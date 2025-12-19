@@ -1,0 +1,197 @@
+import { Component } from 'react'
+import type { ReactNode } from 'react'
+
+interface ErrorBoundaryProps {
+  children: ReactNode
+  onReset?: () => void
+  fallback?: ReactNode
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean
+  error: Error | null
+  errorInfo: string | null
+}
+
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props)
+    this.state = {
+      hasError: false,
+      error: null,
+      errorInfo: null,
+    }
+  }
+
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
+    return {
+      hasError: true,
+      error,
+    }
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo)
+    this.setState({
+      errorInfo: errorInfo.componentStack || null,
+    })
+  }
+
+  handleReset = () => {
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null,
+    })
+    this.props.onReset?.()
+  }
+
+  render() {
+    if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback
+      }
+
+      return <ErrorFallback
+        error={this.state.error}
+        onReset={this.handleReset}
+      />
+    }
+
+    return this.props.children
+  }
+}
+
+interface ErrorFallbackProps {
+  error: Error | null
+  onReset: () => void
+}
+
+function ErrorFallback({ error, onReset }: ErrorFallbackProps) {
+  // Determine error type
+  const isParsingError = error?.message?.toLowerCase().includes('parse') ||
+    error?.message?.toLowerCase().includes('drf')
+  const isFileError = error?.message?.toLowerCase().includes('file') ||
+    error?.message?.toLowerCase().includes('read')
+  const isCorruptedError = error?.message?.toLowerCase().includes('corrupt') ||
+    error?.message?.toLowerCase().includes('invalid')
+
+  let title = 'Something went wrong'
+  let description = 'An unexpected error occurred while processing your request.'
+  let suggestion = 'Please try again or contact support if the problem persists.'
+
+  if (isParsingError) {
+    title = 'File Parsing Error'
+    description = 'We couldn\'t parse the DRF file. The file format may be incorrect or unsupported.'
+    suggestion = 'Make sure you\'re uploading a valid .drf file from Daily Racing Form.'
+  } else if (isCorruptedError) {
+    title = 'Corrupted File Detected'
+    description = 'The DRF file appears to be corrupted or contains invalid data.'
+    suggestion = 'Try downloading the file again or use a different DRF file.'
+  } else if (isFileError) {
+    title = 'File Read Error'
+    description = 'There was a problem reading the file.'
+    suggestion = 'Make sure the file is accessible and try again.'
+  }
+
+  return (
+    <div className="error-boundary-container">
+      <div className="error-boundary-card">
+        {/* Error icon */}
+        <div className="error-icon-wrapper">
+          <span className="material-icons error-icon">error</span>
+        </div>
+
+        {/* Error title */}
+        <h2 className="error-title">{title}</h2>
+
+        {/* Error description */}
+        <p className="error-description">{description}</p>
+
+        {/* Suggestion */}
+        <p className="error-suggestion">{suggestion}</p>
+
+        {/* Error details (collapsible) */}
+        {error && (
+          <details className="error-details">
+            <summary className="error-details-summary">
+              <span className="material-icons">code</span>
+              Technical Details
+            </summary>
+            <pre className="error-details-content">
+              {error.message}
+            </pre>
+          </details>
+        )}
+
+        {/* Action buttons */}
+        <div className="error-actions">
+          <button onClick={onReset} className="error-reset-button">
+            <span className="material-icons">refresh</span>
+            Try Another File
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Standalone error display for non-boundary errors
+interface ErrorDisplayProps {
+  title?: string
+  message: string
+  onRetry?: () => void
+}
+
+export function ErrorDisplay({ title = 'Error', message, onRetry }: ErrorDisplayProps) {
+  return (
+    <div className="error-display">
+      <div className="error-display-content">
+        <span className="material-icons error-display-icon">warning</span>
+        <div className="error-display-text">
+          <span className="error-display-title">{title}</span>
+          <span className="error-display-message">{message}</span>
+        </div>
+        {onRetry && (
+          <button onClick={onRetry} className="error-display-retry">
+            <span className="material-icons">refresh</span>
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Data validation error display
+interface DataValidationWarningProps {
+  warnings: string[]
+  onDismiss?: () => void
+}
+
+export function DataValidationWarning({ warnings, onDismiss }: DataValidationWarningProps) {
+  if (warnings.length === 0) return null
+
+  return (
+    <div className="validation-warning">
+      <div className="validation-warning-header">
+        <span className="material-icons validation-warning-icon">warning_amber</span>
+        <span className="validation-warning-title">Data Warnings</span>
+        {onDismiss && (
+          <button onClick={onDismiss} className="validation-warning-dismiss">
+            <span className="material-icons">close</span>
+          </button>
+        )}
+      </div>
+      <ul className="validation-warning-list">
+        {warnings.map((warning, index) => (
+          <li key={index} className="validation-warning-item">
+            {warning}
+          </li>
+        ))}
+      </ul>
+      <p className="validation-warning-note">
+        Continuing with available data. Some analysis may be incomplete.
+      </p>
+    </div>
+  )
+}

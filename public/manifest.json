@@ -1,0 +1,31 @@
+{
+  "name": "Horse Monster - Advanced Handicapping Analysis",
+  "short_name": "Horse Monster",
+  "description": "Professional horse racing handicapping tool with DRF file analysis and betting recommendations",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F0F10",
+  "theme_color": "#19abb5",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["sports", "entertainment"],
+  "lang": "en-US",
+  "dir": "ltr"
+}
