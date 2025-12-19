@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react'
 import type { ParsedRace } from '../types/drf'
 import type { TrackCondition, UseRaceStateReturn } from '../hooks/useRaceState'
 import { RaceControls } from './RaceControls'
+import { BettingRecommendations } from './BettingRecommendations'
 import { calculateRaceScores, getScoreColor, type HorseScore } from '../lib/scoring'
 import { getTrackBiasSummary } from '../lib/trackIntelligence'
 
@@ -415,6 +416,14 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
           )
         })}
       </div>
+
+      {/* Betting Recommendations - Only show when horses are scored */}
+      {scoredHorses.length > 0 && (
+        <BettingRecommendations
+          horses={scoredHorses}
+          raceNumber={header.raceNumber}
+        />
+      )}
     </div>
   )
 }
