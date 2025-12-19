@@ -1,0 +1,499 @@
+/* ============================================
+   Responsive Breakpoints & Utilities
+   Mobile-first approach following Material Design 3
+   ============================================ */
+
+/*
+   Breakpoint Reference:
+   - Mobile:  < 768px (default styles)
+   - Tablet:  768px - 1023px
+   - Desktop: 1024px+
+
+   Extra breakpoints:
+   - Small mobile: < 375px
+   - Large mobile: 375px - 767px
+   - Large desktop: 1280px+
+*/
+
+/* ============================================
+   CSS Custom Properties for Responsive Design
+   ============================================ */
+
+:root {
+  /* Spacing scale for different screen sizes */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-2xl: 3rem;     /* 48px */
+
+  /* Touch targets - minimum 44px for accessibility */
+  --touch-target-min: 44px;
+  --touch-target-lg: 48px;
+
+  /* Typography scale */
+  --text-xs: 0.75rem;      /* 12px */
+  --text-sm: 0.8125rem;    /* 13px */
+  --text-base: 0.875rem;   /* 14px - mobile minimum */
+  --text-md: 1rem;         /* 16px */
+  --text-lg: 1.125rem;     /* 18px */
+  --text-xl: 1.25rem;      /* 20px */
+  --text-2xl: 1.5rem;      /* 24px */
+
+  /* Layout widths */
+  --container-max: 1200px;
+  --modal-max-desktop: 800px;
+  --modal-max-tablet: 100%;
+
+  /* Safe area insets for notched devices */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+
+  /* Header height for sticky behavior */
+  --header-height: 60px;
+}
+
+/* ============================================
+   Safe Area Utilities
+   ============================================ */
+
+.safe-area-padding {
+  padding-left: var(--safe-area-left);
+  padding-right: var(--safe-area-right);
+}
+
+.safe-area-top {
+  padding-top: var(--safe-area-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: var(--safe-area-bottom);
+}
+
+/* ============================================
+   Touch-Friendly Spacing Utilities
+   ============================================ */
+
+.touch-target {
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+}
+
+.touch-target-lg {
+  min-width: var(--touch-target-lg);
+  min-height: var(--touch-target-lg);
+}
+
+/* ============================================
+   Responsive Container
+   ============================================ */
+
+.responsive-container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+  .responsive-container {
+    padding-left: var(--spacing-lg);
+    padding-right: var(--spacing-lg);
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-container {
+    max-width: var(--container-max);
+    padding-left: var(--spacing-xl);
+    padding-right: var(--spacing-xl);
+  }
+}
+
+/* ============================================
+   Responsive Typography
+   ============================================ */
+
+/* Ensure minimum 14px text on mobile */
+.text-responsive-base {
+  font-size: var(--text-base);
+}
+
+@media (min-width: 768px) {
+  .text-responsive-base {
+    font-size: var(--text-md);
+  }
+}
+
+/* Scale headings responsively */
+.heading-responsive {
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .heading-responsive {
+    font-size: var(--text-xl);
+  }
+}
+
+@media (min-width: 1024px) {
+  .heading-responsive {
+    font-size: var(--text-2xl);
+  }
+}
+
+/* ============================================
+   Responsive Grid Layouts
+   ============================================ */
+
+/* Betting recommendations grid */
+.responsive-tier-grid {
+  display: grid;
+  gap: var(--spacing-md);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .responsive-tier-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .responsive-tier-grid > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-tier-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .responsive-tier-grid > :first-child {
+    grid-column: auto;
+  }
+}
+
+/* ============================================
+   Responsive Flex Utilities
+   ============================================ */
+
+.flex-col-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+@media (min-width: 768px) {
+  .flex-col-mobile {
+    flex-direction: row;
+    gap: var(--spacing-md);
+  }
+}
+
+.flex-wrap-mobile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+/* ============================================
+   Show/Hide Utilities by Breakpoint
+   ============================================ */
+
+/* Hide on mobile, show on tablet+ */
+.hide-mobile {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .hide-mobile {
+    display: block !important;
+  }
+}
+
+/* Show only on mobile */
+.show-mobile {
+  display: block !important;
+}
+
+@media (min-width: 768px) {
+  .show-mobile {
+    display: none !important;
+  }
+}
+
+/* Hide on tablet, show on desktop */
+.hide-tablet {
+  display: none !important;
+}
+
+@media (min-width: 1024px) {
+  .hide-tablet {
+    display: block !important;
+  }
+}
+
+/* Show on tablet only */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .show-tablet-only {
+    display: block !important;
+  }
+}
+
+/* ============================================
+   Responsive Modal Utilities
+   ============================================ */
+
+.modal-responsive {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+@media (min-width: 768px) {
+  .modal-responsive {
+    max-width: var(--modal-max-tablet);
+    height: auto;
+    max-height: 90vh;
+    border-radius: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .modal-responsive {
+    max-width: var(--modal-max-desktop);
+  }
+}
+
+/* ============================================
+   Sticky Header Utilities
+   ============================================ */
+
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: var(--color-background);
+}
+
+@media (min-width: 768px) {
+  .sticky-header-tablet {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+}
+
+/* ============================================
+   Swipeable Container (for mobile tier sections)
+   ============================================ */
+
+.swipe-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+@media (max-width: 767px) {
+  .swipe-container-mobile {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+  }
+
+  .swipe-container-mobile::-webkit-scrollbar {
+    display: none;
+  }
+
+  .swipe-container-mobile > * {
+    flex: 0 0 85%;
+    scroll-snap-align: start;
+  }
+}
+
+/* ============================================
+   Card Grid Responsive
+   ============================================ */
+
+.card-grid {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+/* Mobile: single column */
+.card-grid {
+  grid-template-columns: 1fr;
+}
+
+/* Tablet: 2 columns */
+@media (min-width: 768px) {
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+}
+
+/* Desktop: 3 columns */
+@media (min-width: 1024px) {
+  .card-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ============================================
+   Form Controls Responsive
+   ============================================ */
+
+.input-responsive {
+  width: 100%;
+  min-height: var(--touch-target-min);
+  font-size: 16px; /* Prevents zoom on iOS */
+}
+
+@media (min-width: 768px) {
+  .input-responsive {
+    width: auto;
+    min-width: 200px;
+  }
+}
+
+.select-responsive {
+  width: 100%;
+  min-height: var(--touch-target-lg);
+  font-size: 16px; /* Prevents zoom on iOS */
+}
+
+@media (min-width: 768px) {
+  .select-responsive {
+    width: auto;
+    min-width: 180px;
+  }
+}
+
+/* ============================================
+   Prevent Horizontal Overflow
+   ============================================ */
+
+.no-overflow-x {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* ============================================
+   Mobile-optimized Scrollable Table Container
+   ============================================ */
+
+.table-scroll-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 767px) {
+  .table-scroll-container {
+    margin-left: calc(-1 * var(--spacing-md));
+    margin-right: calc(-1 * var(--spacing-md));
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
+}
+
+/* ============================================
+   Bottom Sheet Animation (for mobile modals)
+   ============================================ */
+
+@keyframes slide-up-from-bottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-down-to-bottom {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0.5;
+  }
+}
+
+.bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--color-surface);
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  animation: slide-up-from-bottom 0.3s ease-out forwards;
+  max-height: calc(100vh - var(--safe-area-top) - 20px);
+  padding-bottom: var(--safe-area-bottom);
+}
+
+/* ============================================
+   Responsive Padding Utilities
+   ============================================ */
+
+.p-responsive {
+  padding: var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+  .p-responsive {
+    padding: var(--spacing-lg);
+  }
+}
+
+@media (min-width: 1024px) {
+  .p-responsive {
+    padding: var(--spacing-xl);
+  }
+}
+
+.px-responsive {
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+  .px-responsive {
+    padding-left: var(--spacing-lg);
+    padding-right: var(--spacing-lg);
+  }
+}
+
+@media (min-width: 1024px) {
+  .px-responsive {
+    padding-left: var(--spacing-xl);
+    padding-right: var(--spacing-xl);
+  }
+}
+
+.py-responsive {
+  padding-top: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+  .py-responsive {
+    padding-top: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+  }
+}

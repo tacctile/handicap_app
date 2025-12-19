@@ -235,13 +235,13 @@ export function HorseDetailModal({
 
   return (
     <div
-      className={`modal-overlay ${isAnimating ? 'animate-in' : ''}`}
+      className={`modal-overlay modal-overlay-responsive ${isAnimating ? 'animate-in' : ''}`}
       onClick={(e) => e.target === e.currentTarget && onClose()}
       role="dialog"
       aria-modal="true"
       aria-labelledby="horse-modal-title"
     >
-      <div className="horse-modal">
+      <div className="horse-modal horse-modal-responsive">
         {/* Close button */}
         <button
           type="button"
@@ -252,10 +252,10 @@ export function HorseDetailModal({
           <Icon name="close" />
         </button>
 
-        {/* Header Section */}
-        <header className="modal-header">
-          <div className="modal-header-top">
-            <div className="horse-identity">
+        {/* Header Section - Responsive */}
+        <header className="modal-header modal-header-responsive">
+          <div className="modal-header-top modal-header-top-responsive">
+            <div className="horse-identity horse-identity-responsive">
               <div className="horse-badges">
                 <span className="program-badge">#{horse.programNumber}</span>
                 <span className="post-badge">PP{horse.postPosition}</span>
@@ -263,9 +263,9 @@ export function HorseDetailModal({
               <h2 id="horse-modal-title" className="horse-name-large">{horse.horseName}</h2>
             </div>
 
-            <div className="score-display-large">
+            <div className="score-display-large score-display-responsive">
               <div
-                className="score-circle"
+                className="score-circle score-circle-responsive"
                 style={{
                   borderColor: scoreColor,
                   color: scoreColor,
@@ -278,18 +278,18 @@ export function HorseDetailModal({
             </div>
           </div>
 
-          <div className="modal-header-stats">
-            <div className="stat-pill">
+          <div className="modal-header-stats modal-header-stats-responsive">
+            <div className="stat-pill stat-pill-responsive">
               <Icon name="emoji_events" className="stat-icon" />
               <span className="stat-label">Predicted</span>
               <span className="stat-value">{ordinal(predictedPosition)}</span>
             </div>
-            <div className="stat-pill highlight">
+            <div className="stat-pill stat-pill-responsive highlight">
               <Icon name="percent" className="stat-icon" />
               <span className="stat-label">Win Prob</span>
               <span className="stat-value">{winProbability}%</span>
             </div>
-            <div className="stat-pill">
+            <div className="stat-pill stat-pill-responsive">
               <Icon name="paid" className="stat-icon" />
               <span className="stat-label">Odds</span>
               <span className="stat-value">{currentOdds}</span>
@@ -297,16 +297,16 @@ export function HorseDetailModal({
           </div>
         </header>
 
-        {/* Scrollable Content */}
-        <div className="modal-content">
+        {/* Scrollable Content - with mobile safe area */}
+        <div className="modal-content modal-content-responsive">
           {/* Score Breakdown Section */}
-          <section className="modal-section">
+          <section className="modal-section modal-section-responsive">
             <h3 className="section-title-modal">
               <Icon name="analytics" className="section-icon-modal" />
               Score Breakdown
             </h3>
 
-            <div className="category-cards">
+            <div className="category-cards category-cards-responsive">
               <CategoryCard
                 icon="people"
                 title="Connections"
