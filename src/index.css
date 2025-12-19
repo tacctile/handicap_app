@@ -6,7 +6,7 @@
 }
 
 :root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -18,4 +18,135 @@ body {
   min-height: 100vh;
   background-color: var(--color-background);
   color: var(--color-foreground);
+}
+
+/* Material Design 3 Custom Properties */
+:root {
+  --color-primary: #19abb5;
+  --color-primary-hover: #1b7583;
+  --color-surface: #1a1a1c;
+  --color-surface-variant: #242428;
+  --color-on-surface: #EEEFF1;
+  --color-on-surface-variant: rgba(238, 239, 241, 0.7);
+  --color-outline: rgba(255, 255, 255, 0.1);
+}
+
+/* Race Table Container */
+.race-table-container {
+  width: 100%;
+  max-width: 1200px;
+  margin-bottom: 1.5rem;
+}
+
+/* Race Header Card - MD3 Surface styling */
+.race-header-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-outline);
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Track Badge */
+.track-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Race Number */
+.race-number {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+/* Info Chips */
+.info-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--color-on-surface-variant);
+  background-color: var(--color-surface-variant);
+  padding: 0.25rem 0.75rem;
+  border-radius: 8px;
+}
+
+/* Race Table */
+.race-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-outline);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.race-table thead {
+  background-color: var(--color-surface-variant);
+}
+
+.race-table th {
+  padding: 0.875rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(238, 239, 241, 0.5);
+  border-bottom: 1px solid var(--color-outline);
+}
+
+.race-table td {
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--color-outline);
+}
+
+.race-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Row hover effect */
+.race-row {
+  transition: background-color 0.15s ease;
+}
+
+.race-row:hover {
+  background-color: var(--color-primary-hover);
+}
+
+/* Accent color for odds */
+.text-accent {
+  color: var(--color-primary);
+}
+
+/* Tabular numbers for consistent alignment */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Mobile Horse Card */
+.mobile-horse-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-outline);
+  border-radius: 12px;
+  padding: 0.875rem 1rem;
+}
+
+/* Post Position Badge */
+.pp-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background-color: var(--color-surface-variant);
+  border-radius: 8px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-on-surface);
+  flex-shrink: 0;
 }
