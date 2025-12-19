@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import type { ParsedRace } from '../types/drf'
 import type { TrackCondition, UseRaceStateReturn } from '../hooks/useRaceState'
 import { RaceControls } from './RaceControls'
+import { calculateRaceScores, getScoreColor, type HorseScore } from '../lib/scoring'
 
 interface RaceTableProps {
   race: ParsedRace
@@ -102,6 +103,31 @@ function ScratchCheckbox({ checked, onChange, horseName }: ScratchCheckboxProps)
   )
 }
 
+// Score badge component
+interface ScoreBadgeProps {
+  score: HorseScore
+}
+
+function ScoreBadge({ score }: ScoreBadgeProps) {
+  const color = getScoreColor(score.total, score.isScratched)
+
+  return (
+    <div
+      className="score-badge"
+      style={{
+        backgroundColor: `${color}20`,
+        color: color,
+        borderColor: `${color}40`,
+      }}
+      title={score.isScratched ? 'Scratched' : `Score: ${score.total}/240`}
+    >
+      <span className="tabular-nums font-semibold">
+        {score.isScratched ? '—' : score.total}
+      </span>
+    </div>
+  )
+}
+
 // Race header card component
 function RaceHeader({
   race,
@@ -159,7 +185,7 @@ function RaceHeader({
 
 // Main RaceTable component
 export function RaceTable({ race, raceState }: RaceTableProps) {
-  const { horses } = race
+  const { horses, header } = race
   const {
     trackCondition,
     setTrackCondition,
@@ -169,6 +195,17 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
     updateOdds,
     hasOddsChanged,
   } = raceState
+
+  // Calculate and sort scores - recalculates when odds, scratches, or track condition change
+  const scoredHorses = useMemo(() => {
+    return calculateRaceScores(
+      horses,
+      header,
+      getOdds,
+      isScratched,
+      trackCondition
+    )
+  }, [horses, header, getOdds, isScratched, trackCondition])
 
   return (
     <div className="race-table-container">
@@ -186,6 +223,7 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
               <th className="w-12 text-center">
                 <Icon name="cancel" className="text-base text-white/40" />
               </th>
+              <th className="w-20 text-center">Score</th>
               <th className="w-16 text-center">PP</th>
               <th className="text-left">Horse</th>
               <th className="text-left">Trainer</th>
@@ -194,8 +232,8 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
             </tr>
           </thead>
           <tbody>
-            {horses.map((horse, index) => {
-              const scratched = isScratched(index)
+            {scoredHorses.map(({ horse, index, score }) => {
+              const scratched = score.isScratched
               const currentOdds = getOdds(index, horse.morningLineOdds)
               const oddsChanged = hasOddsChanged(index)
 
@@ -210,6 +248,9 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
                       onChange={() => toggleScratch(index)}
                       horseName={horse.horseName}
                     />
+                  </td>
+                  <td className="text-center">
+                    <ScoreBadge score={score} />
                   </td>
                   <td className="text-center tabular-nums font-medium">
                     {horse.postPosition}
@@ -240,8 +281,8 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
 
       {/* Mobile Card View */}
       <div className="sm:hidden space-y-2">
-        {horses.map((horse, index) => {
-          const scratched = isScratched(index)
+        {scoredHorses.map(({ horse, index, score }) => {
+          const scratched = score.isScratched
           const currentOdds = getOdds(index, horse.morningLineOdds)
           const oddsChanged = hasOddsChanged(index)
 
@@ -257,6 +298,7 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
                     onChange={() => toggleScratch(index)}
                     horseName={horse.horseName}
                   />
+                  <ScoreBadge score={score} />
                   <div className="pp-badge">
                     {horse.postPosition}
                   </div>
