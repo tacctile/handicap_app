@@ -386,3 +386,31 @@ body {
 .odds-input:focus {
   outline: none;
 }
+
+/* ============================================
+   Score Badge Styles
+   ============================================ */
+
+.score-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3rem;
+  padding: 0.375rem 0.625rem;
+  border-radius: 8px;
+  border: 1px solid;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: transform 0.15s ease;
+}
+
+.score-badge:hover {
+  transform: scale(1.05);
+}
+
+/* Score badge in mobile view */
+.mobile-horse-card .score-badge {
+  min-width: 2.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+}
