@@ -1,8 +1,9 @@
 import { useState, useCallback, useMemo } from 'react'
-import type { ParsedRace } from '../types/drf'
+import type { ParsedRace, HorseEntry } from '../types/drf'
 import type { TrackCondition, UseRaceStateReturn } from '../hooks/useRaceState'
 import { RaceControls } from './RaceControls'
 import { BettingRecommendations } from './BettingRecommendations'
+import { HorseDetailModal } from './HorseDetailModal'
 import { calculateRaceScores, getScoreColor, type HorseScore } from '../lib/scoring'
 import { getTrackBiasSummary } from '../lib/trackIntelligence'
 
@@ -271,6 +272,14 @@ function RaceHeader({
   )
 }
 
+// Modal state interface
+interface SelectedHorseData {
+  horse: HorseEntry
+  score: HorseScore
+  index: number
+  predictedPosition: number
+}
+
 // Main RaceTable component
 export function RaceTable({ race, raceState }: RaceTableProps) {
   const { horses, header } = race
@@ -284,6 +293,9 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
     hasOddsChanged,
   } = raceState
 
+  // Modal state
+  const [selectedHorse, setSelectedHorse] = useState<SelectedHorseData | null>(null)
+
   // Calculate and sort scores - recalculates when odds, scratches, or track condition change
   const scoredHorses = useMemo(() => {
     return calculateRaceScores(
@@ -294,6 +306,21 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
       trackCondition
     )
   }, [horses, header, getOdds, isScratched, trackCondition])
+
+  // Handle row click to open modal
+  const handleRowClick = useCallback((
+    horse: HorseEntry,
+    score: HorseScore,
+    index: number,
+    predictedPosition: number
+  ) => {
+    setSelectedHorse({ horse, score, index, predictedPosition })
+  }, [])
+
+  // Close modal
+  const handleCloseModal = useCallback(() => {
+    setSelectedHorse(null)
+  }, [])
 
   return (
     <div className="race-table-container">
@@ -317,10 +344,11 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
               <th className="text-left">Trainer</th>
               <th className="text-left">Jockey</th>
               <th className="w-28 text-right">Odds</th>
+              <th className="w-10"></th>
             </tr>
           </thead>
           <tbody>
-            {scoredHorses.map(({ horse, index, score }) => {
+            {scoredHorses.map(({ horse, index, score }, position) => {
               const scratched = score.isScratched
               const currentOdds = getOdds(index, horse.morningLineOdds)
               const oddsChanged = hasOddsChanged(index)
@@ -328,9 +356,19 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
               return (
                 <tr
                   key={index}
-                  className={`race-row ${scratched ? 'race-row-scratched' : ''}`}
+                  className={`race-row race-row-clickable ${scratched ? 'race-row-scratched' : ''}`}
+                  onClick={() => handleRowClick(horse, score, index, position + 1)}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      handleRowClick(horse, score, index, position + 1)
+                    }
+                  }}
+                  role="button"
+                  aria-label={`View details for ${horse.horseName}`}
                 >
-                  <td className="text-center">
+                  <td className="text-center" onClick={(e) => e.stopPropagation()}>
                     <ScratchCheckbox
                       checked={scratched}
                       onChange={() => toggleScratch(index)}
@@ -352,13 +390,16 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
                   <td className="text-white/70">
                     {horse.jockeyName}
                   </td>
-                  <td className="text-right">
+                  <td className="text-right" onClick={(e) => e.stopPropagation()}>
                     <EditableOdds
                       value={currentOdds}
                       onChange={(newOdds) => updateOdds(index, newOdds)}
                       hasChanged={oddsChanged}
                       disabled={scratched}
                     />
+                  </td>
+                  <td className="row-chevron-cell">
+                    <Icon name="chevron_right" className="row-chevron" />
                   </td>
                 </tr>
               )
@@ -369,7 +410,7 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
 
       {/* Mobile Card View */}
       <div className="sm:hidden space-y-2">
-        {scoredHorses.map(({ horse, index, score }) => {
+        {scoredHorses.map(({ horse, index, score }, position) => {
           const scratched = score.isScratched
           const currentOdds = getOdds(index, horse.morningLineOdds)
           const oddsChanged = hasOddsChanged(index)
@@ -377,15 +418,27 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
           return (
             <div
               key={index}
-              className={`mobile-horse-card ${scratched ? 'mobile-card-scratched' : ''}`}
+              className={`mobile-horse-card mobile-card-clickable ${scratched ? 'mobile-card-scratched' : ''}`}
+              onClick={() => handleRowClick(horse, score, index, position + 1)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  handleRowClick(horse, score, index, position + 1)
+                }
+              }}
+              aria-label={`View details for ${horse.horseName}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <ScratchCheckbox
-                    checked={scratched}
-                    onChange={() => toggleScratch(index)}
-                    horseName={horse.horseName}
-                  />
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <ScratchCheckbox
+                      checked={scratched}
+                      onChange={() => toggleScratch(index)}
+                      horseName={horse.horseName}
+                    />
+                  </div>
                   <ScoreBadge score={score} />
                   <div className="pp-badge">
                     {horse.postPosition}
@@ -399,14 +452,17 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <EditableOdds
-                    value={currentOdds}
-                    onChange={(newOdds) => updateOdds(index, newOdds)}
-                    hasChanged={oddsChanged}
-                    disabled={scratched}
-                  />
-                  <div className="text-xs text-white/40">Odds</div>
+                <div className="flex items-center gap-2">
+                  <div className="text-right" onClick={(e) => e.stopPropagation()}>
+                    <EditableOdds
+                      value={currentOdds}
+                      onChange={(newOdds) => updateOdds(index, newOdds)}
+                      hasChanged={oddsChanged}
+                      disabled={scratched}
+                    />
+                    <div className="text-xs text-white/40">Odds</div>
+                  </div>
+                  <Icon name="chevron_right" className="mobile-card-chevron" />
                 </div>
               </div>
               <div className="mt-2 pt-2 border-t border-white/5 text-xs text-white/50">
@@ -422,6 +478,20 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
         <BettingRecommendations
           horses={scoredHorses}
           raceNumber={header.raceNumber}
+        />
+      )}
+
+      {/* Horse Detail Modal */}
+      {selectedHorse && (
+        <HorseDetailModal
+          isOpen={!!selectedHorse}
+          onClose={handleCloseModal}
+          horse={selectedHorse.horse}
+          score={selectedHorse.score}
+          raceHeader={header}
+          currentOdds={getOdds(selectedHorse.index, selectedHorse.horse.morningLineOdds)}
+          predictedPosition={selectedHorse.predictedPosition}
+          totalHorses={horses.filter((_, i) => !isScratched(i)).length}
         />
       )}
     </div>
