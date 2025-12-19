@@ -29,16 +29,16 @@ export function RaceControls({
   )
 
   return (
-    <div className="race-controls">
-      <div className="race-controls-section">
-        <label className="race-controls-label" htmlFor="track-condition">
+    <div className="race-controls race-controls-responsive">
+      <div className="race-controls-section race-controls-section-responsive">
+        <label className="race-controls-label race-controls-label-responsive" htmlFor="track-condition">
           <Icon name="wb_cloudy" className="race-controls-icon" />
           <span>Track Condition</span>
         </label>
-        <div className="select-wrapper">
+        <div className="select-wrapper select-wrapper-responsive">
           <select
             id="track-condition"
-            className="race-select"
+            className="race-select race-select-responsive"
             value={trackCondition}
             onChange={(e) => onTrackConditionChange(e.target.value as TrackCondition)}
           >

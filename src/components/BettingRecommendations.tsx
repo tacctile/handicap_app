@@ -258,9 +258,9 @@ export function BettingRecommendations({ horses, raceNumber }: BettingRecommenda
         </div>
       </button>
 
-      {/* Tier Panels */}
+      {/* Tier Panels - Responsive grid layout */}
       {!isCollapsed && (
-        <div className="betting-tiers-container">
+        <div className="betting-tiers-container betting-tiers-responsive">
           {recommendations.map(tierRecs => (
             <ExpansionPanel
               key={tierRecs.tier}

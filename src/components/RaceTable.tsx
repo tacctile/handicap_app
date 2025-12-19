@@ -330,8 +330,8 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
         onTrackConditionChange={setTrackCondition}
       />
 
-      {/* Desktop/Tablet Table View */}
-      <div className="hidden sm:block overflow-x-auto">
+      {/* Desktop/Tablet Table View - visible at 768px+ */}
+      <div className="race-table-wrapper">
         <table className="race-table">
           <thead>
             <tr>
@@ -408,8 +408,8 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
         </table>
       </div>
 
-      {/* Mobile Card View */}
-      <div className="sm:hidden space-y-2">
+      {/* Mobile Card View - visible below 768px */}
+      <div className="mobile-cards-container">
         {scoredHorses.map(({ horse, index, score }, position) => {
           const scratched = score.isScratched
           const currentOdds = getOdds(index, horse.morningLineOdds)
@@ -428,45 +428,55 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
                   handleRowClick(horse, score, index, position + 1)
                 }
               }}
-              aria-label={`View details for ${horse.horseName}`}
+              aria-label={`View details for ${horse.horseName}. Tap to expand for full details.`}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <ScratchCheckbox
-                      checked={scratched}
-                      onChange={() => toggleScratch(index)}
-                      horseName={horse.horseName}
-                    />
-                  </div>
-                  <ScoreBadge score={score} />
-                  <div className="pp-badge">
-                    {horse.postPosition}
-                  </div>
-                  <div>
-                    <div className={`font-medium ${scratched ? 'horse-name-scratched' : 'text-foreground'}`}>
-                      {horse.horseName}
+              {/* Rank indicator */}
+              <div className="mobile-card-rank">{position + 1}</div>
+
+              {/* Main card content */}
+              <div className="mobile-card-main">
+                <div className="mobile-card-header">
+                  <div className="mobile-card-left">
+                    <div className="mobile-scratch-area" onClick={(e) => e.stopPropagation()}>
+                      <ScratchCheckbox
+                        checked={scratched}
+                        onChange={() => toggleScratch(index)}
+                        horseName={horse.horseName}
+                      />
                     </div>
-                    <div className="text-xs text-white/50 mt-0.5">
-                      {horse.jockeyName}
+                    <ScoreBadge score={score} />
+                    <div className="pp-badge">
+                      {horse.postPosition}
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="text-right" onClick={(e) => e.stopPropagation()}>
+                  <div className="mobile-card-right" onClick={(e) => e.stopPropagation()}>
                     <EditableOdds
                       value={currentOdds}
                       onChange={(newOdds) => updateOdds(index, newOdds)}
                       hasChanged={oddsChanged}
                       disabled={scratched}
                     />
-                    <div className="text-xs text-white/40">Odds</div>
                   </div>
+                </div>
+
+                <div className="mobile-card-body">
+                  <div className={`mobile-horse-name ${scratched ? 'horse-name-scratched' : ''}`}>
+                    {horse.horseName}
+                  </div>
+                  <div className="mobile-horse-details">
+                    <span className="mobile-detail-item">
+                      <span className="mobile-detail-label">J:</span> {horse.jockeyName}
+                    </span>
+                    <span className="mobile-detail-item">
+                      <span className="mobile-detail-label">T:</span> {horse.trainerName}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mobile-card-footer">
+                  <span className="mobile-tap-hint">Tap for details</span>
                   <Icon name="chevron_right" className="mobile-card-chevron" />
                 </div>
-              </div>
-              <div className="mt-2 pt-2 border-t border-white/5 text-xs text-white/50">
-                <span className="text-white/30">T:</span> {horse.trainerName}
               </div>
             </div>
           )
