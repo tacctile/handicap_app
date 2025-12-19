@@ -1,10 +1,14 @@
 import type { HorseEntry, RaceHeader } from '../../types/drf'
 import type { TrackCondition } from '../../hooks/useRaceState'
+import {
+  getPostPositionBiasMultiplier,
+  isTrackIntelligenceAvailable
+} from '../trackIntelligence'
 
 // Score breakdown for transparency
 export interface ScoreBreakdown {
   connections: { total: number; trainer: number; jockey: number }
-  postPosition: { total: number; reasoning: string }
+  postPosition: { total: number; reasoning: string; trackBiasApplied: boolean }
   speedFigure: { total: number; reasoning: string }
   form: { total: number; reasoning: string }
   equipment: { total: number; reasoning: string }
@@ -99,8 +103,8 @@ function parseDistance(distance: string): { isSprint: boolean; isRoute: boolean;
 
 /**
  * B. Calculate Post Position Score (max 45 points)
- * Sprint: Posts 4-5 best, 2-3 good
- * Route: Post 5 best, 2-4 good
+ * Now uses track-specific bias data when available
+ * Falls back to generic scoring when track not in database
  */
 export function calculatePostPositionScore(
   horse: HorseEntry,
@@ -108,72 +112,96 @@ export function calculatePostPositionScore(
 ): ScoreBreakdown['postPosition'] {
   const pp = horse.postPosition
   const { isSprint, isRoute } = parseDistance(raceHeader.distance)
+  const trackCode = raceHeader.trackCode
+  const hasTrackData = isTrackIntelligenceAvailable(trackCode)
 
-  let score = 10 // Base score
+  let baseScore = 10 // Base score
   let reasoning = ''
 
+  // Calculate base score using generic rules
   if (isSprint) {
     // Sprint distances (6F-7F)
     if (pp === 4) {
-      score = 20
+      baseScore = 20
       reasoning = 'Ideal sprint post (4)'
     } else if (pp === 5) {
-      score = 18
+      baseScore = 18
       reasoning = 'Good sprint post (5)'
     } else if (pp === 3) {
-      score = 14
+      baseScore = 14
       reasoning = 'Decent sprint post (3)'
     } else if (pp === 2) {
-      score = 12
+      baseScore = 12
       reasoning = 'Inside sprint post (2)'
     } else if (pp === 1) {
-      score = 8
+      baseScore = 8
       reasoning = 'Rail can be tricky in sprints'
     } else if (pp >= 6 && pp <= 8) {
-      score = 10
+      baseScore = 10
       reasoning = 'Outside post in sprint'
     } else {
-      score = 5
+      baseScore = 5
       reasoning = 'Far outside post in sprint'
     }
   } else if (isRoute) {
     // Route distances (1M+)
     if (pp === 5) {
-      score = 20
+      baseScore = 20
       reasoning = 'Ideal route post (5)'
     } else if (pp >= 2 && pp <= 4) {
-      score = 15
+      baseScore = 15
       reasoning = 'Good inside route post'
     } else if (pp === 6 || pp === 7) {
-      score = 12
+      baseScore = 12
       reasoning = 'Mid-outside route post'
     } else if (pp === 1) {
-      score = 10
+      baseScore = 10
       reasoning = 'Rail - can save ground'
     } else {
-      score = 8
+      baseScore = 8
       reasoning = 'Wide post in route'
     }
   } else {
     // Mid-distance
     if (pp >= 3 && pp <= 5) {
-      score = 15
+      baseScore = 15
       reasoning = 'Good mid-distance post'
     } else {
-      score = 10
+      baseScore = 10
       reasoning = 'Average post position'
     }
   }
 
-  // Adjust for turf (inside posts slightly better)
-  if (raceHeader.surface === 'turf' && pp <= 3) {
-    score = Math.min(score + 3, 20)
+  // Adjust for turf (inside posts slightly better) - generic bonus
+  if (raceHeader.surface === 'turf' && pp <= 3 && !hasTrackData) {
+    baseScore = Math.min(baseScore + 3, 20)
     reasoning += ' (turf rail bonus)'
   }
 
+  // Apply track-specific bias if available
+  let finalScore = baseScore
+  let trackBiasApplied = false
+
+  if (hasTrackData) {
+    const biasResult = getPostPositionBiasMultiplier(
+      trackCode,
+      raceHeader.distance,
+      raceHeader.surface,
+      pp
+    )
+
+    // Apply multiplier and cap at max score
+    finalScore = Math.round(baseScore * biasResult.multiplier)
+    finalScore = Math.max(5, Math.min(45, finalScore)) // Cap between 5-45
+
+    reasoning = biasResult.reasoning
+    trackBiasApplied = true
+  }
+
   return {
-    total: score,
+    total: finalScore,
     reasoning: `${reasoning} - ${raceHeader.distance}`,
+    trackBiasApplied
   }
 }
 
