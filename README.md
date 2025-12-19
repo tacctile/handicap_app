@@ -1,2 +1,15 @@
-# handicap_app
-Horse race handicapping and betting analysis too
+# Horse Monster
+
+A horse racing handicapping application.
+
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+## Tech Stack
+
+- Vite + React + TypeScript
+- TailwindCSS
