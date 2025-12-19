@@ -58,7 +58,7 @@ export function calculateHorseScore(
       total: 0,
       breakdown: {
         connections: { total: 0, trainer: 0, jockey: 0 },
-        postPosition: { total: 0, reasoning: 'Scratched' },
+        postPosition: { total: 0, reasoning: 'Scratched', trackBiasApplied: false },
         speedFigure: { total: 0, reasoning: 'Scratched' },
         form: { total: 0, reasoning: 'Scratched' },
         equipment: { total: 0, reasoning: 'Scratched' },

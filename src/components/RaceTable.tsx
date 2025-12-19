@@ -3,6 +3,7 @@ import type { ParsedRace } from '../types/drf'
 import type { TrackCondition, UseRaceStateReturn } from '../hooks/useRaceState'
 import { RaceControls } from './RaceControls'
 import { calculateRaceScores, getScoreColor, type HorseScore } from '../lib/scoring'
+import { getTrackBiasSummary } from '../lib/trackIntelligence'
 
 interface RaceTableProps {
   race: ParsedRace
@@ -128,6 +129,85 @@ function ScoreBadge({ score }: ScoreBadgeProps) {
   )
 }
 
+// Track bias info component with tooltip
+interface TrackBiasInfoProps {
+  trackCode: string
+  distance: string
+  surface: 'dirt' | 'turf' | 'synthetic'
+}
+
+function TrackBiasInfo({ trackCode, distance, surface }: TrackBiasInfoProps) {
+  const [showTooltip, setShowTooltip] = useState(false)
+  const biasSummary = useMemo(
+    () => getTrackBiasSummary(trackCode, distance, surface),
+    [trackCode, distance, surface]
+  )
+
+  if (!biasSummary.isDataAvailable) {
+    return null
+  }
+
+  const speedBiasLabel = biasSummary.speedBiasPercent >= 55
+    ? 'Speed favoring'
+    : biasSummary.speedBiasPercent <= 45
+    ? 'Closer friendly'
+    : 'Fair track'
+
+  return (
+    <div className="track-bias-container">
+      <div className="track-bias-chips">
+        <div className="bias-chip speed-bias">
+          <Icon name="speed" className="text-sm" />
+          <span>Speed: {biasSummary.speedBiasPercent}%</span>
+        </div>
+        <div className="bias-chip post-bias">
+          <Icon name="grid_view" className="text-sm" />
+          <span>{biasSummary.favoredPostsDescription}</span>
+        </div>
+        <button
+          type="button"
+          className="bias-info-btn"
+          onMouseEnter={() => setShowTooltip(true)}
+          onMouseLeave={() => setShowTooltip(false)}
+          onFocus={() => setShowTooltip(true)}
+          onBlur={() => setShowTooltip(false)}
+          aria-label="Track bias details"
+        >
+          <Icon name="info" className="text-base" />
+        </button>
+      </div>
+
+      {showTooltip && (
+        <div className="bias-tooltip">
+          <div className="tooltip-header">
+            <Icon name="analytics" className="text-base" />
+            <span>{biasSummary.trackName} Bias</span>
+          </div>
+          <div className="tooltip-content">
+            <div className="tooltip-row">
+              <span className="tooltip-label">Speed bias:</span>
+              <span className="tooltip-value">{speedBiasLabel}</span>
+            </div>
+            <div className="tooltip-row">
+              <span className="tooltip-label">Early speed win rate:</span>
+              <span className="tooltip-value">{biasSummary.speedBiasPercent}%</span>
+            </div>
+            <div className="tooltip-row">
+              <span className="tooltip-label">Post advantage:</span>
+              <span className="tooltip-value">{biasSummary.favoredPostsDescription}</span>
+            </div>
+            <div className="tooltip-desc">{biasSummary.speedBiasDescription}</div>
+          </div>
+          <div className="tooltip-footer">
+            <Icon name="verified" className="text-xs" />
+            <span>Track bias applied to scoring</span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Race header card component
 function RaceHeader({
   race,
@@ -171,6 +251,13 @@ function RaceHeader({
             </div>
           </div>
         </div>
+
+        {/* Track Bias Information */}
+        <TrackBiasInfo
+          trackCode={header.trackCode}
+          distance={header.distance}
+          surface={header.surface}
+        />
 
         {/* Race Controls integrated in header */}
         <RaceControls
