@@ -1,3 +1,5 @@
+import { FileUpload } from './components/FileUpload'
+
 function App() {
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -5,7 +7,7 @@ function App() {
         <h1 className="text-xl font-semibold tracking-tight">Horse Monster</h1>
       </header>
       <main className="p-6">
-        <p className="text-white/60">Ready to build.</p>
+        <FileUpload />
       </main>
     </div>
   )
