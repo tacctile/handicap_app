@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 
 // Track condition options
 export type TrackCondition =
@@ -33,6 +33,25 @@ export interface RaceState {
   updatedOdds: OddsUpdate
 }
 
+// Calculation state for real-time updates
+export interface CalculationState {
+  isCalculating: boolean
+  lastCalculatedAt: number | null
+  calculationVersion: number
+  changedHorseIndices: Set<number>
+  changedTierIndices: Set<number>
+  changedOddsIndices: Set<number>
+}
+
+// History entry for undo functionality
+export interface HistoryEntry {
+  timestamp: number
+  trackCondition: TrackCondition
+  scratchedHorses: Set<number>
+  updatedOdds: OddsUpdate
+  description: string
+}
+
 export interface RaceStateActions {
   setTrackCondition: (condition: TrackCondition) => void
   toggleScratch: (horseIndex: number) => void
@@ -40,12 +59,22 @@ export interface RaceStateActions {
   updateOdds: (horseIndex: number, newOdds: string) => void
   resetOdds: (horseIndex: number) => void
   resetAll: () => void
+  storeOriginalOdds: (originalOdds: Record<number, string>) => void
+  clearChangeHighlights: () => void
 }
 
 export interface UseRaceStateReturn extends RaceState, RaceStateActions {
   isScratched: (horseIndex: number) => boolean
   getOdds: (horseIndex: number, originalOdds: string) => string
   hasOddsChanged: (horseIndex: number) => boolean
+  // Calculation state
+  calculationState: CalculationState
+  // History
+  history: HistoryEntry[]
+  canUndo: boolean
+  // Original state for reset
+  originalOdds: Record<number, string>
+  hasChanges: boolean
 }
 
 const initialState: RaceState = {
@@ -54,23 +83,128 @@ const initialState: RaceState = {
   updatedOdds: {},
 }
 
+const initialCalculationState: CalculationState = {
+  isCalculating: false,
+  lastCalculatedAt: null,
+  calculationVersion: 0,
+  changedHorseIndices: new Set(),
+  changedTierIndices: new Set(),
+  changedOddsIndices: new Set(),
+}
+
+// Debounce helper
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [value, delay])
+
+  return debouncedValue
+}
+
 export function useRaceState(): UseRaceStateReturn {
-  const [trackCondition, setTrackCondition] = useState<TrackCondition>(initialState.trackCondition)
+  const [trackCondition, setTrackConditionState] = useState<TrackCondition>(initialState.trackCondition)
   const [scratchedHorses, setScratchedHorses] = useState<Set<number>>(initialState.scratchedHorses)
   const [updatedOdds, setUpdatedOdds] = useState<OddsUpdate>(initialState.updatedOdds)
+
+  // Original odds storage for reset functionality
+  const [originalOdds, setOriginalOdds] = useState<Record<number, string>>({})
+
+  // Calculation state
+  const [calculationState, setCalculationState] = useState<CalculationState>(initialCalculationState)
+
+  // History for undo
+  const [history, setHistory] = useState<HistoryEntry[]>([])
+  const maxHistoryLength = 50
+
+  // Debounced state version for triggering recalculation
+  const stateVersion = useMemo(() => ({
+    trackCondition,
+    scratchedCount: scratchedHorses.size,
+    oddsCount: Object.keys(updatedOdds).length,
+    version: calculationState.calculationVersion,
+  }), [trackCondition, scratchedHorses.size, updatedOdds, calculationState.calculationVersion])
+
+  const debouncedStateVersion = useDebounce(stateVersion, 300)
+
+  // Effect to handle debounced recalculation trigger
+  useEffect(() => {
+    if (debouncedStateVersion.version !== calculationState.calculationVersion) {
+      // Mark calculation as complete and update timestamp
+      setCalculationState(prev => ({
+        ...prev,
+        isCalculating: false,
+        lastCalculatedAt: Date.now(),
+      }))
+    }
+  }, [debouncedStateVersion, calculationState.calculationVersion])
+
+  // Add to history helper
+  const addToHistory = useCallback((description: string) => {
+    setHistory(prev => {
+      const entry: HistoryEntry = {
+        timestamp: Date.now(),
+        trackCondition,
+        scratchedHorses: new Set(scratchedHorses),
+        updatedOdds: { ...updatedOdds },
+        description,
+      }
+      const newHistory = [entry, ...prev].slice(0, maxHistoryLength)
+      return newHistory
+    })
+  }, [trackCondition, scratchedHorses, updatedOdds])
+
+  // Trigger recalculation
+  const triggerRecalculation = useCallback((changedIndices?: Set<number>, changeType?: 'score' | 'tier' | 'odds') => {
+    setCalculationState(prev => ({
+      ...prev,
+      isCalculating: true,
+      calculationVersion: prev.calculationVersion + 1,
+      changedHorseIndices: changeType === 'score' && changedIndices ? changedIndices : prev.changedHorseIndices,
+      changedTierIndices: changeType === 'tier' && changedIndices ? changedIndices : prev.changedTierIndices,
+      changedOddsIndices: changeType === 'odds' && changedIndices ? changedIndices : prev.changedOddsIndices,
+    }))
+  }, [])
+
+  // Clear change highlights (called after animation completes)
+  const clearChangeHighlights = useCallback(() => {
+    setCalculationState(prev => ({
+      ...prev,
+      changedHorseIndices: new Set(),
+      changedTierIndices: new Set(),
+      changedOddsIndices: new Set(),
+    }))
+  }, [])
+
+  // Set track condition with history
+  const setTrackCondition = useCallback((condition: TrackCondition) => {
+    addToHistory(`Track condition changed to ${condition}`)
+    setTrackConditionState(condition)
+    triggerRecalculation(undefined, 'score')
+  }, [addToHistory, triggerRecalculation])
 
   // Toggle scratch status for a horse
   const toggleScratch = useCallback((horseIndex: number) => {
     setScratchedHorses(prev => {
       const next = new Set(prev)
-      if (next.has(horseIndex)) {
-        next.delete(horseIndex)
-      } else {
+      const willBeScratched = !next.has(horseIndex)
+      if (willBeScratched) {
         next.add(horseIndex)
+      } else {
+        next.delete(horseIndex)
       }
       return next
     })
-  }, [])
+    addToHistory(`Horse ${horseIndex} ${scratchedHorses.has(horseIndex) ? 'unscratched' : 'scratched'}`)
+    triggerRecalculation(new Set([horseIndex]), 'score')
+  }, [addToHistory, triggerRecalculation, scratchedHorses])
 
   // Set scratch status explicitly
   const setScratch = useCallback((horseIndex: number, scratched: boolean) => {
@@ -83,7 +217,9 @@ export function useRaceState(): UseRaceStateReturn {
       }
       return next
     })
-  }, [])
+    addToHistory(`Horse ${horseIndex} ${scratched ? 'scratched' : 'unscratched'}`)
+    triggerRecalculation(new Set([horseIndex]), 'score')
+  }, [addToHistory, triggerRecalculation])
 
   // Update odds for a horse
   const updateOdds = useCallback((horseIndex: number, newOdds: string) => {
@@ -91,7 +227,13 @@ export function useRaceState(): UseRaceStateReturn {
       ...prev,
       [horseIndex]: newOdds,
     }))
-  }, [])
+    // Mark this horse as having odds change for highlight
+    setCalculationState(prev => ({
+      ...prev,
+      changedOddsIndices: new Set([...prev.changedOddsIndices, horseIndex]),
+    }))
+    triggerRecalculation(new Set([horseIndex]), 'odds')
+  }, [triggerRecalculation])
 
   // Reset odds for a horse to original
   const resetOdds = useCallback((horseIndex: number) => {
@@ -100,14 +242,22 @@ export function useRaceState(): UseRaceStateReturn {
       delete next[horseIndex]
       return next
     })
+    triggerRecalculation(new Set([horseIndex]), 'odds')
+  }, [triggerRecalculation])
+
+  // Store original odds when race data is loaded
+  const storeOriginalOdds = useCallback((odds: Record<number, string>) => {
+    setOriginalOdds(odds)
   }, [])
 
   // Reset all state to initial
   const resetAll = useCallback(() => {
-    setTrackCondition(initialState.trackCondition)
+    addToHistory('Reset all changes')
+    setTrackConditionState(initialState.trackCondition)
     setScratchedHorses(new Set())
     setUpdatedOdds({})
-  }, [])
+    setCalculationState(initialCalculationState)
+  }, [addToHistory])
 
   // Check if a horse is scratched
   const isScratched = useCallback((horseIndex: number): boolean => {
@@ -124,6 +274,18 @@ export function useRaceState(): UseRaceStateReturn {
     return horseIndex in updatedOdds
   }, [updatedOdds])
 
+  // Check if there are any changes from original state
+  const hasChanges = useMemo(() => {
+    return (
+      trackCondition !== initialState.trackCondition ||
+      scratchedHorses.size > 0 ||
+      Object.keys(updatedOdds).length > 0
+    )
+  }, [trackCondition, scratchedHorses.size, updatedOdds])
+
+  // Check if undo is available
+  const canUndo = history.length > 0
+
   return useMemo(() => ({
     // State
     trackCondition,
@@ -136,21 +298,39 @@ export function useRaceState(): UseRaceStateReturn {
     updateOdds,
     resetOdds,
     resetAll,
+    storeOriginalOdds,
+    clearChangeHighlights,
     // Helpers
     isScratched,
     getOdds,
     hasOddsChanged,
+    // Calculation state
+    calculationState,
+    // History
+    history,
+    canUndo,
+    // Original state
+    originalOdds,
+    hasChanges,
   }), [
     trackCondition,
     scratchedHorses,
     updatedOdds,
+    setTrackCondition,
     toggleScratch,
     setScratch,
     updateOdds,
     resetOdds,
     resetAll,
+    storeOriginalOdds,
+    clearChangeHighlights,
     isScratched,
     getOdds,
     hasOddsChanged,
+    calculationState,
+    history,
+    canUndo,
+    originalOdds,
+    hasChanges,
   ])
 }

@@ -1,9 +1,11 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef, memo } from 'react'
 import type { ParsedRace, HorseEntry } from '../types/drf'
 import type { TrackCondition, UseRaceStateReturn } from '../hooks/useRaceState'
 import { RaceControls } from './RaceControls'
 import { BettingRecommendations } from './BettingRecommendations'
 import { HorseDetailModal } from './HorseDetailModal'
+import { CalculationStatus } from './CalculationStatus'
+import { ToastContainer, useToasts } from './Toast'
 import { calculateRaceScores, getScoreColor, type HorseScore } from '../lib/scoring'
 import { getTrackBiasSummary } from '../lib/trackIntelligence'
 
@@ -21,15 +23,22 @@ function Icon({ name, className = '' }: { name: string; className?: string }) {
   )
 }
 
-// Editable odds field component
+// Editable odds field component with highlight animation
 interface EditableOddsProps {
   value: string
   onChange: (value: string) => void
   hasChanged: boolean
   disabled?: boolean
+  isHighlighted?: boolean
 }
 
-function EditableOdds({ value, onChange, hasChanged, disabled }: EditableOddsProps) {
+const EditableOdds = memo(function EditableOdds({
+  value,
+  onChange,
+  hasChanged,
+  disabled,
+  isHighlighted = false,
+}: EditableOddsProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(value)
 
@@ -73,7 +82,7 @@ function EditableOdds({ value, onChange, hasChanged, disabled }: EditableOddsPro
   return (
     <button
       type="button"
-      className={`odds-display ${hasChanged ? 'odds-changed' : ''} ${disabled ? 'odds-disabled' : ''}`}
+      className={`odds-display ${hasChanged ? 'odds-changed' : ''} ${disabled ? 'odds-disabled' : ''} ${isHighlighted ? 'odds-highlight' : ''}`}
       onClick={handleClick}
       disabled={disabled}
     >
@@ -81,7 +90,7 @@ function EditableOdds({ value, onChange, hasChanged, disabled }: EditableOddsPro
       {!disabled && <Icon name="edit" className="odds-edit-icon" />}
     </button>
   )
-}
+})
 
 // Scratch checkbox component
 interface ScratchCheckboxProps {
@@ -90,7 +99,7 @@ interface ScratchCheckboxProps {
   horseName: string
 }
 
-function ScratchCheckbox({ checked, onChange, horseName }: ScratchCheckboxProps) {
+const ScratchCheckbox = memo(function ScratchCheckbox({ checked, onChange, horseName }: ScratchCheckboxProps) {
   return (
     <label className="scratch-checkbox" title={checked ? `Unscratsch ${horseName}` : `Scratch ${horseName}`}>
       <input
@@ -104,19 +113,29 @@ function ScratchCheckbox({ checked, onChange, horseName }: ScratchCheckboxProps)
       </span>
     </label>
   )
-}
+})
 
-// Score badge component
+// Score badge component with pulse animation
 interface ScoreBadgeProps {
   score: HorseScore
+  hasChanged?: boolean
 }
 
-function ScoreBadge({ score }: ScoreBadgeProps) {
+const ScoreBadge = memo(function ScoreBadge({ score, hasChanged = false }: ScoreBadgeProps) {
   const color = getScoreColor(score.total, score.isScratched)
+  const [shouldAnimate, setShouldAnimate] = useState(false)
+
+  useEffect(() => {
+    if (hasChanged) {
+      setShouldAnimate(true)
+      const timer = setTimeout(() => setShouldAnimate(false), 600)
+      return () => clearTimeout(timer)
+    }
+  }, [hasChanged, score.total])
 
   return (
     <div
-      className="score-badge"
+      className={`score-badge ${shouldAnimate ? 'score-changed' : ''}`}
       style={{
         backgroundColor: `${color}20`,
         color: color,
@@ -129,7 +148,7 @@ function ScoreBadge({ score }: ScoreBadgeProps) {
       </span>
     </div>
   )
-}
+})
 
 // Track bias info component with tooltip
 interface TrackBiasInfoProps {
@@ -138,7 +157,7 @@ interface TrackBiasInfoProps {
   surface: 'dirt' | 'turf' | 'synthetic'
 }
 
-function TrackBiasInfo({ trackCode, distance, surface }: TrackBiasInfoProps) {
+const TrackBiasInfo = memo(function TrackBiasInfo({ trackCode, distance, surface }: TrackBiasInfoProps) {
   const [showTooltip, setShowTooltip] = useState(false)
   const biasSummary = useMemo(
     () => getTrackBiasSummary(trackCode, distance, surface),
@@ -208,18 +227,28 @@ function TrackBiasInfo({ trackCode, distance, surface }: TrackBiasInfoProps) {
       )}
     </div>
   )
-}
+})
 
 // Race header card component
-function RaceHeader({
-  race,
-  trackCondition,
-  onTrackConditionChange,
-}: {
+interface RaceHeaderProps {
   race: ParsedRace
   trackCondition: TrackCondition
   onTrackConditionChange: (condition: TrackCondition) => void
-}) {
+  hasChanges: boolean
+  onReset: () => void
+  scratchesCount: number
+  oddsChangesCount: number
+}
+
+const RaceHeader = memo(function RaceHeader({
+  race,
+  trackCondition,
+  onTrackConditionChange,
+  hasChanges,
+  onReset,
+  scratchesCount,
+  oddsChangesCount,
+}: RaceHeaderProps) {
   const { header } = race
 
   // Format surface for display
@@ -266,11 +295,15 @@ function RaceHeader({
           trackCondition={trackCondition}
           onTrackConditionChange={onTrackConditionChange}
           surface={header.surface}
+          hasChanges={hasChanges}
+          onReset={onReset}
+          scratchesCount={scratchesCount}
+          oddsChangesCount={oddsChangesCount}
         />
       </div>
     </div>
   )
-}
+})
 
 // Modal state interface
 interface SelectedHorseData {
@@ -291,10 +324,23 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
     getOdds,
     updateOdds,
     hasOddsChanged,
+    resetAll,
+    hasChanges,
+    calculationState,
+    clearChangeHighlights,
   } = raceState
+
+  // Toast notifications
+  const { toasts, addToast, dismissToast } = useToasts()
+
+  // Track previous calculation version for toast notifications
+  const prevVersionRef = useRef(calculationState.calculationVersion)
 
   // Modal state
   const [selectedHorse, setSelectedHorse] = useState<SelectedHorseData | null>(null)
+
+  // Track previous scores for change detection
+  const prevScoresRef = useRef<Map<number, number>>(new Map())
 
   // Calculate and sort scores - recalculates when odds, scratches, or track condition change
   const scoredHorses = useMemo(() => {
@@ -306,6 +352,68 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
       trackCondition
     )
   }, [horses, header, getOdds, isScratched, trackCondition])
+
+  // Detect score changes and track them
+  const changedScoreIndices = useMemo(() => {
+    const changed = new Set<number>()
+    for (const { index, score } of scoredHorses) {
+      const prevScore = prevScoresRef.current.get(index)
+      if (prevScore !== undefined && prevScore !== score.total) {
+        changed.add(index)
+      }
+    }
+    return changed
+  }, [scoredHorses])
+
+  // Update previous scores after render
+  useEffect(() => {
+    const newMap = new Map<number, number>()
+    for (const { index, score } of scoredHorses) {
+      newMap.set(index, score.total)
+    }
+    prevScoresRef.current = newMap
+  }, [scoredHorses])
+
+  // Show toast when recalculation completes (after first load)
+  useEffect(() => {
+    if (
+      calculationState.calculationVersion > 1 &&
+      calculationState.calculationVersion !== prevVersionRef.current &&
+      !calculationState.isCalculating
+    ) {
+      addToast('Recalculated based on changes', 'success', 2000)
+    }
+    prevVersionRef.current = calculationState.calculationVersion
+  }, [calculationState.calculationVersion, calculationState.isCalculating, addToast])
+
+  // Clear highlights after animation
+  useEffect(() => {
+    if (changedScoreIndices.size > 0) {
+      const timer = setTimeout(() => {
+        clearChangeHighlights()
+      }, 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [changedScoreIndices.size, clearChangeHighlights])
+
+  // Calculate stats for CalculationStatus
+  const activeHorses = scoredHorses.filter(h => !h.score.isScratched).length
+  const confidenceLevel = useMemo(() => {
+    const scores = scoredHorses
+      .filter(h => !h.score.isScratched)
+      .map(h => h.score.total)
+      .sort((a, b) => b - a)
+
+    if (scores.length < 2) return 50
+
+    const topScore = scores[0]
+    const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length
+    const differential = scores.length > 1 ? ((topScore - scores[1]) / topScore) * 30 : 0
+    const qualityBonus = Math.min(20, (topScore / 240) * 25)
+    const baseConfidence = 40 + (avgScore / 240) * 30
+
+    return Math.min(100, Math.round(baseConfidence + differential + qualityBonus))
+  }, [scoredHorses])
 
   // Handle row click to open modal
   const handleRowClick = useCallback((
@@ -322,12 +430,22 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
     setSelectedHorse(null)
   }, [])
 
+  // Handle reset with toast
+  const handleReset = useCallback(() => {
+    resetAll()
+    addToast('All changes reset to original', 'info', 2500)
+  }, [resetAll, addToast])
+
   return (
     <div className="race-table-container">
       <RaceHeader
         race={race}
         trackCondition={trackCondition}
         onTrackConditionChange={setTrackCondition}
+        hasChanges={hasChanges}
+        onReset={handleReset}
+        scratchesCount={raceState.scratchedHorses.size}
+        oddsChangesCount={Object.keys(raceState.updatedOdds).length}
       />
 
       {/* Desktop/Tablet Table View - visible at 768px+ */}
@@ -352,6 +470,8 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
               const scratched = score.isScratched
               const currentOdds = getOdds(index, horse.morningLineOdds)
               const oddsChanged = hasOddsChanged(index)
+              const scoreChanged = changedScoreIndices.has(index)
+              const oddsHighlighted = calculationState.changedOddsIndices.has(index)
 
               return (
                 <tr
@@ -376,7 +496,7 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
                     />
                   </td>
                   <td className="text-center">
-                    <ScoreBadge score={score} />
+                    <ScoreBadge score={score} hasChanged={scoreChanged} />
                   </td>
                   <td className="text-center tabular-nums font-medium">
                     {horse.postPosition}
@@ -396,6 +516,7 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
                       onChange={(newOdds) => updateOdds(index, newOdds)}
                       hasChanged={oddsChanged}
                       disabled={scratched}
+                      isHighlighted={oddsHighlighted}
                     />
                   </td>
                   <td className="row-chevron-cell">
@@ -414,6 +535,8 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
           const scratched = score.isScratched
           const currentOdds = getOdds(index, horse.morningLineOdds)
           const oddsChanged = hasOddsChanged(index)
+          const scoreChanged = changedScoreIndices.has(index)
+          const oddsHighlighted = calculationState.changedOddsIndices.has(index)
 
           return (
             <div
@@ -444,7 +567,7 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
                         horseName={horse.horseName}
                       />
                     </div>
-                    <ScoreBadge score={score} />
+                    <ScoreBadge score={score} hasChanged={scoreChanged} />
                     <div className="pp-badge">
                       {horse.postPosition}
                     </div>
@@ -455,6 +578,7 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
                       onChange={(newOdds) => updateOdds(index, newOdds)}
                       hasChanged={oddsChanged}
                       disabled={scratched}
+                      isHighlighted={oddsHighlighted}
                     />
                   </div>
                 </div>
@@ -483,12 +607,20 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
         })}
       </div>
 
-      {/* Betting Recommendations - Only show when horses are scored */}
+      {/* Betting Recommendations with Calculation Status */}
       {scoredHorses.length > 0 && (
-        <BettingRecommendations
-          horses={scoredHorses}
-          raceNumber={header.raceNumber}
-        />
+        <>
+          <CalculationStatus
+            calculationState={calculationState}
+            horsesAnalyzed={horses.length}
+            activeHorses={activeHorses}
+            confidenceLevel={confidenceLevel}
+          />
+          <BettingRecommendations
+            horses={scoredHorses}
+            raceNumber={header.raceNumber}
+          />
+        </>
       )}
 
       {/* Horse Detail Modal */}
@@ -504,6 +636,9 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
           totalHorses={horses.filter((_, i) => !isScratched(i)).length}
         />
       )}
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }
