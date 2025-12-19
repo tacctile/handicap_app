@@ -1,14 +1,18 @@
 import { useState, useCallback } from 'react'
 import { FileUpload } from './components/FileUpload'
 import { RaceTable } from './components/RaceTable'
+import { useRaceState } from './hooks/useRaceState'
 import type { ParsedDRFFile } from './types/drf'
 
 function App() {
   const [parsedData, setParsedData] = useState<ParsedDRFFile | null>(null)
+  const raceState = useRaceState()
 
   const handleParsed = useCallback((data: ParsedDRFFile) => {
     setParsedData(data)
-  }, [])
+    // Reset race state when new file is loaded
+    raceState.resetAll()
+  }, [raceState])
 
   const totalHorses = parsedData?.races.reduce((sum, race) => sum + race.horses.length, 0) ?? 0
 
@@ -38,7 +42,7 @@ function App() {
             {/* Race tables */}
             <div className="space-y-6">
               {parsedData.races.map((race, index) => (
-                <RaceTable key={index} race={race} />
+                <RaceTable key={index} race={race} raceState={raceState} />
               ))}
             </div>
           </div>
