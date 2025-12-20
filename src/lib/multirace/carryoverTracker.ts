@@ -11,7 +11,6 @@
 import { validateNumber, sanitizeString } from '../sanitization'
 import {
   type CarryoverInfo,
-  type MultiRaceBetType,
   CARRYOVER_THRESHOLDS,
   getBetConfig,
 } from './multiraceTypes'
@@ -263,7 +262,6 @@ export function calculateCarryoverAdjustedEV(params: {
   const baseEV = baseExpectedReturn - baseCost
 
   // With carryover: pool is larger
-  const totalPool = estimatedPoolToday + carryoverAmount
   const carryoverPoolReturn = estimatedPoolToday * (1 - takeoutRate) + carryoverAmount
   const adjustedExpectedReturn = baseProbability * carryoverPoolReturn
   const adjustedEV = adjustedExpectedReturn - baseCost

@@ -18,7 +18,6 @@ import {
   type MultiRaceBetType,
   type MultiRaceCost,
   type RaceSelection,
-  MULTI_RACE_BET_CONFIGS,
   getBetConfig,
 } from './multiraceTypes'
 
@@ -408,9 +407,6 @@ export function calculateWithAllOption(config: {
   const selectionsWithAll = currentSelections.map((sel, idx) =>
     allLegs.includes(idx) ? fieldSizes[idx] : sel
   )
-
-  // Calculate without "All" (original)
-  const selectionsWithoutAll = currentSelections.filter((_, idx) => !allLegs.includes(idx))
 
   const withAllCombos = calculateCombinations(selectionsWithAll)
   const withAllCost = calculateBasicCost(selectionsWithAll, validatedBaseBet)

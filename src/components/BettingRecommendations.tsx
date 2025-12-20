@@ -39,7 +39,8 @@ import {
 import type { UseBankrollReturn } from '../hooks/useBankroll'
 import { BankrollSummaryCard } from './BankrollSummaryCard'
 import { ExoticBuilderModal, type ExoticBetResult } from './ExoticBuilderModal'
-import { MultiRaceExoticsPanel, type MultiRaceTicketResult } from './MultiRaceExoticsPanel'
+import { MultiRaceExoticsPanel } from './MultiRaceExoticsPanel'
+import type { MultiRaceTicketResult } from './MultiRaceBuilderModal'
 
 interface BettingRecommendationsProps {
   horses: Array<{ horse: HorseEntry; index: number; score: HorseScore }>
@@ -1022,7 +1023,7 @@ export function BettingRecommendations({
       description: `${ticket.displayName}: ${ticket.spreadNotation}`,
       type: 'pick_multi' as never,
       horses: [],
-      horseNumbers: ticket.raceInstructions.flatMap(r => r.horses),
+      horseNumbers: ticket.raceInstructions.flatMap((r: { raceNumber: number; horses: number[] }) => r.horses),
       amount: ticket.totalCost,
       totalCost: ticket.totalCost,
       windowInstruction: `"${ticket.windowInstruction}"`,

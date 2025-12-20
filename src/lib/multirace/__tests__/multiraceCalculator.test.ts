@@ -9,7 +9,7 @@
  * - Edge cases and error handling
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import {
   calculateCombinations,
   calculateBasicCost,
@@ -25,7 +25,6 @@ import {
   findMaxSelectionsForBudget,
   compareSpreads,
   generateWindowInstruction,
-  MAX_TICKET_COST,
   MAX_SELECTIONS_PER_RACE,
 } from '../multiraceCalculator'
 import type { RaceSelection } from '../multiraceTypes'

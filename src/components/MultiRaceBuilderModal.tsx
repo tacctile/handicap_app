@@ -11,7 +11,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import type { HorseEntry } from '../types/drf'
 import type { HorseScore } from '../lib/scoring'
 import {
@@ -19,16 +19,12 @@ import {
   type MultiRaceStrategy,
   type MultiRaceRaceData,
   type MultiRaceHorse,
-  type OptimizedTicket,
   type LegSuggestion,
-  MULTI_RACE_BET_CONFIGS,
   getBetConfig,
   createBuilderState,
-  updateLegSelection,
   toggleHorseInLeg,
   toggleAllForLeg,
   updateBaseBet,
-  updateBudget,
   updateStrategy,
   generateAllSuggestions,
   applySuggestion,
@@ -36,7 +32,6 @@ import {
   autoOptimizeForBudget,
   buildTicketFromState,
   validateBuilderState,
-  getStateSummary,
   getProbabilityColor,
   getEVColor,
   formatProbability,
@@ -235,10 +230,6 @@ export function MultiRaceBuilderModal({
 
   const handleBaseBetChange = useCallback((newBaseBet: number) => {
     setState(prev => updateBaseBet(prev, newBaseBet))
-  }, [])
-
-  const handleBudgetChange = useCallback((newBudget: number) => {
-    setState(prev => updateBudget(prev, newBudget))
   }, [])
 
   const handleStrategyChange = useCallback((newStrategy: MultiRaceStrategy) => {

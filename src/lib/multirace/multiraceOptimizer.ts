@@ -23,14 +23,13 @@ import {
   type MultiRaceOptimizationResult,
   type MultiRaceOptimizationConfig,
   type RaceStrength,
-  MULTI_RACE_BET_CONFIGS,
+  type MultiRaceCost,
   getBetConfig,
 } from './multiraceTypes'
 import {
   calculateMultiRaceCost,
   findOptimalBaseBet,
   generateWindowInstruction,
-  type MultiRaceCost,
 } from './multiraceCalculator'
 
 // ============================================================================
@@ -233,8 +232,8 @@ export function calculateExpectedValue(
 export function generateOptimalSelections(
   races: MultiRaceRaceData[],
   strategy: MultiRaceStrategy,
-  budget: number,
-  baseBet: number
+  _budget?: number,
+  _baseBet?: number
 ): RaceSelection[] {
   const selections: RaceSelection[] = []
 
@@ -298,7 +297,7 @@ export function buildOptimizedTicket(
 
   // Find optimal base bet
   const selectionsPerRace = selections.map(s => s.selections.length)
-  const { baseBet, cost: totalCost, fits } = findOptimalBaseBet(
+  const { baseBet, fits } = findOptimalBaseBet(
     betType,
     selectionsPerRace,
     budget

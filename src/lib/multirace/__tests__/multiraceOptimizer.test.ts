@@ -14,7 +14,6 @@ import {
   findStandoutHorse,
   getTopHorsesForRace,
   calculateTicketProbability,
-  estimatePayoutRange,
   calculateExpectedValue,
   generateOptimalSelections,
   optimizeMultiRaceBet,
@@ -400,7 +399,7 @@ describe('Ticket Optimization', () => {
         betType: 'daily_double',
         races,
         budget: 100,
-        strategy: undefined, // All strategies
+        strategy: 'balanced',
       })
 
       expect(result.isValid).toBe(true)
@@ -412,7 +411,7 @@ describe('Ticket Optimization', () => {
         betType: 'daily_double',
         races,
         budget: 100,
-        strategy: undefined,
+        strategy: 'balanced',
       })
 
       for (let i = 1; i < result.tickets.length; i++) {

@@ -14,22 +14,19 @@ import {
   type MultiRaceBetType,
   type MultiRaceStrategy,
   type MultiRaceRaceData,
-  type MultiRaceHorse,
   type RaceSelection,
   type TicketBuilderState,
   type LegSuggestion,
   type OptimizedTicket,
   type CarryoverInfo,
   type MultiRaceTicketDisplay,
+  type MultiRaceCost,
   getBetConfig,
-  MULTI_RACE_BET_CONFIGS,
 } from './multiraceTypes'
 import {
   calculateMultiRaceCost,
-  generateSpreadNotation,
   generateWindowInstruction,
   findOptimalBaseBet,
-  type MultiRaceCost,
 } from './multiraceCalculator'
 import {
   classifyRaceStrength,
@@ -40,7 +37,6 @@ import {
 } from './multiraceOptimizer'
 import {
   getCarryover,
-  formatCarryoverAmount,
 } from './carryoverTracker'
 
 // ============================================================================

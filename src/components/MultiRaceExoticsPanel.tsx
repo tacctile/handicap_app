@@ -18,7 +18,6 @@ import {
   type MultiRaceHorse,
   type OptimizedTicket,
   type CarryoverInfo,
-  MULTI_RACE_BET_CONFIGS,
   getBetConfig,
   getAvailableBetTypes,
   analyzeRaceCard,
