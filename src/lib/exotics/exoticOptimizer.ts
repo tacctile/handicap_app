@@ -23,6 +23,7 @@ import {
   calculateSuperfectaKeyCost,
   type ExoticBetType,
   type BetStructure,
+  type ExoticCost,
   BASE_BET_OPTIONS,
   MIN_HORSES,
 } from './exoticCalculator'
