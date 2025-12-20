@@ -5,7 +5,6 @@ import {
   analyzeOverlay,
   calculateTierAdjustment,
   type OverlayAnalysis,
-  type ValueClassification,
 } from '../scoring'
 
 // Tier definitions

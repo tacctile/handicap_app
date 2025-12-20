@@ -14,7 +14,6 @@ import {
   formatOverlayPercent,
   formatEV,
   getOverlayColor,
-  VALUE_LABELS,
 } from '../lib/scoring'
 import type { UseBankrollReturn } from '../hooks/useBankroll'
 import { BankrollSummaryCard } from './BankrollSummaryCard'

@@ -613,11 +613,12 @@ export function HorseDetailModal({
                 }}
               >
                 <div className="overlay-main-header">
-                  <Icon
-                    name={VALUE_ICONS[overlay.valueClass]}
-                    className="overlay-main-icon"
+                  <span
+                    className="material-icons overlay-main-icon"
                     style={{ color: getOverlayColor(overlay.overlayPercent) }}
-                  />
+                  >
+                    {VALUE_ICONS[overlay.valueClass]}
+                  </span>
                   <span
                     className="overlay-main-percent"
                     style={{ color: getOverlayColor(overlay.overlayPercent) }}

@@ -20,7 +20,6 @@ import {
   getOverlayColor,
   getOverlayBgColor,
   VALUE_LABELS,
-  VALUE_ICONS,
   type HorseScore,
   type OverlayAnalysis,
   type ValuePlay,

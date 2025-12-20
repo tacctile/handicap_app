@@ -351,7 +351,7 @@ export function calculateEV(winProbability: number, decimalOdds: number): number
 export function generateRecommendation(
   valueClass: ValueClassification,
   overlayPercent: number,
-  evPerDollar: number
+  _evPerDollar: number
 ): BettingRecommendation {
   switch (valueClass) {
     case 'massive_overlay':
