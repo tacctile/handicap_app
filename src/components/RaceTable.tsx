@@ -6,7 +6,13 @@ import { BettingRecommendations } from './BettingRecommendations'
 import { HorseDetailModal } from './HorseDetailModal'
 import { CalculationStatus } from './CalculationStatus'
 import { ToastContainer, useToasts } from './Toast'
-import { calculateRaceScores, getScoreColor, type HorseScore } from '../lib/scoring'
+import {
+  calculateRaceScores,
+  getScoreColor,
+  getScoreTier,
+  SCORE_THRESHOLDS,
+  type HorseScore,
+} from '../lib/scoring'
 import { getTrackBiasSummary } from '../lib/trackIntelligence'
 
 interface RaceTableProps {
@@ -115,14 +121,45 @@ const ScratchCheckbox = memo(function ScratchCheckbox({ checked, onChange, horse
   )
 })
 
-// Score badge component with pulse animation
+// Rank badge component for top 3 horses
+interface RankBadgeProps {
+  rank: number
+}
+
+const RankBadge = memo(function RankBadge({ rank }: RankBadgeProps) {
+  if (rank > 3) return null
+
+  const colors = {
+    1: { bg: '#FFD700', text: '#1a1a1a' },  // Gold
+    2: { bg: '#C0C0C0', text: '#1a1a1a' },  // Silver
+    3: { bg: '#CD7F32', text: '#1a1a1a' },  // Bronze
+  }
+
+  const { bg, text } = colors[rank as 1 | 2 | 3]
+
+  return (
+    <div
+      className="rank-badge"
+      style={{
+        backgroundColor: bg,
+        color: text,
+      }}
+    >
+      #{rank}
+    </div>
+  )
+})
+
+// Score badge component with pulse animation and tier coloring
 interface ScoreBadgeProps {
   score: HorseScore
+  rank: number
   hasChanged?: boolean
 }
 
-const ScoreBadge = memo(function ScoreBadge({ score, hasChanged = false }: ScoreBadgeProps) {
+const ScoreBadge = memo(function ScoreBadge({ score, rank, hasChanged = false }: ScoreBadgeProps) {
   const color = getScoreColor(score.total, score.isScratched)
+  const tier = getScoreTier(score.total)
   const [shouldAnimate, setShouldAnimate] = useState(false)
 
   useEffect(() => {
@@ -133,19 +170,33 @@ const ScoreBadge = memo(function ScoreBadge({ score, hasChanged = false }: Score
     }
   }, [hasChanged, score.total])
 
+  // Build detailed tooltip
+  const tooltipParts = [
+    `Score: ${score.total}/240 (${tier})`,
+    `Connections: ${score.breakdown.connections.total}`,
+    `Post Position: ${score.breakdown.postPosition.total}`,
+    `Speed/Class: ${score.breakdown.speedClass.total}`,
+    `Form: ${score.breakdown.form.total}`,
+    `Equipment: ${score.breakdown.equipment.total}`,
+    `Pace: ${score.breakdown.pace.total}`,
+  ]
+
   return (
-    <div
-      className={`score-badge ${shouldAnimate ? 'score-changed' : ''}`}
-      style={{
-        backgroundColor: `${color}20`,
-        color: color,
-        borderColor: `${color}40`,
-      }}
-      title={score.isScratched ? 'Scratched' : `Score: ${score.total}/240`}
-    >
-      <span className="tabular-nums font-semibold">
-        {score.isScratched ? '—' : score.total}
-      </span>
+    <div className="score-badge-container">
+      {!score.isScratched && <RankBadge rank={rank} />}
+      <div
+        className={`score-badge ${shouldAnimate ? 'score-changed' : ''} ${score.total >= SCORE_THRESHOLDS.elite ? 'score-elite' : ''}`}
+        style={{
+          backgroundColor: `${color}20`,
+          color: color,
+          borderColor: `${color}40`,
+        }}
+        title={score.isScratched ? 'Scratched' : tooltipParts.join('\n')}
+      >
+        <span className="tabular-nums font-semibold">
+          {score.isScratched ? '—' : score.total}
+        </span>
+      </div>
     </div>
   )
 })
@@ -466,7 +517,7 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
             </tr>
           </thead>
           <tbody>
-            {scoredHorses.map(({ horse, index, score }, position) => {
+            {scoredHorses.map(({ horse, index, score, rank }) => {
               const scratched = score.isScratched
               const currentOdds = getOdds(index, horse.morningLineOdds)
               const oddsChanged = hasOddsChanged(index)
@@ -477,12 +528,12 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
                 <tr
                   key={index}
                   className={`race-row race-row-clickable ${scratched ? 'race-row-scratched' : ''}`}
-                  onClick={() => handleRowClick(horse, score, index, position + 1)}
+                  onClick={() => handleRowClick(horse, score, index, rank)}
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
-                      handleRowClick(horse, score, index, position + 1)
+                      handleRowClick(horse, score, index, rank)
                     }
                   }}
                   role="button"
@@ -496,7 +547,7 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
                     />
                   </td>
                   <td className="text-center">
-                    <ScoreBadge score={score} hasChanged={scoreChanged} />
+                    <ScoreBadge score={score} rank={rank} hasChanged={scoreChanged} />
                   </td>
                   <td className="text-center tabular-nums font-medium">
                     {horse.postPosition}
@@ -531,7 +582,7 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
 
       {/* Mobile Card View - visible below 768px */}
       <div className="mobile-cards-container">
-        {scoredHorses.map(({ horse, index, score }, position) => {
+        {scoredHorses.map(({ horse, index, score, rank }) => {
           const scratched = score.isScratched
           const currentOdds = getOdds(index, horse.morningLineOdds)
           const oddsChanged = hasOddsChanged(index)
@@ -542,19 +593,19 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
             <div
               key={index}
               className={`mobile-horse-card mobile-card-clickable ${scratched ? 'mobile-card-scratched' : ''}`}
-              onClick={() => handleRowClick(horse, score, index, position + 1)}
+              onClick={() => handleRowClick(horse, score, index, rank)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault()
-                  handleRowClick(horse, score, index, position + 1)
+                  handleRowClick(horse, score, index, rank)
                 }
               }}
               aria-label={`View details for ${horse.horseName}. Tap to expand for full details.`}
             >
               {/* Rank indicator */}
-              <div className="mobile-card-rank">{position + 1}</div>
+              <div className="mobile-card-rank">{rank || '—'}</div>
 
               {/* Main card content */}
               <div className="mobile-card-main">
@@ -567,7 +618,7 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
                         horseName={horse.horseName}
                       />
                     </div>
-                    <ScoreBadge score={score} hasChanged={scoreChanged} />
+                    <ScoreBadge score={score} rank={rank} hasChanged={scoreChanged} />
                     <div className="pp-badge">
                       {horse.postPosition}
                     </div>

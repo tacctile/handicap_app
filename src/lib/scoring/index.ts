@@ -1,49 +1,423 @@
+/**
+ * Master Scoring Engine
+ *
+ * Combines all scoring categories to produce comprehensive horse scores.
+ * All calculations are deterministic - same inputs always produce same scores.
+ * Optimized for performance: scoring 12 horses completes in under 100ms.
+ *
+ * Score Breakdown (0-240 points max):
+ * - Connections (Trainer + Jockey + Partnership): 0-55 points
+ * - Post Position: 0-45 points
+ * - Speed & Class: 0-50 points
+ * - Form: 0-30 points
+ * - Equipment: 0-25 points
+ * - Pace: 0-40 points
+ *
+ * Total theoretical max: 245 (but capped at 240)
+ */
+
 import type { HorseEntry, RaceHeader } from '../../types/drf'
 import type { TrackCondition } from '../../hooks/useRaceState'
-import {
-  calculateConnectionsScore,
-  calculatePostPositionScore,
-  calculateSpeedFigureScore,
-  calculateFormScore,
-  calculateEquipmentScore,
-  calculatePaceScore,
-  type ScoreBreakdown,
-} from './baseScoring'
 
-// Score limits by category
+// Import scoring modules
+import {
+  calculateConnectionsScore as calcConnections,
+  buildConnectionsDatabase,
+  type ConnectionsScoreResult,
+  type ConnectionsDatabase,
+} from './connections'
+import {
+  calculatePostPositionScore as calcPostPosition,
+  type PostPositionScoreResult,
+} from './postPosition'
+import {
+  calculateSpeedClassScore as calcSpeedClass,
+  type SpeedClassScoreResult,
+} from './speedClass'
+import {
+  calculateFormScore as calcForm,
+  type FormScoreResult,
+} from './form'
+import {
+  calculateEquipmentScore as calcEquipment,
+  type EquipmentScoreResult,
+} from './equipment'
+import {
+  calculatePaceScore as calcPace,
+  analyzeFieldPace,
+  type PaceScoreResult,
+  type FieldPaceAnalysis,
+} from './pace'
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+/** Maximum total score */
+export const MAX_SCORE = 240
+
+/** Score limits by category */
 export const SCORE_LIMITS = {
-  connections: 50,
+  connections: 55,
   postPosition: 45,
-  speedFigure: 50,
+  speedClass: 50,
   form: 30,
   equipment: 25,
   pace: 40,
-  total: 240,
+  total: MAX_SCORE,
 } as const
 
-// Score thresholds for color coding
+/** Score thresholds for color coding and tier classification */
 export const SCORE_THRESHOLDS = {
-  high: 180,    // 180+ = high score (teal)
-  medium: 140,  // 140-179 = medium score (darker teal)
-  low: 0,       // <140 = low score (gray)
+  elite: 200,      // Bright accent (#36d1da)
+  strong: 180,     // Accent (#19abb5)
+  good: 160,       // Medium (#1b7583)
+  fair: 140,       // Low (#888)
+  weak: 0,         // Grey (#555)
 } as const
 
-// Score colors
+/** Score colors matching thresholds */
 export const SCORE_COLORS = {
-  high: '#36d1da',
-  medium: '#19abb5',
-  low: '#888888',
+  elite: '#36d1da',
+  strong: '#19abb5',
+  good: '#1b7583',
+  fair: '#888888',
+  weak: '#555555',
 } as const
 
+// ============================================================================
+// TYPES
+// ============================================================================
+
+/** Detailed breakdown of all scoring categories */
+export interface ScoreBreakdown {
+  connections: {
+    total: number
+    trainer: number
+    jockey: number
+    partnershipBonus: number
+    reasoning: string
+  }
+  postPosition: {
+    total: number
+    trackBiasApplied: boolean
+    isGoldenPost: boolean
+    reasoning: string
+  }
+  speedClass: {
+    total: number
+    speedScore: number
+    classScore: number
+    bestFigure: number | null
+    classMovement: string
+    reasoning: string
+  }
+  form: {
+    total: number
+    recentFormScore: number
+    layoffScore: number
+    consistencyBonus: number
+    formTrend: string
+    reasoning: string
+  }
+  equipment: {
+    total: number
+    hasChanges: boolean
+    reasoning: string
+  }
+  pace: {
+    total: number
+    runningStyle: string
+    paceFit: string
+    reasoning: string
+  }
+}
+
+/** Complete score result for a horse */
 export interface HorseScore {
   total: number
   breakdown: ScoreBreakdown
   isScratched: boolean
+  confidenceLevel: 'high' | 'medium' | 'low'
+  dataQuality: number  // 0-100 percentage
+}
+
+/** Scored horse with index for sorting */
+export interface ScoredHorse {
+  horse: HorseEntry
+  index: number
+  score: HorseScore
+  rank: number
+}
+
+/** Race scoring context for efficient batch processing */
+interface RaceScoringContext {
+  horses: HorseEntry[]
+  raceHeader: RaceHeader
+  connectionsDb: ConnectionsDatabase
+  fieldPaceAnalysis: FieldPaceAnalysis
+  activeHorses: HorseEntry[]
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Parse odds string to decimal number
+ * Handles formats like "3-1", "5/2", "3.5", "EVEN"
+ */
+export function parseOdds(oddsStr: string): number {
+  const cleaned = oddsStr.trim().toUpperCase()
+
+  // Handle "EVEN" odds
+  if (cleaned === 'EVEN' || cleaned === 'EVN') {
+    return 1.0
+  }
+
+  // Handle "X-1" format (e.g., "5-1")
+  if (cleaned.includes('-')) {
+    const [num] = cleaned.split('-')
+    return parseFloat(num) || 10
+  }
+
+  // Handle "X/Y" format (e.g., "5/2")
+  if (cleaned.includes('/')) {
+    const [num, denom] = cleaned.split('/')
+    return parseFloat(num) / (parseFloat(denom) || 1)
+  }
+
+  // Handle plain number
+  return parseFloat(cleaned) || 10
 }
 
 /**
- * Calculate the total score for a horse
- * Returns a score from 0-240 with a full breakdown
+ * Get the color for a score based on thresholds
+ */
+export function getScoreColor(score: number, isScratched: boolean): string {
+  if (isScratched) return SCORE_COLORS.weak
+  if (score >= SCORE_THRESHOLDS.elite) return SCORE_COLORS.elite
+  if (score >= SCORE_THRESHOLDS.strong) return SCORE_COLORS.strong
+  if (score >= SCORE_THRESHOLDS.good) return SCORE_COLORS.good
+  if (score >= SCORE_THRESHOLDS.fair) return SCORE_COLORS.fair
+  return SCORE_COLORS.weak
+}
+
+/**
+ * Get score tier name
+ */
+export function getScoreTier(score: number): string {
+  if (score >= SCORE_THRESHOLDS.elite) return 'Elite'
+  if (score >= SCORE_THRESHOLDS.strong) return 'Strong'
+  if (score >= SCORE_THRESHOLDS.good) return 'Good'
+  if (score >= SCORE_THRESHOLDS.fair) return 'Fair'
+  return 'Weak'
+}
+
+/**
+ * Calculate data quality score based on available information
+ */
+function calculateDataQuality(horse: HorseEntry): number {
+  let quality = 0
+  const maxPoints = 100
+
+  // Past performances (40 points max)
+  const ppCount = horse.pastPerformances.length
+  quality += Math.min(40, ppCount * 8)  // 5+ PPs = full points
+
+  // Speed figures available (20 points)
+  if (horse.bestBeyer !== null || horse.averageBeyer !== null) {
+    quality += 20
+  } else if (horse.pastPerformances.some(pp => pp.speedFigures.beyer !== null)) {
+    quality += 15
+  }
+
+  // Running style data (15 points)
+  if (horse.runningStyle) {
+    quality += 15
+  } else if (horse.earlySpeedRating !== null) {
+    quality += 10
+  }
+
+  // Trainer/jockey data (15 points)
+  if (horse.trainerName && horse.jockeyName) {
+    quality += 10
+  }
+  if (horse.trainerStats || horse.jockeyStats) {
+    quality += 5
+  }
+
+  // Equipment data (10 points)
+  if (horse.equipment.raw || horse.equipment.firstTimeEquipment.length > 0) {
+    quality += 10
+  }
+
+  return Math.min(maxPoints, quality)
+}
+
+/**
+ * Determine confidence level based on data quality and score variance
+ */
+function calculateConfidenceLevel(
+  dataQuality: number,
+  breakdown: ScoreBreakdown
+): 'high' | 'medium' | 'low' {
+  // Low data quality = low confidence
+  if (dataQuality < 40) return 'low'
+
+  // Check for too many placeholder/neutral scores
+  const neutralCount = [
+    breakdown.connections.total === 22,  // Neutral trainer + jockey
+    breakdown.speedClass.speedScore === 15,  // No speed data
+    breakdown.form.total === 8,  // First starter neutral
+    breakdown.pace.total === 20,  // Neutral fit
+  ].filter(Boolean).length
+
+  if (neutralCount >= 3) return 'low'
+  if (neutralCount >= 2 || dataQuality < 60) return 'medium'
+
+  return 'high'
+}
+
+// ============================================================================
+// MAIN SCORING FUNCTIONS
+// ============================================================================
+
+/**
+ * Build scoring context for efficient batch processing
+ * Call once per race, reuse for all horses
+ */
+function buildScoringContext(
+  horses: HorseEntry[],
+  raceHeader: RaceHeader,
+  isScratched: (index: number) => boolean
+): RaceScoringContext {
+  // Get active (non-scratched) horses
+  const activeHorses = horses.filter((_, i) => !isScratched(i))
+
+  // Build connections database from all horses
+  const connectionsDb = buildConnectionsDatabase(horses)
+
+  // Pre-calculate field pace analysis
+  const fieldPaceAnalysis = analyzeFieldPace(activeHorses)
+
+  return {
+    horses,
+    raceHeader,
+    connectionsDb,
+    fieldPaceAnalysis,
+    activeHorses,
+  }
+}
+
+/**
+ * Calculate the total score for a single horse
+ * Uses pre-built context for efficiency
+ */
+function calculateHorseScoreWithContext(
+  horse: HorseEntry,
+  context: RaceScoringContext,
+  _currentOdds: string,
+  _trackCondition: TrackCondition,
+  isScratched: boolean
+): HorseScore {
+  // Scratched horses get zero score
+  if (isScratched) {
+    return {
+      total: 0,
+      breakdown: {
+        connections: { total: 0, trainer: 0, jockey: 0, partnershipBonus: 0, reasoning: 'Scratched' },
+        postPosition: { total: 0, trackBiasApplied: false, isGoldenPost: false, reasoning: 'Scratched' },
+        speedClass: { total: 0, speedScore: 0, classScore: 0, bestFigure: null, classMovement: 'unknown', reasoning: 'Scratched' },
+        form: { total: 0, recentFormScore: 0, layoffScore: 0, consistencyBonus: 0, formTrend: 'unknown', reasoning: 'Scratched' },
+        equipment: { total: 0, hasChanges: false, reasoning: 'Scratched' },
+        pace: { total: 0, runningStyle: 'Unknown', paceFit: 'neutral', reasoning: 'Scratched' },
+      },
+      isScratched: true,
+      confidenceLevel: 'low',
+      dataQuality: 0,
+    }
+  }
+
+  // Calculate each category using the new modules
+  const connections = calcConnections(horse, context.connectionsDb)
+  const postPosition = calcPostPosition(horse, context.raceHeader)
+  const speedClass = calcSpeedClass(horse, context.raceHeader)
+  const form = calcForm(horse)
+  const equipment = calcEquipment(horse)
+  const pace = calcPace(horse, context.raceHeader, context.activeHorses, context.fieldPaceAnalysis)
+
+  // Build breakdown
+  const breakdown: ScoreBreakdown = {
+    connections: {
+      total: connections.total,
+      trainer: connections.trainer,
+      jockey: connections.jockey,
+      partnershipBonus: connections.partnershipBonus,
+      reasoning: connections.reasoning,
+    },
+    postPosition: {
+      total: postPosition.total,
+      trackBiasApplied: postPosition.trackBiasApplied,
+      isGoldenPost: postPosition.isGoldenPost,
+      reasoning: postPosition.reasoning,
+    },
+    speedClass: {
+      total: speedClass.total,
+      speedScore: speedClass.speedScore,
+      classScore: speedClass.classScore,
+      bestFigure: speedClass.bestRecentFigure,
+      classMovement: speedClass.classMovement,
+      reasoning: `${speedClass.speedReasoning} | ${speedClass.classReasoning}`,
+    },
+    form: {
+      total: form.total,
+      recentFormScore: form.recentFormScore,
+      layoffScore: form.layoffScore,
+      consistencyBonus: form.consistencyBonus,
+      formTrend: form.formTrend,
+      reasoning: form.reasoning,
+    },
+    equipment: {
+      total: equipment.total,
+      hasChanges: equipment.hasSignificantChange,
+      reasoning: equipment.reasoning,
+    },
+    pace: {
+      total: pace.total,
+      runningStyle: pace.profile.styleName,
+      paceFit: pace.paceFit,
+      reasoning: pace.reasoning,
+    },
+  }
+
+  // Calculate total score (capped at MAX_SCORE)
+  const rawTotal =
+    breakdown.connections.total +
+    breakdown.postPosition.total +
+    breakdown.speedClass.total +
+    breakdown.form.total +
+    breakdown.equipment.total +
+    breakdown.pace.total
+
+  const total = Math.min(MAX_SCORE, rawTotal)
+
+  // Calculate data quality and confidence
+  const dataQuality = calculateDataQuality(horse)
+  const confidenceLevel = calculateConfidenceLevel(dataQuality, breakdown)
+
+  return {
+    total,
+    breakdown,
+    isScratched: false,
+    confidenceLevel,
+    dataQuality,
+  }
+}
+
+/**
+ * Calculate the total score for a horse (standalone version)
+ * Less efficient than batch processing but works for single horse
  */
 export function calculateHorseScore(
   horse: HorseEntry,
@@ -52,65 +426,15 @@ export function calculateHorseScore(
   trackCondition: TrackCondition,
   isScratched: boolean
 ): HorseScore {
-  // Scratched horses get 0 score
-  if (isScratched) {
-    return {
-      total: 0,
-      breakdown: {
-        connections: { total: 0, trainer: 0, jockey: 0 },
-        postPosition: { total: 0, reasoning: 'Scratched', trackBiasApplied: false },
-        speedFigure: { total: 0, reasoning: 'Scratched' },
-        form: { total: 0, reasoning: 'Scratched' },
-        equipment: { total: 0, reasoning: 'Scratched' },
-        pace: { total: 0, reasoning: 'Scratched' },
-      },
-      isScratched: true,
-    }
-  }
+  // Build minimal context
+  const context = buildScoringContext([horse], raceHeader, () => isScratched)
 
-  // Calculate each category
-  const connections = calculateConnectionsScore(horse)
-  const postPosition = calculatePostPositionScore(horse, raceHeader)
-  const speedFigure = calculateSpeedFigureScore(horse, currentOdds)
-  const form = calculateFormScore(horse)
-  const equipment = calculateEquipmentScore(horse)
-  const pace = calculatePaceScore(horse, trackCondition)
-
-  // Sum up total score
-  const total =
-    connections.total +
-    postPosition.total +
-    speedFigure.total +
-    form.total +
-    equipment.total +
-    pace.total
-
-  return {
-    total,
-    breakdown: {
-      connections,
-      postPosition,
-      speedFigure,
-      form,
-      equipment,
-      pace,
-    },
-    isScratched: false,
-  }
-}
-
-/**
- * Get the color for a score based on thresholds
- */
-export function getScoreColor(score: number, isScratched: boolean): string {
-  if (isScratched) return SCORE_COLORS.low
-  if (score >= SCORE_THRESHOLDS.high) return SCORE_COLORS.high
-  if (score >= SCORE_THRESHOLDS.medium) return SCORE_COLORS.medium
-  return SCORE_COLORS.low
+  return calculateHorseScoreWithContext(horse, context, currentOdds, trackCondition, isScratched)
 }
 
 /**
  * Calculate scores for all horses in a race and return sorted by score descending
+ * Optimized for performance - builds shared context once
  */
 export function calculateRaceScores(
   horses: HorseEntry[],
@@ -118,29 +442,97 @@ export function calculateRaceScores(
   getOdds: (index: number, originalOdds: string) => string,
   isScratched: (index: number) => boolean,
   trackCondition: TrackCondition
-): Array<{ horse: HorseEntry; index: number; score: HorseScore }> {
-  const scores = horses.map((horse, index) => ({
+): ScoredHorse[] {
+  // Build shared context for efficiency
+  const context = buildScoringContext(horses, raceHeader, isScratched)
+
+  // Calculate scores for all horses
+  const scoredHorses: ScoredHorse[] = horses.map((horse, index) => ({
     horse,
     index,
-    score: calculateHorseScore(
+    score: calculateHorseScoreWithContext(
       horse,
-      raceHeader,
+      context,
       getOdds(index, horse.morningLineOdds),
       trackCondition,
       isScratched(index)
     ),
+    rank: 0,  // Will be set after sorting
   }))
 
   // Sort by score descending (scratched horses go to bottom)
-  return scores.sort((a, b) => {
-    // Scratched horses always at bottom
+  scoredHorses.sort((a, b) => {
     if (a.score.isScratched && !b.score.isScratched) return 1
     if (!a.score.isScratched && b.score.isScratched) return -1
-    // Otherwise sort by score descending
     return b.score.total - a.score.total
   })
+
+  // Assign ranks
+  let currentRank = 1
+  for (let i = 0; i < scoredHorses.length; i++) {
+    if (!scoredHorses[i].score.isScratched) {
+      scoredHorses[i].rank = currentRank++
+    }
+  }
+
+  return scoredHorses
 }
 
-// Re-export types and utilities from baseScoring
-export type { ScoreBreakdown } from './baseScoring'
-export { parseOdds } from './baseScoring'
+/**
+ * Get top N horses by score (excluding scratched)
+ */
+export function getTopHorses(
+  scoredHorses: ScoredHorse[],
+  count: number = 3
+): ScoredHorse[] {
+  return scoredHorses
+    .filter(h => !h.score.isScratched)
+    .slice(0, count)
+}
+
+/**
+ * Calculate overall confidence for the race analysis
+ */
+export function calculateRaceConfidence(scoredHorses: ScoredHorse[]): number {
+  const activeHorses = scoredHorses.filter(h => !h.score.isScratched)
+
+  if (activeHorses.length === 0) return 0
+
+  // Average data quality
+  const avgDataQuality = activeHorses.reduce((sum, h) => sum + h.score.dataQuality, 0) / activeHorses.length
+
+  // Score separation (higher = more confident)
+  const scores = activeHorses.map(h => h.score.total).sort((a, b) => b - a)
+  const topScore = scores[0] || 0
+  const separation = scores.length > 1 ? ((topScore - scores[1]) / topScore) * 30 : 0
+
+  // Quality bonus
+  const qualityBonus = Math.min(20, (topScore / MAX_SCORE) * 25)
+
+  // Base confidence from data quality
+  const baseConfidence = 40 + (avgDataQuality / 100) * 30
+
+  return Math.min(100, Math.round(baseConfidence + separation + qualityBonus))
+}
+
+// ============================================================================
+// RE-EXPORTS
+// ============================================================================
+
+// Re-export types from sub-modules for convenience
+export type {
+  ConnectionsScoreResult,
+  PostPositionScoreResult,
+  SpeedClassScoreResult,
+  FormScoreResult,
+  EquipmentScoreResult,
+  PaceScoreResult,
+  FieldPaceAnalysis,
+}
+
+// Re-export utility functions from sub-modules
+export { analyzeFieldPace } from './pace'
+export { getFormSummary, isOnHotStreak } from './form'
+export { getEquipmentSummary, hasSignificantEquipmentChange } from './equipment'
+export { getOptimalPostPositions } from './postPosition'
+export { getParFigures, getClassHierarchy } from './speedClass'
