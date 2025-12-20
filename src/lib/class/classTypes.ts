@@ -17,47 +17,49 @@
  */
 
 // ============================================================================
-// CLASS LEVEL ENUM
+// CLASS LEVEL CONSTANTS
 // ============================================================================
 
 /**
  * Race class levels in order from lowest to highest
  * Numeric values represent relative class level (higher = better class)
  */
-export enum ClassLevel {
+export const ClassLevel = {
+  // Unknown/default (must be unique value)
+  UNKNOWN: 0,
+
   // Maiden races (horses seeking first win)
-  MAIDEN_CLAIMING = 10,
-  MAIDEN_SPECIAL_WEIGHT = 20,
+  MAIDEN_CLAIMING: 10,
+  MAIDEN_SPECIAL_WEIGHT: 20,
 
   // Claiming races (tiered by price)
-  CLAIMING_UNDER_10K = 30,
-  CLAIMING_10K_TO_24K = 35,
-  CLAIMING_25K_TO_49K = 40,
-  CLAIMING_50K_TO_99K = 45,
-  CLAIMING_100K_PLUS = 50,
+  CLAIMING_UNDER_10K: 30,
+  CLAIMING_10K_TO_24K: 35,
+  CLAIMING_25K_TO_49K: 40,
+  CLAIMING_50K_TO_99K: 45,
+  CLAIMING_100K_PLUS: 50,
 
   // Starter allowance (must have started for claiming price)
-  STARTER_ALLOWANCE = 55,
+  STARTER_ALLOWANCE: 55,
 
   // Allowance races (with conditions)
-  ALLOWANCE_N3X = 60, // Non-winners of 3 races (other than maiden/claiming)
-  ALLOWANCE_N2X = 65, // Non-winners of 2 races
-  ALLOWANCE_N1X = 70, // Non-winners of 1 race
-  ALLOWANCE = 75, // Open allowance
+  ALLOWANCE_N3X: 60, // Non-winners of 3 races (other than maiden/claiming)
+  ALLOWANCE_N2X: 65, // Non-winners of 2 races
+  ALLOWANCE_N1X: 70, // Non-winners of 1 race
+  ALLOWANCE: 75, // Open allowance
 
   // Allowance optional claiming
-  ALLOWANCE_OPTIONAL_CLAIMING = 80,
+  ALLOWANCE_OPTIONAL_CLAIMING: 80,
 
   // Stakes races
-  STAKES_UNGRADED = 85,
-  STAKES_LISTED = 90,
-  STAKES_GRADE_3 = 95,
-  STAKES_GRADE_2 = 100,
-  STAKES_GRADE_1 = 105,
+  STAKES_UNGRADED: 85,
+  STAKES_LISTED: 90,
+  STAKES_GRADE_3: 95,
+  STAKES_GRADE_2: 100,
+  STAKES_GRADE_1: 105,
+} as const
 
-  // Unknown/default
-  UNKNOWN = 40, // Default to mid-claiming level
-}
+export type ClassLevel = (typeof ClassLevel)[keyof typeof ClassLevel]
 
 // ============================================================================
 // CLASS LEVEL METADATA
@@ -82,6 +84,14 @@ export interface ClassLevelMetadata {
  * Complete metadata for each class level
  */
 export const CLASS_LEVEL_METADATA: Record<ClassLevel, ClassLevelMetadata> = {
+  [ClassLevel.UNKNOWN]: {
+    name: 'Unknown',
+    abbrev: 'UNK',
+    value: 0,
+    typicalPurseRange: [20000, 50000],
+    parBeyer: 75,
+    description: 'Unable to determine class level',
+  },
   [ClassLevel.MAIDEN_CLAIMING]: {
     name: 'Maiden Claiming',
     abbrev: 'MCL',
@@ -226,14 +236,6 @@ export const CLASS_LEVEL_METADATA: Record<ClassLevel, ClassLevelMetadata> = {
     parBeyer: 108,
     description: 'Grade 1 stakes race - highest level',
   },
-  [ClassLevel.UNKNOWN]: {
-    name: 'Unknown',
-    abbrev: 'UNK',
-    value: 40,
-    typicalPurseRange: [20000, 50000],
-    parBeyer: 75,
-    description: 'Unable to determine class level',
-  },
 }
 
 // ============================================================================
@@ -360,21 +362,21 @@ export interface TrackTierMovement {
  * Get class level display name
  */
 export function getClassLevelName(level: ClassLevel): string {
-  return CLASS_LEVEL_METADATA[level].name
+  return CLASS_LEVEL_METADATA[level]?.name ?? 'Unknown'
 }
 
 /**
  * Get class level abbreviation
  */
 export function getClassLevelAbbrev(level: ClassLevel): string {
-  return CLASS_LEVEL_METADATA[level].abbrev
+  return CLASS_LEVEL_METADATA[level]?.abbrev ?? 'UNK'
 }
 
 /**
  * Get par Beyer for class level
  */
 export function getClassParBeyer(level: ClassLevel): number {
-  return CLASS_LEVEL_METADATA[level].parBeyer
+  return CLASS_LEVEL_METADATA[level]?.parBeyer ?? 75
 }
 
 /**
@@ -382,7 +384,9 @@ export function getClassParBeyer(level: ClassLevel): number {
  * Returns: negative if a < b, 0 if equal, positive if a > b
  */
 export function compareClassLevels(a: ClassLevel, b: ClassLevel): number {
-  return CLASS_LEVEL_METADATA[a].value - CLASS_LEVEL_METADATA[b].value
+  const aValue = CLASS_LEVEL_METADATA[a]?.value ?? 0
+  const bValue = CLASS_LEVEL_METADATA[b]?.value ?? 0
+  return aValue - bValue
 }
 
 /**

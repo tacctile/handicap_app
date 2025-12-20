@@ -62,13 +62,10 @@ import {
 } from '../breeding'
 import {
   calculateClassScore,
-  type ClassScoreResult,
-  type ClassAnalysisResult,
-  type HiddenClassDrop,
   formatClassMovement,
-  getHiddenDropsSummary,
-  hasSignificantHiddenValue,
   isValuePlay,
+  type ClassScoreResult,
+  type HiddenClassDrop,
 } from '../class'
 
 // ============================================================================

@@ -14,13 +14,13 @@
 import type { HorseEntry, RaceHeader, PastPerformance } from '../../types/drf'
 import {
   ClassLevel,
-  ClassAnalysisResult,
-  ProvenAtLevelResult,
-  HiddenClassDrop,
   CLASS_LEVEL_METADATA,
   getClassLevelAbbrev,
+  type ClassAnalysisResult,
+  type ProvenAtLevelResult,
+  type HiddenClassDrop,
 } from './classTypes'
-import { analyzeClass, extractClassFromPP, extractCurrentRaceClass } from './classExtractor'
+import { analyzeClass } from './classExtractor'
 import { analyzeTrackTierMovement } from './trackTiers'
 
 // ============================================================================

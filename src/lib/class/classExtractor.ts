@@ -8,16 +8,15 @@
 import type { HorseEntry, RaceHeader, PastPerformance, RaceClassification } from '../../types/drf'
 import {
   ClassLevel,
-  ClassMovement,
-  ClassMovementDirection,
-  ProvenAtLevelResult,
-  HiddenClassDrop,
-  HiddenDropType,
-  ClassAnalysisResult,
   getMovementMagnitude,
   CLASS_LEVEL_METADATA,
+  type ClassMovement,
+  type ClassMovementDirection,
+  type ProvenAtLevelResult,
+  type HiddenClassDrop,
+  type ClassAnalysisResult,
 } from './classTypes'
-import { analyzeTrackTierMovement, getTrackTier, isShipperFromElite } from './trackTiers'
+import { analyzeTrackTierMovement, isShipperFromElite } from './trackTiers'
 
 // ============================================================================
 // CLASS LEVEL MAPPING
