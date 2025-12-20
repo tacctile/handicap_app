@@ -47,6 +47,12 @@ import {
   analyzeFieldPace,
   type PaceScoreResult,
   type FieldPaceAnalysis,
+  type RunningStyleCode,
+  type RunningStyleProfile,
+  type PaceScenarioType,
+  type PaceScenarioAnalysis,
+  type TacticalAdvantage,
+  type PaceAnalysisResult,
 } from './pace'
 
 // ============================================================================
@@ -528,10 +534,27 @@ export type {
   EquipmentScoreResult,
   PaceScoreResult,
   FieldPaceAnalysis,
+  // New pace analysis types
+  RunningStyleCode,
+  RunningStyleProfile,
+  PaceScenarioType,
+  PaceScenarioAnalysis,
+  TacticalAdvantage,
+  PaceAnalysisResult,
 }
 
 // Re-export utility functions from sub-modules
-export { analyzeFieldPace } from './pace'
+export {
+  analyzeFieldPace,
+  analyzePaceScenario,
+  parseRunningStyle,
+  formatStyleBreakdown,
+  getEnhancedPaceDisplay,
+  calculateTacticalAdvantage,
+  RUNNING_STYLE_NAMES,
+  PACE_SCENARIO_LABELS,
+  PACE_SCENARIO_COLORS,
+} from './pace'
 export { getFormSummary, isOnHotStreak } from './form'
 export { getEquipmentSummary, hasSignificantEquipmentChange } from './equipment'
 export { getOptimalPostPositions } from './postPosition'

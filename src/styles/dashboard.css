@@ -4963,6 +4963,166 @@ input:-webkit-autofill:focus {
   border-radius: inherit;
 }
 
+/* ============================================================================
+   Pace Scenario Section - Race Overview Card
+   ============================================================================ */
+
+.race-overview-pace-section {
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.race-overview-pace-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.pace-scenario-icon {
+  font-size: 24px;
+}
+
+.pace-scenario-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.pace-scenario-label {
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pace-scenario-value {
+  font-size: var(--font-md);
+  font-weight: 600;
+}
+
+.pace-ppi-badge {
+  display: flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid;
+  font-size: var(--font-xs);
+  font-weight: 600;
+}
+
+.ppi-value {
+  white-space: nowrap;
+}
+
+.race-overview-style-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+}
+
+.style-breakdown-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.style-breakdown-value {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--font-xs);
+}
+
+.race-overview-expected-pace {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+}
+
+.expected-pace-icon {
+  font-size: 18px;
+  color: var(--text-secondary);
+}
+
+.expected-pace-text {
+  color: var(--text-secondary);
+}
+
+.expected-pace-text strong {
+  color: var(--text-primary);
+}
+
+/* ============================================================================
+   Pace Fit Section - Horse Detail Modal
+   ============================================================================ */
+
+.pace-fit-section {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.pace-fit-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pace-fit-icon {
+  font-size: 20px;
+}
+
+.pace-fit-label {
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.pace-fit-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid;
+  font-size: var(--font-sm);
+  font-weight: 500;
+}
+
+.pace-fit-points {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+}
+
+.points-label {
+  color: var(--text-secondary);
+}
+
+.points-value {
+  font-weight: 600;
+  font-size: var(--font-md);
+}
+
+/* Running Style Badge Enhancement */
+.running-style-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
 /* Post Time Detail Modal */
 .post-time-modal-backdrop {
   position: fixed;
