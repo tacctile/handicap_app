@@ -11,6 +11,8 @@ import {
 import {
   generateRecommendations,
   formatCurrency,
+  isKellyEnabled,
+  calculateBetWithKelly,
   type GeneratedBet,
   type BetGeneratorResult,
 } from '../lib/recommendations'
@@ -29,6 +31,13 @@ interface BettingRecommendationsProps {
 interface SelectableBet extends GeneratedBet {
   isSelected: boolean
   customAmount: number
+  kellyInfo?: {
+    kellyAmount: number
+    kellyFraction: string
+    edge: string
+    shouldBet: boolean
+    warnings: string[]
+  }
 }
 
 // Tier badge colors
@@ -210,6 +219,7 @@ interface InteractiveBetCardProps {
   onToggleSelect: (id: string) => void
   onAmountChange: (id: string, amount: number) => void
   remainingBudget: number
+  kellyEnabled?: boolean
 }
 
 function InteractiveBetCard({
@@ -219,6 +229,7 @@ function InteractiveBetCard({
   onToggleSelect,
   onAmountChange,
   remainingBudget,
+  kellyEnabled = false,
 }: InteractiveBetCardProps) {
   const [showInstruction, setShowInstruction] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -324,6 +335,34 @@ function InteractiveBetCard({
                 {bet.specialCategory === 'nuclear' ? 'Nuclear Longshot' :
                  bet.specialCategory === 'diamond' ? 'Hidden Gem' : 'Value Bomb'}
               </span>
+            </div>
+          )}
+
+          {/* Kelly Criterion info (Advanced mode only) */}
+          {kellyEnabled && bet.kellyInfo && (
+            <div className="bet-kelly-info">
+              <div className="bet-kelly-badge">
+                <span className="material-icons" style={{ fontSize: 14 }}>functions</span>
+                <span className="bet-kelly-label">{bet.kellyInfo.kellyFraction}</span>
+                {bet.kellyInfo.shouldBet ? (
+                  <span className="bet-kelly-amount">${bet.kellyInfo.kellyAmount}</span>
+                ) : (
+                  <span className="bet-kelly-pass">Pass</span>
+                )}
+              </div>
+              {bet.kellyInfo.edge && (
+                <span className="bet-kelly-edge" style={{
+                  color: bet.kellyInfo.edge.startsWith('+') ? '#22c55e' : '#ef4444'
+                }}>
+                  Edge: {bet.kellyInfo.edge}
+                </span>
+              )}
+              {bet.kellyInfo.warnings.length > 0 && !bet.kellyInfo.shouldBet && (
+                <span className="bet-kelly-warning">
+                  <span className="material-icons" style={{ fontSize: 12 }}>warning</span>
+                  {bet.kellyInfo.warnings[0]}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -565,6 +604,9 @@ export function BettingRecommendations({
   const [isMobile, setIsMobile] = useState(false)
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null)
 
+  // Check if Kelly Criterion is enabled
+  const kellyEnabled = useMemo(() => isKellyEnabled(bankroll), [bankroll])
+
   // Convert horses to ScoredHorse format for generator
   const scoredHorses: ScoredHorse[] = useMemo(() => {
     return horses.map((h, idx) => ({
@@ -635,13 +677,43 @@ export function BettingRecommendations({
 
   // Initialize selectable bets when generator result changes
   useEffect(() => {
-    const newSelectableBets: SelectableBet[] = generatorResult.allBets.map(bet => ({
-      ...bet,
-      isSelected: bet.isRecommended, // Pre-select recommended bets
-      customAmount: bet.totalCost,
-    }))
+    const newSelectableBets: SelectableBet[] = generatorResult.allBets.map(bet => {
+      // Calculate Kelly info if enabled
+      let kellyInfo: SelectableBet['kellyInfo'] = undefined
+
+      if (kellyEnabled && bet.horses && bet.horses.length > 0) {
+        const topHorse = bet.horses[0]
+        // Get odds from horse's morning line
+        const oddsString = topHorse?.horse?.morningLineOdds || topHorse?.oddsDisplay || '5-1'
+
+        const kellyResult = calculateBetWithKelly(
+          bet.confidence,
+          oddsString,
+          bet.tier,
+          bankroll,
+          horses.length
+        )
+
+        if (kellyResult.kellyResult) {
+          kellyInfo = {
+            kellyAmount: kellyResult.kellyAmount,
+            kellyFraction: kellyResult.display.kellyFraction,
+            edge: kellyResult.display.edge,
+            shouldBet: kellyResult.display.shouldBet,
+            warnings: kellyResult.display.warnings,
+          }
+        }
+      }
+
+      return {
+        ...bet,
+        isSelected: bet.isRecommended, // Pre-select recommended bets
+        customAmount: bet.totalCost,
+        kellyInfo,
+      }
+    })
     setSelectableBets(newSelectableBets)
-  }, [generatorResult])
+  }, [generatorResult, kellyEnabled, bankroll, horses.length])
 
   // Check for mobile
   useEffect(() => {
@@ -803,6 +875,7 @@ export function BettingRecommendations({
                 onToggleSelect={handleToggleSelect}
                 onAmountChange={handleAmountChange}
                 remainingBudget={remainingBudget + (bet.isSelected ? bet.customAmount : 0)}
+                kellyEnabled={kellyEnabled}
               />
             ))}
           </div>
@@ -846,6 +919,7 @@ export function BettingRecommendations({
                     onToggleSelect={handleToggleSelect}
                     onAmountChange={handleAmountChange}
                     remainingBudget={remainingBudget + (bet.isSelected ? bet.customAmount : 0)}
+                    kellyEnabled={kellyEnabled}
                   />
                 ))}
               </div>
