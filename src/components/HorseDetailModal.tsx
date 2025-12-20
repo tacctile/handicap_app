@@ -21,6 +21,10 @@ import {
   getBreedingDisplayInfo,
   getExperienceBadge,
   BREEDING_SCORE_LIMITS,
+  lookupSire,
+  getSireTierColor,
+  BREEDING_CATEGORY_LIMITS,
+  type DetailedBreedingScore,
 } from '../lib/breeding'
 
 interface HorseDetailModalProps {
@@ -612,7 +616,15 @@ export function HorseDetailModal({
           <section className="modal-section">
             <h3 className="section-title-modal">
               <Icon name="family_restroom" className="section-icon-modal" />
-              Breeding
+              Breeding {breedingInfo.showBreedingScore && score.breedingScore?.wasApplied && (
+                <span style={{
+                  fontSize: '0.75rem',
+                  color: score.breedingScore.total >= 40 ? '#22c55e' : score.breedingScore.total >= 30 ? '#36d1da' : '#888888',
+                  marginLeft: '8px'
+                }}>
+                  +{score.breakdown.breeding?.contribution || 0} pts
+                </span>
+              )}
             </h3>
 
             <div className="breeding-info-box">
@@ -629,19 +641,32 @@ export function HorseDetailModal({
                   <Icon name={breedingInfo.experienceLevel === 'debut' ? 'star' : breedingInfo.experienceLevel === 'lightly_raced' ? 'trending_up' : 'verified'} className="text-sm" />
                   {breedingInfo.badge.text}
                 </span>
-                {breedingInfo.showBreedingScore && (
-                  <span className="breeding-analysis-indicator">
+                {breedingInfo.showBreedingScore && score.breedingScore?.wasApplied && (
+                  <span className="breeding-analysis-indicator" style={{ color: '#36d1da' }}>
                     <Icon name="insights" className="text-sm" />
                     Breeding analysis active
                   </span>
                 )}
               </div>
 
-              {/* Pedigree Grid */}
+              {/* Pedigree Grid with Scores */}
               <div className="breeding-pedigree-grid">
                 <div className="breeding-pedigree-item">
                   <span className="breeding-label">Sire</span>
-                  <span className="breeding-value">{breedingInfo.sire}</span>
+                  <span className="breeding-value" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {breedingInfo.sire}
+                    {score.breedingScore?.sireDetails.profile && (
+                      <span style={{
+                        fontSize: '0.7rem',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        backgroundColor: `${getSireTierColor(score.breedingScore.sireDetails.profile.tier)}20`,
+                        color: getSireTierColor(score.breedingScore.sireDetails.profile.tier),
+                      }}>
+                        {score.breedingScore.sireDetails.tierLabel}
+                      </span>
+                    )}
+                  </span>
                 </div>
                 <div className="breeding-pedigree-item">
                   <span className="breeding-label">Dam</span>
@@ -657,26 +682,138 @@ export function HorseDetailModal({
                 </div>
               </div>
 
-              {/* Experience Details */}
-              <div className="breeding-experience-details">
-                <div className="breeding-starts-row">
-                  <Icon name="history" className="text-sm" />
-                  <span>
-                    {breedingInfo.starts === 0
-                      ? 'Making career debut - no race history'
-                      : breedingInfo.starts === 1
-                      ? '1 lifetime start - limited form data'
-                      : `${breedingInfo.starts} lifetime starts`}
-                  </span>
-                </div>
-                {breedingInfo.showBreedingScore && (
-                  <div className="breeding-score-placeholder">
-                    <Icon name="pending" className="text-sm" />
-                    <span>Breeding score: Coming in Part 2</span>
-                    <span className="breeding-score-max">/ {BREEDING_SCORE_LIMITS.total}</span>
+              {/* Breeding Score Breakdown (for lightly raced horses) */}
+              {breedingInfo.showBreedingScore && score.breedingScore?.wasApplied && (
+                <div className="breeding-score-breakdown" style={{
+                  marginTop: '12px',
+                  padding: '12px',
+                  backgroundColor: '#1a1a1a',
+                  borderRadius: '8px',
+                  border: '1px solid #333'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ fontWeight: 600, color: '#e0e0e0' }}>Breeding Score</span>
+                    <span style={{
+                      fontSize: '1.1rem',
+                      fontWeight: 700,
+                      color: score.breedingScore.total >= 40 ? '#22c55e' : score.breedingScore.total >= 30 ? '#36d1da' : '#888888'
+                    }}>
+                      {score.breedingScore.total}/{BREEDING_CATEGORY_LIMITS.total}
+                    </span>
                   </div>
-                )}
-              </div>
+
+                  {/* Score breakdown bars */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: '#888', fontSize: '0.85rem' }}>Sire</span>
+                      <span style={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                        {score.breedingScore.breakdown.sireScore}/{BREEDING_CATEGORY_LIMITS.sire}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: '#888', fontSize: '0.85rem' }}>Dam</span>
+                      <span style={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                        {score.breedingScore.breakdown.damScore}/{BREEDING_CATEGORY_LIMITS.dam}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: '#888', fontSize: '0.85rem' }}>Damsire</span>
+                      <span style={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                        {score.breedingScore.breakdown.damsireScore}/{BREEDING_CATEGORY_LIMITS.damsire}
+                      </span>
+                    </div>
+                    {score.breedingScore.bonuses.total > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ color: '#36d1da', fontSize: '0.85rem' }}>Bonuses</span>
+                        <span style={{ color: '#36d1da', fontSize: '0.85rem' }}>
+                          +{score.breedingScore.bonuses.total}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Contribution to overall score */}
+                  <div style={{
+                    marginTop: '12px',
+                    paddingTop: '10px',
+                    borderTop: '1px solid #333',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <span style={{ color: '#888', fontSize: '0.8rem' }}>
+                      Contributing to overall score
+                    </span>
+                    <span style={{ color: '#36d1da', fontWeight: 600, fontSize: '0.9rem' }}>
+                      +{score.breakdown.breeding?.contribution || 0} pts
+                    </span>
+                  </div>
+
+                  {/* Sire details if known */}
+                  {score.breedingScore.sireDetails.profile && (
+                    <div style={{
+                      marginTop: '12px',
+                      padding: '10px',
+                      backgroundColor: '#222',
+                      borderRadius: '6px',
+                      fontSize: '0.8rem'
+                    }}>
+                      <div style={{ color: '#e0e0e0', fontWeight: 600, marginBottom: '6px' }}>
+                        {score.breedingScore.sireDetails.profile.name} Stats
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', color: '#888' }}>
+                        <span>Win Rate: <span style={{ color: '#e0e0e0' }}>{score.breedingScore.sireDetails.profile.winRate.toFixed(1)}%</span></span>
+                        <span>$/Start: <span style={{ color: '#e0e0e0' }}>${(score.breedingScore.sireDetails.profile.earningsPerStart / 1000).toFixed(0)}K</span></span>
+                        <span>Surface: <span style={{ color: '#e0e0e0' }}>{score.breedingScore.sireDetails.profile.surfacePreference}</span></span>
+                        <span>Distance: <span style={{ color: '#e0e0e0' }}>{score.breedingScore.sireDetails.profile.distancePreference.category}</span></span>
+                        <span>FTS Win%: <span style={{ color: '#e0e0e0' }}>{score.breedingScore.sireDetails.profile.firstTimeStarterWinRate.toFixed(1)}%</span></span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Why this matters explanation */}
+                  <div style={{
+                    marginTop: '10px',
+                    fontSize: '0.75rem',
+                    color: '#666',
+                    fontStyle: 'italic'
+                  }}>
+                    <Icon name="info" className="text-sm" style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                    {breedingInfo.starts === 0
+                      ? 'Debut runners have no race form, so breeding data helps project potential ability.'
+                      : `With only ${breedingInfo.starts} start${breedingInfo.starts === 1 ? '' : 's'}, breeding helps fill gaps in race data.`
+                    }
+                  </div>
+                </div>
+              )}
+
+              {/* Experience Details (for experienced horses) */}
+              {!breedingInfo.showBreedingScore && (
+                <div className="breeding-experience-details" style={{ marginTop: '12px' }}>
+                  <div className="breeding-starts-row" style={{ color: '#888', fontSize: '0.85rem' }}>
+                    <Icon name="verified" className="text-sm" />
+                    <span>
+                      {breedingInfo.starts} lifetime starts - race form data used for scoring
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Lightly raced but breeding not applied */}
+              {breedingInfo.showBreedingScore && !score.breedingScore?.wasApplied && (
+                <div className="breeding-experience-details" style={{ marginTop: '12px' }}>
+                  <div className="breeding-starts-row" style={{ color: '#888', fontSize: '0.85rem' }}>
+                    <Icon name="history" className="text-sm" />
+                    <span>
+                      {breedingInfo.starts === 0
+                        ? 'Making career debut - no race history'
+                        : breedingInfo.starts === 1
+                        ? '1 lifetime start - limited form data'
+                        : `${breedingInfo.starts} lifetime starts`}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 

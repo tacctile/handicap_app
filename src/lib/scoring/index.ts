@@ -54,6 +54,12 @@ import {
   type TacticalAdvantage,
   type PaceAnalysisResult,
 } from './pace'
+import {
+  calculateDetailedBreedingScore,
+  calculateBreedingContribution,
+  shouldShowBreedingAnalysis,
+  type DetailedBreedingScore,
+} from '../breeding'
 
 // ============================================================================
 // CONSTANTS
@@ -137,6 +143,17 @@ export interface ScoreBreakdown {
     paceFit: string
     reasoning: string
   }
+  /** Breeding score for lightly raced horses (0 if 8+ starts) */
+  breeding?: {
+    total: number
+    contribution: number
+    sireScore: number
+    damScore: number
+    damsireScore: number
+    bonuses: number
+    wasApplied: boolean
+    summary: string
+  }
 }
 
 /** Complete score result for a horse */
@@ -146,6 +163,8 @@ export interface HorseScore {
   isScratched: boolean
   confidenceLevel: 'high' | 'medium' | 'low'
   dataQuality: number  // 0-100 percentage
+  /** Detailed breeding score (for lightly raced horses) */
+  breedingScore?: DetailedBreedingScore
 }
 
 /** Scored horse with index for sorting */
@@ -353,6 +372,29 @@ function calculateHorseScoreWithContext(
   const equipment = calcEquipment(horse)
   const pace = calcPace(horse, context.raceHeader, context.activeHorses, context.fieldPaceAnalysis)
 
+  // Calculate breeding score for lightly raced horses
+  let breedingScore: DetailedBreedingScore | undefined
+  let breedingBreakdown: ScoreBreakdown['breeding'] | undefined
+  let breedingContribution = 0
+
+  if (shouldShowBreedingAnalysis(horse)) {
+    breedingScore = calculateDetailedBreedingScore(horse, context.raceHeader)
+    if (breedingScore.wasApplied) {
+      const starts = horse.lifetimeStarts ?? 0
+      breedingContribution = calculateBreedingContribution(breedingScore, starts)
+      breedingBreakdown = {
+        total: breedingScore.total,
+        contribution: breedingContribution,
+        sireScore: breedingScore.breakdown.sireScore,
+        damScore: breedingScore.breakdown.damScore,
+        damsireScore: breedingScore.breakdown.damsireScore,
+        bonuses: breedingScore.bonuses.total,
+        wasApplied: true,
+        summary: breedingScore.summary,
+      }
+    }
+  }
+
   // Build breakdown
   const breakdown: ScoreBreakdown = {
     connections: {
@@ -395,16 +437,19 @@ function calculateHorseScoreWithContext(
       paceFit: pace.paceFit,
       reasoning: pace.reasoning,
     },
+    breeding: breedingBreakdown,
   }
 
   // Calculate total score (capped at MAX_SCORE)
+  // Add breeding contribution for lightly raced horses
   const rawTotal =
     breakdown.connections.total +
     breakdown.postPosition.total +
     breakdown.speedClass.total +
     breakdown.form.total +
     breakdown.equipment.total +
-    breakdown.pace.total
+    breakdown.pace.total +
+    breedingContribution
 
   const total = Math.min(MAX_SCORE, rawTotal)
 
@@ -418,6 +463,7 @@ function calculateHorseScoreWithContext(
     isScratched: false,
     confidenceLevel,
     dataQuality,
+    breedingScore,
   }
 }
 
@@ -559,6 +605,18 @@ export { getFormSummary, isOnHotStreak } from './form'
 export { getEquipmentSummary, hasSignificantEquipmentChange } from './equipment'
 export { getOptimalPostPositions } from './postPosition'
 export { getParFigures, getClassHierarchy } from './speedClass'
+
+// Breeding analysis exports
+export {
+  calculateDetailedBreedingScore,
+  calculateBreedingContribution,
+  shouldShowBreedingAnalysis,
+  getBreedingScoreWeight,
+  getBreedingScoreDisplay,
+  MAX_STARTS_FOR_BREEDING,
+  BREEDING_CATEGORY_LIMITS,
+  type DetailedBreedingScore,
+} from '../breeding'
 
 // Overlay analysis exports
 export {

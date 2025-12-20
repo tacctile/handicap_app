@@ -3,7 +3,7 @@
  *
  * Exports for breeding data extraction and analysis.
  * Part 1: Data extraction and display
- * Part 2: Scoring (to be implemented)
+ * Part 2: Sire/Dam/Damsire databases and scoring
  */
 
 // Types
@@ -62,5 +62,66 @@ export {
   countDebutHorses,
   getLightlyRacedHorses,
   isLightlyRacedRace,
-  calculateBreedingScore,
 } from './breedingExtractor'
+
+// ============================================================================
+// PART 2: BREEDING DATABASES AND SCORING
+// ============================================================================
+
+// Sire database
+export {
+  SIRE_DATABASE,
+  SIRE_TIER_THRESHOLDS,
+  lookupSire,
+  getAllSireNames,
+  getSiresByTier,
+  calculateSireScore,
+  getSireTierLabel,
+  getSireTierColor,
+  normalizeSireName,
+  type ExtendedSireProfile,
+  type SireTier,
+} from './sireDatabase'
+
+// Dam database
+export {
+  DAM_DATABASE,
+  DAM_TIER_THRESHOLDS,
+  lookupDam,
+  getAllDamNames,
+  calculateDamScore,
+  getDamTierLabel,
+  getDamTierColor,
+  normalizeDamName,
+  estimateDamScoreFromClass,
+  type ExtendedDamProfile,
+  type DamTier,
+} from './damDatabase'
+
+// Damsire database
+export {
+  DAMSIRE_DATABASE,
+  DAMSIRE_TIER_THRESHOLDS,
+  lookupDamsire,
+  getAllDamsireNames,
+  calculateDamsireScore,
+  getDamsireTierLabel,
+  getDamsireTierColor,
+  normalizeDamsireName,
+  type ExtendedDamsireProfile,
+  type DamsireTier,
+} from './damsireDatabase'
+
+// Breeding scoring
+export {
+  calculateDetailedBreedingScore,
+  calculateBreedingScoreForHorse,
+  shouldShowBreedingAnalysis,
+  getBreedingScoreWeight,
+  calculateBreedingContribution,
+  getBreedingScoreDisplay,
+  MAX_STARTS_FOR_BREEDING,
+  BREEDING_CATEGORY_LIMITS,
+  type DetailedBreedingScore,
+  type BreedingScoreContext,
+} from './breedingScoring'
