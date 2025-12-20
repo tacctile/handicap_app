@@ -3,7 +3,7 @@
  * Contains track-specific data for handicapping calculations
  *
  * This module exports a centralized database of track intelligence data
- * for 32 major tracks in North American racing. Each track file contains
+ * for 37 major tracks in North American racing. Each track file contains
  * verified, researched data from authoritative sources including:
  * - Equibase track profiles and records
  * - Official track websites and specifications
@@ -23,6 +23,10 @@
  * - Minnesota Racing Commission (CBY)
  * - Iowa Racing and Gaming Commission (PRM)
  * - Indiana Horse Racing Commission (IND, HOO)
+ * - California Horse Racing Board (GG, LRC)
+ * - Washington Horse Racing Commission (EMD)
+ * - Arizona Department of Gaming (TUP)
+ * - New Mexico Racing Commission (SUN)
  *
  * Track codes follow standard DRF/Equibase conventions:
  * - AQU = Aqueduct Racetrack
@@ -34,15 +38,18 @@
  * - DEL = Delaware Park
  * - DMR = Del Mar Thoroughbred Club
  * - ELP = Ellis Park Race Course
+ * - EMD = Emerald Downs
  * - EVD = Evangeline Downs Racetrack & Casino
  * - FG = Fair Grounds Race Course
  * - FL = Finger Lakes Gaming & Racetrack
  * - FON = Fonner Park
+ * - GG = Golden Gate Fields
  * - GP = Gulfstream Park
  * - HOO = Hoosier Park Racing & Casino
  * - HOU = Sam Houston Race Park
  * - IND = Indiana Grand Racing & Casino
  * - KEE = Keeneland Race Course
+ * - LRC = Los Alamitos Race Course
  * - LRL = Laurel Park
  * - LS = Lone Star Park
  * - MNR = Mountaineer Casino Racetrack & Resort
@@ -55,8 +62,10 @@
  * - RP = Remington Park
  * - SA = Santa Anita Park
  * - SAR = Saratoga Race Course
+ * - SUN = Sunland Park Racetrack & Casino
  * - TAM = Tampa Bay Downs
  * - TP = Turfway Park
+ * - TUP = Turf Paradise
  */
 
 import type { TrackData, TrackBiasSummary } from './trackSchema'
@@ -71,16 +80,19 @@ import { delawarePark } from './delawarePark'
 import { deltaDowns } from './deltaDowns'
 import { delMar } from './delMar'
 import { ellisPark } from './ellisPark'
+import { emeraldDowns } from './emeraldDowns'
 import { evangelineDowns } from './evangelineDowns'
 import { fairGrounds } from './fairGrounds'
 import { fingerLakes } from './fingerLakes'
 import { fonnerPark } from './fonnerPark'
+import { goldenGateFields } from './goldenGateFields'
 import { gulfstreamPark } from './gulfstreamPark'
 import { hoosierPark } from './hoosierPark'
 import { indianaGrand } from './indianaGrand'
 import { keeneland } from './keeneland'
 import { laurelPark } from './laurelPark'
 import { loneStarPark } from './loneStarPark'
+import { losAlamitos } from './losAlamitos'
 import { monmouthPark } from './monmouthPark'
 import { mountaineer } from './mountaineer'
 import { oaklawnPark } from './oaklawnPark'
@@ -92,7 +104,9 @@ import { remingtonPark } from './remingtonPark'
 import { samHoustonRacePark } from './samHoustonRacePark'
 import { santaAnita } from './santaAnita'
 import { saratoga } from './saratoga'
+import { sunlandPark } from './sunlandPark'
 import { tampaBayDowns } from './tampaBayDowns'
+import { turfParadise } from './turfParadise'
 import { turfwayPark } from './turfwayPark'
 
 /**
@@ -109,15 +123,18 @@ export const trackDatabase: Map<string, TrackData> = new Map([
   ['DEL', delawarePark],
   ['DMR', delMar],
   ['ELP', ellisPark],
+  ['EMD', emeraldDowns],
   ['EVD', evangelineDowns],
   ['FG', fairGrounds],
   ['FL', fingerLakes],
   ['FON', fonnerPark],
+  ['GG', goldenGateFields],
   ['GP', gulfstreamPark],
   ['HOO', hoosierPark],
   ['HOU', samHoustonRacePark],
   ['IND', indianaGrand],
   ['KEE', keeneland],
+  ['LRC', losAlamitos],
   ['LRL', laurelPark],
   ['LS', loneStarPark],
   ['MNR', mountaineer],
@@ -130,8 +147,10 @@ export const trackDatabase: Map<string, TrackData> = new Map([
   ['RP', remingtonPark],
   ['SA', santaAnita],
   ['SAR', saratoga],
+  ['SUN', sunlandPark],
   ['TAM', tampaBayDowns],
-  ['TP', turfwayPark]
+  ['TP', turfwayPark],
+  ['TUP', turfParadise]
 ])
 
 /**
@@ -271,16 +290,19 @@ export {
   deltaDowns,
   delMar,
   ellisPark,
+  emeraldDowns,
   evangelineDowns,
   fairGrounds,
   fingerLakes,
   fonnerPark,
+  goldenGateFields,
   gulfstreamPark,
   hoosierPark,
   indianaGrand,
   keeneland,
   laurelPark,
   loneStarPark,
+  losAlamitos,
   monmouthPark,
   mountaineer,
   oaklawnPark,
@@ -292,6 +314,8 @@ export {
   samHoustonRacePark,
   santaAnita,
   saratoga,
+  sunlandPark,
   tampaBayDowns,
+  turfParadise,
   turfwayPark
 }
