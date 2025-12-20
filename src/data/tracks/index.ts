@@ -3,23 +3,25 @@
  * Contains track-specific data for handicapping calculations
  *
  * This module exports a centralized database of track intelligence data
- * for 11 major tracks in North American racing. Each track file contains
+ * for 13 major tracks in North American racing. Each track file contains
  * verified, researched data from authoritative sources including:
  * - Equibase track profiles and records
  * - Official track websites and specifications
  * - America's Best Racing handicapping analysis
  * - NYRA and other racing association statistics
  * - Racing publications (BloodHorse, Horse Racing Nation, TwinSpires)
- * - State racing commission data (Nebraska Racing Commission for FON)
+ * - State racing commission data (Nebraska Racing Commission for FON, NJRC for MTH)
  *
  * Track codes follow standard DRF/Equibase conventions:
  * - AQU = Aqueduct Racetrack
  * - BEL = Belmont Park
  * - CD = Churchill Downs
  * - DMR = Del Mar Thoroughbred Club
+ * - FL = Finger Lakes Gaming & Racetrack
  * - FON = Fonner Park
  * - GP = Gulfstream Park
  * - KEE = Keeneland Race Course
+ * - MTH = Monmouth Park
  * - OP = Oaklawn Racing Casino Resort
  * - PIM = Pimlico Race Course
  * - SA = Santa Anita Park
@@ -33,9 +35,11 @@ import { aqueduct } from './aqueduct'
 import { belmontPark } from './belmontPark'
 import { churchillDowns } from './churchillDowns'
 import { delMar } from './delMar'
+import { fingerLakes } from './fingerLakes'
 import { fonnerPark } from './fonnerPark'
 import { gulfstreamPark } from './gulfstreamPark'
 import { keeneland } from './keeneland'
+import { monmouthPark } from './monmouthPark'
 import { oaklawnPark } from './oaklawnPark'
 import { pimlico } from './pimlico'
 import { santaAnita } from './santaAnita'
@@ -50,9 +54,11 @@ export const trackDatabase: Map<string, TrackData> = new Map([
   ['BEL', belmontPark],
   ['CD', churchillDowns],
   ['DMR', delMar],
+  ['FL', fingerLakes],
   ['FON', fonnerPark],
   ['GP', gulfstreamPark],
   ['KEE', keeneland],
+  ['MTH', monmouthPark],
   ['OP', oaklawnPark],
   ['PIM', pimlico],
   ['SA', santaAnita],
@@ -191,9 +197,11 @@ export {
   belmontPark,
   churchillDowns,
   delMar,
+  fingerLakes,
   fonnerPark,
   gulfstreamPark,
   keeneland,
+  monmouthPark,
   oaklawnPark,
   pimlico,
   santaAnita,
