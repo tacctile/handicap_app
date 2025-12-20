@@ -154,7 +154,7 @@ const ScoreBadge = memo(function ScoreBadge({ score, hasChanged = false }: Score
 interface TrackBiasInfoProps {
   trackCode: string
   distance: string
-  surface: 'dirt' | 'turf' | 'synthetic'
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather'
 }
 
 const TrackBiasInfo = memo(function TrackBiasInfo({ trackCode, distance, surface }: TrackBiasInfoProps) {

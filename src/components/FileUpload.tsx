@@ -30,9 +30,11 @@ export function FileUpload({ onParsed }: FileUploadProps) {
         setParseStatus('success')
         setErrorMessage(null)
         onParsed?.(response.data)
-      } else {
+      } else if (response.type === 'error') {
         setParseStatus('error')
         setErrorMessage(response.error || 'Failed to parse file')
+      } else if (response.type === 'progress') {
+        // Progress updates are handled separately if needed
       }
     }
 

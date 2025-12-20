@@ -1,11 +1,33 @@
-import type { ParsedDRFFile, ParsedRace, HorseEntry } from '../types/drf'
+/**
+ * Comprehensive DRF Data Validation
+ *
+ * Validates parsed DRF data for:
+ * - Required field presence
+ * - Value range checks
+ * - Data consistency
+ * - Cross-field validation
+ */
+
+import type {
+  ParsedDRFFile,
+  ParsedRace,
+  HorseEntry,
+  PastPerformance,
+  Workout,
+} from '../types/drf'
+
+// ============================================================================
+// VALIDATION TYPES
+// ============================================================================
 
 export interface ValidationWarning {
-  type: 'missing' | 'invalid' | 'incomplete'
+  type: 'missing' | 'invalid' | 'incomplete' | 'approximated' | 'suspicious'
   field: string
   message: string
   horseIndex?: number
   raceIndex?: number
+  severity: 'low' | 'medium' | 'high'
+  suggestion?: string
 }
 
 export interface ValidationResult {
@@ -15,12 +37,21 @@ export interface ValidationResult {
   stats: {
     totalRaces: number
     totalHorses: number
+    totalPastPerformances: number
+    totalWorkouts: number
     horsesWithMissingData: number
     completeHorses: number
+    validationScore: number // 0-100
   }
 }
 
-// Validate odds format and value
+// ============================================================================
+// VALIDATION HELPERS
+// ============================================================================
+
+/**
+ * Check if odds format is valid
+ */
 function isValidOdds(odds: string): boolean {
   if (!odds) return false
 
@@ -37,7 +68,9 @@ function isValidOdds(odds: string): boolean {
   return !isNaN(decimalValue) && decimalValue > 0
 }
 
-// Convert odds string to decimal for comparison
+/**
+ * Convert odds string to decimal for comparison
+ */
 export function oddsToDecimal(odds: string): number {
   if (!odds) return 0
 
@@ -54,208 +87,605 @@ export function oddsToDecimal(odds: string): number {
   return isNaN(decimalValue) ? 0 : decimalValue
 }
 
-// Validate a single horse entry
-function validateHorse(horse: HorseEntry, horseIndex: number, raceIndex: number): ValidationWarning[] {
-  const warnings: ValidationWarning[] = []
+/**
+ * Check if a string is non-empty
+ */
+function isNonEmpty(value: string | undefined | null): boolean {
+  return typeof value === 'string' && value.trim().length > 0
+}
 
-  // Check horse name
-  if (!horse.horseName || horse.horseName.trim() === '') {
+/**
+ * Check if a number is within a valid range
+ */
+function isInRange(value: number | null | undefined, min: number, max: number): boolean {
+  if (value === null || value === undefined) return false
+  return value >= min && value <= max
+}
+
+// ============================================================================
+// HORSE VALIDATION
+// ============================================================================
+
+/**
+ * Validate a single horse entry
+ */
+function validateHorse(
+  horse: HorseEntry,
+  horseIndex: number,
+  raceIndex: number
+): ValidationWarning[] {
+  const warnings: ValidationWarning[] = []
+  const horseName = horse.horseName || `Horse #${horse.programNumber}`
+
+  // ===== CRITICAL FIELDS =====
+
+  // Horse name
+  if (!isNonEmpty(horse.horseName) || horse.horseName.startsWith('Horse ')) {
     warnings.push({
       type: 'missing',
       field: 'horseName',
-      message: `Race ${raceIndex + 1}, Horse #${horse.programNumber}: Missing horse name`,
+      message: `Race ${raceIndex + 1}, Entry #${horse.programNumber}: Missing horse name`,
       horseIndex,
       raceIndex,
+      severity: 'high',
+      suggestion: 'Horse name is required for accurate handicapping',
     })
   }
 
-  // Check trainer name
-  if (!horse.trainerName || horse.trainerName.trim() === '') {
+  // Trainer name
+  if (!isNonEmpty(horse.trainerName) || horse.trainerName === 'Unknown') {
     warnings.push({
       type: 'missing',
       field: 'trainerName',
-      message: `Race ${raceIndex + 1}, ${horse.horseName || 'Unknown'}: Missing trainer name`,
+      message: `Race ${raceIndex + 1}, ${horseName}: Missing trainer name`,
       horseIndex,
       raceIndex,
+      severity: 'medium',
+      suggestion: 'Trainer statistics will not be available',
     })
   }
 
-  // Check jockey name
-  if (!horse.jockeyName || horse.jockeyName.trim() === '') {
+  // Jockey name
+  if (!isNonEmpty(horse.jockeyName) || horse.jockeyName === 'Unknown') {
     warnings.push({
       type: 'missing',
       field: 'jockeyName',
-      message: `Race ${raceIndex + 1}, ${horse.horseName || 'Unknown'}: Missing jockey name`,
+      message: `Race ${raceIndex + 1}, ${horseName}: Missing jockey name`,
       horseIndex,
       raceIndex,
+      severity: 'medium',
+      suggestion: 'Jockey statistics will not be available',
     })
   }
 
-  // Check odds
-  if (!horse.morningLineOdds || !isValidOdds(horse.morningLineOdds)) {
+  // ===== ODDS VALIDATION =====
+
+  if (!isValidOdds(horse.morningLineOdds)) {
     warnings.push({
       type: 'invalid',
       field: 'morningLineOdds',
-      message: `Race ${raceIndex + 1}, ${horse.horseName || 'Unknown'}: Invalid or missing odds`,
+      message: `Race ${raceIndex + 1}, ${horseName}: Invalid or missing morning line odds`,
       horseIndex,
       raceIndex,
+      severity: 'high',
+      suggestion: 'Enter odds manually before analyzing',
     })
+  } else {
+    // Check for suspicious odds (too low or too high)
+    const decimalOdds = horse.morningLineDecimal
+    if (decimalOdds < 0.1) {
+      warnings.push({
+        type: 'suspicious',
+        field: 'morningLineOdds',
+        message: `Race ${raceIndex + 1}, ${horseName}: Odds seem unusually low (${horse.morningLineOdds})`,
+        horseIndex,
+        raceIndex,
+        severity: 'low',
+      })
+    } else if (decimalOdds > 99) {
+      warnings.push({
+        type: 'suspicious',
+        field: 'morningLineOdds',
+        message: `Race ${raceIndex + 1}, ${horseName}: Odds seem unusually high (${horse.morningLineOdds})`,
+        horseIndex,
+        raceIndex,
+        severity: 'low',
+      })
+    }
   }
 
-  // Check post position
-  if (horse.postPosition < 1 || horse.postPosition > 20) {
+  // ===== POSITION VALIDATION =====
+
+  if (!isInRange(horse.postPosition, 1, 24)) {
     warnings.push({
       type: 'invalid',
       field: 'postPosition',
-      message: `Race ${raceIndex + 1}, ${horse.horseName || 'Unknown'}: Invalid post position (${horse.postPosition})`,
+      message: `Race ${raceIndex + 1}, ${horseName}: Invalid post position (${horse.postPosition})`,
       horseIndex,
       raceIndex,
+      severity: 'medium',
+      suggestion: 'Post position should be between 1 and 24',
     })
   }
 
-  // Check program number
-  if (horse.programNumber < 1) {
+  if (!isInRange(horse.programNumber, 1, 99)) {
     warnings.push({
       type: 'invalid',
       field: 'programNumber',
-      message: `Race ${raceIndex + 1}, ${horse.horseName || 'Unknown'}: Invalid program number`,
+      message: `Race ${raceIndex + 1}, ${horseName}: Invalid program number (${horse.programNumber})`,
       horseIndex,
       raceIndex,
+      severity: 'medium',
+    })
+  }
+
+  // ===== WEIGHT VALIDATION =====
+
+  if (!isInRange(horse.weight, 100, 140)) {
+    if (horse.weight === 0 || horse.weight === 120) {
+      // Default value, might be missing
+      warnings.push({
+        type: 'missing',
+        field: 'weight',
+        message: `Race ${raceIndex + 1}, ${horseName}: Weight may be missing or defaulted`,
+        horseIndex,
+        raceIndex,
+        severity: 'low',
+      })
+    } else {
+      warnings.push({
+        type: 'invalid',
+        field: 'weight',
+        message: `Race ${raceIndex + 1}, ${horseName}: Unusual weight (${horse.weight} lbs)`,
+        horseIndex,
+        raceIndex,
+        severity: 'low',
+        suggestion: 'Weight typically ranges from 112-130 lbs',
+      })
+    }
+  }
+
+  // ===== AGE VALIDATION =====
+
+  if (!isInRange(horse.age, 2, 15)) {
+    warnings.push({
+      type: 'invalid',
+      field: 'age',
+      message: `Race ${raceIndex + 1}, ${horseName}: Invalid age (${horse.age})`,
+      horseIndex,
+      raceIndex,
+      severity: 'low',
+      suggestion: 'Age should be between 2 and 15 years',
+    })
+  }
+
+  // ===== SPEED FIGURE VALIDATION =====
+
+  if (horse.lastBeyer !== null && !isInRange(horse.lastBeyer, 0, 130)) {
+    warnings.push({
+      type: 'invalid',
+      field: 'lastBeyer',
+      message: `Race ${raceIndex + 1}, ${horseName}: Unusual Beyer figure (${horse.lastBeyer})`,
+      horseIndex,
+      raceIndex,
+      severity: 'low',
+      suggestion: 'Beyer figures typically range from 0-120',
+    })
+  }
+
+  // ===== BREEDING VALIDATION =====
+
+  if (!isNonEmpty(horse.breeding?.sire) || horse.breeding?.sire === 'Unknown') {
+    warnings.push({
+      type: 'missing',
+      field: 'breeding.sire',
+      message: `Race ${raceIndex + 1}, ${horseName}: Missing sire information`,
+      horseIndex,
+      raceIndex,
+      severity: 'low',
+    })
+  }
+
+  if (!isNonEmpty(horse.breeding?.dam) || horse.breeding?.dam === 'Unknown') {
+    warnings.push({
+      type: 'missing',
+      field: 'breeding.dam',
+      message: `Race ${raceIndex + 1}, ${horseName}: Missing dam information`,
+      horseIndex,
+      raceIndex,
+      severity: 'low',
+    })
+  }
+
+  // ===== PAST PERFORMANCE VALIDATION =====
+
+  if (horse.pastPerformances.length === 0) {
+    warnings.push({
+      type: 'missing',
+      field: 'pastPerformances',
+      message: `Race ${raceIndex + 1}, ${horseName}: No past performances available`,
+      horseIndex,
+      raceIndex,
+      severity: 'medium',
+      suggestion: 'May be a first-time starter or maiden',
+    })
+  } else {
+    // Validate each past performance
+    horse.pastPerformances.forEach((pp, ppIndex) => {
+      const ppWarnings = validatePastPerformance(pp, ppIndex, horseIndex, raceIndex, horseName)
+      warnings.push(...ppWarnings)
+    })
+  }
+
+  // ===== WORKOUT VALIDATION =====
+
+  if (horse.workouts.length === 0 && horse.pastPerformances.length === 0) {
+    warnings.push({
+      type: 'missing',
+      field: 'workouts',
+      message: `Race ${raceIndex + 1}, ${horseName}: No workouts or past performances available`,
+      horseIndex,
+      raceIndex,
+      severity: 'high',
+      suggestion: 'Limited data for analysis - may be debut starter',
+    })
+  } else if (horse.workouts.length > 0) {
+    horse.workouts.forEach((workout, wkIndex) => {
+      const wkWarnings = validateWorkout(workout, wkIndex, horseIndex, raceIndex, horseName)
+      warnings.push(...wkWarnings)
     })
   }
 
   return warnings
 }
 
-// Validate a single race
-function validateRace(race: ParsedRace, raceIndex: number): ValidationWarning[] {
+// ============================================================================
+// PAST PERFORMANCE VALIDATION
+// ============================================================================
+
+/**
+ * Validate a single past performance record
+ */
+function validatePastPerformance(
+  pp: PastPerformance,
+  ppIndex: number,
+  horseIndex: number,
+  raceIndex: number,
+  horseName: string
+): ValidationWarning[] {
   const warnings: ValidationWarning[] = []
 
-  // Check race header
-  if (!race.header.trackCode) {
+  // Date validation
+  if (!isNonEmpty(pp.date)) {
+    warnings.push({
+      type: 'missing',
+      field: `pastPerformances[${ppIndex}].date`,
+      message: `Race ${raceIndex + 1}, ${horseName}: PP #${ppIndex + 1} missing date`,
+      horseIndex,
+      raceIndex,
+      severity: 'low',
+    })
+  }
+
+  // Finish position validation
+  if (!isInRange(pp.finishPosition, 1, 20)) {
+    warnings.push({
+      type: 'invalid',
+      field: `pastPerformances[${ppIndex}].finishPosition`,
+      message: `Race ${raceIndex + 1}, ${horseName}: PP #${ppIndex + 1} invalid finish position`,
+      horseIndex,
+      raceIndex,
+      severity: 'low',
+    })
+  }
+
+  // Beyer validation if present
+  if (pp.speedFigures.beyer !== null && !isInRange(pp.speedFigures.beyer, 0, 130)) {
+    warnings.push({
+      type: 'suspicious',
+      field: `pastPerformances[${ppIndex}].speedFigures.beyer`,
+      message: `Race ${raceIndex + 1}, ${horseName}: PP #${ppIndex + 1} unusual Beyer (${pp.speedFigures.beyer})`,
+      horseIndex,
+      raceIndex,
+      severity: 'low',
+    })
+  }
+
+  return warnings
+}
+
+// ============================================================================
+// WORKOUT VALIDATION
+// ============================================================================
+
+/**
+ * Validate a single workout record
+ */
+function validateWorkout(
+  workout: Workout,
+  wkIndex: number,
+  horseIndex: number,
+  raceIndex: number,
+  horseName: string
+): ValidationWarning[] {
+  const warnings: ValidationWarning[] = []
+
+  // Date validation
+  if (!isNonEmpty(workout.date)) {
+    warnings.push({
+      type: 'missing',
+      field: `workouts[${wkIndex}].date`,
+      message: `Race ${raceIndex + 1}, ${horseName}: Workout #${wkIndex + 1} missing date`,
+      horseIndex,
+      raceIndex,
+      severity: 'low',
+    })
+  }
+
+  // Time validation
+  if (workout.timeSeconds <= 0) {
+    warnings.push({
+      type: 'missing',
+      field: `workouts[${wkIndex}].timeSeconds`,
+      message: `Race ${raceIndex + 1}, ${horseName}: Workout #${wkIndex + 1} missing time`,
+      horseIndex,
+      raceIndex,
+      severity: 'low',
+    })
+  }
+
+  // Distance validation
+  if (!isInRange(workout.distanceFurlongs, 2, 12)) {
+    warnings.push({
+      type: 'invalid',
+      field: `workouts[${wkIndex}].distanceFurlongs`,
+      message: `Race ${raceIndex + 1}, ${horseName}: Workout #${wkIndex + 1} unusual distance`,
+      horseIndex,
+      raceIndex,
+      severity: 'low',
+    })
+  }
+
+  return warnings
+}
+
+// ============================================================================
+// RACE VALIDATION
+// ============================================================================
+
+/**
+ * Validate a single race
+ */
+function validateRace(race: ParsedRace, raceIndex: number): ValidationWarning[] {
+  const warnings: ValidationWarning[] = []
+  const header = race.header
+
+  // ===== TRACK VALIDATION =====
+
+  if (!isNonEmpty(header.trackCode) || header.trackCode === 'UNK') {
     warnings.push({
       type: 'missing',
       field: 'trackCode',
       message: `Race ${raceIndex + 1}: Missing track code`,
       raceIndex,
+      severity: 'high',
     })
   }
 
-  if (!race.header.distance) {
+  // ===== DISTANCE VALIDATION =====
+
+  if (!isNonEmpty(header.distance) || header.distance === 'Unknown') {
     warnings.push({
       type: 'missing',
       field: 'distance',
       message: `Race ${raceIndex + 1}: Missing distance`,
       raceIndex,
+      severity: 'high',
+    })
+  } else if (!isInRange(header.distanceFurlongs, 2, 16)) {
+    warnings.push({
+      type: 'invalid',
+      field: 'distanceFurlongs',
+      message: `Race ${raceIndex + 1}: Unusual distance (${header.distanceFurlongs}f)`,
+      raceIndex,
+      severity: 'medium',
+      suggestion: 'Distance should be between 2 and 16 furlongs',
     })
   }
 
-  // Check for minimum horses
+  // ===== FIELD SIZE VALIDATION =====
+
   if (race.horses.length < 2) {
     warnings.push({
       type: 'incomplete',
       field: 'horses',
-      message: `Race ${raceIndex + 1}: Only ${race.horses.length} horse(s) - need at least 2`,
+      message: `Race ${raceIndex + 1}: Only ${race.horses.length} horse(s) - need at least 2 for a race`,
       raceIndex,
+      severity: 'high',
+      suggestion: 'Check if file is complete or if entries were scratched',
+    })
+  } else if (race.horses.length > 20) {
+    warnings.push({
+      type: 'suspicious',
+      field: 'horses',
+      message: `Race ${raceIndex + 1}: Large field size (${race.horses.length} horses)`,
+      raceIndex,
+      severity: 'low',
     })
   }
 
-  // Validate each horse
+  // ===== PURSE VALIDATION =====
+
+  if (header.purse <= 0) {
+    warnings.push({
+      type: 'missing',
+      field: 'purse',
+      message: `Race ${raceIndex + 1}: Missing purse amount`,
+      raceIndex,
+      severity: 'low',
+    })
+  }
+
+  // ===== VALIDATE EACH HORSE =====
+
   race.horses.forEach((horse, horseIndex) => {
     const horseWarnings = validateHorse(horse, horseIndex, raceIndex)
     warnings.push(...horseWarnings)
   })
 
+  // ===== CHECK FOR DUPLICATE POST POSITIONS =====
+
+  const postPositions = race.horses.map((h) => h.postPosition)
+  const duplicates = postPositions.filter((pos, idx) => postPositions.indexOf(pos) !== idx)
+  if (duplicates.length > 0) {
+    warnings.push({
+      type: 'invalid',
+      field: 'postPositions',
+      message: `Race ${raceIndex + 1}: Duplicate post positions found: ${[...new Set(duplicates)].join(', ')}`,
+      raceIndex,
+      severity: 'medium',
+      suggestion: 'May indicate coupled entries or data error',
+    })
+  }
+
   return warnings
 }
 
-// Main validation function
+// ============================================================================
+// MAIN VALIDATION FUNCTION
+// ============================================================================
+
+/**
+ * Validate complete parsed DRF data
+ */
 export function validateParsedData(data: ParsedDRFFile | null): ValidationResult {
+  // Handle null/missing data
   if (!data) {
     return {
       isValid: false,
       warnings: [],
-      errors: [{
-        type: 'missing',
-        field: 'data',
-        message: 'No data provided',
-      }],
+      errors: [
+        {
+          type: 'missing',
+          field: 'data',
+          message: 'No data provided for validation',
+          severity: 'high',
+        },
+      ],
       stats: {
         totalRaces: 0,
         totalHorses: 0,
+        totalPastPerformances: 0,
+        totalWorkouts: 0,
         horsesWithMissingData: 0,
         completeHorses: 0,
+        validationScore: 0,
       },
     }
   }
 
-  const warnings: ValidationWarning[] = []
-  const errors: ValidationWarning[] = []
-
-  // Check for races
+  // Handle empty races array
   if (!data.races || data.races.length === 0) {
-    errors.push({
-      type: 'missing',
-      field: 'races',
-      message: 'No races found in file',
-    })
     return {
       isValid: false,
       warnings: [],
-      errors,
+      errors: [
+        {
+          type: 'missing',
+          field: 'races',
+          message: 'No races found in file',
+          severity: 'high',
+          suggestion: 'The file may not be a valid DRF file or may be corrupted',
+        },
+      ],
       stats: {
         totalRaces: 0,
         totalHorses: 0,
+        totalPastPerformances: 0,
+        totalWorkouts: 0,
         horsesWithMissingData: 0,
         completeHorses: 0,
+        validationScore: 0,
       },
     }
   }
 
-  // Validate each race
+  // Collect all warnings
+  const allWarnings: ValidationWarning[] = []
   let totalHorses = 0
+  let totalPastPerformances = 0
+  let totalWorkouts = 0
   let horsesWithMissingData = 0
 
+  // Validate each race
   data.races.forEach((race, raceIndex) => {
     const raceWarnings = validateRace(race, raceIndex)
-    warnings.push(...raceWarnings)
-    totalHorses += race.horses.length
+    allWarnings.push(...raceWarnings)
 
-    // Count horses with missing data
-    race.horses.forEach((horse, horseIndex) => {
-      const horseWarnings = validateHorse(horse, horseIndex, raceIndex)
-      if (horseWarnings.length > 0) {
+    // Count horses and data
+    race.horses.forEach((horse) => {
+      totalHorses++
+      totalPastPerformances += horse.pastPerformances?.length || 0
+      totalWorkouts += horse.workouts?.length || 0
+
+      // Check for missing critical data
+      const hasMissingData =
+        !isNonEmpty(horse.horseName) ||
+        horse.horseName.startsWith('Horse ') ||
+        !isValidOdds(horse.morningLineOdds) ||
+        horse.trainerName === 'Unknown' ||
+        horse.jockeyName === 'Unknown'
+
+      if (hasMissingData) {
         horsesWithMissingData++
       }
     })
   })
 
-  // Separate critical errors from warnings
-  const criticalErrors = warnings.filter(w =>
-    w.field === 'horses' && w.type === 'incomplete' &&
-    (data.races[w.raceIndex!]?.horses.length ?? 0) < 1
-  )
+  // Separate errors from warnings
+  const errors = allWarnings.filter((w) => w.severity === 'high')
+  const warnings = allWarnings.filter((w) => w.severity !== 'high')
 
-  errors.push(...criticalErrors)
-  const nonCriticalWarnings = warnings.filter(w => !criticalErrors.includes(w))
+  // Calculate validation score (0-100)
+  const completeHorses = totalHorses - horsesWithMissingData
+  const dataCompleteness = totalHorses > 0 ? (completeHorses / totalHorses) * 100 : 0
+  const errorPenalty = Math.min(errors.length * 10, 50)
+  const warningPenalty = Math.min(warnings.length * 2, 30)
+  const validationScore = Math.max(0, Math.round(dataCompleteness - errorPenalty - warningPenalty))
+
+  // Determine if data is valid (no critical errors)
+  const criticalErrors = errors.filter(
+    (e) => e.field === 'races' || e.field === 'data' || (e.field === 'horses' && e.type === 'incomplete')
+  )
+  const isValid = criticalErrors.length === 0 && data.races.length > 0
 
   return {
-    isValid: errors.length === 0,
-    warnings: nonCriticalWarnings,
+    isValid,
+    warnings,
     errors,
     stats: {
       totalRaces: data.races.length,
       totalHorses,
+      totalPastPerformances,
+      totalWorkouts,
       horsesWithMissingData,
-      completeHorses: totalHorses - horsesWithMissingData,
+      completeHorses,
+      validationScore,
     },
   }
 }
 
-// Get summary of validation warnings
+// ============================================================================
+// SUMMARY FUNCTIONS
+// ============================================================================
+
+/**
+ * Get human-readable summary of validation warnings
+ */
 export function getValidationSummary(result: ValidationResult): string[] {
   const summary: string[] = []
 
+  // Data completeness
   if (result.stats.horsesWithMissingData > 0) {
     summary.push(
       `${result.stats.horsesWithMissingData} of ${result.stats.totalHorses} horses have incomplete data`
@@ -263,9 +693,10 @@ export function getValidationSummary(result: ValidationResult): string[] {
   }
 
   // Group warnings by type
-  const missingTrainers = result.warnings.filter(w => w.field === 'trainerName').length
-  const missingJockeys = result.warnings.filter(w => w.field === 'jockeyName').length
-  const invalidOdds = result.warnings.filter(w => w.field === 'morningLineOdds').length
+  const missingTrainers = result.warnings.filter((w) => w.field === 'trainerName').length
+  const missingJockeys = result.warnings.filter((w) => w.field === 'jockeyName').length
+  const invalidOdds = result.warnings.filter((w) => w.field === 'morningLineOdds').length
+  const missingPPs = result.warnings.filter((w) => w.field === 'pastPerformances').length
 
   if (missingTrainers > 0) {
     summary.push(`${missingTrainers} horses missing trainer information`)
@@ -276,15 +707,64 @@ export function getValidationSummary(result: ValidationResult): string[] {
   if (invalidOdds > 0) {
     summary.push(`${invalidOdds} horses with invalid odds`)
   }
+  if (missingPPs > 0) {
+    summary.push(`${missingPPs} horses with no past performances`)
+  }
+
+  // Critical errors
+  result.errors.forEach((error) => {
+    summary.push(`Error: ${error.message}`)
+  })
 
   return summary
 }
 
-// Check if data is usable despite warnings
+/**
+ * Check if data is usable despite warnings
+ */
 export function isDataUsable(result: ValidationResult): boolean {
-  // Data is usable if we have at least one valid race with at least 2 horses
-  return result.isValid || (
-    result.stats.totalRaces > 0 &&
-    result.stats.completeHorses >= 2
+  // Data is usable if we have at least one valid race with at least 2 complete horses
+  return (
+    result.isValid ||
+    (result.stats.totalRaces > 0 && result.stats.completeHorses >= 2)
   )
+}
+
+/**
+ * Get suggestions for fixing common issues
+ */
+export function getFixSuggestions(result: ValidationResult): string[] {
+  const suggestions: string[] = []
+  const seenSuggestions = new Set<string>()
+
+  // Collect unique suggestions
+  ;[...result.errors, ...result.warnings].forEach((item) => {
+    if (item.suggestion && !seenSuggestions.has(item.suggestion)) {
+      seenSuggestions.add(item.suggestion)
+      suggestions.push(item.suggestion)
+    }
+  })
+
+  return suggestions
+}
+
+/**
+ * Get validation score color
+ */
+export function getValidationScoreColor(score: number): string {
+  if (score >= 80) return '#36d1da' // Green/teal
+  if (score >= 60) return '#19abb5' // Accent
+  if (score >= 40) return '#f59e0b' // Warning yellow
+  return '#ef4444' // Error red
+}
+
+/**
+ * Get validation score label
+ */
+export function getValidationScoreLabel(score: number): string {
+  if (score >= 90) return 'Excellent'
+  if (score >= 75) return 'Good'
+  if (score >= 60) return 'Fair'
+  if (score >= 40) return 'Poor'
+  return 'Critical Issues'
 }

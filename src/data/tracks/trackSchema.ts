@@ -26,7 +26,7 @@ export interface PostPositionBias {
  */
 export interface SpeedBias {
   /** Surface type this bias applies to */
-  surface: 'dirt' | 'turf' | 'synthetic'
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather'
   /** Percentage of races won by early speed horses */
   earlySpeedWinRate: number
   /** Rating from 1-10 indicating pace advantage (10 = very strong speed bias) */
@@ -90,7 +90,7 @@ export interface WinningTimeByDistance {
   /** Distance in furlongs */
   furlongs: number
   /** Surface type */
-  surface: 'dirt' | 'turf' | 'synthetic'
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather'
   /** Average winning time in seconds for claiming races ($25k-$50k) */
   claimingAvg: number
   /** Average winning time in seconds for allowance races */
