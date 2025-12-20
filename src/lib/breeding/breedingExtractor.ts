@@ -5,19 +5,16 @@
  * Main entry point for breeding analysis in the handicapping system.
  */
 
-import type { HorseEntry, Breeding } from '../../types/drf'
+import type { HorseEntry } from '../../types/drf'
 import type {
   BreedingInfo,
   BreedingDisplayInfo,
   ExperienceLevel,
   BreedingScore,
-  EMPTY_BREEDING_SCORE,
 } from './types'
 import {
-  parseBreedingLine,
   isUnknownSire,
   isUnknownDam,
-  formatBreedingDisplay,
   getExperienceLevel,
   getExperienceLabel,
   qualifiesForBreedingAnalysis,
