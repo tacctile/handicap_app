@@ -95,10 +95,10 @@ interface PresetConfig {
 }
 
 const PRESETS: PresetConfig[] = [
+  { id: 'valueHunter', label: 'Value Hunter', icon: 'local_fire_department', description: 'Best value bets (sorted by EV%)' },
+  { id: 'positiveEV', label: '+EV Only', icon: 'trending_up', description: 'All positive expected value bets' },
   { id: 'allTier1', label: 'All Tier 1', icon: 'workspace_premium', description: 'Select all top tier bets' },
-  { id: 'positiveEV', label: '+EV Only', icon: 'trending_up', description: 'Positive expected value only' },
-  { id: 'valueHunter', label: 'Overlays', icon: 'local_fire_department', description: '25%+ overlay bets' },
-  { id: 'conservative', label: 'Safe', icon: 'shield', description: 'Low risk selections' },
+  { id: 'conservative', label: 'Safe', icon: 'shield', description: 'High confidence, low risk' },
   { id: 'maxCoverage', label: 'All', icon: 'grid_view', description: 'Maximum bet coverage' },
   { id: 'clearAll', label: 'Clear', icon: 'clear_all', description: 'Deselect all bets' },
 ]
@@ -937,10 +937,18 @@ export function BettingRecommendations({
               isSelected: bet.evPerDollar > 0,
             }))
           case 'valueHunter':
-            // Select bets with 25%+ overlay
-            return prev.map((bet) => ({
+            // Value Hunter: Select positive EV bets, sorted by EV% (ignores tier)
+            // This preset focuses on mathematical value, not tier classification
+            const sortedByEV = [...prev].sort((a, b) => {
+              // Sort by EV per dollar (highest first)
+              const evA = a.evPerDollar ?? 0
+              const evB = b.evPerDollar ?? 0
+              return evB - evA
+            })
+            // Select top value bets (EV > 5% or overlay > 15%)
+            return sortedByEV.map((bet) => ({
               ...bet,
-              isSelected: bet.overlayPercent >= 25,
+              isSelected: (bet.evPerDollar * 100 >= 5) || (bet.overlayPercent >= 15),
             }))
           case 'conservative':
             return prev.map((bet) => ({
