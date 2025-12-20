@@ -11,6 +11,18 @@ import type {
 } from '../hooks/useBankroll'
 import { BETTING_STYLE_INFO, BET_TYPE_LABELS, getExpectedReturnRange } from '../hooks/useBankroll'
 import type { NotificationSettings } from '../hooks/usePostTime'
+import {
+  type KellySettings,
+  type KellyFraction,
+  KELLY_FRACTION_OPTIONS,
+  MAX_BET_PERCENT_OPTIONS,
+  MIN_EDGE_OPTIONS,
+  KELLY_FRACTION_INFO,
+  DEFAULT_KELLY_SETTINGS,
+  loadKellySettings,
+  saveKellySettings,
+} from '../lib/betting/kellySettings'
+import { KellyHelpModal } from './KellyHelpModal'
 
 interface BankrollSettingsProps {
   isOpen: boolean
@@ -66,6 +78,8 @@ export function BankrollSettings({
   const [notifState, setNotifState] = useState<NotificationSettings>(
     notificationSettings || { enabled: true, soundEnabled: false, timings: [15, 10, 5, 2] }
   )
+  const [kellyState, setKellyState] = useState<KellySettings>(loadKellySettings)
+  const [showKellyHelp, setShowKellyHelp] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
   const [activeTab, setActiveTab] = useState<'bankroll' | 'notifications'>('bankroll')
   const modalRef = useRef<HTMLDivElement>(null)
@@ -77,6 +91,7 @@ export function BankrollSettings({
       if (notificationSettings) {
         setNotifState(notificationSettings)
       }
+      setKellyState(loadKellySettings())
       setHasChanges(false)
     }
   }, [settings, notificationSettings, isOpen])
@@ -154,6 +169,18 @@ export function BankrollSettings({
     })
   }, [])
 
+  // Update Kelly field
+  const updateKellyField = useCallback(<K extends keyof KellySettings>(
+    field: K,
+    value: KellySettings[K]
+  ) => {
+    setKellyState(prev => {
+      const newState = { ...prev, [field]: value }
+      setHasChanges(true)
+      return newState
+    })
+  }, [])
+
   // Toggle notification timing
   const toggleNotifTiming = useCallback((timing: number) => {
     setNotifState(prev => {
@@ -171,14 +198,18 @@ export function BankrollSettings({
     if (onNotificationSettingsChange) {
       onNotificationSettingsChange(notifState)
     }
+    // Save Kelly settings separately (stored in localStorage)
+    saveKellySettings(kellyState)
     setHasChanges(false)
     onClose()
-  }, [formState, notifState, onSave, onNotificationSettingsChange, onClose])
+  }, [formState, notifState, kellyState, onSave, onNotificationSettingsChange, onClose])
 
   // Handle reset
   const handleReset = useCallback(() => {
     onReset()
     setNotifState({ enabled: true, soundEnabled: false, timings: [15, 10, 5, 2] })
+    setKellyState(DEFAULT_KELLY_SETTINGS)
+    saveKellySettings(DEFAULT_KELLY_SETTINGS)
     setHasChanges(false)
   }, [onReset])
 
@@ -561,7 +592,158 @@ export function BankrollSettings({
             </span>
           )}
         </div>
+
+        {/* Kelly Criterion Section */}
+        <div className="bankroll-kelly-section">
+          <div className="bankroll-kelly-header">
+            <div className="bankroll-kelly-title">
+              <span className="material-icons">functions</span>
+              <div>
+                <span className="bankroll-kelly-label">Kelly Criterion</span>
+                <span className="bankroll-kelly-badge">Advanced</span>
+              </div>
+            </div>
+            <label className="bankroll-toggle">
+              <input
+                type="checkbox"
+                checked={kellyState.enabled}
+                onChange={(e) => updateKellyField('enabled', e.target.checked)}
+              />
+              <span className="bankroll-toggle-slider" />
+            </label>
+          </div>
+
+          <p className="bankroll-kelly-description">
+            Mathematically optimizes bet sizing for maximum bankroll growth based on your edge.
+          </p>
+
+          <AnimatePresence>
+            {kellyState.enabled && (
+              <motion.div
+                className="bankroll-kelly-settings"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {/* Kelly Fraction */}
+                <div className="bankroll-form-group">
+                  <label className="bankroll-form-label">
+                    <span className="material-icons">pie_chart</span>
+                    Kelly Fraction
+                  </label>
+                  <div className="bankroll-kelly-fraction-options">
+                    {KELLY_FRACTION_OPTIONS.map((option) => {
+                      const info = KELLY_FRACTION_INFO[option.value]
+                      return (
+                        <label
+                          key={option.value}
+                          className={`bankroll-kelly-fraction-option ${kellyState.kellyFraction === option.value ? 'selected' : ''}`}
+                          style={{
+                            borderColor: kellyState.kellyFraction === option.value ? info.color : undefined,
+                          }}
+                        >
+                          <input
+                            type="radio"
+                            name="kellyFraction"
+                            value={option.value}
+                            checked={kellyState.kellyFraction === option.value}
+                            onChange={() => updateKellyField('kellyFraction', option.value as KellyFraction)}
+                          />
+                          <div className="bankroll-kelly-fraction-content">
+                            <span
+                              className="bankroll-kelly-fraction-label"
+                              style={{ color: kellyState.kellyFraction === option.value ? info.color : undefined }}
+                            >
+                              {option.shortLabel}
+                            </span>
+                            <span className="bankroll-kelly-fraction-desc">{option.description}</span>
+                          </div>
+                        </label>
+                      )
+                    })}
+                  </div>
+                  <span className="bankroll-input-hint bankroll-kelly-hint">
+                    <span className="material-icons">info</span>
+                    Quarter Kelly recommended for most bettors (75% less variance)
+                  </span>
+                </div>
+
+                {/* Max Bet Percent */}
+                <div className="bankroll-form-group">
+                  <label className="bankroll-form-label">
+                    <span className="material-icons">vertical_align_top</span>
+                    Maximum Bet Cap
+                  </label>
+                  <div className="bankroll-kelly-slider-group">
+                    <input
+                      type="range"
+                      className="bankroll-kelly-slider"
+                      min="1"
+                      max="20"
+                      value={kellyState.maxBetPercent}
+                      onChange={(e) => updateKellyField('maxBetPercent', Number(e.target.value))}
+                    />
+                    <span className="bankroll-kelly-slider-value">{kellyState.maxBetPercent}%</span>
+                  </div>
+                  <span className="bankroll-input-hint">
+                    Never bet more than {kellyState.maxBetPercent}% of bankroll on a single bet
+                  </span>
+                </div>
+
+                {/* Min Edge Required */}
+                <div className="bankroll-form-group">
+                  <label className="bankroll-form-label">
+                    <span className="material-icons">trending_up</span>
+                    Minimum Edge Required
+                  </label>
+                  <div className="bankroll-kelly-slider-group">
+                    <input
+                      type="range"
+                      className="bankroll-kelly-slider"
+                      min="1"
+                      max="25"
+                      value={kellyState.minEdgeRequired}
+                      onChange={(e) => updateKellyField('minEdgeRequired', Number(e.target.value))}
+                    />
+                    <span className="bankroll-kelly-slider-value">{kellyState.minEdgeRequired}%</span>
+                  </div>
+                  <span className="bankroll-input-hint">
+                    Only bet when you have at least {kellyState.minEdgeRequired}% edge over the odds
+                  </span>
+                </div>
+
+                {/* Kelly Info */}
+                <div className="bankroll-kelly-info">
+                  <span className="material-icons">help_outline</span>
+                  <span>
+                    Kelly Criterion calculates optimal bet size based on your edge.
+                    When enabled, bet recommendations will show Kelly-calculated amounts
+                    alongside tier-based allocations.
+                  </span>
+                </div>
+
+                {/* Learn More Link */}
+                <button
+                  type="button"
+                  className="bankroll-kelly-learn-more"
+                  onClick={() => setShowKellyHelp(true)}
+                >
+                  <span className="material-icons">school</span>
+                  <span>Learn more about Kelly Criterion</span>
+                  <span className="material-icons">arrow_forward</span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </form>
+
+      {/* Kelly Help Modal */}
+      <KellyHelpModal
+        isOpen={showKellyHelp}
+        onClose={() => setShowKellyHelp(false)}
+      />
     </motion.div>
   )
 

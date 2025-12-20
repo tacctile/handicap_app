@@ -22,6 +22,8 @@ export {
 export {
   calculateBetAmount,
   calculateKellyBetAmount,
+  calculateBetWithKelly,
+  isKellyEnabled,
   scaleBetsByBankroll,
   getBetSizingConfig,
   getTierAllocation,
@@ -37,6 +39,10 @@ export {
   BET_LIMITS,
   type BetSizingConfig,
   type TierAllocation,
+  type KellyBetSizingResult,
+  type KellySettings,
+  type KellyFraction,
+  type KellyResult,
 } from './betSizing'
 
 // Window Instructions

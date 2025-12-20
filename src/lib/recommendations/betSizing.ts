@@ -5,7 +5,7 @@
  * - Reads from useBankroll hook settings
  * - Supports Simple, Moderate, and Advanced modes
  * - Applies tier allocations based on betting style
- * - Implements Kelly Criterion placeholder for Phase 3
+ * - Implements Kelly Criterion for optimal bet sizing (Advanced mode)
  *
  * @module recommendations/betSizing
  */
@@ -14,6 +14,21 @@ import type { UseBankrollReturn, BettingStyle, ComplexityMode, RiskTolerance } f
 import type { BettingTier } from '../betting/tierClassification'
 import type { GeneratedBet } from './betGenerator'
 import { logger } from '../../services/logging'
+import {
+  calculateKelly,
+  parseOddsToDecimal,
+  confidenceToWinProbability,
+  formatKellyResult,
+  KELLY_FRACTION_VALUES,
+  type KellyResult,
+  type KellyInput,
+} from '../betting/kellyCriterion'
+import {
+  type KellySettings,
+  type KellyFraction,
+  loadKellySettings,
+  getKellyFractionLabel,
+} from '../betting/kellySettings'
 
 // ============================================================================
 // TYPES
@@ -30,6 +45,29 @@ export interface BetSizingConfig {
   riskTolerance: RiskTolerance
   /** Base unit size */
   unitSize: number
+  /** Kelly settings if enabled */
+  kellySettings?: KellySettings
+}
+
+/** Result from Kelly-based bet sizing */
+export interface KellyBetSizingResult {
+  /** Kelly-calculated bet amount */
+  kellyAmount: number
+  /** Tier-based bet amount (alternative) */
+  tierAmount: number
+  /** Which sizing method is active */
+  activeMethod: 'kelly' | 'tier'
+  /** Kelly result details */
+  kellyResult: KellyResult | null
+  /** Display info for UI */
+  display: {
+    recommended: string
+    alternative: string
+    kellyFraction: string
+    edge: string
+    shouldBet: boolean
+    warnings: string[]
+  }
 }
 
 export interface TierAllocation {
@@ -117,6 +155,9 @@ export function getBetSizingConfig(bankroll: UseBankrollReturn): BetSizingConfig
   const simpleSettings = bankroll.getSimpleSettings()
   const moderateSettings = bankroll.getModerateSettings()
 
+  // Load Kelly settings (only used in Advanced mode)
+  const kellySettings = mode === 'advanced' ? loadKellySettings() : undefined
+
   return {
     raceBudget: bankroll.getRaceBudget(),
     mode,
@@ -126,6 +167,7 @@ export function getBetSizingConfig(bankroll: UseBankrollReturn): BetSizingConfig
         : simpleSettings.bettingStyle === 'balanced' ? 'moderate' : 'aggressive')
       : moderateSettings.riskLevel,
     unitSize: bankroll.getUnitSize(),
+    kellySettings,
   }
 }
 
@@ -222,39 +264,138 @@ export function calculateBetAmount(
 }
 
 /**
- * Calculate bet amount using Kelly Criterion (placeholder for Phase 3)
- * Kelly formula: f* = (bp - q) / b
- * where b = odds, p = win probability, q = 1-p
+ * Calculate bet amount using Kelly Criterion
+ * Now uses the full Kelly module for proper calculations
+ *
+ * @param winProbability - Win probability (0-1 or 0-100)
+ * @param odds - Decimal odds or odds string (e.g., "5-1")
+ * @param bankroll - Current bankroll
+ * @param fractionKelly - Kelly fraction (0.25, 0.5, 1.0) - deprecated, use settings
+ * @param settings - Optional Kelly settings
  */
 export function calculateKellyBetAmount(
   winProbability: number,
-  odds: number,
+  odds: number | string,
   bankroll: number,
-  fractionKelly: number = 0.25 // Use quarter Kelly for safety
+  fractionKelly: number = 0.25, // Use quarter Kelly for safety
+  settings?: Partial<KellySettings>
 ): number {
-  // Convert American odds to decimal if needed
-  const decimalOdds = odds
+  // Convert odds if string
+  const decimalOdds = typeof odds === 'string' ? parseOddsToDecimal(odds) : odds
 
-  // Calculate Kelly fraction
-  const b = decimalOdds
-  const p = winProbability
-  const q = 1 - p
+  // Normalize probability (if > 1, assume percentage)
+  const normalizedProb = winProbability > 1 ? winProbability / 100 : winProbability
 
-  const kellyFraction = (b * p - q) / b
+  // Determine Kelly fraction to use
+  let kellyFraction: KellyFraction = 'quarter'
+  if (settings?.kellyFraction) {
+    kellyFraction = settings.kellyFraction
+  } else if (fractionKelly >= 0.9) {
+    kellyFraction = 'full'
+  } else if (fractionKelly >= 0.4) {
+    kellyFraction = 'half'
+  }
 
-  // Apply fractional Kelly for safety
-  const adjustedKelly = kellyFraction * fractionKelly
+  // Calculate using Kelly module
+  const result = calculateKelly({
+    winProbability: normalizedProb,
+    decimalOdds,
+    bankroll,
+    kellyFraction,
+    maxBetPercent: (settings?.maxBetPercent ?? 10) / 100,
+    minEdgeRequired: (settings?.minEdgeRequired ?? 5) / 100,
+  })
 
-  // Don't bet if Kelly is negative
-  if (adjustedKelly <= 0) return 0
+  return result.optimalBetSize
+}
 
-  // Calculate bet amount
-  let amount = bankroll * adjustedKelly
+/**
+ * Calculate bet sizing with both Kelly and tier-based methods
+ * Returns both options for display in UI
+ */
+export function calculateBetWithKelly(
+  confidence: number,
+  oddsString: string,
+  tier: BettingTier,
+  bankroll: UseBankrollReturn,
+  fieldSize: number = 10
+): KellyBetSizingResult {
+  const config = getBetSizingConfig(bankroll)
+  const kellySettings = config.kellySettings
 
-  // Apply limits
-  amount = Math.max(BET_LIMITS.min, Math.min(bankroll * 0.05, amount)) // Max 5% of bankroll
+  // Calculate tier-based amount (always available)
+  const tierAmount = calculateBetAmount(confidence, tier, bankroll)
 
-  return Math.round(amount)
+  // If Kelly not enabled or not in Advanced mode, just return tier amount
+  if (!kellySettings?.enabled || config.mode !== 'advanced') {
+    return {
+      kellyAmount: 0,
+      tierAmount,
+      activeMethod: 'tier',
+      kellyResult: null,
+      display: {
+        recommended: `$${tierAmount}`,
+        alternative: '',
+        kellyFraction: '',
+        edge: '',
+        shouldBet: true,
+        warnings: [],
+      },
+    }
+  }
+
+  // Parse odds
+  const decimalOdds = parseOddsToDecimal(oddsString)
+
+  // Convert confidence to win probability
+  const winProbability = confidenceToWinProbability(confidence, fieldSize)
+
+  // Calculate Kelly
+  const kellyResult = calculateKelly({
+    winProbability,
+    decimalOdds,
+    bankroll: bankroll.settings.totalBankroll,
+    kellyFraction: kellySettings.kellyFraction,
+    maxBetPercent: kellySettings.maxBetPercent / 100,
+    minEdgeRequired: kellySettings.minEdgeRequired / 100,
+  })
+
+  // Get formatted display
+  const formatted = formatKellyResult(kellyResult)
+  const warnings = kellyResult.warnings.map(w => w.message)
+
+  // Determine which is active
+  const activeMethod = kellySettings.enabled ? 'kelly' : 'tier'
+  const kellyAmount = kellyResult.shouldBet ? kellyResult.optimalBetSize : 0
+
+  return {
+    kellyAmount,
+    tierAmount,
+    activeMethod,
+    kellyResult,
+    display: {
+      recommended: activeMethod === 'kelly'
+        ? `$${kellyAmount} (${getKellyFractionLabel(kellySettings.kellyFraction)})`
+        : `$${tierAmount} (Tier allocation)`,
+      alternative: activeMethod === 'kelly'
+        ? `$${tierAmount} (Tier allocation)`
+        : kellyResult.shouldBet
+          ? `$${kellyAmount} (${getKellyFractionLabel(kellySettings.kellyFraction)})`
+          : 'Kelly suggests pass',
+      kellyFraction: formatted.fraction,
+      edge: formatted.edge,
+      shouldBet: kellyResult.shouldBet,
+      warnings,
+    },
+  }
+}
+
+/**
+ * Check if Kelly Criterion is enabled for current settings
+ */
+export function isKellyEnabled(bankroll: UseBankrollReturn): boolean {
+  const config = getBetSizingConfig(bankroll)
+  return config.mode === 'advanced' && (config.kellySettings?.enabled ?? false)
 }
 
 // ============================================================================
@@ -454,3 +595,4 @@ export function optimizeBetDistribution(
 // ============================================================================
 
 export type { BettingTier }
+export type { KellySettings, KellyFraction, KellyResult }
