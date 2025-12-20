@@ -23,6 +23,19 @@ import {
   type OptimizationResult,
   type HorseTier,
 } from '../lib/exotics'
+import {
+  calculateDutchBook,
+  findOptimalDutchCombinations,
+  convertToDutchCandidates,
+  formatCurrency as formatDutchCurrency,
+  loadDutchSettings,
+  EDGE_COLORS,
+  EDGE_ICONS,
+  type DutchCombination,
+  type DutchResult,
+  type DutchCandidateHorse,
+  type DutchSettings,
+} from '../lib/dutch'
 import type { UseBankrollReturn } from '../hooks/useBankroll'
 import { BankrollSummaryCard } from './BankrollSummaryCard'
 import { ExoticBuilderModal, type ExoticBetResult } from './ExoticBuilderModal'
@@ -615,6 +628,12 @@ export function BettingRecommendations({
   const [isExoticBuilderOpen, setIsExoticBuilderOpen] = useState(false)
   const [exoticBudget, setExoticBudget] = useState(20)
   const [selectedExoticType, setSelectedExoticType] = useState<ExoticBetType>('exacta')
+  // Dutch booking state
+  const [isDutchPanelOpen, setIsDutchPanelOpen] = useState(false)
+  const [isDutchBuilderOpen, setIsDutchBuilderOpen] = useState(false)
+  const [dutchStake, setDutchStake] = useState(50)
+  const [selectedDutchHorses, setSelectedDutchHorses] = useState<number[]>([])
+  const [dutchSettings] = useState<DutchSettings>(loadDutchSettings)
 
   // Check if Kelly Criterion is enabled
   const kellyEnabled = useMemo(() => isKellyEnabled(bankroll), [bankroll])
@@ -809,6 +828,61 @@ export function BettingRecommendations({
     })
   }, [horseTiers, exoticBudget, horses.length])
 
+  // Dutch booking candidates
+  const dutchCandidates: DutchCandidateHorse[] = useMemo(() => {
+    return convertToDutchCandidates(
+      horses.map(h => {
+        let tier: 1 | 2 | 3 = 3
+        if (h.score.total >= 180) tier = 1
+        else if (h.score.total >= 160) tier = 2
+
+        return {
+          programNumber: h.horse.programNumber,
+          horseName: h.horse.horseName,
+          morningLineOdds: h.horse.morningLineOdds,
+          score: h.score.total,
+          confidence: Math.min(100, 40 + (h.score.total / 240) * 60),
+          tier,
+          estimatedWinProb: undefined,
+          overlayPercent: 0,
+        }
+      })
+    )
+  }, [horses])
+
+  // Dutch optimization results
+  const dutchOptimization = useMemo(() => {
+    if (!dutchSettings.enabled || dutchCandidates.length < 2) return null
+
+    return findOptimalDutchCombinations({
+      horses: dutchCandidates,
+      minEdgeRequired: dutchSettings.minEdgeRequired,
+      maxHorses: dutchSettings.maxHorses,
+      overlayOnly: dutchSettings.overlayOnly,
+      preferMixedTiers: dutchSettings.preferMixedTiers,
+      stake: dutchStake,
+    })
+  }, [dutchCandidates, dutchSettings, dutchStake])
+
+  // Live Dutch calculation for builder
+  const liveDutchResult = useMemo((): DutchResult | null => {
+    if (selectedDutchHorses.length < 2) return null
+
+    const selectedCandidates = dutchCandidates.filter(h =>
+      selectedDutchHorses.includes(h.programNumber)
+    )
+
+    return calculateDutchBook({
+      totalStake: dutchStake,
+      horses: selectedCandidates.map(h => ({
+        programNumber: h.programNumber,
+        horseName: h.horseName,
+        decimalOdds: h.decimalOdds,
+        oddsDisplay: h.oddsDisplay,
+      })),
+    })
+  }, [selectedDutchHorses, dutchCandidates, dutchStake])
+
   const dailyBudget = bankroll.getDailyBudget()
   const spentToday = bankroll.getSpentToday()
   const remainingBudget = dailyBudget - spentToday - totalCost
@@ -927,6 +1001,81 @@ export function BettingRecommendations({
     setCopiedMessage('Exotic bet added!')
     setTimeout(() => setCopiedMessage(null), 2000)
   }, [])
+
+  // Dutch booking handlers
+  const handleToggleDutchHorse = useCallback((programNumber: number) => {
+    setSelectedDutchHorses(prev => {
+      if (prev.includes(programNumber)) {
+        return prev.filter(n => n !== programNumber)
+      }
+      if (prev.length >= (dutchSettings.maxHorses || 5)) {
+        return prev // Don't add more than max
+      }
+      return [...prev, programNumber]
+    })
+  }, [dutchSettings.maxHorses])
+
+  const handleUseDutchCombination = useCallback((combination: DutchCombination) => {
+    if (!combination.dutchResult) return
+
+    // Add all Dutch bets to the bet slip
+    const dutchBets: SelectableBet[] = combination.dutchResult.bets.map((bet, idx) => ({
+      id: `dutch-${combination.id}-${bet.programNumber}-${idx}`,
+      tier: 'tier1' as BettingTier,
+      typeName: `Dutch Win`,
+      description: `Part of ${combination.horseCount}-horse Dutch (${combination.edgePercent.toFixed(1)}% edge)`,
+      type: 'win' as const,
+      horses: [],
+      horseNumbers: [bet.programNumber],
+      amount: bet.betAmountRounded,
+      totalCost: bet.betAmountRounded,
+      windowInstruction: `"Race ${raceNumber}, $${bet.betAmountRounded.toFixed(2)} to win on the ${bet.programNumber}"`,
+      potentialReturn: { min: bet.returnIfWins, max: bet.returnIfWins },
+      confidence: combination.avgConfidence,
+      icon: 'balance',
+      isRecommended: true,
+      overlayPercent: 0,
+      evPerDollar: combination.edgePercent / 100,
+      specialCategory: null,
+      explanation: [
+        `Dutch book: ${combination.horseCount} horses for guaranteed profit`,
+        `If #${bet.programNumber} wins: return ${formatDutchCurrency(bet.returnIfWins)}`,
+        `Edge: ${combination.edgePercent.toFixed(1)}%`,
+      ],
+      narrative: `Dutch bet on #${bet.programNumber} ${bet.horseName}`,
+      scoringSources: ['dutch-optimizer'],
+      isSelected: true,
+      customAmount: bet.betAmountRounded,
+    }))
+
+    setSelectableBets(prev => [...dutchBets, ...prev])
+    setCopiedMessage(`Dutch book added: ${combination.horseCount} bets`)
+    setTimeout(() => setCopiedMessage(null), 2000)
+    setIsDutchPanelOpen(false)
+  }, [raceNumber])
+
+  const handleUseLiveDutch = useCallback(() => {
+    if (!liveDutchResult || !liveDutchResult.isValid) return
+
+    handleUseDutchCombination({
+      id: `custom-${Date.now()}`,
+      horses: dutchCandidates.filter(h => selectedDutchHorses.includes(h.programNumber)),
+      horseCount: selectedDutchHorses.length,
+      edgePercent: liveDutchResult.edgePercent,
+      edgeClass: liveDutchResult.edgePercent >= 10 ? 'good' : liveDutchResult.edgePercent >= 5 ? 'moderate' : 'marginal',
+      sumOfImpliedProbs: liveDutchResult.sumOfImpliedProbs,
+      isProfitable: liveDutchResult.hasProfitPotential,
+      description: `Custom Dutch: ${selectedDutchHorses.map(n => `#${n}`).join(', ')}`,
+      tierMix: 'Custom',
+      avgConfidence: 70,
+      avgOdds: 5,
+      recommendationStrength: 70,
+      dutchResult: liveDutchResult,
+    })
+
+    setSelectedDutchHorses([])
+    setIsDutchBuilderOpen(false)
+  }, [liveDutchResult, selectedDutchHorses, dutchCandidates, handleUseDutchCombination])
 
   // Check if we have any recommendations
   if (generatorResult.allBets.length === 0) {
@@ -1117,6 +1266,274 @@ export function BettingRecommendations({
                   <span className="material-icons">build</span>
                   Build Custom Exotic
                 </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* Dutch Book Opportunities Section */}
+      {dutchSettings.enabled && dutchCandidates.length >= 2 && (
+        <div className="dutch-optimizer-section">
+          <button
+            className="dutch-optimizer-toggle"
+            onClick={() => setIsDutchPanelOpen(!isDutchPanelOpen)}
+          >
+            <span className="material-icons">balance</span>
+            <span>Dutch Book Opportunities</span>
+            {dutchOptimization?.overallBest && (
+              <span
+                className="dutch-edge-badge"
+                style={{
+                  backgroundColor: EDGE_COLORS[dutchOptimization.overallBest.edgeClass] + '20',
+                  color: EDGE_COLORS[dutchOptimization.overallBest.edgeClass],
+                }}
+              >
+                {dutchOptimization.overallBest.edgePercent.toFixed(1)}% edge - Guaranteed profit
+              </span>
+            )}
+            <span className={`material-icons chevron ${isDutchPanelOpen ? 'open' : ''}`}>
+              expand_more
+            </span>
+          </button>
+
+          <AnimatePresence>
+            {isDutchPanelOpen && (
+              <motion.div
+                className="dutch-optimizer-panel"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {/* Stake Slider */}
+                <div className="dutch-control-group">
+                  <label className="dutch-control-label">
+                    Total stake: {formatCurrency(dutchStake)}
+                  </label>
+                  <input
+                    type="range"
+                    className="dutch-stake-slider"
+                    min={10}
+                    max={200}
+                    step={10}
+                    value={dutchStake}
+                    onChange={(e) => setDutchStake(Number(e.target.value))}
+                  />
+                  <div className="dutch-stake-labels">
+                    <span>$10</span>
+                    <span>$200</span>
+                  </div>
+                </div>
+
+                {/* Top Dutch Combinations */}
+                {dutchOptimization && dutchOptimization.combinations.length > 0 ? (
+                  <div className="dutch-combinations-list">
+                    <div className="dutch-combinations-header">
+                      <span className="material-icons">auto_awesome</span>
+                      <span>Top Dutch Opportunities</span>
+                    </div>
+
+                    {dutchOptimization.combinations.slice(0, 3).map((combo, idx) => (
+                      <div
+                        key={combo.id}
+                        className={`dutch-combination-card ${idx === 0 ? 'recommended' : ''}`}
+                      >
+                        <div className="dutch-combination-header">
+                          <div className="dutch-combination-title">
+                            <span className="dutch-combination-rank">#{idx + 1}</span>
+                            <span className="dutch-combination-name">
+                              {combo.horseCount}-Horse Dutch
+                            </span>
+                          </div>
+                          <span
+                            className="dutch-combination-badge"
+                            style={{
+                              backgroundColor: EDGE_COLORS[combo.edgeClass] + '20',
+                              color: EDGE_COLORS[combo.edgeClass],
+                            }}
+                          >
+                            <span className="material-icons" style={{ fontSize: 14 }}>
+                              {EDGE_ICONS[combo.edgeClass]}
+                            </span>
+                            {combo.edgePercent.toFixed(1)}% edge
+                          </span>
+                        </div>
+
+                        <p className="dutch-combination-horses">
+                          {combo.horses.map(h => `#${h.programNumber} ${h.horseName}`).join(', ')}
+                        </p>
+
+                        <div className="dutch-combination-stats">
+                          <div className="dutch-stat">
+                            <span className="dutch-stat-label">Stake</span>
+                            <span className="dutch-stat-value">
+                              {combo.dutchResult ? formatCurrency(combo.dutchResult.actualTotalCost) : '-'}
+                            </span>
+                          </div>
+                          <div className="dutch-stat">
+                            <span className="dutch-stat-label">Return</span>
+                            <span className="dutch-stat-value">
+                              {combo.dutchResult ? formatCurrency(combo.dutchResult.guaranteedReturn) : '-'}
+                            </span>
+                          </div>
+                          <div className="dutch-stat">
+                            <span className="dutch-stat-label">Profit</span>
+                            <span className="dutch-stat-value positive">
+                              {combo.dutchResult ? `+${formatCurrency(combo.dutchResult.guaranteedProfit)}` : '-'}
+                            </span>
+                          </div>
+                          <div className="dutch-stat">
+                            <span className="dutch-stat-label">ROI</span>
+                            <span className="dutch-stat-value positive">
+                              {combo.dutchResult ? `${combo.dutchResult.roiPercent.toFixed(0)}%` : '-'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Bet breakdown */}
+                        {combo.dutchResult && (
+                          <div className="dutch-combination-bets">
+                            {combo.dutchResult.bets.map(bet => (
+                              <div key={bet.programNumber} className="dutch-bet-row">
+                                <span className="dutch-bet-horse">#{bet.programNumber}</span>
+                                <span className="dutch-bet-amount">{formatCurrency(bet.betAmountRounded)}</span>
+                                <span className="dutch-bet-odds">{bet.oddsDisplay}</span>
+                                <span className="dutch-bet-return">
+                                  &rarr; {formatCurrency(bet.returnIfWins)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <button
+                          className="dutch-use-btn"
+                          onClick={() => handleUseDutchCombination(combo)}
+                        >
+                          <span className="material-icons">add</span>
+                          Use This Dutch
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="dutch-no-opportunities">
+                    <span className="material-icons">info</span>
+                    <p>No profitable Dutch opportunities found with current settings.</p>
+                    <span className="dutch-no-opportunities-hint">
+                      Try adjusting minimum edge requirement or include more horses.
+                    </span>
+                  </div>
+                )}
+
+                {/* Build Custom Dutch Button */}
+                <button
+                  className="dutch-build-custom-btn"
+                  onClick={() => setIsDutchBuilderOpen(!isDutchBuilderOpen)}
+                >
+                  <span className="material-icons">build</span>
+                  Build Custom Dutch
+                  <span className={`material-icons ${isDutchBuilderOpen ? 'rotated' : ''}`}>
+                    expand_more
+                  </span>
+                </button>
+
+                {/* Custom Dutch Builder */}
+                <AnimatePresence>
+                  {isDutchBuilderOpen && (
+                    <motion.div
+                      className="dutch-builder-panel"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                    >
+                      <div className="dutch-builder-header">
+                        <span>Select 2-{dutchSettings.maxHorses} horses:</span>
+                        <span className="dutch-builder-count">
+                          {selectedDutchHorses.length} selected
+                        </span>
+                      </div>
+
+                      <div className="dutch-horse-selection">
+                        {dutchCandidates.map(horse => (
+                          <button
+                            key={horse.programNumber}
+                            className={`dutch-horse-option ${selectedDutchHorses.includes(horse.programNumber) ? 'selected' : ''}`}
+                            onClick={() => handleToggleDutchHorse(horse.programNumber)}
+                          >
+                            <span className="dutch-horse-number">#{horse.programNumber}</span>
+                            <span className="dutch-horse-name">{horse.horseName}</span>
+                            <span className="dutch-horse-odds">{horse.oddsDisplay}</span>
+                            {selectedDutchHorses.includes(horse.programNumber) && (
+                              <span className="material-icons dutch-horse-check">check</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Live calculation */}
+                      {liveDutchResult && (
+                        <div className={`dutch-live-result ${liveDutchResult.hasProfitPotential ? 'profitable' : 'unprofitable'}`}>
+                          {liveDutchResult.hasProfitPotential ? (
+                            <>
+                              <div className="dutch-live-header">
+                                <span className="material-icons">check_circle</span>
+                                <span>Profitable Dutch!</span>
+                                <span className="dutch-live-edge">
+                                  {liveDutchResult.edgePercent.toFixed(1)}% edge
+                                </span>
+                              </div>
+                              <div className="dutch-live-stats">
+                                <div className="dutch-live-stat">
+                                  <span>Stake:</span>
+                                  <span>{formatCurrency(liveDutchResult.actualTotalCost)}</span>
+                                </div>
+                                <div className="dutch-live-stat">
+                                  <span>Return:</span>
+                                  <span>{formatCurrency(liveDutchResult.guaranteedReturn)}</span>
+                                </div>
+                                <div className="dutch-live-stat">
+                                  <span>Profit:</span>
+                                  <span className="positive">+{formatCurrency(liveDutchResult.guaranteedProfit)}</span>
+                                </div>
+                              </div>
+                              <button
+                                className="dutch-use-live-btn"
+                                onClick={handleUseLiveDutch}
+                              >
+                                <span className="material-icons">add</span>
+                                Add to Bet Slip
+                              </button>
+                            </>
+                          ) : (
+                            <div className="dutch-live-warning">
+                              <span className="material-icons">warning</span>
+                              <span>
+                                No profit possible: book is {(liveDutchResult.sumOfImpliedProbs * 100).toFixed(1)}%
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {selectedDutchHorses.length < 2 && (
+                        <div className="dutch-builder-hint">
+                          <span className="material-icons">info</span>
+                          Select at least 2 horses to see Dutch calculation
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Dutch explanation */}
+                <div className="dutch-explanation">
+                  <span className="material-icons">help_outline</span>
+                  <p>
+                    Dutch booking spreads risk across multiple horses. If any selected horse wins, you're guaranteed the same profit regardless of which one wins.
+                  </p>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
