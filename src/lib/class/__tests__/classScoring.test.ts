@@ -110,7 +110,7 @@ function createHorseWithClassData(
 ) {
   const horse = createHorseEntry(horseOverrides) as unknown as Record<string, unknown>
   horse.__mockClassData = classData
-  return horse
+  return horse as unknown as ReturnType<typeof createHorseEntry>
 }
 
 describe('Class Scoring', () => {

@@ -30,7 +30,7 @@ import {
   createWorkout,
   createMedication,
 } from '../../../__tests__/fixtures/testHelpers'
-import type { PaceScenarioAnalysis, RunningStyleProfile, RunningStyleEvidence } from '../../scoring/paceAnalysis'
+import type { PaceScenarioAnalysis, RunningStyleProfile } from '../../scoring/paceAnalysis'
 import type { ClassScoreResult } from '../../class/classScoring'
 import type { EquipmentScoreResult } from '../../equipment/equipmentScoring'
 
