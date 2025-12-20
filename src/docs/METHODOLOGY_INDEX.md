@@ -1,4 +1,4 @@
-# HORSE MONSTER METHODOLOGY INDEX
+# FURLONG METHODOLOGY INDEX
 
 ## Master Documentation Reference
 
