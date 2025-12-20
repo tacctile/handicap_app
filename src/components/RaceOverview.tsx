@@ -9,11 +9,13 @@ import {
   getConfidenceBorderColor,
 } from '../lib/confidence'
 import { SCORE_THRESHOLDS } from '../lib/scoring'
+import { getDiamondColor, getDiamondBgColor } from '../lib/diamonds'
 
 interface RaceOverviewProps {
   parsedData: ParsedDRFFile
   raceConfidences: Map<number, number>
   topHorsesByRace: Map<number, ScoredHorse[]>
+  diamondCountByRace?: Map<number, number>
   onRaceSelect: (raceIndex: number) => void
 }
 
@@ -56,6 +58,30 @@ const ConfidenceBadge = memo(function ConfidenceBadge({
   )
 })
 
+// Diamond badge component
+interface DiamondBadgeProps {
+  count: number
+}
+
+const DiamondBadge = memo(function DiamondBadge({ count }: DiamondBadgeProps) {
+  if (count === 0) return null
+
+  return (
+    <div
+      className="diamond-badge"
+      style={{
+        backgroundColor: getDiamondBgColor(0.2),
+        borderColor: getDiamondColor(),
+        color: getDiamondColor(),
+      }}
+      title={`${count} Hidden Gem${count > 1 ? 's' : ''} in this race`}
+    >
+      <span className="diamond-badge-icon">💎</span>
+      {count > 1 && <span className="diamond-badge-count">{count}</span>}
+    </div>
+  )
+})
+
 // Race card component
 interface RaceCardProps {
   race: ParsedRace
@@ -63,6 +89,7 @@ interface RaceCardProps {
   confidence: number
   topHorses: ScoredHorse[]
   scratchedCount: number
+  diamondCount: number
   onClick: () => void
 }
 
@@ -72,6 +99,7 @@ const RaceCard = memo(function RaceCard({
   confidence,
   topHorses,
   scratchedCount,
+  diamondCount,
   onClick,
 }: RaceCardProps) {
   const { header, horses } = race
@@ -79,6 +107,9 @@ const RaceCard = memo(function RaceCard({
 
   // Check if there's a Tier 1 pick (180+ points)
   const hasTier1Pick = topHorses.some(h => h.score.total >= SCORE_THRESHOLDS.strong)
+
+  // Check for diamonds
+  const hasDiamonds = diamondCount > 0
 
   // Format surface nicely
   const surfaceLabel = header.surface.charAt(0).toUpperCase() + header.surface.slice(1)
@@ -88,7 +119,7 @@ const RaceCard = memo(function RaceCard({
 
   return (
     <motion.button
-      className={`race-card ${hasTier1Pick ? 'race-card-has-tier1' : ''}`}
+      className={`race-card ${hasTier1Pick ? 'race-card-has-tier1' : ''} ${hasDiamonds ? 'race-card-has-diamonds' : ''}`}
       onClick={onClick}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
@@ -158,6 +189,13 @@ const RaceCard = memo(function RaceCard({
         <ConfidenceBadge confidence={confidence} />
       </div>
 
+      {/* Diamond indicator */}
+      {hasDiamonds && (
+        <div className="race-card-diamond-indicator">
+          <DiamondBadge count={diamondCount} />
+        </div>
+      )}
+
       {/* Tier 1 indicator */}
       {hasTier1Pick && (
         <div className="race-card-tier1-indicator" title="Tier 1 pick available">
@@ -177,6 +215,7 @@ export const RaceOverview = memo(function RaceOverview({
   parsedData,
   raceConfidences,
   topHorsesByRace,
+  diamondCountByRace,
   onRaceSelect,
 }: RaceOverviewProps) {
   // Handle keyboard navigation
@@ -197,6 +236,7 @@ export const RaceOverview = memo(function RaceOverview({
   const stats = useMemo(() => {
     let totalHorses = 0
     let tier1Races = 0
+    let totalDiamonds = 0
 
     parsedData.races.forEach((race, index) => {
       totalHorses += race.horses.length
@@ -204,10 +244,11 @@ export const RaceOverview = memo(function RaceOverview({
       if (topHorses.some(h => h.score.total >= SCORE_THRESHOLDS.strong)) {
         tier1Races++
       }
+      totalDiamonds += diamondCountByRace?.get(index) || 0
     })
 
-    return { totalHorses, tier1Races }
-  }, [parsedData.races, topHorsesByRace])
+    return { totalHorses, tier1Races, totalDiamonds }
+  }, [parsedData.races, topHorsesByRace, diamondCountByRace])
 
   return (
     <div className="race-overview">
@@ -234,6 +275,18 @@ export const RaceOverview = memo(function RaceOverview({
               </span>
             </>
           )}
+          {stats.totalDiamonds > 0 && (
+            <>
+              <span className="race-overview-stat-divider">•</span>
+              <span
+                className="race-overview-stat race-overview-stat-diamonds"
+                style={{ color: getDiamondColor() }}
+              >
+                <span className="race-overview-diamond-icon">💎</span>
+                <span className="tabular-nums">{stats.totalDiamonds}</span> Hidden Gem{stats.totalDiamonds > 1 ? 's' : ''}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
@@ -254,6 +307,7 @@ export const RaceOverview = memo(function RaceOverview({
               confidence={raceConfidences.get(index) || 0}
               topHorses={topHorsesByRace.get(index) || []}
               scratchedCount={0}
+              diamondCount={diamondCountByRace?.get(index) || 0}
               onClick={() => onRaceSelect(index)}
             />
           ))}
