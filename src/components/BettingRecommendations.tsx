@@ -8,7 +8,14 @@ import {
   formatCurrency,
   type BetRecommendation,
   type BettingTier,
+  type ClassifiedHorse,
 } from '../lib/betting'
+import {
+  formatOverlayPercent,
+  formatEV,
+  getOverlayColor,
+  VALUE_LABELS,
+} from '../lib/scoring'
 import type { UseBankrollReturn } from '../hooks/useBankroll'
 import { BankrollSummaryCard } from './BankrollSummaryCard'
 
@@ -19,12 +26,19 @@ interface BettingRecommendationsProps {
   onOpenBankrollSettings: () => void
 }
 
-// Extended bet with selection state
+// Extended bet with selection state and overlay data
 interface SelectableBet extends BetRecommendation {
   id: string
   tier: BettingTier
   isSelected: boolean
   customAmount: number
+  /** Top horse overlay info for display */
+  topHorseOverlay?: {
+    overlayPercent: number
+    evPerDollar: number
+    valueClass: string
+    isPositiveEV: boolean
+  }
 }
 
 // Tier badge colors
@@ -41,7 +55,7 @@ const TIER_ICONS: Record<BettingTier, string> = {
 }
 
 // Preset types
-type PresetType = 'allTier1' | 'conservative' | 'valueHunter' | 'maxCoverage' | 'clearAll'
+type PresetType = 'allTier1' | 'conservative' | 'valueHunter' | 'positiveEV' | 'maxCoverage' | 'clearAll'
 
 interface PresetConfig {
   id: PresetType
@@ -52,10 +66,11 @@ interface PresetConfig {
 
 const PRESETS: PresetConfig[] = [
   { id: 'allTier1', label: 'All Tier 1', icon: 'workspace_premium', description: 'Select all top tier bets' },
-  { id: 'conservative', label: 'Conservative', icon: 'shield', description: 'Low risk selections' },
-  { id: 'valueHunter', label: 'Value Hunter', icon: 'search', description: 'High value bets only' },
-  { id: 'maxCoverage', label: 'Max Coverage', icon: 'grid_view', description: 'Maximum bet coverage' },
-  { id: 'clearAll', label: 'Clear All', icon: 'clear_all', description: 'Deselect all bets' },
+  { id: 'positiveEV', label: '+EV Only', icon: 'trending_up', description: 'Positive expected value only' },
+  { id: 'valueHunter', label: 'Overlays', icon: 'local_fire_department', description: '25%+ overlay bets' },
+  { id: 'conservative', label: 'Safe', icon: 'shield', description: 'Low risk selections' },
+  { id: 'maxCoverage', label: 'All', icon: 'grid_view', description: 'Maximum bet coverage' },
+  { id: 'clearAll', label: 'Clear', icon: 'clear_all', description: 'Deselect all bets' },
 ]
 
 // Bet Slip Modal Component
@@ -284,6 +299,29 @@ function InteractiveBetCard({
               </span>
             ))}
           </div>
+
+          {/* Overlay info badge */}
+          {bet.topHorseOverlay && (
+            <div className="bet-overlay-info">
+              <span
+                className="bet-overlay-badge"
+                style={{
+                  color: getOverlayColor(bet.topHorseOverlay.overlayPercent),
+                  backgroundColor: `${getOverlayColor(bet.topHorseOverlay.overlayPercent)}15`,
+                }}
+              >
+                {formatOverlayPercent(bet.topHorseOverlay.overlayPercent)}
+              </span>
+              <span
+                className="bet-ev-badge"
+                style={{
+                  color: bet.topHorseOverlay.isPositiveEV ? '#22c55e' : '#9ca3af',
+                }}
+              >
+                EV: {formatEV(bet.topHorseOverlay.evPerDollar)}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Amount Input */}
@@ -583,22 +621,45 @@ export function BettingRecommendations({
     })
   }, [horses, bankrollSettings, unitSize])
 
+  // Get classified horses for overlay data
+  const classifiedHorsesMap = useMemo(() => {
+    const tierGroups = classifyHorses(horses)
+    const map = new Map<number, ClassifiedHorse>()
+    for (const group of tierGroups) {
+      for (const horse of group.horses) {
+        map.set(horse.horse.programNumber, horse)
+      }
+    }
+    return map
+  }, [horses])
+
   // Initialize selectable bets when recommendations change
   useEffect(() => {
     const newSelectableBets: SelectableBet[] = []
     recommendations.forEach((tierRec) => {
       tierRec.bets.forEach((bet, index) => {
+        // Get overlay info from the top horse in the bet
+        const topHorseNumber = bet.horseNumbers[0]
+        const topClassified = classifiedHorsesMap.get(topHorseNumber)
+        const topHorseOverlay = topClassified ? {
+          overlayPercent: topClassified.overlay.overlayPercent,
+          evPerDollar: topClassified.overlay.evPerDollar,
+          valueClass: topClassified.overlay.valueClass,
+          isPositiveEV: topClassified.overlay.isPositiveEV,
+        } : undefined
+
         newSelectableBets.push({
           ...bet,
           id: `${tierRec.tier}-${index}`,
           tier: tierRec.tier,
           isSelected: false,
           customAmount: bet.totalCost,
+          topHorseOverlay,
         })
       })
     })
     setSelectableBets(newSelectableBets)
-  }, [recommendations])
+  }, [recommendations, classifiedHorsesMap])
 
   // Check for mobile
   useEffect(() => {
@@ -660,15 +721,22 @@ export function BettingRecommendations({
         switch (preset) {
           case 'allTier1':
             return prev.map((bet) => ({ ...bet, isSelected: bet.tier === 'tier1' }))
+          case 'positiveEV':
+            // Select only bets with positive expected value
+            return prev.map((bet) => ({
+              ...bet,
+              isSelected: bet.topHorseOverlay?.isPositiveEV === true,
+            }))
+          case 'valueHunter':
+            // Select bets with 25%+ overlay
+            return prev.map((bet) => ({
+              ...bet,
+              isSelected: (bet.topHorseOverlay?.overlayPercent ?? 0) >= 25,
+            }))
           case 'conservative':
             return prev.map((bet) => ({
               ...bet,
               isSelected: bet.confidence >= 70 && bet.tier !== 'tier3',
-            }))
-          case 'valueHunter':
-            return prev.map((bet) => ({
-              ...bet,
-              isSelected: bet.tier === 'tier2' || bet.tier === 'tier3',
             }))
           case 'maxCoverage':
             return prev.map((bet) => ({ ...bet, isSelected: true }))

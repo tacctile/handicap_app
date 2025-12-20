@@ -4321,3 +4321,499 @@ select:focus-visible {
     display: none;
   }
 }
+
+/* ========================================
+   OVERLAY & VALUE ANALYSIS STYLES
+   ======================================== */
+
+/* Overlay Badge - Table Cells */
+.overlay-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.overlay-badge-compact {
+  padding: 0.125rem 0.375rem;
+  font-size: 0.7rem;
+}
+
+.overlay-badge .overlay-icon {
+  font-size: 0.875rem;
+}
+
+.overlay-badge-compact .overlay-icon {
+  font-size: 0.75rem;
+}
+
+/* Fair Odds Display */
+.fair-odds-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.fair-odds-value {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.win-prob-value {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+}
+
+/* EV Display */
+.ev-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.ev-value {
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.ev-value.positive {
+  color: #10b981;
+}
+
+.ev-value.negative {
+  color: #ef4444;
+}
+
+.ev-percent {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+}
+
+/* Value Plays Detector Badge */
+.value-plays-detector {
+  position: relative;
+  display: inline-block;
+}
+
+.value-plays-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.value-plays-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+}
+
+.value-plays-badge .badge-icon {
+  font-size: 1rem;
+}
+
+.value-plays-badge .badge-count {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.value-plays-badge .chevron {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+}
+
+.value-plays-badge .chevron.expanded {
+  transform: rotate(180deg);
+}
+
+/* Value Plays Dropdown */
+.value-plays-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.5rem;
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 280px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.value-plays-dropdown-header {
+  padding: 0.75rem 1rem;
+  background: var(--surface-secondary);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.value-plays-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.value-play-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.value-play-item:last-child {
+  border-bottom: none;
+}
+
+.value-play-item:hover {
+  background: var(--surface-hover);
+}
+
+.value-play-horse {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.value-play-pp {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-tertiary);
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+}
+
+.value-play-name {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.value-play-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.value-play-overlay {
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.value-play-ev {
+  font-size: 0.75rem;
+  color: #10b981;
+  font-weight: 500;
+}
+
+/* Overlay Analysis Box in Modal */
+.overlay-analysis-box {
+  background: var(--surface-secondary);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+.overlay-main-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.overlay-main-badge .overlay-icon {
+  font-size: 1.5rem;
+}
+
+.overlay-main-info {
+  flex: 1;
+}
+
+.overlay-main-label {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.125rem;
+}
+
+.overlay-main-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.overlay-main-class {
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+/* Overlay Details Grid */
+.overlay-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.overlay-detail-item {
+  background: var(--surface-card);
+  padding: 0.75rem;
+  border-radius: 6px;
+  text-align: center;
+  border: 1px solid var(--border-subtle);
+}
+
+.overlay-detail-label {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.overlay-detail-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.overlay-detail-value.positive {
+  color: #10b981;
+}
+
+.overlay-detail-value.negative {
+  color: #ef4444;
+}
+
+/* Overlay Recommendation Box */
+.overlay-recommendation-box {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  border-left: 4px solid;
+}
+
+.overlay-recommendation-box.positive {
+  background: rgba(16, 185, 129, 0.1);
+  border-left-color: #10b981;
+}
+
+.overlay-recommendation-box.negative {
+  background: rgba(239, 68, 68, 0.1);
+  border-left-color: #ef4444;
+}
+
+.overlay-recommendation-box.neutral {
+  background: rgba(156, 163, 175, 0.1);
+  border-left-color: #9ca3af;
+}
+
+.overlay-recommendation-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.overlay-recommendation-text {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.overlay-bet-multiplier {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  background: rgba(16, 185, 129, 0.2);
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: #10b981;
+}
+
+/* EV Explanation */
+.ev-explanation {
+  margin-top: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  background: var(--surface-card);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+  border: 1px dashed var(--border-subtle);
+}
+
+/* Betting Recommendations Overlay Info */
+.bet-overlay-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.bet-overlay-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.bet-ev-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.bet-ev-badge.negative {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+/* Mobile Overlay Row */
+.mobile-overlay-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 0.5rem;
+}
+
+.mobile-overlay-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  min-width: 60px;
+}
+
+.mobile-overlay-label {
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+.mobile-overlay-value {
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+/* Highlighted Row Animation */
+.race-row-highlighted {
+  animation: highlightPulse 2s ease-out;
+}
+
+.mobile-card-highlighted {
+  animation: highlightPulse 2s ease-out;
+}
+
+@keyframes highlightPulse {
+  0% {
+    background-color: rgba(16, 185, 129, 0.3);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.5);
+  }
+  50% {
+    background-color: rgba(16, 185, 129, 0.15);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+/* Hide trainer/jockey on smaller screens */
+@media (max-width: 1200px) {
+  .hide-on-small {
+    display: none;
+  }
+}
+
+/* Responsive Overlay Columns */
+@media (max-width: 900px) {
+  .overlay-badge {
+    padding: 0.125rem 0.25rem;
+    font-size: 0.65rem;
+  }
+
+  .fair-odds-value,
+  .ev-value {
+    font-size: 0.75rem;
+  }
+
+  .win-prob-value,
+  .ev-percent {
+    display: none;
+  }
+}
+
+/* Mobile Value Plays Detector */
+@media (max-width: 767px) {
+  .value-plays-dropdown {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    top: auto;
+    bottom: 1rem;
+    min-width: auto;
+    max-height: 50vh;
+  }
+
+  .overlay-details-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  .overlay-main-badge {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .overlay-main-class {
+    margin-top: 0.5rem;
+  }
+}

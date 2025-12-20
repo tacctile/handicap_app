@@ -1,6 +1,12 @@
 import type { HorseEntry } from '../../types/drf'
 import type { HorseScore } from '../scoring'
-import { parseOdds } from '../scoring'
+import {
+  parseOdds,
+  analyzeOverlay,
+  calculateTierAdjustment,
+  type OverlayAnalysis,
+  type ValueClassification,
+} from '../scoring'
 
 // Tier definitions
 export type BettingTier = 'tier1' | 'tier2' | 'tier3'
@@ -44,7 +50,17 @@ export interface ClassifiedHorse {
   odds: number
   oddsDisplay: string
   tier: BettingTier
-  valueScore: number // How much overlay exists
+  valueScore: number // How much overlay exists (legacy)
+  /** Full overlay analysis */
+  overlay: OverlayAnalysis
+  /** Adjusted score considering overlay */
+  adjustedScore: number
+  /** Whether this is a special case (diamond in rough, fool's gold) */
+  isSpecialCase: boolean
+  /** Special case type if applicable */
+  specialCaseType: 'diamond_in_rough' | 'fool_gold' | null
+  /** Tier adjustment reasoning */
+  tierAdjustmentReasoning: string
 }
 
 export interface TierGroup {
@@ -83,15 +99,40 @@ function calculateValueScore(score: number, odds: number): number {
 
 /**
  * Determine which tier a horse belongs to based on score
+ * Uses adjusted score (considering overlay) for tier assignment
+ *
+ * Enhanced logic:
+ * - High score + overlay = bump up tier
+ * - High score + underlay = bump down tier
+ * - Diamond in Rough (score 140-170 + 150%+ overlay) = Tier 2 with special flag
  */
-function determineTier(score: number, confidence: number): BettingTier | null {
-  if (score >= TIER_CONFIG.tier1.minScore && confidence >= TIER_CONFIG.tier1.minConfidence) {
-    return 'tier1'
-  }
-  if (score >= TIER_CONFIG.tier2.minScore && score <= TIER_CONFIG.tier2.maxScore) {
+function determineTier(
+  rawScore: number,
+  adjustedScore: number,
+  confidence: number,
+  isSpecialCase: boolean,
+  specialCaseType: 'diamond_in_rough' | 'fool_gold' | null
+): BettingTier | null {
+  // Special case: Diamond in Rough - force into Tier 2 (value play)
+  if (isSpecialCase && specialCaseType === 'diamond_in_rough') {
     return 'tier2'
   }
-  if (score >= TIER_CONFIG.tier3.minScore && score <= TIER_CONFIG.tier3.maxScore) {
+
+  // Special case: Fool's Gold - demote from Tier 1
+  if (isSpecialCase && specialCaseType === 'fool_gold' && rawScore >= TIER_CONFIG.tier1.minScore) {
+    return 'tier2'
+  }
+
+  // Use adjusted score for tier determination
+  const scoreToUse = adjustedScore
+
+  if (scoreToUse >= TIER_CONFIG.tier1.minScore && confidence >= TIER_CONFIG.tier1.minConfidence) {
+    return 'tier1'
+  }
+  if (scoreToUse >= TIER_CONFIG.tier2.minScore && scoreToUse <= TIER_CONFIG.tier2.maxScore + 20) {
+    return 'tier2'
+  }
+  if (scoreToUse >= TIER_CONFIG.tier3.minScore && scoreToUse <= TIER_CONFIG.tier3.maxScore + 20) {
     return 'tier3'
   }
   return null // Below threshold for betting
@@ -99,17 +140,21 @@ function determineTier(score: number, confidence: number): BettingTier | null {
 
 /**
  * Check if a horse has a specific overlay angle for Tier 3
- * Overlay angle: odds are significantly higher than score suggests
+ * Now uses the enhanced overlay analysis
  */
-function hasOverlayAngle(score: number, odds: number): boolean {
-  // For tier 3, we want horses where odds offer value
-  // If odds are at least 2x what the score suggests, it's an overlay
-  const expectedOdds = (1 / (score / 240)) - 1
-  return odds >= expectedOdds * 1.5
+function hasOverlayAngle(overlayPercent: number): boolean {
+  // For tier 3, we want horses where odds offer significant value
+  // At least 25% overlay for tier 3 consideration
+  return overlayPercent >= 25
 }
 
 /**
  * Classify horses into betting tiers
+ *
+ * Enhanced with overlay analysis:
+ * - Uses adjusted scores for tier determination
+ * - Identifies special cases (Diamond in Rough, Fool's Gold)
+ * - Includes full overlay analysis in classified horse data
  *
  * @param horses Array of horse entries
  * @param scores Map of horse index to score
@@ -127,10 +172,24 @@ export function classifyHorses(
 
     const odds = parseOdds(horse.morningLineOdds)
     const confidence = calculateConfidence(score.total)
-    const tier = determineTier(score.total, confidence)
 
-    // For tier 3, also check for overlay angle
-    if (tier === 'tier3' && !hasOverlayAngle(score.total, odds)) {
+    // Perform full overlay analysis
+    const overlay = analyzeOverlay(score.total, horse.morningLineOdds)
+
+    // Calculate tier adjustment based on overlay
+    const tierAdjustment = calculateTierAdjustment(score.total, overlay.overlayPercent)
+
+    // Determine tier using adjusted score and special case info
+    const tier = determineTier(
+      score.total,
+      tierAdjustment.adjustedScore,
+      confidence,
+      tierAdjustment.isSpecialCase,
+      tierAdjustment.specialCaseType
+    )
+
+    // For tier 3, also check for overlay angle (using new method)
+    if (tier === 'tier3' && !hasOverlayAngle(overlay.overlayPercent)) {
       continue // Skip tier 3 horses without overlay angle
     }
 
@@ -144,22 +203,43 @@ export function classifyHorses(
         oddsDisplay: horse.morningLineOdds,
         tier,
         valueScore: calculateValueScore(score.total, odds),
+        overlay,
+        adjustedScore: tierAdjustment.adjustedScore,
+        isSpecialCase: tierAdjustment.isSpecialCase,
+        specialCaseType: tierAdjustment.specialCaseType,
+        tierAdjustmentReasoning: tierAdjustment.reasoning,
       })
     }
   }
 
-  // Group by tier
+  // Group by tier with enhanced sorting
   const tier1Horses = classifiedHorses
     .filter(h => h.tier === 'tier1')
-    .sort((a, b) => b.score.total - a.score.total)
+    .sort((a, b) => {
+      // Sort by adjusted score, then by overlay for ties
+      if (b.adjustedScore !== a.adjustedScore) return b.adjustedScore - a.adjustedScore
+      return b.overlay.overlayPercent - a.overlay.overlayPercent
+    })
 
   const tier2Horses = classifiedHorses
     .filter(h => h.tier === 'tier2')
-    .sort((a, b) => b.valueScore - a.valueScore) // Sort by value for tier 2
+    .sort((a, b) => {
+      // Diamond in Rough horses first, then by overlay percentage
+      if (a.isSpecialCase && a.specialCaseType === 'diamond_in_rough' && !b.isSpecialCase) return -1
+      if (b.isSpecialCase && b.specialCaseType === 'diamond_in_rough' && !a.isSpecialCase) return 1
+      // Then sort by overlay percentage (best value first)
+      return b.overlay.overlayPercent - a.overlay.overlayPercent
+    })
 
   const tier3Horses = classifiedHorses
     .filter(h => h.tier === 'tier3')
-    .sort((a, b) => b.odds - a.odds) // Highest odds first for tier 3
+    .sort((a, b) => {
+      // Sort by overlay percentage first (best value), then by odds
+      if (b.overlay.overlayPercent !== a.overlay.overlayPercent) {
+        return b.overlay.overlayPercent - a.overlay.overlayPercent
+      }
+      return b.odds - a.odds // Highest odds as tiebreaker
+    })
 
   const tierGroups: TierGroup[] = []
 

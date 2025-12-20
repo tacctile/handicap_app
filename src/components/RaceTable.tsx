@@ -12,7 +12,18 @@ import {
   getScoreColor,
   getScoreTier,
   SCORE_THRESHOLDS,
+  analyzeOverlay,
+  detectValuePlays,
+  getValuePlaysSummary,
+  formatOverlayPercent,
+  formatEV,
+  getOverlayColor,
+  getOverlayBgColor,
+  VALUE_LABELS,
+  VALUE_ICONS,
   type HorseScore,
+  type OverlayAnalysis,
+  type ValuePlay,
 } from '../lib/scoring'
 import { getTrackBiasSummary } from '../lib/trackIntelligence'
 
@@ -149,6 +160,142 @@ const RankBadge = memo(function RankBadge({ rank }: RankBadgeProps) {
       }}
     >
       #{rank}
+    </div>
+  )
+})
+
+// Overlay badge component for displaying value
+interface OverlayBadgeProps {
+  overlay: OverlayAnalysis
+  compact?: boolean
+}
+
+const OverlayBadge = memo(function OverlayBadge({ overlay, compact = false }: OverlayBadgeProps) {
+  const color = getOverlayColor(overlay.overlayPercent)
+  const bgColor = getOverlayBgColor(overlay.overlayPercent)
+
+  if (compact) {
+    return (
+      <span
+        className="overlay-badge-compact"
+        style={{
+          backgroundColor: bgColor,
+          color: color,
+          borderColor: `${color}40`,
+        }}
+        title={`${overlay.overlayDescription}\nEV: ${formatEV(overlay.evPerDollar)}/dollar`}
+      >
+        {formatOverlayPercent(overlay.overlayPercent)}
+      </span>
+    )
+  }
+
+  return (
+    <div
+      className="overlay-badge"
+      style={{
+        backgroundColor: bgColor,
+        color: color,
+        borderColor: `${color}40`,
+      }}
+      title={overlay.overlayDescription}
+    >
+      <span className="overlay-percent">{formatOverlayPercent(overlay.overlayPercent)}</span>
+      <span className="overlay-label">{VALUE_LABELS[overlay.valueClass]}</span>
+    </div>
+  )
+})
+
+// Fair odds display component
+interface FairOddsDisplayProps {
+  overlay: OverlayAnalysis
+}
+
+const FairOddsDisplay = memo(function FairOddsDisplay({ overlay }: FairOddsDisplayProps) {
+  return (
+    <span
+      className="fair-odds-display"
+      title={`Fair odds based on score\nWin probability: ${overlay.winProbability.toFixed(1)}%`}
+    >
+      {overlay.fairOddsDisplay}
+    </span>
+  )
+})
+
+// EV display component
+interface EVDisplayProps {
+  overlay: OverlayAnalysis
+}
+
+const EVDisplay = memo(function EVDisplay({ overlay }: EVDisplayProps) {
+  const isPositive = overlay.evPerDollar > 0
+  const color = isPositive ? '#22c55e' : overlay.evPerDollar < -0.05 ? '#ef4444' : '#9ca3af'
+
+  return (
+    <span
+      className="ev-display"
+      style={{ color }}
+      title={`Expected Value per $1 wagered\n${overlay.isPositiveEV ? 'Profitable long-term bet' : 'Not profitable long-term'}`}
+    >
+      {formatEV(overlay.evPerDollar)}
+    </span>
+  )
+})
+
+// Value plays detector badge for race header
+interface ValuePlaysDetectorProps {
+  valuePlays: ValuePlay[]
+  onHighlightHorse?: (index: number) => void
+}
+
+const ValuePlaysDetector = memo(function ValuePlaysDetector({ valuePlays, onHighlightHorse }: ValuePlaysDetectorProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const summary = useMemo(() => getValuePlaysSummary(valuePlays), [valuePlays])
+
+  if (summary.totalCount === 0) return null
+
+  return (
+    <div className="value-plays-detector">
+      <button
+        type="button"
+        className="value-plays-badge"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <Icon name="local_fire_department" className="value-plays-icon" />
+        <span className="value-plays-text">
+          {summary.totalCount} Value Play{summary.totalCount > 1 ? 's' : ''} Detected
+        </span>
+        {summary.massiveCount > 0 && (
+          <span className="value-plays-massive-badge">{summary.massiveCount} HOT</span>
+        )}
+        <Icon name={isExpanded ? 'expand_less' : 'expand_more'} className="value-plays-chevron" />
+      </button>
+
+      {isExpanded && (
+        <div className="value-plays-dropdown">
+          {valuePlays.slice(0, 5).map((play) => (
+            <button
+              key={play.horseIndex}
+              type="button"
+              className="value-play-item"
+              onClick={() => onHighlightHorse?.(play.horseIndex)}
+            >
+              <span className="value-play-number">#{play.programNumber}</span>
+              <span className="value-play-name">{play.horseName}</span>
+              <span
+                className="value-play-overlay"
+                style={{ color: getOverlayColor(play.overlayPercent) }}
+              >
+                {formatOverlayPercent(play.overlayPercent)}
+              </span>
+              <span className="value-play-ev">{formatEV(play.evPerDollar)}</span>
+            </button>
+          ))}
+          {valuePlays.length > 5 && (
+            <div className="value-plays-more">+{valuePlays.length - 5} more</div>
+          )}
+        </div>
+      )}
     </div>
   )
 })
@@ -292,6 +439,8 @@ interface RaceHeaderProps {
   onReset: () => void
   scratchesCount: number
   oddsChangesCount: number
+  valuePlays: ValuePlay[]
+  onHighlightHorse?: (index: number) => void
 }
 
 const RaceHeader = memo(function RaceHeader({
@@ -302,6 +451,8 @@ const RaceHeader = memo(function RaceHeader({
   onReset,
   scratchesCount,
   oddsChangesCount,
+  valuePlays,
+  onHighlightHorse,
 }: RaceHeaderProps) {
   const { header } = race
 
@@ -336,6 +487,9 @@ const RaceHeader = memo(function RaceHeader({
             </div>
           </div>
         </div>
+
+        {/* Value Plays Detection Badge */}
+        <ValuePlaysDetector valuePlays={valuePlays} onHighlightHorse={onHighlightHorse} />
 
         {/* Track Bias Information */}
         <TrackBiasInfo
@@ -393,6 +547,9 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
   // Modal state
   const [selectedHorse, setSelectedHorse] = useState<SelectedHorseData | null>(null)
 
+  // Highlighted horse index (from value plays click)
+  const [highlightedHorseIndex, setHighlightedHorseIndex] = useState<number | null>(null)
+
   // Track previous scores for change detection
   const prevScoresRef = useRef<Map<number, number>>(new Map())
 
@@ -406,6 +563,43 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
       trackCondition
     )
   }, [horses, header, getOdds, isScratched, trackCondition])
+
+  // Calculate overlay analysis for each horse
+  const overlaysByIndex = useMemo(() => {
+    const overlays: Map<number, OverlayAnalysis> = new Map()
+    for (const { horse, index, score } of scoredHorses) {
+      if (!score.isScratched) {
+        const currentOdds = getOdds(index, horse.morningLineOdds)
+        overlays.set(index, analyzeOverlay(score.total, currentOdds))
+      }
+    }
+    return overlays
+  }, [scoredHorses, getOdds])
+
+  // Detect value plays for the race header badge
+  const valuePlays = useMemo(() => {
+    const horsesData = scoredHorses.map(({ horse, index, score }) => ({
+      horseIndex: index,
+      horseName: horse.horseName,
+      programNumber: horse.programNumber,
+      score: score.total,
+      currentOdds: getOdds(index, horse.morningLineOdds),
+      isScratched: score.isScratched,
+    }))
+    return detectValuePlays(horsesData, 10) // 10% minimum overlay
+  }, [scoredHorses, getOdds])
+
+  // Handle highlight horse from value plays click
+  const handleHighlightHorse = useCallback((index: number) => {
+    setHighlightedHorseIndex(index)
+    // Auto-clear highlight after 3 seconds
+    setTimeout(() => setHighlightedHorseIndex(null), 3000)
+    // Scroll to the horse row
+    const row = document.querySelector(`[data-horse-index="${index}"]`)
+    if (row) {
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [])
 
   // Detect score changes and track them
   const changedScoreIndices = useMemo(() => {
@@ -500,6 +694,8 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
         onReset={handleReset}
         scratchesCount={raceState.scratchedHorses.size}
         oddsChangesCount={Object.keys(raceState.updatedOdds).length}
+        valuePlays={valuePlays}
+        onHighlightHorse={handleHighlightHorse}
       />
 
       {/* Desktop/Tablet Table View - visible at 768px+ */}
@@ -513,9 +709,12 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
               <th className="w-20 text-center">Score</th>
               <th className="w-16 text-center">PP</th>
               <th className="text-left">Horse</th>
-              <th className="text-left">Trainer</th>
-              <th className="text-left">Jockey</th>
-              <th className="w-28 text-right">Odds</th>
+              <th className="text-left hide-on-small">Trainer</th>
+              <th className="text-left hide-on-small">Jockey</th>
+              <th className="w-20 text-right">Odds</th>
+              <th className="w-16 text-center" title="Fair Odds based on score">Fair</th>
+              <th className="w-20 text-center" title="Overlay percentage (value)">Overlay</th>
+              <th className="w-16 text-center" title="Expected Value per $1">EV</th>
               <th className="w-10"></th>
             </tr>
           </thead>
@@ -526,11 +725,14 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
               const oddsChanged = hasOddsChanged(index)
               const scoreChanged = changedScoreIndices.has(index)
               const oddsHighlighted = calculationState.changedOddsIndices.has(index)
+              const overlay = overlaysByIndex.get(index)
+              const isHighlighted = highlightedHorseIndex === index
 
               return (
                 <tr
                   key={index}
-                  className={`race-row race-row-clickable ${scratched ? 'race-row-scratched' : ''}`}
+                  data-horse-index={index}
+                  className={`race-row race-row-clickable ${scratched ? 'race-row-scratched' : ''} ${isHighlighted ? 'race-row-highlighted' : ''}`}
                   onClick={() => handleRowClick(horse, score, index, rank)}
                   tabIndex={0}
                   onKeyDown={(e) => {
@@ -558,10 +760,10 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                   <td className={`font-medium ${scratched ? 'horse-name-scratched' : 'text-foreground'}`}>
                     {horse.horseName}
                   </td>
-                  <td className="text-white/70">
+                  <td className="text-white/70 hide-on-small">
                     {horse.trainerName}
                   </td>
-                  <td className="text-white/70">
+                  <td className="text-white/70 hide-on-small">
                     {horse.jockeyName}
                   </td>
                   <td className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -572,6 +774,27 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                       disabled={scratched}
                       isHighlighted={oddsHighlighted}
                     />
+                  </td>
+                  <td className="text-center">
+                    {!scratched && overlay ? (
+                      <FairOddsDisplay overlay={overlay} />
+                    ) : (
+                      <span className="text-white/30">—</span>
+                    )}
+                  </td>
+                  <td className="text-center">
+                    {!scratched && overlay ? (
+                      <OverlayBadge overlay={overlay} compact />
+                    ) : (
+                      <span className="text-white/30">—</span>
+                    )}
+                  </td>
+                  <td className="text-center">
+                    {!scratched && overlay ? (
+                      <EVDisplay overlay={overlay} />
+                    ) : (
+                      <span className="text-white/30">—</span>
+                    )}
                   </td>
                   <td className="row-chevron-cell">
                     <Icon name="chevron_right" className="row-chevron" />
@@ -591,11 +814,14 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
           const oddsChanged = hasOddsChanged(index)
           const scoreChanged = changedScoreIndices.has(index)
           const oddsHighlighted = calculationState.changedOddsIndices.has(index)
+          const overlay = overlaysByIndex.get(index)
+          const isHighlighted = highlightedHorseIndex === index
 
           return (
             <div
               key={index}
-              className={`mobile-horse-card mobile-card-clickable ${scratched ? 'mobile-card-scratched' : ''}`}
+              data-horse-index={index}
+              className={`mobile-horse-card mobile-card-clickable ${scratched ? 'mobile-card-scratched' : ''} ${isHighlighted ? 'mobile-card-highlighted' : ''}`}
               onClick={() => handleRowClick(horse, score, index, rank)}
               role="button"
               tabIndex={0}
@@ -649,6 +875,23 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                       <span className="mobile-detail-label">T:</span> {horse.trainerName}
                     </span>
                   </div>
+                  {/* Overlay info row for mobile */}
+                  {!scratched && overlay && (
+                    <div className="mobile-overlay-row">
+                      <div className="mobile-overlay-item">
+                        <span className="mobile-overlay-label">Fair:</span>
+                        <FairOddsDisplay overlay={overlay} />
+                      </div>
+                      <div className="mobile-overlay-item">
+                        <span className="mobile-overlay-label">Value:</span>
+                        <OverlayBadge overlay={overlay} compact />
+                      </div>
+                      <div className="mobile-overlay-item">
+                        <span className="mobile-overlay-label">EV:</span>
+                        <EVDisplay overlay={overlay} />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mobile-card-footer">
@@ -690,6 +933,8 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
           currentOdds={getOdds(selectedHorse.index, selectedHorse.horse.morningLineOdds)}
           predictedPosition={selectedHorse.predictedPosition}
           totalHorses={horses.filter((_, i) => !isScratched(i)).length}
+          overlay={overlaysByIndex.get(selectedHorse.index)}
+          allHorses={horses.filter((_, i) => !isScratched(i))}
         />
       )}
 
