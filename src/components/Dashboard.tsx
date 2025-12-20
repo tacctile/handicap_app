@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sidebar, TopBar, MobileNav } from './layout'
 import { RaceOverviewCard, EmptyStateTable, BettingPanel } from './cards'
@@ -9,7 +9,10 @@ import { DataValidationWarning } from './ErrorBoundary'
 import { StaggerContainer, StaggerItem, FadeIn } from './motion'
 import { BankrollSettings } from './BankrollSettings'
 import { BankrollSummaryCard } from './BankrollSummaryCard'
+import { PostTimeDetailModal } from './PostTimeCountdown'
+import { ResponsiveToastContainer, useToasts } from './Toast'
 import { useBankroll } from '../hooks/useBankroll'
+import { usePostTime } from '../hooks/usePostTime'
 import type { useRaceState } from '../hooks/useRaceState'
 import type { ParsedDRFFile } from '../types/drf'
 
@@ -36,11 +39,53 @@ export function Dashboard({
   const [mobileTab, setMobileTab] = useState<'dashboard' | 'upload' | 'settings'>('dashboard')
   const [selectedRaceIndex] = useState(0)
   const [bankrollSettingsOpen, setBankrollSettingsOpen] = useState(false)
+  const [postTimeDetailOpen, setPostTimeDetailOpen] = useState(false)
 
   // Bankroll management hook
   const bankroll = useBankroll()
 
+  // Toast notifications
+  const { toasts, dismissToast, addPostTimeNotification } = useToasts()
+
   const hasData = !!parsedData && parsedData.races.length > 0
+
+  // Get post time string from current race
+  const currentPostTimeString = useMemo(() => {
+    if (!parsedData || !parsedData.races.length) return undefined
+    const race = parsedData.races[selectedRaceIndex]
+    return race?.header?.postTime
+  }, [parsedData, selectedRaceIndex])
+
+  // Get race date string for post time calculation
+  const currentRaceDateString = useMemo(() => {
+    if (!parsedData || !parsedData.races.length) return undefined
+    const race = parsedData.races[selectedRaceIndex]
+    return race?.header?.raceDateRaw
+  }, [parsedData, selectedRaceIndex])
+
+  // Post time countdown hook
+  const {
+    countdown,
+    postTimeFormatted,
+    isValid: isPostTimeValid,
+    pendingNotifications,
+    clearNotification,
+    notificationSettings,
+    updateNotificationSettings,
+  } = usePostTime(currentPostTimeString, currentRaceDateString)
+
+  // Handle pending notifications
+  useEffect(() => {
+    if (pendingNotifications.length > 0) {
+      const currentRace = parsedData?.races[selectedRaceIndex]
+      const raceNumber = currentRace?.header?.raceNumber
+
+      pendingNotifications.forEach((notification) => {
+        addPostTimeNotification(notification.minutesMark, raceNumber)
+        clearNotification(notification.minutesMark)
+      })
+    }
+  }, [pendingNotifications, parsedData, selectedRaceIndex, addPostTimeNotification, clearNotification])
 
   // Open bankroll settings modal
   const openBankrollSettings = useCallback(() => {
@@ -50,6 +95,11 @@ export function Dashboard({
   // Close bankroll settings modal
   const closeBankrollSettings = useCallback(() => {
     setBankrollSettingsOpen(false)
+  }, [])
+
+  // Toggle post time detail modal
+  const togglePostTimeDetail = useCallback(() => {
+    setPostTimeDetailOpen((prev) => !prev)
   }, [])
 
   // Toggle sidebar
@@ -81,6 +131,7 @@ export function Dashboard({
     return {
       trackName: race?.header?.trackCode || 'Unknown Track',
       raceNumber: race?.header?.raceNumber || selectedRaceIndex + 1,
+      postTime: race?.header?.postTime,
     }
   }, [parsedData, selectedRaceIndex])
 
@@ -95,6 +146,7 @@ export function Dashboard({
       distance: race?.header?.distance || undefined,
       surface: race?.header?.surface || undefined,
       conditions: raceState.trackCondition,
+      postTime: race?.header?.postTime,
     }
   }, [parsedData, selectedRaceIndex, raceState.trackCondition])
 
@@ -144,6 +196,8 @@ export function Dashboard({
           hasData={hasData}
           bankroll={bankroll}
           onOpenBankrollSettings={openBankrollSettings}
+          countdown={countdown}
+          onCountdownClick={togglePostTimeDetail}
         />
 
         {/* Hidden file upload */}
@@ -186,6 +240,8 @@ export function Dashboard({
                 race={raceOverviewData}
                 weather={{ temp: 72, condition: 'sunny' }}
                 isLoading={isLoading}
+                countdown={countdown}
+                postTimeFormatted={postTimeFormatted}
               />
 
               {/* Stats summary when data is loaded */}
@@ -350,6 +406,12 @@ export function Dashboard({
         hasData={hasData}
       />
 
+      {/* Toast Notifications */}
+      <ResponsiveToastContainer
+        toasts={toasts}
+        onDismiss={dismissToast}
+      />
+
       {/* Bankroll Settings Modal */}
       <BankrollSettings
         isOpen={bankrollSettingsOpen}
@@ -360,6 +422,18 @@ export function Dashboard({
         dailyPL={bankroll.dailyPL}
         spentToday={bankroll.getSpentToday()}
         dailyBudget={bankroll.getDailyBudget()}
+        notificationSettings={notificationSettings}
+        onNotificationSettingsChange={updateNotificationSettings}
+      />
+
+      {/* Post Time Detail Modal */}
+      <PostTimeDetailModal
+        isOpen={postTimeDetailOpen}
+        onClose={() => setPostTimeDetailOpen(false)}
+        countdown={countdown}
+        postTimeFormatted={postTimeFormatted}
+        raceNumber={currentRaceInfo?.raceNumber}
+        trackName={currentRaceInfo?.trackName}
       />
     </div>
   )

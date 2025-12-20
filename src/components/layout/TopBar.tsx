@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PulsingGlow } from '../motion'
 import { BankrollSummaryCard } from '../BankrollSummaryCard'
+import { TopBarCountdown } from '../PostTimeCountdown'
 import type { UseBankrollReturn } from '../../hooks/useBankroll'
+import type { CountdownState } from '../../hooks/usePostTime'
 
 interface TopBarProps {
   currentRace?: {
@@ -16,6 +18,8 @@ interface TopBarProps {
   hasData: boolean
   bankroll?: UseBankrollReturn
   onOpenBankrollSettings?: () => void
+  countdown?: CountdownState
+  onCountdownClick?: () => void
 }
 
 export function TopBar({
@@ -26,6 +30,8 @@ export function TopBar({
   hasData,
   bankroll,
   onOpenBankrollSettings,
+  countdown,
+  onCountdownClick,
 }: TopBarProps) {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [showNotifications, setShowNotifications] = useState(false)
@@ -61,6 +67,9 @@ export function TopBar({
     ? `${currentRace.trackName} - Race ${currentRace.raceNumber}`
     : 'No race loaded'
 
+  // Check if countdown is valid
+  const hasValidCountdown = countdown && countdown.totalMs >= 0 && !countdown.isExpired
+
   return (
     <header className="topbar" role="banner">
       <div className="topbar-content">
@@ -84,8 +93,18 @@ export function TopBar({
           </div>
         </div>
 
-        {/* Center section - System status (desktop only) */}
+        {/* Center section - Countdown + System status (desktop only) */}
         <div className="topbar-center">
+          {/* Post Time Countdown - Primary position */}
+          {hasData && countdown && (
+            <TopBarCountdown
+              countdown={countdown}
+              raceNumber={currentRace?.raceNumber}
+              isValid={hasValidCountdown || countdown.isExpired}
+              onClick={onCountdownClick}
+            />
+          )}
+
           <div className="topbar-system-status">
             <span className="topbar-status-dot active" />
             <span className="topbar-status-text">System Ready</span>
@@ -105,6 +124,26 @@ export function TopBar({
 
         {/* Right section - Actions + Clock */}
         <div className="topbar-right">
+          {/* Mobile countdown indicator */}
+          {hasData && countdown && (hasValidCountdown || countdown.isExpired) && (
+            <button
+              className={`topbar-mobile-countdown ${countdown.colorClass}`}
+              onClick={onCountdownClick}
+              aria-label={`Post in ${countdown.shortFormatted}`}
+            >
+              <motion.span
+                className="material-icons"
+                animate={countdown.isCritical && !countdown.isExpired ? {
+                  scale: [1, 1.2, 1],
+                } : {}}
+                transition={{ duration: 0.8, repeat: Infinity }}
+              >
+                timer
+              </motion.span>
+              <span className="topbar-mobile-countdown-time">{countdown.shortFormatted}</span>
+            </button>
+          )}
+
           {/* Upload button - Primary CTA */}
           {!hasData ? (
             <PulsingGlow className="topbar-upload-glow">

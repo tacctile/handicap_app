@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Skeleton, SlideUp } from '../motion'
+import { RaceCardCountdown, PostTimeProgressBar } from '../PostTimeCountdown'
+import type { CountdownState } from '../../hooks/usePostTime'
 
 interface RaceOverviewCardProps {
   race?: {
@@ -10,13 +12,15 @@ interface RaceOverviewCardProps {
     surface?: string
     conditions?: string
     purse?: string
-    postTime?: Date
+    postTime?: string
   }
   weather?: {
     temp?: number
     condition?: 'sunny' | 'cloudy' | 'rainy' | 'overcast'
   }
   isLoading?: boolean
+  countdown?: CountdownState
+  postTimeFormatted?: string
 }
 
 const weatherIcons: Record<string, string> = {
@@ -26,39 +30,15 @@ const weatherIcons: Record<string, string> = {
   overcast: 'filter_drama',
 }
 
-export function RaceOverviewCard({ race, weather, isLoading }: RaceOverviewCardProps) {
-  const [countdown, setCountdown] = useState<string>('--:--:--')
+export function RaceOverviewCard({
+  race,
+  weather,
+  isLoading,
+  countdown,
+  postTimeFormatted,
+}: RaceOverviewCardProps) {
   const hasData = !!race?.trackName
-
-  // Countdown timer
-  useEffect(() => {
-    if (!race?.postTime) {
-      setCountdown('--:--:--')
-      return
-    }
-
-    const updateCountdown = () => {
-      const now = new Date()
-      const diff = race.postTime!.getTime() - now.getTime()
-
-      if (diff <= 0) {
-        setCountdown('POST!')
-        return
-      }
-
-      const hours = Math.floor(diff / (1000 * 60 * 60))
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
-
-      setCountdown(
-        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-      )
-    }
-
-    updateCountdown()
-    const timer = setInterval(updateCountdown, 1000)
-    return () => clearInterval(timer)
-  }, [race?.postTime])
+  const hasCountdown = countdown && (countdown.totalMs >= 0 || countdown.isExpired)
 
   const getWeatherIcon = useCallback(() => {
     return weatherIcons[weather?.condition || 'sunny']
@@ -101,6 +81,33 @@ export function RaceOverviewCard({ race, weather, isLoading }: RaceOverviewCardP
             </div>
           )}
         </div>
+
+        {/* Post Time Countdown Section */}
+        {hasData && (
+          <div className="race-overview-countdown-section">
+            <RaceCardCountdown
+              countdown={countdown || {
+                totalMs: -1,
+                hours: 0,
+                minutes: 0,
+                seconds: 0,
+                formatted: '--:--:--',
+                shortFormatted: '--:--',
+                isExpired: false,
+                isCritical: false,
+                isWarning: false,
+                isImminent: false,
+                progress: 0,
+                colorClass: 'normal',
+              }}
+              postTimeFormatted={postTimeFormatted || '--:--'}
+              isValid={!!hasCountdown}
+            />
+          </div>
+        )}
+
+        {/* Divider */}
+        <div className="race-overview-divider" />
 
         {/* Race details grid */}
         <div className="race-overview-grid">
@@ -148,7 +155,7 @@ export function RaceOverviewCard({ race, weather, isLoading }: RaceOverviewCardP
         {/* Divider */}
         <div className="race-overview-divider" />
 
-        {/* Bottom section - Weather and Countdown */}
+        {/* Bottom section - Weather */}
         <div className="race-overview-footer">
           {/* Weather widget */}
           <div className="race-overview-weather">
@@ -170,15 +177,32 @@ export function RaceOverviewCard({ race, weather, isLoading }: RaceOverviewCardP
             </span>
           </div>
 
-          {/* Post time countdown */}
-          <div className={`race-overview-countdown ${hasData ? 'active' : ''}`}>
-            <span className="countdown-label">Post Time</span>
-            <div className="countdown-timer">
-              <span className="material-icons countdown-icon">timer</span>
-              <span className="countdown-value">{countdown}</span>
+          {/* Quick countdown badge for reference */}
+          {hasData && hasCountdown && (
+            <div className={`race-overview-countdown-badge ${countdown?.colorClass || 'normal'}`}>
+              <span className="material-icons">timer</span>
+              <span>{countdown?.shortFormatted || '--:--'}</span>
             </div>
-          </div>
+          )}
         </div>
+
+        {/* Urgent warning overlay */}
+        <AnimatePresence>
+          {hasData && countdown?.isImminent && !countdown.isExpired && (
+            <motion.div
+              className="race-overview-urgent-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.div
+                className="urgent-pulse"
+                animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Empty state overlay */}
         {!hasData && (
