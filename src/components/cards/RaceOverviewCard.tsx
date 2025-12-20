@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Skeleton, SlideUp } from '../motion'
 import { RaceCardCountdown } from '../PostTimeCountdown'
 import type { CountdownState } from '../../hooks/usePostTime'
+import type { PaceScenarioAnalysis } from '../../lib/scoring'
 
 interface RaceOverviewCardProps {
   race?: {
@@ -21,6 +22,8 @@ interface RaceOverviewCardProps {
   isLoading?: boolean
   countdown?: CountdownState
   postTimeFormatted?: string
+  /** Pace scenario analysis for the race */
+  paceScenario?: PaceScenarioAnalysis
 }
 
 const weatherIcons: Record<string, string> = {
@@ -30,15 +33,52 @@ const weatherIcons: Record<string, string> = {
   overcast: 'filter_drama',
 }
 
+/**
+ * Get pace scenario icon based on type
+ */
+function getPaceIcon(scenario: PaceScenarioAnalysis['scenario']): string {
+  switch (scenario) {
+    case 'soft': return 'trending_flat'
+    case 'moderate': return 'trending_up'
+    case 'contested': return 'local_fire_department'
+    case 'speed_duel': return 'whatshot'
+    default: return 'help_outline'
+  }
+}
+
+/**
+ * Format style breakdown for compact display
+ */
+function formatCompactBreakdown(breakdown: PaceScenarioAnalysis['styleBreakdown']): string {
+  const parts: string[] = []
+
+  if (breakdown.earlySpeed.length > 0) {
+    parts.push(`E: ${breakdown.earlySpeed.map(n => `#${n}`).join(', ')}`)
+  }
+  if (breakdown.pressers.length > 0) {
+    parts.push(`P: ${breakdown.pressers.map(n => `#${n}`).join(', ')}`)
+  }
+  if (breakdown.closers.length > 0) {
+    parts.push(`C: ${breakdown.closers.map(n => `#${n}`).join(', ')}`)
+  }
+  if (breakdown.sustained.length > 0) {
+    parts.push(`S: ${breakdown.sustained.map(n => `#${n}`).join(', ')}`)
+  }
+
+  return parts.join(' | ') || 'No data'
+}
+
 export function RaceOverviewCard({
   race,
   weather,
   isLoading,
   countdown,
   postTimeFormatted,
+  paceScenario,
 }: RaceOverviewCardProps) {
   const hasData = !!race?.trackName
   const hasCountdown = countdown && (countdown.totalMs >= 0 || countdown.isExpired)
+  const hasPaceData = !!paceScenario && paceScenario.fieldSize > 0
 
   const getWeatherIcon = useCallback(() => {
     return weatherIcons[weather?.condition || 'sunny']
@@ -151,6 +191,61 @@ export function RaceOverviewCard({
             </div>
           </div>
         </div>
+
+        {/* Pace Scenario Section */}
+        {hasData && hasPaceData && paceScenario && (
+          <>
+            <div className="race-overview-divider" />
+            <div className="race-overview-pace-section">
+              <div className="race-overview-pace-header">
+                <span
+                  className="material-icons pace-scenario-icon"
+                  style={{ color: paceScenario.color }}
+                >
+                  {getPaceIcon(paceScenario.scenario)}
+                </span>
+                <div className="pace-scenario-info">
+                  <span className="pace-scenario-label">Pace Scenario</span>
+                  <span
+                    className="pace-scenario-value"
+                    style={{
+                      color: paceScenario.color,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {paceScenario.label}
+                  </span>
+                </div>
+                <div
+                  className="pace-ppi-badge"
+                  style={{
+                    backgroundColor: `${paceScenario.color}20`,
+                    color: paceScenario.color,
+                    borderColor: `${paceScenario.color}40`,
+                  }}
+                >
+                  <span className="ppi-value">PPI: {paceScenario.ppi}</span>
+                </div>
+              </div>
+
+              {/* Style Breakdown */}
+              <div className="race-overview-style-breakdown">
+                <span className="style-breakdown-label">Running Styles:</span>
+                <span className="style-breakdown-value">
+                  {formatCompactBreakdown(paceScenario.styleBreakdown)}
+                </span>
+              </div>
+
+              {/* Expected Pace */}
+              <div className="race-overview-expected-pace">
+                <span className="material-icons expected-pace-icon">speed</span>
+                <span className="expected-pace-text">
+                  Expected: <strong>{paceScenario.expectedPace}</strong> pace
+                </span>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Divider */}
         <div className="race-overview-divider" />

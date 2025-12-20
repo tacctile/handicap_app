@@ -4,22 +4,65 @@
  *
  * Score Range: 0-40 points
  *
- * Pace Scenario Scoring:
- * - Perfect pace fit (lone speed in soft pace): 40 points
- * - Good pace fit (presser in hot pace): 30 points
- * - Neutral fit: 20 points
- * - Poor fit (closer in soft pace): 10 points
- * - Terrible fit: 5 points
+ * Integrates with paceAnalysis.ts for comprehensive pace detection:
+ * - Running Style Classification (E, P, C, S)
+ * - Pace Pressure Index (PPI) calculation
+ * - Tactical advantage scoring based on pace scenario
+ *
+ * Pace Scenario Scoring (from tactical advantage):
+ * - Perfect pace fit (e.g., lone speed in soft pace): 25+ pts base + bonuses
+ * - Good pace fit (e.g., presser in hot pace): 18-24 pts
+ * - Neutral fit: 12-17 pts
+ * - Poor fit (e.g., closer in soft pace): 5-11 pts
+ * - Terrible fit: 0-4 pts
  */
 
-import type { HorseEntry, RaceHeader, PastPerformance } from '../../types/drf'
+import type { HorseEntry, RaceHeader } from '../../types/drf'
 import { getSpeedBias, isTrackIntelligenceAvailable } from '../trackIntelligence'
+import {
+  parseRunningStyle,
+  analyzePaceScenario,
+  calculateTacticalAdvantage,
+  analyzePaceForHorse,
+  formatStyleBreakdown,
+  getPaceScenarioSummary,
+  getRunningStyleBadge,
+  type RunningStyleCode,
+  type RunningStyleProfile,
+  type PaceScenarioType,
+  type PaceScenarioAnalysis,
+  type TacticalAdvantage,
+  type PaceAnalysisResult,
+  RUNNING_STYLE_NAMES,
+  PACE_SCENARIO_LABELS,
+  PACE_SCENARIO_COLORS,
+} from './paceAnalysis'
+
+// Re-export all types and utilities from paceAnalysis
+export {
+  parseRunningStyle,
+  analyzePaceScenario,
+  calculateTacticalAdvantage,
+  analyzePaceForHorse,
+  formatStyleBreakdown,
+  getPaceScenarioSummary,
+  getRunningStyleBadge,
+  type RunningStyleCode,
+  type RunningStyleProfile,
+  type PaceScenarioType,
+  type PaceScenarioAnalysis,
+  type TacticalAdvantage,
+  type PaceAnalysisResult,
+  RUNNING_STYLE_NAMES,
+  PACE_SCENARIO_LABELS,
+  PACE_SCENARIO_COLORS,
+}
 
 // ============================================================================
-// TYPES
+// LEGACY TYPES (for backwards compatibility)
 // ============================================================================
 
-export type RunningStyle = 'E' | 'EP' | 'P' | 'S' | 'C' | 'U'  // Early, Early Presser, Presser, Stalker, Closer, Unknown
+export type RunningStyle = 'E' | 'EP' | 'P' | 'S' | 'C' | 'U'  // Keep for backwards compat
 
 export type PaceScenario = 'lone_speed' | 'contested_speed' | 'honest' | 'slow' | 'unknown'
 
@@ -39,6 +82,9 @@ export interface FieldPaceAnalysis {
   closerCount: number
   pacePressureIndex: number  // 0-100 scale
   expectedPace: 'fast' | 'moderate' | 'slow'
+  // New fields from enhanced analysis
+  paceScenarioType?: PaceScenarioType
+  styleBreakdown?: PaceScenarioAnalysis['styleBreakdown']
 }
 
 export interface PaceScoreResult {
@@ -48,16 +94,18 @@ export interface PaceScoreResult {
   paceFit: 'perfect' | 'good' | 'neutral' | 'poor' | 'terrible'
   trackSpeedBias: number | null
   reasoning: string
+  // Enhanced analysis data
+  detailedProfile?: RunningStyleProfile
+  tacticalAdvantage?: TacticalAdvantage
+  paceScenarioAnalysis?: PaceScenarioAnalysis
 }
 
 // ============================================================================
-// RUNNING STYLE IDENTIFICATION
+// LEGACY STYLE NAMES
 // ============================================================================
 
-/**
- * Running style labels for display
- */
-const STYLE_NAMES: Record<RunningStyle, string> = {
+/** @deprecated Use RUNNING_STYLE_NAMES instead */
+export const LEGACY_STYLE_NAMES: Record<RunningStyle, string> = {
   E: 'Early Speed',
   EP: 'Early Presser',
   P: 'Presser',
@@ -66,128 +114,61 @@ const STYLE_NAMES: Record<RunningStyle, string> = {
   U: 'Unknown',
 }
 
+// ============================================================================
+// CONVERSION UTILITIES
+// ============================================================================
+
 /**
- * Identify running style from past performances
+ * Convert new running style code to legacy format
  */
-function identifyRunningStyle(horse: HorseEntry): PaceProfile {
-  // Check if DRF already has running style
-  if (horse.runningStyle) {
-    const style = normalizeRunningStyle(horse.runningStyle)
-    return {
-      style,
-      styleName: STYLE_NAMES[style],
-      earlySpeedRating: horse.earlySpeedRating ?? 0,
-      averageEarlyPosition: calculateAverageEarlyPosition(horse.pastPerformances),
-      isConfirmedStyle: true,
-    }
-  }
-
-  // Calculate from past performances
-  if (horse.pastPerformances.length === 0) {
-    return {
-      style: 'U',
-      styleName: 'Unknown',
-      earlySpeedRating: 0,
-      averageEarlyPosition: 0,
-      isConfirmedStyle: false,
-    }
-  }
-
-  const avgEarlyPos = calculateAverageEarlyPosition(horse.pastPerformances)
-  const avgFieldSize = calculateAverageFieldSize(horse.pastPerformances)
-
-  // Determine style based on relative early position
-  const relativePosition = avgFieldSize > 0 ? avgEarlyPos / avgFieldSize : 0.5
-
-  let style: RunningStyle
-  if (relativePosition <= 0.15) {
-    style = 'E'
-  } else if (relativePosition <= 0.3) {
-    style = 'EP'
-  } else if (relativePosition <= 0.5) {
-    style = 'P'
-  } else if (relativePosition <= 0.7) {
-    style = 'S'
-  } else {
-    style = 'C'
-  }
-
-  // Calculate early speed rating
-  const earlySpeedRating = calculateEarlySpeedRating(horse.pastPerformances)
-
-  return {
-    style,
-    styleName: STYLE_NAMES[style],
-    earlySpeedRating,
-    averageEarlyPosition: avgEarlyPos,
-    isConfirmedStyle: false,
+function toLegacyStyle(style: RunningStyleCode): RunningStyle {
+  // Map new style codes to legacy ones
+  switch (style) {
+    case 'E': return 'E'
+    case 'P': return 'P'
+    case 'C': return 'C'
+    case 'S': return 'S'
+    case 'U': return 'U'
   }
 }
 
 /**
- * Normalize running style string from DRF
+ * Convert new pace scenario type to legacy format
  */
-function normalizeRunningStyle(style: string): RunningStyle {
-  const normalized = style.toUpperCase().trim()
-
-  if (normalized.startsWith('E') && normalized.includes('P')) return 'EP'
-  if (normalized.startsWith('E')) return 'E'
-  if (normalized === 'P' || normalized === 'PRESSER') return 'P'
-  if (normalized === 'S' || normalized === 'STALKER') return 'S'
-  if (normalized === 'C' || normalized === 'CLOSER') return 'C'
-
-  return 'U'
-}
-
-/**
- * Calculate average early position from running lines
- */
-function calculateAverageEarlyPosition(pastPerformances: PastPerformance[]): number {
-  let total = 0
-  let count = 0
-
-  for (const pp of pastPerformances.slice(0, 5)) {
-    // Use first call position (quarter mile or half mile depending on distance)
-    const earlyPos = pp.runningLine.quarterMile ?? pp.runningLine.halfMile ?? pp.runningLine.start
-
-    if (earlyPos !== null) {
-      total += earlyPos
-      count++
-    }
+function toLegacyScenario(scenario: PaceScenarioType): PaceScenario {
+  switch (scenario) {
+    case 'soft': return 'lone_speed'
+    case 'moderate': return 'honest'
+    case 'contested': return 'contested_speed'
+    case 'speed_duel': return 'contested_speed'
+    case 'unknown': return 'unknown'
   }
-
-  return count > 0 ? total / count : 5  // Default to middle
 }
 
 /**
- * Calculate average field size
+ * Convert tactical advantage level to legacy pace fit
  */
-function calculateAverageFieldSize(pastPerformances: PastPerformance[]): number {
-  if (pastPerformances.length === 0) return 10
-
-  const total = pastPerformances.slice(0, 5).reduce((sum, pp) => sum + pp.fieldSize, 0)
-  return total / Math.min(pastPerformances.length, 5)
-}
-
-/**
- * Calculate early speed rating from PPs
- */
-function calculateEarlySpeedRating(pastPerformances: PastPerformance[]): number {
-  let score = 0
-  let count = 0
-
-  for (const pp of pastPerformances.slice(0, 5)) {
-    const earlyPos = pp.runningLine.quarterMile ?? pp.runningLine.halfMile
-
-    if (earlyPos !== null) {
-      // Higher score for leading or close to lead
-      const posScore = Math.max(0, 100 - (earlyPos - 1) * 15)
-      score += posScore
-      count++
-    }
+function toLegacyPaceFit(level: TacticalAdvantage['level']): PaceScoreResult['paceFit'] {
+  switch (level) {
+    case 'excellent': return 'perfect'
+    case 'good': return 'good'
+    case 'neutral': return 'neutral'
+    case 'poor': return 'poor'
+    case 'terrible': return 'terrible'
   }
+}
 
-  return count > 0 ? Math.round(score / count) : 50
+/**
+ * Convert pace scenario to expected pace
+ */
+function toExpectedPace(scenario: PaceScenarioType): 'fast' | 'moderate' | 'slow' {
+  switch (scenario) {
+    case 'soft': return 'slow'
+    case 'moderate': return 'moderate'
+    case 'contested': return 'fast'
+    case 'speed_duel': return 'fast'
+    case 'unknown': return 'moderate'
+  }
 }
 
 // ============================================================================
@@ -196,179 +177,36 @@ function calculateEarlySpeedRating(pastPerformances: PastPerformance[]): number 
 
 /**
  * Analyze the pace scenario for the entire field
+ * Uses the new enhanced pace analysis system
  */
 export function analyzeFieldPace(horses: HorseEntry[]): FieldPaceAnalysis {
   const activeHorses = horses.filter(h => !h.isScratched)
 
-  let speedCount = 0
-  let presserCount = 0
-  let stalkerCount = 0
-  let closerCount = 0
+  // Use new analysis system
+  const analysis = analyzePaceScenario(activeHorses)
 
-  // Classify each horse's running style
-  for (const horse of activeHorses) {
-    const profile = identifyRunningStyle(horse)
+  // Count runners by style for legacy compatibility
+  const speedCount = analysis.styleBreakdown.earlySpeed.length
+  const presserCount = analysis.styleBreakdown.pressers.length + analysis.styleBreakdown.sustained.length
+  const closerCount = analysis.styleBreakdown.closers.length
 
-    switch (profile.style) {
-      case 'E':
-        speedCount++
-        break
-      case 'EP':
-        speedCount++  // Count as speed (will contest pace)
-        presserCount++
-        break
-      case 'P':
-        presserCount++
-        break
-      case 'S':
-        stalkerCount++
-        break
-      case 'C':
-        closerCount++
-        break
-    }
-  }
-
-  // Calculate pace pressure index (0-100)
-  // Higher = more pace pressure
-  const fieldSize = activeHorses.length
-  const pacePressureIndex = Math.min(100, Math.round(
-    (speedCount * 25 + presserCount * 10) / (fieldSize || 1) * 10
-  ))
-
-  // Determine pace scenario
-  let scenario: PaceScenario
-  let scenarioDescription: string
-  let expectedPace: 'fast' | 'moderate' | 'slow'
-
-  if (speedCount === 0) {
-    scenario = 'slow'
-    scenarioDescription = 'No early speed - soft pace expected'
-    expectedPace = 'slow'
-  } else if (speedCount === 1 && presserCount <= 1) {
-    scenario = 'lone_speed'
-    scenarioDescription = 'Lone speed - could steal on an easy lead'
-    expectedPace = 'slow'
-  } else if (speedCount >= 3 || (speedCount >= 2 && presserCount >= 2)) {
-    scenario = 'contested_speed'
-    scenarioDescription = 'Hot pace expected - speed duel likely'
-    expectedPace = 'fast'
-  } else {
-    scenario = 'honest'
-    scenarioDescription = 'Honest pace - tactical race expected'
-    expectedPace = 'moderate'
-  }
-
+  // Map to legacy format
   return {
-    scenario,
-    scenarioDescription,
+    scenario: toLegacyScenario(analysis.scenario),
+    scenarioDescription: analysis.description,
     speedCount,
     presserCount,
-    closerCount: stalkerCount + closerCount,
-    pacePressureIndex,
-    expectedPace,
+    closerCount,
+    pacePressureIndex: analysis.ppi,
+    expectedPace: toExpectedPace(analysis.scenario),
+    // Include new detailed data
+    paceScenarioType: analysis.scenario,
+    styleBreakdown: analysis.styleBreakdown,
   }
 }
 
 // ============================================================================
-// PACE FIT SCORING
-// ============================================================================
-
-/**
- * Calculate how well a horse's style fits the pace scenario
- */
-function calculatePaceFit(
-  profile: PaceProfile,
-  fieldAnalysis: FieldPaceAnalysis,
-  trackSpeedBias: number | null
-): { fit: 'perfect' | 'good' | 'neutral' | 'poor' | 'terrible'; score: number } {
-  const { style } = profile
-  const { scenario, expectedPace } = fieldAnalysis
-
-  // Track bias adjustment
-  const trackFavorsSpeed = (trackSpeedBias ?? 50) >= 55
-  const trackFavorsClosers = (trackSpeedBias ?? 50) <= 45
-
-  // Perfect fits
-  if (style === 'E' && scenario === 'lone_speed') {
-    return { fit: 'perfect', score: 40 }
-  }
-
-  if ((style === 'C' || style === 'S') && scenario === 'contested_speed') {
-    const bonus = trackFavorsClosers ? 5 : 0
-    return { fit: 'perfect', score: 38 + bonus }
-  }
-
-  if (style === 'P' && scenario === 'honest') {
-    return { fit: 'perfect', score: 38 }
-  }
-
-  // Good fits
-  if (style === 'EP' && scenario === 'lone_speed') {
-    return { fit: 'good', score: 32 }
-  }
-
-  if (style === 'P' && scenario === 'contested_speed') {
-    return { fit: 'good', score: 30 }
-  }
-
-  if ((style === 'E' || style === 'EP') && trackFavorsSpeed && expectedPace !== 'fast') {
-    return { fit: 'good', score: 30 }
-  }
-
-  if ((style === 'S' || style === 'C') && expectedPace === 'fast') {
-    return { fit: 'good', score: 28 }
-  }
-
-  // Poor fits
-  if ((style === 'C' || style === 'S') && scenario === 'slow') {
-    const penalty = trackFavorsClosers ? 0 : -5
-    return { fit: 'poor', score: 12 + penalty }
-  }
-
-  if (style === 'E' && scenario === 'contested_speed') {
-    const penalty = trackFavorsSpeed ? 3 : -5
-    return { fit: 'poor', score: 15 + penalty }
-  }
-
-  // Terrible fits
-  if (style === 'C' && scenario === 'lone_speed' && !trackFavorsClosers) {
-    return { fit: 'terrible', score: 5 }
-  }
-
-  // Neutral - default
-  return { fit: 'neutral', score: 20 }
-}
-
-/**
- * Build reasoning string for pace score
- */
-function buildReasoning(
-  profile: PaceProfile,
-  fieldAnalysis: FieldPaceAnalysis,
-  paceFit: string,
-  trackSpeedBias: number | null
-): string {
-  const parts: string[] = []
-
-  parts.push(profile.styleName)
-  parts.push(`(${fieldAnalysis.scenarioDescription})`)
-
-  if (trackSpeedBias !== null) {
-    if (trackSpeedBias >= 55) {
-      parts.push('Speed-favoring track')
-    } else if (trackSpeedBias <= 45) {
-      parts.push('Closer-friendly track')
-    }
-  }
-
-  parts.push(`Fit: ${paceFit}`)
-
-  return parts.join(' | ')
-}
-
-// ============================================================================
-// MAIN EXPORT
+// MAIN SCORING FUNCTION
 // ============================================================================
 
 /**
@@ -386,10 +224,28 @@ export function calculatePaceScore(
   allHorses: HorseEntry[],
   preCalculatedFieldAnalysis?: FieldPaceAnalysis
 ): PaceScoreResult {
-  // Get running style profile
-  const profile = identifyRunningStyle(horse)
+  // Get enhanced pace analysis
+  const paceScenario = preCalculatedFieldAnalysis?.paceScenarioType
+    ? analyzePaceScenario(allHorses)
+    : analyzePaceScenario(allHorses)
 
-  // Analyze field pace (use pre-calculated if available)
+  const paceResult = analyzePaceForHorse(horse, allHorses, paceScenario)
+
+  // Get running style profile
+  const detailedProfile = paceResult.profile
+  const tacticalAdvantage = paceResult.tactical
+
+  // Convert to legacy PaceProfile for backwards compatibility
+  const profile: PaceProfile = {
+    style: toLegacyStyle(detailedProfile.style),
+    styleName: detailedProfile.styleName,
+    earlySpeedRating: detailedProfile.stats.avgFirstCallPosition < 3 ? 80 :
+                      detailedProfile.stats.avgFirstCallPosition < 5 ? 60 : 40,
+    averageEarlyPosition: detailedProfile.stats.avgFirstCallPosition,
+    isConfirmedStyle: detailedProfile.confidence >= 70,
+  }
+
+  // Get field analysis in legacy format
   const fieldAnalysis = preCalculatedFieldAnalysis ?? analyzeFieldPace(allHorses)
 
   // Get track speed bias
@@ -401,21 +257,75 @@ export function calculatePaceScore(
     }
   }
 
-  // Calculate pace fit
-  const { fit, score } = calculatePaceFit(profile, fieldAnalysis, trackSpeedBias)
+  // Apply track bias adjustments
+  let finalScore = paceResult.totalScore
+
+  // Track bias bonus/penalty
+  if (trackSpeedBias !== null) {
+    if (trackSpeedBias >= 55 && detailedProfile.style === 'E') {
+      finalScore = Math.min(40, finalScore + 3)  // Speed-favoring track bonus for speed
+    } else if (trackSpeedBias <= 45 && detailedProfile.style === 'C') {
+      finalScore = Math.min(40, finalScore + 3)  // Closer-friendly track bonus
+    }
+  }
 
   // Build reasoning
-  const reasoning = buildReasoning(profile, fieldAnalysis, fit, trackSpeedBias)
+  const reasoning = buildReasoning(
+    detailedProfile,
+    paceResult.scenario,
+    tacticalAdvantage,
+    trackSpeedBias
+  )
 
   return {
-    total: Math.max(5, Math.min(40, score)),
+    total: Math.max(5, Math.min(40, finalScore)),
     profile,
     fieldAnalysis,
-    paceFit: fit,
+    paceFit: toLegacyPaceFit(tacticalAdvantage.level),
     trackSpeedBias,
     reasoning,
+    // Enhanced data
+    detailedProfile,
+    tacticalAdvantage,
+    paceScenarioAnalysis: paceResult.scenario,
   }
 }
+
+/**
+ * Build reasoning string for pace score
+ */
+function buildReasoning(
+  profile: RunningStyleProfile,
+  scenario: PaceScenarioAnalysis,
+  tactical: TacticalAdvantage,
+  trackSpeedBias: number | null
+): string {
+  const parts: string[] = []
+
+  // Running style with evidence
+  parts.push(`${profile.styleName} (${profile.stats.timesOnLead}/${profile.stats.totalRaces} led early)`)
+
+  // Pace scenario
+  parts.push(scenario.label)
+
+  // Tactical fit
+  parts.push(`${tactical.level.charAt(0).toUpperCase() + tactical.level.slice(1)} fit: +${tactical.points}pts`)
+
+  // Track bias
+  if (trackSpeedBias !== null) {
+    if (trackSpeedBias >= 55) {
+      parts.push('Speed-favoring track')
+    } else if (trackSpeedBias <= 45) {
+      parts.push('Closer-friendly track')
+    }
+  }
+
+  return parts.join(' | ')
+}
+
+// ============================================================================
+// UTILITY EXPORTS
+// ============================================================================
 
 /**
  * Get pace summary for quick display
@@ -424,13 +334,14 @@ export function getPaceSummary(
   horse: HorseEntry,
   allHorses: HorseEntry[]
 ): { style: string; scenario: string; fit: string } {
-  const profile = identifyRunningStyle(horse)
-  const fieldAnalysis = analyzeFieldPace(allHorses)
+  const profile = parseRunningStyle(horse)
+  const scenario = analyzePaceScenario(allHorses)
+  const tactical = calculateTacticalAdvantage(profile.style, scenario.scenario)
 
   return {
     style: profile.styleName,
-    scenario: fieldAnalysis.scenarioDescription,
-    fit: calculatePaceFit(profile, fieldAnalysis, null).fit,
+    scenario: PACE_SCENARIO_LABELS[scenario.scenario],
+    fit: tactical.level,
   }
 }
 
@@ -452,4 +363,63 @@ export function calculateRacePaceScores(
   }
 
   return results
+}
+
+/**
+ * Get enhanced pace display data for UI
+ */
+export function getEnhancedPaceDisplay(
+  horse: HorseEntry,
+  allHorses: HorseEntry[]
+): {
+  runningStyle: {
+    code: RunningStyleCode
+    name: string
+    color: string
+    confidence: number
+    description: string
+  }
+  scenario: {
+    type: PaceScenarioType
+    label: string
+    color: string
+    ppi: number
+    description: string
+    breakdown: string
+  }
+  tactical: {
+    points: number
+    level: string
+    fit: string
+    reasoning: string
+  }
+} {
+  const profile = parseRunningStyle(horse)
+  const scenario = analyzePaceScenario(allHorses)
+  const tactical = calculateTacticalAdvantage(profile.style, scenario.scenario)
+  const badge = getRunningStyleBadge(profile)
+
+  return {
+    runningStyle: {
+      code: profile.style,
+      name: profile.styleName,
+      color: badge.color,
+      confidence: profile.confidence,
+      description: profile.description,
+    },
+    scenario: {
+      type: scenario.scenario,
+      label: scenario.label,
+      color: scenario.color,
+      ppi: scenario.ppi,
+      description: scenario.description,
+      breakdown: formatStyleBreakdown(scenario.styleBreakdown),
+    },
+    tactical: {
+      points: tactical.points,
+      level: tactical.level,
+      fit: tactical.fit,
+      reasoning: tactical.reasoning,
+    },
+  }
 }

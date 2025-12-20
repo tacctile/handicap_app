@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import type { HorseEntry, RaceHeader } from '../types/drf'
-import type { HorseScore } from '../lib/scoring'
-import { SCORE_LIMITS, getScoreColor } from '../lib/scoring'
+import type { HorseScore, TacticalAdvantage } from '../lib/scoring'
+import { SCORE_LIMITS, getScoreColor, parseRunningStyle, analyzePaceScenario, calculateTacticalAdvantage, PACE_SCENARIO_COLORS } from '../lib/scoring'
 
 interface HorseDetailModalProps {
   isOpen: boolean
@@ -12,6 +12,8 @@ interface HorseDetailModalProps {
   currentOdds: string
   predictedPosition: number
   totalHorses: number
+  /** All horses in the race for pace analysis */
+  allHorses?: HorseEntry[]
 }
 
 // Material Icon component
@@ -109,6 +111,28 @@ function KeyFactor({ icon, text, type = 'neutral' }: { icon: string; text: strin
   )
 }
 
+// Running style color helper
+function getRunningStyleColor(style: string): string {
+  switch (style) {
+    case 'E': return '#ef4444'  // Red for early speed
+    case 'P': return '#f97316'  // Orange for presser
+    case 'C': return '#3b82f6'  // Blue for closer
+    case 'S': return '#8b5cf6'  // Purple for sustained
+    default: return '#888888'   // Gray for unknown
+  }
+}
+
+// Tactical advantage level color
+function getTacticalLevelColor(level: TacticalAdvantage['level']): string {
+  switch (level) {
+    case 'excellent': return '#22c55e'
+    case 'good': return '#36d1da'
+    case 'neutral': return '#888888'
+    case 'poor': return '#f97316'
+    case 'terrible': return '#ef4444'
+  }
+}
+
 export function HorseDetailModal({
   isOpen,
   onClose,
@@ -118,6 +142,7 @@ export function HorseDetailModal({
   currentOdds,
   predictedPosition,
   totalHorses,
+  allHorses,
 }: HorseDetailModalProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['connections']))
   const [isAnimating, setIsAnimating] = useState(false)
@@ -173,6 +198,16 @@ export function HorseDetailModal({
     return Math.round(prob * 100)
   }, [score, predictedPosition, totalHorses])
 
+  // Enhanced pace analysis
+  const paceAnalysis = useMemo(() => {
+    const horsesToAnalyze = allHorses || [horse]
+    const profile = parseRunningStyle(horse)
+    const scenario = analyzePaceScenario(horsesToAnalyze)
+    const tactical = calculateTacticalAdvantage(profile.style, scenario.scenario)
+
+    return { profile, scenario, tactical }
+  }, [horse, allHorses])
+
   // Generate key factors
   const keyFactors = useMemo(() => {
     const factors: { icon: string; text: string; type: 'strength' | 'weakness' | 'neutral' }[] = []
@@ -201,9 +236,13 @@ export function HorseDetailModal({
       factors.push({ icon: 'trending_flat', text: 'Below par speed figures or class rise', type: 'weakness' })
     }
 
-    // Pace analysis
-    if (b.pace.total >= SCORE_LIMITS.pace * 0.7) {
+    // Pace analysis - use enhanced tactical advantage
+    if (paceAnalysis.tactical.level === 'excellent') {
+      factors.push({ icon: 'speed', text: `Excellent pace fit: ${paceAnalysis.tactical.fit}`, type: 'strength' })
+    } else if (paceAnalysis.tactical.level === 'good') {
       factors.push({ icon: 'speed', text: 'Good pace scenario fit', type: 'strength' })
+    } else if (paceAnalysis.tactical.level === 'poor' || paceAnalysis.tactical.level === 'terrible') {
+      factors.push({ icon: 'warning', text: `Poor pace fit: ${paceAnalysis.tactical.fit}`, type: 'weakness' })
     }
 
     // Form analysis
@@ -214,18 +253,7 @@ export function HorseDetailModal({
     }
 
     return factors
-  }, [score.breakdown])
-
-  // Get running style description for Key Factors section
-  const runningStyleDesc = useMemo(() => {
-    const style = score.breakdown.pace.runningStyle
-    if (style === 'Early Speed' || style === 'E') return 'Prefers to be on or near the lead'
-    if (style === 'Early Presser' || style === 'EP') return 'Can rate behind speed and pounce'
-    if (style === 'Presser' || style === 'P') return 'Stalks the pace and makes a timely move'
-    if (style === 'Stalker' || style === 'S') return 'Rates mid-pack and rallies'
-    if (style === 'Closer' || style === 'C') return 'Comes from off the pace in the stretch'
-    return 'Running style unknown'
-  }, [score.breakdown.pace.runningStyle])
+  }, [score.breakdown, paceAnalysis])
 
   if (!isOpen) return null
 
@@ -465,10 +493,54 @@ export function HorseDetailModal({
                 onToggle={() => toggleCategory('pace')}
                 details={
                   <div className="breakdown-details">
+                    {/* Running Style */}
                     <div className="breakdown-row">
                       <span className="breakdown-label">Running Style</span>
-                      <span className="breakdown-value">{score.breakdown.pace.runningStyle}</span>
+                      <span
+                        className="breakdown-value"
+                        style={{ color: getRunningStyleColor(paceAnalysis.profile.style) }}
+                      >
+                        {paceAnalysis.profile.styleName}
+                      </span>
                     </div>
+
+                    {/* Style Evidence */}
+                    <div className="breakdown-row">
+                      <span className="breakdown-label">Evidence</span>
+                      <span className="breakdown-value">
+                        {paceAnalysis.profile.stats.timesOnLead}/{paceAnalysis.profile.stats.totalRaces} led early
+                      </span>
+                    </div>
+
+                    {/* Pace Scenario */}
+                    <div className="breakdown-row">
+                      <span className="breakdown-label">Pace Scenario</span>
+                      <span
+                        className="breakdown-value"
+                        style={{ color: PACE_SCENARIO_COLORS[paceAnalysis.scenario.scenario] }}
+                      >
+                        {paceAnalysis.scenario.label}
+                      </span>
+                    </div>
+
+                    {/* PPI */}
+                    <div className="breakdown-row">
+                      <span className="breakdown-label">Pace Pressure Index</span>
+                      <span className="breakdown-value">{paceAnalysis.scenario.ppi}%</span>
+                    </div>
+
+                    {/* Tactical Advantage */}
+                    <div className="breakdown-row">
+                      <span className="breakdown-label">Tactical Advantage</span>
+                      <span
+                        className="breakdown-value"
+                        style={{ color: getTacticalLevelColor(paceAnalysis.tactical.level) }}
+                      >
+                        +{paceAnalysis.tactical.points} pts ({paceAnalysis.tactical.level})
+                      </span>
+                    </div>
+
+                    {/* Pace Fit */}
                     <div className="breakdown-row">
                       <span className="breakdown-label">Pace Fit</span>
                       <span className="breakdown-value" style={{
@@ -479,8 +551,9 @@ export function HorseDetailModal({
                         {score.breakdown.pace.paceFit.charAt(0).toUpperCase() + score.breakdown.pace.paceFit.slice(1)}
                       </span>
                     </div>
+
                     <div className="breakdown-note">
-                      {score.breakdown.pace.reasoning}
+                      {paceAnalysis.tactical.reasoning}
                     </div>
                   </div>
                 }
@@ -505,14 +578,61 @@ export function HorseDetailModal({
               )}
             </div>
 
+            {/* Enhanced Pace Analysis Box */}
             <div className="pace-scenario-box">
               <div className="pace-scenario-header">
                 <Icon name="directions_run" className="pace-scenario-icon" />
                 <span>Running Style Analysis</span>
               </div>
               <div className="pace-scenario-content">
-                <div className="running-style-badge">{score.breakdown.pace.runningStyle}</div>
-                <p className="pace-scenario-desc">{runningStyleDesc}</p>
+                <div
+                  className="running-style-badge"
+                  style={{
+                    backgroundColor: `${getRunningStyleColor(paceAnalysis.profile.style)}20`,
+                    color: getRunningStyleColor(paceAnalysis.profile.style),
+                    borderColor: `${getRunningStyleColor(paceAnalysis.profile.style)}40`,
+                  }}
+                >
+                  {paceAnalysis.profile.styleName}
+                </div>
+                <p className="pace-scenario-desc">
+                  {paceAnalysis.profile.description}
+                </p>
+              </div>
+
+              {/* Pace Scenario Fit */}
+              <div className="pace-fit-section">
+                <div className="pace-fit-header">
+                  <span
+                    className="material-icons pace-fit-icon"
+                    style={{ color: PACE_SCENARIO_COLORS[paceAnalysis.scenario.scenario] }}
+                  >
+                    {paceAnalysis.scenario.scenario === 'soft' ? 'trending_flat' :
+                     paceAnalysis.scenario.scenario === 'moderate' ? 'trending_up' :
+                     paceAnalysis.scenario.scenario === 'contested' ? 'local_fire_department' :
+                     paceAnalysis.scenario.scenario === 'speed_duel' ? 'whatshot' : 'help_outline'}
+                  </span>
+                  <span className="pace-fit-label">Scenario Fit</span>
+                </div>
+                <div
+                  className="pace-fit-badge"
+                  style={{
+                    backgroundColor: `${getTacticalLevelColor(paceAnalysis.tactical.level)}20`,
+                    color: getTacticalLevelColor(paceAnalysis.tactical.level),
+                    borderColor: `${getTacticalLevelColor(paceAnalysis.tactical.level)}40`,
+                  }}
+                >
+                  {paceAnalysis.tactical.fit}
+                </div>
+                <div className="pace-fit-points">
+                  <span className="points-label">Tactical Points:</span>
+                  <span
+                    className="points-value"
+                    style={{ color: getTacticalLevelColor(paceAnalysis.tactical.level) }}
+                  >
+                    +{paceAnalysis.tactical.points}
+                  </span>
+                </div>
               </div>
             </div>
           </section>
