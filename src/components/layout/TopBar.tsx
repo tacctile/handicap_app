@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PulsingGlow } from '../motion'
+import { BankrollSummaryCard } from '../BankrollSummaryCard'
+import type { UseBankrollReturn } from '../../hooks/useBankroll'
 
 interface TopBarProps {
   currentRace?: {
@@ -12,6 +14,8 @@ interface TopBarProps {
   onSettingsClick?: () => void
   onMenuClick: () => void
   hasData: boolean
+  bankroll?: UseBankrollReturn
+  onOpenBankrollSettings?: () => void
 }
 
 export function TopBar({
@@ -20,6 +24,8 @@ export function TopBar({
   onSettingsClick,
   onMenuClick,
   hasData,
+  bankroll,
+  onOpenBankrollSettings,
 }: TopBarProps) {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [showNotifications, setShowNotifications] = useState(false)
@@ -84,6 +90,17 @@ export function TopBar({
             <span className="topbar-status-dot active" />
             <span className="topbar-status-text">System Ready</span>
           </div>
+
+          {/* Bankroll indicator - desktop only */}
+          {bankroll && onOpenBankrollSettings && (
+            <div className="topbar-bankroll-section">
+              <BankrollSummaryCard
+                bankroll={bankroll}
+                onOpenSettings={onOpenBankrollSettings}
+                variant="compact"
+              />
+            </div>
+          )}
         </div>
 
         {/* Right section - Actions + Clock */}

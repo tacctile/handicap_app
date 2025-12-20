@@ -9,10 +9,12 @@ import {
   type BetRecommendation,
   type BettingTier,
 } from '../lib/betting'
+import type { UseBankrollReturn, BankrollSettings } from '../hooks/useBankroll'
 
 interface BettingRecommendationsProps {
   horses: Array<{ horse: HorseEntry; index: number; score: HorseScore }>
   raceNumber: number
+  bankroll?: UseBankrollReturn
 }
 
 // Tier badge colors
@@ -206,15 +208,69 @@ function BetCard({ bet, tierColor, raceNumber }: BetCardProps) {
   )
 }
 
-export function BettingRecommendations({ horses, raceNumber }: BettingRecommendationsProps) {
+export function BettingRecommendations({ horses, raceNumber, bankroll }: BettingRecommendationsProps) {
   const [expandedTiers, setExpandedTiers] = useState<Set<BettingTier>>(new Set(['tier1']))
   const [isCollapsed, setIsCollapsed] = useState(false)
 
-  // Classify horses and generate recommendations
+  // Get bankroll settings for bet sizing
+  const bankrollSettings = bankroll?.settings
+  const unitSize = bankroll?.getUnitSize() || 10
+
+  // Classify horses and generate recommendations with bankroll-based sizing
   const recommendations = useMemo(() => {
     const tierGroups = classifyHorses(horses)
-    return generateBetRecommendations(tierGroups)
-  }, [horses])
+    const baseRecs = generateBetRecommendations(tierGroups)
+
+    // If we have bankroll settings, scale the bet amounts
+    if (bankrollSettings && unitSize) {
+      return baseRecs.map(tierRec => {
+        // Calculate tier multiplier based on risk tolerance
+        const tierMultiplier = tierRec.tier === 'tier1' ? 1.5 :
+                               tierRec.tier === 'tier2' ? 1.0 : 0.5
+
+        // Calculate risk multiplier
+        const riskMultiplier = bankrollSettings.riskTolerance === 'aggressive' ? 1.5 :
+                               bankrollSettings.riskTolerance === 'conservative' ? 0.6 : 1.0
+
+        const scaledBets = tierRec.bets.map(bet => {
+          // Calculate confidence-based multiplier
+          const confMultiplier = bet.confidence >= 80 ? 2.0 :
+                                bet.confidence >= 70 ? 1.5 :
+                                bet.confidence >= 60 ? 1.0 : 0.75
+
+          // Calculate new amount based on unit size
+          const newAmount = Math.round(unitSize * tierMultiplier * riskMultiplier * confMultiplier)
+          const scaleFactor = newAmount / (bet.amount || 1)
+
+          return {
+            ...bet,
+            amount: newAmount,
+            totalCost: Math.round(bet.totalCost * scaleFactor),
+            potentialReturn: {
+              min: Math.round(bet.potentialReturn.min * scaleFactor),
+              max: Math.round(bet.potentialReturn.max * scaleFactor),
+            },
+          }
+        })
+
+        const newTotalInvestment = scaledBets.reduce((sum, bet) => sum + bet.totalCost, 0)
+        const newMinReturn = scaledBets.reduce((sum, bet) => sum + bet.potentialReturn.min, 0)
+        const newMaxReturn = scaledBets.reduce((sum, bet) => sum + bet.potentialReturn.max, 0)
+
+        return {
+          ...tierRec,
+          bets: scaledBets,
+          totalInvestment: Math.round(newTotalInvestment * 100) / 100,
+          potentialReturnRange: {
+            min: Math.round(newMinReturn),
+            max: Math.round(newMaxReturn),
+          },
+        }
+      })
+    }
+
+    return baseRecs
+  }, [horses, bankrollSettings, unitSize])
 
   // Check if we have any recommendations
   if (recommendations.length === 0 || recommendations.every(r => r.bets.length === 0)) {
@@ -260,17 +316,30 @@ export function BettingRecommendations({ horses, raceNumber }: BettingRecommenda
 
       {/* Tier Panels - Responsive grid layout */}
       {!isCollapsed && (
-        <div className="betting-tiers-container betting-tiers-responsive">
-          {recommendations.map(tierRecs => (
-            <ExpansionPanel
-              key={tierRecs.tier}
-              tierRecs={tierRecs}
-              isExpanded={expandedTiers.has(tierRecs.tier)}
-              onToggle={() => toggleTier(tierRecs.tier)}
-              raceNumber={raceNumber}
-            />
-          ))}
-        </div>
+        <>
+          {/* Bankroll note */}
+          {bankrollSettings && (
+            <div className="bankroll-note">
+              <span className="material-icons">info</span>
+              <span className="bankroll-note-text">
+                Based on your <strong>{bankroll?.formatCurrency(bankrollSettings.totalBankroll)}</strong> bankroll,{' '}
+                <strong>{bankroll?.getRiskLabel()}</strong> risk
+              </span>
+            </div>
+          )}
+
+          <div className="betting-tiers-container betting-tiers-responsive">
+            {recommendations.map(tierRecs => (
+              <ExpansionPanel
+                key={tierRecs.tier}
+                tierRecs={tierRecs}
+                isExpanded={expandedTiers.has(tierRecs.tier)}
+                onToggle={() => toggleTier(tierRecs.tier)}
+                raceNumber={raceNumber}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   )

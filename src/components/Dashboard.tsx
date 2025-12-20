@@ -7,6 +7,9 @@ import { RaceTable } from './RaceTable'
 import { LoadingState } from './LoadingState'
 import { DataValidationWarning } from './ErrorBoundary'
 import { StaggerContainer, StaggerItem, FadeIn } from './motion'
+import { BankrollSettings } from './BankrollSettings'
+import { BankrollSummaryCard } from './BankrollSummaryCard'
+import { useBankroll } from '../hooks/useBankroll'
 import type { useRaceState } from '../hooks/useRaceState'
 import type { ParsedDRFFile } from '../types/drf'
 
@@ -32,8 +35,22 @@ export function Dashboard({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [mobileTab, setMobileTab] = useState<'dashboard' | 'upload' | 'settings'>('dashboard')
   const [selectedRaceIndex] = useState(0)
+  const [bankrollSettingsOpen, setBankrollSettingsOpen] = useState(false)
+
+  // Bankroll management hook
+  const bankroll = useBankroll()
 
   const hasData = !!parsedData && parsedData.races.length > 0
+
+  // Open bankroll settings modal
+  const openBankrollSettings = useCallback(() => {
+    setBankrollSettingsOpen(true)
+  }, [])
+
+  // Close bankroll settings modal
+  const closeBankrollSettings = useCallback(() => {
+    setBankrollSettingsOpen(false)
+  }, [])
 
   // Toggle sidebar
   const toggleSidebar = useCallback(() => {
@@ -123,7 +140,10 @@ export function Dashboard({
           currentRace={currentRaceInfo}
           onUploadClick={handleUploadClick}
           onMenuClick={toggleSidebar}
+          onSettingsClick={openBankrollSettings}
           hasData={hasData}
+          bankroll={bankroll}
+          onOpenBankrollSettings={openBankrollSettings}
         />
 
         {/* Hidden file upload */}
@@ -240,6 +260,7 @@ export function Dashboard({
                           <RaceTable
                             race={race}
                             raceState={raceState}
+                            bankroll={bankroll}
                           />
                         </StaggerItem>
                       ))}
@@ -251,6 +272,24 @@ export function Dashboard({
 
             {/* RIGHT COLUMN - Betting Recommendations */}
             <aside className="dashboard-column right" aria-label="Betting recommendations">
+              {/* Bankroll Summary Card - Mobile collapsible */}
+              <div className="bankroll-summary-mobile-wrapper">
+                <BankrollSummaryCard
+                  bankroll={bankroll}
+                  onOpenSettings={openBankrollSettings}
+                  variant="mobile"
+                />
+              </div>
+
+              {/* Bankroll Summary Card - Desktop full version */}
+              <div className="bankroll-summary-desktop-wrapper">
+                <BankrollSummaryCard
+                  bankroll={bankroll}
+                  onOpenSettings={openBankrollSettings}
+                  variant="full"
+                />
+              </div>
+
               <BettingPanel
                 recommendations={bettingRecommendations}
                 overallConfidence={hasData ? 0 : 0}
@@ -308,6 +347,18 @@ export function Dashboard({
         activeTab={mobileTab}
         onTabChange={handleMobileTabChange}
         hasData={hasData}
+      />
+
+      {/* Bankroll Settings Modal */}
+      <BankrollSettings
+        isOpen={bankrollSettingsOpen}
+        onClose={closeBankrollSettings}
+        settings={bankroll.settings}
+        onSave={bankroll.updateSettings}
+        onReset={bankroll.resetToDefaults}
+        dailyPL={bankroll.dailyPL}
+        spentToday={bankroll.getSpentToday()}
+        dailyBudget={bankroll.getDailyBudget()}
       />
     </div>
   )
