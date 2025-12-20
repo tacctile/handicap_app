@@ -20,6 +20,15 @@ import {
   loadKellySettings,
   saveKellySettings,
 } from '../lib/betting/kellySettings'
+import {
+  type DutchSettings,
+  DEFAULT_DUTCH_SETTINGS,
+  DUTCH_EDGE_OPTIONS,
+  DUTCH_MAX_HORSES_OPTIONS,
+  DUTCH_EDUCATION,
+  loadDutchSettings,
+  saveDutchSettings,
+} from '../lib/dutch'
 import { KellyHelpModal } from './KellyHelpModal'
 
 interface BankrollSettingsProps {
@@ -77,7 +86,9 @@ export function BankrollSettings({
     notificationSettings || { enabled: true, soundEnabled: false, timings: [15, 10, 5, 2] }
   )
   const [kellyState, setKellyState] = useState<KellySettings>(loadKellySettings)
+  const [dutchState, setDutchState] = useState<DutchSettings>(loadDutchSettings)
   const [showKellyHelp, setShowKellyHelp] = useState(false)
+  const [showDutchHelp, setShowDutchHelp] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
   const [activeTab, setActiveTab] = useState<'bankroll' | 'notifications'>('bankroll')
   const modalRef = useRef<HTMLDivElement>(null)
@@ -90,6 +101,7 @@ export function BankrollSettings({
         setNotifState(notificationSettings)
       }
       setKellyState(loadKellySettings())
+      setDutchState(loadDutchSettings())
       setHasChanges(false)
     }
   }, [settings, notificationSettings, isOpen])
@@ -179,6 +191,18 @@ export function BankrollSettings({
     })
   }, [])
 
+  // Update Dutch field
+  const updateDutchField = useCallback(<K extends keyof DutchSettings>(
+    field: K,
+    value: DutchSettings[K]
+  ) => {
+    setDutchState(prev => {
+      const newState = { ...prev, [field]: value }
+      setHasChanges(true)
+      return newState
+    })
+  }, [])
+
   // Toggle notification timing
   const toggleNotifTiming = useCallback((timing: number) => {
     setNotifState(prev => {
@@ -198,9 +222,11 @@ export function BankrollSettings({
     }
     // Save Kelly settings separately (stored in localStorage)
     saveKellySettings(kellyState)
+    // Save Dutch settings separately (stored in localStorage)
+    saveDutchSettings(dutchState)
     setHasChanges(false)
     onClose()
-  }, [formState, notifState, kellyState, onSave, onNotificationSettingsChange, onClose])
+  }, [formState, notifState, kellyState, dutchState, onSave, onNotificationSettingsChange, onClose])
 
   // Handle reset
   const handleReset = useCallback(() => {
@@ -208,6 +234,8 @@ export function BankrollSettings({
     setNotifState({ enabled: true, soundEnabled: false, timings: [15, 10, 5, 2] })
     setKellyState(DEFAULT_KELLY_SETTINGS)
     saveKellySettings(DEFAULT_KELLY_SETTINGS)
+    setDutchState(DEFAULT_DUTCH_SETTINGS)
+    saveDutchSettings(DEFAULT_DUTCH_SETTINGS)
     setHasChanges(false)
   }, [onReset])
 
@@ -731,6 +759,185 @@ export function BankrollSettings({
                   <span>Learn more about Kelly Criterion</span>
                   <span className="material-icons">arrow_forward</span>
                 </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Dutch Booking Section */}
+        <div className="bankroll-dutch-section">
+          <div className="bankroll-dutch-header">
+            <div className="bankroll-dutch-title">
+              <span className="material-icons">balance</span>
+              <div>
+                <span className="bankroll-dutch-label">Dutch Booking</span>
+                <span className="bankroll-dutch-badge">Advanced</span>
+              </div>
+            </div>
+            <label className="bankroll-toggle">
+              <input
+                type="checkbox"
+                checked={dutchState.enabled}
+                onChange={(e) => updateDutchField('enabled', e.target.checked)}
+              />
+              <span className="bankroll-toggle-slider" />
+            </label>
+          </div>
+
+          <p className="bankroll-dutch-description">
+            {DUTCH_EDUCATION.overview}
+          </p>
+
+          <AnimatePresence>
+            {dutchState.enabled && (
+              <motion.div
+                className="bankroll-dutch-settings"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {/* Minimum Edge Required */}
+                <div className="bankroll-form-group">
+                  <label className="bankroll-form-label">
+                    <span className="material-icons">trending_up</span>
+                    Minimum Edge Required
+                  </label>
+                  <div className="bankroll-dutch-edge-options">
+                    {DUTCH_EDGE_OPTIONS.map((option) => (
+                      <label
+                        key={option.value}
+                        className={`bankroll-dutch-option ${dutchState.minEdgeRequired === option.value ? 'selected' : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name="dutchEdge"
+                          value={option.value}
+                          checked={dutchState.minEdgeRequired === option.value}
+                          onChange={() => updateDutchField('minEdgeRequired', option.value)}
+                        />
+                        <span className="bankroll-dutch-option-label">{option.label}</span>
+                        <span className="bankroll-dutch-option-desc">{option.description}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Maximum Horses */}
+                <div className="bankroll-form-group">
+                  <label className="bankroll-form-label">
+                    <span className="material-icons">format_list_numbered</span>
+                    Maximum Horses in Dutch
+                  </label>
+                  <div className="bankroll-dutch-horses-options">
+                    {DUTCH_MAX_HORSES_OPTIONS.map((option) => (
+                      <label
+                        key={option.value}
+                        className={`bankroll-dutch-option ${dutchState.maxHorses === option.value ? 'selected' : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name="dutchMaxHorses"
+                          value={option.value}
+                          checked={dutchState.maxHorses === option.value}
+                          onChange={() => updateDutchField('maxHorses', option.value)}
+                        />
+                        <span className="bankroll-dutch-option-label">{option.label}</span>
+                        <span className="bankroll-dutch-option-desc">{option.description}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Overlay Only Toggle */}
+                <div className="bankroll-form-group dutch-toggle-group">
+                  <label className="bankroll-form-label">
+                    <span className="material-icons">filter_list</span>
+                    Only Overlay Horses
+                  </label>
+                  <label className="bankroll-toggle">
+                    <input
+                      type="checkbox"
+                      checked={dutchState.overlayOnly}
+                      onChange={(e) => updateDutchField('overlayOnly', e.target.checked)}
+                    />
+                    <span className="bankroll-toggle-slider" />
+                  </label>
+                </div>
+
+                {/* Prefer Mixed Tiers Toggle */}
+                <div className="bankroll-form-group dutch-toggle-group">
+                  <label className="bankroll-form-label">
+                    <span className="material-icons">layers</span>
+                    Prefer Mixed Tier Combinations
+                  </label>
+                  <label className="bankroll-toggle">
+                    <input
+                      type="checkbox"
+                      checked={dutchState.preferMixedTiers}
+                      onChange={(e) => updateDutchField('preferMixedTiers', e.target.checked)}
+                    />
+                    <span className="bankroll-toggle-slider" />
+                  </label>
+                </div>
+
+                {/* Dutch Info */}
+                <div className="bankroll-dutch-info">
+                  <span className="material-icons">help_outline</span>
+                  <span>
+                    Dutch booking spreads risk across multiple horses to guarantee profit
+                    if any selected horse wins. Only works when combined odds create an
+                    overlay (sum of implied probabilities &lt; 100%).
+                  </span>
+                </div>
+
+                {/* Learn More Link */}
+                <button
+                  type="button"
+                  className="bankroll-dutch-learn-more"
+                  onClick={() => setShowDutchHelp(!showDutchHelp)}
+                >
+                  <span className="material-icons">school</span>
+                  <span>How Dutch Booking Works</span>
+                  <span className={`material-icons ${showDutchHelp ? 'rotated' : ''}`}>expand_more</span>
+                </button>
+
+                {/* Dutch Help Section */}
+                <AnimatePresence>
+                  {showDutchHelp && (
+                    <motion.div
+                      className="bankroll-dutch-help"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      <div className="dutch-help-section">
+                        <h4>How It Works</h4>
+                        <p>{DUTCH_EDUCATION.howItWorks}</p>
+                      </div>
+                      <div className="dutch-help-section">
+                        <h4>Example</h4>
+                        <pre className="dutch-help-example">{DUTCH_EDUCATION.example}</pre>
+                      </div>
+                      <div className="dutch-help-section">
+                        <h4>Requirements</h4>
+                        <ul>
+                          {DUTCH_EDUCATION.requirements.map((req, idx) => (
+                            <li key={idx}>{req}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="dutch-help-section">
+                        <h4>Warnings</h4>
+                        <ul className="dutch-help-warnings">
+                          {DUTCH_EDUCATION.warnings.map((warn, idx) => (
+                            <li key={idx}>{warn}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
           </AnimatePresence>
