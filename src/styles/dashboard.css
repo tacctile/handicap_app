@@ -1818,6 +1818,843 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ============================================
+   Multi-Race Exotics Section
+   ============================================ */
+
+.multirace-exotics-section {
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-4);
+}
+
+.multirace-exotics-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-4) var(--space-5);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.multirace-exotics-toggle:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-prominent);
+}
+
+.multirace-exotics-toggle .material-icons:first-child {
+  color: var(--accent-primary);
+  font-size: 20px;
+}
+
+.multirace-exotics-toggle .chevron {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+  color: var(--text-tertiary);
+}
+
+.multirace-exotics-toggle .chevron.open {
+  transform: rotate(180deg);
+}
+
+.multirace-carryover-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px 8px;
+  background: rgba(234, 179, 8, 0.15);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  color: #eab308;
+  font-weight: 600;
+}
+
+.multirace-opportunity-badge {
+  padding: 2px 8px;
+  background: rgba(34, 197, 94, 0.15);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.multirace-exotics-panel {
+  padding: var(--space-4);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-top: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  overflow: hidden;
+}
+
+/* Analysis Summary */
+.multirace-analysis-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(25, 171, 181, 0.1);
+  border: 1px solid rgba(25, 171, 181, 0.2);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.multirace-analysis-summary .material-icons {
+  color: var(--accent-primary);
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+/* Strength Summary */
+.multirace-strength-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.multirace-strength-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+}
+
+.multirace-strength-item .material-icons {
+  font-size: 16px;
+}
+
+.multirace-strength-item.standout .material-icons {
+  color: #22c55e;
+}
+
+.multirace-strength-item.competitive .material-icons {
+  color: #f59e0b;
+}
+
+.multirace-strength-item.weak .material-icons {
+  color: #ef4444;
+}
+
+.multirace-strength-races {
+  color: var(--text-tertiary);
+  margin-left: var(--space-1);
+}
+
+/* Bet Type Cards Grid */
+.multirace-bet-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.multirace-bet-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  transition: all 0.2s ease;
+}
+
+.multirace-bet-card:hover:not(.unavailable) {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 20px rgba(25, 171, 181, 0.1);
+}
+
+.multirace-bet-card.unavailable {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.multirace-bet-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.multirace-bet-card-title {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.multirace-bet-card-icon {
+  color: var(--accent-primary);
+  font-size: 24px;
+}
+
+.multirace-bet-card-name {
+  display: block;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+}
+
+.multirace-bet-card-races {
+  display: block;
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
+}
+
+.multirace-carryover-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  font-weight: 600;
+}
+
+.multirace-bet-card-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+}
+
+.multirace-bet-card-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-xs);
+}
+
+.multirace-bet-card-stat-label {
+  color: var(--text-tertiary);
+}
+
+.multirace-bet-card-stat-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.multirace-bet-card-footer {
+  display: flex;
+  justify-content: center;
+}
+
+.multirace-bet-card-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.multirace-bet-card-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.multirace-bet-card-btn:disabled {
+  background: var(--bg-elevated);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.multirace-bet-card-btn .material-icons {
+  font-size: 16px;
+}
+
+/* Strategy Hint */
+.multirace-strategy-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
+}
+
+.multirace-strategy-hint .material-icons {
+  color: #f59e0b;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.multirace-strategy-hint strong {
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   Multi-Race Builder Modal
+   ============================================ */
+
+.multirace-builder-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  padding: var(--space-4);
+}
+
+.multirace-builder-content {
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.multirace-builder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.multirace-builder-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.multirace-builder-title .material-icons {
+  color: var(--accent-primary);
+}
+
+.multirace-builder-close {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.multirace-builder-close:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+/* Carryover Alert */
+.multirace-carryover-alert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: rgba(234, 179, 8, 0.1);
+  border-bottom: 1px solid rgba(234, 179, 8, 0.2);
+}
+
+.multirace-carryover-alert .material-icons {
+  color: #eab308;
+  font-size: 20px;
+}
+
+.multirace-carryover-text {
+  flex: 1;
+  font-size: var(--font-sm);
+  color: #eab308;
+}
+
+.multirace-carryover-amount {
+  font-weight: 600;
+  font-size: var(--font-base);
+  color: #eab308;
+}
+
+/* Builder Body */
+.multirace-builder-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-5);
+}
+
+/* Strategy Selector */
+.multirace-strategy-selector {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding: var(--space-4);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+}
+
+.multirace-strategy-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--bg-elevated);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.multirace-strategy-btn:hover {
+  background: var(--bg-base);
+}
+
+.multirace-strategy-btn.active {
+  border-color: var(--accent-primary);
+  background: rgba(25, 171, 181, 0.1);
+}
+
+.multirace-strategy-btn .material-icons {
+  font-size: 24px;
+  color: var(--text-tertiary);
+}
+
+.multirace-strategy-btn.active .material-icons {
+  color: var(--accent-primary);
+}
+
+.multirace-strategy-name {
+  font-weight: 500;
+  font-size: var(--font-sm);
+  color: var(--text-primary);
+}
+
+.multirace-strategy-desc {
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+/* Race Legs */
+.multirace-legs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.multirace-leg {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.multirace-leg-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.multirace-leg-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.multirace-leg-number {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  border-radius: 50%;
+}
+
+.multirace-leg-strength {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  font-weight: 500;
+}
+
+.multirace-leg-strength.standout {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.multirace-leg-strength.competitive {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.multirace-leg-strength.weak {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.multirace-leg-suggestion {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
+}
+
+.multirace-leg-suggestion .material-icons {
+  font-size: 14px;
+}
+
+/* Horse Selection Grid */
+.multirace-horse-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.multirace-horse-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-elevated);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.multirace-horse-card:hover {
+  background: var(--bg-base);
+  border-color: var(--border-prominent);
+}
+
+.multirace-horse-card.selected {
+  border-color: var(--accent-primary);
+  background: rgba(25, 171, 181, 0.1);
+}
+
+.multirace-horse-card.tier-1 {
+  border-left: 3px solid #22c55e;
+}
+
+.multirace-horse-card.tier-2 {
+  border-left: 3px solid #f59e0b;
+}
+
+.multirace-horse-card.tier-3 {
+  border-left: 3px solid var(--text-tertiary);
+}
+
+.multirace-horse-number {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: var(--font-sm);
+  color: var(--text-primary);
+}
+
+.multirace-horse-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.multirace-horse-name {
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.multirace-horse-odds {
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+.multirace-horse-check {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--border-prominent);
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+}
+
+.multirace-horse-card.selected .multirace-horse-check {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.multirace-horse-card.selected .multirace-horse-check .material-icons {
+  color: var(--text-inverse);
+  font-size: 14px;
+}
+
+/* Leg Quick Actions */
+.multirace-leg-actions {
+  display: flex;
+  gap: var(--space-2);
+  padding: 0 var(--space-4) var(--space-3);
+}
+
+.multirace-leg-action-btn {
+  padding: var(--space-1) var(--space-2);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.multirace-leg-action-btn:hover {
+  background: var(--bg-base);
+  border-color: var(--border-prominent);
+}
+
+.multirace-leg-action-btn.active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--text-inverse);
+}
+
+/* Builder Footer */
+.multirace-builder-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.multirace-cost-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.multirace-cost-label {
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
+}
+
+.multirace-cost-value {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.multirace-cost-details {
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
+}
+
+.multirace-probability-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.multirace-probability-stat {
+  text-align: center;
+}
+
+.multirace-probability-value {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.multirace-probability-label {
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
+}
+
+.multirace-builder-actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.multirace-auto-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-prominent);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.multirace-auto-btn:hover {
+  background: var(--bg-base);
+}
+
+.multirace-auto-btn .material-icons {
+  font-size: 18px;
+  color: var(--accent-primary);
+}
+
+.multirace-add-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  background: var(--accent-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text-inverse);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.multirace-add-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.multirace-add-btn:disabled {
+  background: var(--bg-elevated);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.multirace-add-btn .material-icons {
+  font-size: 18px;
+}
+
+/* Base Bet Selector */
+.multirace-base-bet {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-4);
+}
+
+.multirace-base-bet-label {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.multirace-base-bet-options {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.multirace-base-bet-option {
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-elevated);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.multirace-base-bet-option:hover {
+  border-color: var(--border-prominent);
+}
+
+.multirace-base-bet-option.active {
+  border-color: var(--accent-primary);
+  background: rgba(25, 171, 181, 0.1);
+  color: var(--accent-primary);
+}
+
+/* Responsive adjustments for multi-race modal */
+@media (max-width: 767px) {
+  .multirace-builder-content {
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .multirace-strategy-selector {
+    flex-direction: column;
+  }
+
+  .multirace-horse-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .multirace-builder-footer {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .multirace-cost-preview,
+  .multirace-probability-preview {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .multirace-builder-actions {
+    width: 100%;
+  }
+
+  .multirace-add-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
 /* Selection color */
 ::selection {
   background: rgba(25, 171, 181, 0.3);

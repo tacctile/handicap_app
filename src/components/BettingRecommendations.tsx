@@ -39,6 +39,7 @@ import {
 import type { UseBankrollReturn } from '../hooks/useBankroll'
 import { BankrollSummaryCard } from './BankrollSummaryCard'
 import { ExoticBuilderModal, type ExoticBetResult } from './ExoticBuilderModal'
+import { MultiRaceExoticsPanel, type MultiRaceTicketResult } from './MultiRaceExoticsPanel'
 
 interface BettingRecommendationsProps {
   horses: Array<{ horse: HorseEntry; index: number; score: HorseScore }>
@@ -46,6 +47,14 @@ interface BettingRecommendationsProps {
   raceHeader?: RaceHeader
   bankroll: UseBankrollReturn
   onOpenBankrollSettings: () => void
+  /** All races in the card for multi-race betting */
+  allRaces?: Array<{
+    raceNumber: number
+    horses: Array<{ horse: HorseEntry; index: number; score: HorseScore }>
+    postTime?: string
+  }>
+  /** Track code for carryover lookups */
+  trackCode?: string
 }
 
 // Extended bet with selection state and overlay data
@@ -619,6 +628,8 @@ export function BettingRecommendations({
   raceHeader,
   bankroll,
   onOpenBankrollSettings,
+  allRaces,
+  trackCode,
 }: BettingRecommendationsProps) {
   const [selectableBets, setSelectableBets] = useState<SelectableBet[]>([])
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false)
@@ -1002,6 +1013,42 @@ export function BettingRecommendations({
     setTimeout(() => setCopiedMessage(null), 2000)
   }, [])
 
+  // Multi-race ticket handler
+  const handleMultiRaceTicketAdd = useCallback((ticket: MultiRaceTicketResult) => {
+    const newBet: SelectableBet = {
+      id: ticket.id,
+      tier: 'tier1',
+      typeName: ticket.displayName,
+      description: `${ticket.displayName}: ${ticket.spreadNotation}`,
+      type: 'pick_multi' as never,
+      horses: [],
+      horseNumbers: ticket.raceInstructions.flatMap(r => r.horses),
+      amount: ticket.totalCost,
+      totalCost: ticket.totalCost,
+      windowInstruction: `"${ticket.windowInstruction}"`,
+      potentialReturn: { min: ticket.payoutRange.min, max: ticket.payoutRange.max },
+      confidence: Math.round(ticket.probability * 100),
+      icon: 'casino',
+      isRecommended: false,
+      overlayPercent: 0,
+      evPerDollar: ticket.expectedValue / ticket.totalCost,
+      specialCategory: ticket.hasCarryover ? 'nuclear' : null,
+      explanation: [
+        `${ticket.displayName} spanning ${ticket.raceRange}`,
+        `${ticket.combinations} combinations using ${ticket.spreadNotation}`,
+        `${(ticket.probability * 100).toFixed(1)}% hit rate`,
+        ticket.hasCarryover ? `Carryover: $${ticket.carryoverAmount?.toLocaleString()}` : '',
+      ].filter(Boolean) as string[],
+      narrative: `Multi-race bet covering races ${ticket.raceRange}`,
+      scoringSources: ['multirace-optimizer'],
+      isSelected: true,
+      customAmount: ticket.totalCost,
+    }
+    setSelectableBets(prev => [newBet, ...prev])
+    setCopiedMessage(`${ticket.displayName} added!`)
+    setTimeout(() => setCopiedMessage(null), 2000)
+  }, [])
+
   // Dutch booking handlers
   const handleToggleDutchHorse = useCallback((programNumber: number) => {
     setSelectedDutchHorses(prev => {
@@ -1270,6 +1317,17 @@ export function BettingRecommendations({
             )}
           </AnimatePresence>
         </div>
+      )}
+
+      {/* Multi-Race Exotics Section */}
+      {allRaces && allRaces.length >= 2 && (
+        <MultiRaceExoticsPanel
+          races={allRaces}
+          currentRaceNumber={raceNumber}
+          trackCode={trackCode || raceHeader?.trackCode}
+          budget={exoticBudget}
+          onAddToBetSlip={handleMultiRaceTicketAdd}
+        />
       )}
 
       {/* Dutch Book Opportunities Section */}
