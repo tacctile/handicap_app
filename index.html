@@ -3,6 +3,39 @@
   <head>
     <meta charset="UTF-8" />
 
+    <!--
+      Content Security Policy (CSP) - Security Hardening
+
+      This CSP restricts what resources can be loaded by the browser:
+
+      - default-src 'self': Only allow resources from same origin by default
+      - script-src 'self': Scripts only from same origin (no inline scripts except Vite dev)
+      - style-src 'self' 'unsafe-inline' fonts.googleapis.com: Styles from self, inline (for CSS-in-JS), and Google Fonts
+      - font-src 'self' fonts.gstatic.com: Fonts from self and Google Fonts CDN
+      - img-src 'self' data: blob:: Images from self, data URIs (for icons), and blob URLs (for file previews)
+      - connect-src 'self' https://*.supabase.co https://*.stripe.com: API connections to self, Supabase (auth), Stripe (payments)
+      - frame-ancestors 'none': Prevent clickjacking by disallowing framing
+      - form-action 'self': Forms can only submit to same origin
+      - base-uri 'self': Restrict base element to same origin
+      - object-src 'none': Disallow plugins (Flash, etc.)
+
+      Note: report-uri can be added when a CSP violation reporting endpoint is available:
+      report-uri /api/csp-report; report-to csp-endpoint
+    -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      img-src 'self' data: blob:;
+      connect-src 'self' https://*.supabase.co https://*.stripe.com;
+      frame-ancestors 'none';
+      form-action 'self';
+      base-uri 'self';
+      object-src 'none';
+      upgrade-insecure-requests;
+    " />
+
     <!-- Primary Meta Tags -->
     <title>Furlong - Advanced Handicapping Analysis</title>
     <meta name="title" content="Furlong - Advanced Handicapping Analysis" />
