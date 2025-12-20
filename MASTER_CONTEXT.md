@@ -864,15 +864,37 @@ When finished, provide:
 
 You are executing a prompt in a fresh session. You have no memory of previous sessions. Your only context comes from:
 1. The prompt you were given
-2. The files in the codebase (including MASTER_CONTEXT.md)
+2. The files in the codebase (including MASTER_CONTEXT.md and methodology docs)
+
+---
+
+## Mandatory Reading — Every Session
+
+**Before executing ANY prompt, read these files in order:**
+
+1. **MASTER_CONTEXT.md** — Project definition, architecture, design system, algorithm overview
+2. **src/docs/METHODOLOGY_INDEX.md** — Master index linking all methodology documentation
+
+**Then, based on the task, read relevant methodology docs:**
+
+| If the task involves... | Also read... |
+|-------------------------|--------------|
+| Scoring, points, categories | src/docs/SCORING_ENGINE.md |
+| DRF parsing, field extraction | src/docs/DRF_FIELD_MAP.md |
+| Race-day adjustments, pace analysis | src/docs/OVERLAY_SYSTEM.md |
+| Longshots, first-timers, special cases | src/docs/EDGE_CASE_PROTOCOLS.md |
+| Bet construction, tiers, output format | src/docs/BETTING_TIERS.md |
+| Track data, bias, connections | src/docs/TRACK_INTELLIGENCE.md |
+
+**When in doubt, read all six.** These documents ARE the algorithm specification. The code implements what they define.
 
 ---
 
 ## What To Do
 
-1. **Read MASTER_CONTEXT.md first** — It's in the reference files list. Read Section 1 (Project Definition) and Section 3 (Prompt Format). Skip Section 2 (Claude Chat Instructions).
+1. **Read mandatory files first** — MASTER_CONTEXT.md, then METHODOLOGY_INDEX.md, then relevant methodology docs based on task.
 
-2. **Read other reference files** — Understand what exists before making changes.
+2. **Read prompt reference files** — Any additional files listed in the prompt's "REFERENCE FILES TO READ FIRST" section.
 
 3. **Execute the requirements** — Do exactly what's listed, in order.
 
@@ -891,6 +913,7 @@ You are executing a prompt in a fresh session. You have no memory of previous se
 - **Do NOT ask for clarification mid-task** — Execute based on what's written
 - **Do NOT modify files outside the scope** — Only touch what's specified
 - **Do NOT skip the completion report** — Nick needs it to verify the work
+- **Do NOT deviate from methodology docs** — They define the algorithm; code implements them exactly
 
 ---
 
@@ -900,10 +923,42 @@ Section 2 of this document contains instructions for Claude Chat sessions (sessi
 
 **You are Claude Code. Ignore Section 2 entirely.**
 
-Your job is to read Section 1 (understand the project), read Section 3 (understand the prompt format), and execute whatever prompt Nick pastes.
+Your job is to:
+1. Read Section 1 (understand the project)
+2. Read methodology docs in src/docs/ (understand the algorithm)
+3. Read Section 3 (understand the prompt format)
+4. Execute whatever prompt Nick pastes
 
 ---
 
-*Document Version: 4.0*
-*Last Updated: December 2024*
-*Repository: tacctile/handicap_app*
+## Methodology Docs Are Authoritative
+
+The methodology documentation in `src/docs/` represents tens of hours of handicapping research and refinement. These documents define:
+
+- Exact point allocations for every scoring category
+- Precise formulas for overlay calculations
+- Specific thresholds for betting tiers
+- Complete protocols for edge cases
+- Track data schema requirements
+
+**The code must implement these specifications exactly.** If there's a conflict between existing code and methodology docs, the methodology docs are correct and the code should be updated.
+
+---
+
+## File Locations Reference
+
+```
+MASTER_CONTEXT.md              # Root — project definition
+src/docs/
+├── METHODOLOGY_INDEX.md       # Entry point for all methodology
+├── SCORING_ENGINE.md          # 6-category base scoring (0-240)
+├── DRF_FIELD_MAP.md           # All 1,435 DRF fields mapped
+├── OVERLAY_SYSTEM.md          # ±50 race-day adjustments
+├── EDGE_CASE_PROTOCOLS.md     # Diamond, Nuclear, Lightly Raced, Late-Breaking
+├── BETTING_TIERS.md           # Three-tier structure, bet construction
+└── TRACK_INTELLIGENCE.md      # Track schema, integration
+```
+
+---
+
+*End of Section 4*
