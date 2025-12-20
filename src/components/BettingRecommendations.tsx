@@ -9,7 +9,7 @@ import {
   type BetRecommendation,
   type BettingTier,
 } from '../lib/betting'
-import type { UseBankrollReturn, BankrollSettings } from '../hooks/useBankroll'
+import type { UseBankrollReturn } from '../hooks/useBankroll'
 
 interface BettingRecommendationsProps {
   horses: Array<{ horse: HorseEntry; index: number; score: HorseScore }>
