@@ -5,6 +5,16 @@ import { RaceCardCountdown } from '../PostTimeCountdown'
 import type { CountdownState } from '../../hooks/usePostTime'
 import type { PaceScenarioAnalysis } from '../../lib/scoring'
 
+/**
+ * Equipment changes summary for display
+ */
+export interface EquipmentChangesSummary {
+  total: number
+  significant: number
+  positive: number
+  negative: number
+}
+
 interface RaceOverviewCardProps {
   race?: {
     trackName?: string
@@ -24,6 +34,8 @@ interface RaceOverviewCardProps {
   postTimeFormatted?: string
   /** Pace scenario analysis for the race */
   paceScenario?: PaceScenarioAnalysis
+  /** Equipment changes summary */
+  equipmentChanges?: EquipmentChangesSummary
 }
 
 const weatherIcons: Record<string, string> = {
@@ -75,10 +87,12 @@ export function RaceOverviewCard({
   countdown,
   postTimeFormatted,
   paceScenario,
+  equipmentChanges,
 }: RaceOverviewCardProps) {
   const hasData = !!race?.trackName
   const hasCountdown = countdown && (countdown.totalMs >= 0 || countdown.isExpired)
   const hasPaceData = !!paceScenario && paceScenario.fieldSize > 0
+  const hasEquipmentChanges = equipmentChanges && equipmentChanges.total > 0
 
   const getWeatherIcon = useCallback(() => {
     return weatherIcons[weather?.condition || 'sunny']
@@ -242,6 +256,64 @@ export function RaceOverviewCard({
                 <span className="expected-pace-text">
                   Expected: <strong>{paceScenario.expectedPace}</strong> pace
                 </span>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Equipment Changes Section */}
+        {hasData && hasEquipmentChanges && equipmentChanges && (
+          <>
+            <div className="race-overview-divider" />
+            <div className="race-overview-equipment-section">
+              <div className="race-overview-equipment-header">
+                <span
+                  className="material-icons equipment-section-icon"
+                  style={{ color: equipmentChanges.significant > 0 ? '#36d1da' : '#888' }}
+                >
+                  build
+                </span>
+                <div className="equipment-section-info">
+                  <span className="equipment-section-label">Equipment Changes</span>
+                  <span
+                    className="equipment-section-value"
+                    style={{
+                      color: equipmentChanges.significant > 0 ? '#36d1da' : '#888',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {equipmentChanges.total} horse{equipmentChanges.total > 1 ? 's' : ''} with changes
+                  </span>
+                </div>
+                {equipmentChanges.significant > 0 && (
+                  <div
+                    className="equipment-significant-badge"
+                    style={{
+                      backgroundColor: '#36d1da20',
+                      color: '#36d1da',
+                      borderColor: '#36d1da40',
+                    }}
+                  >
+                    <span className="material-icons" style={{ fontSize: '14px' }}>star</span>
+                    <span>{equipmentChanges.significant} significant</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Quick breakdown */}
+              <div className="race-overview-equipment-breakdown">
+                {equipmentChanges.positive > 0 && (
+                  <span className="equipment-breakdown-item positive">
+                    <span className="material-icons" style={{ fontSize: '14px' }}>arrow_upward</span>
+                    {equipmentChanges.positive} positive
+                  </span>
+                )}
+                {equipmentChanges.negative > 0 && (
+                  <span className="equipment-breakdown-item negative">
+                    <span className="material-icons" style={{ fontSize: '14px' }}>arrow_downward</span>
+                    {equipmentChanges.negative} negative
+                  </span>
+                )}
               </div>
             </div>
           </>
