@@ -1,15 +1,12 @@
-import { useState, useCallback, useMemo } from 'react'
-import { FileUpload } from './components/FileUpload'
-import { RaceTable } from './components/RaceTable'
-import { Header } from './components/Header'
-import { EmptyState } from './components/EmptyState'
-import { ErrorBoundary, DataValidationWarning } from './components/ErrorBoundary'
-import { LoadingState } from './components/LoadingState'
+import { useState, useCallback } from 'react'
+import { Dashboard } from './components/Dashboard'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { useRaceState } from './hooks/useRaceState'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { validateParsedData, getValidationSummary, isDataUsable } from './lib/validation'
 import type { ParsedDRFFile } from './types/drf'
 import './styles/responsive.css'
+import './styles/dashboard.css'
 
 function App() {
   const [parsedData, setParsedData] = useState<ParsedDRFFile | null>(null)
@@ -60,14 +57,6 @@ function App() {
     setShowWarnings(false)
   }, [])
 
-  const handleFileSelect = useCallback(() => {
-    // Trigger the file input in FileUpload
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
-    if (fileInput) {
-      fileInput.click()
-    }
-  }, [])
-
   // Keyboard shortcuts for global actions
   useKeyboardShortcuts({
     isModalOpen: modalOpen,
@@ -79,76 +68,17 @@ function App() {
     hasChanges: raceState.hasChanges,
   })
 
-  const totalHorses = useMemo(() =>
-    parsedData?.races.reduce((sum, race) => sum + race.horses.length, 0) ?? 0,
-    [parsedData]
-  )
-
   return (
     <ErrorBoundary onReset={handleFullReset}>
-      <div className="app-container min-h-screen bg-background text-foreground">
-        <Header
-          currentFileName={parsedData?.filename}
-          onReset={handleReset}
-          hasChanges={raceState.hasChanges}
-        />
-
-        <main className="app-main">
-          {/* File Upload - Always visible but compact when file is loaded */}
-          <div className={parsedData ? 'file-upload-compact' : ''}>
-            <FileUpload onParsed={handleParsed} />
-          </div>
-
-          {/* Loading State */}
-          {isLoading && (
-            <LoadingState message="Parsing race data..." />
-          )}
-
-          {/* Empty State - Show when no file is loaded */}
-          {!parsedData && !isLoading && (
-            <EmptyState onFileSelect={handleFileSelect} />
-          )}
-
-          {/* Validation Warnings */}
-          {parsedData && showWarnings && validationWarnings.length > 0 && (
-            <div className="validation-warnings-container">
-              <DataValidationWarning
-                warnings={validationWarnings}
-                onDismiss={handleDismissWarnings}
-              />
-            </div>
-          )}
-
-          {/* Race Data */}
-          {parsedData && parsedData.races.length > 0 && !isLoading && (
-            <div className="races-container">
-              {/* Summary stats */}
-              <div className="summary-stats">
-                <span className="stat-item">
-                  <span className="stat-value">{parsedData.races.length}</span> race{parsedData.races.length !== 1 ? 's' : ''}
-                </span>
-                <span className="stat-divider">•</span>
-                <span className="stat-item">
-                  <span className="stat-value">{totalHorses}</span> horse{totalHorses !== 1 ? 's' : ''}
-                </span>
-                <span className="stat-divider hidden-mobile">•</span>
-                <span className="filename-display">{parsedData.filename}</span>
-              </div>
-
-              {/* Race tables - each handles its own modal */}
-              <div className="race-list">
-                {parsedData.races.map((race, index) => (
-                  <RaceTable
-                    key={index}
-                    race={race}
-                    raceState={raceState}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </main>
-      </div>
+      <Dashboard
+        parsedData={parsedData}
+        isLoading={isLoading}
+        validationWarnings={validationWarnings}
+        showWarnings={showWarnings}
+        onParsed={handleParsed}
+        onDismissWarnings={handleDismissWarnings}
+        raceState={raceState}
+      />
     </ErrorBoundary>
   )
 }
