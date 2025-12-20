@@ -490,7 +490,7 @@ export function validateTripExcuse(
 export function validateAngle(
   angle: DetectedUpsetAngle,
   horse: HorseEntry,
-  raceHeader: RaceHeader,
+  _raceHeader: RaceHeader,
   paceScenario: PaceScenarioAnalysis,
   runningStyle: RunningStyleProfile,
   classScore: ClassScoreResult,
@@ -523,7 +523,7 @@ export function validateAngle(
 
       case 'track_bias_fit':
         evidenceValidations.push(validatePaceScenarioData(paceScenario))
-        evidenceValidations.push(validateRunningStyleData(runningStyle, runningStyle.style))
+        evidenceValidations.push(validateRunningStyleData(runningStyle, runningStyle.style as 'E' | 'P' | 'C' | 'S'))
         break
 
       case 'hidden_form':
@@ -612,7 +612,7 @@ export function getValidatedAngles(
   angles: DetectedUpsetAngle[],
   validations: AngleValidationResult[]
 ): DetectedUpsetAngle[] {
-  return angles.filter((angle, index) => {
+  return angles.filter((_angle, index) => {
     const validation = validations[index]
     return validation && validation.isValid
   })

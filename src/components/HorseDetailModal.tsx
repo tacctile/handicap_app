@@ -1567,9 +1567,9 @@ export function HorseDetailModal({
                       gap: '8px',
                       marginBottom: '6px',
                     }}>
-                      <Icon name="paid" className="text-base" style={{
-                        color: longshotAnalysis.classification === 'nuclear' ? '#22c55e' : '#f59e0b'
-                      }} />
+                      <span style={{ color: longshotAnalysis.classification === 'nuclear' ? '#22c55e' : '#f59e0b' }}>
+                        <Icon name="paid" className="text-base" />
+                      </span>
                       <span style={{
                         color: longshotAnalysis.classification === 'nuclear' ? '#22c55e' : '#f59e0b',
                         fontWeight: 600,

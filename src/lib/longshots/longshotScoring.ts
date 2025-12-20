@@ -21,8 +21,6 @@ import {
   type DetectedUpsetAngle,
   MIN_BASE_SCORE,
   MIN_LONGSHOT_ODDS_DECIMAL,
-  MIN_ANGLE_POINTS_NUCLEAR,
-  MIN_ANGLE_POINTS_LIVE,
   LONGSHOT_CLASSIFICATION_META,
   parseOddsToDecimal,
   formatOddsDisplay,

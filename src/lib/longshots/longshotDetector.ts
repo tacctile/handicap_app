@@ -6,22 +6,17 @@
  */
 
 import type { HorseEntry, RaceHeader, Workout } from '../../types/drf'
-import type { HorseScore } from '../scoring'
 import {
-  type UpsetAngleCategory,
   type DetectedUpsetAngle,
-  UPSET_ANGLE_DEFINITIONS,
   UPSET_ANGLE_NAMES,
   UPSET_ANGLE_BASE_POINTS,
 } from './longshotTypes'
 import {
   type PaceScenarioAnalysis,
   type RunningStyleProfile,
-  parseRunningStyle,
-  analyzePaceScenario,
 } from '../scoring/paceAnalysis'
-import { type ClassScoreResult, calculateClassScore } from '../class/classScoring'
-import { type EquipmentScoreResult, calculateEquipmentImpactScore } from '../equipment/equipmentScoring'
+import type { ClassScoreResult } from '../class/classScoring'
+import type { EquipmentScoreResult } from '../equipment/equipmentScoring'
 import {
   getTrainerPattern,
   getTrainerProfile,
@@ -47,7 +42,7 @@ import { logger } from '../../services/logging'
  */
 export function detectPaceDevastation(
   horse: HorseEntry,
-  allHorses: HorseEntry[],
+  _allHorses: HorseEntry[],
   paceScenario: PaceScenarioAnalysis,
   runningStyle: RunningStyleProfile
 ): DetectedUpsetAngle | null {
@@ -138,7 +133,7 @@ export function detectPaceDevastation(
  */
 export function detectClassRelief(
   horse: HorseEntry,
-  raceHeader: RaceHeader,
+  _raceHeader: RaceHeader,
   classScore: ClassScoreResult
 ): DetectedUpsetAngle | null {
   try {
@@ -349,7 +344,7 @@ export function detectEquipmentRescue(
  */
 export function detectTrainerPattern(
   horse: HorseEntry,
-  raceHeader: RaceHeader
+  _raceHeader: RaceHeader
 ): DetectedUpsetAngle | null {
   try {
     const evidenceDetails: string[] = []

@@ -38,7 +38,6 @@ import {
   analyzeRaceLongshots,
   type RaceLongshotSummary,
   type LongshotAnalysisResult,
-  LONGSHOT_CLASSIFICATION_META,
 } from '../lib/longshots'
 
 interface RaceTableProps {
