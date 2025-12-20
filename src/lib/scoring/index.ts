@@ -559,3 +559,29 @@ export { getFormSummary, isOnHotStreak } from './form'
 export { getEquipmentSummary, hasSignificantEquipmentChange } from './equipment'
 export { getOptimalPostPositions } from './postPosition'
 export { getParFigures, getClassHierarchy } from './speedClass'
+
+// Overlay analysis exports
+export {
+  analyzeOverlay,
+  detectValuePlays,
+  getValuePlaysSummary,
+  calculateTierAdjustment,
+  scoreToWinProbability,
+  probabilityToDecimalOdds,
+  calculateOverlayPercent,
+  classifyValue,
+  calculateEV,
+  formatOverlayPercent,
+  formatEV,
+  formatEVPercent,
+  getOverlayColor,
+  getOverlayBgColor,
+  VALUE_THRESHOLDS,
+  VALUE_COLORS,
+  VALUE_ICONS,
+  VALUE_LABELS,
+  type OverlayAnalysis,
+  type ValueClassification,
+  type BettingRecommendation as OverlayBettingRecommendation,
+  type ValuePlay,
+} from './overlayAnalysis'

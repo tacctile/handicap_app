@@ -1,7 +1,22 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import type { HorseEntry, RaceHeader } from '../types/drf'
-import type { HorseScore, TacticalAdvantage } from '../lib/scoring'
-import { SCORE_LIMITS, getScoreColor, parseRunningStyle, analyzePaceScenario, calculateTacticalAdvantage, PACE_SCENARIO_COLORS } from '../lib/scoring'
+import type { HorseScore, TacticalAdvantage, OverlayAnalysis } from '../lib/scoring'
+import {
+  SCORE_LIMITS,
+  getScoreColor,
+  parseRunningStyle,
+  analyzePaceScenario,
+  calculateTacticalAdvantage,
+  PACE_SCENARIO_COLORS,
+  analyzeOverlay,
+  formatOverlayPercent,
+  formatEV,
+  formatEVPercent,
+  getOverlayColor,
+  getOverlayBgColor,
+  VALUE_LABELS,
+  VALUE_ICONS,
+} from '../lib/scoring'
 
 interface HorseDetailModalProps {
   isOpen: boolean
@@ -14,6 +29,8 @@ interface HorseDetailModalProps {
   totalHorses: number
   /** All horses in the race for pace analysis */
   allHorses?: HorseEntry[]
+  /** Pre-calculated overlay analysis */
+  overlay?: OverlayAnalysis
 }
 
 // Material Icon component
@@ -143,6 +160,7 @@ export function HorseDetailModal({
   predictedPosition,
   totalHorses,
   allHorses,
+  overlay: overlayProp,
 }: HorseDetailModalProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['connections']))
   const [isAnimating, setIsAnimating] = useState(false)
@@ -208,6 +226,12 @@ export function HorseDetailModal({
     return { profile, scenario, tactical }
   }, [horse, allHorses])
 
+  // Overlay analysis - use prop if provided, otherwise calculate
+  const overlay = useMemo(() => {
+    if (overlayProp) return overlayProp
+    return analyzeOverlay(score.total, currentOdds)
+  }, [overlayProp, score.total, currentOdds])
+
   // Generate key factors
   const keyFactors = useMemo(() => {
     const factors: { icon: string; text: string; type: 'strength' | 'weakness' | 'neutral' }[] = []
@@ -252,8 +276,19 @@ export function HorseDetailModal({
       factors.push({ icon: 'schedule', text: 'Form concerns', type: 'weakness' })
     }
 
+    // Overlay / Value analysis
+    if (overlay.overlayPercent >= 100) {
+      factors.push({ icon: 'rocket_launch', text: `Massive ${formatOverlayPercent(overlay.overlayPercent)} overlay - exceptional value!`, type: 'strength' })
+    } else if (overlay.overlayPercent >= 50) {
+      factors.push({ icon: 'trending_up', text: `Strong ${formatOverlayPercent(overlay.overlayPercent)} overlay - excellent value`, type: 'strength' })
+    } else if (overlay.overlayPercent >= 25) {
+      factors.push({ icon: 'thumb_up', text: `Good ${formatOverlayPercent(overlay.overlayPercent)} overlay`, type: 'strength' })
+    } else if (overlay.overlayPercent <= -20) {
+      factors.push({ icon: 'do_not_disturb', text: `${formatOverlayPercent(overlay.overlayPercent)} underlay - avoid`, type: 'weakness' })
+    }
+
     return factors
-  }, [score.breakdown, paceAnalysis])
+  }, [score.breakdown, paceAnalysis, overlay])
 
   if (!isOpen) return null
 
@@ -558,6 +593,120 @@ export function HorseDetailModal({
                   </div>
                 }
               />
+            </div>
+          </section>
+
+          {/* Overlay & Value Analysis Section */}
+          <section className="modal-section">
+            <h3 className="section-title-modal">
+              <Icon name="attach_money" className="section-icon-modal" />
+              Value Analysis
+            </h3>
+
+            <div className="overlay-analysis-box">
+              {/* Main overlay badge */}
+              <div
+                className="overlay-main-badge"
+                style={{
+                  backgroundColor: getOverlayBgColor(overlay.overlayPercent, 0.15),
+                  borderColor: `${getOverlayColor(overlay.overlayPercent)}40`,
+                }}
+              >
+                <div className="overlay-main-header">
+                  <span
+                    className="material-icons overlay-main-icon"
+                    style={{ color: getOverlayColor(overlay.overlayPercent) }}
+                  >
+                    {VALUE_ICONS[overlay.valueClass]}
+                  </span>
+                  <span
+                    className="overlay-main-percent"
+                    style={{ color: getOverlayColor(overlay.overlayPercent) }}
+                  >
+                    {formatOverlayPercent(overlay.overlayPercent)}
+                  </span>
+                  <span className="overlay-main-label">
+                    {VALUE_LABELS[overlay.valueClass]}
+                  </span>
+                </div>
+                <p className="overlay-main-description">{overlay.overlayDescription}</p>
+              </div>
+
+              {/* Detailed breakdown */}
+              <div className="overlay-details-grid">
+                <div className="overlay-detail-item">
+                  <span className="overlay-detail-label">Your Win Probability</span>
+                  <span className="overlay-detail-value highlight">
+                    {overlay.winProbability.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="overlay-detail-item">
+                  <span className="overlay-detail-label">Fair Odds (based on score)</span>
+                  <span className="overlay-detail-value">{overlay.fairOddsDisplay}</span>
+                </div>
+                <div className="overlay-detail-item">
+                  <span className="overlay-detail-label">Actual Odds</span>
+                  <span className="overlay-detail-value">{currentOdds}</span>
+                </div>
+                <div className="overlay-detail-item">
+                  <span className="overlay-detail-label">Expected Value (per $1)</span>
+                  <span
+                    className="overlay-detail-value"
+                    style={{ color: overlay.evPerDollar >= 0 ? '#22c55e' : '#ef4444' }}
+                  >
+                    {formatEV(overlay.evPerDollar)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Recommendation box */}
+              <div
+                className="overlay-recommendation-box"
+                style={{
+                  borderColor: overlay.recommendation.action === 'bet_heavily' ? '#22c55e' :
+                               overlay.recommendation.action === 'bet_standard' ? '#3b82f6' :
+                               overlay.recommendation.action === 'avoid' ? '#ef4444' : '#6b7280',
+                }}
+              >
+                <div className="overlay-rec-header">
+                  <Icon
+                    name={
+                      overlay.recommendation.action === 'bet_heavily' ? 'rocket_launch' :
+                      overlay.recommendation.action === 'bet_standard' ? 'check_circle' :
+                      overlay.recommendation.action === 'bet_small' ? 'thumb_up' :
+                      overlay.recommendation.action === 'avoid' ? 'cancel' : 'remove_circle'
+                    }
+                    className="overlay-rec-icon"
+                  />
+                  <span className="overlay-rec-action">
+                    {overlay.recommendation.action === 'bet_heavily' ? 'Bet Heavily' :
+                     overlay.recommendation.action === 'bet_standard' ? 'Standard Bet' :
+                     overlay.recommendation.action === 'bet_small' ? 'Small Bet' :
+                     overlay.recommendation.action === 'avoid' ? 'Avoid' : 'Pass'}
+                  </span>
+                  {overlay.recommendation.urgency === 'immediate' && (
+                    <span className="overlay-urgency-badge">IMMEDIATE</span>
+                  )}
+                </div>
+                <p className="overlay-rec-reasoning">{overlay.recommendation.reasoning}</p>
+                {overlay.recommendation.suggestedMultiplier > 0 && overlay.recommendation.action !== 'avoid' && (
+                  <div className="overlay-bet-multiplier">
+                    <span>Suggested: </span>
+                    <strong>{overlay.recommendation.suggestedMultiplier.toFixed(1)}x</strong>
+                    <span> standard unit</span>
+                  </div>
+                )}
+              </div>
+
+              {/* EV explanation */}
+              <div className="overlay-ev-explanation">
+                <Icon name="info" className="text-sm" />
+                <span>
+                  {overlay.isPositiveEV
+                    ? `Positive EV bet: Expected to return ${formatEVPercent(overlay.evPercent)} on investment long-term.`
+                    : 'Negative EV: This bet is not profitable long-term at current odds.'}
+                </span>
+              </div>
             </div>
           </section>
 
