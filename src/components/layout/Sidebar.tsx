@@ -134,7 +134,7 @@ function SidebarContent({ activeItem, onNavClick, trackDbLoaded }: SidebarConten
           <span className="material-icons">casino</span>
         </div>
         <div className="sidebar-logo-text">
-          <span className="sidebar-logo-name">Horse Monster</span>
+          <span className="sidebar-logo-name">Furlong</span>
           <span className="sidebar-logo-tagline">Pro Handicapping</span>
         </div>
       </div>

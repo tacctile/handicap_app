@@ -48,7 +48,7 @@ export function Header({
               </button>
             )}
             <div className="header-branding">
-              <h1 className="header-title">Horse Monster</h1>
+              <h1 className="header-title">Furlong</h1>
               <span className="header-subtitle">Advanced Handicapping Analysis</span>
             </div>
           </div>

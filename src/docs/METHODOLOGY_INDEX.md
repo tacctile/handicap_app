@@ -293,7 +293,7 @@ Recommended update frequency:
 
 ## CONTACT & SUPPORT
 
-**Project:** Horse Monster
+**Project:** Furlong
 **Type:** PWA Handicapping Application
 **Architecture:** React + TypeScript + Vite
 

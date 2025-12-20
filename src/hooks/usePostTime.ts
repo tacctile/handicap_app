@@ -75,7 +75,7 @@ export interface UsePostTimeReturn {
 }
 
 // Local storage key for notification settings
-const NOTIFICATION_SETTINGS_KEY = 'horseMonster_notification_settings'
+const NOTIFICATION_SETTINGS_KEY = 'furlong_notification_settings'
 
 // Parse post time string to Date object
 function parsePostTime(postTimeStr: string | undefined, raceDateStr?: string): Date | null {

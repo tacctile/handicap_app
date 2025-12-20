@@ -141,9 +141,9 @@ const DEFAULT_SETTINGS: BankrollSettings = {
 }
 
 // Local storage keys
-const STORAGE_KEY = 'horseMonster_bankroll_settings'
-const TRACKING_KEY = 'horseMonster_bankroll_tracking'
-const PL_KEY = 'horseMonster_daily_pl'
+const STORAGE_KEY = 'furlong_bankroll_settings'
+const TRACKING_KEY = 'furlong_bankroll_tracking'
+const PL_KEY = 'furlong_daily_pl'
 
 // Helper: get today's date as ISO string
 function getTodayISO(): string {
