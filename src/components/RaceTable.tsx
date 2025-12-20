@@ -39,6 +39,15 @@ import {
   type RaceLongshotSummary,
   type LongshotAnalysisResult,
 } from '../lib/longshots'
+import {
+  analyzeRaceDiamonds,
+  type RaceDiamondSummary,
+  type DiamondAnalysis,
+  getDiamondColor,
+  getDiamondBgColor,
+  FACTOR_ICONS,
+  FACTOR_COLORS,
+} from '../lib/diamonds'
 
 interface RaceTableProps {
   race: ParsedRace
@@ -431,6 +440,153 @@ const ValuePlaysDetector = memo(function ValuePlaysDetector({ valuePlays, onHigh
   )
 })
 
+// Diamond in Rough detector badge for race header
+interface DiamondDetectorProps {
+  diamondSummary: RaceDiamondSummary
+  onHighlightHorse?: (index: number) => void
+}
+
+const DiamondDetector = memo(function DiamondDetector({
+  diamondSummary,
+  onHighlightHorse,
+}: DiamondDetectorProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  if (!diamondSummary.hasDiamonds) return null
+
+  const diamondColor = getDiamondColor()
+  const diamondBg = getDiamondBgColor(0.2)
+
+  return (
+    <div className="diamond-detector" style={{
+      marginBottom: '12px',
+    }}>
+      <button
+        type="button"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '12px 16px',
+          backgroundColor: diamondBg,
+          border: `2px solid ${diamondColor}60`,
+          borderRadius: '8px',
+          color: diamondColor,
+          cursor: 'pointer',
+          width: '100%',
+          justifyContent: 'space-between',
+          fontWeight: 700,
+          fontSize: '0.95rem',
+        }}
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '1.3rem' }}>💎</span>
+          <span>
+            {diamondSummary.diamondCount} Hidden Gem{diamondSummary.diamondCount > 1 ? 's' : ''} Detected!
+          </span>
+          <span style={{
+            backgroundColor: diamondColor,
+            color: '#1a1a1a',
+            padding: '2px 8px',
+            borderRadius: '4px',
+            fontSize: '0.7rem',
+            fontWeight: 800,
+          }}>
+            RARE FIND
+          </span>
+        </div>
+        <Icon name={isExpanded ? 'expand_less' : 'expand_more'} />
+      </button>
+
+      {isExpanded && (
+        <div style={{
+          backgroundColor: '#1a1a1a',
+          borderRadius: '0 0 8px 8px',
+          border: `1px solid ${diamondColor}40`,
+          borderTop: 'none',
+          marginTop: '-4px',
+          paddingTop: '8px',
+        }}>
+          {diamondSummary.diamonds.map((diamond) => (
+            <button
+              key={diamond.programNumber}
+              type="button"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                padding: '12px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                borderBottom: '1px solid #333',
+                cursor: 'pointer',
+                color: '#e0e0e0',
+              }}
+              onClick={() => onHighlightHorse?.(diamond.horseIndex)}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{
+                  backgroundColor: diamondColor,
+                  color: '#1a1a1a',
+                  padding: '3px 8px',
+                  borderRadius: '4px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                }}>
+                  #{diamond.programNumber}
+                </span>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontWeight: 600 }}>{diamond.horseName}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#888' }}>
+                    {diamond.story}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ color: diamondColor, fontSize: '0.85rem' }}>
+                  {diamond.oddsDisplay}
+                </span>
+                <span style={{
+                  color: '#22c55e',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                }}>
+                  +{diamond.overlayPercent.toFixed(0)}%
+                </span>
+                <span style={{
+                  backgroundColor: `${diamondColor}20`,
+                  color: diamondColor,
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                }}>
+                  {diamond.confidence}% conf
+                </span>
+              </div>
+            </button>
+          ))}
+
+          <div style={{
+            padding: '10px 12px',
+            fontSize: '0.8rem',
+            color: diamondColor,
+            fontStyle: 'italic',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}>
+            <span>💎</span>
+            <span>Click horse to highlight in table</span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+})
+
 // Nuclear Longshots detector badge for race header
 interface NuclearLongshotsDetectorProps {
   longshotSummary: RaceLongshotSummary
@@ -748,6 +904,7 @@ interface RaceHeaderProps {
   oddsChangesCount: number
   valuePlays: ValuePlay[]
   longshotSummary: RaceLongshotSummary | null
+  diamondSummary: RaceDiamondSummary | null
   onHighlightHorse?: (index: number) => void
 }
 
@@ -761,6 +918,7 @@ const RaceHeader = memo(function RaceHeader({
   oddsChangesCount,
   valuePlays,
   longshotSummary,
+  diamondSummary,
   onHighlightHorse,
 }: RaceHeaderProps) {
   const { header } = race
@@ -796,6 +954,11 @@ const RaceHeader = memo(function RaceHeader({
             </div>
           </div>
         </div>
+
+        {/* Diamond in Rough Detection Badge - Most prominent! */}
+        {diamondSummary && (
+          <DiamondDetector diamondSummary={diamondSummary} onHighlightHorse={onHighlightHorse} />
+        )}
 
         {/* Nuclear Longshots Detection Badge */}
         {longshotSummary && (
@@ -913,6 +1076,24 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
     return analyzeRaceLongshots(horses, header, scoresMap)
   }, [horses, header, scoredHorses])
 
+  // Analyze diamonds in rough
+  const diamondSummary = useMemo(() => {
+    const scoresMap = new Map<number, HorseScore>()
+    for (const { index, score } of scoredHorses) {
+      scoresMap.set(index, score)
+    }
+    return analyzeRaceDiamonds(horses, scoresMap, header, getOdds)
+  }, [horses, header, scoredHorses, getOdds])
+
+  // Create a map of program number to diamond analysis for easy lookup
+  const diamondsByProgram = useMemo(() => {
+    const map = new Map<number, DiamondAnalysis>()
+    for (const diamond of diamondSummary.diamonds) {
+      map.set(diamond.programNumber, diamond)
+    }
+    return map
+  }, [diamondSummary])
+
   // Create a map of program number to longshot analysis for easy lookup
   const longshotsByProgram = useMemo(() => {
     const map = new Map<number, LongshotAnalysisResult>()
@@ -1017,6 +1198,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
         oddsChangesCount={Object.keys(raceState.updatedOdds).length}
         valuePlays={valuePlays}
         longshotSummary={longshotSummary}
+        diamondSummary={diamondSummary}
         onHighlightHorse={handleHighlightHorse}
       />
 
@@ -1054,12 +1236,19 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
               const longshotAnalysis = longshotsByProgram.get(horse.programNumber)
               const isNuclear = longshotAnalysis?.classification === 'nuclear'
               const isLive = longshotAnalysis?.classification === 'live'
+              const diamondAnalysis = diamondsByProgram.get(horse.programNumber)
+              const isDiamond = !!diamondAnalysis
+              const diamondColor = getDiamondColor()
 
               return (
                 <tr
                   key={index}
                   data-horse-index={index}
-                  className={`race-row race-row-clickable ${scratched ? 'race-row-scratched' : ''} ${isHighlighted ? 'race-row-highlighted' : ''}`}
+                  className={`race-row race-row-clickable ${scratched ? 'race-row-scratched' : ''} ${isHighlighted ? 'race-row-highlighted' : ''} ${isDiamond && !scratched ? 'race-row-diamond' : ''}`}
+                  style={isDiamond && !scratched ? {
+                    backgroundColor: getDiamondBgColor(0.08),
+                    borderLeft: `3px solid ${diamondColor}`,
+                  } : undefined}
                   onClick={() => handleRowClick(horse, score, index, rank)}
                   tabIndex={0}
                   onKeyDown={(e) => {
@@ -1087,6 +1276,24 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                   <td className={`font-medium ${scratched ? 'horse-name-scratched' : 'text-foreground'}`}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       {horse.horseName}
+                      {isDiamond && !scratched && (
+                        <span
+                          title={`💎 HIDDEN GEM: ${diamondAnalysis?.factorCount} factors align for upset at ${diamondAnalysis?.oddsDisplay}\n${diamondAnalysis?.story}`}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '22px',
+                            height: '22px',
+                            backgroundColor: diamondColor,
+                            borderRadius: '4px',
+                            cursor: 'help',
+                            fontSize: '0.85rem',
+                          }}
+                        >
+                          💎
+                        </span>
+                      )}
                       {isNuclear && !scratched && (
                         <span
                           title={`NUCLEAR LONGSHOT: ${longshotAnalysis?.totalAnglePoints} pts - ${longshotAnalysis?.detectedAngles.map(a => a.name).join(' + ')}`}
@@ -1188,12 +1395,19 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
           const longshotAnalysisMobile = longshotsByProgram.get(horse.programNumber)
           const isNuclearMobile = longshotAnalysisMobile?.classification === 'nuclear'
           const isLiveMobile = longshotAnalysisMobile?.classification === 'live'
+          const diamondAnalysisMobile = diamondsByProgram.get(horse.programNumber)
+          const isDiamondMobile = !!diamondAnalysisMobile
+          const diamondColorMobile = getDiamondColor()
 
           return (
             <div
               key={index}
               data-horse-index={index}
-              className={`mobile-horse-card mobile-card-clickable ${scratched ? 'mobile-card-scratched' : ''} ${isHighlighted ? 'mobile-card-highlighted' : ''}`}
+              className={`mobile-horse-card mobile-card-clickable ${scratched ? 'mobile-card-scratched' : ''} ${isHighlighted ? 'mobile-card-highlighted' : ''} ${isDiamondMobile && !scratched ? 'mobile-card-diamond' : ''}`}
+              style={isDiamondMobile && !scratched ? {
+                backgroundColor: getDiamondBgColor(0.08),
+                borderLeft: `3px solid ${diamondColorMobile}`,
+              } : undefined}
               onClick={() => handleRowClick(horse, score, index, rank)}
               role="button"
               tabIndex={0}
@@ -1238,6 +1452,20 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                 <div className="mobile-card-body">
                   <div className={`mobile-horse-name ${scratched ? 'horse-name-scratched' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     {horse.horseName}
+                    {isDiamondMobile && !scratched && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '22px',
+                        height: '22px',
+                        backgroundColor: diamondColorMobile,
+                        borderRadius: '4px',
+                        fontSize: '0.85rem',
+                      }}>
+                        💎
+                      </span>
+                    )}
                     {isNuclearMobile && !scratched && (
                       <span style={{
                         display: 'inline-flex',
@@ -1346,6 +1574,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
           overlay={overlaysByIndex.get(selectedHorse.index)}
           allHorses={horses.filter((_, i) => !isScratched(i))}
           longshotAnalysis={longshotsByProgram.get(selectedHorse.horse.programNumber)}
+          diamondAnalysis={diamondsByProgram.get(selectedHorse.horse.programNumber)}
         />
       )}
 

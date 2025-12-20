@@ -1,5 +1,6 @@
 import type { ClassifiedHorse, TierGroup, BettingTier } from './tierClassification'
 import type { LongshotAnalysisResult } from '../longshots'
+import type { DiamondAnalysis } from '../diamonds'
 
 // Bet types
 export type BetType =
@@ -15,6 +16,7 @@ export type BetType =
   | 'quinella'
   | 'superfecta'
   | 'value_bomb' // Nuclear longshot special bet
+  | 'hidden_gem' // Diamond in rough special bet
 
 export interface BetRecommendation {
   type: BetType
@@ -32,6 +34,10 @@ export interface BetRecommendation {
   longshotAngle?: string
   /** Whether this is a nuclear longshot bet */
   isNuclearLongshot?: boolean
+  /** For diamonds - the story explanation */
+  diamondStory?: string
+  /** Whether this is a hidden gem bet */
+  isHiddenGem?: boolean
 }
 
 export interface TierBetRecommendations {
@@ -65,6 +71,7 @@ const BET_TYPE_CONFIG: Record<BetType, { name: string; icon: string }> = {
   quinella: { name: 'Quinella', icon: 'compare_arrows' },
   superfecta: { name: 'Superfecta', icon: 'format_list_numbered' },
   value_bomb: { name: 'Value Bomb', icon: 'local_fire_department' },
+  hidden_gem: { name: 'Hidden Gem', icon: 'diamond' },
 }
 
 /**
@@ -151,6 +158,12 @@ function calculatePotentialReturn(
         min: Math.round(cost * (minOdds + 1)),
         max: Math.round(cost * (maxOdds + 1)),
       }
+    case 'hidden_gem':
+      // Diamond in rough - moderate to high returns
+      return {
+        min: Math.round(cost * (minOdds + 1)),
+        max: Math.round(cost * (maxOdds + 1)),
+      }
     default:
       return { min: cost, max: cost * 10 }
   }
@@ -201,6 +214,8 @@ function generateWindowInstruction(
       return `"${racePrefix}$0.10 SUPERFECTA BOX ${numbers}"`
     case 'value_bomb':
       return `"${racePrefix}${baseAmount} to WIN on number ${numbers}" (NUCLEAR LONGSHOT)`
+    case 'hidden_gem':
+      return `"${racePrefix}${baseAmount} to WIN on number ${numbers}" (HIDDEN GEM 💎)`
     default:
       return `"${racePrefix}${baseAmount} on ${numbers}"`
   }
@@ -623,6 +638,90 @@ function generateTier3Bets(
   }
 
   return bets
+}
+
+/**
+ * Diamond bet recommendations - separate from tier-based bets
+ */
+export interface DiamondBetRecommendations {
+  hasDiamonds: boolean
+  diamondCount: number
+  bets: BetRecommendation[]
+  totalInvestment: number
+  potentialReturnRange: { min: number; max: number }
+  summary: string
+}
+
+/**
+ * Generate hidden gem bets for diamonds
+ */
+export function generateDiamondBets(
+  diamonds: DiamondAnalysis[],
+  allHorses: ClassifiedHorse[]
+): DiamondBetRecommendations {
+  const bets: BetRecommendation[] = []
+
+  for (const diamond of diamonds) {
+    const matchingHorse = allHorses.find(h => h.horse.programNumber === diamond.programNumber)
+    if (!matchingHorse) continue
+
+    // Bet size between Tier 2 and Tier 3 - $3-4 base
+    const baseAmount = diamond.confidence >= 60 ? 4 : 3
+
+    // Win bet on diamond
+    bets.push({
+      type: 'hidden_gem',
+      typeName: `💎 Hidden Gem`,
+      description: `${diamond.horseName} at ${diamond.oddsDisplay}: ${diamond.story}`,
+      horses: [matchingHorse],
+      horseNumbers: [diamond.programNumber],
+      amount: baseAmount,
+      totalCost: baseAmount,
+      windowInstruction: generateWindowInstruction('hidden_gem', [matchingHorse], baseAmount),
+      potentialReturn: calculatePotentialReturn('hidden_gem', [matchingHorse], baseAmount),
+      confidence: diamond.confidence,
+      icon: BET_TYPE_CONFIG.hidden_gem.icon,
+      diamondStory: diamond.story,
+      isHiddenGem: true,
+    })
+
+    // Place bet for safety
+    const placeAmount = baseAmount - 1
+    if (placeAmount > 0) {
+      bets.push({
+        type: 'place',
+        typeName: BET_TYPE_CONFIG.place.name,
+        description: `Place saver on ${diamond.horseName}`,
+        horses: [matchingHorse],
+        horseNumbers: [diamond.programNumber],
+        amount: placeAmount,
+        totalCost: placeAmount,
+        windowInstruction: generateWindowInstruction('place', [matchingHorse], placeAmount),
+        potentialReturn: calculatePotentialReturn('place', [matchingHorse], placeAmount),
+        confidence: diamond.confidence + 15,
+        icon: BET_TYPE_CONFIG.place.icon,
+        isHiddenGem: true,
+      })
+    }
+  }
+
+  const totalInvestment = bets.reduce((sum, bet) => sum + bet.totalCost, 0)
+  const minReturn = bets.reduce((sum, bet) => sum + bet.potentialReturn.min, 0)
+  const maxReturn = bets.reduce((sum, bet) => sum + bet.potentialReturn.max, 0)
+
+  return {
+    hasDiamonds: diamonds.length > 0,
+    diamondCount: diamonds.length,
+    bets,
+    totalInvestment: Math.round(totalInvestment * 100) / 100,
+    potentialReturnRange: {
+      min: Math.round(minReturn),
+      max: Math.round(maxReturn),
+    },
+    summary: diamonds.length > 0
+      ? `${diamonds.length} Hidden Gem${diamonds.length > 1 ? 's' : ''} - ${diamonds.map(d => `#${d.programNumber} ${d.horseName}`).join(', ')}`
+      : 'No diamonds in this race',
+  }
 }
 
 /**
