@@ -40,6 +40,13 @@ import {
   UPSET_ANGLE_ICONS,
   LONGSHOT_CLASSIFICATION_META,
 } from '../lib/longshots'
+import {
+  type DiamondAnalysis,
+  getDiamondColor,
+  getDiamondBgColor,
+  FACTOR_ICONS,
+  FACTOR_COLORS,
+} from '../lib/diamonds'
 
 interface HorseDetailModalProps {
   isOpen: boolean
@@ -56,6 +63,8 @@ interface HorseDetailModalProps {
   overlay?: OverlayAnalysis
   /** Longshot analysis for 25/1+ horses */
   longshotAnalysis?: LongshotAnalysisResult
+  /** Diamond analysis for hidden gem horses */
+  diamondAnalysis?: DiamondAnalysis
 }
 
 // Material Icon component
@@ -187,6 +196,7 @@ export function HorseDetailModal({
   allHorses,
   overlay: overlayProp,
   longshotAnalysis,
+  diamondAnalysis,
 }: HorseDetailModalProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['connections']))
   const [isAnimating, setIsAnimating] = useState(false)
@@ -408,6 +418,225 @@ export function HorseDetailModal({
 
         {/* Scrollable Content - with mobile safe area */}
         <div className="modal-content modal-content-responsive">
+          {/* Diamond Analysis Section - PROMINENT for qualifying horses */}
+          {diamondAnalysis && diamondAnalysis.isDiamond && (
+            <section className="modal-section" style={{ marginBottom: '20px' }}>
+              <div style={{
+                backgroundColor: getDiamondBgColor(0.15),
+                border: `3px solid ${getDiamondColor()}`,
+                borderRadius: '16px',
+                padding: '20px',
+                position: 'relative',
+                overflow: 'hidden',
+              }}>
+                {/* Prominent "THIS IS A DIAMOND" callout */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  backgroundColor: getDiamondColor(),
+                  color: '#1a1a1a',
+                  padding: '6px 16px',
+                  borderBottomLeftRadius: '12px',
+                  fontWeight: 800,
+                  fontSize: '0.75rem',
+                  letterSpacing: '0.05em',
+                }}>
+                  💎 HIDDEN GEM
+                </div>
+
+                {/* Main Diamond Header */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  marginBottom: '16px',
+                }}>
+                  <span style={{ fontSize: '2.5rem' }}>💎</span>
+                  <div>
+                    <h3 style={{
+                      color: getDiamondColor(),
+                      fontSize: '1.3rem',
+                      fontWeight: 700,
+                      margin: 0,
+                    }}>
+                      Diamond in the Rough
+                    </h3>
+                    <p style={{
+                      color: '#e0e0e0',
+                      fontSize: '0.95rem',
+                      margin: '4px 0 0 0',
+                    }}>
+                      {diamondAnalysis.story}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Stats Grid */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '12px',
+                  marginBottom: '16px',
+                }}>
+                  <div style={{
+                    backgroundColor: '#1a1a1a',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                  }}>
+                    <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>Score</div>
+                    <div style={{ color: '#e0e0e0', fontWeight: 700, fontSize: '1.1rem' }}>{diamondAnalysis.score}</div>
+                  </div>
+                  <div style={{
+                    backgroundColor: '#1a1a1a',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                  }}>
+                    <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>Overlay</div>
+                    <div style={{ color: '#22c55e', fontWeight: 700, fontSize: '1.1rem' }}>+{diamondAnalysis.overlayPercent.toFixed(0)}%</div>
+                  </div>
+                  <div style={{
+                    backgroundColor: '#1a1a1a',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                  }}>
+                    <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>Factors</div>
+                    <div style={{ color: getDiamondColor(), fontWeight: 700, fontSize: '1.1rem' }}>{diamondAnalysis.factorCount}</div>
+                  </div>
+                  <div style={{
+                    backgroundColor: '#1a1a1a',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                  }}>
+                    <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>Confidence</div>
+                    <div style={{ color: getDiamondColor(), fontWeight: 700, fontSize: '1.1rem' }}>{diamondAnalysis.confidence}%</div>
+                  </div>
+                </div>
+
+                {/* Perfect Storm Factors */}
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{
+                    color: '#e0e0e0',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    marginBottom: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}>
+                    <Icon name="bolt" className="text-base" />
+                    Perfect Storm Factors
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {diamondAnalysis.factors.map((factor, i) => (
+                      <div key={i} style={{
+                        backgroundColor: `${FACTOR_COLORS[factor.type]}15`,
+                        border: `1px solid ${FACTOR_COLORS[factor.type]}40`,
+                        padding: '12px',
+                        borderRadius: '8px',
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: '6px',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Icon
+                              name={FACTOR_ICONS[factor.type]}
+                              className="text-base"
+                            />
+                            <span style={{
+                              color: FACTOR_COLORS[factor.type],
+                              fontWeight: 600,
+                            }}>
+                              {factor.name}
+                            </span>
+                          </div>
+                          <span style={{
+                            backgroundColor: FACTOR_COLORS[factor.type],
+                            color: '#fff',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                          }}>
+                            {factor.confidence}%
+                          </span>
+                        </div>
+                        <div style={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                          {factor.evidence}
+                        </div>
+                        {factor.evidenceDetails.length > 0 && (
+                          <div style={{
+                            marginTop: '8px',
+                            paddingTop: '8px',
+                            borderTop: '1px solid #333',
+                            fontSize: '0.75rem',
+                            color: '#888',
+                          }}>
+                            {factor.evidenceDetails.map((detail, j) => (
+                              <div key={j} style={{ marginBottom: '2px' }}>• {detail}</div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ROI Potential */}
+                <div style={{
+                  backgroundColor: '#1a1a1a',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  marginBottom: '16px',
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className="material-icons text-base" style={{ color: '#22c55e' }}>trending_up</span>
+                      <span style={{ color: '#e0e0e0', fontWeight: 600 }}>ROI Potential</span>
+                    </div>
+                    <span style={{
+                      color: '#22c55e',
+                      fontWeight: 700,
+                      fontSize: '1.1rem',
+                    }}>
+                      {diamondAnalysis.roiPotential > 0 ? '+' : ''}{(diamondAnalysis.roiPotential * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bet Recommendation */}
+                <div style={{
+                  backgroundColor: getDiamondColor(),
+                  color: '#1a1a1a',
+                  padding: '14px 16px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                }}>
+                  <Icon name="paid" className="text-lg" />
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Hidden Gem Bet</div>
+                    <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>
+                      {diamondAnalysis.betRecommendation}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
           {/* Score Breakdown Section */}
           <section className="modal-section modal-section-responsive">
             <h3 className="section-title-modal">

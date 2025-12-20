@@ -1,5 +1,5 @@
 import { memo, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import type { ParsedRace } from '../types/drf'
 import type { UseRaceStateReturn } from '../hooks/useRaceState'
 import type { UseBankrollReturn } from '../hooks/useBankroll'
@@ -10,15 +10,70 @@ import {
   getConfidenceBgColor,
   getConfidenceBorderColor,
 } from '../lib/confidence'
+import { getDiamondColor, getDiamondBgColor } from '../lib/diamonds'
 
 interface RaceDetailProps {
   race: ParsedRace
   confidence: number
   raceState: UseRaceStateReturn
   bankroll: UseBankrollReturn
+  diamondCount?: number
   onBack: () => void
   onOpenBankrollSettings: () => void
 }
+
+// Diamond alert banner component
+const DiamondAlertBanner = memo(function DiamondAlertBanner({
+  count,
+}: {
+  count: number
+}) {
+  if (count === 0) return null
+
+  const diamondColor = getDiamondColor()
+  const diamondBg = getDiamondBgColor(0.15)
+
+  return (
+    <motion.div
+      className="diamond-alert-banner"
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.3 }}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '12px',
+        padding: '10px 16px',
+        backgroundColor: diamondBg,
+        borderBottom: `2px solid ${diamondColor}`,
+        color: diamondColor,
+        fontWeight: 700,
+        fontSize: '0.9rem',
+      }}
+    >
+      <span style={{ fontSize: '1.2rem' }}>💎</span>
+      <span>
+        {count} Hidden Gem{count > 1 ? 's' : ''} in this race!
+      </span>
+      <span style={{
+        backgroundColor: diamondColor,
+        color: '#1a1a1a',
+        padding: '2px 8px',
+        borderRadius: '4px',
+        fontSize: '0.65rem',
+        fontWeight: 800,
+        letterSpacing: '0.5px',
+      }}>
+        RARE VALUE
+      </span>
+      <span style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+        ↓ Scroll to see details
+      </span>
+    </motion.div>
+  )
+})
 
 // Material Icon component
 function Icon({ name, className = '' }: { name: string; className?: string }) {
@@ -62,6 +117,7 @@ export const RaceDetail = memo(function RaceDetail({
   confidence,
   raceState,
   bankroll,
+  diamondCount = 0,
   onBack,
   onOpenBankrollSettings,
 }: RaceDetailProps) {
@@ -90,6 +146,11 @@ export const RaceDetail = memo(function RaceDetail({
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.2 }}
     >
+      {/* Diamond alert banner */}
+      <AnimatePresence>
+        {diamondCount > 0 && <DiamondAlertBanner count={diamondCount} />}
+      </AnimatePresence>
+
       {/* Header with back navigation */}
       <div className="race-detail-header">
         <button
