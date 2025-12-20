@@ -5,7 +5,7 @@
  * optimal bet sizing for bankroll growth.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import {
   calculateKelly,
   parseOddsToDecimal,
@@ -20,7 +20,6 @@ import {
   MIN_BET_AMOUNT,
   DEFAULT_MAX_BET_PERCENT,
 } from '../kellyCriterion'
-import type { KellyFraction } from '../kellySettings'
 
 // Mock logger
 vi.mock('../../../services/logging', () => ({

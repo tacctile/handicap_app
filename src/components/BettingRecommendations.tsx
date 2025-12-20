@@ -15,9 +15,7 @@ import {
   calculateBetWithKelly,
   type GeneratedBet,
   type BetGeneratorResult,
-  type KellyBetSizingResult,
 } from '../lib/recommendations'
-import { loadKellySettings, getKellyFractionLabel } from '../lib/betting/kellySettings'
 import type { UseBankrollReturn } from '../hooks/useBankroll'
 import { BankrollSummaryCard } from './BankrollSummaryCard'
 
@@ -608,7 +606,6 @@ export function BettingRecommendations({
 
   // Check if Kelly Criterion is enabled
   const kellyEnabled = useMemo(() => isKellyEnabled(bankroll), [bankroll])
-  const kellySettings = useMemo(() => loadKellySettings(), [])
 
   // Convert horses to ScoredHorse format for generator
   const scoredHorses: ScoredHorse[] = useMemo(() => {

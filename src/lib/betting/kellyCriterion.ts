@@ -21,7 +21,7 @@
 
 import { logger } from '../../services/logging'
 import type { KellySettings, KellyFraction, RiskToleranceKelly } from './kellySettings'
-import { validateKellyInputs, type KellyValidationResult } from './kellyValidator'
+import { validateKellyInputs } from './kellyValidator'
 
 // ============================================================================
 // TYPES

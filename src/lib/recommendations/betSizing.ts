@@ -19,9 +19,7 @@ import {
   parseOddsToDecimal,
   confidenceToWinProbability,
   formatKellyResult,
-  KELLY_FRACTION_VALUES,
   type KellyResult,
-  type KellyInput,
 } from '../betting/kellyCriterion'
 import {
   type KellySettings,

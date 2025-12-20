@@ -15,8 +15,6 @@ import {
   type KellySettings,
   type KellyFraction,
   KELLY_FRACTION_OPTIONS,
-  MAX_BET_PERCENT_OPTIONS,
-  MIN_EDGE_OPTIONS,
   KELLY_FRACTION_INFO,
   DEFAULT_KELLY_SETTINGS,
   loadKellySettings,
