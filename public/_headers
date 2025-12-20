@@ -1,0 +1,56 @@
+# Security Headers Configuration
+# This file works with both Vercel and Netlify deployments
+#
+# Reference: https://owasp.org/www-project-secure-headers/
+
+/*
+  # Prevent clickjacking - deny all framing
+  X-Frame-Options: DENY
+
+  # Prevent MIME type sniffing - reduces XSS risk
+  X-Content-Type-Options: nosniff
+
+  # Control referrer information sent with requests
+  # strict-origin-when-cross-origin: Full URL for same-origin, origin only for cross-origin
+  Referrer-Policy: strict-origin-when-cross-origin
+
+  # Restrict browser features/APIs - disable unused sensitive features
+  # camera=(), microphone=(), geolocation=() - explicitly disabled
+  # Additional restrictions for security-sensitive features
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()
+
+  # Prevent XSS attacks in older browsers (modern browsers use CSP)
+  X-XSS-Protection: 1; mode=block
+
+  # Only connect via HTTPS - enable after SSL is confirmed
+  # Strict-Transport-Security: max-age=31536000; includeSubDomains
+
+  # Prevent browsers from caching sensitive data
+  # Applied globally; specific routes may override for static assets
+  Cache-Control: no-store, max-age=0
+
+# Static assets can be cached
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Fonts can be cached
+*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+
+# Images can be cached
+*.png
+  Cache-Control: public, max-age=86400
+
+*.jpg
+  Cache-Control: public, max-age=86400
+
+*.svg
+  Cache-Control: public, max-age=86400
+
+# Service worker should not be cached
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# Manifest should be fresh
+/manifest.json
+  Cache-Control: no-cache

@@ -22,6 +22,9 @@ const STORES = {
   CALCULATIONS: 'calculations',
 } as const
 
+// Default cache expiration time: 7 days
+const DEFAULT_CACHE_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000
+
 // Types for stored data
 interface StoredRaceData {
   id: string
@@ -30,6 +33,7 @@ interface StoredRaceData {
   savedAt: Date
   trackCode: string
   raceDate: string
+  expiresAt?: Date
 }
 
 interface SavedFileInfo {
@@ -44,6 +48,7 @@ interface UserPreferences {
   key: string
   value: unknown
   updatedAt: Date
+  expiresAt?: Date
 }
 
 interface CachedCalculation {
@@ -52,6 +57,7 @@ interface CachedCalculation {
   calculationType: string
   result: unknown
   calculatedAt: Date
+  expiresAt?: Date
 }
 
 // Open database connection
@@ -114,22 +120,31 @@ function generateRaceDataId(data: ParsedDRFFile): string {
 
 /**
  * Save parsed DRF file data to IndexedDB
+ * @param fileId - Unique identifier for the file
+ * @param data - Parsed DRF file data
+ * @param expirationMs - Optional custom expiration time in milliseconds (default: 7 days)
  */
-export async function saveRaceData(fileId: string, data: ParsedDRFFile): Promise<void> {
+export async function saveRaceData(
+  fileId: string,
+  data: ParsedDRFFile,
+  expirationMs: number = DEFAULT_CACHE_EXPIRATION_MS
+): Promise<void> {
   const db = await openDatabase()
   const tx = db.transaction(STORES.RACE_DATA, 'readwrite')
   const store = tx.objectStore(STORES.RACE_DATA)
 
   const trackCode = data.races[0]?.header?.trackCode || 'unknown'
   const raceDate = data.races[0]?.header?.raceDateRaw || ''
+  const now = new Date()
 
   const storedData: StoredRaceData = {
     id: fileId,
     filename: data.filename,
     data,
-    savedAt: new Date(),
+    savedAt: now,
     trackCode,
     raceDate,
+    expiresAt: new Date(now.getTime() + expirationMs),
   }
 
   return new Promise((resolve, reject) => {
@@ -468,3 +483,164 @@ export async function isStoragePersistent(): Promise<boolean> {
 
 // Export utility for generating IDs
 export { generateRaceDataId }
+
+// ============================================================================
+// SECURITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Clear all expired cached items from all stores.
+ * Should be called periodically (e.g., on app start) to clean up old data.
+ *
+ * @returns Number of expired items cleared
+ */
+export async function clearExpiredData(): Promise<number> {
+  const db = await openDatabase()
+  const now = new Date()
+  let clearedCount = 0
+
+  // Clear expired race data
+  const raceDataTx = db.transaction(STORES.RACE_DATA, 'readwrite')
+  const raceStore = raceDataTx.objectStore(STORES.RACE_DATA)
+
+  await new Promise<void>((resolve, reject) => {
+    const request = raceStore.openCursor()
+    request.onsuccess = () => {
+      const cursor = request.result
+      if (cursor) {
+        const data = cursor.value as StoredRaceData
+        if (data.expiresAt && new Date(data.expiresAt) < now) {
+          cursor.delete()
+          clearedCount++
+        }
+        cursor.continue()
+      } else {
+        resolve()
+      }
+    }
+    request.onerror = () => reject(request.error)
+  })
+
+  // Clear expired calculations
+  const calcTx = db.transaction(STORES.CALCULATIONS, 'readwrite')
+  const calcStore = calcTx.objectStore(STORES.CALCULATIONS)
+
+  await new Promise<void>((resolve, reject) => {
+    const request = calcStore.openCursor()
+    request.onsuccess = () => {
+      const cursor = request.result
+      if (cursor) {
+        const data = cursor.value as CachedCalculation
+        if (data.expiresAt && new Date(data.expiresAt) < now) {
+          cursor.delete()
+          clearedCount++
+        }
+        cursor.continue()
+      } else {
+        resolve()
+      }
+    }
+    request.onerror = () => reject(request.error)
+  })
+
+  // Clear expired preferences
+  const prefTx = db.transaction(STORES.PREFERENCES, 'readwrite')
+  const prefStore = prefTx.objectStore(STORES.PREFERENCES)
+
+  await new Promise<void>((resolve, reject) => {
+    const request = prefStore.openCursor()
+    request.onsuccess = () => {
+      const cursor = request.result
+      if (cursor) {
+        const data = cursor.value as UserPreferences
+        if (data.expiresAt && new Date(data.expiresAt) < now) {
+          cursor.delete()
+          clearedCount++
+        }
+        cursor.continue()
+      } else {
+        resolve()
+      }
+    }
+    request.onerror = () => reject(request.error)
+  })
+
+  if (clearedCount > 0) {
+    console.log(`[Storage] Cleared ${clearedCount} expired items`)
+  }
+
+  return clearedCount
+}
+
+/**
+ * Clear all sensitive data on logout.
+ * This should be called when the user logs out to ensure no
+ * sensitive information remains in client storage.
+ *
+ * Clears:
+ * - All cached calculations
+ * - All user preferences
+ * - Auth-related localStorage keys
+ *
+ * Does NOT clear:
+ * - Race data (non-sensitive, allows offline access)
+ */
+export async function clearSensitiveDataOnLogout(): Promise<void> {
+  // Clear IndexedDB stores with potentially sensitive data
+  await Promise.all([
+    clearAllCalculations(),
+    clearAllPreferences(),
+  ])
+
+  // Clear auth-related localStorage keys
+  // Pattern matches auth storage keys from auth service
+  const authKeyPatterns = [
+    'handicap_app_auth',
+    'handicap_app_auth_users',
+    'handicap_app_auth_pwd_',
+  ]
+
+  const keysToRemove: string[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && authKeyPatterns.some((pattern) => key.startsWith(pattern))) {
+      keysToRemove.push(key)
+    }
+  }
+
+  keysToRemove.forEach((key) => localStorage.removeItem(key))
+
+  console.log('[Storage] Cleared sensitive data on logout')
+}
+
+/**
+ * Clear all user preferences
+ */
+async function clearAllPreferences(): Promise<void> {
+  const db = await openDatabase()
+  const tx = db.transaction(STORES.PREFERENCES, 'readwrite')
+  const store = tx.objectStore(STORES.PREFERENCES)
+
+  return new Promise((resolve, reject) => {
+    const request = store.clear()
+    request.onsuccess = () => resolve()
+    request.onerror = () => {
+      console.error('[Storage] Failed to clear preferences:', request.error)
+      reject(request.error)
+    }
+  })
+}
+
+/**
+ * Sanitize data before storage.
+ * This helper can be used to ensure data is clean before storing.
+ *
+ * Note: Import sanitization utilities from src/lib/sanitization.ts
+ * for comprehensive input sanitization before passing to storage.
+ */
+export function sanitizeStorageKey(key: string): string {
+  // Remove any characters that could cause issues with IndexedDB keys
+  return key
+    .replace(/[^\w\-_.]/g, '_')
+    .substring(0, 255)
+}

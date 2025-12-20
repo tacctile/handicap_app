@@ -1,0 +1,191 @@
+# Security Audit Workflow
+# Runs weekly dependency audits and alerts on vulnerabilities
+#
+# Features:
+# - Weekly scheduled security audits (Monday 9 AM UTC)
+# - Manual trigger option for on-demand audits
+# - Runs on PRs that modify package files
+# - Creates GitHub issues for high/critical vulnerabilities
+# - Outputs detailed audit report
+
+name: Security Audit
+
+on:
+  # Run weekly on Monday at 9 AM UTC
+  schedule:
+    - cron: '0 9 * * 1'
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+  # Run on PRs that modify dependencies
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      issues: write
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        id: audit
+        continue-on-error: true
+        run: |
+          # Run audit and capture output
+          npm audit --json > audit-results.json 2>&1 || true
+
+          # Parse results
+          TOTAL=$(jq '.metadata.vulnerabilities.total' audit-results.json)
+          HIGH=$(jq '.metadata.vulnerabilities.high' audit-results.json)
+          CRITICAL=$(jq '.metadata.vulnerabilities.critical' audit-results.json)
+
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+          echo "high=$HIGH" >> $GITHUB_OUTPUT
+          echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+
+          # Display summary
+          echo "## Security Audit Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Critical | $(jq '.metadata.vulnerabilities.critical' audit-results.json) |" >> $GITHUB_STEP_SUMMARY
+          echo "| High | $(jq '.metadata.vulnerabilities.high' audit-results.json) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Moderate | $(jq '.metadata.vulnerabilities.moderate' audit-results.json) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Low | $(jq '.metadata.vulnerabilities.low' audit-results.json) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Info | $(jq '.metadata.vulnerabilities.info' audit-results.json) |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$TOTAL" -gt "0" ]; then
+            echo "### Vulnerabilities Found" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Run \`npm audit\` locally for details." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No vulnerabilities found!" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-results
+          path: audit-results.json
+          retention-days: 30
+
+      - name: Create issue for high/critical vulnerabilities
+        if: steps.audit.outputs.high > 0 || steps.audit.outputs.critical > 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const auditResults = JSON.parse(fs.readFileSync('audit-results.json', 'utf8'));
+
+            const high = auditResults.metadata.vulnerabilities.high;
+            const critical = auditResults.metadata.vulnerabilities.critical;
+
+            // Check for existing open issue
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'security,automated'
+            });
+
+            const existingSecurityIssue = existingIssues.data.find(
+              issue => issue.title.includes('Security Vulnerabilities Detected')
+            );
+
+            const issueBody = `## Security Audit Alert
+
+            **Critical vulnerabilities:** ${critical}
+            **High vulnerabilities:** ${high}
+
+            ### Action Required
+
+            Please review and address these security vulnerabilities as soon as possible.
+
+            \`\`\`bash
+            # Run locally to see full details
+            npm audit
+
+            # Attempt to fix automatically
+            npm audit fix
+
+            # Force fix (may include breaking changes)
+            npm audit fix --force
+            \`\`\`
+
+            ### Audit Run Details
+            - **Date:** ${new Date().toISOString()}
+            - **Workflow Run:** [View Details](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})
+
+            ---
+            *This issue was automatically created by the security audit workflow.*
+            `;
+
+            if (existingSecurityIssue) {
+              // Update existing issue
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingSecurityIssue.number,
+                body: `## Updated Security Audit Results\n\n${issueBody}`
+              });
+            } else {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `🔒 Security Vulnerabilities Detected (${critical} critical, ${high} high)`,
+                body: issueBody,
+                labels: ['security', 'automated', 'priority-high']
+              });
+            }
+
+      - name: Fail on high/critical vulnerabilities
+        if: steps.audit.outputs.high > 0 || steps.audit.outputs.critical > 0
+        run: |
+          echo "::error::Security audit found ${{ steps.audit.outputs.critical }} critical and ${{ steps.audit.outputs.high }} high severity vulnerabilities."
+          exit 1
+
+  # License compliance check
+  license-check:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check licenses
+        run: |
+          npx license-checker --summary --production || true
+          echo "## License Summary" >> $GITHUB_STEP_SUMMARY
+          npx license-checker --summary --production >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
