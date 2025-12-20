@@ -67,7 +67,6 @@ export function Dashboard({
   const {
     countdown,
     postTimeFormatted,
-    isValid: isPostTimeValid,
     pendingNotifications,
     clearNotification,
     notificationSettings,

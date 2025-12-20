@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Skeleton, SlideUp } from '../motion'
-import { RaceCardCountdown, PostTimeProgressBar } from '../PostTimeCountdown'
+import { RaceCardCountdown } from '../PostTimeCountdown'
 import type { CountdownState } from '../../hooks/usePostTime'
 
 interface RaceOverviewCardProps {
