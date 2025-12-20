@@ -1,5 +1,14 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 
+// Complexity mode levels
+export type ComplexityMode = 'simple' | 'moderate' | 'advanced'
+
+// Betting styles for Simple mode
+export type BettingStyle = 'safe' | 'balanced' | 'aggressive'
+
+// Bet types for Moderate mode
+export type BetType = 'win_place' | 'exacta' | 'trifecta' | 'superfecta' | 'multi_race'
+
 // Risk tolerance levels
 export type RiskTolerance = 'conservative' | 'moderate' | 'aggressive'
 
@@ -9,8 +18,34 @@ export type BetUnitType = 'percentage' | 'fixed'
 // Daily budget type
 export type DailyBudgetType = 'percentage' | 'fixed'
 
+// Simple mode settings
+export interface SimpleModeSettings {
+  raceBudget: number
+  bettingStyle: BettingStyle
+}
+
+// Moderate mode settings
+export interface ModerateModeSettings {
+  raceBudget: number
+  riskLevel: RiskTolerance
+  selectedBetTypes: BetType[]
+}
+
 // Bankroll settings interface
 export interface BankrollSettings {
+  // Mode selection
+  complexityMode: ComplexityMode
+
+  // Simple mode fields
+  simpleRaceBudget: number
+  simpleBettingStyle: BettingStyle
+
+  // Moderate mode fields
+  moderateRaceBudget: number
+  moderateRiskLevel: RiskTolerance
+  moderateSelectedBetTypes: BetType[]
+
+  // Advanced mode fields (existing)
   totalBankroll: number
   dailyBudgetType: DailyBudgetType
   dailyBudgetValue: number // Either dollar amount or percentage
@@ -40,8 +75,62 @@ const RISK_LABELS: Record<RiskTolerance, string> = {
   aggressive: 'Aggressive',
 }
 
+// Betting style labels and descriptions
+export const BETTING_STYLE_INFO: Record<BettingStyle, { label: string; emoji: string; description: string }> = {
+  safe: {
+    label: 'Play It Safe',
+    emoji: '🎯',
+    description: 'Win, Place and Show bets only, favorites',
+  },
+  balanced: {
+    label: 'Balanced Mix',
+    emoji: '⚖️',
+    description: 'Win, Place, Show and Exactas on top picks',
+  },
+  aggressive: {
+    label: 'Swing for Fences',
+    emoji: '🎲',
+    description: 'All bet types including longshots',
+  },
+}
+
+// Bet type labels
+export const BET_TYPE_LABELS: Record<BetType, string> = {
+  win_place: 'Win/Place bets',
+  exacta: 'Exacta boxes',
+  trifecta: 'Trifecta combos',
+  superfecta: 'Superfectas',
+  multi_race: 'Daily Doubles/Pick 3s',
+}
+
+// Expected return ranges by risk and bet types
+export function getExpectedReturnRange(riskLevel: RiskTolerance, betTypes: BetType[]): string {
+  const hasExotics = betTypes.some(t => ['trifecta', 'superfecta', 'multi_race'].includes(t))
+
+  if (riskLevel === 'conservative') {
+    return hasExotics ? '0.8x - 2.5x' : '0.9x - 1.5x'
+  } else if (riskLevel === 'moderate') {
+    return hasExotics ? '0.5x - 5x' : '0.7x - 2x'
+  } else {
+    return hasExotics ? '0x - 20x' : '0.3x - 4x'
+  }
+}
+
 // Default settings
 const DEFAULT_SETTINGS: BankrollSettings = {
+  // Mode - defaults to simple for new users
+  complexityMode: 'simple',
+
+  // Simple mode defaults
+  simpleRaceBudget: 20,
+  simpleBettingStyle: 'balanced',
+
+  // Moderate mode defaults
+  moderateRaceBudget: 100,
+  moderateRiskLevel: 'moderate',
+  moderateSelectedBetTypes: ['win_place', 'exacta'],
+
+  // Advanced mode defaults (existing)
   totalBankroll: 1000,
   dailyBudgetType: 'fixed',
   dailyBudgetValue: 200,
@@ -67,12 +156,20 @@ export interface UseBankrollReturn {
   updateSettings: (newSettings: Partial<BankrollSettings>) => void
   resetToDefaults: () => void
 
+  // Mode-aware getters
+  getComplexityMode: () => ComplexityMode
+  getSimpleSettings: () => SimpleModeSettings
+  getModerateSettings: () => ModerateModeSettings
+  getBettingStyleLabel: () => string
+  getSelectedBetTypesLabel: () => string
+
   // Calculated values
   getDailyBudget: () => number
   getRaceBudget: () => number
   getUnitSize: () => number
   getRemainingDaily: () => number
   getSpentToday: () => number
+  getExpectedReturn: () => string
 
   // Bet sizing helpers
   getBetAmount: (confidence: number, tierMultiplier?: number) => number
@@ -195,10 +292,66 @@ export function useBankroll(): UseBankrollReturn {
     return settings.dailyBudgetValue
   }, [settings.dailyBudgetType, settings.dailyBudgetValue, settings.totalBankroll])
 
-  // Get race budget
+  // Get complexity mode
+  const getComplexityMode = useCallback((): ComplexityMode => {
+    return settings.complexityMode
+  }, [settings.complexityMode])
+
+  // Get simple mode settings
+  const getSimpleSettings = useCallback((): SimpleModeSettings => {
+    return {
+      raceBudget: settings.simpleRaceBudget,
+      bettingStyle: settings.simpleBettingStyle,
+    }
+  }, [settings.simpleRaceBudget, settings.simpleBettingStyle])
+
+  // Get moderate mode settings
+  const getModerateSettings = useCallback((): ModerateModeSettings => {
+    return {
+      raceBudget: settings.moderateRaceBudget,
+      riskLevel: settings.moderateRiskLevel,
+      selectedBetTypes: settings.moderateSelectedBetTypes,
+    }
+  }, [settings.moderateRaceBudget, settings.moderateRiskLevel, settings.moderateSelectedBetTypes])
+
+  // Get betting style label for Simple mode
+  const getBettingStyleLabel = useCallback((): string => {
+    const info = BETTING_STYLE_INFO[settings.simpleBettingStyle]
+    return `${info.emoji} ${info.label}`
+  }, [settings.simpleBettingStyle])
+
+  // Get selected bet types label for Moderate mode
+  const getSelectedBetTypesLabel = useCallback((): string => {
+    const labels = settings.moderateSelectedBetTypes.map(t => {
+      switch (t) {
+        case 'win_place': return 'Win'
+        case 'exacta': return 'Exacta'
+        case 'trifecta': return 'Trifecta'
+        case 'superfecta': return 'Super'
+        case 'multi_race': return 'Multi'
+        default: return t
+      }
+    })
+    return labels.join(', ')
+  }, [settings.moderateSelectedBetTypes])
+
+  // Get expected return range for Moderate mode
+  const getExpectedReturn = useCallback((): string => {
+    return getExpectedReturnRange(settings.moderateRiskLevel, settings.moderateSelectedBetTypes)
+  }, [settings.moderateRiskLevel, settings.moderateSelectedBetTypes])
+
+  // Get race budget - mode aware
   const getRaceBudget = useCallback((): number => {
-    return settings.perRaceBudget
-  }, [settings.perRaceBudget])
+    switch (settings.complexityMode) {
+      case 'simple':
+        return settings.simpleRaceBudget
+      case 'moderate':
+        return settings.moderateRaceBudget
+      case 'advanced':
+      default:
+        return settings.perRaceBudget
+    }
+  }, [settings.complexityMode, settings.simpleRaceBudget, settings.moderateRaceBudget, settings.perRaceBudget])
 
   // Get unit size based on risk tolerance and settings
   const getUnitSize = useCallback((): number => {
@@ -321,11 +474,17 @@ export function useBankroll(): UseBankrollReturn {
     settings,
     updateSettings,
     resetToDefaults,
+    getComplexityMode,
+    getSimpleSettings,
+    getModerateSettings,
+    getBettingStyleLabel,
+    getSelectedBetTypesLabel,
     getDailyBudget,
     getRaceBudget,
     getUnitSize,
     getRemainingDaily,
     getSpentToday,
+    getExpectedReturn,
     getBetAmount,
     getUnitMultiplier,
     recordSpending,
@@ -344,11 +503,17 @@ export function useBankroll(): UseBankrollReturn {
     settings,
     updateSettings,
     resetToDefaults,
+    getComplexityMode,
+    getSimpleSettings,
+    getModerateSettings,
+    getBettingStyleLabel,
+    getSelectedBetTypesLabel,
     getDailyBudget,
     getRaceBudget,
     getUnitSize,
     getRemainingDaily,
     getSpentToday,
+    getExpectedReturn,
     getBetAmount,
     getUnitMultiplier,
     recordSpending,

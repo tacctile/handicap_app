@@ -1,6 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { RiskTolerance, BetUnitType, DailyBudgetType, BankrollSettings as BankrollSettingsType } from '../hooks/useBankroll'
+import type {
+  RiskTolerance,
+  BetUnitType,
+  DailyBudgetType,
+  BankrollSettings as BankrollSettingsType,
+  ComplexityMode,
+  BettingStyle,
+  BetType
+} from '../hooks/useBankroll'
+import { BETTING_STYLE_INFO, BET_TYPE_LABELS, getExpectedReturnRange } from '../hooks/useBankroll'
 import type { NotificationSettings } from '../hooks/usePostTime'
 
 interface BankrollSettingsProps {
@@ -29,6 +38,16 @@ const NOTIFICATION_TIMING_OPTIONS = [
   { value: 2, label: '2 min' },
   { value: 1, label: '1 min' },
 ]
+
+const MODE_OPTIONS: { value: ComplexityMode; label: string; description: string }[] = [
+  { value: 'simple', label: 'Simple', description: 'Just tell us your budget and betting style' },
+  { value: 'moderate', label: 'Moderate', description: 'Set your risk level and favorite bet types' },
+  { value: 'advanced', label: 'Advanced', description: 'Full control over bankroll and strategy' },
+]
+
+const BETTING_STYLES: BettingStyle[] = ['safe', 'balanced', 'aggressive']
+
+const BET_TYPES: BetType[] = ['win_place', 'exacta', 'trifecta', 'superfecta', 'multi_race']
 
 export function BankrollSettings({
   isOpen,
@@ -111,6 +130,18 @@ export function BankrollSettings({
     })
   }, [])
 
+  // Toggle bet type for Moderate mode
+  const toggleBetType = useCallback((betType: BetType) => {
+    setFormState(prev => {
+      const currentTypes = prev.moderateSelectedBetTypes || []
+      const newTypes = currentTypes.includes(betType)
+        ? currentTypes.filter(t => t !== betType)
+        : [...currentTypes, betType]
+      setHasChanges(true)
+      return { ...prev, moderateSelectedBetTypes: newTypes }
+    })
+  }, [])
+
   // Update notification field
   const updateNotifField = useCallback(<K extends keyof NotificationSettings>(
     field: K,
@@ -160,6 +191,379 @@ export function BankrollSettings({
       maximumFractionDigits: 0,
     }).format(amount)
   }
+
+  // Render Mode Selector
+  const renderModeSelector = () => (
+    <div className="complexity-mode-selector">
+      <div className="complexity-mode-buttons">
+        {MODE_OPTIONS.map((mode) => (
+          <button
+            key={mode.value}
+            type="button"
+            className={`complexity-mode-btn ${formState.complexityMode === mode.value ? 'selected' : ''}`}
+            onClick={() => updateField('complexityMode', mode.value)}
+          >
+            <span className="complexity-mode-label">{mode.label}</span>
+          </button>
+        ))}
+      </div>
+      <p className="complexity-mode-description">
+        {MODE_OPTIONS.find(m => m.value === formState.complexityMode)?.description}
+      </p>
+    </div>
+  )
+
+  // Render Simple Mode Form
+  const renderSimpleMode = () => (
+    <motion.div
+      key="simple-mode"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+      className="simple-mode-form"
+    >
+      {/* Race Budget Input */}
+      <div className="simple-budget-section">
+        <label className="simple-budget-label">
+          How much for this race?
+        </label>
+        <div className="simple-budget-input-wrapper">
+          <span className="simple-budget-prefix">$</span>
+          <input
+            type="number"
+            className="simple-budget-input"
+            value={formState.simpleRaceBudget}
+            onChange={(e) => updateField('simpleRaceBudget', Math.max(1, Number(e.target.value)))}
+            min="1"
+            step="5"
+            placeholder="20"
+          />
+        </div>
+      </div>
+
+      {/* Betting Style Presets */}
+      <div className="simple-style-section">
+        <label className="simple-style-label">Pick your style:</label>
+        <div className="simple-style-options">
+          {BETTING_STYLES.map((style) => {
+            const info = BETTING_STYLE_INFO[style]
+            return (
+              <label
+                key={style}
+                className={`simple-style-option ${formState.simpleBettingStyle === style ? 'selected' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="bettingStyle"
+                  value={style}
+                  checked={formState.simpleBettingStyle === style}
+                  onChange={() => updateField('simpleBettingStyle', style)}
+                />
+                <span className="simple-style-emoji">{info.emoji}</span>
+                <div className="simple-style-content">
+                  <span className="simple-style-name">{info.label}</span>
+                  <span className="simple-style-description">{info.description}</span>
+                </div>
+                <div className="simple-style-check">
+                  <span className="material-icons">check_circle</span>
+                </div>
+              </label>
+            )
+          })}
+        </div>
+      </div>
+
+      <p className="simple-mode-hint">
+        <span className="material-icons">auto_awesome</span>
+        We'll suggest bets based on your choice
+      </p>
+    </motion.div>
+  )
+
+  // Render Moderate Mode Form
+  const renderModerateMode = () => (
+    <motion.div
+      key="moderate-mode"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+      className="moderate-mode-form"
+    >
+      {/* Race Budget */}
+      <div className="bankroll-form-group">
+        <label className="bankroll-form-label">
+          <span className="material-icons">sports_score</span>
+          Race Budget
+        </label>
+        <div className="bankroll-input-wrapper">
+          <span className="bankroll-input-prefix">$</span>
+          <input
+            type="number"
+            className="bankroll-input"
+            value={formState.moderateRaceBudget}
+            onChange={(e) => updateField('moderateRaceBudget', Math.max(0, Number(e.target.value)))}
+            min="0"
+            step="10"
+          />
+        </div>
+      </div>
+
+      {/* Risk Tolerance Slider */}
+      <div className="bankroll-form-group">
+        <label className="bankroll-form-label">
+          <span className="material-icons">speed</span>
+          Risk Tolerance
+        </label>
+        <div className="moderate-risk-slider">
+          <div className="moderate-risk-track">
+            {(['conservative', 'moderate', 'aggressive'] as RiskTolerance[]).map((level, index) => (
+              <button
+                key={level}
+                type="button"
+                className={`moderate-risk-point ${formState.moderateRiskLevel === level ? 'selected' : ''}`}
+                onClick={() => updateField('moderateRiskLevel', level)}
+                style={{ left: `${index * 50}%` }}
+              >
+                <span className="moderate-risk-dot" />
+                <span className="moderate-risk-label">
+                  {level.charAt(0).toUpperCase() + level.slice(1)}
+                </span>
+              </button>
+            ))}
+            <div
+              className="moderate-risk-fill"
+              style={{
+                width: `${formState.moderateRiskLevel === 'conservative' ? 0 : formState.moderateRiskLevel === 'moderate' ? 50 : 100}%`
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Bet Types */}
+      <div className="bankroll-form-group">
+        <label className="bankroll-form-label">
+          <span className="material-icons">style</span>
+          Which bet types do you like?
+        </label>
+        <div className="moderate-bet-types">
+          {BET_TYPES.map((betType) => (
+            <label
+              key={betType}
+              className={`moderate-bet-type-option ${(formState.moderateSelectedBetTypes || []).includes(betType) ? 'selected' : ''}`}
+            >
+              <input
+                type="checkbox"
+                checked={(formState.moderateSelectedBetTypes || []).includes(betType)}
+                onChange={() => toggleBetType(betType)}
+              />
+              <span className="moderate-bet-type-checkbox">
+                <span className="material-icons">
+                  {(formState.moderateSelectedBetTypes || []).includes(betType) ? 'check_box' : 'check_box_outline_blank'}
+                </span>
+              </span>
+              <span className="moderate-bet-type-label">{BET_TYPE_LABELS[betType]}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Expected Return Range */}
+      <div className="moderate-expected-return">
+        <span className="material-icons">trending_up</span>
+        <span className="moderate-expected-label">Expected return range:</span>
+        <span className="moderate-expected-value">
+          {getExpectedReturnRange(formState.moderateRiskLevel, formState.moderateSelectedBetTypes || [])}
+        </span>
+      </div>
+    </motion.div>
+  )
+
+  // Render Advanced Mode Form (existing form)
+  const renderAdvancedMode = () => (
+    <motion.div
+      key="advanced-mode"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+    >
+      {/* Daily P&L Summary */}
+      <div className="bankroll-pl-summary">
+        <div className="bankroll-pl-header">
+          <span className="material-icons">today</span>
+          <span>Today's Summary</span>
+        </div>
+        <div className="bankroll-pl-stats">
+          <div className="bankroll-pl-stat">
+            <span className="bankroll-pl-label">P&L</span>
+            <span className={`bankroll-pl-value ${dailyPL >= 0 ? 'positive' : 'negative'}`}>
+              {dailyPL >= 0 ? '+' : ''}{formatCurrency(dailyPL)}
+            </span>
+          </div>
+          <div className="bankroll-pl-stat">
+            <span className="bankroll-pl-label">Spent</span>
+            <span className="bankroll-pl-value">{formatCurrency(spentToday)}</span>
+          </div>
+          <div className="bankroll-pl-stat">
+            <span className="bankroll-pl-label">Budget</span>
+            <span className="bankroll-pl-value">{formatCurrency(dailyBudget)}</span>
+          </div>
+        </div>
+        <div className="bankroll-pl-progress">
+          <div
+            className="bankroll-pl-progress-bar"
+            style={{ width: `${Math.min(100, (spentToday / dailyBudget) * 100)}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Settings Form */}
+      <form className="bankroll-form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+        {/* Total Bankroll */}
+        <div className="bankroll-form-group">
+          <label className="bankroll-form-label">
+            <span className="material-icons">savings</span>
+            Total Bankroll
+          </label>
+          <div className="bankroll-input-wrapper">
+            <span className="bankroll-input-prefix">$</span>
+            <input
+              type="number"
+              className="bankroll-input"
+              value={formState.totalBankroll}
+              onChange={(e) => updateField('totalBankroll', Math.max(0, Number(e.target.value)))}
+              min="0"
+              step="100"
+            />
+          </div>
+        </div>
+
+        {/* Daily Budget */}
+        <div className="bankroll-form-group">
+          <label className="bankroll-form-label">
+            <span className="material-icons">calendar_today</span>
+            Daily Budget
+          </label>
+          <div className="bankroll-input-row">
+            <select
+              className="bankroll-select"
+              value={formState.dailyBudgetType}
+              onChange={(e) => updateField('dailyBudgetType', e.target.value as DailyBudgetType)}
+            >
+              <option value="fixed">Fixed $</option>
+              <option value="percentage">% of Bankroll</option>
+            </select>
+            <div className="bankroll-input-wrapper">
+              <span className="bankroll-input-prefix">
+                {formState.dailyBudgetType === 'fixed' ? '$' : '%'}
+              </span>
+              <input
+                type="number"
+                className="bankroll-input"
+                value={formState.dailyBudgetValue}
+                onChange={(e) => updateField('dailyBudgetValue', Math.max(0, Number(e.target.value)))}
+                min="0"
+                step={formState.dailyBudgetType === 'fixed' ? '10' : '1'}
+              />
+            </div>
+          </div>
+          {formState.dailyBudgetType === 'percentage' && (
+            <span className="bankroll-input-hint">
+              = {formatCurrency((formState.dailyBudgetValue / 100) * formState.totalBankroll)}
+            </span>
+          )}
+        </div>
+
+        {/* Per-Race Budget */}
+        <div className="bankroll-form-group">
+          <label className="bankroll-form-label">
+            <span className="material-icons">sports_score</span>
+            Per-Race Budget
+          </label>
+          <div className="bankroll-input-wrapper">
+            <span className="bankroll-input-prefix">$</span>
+            <input
+              type="number"
+              className="bankroll-input"
+              value={formState.perRaceBudget}
+              onChange={(e) => updateField('perRaceBudget', Math.max(0, Number(e.target.value)))}
+              min="0"
+              step="10"
+            />
+          </div>
+        </div>
+
+        {/* Risk Tolerance */}
+        <div className="bankroll-form-group">
+          <label className="bankroll-form-label">
+            <span className="material-icons">speed</span>
+            Risk Tolerance
+          </label>
+          <div className="bankroll-risk-options">
+            {RISK_OPTIONS.map((option) => (
+              <label
+                key={option.value}
+                className={`bankroll-risk-option ${formState.riskTolerance === option.value ? 'selected' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="riskTolerance"
+                  value={option.value}
+                  checked={formState.riskTolerance === option.value}
+                  onChange={(e) => updateField('riskTolerance', e.target.value as RiskTolerance)}
+                />
+                <div className="bankroll-risk-content">
+                  <span className="bankroll-risk-label">{option.label}</span>
+                  <span className="bankroll-risk-description">{option.description}</span>
+                  <span className="bankroll-risk-range">{option.range}</span>
+                </div>
+                <div className="bankroll-risk-indicator" />
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Default Bet Unit */}
+        <div className="bankroll-form-group">
+          <label className="bankroll-form-label">
+            <span className="material-icons">monetization_on</span>
+            Default Bet Unit
+          </label>
+          <div className="bankroll-input-row">
+            <select
+              className="bankroll-select"
+              value={formState.betUnitType}
+              onChange={(e) => updateField('betUnitType', e.target.value as BetUnitType)}
+            >
+              <option value="percentage">% of Bankroll</option>
+              <option value="fixed">Fixed $</option>
+            </select>
+            <div className="bankroll-input-wrapper">
+              <span className="bankroll-input-prefix">
+                {formState.betUnitType === 'fixed' ? '$' : '%'}
+              </span>
+              <input
+                type="number"
+                className="bankroll-input"
+                value={formState.betUnitValue}
+                onChange={(e) => updateField('betUnitValue', Math.max(0, Number(e.target.value)))}
+                min="0"
+                step={formState.betUnitType === 'fixed' ? '5' : '0.5'}
+              />
+            </div>
+          </div>
+          {formState.betUnitType === 'percentage' && (
+            <span className="bankroll-input-hint">
+              = {formatCurrency((formState.betUnitValue / 100) * formState.totalBankroll)} per unit
+            </span>
+          )}
+        </div>
+      </form>
+    </motion.div>
+  )
 
   return (
     <AnimatePresence>
@@ -236,178 +640,15 @@ export function BankrollSettings({
                       exit={{ opacity: 0, x: 20 }}
                       transition={{ duration: 0.2 }}
                     >
-                      {/* Daily P&L Summary */}
-                      <div className="bankroll-pl-summary">
-                        <div className="bankroll-pl-header">
-                          <span className="material-icons">today</span>
-                          <span>Today's Summary</span>
-                        </div>
-                        <div className="bankroll-pl-stats">
-                          <div className="bankroll-pl-stat">
-                            <span className="bankroll-pl-label">P&L</span>
-                            <span className={`bankroll-pl-value ${dailyPL >= 0 ? 'positive' : 'negative'}`}>
-                              {dailyPL >= 0 ? '+' : ''}{formatCurrency(dailyPL)}
-                            </span>
-                          </div>
-                          <div className="bankroll-pl-stat">
-                            <span className="bankroll-pl-label">Spent</span>
-                            <span className="bankroll-pl-value">{formatCurrency(spentToday)}</span>
-                          </div>
-                          <div className="bankroll-pl-stat">
-                            <span className="bankroll-pl-label">Budget</span>
-                            <span className="bankroll-pl-value">{formatCurrency(dailyBudget)}</span>
-                          </div>
-                        </div>
-                        <div className="bankroll-pl-progress">
-                          <div
-                            className="bankroll-pl-progress-bar"
-                            style={{ width: `${Math.min(100, (spentToday / dailyBudget) * 100)}%` }}
-                          />
-                        </div>
-                      </div>
+                      {/* Mode Selector */}
+                      {renderModeSelector()}
 
-                      {/* Settings Form */}
-                      <form className="bankroll-form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-                        {/* Total Bankroll */}
-                        <div className="bankroll-form-group">
-                          <label className="bankroll-form-label">
-                            <span className="material-icons">savings</span>
-                            Total Bankroll
-                          </label>
-                          <div className="bankroll-input-wrapper">
-                            <span className="bankroll-input-prefix">$</span>
-                            <input
-                              type="number"
-                              className="bankroll-input"
-                              value={formState.totalBankroll}
-                              onChange={(e) => updateField('totalBankroll', Math.max(0, Number(e.target.value)))}
-                              min="0"
-                              step="100"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Daily Budget */}
-                        <div className="bankroll-form-group">
-                          <label className="bankroll-form-label">
-                            <span className="material-icons">calendar_today</span>
-                            Daily Budget
-                          </label>
-                          <div className="bankroll-input-row">
-                            <select
-                              className="bankroll-select"
-                              value={formState.dailyBudgetType}
-                              onChange={(e) => updateField('dailyBudgetType', e.target.value as DailyBudgetType)}
-                            >
-                              <option value="fixed">Fixed $</option>
-                              <option value="percentage">% of Bankroll</option>
-                            </select>
-                            <div className="bankroll-input-wrapper">
-                              <span className="bankroll-input-prefix">
-                                {formState.dailyBudgetType === 'fixed' ? '$' : '%'}
-                              </span>
-                              <input
-                                type="number"
-                                className="bankroll-input"
-                                value={formState.dailyBudgetValue}
-                                onChange={(e) => updateField('dailyBudgetValue', Math.max(0, Number(e.target.value)))}
-                                min="0"
-                                step={formState.dailyBudgetType === 'fixed' ? '10' : '1'}
-                              />
-                            </div>
-                          </div>
-                          {formState.dailyBudgetType === 'percentage' && (
-                            <span className="bankroll-input-hint">
-                              = {formatCurrency((formState.dailyBudgetValue / 100) * formState.totalBankroll)}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Per-Race Budget */}
-                        <div className="bankroll-form-group">
-                          <label className="bankroll-form-label">
-                            <span className="material-icons">sports_score</span>
-                            Per-Race Budget
-                          </label>
-                          <div className="bankroll-input-wrapper">
-                            <span className="bankroll-input-prefix">$</span>
-                            <input
-                              type="number"
-                              className="bankroll-input"
-                              value={formState.perRaceBudget}
-                              onChange={(e) => updateField('perRaceBudget', Math.max(0, Number(e.target.value)))}
-                              min="0"
-                              step="10"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Risk Tolerance */}
-                        <div className="bankroll-form-group">
-                          <label className="bankroll-form-label">
-                            <span className="material-icons">speed</span>
-                            Risk Tolerance
-                          </label>
-                          <div className="bankroll-risk-options">
-                            {RISK_OPTIONS.map((option) => (
-                              <label
-                                key={option.value}
-                                className={`bankroll-risk-option ${formState.riskTolerance === option.value ? 'selected' : ''}`}
-                              >
-                                <input
-                                  type="radio"
-                                  name="riskTolerance"
-                                  value={option.value}
-                                  checked={formState.riskTolerance === option.value}
-                                  onChange={(e) => updateField('riskTolerance', e.target.value as RiskTolerance)}
-                                />
-                                <div className="bankroll-risk-content">
-                                  <span className="bankroll-risk-label">{option.label}</span>
-                                  <span className="bankroll-risk-description">{option.description}</span>
-                                  <span className="bankroll-risk-range">{option.range}</span>
-                                </div>
-                                <div className="bankroll-risk-indicator" />
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Default Bet Unit */}
-                        <div className="bankroll-form-group">
-                          <label className="bankroll-form-label">
-                            <span className="material-icons">monetization_on</span>
-                            Default Bet Unit
-                          </label>
-                          <div className="bankroll-input-row">
-                            <select
-                              className="bankroll-select"
-                              value={formState.betUnitType}
-                              onChange={(e) => updateField('betUnitType', e.target.value as BetUnitType)}
-                            >
-                              <option value="percentage">% of Bankroll</option>
-                              <option value="fixed">Fixed $</option>
-                            </select>
-                            <div className="bankroll-input-wrapper">
-                              <span className="bankroll-input-prefix">
-                                {formState.betUnitType === 'fixed' ? '$' : '%'}
-                              </span>
-                              <input
-                                type="number"
-                                className="bankroll-input"
-                                value={formState.betUnitValue}
-                                onChange={(e) => updateField('betUnitValue', Math.max(0, Number(e.target.value)))}
-                                min="0"
-                                step={formState.betUnitType === 'fixed' ? '5' : '0.5'}
-                              />
-                            </div>
-                          </div>
-                          {formState.betUnitType === 'percentage' && (
-                            <span className="bankroll-input-hint">
-                              = {formatCurrency((formState.betUnitValue / 100) * formState.totalBankroll)} per unit
-                            </span>
-                          )}
-                        </div>
-                      </form>
+                      {/* Form content based on mode */}
+                      <AnimatePresence mode="wait">
+                        {formState.complexityMode === 'simple' && renderSimpleMode()}
+                        {formState.complexityMode === 'moderate' && renderModerateMode()}
+                        {formState.complexityMode === 'advanced' && renderAdvancedMode()}
+                      </AnimatePresence>
                     </motion.div>
                   ) : (
                     <motion.div
