@@ -18,9 +18,7 @@ import {
   VALUE_ICONS,
   extractEquipmentInfo,
   formatEquipmentChange,
-  getEquipmentScoreColor,
   getTrainerProfile,
-  type DetectedEquipmentChange,
 } from '../lib/scoring'
 import {
   getBreedingDisplayInfo,
@@ -552,7 +550,7 @@ export function HorseDetailModal({
                               border: `1px solid ${formatted.color}30`
                             }}>
                               <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <Icon name={formatted.icon} className="text-sm" style={{ color: formatted.color }} />
+                                <span className="material-icons text-sm" style={{ color: formatted.color }}>{formatted.icon}</span>
                                 <span style={{ color: '#e0e0e0' }}>{formatted.label}</span>
                               </span>
                               <span className="breakdown-value" style={{ color: formatted.color, fontWeight: 600 }}>
@@ -571,7 +569,7 @@ export function HorseDetailModal({
                             border: '1px solid #333'
                           }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                              <Icon name="star" className="text-sm" style={{ color: '#f59e0b' }} />
+                              <span className="material-icons text-sm" style={{ color: '#f59e0b' }}>star</span>
                               <span style={{ color: '#f59e0b', fontSize: '0.8rem', fontWeight: 600 }}>
                                 Trainer Pattern Active
                               </span>

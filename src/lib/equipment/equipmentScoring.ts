@@ -19,7 +19,6 @@
 import type { HorseEntry, RaceHeader } from '../../types/drf'
 import {
   type DetectedEquipmentChange,
-  type EquipmentAnalysis,
   getImpactClassification,
 } from './equipmentTypes'
 import {
@@ -28,8 +27,6 @@ import {
 } from './equipmentExtractor'
 import {
   calculateTrainerAdjustedPoints,
-  hasCrediblePattern,
-  equipmentIdToChangeType,
 } from './trainerPatterns'
 
 // ============================================================================
