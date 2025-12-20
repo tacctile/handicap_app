@@ -147,7 +147,8 @@ class FeatureFlagService {
    */
   private loadFromEnvironment(): void {
     // Check for Vite environment variables
-    const env = (typeof import.meta !== 'undefined' && import.meta.env) || {}
+    const env: Record<string, string | undefined> =
+      (typeof import.meta !== 'undefined' && import.meta.env) || {}
 
     for (const flagName of Object.keys(FLAG_DEFINITIONS) as FeatureFlagName[]) {
       const envKey = `VITE_${flagName}`
