@@ -449,6 +449,26 @@ Unknown tracks get:
 
 ## Application Structure
 
+### Overview-First Navigation
+
+**User Flow:** Upload DRF file → Race Overview (all races) → Click race → Race Detail → Back to Overview
+
+**Primary View: Race Overview**
+- Displays ALL races from parsed DRF file as cards
+- Each card shows: race number, distance, surface, class, confidence badge
+- Confidence badges use color-coded indicators (High/Moderate/Low)
+- Tier 1 picks highlighted with accent styling
+- Click any race card to drill into details
+
+**Secondary View: Race Detail**
+- Full horse-by-horse analysis
+- Scoring breakdowns, betting recommendations
+- Controls for scratches, odds updates, track conditions
+- Back button + Escape key returns to Overview
+- Confidence recalculates on changes
+
+### Component Architecture
+
 ```
 src/
 ├── main.tsx
@@ -456,9 +476,11 @@ src/
 ├── index.css
 │
 ├── components/
-│   ├── Dashboard.tsx
+│   ├── Dashboard.tsx          # View orchestrator (overview vs detail)
+│   ├── RaceOverview.tsx       # All races grid with confidence badges
+│   ├── RaceDetail.tsx         # Single race deep dive (wraps existing components)
 │   ├── FileUpload.tsx
-│   ├── RaceTable.tsx
+│   ├── RaceTable.tsx          # Horse table within detail view
 │   ├── RaceControls.tsx
 │   ├── BettingRecommendations.tsx
 │   ├── HorseDetailModal.tsx
@@ -490,6 +512,7 @@ src/
 │   ├── drfParser.ts
 │   ├── drfWorker.ts
 │   ├── validation.ts
+│   ├── confidence.ts          # Shared confidence utilities
 │   ├── scoring/
 │   │   ├── index.ts
 │   │   ├── connections.ts
@@ -534,6 +557,7 @@ src/
 10. **Atomic prompts** — One focused task per Claude Code session
 11. **Test before merge** — npm test passes, manual verification done
 12. **No App Store** — PWA only, direct web access
+13. **Overview-first navigation** — Users see all races with confidence before drilling into details
 
 ---
 
@@ -583,13 +607,16 @@ src/
 
 ### Phase 6: User Interface
 - [ ] File upload flow
-- [ ] Race selection interface
+- [ ] Race Overview screen (all races with confidence badges)
+- [ ] Race Detail screen (single race deep dive)
+- [ ] View management (overview ↔ detail navigation)
 - [ ] Horse table/cards (responsive)
 - [ ] Scoring breakdown panels
 - [ ] Betting recommendations display
 - [ ] Horse detail modal
 - [ ] Scratch/conditions controls
 - [ ] Real-time recalculation feedback
+- [ ] Keyboard navigation (Escape returns to overview)
 
 ### Phase 7: Enterprise Scaffolding
 - [ ] Auth service abstraction

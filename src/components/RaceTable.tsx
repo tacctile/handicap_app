@@ -9,6 +9,7 @@ import { CalculationStatus } from './CalculationStatus'
 import { ToastContainer, useToasts } from './Toast'
 import {
   calculateRaceScores,
+  calculateRaceConfidence,
   getScoreColor,
   getScoreTier,
   SCORE_THRESHOLDS,
@@ -685,21 +686,9 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
 
   // Calculate stats for CalculationStatus
   const activeHorses = scoredHorses.filter(h => !h.score.isScratched).length
+  // Use centralized confidence calculation from scoring module
   const confidenceLevel = useMemo(() => {
-    const scores = scoredHorses
-      .filter(h => !h.score.isScratched)
-      .map(h => h.score.total)
-      .sort((a, b) => b - a)
-
-    if (scores.length < 2) return 50
-
-    const topScore = scores[0]
-    const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length
-    const differential = scores.length > 1 ? ((topScore - scores[1]) / topScore) * 30 : 0
-    const qualityBonus = Math.min(20, (topScore / 240) * 25)
-    const baseConfidence = 40 + (avgScore / 240) * 30
-
-    return Math.min(100, Math.round(baseConfidence + differential + qualityBonus))
+    return calculateRaceConfidence(scoredHorses)
   }, [scoredHorses])
 
   // Handle row click to open modal
