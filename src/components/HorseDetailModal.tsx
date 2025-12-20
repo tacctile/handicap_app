@@ -19,6 +19,16 @@ import {
   extractEquipmentInfo,
   formatEquipmentChange,
   getTrainerProfile,
+  // Class analysis imports
+  formatClassMovement,
+  getClassScoreColor,
+  getHiddenDropsSummary,
+  getClassMovementColor,
+  getClassMovementIcon,
+  getClassLevelName,
+  getTierColor,
+  getTierDisplayName,
+  isValuePlay,
 } from '../lib/scoring'
 import {
   getBreedingDisplayInfo,
@@ -692,6 +702,341 @@ export function HorseDetailModal({
               />
             </div>
           </section>
+
+          {/* Class Analysis Section */}
+          {score.classScore && (
+            <section className="modal-section">
+              <h3 className="section-title-modal">
+                <Icon name="leaderboard" className="section-icon-modal" />
+                Class Analysis
+                {score.breakdown.classAnalysis?.isValuePlay && (
+                  <span style={{
+                    fontSize: '0.7rem',
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    backgroundColor: '#22c55e20',
+                    color: '#22c55e',
+                    marginLeft: '8px',
+                    fontWeight: 600,
+                  }}>
+                    VALUE PLAY
+                  </span>
+                )}
+              </h3>
+
+              <div className="class-analysis-box" style={{
+                backgroundColor: '#1a1a1a',
+                borderRadius: '12px',
+                padding: '16px',
+                border: '1px solid #333',
+              }}>
+                {/* Class Movement Badge */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '16px',
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                  }}>
+                    <span style={{
+                      fontSize: '1.5rem',
+                      color: getClassMovementColor(score.classScore.analysis.movement.direction),
+                    }}>
+                      {getClassMovementIcon(score.classScore.analysis.movement.direction)}
+                    </span>
+                    <div>
+                      <div style={{
+                        color: getClassMovementColor(score.classScore.analysis.movement.direction),
+                        fontWeight: 600,
+                        fontSize: '1rem',
+                      }}>
+                        {score.classScore.analysis.movement.direction === 'drop' ? 'Class Drop' :
+                         score.classScore.analysis.movement.direction === 'rise' ? 'Class Rise' :
+                         score.classScore.analysis.movement.direction === 'lateral' ? 'Same Class' : 'First Start'}
+                      </div>
+                      <div style={{ color: '#888', fontSize: '0.85rem' }}>
+                        {formatClassMovement(score.classScore.analysis)}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{
+                    backgroundColor: `${getClassScoreColor(score.classScore.total)}20`,
+                    color: getClassScoreColor(score.classScore.total),
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '1.1rem',
+                  }}>
+                    {score.classScore.total}/20
+                  </div>
+                </div>
+
+                {/* Current vs Last Race Class */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: '12px',
+                  marginBottom: '16px',
+                }}>
+                  <div style={{
+                    backgroundColor: '#222',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                  }}>
+                    <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>Current Race</div>
+                    <div style={{ color: '#e0e0e0', fontWeight: 600 }}>
+                      {getClassLevelName(score.classScore.analysis.currentClass)}
+                    </div>
+                  </div>
+                  <div style={{
+                    backgroundColor: '#222',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                  }}>
+                    <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>Last Race</div>
+                    <div style={{ color: '#e0e0e0', fontWeight: 600 }}>
+                      {score.classScore.analysis.lastRaceClass
+                        ? getClassLevelName(score.classScore.analysis.lastRaceClass)
+                        : 'First Start'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Proven at Level */}
+                {score.classScore.analysis.provenAtLevel && (
+                  <div style={{
+                    backgroundColor: '#222',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    marginBottom: '16px',
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      marginBottom: '8px',
+                    }}>
+                      <Icon name="verified" className="text-sm" style={{ color: '#36d1da' }} />
+                      <span style={{ color: '#e0e0e0', fontWeight: 600, fontSize: '0.9rem' }}>
+                        Proven at Level
+                      </span>
+                    </div>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(3, 1fr)',
+                      gap: '8px',
+                      fontSize: '0.8rem',
+                    }}>
+                      <div>
+                        <span style={{ color: '#888' }}>Wins: </span>
+                        <span style={{
+                          color: score.classScore.analysis.provenAtLevel.winsAtLevel > 0 ? '#22c55e' : '#e0e0e0'
+                        }}>
+                          {score.classScore.analysis.provenAtLevel.winsAtLevel}
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#888' }}>ITM: </span>
+                        <span style={{
+                          color: score.classScore.analysis.provenAtLevel.itmAtLevel > 0 ? '#36d1da' : '#e0e0e0'
+                        }}>
+                          {score.classScore.analysis.provenAtLevel.itmAtLevel}
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#888' }}>Competitive: </span>
+                        <span style={{ color: '#e0e0e0' }}>
+                          {score.classScore.analysis.provenAtLevel.competitiveRacesAtLevel}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Hidden Class Drops - CRITICAL value indicators */}
+                {score.classScore.analysis.hiddenDrops.length > 0 && (
+                  <div style={{
+                    backgroundColor: '#1a2e1a',
+                    border: '1px solid #22c55e40',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    marginBottom: '16px',
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      marginBottom: '10px',
+                    }}>
+                      <Icon name="trending_down" className="text-sm" style={{ color: '#22c55e' }} />
+                      <span style={{ color: '#22c55e', fontWeight: 600, fontSize: '0.9rem' }}>
+                        Hidden Class Drops Detected
+                      </span>
+                      <span style={{
+                        backgroundColor: '#22c55e20',
+                        color: '#22c55e',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                      }}>
+                        +{score.classScore.hiddenDropsScore} pts
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {score.classScore.analysis.hiddenDrops.map((drop, i) => (
+                        <div key={i} style={{
+                          backgroundColor: '#222',
+                          padding: '10px',
+                          borderRadius: '6px',
+                          border: '1px solid #333',
+                        }}>
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '4px',
+                          }}>
+                            <span style={{ color: '#e0e0e0', fontSize: '0.85rem', fontWeight: 500 }}>
+                              {drop.description}
+                            </span>
+                            <span style={{ color: '#22c55e', fontSize: '0.8rem', fontWeight: 600 }}>
+                              +{drop.pointsBonus} pts
+                            </span>
+                          </div>
+                          <div style={{ color: '#888', fontSize: '0.75rem' }}>
+                            {drop.explanation}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Track Tier Movement */}
+                {score.classScore.analysis.trackTierMovement && (
+                  <div style={{
+                    backgroundColor: '#222',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    marginBottom: '16px',
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      marginBottom: '8px',
+                    }}>
+                      <Icon name="location_on" className="text-sm" style={{ color: '#f59e0b' }} />
+                      <span style={{ color: '#e0e0e0', fontWeight: 600, fontSize: '0.9rem' }}>
+                        Track Tier Movement
+                      </span>
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '0.85rem',
+                    }}>
+                      <span style={{
+                        backgroundColor: `${getTierColor(score.classScore.analysis.trackTierMovement.fromTier)}20`,
+                        color: getTierColor(score.classScore.analysis.trackTierMovement.fromTier),
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                      }}>
+                        {score.classScore.analysis.trackTierMovement.fromTrack} ({getTierDisplayName(score.classScore.analysis.trackTierMovement.fromTier)})
+                      </span>
+                      <Icon name="arrow_forward" className="text-sm" style={{ color: '#888' }} />
+                      <span style={{
+                        backgroundColor: `${getTierColor(score.classScore.analysis.trackTierMovement.toTier)}20`,
+                        color: getTierColor(score.classScore.analysis.trackTierMovement.toTier),
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                      }}>
+                        {score.classScore.analysis.trackTierMovement.toTrack} ({getTierDisplayName(score.classScore.analysis.trackTierMovement.toTier)})
+                      </span>
+                      {score.classScore.analysis.trackTierMovement.pointsAdjustment !== 0 && (
+                        <span style={{
+                          color: score.classScore.analysis.trackTierMovement.pointsAdjustment > 0 ? '#22c55e' : '#ef4444',
+                          fontWeight: 600,
+                        }}>
+                          {score.classScore.analysis.trackTierMovement.pointsAdjustment > 0 ? '+' : ''}
+                          {score.classScore.analysis.trackTierMovement.pointsAdjustment} pts
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Score Breakdown */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: '8px',
+                  fontSize: '0.8rem',
+                }}>
+                  <div style={{
+                    backgroundColor: '#222',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                  }}>
+                    <span style={{ color: '#888' }}>Proven at Level</span>
+                    <span style={{ color: '#e0e0e0' }}>{score.classScore.provenAtLevelScore}</span>
+                  </div>
+                  <div style={{
+                    backgroundColor: '#222',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                  }}>
+                    <span style={{ color: '#888' }}>Class Movement</span>
+                    <span style={{ color: '#e0e0e0' }}>{score.classScore.classMovementScore}</span>
+                  </div>
+                  <div style={{
+                    backgroundColor: '#222',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                  }}>
+                    <span style={{ color: '#888' }}>Hidden Drops</span>
+                    <span style={{ color: score.classScore.hiddenDropsScore > 0 ? '#22c55e' : '#e0e0e0' }}>
+                      {score.classScore.hiddenDropsScore > 0 ? '+' : ''}{score.classScore.hiddenDropsScore}
+                    </span>
+                  </div>
+                  <div style={{
+                    backgroundColor: '#222',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                  }}>
+                    <span style={{ color: '#888' }}>Track Tier</span>
+                    <span style={{ color: '#e0e0e0' }}>{score.classScore.trackTierScore}</span>
+                  </div>
+                </div>
+
+                {/* Reasoning */}
+                <div style={{
+                  marginTop: '12px',
+                  color: '#888',
+                  fontSize: '0.8rem',
+                  fontStyle: 'italic',
+                }}>
+                  {score.classScore.reasoning}
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Breeding Section */}
           <section className="modal-section">
