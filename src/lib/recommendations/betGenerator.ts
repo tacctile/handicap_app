@@ -15,21 +15,21 @@
  * @module recommendations/betGenerator
  */
 
-import type { HorseEntry, RaceHeader } from '../../types/drf'
+import type { RaceHeader } from '../../types/drf'
 import type { HorseScore, ScoredHorse } from '../scoring'
-import type { UseBankrollReturn, BettingStyle, ComplexityMode } from '../../hooks/useBankroll'
+import type { UseBankrollReturn } from '../../hooks/useBankroll'
 import type { ClassifiedHorse, TierGroup, BettingTier } from '../betting/tierClassification'
 import type { LongshotAnalysisResult } from '../longshots'
 import type { DiamondAnalysis } from '../diamonds'
 import type { BetRecommendation, TierBetRecommendations } from '../betting/betRecommendations'
 
-import { classifyHorses, TIER_CONFIG } from '../betting/tierClassification'
+import { classifyHorses } from '../betting/tierClassification'
 import { analyzeRaceLongshots } from '../longshots'
 import { analyzeRaceDiamonds, getValidatedDiamonds } from '../diamonds'
 import { logger } from '../../services/logging'
 
 import { calculateBetAmount, scaleBetsByBankroll } from './betSizing'
-import { generateWindowInstruction, formatBetSlip } from './windowInstructions'
+import { generateWindowInstruction } from './windowInstructions'
 import { generateBetExplanation, generateBetNarrative } from './betExplanations'
 
 // ============================================================================
@@ -129,12 +129,6 @@ const MAX_BET_AMOUNTS = {
   tier3: 10,
 } as const
 
-/** Number of bet types to generate per tier */
-const BETS_PER_TIER = {
-  tier1: 5,
-  tier2: 6,
-  tier3: 5,
-} as const
 
 // ============================================================================
 // TIER 1 BET GENERATION (180+ pts, 80%+ confidence)

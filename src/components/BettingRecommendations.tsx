@@ -2,11 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { HorseEntry, RaceHeader } from '../types/drf'
 import type { HorseScore, ScoredHorse } from '../lib/scoring'
-import {
-  classifyHorses,
-  type BettingTier,
-  type ClassifiedHorse,
-} from '../lib/betting'
+import type { BettingTier } from '../lib/betting'
 import {
   formatOverlayPercent,
   formatEV,
@@ -568,10 +564,6 @@ export function BettingRecommendations({
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null)
-  const [showExplanation, setShowExplanation] = useState<string | null>(null)
-
-  // Get bankroll settings for bet sizing
-  const bankrollSettings = bankroll.settings
 
   // Convert horses to ScoredHorse format for generator
   const scoredHorses: ScoredHorse[] = useMemo(() => {
@@ -587,17 +579,45 @@ export function BettingRecommendations({
   const effectiveRaceHeader: RaceHeader = useMemo(() => {
     if (raceHeader) return raceHeader
     // Create a minimal header from available data
+    const today = new Date()
+    const dateStr = today.toISOString().split('T')[0]
     return {
-      date: new Date().toISOString().split('T')[0],
-      raceNumber,
       trackCode: 'UNK',
       trackName: 'Unknown Track',
-      distance: '6F',
-      surface: 'dirt' as const,
-      raceClassification: { type: 'claiming', purse: 0 },
-      fieldSize: horses.length,
+      trackLocation: '',
+      raceNumber,
+      raceDate: dateStr,
+      raceDateRaw: dateStr.replace(/-/g, ''),
+      postTime: '',
+      distanceFurlongs: 6,
+      distance: '6 furlongs',
+      distanceExact: '6f',
+      surface: 'dirt',
+      trackCondition: 'fast',
+      classification: 'claiming',
+      raceType: 'Claiming',
       purse: 0,
-    } as RaceHeader
+      purseFormatted: '$0',
+      ageRestriction: '3&UP',
+      sexRestriction: '',
+      weightConditions: '',
+      stateBred: null,
+      claimingPriceMin: null,
+      claimingPriceMax: null,
+      allowedWeight: null,
+      conditions: '',
+      raceName: null,
+      grade: null,
+      isListed: false,
+      isAbout: false,
+      tempRail: null,
+      turfCourseType: null,
+      chuteStart: false,
+      hasReplay: false,
+      programNumber: raceNumber,
+      fieldSize: horses.length,
+      probableFavorite: null,
+    }
   }, [raceHeader, raceNumber, horses.length])
 
   // Generate recommendations using new integrated system

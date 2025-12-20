@@ -140,7 +140,6 @@ export function generateWindowInstruction(
   const racePrefix = raceNumber ? `Race ${raceNumber}, ` : ''
   const formattedAmount = formatAmount(amount)
   const numbers = formatHorseNumbers(horses)
-  const numbersComma = formatHorseNumbersComma(horses)
 
   switch (betType) {
     case 'win':

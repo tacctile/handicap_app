@@ -321,7 +321,7 @@ function explainOverlay(horse: ClassifiedHorse): ExplanationSection | null {
     parts.push(`+EV: $${overlay.evPerDollar.toFixed(2)} per dollar wagered`)
   }
 
-  parts.push(`Fair odds: ${overlay.fairOdds.toFixed(1)}-1 vs actual ${horse.oddsDisplay}`)
+  parts.push(`Fair odds: ${overlay.fairOddsDecimal.toFixed(1)}-1 vs actual ${horse.oddsDisplay}`)
 
   return {
     title: 'Value Overlay',
@@ -424,7 +424,7 @@ export function generateBetExplanation(
  */
 export function generateBetNarrative(
   horses: ClassifiedHorse[],
-  betType: string,
+  _betType: string,
   overlayPercent: number
 ): string {
   const primaryHorse = horses[0]
@@ -469,7 +469,7 @@ export function generateBetNarrative(
  */
 export function generateFullBetExplanation(
   horses: ClassifiedHorse[],
-  betType: string
+  _betType: string
 ): BetExplanation {
   const primaryHorse = horses[0]
   if (!primaryHorse) {
