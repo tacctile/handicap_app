@@ -6,7 +6,6 @@ import {
   classifyHorses,
   generateBetRecommendations,
   formatCurrency,
-  type TierBetRecommendations,
   type BetRecommendation,
   type BettingTier,
 } from '../lib/betting'
