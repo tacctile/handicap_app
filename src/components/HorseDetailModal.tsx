@@ -22,13 +22,11 @@ import {
   // Class analysis imports
   formatClassMovement,
   getClassScoreColor,
-  getHiddenDropsSummary,
   getClassMovementColor,
   getClassMovementIcon,
   getClassLevelName,
   getTierColor,
   getTierDisplayName,
-  isValuePlay,
 } from '../lib/scoring'
 import {
   getBreedingDisplayInfo,
@@ -820,7 +818,7 @@ export function HorseDetailModal({
                       gap: '8px',
                       marginBottom: '8px',
                     }}>
-                      <Icon name="verified" className="text-sm" style={{ color: '#36d1da' }} />
+                      <span style={{ color: '#36d1da' }}><Icon name="verified" className="text-sm" /></span>
                       <span style={{ color: '#e0e0e0', fontWeight: 600, fontSize: '0.9rem' }}>
                         Proven at Level
                       </span>
@@ -872,7 +870,7 @@ export function HorseDetailModal({
                       gap: '8px',
                       marginBottom: '10px',
                     }}>
-                      <Icon name="trending_down" className="text-sm" style={{ color: '#22c55e' }} />
+                      <span style={{ color: '#22c55e' }}><Icon name="trending_down" className="text-sm" /></span>
                       <span style={{ color: '#22c55e', fontWeight: 600, fontSize: '0.9rem' }}>
                         Hidden Class Drops Detected
                       </span>
@@ -931,7 +929,7 @@ export function HorseDetailModal({
                       gap: '8px',
                       marginBottom: '8px',
                     }}>
-                      <Icon name="location_on" className="text-sm" style={{ color: '#f59e0b' }} />
+                      <span style={{ color: '#f59e0b' }}><Icon name="location_on" className="text-sm" /></span>
                       <span style={{ color: '#e0e0e0', fontWeight: 600, fontSize: '0.9rem' }}>
                         Track Tier Movement
                       </span>
@@ -951,7 +949,7 @@ export function HorseDetailModal({
                       }}>
                         {score.classScore.analysis.trackTierMovement.fromTrack} ({getTierDisplayName(score.classScore.analysis.trackTierMovement.fromTier)})
                       </span>
-                      <Icon name="arrow_forward" className="text-sm" style={{ color: '#888' }} />
+                      <span style={{ color: '#888' }}><Icon name="arrow_forward" className="text-sm" /></span>
                       <span style={{
                         backgroundColor: `${getTierColor(score.classScore.analysis.trackTierMovement.toTier)}20`,
                         color: getTierColor(score.classScore.analysis.trackTierMovement.toTier),
