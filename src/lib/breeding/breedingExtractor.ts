@@ -10,7 +10,6 @@ import type {
   BreedingInfo,
   BreedingDisplayInfo,
   ExperienceLevel,
-  BreedingScore,
 } from './types'
 import {
   isUnknownSire,
@@ -204,26 +203,8 @@ export function isLightlyRacedRace(horses: HorseEntry[]): boolean {
 }
 
 // ============================================================================
-// PLACEHOLDER FOR PART 2: SCORING
+// RE-EXPORT BREEDING SCORING (from Part 2)
 // ============================================================================
 
-/**
- * Placeholder for breeding score calculation
- * Will be implemented in Part 2
- */
-export function calculateBreedingScore(_horse: HorseEntry): BreedingScore {
-  // Return empty score for now - scoring will be implemented in Part 2
-  return {
-    total: 0,
-    breakdown: {
-      sireScore: 0,
-      damScore: 0,
-      damsireScore: 0,
-      fitScore: 0,
-    },
-    confidence: 'none',
-    summary: 'Breeding scoring not yet implemented',
-    wasApplied: false,
-    notAppliedReason: 'Part 2: Scoring system not yet implemented',
-  }
-}
+// The actual breeding score calculation is now in breedingScoring.ts
+// Re-exported through index.ts as calculateBreedingScoreForHorse and calculateDetailedBreedingScore
