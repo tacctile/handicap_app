@@ -21,7 +21,7 @@
  * Requires minimum 15 starts for credibility
  */
 
-import type { HorseEntry, PastPerformance, RaceHeader, Surface, RaceClassification } from '../../types/drf'
+import type { HorseEntry, RaceHeader, Surface, RaceClassification } from '../../types/drf'
 import { logger } from '../../services/logging'
 
 // ============================================================================

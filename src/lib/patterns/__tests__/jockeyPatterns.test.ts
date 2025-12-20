@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import type { HorseEntry, PastPerformance, RaceHeader } from '../../../types/drf'
+import type { HorseEntry, PastPerformance, RaceHeader, SpeedFigures, RunningLine, Equipment, Medication, Breeding } from '../../../types/drf'
 import {
   normalizeJockeyName,
   determineRunningStyle,
@@ -26,6 +26,75 @@ import {
 // TEST FIXTURES
 // ============================================================================
 
+function createMockSpeedFigures(beyer: number | null = 78): SpeedFigures {
+  return {
+    beyer,
+    timeformUS: null,
+    equibase: null,
+    trackVariant: null,
+    dirtVariant: null,
+    turfVariant: null,
+  }
+}
+
+function createMockRunningLine(overrides: Partial<RunningLine> = {}): RunningLine {
+  return {
+    start: 4,
+    quarterMile: 3,
+    quarterMileLengths: 2,
+    halfMile: 2,
+    halfMileLengths: 1.5,
+    threeQuarters: null,
+    threeQuartersLengths: null,
+    stretch: 2,
+    stretchLengths: 1,
+    finish: 3,
+    finishLengths: 2,
+    ...overrides,
+  }
+}
+
+function createMockEquipment(): Equipment {
+  return {
+    blinkers: false,
+    blinkersOff: false,
+    frontBandages: false,
+    rearBandages: false,
+    barShoes: false,
+    mudCaulks: false,
+    tongueTie: false,
+    nasalStrip: false,
+    shadowRoll: false,
+    cheekPieces: false,
+    firstTimeEquipment: [],
+    equipmentChanges: [],
+    raw: '',
+  }
+}
+
+function createMockMedication(): Medication {
+  return {
+    lasixFirstTime: false,
+    lasix: false,
+    lasixOff: false,
+    bute: false,
+    other: [],
+    raw: '',
+  }
+}
+
+function createMockBreeding(): Breeding {
+  return {
+    sire: 'Test Sire',
+    sireOfSire: 'Test Sire of Sire',
+    dam: 'Test Dam',
+    damSire: 'Test Damsire',
+    breeder: 'Test Breeder',
+    whereBred: 'KY',
+    studFee: null,
+  }
+}
+
 function createMockPastPerformance(overrides: Partial<PastPerformance> = {}): PastPerformance {
   return {
     date: '2024-01-15',
@@ -35,7 +104,7 @@ function createMockPastPerformance(overrides: Partial<PastPerformance> = {}): Pa
     distance: '6f',
     distanceFurlongs: 6,
     surface: 'dirt',
-    condition: 'fast',
+    trackCondition: 'fast',
     classification: 'claiming',
     purse: 25000,
     claimingPrice: 25000,
@@ -44,35 +113,97 @@ function createMockPastPerformance(overrides: Partial<PastPerformance> = {}): Pa
     odds: 5.0,
     jockey: 'Smith, J.',
     weight: 122,
-    speedFigures: { beyer: 78 },
-    runningLine: {
-      start: 4,
-      quarterMile: 3,
-      halfMile: 2,
-      stretch: 2,
-      finish: 3,
-    },
+    apprenticeAllowance: 0,
+    speedFigures: createMockSpeedFigures(),
+    runningLine: createMockRunningLine(),
+    lengthsBehind: 2,
+    lengthsAhead: null,
+    finalTime: 70.5,
+    finalTimeFormatted: '1:10.50',
+    winner: 'Winner Horse',
+    secondPlace: 'Second Horse',
+    thirdPlace: 'Third Horse',
+    tripComment: '',
+    comment: '',
+    favoriteRank: null,
+    wasClaimed: false,
+    claimedFrom: null,
+    daysSinceLast: null,
+    equipment: '',
+    medication: '',
     ...overrides,
   }
 }
 
 function createMockHorse(overrides: Partial<HorseEntry> = {}): HorseEntry {
   return {
-    programNumber: '1',
+    programNumber: 1,
+    entryIndicator: '',
     horseName: 'Test Horse',
     jockeyName: 'Smith, J.',
     trainerName: 'Baffert, B.',
     morningLineOdds: '5-1',
+    morningLineDecimal: 5.0,
+    currentOdds: null,
     weight: 122,
+    apprenticeAllowance: 0,
     postPosition: 1,
     age: 4,
-    sex: 'C',
-    sire: 'Test Sire',
-    dam: 'Test Dam',
-    damSire: 'Test Damsire',
-    equipment: '',
-    medication: '',
+    sex: 'c',
+    sexFull: 'Colt',
+    color: 'Bay',
+    breeding: createMockBreeding(),
+    owner: 'Test Owner',
+    silks: 'Red and White',
+    trainerStats: '',
+    jockeyStats: '',
+    equipment: createMockEquipment(),
+    medication: createMockMedication(),
+    lifetimeStarts: 10,
+    lifetimeWins: 2,
+    lifetimePlaces: 3,
+    lifetimeShows: 2,
+    lifetimeEarnings: 100000,
+    currentYearStarts: 5,
+    currentYearWins: 1,
+    currentYearPlaces: 1,
+    currentYearShows: 1,
+    currentYearEarnings: 50000,
+    previousYearStarts: 5,
+    previousYearWins: 1,
+    previousYearPlaces: 2,
+    previousYearShows: 1,
+    previousYearEarnings: 50000,
+    trackStarts: 3,
+    trackWins: 1,
+    trackPlaces: 1,
+    trackShows: 1,
+    surfaceStarts: 8,
+    surfaceWins: 2,
+    distanceStarts: 5,
+    distanceWins: 1,
+    turfStarts: 2,
+    turfWins: 0,
+    wetStarts: 1,
+    wetWins: 0,
+    daysSinceLastRace: 30,
+    lastRaceDate: '2023-12-15',
+    averageBeyer: 78,
+    bestBeyer: 85,
+    lastBeyer: 78,
+    earlySpeedRating: 75,
+    runningStyle: 'E',
+    pedigreeRating: null,
+    claimingPrice: null,
+    lastClaimPrice: null,
+    trainerAngle: null,
+    workouts: [],
     pastPerformances: [],
+    isScratched: false,
+    scratchReason: null,
+    isCoupledMain: false,
+    coupledWith: [],
+    rawLine: '',
     ...overrides,
   }
 }
@@ -81,20 +212,39 @@ function createMockRaceHeader(overrides: Partial<RaceHeader> = {}): RaceHeader {
   return {
     trackCode: 'CD',
     trackName: 'Churchill Downs',
+    trackLocation: 'Louisville, KY',
     raceNumber: 5,
     raceDate: 'January 15, 2024',
     raceDateRaw: '2024-01-15',
+    postTime: '2:00 PM',
     distance: '6f',
+    distanceExact: '6 furlongs',
     distanceFurlongs: 6,
     surface: 'dirt',
+    trackCondition: 'fast',
     classification: 'claiming',
     raceType: 'CLM',
     purse: 25000,
     purseFormatted: '$25,000',
-    claimingPrice: 25000,
-    restrictions: '',
+    claimingPriceMin: 25000,
+    claimingPriceMax: 25000,
+    allowedWeight: null,
     ageRestriction: '3+',
     sexRestriction: '',
+    weightConditions: '',
+    stateBred: null,
+    conditions: '',
+    raceName: null,
+    grade: null,
+    isListed: false,
+    isAbout: false,
+    tempRail: null,
+    turfCourseType: null,
+    chuteStart: false,
+    hasReplay: false,
+    programNumber: 5,
+    fieldSize: 8,
+    probableFavorite: null,
     ...overrides,
   }
 }
@@ -129,13 +279,13 @@ describe('normalizeJockeyName', () => {
 describe('determineRunningStyle', () => {
   it('should detect Early (E) style when leading at first call', () => {
     const pp = createMockPastPerformance({
-      runningLine: {
+      runningLine: createMockRunningLine({
         start: 1,
         quarterMile: 1,
         halfMile: 2,
         stretch: 2,
         finish: 2,
-      },
+      }),
     })
 
     expect(determineRunningStyle(pp)).toBe('E')
@@ -143,13 +293,13 @@ describe('determineRunningStyle', () => {
 
   it('should detect Early/Presser (E/P) style', () => {
     const pp = createMockPastPerformance({
-      runningLine: {
+      runningLine: createMockRunningLine({
         start: 3,
         quarterMile: 3,
         halfMile: 2,
         stretch: 1,
         finish: 1,
-      },
+      }),
     })
 
     expect(determineRunningStyle(pp)).toBe('E/P')
@@ -157,13 +307,13 @@ describe('determineRunningStyle', () => {
 
   it('should detect Presser (P) style', () => {
     const pp = createMockPastPerformance({
-      runningLine: {
+      runningLine: createMockRunningLine({
         start: 6,
         quarterMile: 6,
         halfMile: 4,
         stretch: 2,
         finish: 1,
-      },
+      }),
     })
 
     expect(determineRunningStyle(pp)).toBe('P')
@@ -171,13 +321,13 @@ describe('determineRunningStyle', () => {
 
   it('should detect Closer (C) style', () => {
     const pp = createMockPastPerformance({
-      runningLine: {
+      runningLine: createMockRunningLine({
         start: 10,
         quarterMile: 10,
         halfMile: 8,
         stretch: 4,
         finish: 2,
-      },
+      }),
       finishPosition: 2,
     })
 
@@ -185,11 +335,11 @@ describe('determineRunningStyle', () => {
   })
 
   it('should return unknown when no running line', () => {
-    const pp = createMockPastPerformance({
-      runningLine: undefined,
-    })
+    const pp = createMockPastPerformance()
+    // Override runningLine to be undefined
+    const ppWithNoRunningLine = { ...pp, runningLine: undefined as unknown as RunningLine }
 
-    expect(determineRunningStyle(pp)).toBe('unknown')
+    expect(determineRunningStyle(ppWithNoRunningLine)).toBe('unknown')
   })
 })
 
@@ -286,12 +436,12 @@ describe('extractJockeyPatternsFromHorses', () => {
           createMockPastPerformance({
             jockey: 'Speed Jockey',
             finishPosition: 1,
-            runningLine: { start: 1, quarterMile: 1, halfMile: 1, stretch: 1, finish: 1 },
+            runningLine: createMockRunningLine({ start: 1, quarterMile: 1, halfMile: 1, stretch: 1, finish: 1 }),
           }),
           createMockPastPerformance({
             jockey: 'Speed Jockey',
             finishPosition: 1,
-            runningLine: { start: 1, quarterMile: 2, halfMile: 1, stretch: 1, finish: 1 },
+            runningLine: createMockRunningLine({ start: 1, quarterMile: 2, halfMile: 1, stretch: 1, finish: 1 }),
           }),
         ],
       }),
@@ -547,7 +697,6 @@ describe('Edge cases', () => {
         createMockPastPerformance({ jockey: 'Jockey C', finishPosition: 3 }),
       ],
     })
-    const header = createMockRaceHeader()
 
     const profiles = extractJockeyPatternsFromHorses([horse])
 

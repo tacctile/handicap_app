@@ -12,7 +12,7 @@
  * Maximum synergy bonus: 10 pts
  */
 
-import type { HorseEntry, PastPerformance, RaceHeader } from '../../types/drf'
+import type { HorseEntry } from '../../types/drf'
 import { logger } from '../../services/logging'
 import { normalizeTrainerName } from './trainerPatterns'
 import { normalizeJockeyName } from './jockeyPatterns'

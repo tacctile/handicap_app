@@ -19,7 +19,6 @@
 
 import type { HorseEntry, RaceHeader } from '../../types/drf'
 import {
-  type PatternAnalysisResult,
   type TrainerPatternResult,
   type JockeyPatternResult,
   type SynergyResult,

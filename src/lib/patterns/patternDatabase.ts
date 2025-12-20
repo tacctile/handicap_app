@@ -13,7 +13,7 @@
 
 import type { HorseEntry, RaceHeader, ParsedRace } from '../../types/drf'
 import { logger } from '../../services/logging'
-import { getRateLimiter, RateLimitPresets } from '../rateLimit'
+import { getRateLimiter } from '../rateLimit'
 import {
   type TrainerProfile,
   type TrainerPatternResult,
@@ -24,7 +24,6 @@ import {
 import {
   type JockeyProfile,
   type JockeyPatternResult,
-  buildJockeyProfile,
   calculateJockeyPatternScore,
   normalizeJockeyName,
   extractJockeyPatternsFromHorses,
