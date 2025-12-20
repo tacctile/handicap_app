@@ -1,12 +1,9 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { HorseEntry } from '../types/drf'
-import type { HorseScore } from '../lib/scoring'
+import type { HorseEntry, RaceHeader } from '../types/drf'
+import type { HorseScore, ScoredHorse } from '../lib/scoring'
 import {
   classifyHorses,
-  generateBetRecommendations,
-  formatCurrency,
-  type BetRecommendation,
   type BettingTier,
   type ClassifiedHorse,
 } from '../lib/betting'
@@ -15,29 +12,27 @@ import {
   formatEV,
   getOverlayColor,
 } from '../lib/scoring'
+import {
+  generateRecommendations,
+  formatCurrency,
+  type GeneratedBet,
+  type BetGeneratorResult,
+} from '../lib/recommendations'
 import type { UseBankrollReturn } from '../hooks/useBankroll'
 import { BankrollSummaryCard } from './BankrollSummaryCard'
 
 interface BettingRecommendationsProps {
   horses: Array<{ horse: HorseEntry; index: number; score: HorseScore }>
   raceNumber: number
+  raceHeader?: RaceHeader
   bankroll: UseBankrollReturn
   onOpenBankrollSettings: () => void
 }
 
 // Extended bet with selection state and overlay data
-interface SelectableBet extends BetRecommendation {
-  id: string
-  tier: BettingTier
+interface SelectableBet extends GeneratedBet {
   isSelected: boolean
   customAmount: number
-  /** Top horse overlay info for display */
-  topHorseOverlay?: {
-    overlayPercent: number
-    evPerDollar: number
-    valueClass: string
-    isPositiveEV: boolean
-  }
 }
 
 // Tier badge colors
@@ -300,24 +295,38 @@ function InteractiveBetCard({
           </div>
 
           {/* Overlay info badge */}
-          {bet.topHorseOverlay && (
+          {bet.overlayPercent > 0 && (
             <div className="bet-overlay-info">
               <span
                 className="bet-overlay-badge"
                 style={{
-                  color: getOverlayColor(bet.topHorseOverlay.overlayPercent),
-                  backgroundColor: `${getOverlayColor(bet.topHorseOverlay.overlayPercent)}15`,
+                  color: getOverlayColor(bet.overlayPercent),
+                  backgroundColor: `${getOverlayColor(bet.overlayPercent)}15`,
                 }}
               >
-                {formatOverlayPercent(bet.topHorseOverlay.overlayPercent)}
+                {formatOverlayPercent(bet.overlayPercent)}
               </span>
               <span
                 className="bet-ev-badge"
                 style={{
-                  color: bet.topHorseOverlay.isPositiveEV ? '#22c55e' : '#9ca3af',
+                  color: bet.evPerDollar > 0 ? '#22c55e' : '#9ca3af',
                 }}
               >
-                EV: {formatEV(bet.topHorseOverlay.evPerDollar)}
+                EV: {formatEV(bet.evPerDollar)}
+              </span>
+            </div>
+          )}
+
+          {/* Special category badge */}
+          {bet.specialCategory && (
+            <div className="bet-special-badge">
+              <span className="material-icons" style={{ fontSize: 14 }}>
+                {bet.specialCategory === 'nuclear' ? 'local_fire_department' :
+                 bet.specialCategory === 'diamond' ? 'diamond' : 'trending_up'}
+              </span>
+              <span>
+                {bet.specialCategory === 'nuclear' ? 'Nuclear Longshot' :
+                 bet.specialCategory === 'diamond' ? 'Hidden Gem' : 'Value Bomb'}
               </span>
             </div>
           )}
@@ -551,6 +560,7 @@ function StickyFooter({
 export function BettingRecommendations({
   horses,
   raceNumber,
+  raceHeader,
   bankroll,
   onOpenBankrollSettings,
 }: BettingRecommendationsProps) {
@@ -558,107 +568,60 @@ export function BettingRecommendations({
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null)
+  const [showExplanation, setShowExplanation] = useState<string | null>(null)
 
   // Get bankroll settings for bet sizing
   const bankrollSettings = bankroll.settings
-  const unitSize = bankroll.getUnitSize()
 
-  // Generate recommendations
-  const recommendations = useMemo(() => {
-    const tierGroups = classifyHorses(horses)
-    const baseRecs = generateBetRecommendations(tierGroups)
-
-    // Scale the bet amounts based on bankroll settings
-    return baseRecs.map((tierRec) => {
-      const tierMultiplier =
-        tierRec.tier === 'tier1' ? 1.5 : tierRec.tier === 'tier2' ? 1.0 : 0.5
-
-      const riskMultiplier =
-        bankrollSettings.riskTolerance === 'aggressive'
-          ? 1.5
-          : bankrollSettings.riskTolerance === 'conservative'
-            ? 0.6
-            : 1.0
-
-      const scaledBets = tierRec.bets.map((bet) => {
-        const confMultiplier =
-          bet.confidence >= 80
-            ? 2.0
-            : bet.confidence >= 70
-              ? 1.5
-              : bet.confidence >= 60
-                ? 1.0
-                : 0.75
-
-        const newAmount = Math.round(unitSize * tierMultiplier * riskMultiplier * confMultiplier)
-        const scaleFactor = newAmount / (bet.amount || 1)
-
-        return {
-          ...bet,
-          amount: newAmount,
-          totalCost: Math.round(bet.totalCost * scaleFactor),
-          potentialReturn: {
-            min: Math.round(bet.potentialReturn.min * scaleFactor),
-            max: Math.round(bet.potentialReturn.max * scaleFactor),
-          },
-        }
-      })
-
-      const newTotalInvestment = scaledBets.reduce((sum, bet) => sum + bet.totalCost, 0)
-      const newMinReturn = scaledBets.reduce((sum, bet) => sum + bet.potentialReturn.min, 0)
-      const newMaxReturn = scaledBets.reduce((sum, bet) => sum + bet.potentialReturn.max, 0)
-
-      return {
-        ...tierRec,
-        bets: scaledBets,
-        totalInvestment: Math.round(newTotalInvestment * 100) / 100,
-        potentialReturnRange: {
-          min: Math.round(newMinReturn),
-          max: Math.round(newMaxReturn),
-        },
-      }
-    })
-  }, [horses, bankrollSettings, unitSize])
-
-  // Get classified horses for overlay data
-  const classifiedHorsesMap = useMemo(() => {
-    const tierGroups = classifyHorses(horses)
-    const map = new Map<number, ClassifiedHorse>()
-    for (const group of tierGroups) {
-      for (const horse of group.horses) {
-        map.set(horse.horse.programNumber, horse)
-      }
-    }
-    return map
+  // Convert horses to ScoredHorse format for generator
+  const scoredHorses: ScoredHorse[] = useMemo(() => {
+    return horses.map((h, idx) => ({
+      horse: h.horse,
+      index: h.index,
+      score: h.score,
+      rank: idx + 1,
+    }))
   }, [horses])
 
-  // Initialize selectable bets when recommendations change
-  useEffect(() => {
-    const newSelectableBets: SelectableBet[] = []
-    recommendations.forEach((tierRec) => {
-      tierRec.bets.forEach((bet, index) => {
-        // Get overlay info from the top horse in the bet
-        const topHorseNumber = bet.horseNumbers[0]
-        const topClassified = classifiedHorsesMap.get(topHorseNumber)
-        const topHorseOverlay = topClassified ? {
-          overlayPercent: topClassified.overlay.overlayPercent,
-          evPerDollar: topClassified.overlay.evPerDollar,
-          valueClass: topClassified.overlay.valueClass,
-          isPositiveEV: topClassified.overlay.isPositiveEV,
-        } : undefined
+  // Create default race header if not provided
+  const effectiveRaceHeader: RaceHeader = useMemo(() => {
+    if (raceHeader) return raceHeader
+    // Create a minimal header from available data
+    return {
+      date: new Date().toISOString().split('T')[0],
+      raceNumber,
+      trackCode: 'UNK',
+      trackName: 'Unknown Track',
+      distance: '6F',
+      surface: 'dirt' as const,
+      raceClassification: { type: 'claiming', purse: 0 },
+      fieldSize: horses.length,
+      purse: 0,
+    } as RaceHeader
+  }, [raceHeader, raceNumber, horses.length])
 
-        newSelectableBets.push({
-          ...bet,
-          id: `${tierRec.tier}-${index}`,
-          tier: tierRec.tier,
-          isSelected: false,
-          customAmount: bet.totalCost,
-          topHorseOverlay,
-        })
-      })
+  // Generate recommendations using new integrated system
+  const generatorResult: BetGeneratorResult = useMemo(() => {
+    return generateRecommendations({
+      scoredHorses,
+      raceHeader: effectiveRaceHeader,
+      raceNumber,
+      bankroll,
     })
+  }, [scoredHorses, effectiveRaceHeader, raceNumber, bankroll])
+
+  // Extract tier recommendations for backward compatibility
+  const recommendations = generatorResult.tierBets
+
+  // Initialize selectable bets when generator result changes
+  useEffect(() => {
+    const newSelectableBets: SelectableBet[] = generatorResult.allBets.map(bet => ({
+      ...bet,
+      isSelected: bet.isRecommended, // Pre-select recommended bets
+      customAmount: bet.totalCost,
+    }))
     setSelectableBets(newSelectableBets)
-  }, [recommendations, classifiedHorsesMap])
+  }, [generatorResult])
 
   // Check for mobile
   useEffect(() => {
@@ -724,13 +687,13 @@ export function BettingRecommendations({
             // Select only bets with positive expected value
             return prev.map((bet) => ({
               ...bet,
-              isSelected: bet.topHorseOverlay?.isPositiveEV === true,
+              isSelected: bet.evPerDollar > 0,
             }))
           case 'valueHunter':
             // Select bets with 25%+ overlay
             return prev.map((bet) => ({
               ...bet,
-              isSelected: (bet.topHorseOverlay?.overlayPercent ?? 0) >= 25,
+              isSelected: bet.overlayPercent >= 25,
             }))
           case 'conservative':
             return prev.map((bet) => ({
@@ -774,15 +737,18 @@ export function BettingRecommendations({
   }, [])
 
   // Check if we have any recommendations
-  if (recommendations.length === 0 || recommendations.every((r) => r.bets.length === 0)) {
+  if (generatorResult.allBets.length === 0) {
     return null
   }
 
   // Group bets by tier for display
   const betsByTier = recommendations.map((tierRec) => ({
     ...tierRec,
-    selectableBets: selectableBets.filter((bet) => bet.tier === tierRec.tier),
+    selectableBets: selectableBets.filter((bet) => bet.tier === tierRec.tier && !bet.specialCategory),
   }))
+
+  // Get special category bets
+  const specialBets = selectableBets.filter(bet => bet.specialCategory !== null)
 
   return (
     <div className="interactive-betting-container">
@@ -798,6 +764,30 @@ export function BettingRecommendations({
 
       {/* Quick Preset Buttons */}
       <QuickPresetButtons onPresetClick={handlePresetClick} isMobile={isMobile} />
+
+      {/* Special Category Bets */}
+      {specialBets.length > 0 && (
+        <div className="special-bets-section">
+          <div className="special-bets-header">
+            <span className="material-icons">auto_awesome</span>
+            <span>Special Plays</span>
+            <span className="special-bets-count">{specialBets.length} bets</span>
+          </div>
+          <div className="special-bets-list">
+            {specialBets.map((bet) => (
+              <InteractiveBetCard
+                key={bet.id}
+                bet={bet}
+                tierColor={TIER_COLORS[bet.tier]}
+                raceNumber={raceNumber}
+                onToggleSelect={handleToggleSelect}
+                onAmountChange={handleAmountChange}
+                remainingBudget={remainingBudget + (bet.isSelected ? bet.customAmount : 0)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Interactive Bet List */}
       <div className="interactive-bet-list">
