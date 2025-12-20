@@ -1,6 +1,6 @@
 {
-  "name": "Horse Monster - Advanced Handicapping Analysis",
-  "short_name": "Horse Monster",
+  "name": "Furlong - Advanced Handicapping Analysis",
+  "short_name": "Furlong",
   "description": "Professional horse racing handicapping tool with DRF file analysis and betting recommendations",
   "start_url": "/",
   "display": "standalone",

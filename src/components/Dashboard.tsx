@@ -478,7 +478,7 @@ export function Dashboard({
                     <span className="enterprise-badge">Enterprise</span>
                   </div>
                   <p className="enterprise-description">
-                    Integrate Horse Monster analytics into your applications with our REST API.
+                    Integrate Furlong analytics into your applications with our REST API.
                   </p>
                   <button className="enterprise-btn" disabled>
                     Learn More
