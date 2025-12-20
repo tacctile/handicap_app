@@ -602,7 +602,34 @@ export {
   PACE_SCENARIO_COLORS,
 } from './pace'
 export { getFormSummary, isOnHotStreak } from './form'
-export { getEquipmentSummary, hasSignificantEquipmentChange } from './equipment'
+export {
+  getEquipmentSummary,
+  hasSignificantEquipmentChange,
+  // Enhanced equipment exports
+  extractEquipmentInfo,
+  getEquipmentChangeSummary,
+  getEquipmentImpactSummary,
+  hasSignificantEquipmentImpact,
+  getEquipmentScoreColor,
+  formatEquipmentChange,
+  getHorsesWithEquipmentChanges,
+  countEquipmentChanges,
+  getImpactColor,
+  getImpactIcon,
+  getCategoryIcon,
+  getImpactClassification,
+  // Trainer patterns
+  getTrainerProfile,
+  getTrainerPattern,
+  hasCrediblePattern,
+  getTopLasixTrainers,
+  getTopBlinkersTrainers,
+  // Types
+  type DetectedEquipmentChange,
+  type EquipmentAnalysis,
+  type EquipmentHistoryEntry,
+  type TrainerEquipmentPattern,
+} from './equipment'
 export { getOptimalPostPositions } from './postPosition'
 export { getParFigures, getClassHierarchy } from './speedClass'
 

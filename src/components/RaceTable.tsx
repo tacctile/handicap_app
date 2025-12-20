@@ -20,6 +20,9 @@ import {
   getOverlayColor,
   getOverlayBgColor,
   VALUE_LABELS,
+  getEquipmentImpactSummary,
+  getImpactColor,
+  getImpactIcon,
   type HorseScore,
   type OverlayAnalysis,
   type ValuePlay,
@@ -238,6 +241,43 @@ const EVDisplay = memo(function EVDisplay({ overlay }: EVDisplayProps) {
     >
       {formatEV(overlay.evPerDollar)}
     </span>
+  )
+})
+
+// Equipment badge component for displaying equipment changes
+interface EquipmentBadgeProps {
+  horse: HorseEntry
+}
+
+const EquipmentBadge = memo(function EquipmentBadge({ horse }: EquipmentBadgeProps) {
+  const equipmentInfo = getEquipmentImpactSummary(horse)
+
+  if (!equipmentInfo.hasChanges || !equipmentInfo.primaryChange) {
+    return <span className="text-white/30">—</span>
+  }
+
+  const { primaryChange, totalImpact, hasTrainerPattern } = equipmentInfo
+  const isPositive = totalImpact > 0
+  const color = getImpactColor(primaryChange.impact)
+  const icon = getImpactIcon(primaryChange.impact)
+
+  return (
+    <div
+      className="equipment-badge"
+      style={{
+        backgroundColor: `${color}15`,
+        borderColor: `${color}40`,
+        color: color,
+      }}
+      title={`${equipmentInfo.summary}\nImpact: ${isPositive ? '+' : ''}${totalImpact} pts${hasTrainerPattern ? '\n★ Trainer pattern applied' : ''}`}
+    >
+      <Icon name={icon} className="equipment-badge-icon" />
+      <span className="equipment-badge-label">
+        {primaryChange.equipmentType.name.slice(0, 3).toUpperCase()}
+      </span>
+      {isPositive && <Icon name="arrow_upward" className="equipment-badge-arrow" />}
+      {totalImpact < 0 && <Icon name="arrow_downward" className="equipment-badge-arrow" />}
+    </div>
   )
 })
 
@@ -708,6 +748,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
               <th className="w-20 text-center">Score</th>
               <th className="w-16 text-center">PP</th>
               <th className="text-left">Horse</th>
+              <th className="w-20 text-center hide-on-small" title="Equipment changes">Equip</th>
               <th className="text-left hide-on-small">Trainer</th>
               <th className="text-left hide-on-small">Jockey</th>
               <th className="w-20 text-right">Odds</th>
@@ -758,6 +799,9 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                   </td>
                   <td className={`font-medium ${scratched ? 'horse-name-scratched' : 'text-foreground'}`}>
                     {horse.horseName}
+                  </td>
+                  <td className="text-center hide-on-small">
+                    {!scratched ? <EquipmentBadge horse={horse} /> : <span className="text-white/30">—</span>}
                   </td>
                   <td className="text-white/70 hide-on-small">
                     {horse.trainerName}

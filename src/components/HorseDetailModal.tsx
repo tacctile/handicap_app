@@ -16,6 +16,11 @@ import {
   getOverlayBgColor,
   VALUE_LABELS,
   VALUE_ICONS,
+  extractEquipmentInfo,
+  formatEquipmentChange,
+  getEquipmentScoreColor,
+  getTrainerProfile,
+  type DetectedEquipmentChange,
 } from '../lib/scoring'
 import {
   getBreedingDisplayInfo,
@@ -243,6 +248,16 @@ export function HorseDetailModal({
     const displayInfo = getBreedingDisplayInfo(horse)
     const badge = getExperienceBadge(horse)
     return { ...displayInfo, badge }
+  }, [horse])
+
+  // Equipment analysis
+  const equipmentAnalysis = useMemo(() => {
+    const info = extractEquipmentInfo(horse)
+    const trainerProfile = getTrainerProfile(horse.trainerName)
+    return {
+      ...info,
+      trainerProfile,
+    }
   }, [horse])
 
   // Generate key factors
@@ -517,15 +532,86 @@ export function HorseDetailModal({
                 onToggle={() => toggleCategory('equipment')}
                 details={
                   <div className="breakdown-details">
-                    {score.breakdown.equipment.hasChanges && (
+                    {/* Equipment Changes List */}
+                    {equipmentAnalysis.changes.length > 0 ? (
+                      <>
+                        <div className="breakdown-row" style={{ marginBottom: '8px' }}>
+                          <span className="breakdown-label">Changes Detected</span>
+                          <span className="breakdown-value" style={{ color: '#36d1da' }}>
+                            {equipmentAnalysis.changes.length}
+                          </span>
+                        </div>
+                        {equipmentAnalysis.changes.map((change, i) => {
+                          const formatted = formatEquipmentChange(change)
+                          return (
+                            <div key={i} className="breakdown-row" style={{
+                              backgroundColor: `${formatted.color}10`,
+                              padding: '6px 8px',
+                              borderRadius: '6px',
+                              marginBottom: '4px',
+                              border: `1px solid ${formatted.color}30`
+                            }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <Icon name={formatted.icon} className="text-sm" style={{ color: formatted.color }} />
+                                <span style={{ color: '#e0e0e0' }}>{formatted.label}</span>
+                              </span>
+                              <span className="breakdown-value" style={{ color: formatted.color, fontWeight: 600 }}>
+                                {formatted.points} pts
+                              </span>
+                            </div>
+                          )
+                        })}
+                        {/* Trainer Pattern Evidence */}
+                        {equipmentAnalysis.trainerProfile && (
+                          <div style={{
+                            marginTop: '8px',
+                            padding: '8px',
+                            backgroundColor: '#1a1a1a',
+                            borderRadius: '6px',
+                            border: '1px solid #333'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                              <Icon name="star" className="text-sm" style={{ color: '#f59e0b' }} />
+                              <span style={{ color: '#f59e0b', fontSize: '0.8rem', fontWeight: 600 }}>
+                                Trainer Pattern Active
+                              </span>
+                            </div>
+                            <span style={{ color: '#888', fontSize: '0.75rem' }}>
+                              {horse.trainerName} has {equipmentAnalysis.trainerProfile.patterns.length} tracked equipment patterns
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
                       <div className="breakdown-row">
-                        <span className="breakdown-label">Equipment Change</span>
-                        <span className="breakdown-value" style={{ color: '#36d1da' }}>
-                          <Icon name="star" className="text-sm" /> Active
+                        <span className="breakdown-label">Status</span>
+                        <span className="breakdown-value" style={{ color: '#888' }}>
+                          No equipment changes
                         </span>
                       </div>
                     )}
-                    <div className="breakdown-note">
+
+                    {/* Current Equipment */}
+                    {equipmentAnalysis.currentEquipment && (
+                      <div style={{ marginTop: '8px' }}>
+                        <span style={{ color: '#888', fontSize: '0.75rem' }}>Current: </span>
+                        <span style={{ color: '#e0e0e0', fontSize: '0.75rem' }}>
+                          {equipmentAnalysis.currentEquipment || 'None listed'}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Last Race Equipment */}
+                    {equipmentAnalysis.lastRaceEquipment && (
+                      <div>
+                        <span style={{ color: '#888', fontSize: '0.75rem' }}>Last race: </span>
+                        <span style={{ color: '#e0e0e0', fontSize: '0.75rem' }}>
+                          {equipmentAnalysis.lastRaceEquipment}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="breakdown-note" style={{ marginTop: '8px' }}>
                       {score.breakdown.equipment.reasoning}
                     </div>
                   </div>
