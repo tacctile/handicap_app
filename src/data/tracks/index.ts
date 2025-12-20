@@ -3,41 +3,60 @@
  * Contains track-specific data for handicapping calculations
  *
  * This module exports a centralized database of track intelligence data
- * for the 5 major tracks in North American racing. Each track file contains
+ * for 11 major tracks in North American racing. Each track file contains
  * verified, researched data from authoritative sources including:
  * - Equibase track profiles and records
  * - Official track websites and specifications
  * - America's Best Racing handicapping analysis
  * - NYRA and other racing association statistics
  * - Racing publications (BloodHorse, Horse Racing Nation, TwinSpires)
+ * - State racing commission data (Nebraska Racing Commission for FON)
  *
  * Track codes follow standard DRF/Equibase conventions:
+ * - AQU = Aqueduct Racetrack
+ * - BEL = Belmont Park
  * - CD = Churchill Downs
- * - SAR = Saratoga Race Course
- * - SA = Santa Anita Park
- * - GP = Gulfstream Park
  * - DMR = Del Mar Thoroughbred Club
+ * - FON = Fonner Park
+ * - GP = Gulfstream Park
+ * - KEE = Keeneland Race Course
+ * - OP = Oaklawn Racing Casino Resort
+ * - PIM = Pimlico Race Course
+ * - SA = Santa Anita Park
+ * - SAR = Saratoga Race Course
  */
 
 import type { TrackData, TrackBiasSummary } from './trackSchema'
 
-// Import individual track data files
+// Import individual track data files (alphabetical order)
+import { aqueduct } from './aqueduct'
+import { belmontPark } from './belmontPark'
 import { churchillDowns } from './churchillDowns'
-import { saratoga } from './saratoga'
-import { santaAnita } from './santaAnita'
-import { gulfstreamPark } from './gulfstreamPark'
 import { delMar } from './delMar'
+import { fonnerPark } from './fonnerPark'
+import { gulfstreamPark } from './gulfstreamPark'
+import { keeneland } from './keeneland'
+import { oaklawnPark } from './oaklawnPark'
+import { pimlico } from './pimlico'
+import { santaAnita } from './santaAnita'
+import { saratoga } from './saratoga'
 
 /**
  * Track database indexed by standard track code
  * Keys use DRF/Equibase standard codes for consistency with DRF file parsing
  */
 export const trackDatabase: Map<string, TrackData> = new Map([
+  ['AQU', aqueduct],
+  ['BEL', belmontPark],
   ['CD', churchillDowns],
-  ['SAR', saratoga],
-  ['SA', santaAnita],
+  ['DMR', delMar],
+  ['FON', fonnerPark],
   ['GP', gulfstreamPark],
-  ['DMR', delMar]
+  ['KEE', keeneland],
+  ['OP', oaklawnPark],
+  ['PIM', pimlico],
+  ['SA', santaAnita],
+  ['SAR', saratoga]
 ])
 
 /**
@@ -166,11 +185,17 @@ export type {
   TrackBiasSummary
 } from './trackSchema'
 
-// Export individual track data for direct access if needed
+// Export individual track data for direct access if needed (alphabetical order)
 export {
+  aqueduct,
+  belmontPark,
   churchillDowns,
-  saratoga,
-  santaAnita,
+  delMar,
+  fonnerPark,
   gulfstreamPark,
-  delMar
+  keeneland,
+  oaklawnPark,
+  pimlico,
+  santaAnita,
+  saratoga
 }
