@@ -1,5 +1,6 @@
 import { memo, useEffect, useState } from 'react'
 import type { CalculationState } from '../hooks/useRaceState'
+import { getConfidenceColor, getConfidenceLabel } from '../lib/confidence'
 
 interface CalculationStatusProps {
   calculationState: CalculationState
@@ -26,21 +27,6 @@ function formatTimestamp(timestamp: number | null): string {
   if (diff < 60000) return `${Math.floor(diff / 1000)}s ago`
   if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`
   return new Date(timestamp).toLocaleTimeString()
-}
-
-function getConfidenceColor(confidence: number): string {
-  if (confidence >= 75) return '#36d1da'
-  if (confidence >= 50) return '#19abb5'
-  if (confidence >= 25) return '#f59e0b'
-  return '#888888'
-}
-
-function getConfidenceLabel(confidence: number): string {
-  if (confidence >= 80) return 'Very High'
-  if (confidence >= 65) return 'High'
-  if (confidence >= 50) return 'Moderate'
-  if (confidence >= 35) return 'Low'
-  return 'Very Low'
 }
 
 export const CalculationStatus = memo(function CalculationStatus({

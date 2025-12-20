@@ -1,20 +1,30 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sidebar, TopBar, MobileNav } from './layout'
-import { RaceOverviewCard, EmptyStateTable } from './cards'
+import { EmptyStateTable } from './cards'
 import { FileUpload } from './FileUpload'
-import { RaceTable } from './RaceTable'
+import { RaceOverview } from './RaceOverview'
+import { RaceDetail } from './RaceDetail'
 import { LoadingState } from './LoadingState'
 import { DataValidationWarning } from './ErrorBoundary'
-import { StaggerContainer, StaggerItem, FadeIn } from './motion'
+import { FadeIn } from './motion'
 import { BankrollSettings } from './BankrollSettings'
 import { BankrollSummaryCard } from './BankrollSummaryCard'
 import { PostTimeDetailModal } from './PostTimeCountdown'
 import { ResponsiveToastContainer, useToasts } from './Toast'
 import { useBankroll } from '../hooks/useBankroll'
 import { usePostTime } from '../hooks/usePostTime'
+import {
+  calculateRaceScores,
+  calculateRaceConfidence,
+  getTopHorses,
+  type ScoredHorse,
+} from '../lib/scoring'
 import type { useRaceState } from '../hooks/useRaceState'
 import type { ParsedDRFFile } from '../types/drf'
+
+// View types for overview-first navigation
+type ViewMode = 'overview' | 'detail'
 
 interface DashboardProps {
   parsedData: ParsedDRFFile | null
@@ -35,9 +45,13 @@ export function Dashboard({
   onDismissWarnings,
   raceState,
 }: DashboardProps) {
+  // View management state
+  const [currentView, setCurrentView] = useState<ViewMode>('overview')
+  const [selectedRaceIndex, setSelectedRaceIndex] = useState(0)
+
+  // UI state
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [mobileTab, setMobileTab] = useState<'dashboard' | 'upload' | 'settings'>('dashboard')
-  const [selectedRaceIndex] = useState(0)
   const [bankrollSettingsOpen, setBankrollSettingsOpen] = useState(false)
   const [postTimeDetailOpen, setPostTimeDetailOpen] = useState(false)
 
@@ -48,6 +62,69 @@ export function Dashboard({
   const { toasts, dismissToast, addPostTimeNotification } = useToasts()
 
   const hasData = !!parsedData && parsedData.races.length > 0
+
+  // Reset to overview when new file is loaded
+  useEffect(() => {
+    if (parsedData) {
+      setCurrentView('overview')
+      setSelectedRaceIndex(0)
+    }
+  }, [parsedData])
+
+  // Calculate and cache all race confidences and top horses on data load
+  // This is computed once and cached - performance optimization
+  const { raceConfidences, topHorsesByRace } = useMemo(() => {
+    const confidences = new Map<number, number>()
+    const topHorses = new Map<number, ScoredHorse[]>()
+
+    if (!parsedData) {
+      return { raceConfidences: confidences, topHorsesByRace: topHorses }
+    }
+
+    parsedData.races.forEach((race, index) => {
+      // Calculate scores for overview display
+      // For overview, we don't use user scratches - show base confidence
+      const scoredHorses = calculateRaceScores(
+        race.horses,
+        race.header,
+        (_i, originalOdds) => originalOdds, // Use original odds for overview
+        () => false, // No scratches for overview
+        'fast' // Default condition for overview
+      )
+
+      const confidence = calculateRaceConfidence(scoredHorses)
+      const top = getTopHorses(scoredHorses, 3)
+
+      confidences.set(index, confidence)
+      topHorses.set(index, top)
+    })
+
+    return { raceConfidences: confidences, topHorsesByRace: topHorses }
+  }, [parsedData])
+
+  // Get current race's scored horses for detail view (includes user modifications)
+  const currentRaceScoredHorses = useMemo(() => {
+    if (!parsedData || currentView !== 'detail') return []
+
+    const race = parsedData.races[selectedRaceIndex]
+    if (!race) return []
+
+    return calculateRaceScores(
+      race.horses,
+      race.header,
+      (i, originalOdds) => raceState.getOdds(i, originalOdds),
+      (i) => raceState.isScratched(i),
+      raceState.trackCondition
+    )
+  }, [parsedData, selectedRaceIndex, currentView, raceState])
+
+  // Current race confidence (recalculated when user makes changes)
+  const currentRaceConfidence = useMemo(() => {
+    if (currentView !== 'detail') {
+      return raceConfidences.get(selectedRaceIndex) || 0
+    }
+    return calculateRaceConfidence(currentRaceScoredHorses)
+  }, [currentView, raceConfidences, selectedRaceIndex, currentRaceScoredHorses])
 
   // Get post time string from current race
   const currentPostTimeString = useMemo(() => {
@@ -85,6 +162,16 @@ export function Dashboard({
       })
     }
   }, [pendingNotifications, parsedData, selectedRaceIndex, addPostTimeNotification, clearNotification])
+
+  // View navigation handlers
+  const handleRaceSelect = useCallback((raceIndex: number) => {
+    setSelectedRaceIndex(raceIndex)
+    setCurrentView('detail')
+  }, [])
+
+  const handleBackToOverview = useCallback(() => {
+    setCurrentView('overview')
+  }, [])
 
   // Open bankroll settings modal
   const openBankrollSettings = useCallback(() => {
@@ -134,22 +221,6 @@ export function Dashboard({
     }
   }, [parsedData, selectedRaceIndex])
 
-  // Get race overview data
-  const raceOverviewData = useMemo(() => {
-    if (!parsedData || !parsedData.races.length) return undefined
-
-    const race = parsedData.races[selectedRaceIndex]
-    return {
-      trackName: race?.header?.trackCode || 'Unknown Track',
-      raceNumber: race?.header?.raceNumber || selectedRaceIndex + 1,
-      distance: race?.header?.distance || undefined,
-      surface: race?.header?.surface || undefined,
-      conditions: raceState.trackCondition,
-      postTime: race?.header?.postTime,
-    }
-  }, [parsedData, selectedRaceIndex, raceState.trackCondition])
-
-
   // Calculate stats
   const stats = useMemo(() => {
     if (!parsedData) return { races: 0, horses: 0 }
@@ -177,14 +248,14 @@ export function Dashboard({
       <div className="dashboard-main">
         {/* Top bar */}
         <TopBar
-          currentRace={currentRaceInfo}
+          currentRace={currentView === 'detail' ? currentRaceInfo : undefined}
           onUploadClick={handleUploadClick}
           onMenuClick={toggleSidebar}
           onSettingsClick={openBankrollSettings}
           hasData={hasData}
           bankroll={bankroll}
           onOpenBankrollSettings={openBankrollSettings}
-          countdown={countdown}
+          countdown={currentView === 'detail' ? countdown : undefined}
           onCountdownClick={togglePostTimeDetail}
         />
 
@@ -220,181 +291,202 @@ export function Dashboard({
             </FadeIn>
           )}
 
-          {/* Three-column layout */}
-          <div className="dashboard-grid">
-            {/* LEFT COLUMN - Race Overview */}
-            <aside className="dashboard-column left" aria-label="Race overview">
-              <RaceOverviewCard
-                race={raceOverviewData}
-                weather={{ temp: 72, condition: 'sunny' }}
-                isLoading={isLoading}
-                countdown={countdown}
-                postTimeFormatted={postTimeFormatted}
-              />
-
-              {/* Stats summary when data is loaded */}
-              {hasData && (
-                <FadeIn delay={0.2}>
-                  <div className="dashboard-stats-card">
-                    <div className="stats-header">
-                      <span className="material-icons">bar_chart</span>
-                      <span>Session Stats</span>
-                    </div>
-                    <div className="stats-grid">
-                      <div className="stat-item">
-                        <span className="stat-value">{stats.races}</span>
-                        <span className="stat-label">Races</span>
+          {/* View Content - Overview or Detail */}
+          <AnimatePresence mode="wait">
+            {!hasData ? (
+              // Empty state - no data uploaded
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="dashboard-empty-container"
+              >
+                <div className="dashboard-grid">
+                  {/* LEFT COLUMN - Info */}
+                  <aside className="dashboard-column left" aria-label="Info">
+                    <FadeIn delay={0.2}>
+                      <div className="dashboard-stats-card">
+                        <div className="stats-header">
+                          <span className="material-icons">bar_chart</span>
+                          <span>Session Stats</span>
+                        </div>
+                        <div className="stats-grid">
+                          <div className="stat-item">
+                            <span className="stat-value">—</span>
+                            <span className="stat-label">Races</span>
+                          </div>
+                          <div className="stat-item">
+                            <span className="stat-value">—</span>
+                            <span className="stat-label">Horses</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="stat-item">
-                        <span className="stat-value">{stats.horses}</span>
-                        <span className="stat-label">Horses</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-value">{parsedData?.filename?.split('.')[0].slice(0, 8) || '—'}</span>
-                        <span className="stat-label">File</span>
-                      </div>
-                    </div>
-                  </div>
-                </FadeIn>
-              )}
+                    </FadeIn>
+                  </aside>
 
-              {/* Performance tracking placeholder */}
-              <FadeIn delay={0.3}>
-                <div className="dashboard-placeholder-card">
-                  <div className="placeholder-header">
-                    <span className="material-icons">trending_up</span>
-                    <span>Performance Tracking</span>
-                    <span className="placeholder-badge">Coming Soon</span>
-                  </div>
-                  <div className="placeholder-content">
-                    <div className="placeholder-line" style={{ width: '80%' }} />
-                    <div className="placeholder-line" style={{ width: '60%' }} />
-                    <div className="placeholder-line" style={{ width: '70%' }} />
-                  </div>
-                </div>
-              </FadeIn>
-            </aside>
-
-            {/* CENTER COLUMN - Horse Analysis Table */}
-            <section className="dashboard-column center" aria-label="Horse analysis">
-              <AnimatePresence mode="wait">
-                {!hasData ? (
-                  <motion.div
-                    key="empty"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  >
+                  {/* CENTER COLUMN - Empty State */}
+                  <section className="dashboard-column center" aria-label="Upload prompt">
                     <EmptyStateTable
                       onUploadClick={handleUploadClick}
                       isLoading={isLoading}
                     />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="data"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="race-tables-container"
-                  >
-                    <StaggerContainer>
-                      {parsedData.races.map((race, index) => (
-                        <StaggerItem key={index}>
-                          <RaceTable
-                            race={race}
-                            raceState={raceState}
-                            bankroll={bankroll}
-                            onOpenBankrollSettings={openBankrollSettings}
-                          />
-                        </StaggerItem>
-                      ))}
-                    </StaggerContainer>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </section>
+                  </section>
 
-            {/* RIGHT COLUMN - Bankroll & Betting Overview */}
-            <aside className="dashboard-column right" aria-label="Betting overview">
-              {/* Bankroll Summary Card - Full version */}
-              <BankrollSummaryCard
-                bankroll={bankroll}
-                onOpenSettings={openBankrollSettings}
-                variant="full"
-              />
-
-              {/* Quick Tips Card */}
-              {hasData && (
-                <FadeIn delay={0.2}>
-                  <div className="betting-tips-card">
-                    <div className="tips-header">
-                      <span className="material-icons">lightbulb</span>
-                      <span>Quick Tips</span>
-                    </div>
-                    <ul className="tips-list">
-                      <li>
-                        <span className="material-icons">check_circle</span>
-                        <span>Select bets from the race table below</span>
-                      </li>
-                      <li>
-                        <span className="material-icons">check_circle</span>
-                        <span>Use presets for quick selections</span>
-                      </li>
-                      <li>
-                        <span className="material-icons">check_circle</span>
-                        <span>Copy bet slip to share at the window</span>
-                      </li>
-                    </ul>
-                  </div>
-                </FadeIn>
-              )}
-
-              {/* Session Summary when no data */}
-              {!hasData && (
-                <FadeIn delay={0.2}>
-                  <div className="betting-empty-state">
-                    <span className="material-icons betting-empty-icon">casino</span>
-                    <h4>Ready to Bet</h4>
-                    <p>Upload race data to see betting recommendations and track your wagers.</p>
-                  </div>
-                </FadeIn>
-              )}
-            </aside>
-          </div>
-
-          {/* Detailed analysis expansion panel */}
-          <FadeIn delay={0.4}>
-            <div className="dashboard-expansion-panel">
-              <button className="expansion-panel-header" disabled>
-                <div className="expansion-panel-title">
-                  <span className="material-icons">insights</span>
-                  <span>Detailed Analysis</span>
-                  <span className="expansion-coming-soon">Coming Soon</span>
+                  {/* RIGHT COLUMN - Bankroll */}
+                  <aside className="dashboard-column right" aria-label="Betting overview">
+                    <BankrollSummaryCard
+                      bankroll={bankroll}
+                      onOpenSettings={openBankrollSettings}
+                      variant="full"
+                    />
+                    <FadeIn delay={0.2}>
+                      <div className="betting-empty-state">
+                        <span className="material-icons betting-empty-icon">casino</span>
+                        <h4>Ready to Bet</h4>
+                        <p>Upload race data to see betting recommendations and track your wagers.</p>
+                      </div>
+                    </FadeIn>
+                  </aside>
                 </div>
-                <span className="material-icons expansion-arrow">expand_more</span>
-              </button>
-            </div>
-          </FadeIn>
+              </motion.div>
+            ) : currentView === 'overview' ? (
+              // Race Overview - all races with confidence badges
+              <motion.div
+                key="overview"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="dashboard-overview-container"
+              >
+                <div className="dashboard-grid">
+                  {/* LEFT COLUMN - Stats */}
+                  <aside className="dashboard-column left" aria-label="Session info">
+                    <FadeIn delay={0.1}>
+                      <div className="dashboard-stats-card">
+                        <div className="stats-header">
+                          <span className="material-icons">bar_chart</span>
+                          <span>Session Stats</span>
+                        </div>
+                        <div className="stats-grid">
+                          <div className="stat-item">
+                            <span className="stat-value">{stats.races}</span>
+                            <span className="stat-label">Races</span>
+                          </div>
+                          <div className="stat-item">
+                            <span className="stat-value">{stats.horses}</span>
+                            <span className="stat-label">Horses</span>
+                          </div>
+                          <div className="stat-item">
+                            <span className="stat-value">{parsedData?.filename?.split('.')[0].slice(0, 8) || '—'}</span>
+                            <span className="stat-label">File</span>
+                          </div>
+                        </div>
+                      </div>
+                    </FadeIn>
 
-          {/* API Access section - enterprise placeholder */}
-          <FadeIn delay={0.5}>
-            <div className="dashboard-enterprise-section">
-              <div className="enterprise-card">
-                <div className="enterprise-header">
-                  <span className="material-icons">api</span>
-                  <span>API Access</span>
-                  <span className="enterprise-badge">Enterprise</span>
+                    <FadeIn delay={0.2}>
+                      <div className="dashboard-placeholder-card">
+                        <div className="placeholder-header">
+                          <span className="material-icons">trending_up</span>
+                          <span>Performance Tracking</span>
+                          <span className="placeholder-badge">Coming Soon</span>
+                        </div>
+                        <div className="placeholder-content">
+                          <div className="placeholder-line" style={{ width: '80%' }} />
+                          <div className="placeholder-line" style={{ width: '60%' }} />
+                          <div className="placeholder-line" style={{ width: '70%' }} />
+                        </div>
+                      </div>
+                    </FadeIn>
+                  </aside>
+
+                  {/* CENTER COLUMN - Race Overview Grid */}
+                  <section className="dashboard-column center" aria-label="Race overview">
+                    <RaceOverview
+                      parsedData={parsedData}
+                      raceConfidences={raceConfidences}
+                      topHorsesByRace={topHorsesByRace}
+                      onRaceSelect={handleRaceSelect}
+                    />
+                  </section>
+
+                  {/* RIGHT COLUMN - Bankroll */}
+                  <aside className="dashboard-column right" aria-label="Betting overview">
+                    <BankrollSummaryCard
+                      bankroll={bankroll}
+                      onOpenSettings={openBankrollSettings}
+                      variant="full"
+                    />
+
+                    <FadeIn delay={0.2}>
+                      <div className="betting-tips-card">
+                        <div className="tips-header">
+                          <span className="material-icons">lightbulb</span>
+                          <span>Quick Tips</span>
+                        </div>
+                        <ul className="tips-list">
+                          <li>
+                            <span className="material-icons">check_circle</span>
+                            <span>Click any race card to view details</span>
+                          </li>
+                          <li>
+                            <span className="material-icons">check_circle</span>
+                            <span>Confidence shows analysis quality</span>
+                          </li>
+                          <li>
+                            <span className="material-icons">check_circle</span>
+                            <span>Green borders indicate Tier 1 picks</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </FadeIn>
+                  </aside>
                 </div>
-                <p className="enterprise-description">
-                  Integrate Horse Monster analytics into your applications with our REST API.
-                </p>
-                <button className="enterprise-btn" disabled>
-                  Learn More
-                </button>
+              </motion.div>
+            ) : (
+              // Race Detail - single race deep dive
+              <motion.div
+                key="detail"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+                className="dashboard-detail-container"
+              >
+                <RaceDetail
+                  race={parsedData.races[selectedRaceIndex]}
+                  confidence={currentRaceConfidence}
+                  raceState={raceState}
+                  bankroll={bankroll}
+                  onBack={handleBackToOverview}
+                  onOpenBankrollSettings={openBankrollSettings}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Footer - only show in overview */}
+          {currentView === 'overview' && hasData && (
+            <FadeIn delay={0.4}>
+              <div className="dashboard-enterprise-section">
+                <div className="enterprise-card">
+                  <div className="enterprise-header">
+                    <span className="material-icons">api</span>
+                    <span>API Access</span>
+                    <span className="enterprise-badge">Enterprise</span>
+                  </div>
+                  <p className="enterprise-description">
+                    Integrate Horse Monster analytics into your applications with our REST API.
+                  </p>
+                  <button className="enterprise-btn" disabled>
+                    Learn More
+                  </button>
+                </div>
               </div>
-            </div>
-          </FadeIn>
+            </FadeIn>
+          )}
         </main>
 
         {/* Footer */}
