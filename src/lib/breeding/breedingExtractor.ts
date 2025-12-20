@@ -10,7 +10,6 @@ import type {
   BreedingInfo,
   BreedingDisplayInfo,
   ExperienceLevel,
-  BreedingScore,
 } from './types'
 import {
   isUnknownSire,

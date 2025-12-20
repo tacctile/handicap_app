@@ -19,7 +19,7 @@
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf'
-import type { BreedingInfo, BreedingScore, BreedingScoreBreakdown, BreedingConfidence } from './types'
+import type { BreedingScore, BreedingScoreBreakdown, BreedingConfidence } from './types'
 import { extractBreedingInfo } from './breedingExtractor'
 import { calculateSireScore, lookupSire, getSireTierLabel, getSireTierColor, type ExtendedSireProfile } from './sireDatabase'
 import { calculateDamScore, lookupDam, getDamTierLabel, type ExtendedDamProfile } from './damDatabase'
@@ -122,29 +122,6 @@ function parseDistanceCategory(distance: string): 'sprint' | 'route' | 'versatil
   }
 
   return 'versatile'
-}
-
-/**
- * Parse distance string to furlongs
- */
-function parseDistanceToFurlongs(distance: string): number {
-  const distLower = distance.toLowerCase()
-
-  // Handle mile distances
-  if (distLower.includes('m')) {
-    const mileMatch = distLower.match(/(\d+\.?\d*)\s*m/)
-    if (mileMatch) {
-      return parseFloat(mileMatch[1]) * 8
-    }
-  }
-
-  // Handle furlong distances
-  const furlongMatch = distLower.match(/(\d+\.?\d*)\s*f/)
-  if (furlongMatch) {
-    return parseFloat(furlongMatch[1])
-  }
-
-  return 8 // Default to 1 mile
 }
 
 /**

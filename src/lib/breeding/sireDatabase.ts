@@ -12,7 +12,7 @@
  * - Below Average (0-4): <8% win rate, <$10K per start
  */
 
-import type { SireProfile, SurfacePreference, DistancePreference } from './types'
+import type { SireProfile } from './types'
 
 // ============================================================================
 // SIRE TIER CONSTANTS

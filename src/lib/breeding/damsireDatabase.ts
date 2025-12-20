@@ -12,7 +12,7 @@
  * - Below Average (0-3): Limited success as broodmare sire
  */
 
-import type { DamsireProfile, SurfacePreference } from './types'
+import type { DamsireProfile } from './types'
 
 // ============================================================================
 // DAMSIRE TIER CONSTANTS

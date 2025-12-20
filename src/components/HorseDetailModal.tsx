@@ -20,11 +20,8 @@ import {
 import {
   getBreedingDisplayInfo,
   getExperienceBadge,
-  BREEDING_SCORE_LIMITS,
-  lookupSire,
   getSireTierColor,
   BREEDING_CATEGORY_LIMITS,
-  type DetailedBreedingScore,
 } from '../lib/breeding'
 
 interface HorseDetailModalProps {
@@ -776,13 +773,18 @@ export function HorseDetailModal({
                     marginTop: '10px',
                     fontSize: '0.75rem',
                     color: '#666',
-                    fontStyle: 'italic'
+                    fontStyle: 'italic',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '4px'
                   }}>
-                    <Icon name="info" className="text-sm" style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-                    {breedingInfo.starts === 0
-                      ? 'Debut runners have no race form, so breeding data helps project potential ability.'
-                      : `With only ${breedingInfo.starts} start${breedingInfo.starts === 1 ? '' : 's'}, breeding helps fill gaps in race data.`
-                    }
+                    <Icon name="info" className="text-sm" />
+                    <span>
+                      {breedingInfo.starts === 0
+                        ? 'Debut runners have no race form, so breeding data helps project potential ability.'
+                        : `With only ${breedingInfo.starts} start${breedingInfo.starts === 1 ? '' : 's'}, breeding helps fill gaps in race data.`
+                      }
+                    </span>
                   </div>
                 </div>
               )}
