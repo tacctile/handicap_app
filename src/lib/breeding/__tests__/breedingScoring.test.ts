@@ -13,7 +13,6 @@ import {
   calculateBreedingContribution,
   shouldShowBreedingAnalysis,
   getBreedingScoreDisplay,
-  MAX_STARTS_FOR_BREEDING,
   BREEDING_CATEGORY_LIMITS,
 } from '../breedingScoring'
 import type { DetailedBreedingScore } from '../breedingScoring'
@@ -27,7 +26,7 @@ import {
 
 // Mock the database modules to control sire/dam lookups
 vi.mock('../sireDatabase', () => ({
-  calculateSireScore: vi.fn((sireName: string, context: { isDebut: boolean }) => {
+  calculateSireScore: vi.fn((sireName: string, _context: { isDebut: boolean }) => {
     // Elite sires
     if (sireName === 'Into Mischief' || sireName === 'Gun Runner') {
       return {
@@ -724,7 +723,7 @@ describe('Breeding Scoring', () => {
       const raceHeader = createRaceHeader({
         surface: 'dirt',
         distance: '6f',
-        classification: 'maiden_special_weight',
+        classification: 'maiden',
       })
 
       const result = calculateDetailedBreedingScore(horse, raceHeader)

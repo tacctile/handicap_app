@@ -25,10 +25,8 @@ import {
   formatEV,
   formatEVPercent,
   getOverlayColor,
-  VALUE_THRESHOLDS,
   VALUE_COLORS,
   type ValueClassification,
-  type OverlayAnalysis,
 } from '../overlayAnalysis'
 
 describe('Overlay Analysis', () => {

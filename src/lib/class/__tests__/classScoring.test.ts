@@ -16,7 +16,7 @@ import {
   isValuePlay,
   MAX_CLASS_SCORE,
 } from '../classScoring'
-import { ClassLevel, CLASS_LEVEL_METADATA } from '../classTypes'
+import { ClassLevel } from '../classTypes'
 import {
   createHorseEntry,
   createRaceHeader,
@@ -25,7 +25,7 @@ import {
 
 // Mock the class extractor
 vi.mock('../classExtractor', () => ({
-  analyzeClass: vi.fn((horse, raceHeader) => {
+  analyzeClass: vi.fn((horse, _raceHeader) => {
     // Return default analysis that can be overridden via test data
     const mockData = (horse as { __mockClassData?: unknown }).__mockClassData
 
@@ -108,8 +108,8 @@ function createHorseWithClassData(
   classData: Record<string, unknown>,
   horseOverrides = {}
 ) {
-  const horse = createHorseEntry(horseOverrides)
-  ;(horse as { __mockClassData: unknown }).__mockClassData = classData
+  const horse = createHorseEntry(horseOverrides) as unknown as Record<string, unknown>
+  horse.__mockClassData = classData
   return horse
 }
 
@@ -787,7 +787,7 @@ describe('Class Scoring', () => {
         pastPerformances: [],
       })
 
-      const raceHeader = createRaceHeader({ classification: 'maiden_special_weight' })
+      const raceHeader = createRaceHeader({ classification: 'maiden' })
 
       const result = calculateClassScore(horse, raceHeader)
 

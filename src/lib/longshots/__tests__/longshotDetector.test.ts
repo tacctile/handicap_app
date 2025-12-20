@@ -10,13 +10,11 @@ import {
   detectPaceDevastation,
   detectClassRelief,
   detectEquipmentRescue,
-  detectTrainerPattern,
   detectTrackBiasFit,
   detectHiddenForm,
   detectAllUpsetAngles,
 } from '../longshotDetector'
 import {
-  MIN_LONGSHOT_ODDS_DECIMAL,
   MIN_ANGLE_POINTS_LIVE,
   MIN_ANGLE_POINTS_NUCLEAR,
   UPSET_ANGLE_BASE_POINTS,
@@ -30,10 +28,9 @@ import {
   createRaceHeader,
   createPastPerformance,
   createWorkout,
-  createEquipment,
   createMedication,
 } from '../../../__tests__/fixtures/testHelpers'
-import type { PaceScenarioAnalysis, RunningStyleProfile } from '../../scoring/paceAnalysis'
+import type { PaceScenarioAnalysis, RunningStyleProfile, RunningStyleEvidence } from '../../scoring/paceAnalysis'
 import type { ClassScoreResult } from '../../class/classScoring'
 import type { EquipmentScoreResult } from '../../equipment/equipmentScoring'
 
@@ -70,7 +67,7 @@ vi.mock('../../trackIntelligence', () => ({
     }
     return { earlySpeedWinRate: 55, sampleSize: 100 } // Neutral
   }),
-  getPostPositionBias: vi.fn((trackCode: string, distance: string, surface: string) => {
+  getPostPositionBias: vi.fn((trackCode: string, _distance: string, _surface: string) => {
     if (trackCode === 'SAR') {
       return { favoredPosts: [1, 2, 3] }
     }
@@ -99,8 +96,9 @@ function createPaceScenario(overrides: Partial<PaceScenarioAnalysis> = {}): Pace
     styleBreakdown: {
       earlySpeed: [1, 2, 3],
       pressers: [4, 5],
-      stalkers: [6, 7],
+      sustained: [6, 7],
       closers: [8],
+      unknown: [],
     },
     pacePressure: 'moderate',
     styledHorses: [],
@@ -206,8 +204,9 @@ describe('Longshot Detector', () => {
         styleBreakdown: {
           earlySpeed: [1, 2, 3, 4, 5], // 5 speed horses
           pressers: [6],
-          stalkers: [7],
+          sustained: [7],
           closers: [8], // Only 1 closer
+          unknown: [],
         },
       })
 
@@ -216,8 +215,8 @@ describe('Longshot Detector', () => {
         styleName: 'Closer',
         confidence: 85,
         evidence: [
-          { finishPosition: 1, styleInRace: 'C' },
-          { finishPosition: 2, styleInRace: 'C' },
+          { raceDate: '2024-01-15', track: 'SAR', firstCallPosition: 8, fieldSize: 10, finishPosition: 1, styleInRace: 'C', wasOnLead: false, lengthsBehindAtFirstCall: 12 },
+          { raceDate: '2024-01-01', track: 'SAR', firstCallPosition: 7, fieldSize: 9, finishPosition: 2, styleInRace: 'C', wasOnLead: false, lengthsBehindAtFirstCall: 10 },
         ],
       })
 
@@ -259,8 +258,9 @@ describe('Longshot Detector', () => {
         styleBreakdown: {
           earlySpeed: [1, 2, 3, 4, 5],
           pressers: [],
-          stalkers: [],
+          sustained: [],
           closers: [],
+          unknown: [],
         },
       })
 
@@ -284,8 +284,9 @@ describe('Longshot Detector', () => {
         styleBreakdown: {
           earlySpeed: [1, 2, 3], // Only 3 speed horses
           pressers: [4, 5],
-          stalkers: [6],
+          sustained: [6],
           closers: [7, 8],
+          unknown: [],
         },
       })
 
@@ -306,8 +307,9 @@ describe('Longshot Detector', () => {
         styleBreakdown: {
           earlySpeed: [1, 2, 3, 4],
           pressers: [5],
-          stalkers: [6, 7],
+          sustained: [6, 7],
           closers: [8], // Lone closer
+          unknown: [],
         },
       })
 
@@ -316,8 +318,9 @@ describe('Longshot Detector', () => {
         styleBreakdown: {
           earlySpeed: [1, 2, 3, 4],
           pressers: [5],
-          stalkers: [],
+          sustained: [],
           closers: [6, 7, 8], // 3 closers
+          unknown: [],
         },
       })
 
@@ -702,8 +705,9 @@ describe('Longshot Detector', () => {
         styleBreakdown: {
           earlySpeed: [1, 2, 3, 4, 5],
           pressers: [],
-          stalkers: [],
+          sustained: [],
           closers: [6],
+          unknown: [],
         },
       })
 
@@ -977,16 +981,17 @@ describe('Longshot Detector', () => {
         styleBreakdown: {
           earlySpeed: [1, 2, 3, 4, 5],
           pressers: [6],
-          stalkers: [7],
+          sustained: [7],
           closers: [8],
+          unknown: [],
         },
       })
 
       const runningStyle = createRunningStyle({
         style: 'C',
         evidence: [
-          { finishPosition: 1, styleInRace: 'C' },
-          { finishPosition: 2, styleInRace: 'C' },
+          { raceDate: '2024-01-15', track: 'SAR', firstCallPosition: 8, fieldSize: 10, finishPosition: 1, styleInRace: 'C', wasOnLead: false, lengthsBehindAtFirstCall: 12 },
+          { raceDate: '2024-01-01', track: 'SAR', firstCallPosition: 7, fieldSize: 9, finishPosition: 2, styleInRace: 'C', wasOnLead: false, lengthsBehindAtFirstCall: 10 },
         ],
       })
 
@@ -1129,8 +1134,9 @@ describe('Longshot Detector', () => {
         styleBreakdown: {
           earlySpeed: [1, 2, 3, 4, 5, 6], // 6 speed horses
           pressers: [7, 8],
-          stalkers: [],
+          sustained: [],
           closers: [9], // Lone closer
+          unknown: [],
         },
       })
 
@@ -1139,9 +1145,9 @@ describe('Longshot Detector', () => {
         styleName: 'Closer',
         confidence: 90,
         evidence: [
-          { finishPosition: 1, styleInRace: 'C' },
-          { finishPosition: 2, styleInRace: 'C' },
-          { finishPosition: 3, styleInRace: 'C' },
+          { raceDate: '2024-01-20', track: 'CD', firstCallPosition: 10, fieldSize: 12, finishPosition: 1, styleInRace: 'C', wasOnLead: false, lengthsBehindAtFirstCall: 15 },
+          { raceDate: '2024-01-10', track: 'CD', firstCallPosition: 9, fieldSize: 11, finishPosition: 2, styleInRace: 'C', wasOnLead: false, lengthsBehindAtFirstCall: 12 },
+          { raceDate: '2024-01-01', track: 'CD', firstCallPosition: 8, fieldSize: 10, finishPosition: 3, styleInRace: 'C', wasOnLead: false, lengthsBehindAtFirstCall: 10 },
         ],
       })
 
