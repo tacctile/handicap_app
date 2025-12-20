@@ -60,6 +60,13 @@ import {
   shouldShowBreedingAnalysis,
   type DetailedBreedingScore,
 } from '../breeding'
+import {
+  calculateClassScore,
+  formatClassMovement,
+  isValuePlay,
+  type ClassScoreResult,
+  type HiddenClassDrop,
+} from '../class'
 
 // ============================================================================
 // CONSTANTS
@@ -154,6 +161,18 @@ export interface ScoreBreakdown {
     wasApplied: boolean
     summary: string
   }
+  /** Enhanced class analysis including hidden drops */
+  classAnalysis?: {
+    total: number
+    provenAtLevelScore: number
+    classMovementScore: number
+    hiddenDropsScore: number
+    trackTierScore: number
+    movement: string
+    hiddenDrops: HiddenClassDrop[]
+    isValuePlay: boolean
+    reasoning: string
+  }
 }
 
 /** Complete score result for a horse */
@@ -165,6 +184,8 @@ export interface HorseScore {
   dataQuality: number  // 0-100 percentage
   /** Detailed breeding score (for lightly raced horses) */
   breedingScore?: DetailedBreedingScore
+  /** Detailed class analysis */
+  classScore?: ClassScoreResult
 }
 
 /** Scored horse with index for sorting */
@@ -395,6 +416,20 @@ function calculateHorseScoreWithContext(
     }
   }
 
+  // Calculate enhanced class analysis
+  const classScoreResult = calculateClassScore(horse, context.raceHeader)
+  const classAnalysisBreakdown: ScoreBreakdown['classAnalysis'] = {
+    total: classScoreResult.total,
+    provenAtLevelScore: classScoreResult.provenAtLevelScore,
+    classMovementScore: classScoreResult.classMovementScore,
+    hiddenDropsScore: classScoreResult.hiddenDropsScore,
+    trackTierScore: classScoreResult.trackTierScore,
+    movement: formatClassMovement(classScoreResult.analysis),
+    hiddenDrops: classScoreResult.analysis.hiddenDrops,
+    isValuePlay: isValuePlay(classScoreResult),
+    reasoning: classScoreResult.reasoning,
+  }
+
   // Build breakdown
   const breakdown: ScoreBreakdown = {
     connections: {
@@ -438,10 +473,14 @@ function calculateHorseScoreWithContext(
       reasoning: pace.reasoning,
     },
     breeding: breedingBreakdown,
+    classAnalysis: classAnalysisBreakdown,
   }
 
   // Calculate total score (capped at MAX_SCORE)
   // Add breeding contribution for lightly raced horses
+  // Note: Class score is already included in speedClass.classScore, but enhanced analysis
+  // provides additional hidden drop bonuses that we add separately
+  const hiddenDropsBonus = classScoreResult.hiddenDropsScore
   const rawTotal =
     breakdown.connections.total +
     breakdown.postPosition.total +
@@ -449,7 +488,8 @@ function calculateHorseScoreWithContext(
     breakdown.form.total +
     breakdown.equipment.total +
     breakdown.pace.total +
-    breedingContribution
+    breedingContribution +
+    hiddenDropsBonus // Add hidden class drop bonuses
 
   const total = Math.min(MAX_SCORE, rawTotal)
 
@@ -464,6 +504,7 @@ function calculateHorseScoreWithContext(
     confidenceLevel,
     dataQuality,
     breedingScore,
+    classScore: classScoreResult,
   }
 }
 
@@ -670,3 +711,62 @@ export {
   type BettingRecommendation as OverlayBettingRecommendation,
   type ValuePlay,
 } from './overlayAnalysis'
+
+// Class analysis exports
+export {
+  // Types
+  ClassLevel,
+  CLASS_LEVEL_METADATA,
+  type ClassLevelMetadata,
+  type ClassMovementDirection,
+  type ClassMovementMagnitude,
+  type ClassMovement,
+  type ClassAnalysisResult,
+  type ProvenAtLevelResult,
+  type HiddenClassDrop,
+  type HiddenDropType,
+  type TrackTier,
+  type TrackTierMovement,
+  type ClassScoreResult,
+  type ClassScoreBreakdownItem,
+  // Track tiers
+  TIER_A_TRACKS,
+  TIER_B_TRACKS,
+  TIER_C_TRACKS,
+  getTrackTier,
+  getTrackInfo,
+  isTierATrack,
+  isTierCTrack,
+  analyzeTrackTierMovement,
+  getTierColor,
+  getTierDisplayName,
+  getTracksByTier,
+  isShipperFromElite,
+  // Class extraction
+  extractClassFromPP,
+  extractCurrentRaceClass,
+  getRecentClassLevels,
+  analyzeClassMovement,
+  analyzeClassMovementWithClaiming,
+  analyzeProvenAtLevel,
+  detectHiddenClassDrops,
+  analyzeClass,
+  parseClassFromConditions,
+  // Class scoring
+  MAX_CLASS_SCORE,
+  calculateClassScore,
+  getClassScoreColor,
+  getClassScoreTier,
+  formatClassMovement,
+  getHiddenDropsSummary,
+  hasSignificantHiddenValue,
+  isValuePlay,
+  // Utility
+  getClassLevelName,
+  getClassLevelAbbrev,
+  getClassParBeyer,
+  compareClassLevels,
+  getMovementMagnitude,
+  getClassMovementColor,
+  getClassMovementIcon,
+} from '../class'
