@@ -16,6 +16,7 @@ interface RaceOverviewProps {
   raceConfidences: Map<number, number>
   topHorsesByRace: Map<number, ScoredHorse[]>
   diamondCountByRace?: Map<number, number>
+  eliteConnectionsCountByRace?: Map<number, number>
   onRaceSelect: (raceIndex: number) => void
 }
 
@@ -82,6 +83,38 @@ const DiamondBadge = memo(function DiamondBadge({ count }: DiamondBadgeProps) {
   )
 })
 
+// Elite Connections badge component
+interface EliteConnectionsBadgeProps {
+  count: number
+}
+
+const EliteConnectionsBadge = memo(function EliteConnectionsBadge({ count }: EliteConnectionsBadgeProps) {
+  if (count === 0) return null
+
+  return (
+    <div
+      className="elite-connections-badge"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+        backgroundColor: '#22c55e20',
+        borderColor: '#22c55e',
+        color: '#22c55e',
+        padding: '2px 8px',
+        borderRadius: '12px',
+        border: '1px solid',
+        fontSize: '0.7rem',
+        fontWeight: 600,
+      }}
+      title={`${count} horse${count > 1 ? 's' : ''} with elite connections (30+ pts)`}
+    >
+      <span style={{ fontSize: '0.9rem' }}>🤝</span>
+      {count > 1 && <span>{count}</span>}
+    </div>
+  )
+})
+
 // Race card component
 interface RaceCardProps {
   race: ParsedRace
@@ -90,6 +123,7 @@ interface RaceCardProps {
   topHorses: ScoredHorse[]
   scratchedCount: number
   diamondCount: number
+  eliteConnectionsCount: number
   onClick: () => void
 }
 
@@ -100,6 +134,7 @@ const RaceCard = memo(function RaceCard({
   topHorses,
   scratchedCount,
   diamondCount,
+  eliteConnectionsCount,
   onClick,
 }: RaceCardProps) {
   const { header, horses } = race
@@ -110,6 +145,9 @@ const RaceCard = memo(function RaceCard({
 
   // Check for diamonds
   const hasDiamonds = diamondCount > 0
+
+  // Check for elite connections
+  const hasEliteConnections = eliteConnectionsCount > 0
 
   // Format surface nicely
   const surfaceLabel = header.surface.charAt(0).toUpperCase() + header.surface.slice(1)
@@ -196,6 +234,17 @@ const RaceCard = memo(function RaceCard({
         </div>
       )}
 
+      {/* Elite Connections indicator */}
+      {hasEliteConnections && (
+        <div className="race-card-elite-connections-indicator" style={{
+          position: 'absolute',
+          bottom: hasDiamonds ? '36px' : '8px',
+          right: '8px',
+        }}>
+          <EliteConnectionsBadge count={eliteConnectionsCount} />
+        </div>
+      )}
+
       {/* Tier 1 indicator */}
       {hasTier1Pick && (
         <div className="race-card-tier1-indicator" title="Tier 1 pick available">
@@ -216,6 +265,7 @@ export const RaceOverview = memo(function RaceOverview({
   raceConfidences,
   topHorsesByRace,
   diamondCountByRace,
+  eliteConnectionsCountByRace,
   onRaceSelect,
 }: RaceOverviewProps) {
   // Handle keyboard navigation
@@ -237,6 +287,7 @@ export const RaceOverview = memo(function RaceOverview({
     let totalHorses = 0
     let tier1Races = 0
     let totalDiamonds = 0
+    let totalEliteConnections = 0
 
     parsedData.races.forEach((race, index) => {
       totalHorses += race.horses.length
@@ -245,10 +296,11 @@ export const RaceOverview = memo(function RaceOverview({
         tier1Races++
       }
       totalDiamonds += diamondCountByRace?.get(index) || 0
+      totalEliteConnections += eliteConnectionsCountByRace?.get(index) || 0
     })
 
-    return { totalHorses, tier1Races, totalDiamonds }
-  }, [parsedData.races, topHorsesByRace, diamondCountByRace])
+    return { totalHorses, tier1Races, totalDiamonds, totalEliteConnections }
+  }, [parsedData.races, topHorsesByRace, diamondCountByRace, eliteConnectionsCountByRace])
 
   return (
     <div className="race-overview">
@@ -287,6 +339,18 @@ export const RaceOverview = memo(function RaceOverview({
               </span>
             </>
           )}
+          {stats.totalEliteConnections > 0 && (
+            <>
+              <span className="race-overview-stat-divider">•</span>
+              <span
+                className="race-overview-stat race-overview-stat-connections"
+                style={{ color: '#22c55e' }}
+              >
+                <span style={{ marginRight: '4px' }}>🤝</span>
+                <span className="tabular-nums">{stats.totalEliteConnections}</span> Elite Connection{stats.totalEliteConnections > 1 ? 's' : ''}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
@@ -308,6 +372,7 @@ export const RaceOverview = memo(function RaceOverview({
               topHorses={topHorsesByRace.get(index) || []}
               scratchedCount={0}
               diamondCount={diamondCountByRace?.get(index) || 0}
+              eliteConnectionsCount={eliteConnectionsCountByRace?.get(index) || 0}
               onClick={() => onRaceSelect(index)}
             />
           ))}

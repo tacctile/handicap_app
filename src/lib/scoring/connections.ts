@@ -2,15 +2,34 @@
  * Connections Scoring Module
  * Calculates trainer, jockey, and partnership scores based on DRF data
  *
- * Score Breakdown:
- * - Trainer Score: 0-35 points (based on win rate)
- * - Jockey Score: 0-15 points (based on win rate)
- * - Elite Partnership Bonus: +5 points (same combo with 25%+ win rate)
+ * Score Breakdown (Dynamic Pattern Matching):
+ * - Trainer Score: 0-35 points (based on track/surface/class-specific win rates)
+ * - Jockey Score: 0-15 points (based on track/style-specific win rates)
+ * - Synergy Bonus: 0-10 points (trainer-jockey partnership performance)
  *
- * Total: 0-55 points (with bonus)
+ * Total: 0-50 points (capped)
+ *
+ * Dynamic Pattern Features:
+ * - Track-specific: "Trainer X at Churchill Downs: 18% win (45 starts)"
+ * - Distance-specific: "Trainer X at 6F: 22% win (67 starts)"
+ * - Surface-specific: "Trainer X on turf: 15% win (123 starts)"
+ * - Class-specific: "Trainer X in $25K claimers: 28% win (89 starts)"
+ * - Combo patterns: "Trainer X in turf routes at Saratoga: 31% win (26 starts)"
  */
 
-import type { HorseEntry } from '../../types/drf'
+import type { HorseEntry, RaceHeader } from '../../types/drf'
+import {
+  type TrainerPatternResult,
+  type JockeyPatternResult,
+  type SynergyResult,
+  calculateTrainerPatternScore,
+  calculateJockeyPatternScore,
+  getConnectionSynergy,
+  getTrainerPatternDisplay,
+  getJockeyPatternDisplay,
+  getSynergyDisplay,
+  hasSignificantPartnership,
+} from '../patterns'
 
 // ============================================================================
 // TYPES
@@ -414,4 +433,197 @@ export function calculateRaceConnectionsScores(
   }
 
   return results
+}
+
+// ============================================================================
+// DYNAMIC PATTERN SCORING (ENHANCED)
+// ============================================================================
+
+/** Maximum combined score for connections */
+const MAX_CONNECTIONS_SCORE = 50
+
+/**
+ * Extended connections score result with pattern analysis
+ */
+export interface DynamicConnectionsScoreResult {
+  /** Total connections score (0-50, capped) */
+  total: number
+  /** Trainer pattern score (0-35) */
+  trainerScore: number
+  /** Jockey pattern score (0-15) */
+  jockeyScore: number
+  /** Synergy bonus (0-10) */
+  synergyBonus: number
+  /** Trainer pattern analysis */
+  trainerPattern: TrainerPatternResult
+  /** Jockey pattern analysis */
+  jockeyPattern: JockeyPatternResult
+  /** Synergy analysis */
+  synergy: SynergyResult
+  /** Combined reasoning string */
+  reasoning: string
+  /** All evidence strings for display */
+  evidence: string[]
+  /** Summary for quick display */
+  summary: string
+  /** Has significant partnership */
+  hasEliteConnections: boolean
+}
+
+/**
+ * Calculate dynamic connections score using pattern analysis
+ * This is the enhanced version that uses track/surface/class-specific patterns
+ *
+ * @param horse - The horse entry to score
+ * @param raceHeader - Current race header for context
+ * @param allHorses - All horses in the race for database building
+ * @returns Enhanced score with pattern analysis
+ */
+export function calculateDynamicConnectionsScore(
+  horse: HorseEntry,
+  raceHeader: RaceHeader,
+  allHorses: HorseEntry[]
+): DynamicConnectionsScoreResult {
+  // Calculate trainer pattern score
+  const trainerPattern = calculateTrainerPatternScore(horse, raceHeader, allHorses)
+
+  // Calculate jockey pattern score
+  const jockeyPattern = calculateJockeyPatternScore(horse, raceHeader, allHorses)
+
+  // Calculate synergy
+  const synergy = getConnectionSynergy(horse, allHorses)
+
+  // Calculate total (capped at 50)
+  const rawTotal = trainerPattern.score + jockeyPattern.score + synergy.bonus
+  const total = Math.min(rawTotal, MAX_CONNECTIONS_SCORE)
+
+  // Collect all evidence
+  const evidence: string[] = [
+    ...trainerPattern.evidence,
+    ...jockeyPattern.evidence,
+    ...synergy.evidence,
+  ]
+
+  // Build reasoning
+  const reasoningParts: string[] = []
+
+  if (trainerPattern.relevantPattern) {
+    reasoningParts.push(getTrainerPatternDisplay(trainerPattern))
+  } else {
+    reasoningParts.push('T: Limited data')
+  }
+
+  if (jockeyPattern.relevantPattern) {
+    reasoningParts.push(getJockeyPatternDisplay(jockeyPattern))
+  } else {
+    reasoningParts.push('J: Limited data')
+  }
+
+  if (hasSignificantPartnership(synergy)) {
+    reasoningParts.push(getSynergyDisplay(synergy))
+  }
+
+  const reasoning = reasoningParts.join(' | ')
+
+  // Build summary
+  const summaryParts: string[] = []
+
+  if (trainerPattern.relevantPattern) {
+    summaryParts.push(`T: ${trainerPattern.relevantPattern.winRate.toFixed(0)}%`)
+  }
+  if (jockeyPattern.relevantPattern) {
+    summaryParts.push(`J: ${jockeyPattern.relevantPattern.winRate.toFixed(0)}%`)
+  }
+  if (synergy.partnership && synergy.level !== 'none') {
+    summaryParts.push(`Pair: ${synergy.partnership.winRate.toFixed(0)}%`)
+  }
+
+  const summary = summaryParts.length > 0 ? summaryParts.join(' | ') : 'Limited data'
+
+  // Check for elite connections (score >= 30)
+  const hasEliteConnections = total >= 30
+
+  return {
+    total,
+    trainerScore: trainerPattern.score,
+    jockeyScore: jockeyPattern.score,
+    synergyBonus: synergy.bonus,
+    trainerPattern,
+    jockeyPattern,
+    synergy,
+    reasoning,
+    evidence,
+    summary,
+    hasEliteConnections,
+  }
+}
+
+/**
+ * Calculate dynamic connections scores for all horses in a race
+ *
+ * @param horses - All horses in the race
+ * @param raceHeader - Race header for context
+ * @returns Map of horse index to dynamic score result
+ */
+export function calculateRaceDynamicConnectionsScores(
+  horses: HorseEntry[],
+  raceHeader: RaceHeader
+): Map<number, DynamicConnectionsScoreResult> {
+  const results = new Map<number, DynamicConnectionsScoreResult>()
+
+  for (let i = 0; i < horses.length; i++) {
+    results.set(i, calculateDynamicConnectionsScore(horses[i], raceHeader, horses))
+  }
+
+  return results
+}
+
+/**
+ * Get formatted display string for dynamic connections
+ */
+export function getDynamicConnectionsDisplay(result: DynamicConnectionsScoreResult): {
+  trainer: string
+  jockey: string
+  partnership: string | null
+  total: string
+} {
+  return {
+    trainer: result.trainerPattern.relevantPattern
+      ? `${result.trainerPattern.relevantPattern.winRate.toFixed(0)}% win (${result.trainerPattern.relevantPattern.starts} starts) ${result.trainerPattern.relevantPattern.description.toLowerCase()}`
+      : 'Limited trainer data',
+    jockey: result.jockeyPattern.relevantPattern
+      ? `${result.jockeyPattern.relevantPattern.winRate.toFixed(0)}% win (${result.jockeyPattern.relevantPattern.starts} rides) ${result.jockeyPattern.relevantPattern.description.toLowerCase()}`
+      : 'Limited jockey data',
+    partnership: hasSignificantPartnership(result.synergy) && result.synergy.partnership
+      ? `${result.synergy.partnership.winRate.toFixed(0)}% together (${result.synergy.partnership.starts} starts)`
+      : null,
+    total: `${result.total}/50 pts`,
+  }
+}
+
+/**
+ * Check if a horse has elite connections (30+ points)
+ */
+export function hasEliteConnections(result: DynamicConnectionsScoreResult): boolean {
+  return result.hasEliteConnections
+}
+
+/**
+ * Get the tier label for connections score
+ */
+export function getConnectionsTier(score: number): 'elite' | 'strong' | 'average' | 'weak' {
+  if (score >= 35) return 'elite'
+  if (score >= 25) return 'strong'
+  if (score >= 15) return 'average'
+  return 'weak'
+}
+
+/**
+ * Get the tier color for connections score
+ */
+export function getConnectionsTierColor(score: number): string {
+  if (score >= 35) return '#22c55e' // Green - elite
+  if (score >= 25) return '#3b82f6' // Blue - strong
+  if (score >= 15) return '#f59e0b' // Amber - average
+  return '#6b7280' // Gray - weak
 }

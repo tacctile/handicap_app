@@ -47,6 +47,12 @@ import {
   FACTOR_ICONS,
   FACTOR_COLORS,
 } from '../lib/diamonds'
+import {
+  type DynamicConnectionsScoreResult,
+  calculateDynamicConnectionsScore,
+  getConnectionsTier,
+  getConnectionsTierColor,
+} from '../lib/scoring/connections'
 
 interface HorseDetailModalProps {
   isOpen: boolean
@@ -284,6 +290,16 @@ export function HorseDetailModal({
       trainerProfile,
     }
   }, [horse])
+
+  // Calculate dynamic connections score with pattern analysis
+  const dynamicConnections = useMemo<DynamicConnectionsScoreResult | null>(() => {
+    if (!allHorses || allHorses.length === 0) return null
+    try {
+      return calculateDynamicConnectionsScore(horse, raceHeader, allHorses)
+    } catch {
+      return null
+    }
+  }, [horse, raceHeader, allHorses])
 
   // Generate key factors
   const keyFactors = useMemo(() => {
@@ -648,29 +664,124 @@ export function HorseDetailModal({
               <CategoryCard
                 icon="people"
                 title="Connections"
-                score={score.breakdown.connections.total}
+                score={dynamicConnections?.total ?? score.breakdown.connections.total}
                 maxScore={SCORE_LIMITS.connections}
                 isExpanded={expandedCategories.has('connections')}
                 onToggle={() => toggleCategory('connections')}
                 details={
                   <div className="breakdown-details">
+                    {/* Trainer Pattern */}
                     <div className="breakdown-row">
-                      <span className="breakdown-label">Trainer Score</span>
-                      <span className="breakdown-value">{score.breakdown.connections.trainer}/35</span>
+                      <span className="breakdown-label">
+                        <Icon name="school" className="text-xs mr-1" />
+                        Trainer
+                      </span>
+                      <span className="breakdown-value">
+                        {dynamicConnections?.trainerScore ?? score.breakdown.connections.trainer}/35
+                      </span>
                     </div>
-                    <div className="breakdown-row">
-                      <span className="breakdown-label">Jockey Score</span>
-                      <span className="breakdown-value">{score.breakdown.connections.jockey}/15</span>
-                    </div>
-                    {score.breakdown.connections.partnershipBonus > 0 && (
-                      <div className="breakdown-row">
-                        <span className="breakdown-label">Elite Partnership Bonus</span>
-                        <span className="breakdown-value" style={{ color: '#36d1da' }}>+{score.breakdown.connections.partnershipBonus}</span>
+                    {dynamicConnections?.trainerPattern?.relevantPattern && (
+                      <div className="breakdown-evidence" style={{
+                        fontSize: '0.75rem',
+                        color: getConnectionsTierColor(dynamicConnections.trainerScore),
+                        marginBottom: '8px',
+                        paddingLeft: '16px',
+                      }}>
+                        {dynamicConnections.trainerPattern.relevantPattern.winRate.toFixed(0)}% win (
+                        {dynamicConnections.trainerPattern.relevantPattern.starts} starts) {' '}
+                        {dynamicConnections.trainerPattern.relevantPattern.description.toLowerCase()}
                       </div>
                     )}
-                    <div className="breakdown-note">
-                      Combined trainer + jockey rating
+
+                    {/* Jockey Pattern */}
+                    <div className="breakdown-row">
+                      <span className="breakdown-label">
+                        <Icon name="sports_score" className="text-xs mr-1" />
+                        Jockey
+                      </span>
+                      <span className="breakdown-value">
+                        {dynamicConnections?.jockeyScore ?? score.breakdown.connections.jockey}/15
+                      </span>
                     </div>
+                    {dynamicConnections?.jockeyPattern?.relevantPattern && (
+                      <div className="breakdown-evidence" style={{
+                        fontSize: '0.75rem',
+                        color: getConnectionsTierColor(dynamicConnections.jockeyScore * 3),
+                        marginBottom: '8px',
+                        paddingLeft: '16px',
+                      }}>
+                        {dynamicConnections.jockeyPattern.relevantPattern.winRate.toFixed(0)}% win (
+                        {dynamicConnections.jockeyPattern.relevantPattern.starts} rides) {' '}
+                        {dynamicConnections.jockeyPattern.relevantPattern.description.toLowerCase()}
+                      </div>
+                    )}
+
+                    {/* Partnership Synergy */}
+                    {(dynamicConnections?.synergyBonus ?? score.breakdown.connections.partnershipBonus) > 0 && (
+                      <>
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">
+                            <Icon name="handshake" className="text-xs mr-1" />
+                            Partnership Synergy
+                          </span>
+                          <span className="breakdown-value" style={{ color: '#36d1da' }}>
+                            +{dynamicConnections?.synergyBonus ?? score.breakdown.connections.partnershipBonus}
+                          </span>
+                        </div>
+                        {dynamicConnections?.synergy?.partnership && (
+                          <div className="breakdown-evidence" style={{
+                            fontSize: '0.75rem',
+                            color: '#36d1da',
+                            marginBottom: '8px',
+                            paddingLeft: '16px',
+                          }}>
+                            {dynamicConnections.synergy.partnership.winRate.toFixed(0)}% together (
+                            {dynamicConnections.synergy.partnership.starts} starts)
+                            {dynamicConnections.synergy.isHotCombo && (
+                              <span style={{
+                                marginLeft: '6px',
+                                backgroundColor: '#ef4444',
+                                color: '#fff',
+                                padding: '1px 4px',
+                                borderRadius: '4px',
+                                fontSize: '0.65rem',
+                                fontWeight: 700,
+                              }}>
+                                HOT
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Tier Badge */}
+                    {dynamicConnections && (
+                      <div className="breakdown-note" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginTop: '8px',
+                      }}>
+                        <span style={{
+                          backgroundColor: getConnectionsTierColor(dynamicConnections.total),
+                          color: '#fff',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.7rem',
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                        }}>
+                          {getConnectionsTier(dynamicConnections.total)}
+                        </span>
+                        <span>Dynamic pattern analysis</span>
+                      </div>
+                    )}
+                    {!dynamicConnections && (
+                      <div className="breakdown-note">
+                        Combined trainer + jockey rating
+                      </div>
+                    )}
                   </div>
                 }
               />
