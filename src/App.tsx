@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { Dashboard } from './components/Dashboard'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { AuthProvider } from './contexts/AuthContext'
 import { useRaceState } from './hooks/useRaceState'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { validateParsedData, getValidationSummary, isDataUsable } from './lib/validation'
@@ -8,7 +9,7 @@ import type { ParsedDRFFile } from './types/drf'
 import './styles/responsive.css'
 import './styles/dashboard.css'
 
-function App() {
+function AppContent() {
   const [parsedData, setParsedData] = useState<ParsedDRFFile | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [validationWarnings, setValidationWarnings] = useState<string[]>([])
@@ -80,6 +81,18 @@ function App() {
         raceState={raceState}
       />
     </ErrorBoundary>
+  )
+}
+
+/**
+ * App component wrapped with providers
+ * AuthProvider is always present but auth is controlled by feature flags
+ */
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
 
