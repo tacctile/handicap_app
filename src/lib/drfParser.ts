@@ -10,7 +10,20 @@
  * - Equipment and medication details
  *
  * Based on official DRF column specifications.
+ *
+ * Includes defensive parsing to handle:
+ * - Non-text/binary files
+ * - Truncated files
+ * - Encoding issues
+ * - Malformed CSV
+ * - Missing/inconsistent field counts
  */
+
+import {
+  DRFParseError,
+  FileFormatError,
+} from '../types/errors'
+import { logger } from '../services/logging'
 
 import type {
   HorseEntry,
@@ -121,6 +134,202 @@ const DRF_COLUMNS = {
   WORKOUT_START: 600,
   WORKOUT_FIELDS_PER_WORK: 10,
 } as const
+
+// ============================================================================
+// FILE VALIDATION & DEFENSIVE PARSING
+// ============================================================================
+
+/** Minimum fields expected for a valid DRF CSV line */
+const MIN_EXPECTED_FIELDS = 50
+
+/** Maximum file size we'll attempt to parse (10MB) */
+const MAX_FILE_SIZE = 10 * 1024 * 1024
+
+/** Common binary file signatures to detect non-text files */
+const BINARY_SIGNATURES = [
+  [0x89, 0x50, 0x4e, 0x47], // PNG
+  [0xff, 0xd8, 0xff],       // JPEG
+  [0x50, 0x4b, 0x03, 0x04], // ZIP/XLSX/DOCX
+  [0x25, 0x50, 0x44, 0x46], // PDF
+  [0x7f, 0x45, 0x4c, 0x46], // ELF
+  [0x4d, 0x5a],             // Windows executable
+]
+
+/**
+ * Check if content appears to be binary (non-text)
+ */
+function isBinaryContent(content: string): boolean {
+  // Check for null bytes which indicate binary content
+  if (content.includes('\x00')) {
+    return true
+  }
+
+  // Check first few bytes against known binary signatures
+  const bytes = content.slice(0, 8).split('').map(c => c.charCodeAt(0))
+  for (const sig of BINARY_SIGNATURES) {
+    if (sig.every((byte, i) => bytes[i] === byte)) {
+      return true
+    }
+  }
+
+  // Check for high ratio of non-printable characters (excluding common whitespace)
+  const sample = content.slice(0, 1000)
+  let nonPrintable = 0
+  for (let i = 0; i < sample.length; i++) {
+    const code = sample.charCodeAt(i)
+    // Allow printable ASCII, tabs, newlines, carriage returns
+    if (code < 32 && code !== 9 && code !== 10 && code !== 13) {
+      nonPrintable++
+    }
+    // Disallow most control characters except for extended ASCII
+    if (code > 126 && code < 160) {
+      nonPrintable++
+    }
+  }
+
+  // If more than 5% non-printable, likely binary
+  return sample.length > 0 && (nonPrintable / sample.length) > 0.05
+}
+
+/**
+ * Check if content has UTF-8 encoding issues
+ */
+function hasEncodingIssues(content: string): boolean {
+  // Check for replacement character which indicates encoding problems
+  if (content.includes('\uFFFD')) {
+    return true
+  }
+
+  // Check for common mojibake patterns (UTF-8 decoded as Latin-1, etc.)
+  const mojibakePatterns = [
+    /Ã©/g, // é as UTF-8 in Latin-1
+    /Ã¨/g, // è
+    /Ã /g, // à
+    /â€/g, // various smart quotes
+  ]
+
+  const sample = content.slice(0, 2000)
+  let matches = 0
+  for (const pattern of mojibakePatterns) {
+    const found = sample.match(pattern)
+    if (found) matches += found.length
+  }
+
+  // A few matches might be coincidental, many indicates encoding issues
+  return matches > 5
+}
+
+/**
+ * Validate file content before parsing
+ * Returns null if valid, or throws appropriate error
+ */
+function validateFileContent(
+  content: string,
+  filename: string
+): void {
+  // Check for empty content
+  if (!content || content.trim().length === 0) {
+    throw new DRFParseError('EMPTY_FILE', 'The file is empty or contains no readable data', {
+      context: { filename },
+    })
+  }
+
+  // Check file size
+  const size = new Blob([content]).size
+  if (size > MAX_FILE_SIZE) {
+    throw new FileFormatError('FILE_TOO_LARGE', `File exceeds maximum size of ${MAX_FILE_SIZE / 1024 / 1024}MB`, {
+      filename,
+      fileSize: size,
+    })
+  }
+
+  // Check for binary content
+  if (isBinaryContent(content)) {
+    throw new FileFormatError('BINARY_CONTENT', 'The file appears to be binary, not a text-based DRF file', {
+      filename,
+      detectedType: 'binary',
+    })
+  }
+
+  // Check for encoding issues
+  if (hasEncodingIssues(content)) {
+    logger.logWarning('Potential encoding issues detected in file', { fileName: filename })
+    // Don't throw - try to parse anyway with a warning
+  }
+}
+
+/**
+ * Validate that a line looks like valid CSV/DRF data
+ */
+function validateLine(line: string, lineNumber: number, _filename: string): {
+  isValid: boolean
+  fieldCount: number
+  warning?: string
+} {
+  // Empty lines are skipped, not invalid
+  if (!line.trim()) {
+    return { isValid: false, fieldCount: 0 }
+  }
+
+  // Count fields (rough estimate - doesn't handle quoted commas perfectly)
+  const roughFieldCount = (line.match(/,/g) || []).length + 1
+
+  // Check for extremely short lines (truncated)
+  if (roughFieldCount < 5 && line.length > 0) {
+    return {
+      isValid: false,
+      fieldCount: roughFieldCount,
+      warning: `Line ${lineNumber}: Too few fields (${roughFieldCount}), may be truncated`,
+    }
+  }
+
+  // Check for lines that are way shorter than expected for DRF
+  if (roughFieldCount < MIN_EXPECTED_FIELDS && roughFieldCount > 5) {
+    return {
+      isValid: true,
+      fieldCount: roughFieldCount,
+      warning: `Line ${lineNumber}: Fewer fields than typical DRF format (${roughFieldCount} < ${MIN_EXPECTED_FIELDS})`,
+    }
+  }
+
+  return { isValid: true, fieldCount: roughFieldCount }
+}
+
+/**
+ * Safely parse a CSV line with error handling
+ */
+function safeParseCSVLine(
+  line: string,
+  lineNumber: number,
+  filename: string
+): { fields: string[]; warning?: string } | null {
+  try {
+    const fields = parseCSVLine(line)
+
+    // Validate we got reasonable results
+    if (fields.length === 0) {
+      return null
+    }
+
+    // Check for obviously malformed data
+    if (fields.length === 1 && line.includes(',')) {
+      // CSV parsing may have failed - all data in one field despite commas
+      return {
+        fields,
+        warning: `Line ${lineNumber}: Possible CSV parsing issue - check for unbalanced quotes`,
+      }
+    }
+
+    return { fields }
+  } catch (error) {
+    logger.logWarning(`Failed to parse CSV line ${lineNumber}`, {
+      fileName: filename,
+      lineNumber,
+      error: error instanceof Error ? error.message : String(error),
+    })
+    return null
+  }
+}
 
 // ============================================================================
 // PARSING UTILITIES
@@ -1066,6 +1275,13 @@ export type ProgressCallback = (message: DRFWorkerProgressMessage) => void
  * Parse a DRF file content string into structured data.
  * Handles both comma-delimited and fixed-width formats.
  *
+ * Includes defensive parsing to prevent crashes on malformed input:
+ * - Validates file format before parsing
+ * - Handles truncated files gracefully
+ * - Catches encoding issues
+ * - Validates field counts per line
+ * - Never throws unhandled exceptions
+ *
  * @param content - Raw file content
  * @param filename - Original filename
  * @param onProgress - Optional callback for progress updates
@@ -1098,32 +1314,56 @@ export function parseDRFFile(
     }
   }
 
+  // Helper to create error result
+  const createErrorResult = (errorMessage: string): ParsedDRFFile => ({
+    filename,
+    races: [],
+    format: 'unknown',
+    version: null,
+    parsedAt: new Date().toISOString(),
+    isValid: false,
+    warnings,
+    errors: [errorMessage, ...errors],
+    stats: {
+      totalRaces: 0,
+      totalHorses: 0,
+      totalPastPerformances: 0,
+      totalWorkouts: 0,
+      parseTimeMs: performance.now() - startTime,
+      linesProcessed: 0,
+      linesSkipped: 0,
+    },
+  })
+
   sendProgress(0, 'initializing', 'Initializing parser...')
+
+  // =====================================================================
+  // STEP 1: Validate file content before parsing
+  // =====================================================================
+  try {
+    validateFileContent(content, filename)
+  } catch (error) {
+    // Log the error and return a friendly result
+    if (error instanceof DRFParseError || error instanceof FileFormatError) {
+      logger.logError(error, { fileName: filename, component: 'DRFParser' })
+      return createErrorResult(error.getUserMessage())
+    }
+    // Unknown error type
+    const msg = error instanceof Error ? error.message : 'File validation failed'
+    logger.logError(new Error(msg), { fileName: filename, component: 'DRFParser' })
+    return createErrorResult(msg)
+  }
 
   // Split into lines
   const lines = content.split(/\r?\n/).filter((line) => line.trim().length > 0)
   const totalLines = lines.length
 
   if (totalLines === 0) {
-    return {
-      filename,
-      races: [],
-      format: 'unknown',
-      version: null,
-      parsedAt: new Date().toISOString(),
-      isValid: false,
-      warnings: [],
-      errors: ['Empty file - no data found'],
-      stats: {
-        totalRaces: 0,
-        totalHorses: 0,
-        totalPastPerformances: 0,
-        totalWorkouts: 0,
-        parseTimeMs: performance.now() - startTime,
-        linesProcessed: 0,
-        linesSkipped: 0,
-      },
-    }
+    const emptyError = new DRFParseError('EMPTY_FILE', 'No data lines found in file', {
+      context: { filename },
+    })
+    logger.logWarning('Empty file uploaded', { fileName: filename })
+    return createErrorResult(emptyError.getUserMessage())
   }
 
   sendProgress(5, 'detecting-format', 'Detecting file format...')
@@ -1144,6 +1384,7 @@ export function parseDRFFile(
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
+    const lineNumber = i + 1
 
     // Update progress periodically
     if (i % 10 === 0) {
@@ -1154,37 +1395,92 @@ export function parseDRFFile(
       })
     }
 
+    // =====================================================================
+    // STEP 2: Validate each line before parsing
+    // =====================================================================
+    const lineValidation = validateLine(line, lineNumber, filename)
+    if (lineValidation.warning) {
+      warnings.push(lineValidation.warning)
+    }
+    if (!lineValidation.isValid) {
+      linesSkipped++
+      continue
+    }
+
     if (isCSV) {
-      const fields = parseCSVLine(line)
-      if (fields.length < 5) {
+      // Use safe CSV parsing with error handling
+      const parseResult = safeParseCSVLine(line, lineNumber, filename)
+      if (!parseResult) {
         linesSkipped++
         continue
       }
 
-      // Extract race key
+      const { fields, warning: parseWarning } = parseResult
+      if (parseWarning) {
+        warnings.push(parseWarning)
+      }
+
+      if (fields.length < 5) {
+        warnings.push(`Line ${lineNumber}: Insufficient fields (${fields.length}), skipping`)
+        linesSkipped++
+        continue
+      }
+
+      // Validate field count consistency
+      if (lineValidation.fieldCount < MIN_EXPECTED_FIELDS) {
+        // Log but continue - partial data might still be usable
+        logger.logDebug(`Line ${lineNumber} has fewer fields than expected`, {
+          fileName: filename,
+          lineNumber,
+          fieldCount: fields.length,
+          expectedMin: MIN_EXPECTED_FIELDS,
+        })
+      }
+
+      // Extract race key with defensive null checks
       const trackCode = getField(fields, DRF_COLUMNS.TRACK_CODE.index, 'UNK').substring(0, 3)
       const raceDate = getField(fields, DRF_COLUMNS.RACE_DATE.index)
       const raceNumber = parseIntSafe(getField(fields, DRF_COLUMNS.RACE_NUMBER.index), 0)
       const raceKey = `${trackCode}-${raceDate}-${raceNumber}`
 
       if (!racesMap.has(raceKey)) {
-        const header = parseRaceHeader(fields)
-        racesMap.set(raceKey, {
-          header,
-          horses: [],
-          warnings: [],
-          errors: [],
-        })
+        try {
+          const header = parseRaceHeader(fields)
+          racesMap.set(raceKey, {
+            header,
+            horses: [],
+            warnings: [],
+            errors: [],
+          })
+        } catch (headerError) {
+          logger.logWarning(`Failed to parse race header at line ${lineNumber}`, {
+            fileName: filename,
+            lineNumber,
+            error: headerError instanceof Error ? headerError.message : String(headerError),
+          })
+          warnings.push(`Line ${lineNumber}: Failed to parse race header`)
+          linesSkipped++
+          continue
+        }
       }
 
-      // Parse horse entry
+      // Parse horse entry with error handling
       if (fields.length >= 6) {
-        const race = racesMap.get(raceKey)!
-        const horseEntry = parseHorseEntry(fields, race.horses.length)
-        race.horses.push(horseEntry)
-        totalHorses++
-        totalPastPerformances += horseEntry.pastPerformances.length
-        totalWorkouts += horseEntry.workouts.length
+        try {
+          const race = racesMap.get(raceKey)!
+          const horseEntry = parseHorseEntry(fields, race.horses.length)
+          race.horses.push(horseEntry)
+          totalHorses++
+          totalPastPerformances += horseEntry.pastPerformances.length
+          totalWorkouts += horseEntry.workouts.length
+        } catch (horseError) {
+          logger.logWarning(`Failed to parse horse entry at line ${lineNumber}`, {
+            fileName: filename,
+            lineNumber,
+            error: horseError instanceof Error ? horseError.message : String(horseError),
+          })
+          warnings.push(`Line ${lineNumber}: Failed to parse horse entry`)
+        }
       }
 
       linesProcessed++
@@ -1196,32 +1492,42 @@ export function parseDRFFile(
       }
 
       // For fixed-width, parse as if it's a delimited file with spaces
-      const fields = line.split(/\s+/)
-      const trackCode = fields[0]?.substring(0, 3) || 'UNK'
-      const raceDate = fields[1] || ''
-      const raceNumber = parseIntSafe(fields[2] || '1', 1)
-      const raceKey = `${trackCode}-${raceDate}-${raceNumber}`
+      try {
+        const fields = line.split(/\s+/)
+        const trackCode = fields[0]?.substring(0, 3) || 'UNK'
+        const raceDate = fields[1] || ''
+        const raceNumber = parseIntSafe(fields[2] || '1', 1)
+        const raceKey = `${trackCode}-${raceDate}-${raceNumber}`
 
-      if (!racesMap.has(raceKey)) {
-        racesMap.set(raceKey, {
-          header: createDefaultRaceHeader(),
-          horses: [],
-          warnings: [],
-          errors: [],
-        })
+        if (!racesMap.has(raceKey)) {
+          racesMap.set(raceKey, {
+            header: createDefaultRaceHeader(),
+            horses: [],
+            warnings: [],
+            errors: [],
+          })
+          const race = racesMap.get(raceKey)!
+          race.header.trackCode = trackCode
+          race.header.raceDate = raceDate
+          race.header.raceNumber = raceNumber
+        }
+
         const race = racesMap.get(raceKey)!
-        race.header.trackCode = trackCode
-        race.header.raceDate = raceDate
-        race.header.raceNumber = raceNumber
+        const horseEntry = createDefaultHorseEntry(race.horses.length)
+        horseEntry.horseName = fields[3] || `Horse ${race.horses.length + 1}`
+        race.horses.push(horseEntry)
+        totalHorses++
+
+        linesProcessed++
+      } catch (fixedWidthError) {
+        logger.logWarning(`Failed to parse fixed-width line ${lineNumber}`, {
+          fileName: filename,
+          lineNumber,
+          error: fixedWidthError instanceof Error ? fixedWidthError.message : String(fixedWidthError),
+        })
+        warnings.push(`Line ${lineNumber}: Failed to parse`)
+        linesSkipped++
       }
-
-      const race = racesMap.get(raceKey)!
-      const horseEntry = createDefaultHorseEntry(race.horses.length)
-      horseEntry.horseName = fields[3] || `Horse ${race.horses.length + 1}`
-      race.horses.push(horseEntry)
-      totalHorses++
-
-      linesProcessed++
     }
   }
 
@@ -1263,10 +1569,38 @@ export function parseDRFFile(
 
   sendProgress(100, 'complete', 'Parsing complete!')
 
-  // Collect all warnings
+  // Collect all warnings from individual races
   races.forEach((race) => {
     warnings.push(...race.warnings)
   })
+
+  // Final validation check
+  const isValid = errors.length === 0 && races.length > 0
+
+  // Log parsing results
+  if (isValid) {
+    logger.logInfo('DRF file parsed successfully', {
+      fileName: filename,
+      totalRaces: races.length,
+      totalHorses,
+      totalPastPerformances,
+      totalWorkouts,
+      parseTimeMs,
+      linesProcessed,
+      linesSkipped,
+      warningCount: warnings.length,
+    })
+  } else {
+    logger.logWarning('DRF parsing completed with issues', {
+      fileName: filename,
+      isValid,
+      errorCount: errors.length,
+      warningCount: warnings.length,
+      racesFound: races.length,
+      linesProcessed,
+      linesSkipped,
+    })
+  }
 
   return {
     filename,
@@ -1274,7 +1608,7 @@ export function parseDRFFile(
     format,
     version: null,
     parsedAt: new Date().toISOString(),
-    isValid: errors.length === 0 && races.length > 0,
+    isValid,
     warnings,
     errors,
     stats: {

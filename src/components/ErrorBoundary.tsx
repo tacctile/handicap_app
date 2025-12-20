@@ -1,10 +1,22 @@
 import { Component } from 'react'
 import type { ReactNode } from 'react'
+import { logger } from '../services/logging'
+import {
+  isAppError,
+  isDRFParseError,
+  isFileFormatError,
+  getUserFriendlyMessage,
+  getErrorSuggestion,
+} from '../types/errors'
 
 interface ErrorBoundaryProps {
   children: ReactNode
   onReset?: () => void
   fallback?: ReactNode
+  /** Component name for context in error logs */
+  componentName?: string
+  /** Additional context to include in error logs */
+  context?: Record<string, unknown>
 }
 
 interface ErrorBoundaryState {
@@ -31,7 +43,17 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo)
+    // Log the error with full context using the logging service
+    logger.logError(error, {
+      component: this.props.componentName || 'ErrorBoundary',
+      componentStack: errorInfo.componentStack || undefined,
+      errorCode: isAppError(error) ? error.code : undefined,
+      errorCategory: isAppError(error) ? error.category : undefined,
+      recoverable: isAppError(error) ? error.recoverable : true,
+      url: typeof window !== 'undefined' ? window.location.href : undefined,
+      ...this.props.context,
+    })
+
     this.setState({
       errorInfo: errorInfo.componentStack || null,
     })
@@ -68,30 +90,42 @@ interface ErrorFallbackProps {
 }
 
 function ErrorFallback({ error, onReset }: ErrorFallbackProps) {
-  // Determine error type
-  const isParsingError = error?.message?.toLowerCase().includes('parse') ||
-    error?.message?.toLowerCase().includes('drf')
-  const isFileError = error?.message?.toLowerCase().includes('file') ||
-    error?.message?.toLowerCase().includes('read')
-  const isCorruptedError = error?.message?.toLowerCase().includes('corrupt') ||
-    error?.message?.toLowerCase().includes('invalid')
-
+  // Use the error utilities to get proper messages based on error type
   let title = 'Something went wrong'
   let description = 'An unexpected error occurred while processing your request.'
   let suggestion = 'Please try again or contact support if the problem persists.'
 
-  if (isParsingError) {
-    title = 'File Parsing Error'
-    description = 'We couldn\'t parse the DRF file. The file format may be incorrect or unsupported.'
-    suggestion = 'Make sure you\'re uploading a valid .drf file from Daily Racing Form.'
-  } else if (isCorruptedError) {
-    title = 'Corrupted File Detected'
-    description = 'The DRF file appears to be corrupted or contains invalid data.'
-    suggestion = 'Try downloading the file again or use a different DRF file.'
-  } else if (isFileError) {
-    title = 'File Read Error'
-    description = 'There was a problem reading the file.'
-    suggestion = 'Make sure the file is accessible and try again.'
+  if (error) {
+    // Check for our custom error types first
+    if (isAppError(error)) {
+      title = error.category
+      description = getUserFriendlyMessage(error)
+      suggestion = getErrorSuggestion(error)
+    } else if (isDRFParseError(error)) {
+      title = 'File Parsing Error'
+      description = error.getUserMessage()
+      suggestion = error.getSuggestion()
+    } else if (isFileFormatError(error)) {
+      title = 'File Format Error'
+      description = error.getUserMessage()
+      suggestion = error.getSuggestion()
+    } else {
+      // Fallback to message pattern matching for generic errors
+      const msg = error.message?.toLowerCase() || ''
+      if (msg.includes('parse') || msg.includes('drf')) {
+        title = 'File Parsing Error'
+        description = 'We couldn\'t parse the DRF file. The file format may be incorrect or unsupported.'
+        suggestion = 'Make sure you\'re uploading a valid .drf file from Daily Racing Form.'
+      } else if (msg.includes('corrupt') || msg.includes('invalid')) {
+        title = 'Corrupted File Detected'
+        description = 'The DRF file appears to be corrupted or contains invalid data.'
+        suggestion = 'Try downloading the file again or use a different DRF file.'
+      } else if (msg.includes('file') || msg.includes('read')) {
+        title = 'File Read Error'
+        description = 'There was a problem reading the file.'
+        suggestion = 'Make sure the file is accessible and try again.'
+      }
+    }
   }
 
   return (

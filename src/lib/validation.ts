@@ -2,10 +2,13 @@
  * Comprehensive DRF Data Validation
  *
  * Validates parsed DRF data for:
+ * - File-level validation (before parsing)
  * - Required field presence
  * - Value range checks
  * - Data consistency
  * - Cross-field validation
+ *
+ * Never throws unhandled exceptions - returns clear error messages.
  */
 
 import type {
@@ -15,6 +18,9 @@ import type {
   PastPerformance,
   Workout,
 } from '../types/drf'
+// Error types available for use if needed
+// import { FileFormatError, DRFParseError, ValidationError } from '../types/errors'
+import { logger } from '../services/logging'
 
 // ============================================================================
 // VALIDATION TYPES
@@ -100,6 +106,241 @@ function isNonEmpty(value: string | undefined | null): boolean {
 function isInRange(value: number | null | undefined, min: number, max: number): boolean {
   if (value === null || value === undefined) return false
   return value >= min && value <= max
+}
+
+// ============================================================================
+// FILE-LEVEL VALIDATION
+// ============================================================================
+
+/**
+ * Result of file validation
+ */
+export interface FileValidationResult {
+  isValid: boolean
+  errors: string[]
+  warnings: string[]
+  fileInfo: {
+    name: string
+    size: number
+    type: string
+    extension: string
+  }
+}
+
+/**
+ * Validate a file before parsing (pre-parse validation)
+ * Checks file type, extension, size, and basic content
+ */
+export function validateFileBeforeParsing(file: File): FileValidationResult {
+  const result: FileValidationResult = {
+    isValid: true,
+    errors: [],
+    warnings: [],
+    fileInfo: {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      extension: file.name.split('.').pop()?.toLowerCase() || '',
+    },
+  }
+
+  // Check file extension
+  const validExtensions = ['drf', 'csv', 'txt']
+  if (!validExtensions.includes(result.fileInfo.extension)) {
+    result.warnings.push(
+      `Unusual file extension: .${result.fileInfo.extension}. Expected .drf, .csv, or .txt`
+    )
+    // Don't fail - some DRF files may have different extensions
+  }
+
+  // Check file size limits
+  const MAX_SIZE = 10 * 1024 * 1024 // 10MB
+  const MIN_SIZE = 100 // 100 bytes - anything smaller is likely not valid
+
+  if (file.size > MAX_SIZE) {
+    result.isValid = false
+    result.errors.push(`File is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum size is 10MB.`)
+  }
+
+  if (file.size < MIN_SIZE) {
+    result.isValid = false
+    result.errors.push(`File is too small (${file.size} bytes). The file may be empty or corrupted.`)
+  }
+
+  // Check MIME type - warn but don't fail (browsers may not always detect correctly)
+  const validTypes = ['text/plain', 'text/csv', 'application/csv', 'application/octet-stream', '']
+  if (!validTypes.includes(file.type)) {
+    result.warnings.push(
+      `Unusual file type detected: ${file.type}. DRF files should be text/CSV format.`
+    )
+  }
+
+  // Log validation result
+  if (!result.isValid) {
+    logger.logWarning('File validation failed', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      errors: result.errors,
+    })
+  }
+
+  return result
+}
+
+/**
+ * Validate file content structure (post-read, pre-parse validation)
+ * Returns validation result without throwing
+ */
+export function validateFileContent(content: string, filename: string): FileValidationResult {
+  const result: FileValidationResult = {
+    isValid: true,
+    errors: [],
+    warnings: [],
+    fileInfo: {
+      name: filename,
+      size: new Blob([content]).size,
+      type: 'text/plain',
+      extension: filename.split('.').pop()?.toLowerCase() || '',
+    },
+  }
+
+  // Check for empty content
+  if (!content || content.trim().length === 0) {
+    result.isValid = false
+    result.errors.push('The file is empty or contains no readable data.')
+    return result
+  }
+
+  // Check for binary content (null bytes indicate binary)
+  if (content.includes('\x00')) {
+    result.isValid = false
+    result.errors.push('The file contains binary data and is not a valid text file.')
+    return result
+  }
+
+  // Split into lines for analysis
+  const lines = content.split(/\r?\n/).filter(line => line.trim().length > 0)
+
+  if (lines.length === 0) {
+    result.isValid = false
+    result.errors.push('The file contains no data lines.')
+    return result
+  }
+
+  // Analyze first line to detect format
+  const firstLine = lines[0]
+  const isCSVFormat = firstLine.includes(',')
+
+  if (!isCSVFormat && firstLine.length < 50) {
+    result.warnings.push('File format may not be standard DRF CSV format.')
+  }
+
+  // Count fields in first line to check for DRF format
+  if (isCSVFormat) {
+    const fieldCount = (firstLine.match(/,/g) || []).length + 1
+    if (fieldCount < 20) {
+      result.warnings.push(
+        `First line has only ${fieldCount} fields. Standard DRF files have 50+ fields.`
+      )
+    }
+    if (fieldCount < 5) {
+      result.isValid = false
+      result.errors.push('The file does not appear to be in DRF format (too few fields).')
+    }
+  }
+
+  // Check for consistent field counts (sample first 10 lines)
+  if (isCSVFormat && lines.length > 1) {
+    const fieldCounts = lines.slice(0, 10).map(
+      line => (line.match(/,/g) || []).length + 1
+    )
+    const uniqueCounts = [...new Set(fieldCounts)]
+    if (uniqueCounts.length > 2) {
+      result.warnings.push(
+        'Lines have inconsistent field counts. Some data may be malformed.'
+      )
+    }
+  }
+
+  // Check for potential encoding issues
+  const hasReplacementChar = content.includes('\uFFFD')
+  if (hasReplacementChar) {
+    result.warnings.push(
+      'File may have encoding issues. Some characters could not be read correctly.'
+    )
+  }
+
+  // Log validation result
+  if (!result.isValid) {
+    logger.logWarning('File content validation failed', {
+      fileName: filename,
+      errors: result.errors,
+      warnings: result.warnings,
+      lineCount: lines.length,
+    })
+  } else if (result.warnings.length > 0) {
+    logger.logInfo('File content validated with warnings', {
+      fileName: filename,
+      warnings: result.warnings,
+      lineCount: lines.length,
+    })
+  }
+
+  return result
+}
+
+/**
+ * Comprehensive file validation combining pre-read and post-read checks
+ * Use this for complete validation before parsing
+ */
+export async function validateFile(file: File): Promise<FileValidationResult> {
+  // First validate the file object
+  const fileResult = validateFileBeforeParsing(file)
+  if (!fileResult.isValid) {
+    return fileResult
+  }
+
+  // Read and validate content
+  try {
+    const content = await file.text()
+    const contentResult = validateFileContent(content, file.name)
+
+    // Merge results
+    return {
+      isValid: contentResult.isValid,
+      errors: [...fileResult.errors, ...contentResult.errors],
+      warnings: [...fileResult.warnings, ...contentResult.warnings],
+      fileInfo: contentResult.fileInfo,
+    }
+  } catch (error) {
+    logger.logError(error instanceof Error ? error : new Error(String(error)), {
+      fileName: file.name,
+      component: 'FileValidation',
+    })
+
+    return {
+      isValid: false,
+      errors: ['Failed to read file content. The file may be corrupted or inaccessible.'],
+      warnings: fileResult.warnings,
+      fileInfo: fileResult.fileInfo,
+    }
+  }
+}
+
+/**
+ * Create a user-friendly error message from validation result
+ */
+export function getValidationErrorMessage(result: FileValidationResult): string {
+  if (result.isValid) {
+    return ''
+  }
+
+  if (result.errors.length === 1) {
+    return result.errors[0]
+  }
+
+  return `Multiple issues found:\n${result.errors.map(e => `- ${e}`).join('\n')}`
 }
 
 // ============================================================================
