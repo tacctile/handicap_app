@@ -1,4 +1,4 @@
-# Horse Monster
+# Handicap App
 
 A horse racing handicapping application.
 
