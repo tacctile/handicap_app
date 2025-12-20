@@ -19,7 +19,8 @@ import { getTrackBiasSummary } from '../lib/trackIntelligence'
 interface RaceTableProps {
   race: ParsedRace
   raceState: UseRaceStateReturn
-  bankroll?: UseBankrollReturn
+  bankroll: UseBankrollReturn
+  onOpenBankrollSettings: () => void
 }
 
 // Material Icon component for cleaner usage
@@ -367,7 +368,7 @@ interface SelectedHorseData {
 }
 
 // Main RaceTable component
-export function RaceTable({ race, raceState, bankroll }: RaceTableProps) {
+export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }: RaceTableProps) {
   const { horses, header } = race
   const {
     trackCondition,
@@ -673,6 +674,7 @@ export function RaceTable({ race, raceState, bankroll }: RaceTableProps) {
             horses={scoredHorses}
             raceNumber={header.raceNumber}
             bankroll={bankroll}
+            onOpenBankrollSettings={onOpenBankrollSettings}
           />
         </>
       )}
