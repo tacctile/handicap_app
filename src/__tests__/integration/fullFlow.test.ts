@@ -56,7 +56,7 @@ describe('Full Flow Integration', () => {
       // Step 3: Classify into tiers
       const horsesForClassification = scoredHorses.map(sh => ({
         horse: sh.horse,
-        index: sh.originalIndex,
+        index: sh.index,
         score: sh.score,
       }))
 
@@ -89,7 +89,7 @@ describe('Full Flow Integration', () => {
       const scoredHorses = calculateRaceScores(horses, header, getOdds, isScratched, 'fast')
       const horsesForClassification = scoredHorses.map(sh => ({
         horse: sh.horse,
-        index: sh.originalIndex,
+        index: sh.index,
         score: sh.score,
       }))
 
@@ -174,13 +174,13 @@ describe('Full Flow Integration', () => {
       // Score with no scratches
       const scored1 = calculateRaceScores(horses, header, getOdds, () => false, 'fast')
       const classification1 = classifyHorses(
-        scored1.map(sh => ({ horse: sh.horse, index: sh.originalIndex, score: sh.score }))
+        scored1.map(sh => ({ horse: sh.horse, index: sh.index, score: sh.score }))
       )
 
       // Scratch top horse
       const scored2 = calculateRaceScores(horses, header, getOdds, (i) => i === 0, 'fast')
       const classification2 = classifyHorses(
-        scored2.map(sh => ({ horse: sh.horse, index: sh.originalIndex, score: sh.score }))
+        scored2.map(sh => ({ horse: sh.horse, index: sh.index, score: sh.score }))
       )
 
       // Second classification should not include scratched horse
@@ -234,14 +234,14 @@ describe('Full Flow Integration', () => {
       const getShortOdds = () => '3-1'
       const scored1 = calculateRaceScores([horse], header, getShortOdds, () => false, 'fast')
       const classified1 = classifyHorses(
-        scored1.map(sh => ({ horse: sh.horse, index: sh.originalIndex, score: sh.score }))
+        scored1.map(sh => ({ horse: sh.horse, index: sh.index, score: sh.score }))
       )
 
       // At long odds (more overlay potential)
       const getLongOdds = () => '25-1'
       const scored2 = calculateRaceScores([horse], header, getLongOdds, () => false, 'fast')
       const classified2 = classifyHorses(
-        scored2.map(sh => ({ horse: sh.horse, index: sh.originalIndex, score: sh.score }))
+        scored2.map(sh => ({ horse: sh.horse, index: sh.index, score: sh.score }))
       )
 
       // Classification may change based on overlay
@@ -354,13 +354,13 @@ describe('Full Flow Integration', () => {
 
       const scored1 = calculateRaceScores(horses, header, getOdds, isScratched, 'fast')
       const classified1 = classifyHorses(
-        scored1.map(sh => ({ horse: sh.horse, index: sh.originalIndex, score: sh.score }))
+        scored1.map(sh => ({ horse: sh.horse, index: sh.index, score: sh.score }))
       )
       const recs1 = generateBetRecommendations(classified1)
 
       const scored2 = calculateRaceScores(horses, header, getOdds, isScratched, 'fast')
       const classified2 = classifyHorses(
-        scored2.map(sh => ({ horse: sh.horse, index: sh.originalIndex, score: sh.score }))
+        scored2.map(sh => ({ horse: sh.horse, index: sh.index, score: sh.score }))
       )
       const recs2 = generateBetRecommendations(classified2)
 
@@ -387,7 +387,7 @@ describe('Full Flow Integration', () => {
 
       const scored = calculateRaceScores(horses, header, getOdds, () => false, 'fast')
       const classified = classifyHorses(
-        scored.map(sh => ({ horse: sh.horse, index: sh.originalIndex, score: sh.score }))
+        scored.map(sh => ({ horse: sh.horse, index: sh.index, score: sh.score }))
       )
       const recs = generateBetRecommendations(classified)
 
@@ -402,7 +402,7 @@ describe('Full Flow Integration', () => {
 
       const scored = calculateRaceScores(horses, header, getOdds, () => false, 'fast')
       const classified = classifyHorses(
-        scored.map(sh => ({ horse: sh.horse, index: sh.originalIndex, score: sh.score }))
+        scored.map(sh => ({ horse: sh.horse, index: sh.index, score: sh.score }))
       )
       const recs = generateBetRecommendations(classified)
 
