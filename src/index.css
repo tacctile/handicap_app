@@ -4817,3 +4817,145 @@ select:focus-visible {
     margin-top: 0.5rem;
   }
 }
+
+/* ============================================================================
+   BREEDING SECTION STYLES
+   ============================================================================ */
+
+/* Breeding Info Box */
+.breeding-info-box {
+  background: var(--surface-secondary);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+/* Experience Badge Row */
+.breeding-experience-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.breeding-experience-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid;
+}
+
+.breeding-experience-badge .material-icons {
+  font-size: 0.875rem;
+}
+
+.breeding-analysis-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: var(--text-accent);
+  background: var(--accent-subtle);
+  padding: 0.25rem 0.625rem;
+  border-radius: 4px;
+}
+
+.breeding-analysis-indicator .material-icons {
+  font-size: 0.875rem;
+}
+
+/* Pedigree Grid */
+.breeding-pedigree-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.breeding-pedigree-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-card);
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+}
+
+.breeding-label {
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.breeding-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+/* Experience Details */
+.breeding-experience-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.breeding-starts-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.breeding-starts-row .material-icons {
+  font-size: 1rem;
+  color: var(--text-tertiary);
+}
+
+.breeding-score-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-card);
+  border-radius: 6px;
+  border: 1px dashed var(--border-subtle);
+}
+
+.breeding-score-placeholder .material-icons {
+  font-size: 1rem;
+}
+
+.breeding-score-max {
+  font-size: 0.7rem;
+  color: var(--text-quaternary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 767px) {
+  .breeding-pedigree-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .breeding-experience-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

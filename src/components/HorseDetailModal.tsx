@@ -17,6 +17,11 @@ import {
   VALUE_LABELS,
   VALUE_ICONS,
 } from '../lib/scoring'
+import {
+  getBreedingDisplayInfo,
+  getExperienceBadge,
+  BREEDING_SCORE_LIMITS,
+} from '../lib/breeding'
 
 interface HorseDetailModalProps {
   isOpen: boolean
@@ -231,6 +236,13 @@ export function HorseDetailModal({
     if (overlayProp) return overlayProp
     return analyzeOverlay(score.total, currentOdds)
   }, [overlayProp, score.total, currentOdds])
+
+  // Breeding analysis
+  const breedingInfo = useMemo(() => {
+    const displayInfo = getBreedingDisplayInfo(horse)
+    const badge = getExperienceBadge(horse)
+    return { ...displayInfo, badge }
+  }, [horse])
 
   // Generate key factors
   const keyFactors = useMemo(() => {
@@ -593,6 +605,78 @@ export function HorseDetailModal({
                   </div>
                 }
               />
+            </div>
+          </section>
+
+          {/* Breeding Section */}
+          <section className="modal-section">
+            <h3 className="section-title-modal">
+              <Icon name="family_restroom" className="section-icon-modal" />
+              Breeding
+            </h3>
+
+            <div className="breeding-info-box">
+              {/* Experience Badge */}
+              <div className="breeding-experience-row">
+                <span
+                  className="breeding-experience-badge"
+                  style={{
+                    backgroundColor: breedingInfo.badge.bgColor,
+                    color: breedingInfo.badge.color,
+                    borderColor: `${breedingInfo.badge.color}40`,
+                  }}
+                >
+                  <Icon name={breedingInfo.experienceLevel === 'debut' ? 'star' : breedingInfo.experienceLevel === 'lightly_raced' ? 'trending_up' : 'verified'} className="text-sm" />
+                  {breedingInfo.badge.text}
+                </span>
+                {breedingInfo.showBreedingScore && (
+                  <span className="breeding-analysis-indicator">
+                    <Icon name="insights" className="text-sm" />
+                    Breeding analysis active
+                  </span>
+                )}
+              </div>
+
+              {/* Pedigree Grid */}
+              <div className="breeding-pedigree-grid">
+                <div className="breeding-pedigree-item">
+                  <span className="breeding-label">Sire</span>
+                  <span className="breeding-value">{breedingInfo.sire}</span>
+                </div>
+                <div className="breeding-pedigree-item">
+                  <span className="breeding-label">Dam</span>
+                  <span className="breeding-value">{breedingInfo.dam}</span>
+                </div>
+                <div className="breeding-pedigree-item">
+                  <span className="breeding-label">Damsire</span>
+                  <span className="breeding-value">{breedingInfo.damsire}</span>
+                </div>
+                <div className="breeding-pedigree-item">
+                  <span className="breeding-label">Where Bred</span>
+                  <span className="breeding-value">{breedingInfo.whereBred}</span>
+                </div>
+              </div>
+
+              {/* Experience Details */}
+              <div className="breeding-experience-details">
+                <div className="breeding-starts-row">
+                  <Icon name="history" className="text-sm" />
+                  <span>
+                    {breedingInfo.starts === 0
+                      ? 'Making career debut - no race history'
+                      : breedingInfo.starts === 1
+                      ? '1 lifetime start - limited form data'
+                      : `${breedingInfo.starts} lifetime starts`}
+                  </span>
+                </div>
+                {breedingInfo.showBreedingScore && (
+                  <div className="breeding-score-placeholder">
+                    <Icon name="pending" className="text-sm" />
+                    <span>Breeding score: Coming in Part 2</span>
+                    <span className="breeding-score-max">/ {BREEDING_SCORE_LIMITS.total}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 
