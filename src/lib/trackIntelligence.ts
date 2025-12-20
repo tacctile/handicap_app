@@ -73,7 +73,7 @@ export function getTrackData(trackCode: string): TrackData | undefined {
 export function getPostPositionBias(
   trackCode: string,
   distance: string,
-  surface: 'dirt' | 'turf' | 'synthetic'
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather'
 ): PostPositionBias | undefined {
   const track = getTrackData(trackCode)
   if (!track) return undefined
@@ -101,7 +101,7 @@ export function getPostPositionBias(
  */
 export function getSpeedBias(
   trackCode: string,
-  surface: 'dirt' | 'turf' | 'synthetic'
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather'
 ): SpeedBias | undefined {
   const track = getTrackData(trackCode)
   if (!track) return undefined
@@ -119,7 +119,7 @@ export function getSpeedBias(
 export function getPostPositionBiasMultiplier(
   trackCode: string,
   distance: string,
-  surface: 'dirt' | 'turf' | 'synthetic',
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather',
   postPosition: number
 ): { multiplier: number; reasoning: string } {
   const bias = getPostPositionBias(trackCode, distance, surface)
@@ -171,7 +171,7 @@ export function getPostPositionBiasMultiplier(
 export function getTrackBiasSummary(
   trackCode: string,
   distance: string,
-  surface: 'dirt' | 'turf' | 'synthetic'
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather'
 ): TrackBiasSummary {
   const track = getTrackData(trackCode)
 

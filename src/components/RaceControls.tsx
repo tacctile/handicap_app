@@ -5,7 +5,7 @@ import { ResetConfirmDialog } from './ResetConfirmDialog'
 interface RaceControlsProps {
   trackCondition: TrackCondition
   onTrackConditionChange: (condition: TrackCondition) => void
-  surface?: 'dirt' | 'turf' | 'synthetic'
+  surface?: 'dirt' | 'turf' | 'synthetic' | 'all-weather'
   // Reset functionality
   hasChanges?: boolean
   onReset?: () => void
