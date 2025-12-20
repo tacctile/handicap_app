@@ -34,6 +34,12 @@ import {
   type ValuePlay,
 } from '../lib/scoring'
 import { getTrackBiasSummary } from '../lib/trackIntelligence'
+import {
+  analyzeRaceLongshots,
+  type RaceLongshotSummary,
+  type LongshotAnalysisResult,
+  LONGSHOT_CLASSIFICATION_META,
+} from '../lib/longshots'
 
 interface RaceTableProps {
   race: ParsedRace
@@ -426,6 +432,182 @@ const ValuePlaysDetector = memo(function ValuePlaysDetector({ valuePlays, onHigh
   )
 })
 
+// Nuclear Longshots detector badge for race header
+interface NuclearLongshotsDetectorProps {
+  longshotSummary: RaceLongshotSummary
+  onHighlightHorse?: (index: number) => void
+}
+
+const NuclearLongshotsDetector = memo(function NuclearLongshotsDetector({
+  longshotSummary,
+  onHighlightHorse,
+}: NuclearLongshotsDetectorProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  // Only show if we have nuclear or live longshots
+  if (!longshotSummary.hasNuclear && !longshotSummary.hasLive) return null
+
+  const nuclearCount = longshotSummary.nuclearLongshots.length
+  const liveCount = longshotSummary.liveLongshots.length
+
+  const bgColor = longshotSummary.hasNuclear ? '#ef444420' : '#f59e0b20'
+  const borderColor = longshotSummary.hasNuclear ? '#ef4444' : '#f59e0b'
+  const textColor = longshotSummary.hasNuclear ? '#ef4444' : '#f59e0b'
+
+  return (
+    <div className="nuclear-longshots-detector" style={{
+      marginBottom: '12px',
+    }}>
+      <button
+        type="button"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '10px 16px',
+          backgroundColor: bgColor,
+          border: `1px solid ${borderColor}40`,
+          borderRadius: '8px',
+          color: textColor,
+          cursor: 'pointer',
+          width: '100%',
+          justifyContent: 'space-between',
+          fontWeight: 600,
+          fontSize: '0.9rem',
+        }}
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Icon name={longshotSummary.hasNuclear ? 'local_fire_department' : 'bolt'} />
+          <span>
+            {nuclearCount > 0 && `${nuclearCount} NUCLEAR`}
+            {nuclearCount > 0 && liveCount > 0 && ' + '}
+            {liveCount > 0 && `${liveCount} Live`}
+            {' '}Longshot{(nuclearCount + liveCount) > 1 ? 's' : ''} Detected
+          </span>
+        </div>
+        <Icon name={isExpanded ? 'expand_less' : 'expand_more'} />
+      </button>
+
+      {isExpanded && (
+        <div style={{
+          backgroundColor: '#1a1a1a',
+          borderRadius: '0 0 8px 8px',
+          border: '1px solid #333',
+          borderTop: 'none',
+          marginTop: '-4px',
+          paddingTop: '8px',
+        }}>
+          {/* Nuclear Longshots */}
+          {longshotSummary.nuclearLongshots.map((longshot) => (
+            <button
+              key={longshot.programNumber}
+              type="button"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                padding: '10px 12px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                borderBottom: '1px solid #333',
+                cursor: 'pointer',
+                color: '#e0e0e0',
+              }}
+              onClick={() => onHighlightHorse?.(longshot.programNumber - 1)}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                  backgroundColor: '#ef4444',
+                  color: '#fff',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                }}>
+                  #{longshot.programNumber}
+                </span>
+                <span style={{ fontWeight: 500 }}>{longshot.horseName}</span>
+                <span style={{ color: '#888', fontSize: '0.85rem' }}>{longshot.oddsDisplay}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                  color: '#ef4444',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                }}>
+                  {longshot.totalAnglePoints} pts
+                </span>
+                <span style={{ color: '#22c55e', fontSize: '0.8rem' }}>
+                  {(longshot.upsetProbability * 100).toFixed(0)}% upset
+                </span>
+              </div>
+            </button>
+          ))}
+
+          {/* Live Longshots */}
+          {longshotSummary.liveLongshots.map((longshot) => (
+            <button
+              key={longshot.programNumber}
+              type="button"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                padding: '10px 12px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                borderBottom: '1px solid #333',
+                cursor: 'pointer',
+                color: '#e0e0e0',
+              }}
+              onClick={() => onHighlightHorse?.(longshot.programNumber - 1)}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                  backgroundColor: '#f59e0b',
+                  color: '#fff',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                }}>
+                  #{longshot.programNumber}
+                </span>
+                <span style={{ fontWeight: 500 }}>{longshot.horseName}</span>
+                <span style={{ color: '#888', fontSize: '0.85rem' }}>{longshot.oddsDisplay}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                  color: '#f59e0b',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                }}>
+                  {longshot.totalAnglePoints} pts
+                </span>
+                <span style={{ color: '#22c55e', fontSize: '0.8rem' }}>
+                  {(longshot.upsetProbability * 100).toFixed(0)}% upset
+                </span>
+              </div>
+            </button>
+          ))}
+
+          <div style={{
+            padding: '8px 12px',
+            fontSize: '0.75rem',
+            color: '#888',
+            fontStyle: 'italic',
+          }}>
+            Click horse to highlight in table
+          </div>
+        </div>
+      )}
+    </div>
+  )
+})
+
 // Score badge component with pulse animation and tier coloring
 interface ScoreBadgeProps {
   score: HorseScore
@@ -566,6 +748,7 @@ interface RaceHeaderProps {
   scratchesCount: number
   oddsChangesCount: number
   valuePlays: ValuePlay[]
+  longshotSummary: RaceLongshotSummary | null
   onHighlightHorse?: (index: number) => void
 }
 
@@ -578,6 +761,7 @@ const RaceHeader = memo(function RaceHeader({
   scratchesCount,
   oddsChangesCount,
   valuePlays,
+  longshotSummary,
   onHighlightHorse,
 }: RaceHeaderProps) {
   const { header } = race
@@ -613,6 +797,11 @@ const RaceHeader = memo(function RaceHeader({
             </div>
           </div>
         </div>
+
+        {/* Nuclear Longshots Detection Badge */}
+        {longshotSummary && (
+          <NuclearLongshotsDetector longshotSummary={longshotSummary} onHighlightHorse={onHighlightHorse} />
+        )}
 
         {/* Value Plays Detection Badge */}
         <ValuePlaysDetector valuePlays={valuePlays} onHighlightHorse={onHighlightHorse} />
@@ -715,6 +904,25 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
     return detectValuePlays(horsesData, 10) // 10% minimum overlay
   }, [scoredHorses, getOdds])
 
+  // Analyze nuclear longshots
+  const longshotSummary = useMemo(() => {
+    // Create a scores map for the longshot analyzer
+    const scoresMap = new Map<number, HorseScore>()
+    for (const { horse, score } of scoredHorses) {
+      scoresMap.set(horse.programNumber, score)
+    }
+    return analyzeRaceLongshots(horses, header, scoresMap)
+  }, [horses, header, scoredHorses])
+
+  // Create a map of program number to longshot analysis for easy lookup
+  const longshotsByProgram = useMemo(() => {
+    const map = new Map<number, LongshotAnalysisResult>()
+    for (const longshot of longshotSummary.allLongshots) {
+      map.set(longshot.programNumber, longshot)
+    }
+    return map
+  }, [longshotSummary])
+
   // Handle highlight horse from value plays click
   const handleHighlightHorse = useCallback((index: number) => {
     setHighlightedHorseIndex(index)
@@ -809,6 +1017,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
         scratchesCount={raceState.scratchedHorses.size}
         oddsChangesCount={Object.keys(raceState.updatedOdds).length}
         valuePlays={valuePlays}
+        longshotSummary={longshotSummary}
         onHighlightHorse={handleHighlightHorse}
       />
 
@@ -843,6 +1052,9 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
               const oddsHighlighted = calculationState.changedOddsIndices.has(index)
               const overlay = overlaysByIndex.get(index)
               const isHighlighted = highlightedHorseIndex === index
+              const longshotAnalysis = longshotsByProgram.get(horse.programNumber)
+              const isNuclear = longshotAnalysis?.classification === 'nuclear'
+              const isLive = longshotAnalysis?.classification === 'live'
 
               return (
                 <tr
@@ -874,7 +1086,43 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                     {horse.postPosition}
                   </td>
                   <td className={`font-medium ${scratched ? 'horse-name-scratched' : 'text-foreground'}`}>
-                    {horse.horseName}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {horse.horseName}
+                      {isNuclear && !scratched && (
+                        <span
+                          title={`NUCLEAR LONGSHOT: ${longshotAnalysis?.totalAnglePoints} pts - ${longshotAnalysis?.detectedAngles.map(a => a.name).join(' + ')}`}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '20px',
+                            height: '20px',
+                            backgroundColor: '#ef4444',
+                            borderRadius: '50%',
+                            cursor: 'help',
+                          }}
+                        >
+                          <Icon name="local_fire_department" className="text-xs text-white" />
+                        </span>
+                      )}
+                      {isLive && !scratched && (
+                        <span
+                          title={`Live Longshot: ${longshotAnalysis?.totalAnglePoints} pts - ${longshotAnalysis?.detectedAngles.map(a => a.name).join(' + ')}`}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '18px',
+                            height: '18px',
+                            backgroundColor: '#f59e0b',
+                            borderRadius: '50%',
+                            cursor: 'help',
+                          }}
+                        >
+                          <Icon name="bolt" className="text-xs text-white" />
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="text-center hide-on-small">
                     {!scratched ? <ClassBadge score={score} /> : <span className="text-white/30">—</span>}
@@ -938,6 +1186,9 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
           const oddsHighlighted = calculationState.changedOddsIndices.has(index)
           const overlay = overlaysByIndex.get(index)
           const isHighlighted = highlightedHorseIndex === index
+          const longshotAnalysisMobile = longshotsByProgram.get(horse.programNumber)
+          const isNuclearMobile = longshotAnalysisMobile?.classification === 'nuclear'
+          const isLiveMobile = longshotAnalysisMobile?.classification === 'live'
 
           return (
             <div
@@ -986,8 +1237,34 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                 </div>
 
                 <div className="mobile-card-body">
-                  <div className={`mobile-horse-name ${scratched ? 'horse-name-scratched' : ''}`}>
+                  <div className={`mobile-horse-name ${scratched ? 'horse-name-scratched' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     {horse.horseName}
+                    {isNuclearMobile && !scratched && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '20px',
+                        height: '20px',
+                        backgroundColor: '#ef4444',
+                        borderRadius: '50%',
+                      }}>
+                        <Icon name="local_fire_department" className="text-xs text-white" />
+                      </span>
+                    )}
+                    {isLiveMobile && !scratched && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '18px',
+                        height: '18px',
+                        backgroundColor: '#f59e0b',
+                        borderRadius: '50%',
+                      }}>
+                        <Icon name="bolt" className="text-xs text-white" />
+                      </span>
+                    )}
                   </div>
                   <div className="mobile-horse-details">
                     <span className="mobile-detail-item">
@@ -1069,6 +1346,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
           totalHorses={horses.filter((_, i) => !isScratched(i)).length}
           overlay={overlaysByIndex.get(selectedHorse.index)}
           allHorses={horses.filter((_, i) => !isScratched(i))}
+          longshotAnalysis={longshotsByProgram.get(selectedHorse.horse.programNumber)}
         />
       )}
 

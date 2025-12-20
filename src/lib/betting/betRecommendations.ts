@@ -1,4 +1,5 @@
 import type { ClassifiedHorse, TierGroup, BettingTier } from './tierClassification'
+import type { LongshotAnalysisResult } from '../longshots'
 
 // Bet types
 export type BetType =
@@ -13,6 +14,7 @@ export type BetType =
   | 'trifecta_wheel'
   | 'quinella'
   | 'superfecta'
+  | 'value_bomb' // Nuclear longshot special bet
 
 export interface BetRecommendation {
   type: BetType
@@ -26,6 +28,10 @@ export interface BetRecommendation {
   potentialReturn: { min: number; max: number }
   confidence: number
   icon: string
+  /** For nuclear longshots - the upset angle explanation */
+  longshotAngle?: string
+  /** Whether this is a nuclear longshot bet */
+  isNuclearLongshot?: boolean
 }
 
 export interface TierBetRecommendations {
@@ -58,6 +64,7 @@ const BET_TYPE_CONFIG: Record<BetType, { name: string; icon: string }> = {
   trifecta_wheel: { name: 'Trifecta Wheel', icon: 'sync' },
   quinella: { name: 'Quinella', icon: 'compare_arrows' },
   superfecta: { name: 'Superfecta', icon: 'format_list_numbered' },
+  value_bomb: { name: 'Value Bomb', icon: 'local_fire_department' },
 }
 
 /**
@@ -138,6 +145,12 @@ function calculatePotentialReturn(
         min: Math.round(cost * (avgOdds * 20 + 1)),
         max: Math.round(cost * (maxOdds * avgOdds * 10 + 1)),
       }
+    case 'value_bomb':
+      // Nuclear longshots - massive potential returns
+      return {
+        min: Math.round(cost * (minOdds + 1)),
+        max: Math.round(cost * (maxOdds + 1)),
+      }
     default:
       return { min: cost, max: cost * 10 }
   }
@@ -186,6 +199,8 @@ function generateWindowInstruction(
       return `"${racePrefix}${baseAmount} QUINELLA ${numbers}"`
     case 'superfecta':
       return `"${racePrefix}$0.10 SUPERFECTA BOX ${numbers}"`
+    case 'value_bomb':
+      return `"${racePrefix}${baseAmount} to WIN on number ${numbers}" (NUCLEAR LONGSHOT)`
     default:
       return `"${racePrefix}${baseAmount} on ${numbers}"`
   }
@@ -461,10 +476,12 @@ function generateTier2Bets(
 
 /**
  * Generate Tier 3 (Value Bombs) bet recommendations
+ * Includes special handling for nuclear longshots
  */
 function generateTier3Bets(
   tierGroup: TierGroup,
-  allHorses: ClassifiedHorse[]
+  allHorses: ClassifiedHorse[],
+  nuclearLongshots?: Map<number, LongshotAnalysisResult>
 ): BetRecommendation[] {
   const bets: BetRecommendation[] = []
   const baseAmount = BASE_AMOUNTS.tier3
@@ -472,23 +489,54 @@ function generateTier3Bets(
 
   if (tier3Horses.length === 0) return bets
 
+  // Check for nuclear longshots first - these get priority
+  for (const horse of tier3Horses) {
+    const longshotAnalysis = nuclearLongshots?.get(horse.horse.programNumber)
+    if (longshotAnalysis && (longshotAnalysis.classification === 'nuclear' || longshotAnalysis.classification === 'live')) {
+      const bombAmount = longshotAnalysis.classification === 'nuclear' ? 5 : 2 // Fixed bet $2-5
+      const angleNames = longshotAnalysis.detectedAngles.map(a => a.name).join(' + ')
+      const angleExplanation = longshotAnalysis.detectedAngles[0]?.evidence || 'Multiple upset angles detected'
+
+      bets.push({
+        type: 'value_bomb',
+        typeName: `${longshotAnalysis.classification === 'nuclear' ? 'NUCLEAR' : 'LIVE'} Value Bomb`,
+        description: `${horse.horse.horseName} at ${horse.oddsDisplay}: ${angleNames}`,
+        horses: [horse],
+        horseNumbers: [horse.horse.programNumber],
+        amount: bombAmount,
+        totalCost: bombAmount,
+        windowInstruction: generateWindowInstruction('value_bomb', [horse], bombAmount),
+        potentialReturn: calculatePotentialReturn('value_bomb', [horse], bombAmount),
+        confidence: Math.round(longshotAnalysis.upsetProbability * 100),
+        icon: BET_TYPE_CONFIG.value_bomb.icon,
+        longshotAngle: angleExplanation,
+        isNuclearLongshot: longshotAnalysis.classification === 'nuclear',
+      })
+    }
+  }
+
   const bombHorse = tier3Horses[0]
 
-  // 1. Small win bet (lottery ticket)
-  const winAmount = baseAmount
-  bets.push({
-    type: 'win',
-    typeName: BET_TYPE_CONFIG.win.name,
-    description: `Lottery ticket: ${bombHorse.horse.horseName} at ${bombHorse.oddsDisplay}`,
-    horses: [bombHorse],
-    horseNumbers: [bombHorse.horse.programNumber],
-    amount: winAmount,
-    totalCost: winAmount,
-    windowInstruction: generateWindowInstruction('win', [bombHorse], winAmount),
-    potentialReturn: calculatePotentialReturn('win', [bombHorse], winAmount),
-    confidence: bombHorse.confidence,
-    icon: BET_TYPE_CONFIG.win.icon,
-  })
+  // Skip normal win bet if we already have a value bomb for this horse
+  const hasValueBomb = bets.some(b => b.horseNumbers.includes(bombHorse.horse.programNumber))
+
+  // 1. Small win bet (lottery ticket) - only if not already a value bomb
+  if (!hasValueBomb) {
+    const winAmount = baseAmount
+    bets.push({
+      type: 'win',
+      typeName: BET_TYPE_CONFIG.win.name,
+      description: `Lottery ticket: ${bombHorse.horse.horseName} at ${bombHorse.oddsDisplay}`,
+      horses: [bombHorse],
+      horseNumbers: [bombHorse.horse.programNumber],
+      amount: winAmount,
+      totalCost: winAmount,
+      windowInstruction: generateWindowInstruction('win', [bombHorse], winAmount),
+      potentialReturn: calculatePotentialReturn('win', [bombHorse], winAmount),
+      confidence: bombHorse.confidence,
+      icon: BET_TYPE_CONFIG.win.icon,
+    })
+  }
 
   // 2. Exacta key over all others
   const otherHorses = allHorses
@@ -579,9 +627,12 @@ function generateTier3Bets(
 
 /**
  * Generate all bet recommendations for a set of tier groups
+ * @param tierGroups - The tier groups to generate bets for
+ * @param nuclearLongshots - Optional map of program numbers to longshot analyses for nuclear bet generation
  */
 export function generateBetRecommendations(
-  tierGroups: TierGroup[]
+  tierGroups: TierGroup[],
+  nuclearLongshots?: Map<number, LongshotAnalysisResult>
 ): TierBetRecommendations[] {
   const recommendations: TierBetRecommendations[] = []
 
@@ -601,7 +652,7 @@ export function generateBetRecommendations(
         bets = generateTier2Bets(group, tier1Horses)
         break
       case 'tier3':
-        bets = generateTier3Bets(group, allHorses)
+        bets = generateTier3Bets(group, allHorses, nuclearLongshots)
         break
     }
 
