@@ -3,7 +3,7 @@
  * Contains track-specific data for handicapping calculations
  *
  * This module exports a centralized database of track intelligence data
- * for 27 major tracks in North American racing. Each track file contains
+ * for 32 major tracks in North American racing. Each track file contains
  * verified, researched data from authoritative sources including:
  * - Equibase track profiles and records
  * - Official track websites and specifications
@@ -19,10 +19,15 @@
  * - Louisiana State Racing Commission (FG, DED, EVD)
  * - Kentucky Horse Racing Commission (TP, ELP)
  * - Texas Racing Commission (LS, HOU)
+ * - Oklahoma Horse Racing Commission (RP)
+ * - Minnesota Racing Commission (CBY)
+ * - Iowa Racing and Gaming Commission (PRM)
+ * - Indiana Horse Racing Commission (IND, HOO)
  *
  * Track codes follow standard DRF/Equibase conventions:
  * - AQU = Aqueduct Racetrack
  * - BEL = Belmont Park
+ * - CBY = Canterbury Park
  * - CD = Churchill Downs
  * - CT = Charles Town Races
  * - DED = Delta Downs Racetrack Casino & Hotel
@@ -34,7 +39,9 @@
  * - FL = Finger Lakes Gaming & Racetrack
  * - FON = Fonner Park
  * - GP = Gulfstream Park
+ * - HOO = Hoosier Park Racing & Casino
  * - HOU = Sam Houston Race Park
+ * - IND = Indiana Grand Racing & Casino
  * - KEE = Keeneland Race Course
  * - LRL = Laurel Park
  * - LS = Lone Star Park
@@ -43,7 +50,9 @@
  * - OP = Oaklawn Racing Casino Resort
  * - PEN = Penn National Race Course
  * - PIM = Pimlico Race Course
+ * - PRM = Prairie Meadows Racetrack & Casino
  * - PRX = Parx Racing
+ * - RP = Remington Park
  * - SA = Santa Anita Park
  * - SAR = Saratoga Race Course
  * - TAM = Tampa Bay Downs
@@ -55,6 +64,7 @@ import type { TrackData, TrackBiasSummary } from './trackSchema'
 // Import individual track data files (alphabetical order)
 import { aqueduct } from './aqueduct'
 import { belmontPark } from './belmontPark'
+import { canterburyPark } from './canterburyPark'
 import { charlesTownRaces } from './charlesTownRaces'
 import { churchillDowns } from './churchillDowns'
 import { delawarePark } from './delawarePark'
@@ -66,6 +76,8 @@ import { fairGrounds } from './fairGrounds'
 import { fingerLakes } from './fingerLakes'
 import { fonnerPark } from './fonnerPark'
 import { gulfstreamPark } from './gulfstreamPark'
+import { hoosierPark } from './hoosierPark'
+import { indianaGrand } from './indianaGrand'
 import { keeneland } from './keeneland'
 import { laurelPark } from './laurelPark'
 import { loneStarPark } from './loneStarPark'
@@ -75,6 +87,8 @@ import { oaklawnPark } from './oaklawnPark'
 import { parxRacing } from './parxRacing'
 import { pennNational } from './pennNational'
 import { pimlico } from './pimlico'
+import { prairieMeadows } from './prairieMeadows'
+import { remingtonPark } from './remingtonPark'
 import { samHoustonRacePark } from './samHoustonRacePark'
 import { santaAnita } from './santaAnita'
 import { saratoga } from './saratoga'
@@ -88,6 +102,7 @@ import { turfwayPark } from './turfwayPark'
 export const trackDatabase: Map<string, TrackData> = new Map([
   ['AQU', aqueduct],
   ['BEL', belmontPark],
+  ['CBY', canterburyPark],
   ['CD', churchillDowns],
   ['CT', charlesTownRaces],
   ['DED', deltaDowns],
@@ -99,7 +114,9 @@ export const trackDatabase: Map<string, TrackData> = new Map([
   ['FL', fingerLakes],
   ['FON', fonnerPark],
   ['GP', gulfstreamPark],
+  ['HOO', hoosierPark],
   ['HOU', samHoustonRacePark],
+  ['IND', indianaGrand],
   ['KEE', keeneland],
   ['LRL', laurelPark],
   ['LS', loneStarPark],
@@ -108,7 +125,9 @@ export const trackDatabase: Map<string, TrackData> = new Map([
   ['OP', oaklawnPark],
   ['PEN', pennNational],
   ['PIM', pimlico],
+  ['PRM', prairieMeadows],
   ['PRX', parxRacing],
+  ['RP', remingtonPark],
   ['SA', santaAnita],
   ['SAR', saratoga],
   ['TAM', tampaBayDowns],
@@ -245,6 +264,7 @@ export type {
 export {
   aqueduct,
   belmontPark,
+  canterburyPark,
   charlesTownRaces,
   churchillDowns,
   delawarePark,
@@ -256,6 +276,8 @@ export {
   fingerLakes,
   fonnerPark,
   gulfstreamPark,
+  hoosierPark,
+  indianaGrand,
   keeneland,
   laurelPark,
   loneStarPark,
@@ -265,6 +287,8 @@ export {
   parxRacing,
   pennNational,
   pimlico,
+  prairieMeadows,
+  remingtonPark,
   samHoustonRacePark,
   santaAnita,
   saratoga,
