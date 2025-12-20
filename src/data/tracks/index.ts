@@ -3,7 +3,7 @@
  * Contains track-specific data for handicapping calculations
  *
  * This module exports a centralized database of track intelligence data
- * for 37 major tracks in North American racing. Each track file contains
+ * for 40 major tracks in North American racing. Each track file contains
  * verified, researched data from authoritative sources including:
  * - Equibase track profiles and records
  * - Official track websites and specifications
@@ -27,10 +27,14 @@
  * - Washington Horse Racing Commission (EMD)
  * - Arizona Department of Gaming (TUP)
  * - New Mexico Racing Commission (SUN)
+ * - Ohio State Racing Commission (BTP)
+ * - Alcohol and Gaming Commission of Ontario (WO)
+ * - British Columbia Racing Commission (HST)
  *
  * Track codes follow standard DRF/Equibase conventions:
  * - AQU = Aqueduct Racetrack
  * - BEL = Belmont Park
+ * - BTP = Belterra Park Gaming & Entertainment Center
  * - CBY = Canterbury Park
  * - CD = Churchill Downs
  * - CT = Charles Town Races
@@ -47,6 +51,7 @@
  * - GP = Gulfstream Park
  * - HOO = Hoosier Park Racing & Casino
  * - HOU = Sam Houston Race Park
+ * - HST = Hastings Racecourse
  * - IND = Indiana Grand Racing & Casino
  * - KEE = Keeneland Race Course
  * - LRC = Los Alamitos Race Course
@@ -66,6 +71,7 @@
  * - TAM = Tampa Bay Downs
  * - TP = Turfway Park
  * - TUP = Turf Paradise
+ * - WO = Woodbine Racetrack
  */
 
 import type { TrackData, TrackBiasSummary } from './trackSchema'
@@ -73,6 +79,7 @@ import type { TrackData, TrackBiasSummary } from './trackSchema'
 // Import individual track data files (alphabetical order)
 import { aqueduct } from './aqueduct'
 import { belmontPark } from './belmontPark'
+import { belterraPark } from './belterraPark'
 import { canterburyPark } from './canterburyPark'
 import { charlesTownRaces } from './charlesTownRaces'
 import { churchillDowns } from './churchillDowns'
@@ -87,6 +94,7 @@ import { fingerLakes } from './fingerLakes'
 import { fonnerPark } from './fonnerPark'
 import { goldenGateFields } from './goldenGateFields'
 import { gulfstreamPark } from './gulfstreamPark'
+import { hastingsRacecourse } from './hastingsRacecourse'
 import { hoosierPark } from './hoosierPark'
 import { indianaGrand } from './indianaGrand'
 import { keeneland } from './keeneland'
@@ -108,6 +116,7 @@ import { sunlandPark } from './sunlandPark'
 import { tampaBayDowns } from './tampaBayDowns'
 import { turfParadise } from './turfParadise'
 import { turfwayPark } from './turfwayPark'
+import { woodbine } from './woodbine'
 
 /**
  * Track database indexed by standard track code
@@ -116,6 +125,7 @@ import { turfwayPark } from './turfwayPark'
 export const trackDatabase: Map<string, TrackData> = new Map([
   ['AQU', aqueduct],
   ['BEL', belmontPark],
+  ['BTP', belterraPark],
   ['CBY', canterburyPark],
   ['CD', churchillDowns],
   ['CT', charlesTownRaces],
@@ -132,6 +142,7 @@ export const trackDatabase: Map<string, TrackData> = new Map([
   ['GP', gulfstreamPark],
   ['HOO', hoosierPark],
   ['HOU', samHoustonRacePark],
+  ['HST', hastingsRacecourse],
   ['IND', indianaGrand],
   ['KEE', keeneland],
   ['LRC', losAlamitos],
@@ -150,7 +161,8 @@ export const trackDatabase: Map<string, TrackData> = new Map([
   ['SUN', sunlandPark],
   ['TAM', tampaBayDowns],
   ['TP', turfwayPark],
-  ['TUP', turfParadise]
+  ['TUP', turfParadise],
+  ['WO', woodbine]
 ])
 
 /**
@@ -283,6 +295,7 @@ export type {
 export {
   aqueduct,
   belmontPark,
+  belterraPark,
   canterburyPark,
   charlesTownRaces,
   churchillDowns,
@@ -297,6 +310,7 @@ export {
   fonnerPark,
   goldenGateFields,
   gulfstreamPark,
+  hastingsRacecourse,
   hoosierPark,
   indianaGrand,
   keeneland,
@@ -317,5 +331,6 @@ export {
   sunlandPark,
   tampaBayDowns,
   turfParadise,
-  turfwayPark
+  turfwayPark,
+  woodbine
 }
