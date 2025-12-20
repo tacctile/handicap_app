@@ -12,6 +12,9 @@ import { BankrollSettings } from './BankrollSettings'
 import { BankrollSummaryCard } from './BankrollSummaryCard'
 import { PostTimeDetailModal } from './PostTimeCountdown'
 import { ResponsiveToastContainer, useToasts } from './Toast'
+import { OfflineIndicator } from './OfflineIndicator'
+import { InstallPrompt } from './InstallPrompt'
+import { UpdatePrompt } from './UpdatePrompt'
 import { useBankroll } from '../hooks/useBankroll'
 import { usePostTime } from '../hooks/usePostTime'
 import {
@@ -535,6 +538,11 @@ export function Dashboard({
         raceNumber={currentRaceInfo?.raceNumber}
         trackName={currentRaceInfo?.trackName}
       />
+
+      {/* PWA Features - Offline, Install, Update */}
+      <OfflineIndicator />
+      <InstallPrompt position="bottom-right" />
+      <UpdatePrompt />
     </div>
   )
 }
