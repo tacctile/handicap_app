@@ -3,7 +3,7 @@
  * Contains track-specific data for handicapping calculations
  *
  * This module exports a centralized database of track intelligence data
- * for 17 major tracks in North American racing. Each track file contains
+ * for 22 major tracks in North American racing. Each track file contains
  * verified, researched data from authoritative sources including:
  * - Equibase track profiles and records
  * - Official track websites and specifications
@@ -14,18 +14,25 @@
  * - Pennsylvania Horse Racing Commission (PRX, PEN)
  * - Maryland Racing Commission (LRL, PIM)
  * - Delaware Racing Commission (DEL)
+ * - West Virginia Racing Commission (CT, MNR)
+ * - Florida Division of Pari-Mutuel Wagering (TAM)
+ * - Louisiana State Racing Commission (FG)
+ * - Kentucky Horse Racing Commission (TP)
  *
  * Track codes follow standard DRF/Equibase conventions:
  * - AQU = Aqueduct Racetrack
  * - BEL = Belmont Park
  * - CD = Churchill Downs
+ * - CT = Charles Town Races
  * - DEL = Delaware Park
  * - DMR = Del Mar Thoroughbred Club
+ * - FG = Fair Grounds Race Course
  * - FL = Finger Lakes Gaming & Racetrack
  * - FON = Fonner Park
  * - GP = Gulfstream Park
  * - KEE = Keeneland Race Course
  * - LRL = Laurel Park
+ * - MNR = Mountaineer Casino Racetrack & Resort
  * - MTH = Monmouth Park
  * - OP = Oaklawn Racing Casino Resort
  * - PEN = Penn National Race Course
@@ -33,6 +40,8 @@
  * - PRX = Parx Racing
  * - SA = Santa Anita Park
  * - SAR = Saratoga Race Course
+ * - TAM = Tampa Bay Downs
+ * - TP = Turfway Park
  */
 
 import type { TrackData, TrackBiasSummary } from './trackSchema'
@@ -40,21 +49,26 @@ import type { TrackData, TrackBiasSummary } from './trackSchema'
 // Import individual track data files (alphabetical order)
 import { aqueduct } from './aqueduct'
 import { belmontPark } from './belmontPark'
+import { charlesTownRaces } from './charlesTownRaces'
 import { churchillDowns } from './churchillDowns'
 import { delawarePark } from './delawarePark'
 import { delMar } from './delMar'
+import { fairGrounds } from './fairGrounds'
 import { fingerLakes } from './fingerLakes'
 import { fonnerPark } from './fonnerPark'
 import { gulfstreamPark } from './gulfstreamPark'
 import { keeneland } from './keeneland'
 import { laurelPark } from './laurelPark'
 import { monmouthPark } from './monmouthPark'
+import { mountaineer } from './mountaineer'
 import { oaklawnPark } from './oaklawnPark'
 import { parxRacing } from './parxRacing'
 import { pennNational } from './pennNational'
 import { pimlico } from './pimlico'
 import { santaAnita } from './santaAnita'
 import { saratoga } from './saratoga'
+import { tampaBayDowns } from './tampaBayDowns'
+import { turfwayPark } from './turfwayPark'
 
 /**
  * Track database indexed by standard track code
@@ -64,20 +78,25 @@ export const trackDatabase: Map<string, TrackData> = new Map([
   ['AQU', aqueduct],
   ['BEL', belmontPark],
   ['CD', churchillDowns],
+  ['CT', charlesTownRaces],
   ['DEL', delawarePark],
   ['DMR', delMar],
+  ['FG', fairGrounds],
   ['FL', fingerLakes],
   ['FON', fonnerPark],
   ['GP', gulfstreamPark],
   ['KEE', keeneland],
   ['LRL', laurelPark],
+  ['MNR', mountaineer],
   ['MTH', monmouthPark],
   ['OP', oaklawnPark],
   ['PEN', pennNational],
   ['PIM', pimlico],
   ['PRX', parxRacing],
   ['SA', santaAnita],
-  ['SAR', saratoga]
+  ['SAR', saratoga],
+  ['TAM', tampaBayDowns],
+  ['TP', turfwayPark]
 ])
 
 /**
@@ -210,19 +229,24 @@ export type {
 export {
   aqueduct,
   belmontPark,
+  charlesTownRaces,
   churchillDowns,
   delawarePark,
   delMar,
+  fairGrounds,
   fingerLakes,
   fonnerPark,
   gulfstreamPark,
   keeneland,
   laurelPark,
   monmouthPark,
+  mountaineer,
   oaklawnPark,
   parxRacing,
   pennNational,
   pimlico,
   santaAnita,
-  saratoga
+  saratoga,
+  tampaBayDowns,
+  turfwayPark
 }
