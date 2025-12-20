@@ -15,6 +15,7 @@ import type {
 import {
   isUnknownSire,
   isUnknownDam,
+  formatBreedingDisplay,
   getExperienceLevel,
   getExperienceLabel,
   qualifiesForBreedingAnalysis,
