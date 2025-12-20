@@ -34,6 +34,12 @@ import {
   getSireTierColor,
   BREEDING_CATEGORY_LIMITS,
 } from '../lib/breeding'
+import {
+  type LongshotAnalysisResult,
+  UPSET_ANGLE_COLORS,
+  UPSET_ANGLE_ICONS,
+  LONGSHOT_CLASSIFICATION_META,
+} from '../lib/longshots'
 
 interface HorseDetailModalProps {
   isOpen: boolean
@@ -48,6 +54,8 @@ interface HorseDetailModalProps {
   allHorses?: HorseEntry[]
   /** Pre-calculated overlay analysis */
   overlay?: OverlayAnalysis
+  /** Longshot analysis for 25/1+ horses */
+  longshotAnalysis?: LongshotAnalysisResult
 }
 
 // Material Icon component
@@ -178,6 +186,7 @@ export function HorseDetailModal({
   totalHorses,
   allHorses,
   overlay: overlayProp,
+  longshotAnalysis,
 }: HorseDetailModalProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['connections']))
   const [isAnimating, setIsAnimating] = useState(false)
@@ -1359,6 +1368,236 @@ export function HorseDetailModal({
               </div>
             </div>
           </section>
+
+          {/* Longshot Analysis Section - Only for 25/1+ horses */}
+          {longshotAnalysis && longshotAnalysis.isLongshot && (
+            <section className="modal-section">
+              <h3 className="section-title-modal">
+                <Icon name="local_fire_department" className="section-icon-modal" />
+                Longshot Analysis
+                <span style={{
+                  fontSize: '0.7rem',
+                  padding: '2px 8px',
+                  borderRadius: '9999px',
+                  backgroundColor: `${LONGSHOT_CLASSIFICATION_META[longshotAnalysis.classification].color}20`,
+                  color: LONGSHOT_CLASSIFICATION_META[longshotAnalysis.classification].color,
+                  marginLeft: '8px',
+                  fontWeight: 700,
+                }}>
+                  {LONGSHOT_CLASSIFICATION_META[longshotAnalysis.classification].name}
+                </span>
+              </h3>
+
+              <div style={{
+                backgroundColor: '#1a1a1a',
+                borderRadius: '12px',
+                padding: '16px',
+                border: `1px solid ${LONGSHOT_CLASSIFICATION_META[longshotAnalysis.classification].color}40`,
+              }}>
+                {/* Classification Header */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '16px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{
+                      fontSize: '1.5rem',
+                      color: LONGSHOT_CLASSIFICATION_META[longshotAnalysis.classification].color,
+                    }}>
+                      <Icon name={LONGSHOT_CLASSIFICATION_META[longshotAnalysis.classification].icon} />
+                    </span>
+                    <div>
+                      <div style={{
+                        color: LONGSHOT_CLASSIFICATION_META[longshotAnalysis.classification].color,
+                        fontWeight: 600,
+                        fontSize: '1rem',
+                      }}>
+                        {longshotAnalysis.oddsDisplay} Longshot
+                      </div>
+                      <div style={{ color: '#888', fontSize: '0.85rem' }}>
+                        {longshotAnalysis.angleCount} upset angle{longshotAnalysis.angleCount !== 1 ? 's' : ''} detected
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{
+                    backgroundColor: `${LONGSHOT_CLASSIFICATION_META[longshotAnalysis.classification].color}20`,
+                    color: LONGSHOT_CLASSIFICATION_META[longshotAnalysis.classification].color,
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '1.1rem',
+                  }}>
+                    {longshotAnalysis.totalAnglePoints} pts
+                  </div>
+                </div>
+
+                {/* Upset Probability & EV */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '12px',
+                  marginBottom: '16px',
+                }}>
+                  <div style={{
+                    backgroundColor: '#222',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                  }}>
+                    <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>Upset Chance</div>
+                    <div style={{ color: '#22c55e', fontWeight: 600 }}>
+                      {(longshotAnalysis.upsetProbability * 100).toFixed(1)}%
+                    </div>
+                  </div>
+                  <div style={{
+                    backgroundColor: '#222',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                  }}>
+                    <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>Expected Value</div>
+                    <div style={{
+                      color: longshotAnalysis.expectedValue > 0 ? '#22c55e' : '#ef4444',
+                      fontWeight: 600,
+                    }}>
+                      {longshotAnalysis.expectedValue > 0 ? '+' : ''}{longshotAnalysis.expectedValue.toFixed(2)}x
+                    </div>
+                  </div>
+                  <div style={{
+                    backgroundColor: '#222',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                  }}>
+                    <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>ROI Potential</div>
+                    <div style={{ color: '#36d1da', fontWeight: 600 }}>
+                      {longshotAnalysis.roiMultiplier.toFixed(2)}x
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upset Angles */}
+                {longshotAnalysis.detectedAngles.length > 0 && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      marginBottom: '10px',
+                      color: '#e0e0e0',
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                    }}>
+                      <Icon name="trending_up" className="text-sm" />
+                      Upset Angles
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {longshotAnalysis.detectedAngles.map((angle, i) => (
+                        <div key={i} style={{
+                          backgroundColor: `${UPSET_ANGLE_COLORS[angle.category]}10`,
+                          border: `1px solid ${UPSET_ANGLE_COLORS[angle.category]}30`,
+                          padding: '12px',
+                          borderRadius: '8px',
+                        }}>
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '6px',
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Icon
+                                name={UPSET_ANGLE_ICONS[angle.category]}
+                                className="text-base"
+                              />
+                              <span style={{
+                                color: UPSET_ANGLE_COLORS[angle.category],
+                                fontWeight: 600,
+                              }}>
+                                {angle.name}
+                              </span>
+                            </div>
+                            <span style={{
+                              backgroundColor: UPSET_ANGLE_COLORS[angle.category],
+                              color: '#fff',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                            }}>
+                              +{angle.points} pts
+                            </span>
+                          </div>
+                          <div style={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                            {angle.evidence}
+                          </div>
+                          {angle.evidenceDetails.length > 0 && (
+                            <div style={{
+                              marginTop: '8px',
+                              paddingTop: '8px',
+                              borderTop: '1px solid #333',
+                              fontSize: '0.75rem',
+                              color: '#888',
+                            }}>
+                              {angle.evidenceDetails.map((detail, j) => (
+                                <div key={j} style={{ marginBottom: '2px' }}>• {detail}</div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Bet Recommendation */}
+                {longshotAnalysis.betRecommendation && (
+                  <div style={{
+                    backgroundColor: longshotAnalysis.classification === 'nuclear' ? '#22c55e15' : '#f59e0b15',
+                    border: `1px solid ${longshotAnalysis.classification === 'nuclear' ? '#22c55e' : '#f59e0b'}40`,
+                    padding: '12px',
+                    borderRadius: '8px',
+                    marginBottom: '12px',
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      marginBottom: '6px',
+                    }}>
+                      <span style={{ color: longshotAnalysis.classification === 'nuclear' ? '#22c55e' : '#f59e0b' }}>
+                        <Icon name="paid" className="text-base" />
+                      </span>
+                      <span style={{
+                        color: longshotAnalysis.classification === 'nuclear' ? '#22c55e' : '#f59e0b',
+                        fontWeight: 600,
+                      }}>
+                        Bet Recommendation
+                      </span>
+                    </div>
+                    <div style={{ color: '#e0e0e0', fontSize: '0.9rem' }}>
+                      {longshotAnalysis.betRecommendation}
+                    </div>
+                  </div>
+                )}
+
+                {/* Summary */}
+                <div style={{
+                  color: '#888',
+                  fontSize: '0.8rem',
+                  fontStyle: 'italic',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '6px',
+                }}>
+                  <Icon name="info" className="text-sm" />
+                  <span>{longshotAnalysis.summary}</span>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Key Factors Section */}
           <section className="modal-section">
