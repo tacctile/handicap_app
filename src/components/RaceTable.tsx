@@ -435,7 +435,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
       calculationState.calculationVersion !== prevVersionRef.current &&
       !calculationState.isCalculating
     ) {
-      addToast('Recalculated based on changes', 'success', 2000)
+      addToast('Recalculated based on changes', 'success', { duration: 2000 })
     }
     prevVersionRef.current = calculationState.calculationVersion
   }, [calculationState.calculationVersion, calculationState.isCalculating, addToast])
@@ -487,7 +487,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
   // Handle reset with toast
   const handleReset = useCallback(() => {
     resetAll()
-    addToast('All changes reset to original', 'info', 2500)
+    addToast('All changes reset to original', 'info', { duration: 2500 })
   }, [resetAll, addToast])
 
   return (
