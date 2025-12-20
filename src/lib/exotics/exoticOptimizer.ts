@@ -18,13 +18,11 @@ import {
   calculateExactaBoxCost,
   calculateExactaKeyOverCost,
   calculateTrifectaBoxCost,
-  calculateTrifectaKeyCost,
   calculateTrifectaPartWheelCost,
   calculateSuperfectaBoxCost,
   calculateSuperfectaKeyCost,
   type ExoticBetType,
   type BetStructure,
-  type ExoticCost,
   BASE_BET_OPTIONS,
   MIN_HORSES,
 } from './exoticCalculator'
@@ -124,13 +122,6 @@ const PAYOUT_MULTIPLIERS: Record<ExoticBetType, number> = {
   exacta: 1.2,
   trifecta: 2.5,
   superfecta: 8,
-}
-
-/** Base hit probability adjustments */
-const HIT_PROBABILITY_BASE: Record<ExoticBetType, number> = {
-  exacta: 0.08,
-  trifecta: 0.015,
-  superfecta: 0.002,
 }
 
 // ============================================================================
@@ -309,7 +300,7 @@ function findOptimalBaseBet(
 function generateExactaOptions(
   config: OptimizationConfig
 ): OptimizedBetOption[] {
-  const { budget, tier1Horses, tier2Horses, tier3Horses = [], fieldSize, maxBaseBet = 5 } = config
+  const { budget, tier1Horses, tier2Horses, tier3Horses = [], maxBaseBet = 5 } = config
   const options: OptimizedBetOption[] = []
   const allHorses = [...tier1Horses, ...tier2Horses, ...tier3Horses]
 

@@ -473,8 +473,6 @@ export function estimateExoticPayout(
     }
   }
 
-  const sorted = sortByOdds(horses.map(categorizeHorse))
-
   // Generate scenarios based on bet type
   let scenarios: PayoutScenario[] = []
   switch (betType) {

@@ -917,6 +917,9 @@ export function BettingRecommendations({
       overlayPercent: 0,
       evPerDollar: 0,
       specialCategory: null,
+      explanation: [`Custom ${bet.betType} with ${bet.combinations} combinations`],
+      narrative: `${bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1)} covering horses ${bet.horses.join(', ')}`,
+      scoringSources: ['exotic-builder'],
       isSelected: true,
       customAmount: bet.totalCost,
     }

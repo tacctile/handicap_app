@@ -135,16 +135,6 @@ const HIT_PROBABILITY: Record<ExoticBetType, Record<BetStructure, number>> = {
   },
 }
 
-/** Structure display names */
-const STRUCTURE_NAMES: Record<BetStructure, string> = {
-  box: 'Box',
-  key_over: 'Key Over',
-  key_under: 'Key Under',
-  wheel: 'Wheel',
-  straight: 'Straight',
-  part_wheel: 'Part Wheel',
-}
-
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
