@@ -194,11 +194,11 @@ export function HorseDetailModal({
       }
     }
 
-    // Speed figure / odds analysis
-    if (b.speedFigure.total >= SCORE_LIMITS.speedFigure * 0.8) {
-      factors.push({ icon: 'bolt', text: 'Strong public choice (low odds)', type: 'strength' })
-    } else if (b.speedFigure.total < SCORE_LIMITS.speedFigure * 0.3) {
-      factors.push({ icon: 'trending_flat', text: 'Longshot - lower public confidence', type: 'weakness' })
+    // Speed figure / class analysis
+    if (b.speedClass.total >= SCORE_LIMITS.speedClass * 0.8) {
+      factors.push({ icon: 'bolt', text: 'Strong speed figures and proven at class', type: 'strength' })
+    } else if (b.speedClass.total < SCORE_LIMITS.speedClass * 0.3) {
+      factors.push({ icon: 'trending_flat', text: 'Below par speed figures or class rise', type: 'weakness' })
     }
 
     // Pace analysis
@@ -216,13 +216,16 @@ export function HorseDetailModal({
     return factors
   }, [score.breakdown])
 
-  // Determine running style based on pace score
-  const runningStyle = useMemo(() => {
-    const paceScore = score.breakdown.pace.total
-    if (paceScore >= 28) return { style: 'Presser/Stalker', desc: 'Can rate off the pace and make a timely move' }
-    if (paceScore >= 24) return { style: 'Speed', desc: 'Prefers to be on or near the lead' }
-    return { style: 'Closer', desc: 'Comes from off the pace in the stretch' }
-  }, [score.breakdown.pace.total])
+  // Get running style description for Key Factors section
+  const runningStyleDesc = useMemo(() => {
+    const style = score.breakdown.pace.runningStyle
+    if (style === 'Early Speed' || style === 'E') return 'Prefers to be on or near the lead'
+    if (style === 'Early Presser' || style === 'EP') return 'Can rate behind speed and pounce'
+    if (style === 'Presser' || style === 'P') return 'Stalks the pace and makes a timely move'
+    if (style === 'Stalker' || style === 'S') return 'Rates mid-pack and rallies'
+    if (style === 'Closer' || style === 'C') return 'Comes from off the pace in the stretch'
+    return 'Running style unknown'
+  }, [score.breakdown.pace.runningStyle])
 
   if (!isOpen) return null
 
@@ -318,12 +321,18 @@ export function HorseDetailModal({
                   <div className="breakdown-details">
                     <div className="breakdown-row">
                       <span className="breakdown-label">Trainer Score</span>
-                      <span className="breakdown-value">{score.breakdown.connections.trainer}/25</span>
+                      <span className="breakdown-value">{score.breakdown.connections.trainer}/35</span>
                     </div>
                     <div className="breakdown-row">
                       <span className="breakdown-label">Jockey Score</span>
-                      <span className="breakdown-value">{score.breakdown.connections.jockey}/25</span>
+                      <span className="breakdown-value">{score.breakdown.connections.jockey}/15</span>
                     </div>
+                    {score.breakdown.connections.partnershipBonus > 0 && (
+                      <div className="breakdown-row">
+                        <span className="breakdown-label">Elite Partnership Bonus</span>
+                        <span className="breakdown-value" style={{ color: '#36d1da' }}>+{score.breakdown.connections.partnershipBonus}</span>
+                      </div>
+                    )}
                     <div className="breakdown-note">
                       Combined trainer + jockey rating
                     </div>
@@ -363,14 +372,28 @@ export function HorseDetailModal({
               <CategoryCard
                 icon="speed"
                 title="Speed Figures / Class"
-                score={score.breakdown.speedFigure.total}
-                maxScore={SCORE_LIMITS.speedFigure}
-                isExpanded={expandedCategories.has('speedFigure')}
-                onToggle={() => toggleCategory('speedFigure')}
+                score={score.breakdown.speedClass.total}
+                maxScore={SCORE_LIMITS.speedClass}
+                isExpanded={expandedCategories.has('speedClass')}
+                onToggle={() => toggleCategory('speedClass')}
                 details={
                   <div className="breakdown-details">
+                    <div className="breakdown-row">
+                      <span className="breakdown-label">Speed Score</span>
+                      <span className="breakdown-value">{score.breakdown.speedClass.speedScore}/30</span>
+                    </div>
+                    <div className="breakdown-row">
+                      <span className="breakdown-label">Class Score</span>
+                      <span className="breakdown-value">{score.breakdown.speedClass.classScore}/20</span>
+                    </div>
+                    {score.breakdown.speedClass.bestFigure && (
+                      <div className="breakdown-row">
+                        <span className="breakdown-label">Best Recent Figure</span>
+                        <span className="breakdown-value">{score.breakdown.speedClass.bestFigure}</span>
+                      </div>
+                    )}
                     <div className="breakdown-note">
-                      {score.breakdown.speedFigure.reasoning}
+                      {score.breakdown.speedClass.reasoning}
                     </div>
                     <div className="breakdown-hint">
                       Based on current odds as class indicator
@@ -388,6 +411,20 @@ export function HorseDetailModal({
                 onToggle={() => toggleCategory('form')}
                 details={
                   <div className="breakdown-details">
+                    <div className="breakdown-row">
+                      <span className="breakdown-label">Recent Form</span>
+                      <span className="breakdown-value">{score.breakdown.form.recentFormScore}/15</span>
+                    </div>
+                    <div className="breakdown-row">
+                      <span className="breakdown-label">Layoff</span>
+                      <span className="breakdown-value">{score.breakdown.form.layoffScore}/10</span>
+                    </div>
+                    {score.breakdown.form.consistencyBonus > 0 && (
+                      <div className="breakdown-row">
+                        <span className="breakdown-label">Consistency Bonus</span>
+                        <span className="breakdown-value" style={{ color: '#36d1da' }}>+{score.breakdown.form.consistencyBonus}</span>
+                      </div>
+                    )}
                     <div className="breakdown-note">
                       {score.breakdown.form.reasoning}
                     </div>
@@ -404,6 +441,14 @@ export function HorseDetailModal({
                 onToggle={() => toggleCategory('equipment')}
                 details={
                   <div className="breakdown-details">
+                    {score.breakdown.equipment.hasChanges && (
+                      <div className="breakdown-row">
+                        <span className="breakdown-label">Equipment Change</span>
+                        <span className="breakdown-value" style={{ color: '#36d1da' }}>
+                          <Icon name="star" className="text-sm" /> Active
+                        </span>
+                      </div>
+                    )}
                     <div className="breakdown-note">
                       {score.breakdown.equipment.reasoning}
                     </div>
@@ -422,7 +467,17 @@ export function HorseDetailModal({
                   <div className="breakdown-details">
                     <div className="breakdown-row">
                       <span className="breakdown-label">Running Style</span>
-                      <span className="breakdown-value">{runningStyle.style}</span>
+                      <span className="breakdown-value">{score.breakdown.pace.runningStyle}</span>
+                    </div>
+                    <div className="breakdown-row">
+                      <span className="breakdown-label">Pace Fit</span>
+                      <span className="breakdown-value" style={{
+                        color: score.breakdown.pace.paceFit === 'perfect' ? '#36d1da' :
+                               score.breakdown.pace.paceFit === 'good' ? '#19abb5' :
+                               score.breakdown.pace.paceFit === 'poor' ? '#ff6b6b' : 'inherit'
+                      }}>
+                        {score.breakdown.pace.paceFit.charAt(0).toUpperCase() + score.breakdown.pace.paceFit.slice(1)}
+                      </span>
                     </div>
                     <div className="breakdown-note">
                       {score.breakdown.pace.reasoning}
@@ -456,8 +511,8 @@ export function HorseDetailModal({
                 <span>Running Style Analysis</span>
               </div>
               <div className="pace-scenario-content">
-                <div className="running-style-badge">{runningStyle.style}</div>
-                <p className="pace-scenario-desc">{runningStyle.desc}</p>
+                <div className="running-style-badge">{score.breakdown.pace.runningStyle}</div>
+                <p className="pace-scenario-desc">{runningStyleDesc}</p>
               </div>
             </div>
           </section>
