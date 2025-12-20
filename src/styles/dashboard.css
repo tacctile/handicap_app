@@ -2787,6 +2787,600 @@ input:-webkit-autofill:focus {
   cursor: not-allowed;
 }
 
+/* ============================================
+   Complexity Mode Selector Styles
+   ============================================ */
+
+.complexity-mode-selector {
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.complexity-mode-buttons {
+  display: flex;
+  gap: 0;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  padding: var(--space-1);
+  border: 1px solid var(--border-subtle);
+}
+
+.complexity-mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.complexity-mode-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.complexity-mode-btn.selected {
+  background: #19abb5;
+  color: white;
+  box-shadow: 0 2px 8px rgba(25, 171, 181, 0.3);
+}
+
+.complexity-mode-label {
+  font-weight: 600;
+}
+
+.complexity-mode-description {
+  text-align: center;
+  font-size: var(--font-sm);
+  color: var(--text-tertiary);
+  margin-top: var(--space-3);
+  font-style: italic;
+}
+
+/* Responsive mode buttons */
+@media (max-width: 480px) {
+  .complexity-mode-buttons {
+    flex-direction: column;
+  }
+
+  .complexity-mode-btn {
+    padding: var(--space-3);
+  }
+}
+
+/* ============================================
+   Simple Mode Form Styles
+   ============================================ */
+
+.simple-mode-form {
+  padding: var(--space-4) 0;
+}
+
+.simple-budget-section {
+  margin-bottom: var(--space-6);
+}
+
+.simple-budget-label {
+  display: block;
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+  text-align: center;
+}
+
+.simple-budget-input-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: var(--bg-elevated);
+  border: 2px solid var(--border-prominent);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4) var(--space-6);
+  max-width: 200px;
+  margin: 0 auto;
+  transition: all 0.2s ease;
+}
+
+.simple-budget-input-wrapper:focus-within {
+  border-color: #19abb5;
+  box-shadow: 0 0 0 3px rgba(25, 171, 181, 0.15);
+}
+
+.simple-budget-prefix {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  color: #19abb5;
+}
+
+.simple-budget-input {
+  width: 100%;
+  max-width: 100px;
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.simple-budget-input::-webkit-outer-spin-button,
+.simple-budget-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.simple-style-section {
+  margin-bottom: var(--space-6);
+}
+
+.simple-style-label {
+  display: block;
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+  text-align: center;
+}
+
+.simple-style-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.simple-style-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--bg-card);
+  border: 2px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.simple-style-option:hover {
+  border-color: var(--border-prominent);
+  background: var(--bg-hover);
+}
+
+.simple-style-option.selected {
+  border-color: #19abb5;
+  background: rgba(25, 171, 181, 0.08);
+  box-shadow: 0 2px 12px rgba(25, 171, 181, 0.15);
+}
+
+.simple-style-option input {
+  display: none;
+}
+
+.simple-style-emoji {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.simple-style-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.simple-style-name {
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.simple-style-description {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.simple-style-check {
+  opacity: 0;
+  color: #19abb5;
+  transition: opacity 0.2s ease;
+}
+
+.simple-style-option.selected .simple-style-check {
+  opacity: 1;
+}
+
+.simple-style-check .material-icons {
+  font-size: 24px;
+}
+
+.simple-mode-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--text-tertiary);
+  padding: var(--space-4);
+  background: rgba(25, 171, 181, 0.05);
+  border-radius: var(--radius-lg);
+  margin-top: var(--space-4);
+}
+
+.simple-mode-hint .material-icons {
+  font-size: 18px;
+  color: #19abb5;
+}
+
+/* ============================================
+   Moderate Mode Form Styles
+   ============================================ */
+
+.moderate-mode-form {
+  padding: var(--space-4) 0;
+}
+
+.moderate-risk-slider {
+  padding: var(--space-6) var(--space-4);
+}
+
+.moderate-risk-track {
+  position: relative;
+  height: 4px;
+  background: var(--border-subtle);
+  border-radius: 2px;
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+.moderate-risk-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.moderate-risk-point {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1;
+}
+
+.moderate-risk-dot {
+  width: 20px;
+  height: 20px;
+  background: var(--bg-card);
+  border: 3px solid var(--border-prominent);
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.moderate-risk-point.selected .moderate-risk-dot {
+  background: #19abb5;
+  border-color: #19abb5;
+  transform: scale(1.2);
+  box-shadow: 0 2px 8px rgba(25, 171, 181, 0.4);
+}
+
+.moderate-risk-label {
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  margin-top: var(--space-2);
+}
+
+.moderate-risk-point.selected .moderate-risk-label {
+  color: #19abb5;
+  font-weight: 600;
+}
+
+.moderate-bet-types {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.moderate-bet-type-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.moderate-bet-type-option:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-prominent);
+}
+
+.moderate-bet-type-option.selected {
+  background: rgba(25, 171, 181, 0.08);
+  border-color: rgba(25, 171, 181, 0.3);
+}
+
+.moderate-bet-type-option input {
+  display: none;
+}
+
+.moderate-bet-type-checkbox .material-icons {
+  font-size: 22px;
+  color: var(--text-tertiary);
+}
+
+.moderate-bet-type-option.selected .moderate-bet-type-checkbox .material-icons {
+  color: #19abb5;
+}
+
+.moderate-bet-type-label {
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.moderate-expected-return {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: rgba(25, 171, 181, 0.08);
+  border: 1px solid rgba(25, 171, 181, 0.2);
+  border-radius: var(--radius-lg);
+  margin-top: var(--space-4);
+}
+
+.moderate-expected-return .material-icons {
+  font-size: 20px;
+  color: #19abb5;
+}
+
+.moderate-expected-label {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.moderate-expected-value {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: #19abb5;
+}
+
+/* ============================================
+   Bankroll Summary Card Mode-Specific Styles
+   ============================================ */
+
+.bankroll-summary-mode-badge {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.bankroll-summary-mode-badge.mode-simple {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.bankroll-summary-mode-badge.mode-moderate {
+  background: rgba(25, 171, 181, 0.15);
+  color: #19abb5;
+}
+
+.bankroll-summary-mode-badge.mode-advanced {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+}
+
+/* Simple Mode Summary Card */
+.bankroll-simple-content {
+  padding: var(--space-4) 0;
+}
+
+.bankroll-simple-main {
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+.bankroll-simple-amount {
+  display: block;
+  font-size: var(--font-3xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.bankroll-simple-per-race {
+  font-size: var(--font-sm);
+  color: var(--text-tertiary);
+  margin-top: var(--space-1);
+}
+
+.bankroll-simple-style {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+}
+
+.bankroll-simple-style-emoji {
+  font-size: 24px;
+}
+
+.bankroll-simple-style-name {
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Mobile simple/moderate summary */
+.bankroll-simple-summary,
+.bankroll-moderate-summary {
+  padding: var(--space-3);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+}
+
+.bankroll-simple-row,
+.bankroll-moderate-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+}
+
+.bankroll-simple-row:not(:last-child),
+.bankroll-moderate-row:not(:last-child) {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.bankroll-simple-label,
+.bankroll-moderate-label {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.bankroll-simple-value,
+.bankroll-moderate-value {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.bankroll-moderate-value.types {
+  max-width: 60%;
+  text-align: right;
+  font-size: var(--font-xs);
+}
+
+.bankroll-moderate-value.risk-conservative {
+  color: #22c55e;
+}
+
+.bankroll-moderate-value.risk-moderate {
+  color: #eab308;
+}
+
+.bankroll-moderate-value.risk-aggressive {
+  color: #ef4444;
+}
+
+/* Moderate Mode Summary Card */
+.bankroll-moderate-content {
+  padding: var(--space-4) 0;
+}
+
+.bankroll-moderate-main {
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+.bankroll-moderate-amount {
+  display: block;
+  font-size: var(--font-3xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.bankroll-moderate-per-race {
+  font-size: var(--font-sm);
+  color: var(--text-tertiary);
+  margin-top: var(--space-1);
+}
+
+.bankroll-moderate-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+}
+
+.bankroll-moderate-detail {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.bankroll-moderate-detail .material-icons {
+  font-size: 18px;
+  color: var(--text-tertiary);
+}
+
+.bankroll-moderate-detail-label {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.bankroll-moderate-detail-value {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.bankroll-moderate-detail-value.risk-conservative {
+  color: #22c55e;
+}
+
+.bankroll-moderate-detail-value.risk-moderate {
+  color: #eab308;
+}
+
+.bankroll-moderate-detail-value.risk-aggressive {
+  color: #ef4444;
+}
+
+/* Mobile collapse badge for mode */
+.bankroll-summary-collapse-badge.mode-simple {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.bankroll-summary-collapse-badge.mode-moderate {
+  background: rgba(25, 171, 181, 0.15);
+  color: #19abb5;
+}
+
+.bankroll-summary-collapse-badge.mode-advanced {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+}
+
 /* Bankroll note in betting recommendations */
 .bankroll-note {
   display: flex;
