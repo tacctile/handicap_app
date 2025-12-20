@@ -145,10 +145,10 @@ function createMockHorse(overrides: Partial<HorseEntry> = {}): HorseEntry {
     medication: {
       lasix: false,
       lasixFirstTime: false,
+      lasixOff: false,
       bute: false,
-      buteFirstTime: false,
-      adjunct: false,
-      description: '',
+      other: [],
+      raw: '',
     },
     morningLineOdds: '15-1',
     morningLineDecimal: 16,
@@ -168,7 +168,6 @@ function createMockHorse(overrides: Partial<HorseEntry> = {}): HorseEntry {
     rawLine: '',
     turfWins: 0,
     distanceWins: 1,
-    sprintWins: 1,
     ...overrides,
   } as HorseEntry
 }
@@ -425,7 +424,7 @@ describe('Diamond Detector', () => {
       ])
       const header = createMockRaceHeader()
 
-      const summary = analyzeRaceDiamonds(horses, scores, header, (i, defaultOdds) => defaultOdds)
+      const summary = analyzeRaceDiamonds(horses, scores, header, (_i, defaultOdds) => defaultOdds)
 
       expect(summary.hasDiamonds).toBe(false)
       expect(summary.diamondCount).toBe(0)
@@ -438,7 +437,7 @@ describe('Diamond Detector', () => {
       const scores = new Map<number, HorseScore>([[0, createMockScore(180)]])
       const header = createMockRaceHeader({ raceNumber: 5, trackCode: 'SAR' })
 
-      const summary = analyzeRaceDiamonds(horses, scores, header, (i, defaultOdds) => defaultOdds)
+      const summary = analyzeRaceDiamonds(horses, scores, header, (_i, defaultOdds) => defaultOdds)
 
       expect(summary.raceNumber).toBe(5)
       expect(summary.trackCode).toBe('SAR')
@@ -451,7 +450,7 @@ describe('Diamond Detector', () => {
       ])
       const header = createMockRaceHeader()
 
-      const summary = analyzeRaceDiamonds(horses, scores, header, (i, defaultOdds) => defaultOdds)
+      const summary = analyzeRaceDiamonds(horses, scores, header, (_i, defaultOdds) => defaultOdds)
 
       expect(summary.totalHorses).toBe(1)
       expect(summary.diamondCount).toBe(0)
@@ -867,34 +866,14 @@ describe('Perfect Storm Detection', () => {
         medication: {
           lasix: true,
           lasixFirstTime: true,
+          lasixOff: false,
           bute: false,
-          buteFirstTime: false,
-          adjunct: false,
-          description: 'L',
+          other: [],
+          raw: 'L',
         },
       })
-      const score = createMockScore(130, {
-        classScore: {
-          total: 15,
-          analysis: {
-            movement: {
-              direction: 'drop',
-              levelsDifference: 5,
-              description: 'Major class drop',
-            },
-            provenAtLevel: { hasWon: true, winsAtLevel: 3, hasPlaced: true, itmAtLevel: 7 },
-            hiddenDrops: [{ description: 'Purse drop', explanation: 'From $75K to $25K' }],
-            currentClass: 'CLM 25K',
-            lastRaceClass: 'CLM 50K',
-          },
-          provenAtLevelScore: 5,
-          classMovementScore: 6,
-          hiddenDropsScore: 4,
-          trackTierScore: 0,
-          reasoning: 'Major drop',
-          breakdown: [],
-        },
-      })
+      // Use the default mock score which has class drop configured
+      const score = createMockScore(130)
       const header = createMockRaceHeader()
 
       const result = analyzeDiamondCandidate(horse, 0, score, [horse], header, '15-1')
@@ -908,8 +887,8 @@ describe('Perfect Storm Detection', () => {
     it('should handle workout and trip analysis', () => {
       const horse = createMockHorse({
         workouts: [
-          { date: new Date().toISOString(), distance: '5f', time: '1:00', track: 'SAR', surface: 'dirt', isBullet: true, ranking: 1 },
-          { date: new Date().toISOString(), distance: '4f', time: '48', track: 'SAR', surface: 'dirt', isBullet: false, ranking: 3 },
+          { date: new Date().toISOString(), distanceFurlongs: 5, distance: '5f', timeSeconds: 60, timeFormatted: '1:00', track: 'SAR', surface: 'dirt', trackCondition: 'fast', type: 'breeze', isBullet: true, fromGate: false, ranking: '1 of 20', rankNumber: 1, totalWorks: 20, notes: '' },
+          { date: new Date().toISOString(), distanceFurlongs: 4, distance: '4f', timeSeconds: 48, timeFormatted: ':48', track: 'SAR', surface: 'dirt', trackCondition: 'fast', type: 'handily', isBullet: false, fromGate: false, ranking: '3 of 15', rankNumber: 3, totalWorks: 15, notes: '' },
         ],
       })
       const score = createMockScore(130)
@@ -927,29 +906,27 @@ describe('Perfect Storm Detection', () => {
       const horse = createMockHorse({
         lifetimeStarts: 3, // Lightly raced
       })
+      // Use type assertion for complex breeding score mock
       const score = createMockScore(130, {
         breedingScore: {
           wasApplied: true,
           total: 45,
           sireDetails: {
             score: 20,
-            profile: { name: 'Top Sire', tier: 'elite' },
+            profile: { name: 'Top Sire' } as any,
             tierLabel: 'Elite',
-            tierColor: '#FFD700',
             reasoning: 'Elite sire',
           },
           damDetails: {
             score: 15,
             profile: null,
-            tierLabel: '',
-            tierColor: '',
+            tierLabel: null,
             reasoning: '',
           },
           damsireDetails: {
             score: 10,
             profile: null,
-            tierLabel: '',
-            tierColor: '',
+            tierLabel: null,
             reasoning: '',
           },
           bonuses: {
@@ -959,7 +936,7 @@ describe('Perfect Storm Detection', () => {
             total: 0,
             reasons: [],
           },
-        },
+        } as any,
       })
       const header = createMockRaceHeader()
 

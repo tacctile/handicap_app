@@ -21,14 +21,12 @@ import {
   analyzeOverlay,
   parseOddsToDecimal,
   calculateEV,
-  type OverlayAnalysis,
 } from '../scoring/overlayAnalysis'
 import { getSpeedBias, getPostPositionBias } from '../trackIntelligence'
 import { parseRunningStyle, analyzePaceScenario } from '../scoring/paceAnalysis'
 import { getTrainerProfile, getTrainerPattern } from '../equipment/trainerPatterns'
 import { logger } from '../../services/logging'
 import {
-  type PerfectStormFactorType,
   type DetectedFactor,
   type DiamondAnalysis,
   type RaceDiamondSummary,
@@ -402,7 +400,7 @@ function detectBreedingPotentialFactor(
  */
 function detectTrainerPatternFactor(
   horse: HorseEntry,
-  raceHeader: RaceHeader
+  _raceHeader: RaceHeader
 ): DetectedFactor | null {
   const profile = getTrainerProfile(horse.trainerName)
   if (!profile) return null
@@ -421,9 +419,9 @@ function detectTrainerPatternFactor(
     if (pattern.sampleSize >= 15 && pattern.winRate >= 20) {
       if (pattern.winRate > bestPatternRate) {
         bestPatternRate = pattern.winRate
-        bestPatternName = pattern.type.replace(/_/g, ' ')
+        bestPatternName = pattern.changeType.replace(/_/g, ' ')
       }
-      evidenceDetails.push(`${pattern.type.replace(/_/g, ' ')}: ${pattern.winRate}% (${pattern.sampleSize} starts)`)
+      evidenceDetails.push(`${pattern.changeType.replace(/_/g, ' ')}: ${pattern.winRate}% (${pattern.sampleSize} starts)`)
     }
   }
 
@@ -511,8 +509,10 @@ function detectDistanceChangeFactor(
   } else {
     // Cutting back
     evidenceDetails.push(`Cutting back: ${lastRace.distanceFurlongs}f → ${raceHeader.distanceFurlongs}f`)
-    if (horse.sprintWins > 0) {
-      evidenceDetails.push(`Has ${horse.sprintWins} sprint wins`)
+    // Calculate sprint wins as lifetime wins minus distance/route wins
+    const sprintWins = horse.lifetimeWins - horse.distanceWins
+    if (sprintWins > 0) {
+      evidenceDetails.push(`Has ${sprintWins} sprint wins`)
       favorable = true
     }
   }
@@ -627,7 +627,7 @@ function generateStory(factors: DetectedFactor[]): string {
  */
 function generateBetRecommendation(
   confidence: number,
-  overlayPercent: number,
+  _overlayPercent: number,
   oddsDisplay: string
 ): string {
   if (confidence >= 80) {

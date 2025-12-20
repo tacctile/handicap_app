@@ -45,8 +45,6 @@ import {
   type DiamondAnalysis,
   getDiamondColor,
   getDiamondBgColor,
-  FACTOR_ICONS,
-  FACTOR_COLORS,
 } from '../lib/diamonds'
 
 interface RaceTableProps {

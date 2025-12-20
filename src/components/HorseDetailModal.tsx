@@ -602,7 +602,7 @@ export function HorseDetailModal({
                     alignItems: 'center',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Icon name="trending_up" className="text-base" style={{ color: '#22c55e' }} />
+                      <span className="material-icons text-base" style={{ color: '#22c55e' }}>trending_up</span>
                       <span style={{ color: '#e0e0e0', fontWeight: 600 }}>ROI Potential</span>
                     </div>
                     <span style={{
