@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sidebar, TopBar, MobileNav } from './layout'
-import { RaceOverviewCard, EmptyStateTable, BettingPanel } from './cards'
+import { RaceOverviewCard, EmptyStateTable } from './cards'
 import { FileUpload } from './FileUpload'
 import { RaceTable } from './RaceTable'
 import { LoadingState } from './LoadingState'
@@ -149,17 +149,6 @@ export function Dashboard({
     }
   }, [parsedData, selectedRaceIndex, raceState.trackCondition])
 
-  // Mock betting recommendations (would come from actual betting logic)
-  const bettingRecommendations = useMemo(() => {
-    if (!hasData) return undefined
-
-    // This would integrate with actual betting recommendation logic
-    return {
-      tier1: { horses: [], confidence: 0 },
-      tier2: { horses: [], confidence: 0 },
-      tier3: { horses: [], confidence: 0 },
-    }
-  }, [hasData])
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -326,31 +315,51 @@ export function Dashboard({
               </AnimatePresence>
             </section>
 
-            {/* RIGHT COLUMN - Betting Recommendations */}
-            <aside className="dashboard-column right" aria-label="Betting recommendations">
-              {/* Bankroll Summary Card - Mobile collapsible */}
-              <div className="bankroll-summary-mobile-wrapper">
-                <BankrollSummaryCard
-                  bankroll={bankroll}
-                  onOpenSettings={openBankrollSettings}
-                  variant="mobile"
-                />
-              </div>
-
-              {/* Bankroll Summary Card - Desktop full version */}
-              <div className="bankroll-summary-desktop-wrapper">
-                <BankrollSummaryCard
-                  bankroll={bankroll}
-                  onOpenSettings={openBankrollSettings}
-                  variant="full"
-                />
-              </div>
-
-              <BettingPanel
-                recommendations={bettingRecommendations}
-                overallConfidence={hasData ? 0 : 0}
-                isLoading={isLoading}
+            {/* RIGHT COLUMN - Bankroll & Betting Overview */}
+            <aside className="dashboard-column right" aria-label="Betting overview">
+              {/* Bankroll Summary Card - Full version */}
+              <BankrollSummaryCard
+                bankroll={bankroll}
+                onOpenSettings={openBankrollSettings}
+                variant="full"
               />
+
+              {/* Quick Tips Card */}
+              {hasData && (
+                <FadeIn delay={0.2}>
+                  <div className="betting-tips-card">
+                    <div className="tips-header">
+                      <span className="material-icons">lightbulb</span>
+                      <span>Quick Tips</span>
+                    </div>
+                    <ul className="tips-list">
+                      <li>
+                        <span className="material-icons">check_circle</span>
+                        <span>Select bets from the race table below</span>
+                      </li>
+                      <li>
+                        <span className="material-icons">check_circle</span>
+                        <span>Use presets for quick selections</span>
+                      </li>
+                      <li>
+                        <span className="material-icons">check_circle</span>
+                        <span>Copy bet slip to share at the window</span>
+                      </li>
+                    </ul>
+                  </div>
+                </FadeIn>
+              )}
+
+              {/* Session Summary when no data */}
+              {!hasData && (
+                <FadeIn delay={0.2}>
+                  <div className="betting-empty-state">
+                    <span className="material-icons betting-empty-icon">casino</span>
+                    <h4>Ready to Bet</h4>
+                    <p>Upload race data to see betting recommendations and track your wagers.</p>
+                  </div>
+                </FadeIn>
+              )}
             </aside>
           </div>
 
