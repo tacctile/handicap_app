@@ -843,8 +843,8 @@ export function BettingRecommendations({
           score: h.score.total,
           confidence: Math.min(100, 40 + (h.score.total / 240) * 60),
           tier,
-          estimatedWinProb: h.score.breakdown.pace?.winProbability || undefined,
-          overlayPercent: h.score.breakdown.speedClass?.overlayPercent || 0,
+          estimatedWinProb: undefined,
+          overlayPercent: 0,
         }
       })
     )

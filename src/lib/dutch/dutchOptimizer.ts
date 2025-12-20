@@ -23,7 +23,7 @@ import {
   calculateImpliedProbability,
   parseOddsToDecimal,
 } from './dutchCalculator'
-import { validateDutchBook, analyzeEdge, type EdgeClassification } from './dutchValidator'
+import { analyzeEdge, type EdgeClassification } from './dutchValidator'
 
 // ============================================================================
 // TYPES

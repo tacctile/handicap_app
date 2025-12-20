@@ -5,7 +5,7 @@
  * Target: 85%+ coverage
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import {
   // Calculator
   calculateDutchBook,
@@ -17,20 +17,14 @@ import {
   roundToNearest,
   findMaxViableStake,
   type DutchHorse,
-  type DutchConfig,
-  MINIMUM_TOTAL_STAKE,
-  MAX_DUTCH_HORSES,
 } from '../dutchCalculator'
 import {
   // Validator
   validateDutchBook,
   validateHorse,
-  validateDutchResult,
   analyzeEdge,
   classifyEdge,
   canFormProfitableDutch,
-  calculateMinimumViableStake,
-  EDGE_THRESHOLDS,
 } from '../dutchValidator'
 import {
   // Optimizer
@@ -45,7 +39,6 @@ import {
   // Display
   generateDutchSummary,
   generateBetInstruction,
-  generateFullDutchDisplay,
   generateDutchExplanation,
   formatCurrency,
   formatCurrencyForWindow,
@@ -54,8 +47,6 @@ import {
 } from '../dutchDisplay'
 import {
   // Settings
-  loadDutchSettings,
-  saveDutchSettings,
   mergeDutchSettings,
   validateDutchSettings,
   getDutchPresetForRisk,
