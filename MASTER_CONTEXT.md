@@ -984,8 +984,23 @@ src/docs/
 ├── EDGE_CASE_PROTOCOLS.md     # Diamond, Nuclear, Lightly Raced, Late-Breaking
 ├── BETTING_TIERS.md           # Three-tier structure, bet construction
 └── TRACK_INTELLIGENCE.md      # Track schema, integration
+
 ```
 
+## Enterprise Quality Standards
+
+*Applies to ALL code written in this project.*
+
+- All new functions must have error handling (try/catch with logging)
+- All external inputs must be validated/sanitized before use
+- All new modules must include corresponding test file in src/__tests__/
+- No console.log in production code — use logging service
+- No 'any' types — explicit TypeScript typing required
+- All async operations must handle failure states
+- New components must be wrapped in ErrorBoundary or handle errors gracefully
+- Code must pass TypeScript strict mode
+- Follow existing patterns in codebase — don't introduce new paradigms without justification
+- 
 ---
 
 *End of Section 4*
