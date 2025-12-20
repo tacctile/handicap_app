@@ -261,6 +261,7 @@ export function Dashboard({
                             race={race}
                             raceState={raceState}
                             bankroll={bankroll}
+                            onOpenBankrollSettings={openBankrollSettings}
                           />
                         </StaggerItem>
                       ))}
