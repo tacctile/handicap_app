@@ -24,6 +24,11 @@ import {
   getEquipmentImpactSummary,
   getImpactColor,
   getImpactIcon,
+  // Class analysis imports
+  getClassMovementColor,
+  getClassMovementIcon,
+  getClassLevelAbbrev,
+  getHiddenDropsSummary,
   type HorseScore,
   type OverlayAnalysis,
   type ValuePlay,
@@ -278,6 +283,87 @@ const EquipmentBadge = memo(function EquipmentBadge({ horse }: EquipmentBadgePro
       </span>
       {isPositive && <Icon name="arrow_upward" className="equipment-badge-arrow" />}
       {totalImpact < 0 && <Icon name="arrow_downward" className="equipment-badge-arrow" />}
+    </div>
+  )
+})
+
+// Class movement badge component for displaying class changes
+interface ClassBadgeProps {
+  score: HorseScore
+}
+
+const ClassBadge = memo(function ClassBadge({ score }: ClassBadgeProps) {
+  if (!score.classScore) {
+    return <span className="text-white/30">—</span>
+  }
+
+  const { analysis } = score.classScore
+  const direction = analysis.movement.direction
+  const color = getClassMovementColor(direction)
+  const icon = getClassMovementIcon(direction)
+  const hasHiddenDrops = analysis.hiddenDrops.length > 0
+  const hiddenDropsSummary = getHiddenDropsSummary(analysis.hiddenDrops)
+
+  // Build tooltip
+  const tooltipParts = [
+    `${direction === 'drop' ? 'Dropping' : direction === 'rise' ? 'Rising' : direction === 'lateral' ? 'Same class' : 'First start'}`,
+  ]
+
+  if (analysis.lastRaceClass) {
+    tooltipParts.push(`From: ${getClassLevelAbbrev(analysis.lastRaceClass)}`)
+  }
+  tooltipParts.push(`To: ${getClassLevelAbbrev(analysis.currentClass)}`)
+
+  if (hasHiddenDrops) {
+    tooltipParts.push(`Hidden edges: ${hiddenDropsSummary}`)
+  }
+
+  if (analysis.provenAtLevel.hasWon) {
+    tooltipParts.push(`Proven: ${analysis.provenAtLevel.winsAtLevel}W at level`)
+  } else if (analysis.provenAtLevel.hasPlaced) {
+    tooltipParts.push(`Proven: ${analysis.provenAtLevel.itmAtLevel} ITM`)
+  }
+
+  tooltipParts.push(`Class Score: ${score.classScore.total}/20`)
+
+  return (
+    <div
+      className="class-badge"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+        backgroundColor: `${color}15`,
+        borderColor: `${color}40`,
+        color: color,
+        padding: '4px 8px',
+        borderRadius: '6px',
+        border: '1px solid',
+        fontSize: '0.75rem',
+        fontWeight: 600,
+        cursor: 'default',
+      }}
+      title={tooltipParts.join('\n')}
+    >
+      <span style={{ fontSize: '0.9rem' }}>{icon}</span>
+      <span>{getClassLevelAbbrev(analysis.currentClass)}</span>
+      {hasHiddenDrops && (
+        <span style={{
+          backgroundColor: '#22c55e',
+          color: '#fff',
+          borderRadius: '50%',
+          width: '14px',
+          height: '14px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '0.6rem',
+          fontWeight: 700,
+          marginLeft: '2px',
+        }}>
+          {analysis.hiddenDrops.length}
+        </span>
+      )}
     </div>
   )
 })
@@ -737,6 +823,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
               <th className="w-20 text-center">Score</th>
               <th className="w-16 text-center">PP</th>
               <th className="text-left">Horse</th>
+              <th className="w-24 text-center hide-on-small" title="Class movement (↓drop ↑rise →lateral)">Class</th>
               <th className="w-20 text-center hide-on-small" title="Equipment changes">Equip</th>
               <th className="text-left hide-on-small">Trainer</th>
               <th className="text-left hide-on-small">Jockey</th>
@@ -788,6 +875,9 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                   </td>
                   <td className={`font-medium ${scratched ? 'horse-name-scratched' : 'text-foreground'}`}>
                     {horse.horseName}
+                  </td>
+                  <td className="text-center hide-on-small">
+                    {!scratched ? <ClassBadge score={score} /> : <span className="text-white/30">—</span>}
                   </td>
                   <td className="text-center hide-on-small">
                     {!scratched ? <EquipmentBadge horse={horse} /> : <span className="text-white/30">—</span>}
@@ -907,6 +997,18 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                       <span className="mobile-detail-label">T:</span> {horse.trainerName}
                     </span>
                   </div>
+                  {/* Class info row for mobile */}
+                  {!scratched && (
+                    <div className="mobile-class-row" style={{
+                      marginTop: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}>
+                      <span style={{ color: '#888', fontSize: '0.75rem' }}>Class:</span>
+                      <ClassBadge score={score} />
+                    </div>
+                  )}
                   {/* Overlay info row for mobile */}
                   {!scratched && overlay && (
                     <div className="mobile-overlay-row">
