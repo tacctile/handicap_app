@@ -1,0 +1,20 @@
+# Code Owners for Handicap App
+# These owners will be automatically requested for review on pull requests
+
+# Default owner for everything in the repo
+* @tacctile
+
+# Core application code
+/src/ @tacctile
+
+# Configuration files
+/*.json @tacctile
+/*.ts @tacctile
+/*.js @tacctile
+
+# GitHub workflows and configuration
+/.github/ @tacctile
+
+# Documentation
+/*.md @tacctile
+/src/docs/ @tacctile

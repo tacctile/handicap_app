@@ -1,0 +1,103 @@
+name: Code Quality
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  bundle-size:
+    name: Check Bundle Size
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Check bundle size
+        run: |
+          # Get total size of JS files in dist
+          BUNDLE_SIZE=$(find dist -name "*.js" -exec du -cb {} + | tail -1 | cut -f1)
+          BUNDLE_SIZE_KB=$((BUNDLE_SIZE / 1024))
+
+          echo "Total JS bundle size: ${BUNDLE_SIZE_KB}KB"
+
+          # Warn if over 750KB
+          if [ $BUNDLE_SIZE_KB -gt 750 ]; then
+            echo "::warning::Bundle size (${BUNDLE_SIZE_KB}KB) exceeds 750KB threshold!"
+            echo "Consider code splitting or removing unused dependencies."
+          else
+            echo "Bundle size is within acceptable limits."
+          fi
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for console.log statements
+        run: |
+          echo "Checking for console.log statements in source files..."
+
+          # Search for console.log in src/ excluding test files
+          CONSOLE_LOGS=$(grep -rn "console\.log" --include="*.ts" --include="*.tsx" src/ \
+            --exclude-dir="__tests__" \
+            --exclude="*.test.ts" \
+            --exclude="*.test.tsx" \
+            --exclude="*.spec.ts" \
+            --exclude="*.spec.tsx" || true)
+
+          if [ -n "$CONSOLE_LOGS" ]; then
+            echo "::warning::Found console.log statements in source code:"
+            echo "$CONSOLE_LOGS"
+            echo ""
+            echo "Consider using the logging service instead of console.log in production code."
+          else
+            echo "No console.log statements found in source files."
+          fi
+
+      - name: Check for TypeScript 'any' usage
+        run: |
+          echo "Checking for 'any' type usage in source files..."
+
+          # Search for explicit 'any' type annotations
+          ANY_USAGE=$(grep -rn ": any" --include="*.ts" --include="*.tsx" src/ \
+            --exclude-dir="__tests__" \
+            --exclude="*.test.ts" \
+            --exclude="*.test.tsx" \
+            --exclude="*.spec.ts" \
+            --exclude="*.spec.tsx" || true)
+
+          # Also check for 'as any' assertions
+          AS_ANY=$(grep -rn "as any" --include="*.ts" --include="*.tsx" src/ \
+            --exclude-dir="__tests__" \
+            --exclude="*.test.ts" \
+            --exclude="*.test.tsx" \
+            --exclude="*.spec.ts" \
+            --exclude="*.spec.tsx" || true)
+
+          if [ -n "$ANY_USAGE" ] || [ -n "$AS_ANY" ]; then
+            echo "::warning::Found 'any' type usage in source code:"
+            if [ -n "$ANY_USAGE" ]; then
+              echo "$ANY_USAGE"
+            fi
+            if [ -n "$AS_ANY" ]; then
+              echo "$AS_ANY"
+            fi
+            echo ""
+            echo "Consider using explicit TypeScript types instead of 'any'."
+          else
+            echo "No 'any' type usage found in source files."
+          fi
