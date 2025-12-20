@@ -16,8 +16,16 @@ import {
   type GeneratedBet,
   type BetGeneratorResult,
 } from '../lib/recommendations'
+import {
+  optimizeExoticBet,
+  generateComparisonTable,
+  type ExoticBetType,
+  type OptimizationResult,
+  type HorseTier,
+} from '../lib/exotics'
 import type { UseBankrollReturn } from '../hooks/useBankroll'
 import { BankrollSummaryCard } from './BankrollSummaryCard'
+import { ExoticBuilderModal, type ExoticBetResult } from './ExoticBuilderModal'
 
 interface BettingRecommendationsProps {
   horses: Array<{ horse: HorseEntry; index: number; score: HorseScore }>
@@ -603,6 +611,10 @@ export function BettingRecommendations({
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null)
+  const [isExoticOptimizerOpen, setIsExoticOptimizerOpen] = useState(false)
+  const [isExoticBuilderOpen, setIsExoticBuilderOpen] = useState(false)
+  const [exoticBudget, setExoticBudget] = useState(20)
+  const [selectedExoticType, setSelectedExoticType] = useState<ExoticBetType>('exacta')
 
   // Check if Kelly Criterion is enabled
   const kellyEnabled = useMemo(() => isKellyEnabled(bankroll), [bankroll])
@@ -740,6 +752,63 @@ export function BettingRecommendations({
     return { min, max }
   }, [selectedBets])
 
+  // Convert horses to HorseTier format for exotic optimizer
+  const horseTiers = useMemo((): HorseTier[] => {
+    return horses.map(h => {
+      let tier: 1 | 2 | 3 = 3
+      if (h.score.total >= 180) tier = 1
+      else if (h.score.total >= 160) tier = 2
+
+      const oddsMatch = h.horse.morningLineOdds.match(/(\d+(?:\.\d+)?)[/-](\d+(?:\.\d+)?)?/)
+      const odds = oddsMatch ? parseFloat(oddsMatch[1]) / (oddsMatch[2] ? parseFloat(oddsMatch[2]) : 1) : 5
+      const winProb = 1 / (odds + 1)
+
+      return {
+        programNumber: h.horse.programNumber,
+        horseName: h.horse.horseName,
+        tier,
+        winProbability: winProb,
+        odds,
+        confidence: Math.min(100, 40 + (h.score.total / 240) * 60),
+      }
+    })
+  }, [horses])
+
+  // Exotic optimization results
+  const exoticOptimization = useMemo((): OptimizationResult | null => {
+    const tier1 = horseTiers.filter(h => h.tier === 1)
+    const tier2 = horseTiers.filter(h => h.tier === 2)
+    const tier3 = horseTiers.filter(h => h.tier === 3)
+
+    if (tier1.length + tier2.length < 2) return null
+
+    return optimizeExoticBet({
+      budget: exoticBudget,
+      tier1Horses: tier1,
+      tier2Horses: tier2,
+      tier3Horses: tier3,
+      betType: selectedExoticType,
+      fieldSize: horses.length,
+    })
+  }, [horseTiers, exoticBudget, selectedExoticType, horses.length])
+
+  // Exotic comparison table
+  const exoticComparison = useMemo(() => {
+    if (horseTiers.length < 2) return null
+
+    return generateComparisonTable({
+      budget: exoticBudget,
+      horses: horseTiers.filter(h => h.tier <= 2).slice(0, 6).map(h => ({
+        programNumber: h.programNumber,
+        horseName: h.horseName,
+        odds: h.odds,
+        confidence: h.confidence,
+      })),
+      fieldSize: horses.length,
+      maxOptions: 6,
+    })
+  }, [horseTiers, exoticBudget, horses.length])
+
   const dailyBudget = bankroll.getDailyBudget()
   const spentToday = bankroll.getSpentToday()
   const remainingBudget = dailyBudget - spentToday - totalCost
@@ -828,6 +897,34 @@ export function BettingRecommendations({
     setTimeout(() => setCopiedMessage(null), 2000)
   }, [])
 
+  const handleExoticBetAdd = useCallback((bet: ExoticBetResult) => {
+    // Add exotic bet to selectable bets
+    const newBet: SelectableBet = {
+      id: `exotic-${bet.betType}-${Date.now()}`,
+      tier: 'tier1',
+      typeName: `${bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1)} ${bet.structure.replace('_', ' ')}`,
+      description: `Custom ${bet.betType}: ${bet.horses.map(h => `#${h}`).join(', ')}`,
+      type: bet.betType === 'exacta' ? 'exacta_box' : bet.betType === 'trifecta' ? 'trifecta_box' : 'superfecta',
+      horses: [],
+      horseNumbers: bet.horses,
+      amount: bet.baseBet,
+      totalCost: bet.totalCost,
+      windowInstruction: `"${bet.windowInstruction}"`,
+      potentialReturn: { min: bet.payoutRange.min, max: bet.payoutRange.max },
+      confidence: 65,
+      icon: bet.betType === 'exacta' ? 'swap_vert' : bet.betType === 'trifecta' ? 'view_list' : 'format_list_numbered',
+      isRecommended: false,
+      overlayPercent: 0,
+      evPerDollar: 0,
+      specialCategory: null,
+      isSelected: true,
+      customAmount: bet.totalCost,
+    }
+    setSelectableBets(prev => [newBet, ...prev])
+    setCopiedMessage('Exotic bet added!')
+    setTimeout(() => setCopiedMessage(null), 2000)
+  }, [])
+
   // Check if we have any recommendations
   if (generatorResult.allBets.length === 0) {
     return null
@@ -856,6 +953,172 @@ export function BettingRecommendations({
 
       {/* Quick Preset Buttons */}
       <QuickPresetButtons onPresetClick={handlePresetClick} isMobile={isMobile} />
+
+      {/* Exotic Optimizer Section */}
+      {horseTiers.length >= 2 && (
+        <div className="exotic-optimizer-section">
+          <button
+            className="exotic-optimizer-toggle"
+            onClick={() => setIsExoticOptimizerOpen(!isExoticOptimizerOpen)}
+          >
+            <span className="material-icons">tune</span>
+            <span>Optimize Exotics</span>
+            <span className={`material-icons chevron ${isExoticOptimizerOpen ? 'open' : ''}`}>
+              expand_more
+            </span>
+          </button>
+
+          <AnimatePresence>
+            {isExoticOptimizerOpen && (
+              <motion.div
+                className="exotic-optimizer-panel"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {/* Budget Slider */}
+                <div className="exotic-control-group">
+                  <label className="exotic-control-label">
+                    Budget for exotic: {formatCurrency(exoticBudget)}
+                  </label>
+                  <input
+                    type="range"
+                    className="exotic-budget-slider"
+                    min={5}
+                    max={100}
+                    step={5}
+                    value={exoticBudget}
+                    onChange={(e) => setExoticBudget(Number(e.target.value))}
+                  />
+                  <div className="exotic-budget-labels">
+                    <span>$5</span>
+                    <span>$100</span>
+                  </div>
+                </div>
+
+                {/* Bet Type Selector */}
+                <div className="exotic-control-group">
+                  <label className="exotic-control-label">Bet Type</label>
+                  <div className="exotic-type-buttons">
+                    {(['exacta', 'trifecta', 'superfecta'] as ExoticBetType[]).map(type => (
+                      <button
+                        key={type}
+                        className={`exotic-type-btn ${selectedExoticType === type ? 'active' : ''}`}
+                        onClick={() => setSelectedExoticType(type)}
+                      >
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Optimization Result */}
+                {exoticOptimization && exoticOptimization.isValid && exoticOptimization.recommended && (
+                  <div className="exotic-recommendation">
+                    <div className="exotic-recommendation-header">
+                      <span className="material-icons">verified</span>
+                      <span>Recommended</span>
+                    </div>
+                    <div className="exotic-recommendation-content">
+                      <p className="exotic-recommendation-title">
+                        {exoticOptimization.recommended.description}
+                      </p>
+                      <div className="exotic-recommendation-stats">
+                        <div className="exotic-stat">
+                          <span className="exotic-stat-label">Cost</span>
+                          <span className="exotic-stat-value">
+                            {formatCurrency(exoticOptimization.recommended.cost.total)}
+                          </span>
+                        </div>
+                        <div className="exotic-stat">
+                          <span className="exotic-stat-label">Combos</span>
+                          <span className="exotic-stat-value">
+                            {exoticOptimization.recommended.cost.combinations}
+                          </span>
+                        </div>
+                        <div className="exotic-stat">
+                          <span className="exotic-stat-label">Hit %</span>
+                          <span className="exotic-stat-value">
+                            {(exoticOptimization.recommended.hitProbability * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        className="exotic-use-btn"
+                        onClick={() => {
+                          handleExoticBetAdd({
+                            betType: selectedExoticType,
+                            structure: exoticOptimization.recommended!.structure,
+                            horses: exoticOptimization.recommended!.firstHorses,
+                            baseBet: exoticOptimization.recommended!.baseBet,
+                            totalCost: exoticOptimization.recommended!.cost.total,
+                            combinations: exoticOptimization.recommended!.cost.combinations,
+                            payoutRange: {
+                              min: 0,
+                              max: 0,
+                              likely: 0,
+                            },
+                            windowInstruction: `Race ${raceNumber}, $${exoticOptimization.recommended!.baseBet} ${selectedExoticType.toUpperCase()} ${exoticOptimization.recommended!.structure === 'box' ? 'BOX' : 'KEY'} ${exoticOptimization.recommended!.firstHorses.join(', ')}`,
+                          })
+                        }}
+                      >
+                        <span className="material-icons">add</span>
+                        Use This Bet
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Comparison Table */}
+                {exoticComparison && exoticComparison.isValid && exoticComparison.rows.length > 0 && (
+                  <div className="exotic-comparison-section">
+                    <div className="exotic-comparison-header">
+                      <span className="material-icons">compare</span>
+                      <span>Compare Options</span>
+                    </div>
+                    <div className="exotic-comparison-table-wrapper">
+                      <table className="exotic-comparison-table">
+                        <thead>
+                          <tr>
+                            <th>Type</th>
+                            <th>Cost</th>
+                            <th>Combos</th>
+                            <th>EV</th>
+                            <th>Hit%</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {exoticComparison.rows.slice(0, 5).map(row => (
+                            <tr key={row.id} className={row.isRecommended ? 'recommended' : ''}>
+                              <td>{row.type} {row.displayName}</td>
+                              <td>{formatCurrency(row.cost.total)}</td>
+                              <td>{row.combinations}</td>
+                              <td className={row.expectedValue >= 0 ? 'positive' : 'negative'}>
+                                {row.evDisplay}
+                              </td>
+                              <td>{row.hitDisplay}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Build Custom Button */}
+                <button
+                  className="exotic-build-custom-btn"
+                  onClick={() => setIsExoticBuilderOpen(true)}
+                >
+                  <span className="material-icons">build</span>
+                  Build Custom Exotic
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
 
       {/* Special Category Bets */}
       {specialBets.length > 0 && (
@@ -968,6 +1231,20 @@ export function BettingRecommendations({
             <span className="material-icons">check_circle</span>
             <span>{copiedMessage}</span>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Exotic Builder Modal */}
+      <AnimatePresence>
+        {isExoticBuilderOpen && (
+          <ExoticBuilderModal
+            isOpen={isExoticBuilderOpen}
+            onClose={() => setIsExoticBuilderOpen(false)}
+            horses={horses}
+            raceNumber={raceNumber}
+            fieldSize={horses.length}
+            onAddToBetSlip={handleExoticBetAdd}
+          />
         )}
       </AnimatePresence>
     </div>
