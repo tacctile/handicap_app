@@ -44,25 +44,68 @@
 }
 
 /* ============================================
-   SCRATCH CHECKBOX
+   SCRATCH & COMPARE ICONS (Stacked)
    ============================================ */
 
-.horse-summary-bar__scratch {
+.horse-summary-bar__icons {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.horse-summary-bar__icon-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.horse-summary-bar__icon-btn {
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.horse-summary-bar__scratch-input {
-  width: 18px;
-  height: 18px;
+  background: transparent;
+  border: none;
+  padding: 0;
   cursor: pointer;
-  accent-color: var(--color-primary);
-  margin: 0;
+  color: var(--color-text-tertiary);
+  transition: color 150ms ease;
+  border-radius: 2px;
 }
 
-.horse-summary-bar__scratch-input:disabled {
+.horse-summary-bar__icon-btn:hover:not(:disabled) {
+  color: var(--color-text-primary);
+}
+
+.horse-summary-bar__icon-btn:disabled {
+  opacity: 0.3;
   cursor: not-allowed;
+}
+
+.horse-summary-bar__icon-btn .material-icons {
+  font-size: 18px;
+}
+
+/* Active states */
+.horse-summary-bar__icon-btn--scratch.horse-summary-bar__icon-btn--active {
+  color: var(--color-tier-bad); /* Red when scratched */
+}
+
+.horse-summary-bar__icon-btn--compare.horse-summary-bar__icon-btn--active {
+  color: var(--color-primary); /* Teal when selected for compare */
+}
+
+/* Labels */
+.horse-summary-bar__icon-label {
+  font-size: 9px;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  user-select: none;
 }
 
 /* ============================================
@@ -86,15 +129,6 @@
 /* ============================================
    CELL STYLES
    ============================================ */
-
-/* Icons column - stacked scratch/compare */
-.horse-summary-bar__icons {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
 
 /* Program number - centered */
 .horse-summary-bar__pp {

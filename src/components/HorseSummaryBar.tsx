@@ -66,11 +66,14 @@ interface HorseSummaryBarProps {
   fairOddsNum?: number;
   fairOddsDen?: number;
   valuePercent?: number;
-  // New props for interactive controls
+  // Props for interactive controls
   isScratched: boolean;
   onScratchToggle: (scratched: boolean) => void;
   currentOdds: { numerator: number; denominator: number };
   onOddsChange: (odds: { numerator: number; denominator: number }) => void;
+  // Props for compare functionality
+  isCompareSelected: boolean;
+  onCompareToggle: (selected: boolean) => void;
 }
 
 // OddsInput component removed - odds now displayed as simple text
@@ -90,6 +93,8 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   onScratchToggle,
   currentOdds,
   onOddsChange: _onOddsChange, // Not used for now - odds displayed as simple text
+  isCompareSelected,
+  onCompareToggle,
 }) => {
   // Extract horse data from HorseEntry type
   const programNumber = horse.programNumber;
@@ -112,15 +117,6 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
     }
   };
 
-  const handleScratchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    onScratchToggle(e.target.checked);
-  };
-
-  const handleScratchClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
-
   return (
     <div
       className={`horse-summary-bar
@@ -129,18 +125,44 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         ${isScratched ? 'horse-summary-bar--scratched' : ''}`}
       onClick={handleRowClick}
     >
-      {/* Column 1: Scratch/Compare icons (placeholder - compare will be added in Prompt 4) */}
-      <div className="horse-summary-bar__icons">
-        <div className="horse-summary-bar__scratch" onClick={handleScratchClick}>
-          <input
-            type="checkbox"
-            checked={isScratched}
-            onChange={handleScratchChange}
+      {/* Column 1: Scratch and Compare icons stacked */}
+      <div className="horse-summary-bar__icons" onClick={(e) => e.stopPropagation()}>
+        {/* Scratch row */}
+        <div className="horse-summary-bar__icon-row">
+          <button
+            className={`horse-summary-bar__icon-btn horse-summary-bar__icon-btn--scratch ${isScratched ? 'horse-summary-bar__icon-btn--active' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onScratchToggle(!isScratched);
+            }}
             title="Mark as scratched"
-            className="horse-summary-bar__scratch-input"
-          />
+            aria-label="Mark as scratched"
+          >
+            <span className="material-icons">
+              {isScratched ? 'close' : 'remove_circle_outline'}
+            </span>
+          </button>
+          <span className="horse-summary-bar__icon-label">Scratch</span>
         </div>
-        {/* Compare checkbox will be added in Prompt 4 */}
+
+        {/* Compare row */}
+        <div className="horse-summary-bar__icon-row">
+          <button
+            className={`horse-summary-bar__icon-btn horse-summary-bar__icon-btn--compare ${isCompareSelected ? 'horse-summary-bar__icon-btn--active' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCompareToggle(!isCompareSelected);
+            }}
+            title="Select for comparison"
+            aria-label="Select for comparison"
+            disabled={isScratched}
+          >
+            <span className="material-icons">
+              {isCompareSelected ? 'check_box' : 'check_box_outline_blank'}
+            </span>
+          </button>
+          <span className="horse-summary-bar__icon-label">Compare</span>
+        </div>
       </div>
 
       {/* Column 2: Program Position */}
