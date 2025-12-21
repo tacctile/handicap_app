@@ -24,15 +24,15 @@
   grid-template-columns:
     40px /* scratch */
     50px /* pp */
-    1fr /* horse name - flexible */
-    120px /* trainer */
+    minmax(120px, 1fr) /* horse name - flexible, min 120px */
+    160px /* trainer - increased */
     50px /* weight */
-    120px /* odds */
-    80px /* life */
-    80px /* score */
-    70px /* fair */
+    140px /* odds - increased */
+    100px /* life */
+    90px /* score */
+    80px /* fair */
     100px /* value */
-    130px /* tier */
+    140px /* tier */
     40px; /* expand */
   align-items: center;
   gap: 8px;
@@ -62,6 +62,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  justify-self: center;
 }
 
 .horse-summary-bar__scratch-input {
@@ -104,6 +105,7 @@
   font-weight: 700;
   color: var(--color-text-primary);
   text-align: center;
+  justify-self: center;
 }
 
 /* Horse name - left aligned, can grow */
@@ -116,15 +118,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  justify-self: start;
 }
 
-/* Trainer - left aligned */
+/* Trainer - left aligned with ellipsis */
 .horse-summary-bar__trainer {
   font-size: 13px;
   color: var(--color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
+  justify-self: start;
 }
 
 /* Weight - centered */
@@ -132,6 +137,7 @@
   font-size: 13px;
   color: var(--color-text-secondary);
   text-align: center;
+  justify-self: center;
 }
 
 /* Lifetime record - right aligned */
@@ -141,12 +147,14 @@
   color: var(--color-text-primary);
   text-align: right;
   font-variant-numeric: tabular-nums;
+  justify-self: end;
 }
 
 /* Score - right aligned */
 .horse-summary-bar__score {
   font-size: 13px;
   text-align: right;
+  justify-self: end;
 }
 
 .horse-summary-bar__score-value {
@@ -160,12 +168,14 @@
   font-weight: 600;
   color: var(--color-text-primary);
   text-align: right;
+  justify-self: end;
 }
 
 /* Value percentage - right aligned */
 .horse-summary-bar__value-percent {
   font-size: 13px;
   text-align: right;
+  justify-self: end;
 }
 
 .horse-summary-bar__value-number {
@@ -209,8 +219,9 @@
 .odds-input {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 4px;
+  justify-self: center;
 }
 
 /* Button stacks - identical on both sides */
@@ -255,10 +266,10 @@
   cursor: not-allowed;
 }
 
-/* Number inputs - identical styling, no special highlighting */
+/* Number inputs - identical styling, NO visible focus state */
 .odds-input__number {
-  width: 32px;
-  height: 30px;
+  width: 36px;
+  height: 32px;
   text-align: center;
   font-size: 14px;
   font-weight: 600;
@@ -279,10 +290,23 @@
   margin: 0;
 }
 
+/* NO visible focus state - just remove outline */
 .odds-input__number:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: none;
+  outline: none !important;
+  border-color: var(--color-border) !important;
+  box-shadow: none !important;
+}
+
+.odds-input__number:focus-visible {
+  outline: none !important;
+  border-color: var(--color-border) !important;
+  box-shadow: none !important;
+}
+
+.odds-input__number:active {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: var(--color-border) !important;
 }
 
 .odds-input__number:disabled {
@@ -308,6 +332,8 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  min-height: 100%;
+  margin: 0;
 }
 
 .horse-list__item {

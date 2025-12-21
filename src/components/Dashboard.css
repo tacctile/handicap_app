@@ -370,7 +370,9 @@
 .app-main__content {
   flex: 1;
   overflow-y: auto;
-  padding: 0; /* Remove padding so table goes edge to edge */
+  overflow-x: hidden;
+  padding: 0;
+  margin: 0;
 }
 
 /* Add padding back for placeholder states */
@@ -906,15 +908,15 @@
   grid-template-columns:
     40px /* scratch */
     50px /* pp */
-    1fr /* horse name - flexible */
-    120px /* trainer */
+    minmax(120px, 1fr) /* horse name - flexible, min 120px */
+    160px /* trainer - increased */
     50px /* weight */
-    120px /* odds */
-    80px /* life */
-    80px /* score */
-    70px /* fair */
+    140px /* odds - increased */
+    100px /* life */
+    90px /* score */
+    80px /* fair */
     100px /* value */
-    130px /* tier */
+    140px /* tier */
     40px; /* expand */
   align-items: end;
   gap: 8px;
@@ -955,20 +957,68 @@
 .horse-list-header__cell--expand {
   text-align: center;
   align-items: center;
+  justify-self: center;
+}
+
+/* Left align name and trainer */
+.horse-list-header__cell--name,
+.horse-list-header__cell--trainer {
+  text-align: left;
+  align-items: flex-start;
+  justify-self: start;
+}
+
+/* Center align odds */
+.horse-list-header__cell--odds {
+  text-align: center;
+  align-items: center;
+  justify-self: center;
 }
 
 /* Right align numeric columns */
-.horse-list-header__cell--odds,
 .horse-list-header__cell--life,
 .horse-list-header__cell--score,
 .horse-list-header__cell--fair,
 .horse-list-header__cell--value {
   text-align: right;
   align-items: flex-end;
+  justify-self: end;
 }
 
 /* Tier column - center */
 .horse-list-header__cell--tier {
   text-align: center;
   align-items: center;
+  justify-self: center;
+}
+
+/* ============================================
+   SORTABLE HEADER STYLES
+   ============================================ */
+
+.horse-list-header__cell--sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background 150ms ease;
+  padding: 4px 6px;
+  border-radius: 4px;
+  margin: -4px -6px;
+}
+
+.horse-list-header__cell--sortable:hover {
+  background: var(--color-card);
+}
+
+.horse-list-header__cell--sorted {
+  background: var(--color-card);
+}
+
+.horse-list-header__cell--sorted .horse-list-header__label {
+  color: var(--color-primary);
+}
+
+.horse-list-header__sort-icon {
+  font-size: 14px;
+  color: var(--color-primary);
+  margin-top: 2px;
 }

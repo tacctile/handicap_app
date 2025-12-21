@@ -51,6 +51,36 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // State for expanded horse in horse list
   const [expandedHorseId, setExpandedHorseId] = useState<string | number | null>(null);
 
+  // Sorting state
+  type SortField = 'pp' | 'score' | 'fair' | 'value' | 'rating';
+  type SortDirection = 'asc' | 'desc';
+  const [sortField, setSortField] = useState<SortField>('pp');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else {
+        // Reset to default (PP ascending)
+        setSortField('pp');
+        setSortDirection('asc');
+      }
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Helper to get numeric rank for rating tier
+  const getValueTierRank = (valuePercent: number): number => {
+    if (valuePercent >= 100) return 5; // elite
+    if (valuePercent >= 50) return 4; // good
+    if (valuePercent >= 10) return 3; // fair
+    if (valuePercent >= -10) return 2; // neutral
+    return 1; // bad
+  };
+
   const toggleHorseExpand = (horseId: string | number) => {
     setExpandedHorseId((prev) => (prev === horseId ? null : horseId));
   };
@@ -62,14 +92,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
       console.log('Track:', parsedData.races?.[0]?.header?.trackCode);
       console.log('Date:', parsedData.races?.[0]?.header?.raceDateRaw);
       console.log('Races:', parsedData.races?.length);
+
+      // Debug post time fields
+      if (parsedData.races?.[0]) {
+        console.log('=== RACE DATA STRUCTURE ===');
+        console.log('First race full object:', parsedData.races[0]);
+        console.log('All race keys:', Object.keys(parsedData.races[0] || {}));
+        console.log('Header keys:', Object.keys(parsedData.races[0]?.header || {}));
+
+        const race = parsedData.races[0];
+        const header = race?.header;
+        console.log('Potential post time fields:');
+        console.log('- header.postTime:', header?.postTime);
+        console.log('- header.raceNumber:', header?.raceNumber);
+      }
     }
   }, [parsedData]);
 
-  // Reset scratches, odds, and expanded state when race changes
+  // Reset scratches, odds, expanded state, and sorting when race changes
   useEffect(() => {
     raceState.resetAll();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional reset on race selection change
     setExpandedHorseId(null);
+    setSortField('pp');
+    setSortDirection('asc');
   }, [selectedRaceIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Calculate scored horses for current race (needed for betting recommendations)
@@ -87,6 +133,66 @@ export const Dashboard: React.FC<DashboardProps> = ({
       raceState.trackCondition
     );
   }, [parsedData, selectedRaceIndex, raceState]);
+
+  // Sorted horses list
+  const sortedHorses = useMemo(() => {
+    if (!currentRaceScoredHorses) return [];
+
+    const horses = [...currentRaceScoredHorses];
+
+    horses.sort((a, b) => {
+      let aVal: number, bVal: number;
+
+      // Get the overlay analysis for fair odds calculation
+      const getOverlayData = (horse: typeof a) => {
+        const currentOddsStr = raceState.getOdds(horse.index, horse.horse.morningLineOdds);
+        return analyzeOverlay(horse.score.total, currentOddsStr);
+      };
+
+      switch (sortField) {
+        case 'pp':
+          aVal = a.horse.programNumber || 0;
+          bVal = b.horse.programNumber || 0;
+          break;
+        case 'score':
+          aVal = a.score.total || 0;
+          bVal = b.score.total || 0;
+          break;
+        case 'fair': {
+          // Lower fair odds = better, so sort by fair odds decimal
+          const aOverlay = getOverlayData(a);
+          const bOverlay = getOverlayData(b);
+          const aFair = aOverlay.fairOddsDisplay.split('-');
+          const bFair = bOverlay.fairOddsDisplay.split('-');
+          aVal = parseInt(aFair[0] || '1') / parseInt(aFair[1] || '1');
+          bVal = parseInt(bFair[0] || '1') / parseInt(bFair[1] || '1');
+          break;
+        }
+        case 'value': {
+          const aOverlay = getOverlayData(a);
+          const bOverlay = getOverlayData(b);
+          aVal = aOverlay.overlayPercent || 0;
+          bVal = bOverlay.overlayPercent || 0;
+          break;
+        }
+        case 'rating': {
+          const aOverlay = getOverlayData(a);
+          const bOverlay = getOverlayData(b);
+          aVal = getValueTierRank(aOverlay.overlayPercent || 0);
+          bVal = getValueTierRank(bOverlay.overlayPercent || 0);
+          break;
+        }
+        default:
+          aVal = a.horse.programNumber || 0;
+          bVal = b.horse.programNumber || 0;
+      }
+
+      const comparison = aVal - bVal;
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+    return horses;
+  }, [currentRaceScoredHorses, sortField, sortDirection, raceState]);
 
   // Get current race data
   const currentRace = parsedData?.races?.[selectedRaceIndex];
@@ -445,43 +551,98 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <div className="horse-list-header__cell horse-list-header__cell--scratch">
                     <span className="horse-list-header__label">SCR</span>
                   </div>
-                  <div className="horse-list-header__cell horse-list-header__cell--pp">
+
+                  <div
+                    className={`horse-list-header__cell horse-list-header__cell--pp horse-list-header__cell--sortable ${sortField === 'pp' ? 'horse-list-header__cell--sorted' : ''}`}
+                    onClick={() => handleSort('pp')}
+                  >
                     <span className="horse-list-header__label">PP</span>
+                    {sortField === 'pp' && (
+                      <span className="horse-list-header__sort-icon material-icons">
+                        {sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                      </span>
+                    )}
                   </div>
+
                   <div className="horse-list-header__cell horse-list-header__cell--name">
                     <span className="horse-list-header__label">HORSE</span>
                   </div>
+
                   <div className="horse-list-header__cell horse-list-header__cell--trainer">
                     <span className="horse-list-header__label">TRAINER</span>
                   </div>
+
                   <div className="horse-list-header__cell horse-list-header__cell--weight">
                     <span className="horse-list-header__label">WT</span>
                   </div>
+
                   <div className="horse-list-header__cell horse-list-header__cell--odds">
                     <span className="horse-list-header__label">LIVE ODDS</span>
                   </div>
+
                   <div className="horse-list-header__cell horse-list-header__cell--life">
                     <span className="horse-list-header__label">LIFE</span>
-                    <span className="horse-list-header__sublabel">W-P-S</span>
+                    <span className="horse-list-header__sublabel">St-W-P-S</span>
                   </div>
-                  <div className="horse-list-header__cell horse-list-header__cell--score">
+
+                  <div
+                    className={`horse-list-header__cell horse-list-header__cell--score horse-list-header__cell--sortable ${sortField === 'score' ? 'horse-list-header__cell--sorted' : ''}`}
+                    onClick={() => handleSort('score')}
+                  >
                     <span className="horse-list-header__label">SCORE</span>
+                    <span className="horse-list-header__sublabel">Furlong</span>
+                    {sortField === 'score' && (
+                      <span className="horse-list-header__sort-icon material-icons">
+                        {sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                      </span>
+                    )}
                   </div>
-                  <div className="horse-list-header__cell horse-list-header__cell--fair">
+
+                  <div
+                    className={`horse-list-header__cell horse-list-header__cell--fair horse-list-header__cell--sortable ${sortField === 'fair' ? 'horse-list-header__cell--sorted' : ''}`}
+                    onClick={() => handleSort('fair')}
+                  >
                     <span className="horse-list-header__label">FAIR</span>
+                    <span className="horse-list-header__sublabel">Should Be</span>
+                    {sortField === 'fair' && (
+                      <span className="horse-list-header__sort-icon material-icons">
+                        {sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                      </span>
+                    )}
                   </div>
-                  <div className="horse-list-header__cell horse-list-header__cell--value">
+
+                  <div
+                    className={`horse-list-header__cell horse-list-header__cell--value horse-list-header__cell--sortable ${sortField === 'value' ? 'horse-list-header__cell--sorted' : ''}`}
+                    onClick={() => handleSort('value')}
+                  >
                     <span className="horse-list-header__label">VALUE</span>
+                    <span className="horse-list-header__sublabel">Edge %</span>
+                    {sortField === 'value' && (
+                      <span className="horse-list-header__sort-icon material-icons">
+                        {sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                      </span>
+                    )}
                   </div>
-                  <div className="horse-list-header__cell horse-list-header__cell--tier">
+
+                  <div
+                    className={`horse-list-header__cell horse-list-header__cell--tier horse-list-header__cell--sortable ${sortField === 'rating' ? 'horse-list-header__cell--sorted' : ''}`}
+                    onClick={() => handleSort('rating')}
+                  >
                     <span className="horse-list-header__label">RATING</span>
+                    <span className="horse-list-header__sublabel">Bet Quality</span>
+                    {sortField === 'rating' && (
+                      <span className="horse-list-header__sort-icon material-icons">
+                        {sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                      </span>
+                    )}
                   </div>
+
                   <div className="horse-list-header__cell horse-list-header__cell--expand">
                     {/* Empty for expand chevron column */}
                   </div>
                 </div>
 
-                {currentRaceScoredHorses.map((scoredHorse, index) => {
+                {sortedHorses.map((scoredHorse, index) => {
                   const horse = scoredHorse.horse;
                   const horseId = horse.programNumber || index;
                   const horseIndex = scoredHorse.index;
