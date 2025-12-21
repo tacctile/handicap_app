@@ -312,7 +312,7 @@ export function sanitizeOdds(odds: unknown): number | null {
 
   if (typeof odds === 'string') {
     // Handle fractional odds (e.g., "5-1", "9/2")
-    const fractionalMatch = odds.match(/^(\d+(?:\.\d+)?)\s*[-\/]\s*(\d+(?:\.\d+)?)$/)
+    const fractionalMatch = odds.match(/^(\d+(?:\.\d+)?)\s*[-/]\s*(\d+(?:\.\d+)?)$/)
     if (fractionalMatch) {
       const num = parseFloat(fractionalMatch[1])
       const den = parseFloat(fractionalMatch[2])

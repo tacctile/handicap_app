@@ -562,7 +562,7 @@ export function validateAngle(
         ? `${angle.name} validated with ${Math.round(avgConfidence)}% confidence`
         : `${angle.name} missing evidence: ${missingEvidence.join(', ')}`,
     }
-  } catch (error) {
+  } catch (_error) {
     logger.logWarning('Error validating angle', {
       component: 'longshotValidator',
       angle: angle.category,

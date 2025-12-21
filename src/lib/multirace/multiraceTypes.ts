@@ -304,8 +304,8 @@ export interface MultiRaceOptimizationConfig {
   races: MultiRaceRaceData[]
   /** Budget for this bet */
   budget: number
-  /** Strategy preference */
-  strategy: MultiRaceStrategy
+  /** Strategy preference (optional - if not provided, all strategies are evaluated) */
+  strategy?: MultiRaceStrategy
   /** Maximum cost allowed */
   maxCost?: number
   /** Minimum probability threshold */

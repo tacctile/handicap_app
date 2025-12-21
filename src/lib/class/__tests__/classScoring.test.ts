@@ -16,7 +16,7 @@ import {
   isValuePlay,
   MAX_CLASS_SCORE,
 } from '../classScoring'
-import { ClassLevel } from '../classTypes'
+import { ClassLevel, type ProvenAtLevelResult, type ClassAnalysisResult } from '../classTypes'
 import {
   createHorseEntry,
   createRaceHeader,
@@ -861,7 +861,7 @@ describe('Class Scoring', () => {
             toLevel: ClassLevel.CLAIMING_25K_TO_49K,
             claimingPriceDrop: null,
           },
-          provenAtLevel: {} as any,
+          provenAtLevel: {} as unknown as ProvenAtLevelResult,
           hiddenDrops: [],
           trackTierMovement: null,
           classScore: 0,
@@ -889,7 +889,7 @@ describe('Class Scoring', () => {
             toLevel: ClassLevel.STAKES_GRADE_3,
             claimingPriceDrop: null,
           },
-          provenAtLevel: {} as any,
+          provenAtLevel: {} as unknown as ProvenAtLevelResult,
           hiddenDrops: [],
           trackTierMovement: null,
           classScore: 0,
@@ -917,7 +917,7 @@ describe('Class Scoring', () => {
             toLevel: ClassLevel.ALLOWANCE,
             claimingPriceDrop: null,
           },
-          provenAtLevel: {} as any,
+          provenAtLevel: {} as unknown as ProvenAtLevelResult,
           hiddenDrops: [],
           trackTierMovement: null,
           classScore: 0,
@@ -986,7 +986,7 @@ describe('Class Scoring', () => {
           classMovementScore: 0,
           hiddenDropsScore: 10,
           trackTierScore: 0,
-          analysis: {} as any,
+          analysis: {} as unknown as ClassAnalysisResult,
           reasoning: '',
           breakdown: [],
         }
@@ -1006,7 +1006,7 @@ describe('Class Scoring', () => {
               { type: 'track_tier_drop' as const, description: '', pointsBonus: 3, explanation: '' },
               { type: 'purse_drop' as const, description: '', pointsBonus: 3, explanation: '' },
             ],
-          } as any,
+          } as unknown as ClassAnalysisResult,
           reasoning: '',
           breakdown: [],
         }
@@ -1025,7 +1025,7 @@ describe('Class Scoring', () => {
             hiddenDrops: [
               { type: 'purse_drop' as const, description: '', pointsBonus: 3, explanation: '' },
             ],
-          } as any,
+          } as unknown as ClassAnalysisResult,
           reasoning: '',
           breakdown: [],
         }
@@ -1045,7 +1045,7 @@ describe('Class Scoring', () => {
           analysis: {
             movement: { direction: 'drop' as const },
             hiddenDrops: [],
-          } as any,
+          } as unknown as ClassAnalysisResult,
           reasoning: '',
           breakdown: [],
         }
@@ -1063,7 +1063,7 @@ describe('Class Scoring', () => {
           analysis: {
             movement: { direction: 'drop' as const },
             hiddenDrops: [],
-          } as any,
+          } as unknown as ClassAnalysisResult,
           reasoning: '',
           breakdown: [],
         }
@@ -1081,7 +1081,7 @@ describe('Class Scoring', () => {
           analysis: {
             movement: { direction: 'lateral' as const },
             hiddenDrops: [],
-          } as any,
+          } as unknown as ClassAnalysisResult,
           reasoning: '',
           breakdown: [],
         }
@@ -1099,7 +1099,7 @@ describe('Class Scoring', () => {
           analysis: {
             movement: { direction: 'lateral' as const },
             hiddenDrops: [],
-          } as any,
+          } as unknown as ClassAnalysisResult,
           reasoning: '',
           breakdown: [],
         }

@@ -138,6 +138,7 @@ export function useRaceState(): UseRaceStateReturn {
   useEffect(() => {
     if (debouncedStateVersion.version !== calculationState.calculationVersion) {
       // Mark calculation as complete and update timestamp
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing debounced state
       setCalculationState(prev => ({
         ...prev,
         isCalculating: false,

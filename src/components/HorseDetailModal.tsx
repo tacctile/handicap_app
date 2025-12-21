@@ -218,6 +218,7 @@ export function HorseDetailModal({
   // Handle modal animation
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing modal state
       setIsAnimating(true)
       document.body.style.overflow = 'hidden'
     } else {

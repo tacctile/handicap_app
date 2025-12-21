@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Parsing Progress Overlay Component
  *
@@ -211,12 +212,13 @@ const StepIndicator = memo(function StepIndicator({
 // ============================================================================
 
 function useTimeEstimate(progress: number): string | null {
-  const startTimeRef = useRef<number>(Date.now())
+  const startTimeRef = useRef<number>(0)
   const [estimate, setEstimate] = useState<string | null>(null)
 
   useEffect(() => {
     if (progress === 0) {
       startTimeRef.current = Date.now()
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Resetting state when progress resets
       setEstimate(null)
       return
     }

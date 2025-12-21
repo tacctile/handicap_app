@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest'
 import { parseDRFFile } from '../../lib/drfParser'
 import { calculateRaceScores, calculateHorseScore } from '../../lib/scoring'
-import { classifyHorses, getQualifyingHorses } from '../../lib/betting/tierClassification'
+import { classifyHorses } from '../../lib/betting/tierClassification'
 import { generateBetRecommendations } from '../../lib/betting/betRecommendations'
 import { readFileSync } from 'fs'
 import { join } from 'path'
@@ -116,11 +116,6 @@ describe('Full Flow Integration', () => {
         'fast'
       )
 
-      const initialRanks = initialScored.map(sh => ({
-        name: sh.horse.horseName,
-        rank: sh.rank,
-      }))
-
       // Scratch the top-ranked horse
       const topHorse = initialScored[0]
       const isScratched = (i: number) => horses[i].horseName === topHorse.horse.horseName
@@ -170,12 +165,6 @@ describe('Full Flow Integration', () => {
       ]
       const header = createRaceHeader({ fieldSize: 2 })
       const getOdds = (_i: number, odds: string) => odds
-
-      // Score with no scratches
-      const scored1 = calculateRaceScores(horses, header, getOdds, () => false, 'fast')
-      const classification1 = classifyHorses(
-        scored1.map(sh => ({ horse: sh.horse, index: sh.index, score: sh.score }))
-      )
 
       // Scratch top horse
       const scored2 = calculateRaceScores(horses, header, getOdds, (i) => i === 0, 'fast')

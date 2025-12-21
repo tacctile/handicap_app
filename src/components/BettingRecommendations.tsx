@@ -292,6 +292,7 @@ function InteractiveBetCard({
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state
     setInputValue(bet.customAmount.toString())
   }, [bet.customAmount])
 
@@ -760,6 +761,7 @@ export function BettingRecommendations({
         kellyInfo,
       }
     })
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state from generator
     setSelectableBets(newSelectableBets)
   }, [generatorResult, kellyEnabled, bankroll, horses.length])
 
@@ -963,7 +965,7 @@ export function BettingRecommendations({
               ...bet,
               isSelected: bet.evPerDollar > 0,
             }))
-          case 'valueHunter':
+          case 'valueHunter': {
             // Value Hunter: Select positive EV bets, sorted by EV% (ignores tier)
             // This preset focuses on mathematical value, not tier classification
             const sortedByEV = [...prev].sort((a, b) => {
@@ -977,6 +979,7 @@ export function BettingRecommendations({
               ...bet,
               isSelected: (bet.evPerDollar * 100 >= 5) || (bet.overlayPercent >= 15),
             }))
+          }
           case 'conservative':
             return prev.map((bet) => ({
               ...bet,

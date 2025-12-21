@@ -245,7 +245,7 @@ export function oddsToMarketProbability(oddsString: string): number {
 
     // Clamp to reasonable range (1% to 95%)
     return Math.max(1, Math.min(95, probability))
-  } catch (error) {
+  } catch (_error) {
     logger.logWarning('Error parsing odds for probability', {
       component: 'valueDetector',
       oddsString,

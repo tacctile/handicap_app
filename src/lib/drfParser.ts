@@ -641,7 +641,7 @@ function parseOdds(raw: string): { odds: string; decimal: number } {
   }
 
   // Normalize: remove extra spaces around dashes and slashes
-  const normalized = trimmed.replace(/\s*[-\/]\s*/g, '-')
+  const normalized = trimmed.replace(/\s*[-/]\s*/g, '-')
 
   // Handle "even" or "E" or "EVEN"
   if (normalized.toLowerCase() === 'even' || normalized.toLowerCase() === 'e') {
@@ -1570,13 +1570,13 @@ export function parseDRFFile(
     }
 
     // Track horses with missing data for consolidated warnings
-    let missingNameCount = 0
+    let _missingNameCount = 0
     let missingOddsCount = 0
 
     // Check for missing data
     race.horses.forEach((horse, idx) => {
       if (!horse.horseName || horse.horseName.startsWith('Horse ')) {
-        missingNameCount++
+        _missingNameCount++
         race.warnings.push(`Horse #${idx + 1}: Missing horse name`)
       }
       if (horse.morningLineDecimal === 0) {

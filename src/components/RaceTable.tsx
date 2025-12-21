@@ -775,6 +775,7 @@ const ScoreBadge = memo(function ScoreBadge({ score, rank, hasChanged = false }:
 
   useEffect(() => {
     if (hasChanged) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing animation state
       setShouldAnimate(true)
       const timer = setTimeout(() => setShouldAnimate(false), 600)
       return () => clearTimeout(timer)
@@ -1114,23 +1115,23 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
   }, [])
 
   // Detect score changes and track them
-  const changedScoreIndices = useMemo(() => {
+  const [changedScoreIndices, setChangedScoreIndices] = useState<Set<number>>(new Set())
+
+  // Update changed scores and previous scores after render
+  useEffect(() => {
     const changed = new Set<number>()
+    const newMap = new Map<number, number>()
+
     for (const { index, score } of scoredHorses) {
       const prevScore = prevScoresRef.current.get(index)
       if (prevScore !== undefined && prevScore !== score.total) {
         changed.add(index)
       }
-    }
-    return changed
-  }, [scoredHorses])
-
-  // Update previous scores after render
-  useEffect(() => {
-    const newMap = new Map<number, number>()
-    for (const { index, score } of scoredHorses) {
       newMap.set(index, score.total)
     }
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Tracking score changes
+    setChangedScoreIndices(changed)
     prevScoresRef.current = newMap
   }, [scoredHorses])
 

@@ -40,6 +40,7 @@ export const CalculationStatus = memo(function CalculationStatus({
 
   // Update display time every 10 seconds
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state and setting up interval
     setDisplayTime(formatTimestamp(lastCalculatedAt))
     const interval = setInterval(() => {
       setDisplayTime(formatTimestamp(lastCalculatedAt))

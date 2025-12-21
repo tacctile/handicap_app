@@ -279,7 +279,7 @@ export function AccountSettings({ onLogout, onBack }: AccountSettingsProps) {
     try {
       await signOut()
       onLogout?.()
-    } catch (err) {
+    } catch (_err) {
       addToast('Failed to log out. Please try again.', 'critical')
     }
   }, [signOut, onLogout, addToast])
@@ -316,7 +316,7 @@ export function AccountSettings({ onLogout, onBack }: AccountSettingsProps) {
         addToast('Password changed successfully', 'success')
 
         setTimeout(() => setPasswordSuccess(false), 3000)
-      } catch (err) {
+      } catch (_err) {
         addToast('Failed to change password. Please try again.', 'critical')
       } finally {
         setIsChangingPassword(false)
@@ -333,7 +333,7 @@ export function AccountSettings({ onLogout, onBack }: AccountSettingsProps) {
       await new Promise((resolve) => setTimeout(resolve, 1500))
       addToast('Account deletion coming soon', 'info')
       setShowDeleteModal(false)
-    } catch (err) {
+    } catch (_err) {
       addToast('Failed to delete account. Please try again.', 'critical')
     } finally {
       setIsDeleting(false)

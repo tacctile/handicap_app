@@ -22,6 +22,7 @@ export function OfflineIndicator({ className = '' }: OfflineIndicatorProps) {
   // Reset dismissed state when coming back online then going offline again
   useEffect(() => {
     if (!isOffline) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state
       setIsDismissed(false)
     }
   }, [isOffline])

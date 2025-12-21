@@ -276,9 +276,20 @@ export function usePostTime(
     }
     const now = new Date()
     const ms = postTime.getTime() - now.getTime()
-    initialDuration.current = ms > 0 ? ms : 0
-    return calculateCountdownState(ms, initialDuration.current)
+    const initial = ms > 0 ? ms : 0
+    return calculateCountdownState(ms, initial)
   })
+
+  // Set initial duration in useEffect to avoid ref access during render
+  useEffect(() => {
+    if (postTime && initialDuration.current === 0) {
+      const now = new Date()
+      const ms = postTime.getTime() - now.getTime()
+      if (ms > 0) {
+        initialDuration.current = ms
+      }
+    }
+  }, [postTime])
 
   // Save notification settings to localStorage
   useEffect(() => {
@@ -292,6 +303,7 @@ export function usePostTime(
   // Update countdown every second
   useEffect(() => {
     if (!postTime) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCountdown(calculateCountdownState(-1, 0))
       return
     }
@@ -346,8 +358,10 @@ export function usePostTime(
 
   // Reset triggered notifications when post time changes
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- Intentionally resetting state when dependencies change */
     setTriggeredNotifications(new Set())
     setPendingNotifications([])
+    /* eslint-enable react-hooks/set-state-in-effect */
     initialDuration.current = 0
   }, [postTimeString, raceDateString])
 

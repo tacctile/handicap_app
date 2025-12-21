@@ -591,7 +591,7 @@ function detectAllFactors(
     const distanceChange = detectDistanceChangeFactor(horse, raceHeader)
     if (distanceChange) factors.push(distanceChange)
 
-  } catch (error) {
+  } catch (_error) {
     logger.logWarning('Error detecting diamond factors', {
       component: 'diamondDetector',
       horseName: horse.horseName,

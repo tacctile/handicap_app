@@ -388,7 +388,7 @@ export function autoOptimizeForBudget(
   races: MultiRaceRaceData[]
 ): TicketBuilderState {
   // Start with suggestions
-  let optimizedState = applyAllSuggestions(state, races)
+  const optimizedState = applyAllSuggestions(state, races)
 
   // Check if it fits budget
   if (optimizedState.liveCost && optimizedState.liveCost.total <= state.budget) {
@@ -409,7 +409,7 @@ export function autoOptimizeForBudget(
 
   // Still too expensive - reduce to singles where possible
   const config = getBetConfig(state.betType)
-  let newSelections = [...optimizedState.selections]
+  const newSelections = [...optimizedState.selections]
 
   for (let i = 0; i < newSelections.length; i++) {
     const race = races[i]

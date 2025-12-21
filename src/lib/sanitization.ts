@@ -55,6 +55,7 @@ export function sanitizeString(input: string): string {
   sanitized = sanitized.replace(/[&<>"'`=/]/g, (char) => HTML_ENTITIES[char] || char)
 
   // Remove any remaining control characters (except newlines and tabs)
+  // eslint-disable-next-line no-control-regex
   sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
 
   return sanitized
@@ -269,6 +270,7 @@ export function validateFilename(filename: string): boolean {
   }
 
   // No control characters
+  // eslint-disable-next-line no-control-regex
   if (/[\x00-\x1F\x7F]/.test(filename)) {
     return false
   }

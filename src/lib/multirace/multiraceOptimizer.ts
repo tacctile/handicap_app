@@ -155,6 +155,11 @@ export function calculateTicketProbability(
   races: MultiRaceRaceData[],
   selections: RaceSelection[]
 ): number {
+  // Empty selections means 0 probability
+  if (selections.length === 0 || races.length === 0) {
+    return 0
+  }
+
   let probability = 1
 
   for (let i = 0; i < selections.length; i++) {
@@ -264,11 +269,12 @@ function getSuggestionReason(race: MultiRaceRaceData, strategy: MultiRaceStrateg
   switch (race.strength) {
     case 'standout':
       return `Single this race - clear favorite (#${race.standoutHorse?.programNumber} at ${race.standoutHorse?.score} pts)`
-    case 'competitive':
+    case 'competitive': {
       const topHorses = race.horses
         .filter(h => h.score >= SCORE_THRESHOLDS.competitive)
         .length
       return `Spread here - competitive race (${topHorses} horses 160+)`
+    }
     case 'weak':
       return strategy === 'aggressive'
         ? 'Use All - weak race, no standout'

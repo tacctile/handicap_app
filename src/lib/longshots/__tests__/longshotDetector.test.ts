@@ -23,6 +23,8 @@ import {
   parseOddsToDecimal,
 } from '../longshotTypes'
 import { ClassLevel } from '../../class/classTypes'
+import type { ClassAnalysisResult } from '../../class/classTypes'
+import type { Workout } from '../../../types/drf'
 import {
   createHorseEntry,
   createRaceHeader,
@@ -33,6 +35,7 @@ import {
 import type { PaceScenarioAnalysis, RunningStyleProfile } from '../../scoring/paceAnalysis'
 import type { ClassScoreResult } from '../../class/classScoring'
 import type { EquipmentScoreResult } from '../../equipment/equipmentScoring'
+import type { DetectedEquipmentChange } from '../../equipment/equipmentTypes'
 
 // Mock trainer patterns
 vi.mock('../../equipment/trainerPatterns', () => ({
@@ -415,7 +418,7 @@ describe('Longshot Detector', () => {
             bestFinish: 1,
             bestBeyerAtLevel: 85,
           },
-        } as any,
+        } as unknown as ClassAnalysisResult,
       })
 
       const raceHeader = createRaceHeader()
@@ -449,7 +452,7 @@ describe('Longshot Detector', () => {
             bestFinish: 1,
             bestBeyerAtLevel: 88,
           },
-        } as any,
+        } as unknown as ClassAnalysisResult,
       })
 
       const raceHeader = createRaceHeader()
@@ -483,7 +486,7 @@ describe('Longshot Detector', () => {
             bestFinish: 8,
             bestBeyerAtLevel: null,
           },
-        } as any,
+        } as unknown as ClassAnalysisResult,
       })
 
       const raceHeader = createRaceHeader()
@@ -521,7 +524,7 @@ describe('Longshot Detector', () => {
             adjustedPoints: 12,
             changeDescription: 'First-time blinkers',
             impact: 'positive',
-          } as any,
+          } as unknown as DetectedEquipmentChange,
         ],
         reasoning: 'First-time Lasix + Blinkers',
       })
@@ -554,7 +557,7 @@ describe('Longshot Detector', () => {
             adjustedPoints: 14,
             changeDescription: 'First-time blinkers',
             impact: 'positive',
-          } as any,
+          } as unknown as DetectedEquipmentChange,
         ],
       })
 
@@ -629,7 +632,7 @@ describe('Longshot Detector', () => {
             adjustedPoints: 12,
             changeDescription: 'First-time blinkers',
             impact: 'positive',
-          } as any,
+          } as unknown as DetectedEquipmentChange,
         ],
       })
 
@@ -743,7 +746,7 @@ describe('Longshot Detector', () => {
             bestFinish: null,
             bestBeyerAtLevel: null,
           },
-        } as any,
+        } as unknown as ClassAnalysisResult,
       })
 
       const raceHeader = createRaceHeader()
@@ -783,7 +786,7 @@ describe('Longshot Detector', () => {
 
     it('handles horse with null workouts', () => {
       const horse = createHorseEntry({
-        workouts: null as unknown as any[],
+        workouts: null as unknown as Workout[],
         pastPerformances: [],
       })
 
@@ -1016,7 +1019,7 @@ describe('Longshot Detector', () => {
             bestFinish: 1,
             bestBeyerAtLevel: 90,
           },
-        } as any,
+        } as unknown as ClassAnalysisResult,
       })
 
       const equipmentScore = createEquipmentScore({
@@ -1029,7 +1032,7 @@ describe('Longshot Detector', () => {
             adjustedPoints: 12,
             changeDescription: 'First-time blinkers',
             impact: 'positive',
-          } as any,
+          } as unknown as DetectedEquipmentChange,
         ],
       })
 
@@ -1098,7 +1101,7 @@ describe('Longshot Detector', () => {
             bestFinish: null,
             bestBeyerAtLevel: null,
           },
-        } as any,
+        } as unknown as ClassAnalysisResult,
       })
 
       const equipmentScore = createEquipmentScore({
@@ -1206,7 +1209,7 @@ describe('Longshot Detector', () => {
               explanation: 'Major claiming drop',
             },
           ],
-        } as any,
+        } as unknown as ClassAnalysisResult,
       })
 
       const raceHeader = createRaceHeader({
