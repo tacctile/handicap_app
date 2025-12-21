@@ -21,6 +21,7 @@ import { OnboardingFlow } from './onboarding';
 import { useBankroll } from '../hooks/useBankroll';
 import { usePostTime } from '../hooks/usePostTime';
 import { useOnboarding } from '../hooks/useOnboarding';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import {
   calculateRaceScores,
   calculateRaceConfidence,
@@ -74,6 +75,9 @@ export function Dashboard({
 
   // Onboarding hook
   const { isOnboardingComplete, completeOnboarding } = useOnboarding();
+
+  // Online/offline status hook
+  const { isOffline } = useOnlineStatus();
 
   // Toast notifications (from context - container rendered by ToastProvider)
   const { addPostTimeNotification } = useToastContext();
@@ -575,7 +579,7 @@ export function Dashboard({
                 <StatusBar
                   trackDbLoaded={true}
                   isCalculating={false}
-                  isOffline={false}
+                  isOffline={isOffline}
                 />
               </motion.div>
             ) : null}
