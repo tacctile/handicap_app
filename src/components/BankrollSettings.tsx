@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type {
   RiskTolerance,
   BetUnitType,
@@ -7,10 +7,10 @@ import type {
   BankrollSettings as BankrollSettingsType,
   ComplexityMode,
   BettingStyle,
-  BetType
-} from '../hooks/useBankroll'
-import { BETTING_STYLE_INFO, BET_TYPE_LABELS, getExpectedReturnRange } from '../hooks/useBankroll'
-import type { NotificationSettings } from '../hooks/usePostTime'
+  BetType,
+} from '../hooks/useBankroll';
+import { BETTING_STYLE_INFO, BET_TYPE_LABELS, getExpectedReturnRange } from '../hooks/useBankroll';
+import type { NotificationSettings } from '../hooks/usePostTime';
 import {
   type KellySettings,
   type KellyFraction,
@@ -19,7 +19,7 @@ import {
   DEFAULT_KELLY_SETTINGS,
   loadKellySettings,
   saveKellySettings,
-} from '../lib/betting/kellySettings'
+} from '../lib/betting/kellySettings';
 import {
   type DutchSettings,
   DEFAULT_DUTCH_SETTINGS,
@@ -28,27 +28,43 @@ import {
   DUTCH_EDUCATION,
   loadDutchSettings,
   saveDutchSettings,
-} from '../lib/dutch'
-import { KellyHelpModal } from './KellyHelpModal'
+} from '../lib/dutch';
+import { KellyHelpModal } from './KellyHelpModal';
 
 interface BankrollSettingsProps {
-  isOpen: boolean
-  onClose: () => void
-  settings: BankrollSettingsType
-  onSave: (settings: Partial<BankrollSettingsType>) => void
-  onReset: () => void
-  dailyPL: number
-  spentToday: number
-  dailyBudget: number
-  notificationSettings?: NotificationSettings
-  onNotificationSettingsChange?: (settings: Partial<NotificationSettings>) => void
+  isOpen: boolean;
+  onClose: () => void;
+  settings: BankrollSettingsType;
+  onSave: (settings: Partial<BankrollSettingsType>) => void;
+  onReset: () => void;
+  dailyPL: number;
+  spentToday: number;
+  dailyBudget: number;
+  notificationSettings?: NotificationSettings;
+  onNotificationSettingsChange?: (settings: Partial<NotificationSettings>) => void;
 }
 
-const RISK_OPTIONS: { value: RiskTolerance; label: string; description: string; range: string }[] = [
-  { value: 'conservative', label: 'Conservative', description: 'Lower risk, smaller bets', range: '1-2% per unit' },
-  { value: 'moderate', label: 'Moderate', description: 'Balanced approach', range: '2-4% per unit' },
-  { value: 'aggressive', label: 'Aggressive', description: 'Higher risk, larger bets', range: '4-6% per unit' },
-]
+const RISK_OPTIONS: { value: RiskTolerance; label: string; description: string; range: string }[] =
+  [
+    {
+      value: 'conservative',
+      label: 'Conservative',
+      description: 'Lower risk, smaller bets',
+      range: '1-2% per unit',
+    },
+    {
+      value: 'moderate',
+      label: 'Moderate',
+      description: 'Balanced approach',
+      range: '2-4% per unit',
+    },
+    {
+      value: 'aggressive',
+      label: 'Aggressive',
+      description: 'Higher risk, larger bets',
+      range: '4-6% per unit',
+    },
+  ];
 
 const NOTIFICATION_TIMING_OPTIONS = [
   { value: 15, label: '15 min' },
@@ -56,17 +72,21 @@ const NOTIFICATION_TIMING_OPTIONS = [
   { value: 5, label: '5 min' },
   { value: 2, label: '2 min' },
   { value: 1, label: '1 min' },
-]
+];
 
 const MODE_OPTIONS: { value: ComplexityMode; label: string; description: string }[] = [
   { value: 'simple', label: 'Simple', description: 'Just tell us your budget and betting style' },
-  { value: 'moderate', label: 'Moderate', description: 'Set your risk level and favorite bet types' },
+  {
+    value: 'moderate',
+    label: 'Moderate',
+    description: 'Set your risk level and favorite bet types',
+  },
   { value: 'advanced', label: 'Advanced', description: 'Full control over bankroll and strategy' },
-]
+];
 
-const BETTING_STYLES: BettingStyle[] = ['safe', 'balanced', 'aggressive']
+const BETTING_STYLES: BettingStyle[] = ['safe', 'balanced', 'aggressive'];
 
-const BET_TYPES: BetType[] = ['win_place', 'exacta', 'trifecta', 'superfecta', 'multi_race']
+const BET_TYPES: BetType[] = ['win_place', 'exacta', 'trifecta', 'superfecta', 'multi_race'];
 
 export function BankrollSettings({
   isOpen,
@@ -81,164 +101,172 @@ export function BankrollSettings({
   onNotificationSettingsChange,
 }: BankrollSettingsProps) {
   // Local form state
-  const [formState, setFormState] = useState<BankrollSettingsType>(settings)
+  const [formState, setFormState] = useState<BankrollSettingsType>(settings);
   const [notifState, setNotifState] = useState<NotificationSettings>(
     notificationSettings || { enabled: true, soundEnabled: false, timings: [15, 10, 5, 2] }
-  )
-  const [kellyState, setKellyState] = useState<KellySettings>(loadKellySettings)
-  const [dutchState, setDutchState] = useState<DutchSettings>(loadDutchSettings)
-  const [showKellyHelp, setShowKellyHelp] = useState(false)
-  const [showDutchHelp, setShowDutchHelp] = useState(false)
-  const [hasChanges, setHasChanges] = useState(false)
-  const [activeTab, setActiveTab] = useState<'bankroll' | 'notifications'>('bankroll')
-  const modalRef = useRef<HTMLDivElement>(null)
+  );
+  const [kellyState, setKellyState] = useState<KellySettings>(loadKellySettings);
+  const [dutchState, setDutchState] = useState<DutchSettings>(loadDutchSettings);
+  const [showKellyHelp, setShowKellyHelp] = useState(false);
+  const [showDutchHelp, setShowDutchHelp] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [activeTab, setActiveTab] = useState<'bankroll' | 'notifications'>('bankroll');
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // Sync form state when settings change externally or modal opens
   useEffect(() => {
     if (isOpen) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state when modal opens
-      setFormState(settings)
+      setFormState(settings);
       if (notificationSettings) {
-        setNotifState(notificationSettings)
+        setNotifState(notificationSettings);
       }
-      setKellyState(loadKellySettings())
-      setDutchState(loadDutchSettings())
-      setHasChanges(false)
+      setKellyState(loadKellySettings());
+      setDutchState(loadDutchSettings());
+      setHasChanges(false);
     }
-  }, [settings, notificationSettings, isOpen])
+  }, [settings, notificationSettings, isOpen]);
 
   // Handle click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        onClose()
+        onClose();
       }
-    }
+    };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('mousedown', handleClickOutside);
       // Prevent body scroll when modal is open
-      document.body.style.overflow = 'hidden'
+      document.body.style.overflow = 'hidden';
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.body.style.overflow = ''
-    }
-  }, [isOpen, onClose])
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, onClose]);
 
   // Handle escape key
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onClose()
+        onClose();
       }
-    }
+    };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape)
+      document.addEventListener('keydown', handleEscape);
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape)
-    }
-  }, [isOpen, onClose])
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, onClose]);
 
   // Update form field
-  const updateField = useCallback(<K extends keyof BankrollSettingsType>(
-    field: K,
-    value: BankrollSettingsType[K]
-  ) => {
-    setFormState(prev => {
-      const newState = { ...prev, [field]: value }
-      setHasChanges(true)
-      return newState
-    })
-  }, [])
+  const updateField = useCallback(
+    <K extends keyof BankrollSettingsType>(field: K, value: BankrollSettingsType[K]) => {
+      setFormState((prev) => {
+        const newState = { ...prev, [field]: value };
+        setHasChanges(true);
+        return newState;
+      });
+    },
+    []
+  );
 
   // Toggle bet type for Moderate mode
   const toggleBetType = useCallback((betType: BetType) => {
-    setFormState(prev => {
-      const currentTypes = prev.moderateSelectedBetTypes || []
+    setFormState((prev) => {
+      const currentTypes = prev.moderateSelectedBetTypes || [];
       const newTypes = currentTypes.includes(betType)
-        ? currentTypes.filter(t => t !== betType)
-        : [...currentTypes, betType]
-      setHasChanges(true)
-      return { ...prev, moderateSelectedBetTypes: newTypes }
-    })
-  }, [])
+        ? currentTypes.filter((t) => t !== betType)
+        : [...currentTypes, betType];
+      setHasChanges(true);
+      return { ...prev, moderateSelectedBetTypes: newTypes };
+    });
+  }, []);
 
   // Update notification field
-  const updateNotifField = useCallback(<K extends keyof NotificationSettings>(
-    field: K,
-    value: NotificationSettings[K]
-  ) => {
-    setNotifState(prev => {
-      const newState = { ...prev, [field]: value }
-      setHasChanges(true)
-      return newState
-    })
-  }, [])
+  const updateNotifField = useCallback(
+    <K extends keyof NotificationSettings>(field: K, value: NotificationSettings[K]) => {
+      setNotifState((prev) => {
+        const newState = { ...prev, [field]: value };
+        setHasChanges(true);
+        return newState;
+      });
+    },
+    []
+  );
 
   // Update Kelly field
-  const updateKellyField = useCallback(<K extends keyof KellySettings>(
-    field: K,
-    value: KellySettings[K]
-  ) => {
-    setKellyState(prev => {
-      const newState = { ...prev, [field]: value }
-      setHasChanges(true)
-      return newState
-    })
-  }, [])
+  const updateKellyField = useCallback(
+    <K extends keyof KellySettings>(field: K, value: KellySettings[K]) => {
+      setKellyState((prev) => {
+        const newState = { ...prev, [field]: value };
+        setHasChanges(true);
+        return newState;
+      });
+    },
+    []
+  );
 
   // Update Dutch field
-  const updateDutchField = useCallback(<K extends keyof DutchSettings>(
-    field: K,
-    value: DutchSettings[K]
-  ) => {
-    setDutchState(prev => {
-      const newState = { ...prev, [field]: value }
-      setHasChanges(true)
-      return newState
-    })
-  }, [])
+  const updateDutchField = useCallback(
+    <K extends keyof DutchSettings>(field: K, value: DutchSettings[K]) => {
+      setDutchState((prev) => {
+        const newState = { ...prev, [field]: value };
+        setHasChanges(true);
+        return newState;
+      });
+    },
+    []
+  );
 
   // Toggle notification timing
   const toggleNotifTiming = useCallback((timing: number) => {
-    setNotifState(prev => {
+    setNotifState((prev) => {
       const newTimings = prev.timings.includes(timing)
-        ? prev.timings.filter(t => t !== timing)
-        : [...prev.timings, timing].sort((a, b) => b - a)
-      setHasChanges(true)
-      return { ...prev, timings: newTimings }
-    })
-  }, [])
+        ? prev.timings.filter((t) => t !== timing)
+        : [...prev.timings, timing].sort((a, b) => b - a);
+      setHasChanges(true);
+      return { ...prev, timings: newTimings };
+    });
+  }, []);
 
   // Handle save
   const handleSave = useCallback(() => {
-    onSave(formState)
+    onSave(formState);
     if (onNotificationSettingsChange) {
-      onNotificationSettingsChange(notifState)
+      onNotificationSettingsChange(notifState);
     }
     // Save Kelly settings separately (stored in localStorage)
-    saveKellySettings(kellyState)
+    saveKellySettings(kellyState);
     // Save Dutch settings separately (stored in localStorage)
-    saveDutchSettings(dutchState)
-    setHasChanges(false)
-    onClose()
-  }, [formState, notifState, kellyState, dutchState, onSave, onNotificationSettingsChange, onClose])
+    saveDutchSettings(dutchState);
+    setHasChanges(false);
+    onClose();
+  }, [
+    formState,
+    notifState,
+    kellyState,
+    dutchState,
+    onSave,
+    onNotificationSettingsChange,
+    onClose,
+  ]);
 
   // Handle reset
   const handleReset = useCallback(() => {
-    onReset()
-    setNotifState({ enabled: true, soundEnabled: false, timings: [15, 10, 5, 2] })
-    setKellyState(DEFAULT_KELLY_SETTINGS)
-    saveKellySettings(DEFAULT_KELLY_SETTINGS)
-    setDutchState(DEFAULT_DUTCH_SETTINGS)
-    saveDutchSettings(DEFAULT_DUTCH_SETTINGS)
-    setHasChanges(false)
-  }, [onReset])
+    onReset();
+    setNotifState({ enabled: true, soundEnabled: false, timings: [15, 10, 5, 2] });
+    setKellyState(DEFAULT_KELLY_SETTINGS);
+    saveKellySettings(DEFAULT_KELLY_SETTINGS);
+    setDutchState(DEFAULT_DUTCH_SETTINGS);
+    saveDutchSettings(DEFAULT_DUTCH_SETTINGS);
+    setHasChanges(false);
+  }, [onReset]);
 
   // Format currency for display
   const formatCurrency = (amount: number): string => {
@@ -247,8 +275,8 @@ export function BankrollSettings({
       currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(amount)
-  }
+    }).format(amount);
+  };
 
   // Render Mode Selector
   const renderModeSelector = () => (
@@ -266,10 +294,10 @@ export function BankrollSettings({
         ))}
       </div>
       <p className="complexity-mode-description">
-        {MODE_OPTIONS.find(m => m.value === formState.complexityMode)?.description}
+        {MODE_OPTIONS.find((m) => m.value === formState.complexityMode)?.description}
       </p>
     </div>
-  )
+  );
 
   // Render Simple Mode Form
   const renderSimpleMode = () => (
@@ -283,9 +311,7 @@ export function BankrollSettings({
     >
       {/* Race Budget Input */}
       <div className="simple-budget-section">
-        <label className="simple-budget-label">
-          How much for this race?
-        </label>
+        <label className="simple-budget-label">How much for this race?</label>
         <div className="simple-budget-input-wrapper">
           <span className="simple-budget-prefix">$</span>
           <input
@@ -305,7 +331,7 @@ export function BankrollSettings({
         <label className="simple-style-label">Pick your style:</label>
         <div className="simple-style-options">
           {BETTING_STYLES.map((style) => {
-            const info = BETTING_STYLE_INFO[style]
+            const info = BETTING_STYLE_INFO[style];
             return (
               <label
                 key={style}
@@ -327,7 +353,7 @@ export function BankrollSettings({
                   <span className="material-icons">check_circle</span>
                 </div>
               </label>
-            )
+            );
           })}
         </div>
       </div>
@@ -337,7 +363,7 @@ export function BankrollSettings({
         We'll suggest bets based on your choice
       </p>
     </motion.div>
-  )
+  );
 
   // Render Moderate Mode Form
   const renderModerateMode = () => (
@@ -393,7 +419,7 @@ export function BankrollSettings({
             <div
               className="moderate-risk-fill"
               style={{
-                width: `${formState.moderateRiskLevel === 'conservative' ? 0 : formState.moderateRiskLevel === 'moderate' ? 50 : 100}%`
+                width: `${formState.moderateRiskLevel === 'conservative' ? 0 : formState.moderateRiskLevel === 'moderate' ? 50 : 100}%`,
               }}
             />
           </div>
@@ -419,7 +445,9 @@ export function BankrollSettings({
               />
               <span className="moderate-bet-type-checkbox">
                 <span className="material-icons">
-                  {(formState.moderateSelectedBetTypes || []).includes(betType) ? 'check_box' : 'check_box_outline_blank'}
+                  {(formState.moderateSelectedBetTypes || []).includes(betType)
+                    ? 'check_box'
+                    : 'check_box_outline_blank'}
                 </span>
               </span>
               <span className="moderate-bet-type-label">{BET_TYPE_LABELS[betType]}</span>
@@ -433,11 +461,14 @@ export function BankrollSettings({
         <span className="material-icons">trending_up</span>
         <span className="moderate-expected-label">Expected return range:</span>
         <span className="moderate-expected-value">
-          {getExpectedReturnRange(formState.moderateRiskLevel, formState.moderateSelectedBetTypes || [])}
+          {getExpectedReturnRange(
+            formState.moderateRiskLevel,
+            formState.moderateSelectedBetTypes || []
+          )}
         </span>
       </div>
     </motion.div>
-  )
+  );
 
   // Render Advanced Mode Form (existing form)
   const renderAdvancedMode = () => (
@@ -458,7 +489,8 @@ export function BankrollSettings({
           <div className="bankroll-pl-stat">
             <span className="bankroll-pl-label">P&L</span>
             <span className={`bankroll-pl-value ${dailyPL >= 0 ? 'positive' : 'negative'}`}>
-              {dailyPL >= 0 ? '+' : ''}{formatCurrency(dailyPL)}
+              {dailyPL >= 0 ? '+' : ''}
+              {formatCurrency(dailyPL)}
             </span>
           </div>
           <div className="bankroll-pl-stat">
@@ -479,7 +511,13 @@ export function BankrollSettings({
       </div>
 
       {/* Settings Form */}
-      <form className="bankroll-form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+      <form
+        className="bankroll-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSave();
+        }}
+      >
         {/* Total Bankroll */}
         <div className="bankroll-form-group">
           <label className="bankroll-form-label">
@@ -522,7 +560,9 @@ export function BankrollSettings({
                 type="number"
                 className="bankroll-input"
                 value={formState.dailyBudgetValue}
-                onChange={(e) => updateField('dailyBudgetValue', Math.max(0, Number(e.target.value)))}
+                onChange={(e) =>
+                  updateField('dailyBudgetValue', Math.max(0, Number(e.target.value)))
+                }
                 min="0"
                 step={formState.dailyBudgetType === 'fixed' ? '10' : '1'}
               />
@@ -661,13 +701,14 @@ export function BankrollSettings({
                   </label>
                   <div className="bankroll-kelly-fraction-options">
                     {KELLY_FRACTION_OPTIONS.map((option) => {
-                      const info = KELLY_FRACTION_INFO[option.value]
+                      const info = KELLY_FRACTION_INFO[option.value];
                       return (
                         <label
                           key={option.value}
                           className={`bankroll-kelly-fraction-option ${kellyState.kellyFraction === option.value ? 'selected' : ''}`}
                           style={{
-                            borderColor: kellyState.kellyFraction === option.value ? info.color : undefined,
+                            borderColor:
+                              kellyState.kellyFraction === option.value ? info.color : undefined,
                           }}
                         >
                           <input
@@ -675,19 +716,28 @@ export function BankrollSettings({
                             name="kellyFraction"
                             value={option.value}
                             checked={kellyState.kellyFraction === option.value}
-                            onChange={() => updateKellyField('kellyFraction', option.value as KellyFraction)}
+                            onChange={() =>
+                              updateKellyField('kellyFraction', option.value as KellyFraction)
+                            }
                           />
                           <div className="bankroll-kelly-fraction-content">
                             <span
                               className="bankroll-kelly-fraction-label"
-                              style={{ color: kellyState.kellyFraction === option.value ? info.color : undefined }}
+                              style={{
+                                color:
+                                  kellyState.kellyFraction === option.value
+                                    ? info.color
+                                    : undefined,
+                              }}
                             >
                               {option.shortLabel}
                             </span>
-                            <span className="bankroll-kelly-fraction-desc">{option.description}</span>
+                            <span className="bankroll-kelly-fraction-desc">
+                              {option.description}
+                            </span>
                           </div>
                         </label>
-                      )
+                      );
                     })}
                   </div>
                   <span className="bankroll-input-hint bankroll-kelly-hint">
@@ -733,7 +783,9 @@ export function BankrollSettings({
                       value={kellyState.minEdgeRequired}
                       onChange={(e) => updateKellyField('minEdgeRequired', Number(e.target.value))}
                     />
-                    <span className="bankroll-kelly-slider-value">{kellyState.minEdgeRequired}%</span>
+                    <span className="bankroll-kelly-slider-value">
+                      {kellyState.minEdgeRequired}%
+                    </span>
                   </div>
                   <span className="bankroll-input-hint">
                     Only bet when you have at least {kellyState.minEdgeRequired}% edge over the odds
@@ -744,9 +796,9 @@ export function BankrollSettings({
                 <div className="bankroll-kelly-info">
                   <span className="material-icons">help_outline</span>
                   <span>
-                    Kelly Criterion calculates optimal bet size based on your edge.
-                    When enabled, bet recommendations will show Kelly-calculated amounts
-                    alongside tier-based allocations.
+                    Kelly Criterion calculates optimal bet size based on your edge. When enabled,
+                    bet recommendations will show Kelly-calculated amounts alongside tier-based
+                    allocations.
                   </span>
                 </div>
 
@@ -785,9 +837,7 @@ export function BankrollSettings({
             </label>
           </div>
 
-          <p className="bankroll-dutch-description">
-            {DUTCH_EDUCATION.overview}
-          </p>
+          <p className="bankroll-dutch-description">{DUTCH_EDUCATION.overview}</p>
 
           <AnimatePresence>
             {dutchState.enabled && (
@@ -886,9 +936,9 @@ export function BankrollSettings({
                 <div className="bankroll-dutch-info">
                   <span className="material-icons">help_outline</span>
                   <span>
-                    Dutch booking spreads risk across multiple horses to guarantee profit
-                    if any selected horse wins. Only works when combined odds create an
-                    overlay (sum of implied probabilities &lt; 100%).
+                    Dutch booking spreads risk across multiple horses to guarantee profit if any
+                    selected horse wins. Only works when combined odds create an overlay (sum of
+                    implied probabilities &lt; 100%).
                   </span>
                 </div>
 
@@ -900,7 +950,9 @@ export function BankrollSettings({
                 >
                   <span className="material-icons">school</span>
                   <span>How Dutch Booking Works</span>
-                  <span className={`material-icons ${showDutchHelp ? 'rotated' : ''}`}>expand_more</span>
+                  <span className={`material-icons ${showDutchHelp ? 'rotated' : ''}`}>
+                    expand_more
+                  </span>
                 </button>
 
                 {/* Dutch Help Section */}
@@ -946,12 +998,9 @@ export function BankrollSettings({
       </form>
 
       {/* Kelly Help Modal */}
-      <KellyHelpModal
-        isOpen={showKellyHelp}
-        onClose={() => setShowKellyHelp(false)}
-      />
+      <KellyHelpModal isOpen={showKellyHelp} onClose={() => setShowKellyHelp(false)} />
     </motion.div>
-  )
+  );
 
   return (
     <AnimatePresence>
@@ -1086,7 +1135,9 @@ export function BankrollSettings({
                             onChange={(e) => updateNotifField('soundEnabled', e.target.checked)}
                             disabled={!notifState.enabled}
                           />
-                          <span className={`notification-switch-slider ${!notifState.enabled ? 'disabled' : ''}`} />
+                          <span
+                            className={`notification-switch-slider ${!notifState.enabled ? 'disabled' : ''}`}
+                          />
                         </label>
                       </div>
 
@@ -1176,7 +1227,7 @@ export function BankrollSettings({
         </>
       )}
     </AnimatePresence>
-  )
+  );
 }
 
-export default BankrollSettings
+export default BankrollSettings;

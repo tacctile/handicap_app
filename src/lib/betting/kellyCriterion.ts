@@ -19,9 +19,9 @@
  * @module betting/kellyCriterion
  */
 
-import { logger } from '../../services/logging'
-import type { KellySettings, KellyFraction, RiskToleranceKelly } from './kellySettings'
-import { validateKellyInputs } from './kellyValidator'
+import { logger } from '../../services/logging';
+import type { KellySettings, KellyFraction, RiskToleranceKelly } from './kellySettings';
+import { validateKellyInputs } from './kellyValidator';
 
 // ============================================================================
 // TYPES
@@ -29,54 +29,54 @@ import { validateKellyInputs } from './kellyValidator'
 
 export interface KellyInput {
   /** Win probability as decimal (0.0 to 1.0) */
-  winProbability: number
+  winProbability: number;
   /** Decimal odds (e.g., 5.0 for 4/1 or 5-1) */
-  decimalOdds: number
+  decimalOdds: number;
   /** Current bankroll in dollars */
-  bankroll: number
+  bankroll: number;
   /** Kelly fraction to use (0.25, 0.5, 1.0) */
-  kellyFraction?: KellyFraction
+  kellyFraction?: KellyFraction;
   /** Maximum bet as percentage of bankroll (0.0 to 1.0) */
-  maxBetPercent?: number
+  maxBetPercent?: number;
   /** Minimum edge required to bet (0.0 to 1.0) */
-  minEdgeRequired?: number
+  minEdgeRequired?: number;
 }
 
 export interface KellyResult {
   /** Optimal bet size in dollars */
-  optimalBetSize: number
+  optimalBetSize: number;
   /** Full Kelly fraction (before safety adjustments) */
-  fullKellyFraction: number
+  fullKellyFraction: number;
   /** Adjusted Kelly fraction (after applying kellyFraction) */
-  adjustedKellyFraction: number
+  adjustedKellyFraction: number;
   /** Fraction used (e.g., 0.25 for Quarter Kelly) */
-  fractionUsed: KellyFraction
+  fractionUsed: KellyFraction;
   /** Edge percentage ((p * b - q) / 1) */
-  edgePercent: number
+  edgePercent: number;
   /** Whether the bet has positive edge */
-  hasPositiveEdge: boolean
+  hasPositiveEdge: boolean;
   /** Whether Kelly suggests betting */
-  shouldBet: boolean
+  shouldBet: boolean;
   /** Reason if shouldBet is false */
-  reason: string | null
+  reason: string | null;
   /** Expected bankroll growth rate (geometric mean) */
-  expectedGrowthRate: number
+  expectedGrowthRate: number;
   /** Implied probability from odds */
-  impliedProbability: number
+  impliedProbability: number;
   /** Our edge over implied probability */
-  overlayPercent: number
+  overlayPercent: number;
   /** Warnings (e.g., bet capped, edge barely positive) */
-  warnings: KellyWarning[]
+  warnings: KellyWarning[];
   /** Was the bet capped? */
-  wasCapped: boolean
+  wasCapped: boolean;
   /** Original bet size before capping */
-  uncappedBetSize: number
+  uncappedBetSize: number;
 }
 
 export interface KellyWarning {
-  type: 'bet_capped' | 'kelly_negative' | 'edge_marginal' | 'bankroll_low' | 'bet_too_aggressive'
-  message: string
-  severity: 'info' | 'warning' | 'error'
+  type: 'bet_capped' | 'kelly_negative' | 'edge_marginal' | 'bankroll_low' | 'bet_too_aggressive';
+  message: string;
+  severity: 'info' | 'warning' | 'error';
 }
 
 // ============================================================================
@@ -86,28 +86,28 @@ export interface KellyWarning {
 /** Kelly fraction multipliers */
 export const KELLY_FRACTION_VALUES: Record<KellyFraction, number> = {
   quarter: 0.25,
-  half: 0.50,
-  full: 1.00,
-}
+  half: 0.5,
+  full: 1.0,
+};
 
 /** Kelly fraction display labels */
 export const KELLY_FRACTION_LABELS: Record<KellyFraction, string> = {
   quarter: '1/4 Kelly',
   half: '1/2 Kelly',
   full: 'Full Kelly',
-}
+};
 
 /** Minimum bet amount in dollars */
-export const MIN_BET_AMOUNT = 2
+export const MIN_BET_AMOUNT = 2;
 
 /** Default max bet as percentage of bankroll */
-export const DEFAULT_MAX_BET_PERCENT = 0.10
+export const DEFAULT_MAX_BET_PERCENT = 0.1;
 
 /** Default minimum edge required */
-export const DEFAULT_MIN_EDGE_PERCENT = 0.05
+export const DEFAULT_MIN_EDGE_PERCENT = 0.05;
 
 /** Threshold for considering edge "marginal" */
-export const MARGINAL_EDGE_THRESHOLD = 0.03
+export const MARGINAL_EDGE_THRESHOLD = 0.03;
 
 // ============================================================================
 // CORE KELLY FUNCTIONS
@@ -129,61 +129,61 @@ export function calculateKelly(input: KellyInput): KellyResult {
     kellyFraction = 'quarter',
     maxBetPercent = DEFAULT_MAX_BET_PERCENT,
     minEdgeRequired = DEFAULT_MIN_EDGE_PERCENT,
-  } = input
+  } = input;
 
   // Initialize warnings
-  const warnings: KellyWarning[] = []
+  const warnings: KellyWarning[] = [];
 
   // Validate inputs
   const validation = validateKellyInputs({
     winProbability,
     decimalOdds,
     bankroll,
-  })
+  });
 
   if (!validation.isValid) {
     logger.logWarning('Kelly calculation failed validation', {
       component: 'kellyCriterion',
       errors: validation.errors,
-    })
+    });
 
-    return createZeroResult(kellyFraction, validation.errors.join('; '))
+    return createZeroResult(kellyFraction, validation.errors.join('; '));
   }
 
   // Calculate probabilities
-  const p = winProbability
-  const q = 1 - p
+  const p = winProbability;
+  const q = 1 - p;
 
   // Decimal odds is the multiplier (e.g., 5.0 for 4/1)
   // Net odds (b) = decimalOdds - 1 for fair comparison
-  const b = decimalOdds - 1
+  const b = decimalOdds - 1;
 
   // Calculate implied probability from odds
-  const impliedProbability = 1 / decimalOdds
+  const impliedProbability = 1 / decimalOdds;
 
   // Calculate overlay percentage
-  const overlayPercent = ((p - impliedProbability) / impliedProbability) * 100
+  const overlayPercent = ((p - impliedProbability) / impliedProbability) * 100;
 
   // Calculate edge percentage: (b * p - q) = expected profit per $1 wagered
-  const edge = b * p - q
-  const edgePercent = edge * 100
+  const edge = b * p - q;
+  const edgePercent = edge * 100;
 
   // Calculate full Kelly fraction
   // f* = (bp - q) / b
-  const fullKellyFraction = edge / b
+  const fullKellyFraction = edge / b;
 
   // Check if we have positive edge
-  const hasPositiveEdge = fullKellyFraction > 0
+  const hasPositiveEdge = fullKellyFraction > 0;
 
   // Determine if edge meets minimum requirement
-  const meetsMinEdge = edge >= minEdgeRequired
+  const meetsMinEdge = edge >= minEdgeRequired;
 
   // Calculate expected growth rate using Kelly criterion
   // g = p * log(1 + b*f) + q * log(1 - f)
   // For small f, approximately: g ≈ f * edge - (f^2 * b^2 * p * q) / 2
   const expectedGrowthRate = hasPositiveEdge
     ? calculateExpectedGrowthRate(p, b, fullKellyFraction * KELLY_FRACTION_VALUES[kellyFraction])
-    : 0
+    : 0;
 
   // Check various conditions
   if (!hasPositiveEdge) {
@@ -191,7 +191,7 @@ export function calculateKelly(input: KellyInput): KellyResult {
       type: 'kelly_negative',
       message: 'Kelly suggests pass - no positive edge',
       severity: 'warning',
-    })
+    });
 
     return {
       optimalBetSize: 0,
@@ -208,7 +208,7 @@ export function calculateKelly(input: KellyInput): KellyResult {
       warnings,
       wasCapped: false,
       uncappedBetSize: 0,
-    }
+    };
   }
 
   if (!meetsMinEdge) {
@@ -216,7 +216,7 @@ export function calculateKelly(input: KellyInput): KellyResult {
       type: 'edge_marginal',
       message: `Edge ${edgePercent.toFixed(1)}% below minimum ${(minEdgeRequired * 100).toFixed(0)}%`,
       severity: 'info',
-    })
+    });
 
     return {
       optimalBetSize: 0,
@@ -233,16 +233,16 @@ export function calculateKelly(input: KellyInput): KellyResult {
       warnings,
       wasCapped: false,
       uncappedBetSize: 0,
-    }
+    };
   }
 
   // Apply fractional Kelly
-  const fractionValue = KELLY_FRACTION_VALUES[kellyFraction]
-  const adjustedKellyFraction = fullKellyFraction * fractionValue
+  const fractionValue = KELLY_FRACTION_VALUES[kellyFraction];
+  const adjustedKellyFraction = fullKellyFraction * fractionValue;
 
   // Calculate bet size
-  let optimalBetSize = bankroll * adjustedKellyFraction
-  const uncappedBetSize = optimalBetSize
+  let optimalBetSize = bankroll * adjustedKellyFraction;
+  const uncappedBetSize = optimalBetSize;
 
   // Check if Kelly is too aggressive (> 25% of bankroll)
   if (fullKellyFraction > 0.25) {
@@ -250,21 +250,21 @@ export function calculateKelly(input: KellyInput): KellyResult {
       type: 'bet_too_aggressive',
       message: `Full Kelly ${(fullKellyFraction * 100).toFixed(1)}% is aggressive`,
       severity: 'warning',
-    })
+    });
   }
 
   // Apply maximum bet cap
-  const maxBetAmount = bankroll * maxBetPercent
-  let wasCapped = false
+  const maxBetAmount = bankroll * maxBetPercent;
+  let wasCapped = false;
 
   if (optimalBetSize > maxBetAmount) {
-    optimalBetSize = maxBetAmount
-    wasCapped = true
+    optimalBetSize = maxBetAmount;
+    wasCapped = true;
     warnings.push({
       type: 'bet_capped',
       message: `Bet capped at ${(maxBetPercent * 100).toFixed(0)}% of bankroll`,
       severity: 'info',
-    })
+    });
   }
 
   // Ensure minimum bet
@@ -274,7 +274,7 @@ export function calculateKelly(input: KellyInput): KellyResult {
         type: 'bankroll_low',
         message: `Bankroll $${bankroll.toFixed(2)} below minimum bet $${MIN_BET_AMOUNT}`,
         severity: 'warning',
-      })
+      });
       return {
         optimalBetSize: 0,
         fullKellyFraction,
@@ -290,13 +290,13 @@ export function calculateKelly(input: KellyInput): KellyResult {
         warnings,
         wasCapped,
         uncappedBetSize,
-      }
+      };
     }
-    optimalBetSize = MIN_BET_AMOUNT
+    optimalBetSize = MIN_BET_AMOUNT;
   }
 
   // Round to whole dollar
-  optimalBetSize = Math.round(optimalBetSize)
+  optimalBetSize = Math.round(optimalBetSize);
 
   // Add marginal edge warning if applicable
   if (edge < MARGINAL_EDGE_THRESHOLD && edge > 0) {
@@ -304,7 +304,7 @@ export function calculateKelly(input: KellyInput): KellyResult {
       type: 'edge_marginal',
       message: `Edge ${edgePercent.toFixed(1)}% is marginal`,
       severity: 'info',
-    })
+    });
   }
 
   return {
@@ -322,7 +322,7 @@ export function calculateKelly(input: KellyInput): KellyResult {
     warnings,
     wasCapped,
     uncappedBetSize,
-  }
+  };
 }
 
 /**
@@ -331,13 +331,13 @@ export function calculateKelly(input: KellyInput): KellyResult {
  * g = p * log(1 + b*f) + q * log(1 - f)
  */
 function calculateExpectedGrowthRate(p: number, b: number, f: number): number {
-  if (f <= 0 || f >= 1) return 0
+  if (f <= 0 || f >= 1) return 0;
 
   try {
-    const growth = p * Math.log(1 + b * f) + (1 - p) * Math.log(1 - f)
-    return growth
+    const growth = p * Math.log(1 + b * f) + (1 - p) * Math.log(1 - f);
+    return growth;
   } catch {
-    return 0
+    return 0;
   }
 }
 
@@ -360,7 +360,7 @@ function createZeroResult(kellyFraction: KellyFraction, reason: string): KellyRe
     warnings: [],
     wasCapped: false,
     uncappedBetSize: 0,
-  }
+  };
 }
 
 // ============================================================================
@@ -375,11 +375,11 @@ function createZeroResult(kellyFraction: KellyFraction, reason: string): KellyRe
  */
 export function americanToDecimal(americanOdds: number): number {
   if (americanOdds >= 100) {
-    return americanOdds / 100 + 1
+    return americanOdds / 100 + 1;
   } else if (americanOdds <= -100) {
-    return 100 / Math.abs(americanOdds) + 1
+    return 100 / Math.abs(americanOdds) + 1;
   }
-  return 2.0 // Default to even money for invalid odds
+  return 2.0; // Default to even money for invalid odds
 }
 
 /**
@@ -389,8 +389,8 @@ export function americanToDecimal(americanOdds: number): number {
  * 9/2 = 5.50 (9/2 + 1)
  */
 export function fractionalToDecimal(numerator: number, denominator: number): number {
-  if (denominator === 0) return 2.0
-  return numerator / denominator + 1
+  if (denominator === 0) return 2.0;
+  return numerator / denominator + 1;
 }
 
 /**
@@ -400,43 +400,43 @@ export function fractionalToDecimal(numerator: number, denominator: number): num
  */
 export function parseOddsToDecimal(oddsString: string): number {
   if (!oddsString || typeof oddsString !== 'string') {
-    return 2.0
+    return 2.0;
   }
 
-  const cleanOdds = oddsString.trim()
+  const cleanOdds = oddsString.trim();
 
   // Handle "X-Y" format (e.g., "5-1", "4-5")
-  const dashMatch = cleanOdds.match(/^(\d+)-(\d+)$/)
+  const dashMatch = cleanOdds.match(/^(\d+)-(\d+)$/);
   if (dashMatch) {
-    const num = parseInt(dashMatch[1], 10)
-    const den = parseInt(dashMatch[2], 10)
+    const num = parseInt(dashMatch[1], 10);
+    const den = parseInt(dashMatch[2], 10);
     if (den > 0) {
-      return num / den + 1
+      return num / den + 1;
     }
   }
 
   // Handle "X/Y" format (e.g., "5/1", "9/2")
-  const slashMatch = cleanOdds.match(/^(\d+)\/(\d+)$/)
+  const slashMatch = cleanOdds.match(/^(\d+)\/(\d+)$/);
   if (slashMatch) {
-    const num = parseInt(slashMatch[1], 10)
-    const den = parseInt(slashMatch[2], 10)
+    const num = parseInt(slashMatch[1], 10);
+    const den = parseInt(slashMatch[2], 10);
     if (den > 0) {
-      return num / den + 1
+      return num / den + 1;
     }
   }
 
   // Handle "Even" or "EVN"
   if (/^even$/i.test(cleanOdds) || /^evn$/i.test(cleanOdds)) {
-    return 2.0
+    return 2.0;
   }
 
   // Handle pure decimal (e.g., "5.0")
-  const decimal = parseFloat(cleanOdds)
+  const decimal = parseFloat(cleanOdds);
   if (!isNaN(decimal) && decimal > 1) {
-    return decimal
+    return decimal;
   }
 
-  return 2.0 // Default
+  return 2.0; // Default
 }
 
 /**
@@ -447,7 +447,7 @@ export function parseOddsToDecimal(oddsString: string): number {
  */
 export function confidenceToWinProbability(confidence: number, fieldSize: number = 10): number {
   // Clamp confidence
-  const clampedConfidence = Math.max(0, Math.min(100, confidence))
+  const clampedConfidence = Math.max(0, Math.min(100, confidence));
 
   // Base probability from confidence (roughly)
   // High confidence (85+) = ~25-35% win probability
@@ -455,31 +455,31 @@ export function confidenceToWinProbability(confidence: number, fieldSize: number
   // Moderate confidence (55-69) = ~8-15% win probability
   // Low confidence (<55) = ~3-8% win probability
 
-  let baseProbability: number
+  let baseProbability: number;
 
   if (clampedConfidence >= 85) {
     // Elite: 25-40%
-    baseProbability = 0.25 + (clampedConfidence - 85) * 0.01
+    baseProbability = 0.25 + (clampedConfidence - 85) * 0.01;
   } else if (clampedConfidence >= 70) {
     // Strong: 15-25%
-    baseProbability = 0.15 + (clampedConfidence - 70) * 0.0067
+    baseProbability = 0.15 + (clampedConfidence - 70) * 0.0067;
   } else if (clampedConfidence >= 55) {
     // Good: 8-15%
-    baseProbability = 0.08 + (clampedConfidence - 55) * 0.0047
+    baseProbability = 0.08 + (clampedConfidence - 55) * 0.0047;
   } else if (clampedConfidence >= 40) {
     // Fair: 4-8%
-    baseProbability = 0.04 + (clampedConfidence - 40) * 0.0027
+    baseProbability = 0.04 + (clampedConfidence - 40) * 0.0027;
   } else {
     // Poor: 1-4%
-    baseProbability = 0.01 + clampedConfidence * 0.00075
+    baseProbability = 0.01 + clampedConfidence * 0.00075;
   }
 
   // Adjust for field size (larger fields = lower individual probability)
-  const fieldAdjustment = 10 / Math.max(5, fieldSize)
-  baseProbability *= fieldAdjustment
+  const fieldAdjustment = 10 / Math.max(5, fieldSize);
+  baseProbability *= fieldAdjustment;
 
   // Clamp to reasonable range
-  return Math.max(0.01, Math.min(0.50, baseProbability))
+  return Math.max(0.01, Math.min(0.5, baseProbability));
 }
 
 /**
@@ -492,25 +492,25 @@ export function getKellySettingsForRisk(riskTolerance: RiskToleranceKelly): Part
         kellyFraction: 'quarter',
         maxBetPercent: 5,
         minEdgeRequired: 15,
-      }
+      };
     case 'moderate':
       return {
         kellyFraction: 'half',
         maxBetPercent: 10,
         minEdgeRequired: 10,
-      }
+      };
     case 'aggressive':
       return {
         kellyFraction: 'full',
         maxBetPercent: 15,
         minEdgeRequired: 5,
-      }
+      };
     default:
       return {
         kellyFraction: 'quarter',
         maxBetPercent: 10,
         minEdgeRequired: 10,
-      }
+      };
   }
 }
 
@@ -518,11 +518,11 @@ export function getKellySettingsForRisk(riskTolerance: RiskToleranceKelly): Part
  * Format Kelly result for display
  */
 export function formatKellyResult(result: KellyResult): {
-  betSize: string
-  fraction: string
-  edge: string
-  growth: string
-  overlay: string
+  betSize: string;
+  fraction: string;
+  edge: string;
+  growth: string;
+  overlay: string;
 } {
   return {
     betSize: `$${result.optimalBetSize}`,
@@ -530,7 +530,7 @@ export function formatKellyResult(result: KellyResult): {
     edge: `${result.edgePercent >= 0 ? '+' : ''}${result.edgePercent.toFixed(1)}%`,
     growth: `${(result.expectedGrowthRate * 100).toFixed(2)}%`,
     overlay: `${result.overlayPercent >= 0 ? '+' : ''}${result.overlayPercent.toFixed(1)}%`,
-  }
+  };
 }
 
 // ============================================================================
@@ -539,26 +539,26 @@ export function formatKellyResult(result: KellyResult): {
 
 export interface BatchKellyInput {
   /** Unique identifier for the bet */
-  id: string
+  id: string;
   /** Win probability as decimal */
-  winProbability: number
+  winProbability: number;
   /** Decimal odds */
-  decimalOdds: number
+  decimalOdds: number;
   /** Optional: override bankroll for this bet */
-  bankroll?: number
+  bankroll?: number;
 }
 
 export interface BatchKellyResult {
   /** Kelly results for each bet */
-  results: Map<string, KellyResult>
+  results: Map<string, KellyResult>;
   /** Total recommended investment */
-  totalInvestment: number
+  totalInvestment: number;
   /** Bets that passed Kelly filter */
-  recommendedBets: string[]
+  recommendedBets: string[];
   /** Bets that failed Kelly filter */
-  passedBets: string[]
+  passedBets: string[];
   /** Expected portfolio growth */
-  portfolioGrowthRate: number
+  portfolioGrowthRate: number;
 }
 
 /**
@@ -569,35 +569,35 @@ export function calculateBatchKelly(
   bankroll: number,
   settings: Partial<KellySettings> = {}
 ): BatchKellyResult {
-  const results = new Map<string, KellyResult>()
-  const recommendedBets: string[] = []
-  const passedBets: string[] = []
-  let totalInvestment = 0
+  const results = new Map<string, KellyResult>();
+  const recommendedBets: string[] = [];
+  const passedBets: string[] = [];
+  let totalInvestment = 0;
 
   for (const bet of bets) {
     const result = calculateKelly({
       winProbability: bet.winProbability,
       decimalOdds: bet.decimalOdds,
       bankroll: bet.bankroll ?? bankroll,
-      kellyFraction: settings.kellyFraction as KellyFraction ?? 'quarter',
+      kellyFraction: (settings.kellyFraction as KellyFraction) ?? 'quarter',
       maxBetPercent: (settings.maxBetPercent ?? 10) / 100,
       minEdgeRequired: (settings.minEdgeRequired ?? 10) / 100,
-    })
+    });
 
-    results.set(bet.id, result)
+    results.set(bet.id, result);
 
     if (result.shouldBet) {
-      recommendedBets.push(bet.id)
-      totalInvestment += result.optimalBetSize
+      recommendedBets.push(bet.id);
+      totalInvestment += result.optimalBetSize;
     } else {
-      passedBets.push(bet.id)
+      passedBets.push(bet.id);
     }
   }
 
   // Calculate portfolio growth rate (simplified - assumes independent bets)
   const portfolioGrowthRate = Array.from(results.values())
-    .filter(r => r.shouldBet)
-    .reduce((sum, r) => sum + r.expectedGrowthRate, 0)
+    .filter((r) => r.shouldBet)
+    .reduce((sum, r) => sum + r.expectedGrowthRate, 0);
 
   return {
     results,
@@ -605,5 +605,5 @@ export function calculateBatchKelly(
     recommendedBets,
     passedBets,
     portfolioGrowthRate,
-  }
+  };
 }

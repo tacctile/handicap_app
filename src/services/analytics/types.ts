@@ -12,22 +12,22 @@
 /**
  * Supported analytics providers
  */
-export type AnalyticsProviderType = 'mock' | 'mixpanel' | 'amplitude'
+export type AnalyticsProviderType = 'mock' | 'mixpanel' | 'amplitude';
 
 /**
  * Configuration for analytics service
  */
 export interface AnalyticsConfig {
   /** Which analytics provider to use */
-  provider: AnalyticsProviderType
+  provider: AnalyticsProviderType;
   /** API key for the provider (not used by mock) */
-  apiKey?: string
+  apiKey?: string;
   /** Whether to enable debug logging */
-  debug?: boolean
+  debug?: boolean;
   /** Batch size before auto-flush */
-  batchSize?: number
+  batchSize?: number;
   /** Flush interval in milliseconds */
-  flushIntervalMs?: number
+  flushIntervalMs?: number;
 }
 
 /**
@@ -38,7 +38,7 @@ export const defaultAnalyticsConfig: AnalyticsConfig = {
   debug: true,
   batchSize: 10,
   flushIntervalMs: 30000, // 30 seconds
-}
+};
 
 // ============================================================================
 // EVENT TYPES
@@ -54,25 +54,25 @@ export type EventName =
   | 'exotic_built'
   | 'session_start'
   | 'session_end'
-  | 'feature_used'
+  | 'feature_used';
 
 /**
  * Event properties - flexible key-value pairs for event metadata
  */
-export type EventProperties = Record<string, string | number | boolean | null>
+export type EventProperties = Record<string, string | number | boolean | null>;
 
 /**
  * Analytics event structure
  */
 export interface AnalyticsEvent {
   /** The name/type of the event */
-  eventName: EventName
+  eventName: EventName;
   /** When the event occurred */
-  timestamp: number
+  timestamp: number;
   /** Additional properties for the event */
-  properties: EventProperties
+  properties: EventProperties;
   /** User ID if available (optional) */
-  userId?: string
+  userId?: string;
 }
 
 // ============================================================================
@@ -84,13 +84,13 @@ export interface AnalyticsEvent {
  */
 export interface UserActivity {
   /** The user's identifier */
-  userId: string
+  userId: string;
   /** List of events for this user */
-  events: AnalyticsEvent[]
+  events: AnalyticsEvent[];
   /** Total number of sessions */
-  sessionCount: number
+  sessionCount: number;
   /** Timestamp of last activity */
-  lastActive: number
+  lastActive: number;
 }
 
 // ============================================================================
@@ -106,20 +106,20 @@ export type AnalyticsErrorCode =
   | 'NETWORK_ERROR'
   | 'QUOTA_EXCEEDED'
   | 'AUTHENTICATION_ERROR'
-  | 'UNKNOWN_ERROR'
+  | 'UNKNOWN_ERROR';
 
 /**
  * Structured analytics error
  */
 export interface AnalyticsError {
   /** Error code for programmatic handling */
-  code: AnalyticsErrorCode
+  code: AnalyticsErrorCode;
   /** Human-readable error message */
-  message: string
+  message: string;
   /** Whether the operation can be retried */
-  retryable: boolean
+  retryable: boolean;
   /** Original error if any */
-  originalError?: unknown
+  originalError?: unknown;
 }
 
 /**
@@ -131,7 +131,7 @@ export function createAnalyticsError(
   retryable: boolean = false,
   originalError?: unknown
 ): AnalyticsError {
-  return { code, message, retryable, originalError }
+  return { code, message, retryable, originalError };
 }
 
 /**
@@ -144,7 +144,7 @@ export function isAnalyticsError(error: unknown): error is AnalyticsError {
     'code' in error &&
     'message' in error &&
     'retryable' in error
-  )
+  );
 }
 
 // ============================================================================
@@ -162,34 +162,30 @@ export interface IAnalyticsProvider {
    * @param properties Additional properties for the event
    * @param userId Optional user identifier
    */
-  trackEvent(
-    eventName: EventName,
-    properties?: EventProperties,
-    userId?: string
-  ): void
+  trackEvent(eventName: EventName, properties?: EventProperties, userId?: string): void;
 
   /**
    * Get activity summary for a user
    * @param userId The user's identifier
    * @returns User activity data
    */
-  getActivity(userId: string): Promise<UserActivity | null>
+  getActivity(userId: string): Promise<UserActivity | null>;
 
   /**
    * Flush any pending events to the analytics service
    * @returns Promise that resolves when flush is complete
    */
-  flush(): Promise<void>
+  flush(): Promise<void>;
 
   /**
    * Get the provider type
    */
-  getProviderType(): AnalyticsProviderType
+  getProviderType(): AnalyticsProviderType;
 
   /**
    * Check if the provider is available/configured
    */
-  isAvailable(): boolean
+  isAvailable(): boolean;
 }
 
 // ============================================================================
@@ -201,7 +197,7 @@ export interface IAnalyticsProvider {
  */
 export type AnalyticsResult<T> =
   | { success: true; data: T }
-  | { success: false; error: AnalyticsError }
+  | { success: false; error: AnalyticsError };
 
 /**
  * Wrap async analytics operation in result type
@@ -210,20 +206,15 @@ export async function wrapAnalyticsResult<T>(
   operation: () => Promise<T>
 ): Promise<AnalyticsResult<T>> {
   try {
-    const data = await operation()
-    return { success: true, data }
+    const data = await operation();
+    return { success: true, data };
   } catch (error) {
     if (isAnalyticsError(error)) {
-      return { success: false, error }
+      return { success: false, error };
     }
     return {
       success: false,
-      error: createAnalyticsError(
-        'UNKNOWN_ERROR',
-        'An unexpected error occurred',
-        false,
-        error
-      ),
-    }
+      error: createAnalyticsError('UNKNOWN_ERROR', 'An unexpected error occurred', false, error),
+    };
   }
 }

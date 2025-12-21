@@ -15,35 +15,35 @@
  */
 export const EQUIPMENT_CODES = {
   // Blinkers
-  'B': 'Blinkers',
-  'BO': 'Blinkers Off',
+  B: 'Blinkers',
+  BO: 'Blinkers Off',
 
   // Bandages
-  'BL': 'Front Bandages',
-  'HR': 'Hind/Rear Bandages',
-  'FB': 'Front Bandages', // Alternative code
-  'RB': 'Rear Bandages', // Alternative code
+  BL: 'Front Bandages',
+  HR: 'Hind/Rear Bandages',
+  FB: 'Front Bandages', // Alternative code
+  RB: 'Rear Bandages', // Alternative code
 
   // Other Equipment
-  'TT': 'Tongue Tie',
-  'NS': 'Nasal Strip',
-  'SR': 'Shadow Roll',
-  'CP': 'Cheek Pieces',
-  'BS': 'Bar Shoes',
-  'MC': 'Mud Caulks',
-  'RR': 'Run-Out Bit Right',
-  'RL': 'Run-Out Bit Left',
-  'CO': 'Cornell Collar',
-  'FS': 'Figure-8 Noseband',
+  TT: 'Tongue Tie',
+  NS: 'Nasal Strip',
+  SR: 'Shadow Roll',
+  CP: 'Cheek Pieces',
+  BS: 'Bar Shoes',
+  MC: 'Mud Caulks',
+  RR: 'Run-Out Bit Right',
+  RL: 'Run-Out Bit Left',
+  CO: 'Cornell Collar',
+  FS: 'Figure-8 Noseband',
 
   // Medication
-  'L': 'Lasix',
-  'L1': 'Lasix First Time',
-  'LO': 'Lasix Off',
-  'BU': 'Bute',
-} as const
+  L: 'Lasix',
+  L1: 'Lasix First Time',
+  LO: 'Lasix Off',
+  BU: 'Bute',
+} as const;
 
-export type EquipmentCode = keyof typeof EQUIPMENT_CODES
+export type EquipmentCode = keyof typeof EQUIPMENT_CODES;
 
 // ============================================================================
 // EQUIPMENT CATEGORY TYPES
@@ -53,22 +53,27 @@ export type EquipmentCode = keyof typeof EQUIPMENT_CODES
  * Equipment category for grouping related equipment
  */
 export type EquipmentCategory =
-  | 'medication'   // Lasix, Bute
-  | 'vision'       // Blinkers, Shadow Roll, Cheek Pieces
-  | 'bandages'     // Front, Hind, All
-  | 'breathing'    // Tongue Tie, Nasal Strip
-  | 'shoes'        // Bar Shoes, Mud Caulks
-  | 'other'        // Everything else
+  | 'medication' // Lasix, Bute
+  | 'vision' // Blinkers, Shadow Roll, Cheek Pieces
+  | 'bandages' // Front, Hind, All
+  | 'breathing' // Tongue Tie, Nasal Strip
+  | 'shoes' // Bar Shoes, Mud Caulks
+  | 'other'; // Everything else
 
 /**
  * Direction of equipment change
  */
-export type EquipmentChangeDirection = 'added' | 'removed' | 'switched'
+export type EquipmentChangeDirection = 'added' | 'removed' | 'switched';
 
 /**
  * Impact classification
  */
-export type ImpactClassification = 'very_positive' | 'positive' | 'neutral' | 'negative' | 'very_negative'
+export type ImpactClassification =
+  | 'very_positive'
+  | 'positive'
+  | 'neutral'
+  | 'negative'
+  | 'very_negative';
 
 // ============================================================================
 // EQUIPMENT TYPE DEFINITIONS
@@ -79,25 +84,25 @@ export type ImpactClassification = 'very_positive' | 'positive' | 'neutral' | 'n
  */
 export interface EquipmentTypeDefinition {
   /** Equipment identifier */
-  id: string
+  id: string;
   /** DRF code(s) for this equipment */
-  codes: string[]
+  codes: string[];
   /** Display name */
-  name: string
+  name: string;
   /** Short description of purpose */
-  description: string
+  description: string;
   /** Equipment category */
-  category: EquipmentCategory
+  category: EquipmentCategory;
   /** Typical impact when added (points) */
-  impactAdded: number
+  impactAdded: number;
   /** Typical impact when removed (points) */
-  impactRemoved: number
+  impactRemoved: number;
   /** Description of typical impact */
-  impactDescription: string
+  impactDescription: string;
   /** Is this a first-time change that's especially significant? */
-  significantFirstTime: boolean
+  significantFirstTime: boolean;
   /** Additional first-time bonus (if applicable) */
-  firstTimeBonus: number
+  firstTimeBonus: number;
 }
 
 // ============================================================================
@@ -117,7 +122,8 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
     category: 'medication',
     impactAdded: 12,
     impactRemoved: -8,
-    impactDescription: 'First-time Lasix is one of the most significant equipment changes. Proven statistical advantage.',
+    impactDescription:
+      'First-time Lasix is one of the most significant equipment changes. Proven statistical advantage.',
     significantFirstTime: true,
     firstTimeBonus: 5,
   },
@@ -131,7 +137,8 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
     category: 'vision',
     impactAdded: 10,
     impactRemoved: 8,
-    impactDescription: 'Blinkers on can improve focus. Blinkers off may help if horse was too keen.',
+    impactDescription:
+      'Blinkers on can improve focus. Blinkers off may help if horse was too keen.',
     significantFirstTime: true,
     firstTimeBonus: 3,
   },
@@ -140,7 +147,7 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
     id: 'shadowRoll',
     codes: ['SR'],
     name: 'Shadow Roll',
-    description: 'Sheepskin noseband to block horse\'s view of shadows on track',
+    description: "Sheepskin noseband to block horse's view of shadows on track",
     category: 'vision',
     impactAdded: 4,
     impactRemoved: 0,
@@ -238,7 +245,8 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
     category: 'shoes',
     impactAdded: 2,
     impactRemoved: 1,
-    impactDescription: 'Used for hoof issues. +2 on turf (better grip), -1 on dirt (may indicate concern).',
+    impactDescription:
+      'Used for hoof issues. +2 on turf (better grip), -1 on dirt (may indicate concern).',
     significantFirstTime: false,
     firstTimeBonus: 0,
   },
@@ -255,7 +263,7 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
     significantFirstTime: false,
     firstTimeBonus: 0,
   },
-} as const
+} as const;
 
 // ============================================================================
 // EQUIPMENT CHANGE INTERFACE
@@ -266,21 +274,21 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
  */
 export interface DetectedEquipmentChange {
   /** Equipment type from EQUIPMENT_TYPES */
-  equipmentType: EquipmentTypeDefinition
+  equipmentType: EquipmentTypeDefinition;
   /** Direction of change */
-  direction: EquipmentChangeDirection
+  direction: EquipmentChangeDirection;
   /** Is this the first time this equipment is being used? */
-  isFirstTime: boolean
+  isFirstTime: boolean;
   /** Base point value for this change */
-  basePoints: number
+  basePoints: number;
   /** Adjusted point value (after trainer patterns, etc.) */
-  adjustedPoints: number
+  adjustedPoints: number;
   /** Description of this specific change */
-  changeDescription: string
+  changeDescription: string;
   /** Impact classification */
-  impact: ImpactClassification
+  impact: ImpactClassification;
   /** Evidence from past performances */
-  evidence?: string
+  evidence?: string;
 }
 
 /**
@@ -288,23 +296,23 @@ export interface DetectedEquipmentChange {
  */
 export interface EquipmentAnalysis {
   /** Current equipment string */
-  currentEquipment: string
+  currentEquipment: string;
   /** Last race equipment string */
-  lastRaceEquipment: string | null
+  lastRaceEquipment: string | null;
   /** All detected changes */
-  changes: DetectedEquipmentChange[]
+  changes: DetectedEquipmentChange[];
   /** Total equipment score */
-  totalScore: number
+  totalScore: number;
   /** Base score without trainer patterns */
-  baseScore: number
+  baseScore: number;
   /** Is there at least one significant change? */
-  hasSignificantChange: boolean
+  hasSignificantChange: boolean;
   /** Summary for display */
-  summary: string
+  summary: string;
   /** Detailed reasoning */
-  reasoning: string
+  reasoning: string;
   /** Historical equipment pattern from past performances */
-  equipmentHistory: EquipmentHistoryEntry[]
+  equipmentHistory: EquipmentHistoryEntry[];
 }
 
 /**
@@ -312,17 +320,17 @@ export interface EquipmentAnalysis {
  */
 export interface EquipmentHistoryEntry {
   /** Race date */
-  date: string
+  date: string;
   /** Track */
-  track: string
+  track: string;
   /** Equipment string */
-  equipment: string
+  equipment: string;
   /** Medication string */
-  medication: string
+  medication: string;
   /** Finish position */
-  finishPosition: number
+  finishPosition: number;
   /** Did horse win? */
-  won: boolean
+  won: boolean;
 }
 
 // ============================================================================
@@ -333,40 +341,40 @@ export interface EquipmentHistoryEntry {
  * Get equipment type definition by ID or code
  */
 export function getEquipmentType(idOrCode: string): EquipmentTypeDefinition | null {
-  const normalized = idOrCode.toUpperCase()
+  const normalized = idOrCode.toUpperCase();
 
   // Check by ID first
   if (EQUIPMENT_TYPES[idOrCode.toLowerCase()]) {
-    return EQUIPMENT_TYPES[idOrCode.toLowerCase()]
+    return EQUIPMENT_TYPES[idOrCode.toLowerCase()];
   }
 
   // Check by code
   for (const type of Object.values(EQUIPMENT_TYPES)) {
     if (type.codes.includes(normalized)) {
-      return type
+      return type;
     }
   }
 
-  return null
+  return null;
 }
 
 /**
  * Parse equipment code to name
  */
 export function equipmentCodeToName(code: string): string {
-  const normalized = code.toUpperCase()
-  return EQUIPMENT_CODES[normalized as EquipmentCode] || code
+  const normalized = code.toUpperCase();
+  return EQUIPMENT_CODES[normalized as EquipmentCode] || code;
 }
 
 /**
  * Get impact classification from points
  */
 export function getImpactClassification(points: number): ImpactClassification {
-  if (points >= 10) return 'very_positive'
-  if (points >= 5) return 'positive'
-  if (points >= -2) return 'neutral'
-  if (points >= -5) return 'negative'
-  return 'very_negative'
+  if (points >= 10) return 'very_positive';
+  if (points >= 5) return 'positive';
+  if (points >= -2) return 'neutral';
+  if (points >= -5) return 'negative';
+  return 'very_negative';
 }
 
 /**
@@ -374,11 +382,16 @@ export function getImpactClassification(points: number): ImpactClassification {
  */
 export function getImpactColor(impact: ImpactClassification): string {
   switch (impact) {
-    case 'very_positive': return '#22c55e'  // Bright green
-    case 'positive': return '#36d1da'       // Accent cyan
-    case 'neutral': return '#888888'        // Gray
-    case 'negative': return '#f97316'       // Orange
-    case 'very_negative': return '#ef4444'  // Red
+    case 'very_positive':
+      return '#22c55e'; // Bright green
+    case 'positive':
+      return '#36d1da'; // Accent cyan
+    case 'neutral':
+      return '#888888'; // Gray
+    case 'negative':
+      return '#f97316'; // Orange
+    case 'very_negative':
+      return '#ef4444'; // Red
   }
 }
 
@@ -387,11 +400,16 @@ export function getImpactColor(impact: ImpactClassification): string {
  */
 export function getImpactIcon(impact: ImpactClassification): string {
   switch (impact) {
-    case 'very_positive': return 'rocket_launch'
-    case 'positive': return 'trending_up'
-    case 'neutral': return 'remove'
-    case 'negative': return 'trending_down'
-    case 'very_negative': return 'warning'
+    case 'very_positive':
+      return 'rocket_launch';
+    case 'positive':
+      return 'trending_up';
+    case 'neutral':
+      return 'remove';
+    case 'negative':
+      return 'trending_down';
+    case 'very_negative':
+      return 'warning';
   }
 }
 
@@ -400,11 +418,17 @@ export function getImpactIcon(impact: ImpactClassification): string {
  */
 export function getCategoryIcon(category: EquipmentCategory): string {
   switch (category) {
-    case 'medication': return 'medication'
-    case 'vision': return 'visibility'
-    case 'bandages': return 'healing'
-    case 'breathing': return 'air'
-    case 'shoes': return 'directions_run'
-    case 'other': return 'build'
+    case 'medication':
+      return 'medication';
+    case 'vision':
+      return 'visibility';
+    case 'bandages':
+      return 'healing';
+    case 'breathing':
+      return 'air';
+    case 'shoes':
+      return 'directions_run';
+    case 'other':
+      return 'build';
   }
 }

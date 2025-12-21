@@ -17,24 +17,19 @@
 // ============================================================================
 
 /** Multi-race bet types */
-export type MultiRaceBetType =
-  | 'daily_double'
-  | 'pick_3'
-  | 'pick_4'
-  | 'pick_5'
-  | 'pick_6'
+export type MultiRaceBetType = 'daily_double' | 'pick_3' | 'pick_4' | 'pick_5' | 'pick_6';
 
 /** Strategy for building multi-race tickets */
 export type MultiRaceStrategy =
-  | 'conservative'  // Single best horse per race, low cost
-  | 'balanced'      // 2-3 horses per race
-  | 'aggressive'    // All horses in weak legs, singles in strong
+  | 'conservative' // Single best horse per race, low cost
+  | 'balanced' // 2-3 horses per race
+  | 'aggressive'; // All horses in weak legs, singles in strong
 
 /** Race strength classification */
 export type RaceStrength =
-  | 'standout'      // Clear favorite (180+ score, no competition)
-  | 'competitive'   // Multiple strong contenders (3+ horses 160+)
-  | 'weak'          // No standout (no horse 160+)
+  | 'standout' // Clear favorite (180+ score, no competition)
+  | 'competitive' // Multiple strong contenders (3+ horses 160+)
+  | 'weak'; // No standout (no horse 160+)
 
 // ============================================================================
 // BET TYPE CONFIGURATION
@@ -43,40 +38,40 @@ export type RaceStrength =
 /** Configuration for a multi-race bet type */
 export interface MultiRaceBetConfig {
   /** Bet type identifier */
-  type: MultiRaceBetType
+  type: MultiRaceBetType;
   /** Display name */
-  displayName: string
+  displayName: string;
   /** Short name for UI */
-  shortName: string
+  shortName: string;
   /** Number of consecutive races required */
-  racesRequired: number
+  racesRequired: number;
   /** Minimum selections per race */
-  minSelectionsPerRace: number
+  minSelectionsPerRace: number;
   /** Maximum selections per race (practical limit) */
-  maxSelectionsPerRace: number
+  maxSelectionsPerRace: number;
   /** Available base bet amounts */
-  baseBetOptions: number[]
+  baseBetOptions: number[];
   /** Default base bet amount */
-  defaultBaseBet: number
+  defaultBaseBet: number;
   /** Minimum base bet allowed */
-  minBaseBet: number
+  minBaseBet: number;
   /** Typical payout ranges (historical averages) */
   typicalPayoutRange: {
-    min: number
-    max: number
-    average: number
-  }
+    min: number;
+    max: number;
+    average: number;
+  };
   /** Expected hit rate range */
   hitRateRange: {
-    min: number
-    max: number
-  }
+    min: number;
+    max: number;
+  };
   /** Whether carryover tracking applies */
-  hasCarryover: boolean
+  hasCarryover: boolean;
   /** Icon for UI */
-  icon: string
+  icon: string;
   /** Description for users */
-  description: string
+  description: string;
 }
 
 /** All multi-race bet type configurations */
@@ -97,7 +92,7 @@ export const MULTI_RACE_BET_CONFIGS: Record<MultiRaceBetType, MultiRaceBetConfig
       average: 50,
     },
     hitRateRange: {
-      min: 0.10,
+      min: 0.1,
       max: 0.35,
     },
     hasCarryover: false,
@@ -196,7 +191,7 @@ export const MULTI_RACE_BET_CONFIGS: Record<MultiRaceBetType, MultiRaceBetConfig
     icon: 'looks_6',
     description: 'Pick the winner of 6 consecutive races - jackpot bet with carryovers',
   },
-}
+};
 
 // ============================================================================
 // RACE SELECTION TYPES
@@ -205,63 +200,63 @@ export const MULTI_RACE_BET_CONFIGS: Record<MultiRaceBetType, MultiRaceBetConfig
 /** Horse selection for a single race in a multi-race bet */
 export interface RaceSelection {
   /** Race number */
-  raceNumber: number
+  raceNumber: number;
   /** Race position in sequence (1-based) */
-  legNumber: number
+  legNumber: number;
   /** Selected horse program numbers */
-  selections: number[]
+  selections: number[];
   /** Whether "All" horses are selected */
-  isAllSelected: boolean
+  isAllSelected: boolean;
   /** Total horses in the race field */
-  fieldSize: number
+  fieldSize: number;
   /** Race strength classification */
-  raceStrength: RaceStrength
+  raceStrength: RaceStrength;
   /** Suggested selection from optimizer */
-  suggestedSelections?: number[]
+  suggestedSelections?: number[];
   /** Suggestion reasoning */
-  suggestionReason?: string
+  suggestionReason?: string;
 }
 
 /** Scored horse data for multi-race optimization */
 export interface MultiRaceHorse {
   /** Program number */
-  programNumber: number
+  programNumber: number;
   /** Horse name */
-  horseName: string
+  horseName: string;
   /** Overall score from handicapping */
-  score: number
+  score: number;
   /** Morning line odds */
-  morningLineOdds: string
+  morningLineOdds: string;
   /** Decimal odds for calculations */
-  decimalOdds: number
+  decimalOdds: number;
   /** Estimated win probability */
-  winProbability: number
+  winProbability: number;
   /** Tier classification (1=top, 2=mid, 3=value) */
-  tier: 1 | 2 | 3
+  tier: 1 | 2 | 3;
   /** Whether this is a "single" candidate (standout) */
-  isSingleCandidate: boolean
+  isSingleCandidate: boolean;
   /** Score gap to next horse */
-  scoreGapToNext: number
+  scoreGapToNext: number;
 }
 
 /** Race data for multi-race betting */
 export interface MultiRaceRaceData {
   /** Race number */
-  raceNumber: number
+  raceNumber: number;
   /** Post time */
-  postTime: string
+  postTime: string;
   /** Field size */
-  fieldSize: number
+  fieldSize: number;
   /** Scored horses sorted by score */
-  horses: MultiRaceHorse[]
+  horses: MultiRaceHorse[];
   /** Race strength classification */
-  strength: RaceStrength
+  strength: RaceStrength;
   /** Has a standout favorite */
-  hasStandout: boolean
+  hasStandout: boolean;
   /** Standout horse if exists */
-  standoutHorse?: MultiRaceHorse
+  standoutHorse?: MultiRaceHorse;
   /** Is this race scratched/cancelled */
-  isCancelled: boolean
+  isCancelled: boolean;
 }
 
 // ============================================================================
@@ -271,25 +266,25 @@ export interface MultiRaceRaceData {
 /** Cost calculation result for a multi-race bet */
 export interface MultiRaceCost {
   /** Total cost of the ticket */
-  total: number
+  total: number;
   /** Number of unique combinations */
-  combinations: number
+  combinations: number;
   /** Cost per single combination */
-  costPerCombo: number
+  costPerCombo: number;
   /** Base bet amount used */
-  baseBet: number
+  baseBet: number;
   /** Bet type */
-  betType: MultiRaceBetType
+  betType: MultiRaceBetType;
   /** Selections per race (for display) */
-  selectionsPerRace: number[]
+  selectionsPerRace: number[];
   /** Spread notation (e.g., "2-3-2-1") */
-  spreadNotation: string
+  spreadNotation: string;
   /** Detailed breakdown */
-  breakdown: string
+  breakdown: string;
   /** Whether calculation is valid */
-  isValid: boolean
+  isValid: boolean;
   /** Error message if invalid */
-  error?: string
+  error?: string;
 }
 
 // ============================================================================
@@ -299,71 +294,71 @@ export interface MultiRaceCost {
 /** Configuration for multi-race optimization */
 export interface MultiRaceOptimizationConfig {
   /** Bet type to optimize */
-  betType: MultiRaceBetType
+  betType: MultiRaceBetType;
   /** Race data for each leg */
-  races: MultiRaceRaceData[]
+  races: MultiRaceRaceData[];
   /** Budget for this bet */
-  budget: number
+  budget: number;
   /** Strategy preference (optional - if not provided, all strategies are evaluated) */
-  strategy?: MultiRaceStrategy
+  strategy?: MultiRaceStrategy;
   /** Maximum cost allowed */
-  maxCost?: number
+  maxCost?: number;
   /** Minimum probability threshold */
-  minProbability?: number
+  minProbability?: number;
   /** User's daily bankroll */
-  dailyBankroll?: number
+  dailyBankroll?: number;
 }
 
 /** Optimized ticket result */
 export interface OptimizedTicket {
   /** Unique identifier */
-  id: string
+  id: string;
   /** Bet type */
-  betType: MultiRaceBetType
+  betType: MultiRaceBetType;
   /** Race selections */
-  selections: RaceSelection[]
+  selections: RaceSelection[];
   /** Cost calculation */
-  cost: MultiRaceCost
+  cost: MultiRaceCost;
   /** Estimated win probability */
-  probability: number
+  probability: number;
   /** Estimated payout range */
   payoutRange: {
-    min: number
-    max: number
-    likely: number
-  }
+    min: number;
+    max: number;
+    likely: number;
+  };
   /** Expected value */
-  expectedValue: number
+  expectedValue: number;
   /** Strategy used */
-  strategy: MultiRaceStrategy
+  strategy: MultiRaceStrategy;
   /** Whether this is recommended */
-  isRecommended: boolean
+  isRecommended: boolean;
   /** Recommendation reasoning */
-  reasoning: string
+  reasoning: string;
   /** Window instruction for placing bet */
-  windowInstruction: string
+  windowInstruction: string;
   /** Races included (first-last) */
-  raceRange: string
+  raceRange: string;
 }
 
 /** Result of multi-race optimization */
 export interface MultiRaceOptimizationResult {
   /** All viable ticket options */
-  tickets: OptimizedTicket[]
+  tickets: OptimizedTicket[];
   /** Recommended ticket */
-  recommended: OptimizedTicket | null
+  recommended: OptimizedTicket | null;
   /** Budget used by recommended */
-  budgetUsed: number
+  budgetUsed: number;
   /** Budget remaining */
-  budgetRemaining: number
+  budgetRemaining: number;
   /** Summary text */
-  summary: string
+  summary: string;
   /** Whether optimization succeeded */
-  isValid: boolean
+  isValid: boolean;
   /** Error message if not valid */
-  error?: string
+  error?: string;
   /** Warnings (e.g., over 50% bankroll) */
-  warnings: string[]
+  warnings: string[];
 }
 
 // ============================================================================
@@ -373,29 +368,29 @@ export interface MultiRaceOptimizationResult {
 /** Carryover information for Pick 5/6 */
 export interface CarryoverInfo {
   /** Bet type (pick_5 or pick_6) */
-  betType: 'pick_5' | 'pick_6'
+  betType: 'pick_5' | 'pick_6';
   /** Track code */
-  trackCode: string
+  trackCode: string;
   /** Track name */
-  trackName: string
+  trackName: string;
   /** Current carryover amount */
-  carryoverAmount: number
+  carryoverAmount: number;
   /** Number of days without a winner */
-  daysWithoutWinner: number
+  daysWithoutWinner: number;
   /** Estimated pool size for today */
-  estimatedPoolToday: number
+  estimatedPoolToday: number;
   /** Total expected pool (today + carryover) */
-  totalExpectedPool: number
+  totalExpectedPool: number;
   /** Whether this is a mandatory payout day */
-  isMandatory: boolean
+  isMandatory: boolean;
   /** Mandatory payout date if known */
-  mandatoryDate?: string
+  mandatoryDate?: string;
   /** Value classification */
-  valueClass: 'low' | 'medium' | 'high' | 'exceptional'
+  valueClass: 'low' | 'medium' | 'high' | 'exceptional';
   /** Recommendation text */
-  recommendation: string
+  recommendation: string;
   /** Last updated timestamp */
-  lastUpdated: string
+  lastUpdated: string;
 }
 
 /** Carryover value thresholds */
@@ -412,7 +407,7 @@ export const CARRYOVER_THRESHOLDS = {
     high: 250000,
     exceptional: 500000,
   },
-} as const
+} as const;
 
 // ============================================================================
 // TICKET BUILDER TYPES
@@ -421,41 +416,41 @@ export const CARRYOVER_THRESHOLDS = {
 /** State for the interactive ticket builder */
 export interface TicketBuilderState {
   /** Bet type being built */
-  betType: MultiRaceBetType
+  betType: MultiRaceBetType;
   /** Starting race number */
-  startingRace: number
+  startingRace: number;
   /** Race selections */
-  selections: RaceSelection[]
+  selections: RaceSelection[];
   /** Current base bet */
-  baseBet: number
+  baseBet: number;
   /** Live cost calculation */
-  liveCost: MultiRaceCost | null
+  liveCost: MultiRaceCost | null;
   /** Live probability estimate */
-  liveProbability: number
+  liveProbability: number;
   /** Budget constraint */
-  budget: number
+  budget: number;
   /** Whether in auto-optimize mode */
-  isAutoOptimizing: boolean
+  isAutoOptimizing: boolean;
   /** Current strategy */
-  strategy: MultiRaceStrategy
+  strategy: MultiRaceStrategy;
   /** Validation errors */
-  errors: string[]
+  errors: string[];
   /** Carryover info if applicable */
-  carryover?: CarryoverInfo
+  carryover?: CarryoverInfo;
 }
 
 /** Suggestion for a race leg */
 export interface LegSuggestion {
   /** Race number */
-  raceNumber: number
+  raceNumber: number;
   /** Suggested action */
-  action: 'single' | 'spread' | 'use_all'
+  action: 'single' | 'spread' | 'use_all';
   /** Suggested horse numbers */
-  horses: number[]
+  horses: number[];
   /** Reasoning */
-  reason: string
+  reason: string;
   /** Icon for UI */
-  icon: string
+  icon: string;
 }
 
 // ============================================================================
@@ -465,36 +460,36 @@ export interface LegSuggestion {
 /** Multi-race ticket for display in bet slip */
 export interface MultiRaceTicketDisplay {
   /** Unique identifier */
-  id: string
+  id: string;
   /** Bet type */
-  betType: MultiRaceBetType
+  betType: MultiRaceBetType;
   /** Display name (e.g., "Pick 4 (Races 3-6)") */
-  displayName: string
+  displayName: string;
   /** Spread notation (e.g., "2-3-2-1") */
-  spreadNotation: string
+  spreadNotation: string;
   /** Total cost */
-  totalCost: number
+  totalCost: number;
   /** Win probability percentage */
-  probabilityPercent: number
+  probabilityPercent: number;
   /** Payout range */
   payoutRange: {
-    min: number
-    max: number
-  }
+    min: number;
+    max: number;
+  };
   /** Expected value */
-  expectedValue: number
+  expectedValue: number;
   /** Individual race instructions */
   raceInstructions: Array<{
-    raceNumber: number
-    horses: number[]
-    displayText: string
-  }>
+    raceNumber: number;
+    horses: number[];
+    displayText: string;
+  }>;
   /** Full window instruction */
-  windowInstruction: string
+  windowInstruction: string;
   /** Carryover flag */
-  hasCarryover: boolean
+  hasCarryover: boolean;
   /** Carryover amount if applicable */
-  carryoverAmount?: number
+  carryoverAmount?: number;
 }
 
 // ============================================================================
@@ -503,22 +498,20 @@ export interface MultiRaceTicketDisplay {
 
 /** Get bet config by type */
 export function getBetConfig(type: MultiRaceBetType): MultiRaceBetConfig {
-  return MULTI_RACE_BET_CONFIGS[type]
+  return MULTI_RACE_BET_CONFIGS[type];
 }
 
 /** Get all bet types as array */
 export function getAllBetTypes(): MultiRaceBetType[] {
-  return Object.keys(MULTI_RACE_BET_CONFIGS) as MultiRaceBetType[]
+  return Object.keys(MULTI_RACE_BET_CONFIGS) as MultiRaceBetType[];
 }
 
 /** Check if bet type supports carryover */
 export function supportsCarryover(type: MultiRaceBetType): boolean {
-  return MULTI_RACE_BET_CONFIGS[type].hasCarryover
+  return MULTI_RACE_BET_CONFIGS[type].hasCarryover;
 }
 
 /** Get available bet types for a given number of races */
 export function getAvailableBetTypes(raceCount: number): MultiRaceBetType[] {
-  return getAllBetTypes().filter(
-    type => MULTI_RACE_BET_CONFIGS[type].racesRequired <= raceCount
-  )
+  return getAllBetTypes().filter((type) => MULTI_RACE_BET_CONFIGS[type].racesRequired <= raceCount);
 }

@@ -24,7 +24,7 @@
  * ```
  */
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo } from 'react';
 import {
   performanceService,
   type MetricName,
@@ -32,7 +32,7 @@ import {
   type TimingContext,
   type StopTimerFn,
   type PerformanceMetric,
-} from '../services/performance'
+} from '../services/performance';
 
 /**
  * Return type for usePerformance hook
@@ -49,7 +49,7 @@ interface UsePerformanceReturn {
     value: number,
     unit: MetricUnit,
     context?: TimingContext
-  ) => void
+  ) => void;
 
   /**
    * Track a timing metric (shorthand for trackMetric with 'ms' unit)
@@ -57,11 +57,7 @@ interface UsePerformanceReturn {
    * @example
    * trackTiming('score_calculation_time', 85, { component: 'ScoringEngine' })
    */
-  trackTiming: (
-    name: MetricName | string,
-    durationMs: number,
-    context?: TimingContext
-  ) => void
+  trackTiming: (name: MetricName | string, durationMs: number, context?: TimingContext) => void;
 
   /**
    * Start a timer and return a function to stop it
@@ -72,17 +68,17 @@ interface UsePerformanceReturn {
    * // ... do work ...
    * stop() // Logs: render_time: 123ms
    */
-  startTimer: (name: MetricName | string, context?: TimingContext) => StopTimerFn
+  startTimer: (name: MetricName | string, context?: TimingContext) => StopTimerFn;
 
   /**
    * Get all recorded metrics (useful for debugging/testing)
    */
-  getMetrics: () => PerformanceMetric[]
+  getMetrics: () => PerformanceMetric[];
 
   /**
    * Clear all recorded metrics
    */
-  clearMetrics: () => void
+  clearMetrics: () => void;
 }
 
 /**
@@ -127,44 +123,35 @@ export function usePerformance(): UsePerformanceReturn {
    * Track a custom metric
    */
   const trackMetric = useCallback(
-    (
-      name: MetricName | string,
-      value: number,
-      unit: MetricUnit,
-      context?: TimingContext
-    ): void => {
+    (name: MetricName | string, value: number, unit: MetricUnit, context?: TimingContext): void => {
       try {
-        performanceService.trackMetric(name, value, unit, context)
+        performanceService.trackMetric(name, value, unit, context);
       } catch {
         // Silently fail - performance tracking should never break the app
         if (import.meta.env?.DEV) {
-          console.warn(`[usePerformance] Failed to track metric: ${name}`)
+          console.warn(`[usePerformance] Failed to track metric: ${name}`);
         }
       }
     },
     []
-  )
+  );
 
   /**
    * Track a timing metric (shorthand)
    */
   const trackTiming = useCallback(
-    (
-      name: MetricName | string,
-      durationMs: number,
-      context?: TimingContext
-    ): void => {
+    (name: MetricName | string, durationMs: number, context?: TimingContext): void => {
       try {
-        performanceService.trackTiming(name, durationMs, context)
+        performanceService.trackTiming(name, durationMs, context);
       } catch {
         // Silently fail
         if (import.meta.env?.DEV) {
-          console.warn(`[usePerformance] Failed to track timing: ${name}`)
+          console.warn(`[usePerformance] Failed to track timing: ${name}`);
         }
       }
     },
     []
-  )
+  );
 
   /**
    * Start a timer
@@ -172,41 +159,41 @@ export function usePerformance(): UsePerformanceReturn {
   const startTimer = useCallback(
     (name: MetricName | string, context?: TimingContext): StopTimerFn => {
       try {
-        return performanceService.startTimer(name, context)
+        return performanceService.startTimer(name, context);
       } catch {
         // Return a no-op function if timer creation fails
         if (import.meta.env?.DEV) {
-          console.warn(`[usePerformance] Failed to start timer: ${name}`)
+          console.warn(`[usePerformance] Failed to start timer: ${name}`);
         }
         return () => {
           // No-op
-        }
+        };
       }
     },
     []
-  )
+  );
 
   /**
    * Get all recorded metrics
    */
   const getMetrics = useCallback((): PerformanceMetric[] => {
     try {
-      return performanceService.getMetrics()
+      return performanceService.getMetrics();
     } catch {
-      return []
+      return [];
     }
-  }, [])
+  }, []);
 
   /**
    * Clear all recorded metrics
    */
   const clearMetrics = useCallback((): void => {
     try {
-      performanceService.clearMetrics()
+      performanceService.clearMetrics();
     } catch {
       // Silently fail
     }
-  }, [])
+  }, []);
 
   /**
    * Memoize the return object for stable reference
@@ -220,7 +207,7 @@ export function usePerformance(): UsePerformanceReturn {
       clearMetrics,
     }),
     [trackMetric, trackTiming, startTimer, getMetrics, clearMetrics]
-  )
+  );
 }
 
-export default usePerformance
+export default usePerformance;

@@ -6,32 +6,32 @@
  * Dismissible but re-appears on status change.
  */
 
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useOnlineStatus } from '../hooks/useOnlineStatus'
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 interface OfflineIndicatorProps {
   /** Optional className for custom positioning */
-  className?: string
+  className?: string;
 }
 
 export function OfflineIndicator({ className = '' }: OfflineIndicatorProps) {
-  const { isOffline } = useOnlineStatus()
-  const [isDismissed, setIsDismissed] = useState(false)
+  const { isOffline } = useOnlineStatus();
+  const [isDismissed, setIsDismissed] = useState(false);
 
   // Reset dismissed state when coming back online then going offline again
   useEffect(() => {
     if (!isOffline) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state
-      setIsDismissed(false)
+      setIsDismissed(false);
     }
-  }, [isOffline])
+  }, [isOffline]);
 
   const handleDismiss = () => {
-    setIsDismissed(true)
-  }
+    setIsDismissed(true);
+  };
 
-  const shouldShow = isOffline && !isDismissed
+  const shouldShow = isOffline && !isDismissed;
 
   return (
     <AnimatePresence>
@@ -46,12 +46,8 @@ export function OfflineIndicator({ className = '' }: OfflineIndicatorProps) {
           aria-live="polite"
         >
           <div className="offline-indicator-content">
-            <span className="material-icons offline-indicator-icon">
-              cloud_off
-            </span>
-            <span className="offline-indicator-text">
-              You're offline — all features still work
-            </span>
+            <span className="material-icons offline-indicator-icon">cloud_off</span>
+            <span className="offline-indicator-text">You're offline — all features still work</span>
             <button
               onClick={handleDismiss}
               className="offline-indicator-dismiss"
@@ -63,23 +59,20 @@ export function OfflineIndicator({ className = '' }: OfflineIndicatorProps) {
         </motion.div>
       )}
     </AnimatePresence>
-  )
+  );
 }
 
 // Compact version for use in headers/toolbars
 export function OfflineIndicatorCompact() {
-  const { isOffline } = useOnlineStatus()
+  const { isOffline } = useOnlineStatus();
 
-  if (!isOffline) return null
+  if (!isOffline) return null;
 
   return (
-    <div
-      className="offline-indicator-compact"
-      title="You're offline — all features still work"
-    >
+    <div className="offline-indicator-compact" title="You're offline — all features still work">
       <span className="material-icons">cloud_off</span>
     </div>
-  )
+  );
 }
 
 // Styles (add to index.css or keep as styled component)
@@ -153,17 +146,17 @@ const styles = `
 .has-offline-banner .dashboard-main {
   padding-top: calc(2.5rem + var(--topbar-height, 64px));
 }
-`
+`;
 
 // Inject styles if not using a CSS file
 if (typeof document !== 'undefined') {
-  const styleId = 'offline-indicator-styles'
+  const styleId = 'offline-indicator-styles';
   if (!document.getElementById(styleId)) {
-    const styleElement = document.createElement('style')
-    styleElement.id = styleId
-    styleElement.textContent = styles
-    document.head.appendChild(styleElement)
+    const styleElement = document.createElement('style');
+    styleElement.id = styleId;
+    styleElement.textContent = styles;
+    document.head.appendChild(styleElement);
   }
 }
 
-export default OfflineIndicator
+export default OfflineIndicator;

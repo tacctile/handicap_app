@@ -5,9 +5,9 @@
  * logout button, and delete account with confirmation.
  */
 
-import { useState, useCallback, type FormEvent } from 'react'
-import { useAuthContext } from '../../contexts/AuthContext'
-import { useToasts, ResponsiveToastContainer } from '../Toast'
+import { useState, useCallback, type FormEvent } from 'react';
+import { useAuthContext } from '../../contexts/AuthContext';
+import { useToasts, ResponsiveToastContainer } from '../Toast';
 
 // ============================================================================
 // TYPES
@@ -15,9 +15,9 @@ import { useToasts, ResponsiveToastContainer } from '../Toast'
 
 export interface AccountSettingsProps {
   /** Callback when user logs out */
-  onLogout?: () => void
+  onLogout?: () => void;
   /** Callback to go back to main app */
-  onBack?: () => void
+  onBack?: () => void;
 }
 
 // ============================================================================
@@ -239,7 +239,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '50%',
     animation: 'spin 0.8s linear infinite',
   },
-}
+};
 
 // ============================================================================
 // COMPONENT
@@ -257,93 +257,93 @@ const styles: Record<string, React.CSSProperties> = {
  * ```
  */
 export function AccountSettings({ onLogout, onBack }: AccountSettingsProps) {
-  const { user, signOut, isLoading } = useAuthContext()
-  const { toasts, addToast, dismissToast } = useToasts()
+  const { user, signOut, isLoading } = useAuthContext();
+  const { toasts, addToast, dismissToast } = useToasts();
 
   // Password change form state
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [focusedField, setFocusedField] = useState<string | null>(null)
-  const [isChangingPassword, setIsChangingPassword] = useState(false)
-  const [passwordSuccess, setPasswordSuccess] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   // Delete confirmation modal
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Hover states
-  const [hoveredButton, setHoveredButton] = useState<string | null>(null)
+  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
 
   const handleLogout = useCallback(async () => {
     try {
-      await signOut()
-      onLogout?.()
+      await signOut();
+      onLogout?.();
     } catch (_err) {
-      addToast('Failed to log out. Please try again.', 'critical')
+      addToast('Failed to log out. Please try again.', 'critical');
     }
-  }, [signOut, onLogout, addToast])
+  }, [signOut, onLogout, addToast]);
 
   const handleChangePassword = useCallback(
     async (e: FormEvent) => {
-      e.preventDefault()
+      e.preventDefault();
 
       // Validation
       if (!currentPassword || !newPassword || !confirmPassword) {
-        addToast('Please fill in all password fields', 'warning')
-        return
+        addToast('Please fill in all password fields', 'warning');
+        return;
       }
 
       if (newPassword.length < 8) {
-        addToast('New password must be at least 8 characters', 'warning')
-        return
+        addToast('New password must be at least 8 characters', 'warning');
+        return;
       }
 
       if (newPassword !== confirmPassword) {
-        addToast('New passwords do not match', 'warning')
-        return
+        addToast('New passwords do not match', 'warning');
+        return;
       }
 
-      setIsChangingPassword(true)
+      setIsChangingPassword(true);
 
       // Mock password change - in real implementation, this would call the auth service
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        setPasswordSuccess(true)
-        setCurrentPassword('')
-        setNewPassword('')
-        setConfirmPassword('')
-        addToast('Password changed successfully', 'success')
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setPasswordSuccess(true);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        addToast('Password changed successfully', 'success');
 
-        setTimeout(() => setPasswordSuccess(false), 3000)
+        setTimeout(() => setPasswordSuccess(false), 3000);
       } catch (_err) {
-        addToast('Failed to change password. Please try again.', 'critical')
+        addToast('Failed to change password. Please try again.', 'critical');
       } finally {
-        setIsChangingPassword(false)
+        setIsChangingPassword(false);
       }
     },
     [currentPassword, newPassword, confirmPassword, addToast]
-  )
+  );
 
   const handleDeleteAccount = useCallback(async () => {
-    setIsDeleting(true)
+    setIsDeleting(true);
 
     // Mock delete - in real implementation, this would call the auth service
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      addToast('Account deletion coming soon', 'info')
-      setShowDeleteModal(false)
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      addToast('Account deletion coming soon', 'info');
+      setShowDeleteModal(false);
     } catch (_err) {
-      addToast('Failed to delete account. Please try again.', 'critical')
+      addToast('Failed to delete account. Please try again.', 'critical');
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }, [addToast])
+  }, [addToast]);
 
   const getInputStyle = (fieldName: string) => ({
     ...styles.input,
     ...(focusedField === fieldName ? styles.inputFocus : {}),
-  })
+  });
 
   const getButtonStyle = (
     buttonName: string,
@@ -355,7 +355,7 @@ export function AccountSettings({ onLogout, onBack }: AccountSettingsProps) {
     ...baseStyle,
     ...(hoveredButton === buttonName && !disabled ? hoverStyle : {}),
     ...(disabled ? styles.buttonDisabled : {}),
-  })
+  });
 
   return (
     <div style={styles.container}>
@@ -473,7 +473,12 @@ export function AccountSettings({ onLogout, onBack }: AccountSettingsProps) {
               disabled={isChangingPassword}
               onMouseEnter={() => setHoveredButton('changePassword')}
               onMouseLeave={() => setHoveredButton(null)}
-              style={getButtonStyle('changePassword', styles.primaryButton, styles.primaryButtonHover, isChangingPassword)}
+              style={getButtonStyle(
+                'changePassword',
+                styles.primaryButton,
+                styles.primaryButtonHover,
+                isChangingPassword
+              )}
             >
               {isChangingPassword ? (
                 <>
@@ -507,7 +512,12 @@ export function AccountSettings({ onLogout, onBack }: AccountSettingsProps) {
               disabled={isLoading}
               onMouseEnter={() => setHoveredButton('logout')}
               onMouseLeave={() => setHoveredButton(null)}
-              style={getButtonStyle('logout', styles.secondaryButton, styles.secondaryButtonHover, isLoading)}
+              style={getButtonStyle(
+                'logout',
+                styles.secondaryButton,
+                styles.secondaryButtonHover,
+                isLoading
+              )}
             >
               <span className="material-icons" style={{ fontSize: '18px' }}>
                 logout
@@ -549,7 +559,12 @@ export function AccountSettings({ onLogout, onBack }: AccountSettingsProps) {
                 disabled={isDeleting}
                 onMouseEnter={() => setHoveredButton('cancel')}
                 onMouseLeave={() => setHoveredButton(null)}
-                style={getButtonStyle('cancel', styles.secondaryButton, styles.secondaryButtonHover, isDeleting)}
+                style={getButtonStyle(
+                  'cancel',
+                  styles.secondaryButton,
+                  styles.secondaryButtonHover,
+                  isDeleting
+                )}
               >
                 Cancel
               </button>
@@ -558,7 +573,12 @@ export function AccountSettings({ onLogout, onBack }: AccountSettingsProps) {
                 disabled={isDeleting}
                 onMouseEnter={() => setHoveredButton('confirmDelete')}
                 onMouseLeave={() => setHoveredButton(null)}
-                style={getButtonStyle('confirmDelete', styles.dangerButton, styles.dangerButtonHover, isDeleting)}
+                style={getButtonStyle(
+                  'confirmDelete',
+                  styles.dangerButton,
+                  styles.dangerButtonHover,
+                  isDeleting
+                )}
               >
                 {isDeleting ? (
                   <>
@@ -586,7 +606,7 @@ export function AccountSettings({ onLogout, onBack }: AccountSettingsProps) {
         `}
       </style>
     </div>
-  )
+  );
 }
 
-export default AccountSettings
+export default AccountSettings;

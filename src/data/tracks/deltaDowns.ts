@@ -14,7 +14,7 @@
  * NOTE: Year-round racing; 7-furlong track (smaller oval); Delta Downs Jackpot (G3); tight turns favor speed
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const deltaDowns: TrackData = {
   code: 'DED',
@@ -33,8 +33,8 @@ export const deltaDowns: TrackData = {
       // Source: Louisiana State Racing Commission - 70 feet wide
       trackWidth: 70,
       // Source: Delta Downs - limited chutes due to smaller configuration
-      chutes: [5, 6]
-    }
+      chutes: [5, 6],
+    },
     // No turf course at Delta Downs
   },
 
@@ -53,7 +53,8 @@ export const deltaDowns: TrackData = {
         // Sample: 550+ dirt sprints
         winPercentByPost: [16.5, 17.0, 14.5, 12.0, 10.5, 9.2, 7.8, 6.5, 4.0, 2.0],
         favoredPosts: [1, 2],
-        biasDescription: 'STRONG inside bias; posts 1-2 heavily favored; tight turns; short 660-ft stretch; closers struggle'
+        biasDescription:
+          'STRONG inside bias; posts 1-2 heavily favored; tight turns; short 660-ft stretch; closers struggle',
       },
       {
         distance: 'route',
@@ -68,9 +69,10 @@ export const deltaDowns: TrackData = {
         // Sample: 250+ dirt routes
         winPercentByPost: [15.0, 15.5, 14.0, 12.5, 11.0, 10.0, 8.5, 7.0, 4.5, 2.0],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Strong inside bias in routes; posts 1-3 heavily favored; tight turns magnify position advantage'
-      }
-    ]
+        biasDescription:
+          'Strong inside bias in routes; posts 1-3 heavily favored; tight turns magnify position advantage',
+      },
+    ],
   },
 
   speedBias: [
@@ -86,8 +88,9 @@ export const deltaDowns: TrackData = {
       // Delta Downs Jackpot often won by speed
       earlySpeedWinRate: 68,
       paceAdvantageRating: 9,
-      description: 'VERY speed-favoring; 68% early speed win rate; short 660-ft stretch; tight turns; wire-to-wire common; closers beware'
-    }
+      description:
+        'VERY speed-favoring; 68% early speed win rate; short 660-ft stretch; tight turns; wire-to-wire common; closers beware',
+    },
   ],
 
   surfaces: [
@@ -97,10 +100,11 @@ export const deltaDowns: TrackData = {
       // Sandy composition typical of Louisiana
       // Maintained for night racing
       // Can become deep after rain
-      composition: 'Sandy loam cushion over limestone base; 3-inch cushion depth; can become deep after heavy rain',
+      composition:
+        'Sandy loam cushion over limestone base; 3-inch cushion depth; can become deep after heavy rain',
       playingStyle: 'speed-favoring',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -112,7 +116,7 @@ export const deltaDowns: TrackData = {
       // Delta Downs Jackpot (G3) in November
       typicalCondition: 'Fast to Good; Gulf Coast weather variable',
       speedAdjustment: 0,
-      notes: 'Peak season; quality fields; Delta Downs Jackpot (G3); night racing'
+      notes: 'Peak season; quality fields; Delta Downs Jackpot (G3); night racing',
     },
     {
       season: 'spring',
@@ -122,7 +126,7 @@ export const deltaDowns: TrackData = {
       // Weather improving
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Spring meet; warming conditions; faster times; continued night racing'
+      notes: 'Spring meet; warming conditions; faster times; continued night racing',
     },
     {
       season: 'summer',
@@ -132,7 +136,7 @@ export const deltaDowns: TrackData = {
       // Some thoroughbred racing continues
       typicalCondition: 'Fast; hot and humid',
       speedAdjustment: 1,
-      notes: 'Mixed thoroughbred/quarter horse cards; hot humid conditions; night racing helps'
+      notes: 'Mixed thoroughbred/quarter horse cards; hot humid conditions; night racing helps',
     },
     {
       season: 'fall',
@@ -142,8 +146,9 @@ export const deltaDowns: TrackData = {
       // Delta Downs Jackpot (G3) in November
       typicalCondition: 'Fast',
       speedAdjustment: 0,
-      notes: 'Thoroughbred meet builds; Delta Downs Jackpot (G3) in November; quality 2-year-old racing'
-    }
+      notes:
+        'Thoroughbred meet builds; Delta Downs Jackpot (G3) in November; quality 2-year-old racing',
+    },
   ],
 
   winningTimes: [
@@ -156,7 +161,7 @@ export const deltaDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 52.5,
       allowanceAvg: 51.5,
-      stakesAvg: 50.5
+      stakesAvg: 50.5,
     },
     {
       distance: '5f',
@@ -164,7 +169,7 @@ export const deltaDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 59.0,
       allowanceAvg: 57.8,
-      stakesAvg: 56.5
+      stakesAvg: 56.5,
     },
     {
       distance: '5.5f',
@@ -172,7 +177,7 @@ export const deltaDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 65.5,
       allowanceAvg: 64.2,
-      stakesAvg: 63.0
+      stakesAvg: 63.0,
     },
     {
       distance: '6f',
@@ -181,7 +186,7 @@ export const deltaDowns: TrackData = {
       // Track record: 1:09.00
       claimingAvg: 72.0,
       allowanceAvg: 70.5,
-      stakesAvg: 69.2
+      stakesAvg: 69.2,
     },
     {
       distance: '6.5f',
@@ -189,7 +194,7 @@ export const deltaDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 78.2,
       allowanceAvg: 76.8,
-      stakesAvg: 75.5
+      stakesAvg: 75.5,
     },
     {
       distance: '7f',
@@ -198,7 +203,7 @@ export const deltaDowns: TrackData = {
       // Full trip around track
       claimingAvg: 84.8,
       allowanceAvg: 83.2,
-      stakesAvg: 81.8
+      stakesAvg: 81.8,
     },
     {
       distance: '1m',
@@ -207,7 +212,7 @@ export const deltaDowns: TrackData = {
       // Two-turn race on small track
       claimingAvg: 99.0,
       allowanceAvg: 97.2,
-      stakesAvg: 95.5
+      stakesAvg: 95.5,
     },
     {
       distance: '1m70y',
@@ -216,7 +221,7 @@ export const deltaDowns: TrackData = {
       // Delta Downs Jackpot distance
       claimingAvg: 103.5,
       allowanceAvg: 101.8,
-      stakesAvg: 100.0
+      stakesAvg: 100.0,
     },
     {
       distance: '1 1/16m',
@@ -224,7 +229,7 @@ export const deltaDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 106.0,
       allowanceAvg: 104.2,
-      stakesAvg: 102.5
+      stakesAvg: 102.5,
     },
     {
       distance: '1 1/8m',
@@ -232,10 +237,10 @@ export const deltaDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 113.0,
       allowanceAvg: 111.0,
-      stakesAvg: 109.0
-    }
+      stakesAvg: 109.0,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

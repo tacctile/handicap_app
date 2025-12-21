@@ -14,7 +14,7 @@
 // SURFACE & TRACK CONDITIONS
 // ============================================================================
 
-export type Surface = 'dirt' | 'turf' | 'synthetic' | 'all-weather'
+export type Surface = 'dirt' | 'turf' | 'synthetic' | 'all-weather';
 
 export type TrackCondition =
   | 'fast'
@@ -24,9 +24,9 @@ export type TrackCondition =
   | 'heavy'
   | 'firm'
   | 'yielding'
-  | 'soft'
+  | 'soft';
 
-export type WorkoutType = 'breeze' | 'handily' | 'driving' | 'easy' | 'unknown'
+export type WorkoutType = 'breeze' | 'handily' | 'driving' | 'easy' | 'unknown';
 
 // ============================================================================
 // RACE CLASSIFICATION
@@ -45,7 +45,7 @@ export type RaceClassification =
   | 'stakes-graded-2'
   | 'stakes-graded-1'
   | 'handicap'
-  | 'unknown'
+  | 'unknown';
 
 // ============================================================================
 // EQUIPMENT & MEDICATION
@@ -53,46 +53,46 @@ export type RaceClassification =
 
 export interface Equipment {
   /** Blinkers (B) */
-  blinkers: boolean
+  blinkers: boolean;
   /** Blinkers off (first time without) */
-  blinkersOff: boolean
+  blinkersOff: boolean;
   /** Front bandages */
-  frontBandages: boolean
+  frontBandages: boolean;
   /** Rear bandages */
-  rearBandages: boolean
+  rearBandages: boolean;
   /** Bar shoes */
-  barShoes: boolean
+  barShoes: boolean;
   /** Mud caulks */
-  mudCaulks: boolean
+  mudCaulks: boolean;
   /** Tongue tie */
-  tongueTie: boolean
+  tongueTie: boolean;
   /** Nasal strip */
-  nasalStrip: boolean
+  nasalStrip: boolean;
   /** Shadow roll */
-  shadowRoll: boolean
+  shadowRoll: boolean;
   /** Cheek pieces */
-  cheekPieces: boolean
+  cheekPieces: boolean;
   /** First time equipment on (any) */
-  firstTimeEquipment: string[]
+  firstTimeEquipment: string[];
   /** Equipment changes from last race */
-  equipmentChanges: string[]
+  equipmentChanges: string[];
   /** Raw equipment string from DRF */
-  raw: string
+  raw: string;
 }
 
 export interface Medication {
   /** Lasix (L) - first time */
-  lasixFirstTime: boolean
+  lasixFirstTime: boolean;
   /** Lasix continuing */
-  lasix: boolean
+  lasix: boolean;
   /** Lasix off (previously on) */
-  lasixOff: boolean
+  lasixOff: boolean;
   /** Bute */
-  bute: boolean
+  bute: boolean;
   /** Other medications */
-  other: string[]
+  other: string[];
   /** Raw medication string from DRF */
-  raw: string
+  raw: string;
 }
 
 // ============================================================================
@@ -101,19 +101,19 @@ export interface Medication {
 
 export interface Breeding {
   /** Sire (father) name */
-  sire: string
+  sire: string;
   /** Sire's sire (paternal grandsire) */
-  sireOfSire: string
+  sireOfSire: string;
   /** Dam (mother) name */
-  dam: string
+  dam: string;
   /** Dam's sire (maternal grandsire / broodmare sire) */
-  damSire: string
+  damSire: string;
   /** Breeder name */
-  breeder: string
+  breeder: string;
   /** State/country where bred */
-  whereBred: string
+  whereBred: string;
   /** Stud fee if available */
-  studFee: number | null
+  studFee: number | null;
 }
 
 // ============================================================================
@@ -122,27 +122,27 @@ export interface Breeding {
 
 export interface RunningLine {
   /** Position at start/break */
-  start: number | null
+  start: number | null;
   /** Position at 1/4 mile call */
-  quarterMile: number | null
+  quarterMile: number | null;
   /** Lengths behind at 1/4 mile */
-  quarterMileLengths: number | null
+  quarterMileLengths: number | null;
   /** Position at 1/2 mile call */
-  halfMile: number | null
+  halfMile: number | null;
   /** Lengths behind at 1/2 mile */
-  halfMileLengths: number | null
+  halfMileLengths: number | null;
   /** Position at 3/4 mile (6f) call */
-  threeQuarters: number | null
+  threeQuarters: number | null;
   /** Lengths behind at 3/4 mile */
-  threeQuartersLengths: number | null
+  threeQuartersLengths: number | null;
   /** Position at stretch call */
-  stretch: number | null
+  stretch: number | null;
   /** Lengths behind at stretch */
-  stretchLengths: number | null
+  stretchLengths: number | null;
   /** Final position */
-  finish: number | null
+  finish: number | null;
   /** Lengths behind at finish */
-  finishLengths: number | null
+  finishLengths: number | null;
 }
 
 // ============================================================================
@@ -151,17 +151,17 @@ export interface RunningLine {
 
 export interface SpeedFigures {
   /** Beyer Speed Figure */
-  beyer: number | null
+  beyer: number | null;
   /** TimeformUS rating */
-  timeformUS: number | null
+  timeformUS: number | null;
   /** Equibase Speed Figure */
-  equibase: number | null
+  equibase: number | null;
   /** Track variant for the day */
-  trackVariant: number | null
+  trackVariant: number | null;
   /** Daily track variant for dirt */
-  dirtVariant: number | null
+  dirtVariant: number | null;
   /** Daily track variant for turf */
-  turfVariant: number | null
+  turfVariant: number | null;
 }
 
 // ============================================================================
@@ -170,73 +170,73 @@ export interface SpeedFigures {
 
 export interface PastPerformance {
   /** Race date (YYYYMMDD or similar) */
-  date: string
+  date: string;
   /** Track code */
-  track: string
+  track: string;
   /** Track name (full) */
-  trackName: string
+  trackName: string;
   /** Race number */
-  raceNumber: number
+  raceNumber: number;
   /** Distance in furlongs */
-  distanceFurlongs: number
+  distanceFurlongs: number;
   /** Formatted distance string */
-  distance: string
+  distance: string;
   /** Surface */
-  surface: Surface
+  surface: Surface;
   /** Track condition */
-  trackCondition: TrackCondition
+  trackCondition: TrackCondition;
   /** Race classification */
-  classification: RaceClassification
+  classification: RaceClassification;
   /** Claiming price (if applicable) */
-  claimingPrice: number | null
+  claimingPrice: number | null;
   /** Purse amount */
-  purse: number
+  purse: number;
   /** Number of starters */
-  fieldSize: number
+  fieldSize: number;
   /** Finish position */
-  finishPosition: number
+  finishPosition: number;
   /** Lengths behind winner (0 if won) */
-  lengthsBehind: number
+  lengthsBehind: number;
   /** Lengths ahead of next horse (if applicable) */
-  lengthsAhead: number | null
+  lengthsAhead: number | null;
   /** Final time in seconds */
-  finalTime: number | null
+  finalTime: number | null;
   /** Final time formatted (e.g., "1:10.45") */
-  finalTimeFormatted: string
+  finalTimeFormatted: string;
   /** Speed figures for this race */
-  speedFigures: SpeedFigures
+  speedFigures: SpeedFigures;
   /** Running line at each call point */
-  runningLine: RunningLine
+  runningLine: RunningLine;
   /** Jockey name */
-  jockey: string
+  jockey: string;
   /** Weight carried */
-  weight: number
+  weight: number;
   /** Apprentice allowance (lbs) */
-  apprenticeAllowance: number
+  apprenticeAllowance: number;
   /** Equipment used */
-  equipment: string
+  equipment: string;
   /** Medication */
-  medication: string
+  medication: string;
   /** Winner's name */
-  winner: string
+  winner: string;
   /** Second place horse */
-  secondPlace: string
+  secondPlace: string;
   /** Third place horse */
-  thirdPlace: string
+  thirdPlace: string;
   /** Trip comment from chart caller */
-  tripComment: string
+  tripComment: string;
   /** Extended comment/notes */
-  comment: string
+  comment: string;
   /** Odds in this race */
-  odds: number | null
+  odds: number | null;
   /** Favorite indicator (1=favorite, etc.) */
-  favoriteRank: number | null
+  favoriteRank: number | null;
   /** Claimed in this race */
-  wasClaimed: boolean
+  wasClaimed: boolean;
   /** Claimed from (if applicable) */
-  claimedFrom: string | null
+  claimedFrom: string | null;
   /** Days since previous race */
-  daysSinceLast: number | null
+  daysSinceLast: number | null;
 }
 
 // ============================================================================
@@ -245,35 +245,35 @@ export interface PastPerformance {
 
 export interface Workout {
   /** Workout date */
-  date: string
+  date: string;
   /** Track where worked */
-  track: string
+  track: string;
   /** Distance in furlongs */
-  distanceFurlongs: number
+  distanceFurlongs: number;
   /** Formatted distance string */
-  distance: string
+  distance: string;
   /** Time in seconds */
-  timeSeconds: number
+  timeSeconds: number;
   /** Formatted time (e.g., ":47.20") */
-  timeFormatted: string
+  timeFormatted: string;
   /** Type of work (breeze, handily, etc.) */
-  type: WorkoutType
+  type: WorkoutType;
   /** Track condition during workout */
-  trackCondition: TrackCondition
+  trackCondition: TrackCondition;
   /** Surface worked on */
-  surface: Surface
+  surface: Surface;
   /** Rank among works that day (e.g., "2 of 35") */
-  ranking: string
+  ranking: string;
   /** Number rank */
-  rankNumber: number | null
+  rankNumber: number | null;
   /** Total works that day at track/distance */
-  totalWorks: number | null
+  totalWorks: number | null;
   /** Bullet work indicator (fastest of day) */
-  isBullet: boolean
+  isBullet: boolean;
   /** From gate indicator */
-  fromGate: boolean
+  fromGate: boolean;
   /** Notes/comments */
-  notes: string
+  notes: string;
 }
 
 // ============================================================================
@@ -282,124 +282,124 @@ export interface Workout {
 
 export interface HorseEntry {
   /** Program number (saddle cloth) */
-  programNumber: number
+  programNumber: number;
   /** Entry indicator (A, B for coupled entries) */
-  entryIndicator: string
+  entryIndicator: string;
   /** Post position */
-  postPosition: number
+  postPosition: number;
   /** Horse name */
-  horseName: string
+  horseName: string;
   /** Horse age in years */
-  age: number
+  age: number;
   /** Sex (c=colt, f=filly, g=gelding, h=horse, m=mare, r=ridgling) */
-  sex: string
+  sex: string;
   /** Sex full name */
-  sexFull: string
+  sexFull: string;
   /** Color (b=bay, ch=chestnut, dk b=dark bay, gr=gray, ro=roan, etc.) */
-  color: string
+  color: string;
   /** Breeding/pedigree information */
-  breeding: Breeding
+  breeding: Breeding;
   /** Owner name */
-  owner: string
+  owner: string;
   /** Owner silks description */
-  silks: string
+  silks: string;
   /** Trainer name */
-  trainerName: string
+  trainerName: string;
   /** Trainer stats (wins/starts at meet, etc.) */
-  trainerStats: string
+  trainerStats: string;
   /** Jockey name */
-  jockeyName: string
+  jockeyName: string;
   /** Jockey stats */
-  jockeyStats: string
+  jockeyStats: string;
   /** Weight carried */
-  weight: number
+  weight: number;
   /** Apprentice allowance claimed */
-  apprenticeAllowance: number
+  apprenticeAllowance: number;
   /** Equipment details */
-  equipment: Equipment
+  equipment: Equipment;
   /** Medication details */
-  medication: Medication
+  medication: Medication;
   /** Morning line odds (string like "5-1") */
-  morningLineOdds: string
+  morningLineOdds: string;
   /** Morning line odds as decimal */
-  morningLineDecimal: number
+  morningLineDecimal: number;
   /** Current odds (if available from tote) */
-  currentOdds: string | null
+  currentOdds: string | null;
   /** Lifetime starts */
-  lifetimeStarts: number
+  lifetimeStarts: number;
   /** Lifetime wins */
-  lifetimeWins: number
+  lifetimeWins: number;
   /** Lifetime places (2nd) */
-  lifetimePlaces: number
+  lifetimePlaces: number;
   /** Lifetime shows (3rd) */
-  lifetimeShows: number
+  lifetimeShows: number;
   /** Lifetime earnings */
-  lifetimeEarnings: number
+  lifetimeEarnings: number;
   /** Current year stats */
-  currentYearStarts: number
-  currentYearWins: number
-  currentYearPlaces: number
-  currentYearShows: number
-  currentYearEarnings: number
+  currentYearStarts: number;
+  currentYearWins: number;
+  currentYearPlaces: number;
+  currentYearShows: number;
+  currentYearEarnings: number;
   /** Previous year stats */
-  previousYearStarts: number
-  previousYearWins: number
-  previousYearPlaces: number
-  previousYearShows: number
-  previousYearEarnings: number
+  previousYearStarts: number;
+  previousYearWins: number;
+  previousYearPlaces: number;
+  previousYearShows: number;
+  previousYearEarnings: number;
   /** Stats on this track */
-  trackStarts: number
-  trackWins: number
-  trackPlaces: number
-  trackShows: number
+  trackStarts: number;
+  trackWins: number;
+  trackPlaces: number;
+  trackShows: number;
   /** Stats on this surface */
-  surfaceStarts: number
-  surfaceWins: number
+  surfaceStarts: number;
+  surfaceWins: number;
   /** Stats at this distance */
-  distanceStarts: number
-  distanceWins: number
+  distanceStarts: number;
+  distanceWins: number;
   /** Turf stats */
-  turfStarts: number
-  turfWins: number
+  turfStarts: number;
+  turfWins: number;
   /** Wet track stats */
-  wetStarts: number
-  wetWins: number
+  wetStarts: number;
+  wetWins: number;
   /** Days since last race */
-  daysSinceLastRace: number | null
+  daysSinceLastRace: number | null;
   /** Last race date */
-  lastRaceDate: string | null
+  lastRaceDate: string | null;
   /** Average Beyer figure (last 3-4 races) */
-  averageBeyer: number | null
+  averageBeyer: number | null;
   /** Best Beyer figure (lifetime or last year) */
-  bestBeyer: number | null
+  bestBeyer: number | null;
   /** Last Beyer figure */
-  lastBeyer: number | null
+  lastBeyer: number | null;
   /** Average early speed rating */
-  earlySpeedRating: number | null
+  earlySpeedRating: number | null;
   /** Early pace call (E, E/P, P, S) */
-  runningStyle: string
+  runningStyle: string;
   /** Pedigree rating for surface */
-  pedigreeRating: string | null
+  pedigreeRating: string | null;
   /** Claiming price (if in for tag) */
-  claimingPrice: number | null
+  claimingPrice: number | null;
   /** Price horse was claimed for last */
-  lastClaimPrice: number | null
+  lastClaimPrice: number | null;
   /** Key trainer angle code */
-  trainerAngle: string | null
+  trainerAngle: string | null;
   /** Workout data (last 5) */
-  workouts: Workout[]
+  workouts: Workout[];
   /** Past performances (last 10) */
-  pastPerformances: PastPerformance[]
+  pastPerformances: PastPerformance[];
   /** Is scratched */
-  isScratched: boolean
+  isScratched: boolean;
   /** Scratch reason */
-  scratchReason: string | null
+  scratchReason: string | null;
   /** Is coupled entry main */
-  isCoupledMain: boolean
+  isCoupledMain: boolean;
   /** Coupled with program numbers */
-  coupledWith: number[]
+  coupledWith: number[];
   /** Raw DRF line for debugging */
-  rawLine: string
+  rawLine: string;
 }
 
 // ============================================================================
@@ -408,74 +408,74 @@ export interface HorseEntry {
 
 export interface RaceHeader {
   /** Track code (3 letter abbreviation) */
-  trackCode: string
+  trackCode: string;
   /** Track full name */
-  trackName: string
+  trackName: string;
   /** Track full address/location */
-  trackLocation: string
+  trackLocation: string;
   /** Race number */
-  raceNumber: number
+  raceNumber: number;
   /** Race date (formatted) */
-  raceDate: string
+  raceDate: string;
   /** Race date raw (YYYYMMDD) */
-  raceDateRaw: string
+  raceDateRaw: string;
   /** Post time */
-  postTime: string
+  postTime: string;
   /** Distance in furlongs */
-  distanceFurlongs: number
+  distanceFurlongs: number;
   /** Distance formatted (e.g., "6 furlongs", "1 1/16 miles") */
-  distance: string
+  distance: string;
   /** Exact distance (to 1/16 mile) */
-  distanceExact: string
+  distanceExact: string;
   /** Surface */
-  surface: Surface
+  surface: Surface;
   /** Track condition */
-  trackCondition: TrackCondition
+  trackCondition: TrackCondition;
   /** Race classification */
-  classification: RaceClassification
+  classification: RaceClassification;
   /** Race type description */
-  raceType: string
+  raceType: string;
   /** Purse amount */
-  purse: number
+  purse: number;
   /** Purse formatted */
-  purseFormatted: string
+  purseFormatted: string;
   /** Age restrictions (e.g., "3YO", "3&UP") */
-  ageRestriction: string
+  ageRestriction: string;
   /** Sex restrictions (e.g., "F&M", "C&G") */
-  sexRestriction: string
+  sexRestriction: string;
   /** Weight conditions description */
-  weightConditions: string
+  weightConditions: string;
   /** State-bred restriction */
-  stateBred: string | null
+  stateBred: string | null;
   /** Claiming price range (if claiming race) */
-  claimingPriceMin: number | null
-  claimingPriceMax: number | null
+  claimingPriceMin: number | null;
+  claimingPriceMax: number | null;
   /** Allowed weight for age */
-  allowedWeight: number | null
+  allowedWeight: number | null;
   /** Conditions text */
-  conditions: string
+  conditions: string;
   /** Race name (for stakes races) */
-  raceName: string | null
+  raceName: string | null;
   /** Grade (for graded stakes) */
-  grade: number | null
+  grade: number | null;
   /** Is listed stakes */
-  isListed: boolean
+  isListed: boolean;
   /** Distance about (approximate distance indicator) */
-  isAbout: boolean
+  isAbout: boolean;
   /** Temp rail position */
-  tempRail: string | null
+  tempRail: string | null;
   /** Turf course description */
-  turfCourseType: string | null
+  turfCourseType: string | null;
   /** Chute start indicator */
-  chuteStart: boolean
+  chuteStart: boolean;
   /** Video replay available */
-  hasReplay: boolean
+  hasReplay: boolean;
   /** Race card/program number for tracking */
-  programNumber: number
+  programNumber: number;
   /** Number of entries */
-  fieldSize: number
+  fieldSize: number;
   /** Probable favorite (program number) */
-  probableFavorite: number | null
+  probableFavorite: number | null;
 }
 
 // ============================================================================
@@ -484,42 +484,42 @@ export interface RaceHeader {
 
 export interface ParsedRace {
   /** Race header information */
-  header: RaceHeader
+  header: RaceHeader;
   /** All horse entries */
-  horses: HorseEntry[]
+  horses: HorseEntry[];
   /** Validation warnings for this race */
-  warnings: string[]
+  warnings: string[];
   /** Parse errors for this race */
-  errors: string[]
+  errors: string[];
 }
 
 export interface ParsedDRFFile {
   /** Original filename */
-  filename: string
+  filename: string;
   /** All parsed races */
-  races: ParsedRace[]
+  races: ParsedRace[];
   /** File format detected */
-  format: 'csv' | 'fixed-width' | 'unknown'
+  format: 'csv' | 'fixed-width' | 'unknown';
   /** File version/schema if detected */
-  version: string | null
+  version: string | null;
   /** Parse timestamp */
-  parsedAt: string
+  parsedAt: string;
   /** Overall file validation status */
-  isValid: boolean
+  isValid: boolean;
   /** Global warnings */
-  warnings: string[]
+  warnings: string[];
   /** Global errors */
-  errors: string[]
+  errors: string[];
   /** Parsing statistics */
   stats: {
-    totalRaces: number
-    totalHorses: number
-    totalPastPerformances: number
-    totalWorkouts: number
-    parseTimeMs: number
-    linesProcessed: number
-    linesSkipped: number
-  }
+    totalRaces: number;
+    totalHorses: number;
+    totalPastPerformances: number;
+    totalWorkouts: number;
+    parseTimeMs: number;
+    linesProcessed: number;
+    linesSkipped: number;
+  };
 }
 
 // ============================================================================
@@ -527,45 +527,45 @@ export interface ParsedDRFFile {
 // ============================================================================
 
 export interface DRFWorkerRequest {
-  type: 'parse'
-  fileContent: string
-  filename: string
+  type: 'parse';
+  fileContent: string;
+  filename: string;
 }
 
 export interface DRFWorkerProgressMessage {
-  type: 'progress'
-  progress: number // 0-100
-  step: ParsingStep
-  message: string
+  type: 'progress';
+  progress: number; // 0-100
+  step: ParsingStep;
+  message: string;
   details?: {
-    currentRace?: number
-    totalRaces?: number
-    currentHorse?: number
-    totalHorses?: number
-  }
+    currentRace?: number;
+    totalRaces?: number;
+    currentHorse?: number;
+    totalHorses?: number;
+  };
 }
 
 export interface DRFWorkerSuccessResponse {
-  type: 'success'
-  data: ParsedDRFFile
+  type: 'success';
+  data: ParsedDRFFile;
 }
 
 export interface DRFWorkerErrorResponse {
-  type: 'error'
-  error: string
-  errorCode: ParsingErrorCode
+  type: 'error';
+  error: string;
+  errorCode: ParsingErrorCode;
   details?: {
-    line?: number
-    field?: string
-    value?: string
-    suggestion?: string
-  }
+    line?: number;
+    field?: string;
+    value?: string;
+    suggestion?: string;
+  };
 }
 
 export type DRFWorkerResponse =
   | DRFWorkerProgressMessage
   | DRFWorkerSuccessResponse
-  | DRFWorkerErrorResponse
+  | DRFWorkerErrorResponse;
 
 // ============================================================================
 // PARSING TYPES
@@ -580,7 +580,7 @@ export type ParsingStep =
   | 'processing-workouts'
   | 'validating-data'
   | 'finalizing'
-  | 'complete'
+  | 'complete';
 
 export type ParsingErrorCode =
   | 'INVALID_FILE'
@@ -590,25 +590,25 @@ export type ParsingErrorCode =
   | 'MISSING_REQUIRED_FIELD'
   | 'INVALID_FIELD_VALUE'
   | 'PARSE_EXCEPTION'
-  | 'UNKNOWN_ERROR'
+  | 'UNKNOWN_ERROR';
 
 export interface ParsingError {
-  code: ParsingErrorCode
-  message: string
-  line?: number
-  field?: string
-  value?: string
-  suggestion?: string
-  recoverable: boolean
+  code: ParsingErrorCode;
+  message: string;
+  line?: number;
+  field?: string;
+  value?: string;
+  suggestion?: string;
+  recoverable: boolean;
 }
 
 export interface ParsingWarning {
-  type: 'missing' | 'invalid' | 'incomplete' | 'approximated'
-  field: string
-  message: string
-  horseIndex?: number
-  raceIndex?: number
-  suggestion?: string
+  type: 'missing' | 'invalid' | 'incomplete' | 'approximated';
+  field: string;
+  message: string;
+  horseIndex?: number;
+  raceIndex?: number;
+  suggestion?: string;
 }
 
 // ============================================================================
@@ -617,27 +617,27 @@ export interface ParsingWarning {
 
 /** @deprecated Use RaceHeader instead */
 export interface Race {
-  track: string
-  date: string
-  distance: string
-  surface: 'dirt' | 'turf' | 'synthetic'
-  conditions: string
+  track: string;
+  date: string;
+  distance: string;
+  surface: 'dirt' | 'turf' | 'synthetic';
+  conditions: string;
 }
 
 /** @deprecated Use HorseEntry instead */
 export interface Horse {
-  programNumber: number
-  name: string
-  trainer: string
-  jockey: string
-  odds: number
+  programNumber: number;
+  name: string;
+  trainer: string;
+  jockey: string;
+  odds: number;
 }
 
 /** @deprecated Use ParsedDRFFile instead */
 export interface DRFFile {
-  filename: string
-  races: Race[]
-  horses: Horse[]
+  filename: string;
+  races: Race[];
+  horses: Horse[];
 }
 
 // ============================================================================
@@ -646,25 +646,25 @@ export interface DRFFile {
 
 /** Subset of horse entry for quick display */
 export interface HorseQuickView {
-  programNumber: number
-  horseName: string
-  jockeyName: string
-  trainerName: string
-  morningLineOdds: string
-  postPosition: number
-  lastBeyer: number | null
-  averageBeyer: number | null
+  programNumber: number;
+  horseName: string;
+  jockeyName: string;
+  trainerName: string;
+  morningLineOdds: string;
+  postPosition: number;
+  lastBeyer: number | null;
+  averageBeyer: number | null;
 }
 
 /** Race summary for list views */
 export interface RaceSummary {
-  raceNumber: number
-  distance: string
-  surface: Surface
-  classification: RaceClassification
-  purse: number
-  fieldSize: number
-  postTime: string
+  raceNumber: number;
+  distance: string;
+  surface: Surface;
+  classification: RaceClassification;
+  purse: number;
+  fieldSize: number;
+  postTime: string;
 }
 
 /** Conversion from new types to legacy types */
@@ -675,7 +675,7 @@ export function toLegacyHorse(entry: HorseEntry): Horse {
     trainer: entry.trainerName,
     jockey: entry.jockeyName,
     odds: entry.morningLineDecimal,
-  }
+  };
 }
 
 export function toLegacyRace(header: RaceHeader): Race {
@@ -685,5 +685,5 @@ export function toLegacyRace(header: RaceHeader): Race {
     distance: header.distance,
     surface: header.surface === 'all-weather' ? 'synthetic' : header.surface,
     conditions: header.conditions,
-  }
+  };
 }

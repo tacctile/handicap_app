@@ -1,10 +1,10 @@
-import { motion } from 'framer-motion'
-import { EmptyRaceIllustration, UploadDocumentIllustration } from '../../assets/illustrations'
-import { StaggerContainer, StaggerItem, Skeleton } from '../motion'
+import { motion } from 'framer-motion';
+import { EmptyRaceIllustration, UploadDocumentIllustration } from '../../assets/illustrations';
+import { StaggerContainer, StaggerItem, Skeleton } from '../motion';
 
 interface EmptyStateTableProps {
-  onUploadClick?: () => void
-  isLoading?: boolean
+  onUploadClick?: () => void;
+  isLoading?: boolean;
 }
 
 const tableHeaders = [
@@ -15,11 +15,11 @@ const tableHeaders = [
   { key: 'score', label: 'Score', width: '80px' },
   { key: 'odds', label: 'Odds', width: '80px' },
   { key: 'actions', label: 'Actions', width: '100px' },
-]
+];
 
 export function EmptyStateTable({ onUploadClick, isLoading }: EmptyStateTableProps) {
   // Generate skeleton rows
-  const skeletonRows = Array.from({ length: 8 }, (_, i) => i)
+  const skeletonRows = Array.from({ length: 8 }, (_, i) => i);
 
   return (
     <div className="empty-state-table-container">
@@ -29,9 +29,7 @@ export function EmptyStateTable({ onUploadClick, isLoading }: EmptyStateTablePro
           <span className="material-icons">format_list_numbered</span>
           <h3>Horse Analysis</h3>
         </div>
-        <div className="empty-table-subtitle">
-          Complete handicapping breakdown for each entry
-        </div>
+        <div className="empty-table-subtitle">Complete handicapping breakdown for each entry</div>
       </div>
 
       {/* Actual table with headers */}
@@ -40,60 +38,68 @@ export function EmptyStateTable({ onUploadClick, isLoading }: EmptyStateTablePro
           <thead>
             <tr>
               {tableHeaders.map((header) => (
-                <th
-                  key={header.key}
-                  style={{ width: header.width }}
-                  scope="col"
-                >
+                <th key={header.key} style={{ width: header.width }} scope="col">
                   {header.label}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {isLoading ? (
-              // Loading skeleton rows
-              skeletonRows.map((i) => (
-                <tr key={i} className="skeleton-row">
-                  <td><Skeleton width="32px" height="32px" className="rounded" /></td>
-                  <td><Skeleton width="140px" height="16px" /></td>
-                  <td><Skeleton width="100px" height="16px" /></td>
-                  <td><Skeleton width="100px" height="16px" /></td>
-                  <td><Skeleton width="48px" height="28px" className="rounded" /></td>
-                  <td><Skeleton width="48px" height="20px" /></td>
-                  <td><Skeleton width="60px" height="28px" className="rounded" /></td>
-                </tr>
-              ))
-            ) : (
-              // Empty state rows with pattern
-              skeletonRows.map((i) => (
-                <tr key={i} className="empty-row">
-                  <td>
-                    <div className="empty-pp-badge">{i + 1}</div>
-                  </td>
-                  <td>
-                    <div className="empty-cell-placeholder" />
-                  </td>
-                  <td>
-                    <div className="empty-cell-placeholder short" />
-                  </td>
-                  <td>
-                    <div className="empty-cell-placeholder short" />
-                  </td>
-                  <td>
-                    <div className="empty-score-badge">—</div>
-                  </td>
-                  <td>
-                    <div className="empty-odds">—</div>
-                  </td>
-                  <td>
-                    <div className="empty-action-btn">
-                      <span className="material-icons">visibility</span>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
+            {isLoading
+              ? // Loading skeleton rows
+                skeletonRows.map((i) => (
+                  <tr key={i} className="skeleton-row">
+                    <td>
+                      <Skeleton width="32px" height="32px" className="rounded" />
+                    </td>
+                    <td>
+                      <Skeleton width="140px" height="16px" />
+                    </td>
+                    <td>
+                      <Skeleton width="100px" height="16px" />
+                    </td>
+                    <td>
+                      <Skeleton width="100px" height="16px" />
+                    </td>
+                    <td>
+                      <Skeleton width="48px" height="28px" className="rounded" />
+                    </td>
+                    <td>
+                      <Skeleton width="48px" height="20px" />
+                    </td>
+                    <td>
+                      <Skeleton width="60px" height="28px" className="rounded" />
+                    </td>
+                  </tr>
+                ))
+              : // Empty state rows with pattern
+                skeletonRows.map((i) => (
+                  <tr key={i} className="empty-row">
+                    <td>
+                      <div className="empty-pp-badge">{i + 1}</div>
+                    </td>
+                    <td>
+                      <div className="empty-cell-placeholder" />
+                    </td>
+                    <td>
+                      <div className="empty-cell-placeholder short" />
+                    </td>
+                    <td>
+                      <div className="empty-cell-placeholder short" />
+                    </td>
+                    <td>
+                      <div className="empty-score-badge">—</div>
+                    </td>
+                    <td>
+                      <div className="empty-odds">—</div>
+                    </td>
+                    <td>
+                      <div className="empty-action-btn">
+                        <span className="material-icons">visibility</span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
           </tbody>
         </table>
 
@@ -110,9 +116,7 @@ export function EmptyStateTable({ onUploadClick, isLoading }: EmptyStateTablePro
                 <EmptyRaceIllustration className="empty-table-illustration" />
               </StaggerItem>
               <StaggerItem>
-                <h4 className="empty-table-prompt-title">
-                  Upload DRF file to analyze race
-                </h4>
+                <h4 className="empty-table-prompt-title">Upload DRF file to analyze race</h4>
               </StaggerItem>
               <StaggerItem>
                 <p className="empty-table-prompt-text">
@@ -149,7 +153,7 @@ export function EmptyStateTable({ onUploadClick, isLoading }: EmptyStateTablePro
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default EmptyStateTable
+export default EmptyStateTable;

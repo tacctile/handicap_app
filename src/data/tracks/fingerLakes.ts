@@ -14,7 +14,7 @@
  * NOTE: Dirt-only facility, no turf racing. Racing season April-December.
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const fingerLakes: TrackData = {
   code: 'FL',
@@ -33,8 +33,8 @@ export const fingerLakes: TrackData = {
       // Source: NYSGC specifications
       trackWidth: 75,
       // Source: Finger Lakes has 6f and 7f chutes
-      chutes: [6, 7]
-    }
+      chutes: [6, 7],
+    },
   },
 
   postPositionBias: {
@@ -50,7 +50,8 @@ export const fingerLakes: TrackData = {
         // Sample: 600+ dirt sprints per season
         winPercentByPost: [14.2, 14.8, 13.5, 12.8, 11.5, 10.2, 9.5, 7.2, 4.5, 1.8],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Inside posts 1-3 clearly favored in sprints; tight turns magnify rail advantage'
+        biasDescription:
+          'Inside posts 1-3 clearly favored in sprints; tight turns magnify rail advantage',
       },
       {
         distance: 'route',
@@ -63,9 +64,10 @@ export const fingerLakes: TrackData = {
         // Sample: 400+ dirt routes per season
         winPercentByPost: [15.5, 14.2, 13.8, 12.5, 11.2, 10.5, 9.2, 7.5, 4.2, 1.4],
         favoredPosts: [1, 2],
-        biasDescription: 'Strong inside bias in routes; posts 1-2 dominate; short 990-foot stretch limits rallies'
-      }
-    ]
+        biasDescription:
+          'Strong inside bias in routes; posts 1-2 dominate; short 990-foot stretch limits rallies',
+      },
+    ],
   },
 
   speedBias: [
@@ -78,8 +80,9 @@ export const fingerLakes: TrackData = {
       // Front-runners win at elevated rate: 60%+ in sprints
       earlySpeedWinRate: 62,
       paceAdvantageRating: 8,
-      description: 'Strong speed bias; short 990-foot stretch favors front-runners heavily; closers struggle to catch leaders'
-    }
+      description:
+        'Strong speed bias; short 990-foot stretch favors front-runners heavily; closers struggle to catch leaders',
+    },
   ],
 
   surfaces: [
@@ -89,8 +92,8 @@ export const fingerLakes: TrackData = {
       // Traditional sandy loam New York racing surface
       composition: 'Sandy loam cushion (4-5 inches) over clay base with limestone screening',
       playingStyle: 'speed-favoring',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -101,7 +104,7 @@ export const fingerLakes: TrackData = {
       // Season opens mid-April; variable spring weather
       typicalCondition: 'Fast to Good; rain affects track early season',
       speedAdjustment: -1,
-      notes: 'Season opens mid-April; NY-bred stakes begin; weather variable in early spring'
+      notes: 'Season opens mid-April; NY-bred stakes begin; weather variable in early spring',
     },
     {
       season: 'summer',
@@ -110,7 +113,7 @@ export const fingerLakes: TrackData = {
       // Hot conditions, track typically fast
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Peak summer racing; fastest track conditions; good field sizes'
+      notes: 'Peak summer racing; fastest track conditions; good field sizes',
     },
     {
       season: 'fall',
@@ -119,8 +122,9 @@ export const fingerLakes: TrackData = {
       // Racing continues through early December
       typicalCondition: 'Fast to Good; slows late season',
       speedAdjustment: 0,
-      notes: 'NY-bred championship meet in fall; racing ends early December; weather deteriorates late'
-    }
+      notes:
+        'NY-bred championship meet in fall; racing ends early December; weather deteriorates late',
+    },
   ],
 
   winningTimes: [
@@ -132,7 +136,7 @@ export const fingerLakes: TrackData = {
       surface: 'dirt',
       claimingAvg: 52.8,
       allowanceAvg: 51.5,
-      stakesAvg: 50.5
+      stakesAvg: 50.5,
     },
     {
       distance: '5f',
@@ -140,7 +144,7 @@ export const fingerLakes: TrackData = {
       surface: 'dirt',
       claimingAvg: 58.8,
       allowanceAvg: 57.5,
-      stakesAvg: 56.5
+      stakesAvg: 56.5,
     },
     {
       distance: '5.5f',
@@ -148,7 +152,7 @@ export const fingerLakes: TrackData = {
       surface: 'dirt',
       claimingAvg: 65.5,
       allowanceAvg: 64.2,
-      stakesAvg: 63.0
+      stakesAvg: 63.0,
     },
     {
       distance: '6f',
@@ -157,7 +161,7 @@ export const fingerLakes: TrackData = {
       // Track record: 1:08.64 (2019)
       claimingAvg: 71.5,
       allowanceAvg: 70.2,
-      stakesAvg: 68.8
+      stakesAvg: 68.8,
     },
     {
       distance: '6.5f',
@@ -165,7 +169,7 @@ export const fingerLakes: TrackData = {
       surface: 'dirt',
       claimingAvg: 78.5,
       allowanceAvg: 77.0,
-      stakesAvg: 75.5
+      stakesAvg: 75.5,
     },
     {
       distance: '1m',
@@ -173,7 +177,7 @@ export const fingerLakes: TrackData = {
       surface: 'dirt',
       claimingAvg: 99.5,
       allowanceAvg: 97.8,
-      stakesAvg: 96.0
+      stakesAvg: 96.0,
     },
     {
       distance: '1m70y',
@@ -181,7 +185,7 @@ export const fingerLakes: TrackData = {
       surface: 'dirt',
       claimingAvg: 103.8,
       allowanceAvg: 102.0,
-      stakesAvg: 100.2
+      stakesAvg: 100.2,
     },
     {
       distance: '1 1/16m',
@@ -189,7 +193,7 @@ export const fingerLakes: TrackData = {
       surface: 'dirt',
       claimingAvg: 106.5,
       allowanceAvg: 104.5,
-      stakesAvg: 102.5
+      stakesAvg: 102.5,
     },
     {
       distance: '1 1/8m',
@@ -198,10 +202,10 @@ export const fingerLakes: TrackData = {
       // NY Derby distance
       claimingAvg: 114.0,
       allowanceAvg: 112.0,
-      stakesAvg: 110.0
-    }
+      stakesAvg: 110.0,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

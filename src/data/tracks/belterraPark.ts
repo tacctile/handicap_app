@@ -15,7 +15,7 @@
  *       Reopened as Belterra Park 2014; all-weather racing; Ohio-bred focus
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const belterraPark: TrackData = {
   code: 'BTP',
@@ -36,8 +36,8 @@ export const belterraPark: TrackData = {
       // Source: Ohio State Racing Commission - 78 feet wide
       trackWidth: 78,
       // Source: Belterra Park - chutes at 6f and 7f
-      chutes: [6, 7]
-    }
+      chutes: [6, 7],
+    },
   },
 
   postPositionBias: {
@@ -55,7 +55,8 @@ export const belterraPark: TrackData = {
         // Sample: 450+ synthetic sprints annually
         winPercentByPost: [11.0, 12.5, 13.8, 14.2, 13.5, 12.0, 10.0, 7.5, 4.0, 1.5],
         favoredPosts: [3, 4, 5],
-        biasDescription: 'Tapeta favors middle posts 3-5 in sprints; inside rail less advantageous; fair surface reduces bias'
+        biasDescription:
+          'Tapeta favors middle posts 3-5 in sprints; inside rail less advantageous; fair surface reduces bias',
       },
       {
         distance: 'route',
@@ -69,9 +70,10 @@ export const belterraPark: TrackData = {
         // Sample: 250+ synthetic routes annually
         winPercentByPost: [11.5, 12.8, 13.5, 14.0, 13.2, 11.8, 9.5, 7.2, 4.5, 2.0],
         favoredPosts: [3, 4, 5],
-        biasDescription: 'Tapeta routes favor posts 3-5; fair racing surface; closers competitive; Ohio-breds dominate'
-      }
-    ]
+        biasDescription:
+          'Tapeta routes favor posts 3-5; fair racing surface; closers competitive; Ohio-breds dominate',
+      },
+    ],
   },
 
   speedBias: [
@@ -85,8 +87,9 @@ export const belterraPark: TrackData = {
       // Similar to Woodbine Tapeta characteristics
       earlySpeedWinRate: 48,
       paceAdvantageRating: 4,
-      description: 'Tapeta plays fair; 48% early speed wins; forgiving surface allows sustained rallies; pace not paramount'
-    }
+      description:
+        'Tapeta plays fair; 48% early speed wins; forgiving surface allows sustained rallies; pace not paramount',
+    },
   ],
 
   surfaces: [
@@ -97,10 +100,11 @@ export const belterraPark: TrackData = {
       // Installed when venue converted to Belterra Park
       // Wax-coated sand, recycled fiber, rubber composition
       // Plays consistent in all weather conditions
-      composition: 'Tapeta synthetic: wax-coated silica sand, recycled fibers, rubber granules; 5-inch depth; all-weather surface',
+      composition:
+        'Tapeta synthetic: wax-coated silica sand, recycled fibers, rubber granules; 5-inch depth; all-weather surface',
       playingStyle: 'fair',
-      drainage: 'excellent'
-    }
+      drainage: 'excellent',
+    },
   ],
 
   seasonalPatterns: [
@@ -112,7 +116,7 @@ export const belterraPark: TrackData = {
       // Ohio-bred focus racing
       typicalCondition: 'Fast; All-weather Tapeta handles precipitation',
       speedAdjustment: 0,
-      notes: 'Season opener; Tapeta consistent in spring weather; Ohio-bred racing featured'
+      notes: 'Season opener; Tapeta consistent in spring weather; Ohio-bred racing featured',
     },
     {
       season: 'summer',
@@ -122,7 +126,7 @@ export const belterraPark: TrackData = {
       // Ohio Championship Day preparation
       typicalCondition: 'Fast',
       speedAdjustment: 0,
-      notes: 'Peak racing season; consistent Tapeta conditions; building to Ohio Championship Day'
+      notes: 'Peak racing season; consistent Tapeta conditions; building to Ohio Championship Day',
     },
     {
       season: 'fall',
@@ -132,7 +136,8 @@ export const belterraPark: TrackData = {
       // Season extends into October/November
       typicalCondition: 'Fast',
       speedAdjustment: 0,
-      notes: 'Ohio Championship Day in September; best Ohio-breds compete; season winds down in fall'
+      notes:
+        'Ohio Championship Day in September; best Ohio-breds compete; season winds down in fall',
     },
     {
       season: 'winter',
@@ -141,8 +146,8 @@ export const belterraPark: TrackData = {
       // Track closed for Ohio winter
       typicalCondition: 'Closed - no racing',
       speedAdjustment: 0,
-      notes: 'Track closed for winter; Ohio weather unsuitable; season resumes in spring'
-    }
+      notes: 'Track closed for winter; Ohio weather unsuitable; season resumes in spring',
+    },
   ],
 
   winningTimes: [
@@ -154,7 +159,7 @@ export const belterraPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 53.0,
       allowanceAvg: 51.8,
-      stakesAvg: 50.5
+      stakesAvg: 50.5,
     },
     {
       distance: '5f',
@@ -162,7 +167,7 @@ export const belterraPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 59.0,
       allowanceAvg: 57.8,
-      stakesAvg: 56.5
+      stakesAvg: 56.5,
     },
     {
       distance: '5.5f',
@@ -170,7 +175,7 @@ export const belterraPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 65.2,
       allowanceAvg: 64.0,
-      stakesAvg: 62.8
+      stakesAvg: 62.8,
     },
     {
       distance: '6f',
@@ -179,7 +184,7 @@ export const belterraPark: TrackData = {
       // Track record: 1:09.40
       claimingAvg: 71.5,
       allowanceAvg: 70.2,
-      stakesAvg: 69.0
+      stakesAvg: 69.0,
     },
     {
       distance: '6.5f',
@@ -187,7 +192,7 @@ export const belterraPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 78.0,
       allowanceAvg: 76.8,
-      stakesAvg: 75.5
+      stakesAvg: 75.5,
     },
     {
       distance: '7f',
@@ -195,7 +200,7 @@ export const belterraPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 84.2,
       allowanceAvg: 83.0,
-      stakesAvg: 81.8
+      stakesAvg: 81.8,
     },
     {
       distance: '1m',
@@ -203,7 +208,7 @@ export const belterraPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 98.0,
       allowanceAvg: 96.5,
-      stakesAvg: 95.0
+      stakesAvg: 95.0,
     },
     {
       distance: '1m70y',
@@ -211,7 +216,7 @@ export const belterraPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 102.5,
       allowanceAvg: 101.0,
-      stakesAvg: 99.5
+      stakesAvg: 99.5,
     },
     {
       distance: '1 1/16m',
@@ -220,7 +225,7 @@ export const belterraPark: TrackData = {
       // Ohio-bred stakes distance
       claimingAvg: 105.0,
       allowanceAvg: 103.5,
-      stakesAvg: 102.0
+      stakesAvg: 102.0,
     },
     {
       distance: '1 1/8m',
@@ -230,7 +235,7 @@ export const belterraPark: TrackData = {
       // Track record: 1:51.20
       claimingAvg: 112.5,
       allowanceAvg: 110.5,
-      stakesAvg: 108.5
+      stakesAvg: 108.5,
     },
     {
       distance: '1 1/4m',
@@ -238,7 +243,7 @@ export const belterraPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 126.0,
       allowanceAvg: 123.5,
-      stakesAvg: 121.0
+      stakesAvg: 121.0,
     },
     {
       distance: '1 1/2m',
@@ -246,10 +251,10 @@ export const belterraPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 154.0,
       allowanceAvg: 151.0,
-      stakesAvg: 148.0
-    }
+      stakesAvg: 148.0,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

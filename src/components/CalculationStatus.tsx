@@ -1,12 +1,12 @@
-import { memo, useEffect, useState } from 'react'
-import type { CalculationState } from '../hooks/useRaceState'
-import { getConfidenceColor, getConfidenceLabel } from '../lib/confidence'
+import { memo, useEffect, useState } from 'react';
+import type { CalculationState } from '../hooks/useRaceState';
+import { getConfidenceColor, getConfidenceLabel } from '../lib/confidence';
 
 interface CalculationStatusProps {
-  calculationState: CalculationState
-  horsesAnalyzed: number
-  activeHorses: number
-  confidenceLevel: number
+  calculationState: CalculationState;
+  horsesAnalyzed: number;
+  activeHorses: number;
+  confidenceLevel: number;
 }
 
 // Material Icon component
@@ -15,18 +15,18 @@ function Icon({ name, className = '' }: { name: string; className?: string }) {
     <span className={`material-icons ${className}`} aria-hidden="true">
       {name}
     </span>
-  )
+  );
 }
 
 function formatTimestamp(timestamp: number | null): string {
-  if (!timestamp) return 'Not calculated'
-  const now = Date.now()
-  const diff = now - timestamp
+  if (!timestamp) return 'Not calculated';
+  const now = Date.now();
+  const diff = now - timestamp;
 
-  if (diff < 1000) return 'Just now'
-  if (diff < 60000) return `${Math.floor(diff / 1000)}s ago`
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`
-  return new Date(timestamp).toLocaleTimeString()
+  if (diff < 1000) return 'Just now';
+  if (diff < 60000) return `${Math.floor(diff / 1000)}s ago`;
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+  return new Date(timestamp).toLocaleTimeString();
 }
 
 export const CalculationStatus = memo(function CalculationStatus({
@@ -35,21 +35,21 @@ export const CalculationStatus = memo(function CalculationStatus({
   activeHorses,
   confidenceLevel,
 }: CalculationStatusProps) {
-  const { isCalculating, lastCalculatedAt } = calculationState
-  const [displayTime, setDisplayTime] = useState(formatTimestamp(lastCalculatedAt))
+  const { isCalculating, lastCalculatedAt } = calculationState;
+  const [displayTime, setDisplayTime] = useState(formatTimestamp(lastCalculatedAt));
 
   // Update display time every 10 seconds
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state and setting up interval
-    setDisplayTime(formatTimestamp(lastCalculatedAt))
+    setDisplayTime(formatTimestamp(lastCalculatedAt));
     const interval = setInterval(() => {
-      setDisplayTime(formatTimestamp(lastCalculatedAt))
-    }, 10000)
-    return () => clearInterval(interval)
-  }, [lastCalculatedAt])
+      setDisplayTime(formatTimestamp(lastCalculatedAt));
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [lastCalculatedAt]);
 
-  const confidenceColor = getConfidenceColor(confidenceLevel)
-  const confidenceLabel = getConfidenceLabel(confidenceLevel)
+  const confidenceColor = getConfidenceColor(confidenceLevel);
+  const confidenceLabel = getConfidenceLabel(confidenceLevel);
 
   return (
     <div className="calculation-status">
@@ -89,5 +89,5 @@ export const CalculationStatus = memo(function CalculationStatus({
         </div>
       </div>
     </div>
-  )
-})
+  );
+});

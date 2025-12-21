@@ -31,7 +31,7 @@ export {
   getMovementMagnitude,
   getClassMovementColor,
   getClassMovementIcon,
-} from './classTypes'
+} from './classTypes';
 
 // Track tiers
 export {
@@ -48,7 +48,7 @@ export {
   getTierDisplayName,
   getTracksByTier,
   isShipperFromElite,
-} from './trackTiers'
+} from './trackTiers';
 
 // Class extraction
 export {
@@ -61,7 +61,7 @@ export {
   detectHiddenClassDrops,
   analyzeClass,
   parseClassFromConditions,
-} from './classExtractor'
+} from './classExtractor';
 
 // Class scoring
 export {
@@ -75,4 +75,4 @@ export {
   getHiddenDropsSummary,
   hasSignificantHiddenValue,
   isValuePlay,
-} from './classScoring'
+} from './classScoring';

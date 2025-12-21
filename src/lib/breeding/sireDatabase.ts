@@ -12,7 +12,7 @@
  * - Below Average (0-4): <8% win rate, <$10K per start
  */
 
-import type { SireProfile } from './types'
+import type { SireProfile } from './types';
 
 // ============================================================================
 // SIRE TIER CONSTANTS
@@ -24,9 +24,9 @@ export const SIRE_TIER_THRESHOLDS = {
   aboveAverage: { minWinRate: 10, minEarnings: 20000, minScore: 10, maxScore: 14 },
   average: { minWinRate: 8, minEarnings: 10000, minScore: 5, maxScore: 9 },
   belowAverage: { minWinRate: 0, minEarnings: 0, minScore: 0, maxScore: 4 },
-} as const
+} as const;
 
-export type SireTier = keyof typeof SIRE_TIER_THRESHOLDS
+export type SireTier = keyof typeof SIRE_TIER_THRESHOLDS;
 
 // ============================================================================
 // EXTENDED SIRE PROFILE
@@ -34,19 +34,19 @@ export type SireTier = keyof typeof SIRE_TIER_THRESHOLDS
 
 export interface ExtendedSireProfile extends SireProfile {
   /** Sire tier classification */
-  tier: SireTier
+  tier: SireTier;
   /** Base score for this sire (0-25) */
-  baseScore: number
+  baseScore: number;
   /** Win rate for 2-year-olds */
-  winRate2yo: number
+  winRate2yo: number;
   /** Win rate for 3-year-olds */
-  winRate3yo: number
+  winRate3yo: number;
   /** First crop year or approximate */
-  firstCropYear?: number
+  firstCropYear?: number;
   /** Representative successful offspring */
-  notableOffspring: string[]
+  notableOffspring: string[];
   /** Brief notes about sire strengths */
-  notes: string
+  notes: string;
 }
 
 // ============================================================================
@@ -96,7 +96,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'Elite route sire, strong stamina influence, top debut %',
   },
 
-  'CURLIN': {
+  CURLIN: {
     name: 'Curlin',
     winRate: 17.5,
     winRate2yo: 14.2,
@@ -109,11 +109,11 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     isKnown: true,
     tier: 'elite',
     baseScore: 24,
-    notableOffspring: ['Good Magic', 'Vino Rosso', 'Cody\'s Wish', 'Palace Malice'],
+    notableOffspring: ['Good Magic', 'Vino Rosso', "Cody's Wish", 'Palace Malice'],
     notes: 'Classic stamina sire, improves with age, strong in stakes',
   },
 
-  'TAPIT': {
+  TAPIT: {
     name: 'Tapit',
     winRate: 16.8,
     winRate2yo: 15.5,
@@ -164,8 +164,8 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'Elite debut sire, precocious 2yos, good speed',
   },
 
-  'MEDAGLIA D\'ORO': {
-    name: 'Medaglia d\'Oro',
+  "MEDAGLIA D'ORO": {
+    name: "Medaglia d'Oro",
     winRate: 15.8,
     winRate2yo: 13.5,
     winRate3yo: 17.2,
@@ -177,7 +177,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     isKnown: true,
     tier: 'elite',
     baseScore: 22,
-    notableOffspring: ['Songbird', 'Bolt d\'Oro', 'Golden Medal', 'Elate'],
+    notableOffspring: ['Songbird', "Bolt d'Oro", 'Golden Medal', 'Elate'],
     notes: 'Strong broodmare sire, versatile surface, classic types',
   },
 
@@ -198,7 +198,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'Elite turf sire, strong internationally, speed oriented',
   },
 
-  'JUSTIFY': {
+  JUSTIFY: {
     name: 'Justify',
     winRate: 16.2,
     winRate2yo: 15.5,
@@ -228,7 +228,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     isKnown: true,
     tier: 'elite',
     baseScore: 20,
-    notableOffspring: ['Cafe Pharoah', 'As Time Goes By', 'Harvey\'s Lil Goil'],
+    notableOffspring: ['Cafe Pharoah', 'As Time Goes By', "Harvey's Lil Goil"],
     notes: 'Triple Crown sire, turf/dirt versatile, some stamina',
   },
 
@@ -250,10 +250,10 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     tier: 'strong',
     baseScore: 19,
     notableOffspring: ['Mage', 'National Treasure'],
-    notes: 'Strong young sire, Breeders\' Cup winner, solid debut %',
+    notes: "Strong young sire, Breeders' Cup winner, solid debut %",
   },
 
-  'SPEIGHTSTOWN': {
+  SPEIGHTSTOWN: {
     name: 'Speightstown',
     winRate: 14.2,
     winRate2yo: 15.5,
@@ -270,7 +270,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'Elite sprint sire, exceptional early speed',
   },
 
-  'MUNNINGS': {
+  MUNNINGS: {
     name: 'Munnings',
     winRate: 13.8,
     winRate2yo: 14.5,
@@ -283,7 +283,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     isKnown: true,
     tier: 'strong',
     baseScore: 18,
-    notableOffspring: ['I\'m a Chatterbox', 'Zayat Road', 'Bohemian Rhapsody'],
+    notableOffspring: ["I'm a Chatterbox", 'Zayat Road', 'Bohemian Rhapsody'],
     notes: 'Speed sire, good sprinters, early ability',
   },
 
@@ -304,8 +304,8 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'Sire of sires, stamina oriented, late developers',
   },
 
-  'KITTEN\'S JOY': {
-    name: 'Kitten\'s Joy',
+  "KITTEN'S JOY": {
+    name: "Kitten's Joy",
     winRate: 13.2,
     winRate2yo: 11.5,
     winRate3yo: 14.8,
@@ -321,7 +321,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'Elite turf sire, stamina influence, late bloomers',
   },
 
-  'CONSTITUTION': {
+  CONSTITUTION: {
     name: 'Constitution',
     winRate: 14.2,
     winRate2yo: 14.8,
@@ -372,7 +372,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'Consistent sire, durable runners, versatile',
   },
 
-  'NYQUIST': {
+  NYQUIST: {
     name: 'Nyquist',
     winRate: 13.8,
     winRate2yo: 14.5,
@@ -402,7 +402,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     isKnown: true,
     tier: 'strong',
     baseScore: 16,
-    notableOffspring: ['Orb', 'Carina Mia', 'Declan\'s Moon'],
+    notableOffspring: ['Orb', 'Carina Mia', "Declan's Moon"],
     notes: 'Consistent mid-tier sire, versatile distance',
   },
 
@@ -423,7 +423,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'International success, precocious, speed oriented',
   },
 
-  'FLATTER': {
+  FLATTER: {
     name: 'Flatter',
     winRate: 12.2,
     winRate2yo: 12.8,
@@ -440,7 +440,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'Solid sire, versatile runners, consistent',
   },
 
-  'ARROGATE': {
+  ARROGATE: {
     name: 'Arrogate',
     winRate: 12.5,
     winRate2yo: 11.5,
@@ -525,7 +525,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     isKnown: true,
     tier: 'aboveAverage',
     baseScore: 13,
-    notableOffspring: ['Rombauer', 'Finley\'sluckycharm'],
+    notableOffspring: ['Rombauer', "Finley'sluckycharm"],
     notes: 'Underrated sire, Preakness winner producer',
   },
 
@@ -546,8 +546,8 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'Young sire, Curlin son, promising early crops',
   },
 
-  'BOLT D\'ORO': {
-    name: 'Bolt d\'Oro',
+  "BOLT D'ORO": {
+    name: "Bolt d'Oro",
     winRate: 11.2,
     winRate2yo: 11.5,
     winRate3yo: 11.0,
@@ -560,11 +560,11 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     tier: 'aboveAverage',
     baseScore: 12,
     notableOffspring: ['Skinner', 'Instant Coffee'],
-    notes: 'Young sire, Medaglia d\'Oro son, improving',
+    notes: "Young sire, Medaglia d'Oro son, improving",
   },
 
-  'MACLEAN\'S MUSIC': {
-    name: 'Maclean\'s Music',
+  "MACLEAN'S MUSIC": {
+    name: "Maclean's Music",
     winRate: 10.8,
     winRate2yo: 12.2,
     winRate3yo: 9.5,
@@ -576,11 +576,11 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     isKnown: true,
     tier: 'aboveAverage',
     baseScore: 12,
-    notableOffspring: ['Cloud Computing', 'Jackie\'s Warrior'],
+    notableOffspring: ['Cloud Computing', "Jackie's Warrior"],
     notes: 'Sprint specialist, fast early runners',
   },
 
-  'MENDELSSOHN': {
+  MENDELSSOHN: {
     name: 'Mendelssohn',
     winRate: 10.5,
     winRate2yo: 10.8,
@@ -597,7 +597,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'Young sire, international bloodline, developing',
   },
 
-  'UPSTART': {
+  UPSTART: {
     name: 'Upstart',
     winRate: 10.2,
     winRate2yo: 10.5,
@@ -631,7 +631,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'Curlin son, stamina influence, developing sire',
   },
 
-  'FROSTED': {
+  FROSTED: {
     name: 'Frosted',
     winRate: 10.5,
     winRate2yo: 10.2,
@@ -661,12 +661,12 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     isKnown: true,
     tier: 'aboveAverage',
     baseScore: 11,
-    notableOffspring: ['Wolfie\'s Dynaghost'],
+    notableOffspring: ["Wolfie's Dynaghost"],
     notes: 'Turf sire, route oriented, developing',
   },
 
-  'LIAM\'S MAP': {
-    name: 'Liam\'s Map',
+  "LIAM'S MAP": {
+    name: "Liam's Map",
     winRate: 10.2,
     winRate2yo: 9.8,
     winRate3yo: 10.5,
@@ -682,7 +682,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'Solid sire, Colonel Liam turf success',
   },
 
-  'GHOSTZAPPER': {
+  GHOSTZAPPER: {
     name: 'Ghostzapper',
     winRate: 10.5,
     winRate2yo: 9.8,
@@ -788,7 +788,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'Deceased, route oriented, some stamina',
   },
 
-  'PAYNTER': {
+  PAYNTER: {
     name: 'Paynter',
     winRate: 8.8,
     winRate2yo: 8.5,
@@ -839,7 +839,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'A.P. Indy son, route oriented',
   },
 
-  'EXAGGERATOR': {
+  EXAGGERATOR: {
     name: 'Exaggerator',
     winRate: 8.2,
     winRate2yo: 8.0,
@@ -856,7 +856,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'Young sire, Preakness winner',
   },
 
-  'VIOLENCE': {
+  VIOLENCE: {
     name: 'Violence',
     winRate: 8.5,
     winRate2yo: 9.2,
@@ -877,7 +877,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
   // BELOW AVERAGE TIER (0-4 points)
   // ========================================================================
 
-  'TONALIST': {
+  TONALIST: {
     name: 'Tonalist',
     winRate: 7.8,
     winRate2yo: 7.2,
@@ -894,7 +894,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'Moderate results, some stakes performers',
   },
 
-  'CONNECT': {
+  CONNECT: {
     name: 'Connect',
     winRate: 7.5,
     winRate2yo: 7.8,
@@ -911,7 +911,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notes: 'Some stakes success, below average overall',
   },
 
-  'VERRAZANO': {
+  VERRAZANO: {
     name: 'Verrazano',
     winRate: 7.2,
     winRate2yo: 7.0,
@@ -944,7 +944,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
     notableOffspring: [],
     notes: 'Champion 2yo, disappointing sire results',
   },
-}
+};
 
 // ============================================================================
 // LOOKUP FUNCTIONS
@@ -954,11 +954,7 @@ export const SIRE_DATABASE: Record<string, ExtendedSireProfile> = {
  * Normalize a sire name for database lookup
  */
 export function normalizeSireName(name: string): string {
-  return name
-    .toUpperCase()
-    .trim()
-    .replace(/['']/g, '\'')
-    .replace(/\s+/g, ' ')
+  return name.toUpperCase().trim().replace(/['']/g, "'").replace(/\s+/g, ' ');
 }
 
 /**
@@ -966,22 +962,22 @@ export function normalizeSireName(name: string): string {
  * Returns the sire profile if found, null otherwise
  */
 export function lookupSire(sireName: string): ExtendedSireProfile | null {
-  const normalized = normalizeSireName(sireName)
-  return SIRE_DATABASE[normalized] || null
+  const normalized = normalizeSireName(sireName);
+  return SIRE_DATABASE[normalized] || null;
 }
 
 /**
  * Get all sire names in the database
  */
 export function getAllSireNames(): string[] {
-  return Object.keys(SIRE_DATABASE)
+  return Object.keys(SIRE_DATABASE);
 }
 
 /**
  * Get sires by tier
  */
 export function getSiresByTier(tier: SireTier): ExtendedSireProfile[] {
-  return Object.values(SIRE_DATABASE).filter(s => s.tier === tier)
+  return Object.values(SIRE_DATABASE).filter((s) => s.tier === tier);
 }
 
 /**
@@ -994,12 +990,12 @@ export function getSiresByTier(tier: SireTier): ExtendedSireProfile[] {
 export function calculateSireScore(
   sireName: string,
   context?: {
-    surface?: string
-    distanceCategory?: 'sprint' | 'route' | 'versatile'
-    isDebut?: boolean
+    surface?: string;
+    distanceCategory?: 'sprint' | 'route' | 'versatile';
+    isDebut?: boolean;
   }
 ): { score: number; profile: ExtendedSireProfile | null; reasoning: string } {
-  const profile = lookupSire(sireName)
+  const profile = lookupSire(sireName);
 
   if (!profile) {
     // Unknown sire - give neutral score
@@ -1007,52 +1003,62 @@ export function calculateSireScore(
       score: 5,
       profile: null,
       reasoning: `Unknown sire "${sireName}" - using neutral baseline`,
-    }
+    };
   }
 
-  let score = profile.baseScore
-  const reasons: string[] = [`${profile.name}: ${profile.tier} tier (base ${profile.baseScore})`]
+  let score = profile.baseScore;
+  const reasons: string[] = [`${profile.name}: ${profile.tier} tier (base ${profile.baseScore})`];
 
   // Surface fit bonus/penalty
-  if (context?.surface && profile.surfacePreference !== 'versatile' && profile.surfacePreference !== 'unknown') {
-    const surfaceLower = context.surface.toLowerCase()
+  if (
+    context?.surface &&
+    profile.surfacePreference !== 'versatile' &&
+    profile.surfacePreference !== 'unknown'
+  ) {
+    const surfaceLower = context.surface.toLowerCase();
     if (
       (surfaceLower === 'turf' && profile.surfacePreference === 'turf') ||
       (surfaceLower === 'dirt' && profile.surfacePreference === 'dirt')
     ) {
-      score += 2
-      reasons.push(`+2 surface fit (${profile.surfacePreference})`)
+      score += 2;
+      reasons.push(`+2 surface fit (${profile.surfacePreference})`);
     } else if (
       (surfaceLower === 'turf' && profile.surfacePreference === 'dirt') ||
       (surfaceLower === 'dirt' && profile.surfacePreference === 'turf')
     ) {
-      score -= 2
-      reasons.push(`-2 surface mismatch`)
+      score -= 2;
+      reasons.push(`-2 surface mismatch`);
     }
   }
 
   // Distance fit bonus
-  if (context?.distanceCategory && profile.distancePreference.category !== 'versatile' && profile.distancePreference.category !== 'unknown') {
+  if (
+    context?.distanceCategory &&
+    profile.distancePreference.category !== 'versatile' &&
+    profile.distancePreference.category !== 'unknown'
+  ) {
     if (context.distanceCategory === profile.distancePreference.category) {
-      score += 1
-      reasons.push(`+1 distance fit (${profile.distancePreference.category})`)
+      score += 1;
+      reasons.push(`+1 distance fit (${profile.distancePreference.category})`);
     }
   }
 
   // Debut runner with strong debut sire
   if (context?.isDebut && profile.firstTimeStarterWinRate >= 13) {
-    score += 2
-    reasons.push(`+2 elite debut sire (${profile.firstTimeStarterWinRate.toFixed(1)}% FTS win rate)`)
+    score += 2;
+    reasons.push(
+      `+2 elite debut sire (${profile.firstTimeStarterWinRate.toFixed(1)}% FTS win rate)`
+    );
   }
 
   // Cap at 25
-  score = Math.min(25, Math.max(0, score))
+  score = Math.min(25, Math.max(0, score));
 
   return {
     score,
     profile,
     reasoning: reasons.join('; '),
-  }
+  };
 }
 
 /**
@@ -1060,11 +1066,16 @@ export function calculateSireScore(
  */
 export function getSireTierLabel(tier: SireTier): string {
   switch (tier) {
-    case 'elite': return 'Elite'
-    case 'strong': return 'Strong'
-    case 'aboveAverage': return 'Above Avg'
-    case 'average': return 'Average'
-    case 'belowAverage': return 'Below Avg'
+    case 'elite':
+      return 'Elite';
+    case 'strong':
+      return 'Strong';
+    case 'aboveAverage':
+      return 'Above Avg';
+    case 'average':
+      return 'Average';
+    case 'belowAverage':
+      return 'Below Avg';
   }
 }
 
@@ -1073,10 +1084,15 @@ export function getSireTierLabel(tier: SireTier): string {
  */
 export function getSireTierColor(tier: SireTier): string {
   switch (tier) {
-    case 'elite': return '#22c55e'
-    case 'strong': return '#36d1da'
-    case 'aboveAverage': return '#19abb5'
-    case 'average': return '#888888'
-    case 'belowAverage': return '#ef4444'
+    case 'elite':
+      return '#22c55e';
+    case 'strong':
+      return '#36d1da';
+    case 'aboveAverage':
+      return '#19abb5';
+    case 'average':
+      return '#888888';
+    case 'belowAverage':
+      return '#ef4444';
   }
 }

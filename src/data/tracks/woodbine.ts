@@ -16,7 +16,7 @@
  *       1.5 mile circumference unique configuration
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const woodbine: TrackData = {
   code: 'WO',
@@ -36,7 +36,7 @@ export const woodbine: TrackData = {
       // Source: Alcohol and Gaming Commission of Ontario - 90 feet wide
       trackWidth: 90,
       // Source: Woodbine - unique chute configurations
-      chutes: [5, 6, 6.5, 7, 8]
+      chutes: [5, 6, 6.5, 7, 8],
     },
     turf: {
       // Source: Woodbine E.P. Taylor Turf Course - 1.5 mile circumference
@@ -47,8 +47,8 @@ export const woodbine: TrackData = {
       turnRadius: 400,
       // Source: Alcohol and Gaming Commission of Ontario - 100 feet wide
       trackWidth: 100,
-      chutes: [5, 8, 10, 12]
-    }
+      chutes: [5, 8, 10, 12],
+    },
   },
 
   postPositionBias: {
@@ -66,7 +66,8 @@ export const woodbine: TrackData = {
         // Sample: 600+ synthetic sprints annually
         winPercentByPost: [13.0, 13.5, 13.2, 12.5, 11.5, 10.5, 9.5, 7.8, 5.2, 2.3, 1.0],
         favoredPosts: [1, 2, 3, 4],
-        biasDescription: 'Inside posts favored in sprints; long stretch allows rally but rail saves ground; Tapeta plays fair'
+        biasDescription:
+          'Inside posts favored in sprints; long stretch allows rally but rail saves ground; Tapeta plays fair',
       },
       {
         distance: 'route',
@@ -80,8 +81,9 @@ export const woodbine: TrackData = {
         // Sample: 500+ synthetic routes annually
         winPercentByPost: [12.0, 12.5, 12.8, 12.5, 11.8, 11.0, 9.8, 8.0, 5.8, 2.5, 1.3],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Large oval reduces post bias in routes; posts 2-4 slight edge; Queens Plate distance fair; closers competitive'
-      }
+        biasDescription:
+          'Large oval reduces post bias in routes; posts 2-4 slight edge; Queens Plate distance fair; closers competitive',
+      },
     ],
     turf: [
       {
@@ -95,7 +97,8 @@ export const woodbine: TrackData = {
         // Sample: 200+ turf sprints annually
         winPercentByPost: [13.5, 13.8, 13.0, 12.2, 11.5, 10.8, 9.5, 8.0, 5.5, 2.2],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'E.P. Taylor Turf Course favors inside in sprints; wide course allows outside to compete; ground savings key'
+        biasDescription:
+          'E.P. Taylor Turf Course favors inside in sprints; wide course allows outside to compete; ground savings key',
       },
       {
         distance: 'route',
@@ -109,9 +112,10 @@ export const woodbine: TrackData = {
         // Sample: 300+ turf routes annually
         winPercentByPost: [12.8, 13.2, 13.5, 12.8, 11.8, 10.5, 9.5, 8.0, 5.5, 2.4],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'World-class turf favors posts 2-4 in routes; international caliber racing; long stretch rewards quality'
-      }
-    ]
+        biasDescription:
+          'World-class turf favors posts 2-4 in routes; international caliber racing; long stretch rewards quality',
+      },
+    ],
   },
 
   speedBias: [
@@ -125,7 +129,8 @@ export const woodbine: TrackData = {
       // Queens Plate often favors tactical speed
       earlySpeedWinRate: 50,
       paceAdvantageRating: 5,
-      description: 'Tapeta plays fair; 50% early speed win rate; 1320ft stretch allows rallies; Queens Plate favors tactical speed'
+      description:
+        'Tapeta plays fair; 50% early speed win rate; 1320ft stretch allows rallies; Queens Plate favors tactical speed',
     },
     {
       surface: 'turf',
@@ -136,8 +141,9 @@ export const woodbine: TrackData = {
       // European-style turf configuration
       earlySpeedWinRate: 48,
       paceAdvantageRating: 4,
-      description: 'World-class turf plays fair; 48% speed success; international runners excel; long stretch rewards class'
-    }
+      description:
+        'World-class turf plays fair; 48% speed success; international runners excel; long stretch rewards class',
+    },
   ],
 
   surfaces: [
@@ -148,9 +154,10 @@ export const woodbine: TrackData = {
       // All-weather surface combining wax-coated sand, rubber, and fiber
       // Plays consistent regardless of weather
       // Replaced original Polytrack
-      composition: 'Tapeta synthetic: wax-coated silica sand, recycled fibers, rubber; 5-inch depth; all-weather; consistent footing',
+      composition:
+        'Tapeta synthetic: wax-coated silica sand, recycled fibers, rubber; 5-inch depth; all-weather; consistent footing',
       playingStyle: 'fair',
-      drainage: 'excellent'
+      drainage: 'excellent',
     },
     {
       baseType: 'turf',
@@ -158,10 +165,11 @@ export const woodbine: TrackData = {
       // Named after legendary Canadian breeder
       // Bluegrass and perennial ryegrass blend
       // World-renowned course hosting international stakes
-      composition: 'Kentucky bluegrass and perennial ryegrass blend; maintained to international standards; natural drainage system',
+      composition:
+        'Kentucky bluegrass and perennial ryegrass blend; maintained to international standards; natural drainage system',
       playingStyle: 'fair',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -173,7 +181,7 @@ export const woodbine: TrackData = {
       // Turf course opens when ground firms
       typicalCondition: 'Fast (synthetic); Good to Firm (turf when open)',
       speedAdjustment: 0,
-      notes: 'Season opener; Tapeta consistent; turf opens mid-spring; build to Queens Plate'
+      notes: 'Season opener; Tapeta consistent; turf opens mid-spring; build to Queens Plate',
     },
     {
       season: 'summer',
@@ -184,7 +192,8 @@ export const woodbine: TrackData = {
       // Best turf conditions
       typicalCondition: 'Fast (synthetic); Firm (turf)',
       speedAdjustment: 1,
-      notes: 'Queens Plate in August; peak quality racing; optimal turf conditions; international caliber competition'
+      notes:
+        'Queens Plate in August; peak quality racing; optimal turf conditions; international caliber competition',
     },
     {
       season: 'fall',
@@ -195,7 +204,8 @@ export const woodbine: TrackData = {
       // Premier international turf events
       typicalCondition: 'Fast (synthetic); Good to Firm (turf)',
       speedAdjustment: 0,
-      notes: 'Woodbine Mile (G1) Sept; Canadian International (G1) Oct; European shippers compete; turf racing peaks'
+      notes:
+        'Woodbine Mile (G1) Sept; Canadian International (G1) Oct; European shippers compete; turf racing peaks',
     },
     {
       season: 'winter',
@@ -205,8 +215,9 @@ export const woodbine: TrackData = {
       // Tapeta allows year-round racing
       typicalCondition: 'Fast (synthetic only)',
       speedAdjustment: -1,
-      notes: 'Winter racing on Tapeta; no turf; Canadian winter conditions; reduced purses and field sizes'
-    }
+      notes:
+        'Winter racing on Tapeta; no turf; Canadian winter conditions; reduced purses and field sizes',
+    },
   ],
 
   winningTimes: [
@@ -218,7 +229,7 @@ export const woodbine: TrackData = {
       surface: 'synthetic',
       claimingAvg: 58.5,
       allowanceAvg: 57.2,
-      stakesAvg: 56.0
+      stakesAvg: 56.0,
     },
     {
       distance: '5.5f',
@@ -226,7 +237,7 @@ export const woodbine: TrackData = {
       surface: 'synthetic',
       claimingAvg: 64.5,
       allowanceAvg: 63.2,
-      stakesAvg: 62.0
+      stakesAvg: 62.0,
     },
     {
       distance: '6f',
@@ -235,7 +246,7 @@ export const woodbine: TrackData = {
       // Track record: 1:08.00
       claimingAvg: 70.5,
       allowanceAvg: 69.2,
-      stakesAvg: 68.0
+      stakesAvg: 68.0,
     },
     {
       distance: '6.5f',
@@ -243,7 +254,7 @@ export const woodbine: TrackData = {
       surface: 'synthetic',
       claimingAvg: 77.2,
       allowanceAvg: 76.0,
-      stakesAvg: 74.8
+      stakesAvg: 74.8,
     },
     {
       distance: '7f',
@@ -251,7 +262,7 @@ export const woodbine: TrackData = {
       surface: 'synthetic',
       claimingAvg: 83.5,
       allowanceAvg: 82.2,
-      stakesAvg: 81.0
+      stakesAvg: 81.0,
     },
     {
       distance: '1m',
@@ -260,7 +271,7 @@ export const woodbine: TrackData = {
       // Woodbine Mile distance
       claimingAvg: 97.0,
       allowanceAvg: 95.5,
-      stakesAvg: 94.0
+      stakesAvg: 94.0,
     },
     {
       distance: '1m70y',
@@ -268,7 +279,7 @@ export const woodbine: TrackData = {
       surface: 'synthetic',
       claimingAvg: 101.5,
       allowanceAvg: 100.0,
-      stakesAvg: 98.5
+      stakesAvg: 98.5,
     },
     {
       distance: '1 1/16m',
@@ -276,7 +287,7 @@ export const woodbine: TrackData = {
       surface: 'synthetic',
       claimingAvg: 104.0,
       allowanceAvg: 102.5,
-      stakesAvg: 101.0
+      stakesAvg: 101.0,
     },
     {
       distance: '1 1/8m',
@@ -284,7 +295,7 @@ export const woodbine: TrackData = {
       surface: 'synthetic',
       claimingAvg: 111.0,
       allowanceAvg: 109.5,
-      stakesAvg: 108.0
+      stakesAvg: 108.0,
     },
     {
       distance: '1 1/4m',
@@ -294,7 +305,7 @@ export const woodbine: TrackData = {
       // Track record: 2:01.80
       claimingAvg: 124.0,
       allowanceAvg: 122.0,
-      stakesAvg: 120.0
+      stakesAvg: 120.0,
     },
     {
       distance: '1 1/2m',
@@ -302,7 +313,7 @@ export const woodbine: TrackData = {
       surface: 'synthetic',
       claimingAvg: 152.0,
       allowanceAvg: 149.5,
-      stakesAvg: 147.0
+      stakesAvg: 147.0,
     },
     // E.P. Taylor Turf Course times
     {
@@ -311,7 +322,7 @@ export const woodbine: TrackData = {
       surface: 'turf',
       claimingAvg: 56.5,
       allowanceAvg: 55.2,
-      stakesAvg: 54.0
+      stakesAvg: 54.0,
     },
     {
       distance: '6f',
@@ -319,7 +330,7 @@ export const woodbine: TrackData = {
       surface: 'turf',
       claimingAvg: 68.2,
       allowanceAvg: 67.0,
-      stakesAvg: 65.5
+      stakesAvg: 65.5,
     },
     {
       distance: '1m',
@@ -329,7 +340,7 @@ export const woodbine: TrackData = {
       // Track record: 1:31.20
       claimingAvg: 94.5,
       allowanceAvg: 93.0,
-      stakesAvg: 91.5
+      stakesAvg: 91.5,
     },
     {
       distance: '1 1/16m',
@@ -337,7 +348,7 @@ export const woodbine: TrackData = {
       surface: 'turf',
       claimingAvg: 101.0,
       allowanceAvg: 99.5,
-      stakesAvg: 98.0
+      stakesAvg: 98.0,
     },
     {
       distance: '1 1/8m',
@@ -345,7 +356,7 @@ export const woodbine: TrackData = {
       surface: 'turf',
       claimingAvg: 107.5,
       allowanceAvg: 106.0,
-      stakesAvg: 104.5
+      stakesAvg: 104.5,
     },
     {
       distance: '1 1/4m',
@@ -353,7 +364,7 @@ export const woodbine: TrackData = {
       surface: 'turf',
       claimingAvg: 121.0,
       allowanceAvg: 119.0,
-      stakesAvg: 117.0
+      stakesAvg: 117.0,
     },
     {
       distance: '1 1/2m',
@@ -363,10 +374,10 @@ export const woodbine: TrackData = {
       // Track record: 2:24.00
       claimingAvg: 148.0,
       allowanceAvg: 146.0,
-      stakesAvg: 144.0
-    }
+      stakesAvg: 144.0,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

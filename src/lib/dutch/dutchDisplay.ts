@@ -10,10 +10,10 @@
  * @module dutch/dutchDisplay
  */
 
-import type { DutchResult, DutchBet } from './dutchCalculator'
-import type { DutchCombination } from './dutchOptimizer'
-import type { EdgeClassification } from './dutchValidator'
-import { EDGE_COLORS, EDGE_ICONS } from './dutchValidator'
+import type { DutchResult, DutchBet } from './dutchCalculator';
+import type { DutchCombination } from './dutchOptimizer';
+import type { EdgeClassification } from './dutchValidator';
+import { EDGE_COLORS, EDGE_ICONS } from './dutchValidator';
 
 // ============================================================================
 // TYPES
@@ -21,55 +21,55 @@ import { EDGE_COLORS, EDGE_ICONS } from './dutchValidator'
 
 export interface DutchDisplaySummary {
   /** Main headline */
-  headline: string
+  headline: string;
   /** Short description */
-  description: string
+  description: string;
   /** Badge text (e.g., "5.2% edge") */
-  badgeText: string
+  badgeText: string;
   /** Badge color */
-  badgeColor: string
+  badgeColor: string;
   /** Is this profitable? */
-  isProfitable: boolean
+  isProfitable: boolean;
   /** Icon to display */
-  icon: string
+  icon: string;
 }
 
 export interface DutchBetInstruction {
   /** Program number */
-  programNumber: number
+  programNumber: number;
   /** Horse name */
-  horseName: string
+  horseName: string;
   /** Bet amount display (e.g., "$54.80") */
-  amountDisplay: string
+  amountDisplay: string;
   /** Window instruction (e.g., "$55 to win on the 3") */
-  windowInstruction: string
+  windowInstruction: string;
   /** Short instruction (e.g., "$55 Win #3") */
-  shortInstruction: string
+  shortInstruction: string;
   /** Odds display */
-  oddsDisplay: string
+  oddsDisplay: string;
   /** Return if wins display */
-  returnIfWinsDisplay: string
+  returnIfWinsDisplay: string;
 }
 
 export interface DutchFullDisplay {
   /** Summary section */
-  summary: DutchDisplaySummary
+  summary: DutchDisplaySummary;
   /** Individual bet instructions */
-  bets: DutchBetInstruction[]
+  bets: DutchBetInstruction[];
   /** Total investment display */
-  totalInvestmentDisplay: string
+  totalInvestmentDisplay: string;
   /** Guaranteed return display */
-  guaranteedReturnDisplay: string
+  guaranteedReturnDisplay: string;
   /** Guaranteed profit display */
-  guaranteedProfitDisplay: string
+  guaranteedProfitDisplay: string;
   /** ROI display */
-  roiDisplay: string
+  roiDisplay: string;
   /** Edge display */
-  edgeDisplay: string
+  edgeDisplay: string;
   /** Window instructions combined */
-  allWindowInstructions: string
+  allWindowInstructions: string;
   /** Explanation text */
-  explanationText: string[]
+  explanationText: string[];
 }
 
 // ============================================================================
@@ -83,7 +83,7 @@ export const EDGE_CLASS_LABELS: Record<EdgeClassification, string> = {
   moderate: 'Moderate Edge',
   marginal: 'Marginal Edge',
   unprofitable: 'No Edge',
-}
+};
 
 // ============================================================================
 // FORMATTING FUNCTIONS
@@ -98,32 +98,32 @@ export function formatCurrency(amount: number): string {
     currency: 'USD',
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
-  }).format(amount)
+  }).format(amount);
 }
 
 /**
  * Format currency for window (rounded to nearest $0.10)
  */
 export function formatCurrencyForWindow(amount: number): string {
-  const rounded = Math.round(amount * 10) / 10
+  const rounded = Math.round(amount * 10) / 10;
   if (rounded === Math.floor(rounded)) {
-    return `$${rounded}`
+    return `$${rounded}`;
   }
-  return `$${rounded.toFixed(2)}`
+  return `$${rounded.toFixed(2)}`;
 }
 
 /**
  * Format percentage for display
  */
 export function formatPercent(value: number, decimals: number = 1): string {
-  return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`
+  return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
 }
 
 /**
  * Format ROI for display
  */
 export function formatROI(roiPercent: number): string {
-  return `${roiPercent >= 0 ? '+' : ''}${roiPercent.toFixed(0)}% ROI`
+  return `${roiPercent >= 0 ? '+' : ''}${roiPercent.toFixed(0)}% ROI`;
 }
 
 // ============================================================================
@@ -145,14 +145,14 @@ export function generateDutchSummary(
       badgeColor: EDGE_COLORS.unprofitable,
       isProfitable: false,
       icon: 'block',
-    }
+    };
   }
 
-  const headline = `Dutch Book: ${result.horseCount} horses for guaranteed profit`
-  const description = `${formatCurrency(result.actualTotalCost)} stake returns ${formatCurrency(result.guaranteedReturn)} if any wins`
-  const badgeText = `${result.edgePercent.toFixed(1)}% edge - Guaranteed profit`
-  const badgeColor = EDGE_COLORS[edgeClass]
-  const icon = EDGE_ICONS[edgeClass]
+  const headline = `Dutch Book: ${result.horseCount} horses for guaranteed profit`;
+  const description = `${formatCurrency(result.actualTotalCost)} stake returns ${formatCurrency(result.guaranteedReturn)} if any wins`;
+  const badgeText = `${result.edgePercent.toFixed(1)}% edge - Guaranteed profit`;
+  const badgeColor = EDGE_COLORS[edgeClass];
+  const icon = EDGE_ICONS[edgeClass];
 
   return {
     headline,
@@ -161,15 +161,15 @@ export function generateDutchSummary(
     badgeColor,
     isProfitable: true,
     icon,
-  }
+  };
 }
 
 /**
  * Generate individual bet instruction
  */
 export function generateBetInstruction(bet: DutchBet, raceNumber?: number): DutchBetInstruction {
-  const racePrefix = raceNumber ? `Race ${raceNumber}, ` : ''
-  const roundedAmount = formatCurrencyForWindow(bet.betAmountRounded)
+  const racePrefix = raceNumber ? `Race ${raceNumber}, ` : '';
+  const roundedAmount = formatCurrencyForWindow(bet.betAmountRounded);
 
   return {
     programNumber: bet.programNumber,
@@ -179,7 +179,7 @@ export function generateBetInstruction(bet: DutchBet, raceNumber?: number): Dutc
     shortInstruction: `${roundedAmount} Win #${bet.programNumber}`,
     oddsDisplay: bet.oddsDisplay,
     returnIfWinsDisplay: formatCurrency(bet.returnIfWins),
-  }
+  };
 }
 
 /**
@@ -190,17 +190,17 @@ export function generateFullDutchDisplay(
   edgeClass: EdgeClassification = 'moderate',
   raceNumber?: number
 ): DutchFullDisplay {
-  const summary = generateDutchSummary(result, edgeClass)
+  const summary = generateDutchSummary(result, edgeClass);
 
-  const bets = result.bets.map((bet) => generateBetInstruction(bet, raceNumber))
+  const bets = result.bets.map((bet) => generateBetInstruction(bet, raceNumber));
 
   // Combine all window instructions
   const allWindowInstructions = bets
     .map((bet) => bet.windowInstruction.replace(/^"|"$/g, ''))
-    .join('\n')
+    .join('\n');
 
   // Generate explanation text
-  const explanationText = generateDutchExplanation(result)
+  const explanationText = generateDutchExplanation(result);
 
   return {
     summary,
@@ -212,7 +212,7 @@ export function generateFullDutchDisplay(
     edgeDisplay: `${result.edgePercent.toFixed(1)}%`,
     allWindowInstructions,
     explanationText,
-  }
+  };
 }
 
 // ============================================================================
@@ -224,33 +224,33 @@ export function generateFullDutchDisplay(
  */
 export function generateDutchExplanation(result: DutchResult): string[] {
   if (!result.isValid || !result.hasProfitPotential) {
-    return ['This Dutch combination is not profitable.']
+    return ['This Dutch combination is not profitable.'];
   }
 
-  const explanations: string[] = []
+  const explanations: string[] = [];
 
   // Main reason
   explanations.push(
     `Why Dutch? ${result.horseCount} horses all have overlays (${result.edgePercent.toFixed(1)}% total edge)`
-  )
+  );
 
   // Show what happens if each horse wins
   for (const bet of result.bets.slice(0, 3)) {
     explanations.push(
       `If #${bet.programNumber} wins at ${bet.oddsDisplay}: return ${formatCurrency(bet.returnIfWins)}`
-    )
+    );
   }
 
   if (result.bets.length > 3) {
-    explanations.push(`...and ${result.bets.length - 3} more horses with similar returns`)
+    explanations.push(`...and ${result.bets.length - 3} more horses with similar returns`);
   }
 
   // Profit guarantee
   explanations.push(
     `Profit guaranteed: ${formatCurrency(result.guaranteedProfit)} (${result.roiPercent.toFixed(0)}% ROI)`
-  )
+  );
 
-  return explanations
+  return explanations;
 }
 
 /**
@@ -258,10 +258,10 @@ export function generateDutchExplanation(result: DutchResult): string[] {
  */
 export function generateCompactExplanation(result: DutchResult): string {
   if (!result.hasProfitPotential) {
-    return 'No profit possible with these odds'
+    return 'No profit possible with these odds';
   }
 
-  return `${result.edgePercent.toFixed(1)}% edge: ${formatCurrency(result.actualTotalCost)} → ${formatCurrency(result.guaranteedReturn)} guaranteed`
+  return `${result.edgePercent.toFixed(1)}% edge: ${formatCurrency(result.actualTotalCost)} → ${formatCurrency(result.guaranteedReturn)} guaranteed`;
 }
 
 // ============================================================================
@@ -272,30 +272,30 @@ export function generateCompactExplanation(result: DutchResult): string {
  * Format Dutch combination for display
  */
 export function formatDutchCombination(combination: DutchCombination): {
-  title: string
-  subtitle: string
-  badge: string
-  badgeColor: string
-  horses: string
-  stats: Array<{ label: string; value: string }>
+  title: string;
+  subtitle: string;
+  badge: string;
+  badgeColor: string;
+  horses: string;
+  stats: Array<{ label: string; value: string }>;
 } {
-  const title = `${combination.horseCount}-Horse Dutch`
-  const subtitle = combination.description
-  const badge = `${combination.edgePercent.toFixed(1)}% edge`
-  const badgeColor = EDGE_COLORS[combination.edgeClass]
-  const horses = combination.horses.map((h) => `#${h.programNumber}`).join(', ')
+  const title = `${combination.horseCount}-Horse Dutch`;
+  const subtitle = combination.description;
+  const badge = `${combination.edgePercent.toFixed(1)}% edge`;
+  const badgeColor = EDGE_COLORS[combination.edgeClass];
+  const horses = combination.horses.map((h) => `#${h.programNumber}`).join(', ');
 
   const stats = [
     { label: 'Edge', value: `${combination.edgePercent.toFixed(1)}%` },
     { label: 'Avg Confidence', value: `${combination.avgConfidence}%` },
     { label: 'Tier Mix', value: combination.tierMix },
-  ]
+  ];
 
   if (combination.dutchResult) {
     stats.push({
       label: 'ROI',
       value: `${combination.dutchResult.roiPercent.toFixed(0)}%`,
-    })
+    });
   }
 
   return {
@@ -305,24 +305,22 @@ export function formatDutchCombination(combination: DutchCombination): {
     badgeColor,
     horses,
     stats,
-  }
+  };
 }
 
 /**
  * Generate ranking display for multiple Dutch options
  */
-export function generateDutchRankingDisplay(
-  combinations: DutchCombination[]
-): Array<{
-  rank: number
-  display: ReturnType<typeof formatDutchCombination>
-  isRecommended: boolean
+export function generateDutchRankingDisplay(combinations: DutchCombination[]): Array<{
+  rank: number;
+  display: ReturnType<typeof formatDutchCombination>;
+  isRecommended: boolean;
 }> {
   return combinations.map((combo, index) => ({
     rank: index + 1,
     display: formatDutchCombination(combo),
     isRecommended: index === 0 || combo.recommendationStrength >= 70,
-  }))
+  }));
 }
 
 // ============================================================================
@@ -337,47 +335,43 @@ export function formatWindowInstruction(
   amount: number,
   raceNumber?: number
 ): string {
-  const racePrefix = raceNumber ? `Race ${raceNumber}, ` : ''
-  const roundedAmount = formatCurrencyForWindow(amount)
-  return `${racePrefix}${roundedAmount} to win on the ${programNumber}`
+  const racePrefix = raceNumber ? `Race ${raceNumber}, ` : '';
+  const roundedAmount = formatCurrencyForWindow(amount);
+  return `${racePrefix}${roundedAmount} to win on the ${programNumber}`;
 }
 
 /**
  * Format all window instructions for a Dutch
  */
-export function formatAllWindowInstructions(
-  result: DutchResult,
-  raceNumber?: number
-): string[] {
+export function formatAllWindowInstructions(result: DutchResult, raceNumber?: number): string[] {
   return result.bets.map((bet) =>
     formatWindowInstruction(bet.programNumber, bet.betAmountRounded, raceNumber)
-  )
+  );
 }
 
 /**
  * Format Dutch as copyable text
  */
-export function formatDutchForCopy(
-  result: DutchResult,
-  raceNumber?: number
-): string {
-  const lines: string[] = []
+export function formatDutchForCopy(result: DutchResult, raceNumber?: number): string {
+  const lines: string[] = [];
 
-  lines.push(`Dutch Book - Race ${raceNumber ?? '?'}`)
-  lines.push('='.repeat(30))
-  lines.push('')
+  lines.push(`Dutch Book - Race ${raceNumber ?? '?'}`);
+  lines.push('='.repeat(30));
+  lines.push('');
 
   for (const bet of result.bets) {
-    lines.push(formatWindowInstruction(bet.programNumber, bet.betAmountRounded))
+    lines.push(formatWindowInstruction(bet.programNumber, bet.betAmountRounded));
   }
 
-  lines.push('')
-  lines.push(`Total: ${formatCurrency(result.actualTotalCost)}`)
-  lines.push(`Guaranteed Return: ${formatCurrency(result.guaranteedReturn)}`)
-  lines.push(`Profit: ${formatCurrency(result.guaranteedProfit)} (${result.roiPercent.toFixed(0)}% ROI)`)
-  lines.push(`Edge: ${result.edgePercent.toFixed(1)}%`)
+  lines.push('');
+  lines.push(`Total: ${formatCurrency(result.actualTotalCost)}`);
+  lines.push(`Guaranteed Return: ${formatCurrency(result.guaranteedReturn)}`);
+  lines.push(
+    `Profit: ${formatCurrency(result.guaranteedProfit)} (${result.roiPercent.toFixed(0)}% ROI)`
+  );
+  lines.push(`Edge: ${result.edgePercent.toFixed(1)}%`);
 
-  return lines.join('\n')
+  return lines.join('\n');
 }
 
 // ============================================================================
@@ -388,13 +382,13 @@ export function formatDutchForCopy(
  * Format live calculation display for Dutch builder
  */
 export function formatLiveCalculation(result: DutchResult | null): {
-  isValid: boolean
-  betBreakdown: string[]
-  totalStake: string
-  guaranteedReturn: string
-  profit: string
-  edge: string
-  warning: string | null
+  isValid: boolean;
+  betBreakdown: string[];
+  totalStake: string;
+  guaranteedReturn: string;
+  profit: string;
+  edge: string;
+  warning: string | null;
 } {
   if (!result) {
     return {
@@ -405,7 +399,7 @@ export function formatLiveCalculation(result: DutchResult | null): {
       profit: '-',
       edge: '-',
       warning: 'Select at least 2 horses',
-    }
+    };
   }
 
   if (!result.isValid) {
@@ -417,19 +411,19 @@ export function formatLiveCalculation(result: DutchResult | null): {
       profit: '-',
       edge: '-',
       warning: result.error || 'Invalid Dutch configuration',
-    }
+    };
   }
 
   const betBreakdown = result.bets.map(
     (bet) =>
       `#${bet.programNumber}: ${formatCurrency(bet.betAmountRounded)} → ${formatCurrency(bet.returnIfWins)} if wins`
-  )
+  );
 
-  let warning: string | null = null
+  let warning: string | null = null;
   if (!result.hasProfitPotential) {
-    warning = `No profit possible (book is ${(result.sumOfImpliedProbs * 100).toFixed(1)}%)`
+    warning = `No profit possible (book is ${(result.sumOfImpliedProbs * 100).toFixed(1)}%)`;
   } else if (result.warnings.length > 0) {
-    warning = result.warnings[0]
+    warning = result.warnings[0];
   }
 
   return {
@@ -440,27 +434,27 @@ export function formatLiveCalculation(result: DutchResult | null): {
     profit: formatCurrency(result.guaranteedProfit),
     edge: `${result.edgePercent.toFixed(1)}%`,
     warning,
-  }
+  };
 }
 
 /**
  * Format horse option for Dutch builder selection
  */
 export function formatHorseOption(horse: {
-  programNumber: number
-  horseName: string
-  oddsDisplay: string
-  impliedProbability: number
+  programNumber: number;
+  horseName: string;
+  oddsDisplay: string;
+  impliedProbability: number;
 }): {
-  value: number
-  label: string
-  odds: string
-  prob: string
+  value: number;
+  label: string;
+  odds: string;
+  prob: string;
 } {
   return {
     value: horse.programNumber,
     label: `#${horse.programNumber} ${horse.horseName}`,
     odds: horse.oddsDisplay,
     prob: `${(horse.impliedProbability * 100).toFixed(1)}%`,
-  }
+  };
 }

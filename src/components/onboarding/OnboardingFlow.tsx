@@ -1,15 +1,15 @@
-import { useState, useCallback } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { OnboardingStep } from './OnboardingStep'
-import { FileUpload } from '../FileUpload'
-import type { ParsedDRFFile } from '../../types/drf'
+import { useState, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { OnboardingStep } from './OnboardingStep';
+import { FileUpload } from '../FileUpload';
+import type { ParsedDRFFile } from '../../types/drf';
 
 interface OnboardingFlowProps {
-  onComplete: () => void
-  onFileUploaded: (data: ParsedDRFFile) => void
+  onComplete: () => void;
+  onFileUploaded: (data: ParsedDRFFile) => void;
 }
 
-const TOTAL_STEPS = 3
+const TOTAL_STEPS = 3;
 
 /**
  * Onboarding flow for new users
@@ -18,22 +18,25 @@ const TOTAL_STEPS = 3
  * Step 3: Prompt to upload first DRF file
  */
 export function OnboardingFlow({ onComplete, onFileUploaded }: OnboardingFlowProps) {
-  const [currentStep, setCurrentStep] = useState(1)
+  const [currentStep, setCurrentStep] = useState(1);
 
   const handleNext = useCallback(() => {
     if (currentStep < TOTAL_STEPS) {
-      setCurrentStep((prev) => prev + 1)
+      setCurrentStep((prev) => prev + 1);
     }
-  }, [currentStep])
+  }, [currentStep]);
 
   const handleSkip = useCallback(() => {
-    onComplete()
-  }, [onComplete])
+    onComplete();
+  }, [onComplete]);
 
-  const handleFileUploaded = useCallback((data: ParsedDRFFile) => {
-    onFileUploaded(data)
-    onComplete()
-  }, [onFileUploaded, onComplete])
+  const handleFileUploaded = useCallback(
+    (data: ParsedDRFFile) => {
+      onFileUploaded(data);
+      onComplete();
+    },
+    [onFileUploaded, onComplete]
+  );
 
   return (
     <div className="onboarding-container">
@@ -44,11 +47,7 @@ export function OnboardingFlow({ onComplete, onFileUploaded }: OnboardingFlowPro
             <div
               key={i}
               className={`onboarding-progress-dot ${
-                i + 1 === currentStep
-                  ? 'active'
-                  : i + 1 < currentStep
-                  ? 'completed'
-                  : ''
+                i + 1 === currentStep ? 'active' : i + 1 < currentStep ? 'completed' : ''
               }`}
             />
           ))}
@@ -146,5 +145,5 @@ export function OnboardingFlow({ onComplete, onFileUploaded }: OnboardingFlowPro
         transition={{ duration: 0.5 }}
       />
     </div>
-  )
+  );
 }

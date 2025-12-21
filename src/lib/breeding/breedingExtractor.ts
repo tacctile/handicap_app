@@ -5,12 +5,8 @@
  * Main entry point for breeding analysis in the handicapping system.
  */
 
-import type { HorseEntry } from '../../types/drf'
-import type {
-  BreedingInfo,
-  BreedingDisplayInfo,
-  ExperienceLevel,
-} from './types'
+import type { HorseEntry } from '../../types/drf';
+import type { BreedingInfo, BreedingDisplayInfo, ExperienceLevel } from './types';
 import {
   isUnknownSire,
   isUnknownDam,
@@ -18,7 +14,7 @@ import {
   getExperienceLevel,
   getExperienceLabel,
   qualifiesForBreedingAnalysis,
-} from './breedingData'
+} from './breedingData';
 
 // ============================================================================
 // MAIN EXTRACTION FUNCTION
@@ -34,19 +30,19 @@ import {
  * @returns Structured BreedingInfo object
  */
 export function extractBreedingInfo(horse: HorseEntry): BreedingInfo {
-  const breeding = horse.breeding
-  const lifetimeStarts = horse.lifetimeStarts ?? 0
+  const breeding = horse.breeding;
+  const lifetimeStarts = horse.lifetimeStarts ?? 0;
 
   // Extract from the existing Breeding interface
-  const sire = normalizeBreedingName(breeding.sire)
-  const dam = normalizeBreedingName(breeding.dam)
-  const damsire = normalizeBreedingName(breeding.damSire)
-  const whereBred = breeding.whereBred?.trim() || 'Unknown'
+  const sire = normalizeBreedingName(breeding.sire);
+  const dam = normalizeBreedingName(breeding.dam);
+  const damsire = normalizeBreedingName(breeding.damSire);
+  const whereBred = breeding.whereBred?.trim() || 'Unknown';
 
   // Determine completeness
-  const hasSire = !isUnknownSire(sire)
-  const hasDam = !isUnknownDam(dam)
-  const hasDamsire = damsire !== null && damsire !== '' && damsire.toLowerCase() !== 'unknown'
+  const hasSire = !isUnknownSire(sire);
+  const hasDam = !isUnknownDam(dam);
+  const hasDamsire = damsire !== null && damsire !== '' && damsire.toLowerCase() !== 'unknown';
 
   return {
     sire: sire || 'Unknown',
@@ -57,17 +53,17 @@ export function extractBreedingInfo(horse: HorseEntry): BreedingInfo {
     isDebut: lifetimeStarts === 0,
     isComplete: hasSire && hasDam && hasDamsire,
     whereBred,
-  }
+  };
 }
 
 /**
  * Normalize a breeding name (handle empty/null values)
  */
 function normalizeBreedingName(name: string | undefined | null): string | null {
-  if (!name) return null
-  const trimmed = name.trim()
-  if (trimmed === '' || trimmed === '-' || trimmed === '--') return null
-  return trimmed
+  if (!name) return null;
+  const trimmed = name.trim();
+  if (trimmed === '' || trimmed === '-' || trimmed === '--') return null;
+  return trimmed;
 }
 
 // ============================================================================
@@ -81,8 +77,8 @@ function normalizeBreedingName(name: string | undefined | null): string | null {
  * @returns BreedingDisplayInfo for UI rendering
  */
 export function getBreedingDisplayInfo(horse: HorseEntry): BreedingDisplayInfo {
-  const info = extractBreedingInfo(horse)
-  const experienceLevel = getExperienceLevel(info.lifetimeStarts)
+  const info = extractBreedingInfo(horse);
+  const experienceLevel = getExperienceLevel(info.lifetimeStarts);
 
   return {
     sire: info.sire,
@@ -93,7 +89,7 @@ export function getBreedingDisplayInfo(horse: HorseEntry): BreedingDisplayInfo {
     experienceLevel,
     showBreedingScore: qualifiesForBreedingAnalysis(info.lifetimeStarts),
     whereBred: info.whereBred,
-  }
+  };
 }
 
 // ============================================================================
@@ -104,46 +100,48 @@ export function getBreedingDisplayInfo(horse: HorseEntry): BreedingDisplayInfo {
  * Check if a horse is lightly raced (< 8 starts)
  */
 export function isLightlyRaced(horse: HorseEntry): boolean {
-  return (horse.lifetimeStarts ?? 0) < 8
+  return (horse.lifetimeStarts ?? 0) < 8;
 }
 
 /**
  * Check if a horse is making its debut (0 starts)
  */
 export function isDebutRunner(horse: HorseEntry): boolean {
-  return (horse.lifetimeStarts ?? 0) === 0
+  return (horse.lifetimeStarts ?? 0) === 0;
 }
 
 /**
  * Get the experience level for a horse
  */
 export function getHorseExperienceLevel(horse: HorseEntry): ExperienceLevel {
-  return getExperienceLevel(horse.lifetimeStarts ?? 0)
+  return getExperienceLevel(horse.lifetimeStarts ?? 0);
 }
 
 /**
  * Check if breeding data is available for analysis
  */
 export function hasBreedingData(horse: HorseEntry): boolean {
-  const info = extractBreedingInfo(horse)
-  return !isUnknownSire(info.sire) || !isUnknownDam(info.dam)
+  const info = extractBreedingInfo(horse);
+  return !isUnknownSire(info.sire) || !isUnknownDam(info.dam);
 }
 
 /**
  * Get a formatted breeding string for display
  */
 export function getBreedingString(horse: HorseEntry): string {
-  const info = extractBreedingInfo(horse)
-  return formatBreedingDisplay(info.sire, info.dam, info.damsire)
+  const info = extractBreedingInfo(horse);
+  return formatBreedingDisplay(info.sire, info.dam, info.damsire);
 }
 
 /**
  * Get experience badge text and color
  */
-export function getExperienceBadge(
-  horse: HorseEntry
-): { text: string; color: string; bgColor: string } {
-  const level = getHorseExperienceLevel(horse)
+export function getExperienceBadge(horse: HorseEntry): {
+  text: string;
+  color: string;
+  bgColor: string;
+} {
+  const level = getHorseExperienceLevel(horse);
 
   switch (level) {
     case 'debut':
@@ -151,19 +149,19 @@ export function getExperienceBadge(
         text: 'DEBUT',
         color: '#22c55e',
         bgColor: '#22c55e20',
-      }
+      };
     case 'lightly_raced':
       return {
         text: `${horse.lifetimeStarts ?? 0} STARTS`,
         color: '#3b82f6',
         bgColor: '#3b82f620',
-      }
+      };
     case 'experienced':
       return {
         text: 'EXPERIENCED',
         color: '#6b7280',
         bgColor: '#6b728020',
-      }
+      };
   }
 }
 
@@ -175,21 +173,21 @@ export function getExperienceBadge(
  * Count lightly raced horses in a race
  */
 export function countLightlyRacedHorses(horses: HorseEntry[]): number {
-  return horses.filter((h) => isLightlyRaced(h) && !h.isScratched).length
+  return horses.filter((h) => isLightlyRaced(h) && !h.isScratched).length;
 }
 
 /**
  * Count debut horses in a race
  */
 export function countDebutHorses(horses: HorseEntry[]): number {
-  return horses.filter((h) => isDebutRunner(h) && !h.isScratched).length
+  return horses.filter((h) => isDebutRunner(h) && !h.isScratched).length;
 }
 
 /**
  * Get all lightly raced horses in a race
  */
 export function getLightlyRacedHorses(horses: HorseEntry[]): HorseEntry[] {
-  return horses.filter((h) => isLightlyRaced(h) && !h.isScratched)
+  return horses.filter((h) => isLightlyRaced(h) && !h.isScratched);
 }
 
 /**
@@ -197,9 +195,9 @@ export function getLightlyRacedHorses(horses: HorseEntry[]): HorseEntry[] {
  * (more than 30% of the field)
  */
 export function isLightlyRacedRace(horses: HorseEntry[]): boolean {
-  const activeHorses = horses.filter((h) => !h.isScratched)
-  const lightlyRaced = countLightlyRacedHorses(horses)
-  return lightlyRaced / activeHorses.length > 0.3
+  const activeHorses = horses.filter((h) => !h.isScratched);
+  const lightlyRaced = countLightlyRacedHorses(horses);
+  return lightlyRaced / activeHorses.length > 0.3;
 }
 
 // ============================================================================

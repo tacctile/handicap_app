@@ -14,7 +14,7 @@
  * NOTE: Year-round racing; Oklahoma Derby venue; significant Quarter Horse influence
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const remingtonPark: TrackData = {
   code: 'RP',
@@ -33,7 +33,7 @@ export const remingtonPark: TrackData = {
       // Source: Oklahoma Horse Racing Commission - 80 feet wide
       trackWidth: 80,
       // Source: Remington Park - chutes at 6f and 7f
-      chutes: [6, 7]
+      chutes: [6, 7],
     },
     turf: {
       // Source: Remington Park official - 7/8 mile turf course
@@ -44,8 +44,8 @@ export const remingtonPark: TrackData = {
       turnRadius: 240,
       // Source: Oklahoma Horse Racing Commission
       trackWidth: 70,
-      chutes: [8, 10]
-    }
+      chutes: [8, 10],
+    },
   },
 
   postPositionBias: {
@@ -62,7 +62,8 @@ export const remingtonPark: TrackData = {
         // Sample: 800+ dirt sprints annually
         winPercentByPost: [13.5, 14.2, 13.8, 12.5, 11.5, 10.2, 9.0, 7.5, 5.5, 2.3],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Speed-favoring; posts 1-3 advantage in sprints; short run to turn rewards early speed; rail is live'
+        biasDescription:
+          'Speed-favoring; posts 1-3 advantage in sprints; short run to turn rewards early speed; rail is live',
       },
       {
         distance: 'route',
@@ -75,8 +76,9 @@ export const remingtonPark: TrackData = {
         // Sample: 400+ dirt routes annually
         winPercentByPost: [11.0, 12.5, 14.0, 14.5, 13.2, 11.5, 9.8, 7.5, 4.5, 1.5],
         favoredPosts: [3, 4, 5],
-        biasDescription: 'Moderate inside edge in routes; posts 3-5 optimal; Oklahoma Derby favors tactical speed'
-      }
+        biasDescription:
+          'Moderate inside edge in routes; posts 3-5 optimal; Oklahoma Derby favors tactical speed',
+      },
     ],
     turf: [
       {
@@ -89,7 +91,8 @@ export const remingtonPark: TrackData = {
         // Sample: 150+ turf sprints annually
         winPercentByPost: [14.5, 14.8, 13.5, 12.0, 11.0, 10.0, 9.0, 7.8, 5.2, 2.2],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Strong inside advantage in turf sprints; posts 1-3 heavily favored; ground savings critical'
+        biasDescription:
+          'Strong inside advantage in turf sprints; posts 1-3 heavily favored; ground savings critical',
       },
       {
         distance: 'route',
@@ -100,9 +103,10 @@ export const remingtonPark: TrackData = {
         // Sample: 200+ turf routes annually
         winPercentByPost: [13.8, 14.2, 13.5, 12.5, 11.0, 10.0, 9.2, 8.5, 5.5, 1.8],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Inside advantage persists in turf routes; posts 1-3 favored; firm conditions favor speed'
-      }
-    ]
+        biasDescription:
+          'Inside advantage persists in turf routes; posts 1-3 favored; firm conditions favor speed',
+      },
+    ],
   },
 
   speedBias: [
@@ -115,7 +119,8 @@ export const remingtonPark: TrackData = {
       // Oklahoma heat creates fast conditions
       earlySpeedWinRate: 57,
       paceAdvantageRating: 7,
-      description: 'Strong speed bias; 57% early speed win rate; hard, fast surface; Oklahoma heat creates speed-favoring conditions'
+      description:
+        'Strong speed bias; 57% early speed win rate; hard, fast surface; Oklahoma heat creates speed-favoring conditions',
     },
     {
       surface: 'turf',
@@ -125,8 +130,9 @@ export const remingtonPark: TrackData = {
       // Limited turf racing means smaller sample
       earlySpeedWinRate: 54,
       paceAdvantageRating: 6,
-      description: 'Speed-favoring turf; Bermuda grass runs firm; 54% early speed success; limited turf racing'
-    }
+      description:
+        'Speed-favoring turf; Bermuda grass runs firm; 54% early speed success; limited turf racing',
+    },
   ],
 
   surfaces: [
@@ -135,18 +141,20 @@ export const remingtonPark: TrackData = {
       // Source: Oklahoma Horse Racing Commission, Remington Park grounds crew
       // Sandy loam composition; compact surface
       // Oklahoma climate creates hard, fast conditions
-      composition: 'Sandy loam cushion over clay base; 2.5-inch cushion depth; compact, fast surface typical of Oklahoma climate',
+      composition:
+        'Sandy loam cushion over clay base; 2.5-inch cushion depth; compact, fast surface typical of Oklahoma climate',
       playingStyle: 'speed-favoring',
-      drainage: 'good'
+      drainage: 'good',
     },
     {
       baseType: 'turf',
       // Source: Remington Park grounds specifications
       // Bermuda grass suited for Oklahoma heat
-      composition: 'Bermuda grass base; maintained for hot Oklahoma summer conditions; generally runs firm',
+      composition:
+        'Bermuda grass base; maintained for hot Oklahoma summer conditions; generally runs firm',
       playingStyle: 'speed-favoring',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -158,7 +166,7 @@ export const remingtonPark: TrackData = {
       // Variable Oklahoma spring weather
       typicalCondition: 'Fast to Good; occasional off-track from spring storms',
       speedAdjustment: 0,
-      notes: 'Thoroughbred meet begins; variable conditions; storm season can affect track'
+      notes: 'Thoroughbred meet begins; variable conditions; storm season can affect track',
     },
     {
       season: 'summer',
@@ -168,7 +176,8 @@ export const remingtonPark: TrackData = {
       // Speed advantage increases
       typicalCondition: 'Fast; hard, compact surface',
       speedAdjustment: 1,
-      notes: 'Peak speed bias; hot dry conditions; surface plays very fast; wire-to-wire winners increase'
+      notes:
+        'Peak speed bias; hot dry conditions; surface plays very fast; wire-to-wire winners increase',
     },
     {
       season: 'fall',
@@ -178,7 +187,8 @@ export const remingtonPark: TrackData = {
       // Best racing weather
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Premier stakes season; Oklahoma Derby; optimal racing conditions; maintained speed bias'
+      notes:
+        'Premier stakes season; Oklahoma Derby; optimal racing conditions; maintained speed bias',
     },
     {
       season: 'winter',
@@ -188,8 +198,8 @@ export const remingtonPark: TrackData = {
       // Quarter Horse season more prominent
       typicalCondition: 'Fast to Good; occasional freezing conditions',
       speedAdjustment: 0,
-      notes: 'Quarter Horse focus; occasional weather delays; slower times when cold'
-    }
+      notes: 'Quarter Horse focus; occasional weather delays; slower times when cold',
+    },
   ],
 
   winningTimes: [
@@ -201,7 +211,7 @@ export const remingtonPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 57.8,
       allowanceAvg: 56.5,
-      stakesAvg: 55.8
+      stakesAvg: 55.8,
     },
     {
       distance: '5.5f',
@@ -209,7 +219,7 @@ export const remingtonPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 64.0,
       allowanceAvg: 62.8,
-      stakesAvg: 62.0
+      stakesAvg: 62.0,
     },
     {
       distance: '6f',
@@ -218,7 +228,7 @@ export const remingtonPark: TrackData = {
       // Track record: 1:07.80
       claimingAvg: 70.2,
       allowanceAvg: 69.0,
-      stakesAvg: 68.0
+      stakesAvg: 68.0,
     },
     {
       distance: '6.5f',
@@ -226,7 +236,7 @@ export const remingtonPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 76.5,
       allowanceAvg: 75.2,
-      stakesAvg: 74.2
+      stakesAvg: 74.2,
     },
     {
       distance: '7f',
@@ -234,7 +244,7 @@ export const remingtonPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 83.0,
       allowanceAvg: 81.5,
-      stakesAvg: 80.5
+      stakesAvg: 80.5,
     },
     {
       distance: '1m',
@@ -242,7 +252,7 @@ export const remingtonPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 96.5,
       allowanceAvg: 95.0,
-      stakesAvg: 93.5
+      stakesAvg: 93.5,
     },
     {
       distance: '1m70y',
@@ -250,7 +260,7 @@ export const remingtonPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 101.0,
       allowanceAvg: 99.5,
-      stakesAvg: 98.0
+      stakesAvg: 98.0,
     },
     {
       distance: '1 1/16m',
@@ -258,7 +268,7 @@ export const remingtonPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 103.5,
       allowanceAvg: 102.0,
-      stakesAvg: 100.5
+      stakesAvg: 100.5,
     },
     {
       distance: '1 1/8m',
@@ -267,7 +277,7 @@ export const remingtonPark: TrackData = {
       // Track record: 1:47.60 - Oklahoma Derby distance
       claimingAvg: 110.5,
       allowanceAvg: 108.5,
-      stakesAvg: 106.5
+      stakesAvg: 106.5,
     },
     {
       distance: '1 1/4m',
@@ -275,7 +285,7 @@ export const remingtonPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 124.0,
       allowanceAvg: 121.5,
-      stakesAvg: 119.0
+      stakesAvg: 119.0,
     },
     // Turf times
     {
@@ -284,7 +294,7 @@ export const remingtonPark: TrackData = {
       surface: 'turf',
       claimingAvg: 56.8,
       allowanceAvg: 55.5,
-      stakesAvg: 54.5
+      stakesAvg: 54.5,
     },
     {
       distance: '1m',
@@ -292,7 +302,7 @@ export const remingtonPark: TrackData = {
       surface: 'turf',
       claimingAvg: 95.5,
       allowanceAvg: 94.0,
-      stakesAvg: 92.5
+      stakesAvg: 92.5,
     },
     {
       distance: '1 1/16m',
@@ -300,7 +310,7 @@ export const remingtonPark: TrackData = {
       surface: 'turf',
       claimingAvg: 102.0,
       allowanceAvg: 100.5,
-      stakesAvg: 99.0
+      stakesAvg: 99.0,
     },
     {
       distance: '1 1/8m',
@@ -308,10 +318,10 @@ export const remingtonPark: TrackData = {
       surface: 'turf',
       claimingAvg: 109.0,
       allowanceAvg: 107.5,
-      stakesAvg: 106.0
-    }
+      stakesAvg: 106.0,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

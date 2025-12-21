@@ -1,6 +1,6 @@
-import { memo, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import type { CountdownState } from '../hooks/usePostTime'
+import { memo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { CountdownState } from '../hooks/usePostTime';
 
 // ============================================
 // PostTimeCountdown - Main countdown component
@@ -8,19 +8,19 @@ import type { CountdownState } from '../hooks/usePostTime'
 
 interface PostTimeCountdownProps {
   /** Countdown state from usePostTime hook */
-  countdown: CountdownState
+  countdown: CountdownState;
   /** Formatted post time (e.g., "2:30 PM") */
-  postTimeFormatted: string
+  postTimeFormatted: string;
   /** Is countdown valid (has post time data) */
-  isValid: boolean
+  isValid: boolean;
   /** Race number for display */
-  raceNumber?: number
+  raceNumber?: number;
   /** Variant: 'compact' for top bar, 'full' for race card */
-  variant?: 'compact' | 'full'
+  variant?: 'compact' | 'full';
   /** Show detailed race time info on click */
-  onClick?: () => void
+  onClick?: () => void;
   /** Additional CSS class */
-  className?: string
+  className?: string;
 }
 
 export const PostTimeCountdown = memo(function PostTimeCountdown({
@@ -33,8 +33,8 @@ export const PostTimeCountdown = memo(function PostTimeCountdown({
   className = '',
 }: PostTimeCountdownProps) {
   const handleClick = useCallback(() => {
-    if (onClick) onClick()
-  }, [onClick])
+    if (onClick) onClick();
+  }, [onClick]);
 
   if (!isValid) {
     return (
@@ -42,10 +42,10 @@ export const PostTimeCountdown = memo(function PostTimeCountdown({
         <span className="material-icons countdown-icon">schedule</span>
         <span className="countdown-text">--:--</span>
       </div>
-    )
+    );
   }
 
-  const shouldPulse = countdown.isCritical && !countdown.isExpired
+  const shouldPulse = countdown.isCritical && !countdown.isExpired;
 
   return (
     <motion.div
@@ -55,8 +55,8 @@ export const PostTimeCountdown = memo(function PostTimeCountdown({
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={(e) => {
         if (onClick && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault()
-          handleClick()
+          e.preventDefault();
+          handleClick();
         }
       }}
       whileHover={onClick ? { scale: 1.02 } : undefined}
@@ -74,9 +74,7 @@ export const PostTimeCountdown = memo(function PostTimeCountdown({
       {variant === 'compact' ? (
         // Compact variant for top bar
         <div className="countdown-compact-content">
-          {raceNumber && (
-            <span className="countdown-race">Race {raceNumber}</span>
-          )}
+          {raceNumber && <span className="countdown-race">Race {raceNumber}</span>}
           <span className="countdown-separator">|</span>
           <span className="countdown-label">Post in</span>
           <span className="countdown-value">{countdown.shortFormatted}</span>
@@ -96,8 +94,8 @@ export const PostTimeCountdown = memo(function PostTimeCountdown({
         </div>
       )}
     </motion.div>
-  )
-})
+  );
+});
 
 // ============================================
 // PostTimeProgressBar - Visual progress indicator
@@ -105,13 +103,13 @@ export const PostTimeCountdown = memo(function PostTimeCountdown({
 
 interface PostTimeProgressBarProps {
   /** Progress percentage (0-100) */
-  progress: number
+  progress: number;
   /** Color class based on time remaining */
-  colorClass: CountdownState['colorClass']
+  colorClass: CountdownState['colorClass'];
   /** Show percentage label */
-  showLabel?: boolean
+  showLabel?: boolean;
   /** Additional CSS class */
-  className?: string
+  className?: string;
 }
 
 export const PostTimeProgressBar = memo(function PostTimeProgressBar({
@@ -130,22 +128,20 @@ export const PostTimeProgressBar = memo(function PostTimeProgressBar({
           transition={{ type: 'spring', stiffness: 100, damping: 20 }}
         />
       </div>
-      {showLabel && (
-        <span className="post-time-progress-label">{Math.round(progress)}%</span>
-      )}
+      {showLabel && <span className="post-time-progress-label">{Math.round(progress)}%</span>}
     </div>
-  )
-})
+  );
+});
 
 // ============================================
 // TopBarCountdown - Specialized for top bar integration
 // ============================================
 
 interface TopBarCountdownProps {
-  countdown: CountdownState
-  raceNumber?: number
-  isValid: boolean
-  onClick?: () => void
+  countdown: CountdownState;
+  raceNumber?: number;
+  isValid: boolean;
+  onClick?: () => void;
 }
 
 export const TopBarCountdown = memo(function TopBarCountdown({
@@ -155,10 +151,10 @@ export const TopBarCountdown = memo(function TopBarCountdown({
   onClick,
 }: TopBarCountdownProps) {
   if (!isValid) {
-    return null
+    return null;
   }
 
-  const shouldPulse = countdown.isCritical && !countdown.isExpired
+  const shouldPulse = countdown.isCritical && !countdown.isExpired;
 
   return (
     <motion.button
@@ -170,10 +166,14 @@ export const TopBarCountdown = memo(function TopBarCountdown({
     >
       <motion.span
         className={`material-icons topbar-countdown-icon ${shouldPulse ? 'pulsing' : ''}`}
-        animate={shouldPulse ? {
-          scale: [1, 1.15, 1],
-          opacity: [1, 0.7, 1],
-        } : {}}
+        animate={
+          shouldPulse
+            ? {
+                scale: [1, 1.15, 1],
+                opacity: [1, 0.7, 1],
+              }
+            : {}
+        }
         transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
       >
         {countdown.isExpired ? 'sports_score' : 'timer'}
@@ -190,17 +190,17 @@ export const TopBarCountdown = memo(function TopBarCountdown({
         <span className="topbar-countdown-value">{countdown.shortFormatted}</span>
       </div>
     </motion.button>
-  )
-})
+  );
+});
 
 // ============================================
 // RaceCardCountdown - Specialized for race overview card
 // ============================================
 
 interface RaceCardCountdownProps {
-  countdown: CountdownState
-  postTimeFormatted: string
-  isValid: boolean
+  countdown: CountdownState;
+  postTimeFormatted: string;
+  isValid: boolean;
 }
 
 export const RaceCardCountdown = memo(function RaceCardCountdown({
@@ -218,10 +218,10 @@ export const RaceCardCountdown = memo(function RaceCardCountdown({
         <div className="race-card-countdown-time">--:--</div>
         <PostTimeProgressBar progress={0} colorClass="normal" />
       </div>
-    )
+    );
   }
 
-  const shouldPulse = countdown.isCritical && !countdown.isExpired
+  const shouldPulse = countdown.isCritical && !countdown.isExpired;
 
   return (
     <div className={`race-card-countdown ${countdown.colorClass}`}>
@@ -243,10 +243,7 @@ export const RaceCardCountdown = memo(function RaceCardCountdown({
         </span>
       </div>
 
-      <PostTimeProgressBar
-        progress={countdown.progress}
-        colorClass={countdown.colorClass}
-      />
+      <PostTimeProgressBar progress={countdown.progress} colorClass={countdown.colorClass} />
 
       <AnimatePresence>
         {countdown.isImminent && !countdown.isExpired && (
@@ -262,20 +259,20 @@ export const RaceCardCountdown = memo(function RaceCardCountdown({
         )}
       </AnimatePresence>
     </div>
-  )
-})
+  );
+});
 
 // ============================================
 // PostTimeDetailModal - Detailed time info modal
 // ============================================
 
 interface PostTimeDetailModalProps {
-  isOpen: boolean
-  onClose: () => void
-  countdown: CountdownState
-  postTimeFormatted: string
-  raceNumber?: number
-  trackName?: string
+  isOpen: boolean;
+  onClose: () => void;
+  countdown: CountdownState;
+  postTimeFormatted: string;
+  raceNumber?: number;
+  trackName?: string;
 }
 
 export const PostTimeDetailModal = memo(function PostTimeDetailModal({
@@ -286,7 +283,7 @@ export const PostTimeDetailModal = memo(function PostTimeDetailModal({
   raceNumber,
   trackName,
 }: PostTimeDetailModalProps) {
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <AnimatePresence>
@@ -359,7 +356,7 @@ export const PostTimeDetailModal = memo(function PostTimeDetailModal({
         </motion.div>
       </motion.div>
     </AnimatePresence>
-  )
-})
+  );
+});
 
-export default PostTimeCountdown
+export default PostTimeCountdown;

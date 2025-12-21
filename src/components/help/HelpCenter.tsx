@@ -1,15 +1,15 @@
-import { useState, useCallback, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { FAQAccordion } from './FAQAccordion'
-import { GuideSection } from './GuideSection'
-import { FAQ_ITEMS } from '../../help/faq'
-import { GUIDE_SECTIONS } from '../../help/guides'
-import { logger } from '../../services/logging'
+import { useState, useCallback, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { FAQAccordion } from './FAQAccordion';
+import { GuideSection } from './GuideSection';
+import { FAQ_ITEMS } from '../../help/faq';
+import { GUIDE_SECTIONS } from '../../help/guides';
+import { logger } from '../../services/logging';
 
-type TabType = 'faq' | 'guides'
+type TabType = 'faq' | 'guides';
 
 interface HelpCenterProps {
-  onBack: () => void
+  onBack: () => void;
 }
 
 /**
@@ -19,47 +19,48 @@ interface HelpCenterProps {
  * Provides comprehensive documentation and answers to common questions.
  */
 export function HelpCenter({ onBack }: HelpCenterProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('faq')
-  const [selectedGuide, setSelectedGuide] = useState<string>(GUIDE_SECTIONS[0]?.id ?? '')
+  const [activeTab, setActiveTab] = useState<TabType>('faq');
+  const [selectedGuide, setSelectedGuide] = useState<string>(GUIDE_SECTIONS[0]?.id ?? '');
 
   // Log help center access
   useEffect(() => {
     logger.logInfo('Help Center opened', {
       component: 'HelpCenter',
-    })
-  }, [])
+    });
+  }, []);
 
   const handleTabChange = useCallback((tab: TabType) => {
-    setActiveTab(tab)
+    setActiveTab(tab);
     logger.logInfo('Help Center tab changed', {
       component: 'HelpCenter',
       tab,
-    })
-  }, [])
+    });
+  }, []);
 
   const handleGuideSelect = useCallback((guideId: string) => {
-    setSelectedGuide(guideId)
+    setSelectedGuide(guideId);
     logger.logInfo('Guide section selected', {
       component: 'HelpCenter',
       guideId,
-    })
-  }, [])
+    });
+  }, []);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onBack()
+        onBack();
       }
     },
     [onBack]
-  )
+  );
 
   useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [handleKeyDown])
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
-  const selectedGuideSection = GUIDE_SECTIONS.find((g) => g.id === selectedGuide) ?? GUIDE_SECTIONS[0]
+  const selectedGuideSection =
+    GUIDE_SECTIONS.find((g) => g.id === selectedGuide) ?? GUIDE_SECTIONS[0];
 
   return (
     <div className="help-center">
@@ -153,7 +154,7 @@ export function HelpCenter({ onBack }: HelpCenterProps) {
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default HelpCenter
+export default HelpCenter;

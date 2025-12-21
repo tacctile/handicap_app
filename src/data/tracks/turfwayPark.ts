@@ -15,7 +15,7 @@
  * IMPORTANT: Synthetic surface plays VERY differently from dirt - deep closers excel
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const turfwayPark: TrackData = {
   code: 'TP',
@@ -36,8 +36,8 @@ export const turfwayPark: TrackData = {
       // Source: Kentucky Racing Commission - 80 feet wide
       trackWidth: 80,
       // Source: Turfway Park - chutes at 6f and 7f
-      chutes: [6, 7]
-    }
+      chutes: [6, 7],
+    },
   },
 
   postPositionBias: {
@@ -56,7 +56,8 @@ export const turfwayPark: TrackData = {
         // Sample: 600+ synthetic sprints
         winPercentByPost: [11.5, 12.8, 14.0, 14.2, 13.5, 12.0, 9.8, 7.0, 3.8, 1.4],
         favoredPosts: [3, 4, 5],
-        biasDescription: 'Polytrack favors middle posts 3-5; inside rail less advantageous than dirt; outside posts less penalized'
+        biasDescription:
+          'Polytrack favors middle posts 3-5; inside rail less advantageous than dirt; outside posts less penalized',
       },
       {
         distance: 'route',
@@ -70,9 +71,10 @@ export const turfwayPark: TrackData = {
         // Sample: 300+ synthetic routes
         winPercentByPost: [11.0, 12.5, 13.8, 14.5, 14.0, 12.5, 9.5, 7.0, 3.5, 1.7],
         favoredPosts: [4, 5],
-        biasDescription: 'Polytrack routes favor posts 4-5; closers thrive; sustained rallies common; wire-to-wire rare'
-      }
-    ]
+        biasDescription:
+          'Polytrack routes favor posts 4-5; closers thrive; sustained rallies common; wire-to-wire rare',
+      },
+    ],
   },
 
   speedBias: [
@@ -88,8 +90,9 @@ export const turfwayPark: TrackData = {
       // Jeff Ruby Steaks often won from off the pace
       earlySpeedWinRate: 42,
       paceAdvantageRating: 2,
-      description: 'POLYTRACK strongly favors closers; only 42% early speed wins; wire-to-wire rare; pace collapses common at 25%+'
-    }
+      description:
+        'POLYTRACK strongly favors closers; only 42% early speed wins; wire-to-wire rare; pace collapses common at 25%+',
+    },
   ],
 
   surfaces: [
@@ -100,10 +103,11 @@ export const turfwayPark: TrackData = {
       // Composed of recycled fiber, rubber, and wax-coated sand
       // All-weather surface that provides consistent racing
       // Plays deep and forgiving - closers love it
-      composition: 'Polytrack synthetic: recycled fiber, rubber granules, wax-coated silica sand; 5-inch depth; all-weather',
+      composition:
+        'Polytrack synthetic: recycled fiber, rubber granules, wax-coated silica sand; 5-inch depth; all-weather',
       playingStyle: 'deep',
-      drainage: 'excellent'
-    }
+      drainage: 'excellent',
+    },
   ],
 
   seasonalPatterns: [
@@ -115,7 +119,8 @@ export const turfwayPark: TrackData = {
       // Polytrack advantage: races in all weather
       typicalCondition: 'Fast; All-weather surface handles precipitation',
       speedAdjustment: 0,
-      notes: 'Peak of meet; synthetic surface provides consistent racing in any weather; ship-ins from cold northern tracks'
+      notes:
+        'Peak of meet; synthetic surface provides consistent racing in any weather; ship-ins from cold northern tracks',
     },
     {
       season: 'spring',
@@ -125,7 +130,8 @@ export const turfwayPark: TrackData = {
       // Meet winds down in early April
       typicalCondition: 'Fast',
       speedAdjustment: 0,
-      notes: 'Jeff Ruby Steaks (G3) in March; premier Kentucky Derby prep for synthetic form; meet ends April'
+      notes:
+        'Jeff Ruby Steaks (G3) in March; premier Kentucky Derby prep for synthetic form; meet ends April',
     },
     {
       season: 'summer',
@@ -133,7 +139,7 @@ export const turfwayPark: TrackData = {
       // Source: Turfway Park closed for summer/fall
       typicalCondition: 'No Racing',
       speedAdjustment: 0,
-      notes: 'Track closed late spring through fall; racing resumes December'
+      notes: 'Track closed late spring through fall; racing resumes December',
     },
     {
       season: 'fall',
@@ -142,8 +148,8 @@ export const turfwayPark: TrackData = {
       // Meet typically opens in December
       typicalCondition: 'No Racing',
       speedAdjustment: 0,
-      notes: 'No racing; meet opens in early December'
-    }
+      notes: 'No racing; meet opens in early December',
+    },
   ],
 
   winningTimes: [
@@ -156,7 +162,7 @@ export const turfwayPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 59.2,
       allowanceAvg: 58.0,
-      stakesAvg: 56.8
+      stakesAvg: 56.8,
     },
     {
       distance: '5.5f',
@@ -164,7 +170,7 @@ export const turfwayPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 65.5,
       allowanceAvg: 64.2,
-      stakesAvg: 63.0
+      stakesAvg: 63.0,
     },
     {
       distance: '6f',
@@ -173,7 +179,7 @@ export const turfwayPark: TrackData = {
       // Track record: 1:09.05
       claimingAvg: 71.8,
       allowanceAvg: 70.5,
-      stakesAvg: 69.2
+      stakesAvg: 69.2,
     },
     {
       distance: '6.5f',
@@ -181,7 +187,7 @@ export const turfwayPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 78.2,
       allowanceAvg: 77.0,
-      stakesAvg: 75.8
+      stakesAvg: 75.8,
     },
     {
       distance: '7f',
@@ -189,7 +195,7 @@ export const turfwayPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 84.5,
       allowanceAvg: 83.2,
-      stakesAvg: 82.0
+      stakesAvg: 82.0,
     },
     {
       distance: '1m',
@@ -197,7 +203,7 @@ export const turfwayPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 98.5,
       allowanceAvg: 97.0,
-      stakesAvg: 95.5
+      stakesAvg: 95.5,
     },
     {
       distance: '1m70y',
@@ -205,7 +211,7 @@ export const turfwayPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 103.0,
       allowanceAvg: 101.5,
-      stakesAvg: 100.0
+      stakesAvg: 100.0,
     },
     {
       distance: '1 1/16m',
@@ -214,7 +220,7 @@ export const turfwayPark: TrackData = {
       // Jeff Ruby Steaks prep races
       claimingAvg: 105.5,
       allowanceAvg: 104.0,
-      stakesAvg: 102.5
+      stakesAvg: 102.5,
     },
     {
       distance: '1 1/8m',
@@ -224,7 +230,7 @@ export const turfwayPark: TrackData = {
       // Track record: 1:50.19
       claimingAvg: 113.0,
       allowanceAvg: 111.0,
-      stakesAvg: 109.0
+      stakesAvg: 109.0,
     },
     {
       distance: '1 1/4m',
@@ -232,7 +238,7 @@ export const turfwayPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 127.0,
       allowanceAvg: 124.5,
-      stakesAvg: 122.0
+      stakesAvg: 122.0,
     },
     {
       distance: '1 1/2m',
@@ -240,10 +246,10 @@ export const turfwayPark: TrackData = {
       surface: 'synthetic',
       claimingAvg: 155.0,
       allowanceAvg: 152.0,
-      stakesAvg: 149.0
-    }
+      stakesAvg: 149.0,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

@@ -1,16 +1,16 @@
-import { memo, useState, useCallback } from 'react'
-import { TRACK_CONDITIONS, type TrackCondition } from '../hooks/useRaceState'
-import { ResetConfirmDialog } from './ResetConfirmDialog'
+import { memo, useState, useCallback } from 'react';
+import { TRACK_CONDITIONS, type TrackCondition } from '../hooks/useRaceState';
+import { ResetConfirmDialog } from './ResetConfirmDialog';
 
 interface RaceControlsProps {
-  trackCondition: TrackCondition
-  onTrackConditionChange: (condition: TrackCondition) => void
-  surface?: 'dirt' | 'turf' | 'synthetic' | 'all-weather'
+  trackCondition: TrackCondition;
+  onTrackConditionChange: (condition: TrackCondition) => void;
+  surface?: 'dirt' | 'turf' | 'synthetic' | 'all-weather';
   // Reset functionality
-  hasChanges?: boolean
-  onReset?: () => void
-  scratchesCount?: number
-  oddsChangesCount?: number
+  hasChanges?: boolean;
+  onReset?: () => void;
+  scratchesCount?: number;
+  oddsChangesCount?: number;
 }
 
 // Material Icon component
@@ -19,7 +19,7 @@ function Icon({ name, className = '' }: { name: string; className?: string }) {
     <span className={`material-icons ${className}`} aria-hidden="true">
       {name}
     </span>
-  )
+  );
 }
 
 export const RaceControls = memo(function RaceControls({
@@ -31,7 +31,7 @@ export const RaceControls = memo(function RaceControls({
   scratchesCount = 0,
   oddsChangesCount = 0,
 }: RaceControlsProps) {
-  const [showResetDialog, setShowResetDialog] = useState(false)
+  const [showResetDialog, setShowResetDialog] = useState(false);
 
   // Filter conditions based on surface
   const availableConditions = TRACK_CONDITIONS.filter(
@@ -39,26 +39,29 @@ export const RaceControls = memo(function RaceControls({
       condition.surface === 'both' ||
       condition.surface === surface ||
       (surface === 'synthetic' && condition.surface === 'dirt')
-  )
+  );
 
   const handleResetClick = useCallback(() => {
-    setShowResetDialog(true)
-  }, [])
+    setShowResetDialog(true);
+  }, []);
 
   const handleConfirmReset = useCallback(() => {
-    setShowResetDialog(false)
-    onReset?.()
-  }, [onReset])
+    setShowResetDialog(false);
+    onReset?.();
+  }, [onReset]);
 
   const handleCancelReset = useCallback(() => {
-    setShowResetDialog(false)
-  }, [])
+    setShowResetDialog(false);
+  }, []);
 
   return (
     <>
       <div className="race-controls race-controls-responsive">
         <div className="race-controls-section race-controls-section-responsive">
-          <label className="race-controls-label race-controls-label-responsive" htmlFor="track-condition">
+          <label
+            className="race-controls-label race-controls-label-responsive"
+            htmlFor="track-condition"
+          >
             <Icon name="wb_cloudy" className="race-controls-icon" />
             <span>Track Condition</span>
           </label>
@@ -108,5 +111,5 @@ export const RaceControls = memo(function RaceControls({
         }}
       />
     </>
-  )
-})
+  );
+});

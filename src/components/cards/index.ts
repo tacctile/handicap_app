@@ -1,2 +1,2 @@
-export { RaceOverviewCard } from './RaceOverviewCard'
-export { EmptyStateTable } from './EmptyStateTable'
+export { RaceOverviewCard } from './RaceOverviewCard';
+export { EmptyStateTable } from './EmptyStateTable';

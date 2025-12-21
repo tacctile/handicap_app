@@ -1,36 +1,31 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback } from 'react';
 
 interface HeaderProps {
-  currentFileName?: string | null
-  onMenuClick?: () => void
-  onReset?: () => void
-  hasChanges?: boolean
+  currentFileName?: string | null;
+  onMenuClick?: () => void;
+  onReset?: () => void;
+  hasChanges?: boolean;
 }
 
-export function Header({
-  currentFileName,
-  onMenuClick,
-  onReset,
-  hasChanges = false
-}: HeaderProps) {
-  const [showResetConfirm, setShowResetConfirm] = useState(false)
+export function Header({ currentFileName, onMenuClick, onReset, hasChanges = false }: HeaderProps) {
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const handleResetClick = useCallback(() => {
     if (hasChanges) {
-      setShowResetConfirm(true)
+      setShowResetConfirm(true);
     } else {
-      onReset?.()
+      onReset?.();
     }
-  }, [hasChanges, onReset])
+  }, [hasChanges, onReset]);
 
   const handleConfirmReset = useCallback(() => {
-    setShowResetConfirm(false)
-    onReset?.()
-  }, [onReset])
+    setShowResetConfirm(false);
+    onReset?.();
+  }, [onReset]);
 
   const handleCancelReset = useCallback(() => {
-    setShowResetConfirm(false)
-  }, [])
+    setShowResetConfirm(false);
+  }, []);
 
   return (
     <>
@@ -39,11 +34,7 @@ export function Header({
           {/* Left section - Menu and branding */}
           <div className="header-left">
             {onMenuClick && (
-              <button
-                onClick={onMenuClick}
-                className="header-menu-button"
-                aria-label="Open menu"
-              >
+              <button onClick={onMenuClick} className="header-menu-button" aria-label="Open menu">
                 <span className="material-icons">menu</span>
               </button>
             )}
@@ -94,14 +85,14 @@ export function Header({
       {/* Reset confirmation dialog */}
       {showResetConfirm && (
         <div className="reset-confirm-overlay" onClick={handleCancelReset}>
-          <div className="reset-confirm-dialog" onClick={e => e.stopPropagation()}>
+          <div className="reset-confirm-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="reset-confirm-icon">
               <span className="material-icons">warning</span>
             </div>
             <h3 className="reset-confirm-title">Reset All Changes?</h3>
             <p className="reset-confirm-message">
-              This will clear all odds adjustments, scratches, and track condition changes.
-              This action cannot be undone.
+              This will clear all odds adjustments, scratches, and track condition changes. This
+              action cannot be undone.
             </p>
             <div className="reset-confirm-actions">
               <button onClick={handleCancelReset} className="reset-confirm-cancel">
@@ -116,5 +107,5 @@ export function Header({
         </div>
       )}
     </>
-  )
+  );
 }

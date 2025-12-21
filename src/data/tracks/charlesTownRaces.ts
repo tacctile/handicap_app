@@ -14,7 +14,7 @@
  * NOTE: 6-furlong bullring with extremely short stretch (660 feet); notorious speed bias
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const charlesTownRaces: TrackData = {
   code: 'CT',
@@ -33,8 +33,8 @@ export const charlesTownRaces: TrackData = {
       // Source: West Virginia Racing Commission - 70 feet wide
       trackWidth: 70,
       // Source: Charles Town - chutes at 4.5f and 7f
-      chutes: [4.5, 7]
-    }
+      chutes: [4.5, 7],
+    },
   },
 
   postPositionBias: {
@@ -51,7 +51,8 @@ export const charlesTownRaces: TrackData = {
         // Sample: 2,500+ dirt sprints
         winPercentByPost: [18.5, 16.2, 13.8, 12.0, 10.5, 9.2, 7.8, 6.0, 4.2, 1.8],
         favoredPosts: [1, 2],
-        biasDescription: 'EXTREME inside bias; rail wins 18%+; tight turns severely penalize outside; 660-ft stretch allows no late rally'
+        biasDescription:
+          'EXTREME inside bias; rail wins 18%+; tight turns severely penalize outside; 660-ft stretch allows no late rally',
       },
       {
         distance: 'route',
@@ -64,9 +65,10 @@ export const charlesTownRaces: TrackData = {
         // Sample: 400+ dirt routes
         winPercentByPost: [17.2, 15.5, 13.5, 12.0, 11.0, 10.0, 8.5, 6.5, 4.0, 1.8],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Strong inside bias in routes; 3+ turns on bullring; posts 1-3 critical for positioning'
-      }
-    ]
+        biasDescription:
+          'Strong inside bias in routes; 3+ turns on bullring; posts 1-3 critical for positioning',
+      },
+    ],
   },
 
   speedBias: [
@@ -80,8 +82,9 @@ export const charlesTownRaces: TrackData = {
       // Deep closers essentially eliminated
       earlySpeedWinRate: 68,
       paceAdvantageRating: 10,
-      description: 'EXTREME speed bias - 68%+ early speed win rate; 660-ft stretch (shortest major track); wire-to-wire dominance'
-    }
+      description:
+        'EXTREME speed bias - 68%+ early speed win rate; 660-ft stretch (shortest major track); wire-to-wire dominance',
+    },
   ],
 
   surfaces: [
@@ -92,8 +95,8 @@ export const charlesTownRaces: TrackData = {
       // Track maintained for speed-favoring racing
       composition: 'Sandy loam cushion over crusite base; 4-inch cushion depth; designed for speed',
       playingStyle: 'speed-favoring',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -105,7 +108,7 @@ export const charlesTownRaces: TrackData = {
       // Cold weather can affect track speed
       typicalCondition: 'Fast to Good; occasional frozen track',
       speedAdjustment: -1,
-      notes: 'Year-round night racing; cold temperatures slow times slightly; speed bias persists'
+      notes: 'Year-round night racing; cold temperatures slow times slightly; speed bias persists',
     },
     {
       season: 'spring',
@@ -114,7 +117,7 @@ export const charlesTownRaces: TrackData = {
       // Improving conditions; Charles Town Classic stakes
       typicalCondition: 'Fast to Good',
       speedAdjustment: 0,
-      notes: 'Spring racing; Charles Town Classic (G2) in April; rain can affect track'
+      notes: 'Spring racing; Charles Town Classic (G2) in April; rain can affect track',
     },
     {
       season: 'summer',
@@ -123,7 +126,7 @@ export const charlesTownRaces: TrackData = {
       // Hot conditions; track runs fast
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Peak summer meet; fast conditions; night racing provides cooler temperatures'
+      notes: 'Peak summer meet; fast conditions; night racing provides cooler temperatures',
     },
     {
       season: 'fall',
@@ -132,8 +135,8 @@ export const charlesTownRaces: TrackData = {
       // Continued quality racing
       typicalCondition: 'Fast',
       speedAdjustment: 0,
-      notes: 'Fall meet; West Virginia Breeders Classics in October'
-    }
+      notes: 'Fall meet; West Virginia Breeders Classics in October',
+    },
   ],
 
   winningTimes: [
@@ -145,7 +148,7 @@ export const charlesTownRaces: TrackData = {
       surface: 'dirt',
       claimingAvg: 51.8,
       allowanceAvg: 50.5,
-      stakesAvg: 49.5
+      stakesAvg: 49.5,
     },
     {
       distance: '6f',
@@ -154,7 +157,7 @@ export const charlesTownRaces: TrackData = {
       // Track record: 1:07.80
       claimingAvg: 70.0,
       allowanceAvg: 68.5,
-      stakesAvg: 67.8
+      stakesAvg: 67.8,
     },
     {
       distance: '6.5f',
@@ -162,7 +165,7 @@ export const charlesTownRaces: TrackData = {
       surface: 'dirt',
       claimingAvg: 76.5,
       allowanceAvg: 75.0,
-      stakesAvg: 74.0
+      stakesAvg: 74.0,
     },
     {
       distance: '7f',
@@ -171,7 +174,7 @@ export const charlesTownRaces: TrackData = {
       // From chute - most common route distance
       claimingAvg: 82.5,
       allowanceAvg: 81.0,
-      stakesAvg: 79.8
+      stakesAvg: 79.8,
     },
     {
       distance: '1 1/16m',
@@ -180,7 +183,7 @@ export const charlesTownRaces: TrackData = {
       // Charles Town Classic distance
       claimingAvg: 103.5,
       allowanceAvg: 101.8,
-      stakesAvg: 100.0
+      stakesAvg: 100.0,
     },
     {
       distance: '1 1/8m',
@@ -189,10 +192,10 @@ export const charlesTownRaces: TrackData = {
       // Track record: 1:49.40
       claimingAvg: 111.0,
       allowanceAvg: 109.0,
-      stakesAvg: 107.5
-    }
+      stakesAvg: 107.5,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

@@ -5,9 +5,9 @@
  * Subscribes to auth state changes and handles loading states.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { getAuthService } from '../services/auth'
-import type { User, AuthState, AuthError, IAuthService } from '../services/auth/types'
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { getAuthService } from '../services/auth';
+import type { User, AuthState, AuthError, IAuthService } from '../services/auth/types';
 
 // ============================================================================
 // HOOK RETURN TYPE
@@ -15,25 +15,25 @@ import type { User, AuthState, AuthError, IAuthService } from '../services/auth/
 
 export interface UseAuthReturn {
   /** Currently authenticated user, or null */
-  user: User | null
+  user: User | null;
   /** Whether auth state is being loaded */
-  isLoading: boolean
+  isLoading: boolean;
   /** Whether user is authenticated */
-  isAuthenticated: boolean
+  isAuthenticated: boolean;
   /** Current auth error, if any */
-  error: AuthError | null
+  error: AuthError | null;
   /** Sign up a new user */
-  signUp: (email: string, password: string, displayName?: string) => Promise<User>
+  signUp: (email: string, password: string, displayName?: string) => Promise<User>;
   /** Sign in an existing user */
-  signIn: (email: string, password: string) => Promise<User>
+  signIn: (email: string, password: string) => Promise<User>;
   /** Sign out the current user */
-  signOut: () => Promise<void>
+  signOut: () => Promise<void>;
   /** Send password reset email */
-  resetPassword: (email: string) => Promise<void>
+  resetPassword: (email: string) => Promise<void>;
   /** Clear current error */
-  clearError: () => void
+  clearError: () => void;
   /** Update user profile */
-  updateProfile?: (updates: Partial<Pick<User, 'displayName' | 'avatarUrl'>>) => Promise<User>
+  updateProfile?: (updates: Partial<Pick<User, 'displayName' | 'avatarUrl'>>) => Promise<User>;
 }
 
 // ============================================================================
@@ -67,130 +67,128 @@ export interface UseAuthReturn {
  * ```
  */
 export function useAuth(): UseAuthReturn {
-  const [authService] = useState<IAuthService>(() => getAuthService())
-  const [state, setState] = useState<AuthState>(() => authService.getAuthState())
-  const [localError, setLocalError] = useState<AuthError | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [authService] = useState<IAuthService>(() => getAuthService());
+  const [state, setState] = useState<AuthState>(() => authService.getAuthState());
+  const [localError, setLocalError] = useState<AuthError | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Subscribe to auth state changes
   useEffect(() => {
     const unsubscribe = authService.onAuthStateChange((newState) => {
-      setState(newState)
-    })
+      setState(newState);
+    });
 
     return () => {
-      unsubscribe()
-    }
-  }, [authService])
+      unsubscribe();
+    };
+  }, [authService]);
 
   // Sign up action
   const signUp = useCallback(
     async (email: string, password: string, displayName?: string): Promise<User> => {
-      setLocalError(null)
-      setIsProcessing(true)
+      setLocalError(null);
+      setIsProcessing(true);
 
       try {
-        const user = await authService.signUp(email, password, displayName)
-        return user
+        const user = await authService.signUp(email, password, displayName);
+        return user;
       } catch (err) {
-        const error = err as AuthError
-        setLocalError(error)
-        throw error
+        const error = err as AuthError;
+        setLocalError(error);
+        throw error;
       } finally {
-        setIsProcessing(false)
+        setIsProcessing(false);
       }
     },
     [authService]
-  )
+  );
 
   // Sign in action
   const signIn = useCallback(
     async (email: string, password: string): Promise<User> => {
-      setLocalError(null)
-      setIsProcessing(true)
+      setLocalError(null);
+      setIsProcessing(true);
 
       try {
-        const user = await authService.signIn(email, password)
-        return user
+        const user = await authService.signIn(email, password);
+        return user;
       } catch (err) {
-        const error = err as AuthError
-        setLocalError(error)
-        throw error
+        const error = err as AuthError;
+        setLocalError(error);
+        throw error;
       } finally {
-        setIsProcessing(false)
+        setIsProcessing(false);
       }
     },
     [authService]
-  )
+  );
 
   // Sign out action
   const signOut = useCallback(async (): Promise<void> => {
-    setLocalError(null)
-    setIsProcessing(true)
+    setLocalError(null);
+    setIsProcessing(true);
 
     try {
-      await authService.signOut()
+      await authService.signOut();
     } catch (err) {
-      const error = err as AuthError
-      setLocalError(error)
-      throw error
+      const error = err as AuthError;
+      setLocalError(error);
+      throw error;
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }, [authService])
+  }, [authService]);
 
   // Reset password action
   const resetPassword = useCallback(
     async (email: string): Promise<void> => {
-      setLocalError(null)
-      setIsProcessing(true)
+      setLocalError(null);
+      setIsProcessing(true);
 
       try {
-        await authService.resetPassword(email)
+        await authService.resetPassword(email);
       } catch (err) {
-        const error = err as AuthError
-        setLocalError(error)
-        throw error
+        const error = err as AuthError;
+        setLocalError(error);
+        throw error;
       } finally {
-        setIsProcessing(false)
+        setIsProcessing(false);
       }
     },
     [authService]
-  )
+  );
 
   // Clear error
   const clearError = useCallback(() => {
-    setLocalError(null)
-  }, [])
+    setLocalError(null);
+  }, []);
 
   // Update profile (if supported)
   const updateProfile = useMemo(() => {
-    if (!authService.updateProfile) return undefined
+    if (!authService.updateProfile) return undefined;
 
-    return async (
-      updates: Partial<Pick<User, 'displayName' | 'avatarUrl'>>
-    ): Promise<User> => {
-      setLocalError(null)
-      setIsProcessing(true)
+    return async (updates: Partial<Pick<User, 'displayName' | 'avatarUrl'>>): Promise<User> => {
+      setLocalError(null);
+      setIsProcessing(true);
 
       try {
-        const user = await authService.updateProfile!(updates)
-        return user
+        const user = await authService.updateProfile!(updates);
+        return user;
       } catch (err) {
-        const error = err as AuthError
-        setLocalError(error)
-        throw error
+        const error = err as AuthError;
+        setLocalError(error);
+        throw error;
       } finally {
-        setIsProcessing(false)
+        setIsProcessing(false);
       }
-    }
-  }, [authService])
+    };
+  }, [authService]);
 
   // Combine auth state loading with local processing
-  const isLoading = state.isLoading || isProcessing
+  const isLoading = state.isLoading || isProcessing;
 
   // Combine errors (prefer local error for immediate feedback)
-  const error = localError || state.error
+  const error = localError || state.error;
 
   return useMemo(
     () => ({
@@ -217,7 +215,7 @@ export function useAuth(): UseAuthReturn {
       clearError,
       updateProfile,
     ]
-  )
+  );
 }
 
 // ============================================================================
@@ -229,7 +227,7 @@ export function useAuth(): UseAuthReturn {
  * Useful for one-time checks in event handlers
  */
 export function getCurrentUser(): User | null {
-  return getAuthService().getCurrentUser()
+  return getAuthService().getCurrentUser();
 }
 
 /**
@@ -237,7 +235,7 @@ export function getCurrentUser(): User | null {
  * Useful for one-time checks in event handlers
  */
 export function isAuthenticated(): boolean {
-  return getAuthService().getCurrentUser() !== null
+  return getAuthService().getCurrentUser() !== null;
 }
 
-export default useAuth
+export default useAuth;

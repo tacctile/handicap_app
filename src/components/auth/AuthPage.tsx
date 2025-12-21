@@ -5,9 +5,9 @@
  * Displays app branding and centered layout.
  */
 
-import { useState, useCallback } from 'react'
-import { LoginForm } from './LoginForm'
-import { SignupForm } from './SignupForm'
+import { useState, useCallback } from 'react';
+import { LoginForm } from './LoginForm';
+import { SignupForm } from './SignupForm';
 
 // ============================================================================
 // TYPES
@@ -15,9 +15,9 @@ import { SignupForm } from './SignupForm'
 
 export interface AuthPageProps {
   /** Initial form to show ('login' or 'signup') */
-  initialForm?: 'login' | 'signup'
+  initialForm?: 'login' | 'signup';
   /** Callback after successful authentication */
-  onAuthSuccess?: () => void
+  onAuthSuccess?: () => void;
 }
 
 // ============================================================================
@@ -103,7 +103,7 @@ const styles: Record<string, React.CSSProperties> = {
     textDecoration: 'none',
     transition: 'color 0.2s',
   },
-}
+};
 
 // ============================================================================
 // COMPONENT
@@ -122,15 +122,15 @@ const styles: Record<string, React.CSSProperties> = {
  * ```
  */
 export function AuthPage({ initialForm = 'login', onAuthSuccess }: AuthPageProps) {
-  const [currentForm, setCurrentForm] = useState<'login' | 'signup'>(initialForm)
+  const [currentForm, setCurrentForm] = useState<'login' | 'signup'>(initialForm);
 
   const handleSwitchToSignup = useCallback(() => {
-    setCurrentForm('signup')
-  }, [])
+    setCurrentForm('signup');
+  }, []);
 
   const handleSwitchToLogin = useCallback(() => {
-    setCurrentForm('login')
-  }, [])
+    setCurrentForm('login');
+  }, []);
 
   return (
     <div style={styles.container}>
@@ -143,9 +143,7 @@ export function AuthPage({ initialForm = 'login', onAuthSuccess }: AuthPageProps
             </span>
           </div>
           <h1 style={styles.appName}>Handicap Pro</h1>
-          <p style={styles.tagline}>
-            Professional horse racing analysis
-          </p>
+          <p style={styles.tagline}>Professional horse racing analysis</p>
         </div>
 
         {/* Auth Card */}
@@ -155,15 +153,9 @@ export function AuthPage({ initialForm = 'login', onAuthSuccess }: AuthPageProps
           </h2>
 
           {currentForm === 'login' ? (
-            <LoginForm
-              onSwitchToSignup={handleSwitchToSignup}
-              onSuccess={onAuthSuccess}
-            />
+            <LoginForm onSwitchToSignup={handleSwitchToSignup} onSuccess={onAuthSuccess} />
           ) : (
-            <SignupForm
-              onSwitchToLogin={handleSwitchToLogin}
-              onSuccess={onAuthSuccess}
-            />
+            <SignupForm onSwitchToLogin={handleSwitchToLogin} onSuccess={onAuthSuccess} />
           )}
         </div>
 
@@ -177,7 +169,7 @@ export function AuthPage({ initialForm = 'login', onAuthSuccess }: AuthPageProps
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default AuthPage
+export default AuthPage;

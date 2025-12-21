@@ -5,13 +5,13 @@
  * Subscribes to flag changes for reactive updates.
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   getFeatureFlagService,
   type FeatureFlagName,
   type FeatureFlags,
   type FeatureFlagDefinition,
-} from '../services/features'
+} from '../services/features';
 
 // ============================================================================
 // SINGLE FLAG HOOK
@@ -32,20 +32,20 @@ import {
  * ```
  */
 export function useFeatureFlag(flagName: FeatureFlagName): boolean {
-  const service = useMemo(() => getFeatureFlagService(), [])
-  const [isEnabled, setIsEnabled] = useState(() => service.isEnabled(flagName))
+  const service = useMemo(() => getFeatureFlagService(), []);
+  const [isEnabled, setIsEnabled] = useState(() => service.isEnabled(flagName));
 
   useEffect(() => {
     const unsubscribe = service.subscribe((flags) => {
-      setIsEnabled(flags[flagName])
-    })
+      setIsEnabled(flags[flagName]);
+    });
 
     return () => {
-      unsubscribe()
-    }
-  }, [service, flagName])
+      unsubscribe();
+    };
+  }, [service, flagName]);
 
-  return isEnabled
+  return isEnabled;
 }
 
 // ============================================================================
@@ -70,32 +70,32 @@ export function useFeatureFlag(flagName: FeatureFlagName): boolean {
  * ```
  */
 export function useFeatureFlags(flagNames: FeatureFlagName[]): Partial<FeatureFlags> {
-  const service = useMemo(() => getFeatureFlagService(), [])
+  const service = useMemo(() => getFeatureFlagService(), []);
   const [flags, setFlags] = useState<Partial<FeatureFlags>>(() => {
-    const allFlags = service.getAllFlags()
-    const subset: Partial<FeatureFlags> = {}
+    const allFlags = service.getAllFlags();
+    const subset: Partial<FeatureFlags> = {};
     for (const name of flagNames) {
-      subset[name] = allFlags[name]
+      subset[name] = allFlags[name];
     }
-    return subset
-  })
+    return subset;
+  });
 
   useEffect(() => {
     const unsubscribe = service.subscribe((allFlags) => {
-      const subset: Partial<FeatureFlags> = {}
+      const subset: Partial<FeatureFlags> = {};
       for (const name of flagNames) {
-        subset[name] = allFlags[name]
+        subset[name] = allFlags[name];
       }
-      setFlags(subset)
-    })
+      setFlags(subset);
+    });
 
     return () => {
-      unsubscribe()
-    }
+      unsubscribe();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [service, ...flagNames])
+  }, [service, ...flagNames]);
 
-  return flags
+  return flags;
 }
 
 // ============================================================================
@@ -129,44 +129,44 @@ export function useFeatureFlags(flagNames: FeatureFlagName[]): Partial<FeatureFl
  * ```
  */
 export function useAllFeatureFlags(): {
-  flags: FeatureFlags
-  setFlag: (name: FeatureFlagName, value: boolean) => void
-  resetFlag: (name: FeatureFlagName) => void
-  resetAll: () => void
-  definitions: Record<FeatureFlagName, FeatureFlagDefinition>
+  flags: FeatureFlags;
+  setFlag: (name: FeatureFlagName, value: boolean) => void;
+  resetFlag: (name: FeatureFlagName) => void;
+  resetAll: () => void;
+  definitions: Record<FeatureFlagName, FeatureFlagDefinition>;
 } {
-  const service = useMemo(() => getFeatureFlagService(), [])
-  const [flags, setFlags] = useState<FeatureFlags>(() => service.getAllFlags())
+  const service = useMemo(() => getFeatureFlagService(), []);
+  const [flags, setFlags] = useState<FeatureFlags>(() => service.getAllFlags());
 
   useEffect(() => {
     const unsubscribe = service.subscribe((newFlags) => {
-      setFlags(newFlags)
-    })
+      setFlags(newFlags);
+    });
 
     return () => {
-      unsubscribe()
-    }
-  }, [service])
+      unsubscribe();
+    };
+  }, [service]);
 
   const setFlag = useCallback(
     (name: FeatureFlagName, value: boolean) => {
-      service.setFlag(name, value)
+      service.setFlag(name, value);
     },
     [service]
-  )
+  );
 
   const resetFlag = useCallback(
     (name: FeatureFlagName) => {
-      service.resetFlag(name)
+      service.resetFlag(name);
     },
     [service]
-  )
+  );
 
   const resetAll = useCallback(() => {
-    service.resetAll()
-  }, [service])
+    service.resetAll();
+  }, [service]);
 
-  const definitions = useMemo(() => service.getAllDefinitions(), [service])
+  const definitions = useMemo(() => service.getAllDefinitions(), [service]);
 
   return useMemo(
     () => ({
@@ -177,7 +177,7 @@ export function useAllFeatureFlags(): {
       definitions,
     }),
     [flags, setFlag, resetFlag, resetAll, definitions]
-  )
+  );
 }
 
 // ============================================================================
@@ -189,11 +189,11 @@ export function useAllFeatureFlags(): {
  */
 export interface FeatureProps {
   /** Feature flag name to check */
-  name: FeatureFlagName
+  name: FeatureFlagName;
   /** Content to render when enabled */
-  children: React.ReactNode
+  children: React.ReactNode;
   /** Content to render when disabled (optional) */
-  fallback?: React.ReactNode
+  fallback?: React.ReactNode;
 }
 
 /**
@@ -211,12 +211,12 @@ export interface FeatureProps {
  * ```
  */
 export function Feature({ name, children, fallback = null }: FeatureProps): React.ReactNode {
-  const isEnabled = useFeatureFlag(name)
-  return isEnabled ? children : fallback
+  const isEnabled = useFeatureFlag(name);
+  return isEnabled ? children : fallback;
 }
 
 // ============================================================================
 // EXPORTS
 // ============================================================================
 
-export default useFeatureFlag
+export default useFeatureFlag;

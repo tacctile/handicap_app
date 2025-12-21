@@ -87,5 +87,5 @@ export function TrophyIllustration({ className = '' }: { className?: string }) {
       <circle cx="80" cy="55" r="1.5" fill="#19abb5" opacity="0.3" />
       <circle cx="20" cy="50" r="1" fill="#19abb5" opacity="0.4" />
     </svg>
-  )
+  );
 }

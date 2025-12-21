@@ -13,7 +13,7 @@
  * Sample sizes: 1000+ races for post position analysis (2022-2024)
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const santaAnita: TrackData = {
   code: 'SA',
@@ -33,7 +33,7 @@ export const santaAnita: TrackData = {
       // Source: Santa Anita official - 85 feet wide in stretch
       trackWidth: 85,
       // Source: Santa Anita configuration
-      chutes: [6, 6.5]
+      chutes: [6, 6.5],
     },
     turf: {
       // Source: Wikipedia - turf course 0.9 mile (1,584 yards/1,448m)
@@ -46,8 +46,8 @@ export const santaAnita: TrackData = {
       // Source: Santa Anita specifications
       trackWidth: 75,
       // Source: Hillside turf allows 6.5f races (only right-hand turn in US racing)
-      chutes: [6.5]
-    }
+      chutes: [6.5],
+    },
   },
 
   postPositionBias: {
@@ -62,7 +62,8 @@ export const santaAnita: TrackData = {
         // Speed dominant - win from the front
         winPercentByPost: [11.5, 14.8, 15.2, 15.5, 14.2, 12.1, 8.5, 5.2, 2.2, 0.8],
         favoredPosts: [3, 4, 5],
-        biasDescription: 'Inside posts 1-3 won 50% of sprints; middle posts 4-6 equally strong; speed very important'
+        biasDescription:
+          'Inside posts 1-3 won 50% of sprints; middle posts 4-6 equally strong; speed very important',
       },
       {
         distance: 'route',
@@ -75,8 +76,9 @@ export const santaAnita: TrackData = {
         // Inside/middle strongly favored
         winPercentByPost: [13.2, 16.5, 17.8, 16.2, 14.5, 11.2, 6.5, 3.2, 0.8, 0.1],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Strong inside bias in routes; posts 7+ nearly impossible (6%); middle posts 4-6 did best in 2024'
-      }
+        biasDescription:
+          'Strong inside bias in routes; posts 7+ nearly impossible (6%); middle posts 4-6 did best in 2024',
+      },
     ],
     turf: [
       {
@@ -89,7 +91,8 @@ export const santaAnita: TrackData = {
         // Posts 1-3 disadvantaged on downhill course
         winPercentByPost: [10.5, 12.8, 14.2, 15.1, 14.5, 13.2, 10.5, 6.2, 2.2, 0.8],
         favoredPosts: [4, 5],
-        biasDescription: 'Flat sprints fair (posts 4-5 best); DOWNHILL 6.5f: outside posts favored, inside disadvantaged'
+        biasDescription:
+          'Flat sprints fair (posts 4-5 best); DOWNHILL 6.5f: outside posts favored, inside disadvantaged',
       },
       {
         distance: 'route',
@@ -101,9 +104,10 @@ export const santaAnita: TrackData = {
         // Speed 38%, stalkers 38%, closers 24% roughly equal for speed/stalkers
         winPercentByPost: [12.5, 14.2, 14.8, 13.8, 12.5, 11.2, 9.5, 7.2, 3.2, 1.1],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Turf routes play fair; posts 2-4 slight edge; horses can win from outside draws'
-      }
-    ]
+        biasDescription:
+          'Turf routes play fair; posts 2-4 slight edge; horses can win from outside draws',
+      },
+    ],
   },
 
   speedBias: [
@@ -116,7 +120,8 @@ export const santaAnita: TrackData = {
       // Strong early speed bias on main track
       earlySpeedWinRate: 58,
       paceAdvantageRating: 6,
-      description: 'Moderate-to-strong speed bias; 57% pace wins at 6f; closers rarely win routes (10%)'
+      description:
+        'Moderate-to-strong speed bias; 57% pace wins at 6f; closers rarely win routes (10%)',
     },
     {
       surface: 'turf',
@@ -126,8 +131,9 @@ export const santaAnita: TrackData = {
       // Routes: speed 39%, stalkers 40%, closers competitive
       earlySpeedWinRate: 42,
       paceAdvantageRating: 4,
-      description: 'Turf plays very fair; 6f nearly equal for all styles; stalkers slightly best in routes'
-    }
+      description:
+        'Turf plays very fair; 6f nearly equal for all styles; stalkers slightly best in routes',
+    },
   ],
 
   surfaces: [
@@ -137,7 +143,7 @@ export const santaAnita: TrackData = {
       // Known as "sandy loam" - drains well, consistent
       composition: 'Natural sandy loam dirt with excellent drainage base',
       playingStyle: 'fair',
-      drainage: 'excellent'
+      drainage: 'excellent',
     },
     {
       baseType: 'turf',
@@ -145,8 +151,8 @@ export const santaAnita: TrackData = {
       // Bermuda/Rye blend - stands up to heavy use
       composition: 'Bermuda grass with perennial ryegrass overseed',
       playingStyle: 'fair',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -158,7 +164,7 @@ export const santaAnita: TrackData = {
       // Rain possible - can affect track significantly
       typicalCondition: 'Fast to Good; rain events possible',
       speedAdjustment: -1,
-      notes: 'Premium winter meet; Santa Anita Handicap; occasional rain can produce off tracks'
+      notes: 'Premium winter meet; Santa Anita Handicap; occasional rain can produce off tracks',
     },
     {
       season: 'spring',
@@ -167,7 +173,7 @@ export const santaAnita: TrackData = {
       // Excellent racing weather
       typicalCondition: 'Fast',
       speedAdjustment: 0,
-      notes: 'Santa Anita Derby prep season; ideal weather conditions'
+      notes: 'Santa Anita Derby prep season; ideal weather conditions',
     },
     {
       season: 'fall',
@@ -176,8 +182,8 @@ export const santaAnita: TrackData = {
       // Autumn meet - hot and dry, fast track
       typicalCondition: 'Fast; dry conditions',
       speedAdjustment: 1,
-      notes: 'Fall meet; hot/dry produces fast track; Breeders Cup Prep races'
-    }
+      notes: 'Fall meet; hot/dry produces fast track; Breeders Cup Prep races',
+    },
   ],
 
   winningTimes: [
@@ -188,7 +194,7 @@ export const santaAnita: TrackData = {
       surface: 'dirt',
       claimingAvg: 57.8,
       allowanceAvg: 56.5,
-      stakesAvg: 55.2
+      stakesAvg: 55.2,
     },
     {
       distance: '5.5f',
@@ -196,7 +202,7 @@ export const santaAnita: TrackData = {
       surface: 'dirt',
       claimingAvg: 63.5,
       allowanceAvg: 62.2,
-      stakesAvg: 61.0
+      stakesAvg: 61.0,
     },
     {
       distance: '6f',
@@ -204,7 +210,7 @@ export const santaAnita: TrackData = {
       surface: 'dirt',
       claimingAvg: 70.5,
       allowanceAvg: 69.2,
-      stakesAvg: 68.0
+      stakesAvg: 68.0,
     },
     {
       distance: '6.5f',
@@ -212,7 +218,7 @@ export const santaAnita: TrackData = {
       surface: 'dirt',
       claimingAvg: 76.8,
       allowanceAvg: 75.5,
-      stakesAvg: 74.2
+      stakesAvg: 74.2,
     },
     {
       distance: '7f',
@@ -220,7 +226,7 @@ export const santaAnita: TrackData = {
       surface: 'dirt',
       claimingAvg: 83.5,
       allowanceAvg: 82.0,
-      stakesAvg: 80.5
+      stakesAvg: 80.5,
     },
     {
       distance: '1m',
@@ -228,7 +234,7 @@ export const santaAnita: TrackData = {
       surface: 'dirt',
       claimingAvg: 96.8,
       allowanceAvg: 95.0,
-      stakesAvg: 93.5
+      stakesAvg: 93.5,
     },
     {
       distance: '1 1/16m',
@@ -236,7 +242,7 @@ export const santaAnita: TrackData = {
       surface: 'dirt',
       claimingAvg: 103.2,
       allowanceAvg: 101.5,
-      stakesAvg: 99.8
+      stakesAvg: 99.8,
     },
     {
       distance: '1 1/8m',
@@ -244,7 +250,7 @@ export const santaAnita: TrackData = {
       surface: 'dirt',
       claimingAvg: 110.5,
       allowanceAvg: 108.8,
-      stakesAvg: 107.0
+      stakesAvg: 107.0,
     },
     {
       distance: '1 1/4m',
@@ -253,7 +259,7 @@ export const santaAnita: TrackData = {
       // Santa Anita Handicap/Santa Anita Derby distance
       claimingAvg: 123.5,
       allowanceAvg: 121.5,
-      stakesAvg: 119.5
+      stakesAvg: 119.5,
     },
     // Turf times
     {
@@ -262,7 +268,7 @@ export const santaAnita: TrackData = {
       surface: 'turf',
       claimingAvg: 56.5,
       allowanceAvg: 55.2,
-      stakesAvg: 54.0
+      stakesAvg: 54.0,
     },
     {
       distance: '6f',
@@ -270,7 +276,7 @@ export const santaAnita: TrackData = {
       surface: 'turf',
       claimingAvg: 69.0,
       allowanceAvg: 67.8,
-      stakesAvg: 66.5
+      stakesAvg: 66.5,
     },
     {
       distance: '6.5f',
@@ -279,7 +285,7 @@ export const santaAnita: TrackData = {
       // Downhill turf course - unique configuration
       claimingAvg: 74.5,
       allowanceAvg: 73.2,
-      stakesAvg: 72.0
+      stakesAvg: 72.0,
     },
     {
       distance: '1m',
@@ -287,7 +293,7 @@ export const santaAnita: TrackData = {
       surface: 'turf',
       claimingAvg: 95.5,
       allowanceAvg: 94.0,
-      stakesAvg: 92.5
+      stakesAvg: 92.5,
     },
     {
       distance: '1 1/8m',
@@ -295,7 +301,7 @@ export const santaAnita: TrackData = {
       surface: 'turf',
       claimingAvg: 108.0,
       allowanceAvg: 106.2,
-      stakesAvg: 104.5
+      stakesAvg: 104.5,
     },
     {
       distance: '1 1/4m',
@@ -303,10 +309,10 @@ export const santaAnita: TrackData = {
       surface: 'turf',
       claimingAvg: 121.5,
       allowanceAvg: 119.5,
-      stakesAvg: 117.5
-    }
+      stakesAvg: 117.5,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

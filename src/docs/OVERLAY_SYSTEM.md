@@ -13,6 +13,7 @@
 **The DRF Overlay transforms the static base score into a dynamic, race-specific assessment:**
 
 **Core Philosophy:**
+
 - Base score identifies historically profitable patterns
 - Overlay captures race-day specific advantages/disadvantages
 - Every DRF data point contributes to overlay calculation
@@ -20,6 +21,7 @@
 - Track-specific patterns prioritized via Track Intelligence Database
 
 **Adjustment Parameters:**
+
 - Maximum Positive Adjustment: +50 points
 - Maximum Negative Adjustment: -50 points
 - Overflow beyond ±50 recorded as confidence modifier
@@ -27,16 +29,16 @@
 
 ### Overlay Section Distribution
 
-| Section | Maximum Adjustment |
-|---------|-------------------|
-| A: Pace Dynamics & Bias | ±20 points |
-| B: Form Cycle & Conditioning | ±15 points |
-| C: Trip Analysis & Trouble | ±12 points |
-| D: Class Movement & Competition | ±15 points |
-| E: Connection Micro-Edges | ±10 points |
-| F: Distance & Surface Optimization | ±8 points |
-| G: Head-to-Head & Tactical Matchups | ±8 points |
-| H: Market Intelligence | Confidence modifier only |
+| Section                             | Maximum Adjustment       |
+| ----------------------------------- | ------------------------ |
+| A: Pace Dynamics & Bias             | ±20 points               |
+| B: Form Cycle & Conditioning        | ±15 points               |
+| C: Trip Analysis & Trouble          | ±12 points               |
+| D: Class Movement & Competition     | ±15 points               |
+| E: Connection Micro-Edges           | ±10 points               |
+| F: Distance & Surface Optimization  | ±8 points                |
+| G: Head-to-Head & Tactical Matchups | ±8 points                |
+| H: Market Intelligence              | Confidence modifier only |
 
 **Raw Overlay Range:** -88 to +88 points (before cap)
 **Capped Overlay Range:** -50 to +50 points (applied to score)
@@ -64,6 +66,7 @@ Pace Scenario Classification:
 **Step 2: Early Pace Figure Analysis**
 
 Using EP1 (Early Pace) figures from DRF:
+
 - Identify horses with EP1 under 75 (true speed)
 - Calculate average EP1 of speed horses
 - Determine pace pressure based on quantity and quality
@@ -73,68 +76,71 @@ Using EP1 (Early Pace) figures from DRF:
 
 ### Hot Pace Scenario (PPI ≥ 28)
 
-| Running Style | Adjustment |
-|---------------|------------|
-| Pure speed (E) | -8 points |
-| Early pressers (EP) | +5 points |
+| Running Style         | Adjustment |
+| --------------------- | ---------- |
+| Pure speed (E)        | -8 points  |
+| Early pressers (EP)   | +5 points  |
 | Mid-pack pressers (P) | +12 points |
-| Stalkers (S) | +15 points |
-| Deep closers (C) | +20 points |
+| Stalkers (S)          | +15 points |
+| Deep closers (C)      | +20 points |
 
 ### Moderate-Hot Pace (PPI 22-27)
 
-| Running Style | Adjustment |
-|---------------|------------|
-| Pure speed (E) | -3 points |
-| Early pressers (EP) | +8 points |
+| Running Style         | Adjustment |
+| --------------------- | ---------- |
+| Pure speed (E)        | -3 points  |
+| Early pressers (EP)   | +8 points  |
 | Mid-pack pressers (P) | +10 points |
-| Stalkers (S) | +12 points |
-| Deep closers (C) | +8 points |
+| Stalkers (S)          | +12 points |
+| Deep closers (C)      | +8 points  |
 
 ### Honest Pace Scenario (PPI 16-21)
 
-| Running Style | Adjustment |
-|---------------|------------|
-| Pure speed (E) | +5 points |
-| Early pressers (EP) | +10 points |
-| Mid-pack pressers (P) | +8 points |
-| Stalkers (S) | +5 points |
-| Deep closers (C) | +3 points |
+| Running Style         | Adjustment |
+| --------------------- | ---------- |
+| Pure speed (E)        | +5 points  |
+| Early pressers (EP)   | +10 points |
+| Mid-pack pressers (P) | +8 points  |
+| Stalkers (S)          | +5 points  |
+| Deep closers (C)      | +3 points  |
 
 ### Soft Pace Scenario (PPI 10-15)
 
-| Running Style | Adjustment |
-|---------------|------------|
-| Pure speed (E) | +15 points |
-| Early pressers (EP) | +12 points |
-| Mid-pack pressers (P) | +5 points |
-| Stalkers (S) | +2 points |
-| Deep closers (C) | -5 points |
+| Running Style         | Adjustment |
+| --------------------- | ---------- |
+| Pure speed (E)        | +15 points |
+| Early pressers (EP)   | +12 points |
+| Mid-pack pressers (P) | +5 points  |
+| Stalkers (S)          | +2 points  |
+| Deep closers (C)      | -5 points  |
 
 ### Dead Pace Scenario (PPI ≤ 9)
 
-| Running Style | Adjustment |
-|---------------|------------|
-| Any horse with tactical speed | +20 points |
+| Running Style                       | Adjustment |
+| ----------------------------------- | ---------- |
+| Any horse with tactical speed       | +20 points |
 | Horses capable of early positioning | +15 points |
-| Pure closers | -10 points |
+| Pure closers                        | -10 points |
 
 ### Special Pace Scenario Bonuses
 
 **Lone Speed Analysis:**
 
 If exactly one horse has EP1 under 75 AND next fastest is 5+ points slower:
+
 - Lone speed horse: +15 additional points
 - All other horses: Assess based on ability to pressure or pass
 
 **Speed Duel Detection:**
 
 If 2 horses have similar EP1 figures (within 2 points) and both under 75:
+
 - Both speed horses: -5 points (mutual destruction likely)
 - Early pressers behind them: +8 points
 - Mid-pack runners: +12 points
 
 **Pace Advantage by Post Position:**
+
 - Inside speed (posts 1-3) in soft pace: +5 additional points
 - Outside speed (posts 6+) in hot pace: -3 points (trapped wide)
 - Middle posts (4-5) perfect for any pace scenario: +3 points
@@ -156,13 +162,13 @@ Classification:
 
 **Bias Adjustments Applied to Base Pace Scoring:**
 
-| Bias Type | E/EP Adjustment | S/C Adjustment |
-|-----------|-----------------|----------------|
-| Strong Speed Bias | +8 points | -8 points |
-| Moderate Speed Bias | +5 points | -5 points |
-| Neutral Bias | No adjustment | No adjustment |
-| Moderate Closing Bias | -5 points | +5 points |
-| Strong Closing Bias | -8 points | +8 points |
+| Bias Type             | E/EP Adjustment | S/C Adjustment |
+| --------------------- | --------------- | -------------- |
+| Strong Speed Bias     | +8 points       | -8 points      |
+| Moderate Speed Bias   | +5 points       | -5 points      |
+| Neutral Bias          | No adjustment   | No adjustment  |
+| Moderate Closing Bias | -5 points       | +5 points      |
+| Strong Closing Bias   | -8 points       | +8 points      |
 
 ---
 
@@ -174,17 +180,18 @@ Classification:
 
 Last 4 Races Pattern Recognition:
 
-| Pattern | Adjustment |
-|---------|------------|
-| Consistent improvement (3+ points each race) | +12 points |
-| Strong recent improvement (5+ points last race) | +8 points |
-| Moderate improvement trend | +5 points |
-| Maintaining high level (within 2 points) | +3 points |
-| Slight decline pattern | -2 points |
-| Significant decline (5+ points) | -8 points |
-| Erratic pattern (10+ point swings) | -5 points |
+| Pattern                                         | Adjustment |
+| ----------------------------------------------- | ---------- |
+| Consistent improvement (3+ points each race)    | +12 points |
+| Strong recent improvement (5+ points last race) | +8 points  |
+| Moderate improvement trend                      | +5 points  |
+| Maintaining high level (within 2 points)        | +3 points  |
+| Slight decline pattern                          | -2 points  |
+| Significant decline (5+ points)                 | -8 points  |
+| Erratic pattern (10+ point swings)              | -5 points  |
 
 **Class-Adjusted Figure Analysis:**
+
 - Convert raw figures to class-adjusted ratings
 - Compare to par for today's class level
 - Assess figure reliability across class changes
@@ -194,48 +201,50 @@ Last 4 Races Pattern Recognition:
 
 **Optimal Layoff Performance (21-56 days):**
 
-| Workout Pattern | Adjustment |
-|-----------------|------------|
-| Strong workout pattern | +8 points |
-| Moderate workout pattern | +5 points |
-| Poor workout pattern | 0 points |
+| Workout Pattern          | Adjustment |
+| ------------------------ | ---------- |
+| Strong workout pattern   | +8 points  |
+| Moderate workout pattern | +5 points  |
+| Poor workout pattern     | 0 points   |
 
 **Short Rest (7-20 days):**
 
-| Last Effort | Adjustment |
-|-------------|------------|
-| After strong effort | +5 points |
-| After moderate effort | +2 points |
-| After poor effort | -3 points |
+| Last Effort           | Adjustment |
+| --------------------- | ---------- |
+| After strong effort   | +5 points  |
+| After moderate effort | +2 points  |
+| After poor effort     | -3 points  |
 
 **Extended Layoff (57+ days):**
 
-| Workout Pattern | Adjustment |
-|-----------------|------------|
-| Bullet workout within 14 days | +3 points |
-| Steady workout pattern | 0 points |
-| Poor workout pattern | -8 points |
-| Trainer's layoff success pattern match | ±3 points |
+| Workout Pattern                        | Adjustment |
+| -------------------------------------- | ---------- |
+| Bullet workout within 14 days          | +3 points  |
+| Steady workout pattern                 | 0 points   |
+| Poor workout pattern                   | -8 points  |
+| Trainer's layoff success pattern match | ±3 points  |
 
 ### Workout Pattern Analysis
 
 **Workout Quality Assessment:**
 
-| Pattern | Adjustment |
-|---------|------------|
-| Bullet workout within 14 days | +8 points |
-| Multiple bullets in 30 days | +10 points |
-| Consistent work pattern | +5 points |
-| Work regression pattern | -5 points |
-| Missing expected works | -8 points |
+| Pattern                       | Adjustment |
+| ----------------------------- | ---------- |
+| Bullet workout within 14 days | +8 points  |
+| Multiple bullets in 30 days   | +10 points |
+| Consistent work pattern       | +5 points  |
+| Work regression pattern       | -5 points  |
+| Missing expected works        | -8 points  |
 
 **Workout Content Analysis:**
+
 - Gate work for speed horses: +3 points
 - Breezing vs. handily patterns: +2 points
 - Company quality in works: +3 points
 - Work surface matching race surface: +2 points
 
 **Trainer-Specific Work Patterns:**
+
 - Deviation from trainer's normal pattern: ±5 points
 - Trainer's success with current pattern: +3 points
 - Work pattern indicates specific targeting: +5 points
@@ -244,22 +253,22 @@ Last 4 Races Pattern Recognition:
 
 **Weight Management Analysis:**
 
-| Condition | Adjustment |
-|-----------|------------|
-| Consistent weight maintenance | +3 points |
-| Recent weight gain (improved condition) | +5 points |
-| Recent weight loss (concern) | -5 points |
-| Optimal weight for horse's frame | +2 points |
+| Condition                               | Adjustment |
+| --------------------------------------- | ---------- |
+| Consistent weight maintenance           | +3 points  |
+| Recent weight gain (improved condition) | +5 points  |
+| Recent weight loss (concern)            | -5 points  |
+| Optimal weight for horse's frame        | +2 points  |
 
 **Seasonal Form Patterns:**
 
-| Pattern | Adjustment |
-|---------|------------|
-| Horse racing in optimal season | +5 points |
-| Historical monthly performance peak | +3 points |
-| Seasonal decline pattern | -3 points |
-| First race back from winter break | +2 points |
-| Peak fitness period for horse | +5 points |
+| Pattern                             | Adjustment |
+| ----------------------------------- | ---------- |
+| Horse racing in optimal season      | +5 points  |
+| Historical monthly performance peak | +3 points  |
+| Seasonal decline pattern            | -3 points  |
+| First race back from winter break   | +2 points  |
+| Peak fitness period for horse       | +5 points  |
 
 ---
 
@@ -271,77 +280,78 @@ Last 4 Races Pattern Recognition:
 
 **Severe Traffic/Interference:**
 
-| Trip Note | Adjustment |
-|-----------|------------|
-| "Checked hard," "pulled up sharply" | +10 points |
-| "Blocked," "no room," "shut off" | +8 points |
-| "Steadied repeatedly," "bumped hard" | +6 points |
-| "Clipped heels," "stumbled badly" | +8 points |
+| Trip Note                            | Adjustment |
+| ------------------------------------ | ---------- |
+| "Checked hard," "pulled up sharply"  | +10 points |
+| "Blocked," "no room," "shut off"     | +8 points  |
+| "Steadied repeatedly," "bumped hard" | +6 points  |
+| "Clipped heels," "stumbled badly"    | +8 points  |
 
 **Wide Trip Disadvantages:**
 
-| Trip Note | Adjustment |
-|-----------|------------|
-| "5-wide turn," "6-wide throughout" | +6 points |
-| "4-wide turn," "wide trip" | +4 points |
-| "Carried wide," "forced wide" | +5 points |
-| Ground loss calculated | +1 point per 2 lengths lost |
+| Trip Note                          | Adjustment                  |
+| ---------------------------------- | --------------------------- |
+| "5-wide turn," "6-wide throughout" | +6 points                   |
+| "4-wide turn," "wide trip"         | +4 points                   |
+| "Carried wide," "forced wide"      | +5 points                   |
+| Ground loss calculated             | +1 point per 2 lengths lost |
 
 **Pace-Related Excuses:**
 
-| Trip Note | Adjustment |
-|-----------|------------|
-| "Hustled early," "pressured throughout" | +5 points |
-| "Dueled to half," "contested pace" | +4 points |
-| "Rushed up," "used early" | +3 points |
+| Trip Note                               | Adjustment |
+| --------------------------------------- | ---------- |
+| "Hustled early," "pressured throughout" | +5 points  |
+| "Dueled to half," "contested pace"      | +4 points  |
+| "Rushed up," "used early"               | +3 points  |
 
 **Equipment/Rider Issues:**
 
-| Trip Note | Adjustment |
-|-----------|------------|
-| "Lost rider," "equipment failure" | +8 points |
-| "Lugged in/out," "bearing in/out" | +3 points |
-| "Reared at start," "dwelt at break" | +4 points |
+| Trip Note                           | Adjustment |
+| ----------------------------------- | ---------- |
+| "Lost rider," "equipment failure"   | +8 points  |
+| "Lugged in/out," "bearing in/out"   | +3 points  |
+| "Reared at start," "dwelt at break" | +4 points  |
 
 ### Trip Note Validation Process
 
 **Cross-Reference with Performance:**
 
-| Scenario | Points Applied |
-|----------|----------------|
+| Scenario                            | Points Applied      |
+| ----------------------------------- | ------------------- |
 | Trouble with competitive final time | Full points awarded |
-| Trouble with poor final time | 50% points awarded |
-| Trouble with terrible final time | 25% points awarded |
+| Trouble with poor final time        | 50% points awarded  |
+| Trouble with terrible final time    | 25% points awarded  |
 
 **Video Review Correlation:**
+
 - Chart caller accuracy assessment
 - Severity of trouble confirmation
 - Alternative explanations for poor performance
 
 **Pattern Recognition:**
 
-| Pattern | Adjustment |
-|---------|------------|
-| Repeated trouble patterns | +2 bonus points |
-| Trouble-free trips with poor results | -3 points |
-| Horse's ability to overcome trouble | +2 points |
+| Pattern                              | Adjustment      |
+| ------------------------------------ | --------------- |
+| Repeated trouble patterns            | +2 bonus points |
+| Trouble-free trips with poor results | -3 points       |
+| Horse's ability to overcome trouble  | +2 points       |
 
 ### Positive Trip Factors
 
 **Ideal Trip Scenarios:**
 
-| Trip Note | Adjustment |
-|-----------|------------|
-| "Perfect trip," "saved ground" | -2 points (no excuse for loss) |
-| "Tracked winner," "ideal position" | -1 point |
-| "Clear sailing," "good trip" | 0 points |
+| Trip Note                          | Adjustment                     |
+| ---------------------------------- | ------------------------------ |
+| "Perfect trip," "saved ground"     | -2 points (no excuse for loss) |
+| "Tracked winner," "ideal position" | -1 point                       |
+| "Clear sailing," "good trip"       | 0 points                       |
 
 **Trip Advantage Recognition:**
 
-| Trip Note | Adjustment |
-|-----------|------------|
-| "Benefited from pace," "perfect setup" | -3 points |
-| "Got through on rail," "inside save" | +1 point (but note setup) |
+| Trip Note                              | Adjustment                |
+| -------------------------------------- | ------------------------- |
+| "Benefited from pace," "perfect setup" | -3 points                 |
+| "Got through on rail," "inside save"   | +1 point (but note setup) |
 
 ---
 
@@ -351,29 +361,29 @@ Last 4 Races Pattern Recognition:
 
 **Claiming Activity Analysis:**
 
-| Scenario | Adjustment |
-|----------|------------|
-| Claimed last start by elite barn | +8 points |
-| Claimed by barn with specific success pattern | +6 points |
-| Claimed and immediately equipment change | +10 points |
-| Claimed and dropping in next start | +5 points |
+| Scenario                                      | Adjustment |
+| --------------------------------------------- | ---------- |
+| Claimed last start by elite barn              | +8 points  |
+| Claimed by barn with specific success pattern | +6 points  |
+| Claimed and immediately equipment change      | +10 points |
+| Claimed and dropping in next start            | +5 points  |
 
 **Protected Claiming Situations:**
 
-| Scenario | Adjustment |
-|----------|------------|
-| Entered for tag but not claimed (overpriced) | +3 points |
-| Multiple entries without claims (protected) | 0 points |
-| Claimed but protected by high price | -2 points |
+| Scenario                                     | Adjustment |
+| -------------------------------------------- | ---------- |
+| Entered for tag but not claimed (overpriced) | +3 points  |
+| Multiple entries without claims (protected)  | 0 points   |
+| Claimed but protected by high price          | -2 points  |
 
 **Class Relief Scenarios:**
 
-| Scenario | Adjustment |
-|----------|------------|
-| Dropping from stakes to allowance | +10 points |
-| Dropping from allowance to claiming | +8 points |
-| Dropping within claiming levels 25%+ | +6 points |
-| Dropping with valid excuse | +5 additional points |
+| Scenario                             | Adjustment           |
+| ------------------------------------ | -------------------- |
+| Dropping from stakes to allowance    | +10 points           |
+| Dropping from allowance to claiming  | +8 points            |
+| Dropping within claiming levels 25%+ | +6 points            |
+| Dropping with valid excuse           | +5 additional points |
 
 ### Key Race Analysis Matrix
 
@@ -390,16 +400,17 @@ Parameters:
 
 **KRI Scoring System:**
 
-| KRI Value | Adjustment | Description |
-|-----------|------------|-------------|
-| KRI 5+ | +12 points | Exceptionally strong form race |
-| KRI 4 | +10 points | Very strong form race |
-| KRI 3 | +8 points | Strong form race |
-| KRI 2 | +5 points | Decent form race |
-| KRI 1 | +2 points | Weak form race |
-| KRI 0 | -3 points | Poor form race |
+| KRI Value | Adjustment | Description                    |
+| --------- | ---------- | ------------------------------ |
+| KRI 5+    | +12 points | Exceptionally strong form race |
+| KRI 4     | +10 points | Very strong form race          |
+| KRI 3     | +8 points  | Strong form race               |
+| KRI 2     | +5 points  | Decent form race               |
+| KRI 1     | +2 points  | Weak form race                 |
+| KRI 0     | -3 points  | Poor form race                 |
 
 **Form Race Quality Assessment:**
+
 - Average class of next-out winners
 - Speed figures of next-out winners
 - Margins of victory in next-out races
@@ -409,20 +420,20 @@ Parameters:
 
 **Field Strength Analysis:**
 
-| Field Strength | Adjustment |
-|----------------|------------|
-| Above-average field strength | -3 points |
-| Below-average field strength | +5 points |
-| Weak field for class level | +8 points |
-| Exceptionally strong field | -8 points |
+| Field Strength               | Adjustment |
+| ---------------------------- | ---------- |
+| Above-average field strength | -3 points  |
+| Below-average field strength | +5 points  |
+| Weak field for class level   | +8 points  |
+| Exceptionally strong field   | -8 points  |
 
 **Pace Competition Assessment:**
 
-| Scenario | Adjustment |
-|----------|------------|
-| Horse's style matches few others | +5 points |
-| Horse's style heavily represented | -3 points |
-| Tactical speed advantage | +3 points |
+| Scenario                          | Adjustment |
+| --------------------------------- | ---------- |
+| Horse's style matches few others  | +5 points  |
+| Horse's style heavily represented | -3 points  |
+| Tactical speed advantage          | +3 points  |
 
 ---
 
@@ -432,55 +443,55 @@ Parameters:
 
 **Upgrade Detection:**
 
-| Scenario | Adjustment |
-|----------|------------|
-| Switch to jockey with 5%+ higher win rate | +5 points |
-| Switch to jockey with strong trainer partnership | +3 points |
-| Switch to specialist for distance/surface | +4 points |
-| Switch to hot jockey (recent strong form) | +3 points |
+| Scenario                                         | Adjustment |
+| ------------------------------------------------ | ---------- |
+| Switch to jockey with 5%+ higher win rate        | +5 points  |
+| Switch to jockey with strong trainer partnership | +3 points  |
+| Switch to specialist for distance/surface        | +4 points  |
+| Switch to hot jockey (recent strong form)        | +3 points  |
 
 **Downgrade Detection:**
 
-| Scenario | Adjustment |
-|----------|------------|
-| Switch to jockey with 5%+ lower win rate | -5 points |
-| Switch off successful partnership | -3 points |
-| Switch to inexperienced rider | -2 points |
+| Scenario                                 | Adjustment |
+| ---------------------------------------- | ---------- |
+| Switch to jockey with 5%+ lower win rate | -5 points  |
+| Switch off successful partnership        | -3 points  |
+| Switch to inexperienced rider            | -2 points  |
 
 **Tactical Jockey Matching:**
 
-| Scenario | Adjustment |
-|----------|------------|
-| Jockey style matches horse's needs | +3 points |
-| Jockey poor fit for horse's style | -3 points |
-| Jockey's post position success | +2 points |
+| Scenario                           | Adjustment |
+| ---------------------------------- | ---------- |
+| Jockey style matches horse's needs | +3 points  |
+| Jockey poor fit for horse's style  | -3 points  |
+| Jockey's post position success     | +2 points  |
 
 ### Trainer Intent Signals
 
 **High Confidence Indicators:**
 
-| Signal | Adjustment |
-|--------|------------|
-| First start off claim for successful claimer | +8 points |
-| Second start off layoff for specialist | +6 points |
-| Equipment change with proven success pattern | +5 points |
-| Barn "in form" (hot streak) | +4 points |
+| Signal                                       | Adjustment |
+| -------------------------------------------- | ---------- |
+| First start off claim for successful claimer | +8 points  |
+| Second start off layoff for specialist       | +6 points  |
+| Equipment change with proven success pattern | +5 points  |
+| Barn "in form" (hot streak)                  | +4 points  |
 
 **Low Confidence Indicators:**
 
-| Signal | Adjustment |
-|--------|------------|
-| Trainer cold streak (0 for 20+) | -5 points |
-| Unusual entry pattern for trainer | -3 points |
-| Trainer rarely wins with this angle | -4 points |
+| Signal                              | Adjustment |
+| ----------------------------------- | ---------- |
+| Trainer cold streak (0 for 20+)     | -5 points  |
+| Unusual entry pattern for trainer   | -3 points  |
+| Trainer rarely wins with this angle | -4 points  |
 
 **Strategic Placement Signals:**
 
-| Signal | Adjustment |
-|--------|------------|
-| Perfect spot for horse's limitations | +5 points |
-| Aggressive spot (reaching) | -3 points |
-| Maintenance race (keeping sharp) | 0 points |
+| Signal                               | Adjustment |
+| ------------------------------------ | ---------- |
+| Perfect spot for horse's limitations | +5 points  |
+| Aggressive spot (reaching)           | -3 points  |
+| Maintenance race (keeping sharp)     | 0 points   |
 
 ---
 
@@ -490,22 +501,23 @@ Parameters:
 
 **Favorable Distance Changes:**
 
-| Scenario | Adjustment |
-|----------|------------|
-| Sprint to route for proven router | +5 points |
-| Route to sprint for speed horse | +6 points |
-| Moving to optimal distance | +4 points |
-| Returning to successful distance | +3 points |
+| Scenario                          | Adjustment |
+| --------------------------------- | ---------- |
+| Sprint to route for proven router | +5 points  |
+| Route to sprint for speed horse   | +6 points  |
+| Moving to optimal distance        | +4 points  |
+| Returning to successful distance  | +3 points  |
 
 **Unfavorable Distance Changes:**
 
-| Scenario | Adjustment |
-|----------|------------|
-| Sprint to route without stamina breeding | -5 points |
-| Route to sprint without early speed | -3 points |
-| Moving away from optimal distance | -4 points |
+| Scenario                                 | Adjustment |
+| ---------------------------------------- | ---------- |
+| Sprint to route without stamina breeding | -5 points  |
+| Route to sprint without early speed      | -3 points  |
+| Moving away from optimal distance        | -4 points  |
 
 **Distance Change with Class Relief:**
+
 - Distance change + class drop: +3 additional points
 - Distance change + class rise: -2 additional points
 
@@ -513,38 +525,38 @@ Parameters:
 
 **Dirt to Turf Analysis:**
 
-| Scenario | Adjustment |
-|----------|------------|
-| Strong turf breeding (sire 15%+ turf) | +6 points |
-| Previous turf success | +4 points |
-| No turf experience/breeding | -6 points |
-| Poor previous turf attempts | -8 points |
+| Scenario                              | Adjustment |
+| ------------------------------------- | ---------- |
+| Strong turf breeding (sire 15%+ turf) | +6 points  |
+| Previous turf success                 | +4 points  |
+| No turf experience/breeding           | -6 points  |
+| Poor previous turf attempts           | -8 points  |
 
 **Turf to Dirt Analysis:**
 
-| Scenario | Adjustment |
-|----------|------------|
-| Returning to preferred surface | +4 points |
-| Dirt breeding stronger than turf | +3 points |
-| Turf specialist forced to dirt | -5 points |
+| Scenario                         | Adjustment |
+| -------------------------------- | ---------- |
+| Returning to preferred surface   | +4 points  |
+| Dirt breeding stronger than turf | +3 points  |
+| Turf specialist forced to dirt   | -5 points  |
 
 ### Weather & Surface Condition Matching
 
 **Wet Track Specialists:**
 
-| Scenario | Adjustment |
-|----------|------------|
-| Sire 20%+ wet track record | +6 points |
-| Horse's wet track success | +5 points |
-| Proven mudder in wet conditions | +8 points |
+| Scenario                        | Adjustment |
+| ------------------------------- | ---------- |
+| Sire 20%+ wet track record      | +6 points  |
+| Horse's wet track success       | +5 points  |
+| Proven mudder in wet conditions | +8 points  |
 
 **Poor Wet Track Performers:**
 
-| Scenario | Adjustment |
-|----------|------------|
-| Poor wet track breeding | -4 points |
-| Historical wet track failures | -6 points |
-| Surface specialist on changed conditions | -5 points |
+| Scenario                                 | Adjustment |
+| ---------------------------------------- | ---------- |
+| Poor wet track breeding                  | -4 points  |
+| Historical wet track failures            | -6 points  |
+| Surface specialist on changed conditions | -5 points  |
 
 ---
 
@@ -554,13 +566,14 @@ Parameters:
 
 **Head-to-Head Record Evaluation:**
 
-| Scenario | Adjustment |
-|----------|------------|
-| Beat today's rival within 60 days | +4 points per rival (max +8) |
+| Scenario                            | Adjustment                   |
+| ----------------------------------- | ---------------------------- |
+| Beat today's rival within 60 days   | +4 points per rival (max +8) |
 | Lost to rival in similar conditions | -3 points per rival (max -6) |
-| First meeting with key rival | 0 points |
+| First meeting with key rival        | 0 points                     |
 
 **Meeting Context Analysis:**
+
 - Beat rival giving weight: +2 additional points
 - Beat rival from worse post: +2 additional points
 - Beat rival in stronger field: +2 additional points
@@ -569,19 +582,19 @@ Parameters:
 
 **Inside Speed Positioning:**
 
-| Scenario | Adjustment |
-|----------|------------|
-| Only inside speed horse | +5 points |
-| Inside among speed horses | +3 points |
-| Outside speed likely trapped | -2 points |
+| Scenario                     | Adjustment |
+| ---------------------------- | ---------- |
+| Only inside speed horse      | +5 points  |
+| Inside among speed horses    | +3 points  |
+| Outside speed likely trapped | -2 points  |
 
 **Stalking Position Optimization:**
 
-| Scenario | Adjustment |
-|----------|------------|
-| Perfect stalking setup behind pace | +4 points |
-| Stalking with clear acceleration path | +3 points |
-| Stalking position likely compromised | -2 points |
+| Scenario                              | Adjustment |
+| ------------------------------------- | ---------- |
+| Perfect stalking setup behind pace    | +4 points  |
+| Stalking with clear acceleration path | +3 points  |
+| Stalking position likely compromised  | -2 points  |
 
 ---
 
@@ -592,6 +605,7 @@ Parameters:
 ### Betting Pattern Analysis
 
 **Overlay Detection:**
+
 - Morning line vs. probable odds analysis
 - Early money patterns
 - Sharp money indicators
@@ -599,26 +613,27 @@ Parameters:
 
 **Value Flags (Confidence Modifiers Only):**
 
-| Flag | Confidence Impact |
-|------|-------------------|
+| Flag           | Confidence Impact                      |
+| -------------- | -------------------------------------- |
 | Overlay Value+ | Horse deserves lower odds than offered |
-| Underlay Risk- | Horse overbet relative to chances |
-| Neutral Market | Odds appropriately reflect chances |
+| Underlay Risk- | Horse overbet relative to chances      |
+| Neutral Market | Odds appropriately reflect chances     |
 
 ### Late Change Impacts
 
 **Scratch Impact Assessment:**
+
 - Key pace rival scratch: Recalculate entire pace scenario
 - Field size reduction impact: Adjust exotic betting strategy
 - Post position shifts: Recalculate post position scoring
 
 **Equipment/Rider Changes:**
 
-| Change Type | Adjustment |
-|-------------|------------|
+| Change Type               | Adjustment                             |
+| ------------------------- | -------------------------------------- |
 | Late jockey change impact | ±3 points based on replacement quality |
-| Late equipment change | ±2 points based on change type |
-| Late medication change | ±2 points based on medication type |
+| Late equipment change     | ±2 points based on change type         |
+| Late medication change    | ±2 points based on medication type     |
 
 ---
 
@@ -628,16 +643,16 @@ Parameters:
 
 **Step 1: Calculate Individual Section Scores**
 
-| Section | Range |
-|---------|-------|
-| Section A (Pace/Bias) | ±20 points |
-| Section B (Form/Conditioning) | ±15 points |
-| Section C (Trip/Trouble) | ±12 points |
-| Section D (Class/Competition) | ±15 points |
-| Section E (Connections) | ±10 points |
-| Section F (Distance/Surface) | ±8 points |
-| Section G (Head-to-Head) | ±8 points |
-| Section H (Market) | Confidence modifier only |
+| Section                       | Range                    |
+| ----------------------------- | ------------------------ |
+| Section A (Pace/Bias)         | ±20 points               |
+| Section B (Form/Conditioning) | ±15 points               |
+| Section C (Trip/Trouble)      | ±12 points               |
+| Section D (Class/Competition) | ±15 points               |
+| Section E (Connections)       | ±10 points               |
+| Section F (Distance/Surface)  | ±8 points                |
+| Section G (Head-to-Head)      | ±8 points                |
+| Section H (Market)            | Confidence modifier only |
 
 **Step 2: Sum All Adjustment Sections**
 
@@ -658,17 +673,17 @@ If -50 ≤ Raw Score ≤ +50: Capped Score = Raw Score, Overflow = 0
 
 **Step 4: Record Overflow as Confidence Modifier**
 
-| Positive Overflow | Confidence Level |
-|-------------------|------------------|
-| 1-10 points | High+ Confidence |
-| 11-20 points | Maximum Confidence |
-| 21+ points | Supreme Confidence |
+| Positive Overflow | Confidence Level   |
+| ----------------- | ------------------ |
+| 1-10 points       | High+ Confidence   |
+| 11-20 points      | Maximum Confidence |
+| 21+ points        | Supreme Confidence |
 
 | Negative Overflow | Confidence Level |
-|-------------------|------------------|
-| 1-10 points | Caution |
-| 11-20 points | Strong Caution |
-| 21+ points | Extreme Caution |
+| ----------------- | ---------------- |
+| 1-10 points       | Caution          |
+| 11-20 points      | Strong Caution   |
+| 21+ points        | Extreme Caution  |
 
 ### Final Score Calculation
 
@@ -684,6 +699,7 @@ Elite Threshold: 180+ points
 ### Quality Control Verification
 
 **Mandatory Overlay Checks:**
+
 - Verify no double-counting between base score and overlay
 - Confirm pace scenario logic consistency
 - Validate trip note accuracy and impact
@@ -692,6 +708,7 @@ Elite Threshold: 180+ points
 - Confirm all mathematical additions
 
 **Reasonableness Tests:**
+
 - Elite horses should show positive overlays
 - Poor horses should show negative overlays
 - Overlay should enhance, not contradict, base score logic
@@ -704,12 +721,14 @@ Elite Threshold: 180+ points
 ### Example 1: Hot Pace Benefits Closer
 
 **Scenario:**
+
 - Horse is deep closer (C style)
 - PPI = 32 (Hot Pace)
 - Strong track closing bias this week
 - Last race had wide trip excuse
 
 **Overlay Calculation:**
+
 - Section A: +20 (closer in hot pace) + 5 (closing bias) = +25 → Capped at +20
 - Section C: +5 (wide trip excuse)
 - **Total Overlay: +25 points**
@@ -717,12 +736,14 @@ Elite Threshold: 180+ points
 ### Example 2: Lone Speed Setup
 
 **Scenario:**
+
 - Horse is only early speed (E style)
 - PPI = 8 (Dead Pace)
 - Inside post position
 - First start for new trainer after claim
 
 **Overlay Calculation:**
+
 - Section A: +20 (tactical speed in dead pace) + 5 (inside in soft pace) = +25 → Capped at +20
 - Section E: +8 (first start off claim for elite barn)
 - **Total Overlay: +28 points**
@@ -730,12 +751,14 @@ Elite Threshold: 180+ points
 ### Example 3: Negative Overlay Scenario
 
 **Scenario:**
+
 - Horse is pure speed (E style)
 - PPI = 30 (Hot Pace)
 - Speed duel likely with rival
 - Jockey downgrade from leading rider
 
 **Overlay Calculation:**
+
 - Section A: -8 (speed in hot pace) + -5 (speed duel) = -13
 - Section E: -5 (jockey downgrade)
 - **Total Overlay: -18 points**
@@ -747,6 +770,7 @@ Elite Threshold: 180+ points
 ### Diamond in the Rough Enhancement
 
 For horses scoring 120-139 base points with extreme overlay:
+
 - Apply standard overlay calculations
 - Add Diamond special circumstance bonuses (see Edge Case Protocols)
 - If Final Score ≥ 140: Qualifies for Tier 3 consideration
@@ -754,6 +778,7 @@ For horses scoring 120-139 base points with extreme overlay:
 ### Nuclear Longshot Detection
 
 For horses at 25/1+ with specific angle:
+
 - Calculate standard overlay
 - Apply Nuclear scenario bonuses (see Edge Case Protocols)
 - Assess extreme value opportunity
@@ -761,12 +786,13 @@ For horses at 25/1+ with specific angle:
 ### Lightly Raced Compensation
 
 For horses with <8 lifetime starts:
+
 - Apply standard overlay calculations
 - Add breeding enhancement bonuses (see Edge Case Protocols)
 - Adjust confidence for limited data
 
 ---
 
-*Document Version: 1.0*
-*Status: Complete Overlay System Specification*
-*Integration: Applied after Base Score calculation, before Betting Tier assignment*
+_Document Version: 1.0_
+_Status: Complete Overlay System Specification_
+_Integration: Applied after Base Score calculation, before Betting Tier assignment_

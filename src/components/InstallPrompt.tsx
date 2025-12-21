@@ -6,49 +6,46 @@
  * Appears once, dismissible, respects user choice.
  */
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useInstallPrompt } from '../hooks/useInstallPrompt'
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useInstallPrompt } from '../hooks/useInstallPrompt';
 
 interface InstallPromptProps {
   /** Optional className for custom positioning */
-  className?: string
+  className?: string;
   /** Position of the prompt */
-  position?: 'bottom' | 'bottom-right' | 'top'
+  position?: 'bottom' | 'bottom-right' | 'top';
 }
 
-export function InstallPrompt({
-  className = '',
-  position = 'bottom-right',
-}: InstallPromptProps) {
-  const { canInstall, promptInstall, dismiss } = useInstallPrompt()
-  const [isInstalling, setIsInstalling] = useState(false)
+export function InstallPrompt({ className = '', position = 'bottom-right' }: InstallPromptProps) {
+  const { canInstall, promptInstall, dismiss } = useInstallPrompt();
+  const [isInstalling, setIsInstalling] = useState(false);
 
   const handleInstall = async () => {
-    setIsInstalling(true)
-    const result = await promptInstall()
-    setIsInstalling(false)
+    setIsInstalling(true);
+    const result = await promptInstall();
+    setIsInstalling(false);
 
     if (result === 'accepted') {
       // Prompt is automatically hidden when installed
     } else if (result === 'dismissed') {
       // User dismissed, already handled by the hook
     }
-  }
+  };
 
   const handleDismiss = () => {
-    dismiss()
-  }
+    dismiss();
+  };
 
   if (!canInstall) {
-    return null
+    return null;
   }
 
   const positionClasses = {
-    'bottom': 'install-prompt-bottom',
+    bottom: 'install-prompt-bottom',
     'bottom-right': 'install-prompt-bottom-right',
-    'top': 'install-prompt-top',
-  }
+    top: 'install-prompt-top',
+  };
 
   return (
     <AnimatePresence>
@@ -75,11 +72,7 @@ export function InstallPrompt({
             </p>
           </div>
           <div className="install-prompt-actions">
-            <button
-              onClick={handleDismiss}
-              className="install-prompt-dismiss"
-              aria-label="Not now"
-            >
+            <button onClick={handleDismiss} className="install-prompt-dismiss" aria-label="Not now">
               Not now
             </button>
             <button
@@ -89,9 +82,7 @@ export function InstallPrompt({
             >
               {isInstalling ? (
                 <>
-                  <span className="material-icons install-prompt-spinner">
-                    hourglass_empty
-                  </span>
+                  <span className="material-icons install-prompt-spinner">hourglass_empty</span>
                   Installing...
                 </>
               ) : (
@@ -112,23 +103,23 @@ export function InstallPrompt({
         </button>
       </motion.div>
     </AnimatePresence>
-  )
+  );
 }
 
 // Compact install button for use in headers/menus
 export function InstallButton({ className = '' }: { className?: string }) {
-  const { canInstall, promptInstall } = useInstallPrompt()
-  const [isInstalling, setIsInstalling] = useState(false)
+  const { canInstall, promptInstall } = useInstallPrompt();
+  const [isInstalling, setIsInstalling] = useState(false);
 
   if (!canInstall) {
-    return null
+    return null;
   }
 
   const handleClick = async () => {
-    setIsInstalling(true)
-    await promptInstall()
-    setIsInstalling(false)
-  }
+    setIsInstalling(true);
+    await promptInstall();
+    setIsInstalling(false);
+  };
 
   return (
     <button
@@ -137,12 +128,10 @@ export function InstallButton({ className = '' }: { className?: string }) {
       disabled={isInstalling}
       title="Install Furlong"
     >
-      <span className="material-icons">
-        {isInstalling ? 'hourglass_empty' : 'download'}
-      </span>
+      <span className="material-icons">{isInstalling ? 'hourglass_empty' : 'download'}</span>
       <span className="install-button-text">Install App</span>
     </button>
-  )
+  );
 }
 
 // Styles
@@ -359,17 +348,17 @@ const styles = `
     padding: 0.5rem;
   }
 }
-`
+`;
 
 // Inject styles
 if (typeof document !== 'undefined') {
-  const styleId = 'install-prompt-styles'
+  const styleId = 'install-prompt-styles';
   if (!document.getElementById(styleId)) {
-    const styleElement = document.createElement('style')
-    styleElement.id = styleId
-    styleElement.textContent = styles
-    document.head.appendChild(styleElement)
+    const styleElement = document.createElement('style');
+    styleElement.id = styleId;
+    styleElement.textContent = styles;
+    document.head.appendChild(styleElement);
   }
 }
 
-export default InstallPrompt
+export default InstallPrompt;

@@ -1,16 +1,16 @@
-import { motion } from 'framer-motion'
+import { motion } from 'framer-motion';
 
 interface MobileNavProps {
-  activeTab: 'dashboard' | 'upload' | 'settings'
-  onTabChange: (tab: 'dashboard' | 'upload' | 'settings') => void
-  hasData: boolean
+  activeTab: 'dashboard' | 'upload' | 'settings';
+  onTabChange: (tab: 'dashboard' | 'upload' | 'settings') => void;
+  hasData: boolean;
 }
 
 interface NavTab {
-  id: 'dashboard' | 'upload' | 'settings'
-  icon: string
-  label: string
-  highlight?: boolean
+  id: 'dashboard' | 'upload' | 'settings';
+  icon: string;
+  label: string;
+  highlight?: boolean;
 }
 
 export function MobileNav({ activeTab, onTabChange, hasData }: MobileNavProps) {
@@ -18,7 +18,7 @@ export function MobileNav({ activeTab, onTabChange, hasData }: MobileNavProps) {
     { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
     { id: 'upload', icon: 'upload_file', label: 'Upload', highlight: !hasData },
     { id: 'settings', icon: 'settings', label: 'Settings' },
-  ]
+  ];
 
   return (
     <nav className="mobile-nav" role="navigation" aria-label="Mobile navigation">
@@ -53,7 +53,7 @@ export function MobileNav({ activeTab, onTabChange, hasData }: MobileNavProps) {
         ))}
       </div>
     </nav>
-  )
+  );
 }
 
-export default MobileNav
+export default MobileNav;

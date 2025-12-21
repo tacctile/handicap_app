@@ -5,7 +5,7 @@
  * Users must acknowledge this disclaimer before using the service.
  */
 
-export const DISCLAIMER_ABBREVIATED = `This is a data analysis tool, not gambling advice. You must be 21+ or of legal gambling age. Use responsibly.`
+export const DISCLAIMER_ABBREVIATED = `This is a data analysis tool, not gambling advice. You must be 21+ or of legal gambling age. Use responsibly.`;
 
 export const DISCLAIMER_TEXT = `
 IMPORTANT DISCLAIMER - PLEASE READ CAREFULLY
@@ -33,4 +33,4 @@ To the fullest extent permitted by law, the creators and operators of this appli
 
 ACCEPTANCE
 By using this application, you acknowledge that you have read, understood, and agree to be bound by this disclaimer.
-`.trim()
+`.trim();

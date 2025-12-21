@@ -15,17 +15,13 @@
  * - Breeding potential (lightly raced) + trainer pattern
  */
 
-import type { HorseEntry, RaceHeader } from '../../types/drf'
-import type { HorseScore } from '../scoring'
-import {
-  analyzeOverlay,
-  parseOddsToDecimal,
-  calculateEV,
-} from '../scoring/overlayAnalysis'
-import { getSpeedBias, getPostPositionBias } from '../trackIntelligence'
-import { parseRunningStyle, analyzePaceScenario } from '../scoring/paceAnalysis'
-import { getTrainerProfile, getTrainerPattern } from '../equipment/trainerPatterns'
-import { logger } from '../../services/logging'
+import type { HorseEntry, RaceHeader } from '../../types/drf';
+import type { HorseScore } from '../scoring';
+import { analyzeOverlay, parseOddsToDecimal, calculateEV } from '../scoring/overlayAnalysis';
+import { getSpeedBias, getPostPositionBias } from '../trackIntelligence';
+import { parseRunningStyle, analyzePaceScenario } from '../scoring/paceAnalysis';
+import { getTrainerProfile, getTrainerPattern } from '../equipment/trainerPatterns';
+import { logger } from '../../services/logging';
 import {
   type DetectedFactor,
   type DiamondAnalysis,
@@ -41,7 +37,7 @@ import {
   meetsMinimumOverlay,
   meetsMinimumFactors,
   calculateConfidence,
-} from './diamondTypes'
+} from './diamondTypes';
 
 // ============================================================================
 // FACTOR DETECTION FUNCTIONS
@@ -51,22 +47,24 @@ import {
  * Detect class drop factor
  */
 function detectClassDropFactor(score: HorseScore): DetectedFactor | null {
-  if (!score.classScore) return null
+  if (!score.classScore) return null;
 
-  const movement = score.classScore.analysis.movement
-  if (movement.direction !== 'drop') return null
+  const movement = score.classScore.analysis.movement;
+  if (movement.direction !== 'drop') return null;
 
   // Need significant drop
-  const levelsDiff = Math.abs(movement.levelsDifference)
-  if (levelsDiff < 3) return null
+  const levelsDiff = Math.abs(movement.levelsDifference);
+  if (levelsDiff < 3) return null;
 
   const evidenceDetails: string[] = [
     `Dropping ${Math.ceil(levelsDiff / 5)} class levels`,
     movement.description,
-  ]
+  ];
 
   if (score.classScore.analysis.provenAtLevel.hasWon) {
-    evidenceDetails.push(`Won ${score.classScore.analysis.provenAtLevel.winsAtLevel} at higher level`)
+    evidenceDetails.push(
+      `Won ${score.classScore.analysis.provenAtLevel.winsAtLevel} at higher level`
+    );
   }
 
   return {
@@ -78,21 +76,19 @@ function detectClassDropFactor(score: HorseScore): DetectedFactor | null {
     icon: FACTOR_ICONS.class_drop,
     color: FACTOR_COLORS.class_drop,
     sourceModule: 'classScoring',
-  }
+  };
 }
 
 /**
  * Detect hidden class drop factor (track tier or purse)
  */
 function detectHiddenClassDropFactor(score: HorseScore): DetectedFactor | null {
-  if (!score.classScore) return null
+  if (!score.classScore) return null;
 
-  const hiddenDrops = score.classScore.analysis.hiddenDrops
-  if (hiddenDrops.length === 0) return null
+  const hiddenDrops = score.classScore.analysis.hiddenDrops;
+  if (hiddenDrops.length === 0) return null;
 
-  const evidenceDetails = hiddenDrops.map(drop =>
-    `${drop.description}: ${drop.explanation}`
-  )
+  const evidenceDetails = hiddenDrops.map((drop) => `${drop.description}: ${drop.explanation}`);
 
   return {
     type: 'hidden_class_drop',
@@ -103,29 +99,26 @@ function detectHiddenClassDropFactor(score: HorseScore): DetectedFactor | null {
     icon: FACTOR_ICONS.hidden_class_drop,
     color: FACTOR_COLORS.hidden_class_drop,
     sourceModule: 'classScoring',
-  }
+  };
 }
 
 /**
  * Detect equipment change factor
  */
-function detectEquipmentChangeFactor(
-  horse: HorseEntry,
-  score: HorseScore
-): DetectedFactor | null {
-  const equipmentScore = score.breakdown.equipment
-  if (equipmentScore.total < 15) return null // Need significant equipment impact
+function detectEquipmentChangeFactor(horse: HorseEntry, score: HorseScore): DetectedFactor | null {
+  const equipmentScore = score.breakdown.equipment;
+  if (equipmentScore.total < 15) return null; // Need significant equipment impact
 
-  const evidenceDetails: string[] = [equipmentScore.reasoning]
+  const evidenceDetails: string[] = [equipmentScore.reasoning];
 
   // Check for first-time Lasix specifically
   if (horse.medication.lasixFirstTime) {
-    evidenceDetails.push('First-time Lasix application')
+    evidenceDetails.push('First-time Lasix application');
   }
 
   // Check for blinkers
   if (horse.equipment.blinkers && !horse.pastPerformances[0]?.equipment.includes('B')) {
-    evidenceDetails.push('Blinkers being added')
+    evidenceDetails.push('Blinkers being added');
   }
 
   return {
@@ -137,24 +130,26 @@ function detectEquipmentChangeFactor(
     icon: FACTOR_ICONS.equipment_change,
     color: FACTOR_COLORS.equipment_change,
     sourceModule: 'equipmentScoring',
-  }
+  };
 }
 
 /**
  * Detect first-time Lasix factor
  */
 function detectFirstTimeLasixFactor(horse: HorseEntry): DetectedFactor | null {
-  if (!horse.medication.lasixFirstTime) return null
+  if (!horse.medication.lasixFirstTime) return null;
 
   // Check trainer pattern for Lasix
-  const pattern = getTrainerPattern(horse.trainerName, 'lasix_first')
-  const evidenceDetails: string[] = ['First-time Lasix application']
+  const pattern = getTrainerPattern(horse.trainerName, 'lasix_first');
+  const evidenceDetails: string[] = ['First-time Lasix application'];
 
-  let confidence = 60
+  let confidence = 60;
 
   if (pattern) {
-    evidenceDetails.push(`Trainer wins ${pattern.winRate}% with first-time Lasix (${pattern.sampleSize} starts)`)
-    confidence = Math.min(90, 60 + pattern.winRate)
+    evidenceDetails.push(
+      `Trainer wins ${pattern.winRate}% with first-time Lasix (${pattern.sampleSize} starts)`
+    );
+    confidence = Math.min(90, 60 + pattern.winRate);
   }
 
   return {
@@ -166,7 +161,7 @@ function detectFirstTimeLasixFactor(horse: HorseEntry): DetectedFactor | null {
     icon: FACTOR_ICONS.first_time_lasix,
     color: FACTOR_COLORS.first_time_lasix,
     sourceModule: 'medication',
-  }
+  };
 }
 
 /**
@@ -177,21 +172,21 @@ function detectPaceFitFactor(
   allHorses: HorseEntry[],
   score: HorseScore
 ): DetectedFactor | null {
-  const paceScore = score.breakdown.pace
-  if (paceScore.paceFit !== 'perfect' && paceScore.paceFit !== 'good') return null
+  const paceScore = score.breakdown.pace;
+  if (paceScore.paceFit !== 'perfect' && paceScore.paceFit !== 'good') return null;
 
-  const runningStyle = parseRunningStyle(horse)
-  const paceScenario = analyzePaceScenario(allHorses)
+  const runningStyle = parseRunningStyle(horse);
+  const paceScenario = analyzePaceScenario(allHorses);
 
   const evidenceDetails: string[] = [
     `Running style: ${runningStyle.styleName}`,
     `Pace scenario: ${paceScenario.label}`,
     `PPI: ${paceScenario.ppi}`,
-  ]
+  ];
 
   // Perfect fit: closer in speed duel
   if (runningStyle.style === 'C' && paceScenario.ppi >= 50) {
-    evidenceDetails.push('Closer in speed duel setup - excellent')
+    evidenceDetails.push('Closer in speed duel setup - excellent');
     return {
       type: 'pace_fit',
       name: FACTOR_NAMES.pace_fit,
@@ -201,12 +196,12 @@ function detectPaceFitFactor(
       icon: FACTOR_ICONS.pace_fit,
       color: FACTOR_COLORS.pace_fit,
       sourceModule: 'paceAnalysis',
-    }
+    };
   }
 
   // Good fit: lone speed in soft pace
   if (runningStyle.style === 'E' && paceScenario.ppi < 30) {
-    evidenceDetails.push('Lone speed in soft pace - wire-to-wire potential')
+    evidenceDetails.push('Lone speed in soft pace - wire-to-wire potential');
     return {
       type: 'pace_fit',
       name: FACTOR_NAMES.pace_fit,
@@ -216,10 +211,10 @@ function detectPaceFitFactor(
       icon: FACTOR_ICONS.pace_fit,
       color: FACTOR_COLORS.pace_fit,
       sourceModule: 'paceAnalysis',
-    }
+    };
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -229,20 +224,29 @@ function detectTrackBiasFitFactor(
   horse: HorseEntry,
   raceHeader: RaceHeader
 ): DetectedFactor | null {
-  const speedBias = getSpeedBias(raceHeader.trackCode, raceHeader.surface)
-  if (!speedBias) return null
+  const speedBias = getSpeedBias(raceHeader.trackCode, raceHeader.surface);
+  if (!speedBias) return null;
 
-  const runningStyle = parseRunningStyle(horse)
-  const evidenceDetails: string[] = []
+  const runningStyle = parseRunningStyle(horse);
+  const evidenceDetails: string[] = [];
 
   // Check for extreme bias match
-  if (speedBias.earlySpeedWinRate >= 75 && (runningStyle.style === 'E' || runningStyle.style === 'P')) {
-    evidenceDetails.push(`Track favors speed: ${speedBias.earlySpeedWinRate}% early speed win rate`)
-    evidenceDetails.push(`This is a ${runningStyle.styleName}`)
+  if (
+    speedBias.earlySpeedWinRate >= 75 &&
+    (runningStyle.style === 'E' || runningStyle.style === 'P')
+  ) {
+    evidenceDetails.push(
+      `Track favors speed: ${speedBias.earlySpeedWinRate}% early speed win rate`
+    );
+    evidenceDetails.push(`This is a ${runningStyle.styleName}`);
 
-    const postBias = getPostPositionBias(raceHeader.trackCode, raceHeader.distance, raceHeader.surface)
+    const postBias = getPostPositionBias(
+      raceHeader.trackCode,
+      raceHeader.distance,
+      raceHeader.surface
+    );
     if (postBias && postBias.favoredPosts.includes(horse.postPosition)) {
-      evidenceDetails.push(`Post ${horse.postPosition} is favored at this track`)
+      evidenceDetails.push(`Post ${horse.postPosition} is favored at this track`);
     }
 
     return {
@@ -254,14 +258,14 @@ function detectTrackBiasFitFactor(
       icon: FACTOR_ICONS.track_bias_fit,
       color: FACTOR_COLORS.track_bias_fit,
       sourceModule: 'trackIntelligence',
-    }
+    };
   }
 
   // Closer-friendly track
-  const closerWinRate = 100 - speedBias.earlySpeedWinRate
+  const closerWinRate = 100 - speedBias.earlySpeedWinRate;
   if (closerWinRate >= 60 && runningStyle.style === 'C') {
-    evidenceDetails.push(`Track favors closers: ${closerWinRate}% closer win rate`)
-    evidenceDetails.push(`This is a ${runningStyle.styleName}`)
+    evidenceDetails.push(`Track favors closers: ${closerWinRate}% closer win rate`);
+    evidenceDetails.push(`This is a ${runningStyle.styleName}`);
 
     return {
       type: 'track_bias_fit',
@@ -272,34 +276,34 @@ function detectTrackBiasFitFactor(
       icon: FACTOR_ICONS.track_bias_fit,
       color: FACTOR_COLORS.track_bias_fit,
       sourceModule: 'trackIntelligence',
-    }
+    };
   }
 
-  return null
+  return null;
 }
 
 /**
  * Detect hidden form factor (sharp workouts + excuse)
  */
 function detectHiddenFormFactor(horse: HorseEntry): DetectedFactor | null {
-  const evidenceDetails: string[] = []
-  let hasSharpWorkouts = false
-  let hasExcuse = false
+  const evidenceDetails: string[] = [];
+  let hasSharpWorkouts = false;
+  let hasExcuse = false;
 
   // Check workouts
-  const workouts = horse.workouts || []
-  const now = new Date()
-  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+  const workouts = horse.workouts || [];
+  const now = new Date();
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-  let recentWorks = 0
-  let hasBullet = false
+  let recentWorks = 0;
+  let hasBullet = false;
 
   for (const work of workouts) {
     try {
-      const workDate = new Date(work.date)
+      const workDate = new Date(work.date);
       if (workDate >= fourteenDaysAgo) {
-        recentWorks++
-        if (work.isBullet) hasBullet = true
+        recentWorks++;
+        if (work.isBullet) hasBullet = true;
       }
     } catch {
       // Skip invalid dates
@@ -307,21 +311,23 @@ function detectHiddenFormFactor(horse: HorseEntry): DetectedFactor | null {
   }
 
   if (recentWorks >= 3 || (recentWorks >= 2 && hasBullet)) {
-    hasSharpWorkouts = true
-    evidenceDetails.push(`${recentWorks} works in last 14 days${hasBullet ? ' (includes bullet)' : ''}`)
+    hasSharpWorkouts = true;
+    evidenceDetails.push(
+      `${recentWorks} works in last 14 days${hasBullet ? ' (includes bullet)' : ''}`
+    );
   }
 
   // Check for excuse in last race
-  const lastRace = horse.pastPerformances[0]
+  const lastRace = horse.pastPerformances[0];
   if (lastRace) {
-    const comment = lastRace.tripComment?.toLowerCase() || ''
-    const excuseKeywords = ['wide', 'trouble', 'blocked', 'bumped', 'steadied', 'checked']
+    const comment = lastRace.tripComment?.toLowerCase() || '';
+    const excuseKeywords = ['wide', 'trouble', 'blocked', 'bumped', 'steadied', 'checked'];
 
     for (const keyword of excuseKeywords) {
       if (comment.includes(keyword)) {
-        hasExcuse = true
-        evidenceDetails.push(`Last race excuse: ${keyword}`)
-        break
+        hasExcuse = true;
+        evidenceDetails.push(`Last race excuse: ${keyword}`);
+        break;
       }
     }
   }
@@ -336,7 +342,7 @@ function detectHiddenFormFactor(horse: HorseEntry): DetectedFactor | null {
       icon: FACTOR_ICONS.hidden_form,
       color: FACTOR_COLORS.hidden_form,
       sourceModule: 'formAnalysis',
-    }
+    };
   }
 
   // Just sharp workouts is still a factor
@@ -350,10 +356,10 @@ function detectHiddenFormFactor(horse: HorseEntry): DetectedFactor | null {
       icon: FACTOR_ICONS.hidden_form,
       color: FACTOR_COLORS.hidden_form,
       sourceModule: 'formAnalysis',
-    }
+    };
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -364,23 +370,25 @@ function detectBreedingPotentialFactor(
   score: HorseScore
 ): DetectedFactor | null {
   // Only for lightly raced horses (< 8 starts)
-  if (horse.lifetimeStarts >= 8) return null
-  if (!score.breedingScore || !score.breedingScore.wasApplied) return null
+  if (horse.lifetimeStarts >= 8) return null;
+  if (!score.breedingScore || !score.breedingScore.wasApplied) return null;
 
-  const breedingTotal = score.breedingScore.total
-  if (breedingTotal < 35) return null // Need good breeding score
+  const breedingTotal = score.breedingScore.total;
+  if (breedingTotal < 35) return null; // Need good breeding score
 
   const evidenceDetails: string[] = [
     `Lifetime starts: ${horse.lifetimeStarts}`,
     `Breeding score: ${breedingTotal}/60`,
-  ]
+  ];
 
   if (score.breedingScore.sireDetails.profile) {
-    evidenceDetails.push(`Sire: ${score.breedingScore.sireDetails.profile.name} (${score.breedingScore.sireDetails.tierLabel})`)
+    evidenceDetails.push(
+      `Sire: ${score.breedingScore.sireDetails.profile.name} (${score.breedingScore.sireDetails.tierLabel})`
+    );
   }
 
   if (score.breedingScore.bonuses.total > 0) {
-    evidenceDetails.push(`Breeding bonuses: +${score.breedingScore.bonuses.total}`)
+    evidenceDetails.push(`Breeding bonuses: +${score.breedingScore.bonuses.total}`);
   }
 
   return {
@@ -392,7 +400,7 @@ function detectBreedingPotentialFactor(
     icon: FACTOR_ICONS.breeding_potential,
     color: FACTOR_COLORS.breeding_potential,
     sourceModule: 'breedingScoring',
-  }
+  };
 }
 
 /**
@@ -402,30 +410,32 @@ function detectTrainerPatternFactor(
   horse: HorseEntry,
   _raceHeader: RaceHeader
 ): DetectedFactor | null {
-  const profile = getTrainerProfile(horse.trainerName)
-  if (!profile) return null
-  if (profile.overallWinRate < 18) return null
+  const profile = getTrainerProfile(horse.trainerName);
+  if (!profile) return null;
+  if (profile.overallWinRate < 18) return null;
 
   const evidenceDetails: string[] = [
     `Trainer: ${horse.trainerName}`,
     `Overall win rate: ${profile.overallWinRate}%`,
-  ]
+  ];
 
-  let bestPatternRate = 0
-  let bestPatternName = ''
+  let bestPatternRate = 0;
+  let bestPatternName = '';
 
   // Check relevant patterns
   for (const pattern of profile.patterns) {
     if (pattern.sampleSize >= 15 && pattern.winRate >= 20) {
       if (pattern.winRate > bestPatternRate) {
-        bestPatternRate = pattern.winRate
-        bestPatternName = pattern.changeType.replace(/_/g, ' ')
+        bestPatternRate = pattern.winRate;
+        bestPatternName = pattern.changeType.replace(/_/g, ' ');
       }
-      evidenceDetails.push(`${pattern.changeType.replace(/_/g, ' ')}: ${pattern.winRate}% (${pattern.sampleSize} starts)`)
+      evidenceDetails.push(
+        `${pattern.changeType.replace(/_/g, ' ')}: ${pattern.winRate}% (${pattern.sampleSize} starts)`
+      );
     }
   }
 
-  if (bestPatternRate < 20) return null
+  if (bestPatternRate < 20) return null;
 
   return {
     type: 'trainer_pattern',
@@ -436,7 +446,7 @@ function detectTrainerPatternFactor(
     icon: FACTOR_ICONS.trainer_pattern,
     color: FACTOR_COLORS.trainer_pattern,
     sourceModule: 'trainerPatterns',
-  }
+  };
 }
 
 /**
@@ -446,30 +456,28 @@ function detectSurfaceSwitchFactor(
   horse: HorseEntry,
   raceHeader: RaceHeader
 ): DetectedFactor | null {
-  const lastRace = horse.pastPerformances[0]
-  if (!lastRace) return null
-  if (lastRace.surface === raceHeader.surface) return null
+  const lastRace = horse.pastPerformances[0];
+  if (!lastRace) return null;
+  if (lastRace.surface === raceHeader.surface) return null;
 
-  const evidenceDetails: string[] = [
-    `Switching: ${lastRace.surface} → ${raceHeader.surface}`,
-  ]
+  const evidenceDetails: string[] = [`Switching: ${lastRace.surface} → ${raceHeader.surface}`];
 
-  let favorable = false
+  let favorable = false;
 
   // Switching to turf with turf wins
   if (raceHeader.surface === 'turf' && horse.turfWins > 0) {
-    evidenceDetails.push(`Has ${horse.turfWins} turf win${horse.turfWins > 1 ? 's' : ''}`)
-    favorable = true
+    evidenceDetails.push(`Has ${horse.turfWins} turf win${horse.turfWins > 1 ? 's' : ''}`);
+    favorable = true;
   }
 
   // Switching to dirt from turf where dirt is preferred
   if (raceHeader.surface === 'dirt' && horse.lifetimeWins > horse.turfWins) {
-    const dirtWins = horse.lifetimeWins - horse.turfWins
-    evidenceDetails.push(`Better on dirt: ${dirtWins} dirt wins vs ${horse.turfWins} turf wins`)
-    favorable = true
+    const dirtWins = horse.lifetimeWins - horse.turfWins;
+    evidenceDetails.push(`Better on dirt: ${dirtWins} dirt wins vs ${horse.turfWins} turf wins`);
+    favorable = true;
   }
 
-  if (!favorable) return null
+  if (!favorable) return null;
 
   return {
     type: 'surface_switch',
@@ -480,7 +488,7 @@ function detectSurfaceSwitchFactor(
     icon: FACTOR_ICONS.surface_switch,
     color: FACTOR_COLORS.surface_switch,
     sourceModule: 'surfaceAnalysis',
-  }
+  };
 }
 
 /**
@@ -490,34 +498,38 @@ function detectDistanceChangeFactor(
   horse: HorseEntry,
   raceHeader: RaceHeader
 ): DetectedFactor | null {
-  const lastRace = horse.pastPerformances[0]
-  if (!lastRace) return null
+  const lastRace = horse.pastPerformances[0];
+  if (!lastRace) return null;
 
-  const distanceChange = raceHeader.distanceFurlongs - lastRace.distanceFurlongs
-  if (Math.abs(distanceChange) < 1.5) return null // Need significant change
+  const distanceChange = raceHeader.distanceFurlongs - lastRace.distanceFurlongs;
+  if (Math.abs(distanceChange) < 1.5) return null; // Need significant change
 
-  const evidenceDetails: string[] = []
-  let favorable = false
+  const evidenceDetails: string[] = [];
+  let favorable = false;
 
   if (distanceChange > 0) {
     // Stretching out
-    evidenceDetails.push(`Stretching out: ${lastRace.distanceFurlongs}f → ${raceHeader.distanceFurlongs}f`)
+    evidenceDetails.push(
+      `Stretching out: ${lastRace.distanceFurlongs}f → ${raceHeader.distanceFurlongs}f`
+    );
     if (horse.distanceWins > 0) {
-      evidenceDetails.push(`Has ${horse.distanceWins} route wins`)
-      favorable = true
+      evidenceDetails.push(`Has ${horse.distanceWins} route wins`);
+      favorable = true;
     }
   } else {
     // Cutting back
-    evidenceDetails.push(`Cutting back: ${lastRace.distanceFurlongs}f → ${raceHeader.distanceFurlongs}f`)
+    evidenceDetails.push(
+      `Cutting back: ${lastRace.distanceFurlongs}f → ${raceHeader.distanceFurlongs}f`
+    );
     // Calculate sprint wins as lifetime wins minus distance/route wins
-    const sprintWins = horse.lifetimeWins - horse.distanceWins
+    const sprintWins = horse.lifetimeWins - horse.distanceWins;
     if (sprintWins > 0) {
-      evidenceDetails.push(`Has ${sprintWins} sprint wins`)
-      favorable = true
+      evidenceDetails.push(`Has ${sprintWins} sprint wins`);
+      favorable = true;
     }
   }
 
-  if (!favorable) return null
+  if (!favorable) return null;
 
   return {
     type: 'distance_change',
@@ -528,7 +540,7 @@ function detectDistanceChangeFactor(
     icon: FACTOR_ICONS.distance_change,
     color: FACTOR_COLORS.distance_change,
     sourceModule: 'distanceAnalysis',
-  }
+  };
 }
 
 // ============================================================================
@@ -544,82 +556,79 @@ function detectAllFactors(
   allHorses: HorseEntry[],
   raceHeader: RaceHeader
 ): DetectedFactor[] {
-  const factors: DetectedFactor[] = []
+  const factors: DetectedFactor[] = [];
 
   try {
     // Class drop
-    const classDrop = detectClassDropFactor(score)
-    if (classDrop) factors.push(classDrop)
+    const classDrop = detectClassDropFactor(score);
+    if (classDrop) factors.push(classDrop);
 
     // Hidden class drop
-    const hiddenClassDrop = detectHiddenClassDropFactor(score)
-    if (hiddenClassDrop) factors.push(hiddenClassDrop)
+    const hiddenClassDrop = detectHiddenClassDropFactor(score);
+    if (hiddenClassDrop) factors.push(hiddenClassDrop);
 
     // Equipment change
-    const equipmentChange = detectEquipmentChangeFactor(horse, score)
-    if (equipmentChange) factors.push(equipmentChange)
+    const equipmentChange = detectEquipmentChangeFactor(horse, score);
+    if (equipmentChange) factors.push(equipmentChange);
 
     // First-time Lasix (separate from equipment)
-    const firstTimeLasix = detectFirstTimeLasixFactor(horse)
-    if (firstTimeLasix && !equipmentChange) factors.push(firstTimeLasix)
+    const firstTimeLasix = detectFirstTimeLasixFactor(horse);
+    if (firstTimeLasix && !equipmentChange) factors.push(firstTimeLasix);
 
     // Pace fit
-    const paceFit = detectPaceFitFactor(horse, allHorses, score)
-    if (paceFit) factors.push(paceFit)
+    const paceFit = detectPaceFitFactor(horse, allHorses, score);
+    if (paceFit) factors.push(paceFit);
 
     // Track bias fit
-    const trackBiasFit = detectTrackBiasFitFactor(horse, raceHeader)
-    if (trackBiasFit) factors.push(trackBiasFit)
+    const trackBiasFit = detectTrackBiasFitFactor(horse, raceHeader);
+    if (trackBiasFit) factors.push(trackBiasFit);
 
     // Hidden form
-    const hiddenForm = detectHiddenFormFactor(horse)
-    if (hiddenForm) factors.push(hiddenForm)
+    const hiddenForm = detectHiddenFormFactor(horse);
+    if (hiddenForm) factors.push(hiddenForm);
 
     // Breeding potential
-    const breedingPotential = detectBreedingPotentialFactor(horse, score)
-    if (breedingPotential) factors.push(breedingPotential)
+    const breedingPotential = detectBreedingPotentialFactor(horse, score);
+    if (breedingPotential) factors.push(breedingPotential);
 
     // Trainer pattern
-    const trainerPattern = detectTrainerPatternFactor(horse, raceHeader)
-    if (trainerPattern) factors.push(trainerPattern)
+    const trainerPattern = detectTrainerPatternFactor(horse, raceHeader);
+    if (trainerPattern) factors.push(trainerPattern);
 
     // Surface switch
-    const surfaceSwitch = detectSurfaceSwitchFactor(horse, raceHeader)
-    if (surfaceSwitch) factors.push(surfaceSwitch)
+    const surfaceSwitch = detectSurfaceSwitchFactor(horse, raceHeader);
+    if (surfaceSwitch) factors.push(surfaceSwitch);
 
     // Distance change
-    const distanceChange = detectDistanceChangeFactor(horse, raceHeader)
-    if (distanceChange) factors.push(distanceChange)
-
+    const distanceChange = detectDistanceChangeFactor(horse, raceHeader);
+    if (distanceChange) factors.push(distanceChange);
   } catch (_error) {
     logger.logWarning('Error detecting diamond factors', {
       component: 'diamondDetector',
       horseName: horse.horseName,
-    })
+    });
   }
 
-  return factors
+  return factors;
 }
 
 /**
  * Generate the "story" for why this diamond makes sense
  */
 function generateStory(factors: DetectedFactor[]): string {
-  if (factors.length === 0) return 'No supporting factors'
-  if (factors.length === 1) return factors[0].evidence
+  if (factors.length === 0) return 'No supporting factors';
+  if (factors.length === 1) return factors[0].evidence;
 
   // Build a narrative from the top 3 factors
-  const topFactors = factors
-    .sort((a, b) => b.confidence - a.confidence)
-    .slice(0, 3)
+  const topFactors = factors.sort((a, b) => b.confidence - a.confidence).slice(0, 3);
 
-  const parts = topFactors.map(f => f.name.toLowerCase())
+  const parts = topFactors.map((f) => f.name.toLowerCase());
 
   if (parts.length === 2) {
-    return `${parts[0]} + ${parts[1]} = upset potential at big odds`
+    return `${parts[0]} + ${parts[1]} = upset potential at big odds`;
   }
 
-  return `${parts[0]} + ${parts[1]} + ${parts[2]} = perfect storm for upset`
+  return `${parts[0]} + ${parts[1]} + ${parts[2]} = perfect storm for upset`;
 }
 
 /**
@@ -631,11 +640,11 @@ function generateBetRecommendation(
   oddsDisplay: string
 ): string {
   if (confidence >= 80) {
-    return `Strong Hidden Gem bet at ${oddsDisplay}. Consider Win + Place.`
+    return `Strong Hidden Gem bet at ${oddsDisplay}. Consider Win + Place.`;
   } else if (confidence >= 60) {
-    return `Moderate Hidden Gem play at ${oddsDisplay}. Win bet with Place saver.`
+    return `Moderate Hidden Gem play at ${oddsDisplay}. Win bet with Place saver.`;
   } else {
-    return `Speculative Hidden Gem at ${oddsDisplay}. Small Win bet only.`
+    return `Speculative Hidden Gem at ${oddsDisplay}. Small Win bet only.`;
   }
 }
 
@@ -654,14 +663,14 @@ export function analyzeDiamondCandidate(
   raceHeader: RaceHeader,
   currentOdds: string
 ): DiamondAnalysis {
-  const horseName = horse.horseName
-  const programNumber = horse.programNumber
-  const scoreTotal = score.total
-  const oddsDecimal = parseOddsToDecimal(currentOdds)
+  const horseName = horse.horseName;
+  const programNumber = horse.programNumber;
+  const scoreTotal = score.total;
+  const oddsDecimal = parseOddsToDecimal(currentOdds);
 
   // Analyze overlay
-  const overlay = analyzeOverlay(scoreTotal, currentOdds)
-  const overlayPercent = overlay.overlayPercent
+  const overlay = analyzeOverlay(scoreTotal, currentOdds);
+  const overlayPercent = overlay.overlayPercent;
 
   // Initialize result
   const result: DiamondAnalysis = {
@@ -685,45 +694,45 @@ export function analyzeDiamondCandidate(
     roiPotential: 0,
     betRecommendation: '',
     analyzedAt: new Date().toISOString(),
-  }
+  };
 
   // Check score range
   if (!isScoreInDiamondRange(scoreTotal)) {
-    result.disqualificationReason = `Score ${scoreTotal} outside diamond range (${DIAMOND_SCORE_MIN}-${DIAMOND_SCORE_MAX})`
-    return result
+    result.disqualificationReason = `Score ${scoreTotal} outside diamond range (${DIAMOND_SCORE_MIN}-${DIAMOND_SCORE_MAX})`;
+    return result;
   }
 
   // Check overlay
   if (!meetsMinimumOverlay(overlayPercent)) {
-    result.disqualificationReason = `Overlay ${overlayPercent.toFixed(0)}% below minimum (${DIAMOND_MIN_OVERLAY_PERCENT}%)`
-    return result
+    result.disqualificationReason = `Overlay ${overlayPercent.toFixed(0)}% below minimum (${DIAMOND_MIN_OVERLAY_PERCENT}%)`;
+    return result;
   }
 
   // Detect all factors
-  const factors = detectAllFactors(horse, score, allHorses, raceHeader)
-  result.factors = factors
-  result.factorCount = factors.length
+  const factors = detectAllFactors(horse, score, allHorses, raceHeader);
+  result.factors = factors;
+  result.factorCount = factors.length;
 
   // Check minimum factors
   if (!meetsMinimumFactors(factors.length)) {
-    result.disqualificationReason = `Only ${factors.length} factor(s) detected, need ${DIAMOND_MIN_FACTORS}+`
-    result.validationStatus = 'partial'
-    return result
+    result.disqualificationReason = `Only ${factors.length} factor(s) detected, need ${DIAMOND_MIN_FACTORS}+`;
+    result.validationStatus = 'partial';
+    return result;
   }
 
   // This IS a diamond!
-  result.isDiamond = true
-  result.confidence = calculateConfidence(factors.length)
-  result.story = generateStory(factors)
-  result.validationStatus = 'validated'
+  result.isDiamond = true;
+  result.confidence = calculateConfidence(factors.length);
+  result.story = generateStory(factors);
+  result.validationStatus = 'validated';
 
   // Calculate EV and ROI
-  const winProb = result.confidence / 100 * 0.3 // Conservative probability estimate
-  result.expectedValue = calculateEV(winProb * 100, oddsDecimal)
-  result.roiPotential = (oddsDecimal - 1) * winProb
+  const winProb = (result.confidence / 100) * 0.3; // Conservative probability estimate
+  result.expectedValue = calculateEV(winProb * 100, oddsDecimal);
+  result.roiPotential = (oddsDecimal - 1) * winProb;
 
   // Generate summary
-  result.summary = `Diamond: ${horseName} (${currentOdds}) - ${factors.length} factors, ${result.confidence}% confidence`
+  result.summary = `Diamond: ${horseName} (${currentOdds}) - ${factors.length} factors, ${result.confidence}% confidence`;
 
   // Generate reasoning
   result.reasoning = [
@@ -732,22 +741,22 @@ export function analyzeDiamondCandidate(
     `Factors: ${factors.length} detected (requires ${DIAMOND_MIN_FACTORS}+)`,
     '',
     'Perfect Storm Factors:',
-    ...factors.map(f => `• ${f.name}: ${f.evidence}`),
+    ...factors.map((f) => `• ${f.name}: ${f.evidence}`),
     '',
     `Story: ${result.story}`,
-  ]
+  ];
 
   // Generate bet recommendation
   result.betRecommendation = generateBetRecommendation(
     result.confidence,
     overlayPercent,
     currentOdds
-  )
+  );
 
   // Validation notes
-  result.validationNotes = factors.map(f =>
-    `${f.name} validated from ${f.sourceModule} (${f.confidence}% confidence)`
-  )
+  result.validationNotes = factors.map(
+    (f) => `${f.name} validated from ${f.sourceModule} (${f.confidence}% confidence)`
+  );
 
   logger.logInfo('Diamond detected', {
     component: 'diamondDetector',
@@ -757,9 +766,9 @@ export function analyzeDiamondCandidate(
     overlay: overlayPercent,
     factors: factors.length,
     confidence: result.confidence,
-  })
+  });
 
-  return result
+  return result;
 }
 
 /**
@@ -771,44 +780,36 @@ export function analyzeRaceDiamonds(
   raceHeader: RaceHeader,
   getOdds: (index: number, defaultOdds: string) => string
 ): RaceDiamondSummary {
-  const diamonds: DiamondAnalysis[] = []
+  const diamonds: DiamondAnalysis[] = [];
 
   for (let i = 0; i < horses.length; i++) {
-    const horse = horses[i]
-    const score = scores.get(i) || scores.get(horse.programNumber)
+    const horse = horses[i];
+    const score = scores.get(i) || scores.get(horse.programNumber);
 
-    if (!score || score.isScratched) continue
+    if (!score || score.isScratched) continue;
 
-    const currentOdds = getOdds(i, horse.morningLineOdds)
-    const analysis = analyzeDiamondCandidate(
-      horse,
-      i,
-      score,
-      horses,
-      raceHeader,
-      currentOdds
-    )
+    const currentOdds = getOdds(i, horse.morningLineOdds);
+    const analysis = analyzeDiamondCandidate(horse, i, score, horses, raceHeader, currentOdds);
 
     if (analysis.isDiamond) {
-      diamonds.push(analysis)
+      diamonds.push(analysis);
     }
   }
 
   // Sort by confidence
-  diamonds.sort((a, b) => b.confidence - a.confidence)
+  diamonds.sort((a, b) => b.confidence - a.confidence);
 
-  const totalFactors = diamonds.reduce((sum, d) => sum + d.factorCount, 0)
-  const averageConfidence = diamonds.length > 0
-    ? diamonds.reduce((sum, d) => sum + d.confidence, 0) / diamonds.length
-    : 0
+  const totalFactors = diamonds.reduce((sum, d) => sum + d.factorCount, 0);
+  const averageConfidence =
+    diamonds.length > 0 ? diamonds.reduce((sum, d) => sum + d.confidence, 0) / diamonds.length : 0;
 
-  let summary = ''
+  let summary = '';
   if (diamonds.length === 0) {
-    summary = 'No diamonds detected in this race'
+    summary = 'No diamonds detected in this race';
   } else if (diamonds.length === 1) {
-    summary = `1 diamond found: ${diamonds[0].horseName} at ${diamonds[0].oddsDisplay}`
+    summary = `1 diamond found: ${diamonds[0].horseName} at ${diamonds[0].oddsDisplay}`;
   } else {
-    summary = `${diamonds.length} diamonds found - hidden value in this race!`
+    summary = `${diamonds.length} diamonds found - hidden value in this race!`;
   }
 
   return {
@@ -822,16 +823,13 @@ export function analyzeRaceDiamonds(
     totalFactors,
     averageConfidence: Math.round(averageConfidence),
     summary,
-  }
+  };
 }
 
 /**
  * Quick check if a horse might be a diamond candidate
  * (For performance - skip full analysis if not possible)
  */
-export function mightBeDiamond(
-  score: number,
-  overlayPercent: number
-): boolean {
-  return isScoreInDiamondRange(score) && meetsMinimumOverlay(overlayPercent)
+export function mightBeDiamond(score: number, overlayPercent: number): boolean {
+  return isScoreInDiamondRange(score) && meetsMinimumOverlay(overlayPercent);
 }

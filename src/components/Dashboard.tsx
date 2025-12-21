@@ -1,48 +1,48 @@
-import { useState, useCallback, useMemo, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Sidebar, TopBar, MobileNav, Footer } from './layout'
-import type { LegalContentType } from './legal'
-import { EmptyStateTable } from './cards'
-import { FileUpload } from './FileUpload'
-import { RaceOverview } from './RaceOverview'
-import { RaceDetail } from './RaceDetail'
-import { LoadingState } from './LoadingState'
-import { DataValidationWarning } from './ErrorBoundary'
-import { FadeIn } from './motion'
-import { BankrollSettings } from './BankrollSettings'
-import { BankrollSummaryCard } from './BankrollSummaryCard'
-import { PostTimeDetailModal } from './PostTimeCountdown'
-import { useToastContext } from '../contexts/ToastContext'
-import { OfflineIndicator } from './OfflineIndicator'
-import { InstallPrompt } from './InstallPrompt'
-import { UpdatePrompt } from './UpdatePrompt'
-import { OnboardingFlow } from './onboarding'
-import { useBankroll } from '../hooks/useBankroll'
-import { usePostTime } from '../hooks/usePostTime'
-import { useOnboarding } from '../hooks/useOnboarding'
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sidebar, TopBar, MobileNav, Footer } from './layout';
+import type { LegalContentType } from './legal';
+import { EmptyStateTable } from './cards';
+import { FileUpload } from './FileUpload';
+import { RaceOverview } from './RaceOverview';
+import { RaceDetail } from './RaceDetail';
+import { LoadingState } from './LoadingState';
+import { DataValidationWarning } from './ErrorBoundary';
+import { FadeIn } from './motion';
+import { BankrollSettings } from './BankrollSettings';
+import { BankrollSummaryCard } from './BankrollSummaryCard';
+import { PostTimeDetailModal } from './PostTimeCountdown';
+import { useToastContext } from '../contexts/ToastContext';
+import { OfflineIndicator } from './OfflineIndicator';
+import { InstallPrompt } from './InstallPrompt';
+import { UpdatePrompt } from './UpdatePrompt';
+import { OnboardingFlow } from './onboarding';
+import { useBankroll } from '../hooks/useBankroll';
+import { usePostTime } from '../hooks/usePostTime';
+import { useOnboarding } from '../hooks/useOnboarding';
 import {
   calculateRaceScores,
   calculateRaceConfidence,
   getTopHorses,
   type ScoredHorse,
-} from '../lib/scoring'
-import type { useRaceState } from '../hooks/useRaceState'
-import type { ParsedDRFFile } from '../types/drf'
+} from '../lib/scoring';
+import type { useRaceState } from '../hooks/useRaceState';
+import type { ParsedDRFFile } from '../types/drf';
 
 // View types for overview-first navigation
-type ViewMode = 'overview' | 'detail'
+type ViewMode = 'overview' | 'detail';
 
 interface DashboardProps {
-  parsedData: ParsedDRFFile | null
-  isLoading: boolean
-  validationWarnings: string[]
-  showWarnings: boolean
-  onParsed: (data: ParsedDRFFile) => void
-  onDismissWarnings: () => void
-  raceState: ReturnType<typeof useRaceState>
-  onOpenLegalModal: (type: LegalContentType) => void
-  onNavigateToAccount?: () => void
-  onNavigateToHelp?: () => void
+  parsedData: ParsedDRFFile | null;
+  isLoading: boolean;
+  validationWarnings: string[];
+  showWarnings: boolean;
+  onParsed: (data: ParsedDRFFile) => void;
+  onDismissWarnings: () => void;
+  raceState: ReturnType<typeof useRaceState>;
+  onOpenLegalModal: (type: LegalContentType) => void;
+  onNavigateToAccount?: () => void;
+  onNavigateToHelp?: () => void;
 }
 
 export function Dashboard({
@@ -58,43 +58,43 @@ export function Dashboard({
   onNavigateToHelp,
 }: DashboardProps) {
   // View management state
-  const [currentView, setCurrentView] = useState<ViewMode>('overview')
-  const [selectedRaceIndex, setSelectedRaceIndex] = useState(0)
+  const [currentView, setCurrentView] = useState<ViewMode>('overview');
+  const [selectedRaceIndex, setSelectedRaceIndex] = useState(0);
 
   // UI state
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [mobileTab, setMobileTab] = useState<'dashboard' | 'upload' | 'settings'>('dashboard')
-  const [bankrollSettingsOpen, setBankrollSettingsOpen] = useState(false)
-  const [postTimeDetailOpen, setPostTimeDetailOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'dashboard' | 'upload' | 'settings'>('dashboard');
+  const [bankrollSettingsOpen, setBankrollSettingsOpen] = useState(false);
+  const [postTimeDetailOpen, setPostTimeDetailOpen] = useState(false);
 
   // Bankroll management hook
-  const bankroll = useBankroll()
+  const bankroll = useBankroll();
 
   // Onboarding hook
-  const { isOnboardingComplete, completeOnboarding } = useOnboarding()
+  const { isOnboardingComplete, completeOnboarding } = useOnboarding();
 
   // Toast notifications (from context - container rendered by ToastProvider)
-  const { addPostTimeNotification } = useToastContext()
+  const { addPostTimeNotification } = useToastContext();
 
-  const hasData = !!parsedData && parsedData.races.length > 0
+  const hasData = !!parsedData && parsedData.races.length > 0;
 
   // Reset to overview when new file is loaded
   useEffect(() => {
     if (parsedData) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state when new data is loaded
-      setCurrentView('overview')
-      setSelectedRaceIndex(0)
+      setCurrentView('overview');
+      setSelectedRaceIndex(0);
     }
-  }, [parsedData])
+  }, [parsedData]);
 
   // Calculate and cache all race confidences and top horses on data load
   // This is computed once and cached - performance optimization
   const { raceConfidences, topHorsesByRace } = useMemo(() => {
-    const confidences = new Map<number, number>()
-    const topHorses = new Map<number, ScoredHorse[]>()
+    const confidences = new Map<number, number>();
+    const topHorses = new Map<number, ScoredHorse[]>();
 
     if (!parsedData) {
-      return { raceConfidences: confidences, topHorsesByRace: topHorses }
+      return { raceConfidences: confidences, topHorsesByRace: topHorses };
     }
 
     parsedData.races.forEach((race, index) => {
@@ -106,24 +106,24 @@ export function Dashboard({
         (_i, originalOdds) => originalOdds, // Use original odds for overview
         () => false, // No scratches for overview
         'fast' // Default condition for overview
-      )
+      );
 
-      const confidence = calculateRaceConfidence(scoredHorses)
-      const top = getTopHorses(scoredHorses, 3)
+      const confidence = calculateRaceConfidence(scoredHorses);
+      const top = getTopHorses(scoredHorses, 3);
 
-      confidences.set(index, confidence)
-      topHorses.set(index, top)
-    })
+      confidences.set(index, confidence);
+      topHorses.set(index, top);
+    });
 
-    return { raceConfidences: confidences, topHorsesByRace: topHorses }
-  }, [parsedData])
+    return { raceConfidences: confidences, topHorsesByRace: topHorses };
+  }, [parsedData]);
 
   // Get current race's scored horses for detail view (includes user modifications)
   const currentRaceScoredHorses = useMemo(() => {
-    if (!parsedData || currentView !== 'detail') return []
+    if (!parsedData || currentView !== 'detail') return [];
 
-    const race = parsedData.races[selectedRaceIndex]
-    if (!race) return []
+    const race = parsedData.races[selectedRaceIndex];
+    if (!race) return [];
 
     return calculateRaceScores(
       race.horses,
@@ -131,30 +131,30 @@ export function Dashboard({
       (i, originalOdds) => raceState.getOdds(i, originalOdds),
       (i) => raceState.isScratched(i),
       raceState.trackCondition
-    )
-  }, [parsedData, selectedRaceIndex, currentView, raceState])
+    );
+  }, [parsedData, selectedRaceIndex, currentView, raceState]);
 
   // Current race confidence (recalculated when user makes changes)
   const currentRaceConfidence = useMemo(() => {
     if (currentView !== 'detail') {
-      return raceConfidences.get(selectedRaceIndex) || 0
+      return raceConfidences.get(selectedRaceIndex) || 0;
     }
-    return calculateRaceConfidence(currentRaceScoredHorses)
-  }, [currentView, raceConfidences, selectedRaceIndex, currentRaceScoredHorses])
+    return calculateRaceConfidence(currentRaceScoredHorses);
+  }, [currentView, raceConfidences, selectedRaceIndex, currentRaceScoredHorses]);
 
   // Get post time string from current race
   const currentPostTimeString = useMemo(() => {
-    if (!parsedData || !parsedData.races.length) return undefined
-    const race = parsedData.races[selectedRaceIndex]
-    return race?.header?.postTime
-  }, [parsedData, selectedRaceIndex])
+    if (!parsedData || !parsedData.races.length) return undefined;
+    const race = parsedData.races[selectedRaceIndex];
+    return race?.header?.postTime;
+  }, [parsedData, selectedRaceIndex]);
 
   // Get race date string for post time calculation
   const currentRaceDateString = useMemo(() => {
-    if (!parsedData || !parsedData.races.length) return undefined
-    const race = parsedData.races[selectedRaceIndex]
-    return race?.header?.raceDateRaw
-  }, [parsedData, selectedRaceIndex])
+    if (!parsedData || !parsedData.races.length) return undefined;
+    const race = parsedData.races[selectedRaceIndex];
+    return race?.header?.raceDateRaw;
+  }, [parsedData, selectedRaceIndex]);
 
   // Post time countdown hook
   const {
@@ -164,101 +164,110 @@ export function Dashboard({
     clearNotification,
     notificationSettings,
     updateNotificationSettings,
-  } = usePostTime(currentPostTimeString, currentRaceDateString)
+  } = usePostTime(currentPostTimeString, currentRaceDateString);
 
   // Handle pending notifications
   useEffect(() => {
     if (pendingNotifications.length > 0) {
-      const currentRace = parsedData?.races[selectedRaceIndex]
-      const raceNumber = currentRace?.header?.raceNumber
+      const currentRace = parsedData?.races[selectedRaceIndex];
+      const raceNumber = currentRace?.header?.raceNumber;
 
       pendingNotifications.forEach((notification) => {
-        addPostTimeNotification(notification.minutesMark, raceNumber)
-        clearNotification(notification.minutesMark)
-      })
+        addPostTimeNotification(notification.minutesMark, raceNumber);
+        clearNotification(notification.minutesMark);
+      });
     }
-  }, [pendingNotifications, parsedData, selectedRaceIndex, addPostTimeNotification, clearNotification])
+  }, [
+    pendingNotifications,
+    parsedData,
+    selectedRaceIndex,
+    addPostTimeNotification,
+    clearNotification,
+  ]);
 
   // View navigation handlers
   const handleRaceSelect = useCallback((raceIndex: number) => {
-    setSelectedRaceIndex(raceIndex)
-    setCurrentView('detail')
-  }, [])
+    setSelectedRaceIndex(raceIndex);
+    setCurrentView('detail');
+  }, []);
 
   const handleBackToOverview = useCallback(() => {
-    setCurrentView('overview')
-  }, [])
+    setCurrentView('overview');
+  }, []);
 
   // Open bankroll settings modal
   const openBankrollSettings = useCallback(() => {
-    setBankrollSettingsOpen(true)
-  }, [])
+    setBankrollSettingsOpen(true);
+  }, []);
 
   // Close bankroll settings modal
   const closeBankrollSettings = useCallback(() => {
-    setBankrollSettingsOpen(false)
-  }, [])
+    setBankrollSettingsOpen(false);
+  }, []);
 
   // Toggle post time detail modal
   const togglePostTimeDetail = useCallback(() => {
-    setPostTimeDetailOpen((prev) => !prev)
-  }, [])
+    setPostTimeDetailOpen((prev) => !prev);
+  }, []);
 
   // Toggle sidebar
   const toggleSidebar = useCallback(() => {
-    setSidebarOpen((prev) => !prev)
-  }, [])
+    setSidebarOpen((prev) => !prev);
+  }, []);
 
   // Handle file upload click
   const handleUploadClick = useCallback(() => {
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     if (fileInput) {
-      fileInput.click()
+      fileInput.click();
     }
-  }, [])
+  }, []);
 
   // Handle mobile tab change
-  const handleMobileTabChange = useCallback((tab: 'dashboard' | 'upload' | 'settings') => {
-    setMobileTab(tab)
-    if (tab === 'upload') {
-      handleUploadClick()
-    }
-  }, [handleUploadClick])
+  const handleMobileTabChange = useCallback(
+    (tab: 'dashboard' | 'upload' | 'settings') => {
+      setMobileTab(tab);
+      if (tab === 'upload') {
+        handleUploadClick();
+      }
+    },
+    [handleUploadClick]
+  );
 
   // Get current race info for top bar
   const currentRaceInfo = useMemo(() => {
-    if (!parsedData || !parsedData.races.length) return undefined
+    if (!parsedData || !parsedData.races.length) return undefined;
 
-    const race = parsedData.races[selectedRaceIndex]
+    const race = parsedData.races[selectedRaceIndex];
     return {
       trackName: race?.header?.trackCode || 'Unknown Track',
       raceNumber: race?.header?.raceNumber || selectedRaceIndex + 1,
       postTime: race?.header?.postTime,
-    }
-  }, [parsedData, selectedRaceIndex])
+    };
+  }, [parsedData, selectedRaceIndex]);
 
   // Calculate stats
   const stats = useMemo(() => {
-    if (!parsedData) return { races: 0, horses: 0 }
+    if (!parsedData) return { races: 0, horses: 0 };
     return {
       races: parsedData.races.length,
       horses: parsedData.races.reduce((sum, race) => sum + race.horses.length, 0),
-    }
-  }, [parsedData])
+    };
+  }, [parsedData]);
 
   // Handle file upload from onboarding flow
-  const handleOnboardingFileUpload = useCallback((data: ParsedDRFFile) => {
-    onParsed(data)
-  }, [onParsed])
+  const handleOnboardingFileUpload = useCallback(
+    (data: ParsedDRFFile) => {
+      onParsed(data);
+    },
+    [onParsed]
+  );
 
   // Show onboarding for new users who haven't completed it and have no data
   if (!isOnboardingComplete && !hasData) {
     return (
-      <OnboardingFlow
-        onComplete={completeOnboarding}
-        onFileUploaded={handleOnboardingFileUpload}
-      />
-    )
+      <OnboardingFlow onComplete={completeOnboarding} onFileUploaded={handleOnboardingFileUpload} />
+    );
   }
 
   return (
@@ -318,10 +327,7 @@ export function Dashboard({
           {/* Validation warnings */}
           {parsedData && showWarnings && validationWarnings.length > 0 && (
             <FadeIn className="dashboard-warnings">
-              <DataValidationWarning
-                warnings={validationWarnings}
-                onDismiss={onDismissWarnings}
-              />
+              <DataValidationWarning warnings={validationWarnings} onDismiss={onDismissWarnings} />
             </FadeIn>
           )}
 
@@ -361,10 +367,7 @@ export function Dashboard({
 
                   {/* CENTER COLUMN - Empty State */}
                   <section className="dashboard-column center" aria-label="Upload prompt">
-                    <EmptyStateTable
-                      onUploadClick={handleUploadClick}
-                      isLoading={isLoading}
-                    />
+                    <EmptyStateTable onUploadClick={handleUploadClick} isLoading={isLoading} />
                   </section>
 
                   {/* RIGHT COLUMN - Bankroll */}
@@ -378,7 +381,9 @@ export function Dashboard({
                       <div className="betting-empty-state">
                         <span className="material-icons betting-empty-icon">casino</span>
                         <h4>Ready to Bet</h4>
-                        <p>Upload race data to see betting recommendations and track your wagers.</p>
+                        <p>
+                          Upload race data to see betting recommendations and track your wagers.
+                        </p>
                       </div>
                     </FadeIn>
                   </aside>
@@ -413,7 +418,9 @@ export function Dashboard({
                             <span className="stat-label">Horses</span>
                           </div>
                           <div className="stat-item">
-                            <span className="stat-value">{parsedData?.filename?.split('.')[0].slice(0, 8) || '—'}</span>
+                            <span className="stat-value">
+                              {parsedData?.filename?.split('.')[0].slice(0, 8) || '—'}
+                            </span>
                             <span className="stat-label">File</span>
                           </div>
                         </div>
@@ -528,11 +535,7 @@ export function Dashboard({
       </div>
 
       {/* Mobile bottom navigation */}
-      <MobileNav
-        activeTab={mobileTab}
-        onTabChange={handleMobileTabChange}
-        hasData={hasData}
-      />
+      <MobileNav activeTab={mobileTab} onTabChange={handleMobileTabChange} hasData={hasData} />
 
       {/* Toast Notifications - Container is rendered by ToastProvider in App.tsx */}
 
@@ -565,7 +568,7 @@ export function Dashboard({
       <InstallPrompt position="bottom-right" />
       <UpdatePrompt />
     </div>
-  )
+  );
 }
 
-export default Dashboard
+export default Dashboard;

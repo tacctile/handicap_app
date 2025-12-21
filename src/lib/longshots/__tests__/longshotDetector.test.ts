@@ -5,7 +5,7 @@
  * horses at 25/1+ odds with specific upset angles.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   detectPaceDevastation,
   detectClassRelief,
@@ -13,7 +13,7 @@ import {
   detectTrackBiasFit,
   detectHiddenForm,
   detectAllUpsetAngles,
-} from '../longshotDetector'
+} from '../longshotDetector';
 import {
   MIN_ANGLE_POINTS_LIVE,
   MIN_ANGLE_POINTS_NUCLEAR,
@@ -21,62 +21,62 @@ import {
   getClassificationFromPoints,
   isLongshotOdds,
   parseOddsToDecimal,
-} from '../longshotTypes'
-import { ClassLevel } from '../../class/classTypes'
-import type { ClassAnalysisResult } from '../../class/classTypes'
-import type { Workout } from '../../../types/drf'
+} from '../longshotTypes';
+import { ClassLevel } from '../../class/classTypes';
+import type { ClassAnalysisResult } from '../../class/classTypes';
+import type { Workout } from '../../../types/drf';
 import {
   createHorseEntry,
   createRaceHeader,
   createPastPerformance,
   createWorkout,
   createMedication,
-} from '../../../__tests__/fixtures/testHelpers'
-import type { PaceScenarioAnalysis, RunningStyleProfile } from '../../scoring/paceAnalysis'
-import type { ClassScoreResult } from '../../class/classScoring'
-import type { EquipmentScoreResult } from '../../equipment/equipmentScoring'
-import type { DetectedEquipmentChange } from '../../equipment/equipmentTypes'
+} from '../../../__tests__/fixtures/testHelpers';
+import type { PaceScenarioAnalysis, RunningStyleProfile } from '../../scoring/paceAnalysis';
+import type { ClassScoreResult } from '../../class/classScoring';
+import type { EquipmentScoreResult } from '../../equipment/equipmentScoring';
+import type { DetectedEquipmentChange } from '../../equipment/equipmentTypes';
 
 // Mock trainer patterns
 vi.mock('../../equipment/trainerPatterns', () => ({
   getTrainerPattern: vi.fn((trainerName: string, patternType: string) => {
     if (trainerName === 'Chad Brown' && patternType === 'lasix_first') {
-      return { winRate: 28, sampleSize: 45 }
+      return { winRate: 28, sampleSize: 45 };
     }
     if (trainerName === 'Bob Baffert' && patternType === 'blinkers_on') {
-      return { winRate: 32, sampleSize: 68 }
+      return { winRate: 32, sampleSize: 68 };
     }
     if (trainerName === 'John Smith' && patternType === 'lasix_first') {
-      return { winRate: 15, sampleSize: 20 } // Below threshold
+      return { winRate: 15, sampleSize: 20 }; // Below threshold
     }
-    return null
+    return null;
   }),
   getTrainerProfile: vi.fn((trainerName: string) => {
     if (trainerName === 'Chad Brown') {
-      return { overallWinRate: 22, sampleSize: 500 }
+      return { overallWinRate: 22, sampleSize: 500 };
     }
-    return null
+    return null;
   }),
-}))
+}));
 
 // Mock track intelligence
 vi.mock('../../trackIntelligence', () => ({
   getSpeedBias: vi.fn((trackCode: string, surface: string) => {
     if (trackCode === 'SAR' && surface === 'dirt') {
-      return { earlySpeedWinRate: 85, sampleSize: 200 } // Heavy speed bias
+      return { earlySpeedWinRate: 85, sampleSize: 200 }; // Heavy speed bias
     }
     if (trackCode === 'GP' && surface === 'turf') {
-      return { earlySpeedWinRate: 25, sampleSize: 150 } // Closer bias
+      return { earlySpeedWinRate: 25, sampleSize: 150 }; // Closer bias
     }
-    return { earlySpeedWinRate: 55, sampleSize: 100 } // Neutral
+    return { earlySpeedWinRate: 55, sampleSize: 100 }; // Neutral
   }),
   getPostPositionBias: vi.fn((trackCode: string, _distance: string, _surface: string) => {
     if (trackCode === 'SAR') {
-      return { favoredPosts: [1, 2, 3] }
+      return { favoredPosts: [1, 2, 3] };
     }
-    return null
+    return null;
   }),
-}))
+}));
 
 // Mock logger to suppress warnings
 vi.mock('../../../services/logging', () => ({
@@ -85,7 +85,7 @@ vi.mock('../../../services/logging', () => ({
     logWarning: vi.fn(),
     logError: vi.fn(),
   },
-}))
+}));
 
 // ============================================================================
 // HELPER FACTORIES
@@ -109,7 +109,7 @@ function createPaceScenario(overrides: Partial<PaceScenarioAnalysis> = {}): Pace
     disadvantages: [],
     projectedEarlyPace: 'moderate',
     ...overrides,
-  } as unknown as PaceScenarioAnalysis
+  } as unknown as PaceScenarioAnalysis;
 }
 
 function createRunningStyle(overrides: Partial<RunningStyleProfile> = {}): RunningStyleProfile {
@@ -121,7 +121,7 @@ function createRunningStyle(overrides: Partial<RunningStyleProfile> = {}): Runni
     averageEarlyPosition: 4,
     averageFinalPosition: 3,
     ...overrides,
-  } as unknown as RunningStyleProfile
+  } as unknown as RunningStyleProfile;
 }
 
 function createClassScore(overrides: Partial<ClassScoreResult> = {}): ClassScoreResult {
@@ -162,7 +162,7 @@ function createClassScore(overrides: Partial<ClassScoreResult> = {}): ClassScore
     reasoning: '',
     breakdown: [],
     ...overrides,
-  } as unknown as ClassScoreResult
+  } as unknown as ClassScoreResult;
 }
 
 function createEquipmentScore(overrides: Partial<EquipmentScoreResult> = {}): EquipmentScoreResult {
@@ -182,13 +182,13 @@ function createEquipmentScore(overrides: Partial<EquipmentScoreResult> = {}): Eq
       lastRaceEquipment: {},
     },
     ...overrides,
-  } as unknown as EquipmentScoreResult
+  } as unknown as EquipmentScoreResult;
 }
 
 describe('Longshot Detector', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   describe('Pace Devastation Angle', () => {
     it('detects pace devastation when PPI > 50 and horse is lone closer', () => {
@@ -200,7 +200,7 @@ describe('Longshot Detector', () => {
           createPastPerformance({ finishPosition: 1 }),
           createPastPerformance({ finishPosition: 2 }),
         ],
-      })
+      });
 
       const paceScenario = createPaceScenario({
         ppi: 65, // Speed duel
@@ -211,50 +211,68 @@ describe('Longshot Detector', () => {
           closers: [8], // Only 1 closer
           unknown: [],
         },
-      })
+      });
 
       const runningStyle = createRunningStyle({
         style: 'C',
         styleName: 'Closer',
         confidence: 85,
         evidence: [
-          { raceDate: '2024-01-15', track: 'SAR', firstCallPosition: 8, fieldSize: 10, finishPosition: 1, styleInRace: 'C', wasOnLead: false, lengthsBehindAtFirstCall: 12 },
-          { raceDate: '2024-01-01', track: 'SAR', firstCallPosition: 7, fieldSize: 9, finishPosition: 2, styleInRace: 'C', wasOnLead: false, lengthsBehindAtFirstCall: 10 },
+          {
+            raceDate: '2024-01-15',
+            track: 'SAR',
+            firstCallPosition: 8,
+            fieldSize: 10,
+            finishPosition: 1,
+            styleInRace: 'C',
+            wasOnLead: false,
+            lengthsBehindAtFirstCall: 12,
+          },
+          {
+            raceDate: '2024-01-01',
+            track: 'SAR',
+            firstCallPosition: 7,
+            fieldSize: 9,
+            finishPosition: 2,
+            styleInRace: 'C',
+            wasOnLead: false,
+            lengthsBehindAtFirstCall: 10,
+          },
         ],
-      })
+      });
 
-      const result = detectPaceDevastation(horse, [], paceScenario, runningStyle)
+      const result = detectPaceDevastation(horse, [], paceScenario, runningStyle);
 
-      expect(result).not.toBeNull()
-      expect(result?.category).toBe('pace_devastation')
-      expect(result?.points).toBeGreaterThanOrEqual(UPSET_ANGLE_BASE_POINTS.pace_devastation)
-      expect(result?.evidence).toContain('speed')
-      expect(result?.evidenceDetails).toContain('PPI: 65 (Speed Duel)')
-      expect(result?.hasAllRequiredEvidence).toBe(true)
-    })
+      expect(result).not.toBeNull();
+      expect(result?.category).toBe('pace_devastation');
+      expect(result?.points).toBeGreaterThanOrEqual(UPSET_ANGLE_BASE_POINTS.pace_devastation);
+      expect(result?.evidence).toContain('speed');
+      expect(result?.evidenceDetails).toContain('PPI: 65 (Speed Duel)');
+      expect(result?.hasAllRequiredEvidence).toBe(true);
+    });
 
     it('returns null when PPI is <= 50 (no speed duel)', () => {
       const horse = createHorseEntry({
         runningStyle: 'C',
-      })
+      });
 
       const paceScenario = createPaceScenario({
         ppi: 45, // Not a speed duel
-      })
+      });
 
       const runningStyle = createRunningStyle({
         style: 'C',
-      })
+      });
 
-      const result = detectPaceDevastation(horse, [], paceScenario, runningStyle)
+      const result = detectPaceDevastation(horse, [], paceScenario, runningStyle);
 
-      expect(result).toBeNull()
-    })
+      expect(result).toBeNull();
+    });
 
     it('returns null when horse is not a closer', () => {
       const horse = createHorseEntry({
         runningStyle: 'E', // Speed horse, not closer
-      })
+      });
 
       const paceScenario = createPaceScenario({
         ppi: 70, // Speed duel exists
@@ -265,22 +283,22 @@ describe('Longshot Detector', () => {
           closers: [],
           unknown: [],
         },
-      })
+      });
 
       const runningStyle = createRunningStyle({
         style: 'E', // Early speed, not closer
         styleName: 'Early Speed',
-      })
+      });
 
-      const result = detectPaceDevastation(horse, [], paceScenario, runningStyle)
+      const result = detectPaceDevastation(horse, [], paceScenario, runningStyle);
 
-      expect(result).toBeNull()
-    })
+      expect(result).toBeNull();
+    });
 
     it('returns null when fewer than 4 early speed horses', () => {
       const horse = createHorseEntry({
         runningStyle: 'C',
-      })
+      });
 
       const paceScenario = createPaceScenario({
         ppi: 55, // Mild speed duel
@@ -291,19 +309,19 @@ describe('Longshot Detector', () => {
           closers: [7, 8],
           unknown: [],
         },
-      })
+      });
 
       const runningStyle = createRunningStyle({
         style: 'C',
-      })
+      });
 
-      const result = detectPaceDevastation(horse, [], paceScenario, runningStyle)
+      const result = detectPaceDevastation(horse, [], paceScenario, runningStyle);
 
-      expect(result).toBeNull()
-    })
+      expect(result).toBeNull();
+    });
 
     it('gives bonus for lone closer vs multiple closers', () => {
-      const horse = createHorseEntry()
+      const horse = createHorseEntry();
 
       const paceScenarioLone = createPaceScenario({
         ppi: 60,
@@ -314,7 +332,7 @@ describe('Longshot Detector', () => {
           closers: [8], // Lone closer
           unknown: [],
         },
-      })
+      });
 
       const paceScenarioMultiple = createPaceScenario({
         ppi: 60,
@@ -325,29 +343,29 @@ describe('Longshot Detector', () => {
           closers: [6, 7, 8], // 3 closers
           unknown: [],
         },
-      })
+      });
 
-      const runningStyle = createRunningStyle({ style: 'C' })
+      const runningStyle = createRunningStyle({ style: 'C' });
 
-      const resultLone = detectPaceDevastation(horse, [], paceScenarioLone, runningStyle)
-      const resultMultiple = detectPaceDevastation(horse, [], paceScenarioMultiple, runningStyle)
+      const resultLone = detectPaceDevastation(horse, [], paceScenarioLone, runningStyle);
+      const resultMultiple = detectPaceDevastation(horse, [], paceScenarioMultiple, runningStyle);
 
       // Lone closer has the advantage
-      expect(resultLone).not.toBeNull()
+      expect(resultLone).not.toBeNull();
       // Multiple closers dilutes the angle (may or may not be null depending on implementation)
       if (resultMultiple) {
         // If detected, points should be lower than lone closer
-        expect(resultMultiple.points).toBeLessThanOrEqual(resultLone!.points)
+        expect(resultMultiple.points).toBeLessThanOrEqual(resultLone!.points);
       }
-    })
-  })
+    });
+  });
 
   describe('Class Relief Angle', () => {
     it('detects class relief with 3+ level drop and proven form', () => {
       const horse = createHorseEntry({
         horseName: 'Class Dropper',
         morningLineOdds: '25-1',
-      })
+      });
 
       const classScore = createClassScore({
         total: 15,
@@ -379,23 +397,31 @@ describe('Longshot Detector', () => {
           classScore: 15,
           reasoning: [],
         },
-      })
+      });
 
-      const raceHeader = createRaceHeader()
+      const raceHeader = createRaceHeader();
 
-      const result = detectClassRelief(horse, raceHeader, classScore)
+      const result = detectClassRelief(horse, raceHeader, classScore);
 
-      expect(result).not.toBeNull()
-      expect(result?.category).toBe('class_relief')
-      expect(result?.points).toBeGreaterThanOrEqual(UPSET_ANGLE_BASE_POINTS.class_relief)
+      expect(result).not.toBeNull();
+      expect(result?.category).toBe('class_relief');
+      expect(result?.points).toBeGreaterThanOrEqual(UPSET_ANGLE_BASE_POINTS.class_relief);
       // Evidence should mention class drop
-      expect(result?.evidenceDetails.some(e => e.toLowerCase().includes('class') || e.toLowerCase().includes('drop'))).toBe(true)
+      expect(
+        result?.evidenceDetails.some(
+          (e) => e.toLowerCase().includes('class') || e.toLowerCase().includes('drop')
+        )
+      ).toBe(true);
       // Evidence should mention proven form
-      expect(result?.evidenceDetails.some(e => e.toLowerCase().includes('won') || e.toLowerCase().includes('proven'))).toBe(true)
-    })
+      expect(
+        result?.evidenceDetails.some(
+          (e) => e.toLowerCase().includes('won') || e.toLowerCase().includes('proven')
+        )
+      ).toBe(true);
+    });
 
     it('returns null when not dropping', () => {
-      const horse = createHorseEntry()
+      const horse = createHorseEntry();
 
       const classScore = createClassScore({
         analysis: {
@@ -419,17 +445,17 @@ describe('Longshot Detector', () => {
             bestBeyerAtLevel: 85,
           },
         } as unknown as ClassAnalysisResult,
-      })
+      });
 
-      const raceHeader = createRaceHeader()
+      const raceHeader = createRaceHeader();
 
-      const result = detectClassRelief(horse, raceHeader, classScore)
+      const result = detectClassRelief(horse, raceHeader, classScore);
 
-      expect(result).toBeNull()
-    })
+      expect(result).toBeNull();
+    });
 
     it('returns null when drop is less than 3 levels', () => {
-      const horse = createHorseEntry()
+      const horse = createHorseEntry();
 
       const classScore = createClassScore({
         analysis: {
@@ -453,17 +479,17 @@ describe('Longshot Detector', () => {
             bestBeyerAtLevel: 88,
           },
         } as unknown as ClassAnalysisResult,
-      })
+      });
 
-      const raceHeader = createRaceHeader()
+      const raceHeader = createRaceHeader();
 
-      const result = detectClassRelief(horse, raceHeader, classScore)
+      const result = detectClassRelief(horse, raceHeader, classScore);
 
-      expect(result).toBeNull()
-    })
+      expect(result).toBeNull();
+    });
 
     it('returns null when no proven form at higher level', () => {
-      const horse = createHorseEntry()
+      const horse = createHorseEntry();
 
       const classScore = createClassScore({
         analysis: {
@@ -487,15 +513,15 @@ describe('Longshot Detector', () => {
             bestBeyerAtLevel: null,
           },
         } as unknown as ClassAnalysisResult,
-      })
+      });
 
-      const raceHeader = createRaceHeader()
+      const raceHeader = createRaceHeader();
 
-      const result = detectClassRelief(horse, raceHeader, classScore)
+      const result = detectClassRelief(horse, raceHeader, classScore);
 
-      expect(result).toBeNull()
-    })
-  })
+      expect(result).toBeNull();
+    });
+  });
 
   describe('Equipment Rescue Angle', () => {
     it('detects equipment rescue with first-time Lasix + Blinkers + trainer pattern', () => {
@@ -512,7 +538,7 @@ describe('Longshot Detector', () => {
             finishPosition: 6,
           }),
         ],
-      })
+      });
 
       const equipmentScore = createEquipmentScore({
         hasSignificantChange: true,
@@ -527,15 +553,15 @@ describe('Longshot Detector', () => {
           } as unknown as DetectedEquipmentChange,
         ],
         reasoning: 'First-time Lasix + Blinkers',
-      })
+      });
 
-      const result = detectEquipmentRescue(horse, equipmentScore)
+      const result = detectEquipmentRescue(horse, equipmentScore);
 
-      expect(result).not.toBeNull()
-      expect(result?.category).toBe('equipment_rescue')
-      expect(result?.points).toBeGreaterThanOrEqual(UPSET_ANGLE_BASE_POINTS.equipment_rescue)
-      expect(result?.evidenceDetails).toContain('First-time Lasix + Blinkers ON')
-    })
+      expect(result).not.toBeNull();
+      expect(result?.category).toBe('equipment_rescue');
+      expect(result?.points).toBeGreaterThanOrEqual(UPSET_ANGLE_BASE_POINTS.equipment_rescue);
+      expect(result?.evidenceDetails).toContain('First-time Lasix + Blinkers ON');
+    });
 
     it('detects equipment rescue with strong trainer pattern alone', () => {
       const horse = createHorseEntry({
@@ -545,7 +571,7 @@ describe('Longshot Detector', () => {
           lasixFirstTime: false,
           lasix: true,
         }),
-      })
+      });
 
       const equipmentScore = createEquipmentScore({
         hasSignificantChange: true,
@@ -559,15 +585,15 @@ describe('Longshot Detector', () => {
             impact: 'positive',
           } as unknown as DetectedEquipmentChange,
         ],
-      })
+      });
 
-      const result = detectEquipmentRescue(horse, equipmentScore)
+      const result = detectEquipmentRescue(horse, equipmentScore);
 
-      expect(result).not.toBeNull()
-      expect(result?.category).toBe('equipment_rescue')
+      expect(result).not.toBeNull();
+      expect(result?.category).toBe('equipment_rescue');
       // Check that evidence mentions trainer pattern
-      expect(result?.evidenceDetails.some(e => e.toLowerCase().includes('trainer'))).toBe(true)
-    })
+      expect(result?.evidenceDetails.some((e) => e.toLowerCase().includes('trainer'))).toBe(true);
+    });
 
     it('returns null when no significant equipment changes', () => {
       const horse = createHorseEntry({
@@ -575,17 +601,17 @@ describe('Longshot Detector', () => {
           lasixFirstTime: false,
           lasix: false,
         }),
-      })
+      });
 
       const equipmentScore = createEquipmentScore({
         hasSignificantChange: false,
         changes: [],
-      })
+      });
 
-      const result = detectEquipmentRescue(horse, equipmentScore)
+      const result = detectEquipmentRescue(horse, equipmentScore);
 
-      expect(result).toBeNull()
-    })
+      expect(result).toBeNull();
+    });
 
     it('returns null when trainer win rate is below threshold', () => {
       const horse = createHorseEntry({
@@ -594,18 +620,18 @@ describe('Longshot Detector', () => {
           lasixFirstTime: true,
           lasix: true,
         }),
-      })
+      });
 
       const equipmentScore = createEquipmentScore({
         hasSignificantChange: true,
         changes: [], // No blinkers, just Lasix
-      })
+      });
 
-      const result = detectEquipmentRescue(horse, equipmentScore)
+      const result = detectEquipmentRescue(horse, equipmentScore);
 
       // Should return null since no blinkers and trainer rate below threshold
-      expect(result).toBeNull()
-    })
+      expect(result).toBeNull();
+    });
 
     it('gives bonus for valid excuse in last race', () => {
       const horse = createHorseEntry({
@@ -620,7 +646,7 @@ describe('Longshot Detector', () => {
             finishPosition: 7,
           }),
         ],
-      })
+      });
 
       const equipmentScore = createEquipmentScore({
         hasSignificantChange: true,
@@ -634,73 +660,73 @@ describe('Longshot Detector', () => {
             impact: 'positive',
           } as unknown as DetectedEquipmentChange,
         ],
-      })
+      });
 
-      const result = detectEquipmentRescue(horse, equipmentScore)
+      const result = detectEquipmentRescue(horse, equipmentScore);
 
-      expect(result).not.toBeNull()
+      expect(result).not.toBeNull();
       // Evidence should mention the equipment changes
-      expect(result?.evidenceDetails.length).toBeGreaterThan(0)
-      expect(result?.bonusPoints).toBeGreaterThanOrEqual(0)
-    })
-  })
+      expect(result?.evidenceDetails.length).toBeGreaterThan(0);
+      expect(result?.bonusPoints).toBeGreaterThanOrEqual(0);
+    });
+  });
 
   describe('NUCLEAR vs LIVE Classification', () => {
     it('classifies horse as NUCLEAR with 100+ angle points', () => {
-      expect(getClassificationFromPoints(100)).toBe('nuclear')
-      expect(getClassificationFromPoints(120)).toBe('nuclear')
-      expect(getClassificationFromPoints(150)).toBe('nuclear')
-    })
+      expect(getClassificationFromPoints(100)).toBe('nuclear');
+      expect(getClassificationFromPoints(120)).toBe('nuclear');
+      expect(getClassificationFromPoints(150)).toBe('nuclear');
+    });
 
     it('classifies horse as LIVE with 60-99 angle points', () => {
-      expect(getClassificationFromPoints(60)).toBe('live')
-      expect(getClassificationFromPoints(75)).toBe('live')
-      expect(getClassificationFromPoints(99)).toBe('live')
-    })
+      expect(getClassificationFromPoints(60)).toBe('live');
+      expect(getClassificationFromPoints(75)).toBe('live');
+      expect(getClassificationFromPoints(99)).toBe('live');
+    });
 
     it('classifies horse as LOTTERY with 40-59 points', () => {
-      expect(getClassificationFromPoints(40)).toBe('lottery')
-      expect(getClassificationFromPoints(50)).toBe('lottery')
-      expect(getClassificationFromPoints(59)).toBe('lottery')
-    })
+      expect(getClassificationFromPoints(40)).toBe('lottery');
+      expect(getClassificationFromPoints(50)).toBe('lottery');
+      expect(getClassificationFromPoints(59)).toBe('lottery');
+    });
 
     it('classifies horse as DEAD with <40 points', () => {
-      expect(getClassificationFromPoints(0)).toBe('dead')
-      expect(getClassificationFromPoints(25)).toBe('dead')
-      expect(getClassificationFromPoints(39)).toBe('dead')
-    })
-  })
+      expect(getClassificationFromPoints(0)).toBe('dead');
+      expect(getClassificationFromPoints(25)).toBe('dead');
+      expect(getClassificationFromPoints(39)).toBe('dead');
+    });
+  });
 
   describe('Odds Threshold (25/1+ Exclusion)', () => {
     it('correctly identifies 25/1 as longshot odds', () => {
-      expect(isLongshotOdds('25-1')).toBe(true)
-      expect(isLongshotOdds('25/1')).toBe(true)
-    })
+      expect(isLongshotOdds('25-1')).toBe(true);
+      expect(isLongshotOdds('25/1')).toBe(true);
+    });
 
     it('correctly identifies 30/1+ as longshot odds', () => {
-      expect(isLongshotOdds('30-1')).toBe(true)
-      expect(isLongshotOdds('50-1')).toBe(true)
-      expect(isLongshotOdds('99-1')).toBe(true)
-    })
+      expect(isLongshotOdds('30-1')).toBe(true);
+      expect(isLongshotOdds('50-1')).toBe(true);
+      expect(isLongshotOdds('99-1')).toBe(true);
+    });
 
     it('correctly rejects odds below 25/1', () => {
-      expect(isLongshotOdds('5-1')).toBe(false)
-      expect(isLongshotOdds('10-1')).toBe(false)
-      expect(isLongshotOdds('20-1')).toBe(false)
-      expect(isLongshotOdds('24-1')).toBe(false)
-    })
+      expect(isLongshotOdds('5-1')).toBe(false);
+      expect(isLongshotOdds('10-1')).toBe(false);
+      expect(isLongshotOdds('20-1')).toBe(false);
+      expect(isLongshotOdds('24-1')).toBe(false);
+    });
 
     it('parses various odds formats correctly', () => {
-      expect(parseOddsToDecimal('25-1')).toBe(26) // 25/1 + 1
-      expect(parseOddsToDecimal('25/1')).toBe(26)
-      expect(parseOddsToDecimal('10-1')).toBe(11)
-      expect(parseOddsToDecimal('5/2')).toBeCloseTo(3.5)
-    })
-  })
+      expect(parseOddsToDecimal('25-1')).toBe(26); // 25/1 + 1
+      expect(parseOddsToDecimal('25/1')).toBe(26);
+      expect(parseOddsToDecimal('10-1')).toBe(11);
+      expect(parseOddsToDecimal('5/2')).toBeCloseTo(3.5);
+    });
+  });
 
   describe('Evidence Validation', () => {
     it('requires all evidence for pace devastation angle', () => {
-      const horse = createHorseEntry()
+      const horse = createHorseEntry();
 
       // Missing PPI requirement
       const paceScenario = createPaceScenario({
@@ -712,17 +738,17 @@ describe('Longshot Detector', () => {
           closers: [6],
           unknown: [],
         },
-      })
+      });
 
-      const runningStyle = createRunningStyle({ style: 'C' })
+      const runningStyle = createRunningStyle({ style: 'C' });
 
-      const result = detectPaceDevastation(horse, [], paceScenario, runningStyle)
+      const result = detectPaceDevastation(horse, [], paceScenario, runningStyle);
 
-      expect(result).toBeNull() // No angle without all evidence
-    })
+      expect(result).toBeNull(); // No angle without all evidence
+    });
 
     it('requires all evidence for class relief angle', () => {
-      const horse = createHorseEntry()
+      const horse = createHorseEntry();
 
       // Missing proven form
       const classScore = createClassScore({
@@ -747,62 +773,62 @@ describe('Longshot Detector', () => {
             bestBeyerAtLevel: null,
           },
         } as unknown as ClassAnalysisResult,
-      })
+      });
 
-      const raceHeader = createRaceHeader()
+      const raceHeader = createRaceHeader();
 
-      const result = detectClassRelief(horse, raceHeader, classScore)
+      const result = detectClassRelief(horse, raceHeader, classScore);
 
-      expect(result).toBeNull() // No angle without proven form
-    })
-  })
+      expect(result).toBeNull(); // No angle without proven form
+    });
+  });
 
   describe('Edge Cases', () => {
     it('handles missing odds gracefully', () => {
-      expect(parseOddsToDecimal('')).toBe(0)
-      expect(isLongshotOdds('')).toBe(false)
-    })
+      expect(parseOddsToDecimal('')).toBe(0);
+      expect(isLongshotOdds('')).toBe(false);
+    });
 
     it('handles incomplete horse data gracefully', () => {
       const horse = createHorseEntry({
         pastPerformances: [], // No past performances
         workouts: [],
-      })
+      });
 
-      const paceScenario = createPaceScenario()
-      const runningStyle = createRunningStyle({ style: 'C' })
-      const classScore = createClassScore()
-      const equipmentScore = createEquipmentScore()
+      const paceScenario = createPaceScenario();
+      const runningStyle = createRunningStyle({ style: 'C' });
+      const classScore = createClassScore();
+      const equipmentScore = createEquipmentScore();
 
       // None of these should throw
-      const paceResult = detectPaceDevastation(horse, [], paceScenario, runningStyle)
-      const classResult = detectClassRelief(horse, createRaceHeader(), classScore)
-      const equipResult = detectEquipmentRescue(horse, equipmentScore)
+      const paceResult = detectPaceDevastation(horse, [], paceScenario, runningStyle);
+      const classResult = detectClassRelief(horse, createRaceHeader(), classScore);
+      const equipResult = detectEquipmentRescue(horse, equipmentScore);
 
-      expect(paceResult).toBeNull()
-      expect(classResult).toBeNull()
-      expect(equipResult).toBeNull()
-    })
+      expect(paceResult).toBeNull();
+      expect(classResult).toBeNull();
+      expect(equipResult).toBeNull();
+    });
 
     it('handles horse with null workouts', () => {
       const horse = createHorseEntry({
         workouts: null as unknown as Workout[],
         pastPerformances: [],
-      })
+      });
 
-      const raceHeader = createRaceHeader()
+      const raceHeader = createRaceHeader();
 
       // Should not throw
-      const result = detectHiddenForm(horse, raceHeader)
+      const result = detectHiddenForm(horse, raceHeader);
 
-      expect(result).toBeNull()
-    })
-  })
+      expect(result).toBeNull();
+    });
+  });
 
   describe('Hidden Form Angle', () => {
     it('detects hidden form with sharp workouts and valid excuse', () => {
-      const now = new Date()
-      const recentDate = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000) // 5 days ago
+      const now = new Date();
+      const recentDate = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000); // 5 days ago
 
       const horse = createHorseEntry({
         horseName: 'Ready to Pop',
@@ -830,24 +856,28 @@ describe('Longshot Detector', () => {
         ],
         turfWins: 0,
         lifetimeWins: 2,
-      })
+      });
 
       const raceHeader = createRaceHeader({
         surface: 'dirt',
         distance: '6f',
-      })
+      });
 
-      const result = detectHiddenForm(horse, raceHeader)
+      const result = detectHiddenForm(horse, raceHeader);
 
-      expect(result).not.toBeNull()
-      expect(result?.category).toBe('hidden_form')
+      expect(result).not.toBeNull();
+      expect(result?.category).toBe('hidden_form');
       // Check that evidence mentions workouts in some form
-      expect(result?.evidenceDetails.some(e => e.toLowerCase().includes('work') || e.toLowerCase().includes('bullet'))).toBe(true)
-    })
+      expect(
+        result?.evidenceDetails.some(
+          (e) => e.toLowerCase().includes('work') || e.toLowerCase().includes('bullet')
+        )
+      ).toBe(true);
+    });
 
     it('returns null without sharp workout pattern', () => {
-      const now = new Date()
-      const oldDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+      const now = new Date();
+      const oldDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
 
       const horse = createHorseEntry({
         workouts: [
@@ -862,90 +892,90 @@ describe('Longshot Detector', () => {
             finishPosition: 5,
           }),
         ],
-      })
+      });
 
-      const raceHeader = createRaceHeader()
+      const raceHeader = createRaceHeader();
 
-      const result = detectHiddenForm(horse, raceHeader)
+      const result = detectHiddenForm(horse, raceHeader);
 
-      expect(result).toBeNull()
-    })
-  })
+      expect(result).toBeNull();
+    });
+  });
 
   describe('Track Bias Fit Angle', () => {
     it('detects track bias fit when speed horse on speed-favoring track', () => {
       const horse = createHorseEntry({
         horseName: 'Speed Demon',
         postPosition: 2, // Favored post at SAR
-      })
+      });
 
       const raceHeader = createRaceHeader({
         trackCode: 'SAR',
         surface: 'dirt',
         distance: '6f',
-      })
+      });
 
       const runningStyle = createRunningStyle({
         style: 'E',
         styleName: 'Early Speed',
         confidence: 85,
-      })
+      });
 
-      const result = detectTrackBiasFit(horse, raceHeader, runningStyle)
+      const result = detectTrackBiasFit(horse, raceHeader, runningStyle);
 
-      expect(result).not.toBeNull()
-      expect(result?.category).toBe('track_bias_fit')
+      expect(result).not.toBeNull();
+      expect(result?.category).toBe('track_bias_fit');
       // Check that evidence mentions speed in some form
-      expect(result?.evidenceDetails.some(e => e.toLowerCase().includes('speed'))).toBe(true)
-    })
+      expect(result?.evidenceDetails.some((e) => e.toLowerCase().includes('speed'))).toBe(true);
+    });
 
     it('detects track bias fit when closer on closer-favoring track', () => {
       const horse = createHorseEntry({
         horseName: 'Late Runner',
-      })
+      });
 
       const raceHeader = createRaceHeader({
         trackCode: 'GP',
         surface: 'turf',
         distance: '1 1/16m',
-      })
+      });
 
       const runningStyle = createRunningStyle({
         style: 'C',
         styleName: 'Closer',
         confidence: 80,
-      })
+      });
 
-      const result = detectTrackBiasFit(horse, raceHeader, runningStyle)
+      const result = detectTrackBiasFit(horse, raceHeader, runningStyle);
 
-      expect(result).not.toBeNull()
-      expect(result?.category).toBe('track_bias_fit')
+      expect(result).not.toBeNull();
+      expect(result?.category).toBe('track_bias_fit');
       // Check that evidence mentions closers in some form
-      expect(result?.evidenceDetails.some(e => e.toLowerCase().includes('closer'))).toBe(true)
-    })
+      expect(result?.evidenceDetails.some((e) => e.toLowerCase().includes('closer'))).toBe(true);
+    });
 
     it('returns null when running style does not match bias', () => {
-      const horse = createHorseEntry()
+      const horse = createHorseEntry();
 
       const raceHeader = createRaceHeader({
         trackCode: 'SAR', // Speed bias
         surface: 'dirt',
-      })
+      });
 
       const runningStyle = createRunningStyle({
         style: 'C', // Closer on speed track - mismatch
         styleName: 'Closer',
-      })
+      });
 
-      const result = detectTrackBiasFit(horse, raceHeader, runningStyle)
+      const result = detectTrackBiasFit(horse, raceHeader, runningStyle);
 
-      expect(result).toBeNull()
-    })
-  })
+      expect(result).toBeNull();
+    });
+  });
 
   describe('detectAllUpsetAngles Integration', () => {
     it('detects multiple angles for nuclear longshot candidate', () => {
-      const now = new Date()
+      const now = new Date();
 
       const horse = createHorseEntry({
         horseName: 'Nuclear Bomb',
@@ -973,11 +1003,11 @@ describe('Longshot Detector', () => {
             finishPosition: 5,
           }),
         ],
-      })
+      });
 
-      const allHorses = [horse]
+      const allHorses = [horse];
 
-      const raceHeader = createRaceHeader()
+      const raceHeader = createRaceHeader();
 
       const paceScenario = createPaceScenario({
         ppi: 65,
@@ -988,15 +1018,33 @@ describe('Longshot Detector', () => {
           closers: [8],
           unknown: [],
         },
-      })
+      });
 
       const runningStyle = createRunningStyle({
         style: 'C',
         evidence: [
-          { raceDate: '2024-01-15', track: 'SAR', firstCallPosition: 8, fieldSize: 10, finishPosition: 1, styleInRace: 'C', wasOnLead: false, lengthsBehindAtFirstCall: 12 },
-          { raceDate: '2024-01-01', track: 'SAR', firstCallPosition: 7, fieldSize: 9, finishPosition: 2, styleInRace: 'C', wasOnLead: false, lengthsBehindAtFirstCall: 10 },
+          {
+            raceDate: '2024-01-15',
+            track: 'SAR',
+            firstCallPosition: 8,
+            fieldSize: 10,
+            finishPosition: 1,
+            styleInRace: 'C',
+            wasOnLead: false,
+            lengthsBehindAtFirstCall: 12,
+          },
+          {
+            raceDate: '2024-01-01',
+            track: 'SAR',
+            firstCallPosition: 7,
+            fieldSize: 9,
+            finishPosition: 2,
+            styleInRace: 'C',
+            wasOnLead: false,
+            lengthsBehindAtFirstCall: 10,
+          },
         ],
-      })
+      });
 
       const classScore = createClassScore({
         analysis: {
@@ -1020,7 +1068,7 @@ describe('Longshot Detector', () => {
             bestBeyerAtLevel: 90,
           },
         } as unknown as ClassAnalysisResult,
-      })
+      });
 
       const equipmentScore = createEquipmentScore({
         hasSignificantChange: true,
@@ -1034,7 +1082,7 @@ describe('Longshot Detector', () => {
             impact: 'positive',
           } as unknown as DetectedEquipmentChange,
         ],
-      })
+      });
 
       const angles = detectAllUpsetAngles(
         horse,
@@ -1044,20 +1092,20 @@ describe('Longshot Detector', () => {
         runningStyle,
         classScore,
         equipmentScore
-      )
+      );
 
-      expect(angles.length).toBeGreaterThan(0)
+      expect(angles.length).toBeGreaterThan(0);
 
       // Calculate total points
-      const totalPoints = angles.reduce((sum, a) => sum + a.points, 0)
+      const totalPoints = angles.reduce((sum, a) => sum + a.points, 0);
 
       // With multiple angles, should qualify as at least LIVE
       if (totalPoints >= MIN_ANGLE_POINTS_NUCLEAR) {
-        expect(getClassificationFromPoints(totalPoints)).toBe('nuclear')
+        expect(getClassificationFromPoints(totalPoints)).toBe('nuclear');
       } else if (totalPoints >= MIN_ANGLE_POINTS_LIVE) {
-        expect(getClassificationFromPoints(totalPoints)).toBe('live')
+        expect(getClassificationFromPoints(totalPoints)).toBe('live');
       }
-    })
+    });
 
     it('returns empty array when no angles apply', () => {
       const horse = createHorseEntry({
@@ -1066,19 +1114,19 @@ describe('Longshot Detector', () => {
         medication: createMedication({
           lasixFirstTime: false,
         }),
-      })
+      });
 
-      const allHorses = [horse]
+      const allHorses = [horse];
 
-      const raceHeader = createRaceHeader()
+      const raceHeader = createRaceHeader();
 
       const paceScenario = createPaceScenario({
         ppi: 40, // No speed duel
-      })
+      });
 
       const runningStyle = createRunningStyle({
         style: 'P', // Presser
-      })
+      });
 
       const classScore = createClassScore({
         analysis: {
@@ -1102,12 +1150,12 @@ describe('Longshot Detector', () => {
             bestBeyerAtLevel: null,
           },
         } as unknown as ClassAnalysisResult,
-      })
+      });
 
       const equipmentScore = createEquipmentScore({
         hasSignificantChange: false,
         changes: [],
-      })
+      });
 
       const angles = detectAllUpsetAngles(
         horse,
@@ -1117,11 +1165,11 @@ describe('Longshot Detector', () => {
         runningStyle,
         classScore,
         equipmentScore
-      )
+      );
 
-      expect(angles.length).toBe(0)
-    })
-  })
+      expect(angles.length).toBe(0);
+    });
+  });
 
   describe('Real-World Racing Scenarios', () => {
     it('identifies pace collapse scenario like the 2009 KY Derby', () => {
@@ -1130,7 +1178,7 @@ describe('Longshot Detector', () => {
         horseName: 'Long Shot Closer',
         morningLineOdds: '50-1',
         runningStyle: 'C',
-      })
+      });
 
       const paceScenario = createPaceScenario({
         ppi: 75, // Hot pace scenario
@@ -1141,25 +1189,52 @@ describe('Longshot Detector', () => {
           closers: [9], // Lone closer
           unknown: [],
         },
-      })
+      });
 
       const runningStyle = createRunningStyle({
         style: 'C',
         styleName: 'Closer',
         confidence: 90,
         evidence: [
-          { raceDate: '2024-01-20', track: 'CD', firstCallPosition: 10, fieldSize: 12, finishPosition: 1, styleInRace: 'C', wasOnLead: false, lengthsBehindAtFirstCall: 15 },
-          { raceDate: '2024-01-10', track: 'CD', firstCallPosition: 9, fieldSize: 11, finishPosition: 2, styleInRace: 'C', wasOnLead: false, lengthsBehindAtFirstCall: 12 },
-          { raceDate: '2024-01-01', track: 'CD', firstCallPosition: 8, fieldSize: 10, finishPosition: 3, styleInRace: 'C', wasOnLead: false, lengthsBehindAtFirstCall: 10 },
+          {
+            raceDate: '2024-01-20',
+            track: 'CD',
+            firstCallPosition: 10,
+            fieldSize: 12,
+            finishPosition: 1,
+            styleInRace: 'C',
+            wasOnLead: false,
+            lengthsBehindAtFirstCall: 15,
+          },
+          {
+            raceDate: '2024-01-10',
+            track: 'CD',
+            firstCallPosition: 9,
+            fieldSize: 11,
+            finishPosition: 2,
+            styleInRace: 'C',
+            wasOnLead: false,
+            lengthsBehindAtFirstCall: 12,
+          },
+          {
+            raceDate: '2024-01-01',
+            track: 'CD',
+            firstCallPosition: 8,
+            fieldSize: 10,
+            finishPosition: 3,
+            styleInRace: 'C',
+            wasOnLead: false,
+            lengthsBehindAtFirstCall: 10,
+          },
         ],
-      })
+      });
 
-      const result = detectPaceDevastation(horse, [], paceScenario, runningStyle)
+      const result = detectPaceDevastation(horse, [], paceScenario, runningStyle);
 
-      expect(result).not.toBeNull()
-      expect(result?.points).toBeGreaterThanOrEqual(40)
-      expect(result?.confidence).toBeGreaterThan(70)
-    })
+      expect(result).not.toBeNull();
+      expect(result?.points).toBeGreaterThanOrEqual(40);
+      expect(result?.confidence).toBeGreaterThan(70);
+    });
 
     it('identifies class dropper like mid-level claimer dropping to bottom', () => {
       const horse = createHorseEntry({
@@ -1178,7 +1253,7 @@ describe('Longshot Detector', () => {
             classification: 'claiming',
           }),
         ],
-      })
+      });
 
       const classScore = createClassScore({
         analysis: {
@@ -1210,18 +1285,18 @@ describe('Longshot Detector', () => {
             },
           ],
         } as unknown as ClassAnalysisResult,
-      })
+      });
 
       const raceHeader = createRaceHeader({
         classification: 'claiming',
         claimingPriceMax: 12500,
-      })
+      });
 
-      const result = detectClassRelief(horse, raceHeader, classScore)
+      const result = detectClassRelief(horse, raceHeader, classScore);
 
-      expect(result).not.toBeNull()
-      expect(result?.category).toBe('class_relief')
-      expect(result?.bonusPoints).toBeGreaterThan(0)
-    })
-  })
-})
+      expect(result).not.toBeNull();
+      expect(result?.category).toBe('class_relief');
+      expect(result?.bonusPoints).toBeGreaterThan(0);
+    });
+  });
+});

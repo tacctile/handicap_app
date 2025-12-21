@@ -41,13 +41,13 @@ src/data/tracks/
 ```typescript
 interface TrackData {
   // IDENTIFICATION
-  code: string;                    // "CD", "SA", "GP", "PEN", etc.
-  name: string;                    // "Churchill Downs"
+  code: string; // "CD", "SA", "GP", "PEN", etc.
+  name: string; // "Churchill Downs"
   location: {
-    city: string;                  // "Louisville"
-    state: string;                 // "KY"
-    country: string;               // "USA"
-    timezone: string;              // "America/New_York"
+    city: string; // "Louisville"
+    state: string; // "KY"
+    country: string; // "USA"
+    timezone: string; // "America/New_York"
   };
 
   // TRACK MEASUREMENTS
@@ -84,8 +84,8 @@ interface TrackData {
   trackRecords: TrackRecord[];
 
   // METADATA
-  lastUpdated: string;             // ISO date
-  dataConfidence: number;          // 0-100 (data quality score)
+  lastUpdated: string; // ISO date
+  dataConfidence: number; // 0-100 (data quality score)
 }
 ```
 
@@ -99,29 +99,29 @@ interface TrackData {
 interface TrackMeasurements {
   // MAIN TRACK (DIRT)
   mainTrack: {
-    circumference: number;         // feet (e.g., 5280 for 1 mile)
+    circumference: number; // feet (e.g., 5280 for 1 mile)
     width: {
-      turns: number;               // feet
-      stretch: number;             // feet
-      backstretch: number;         // feet
+      turns: number; // feet
+      stretch: number; // feet
+      backstretch: number; // feet
     };
     stretch: {
-      length: number;              // feet
-      runFromLastTurn: number;     // feet
+      length: number; // feet
+      runFromLastTurn: number; // feet
     };
     turns: {
-      banking: number;             // degrees
-      radius: number;              // feet
+      banking: number; // degrees
+      radius: number; // feet
     };
     chutes: {
-      sixFurlongs?: number;        // feet from finish
+      sixFurlongs?: number; // feet from finish
       sevenFurlongs?: number;
       mile?: number;
       mileAndSixteenth?: number;
       mileAndEighth?: number;
       mileAndQuarter?: number;
     };
-    railDistance: number;          // feet from inner rail
+    railDistance: number; // feet from inner rail
   };
 
   // TURF COURSE (if applicable)
@@ -132,14 +132,14 @@ interface TrackMeasurements {
       length: number;
       runFromLastTurn: number;
     };
-    configuration: string;         // "inner", "outer", "hillside", etc.
+    configuration: string; // "inner", "outer", "hillside", etc.
   };
 
   // RUN-UP DISTANCES
   runUp: {
-    sprint: number;                // feet
-    route: number;                 // feet
-    turf?: number;                 // feet
+    sprint: number; // feet
+    route: number; // feet
+    turf?: number; // feet
   };
 }
 ```
@@ -148,19 +148,19 @@ interface TrackMeasurements {
 
 ```typescript
 interface SurfaceCharacteristics {
-  material: string;                // "dirt", "turf", "tapeta", "polytrack"
+  material: string; // "dirt", "turf", "tapeta", "polytrack"
   composition?: {
-    primary: string;               // "sand", "clay", "loam"
+    primary: string; // "sand", "clay", "loam"
     secondary?: string;
-    ratio?: string;                // "60/40 sand/clay"
+    ratio?: string; // "60/40 sand/clay"
   };
   cushion: {
-    depth: number;                 // inches
-    maintenance: string;           // "deep harrowed", "sealed", etc.
+    depth: number; // inches
+    maintenance: string; // "deep harrowed", "sealed", etc.
   };
-  drainage: string;                // "excellent", "good", "fair", "poor"
-  speedRating: number;             // 1-100 (100 = fastest)
-  turfType?: string;               // "bermuda", "bluegrass", etc.
+  drainage: string; // "excellent", "good", "fair", "poor"
+  speedRating: number; // 1-100 (100 = fastest)
+  turfType?: string; // "bermuda", "bluegrass", etc.
 }
 ```
 
@@ -169,25 +169,25 @@ interface SurfaceCharacteristics {
 ```typescript
 interface PostPositionBiasMatrix {
   // Win rates by post position (index 0 = post 1)
-  winRates: number[];              // e.g., [0.118, 0.142, 0.157, 0.187, ...]
+  winRates: number[]; // e.g., [0.118, 0.142, 0.157, 0.187, ...]
 
   // Average $2 win payoff by post
-  averagePayoffs: number[];        // e.g., [4.20, 3.80, 3.60, 3.20, ...]
+  averagePayoffs: number[]; // e.g., [4.20, 3.80, 3.60, 3.20, ...]
 
   // Scoring points by post (from Scoring Engine)
-  scoringPoints: number[];         // e.g., [6, 12, 14, 20, 18, 10, 8, 2, ...]
+  scoringPoints: number[]; // e.g., [6, 12, 14, 20, 18, 10, 8, 2, ...]
 
   // Golden posts (highest value posts)
-  goldenPosts: number[];           // e.g., [4, 5] (1-indexed)
+  goldenPosts: number[]; // e.g., [4, 5] (1-indexed)
 
   // Trouble posts (lowest value posts)
-  troublePosts: number[];          // e.g., [8, 9, 10] (1-indexed)
+  troublePosts: number[]; // e.g., [8, 9, 10] (1-indexed)
 
   // Sample size for statistical validity
-  sampleSize: number;              // Number of races analyzed
+  sampleSize: number; // Number of races analyzed
   dateRange: {
-    start: string;                 // ISO date
-    end: string;                   // ISO date
+    start: string; // ISO date
+    end: string; // ISO date
   };
 }
 ```
@@ -202,10 +202,10 @@ interface SpeedBiasData {
 
   // By distance category
   sprint: {
-    rating: number;                // 0-100
-    earlyLeaderWinRate: number;    // % of winners leading at half-mile
-    wireToWireRate: number;        // % of wire-to-wire winners
-    closerWinRate: number;         // % of winners 5+ lengths back at half
+    rating: number; // 0-100
+    earlyLeaderWinRate: number; // % of winners leading at half-mile
+    wireToWireRate: number; // % of wire-to-wire winners
+    closerWinRate: number; // % of winners 5+ lengths back at half
   };
 
   route: {
@@ -224,20 +224,20 @@ interface SpeedBiasData {
 
   // By track condition
   byCondition: {
-    fast: number;                  // bias rating when fast
+    fast: number; // bias rating when fast
     good: number;
     muddy: number;
     sloppy: number;
-    sealed: number;                // often faster than fast
+    sealed: number; // often faster than fast
   };
 
   // Running style scoring adjustments
   styleAdjustments: {
-    E: number;                     // Early speed adjustment
-    EP: number;                    // Early presser adjustment
-    P: number;                     // Presser adjustment
-    S: number;                     // Stalker adjustment
-    C: number;                     // Closer adjustment
+    E: number; // Early speed adjustment
+    EP: number; // Early presser adjustment
+    P: number; // Presser adjustment
+    S: number; // Stalker adjustment
+    C: number; // Closer adjustment
   };
 }
 ```
@@ -248,24 +248,24 @@ interface SpeedBiasData {
 interface ParTimeMatrix {
   // Keyed by distance in furlongs (e.g., "6.0", "8.0", "8.5")
   [distance: string]: {
-    surface: string;               // "dirt", "turf"
-    condition: string;             // "fast", "good", etc.
+    surface: string; // "dirt", "turf"
+    condition: string; // "fast", "good", etc.
 
     // Fractional pars
     fractions: {
-      quarter?: number;            // seconds (e.g., 22.4)
-      half?: number;               // seconds (e.g., 45.2)
-      sixFurlongs?: number;        // seconds
-      mile?: number;               // seconds
-      final: number;               // final time in seconds
+      quarter?: number; // seconds (e.g., 22.4)
+      half?: number; // seconds (e.g., 45.2)
+      sixFurlongs?: number; // seconds
+      mile?: number; // seconds
+      final: number; // final time in seconds
     };
 
     // Par speed figure for class levels
     parFigures: {
-      maiden: number;              // e.g., 72
-      claimingLow: number;         // $5K-$10K claiming
-      claimingMid: number;         // $10K-$25K claiming
-      claimingHigh: number;        // $25K-$50K claiming
+      maiden: number; // e.g., 72
+      claimingLow: number; // $5K-$10K claiming
+      claimingMid: number; // $10K-$25K claiming
+      claimingHigh: number; // $25K-$50K claiming
       allowance: number;
       stakes: number;
       graded: number;
@@ -278,21 +278,21 @@ interface ParTimeMatrix {
 
 ```typescript
 interface SeasonalPattern {
-  months: number[];                // e.g., [1, 2] for Jan-Feb
-  name: string;                    // "Winter Racing"
+  months: number[]; // e.g., [1, 2] for Jan-Feb
+  name: string; // "Winter Racing"
 
   // Adjustments during this period
   adjustments: {
-    speedBias: number;             // adjustment to base speed bias
-    favoriteWinRate: number;       // % (e.g., 38.4)
-    averageFieldSize: number;      // (e.g., 7.2)
-    surfaceNotes: string;          // "Often frozen or sealed"
+    speedBias: number; // adjustment to base speed bias
+    favoriteWinRate: number; // % (e.g., 38.4)
+    averageFieldSize: number; // (e.g., 7.2)
+    surfaceNotes: string; // "Often frozen or sealed"
   };
 
   // Weather impact multipliers
   weatherImpact: {
-    temperatureEffect: number;     // multiplier for temp adjustments
-    precipitationEffect: number;   // multiplier for rain adjustments
+    temperatureEffect: number; // multiplier for temp adjustments
+    precipitationEffect: number; // multiplier for rain adjustments
   };
 }
 ```
@@ -301,15 +301,15 @@ interface SeasonalPattern {
 
 ```typescript
 interface EliteConnection {
-  name: string;                    // "Timothy C. Kreiser"
-  type: "trainer" | "jockey";
+  name: string; // "Timothy C. Kreiser"
+  type: 'trainer' | 'jockey';
 
   // Overall statistics
   stats: {
     starts: number;
     wins: number;
-    winRate: number;               // decimal (e.g., 0.234)
-    roi: number;                   // return on investment per $2
+    winRate: number; // decimal (e.g., 0.234)
+    roi: number; // return on investment per $2
   };
 
   // Track-specific statistics
@@ -327,8 +327,8 @@ interface EliteConnection {
     sprintWinRate?: number;
     routeWinRate?: number;
     firstTimeStarterRate?: number;
-    layoffWinRate?: number;        // 30-60 day layoff
-    equipmentChangeRate?: number;  // blinkers on, Lasix, etc.
+    layoffWinRate?: number; // 30-60 day layoff
+    equipmentChangeRate?: number; // blinkers on, Lasix, etc.
     secondOffClaimRate?: number;
   };
 
@@ -341,8 +341,8 @@ interface EliteConnection {
   };
 
   // Tier assignment for scoring
-  tier: 1 | 2 | 3;                 // 1 = Elite, 2 = Strong, 3 = Solid
-  basePoints: number;              // Points awarded in Category 1
+  tier: 1 | 2 | 3; // 1 = Elite, 2 = Strong, 3 = Solid
+  basePoints: number; // Points awarded in Category 1
 }
 ```
 
@@ -350,12 +350,12 @@ interface EliteConnection {
 
 ```typescript
 interface TrackRecord {
-  distance: string;                // "6F", "1M", "1 1/16M"
-  surface: string;                 // "dirt", "turf"
-  time: number;                    // seconds
+  distance: string; // "6F", "1M", "1 1/16M"
+  surface: string; // "dirt", "turf"
+  time: number; // seconds
   horseName: string;
-  date: string;                    // ISO date
-  conditions: string;              // "fast", "firm", etc.
+  date: string; // ISO date
+  conditions: string; // "fast", "firm", etc.
 }
 ```
 
@@ -370,11 +370,11 @@ When a track code is not found in the database, apply these neutral defaults:
 ```typescript
 const FALLBACK_DEFAULTS: Partial<TrackData> = {
   speedBias: {
-    overallRating: 55,             // Slight speed favor (national average)
+    overallRating: 55, // Slight speed favor (national average)
     sprint: {
       rating: 58,
       earlyLeaderWinRate: 0.55,
-      wireToWireRate: 0.30,
+      wireToWireRate: 0.3,
       closerWinRate: 0.12,
     },
     route: {
@@ -401,30 +401,31 @@ const FALLBACK_DEFAULTS: Partial<TrackData> = {
 
   postPositionBias: {
     sprint: {
-      winRates: [0.10, 0.12, 0.14, 0.16, 0.15, 0.13, 0.11, 0.09],
+      winRates: [0.1, 0.12, 0.14, 0.16, 0.15, 0.13, 0.11, 0.09],
       scoringPoints: [6, 10, 14, 18, 16, 12, 8, 4],
       goldenPosts: [4, 5],
       troublePosts: [8, 9, 10],
       sampleSize: 0,
-      dateRange: { start: "", end: "" },
+      dateRange: { start: '', end: '' },
     },
     route: {
-      winRates: [0.11, 0.13, 0.14, 0.15, 0.16, 0.13, 0.10, 0.08],
+      winRates: [0.11, 0.13, 0.14, 0.15, 0.16, 0.13, 0.1, 0.08],
       scoringPoints: [8, 12, 15, 16, 18, 12, 8, 4],
       goldenPosts: [5],
       troublePosts: [9, 10, 11, 12],
       sampleSize: 0,
-      dateRange: { start: "", end: "" },
+      dateRange: { start: '', end: '' },
     },
   },
 
-  dataConfidence: 40,              // Reduced confidence for unknown track
+  dataConfidence: 40, // Reduced confidence for unknown track
 };
 ```
 
 ### Confidence Adjustments for Fallback
 
 When using fallback data:
+
 - Reduce overall confidence by 15%
 - Flag analysis with "Unknown Track" warning
 - Apply wider variance to probability calculations
@@ -437,6 +438,7 @@ When using fallback data:
 ### How Track Data Feeds Scoring
 
 **Category 1: Elite Connections (50 pts max)**
+
 ```
 Source: eliteTrainers[], eliteJockeys[]
 Usage:
@@ -447,6 +449,7 @@ Usage:
 ```
 
 **Category 2: Post Position & Bias (45 pts max)**
+
 ```
 Source: postPositionBias, speedBias
 Usage:
@@ -457,6 +460,7 @@ Usage:
 ```
 
 **Category 3: Speed Figures & Class (50 pts max)**
+
 ```
 Source: parTimes
 Usage:
@@ -466,6 +470,7 @@ Usage:
 ```
 
 **Category 6: Pace & Tactical (40 pts max)**
+
 ```
 Source: speedBias, parTimes
 Usage:
@@ -482,7 +487,6 @@ function integrateTrackData(
   horseData: ParsedHorse,
   raceConditions: RaceConditions
 ): TrackAdjustments {
-
   // 1. Retrieve track data (or fallback)
   const track = getTrackIntelligence(trackCode);
 
@@ -501,8 +505,8 @@ function integrateTrackData(
   const conditionBias = track.speedBias.byCondition[raceConditions.trackCondition];
 
   // 6. Look up connections
-  const trainerData = track.eliteTrainers.find(t => t.name === horseData.trainer);
-  const jockeyData = track.eliteJockeys.find(j => j.name === horseData.jockey);
+  const trainerData = track.eliteTrainers.find((t) => t.name === horseData.trainer);
+  const jockeyData = track.eliteJockeys.find((j) => j.name === horseData.jockey);
 
   return {
     postPositionPoints: postPoints,
@@ -524,6 +528,7 @@ function integrateTrackData(
 Each track file should follow this template structure with all sections populated with real, researched data for that specific track.
 
 **Required Sections:**
+
 1. Identification (code, name, location)
 2. Track Measurements (circumference, stretch, turns, chutes)
 3. Surface Characteristics (material, composition, drainage)
@@ -543,37 +548,37 @@ Each track file should follow this template structure with all sections populate
 
 For a track to be considered "complete":
 
-| Data Category | Required | Notes |
-|---------------|----------|-------|
-| Basic identification | ✓ | Code, name, location |
-| Track measurements | ✓ | Circumference, stretch length |
-| Post position bias (sprint) | ✓ | Win rates, scoring points |
-| Post position bias (route) | ✓ | Win rates, scoring points |
-| Speed bias rating | ✓ | Overall and by condition |
-| Par times (at least 2 distances) | ✓ | Common distances run |
-| Elite trainers (top 5) | ✓ | With win rates |
-| Elite jockeys (top 5) | ✓ | With win rates |
-| Data confidence score | ✓ | 0-100 rating |
+| Data Category                    | Required | Notes                         |
+| -------------------------------- | -------- | ----------------------------- |
+| Basic identification             | ✓        | Code, name, location          |
+| Track measurements               | ✓        | Circumference, stretch length |
+| Post position bias (sprint)      | ✓        | Win rates, scoring points     |
+| Post position bias (route)       | ✓        | Win rates, scoring points     |
+| Speed bias rating                | ✓        | Overall and by condition      |
+| Par times (at least 2 distances) | ✓        | Common distances run          |
+| Elite trainers (top 5)           | ✓        | With win rates                |
+| Elite jockeys (top 5)            | ✓        | With win rates                |
+| Data confidence score            | ✓        | 0-100 rating                  |
 
 ### Recommended Additional Data
 
-| Data Category | Importance | Notes |
-|---------------|------------|-------|
-| Turf post position bias | High | If track has turf course |
-| Seasonal patterns | Medium | For multi-meet tracks |
-| Track records | Low | Reference only |
-| Surface composition | Low | For weather analysis |
-| Detailed trainer specialties | Medium | Improves Category 1 scoring |
+| Data Category                | Importance | Notes                       |
+| ---------------------------- | ---------- | --------------------------- |
+| Turf post position bias      | High       | If track has turf course    |
+| Seasonal patterns            | Medium     | For multi-meet tracks       |
+| Track records                | Low        | Reference only              |
+| Surface composition          | Low        | For weather analysis        |
+| Detailed trainer specialties | Medium     | Improves Category 1 scoring |
 
 ### Data Quality Standards
 
-| Confidence Score | Description |
-|------------------|-------------|
-| 90-100 | Comprehensive data, recent, large sample sizes |
-| 75-89 | Good data, some gaps or smaller samples |
-| 60-74 | Adequate data, notable limitations |
-| 40-59 | Limited data, use with caution |
-| Below 40 | Minimal data, fallback-level confidence |
+| Confidence Score | Description                                    |
+| ---------------- | ---------------------------------------------- |
+| 90-100           | Comprehensive data, recent, large sample sizes |
+| 75-89            | Good data, some gaps or smaller samples        |
+| 60-74            | Adequate data, notable limitations             |
+| 40-59            | Limited data, use with caution                 |
+| Below 40         | Minimal data, fallback-level confidence        |
 
 ---
 
@@ -581,33 +586,33 @@ For a track to be considered "complete":
 
 ### Priority 1: Major Tracks (Complete First)
 
-| Code | Name | Location |
-|------|------|----------|
-| CD | Churchill Downs | Louisville, KY |
-| SA | Santa Anita | Arcadia, CA |
-| GP | Gulfstream Park | Hallandale Beach, FL |
-| AQU | Aqueduct | Queens, NY |
-| BEL | Belmont Park | Elmont, NY |
-| SAR | Saratoga | Saratoga Springs, NY |
-| KEE | Keeneland | Lexington, KY |
-| DMR | Del Mar | Del Mar, CA |
-| OP | Oaklawn Park | Hot Springs, AR |
-| TAM | Tampa Bay Downs | Tampa, FL |
+| Code | Name            | Location             |
+| ---- | --------------- | -------------------- |
+| CD   | Churchill Downs | Louisville, KY       |
+| SA   | Santa Anita     | Arcadia, CA          |
+| GP   | Gulfstream Park | Hallandale Beach, FL |
+| AQU  | Aqueduct        | Queens, NY           |
+| BEL  | Belmont Park    | Elmont, NY           |
+| SAR  | Saratoga        | Saratoga Springs, NY |
+| KEE  | Keeneland       | Lexington, KY        |
+| DMR  | Del Mar         | Del Mar, CA          |
+| OP   | Oaklawn Park    | Hot Springs, AR      |
+| TAM  | Tampa Bay Downs | Tampa, FL            |
 
 ### Priority 2: Regional Tracks
 
-| Code | Name | Location |
-|------|------|----------|
-| PEN | Penn National | Grantville, PA |
-| PRX | Parx Racing | Bensalem, PA |
-| LRL | Laurel Park | Laurel, MD |
-| PIM | Pimlico | Baltimore, MD |
-| MTH | Monmouth Park | Oceanport, NJ |
-| CT | Charles Town | Charles Town, WV |
-| IND | Indiana Grand | Shelbyville, IN |
-| HAW | Hawthorne | Cicero, IL |
-| FG | Fair Grounds | New Orleans, LA |
-| WO | Woodbine | Toronto, ON |
+| Code | Name          | Location         |
+| ---- | ------------- | ---------------- |
+| PEN  | Penn National | Grantville, PA   |
+| PRX  | Parx Racing   | Bensalem, PA     |
+| LRL  | Laurel Park   | Laurel, MD       |
+| PIM  | Pimlico       | Baltimore, MD    |
+| MTH  | Monmouth Park | Oceanport, NJ    |
+| CT   | Charles Town  | Charles Town, WV |
+| IND  | Indiana Grand | Shelbyville, IN  |
+| HAW  | Hawthorne     | Cicero, IL       |
+| FG   | Fair Grounds  | New Orleans, LA  |
+| WO   | Woodbine      | Toronto, ON      |
 
 ### Priority 3: Additional Tracks
 
@@ -615,6 +620,6 @@ All other active North American tracks.
 
 ---
 
-*Document Version: 1.0*
-*Status: Complete Track Intelligence Schema Specification*
-*Integration: Provides track-specific data to universal Scoring Engine*
+_Document Version: 1.0_
+_Status: Complete Track Intelligence Schema Specification_
+_Integration: Provides track-specific data to universal Scoring Engine_

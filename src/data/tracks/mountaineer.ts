@@ -14,7 +14,7 @@
  * NOTE: 1-mile oval with tight turns; year-round night racing; speed-favoring
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const mountaineer: TrackData = {
   code: 'MNR',
@@ -33,8 +33,8 @@ export const mountaineer: TrackData = {
       // Source: West Virginia Racing Commission - 75 feet wide
       trackWidth: 75,
       // Source: Mountaineer - chutes at 6f and 7f
-      chutes: [6, 7]
-    }
+      chutes: [6, 7],
+    },
   },
 
   postPositionBias: {
@@ -51,7 +51,8 @@ export const mountaineer: TrackData = {
         // Sample: 2,000+ dirt sprints
         winPercentByPost: [14.5, 14.0, 13.5, 12.8, 11.5, 10.5, 9.2, 7.5, 4.8, 1.7],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Moderate inside bias in sprints; posts 1-3 win 42%+ combined; tight turns favor rail'
+        biasDescription:
+          'Moderate inside bias in sprints; posts 1-3 win 42%+ combined; tight turns favor rail',
       },
       {
         distance: 'route',
@@ -64,9 +65,10 @@ export const mountaineer: TrackData = {
         // Sample: 600+ dirt routes
         winPercentByPost: [14.0, 13.5, 13.2, 12.5, 11.8, 10.8, 9.5, 8.0, 4.8, 1.9],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Inside posts 1-3 favored in routes; 990-foot stretch limits rallies; speed holds advantage'
-      }
-    ]
+        biasDescription:
+          'Inside posts 1-3 favored in routes; 990-foot stretch limits rallies; speed holds advantage',
+      },
+    ],
   },
 
   speedBias: [
@@ -80,8 +82,9 @@ export const mountaineer: TrackData = {
       // Stalkers competitive; deep closers struggle
       earlySpeedWinRate: 60,
       paceAdvantageRating: 7,
-      description: 'Speed-favoring track; 60%+ early speed win rate; 990-ft stretch; wire-to-wire common; stalkers can compete'
-    }
+      description:
+        'Speed-favoring track; 60%+ early speed win rate; 990-ft stretch; wire-to-wire common; stalkers can compete',
+    },
   ],
 
   surfaces: [
@@ -92,8 +95,8 @@ export const mountaineer: TrackData = {
       // Well-maintained for consistent racing
       composition: 'Sandy loam cushion over limestone base; 3.5-inch cushion depth',
       playingStyle: 'speed-favoring',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -105,7 +108,7 @@ export const mountaineer: TrackData = {
       // Ohio River valley weather variable
       typicalCondition: 'Fast to Good; frozen track possible',
       speedAdjustment: -1,
-      notes: 'Year-round night racing; cold Ohio River valley weather; occasional frozen track'
+      notes: 'Year-round night racing; cold Ohio River valley weather; occasional frozen track',
     },
     {
       season: 'spring',
@@ -114,7 +117,7 @@ export const mountaineer: TrackData = {
       // Variable weather; rain common
       typicalCondition: 'Fast to Good',
       speedAdjustment: 0,
-      notes: 'Spring racing; Ohio Valley rain can affect track; West Virginia Derby prep races'
+      notes: 'Spring racing; Ohio Valley rain can affect track; West Virginia Derby prep races',
     },
     {
       season: 'summer',
@@ -123,7 +126,7 @@ export const mountaineer: TrackData = {
       // West Virginia Derby (G3) in August
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Peak summer meet; West Virginia Derby (G3) in August; fast conditions predominate'
+      notes: 'Peak summer meet; West Virginia Derby (G3) in August; fast conditions predominate',
     },
     {
       season: 'fall',
@@ -132,8 +135,8 @@ export const mountaineer: TrackData = {
       // Continued year-round racing
       typicalCondition: 'Fast to Good',
       speedAdjustment: 0,
-      notes: 'Fall racing; transition to winter schedule; field sizes may decrease'
-    }
+      notes: 'Fall racing; transition to winter schedule; field sizes may decrease',
+    },
   ],
 
   winningTimes: [
@@ -144,7 +147,7 @@ export const mountaineer: TrackData = {
       surface: 'dirt',
       claimingAvg: 52.2,
       allowanceAvg: 51.0,
-      stakesAvg: 50.0
+      stakesAvg: 50.0,
     },
     {
       distance: '5f',
@@ -152,7 +155,7 @@ export const mountaineer: TrackData = {
       surface: 'dirt',
       claimingAvg: 58.5,
       allowanceAvg: 57.2,
-      stakesAvg: 56.0
+      stakesAvg: 56.0,
     },
     {
       distance: '5.5f',
@@ -160,7 +163,7 @@ export const mountaineer: TrackData = {
       surface: 'dirt',
       claimingAvg: 64.8,
       allowanceAvg: 63.5,
-      stakesAvg: 62.2
+      stakesAvg: 62.2,
     },
     {
       distance: '6f',
@@ -169,7 +172,7 @@ export const mountaineer: TrackData = {
       // Track record: 1:08.40
       claimingAvg: 71.2,
       allowanceAvg: 69.8,
-      stakesAvg: 68.5
+      stakesAvg: 68.5,
     },
     {
       distance: '6.5f',
@@ -177,7 +180,7 @@ export const mountaineer: TrackData = {
       surface: 'dirt',
       claimingAvg: 77.5,
       allowanceAvg: 76.0,
-      stakesAvg: 74.8
+      stakesAvg: 74.8,
     },
     {
       distance: '7f',
@@ -185,7 +188,7 @@ export const mountaineer: TrackData = {
       surface: 'dirt',
       claimingAvg: 84.0,
       allowanceAvg: 82.5,
-      stakesAvg: 81.0
+      stakesAvg: 81.0,
     },
     {
       distance: '1m',
@@ -193,7 +196,7 @@ export const mountaineer: TrackData = {
       surface: 'dirt',
       claimingAvg: 98.0,
       allowanceAvg: 96.5,
-      stakesAvg: 95.0
+      stakesAvg: 95.0,
     },
     {
       distance: '1m70y',
@@ -201,7 +204,7 @@ export const mountaineer: TrackData = {
       surface: 'dirt',
       claimingAvg: 102.5,
       allowanceAvg: 101.0,
-      stakesAvg: 99.5
+      stakesAvg: 99.5,
     },
     {
       distance: '1 1/16m',
@@ -209,7 +212,7 @@ export const mountaineer: TrackData = {
       surface: 'dirt',
       claimingAvg: 105.0,
       allowanceAvg: 103.2,
-      stakesAvg: 101.5
+      stakesAvg: 101.5,
     },
     {
       distance: '1 1/8m',
@@ -219,7 +222,7 @@ export const mountaineer: TrackData = {
       // Track record: 1:49.60
       claimingAvg: 112.5,
       allowanceAvg: 110.5,
-      stakesAvg: 108.5
+      stakesAvg: 108.5,
     },
     {
       distance: '1 1/4m',
@@ -227,10 +230,10 @@ export const mountaineer: TrackData = {
       surface: 'dirt',
       claimingAvg: 126.0,
       allowanceAvg: 123.5,
-      stakesAvg: 121.0
-    }
+      stakesAvg: 121.0,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

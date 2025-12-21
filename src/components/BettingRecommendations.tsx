@@ -1,14 +1,10 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import type { HorseEntry, RaceHeader } from '../types/drf'
-import type { HorseScore, ScoredHorse } from '../lib/scoring'
-import type { BettingTier } from '../lib/betting'
-import { useAnalytics } from '../hooks/useAnalytics'
-import {
-  formatOverlayPercent,
-  formatEV,
-  getOverlayColor,
-} from '../lib/scoring'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { HorseEntry, RaceHeader } from '../types/drf';
+import type { HorseScore, ScoredHorse } from '../lib/scoring';
+import type { BettingTier } from '../lib/betting';
+import { useAnalytics } from '../hooks/useAnalytics';
+import { formatOverlayPercent, formatEV, getOverlayColor } from '../lib/scoring';
 import {
   generateRecommendations,
   formatCurrency,
@@ -16,14 +12,14 @@ import {
   calculateBetWithKelly,
   type GeneratedBet,
   type BetGeneratorResult,
-} from '../lib/recommendations'
+} from '../lib/recommendations';
 import {
   optimizeExoticBet,
   generateComparisonTable,
   type ExoticBetType,
   type OptimizationResult,
   type HorseTier,
-} from '../lib/exotics'
+} from '../lib/exotics';
 import {
   calculateDutchBook,
   findOptimalDutchCombinations,
@@ -36,40 +32,40 @@ import {
   type DutchResult,
   type DutchCandidateHorse,
   type DutchSettings,
-} from '../lib/dutch'
-import type { UseBankrollReturn } from '../hooks/useBankroll'
-import { BankrollSummaryCard } from './BankrollSummaryCard'
-import { ExoticBuilderModal, type ExoticBetResult } from './ExoticBuilderModal'
-import { MultiRaceExoticsPanel } from './MultiRaceExoticsPanel'
-import type { MultiRaceTicketResult } from './MultiRaceBuilderModal'
+} from '../lib/dutch';
+import type { UseBankrollReturn } from '../hooks/useBankroll';
+import { BankrollSummaryCard } from './BankrollSummaryCard';
+import { ExoticBuilderModal, type ExoticBetResult } from './ExoticBuilderModal';
+import { MultiRaceExoticsPanel } from './MultiRaceExoticsPanel';
+import type { MultiRaceTicketResult } from './MultiRaceBuilderModal';
 
 interface BettingRecommendationsProps {
-  horses: Array<{ horse: HorseEntry; index: number; score: HorseScore }>
-  raceNumber: number
-  raceHeader?: RaceHeader
-  bankroll: UseBankrollReturn
-  onOpenBankrollSettings: () => void
+  horses: Array<{ horse: HorseEntry; index: number; score: HorseScore }>;
+  raceNumber: number;
+  raceHeader?: RaceHeader;
+  bankroll: UseBankrollReturn;
+  onOpenBankrollSettings: () => void;
   /** All races in the card for multi-race betting */
   allRaces?: Array<{
-    raceNumber: number
-    horses: Array<{ horse: HorseEntry; index: number; score: HorseScore }>
-    postTime?: string
-  }>
+    raceNumber: number;
+    horses: Array<{ horse: HorseEntry; index: number; score: HorseScore }>;
+    postTime?: string;
+  }>;
   /** Track code for carryover lookups */
-  trackCode?: string
+  trackCode?: string;
 }
 
 // Extended bet with selection state and overlay data
 interface SelectableBet extends GeneratedBet {
-  isSelected: boolean
-  customAmount: number
+  isSelected: boolean;
+  customAmount: number;
   kellyInfo?: {
-    kellyAmount: number
-    kellyFraction: string
-    edge: string
-    shouldBet: boolean
-    warnings: string[]
-  }
+    kellyAmount: number;
+    kellyFraction: string;
+    edge: string;
+    shouldBet: boolean;
+    warnings: string[];
+  };
 }
 
 // Tier badge colors
@@ -77,43 +73,64 @@ const TIER_COLORS: Record<BettingTier, { bg: string; border: string; text: strin
   tier1: { bg: 'rgba(25, 171, 181, 0.2)', border: 'rgba(25, 171, 181, 0.5)', text: '#19abb5' },
   tier2: { bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.4)', text: '#3b82f6' },
   tier3: { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.4)', text: '#f59e0b' },
-}
+};
 
 const TIER_ICONS: Record<BettingTier, string> = {
   tier1: 'workspace_premium',
   tier2: 'trending_up',
   tier3: 'bolt',
-}
+};
 
 // Preset types
-type PresetType = 'allTier1' | 'conservative' | 'valueHunter' | 'positiveEV' | 'maxCoverage' | 'clearAll'
+type PresetType =
+  | 'allTier1'
+  | 'conservative'
+  | 'valueHunter'
+  | 'positiveEV'
+  | 'maxCoverage'
+  | 'clearAll';
 
 interface PresetConfig {
-  id: PresetType
-  label: string
-  icon: string
-  description: string
+  id: PresetType;
+  label: string;
+  icon: string;
+  description: string;
 }
 
 const PRESETS: PresetConfig[] = [
-  { id: 'valueHunter', label: 'Value Hunter', icon: 'local_fire_department', description: 'Best value bets (sorted by EV%)' },
-  { id: 'positiveEV', label: '+EV Only', icon: 'trending_up', description: 'All positive expected value bets' },
-  { id: 'allTier1', label: 'All Tier 1', icon: 'workspace_premium', description: 'Select all top tier bets' },
+  {
+    id: 'valueHunter',
+    label: 'Value Hunter',
+    icon: 'local_fire_department',
+    description: 'Best value bets (sorted by EV%)',
+  },
+  {
+    id: 'positiveEV',
+    label: '+EV Only',
+    icon: 'trending_up',
+    description: 'All positive expected value bets',
+  },
+  {
+    id: 'allTier1',
+    label: 'All Tier 1',
+    icon: 'workspace_premium',
+    description: 'Select all top tier bets',
+  },
   { id: 'conservative', label: 'Safe', icon: 'shield', description: 'High confidence, low risk' },
   { id: 'maxCoverage', label: 'All', icon: 'grid_view', description: 'Maximum bet coverage' },
   { id: 'clearAll', label: 'Clear', icon: 'clear_all', description: 'Deselect all bets' },
-]
+];
 
 // Bet Slip Modal Component
 interface BetSlipModalProps {
-  isOpen: boolean
-  onClose: () => void
-  selectedBets: SelectableBet[]
-  raceNumber: number
-  totalCost: number
-  potentialReturn: { min: number; max: number }
-  onCopyAll: () => void
-  onCopySingle: (instruction: string) => void
+  isOpen: boolean;
+  onClose: () => void;
+  selectedBets: SelectableBet[];
+  raceNumber: number;
+  totalCost: number;
+  potentialReturn: { min: number; max: number };
+  onCopyAll: () => void;
+  onCopySingle: (instruction: string) => void;
 }
 
 function BetSlipModal({
@@ -126,7 +143,7 @@ function BetSlipModal({
   onCopyAll,
   onCopySingle,
 }: BetSlipModalProps) {
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <>
@@ -150,7 +167,9 @@ function BetSlipModal({
               <span className="material-icons bet-slip-modal-icon">receipt_long</span>
               <div>
                 <h2 className="bet-slip-modal-title">Bet Slip</h2>
-                <p className="bet-slip-modal-subtitle">Race {raceNumber} - {selectedBets.length} bets selected</p>
+                <p className="bet-slip-modal-subtitle">
+                  Race {raceNumber} - {selectedBets.length} bets selected
+                </p>
               </div>
             </div>
             <button className="bet-slip-modal-close" onClick={onClose}>
@@ -164,14 +183,16 @@ function BetSlipModal({
               <div className="bet-slip-empty">
                 <span className="material-icons">inbox</span>
                 <p>No bets selected</p>
-                <span className="bet-slip-empty-hint">Select bets from the list to add them here</span>
+                <span className="bet-slip-empty-hint">
+                  Select bets from the list to add them here
+                </span>
               </div>
             ) : (
               <div className="bet-slip-list">
                 {selectedBets.map((bet) => {
                   const windowInstruction = bet.windowInstruction
                     .replace(/^"/, `"Race ${raceNumber}, `)
-                    .replace(/Race \d+, Race \d+/, `Race ${raceNumber}`)
+                    .replace(/Race \d+, Race \d+/, `Race ${raceNumber}`);
 
                   return (
                     <div key={bet.id} className="bet-slip-item">
@@ -188,7 +209,7 @@ function BetSlipModal({
                         </span>
                       </div>
                       <p className="bet-slip-item-horses">
-                        {bet.horseNumbers.map(n => `#${n}`).join(', ')}
+                        {bet.horseNumbers.map((n) => `#${n}`).join(', ')}
                       </p>
                       <div className="bet-slip-item-instruction">
                         <p className="bet-slip-instruction-text">
@@ -203,7 +224,7 @@ function BetSlipModal({
                         </button>
                       </div>
                     </div>
-                  )
+                  );
                 })}
               </div>
             )}
@@ -240,18 +261,18 @@ function BetSlipModal({
         </div>
       </motion.div>
     </>
-  )
+  );
 }
 
 // Interactive Bet Card Component
 interface InteractiveBetCardProps {
-  bet: SelectableBet
-  tierColor: { bg: string; border: string; text: string }
-  raceNumber: number
-  onToggleSelect: (id: string) => void
-  onAmountChange: (id: string, amount: number) => void
-  remainingBudget: number
-  kellyEnabled?: boolean
+  bet: SelectableBet;
+  tierColor: { bg: string; border: string; text: string };
+  raceNumber: number;
+  onToggleSelect: (id: string) => void;
+  onAmountChange: (id: string, amount: number) => void;
+  remainingBudget: number;
+  kellyEnabled?: boolean;
 }
 
 function InteractiveBetCard({
@@ -263,43 +284,45 @@ function InteractiveBetCard({
   remainingBudget,
   kellyEnabled = false,
 }: InteractiveBetCardProps) {
-  const [showInstruction, setShowInstruction] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [inputValue, setInputValue] = useState(bet.customAmount.toString())
+  const [showInstruction, setShowInstruction] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [inputValue, setInputValue] = useState(bet.customAmount.toString());
 
   // Generate window instruction with race number
   const windowInstruction = bet.windowInstruction
     .replace(/^"/, `"Race ${raceNumber}, `)
-    .replace(/Race \d+, Race \d+/, `Race ${raceNumber}`)
+    .replace(/Race \d+, Race \d+/, `Race ${raceNumber}`);
 
   const handleAmountBlur = () => {
-    setIsEditing(false)
-    const newAmount = parseFloat(inputValue)
+    setIsEditing(false);
+    const newAmount = parseFloat(inputValue);
     if (!isNaN(newAmount) && newAmount > 0) {
-      onAmountChange(bet.id, Math.round(newAmount))
+      onAmountChange(bet.id, Math.round(newAmount));
     } else {
-      setInputValue(bet.customAmount.toString())
+      setInputValue(bet.customAmount.toString());
     }
-  }
+  };
 
   const handleAmountKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleAmountBlur()
+      handleAmountBlur();
     } else if (e.key === 'Escape') {
-      setIsEditing(false)
-      setInputValue(bet.customAmount.toString())
+      setIsEditing(false);
+      setInputValue(bet.customAmount.toString());
     }
-  }
+  };
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state
-    setInputValue(bet.customAmount.toString())
-  }, [bet.customAmount])
+    setInputValue(bet.customAmount.toString());
+  }, [bet.customAmount]);
 
-  const isOverBudget = bet.isSelected && bet.customAmount > remainingBudget + bet.customAmount
+  const isOverBudget = bet.isSelected && bet.customAmount > remainingBudget + bet.customAmount;
 
   return (
-    <div className={`interactive-bet-card ${bet.isSelected ? 'selected' : ''} ${isOverBudget ? 'over-budget' : ''}`}>
+    <div
+      className={`interactive-bet-card ${bet.isSelected ? 'selected' : ''} ${isOverBudget ? 'over-budget' : ''}`}
+    >
       {/* Checkbox and Main Info */}
       <div className="bet-card-main">
         <button
@@ -361,12 +384,18 @@ function InteractiveBetCard({
           {bet.specialCategory && (
             <div className="bet-special-badge">
               <span className="material-icons" style={{ fontSize: 14 }}>
-                {bet.specialCategory === 'nuclear' ? 'local_fire_department' :
-                 bet.specialCategory === 'diamond' ? 'diamond' : 'trending_up'}
+                {bet.specialCategory === 'nuclear'
+                  ? 'local_fire_department'
+                  : bet.specialCategory === 'diamond'
+                    ? 'diamond'
+                    : 'trending_up'}
               </span>
               <span>
-                {bet.specialCategory === 'nuclear' ? 'Nuclear Longshot' :
-                 bet.specialCategory === 'diamond' ? 'Hidden Gem' : 'Value Bomb'}
+                {bet.specialCategory === 'nuclear'
+                  ? 'Nuclear Longshot'
+                  : bet.specialCategory === 'diamond'
+                    ? 'Hidden Gem'
+                    : 'Value Bomb'}
               </span>
             </div>
           )}
@@ -375,7 +404,9 @@ function InteractiveBetCard({
           {kellyEnabled && bet.kellyInfo && (
             <div className="bet-kelly-info">
               <div className="bet-kelly-badge">
-                <span className="material-icons" style={{ fontSize: 14 }}>functions</span>
+                <span className="material-icons" style={{ fontSize: 14 }}>
+                  functions
+                </span>
                 <span className="bet-kelly-label">{bet.kellyInfo.kellyFraction}</span>
                 {bet.kellyInfo.shouldBet ? (
                   <span className="bet-kelly-amount">${bet.kellyInfo.kellyAmount}</span>
@@ -384,15 +415,20 @@ function InteractiveBetCard({
                 )}
               </div>
               {bet.kellyInfo.edge && (
-                <span className="bet-kelly-edge" style={{
-                  color: bet.kellyInfo.edge.startsWith('+') ? '#22c55e' : '#ef4444'
-                }}>
+                <span
+                  className="bet-kelly-edge"
+                  style={{
+                    color: bet.kellyInfo.edge.startsWith('+') ? '#22c55e' : '#ef4444',
+                  }}
+                >
                   Edge: {bet.kellyInfo.edge}
                 </span>
               )}
               {bet.kellyInfo.warnings.length > 0 && !bet.kellyInfo.shouldBet && (
                 <span className="bet-kelly-warning">
-                  <span className="material-icons" style={{ fontSize: 12 }}>warning</span>
+                  <span className="material-icons" style={{ fontSize: 12 }}>
+                    warning
+                  </span>
                   {bet.kellyInfo.warnings[0]}
                 </span>
               )}
@@ -460,17 +496,17 @@ function InteractiveBetCard({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // Quick Preset Buttons Component
 interface QuickPresetButtonsProps {
-  onPresetClick: (preset: PresetType) => void
-  isMobile: boolean
+  onPresetClick: (preset: PresetType) => void;
+  isMobile: boolean;
 }
 
 function QuickPresetButtons({ onPresetClick, isMobile }: QuickPresetButtonsProps) {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   if (isMobile) {
     return (
@@ -481,9 +517,7 @@ function QuickPresetButtons({ onPresetClick, isMobile }: QuickPresetButtonsProps
         >
           <span className="material-icons">tune</span>
           <span>Quick Select</span>
-          <span className={`material-icons ${isDropdownOpen ? 'rotated' : ''}`}>
-            expand_more
-          </span>
+          <span className={`material-icons ${isDropdownOpen ? 'rotated' : ''}`}>expand_more</span>
         </button>
         <AnimatePresence>
           {isDropdownOpen && (
@@ -498,8 +532,8 @@ function QuickPresetButtons({ onPresetClick, isMobile }: QuickPresetButtonsProps
                   key={preset.id}
                   className="preset-dropdown-item"
                   onClick={() => {
-                    onPresetClick(preset.id)
-                    setIsDropdownOpen(false)
+                    onPresetClick(preset.id);
+                    setIsDropdownOpen(false);
                   }}
                 >
                   <span className="material-icons">{preset.icon}</span>
@@ -513,7 +547,7 @@ function QuickPresetButtons({ onPresetClick, isMobile }: QuickPresetButtonsProps
           )}
         </AnimatePresence>
       </div>
-    )
+    );
   }
 
   return (
@@ -530,19 +564,19 @@ function QuickPresetButtons({ onPresetClick, isMobile }: QuickPresetButtonsProps
         </button>
       ))}
     </div>
-  )
+  );
 }
 
 // Sticky Footer Component
 interface StickyFooterProps {
-  selectedCount: number
-  totalCost: number
-  remainingBudget: number
-  dailyBudget: number
-  potentialReturn: { min: number; max: number }
-  onViewBetSlip: () => void
-  onCopyToClipboard: () => void
-  isOverBudget: boolean
+  selectedCount: number;
+  totalCost: number;
+  remainingBudget: number;
+  dailyBudget: number;
+  potentialReturn: { min: number; max: number };
+  onViewBetSlip: () => void;
+  onCopyToClipboard: () => void;
+  isOverBudget: boolean;
 }
 
 function StickyFooter({
@@ -555,7 +589,7 @@ function StickyFooter({
   onCopyToClipboard,
   isOverBudget,
 }: StickyFooterProps) {
-  const budgetPercentUsed = Math.min(100, (totalCost / dailyBudget) * 100)
+  const budgetPercentUsed = Math.min(100, (totalCost / dailyBudget) * 100);
 
   return (
     <div className="betting-sticky-footer">
@@ -576,7 +610,9 @@ function StickyFooter({
           <div className="sticky-stat-divider" />
           <div className="sticky-stat">
             <span className="sticky-stat-label">Remaining</span>
-            <span className={`sticky-stat-value ${isOverBudget ? 'over-budget' : remainingBudget < dailyBudget * 0.2 ? 'warning' : ''}`}>
+            <span
+              className={`sticky-stat-value ${isOverBudget ? 'over-budget' : remainingBudget < dailyBudget * 0.2 ? 'warning' : ''}`}
+            >
               {formatCurrency(Math.max(0, remainingBudget))}
             </span>
           </div>
@@ -621,7 +657,7 @@ function StickyFooter({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // Main Component
@@ -634,27 +670,27 @@ export function BettingRecommendations({
   allRaces,
   trackCode,
 }: BettingRecommendationsProps) {
-  const [selectableBets, setSelectableBets] = useState<SelectableBet[]>([])
-  const [isSlipModalOpen, setIsSlipModalOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-  const [copiedMessage, setCopiedMessage] = useState<string | null>(null)
-  const [isExoticOptimizerOpen, setIsExoticOptimizerOpen] = useState(false)
-  const [isExoticBuilderOpen, setIsExoticBuilderOpen] = useState(false)
-  const [exoticBudget, setExoticBudget] = useState(20)
-  const [selectedExoticType, setSelectedExoticType] = useState<ExoticBetType>('exacta')
+  const [selectableBets, setSelectableBets] = useState<SelectableBet[]>([]);
+  const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
+  const [isExoticOptimizerOpen, setIsExoticOptimizerOpen] = useState(false);
+  const [isExoticBuilderOpen, setIsExoticBuilderOpen] = useState(false);
+  const [exoticBudget, setExoticBudget] = useState(20);
+  const [selectedExoticType, setSelectedExoticType] = useState<ExoticBetType>('exacta');
   // Dutch booking state
-  const [isDutchPanelOpen, setIsDutchPanelOpen] = useState(false)
-  const [isDutchBuilderOpen, setIsDutchBuilderOpen] = useState(false)
-  const [dutchStake, setDutchStake] = useState(50)
-  const [selectedDutchHorses, setSelectedDutchHorses] = useState<number[]>([])
-  const [dutchSettings] = useState<DutchSettings>(loadDutchSettings)
+  const [isDutchPanelOpen, setIsDutchPanelOpen] = useState(false);
+  const [isDutchBuilderOpen, setIsDutchBuilderOpen] = useState(false);
+  const [dutchStake, setDutchStake] = useState(50);
+  const [selectedDutchHorses, setSelectedDutchHorses] = useState<number[]>([]);
+  const [dutchSettings] = useState<DutchSettings>(loadDutchSettings);
 
   // Analytics tracking
-  const { trackEvent } = useAnalytics()
-  const lastTrackedRace = useRef<number | null>(null)
+  const { trackEvent } = useAnalytics();
+  const lastTrackedRace = useRef<number | null>(null);
 
   // Check if Kelly Criterion is enabled
-  const kellyEnabled = useMemo(() => isKellyEnabled(bankroll), [bankroll])
+  const kellyEnabled = useMemo(() => isKellyEnabled(bankroll), [bankroll]);
 
   // Convert horses to ScoredHorse format for generator
   const scoredHorses: ScoredHorse[] = useMemo(() => {
@@ -663,15 +699,15 @@ export function BettingRecommendations({
       index: h.index,
       score: h.score,
       rank: idx + 1,
-    }))
-  }, [horses])
+    }));
+  }, [horses]);
 
   // Create default race header if not provided
   const effectiveRaceHeader: RaceHeader = useMemo(() => {
-    if (raceHeader) return raceHeader
+    if (raceHeader) return raceHeader;
     // Create a minimal header from available data
-    const today = new Date()
-    const dateStr = today.toISOString().split('T')[0]
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
     return {
       trackCode: 'UNK',
       trackName: 'Unknown Track',
@@ -708,8 +744,8 @@ export function BettingRecommendations({
       programNumber: raceNumber,
       fieldSize: horses.length,
       probableFavorite: null,
-    }
-  }, [raceHeader, raceNumber, horses.length])
+    };
+  }, [raceHeader, raceNumber, horses.length]);
 
   // Generate recommendations using new integrated system
   const generatorResult: BetGeneratorResult = useMemo(() => {
@@ -718,22 +754,22 @@ export function BettingRecommendations({
       raceHeader: effectiveRaceHeader,
       raceNumber,
       bankroll,
-    })
-  }, [scoredHorses, effectiveRaceHeader, raceNumber, bankroll])
+    });
+  }, [scoredHorses, effectiveRaceHeader, raceNumber, bankroll]);
 
   // Extract tier recommendations for backward compatibility
-  const recommendations = generatorResult.tierBets
+  const recommendations = generatorResult.tierBets;
 
   // Initialize selectable bets when generator result changes
   useEffect(() => {
-    const newSelectableBets: SelectableBet[] = generatorResult.allBets.map(bet => {
+    const newSelectableBets: SelectableBet[] = generatorResult.allBets.map((bet) => {
       // Calculate Kelly info if enabled
-      let kellyInfo: SelectableBet['kellyInfo'] = undefined
+      let kellyInfo: SelectableBet['kellyInfo'] = undefined;
 
       if (kellyEnabled && bet.horses && bet.horses.length > 0) {
-        const topHorse = bet.horses[0]
+        const topHorse = bet.horses[0];
         // Get odds from horse's morning line
-        const oddsString = topHorse?.horse?.morningLineOdds || topHorse?.oddsDisplay || '5-1'
+        const oddsString = topHorse?.horse?.morningLineOdds || topHorse?.oddsDisplay || '5-1';
 
         const kellyResult = calculateBetWithKelly(
           bet.confidence,
@@ -741,7 +777,7 @@ export function BettingRecommendations({
           bet.tier,
           bankroll,
           horses.length
-        )
+        );
 
         if (kellyResult.kellyResult) {
           kellyInfo = {
@@ -750,7 +786,7 @@ export function BettingRecommendations({
             edge: kellyResult.display.edge,
             shouldBet: kellyResult.display.shouldBet,
             warnings: kellyResult.display.warnings,
-          }
+          };
         }
       }
 
@@ -759,20 +795,20 @@ export function BettingRecommendations({
         isSelected: bet.isRecommended, // Pre-select recommended bets
         customAmount: bet.totalCost,
         kellyInfo,
-      }
-    })
+      };
+    });
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state from generator
-    setSelectableBets(newSelectableBets)
-  }, [generatorResult, kellyEnabled, bankroll, horses.length])
+    setSelectableBets(newSelectableBets);
+  }, [generatorResult, kellyEnabled, bankroll, horses.length]);
 
   // Track bet_viewed when recommendations render
   useEffect(() => {
     // Only track if this is a new race and we have recommendations
     if (lastTrackedRace.current !== raceNumber && generatorResult.allBets.length > 0) {
       // Count bets by tier
-      const tier1Count = generatorResult.allBets.filter(bet => bet.tier === 'tier1').length
-      const tier2Count = generatorResult.allBets.filter(bet => bet.tier === 'tier2').length
-      const tier3Count = generatorResult.allBets.filter(bet => bet.tier === 'tier3').length
+      const tier1Count = generatorResult.allBets.filter((bet) => bet.tier === 'tier1').length;
+      const tier2Count = generatorResult.allBets.filter((bet) => bet.tier === 'tier2').length;
+      const tier3Count = generatorResult.allBets.filter((bet) => bet.tier === 'tier3').length;
 
       trackEvent('bet_viewed', {
         race_number: raceNumber,
@@ -781,47 +817,49 @@ export function BettingRecommendations({
         tier2_count: tier2Count,
         tier3_count: tier3Count,
         horse_count: horses.length,
-      })
+      });
 
-      lastTrackedRace.current = raceNumber
+      lastTrackedRace.current = raceNumber;
     }
-  }, [raceNumber, generatorResult.allBets, horses.length, trackEvent])
+  }, [raceNumber, generatorResult.allBets, horses.length, trackEvent]);
 
   // Check for mobile
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Calculate totals
   const selectedBets = useMemo(
     () => selectableBets.filter((bet) => bet.isSelected),
     [selectableBets]
-  )
+  );
 
   const totalCost = useMemo(
     () => selectedBets.reduce((sum, bet) => sum + bet.customAmount, 0),
     [selectedBets]
-  )
+  );
 
   const potentialReturn = useMemo(() => {
-    const min = selectedBets.reduce((sum, bet) => sum + bet.potentialReturn.min, 0)
-    const max = selectedBets.reduce((sum, bet) => sum + bet.potentialReturn.max, 0)
-    return { min, max }
-  }, [selectedBets])
+    const min = selectedBets.reduce((sum, bet) => sum + bet.potentialReturn.min, 0);
+    const max = selectedBets.reduce((sum, bet) => sum + bet.potentialReturn.max, 0);
+    return { min, max };
+  }, [selectedBets]);
 
   // Convert horses to HorseTier format for exotic optimizer
   const horseTiers = useMemo((): HorseTier[] => {
-    return horses.map(h => {
-      let tier: 1 | 2 | 3 = 3
-      if (h.score.total >= 180) tier = 1
-      else if (h.score.total >= 160) tier = 2
+    return horses.map((h) => {
+      let tier: 1 | 2 | 3 = 3;
+      if (h.score.total >= 180) tier = 1;
+      else if (h.score.total >= 160) tier = 2;
 
-      const oddsMatch = h.horse.morningLineOdds.match(/(\d+(?:\.\d+)?)[/-](\d+(?:\.\d+)?)?/)
-      const odds = oddsMatch ? parseFloat(oddsMatch[1]) / (oddsMatch[2] ? parseFloat(oddsMatch[2]) : 1) : 5
-      const winProb = 1 / (odds + 1)
+      const oddsMatch = h.horse.morningLineOdds.match(/(\d+(?:\.\d+)?)[/-](\d+(?:\.\d+)?)?/);
+      const odds = oddsMatch
+        ? parseFloat(oddsMatch[1]) / (oddsMatch[2] ? parseFloat(oddsMatch[2]) : 1)
+        : 5;
+      const winProb = 1 / (odds + 1);
 
       return {
         programNumber: h.horse.programNumber,
@@ -830,17 +868,17 @@ export function BettingRecommendations({
         winProbability: winProb,
         odds,
         confidence: Math.min(100, 40 + (h.score.total / 240) * 60),
-      }
-    })
-  }, [horses])
+      };
+    });
+  }, [horses]);
 
   // Exotic optimization results
   const exoticOptimization = useMemo((): OptimizationResult | null => {
-    const tier1 = horseTiers.filter(h => h.tier === 1)
-    const tier2 = horseTiers.filter(h => h.tier === 2)
-    const tier3 = horseTiers.filter(h => h.tier === 3)
+    const tier1 = horseTiers.filter((h) => h.tier === 1);
+    const tier2 = horseTiers.filter((h) => h.tier === 2);
+    const tier3 = horseTiers.filter((h) => h.tier === 3);
 
-    if (tier1.length + tier2.length < 2) return null
+    if (tier1.length + tier2.length < 2) return null;
 
     return optimizeExoticBet({
       budget: exoticBudget,
@@ -849,33 +887,36 @@ export function BettingRecommendations({
       tier3Horses: tier3,
       betType: selectedExoticType,
       fieldSize: horses.length,
-    })
-  }, [horseTiers, exoticBudget, selectedExoticType, horses.length])
+    });
+  }, [horseTiers, exoticBudget, selectedExoticType, horses.length]);
 
   // Exotic comparison table
   const exoticComparison = useMemo(() => {
-    if (horseTiers.length < 2) return null
+    if (horseTiers.length < 2) return null;
 
     return generateComparisonTable({
       budget: exoticBudget,
-      horses: horseTiers.filter(h => h.tier <= 2).slice(0, 6).map(h => ({
-        programNumber: h.programNumber,
-        horseName: h.horseName,
-        odds: h.odds,
-        confidence: h.confidence,
-      })),
+      horses: horseTiers
+        .filter((h) => h.tier <= 2)
+        .slice(0, 6)
+        .map((h) => ({
+          programNumber: h.programNumber,
+          horseName: h.horseName,
+          odds: h.odds,
+          confidence: h.confidence,
+        })),
       fieldSize: horses.length,
       maxOptions: 6,
-    })
-  }, [horseTiers, exoticBudget, horses.length])
+    });
+  }, [horseTiers, exoticBudget, horses.length]);
 
   // Dutch booking candidates
   const dutchCandidates: DutchCandidateHorse[] = useMemo(() => {
     return convertToDutchCandidates(
-      horses.map(h => {
-        let tier: 1 | 2 | 3 = 3
-        if (h.score.total >= 180) tier = 1
-        else if (h.score.total >= 160) tier = 2
+      horses.map((h) => {
+        let tier: 1 | 2 | 3 = 3;
+        if (h.score.total >= 180) tier = 1;
+        else if (h.score.total >= 160) tier = 2;
 
         return {
           programNumber: h.horse.programNumber,
@@ -886,14 +927,14 @@ export function BettingRecommendations({
           tier,
           estimatedWinProb: undefined,
           overlayPercent: 0,
-        }
+        };
       })
-    )
-  }, [horses])
+    );
+  }, [horses]);
 
   // Dutch optimization results
   const dutchOptimization = useMemo(() => {
-    if (!dutchSettings.enabled || dutchCandidates.length < 2) return null
+    if (!dutchSettings.enabled || dutchCandidates.length < 2) return null;
 
     return findOptimalDutchCombinations({
       horses: dutchCandidates,
@@ -902,39 +943,39 @@ export function BettingRecommendations({
       overlayOnly: dutchSettings.overlayOnly,
       preferMixedTiers: dutchSettings.preferMixedTiers,
       stake: dutchStake,
-    })
-  }, [dutchCandidates, dutchSettings, dutchStake])
+    });
+  }, [dutchCandidates, dutchSettings, dutchStake]);
 
   // Live Dutch calculation for builder
   const liveDutchResult = useMemo((): DutchResult | null => {
-    if (selectedDutchHorses.length < 2) return null
+    if (selectedDutchHorses.length < 2) return null;
 
-    const selectedCandidates = dutchCandidates.filter(h =>
+    const selectedCandidates = dutchCandidates.filter((h) =>
       selectedDutchHorses.includes(h.programNumber)
-    )
+    );
 
     return calculateDutchBook({
       totalStake: dutchStake,
-      horses: selectedCandidates.map(h => ({
+      horses: selectedCandidates.map((h) => ({
         programNumber: h.programNumber,
         horseName: h.horseName,
         decimalOdds: h.decimalOdds,
         oddsDisplay: h.oddsDisplay,
       })),
-    })
-  }, [selectedDutchHorses, dutchCandidates, dutchStake])
+    });
+  }, [selectedDutchHorses, dutchCandidates, dutchStake]);
 
-  const dailyBudget = bankroll.getDailyBudget()
-  const spentToday = bankroll.getSpentToday()
-  const remainingBudget = dailyBudget - spentToday - totalCost
-  const isOverBudget = remainingBudget < 0
+  const dailyBudget = bankroll.getDailyBudget();
+  const spentToday = bankroll.getSpentToday();
+  const remainingBudget = dailyBudget - spentToday - totalCost;
+  const isOverBudget = remainingBudget < 0;
 
   // Handlers
   const handleToggleSelect = useCallback((id: string) => {
     setSelectableBets((prev) =>
       prev.map((bet) => (bet.id === id ? { ...bet, isSelected: !bet.isSelected } : bet))
-    )
-  }, [])
+    );
+  }, []);
 
   const handleAmountChange = useCallback((id: string, amount: number) => {
     setSelectableBets((prev) =>
@@ -950,52 +991,49 @@ export function BettingRecommendations({
             }
           : bet
       )
-    )
-  }, [])
+    );
+  }, []);
 
-  const handlePresetClick = useCallback(
-    (preset: PresetType) => {
-      setSelectableBets((prev) => {
-        switch (preset) {
-          case 'allTier1':
-            return prev.map((bet) => ({ ...bet, isSelected: bet.tier === 'tier1' }))
-          case 'positiveEV':
-            // Select only bets with positive expected value
-            return prev.map((bet) => ({
-              ...bet,
-              isSelected: bet.evPerDollar > 0,
-            }))
-          case 'valueHunter': {
-            // Value Hunter: Select positive EV bets, sorted by EV% (ignores tier)
-            // This preset focuses on mathematical value, not tier classification
-            const sortedByEV = [...prev].sort((a, b) => {
-              // Sort by EV per dollar (highest first)
-              const evA = a.evPerDollar ?? 0
-              const evB = b.evPerDollar ?? 0
-              return evB - evA
-            })
-            // Select top value bets (EV > 5% or overlay > 15%)
-            return sortedByEV.map((bet) => ({
-              ...bet,
-              isSelected: (bet.evPerDollar * 100 >= 5) || (bet.overlayPercent >= 15),
-            }))
-          }
-          case 'conservative':
-            return prev.map((bet) => ({
-              ...bet,
-              isSelected: bet.confidence >= 70 && bet.tier !== 'tier3',
-            }))
-          case 'maxCoverage':
-            return prev.map((bet) => ({ ...bet, isSelected: true }))
-          case 'clearAll':
-            return prev.map((bet) => ({ ...bet, isSelected: false }))
-          default:
-            return prev
+  const handlePresetClick = useCallback((preset: PresetType) => {
+    setSelectableBets((prev) => {
+      switch (preset) {
+        case 'allTier1':
+          return prev.map((bet) => ({ ...bet, isSelected: bet.tier === 'tier1' }));
+        case 'positiveEV':
+          // Select only bets with positive expected value
+          return prev.map((bet) => ({
+            ...bet,
+            isSelected: bet.evPerDollar > 0,
+          }));
+        case 'valueHunter': {
+          // Value Hunter: Select positive EV bets, sorted by EV% (ignores tier)
+          // This preset focuses on mathematical value, not tier classification
+          const sortedByEV = [...prev].sort((a, b) => {
+            // Sort by EV per dollar (highest first)
+            const evA = a.evPerDollar ?? 0;
+            const evB = b.evPerDollar ?? 0;
+            return evB - evA;
+          });
+          // Select top value bets (EV > 5% or overlay > 15%)
+          return sortedByEV.map((bet) => ({
+            ...bet,
+            isSelected: bet.evPerDollar * 100 >= 5 || bet.overlayPercent >= 15,
+          }));
         }
-      })
-    },
-    []
-  )
+        case 'conservative':
+          return prev.map((bet) => ({
+            ...bet,
+            isSelected: bet.confidence >= 70 && bet.tier !== 'tier3',
+          }));
+        case 'maxCoverage':
+          return prev.map((bet) => ({ ...bet, isSelected: true }));
+        case 'clearAll':
+          return prev.map((bet) => ({ ...bet, isSelected: false }));
+        default:
+          return prev;
+      }
+    });
+  }, []);
 
   const handleCopyToClipboard = useCallback(() => {
     const instructions = selectedBets
@@ -1003,23 +1041,23 @@ export function BettingRecommendations({
         const instruction = bet.windowInstruction
           .replace(/^"/, `"Race ${raceNumber}, `)
           .replace(/Race \d+, Race \d+/, `Race ${raceNumber}`)
-          .replace(/^"|"$/g, '')
-        return `${bet.typeName} (${formatCurrency(bet.customAmount)}): ${instruction}`
+          .replace(/^"|"$/g, '');
+        return `${bet.typeName} (${formatCurrency(bet.customAmount)}): ${instruction}`;
       })
-      .join('\n')
+      .join('\n');
 
-    const fullText = `Bet Slip - Race ${raceNumber}\n${'='.repeat(30)}\n${instructions}\n${'='.repeat(30)}\nTotal: ${formatCurrency(totalCost)} | Potential: ${formatCurrency(potentialReturn.min)}-${formatCurrency(potentialReturn.max)}`
+    const fullText = `Bet Slip - Race ${raceNumber}\n${'='.repeat(30)}\n${instructions}\n${'='.repeat(30)}\nTotal: ${formatCurrency(totalCost)} | Potential: ${formatCurrency(potentialReturn.min)}-${formatCurrency(potentialReturn.max)}`;
 
-    navigator.clipboard.writeText(fullText)
-    setCopiedMessage('Copied to clipboard!')
-    setTimeout(() => setCopiedMessage(null), 2000)
-  }, [selectedBets, raceNumber, totalCost, potentialReturn])
+    navigator.clipboard.writeText(fullText);
+    setCopiedMessage('Copied to clipboard!');
+    setTimeout(() => setCopiedMessage(null), 2000);
+  }, [selectedBets, raceNumber, totalCost, potentialReturn]);
 
   const handleCopySingle = useCallback((instruction: string) => {
-    navigator.clipboard.writeText(instruction)
-    setCopiedMessage('Copied!')
-    setTimeout(() => setCopiedMessage(null), 2000)
-  }, [])
+    navigator.clipboard.writeText(instruction);
+    setCopiedMessage('Copied!');
+    setTimeout(() => setCopiedMessage(null), 2000);
+  }, []);
 
   const handleExoticBetAdd = useCallback((bet: ExoticBetResult) => {
     // Add exotic bet to selectable bets
@@ -1027,8 +1065,13 @@ export function BettingRecommendations({
       id: `exotic-${bet.betType}-${Date.now()}`,
       tier: 'tier1',
       typeName: `${bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1)} ${bet.structure.replace('_', ' ')}`,
-      description: `Custom ${bet.betType}: ${bet.horses.map(h => `#${h}`).join(', ')}`,
-      type: bet.betType === 'exacta' ? 'exacta_box' : bet.betType === 'trifecta' ? 'trifecta_box' : 'superfecta',
+      description: `Custom ${bet.betType}: ${bet.horses.map((h) => `#${h}`).join(', ')}`,
+      type:
+        bet.betType === 'exacta'
+          ? 'exacta_box'
+          : bet.betType === 'trifecta'
+            ? 'trifecta_box'
+            : 'superfecta',
       horses: [],
       horseNumbers: bet.horses,
       amount: bet.baseBet,
@@ -1036,7 +1079,12 @@ export function BettingRecommendations({
       windowInstruction: `"${bet.windowInstruction}"`,
       potentialReturn: { min: bet.payoutRange.min, max: bet.payoutRange.max },
       confidence: 65,
-      icon: bet.betType === 'exacta' ? 'swap_vert' : bet.betType === 'trifecta' ? 'view_list' : 'format_list_numbered',
+      icon:
+        bet.betType === 'exacta'
+          ? 'swap_vert'
+          : bet.betType === 'trifecta'
+            ? 'view_list'
+            : 'format_list_numbered',
       isRecommended: false,
       overlayPercent: 0,
       evPerDollar: 0,
@@ -1046,11 +1094,11 @@ export function BettingRecommendations({
       scoringSources: ['exotic-builder'],
       isSelected: true,
       customAmount: bet.totalCost,
-    }
-    setSelectableBets(prev => [newBet, ...prev])
-    setCopiedMessage('Exotic bet added!')
-    setTimeout(() => setCopiedMessage(null), 2000)
-  }, [])
+    };
+    setSelectableBets((prev) => [newBet, ...prev]);
+    setCopiedMessage('Exotic bet added!');
+    setTimeout(() => setCopiedMessage(null), 2000);
+  }, []);
 
   // Multi-race ticket handler
   const handleMultiRaceTicketAdd = useCallback((ticket: MultiRaceTicketResult) => {
@@ -1061,7 +1109,9 @@ export function BettingRecommendations({
       description: `${ticket.displayName}: ${ticket.spreadNotation}`,
       type: 'pick_multi' as never,
       horses: [],
-      horseNumbers: ticket.raceInstructions.flatMap((r: { raceNumber: number; horses: number[] }) => r.horses),
+      horseNumbers: ticket.raceInstructions.flatMap(
+        (r: { raceNumber: number; horses: number[] }) => r.horses
+      ),
       amount: ticket.totalCost,
       totalCost: ticket.totalCost,
       windowInstruction: `"${ticket.windowInstruction}"`,
@@ -1082,100 +1132,113 @@ export function BettingRecommendations({
       scoringSources: ['multirace-optimizer'],
       isSelected: true,
       customAmount: ticket.totalCost,
-    }
-    setSelectableBets(prev => [newBet, ...prev])
-    setCopiedMessage(`${ticket.displayName} added!`)
-    setTimeout(() => setCopiedMessage(null), 2000)
-  }, [])
+    };
+    setSelectableBets((prev) => [newBet, ...prev]);
+    setCopiedMessage(`${ticket.displayName} added!`);
+    setTimeout(() => setCopiedMessage(null), 2000);
+  }, []);
 
   // Dutch booking handlers
-  const handleToggleDutchHorse = useCallback((programNumber: number) => {
-    setSelectedDutchHorses(prev => {
-      if (prev.includes(programNumber)) {
-        return prev.filter(n => n !== programNumber)
-      }
-      if (prev.length >= (dutchSettings.maxHorses || 5)) {
-        return prev // Don't add more than max
-      }
-      return [...prev, programNumber]
-    })
-  }, [dutchSettings.maxHorses])
+  const handleToggleDutchHorse = useCallback(
+    (programNumber: number) => {
+      setSelectedDutchHorses((prev) => {
+        if (prev.includes(programNumber)) {
+          return prev.filter((n) => n !== programNumber);
+        }
+        if (prev.length >= (dutchSettings.maxHorses || 5)) {
+          return prev; // Don't add more than max
+        }
+        return [...prev, programNumber];
+      });
+    },
+    [dutchSettings.maxHorses]
+  );
 
-  const handleUseDutchCombination = useCallback((combination: DutchCombination) => {
-    if (!combination.dutchResult) return
+  const handleUseDutchCombination = useCallback(
+    (combination: DutchCombination) => {
+      if (!combination.dutchResult) return;
 
-    // Add all Dutch bets to the bet slip
-    const dutchBets: SelectableBet[] = combination.dutchResult.bets.map((bet, idx) => ({
-      id: `dutch-${combination.id}-${bet.programNumber}-${idx}`,
-      tier: 'tier1' as BettingTier,
-      typeName: `Dutch Win`,
-      description: `Part of ${combination.horseCount}-horse Dutch (${combination.edgePercent.toFixed(1)}% edge)`,
-      type: 'win' as const,
-      horses: [],
-      horseNumbers: [bet.programNumber],
-      amount: bet.betAmountRounded,
-      totalCost: bet.betAmountRounded,
-      windowInstruction: `"Race ${raceNumber}, $${bet.betAmountRounded.toFixed(2)} to win on the ${bet.programNumber}"`,
-      potentialReturn: { min: bet.returnIfWins, max: bet.returnIfWins },
-      confidence: combination.avgConfidence,
-      icon: 'balance',
-      isRecommended: true,
-      overlayPercent: 0,
-      evPerDollar: combination.edgePercent / 100,
-      specialCategory: null,
-      explanation: [
-        `Dutch book: ${combination.horseCount} horses for guaranteed profit`,
-        `If #${bet.programNumber} wins: return ${formatDutchCurrency(bet.returnIfWins)}`,
-        `Edge: ${combination.edgePercent.toFixed(1)}%`,
-      ],
-      narrative: `Dutch bet on #${bet.programNumber} ${bet.horseName}`,
-      scoringSources: ['dutch-optimizer'],
-      isSelected: true,
-      customAmount: bet.betAmountRounded,
-    }))
+      // Add all Dutch bets to the bet slip
+      const dutchBets: SelectableBet[] = combination.dutchResult.bets.map((bet, idx) => ({
+        id: `dutch-${combination.id}-${bet.programNumber}-${idx}`,
+        tier: 'tier1' as BettingTier,
+        typeName: `Dutch Win`,
+        description: `Part of ${combination.horseCount}-horse Dutch (${combination.edgePercent.toFixed(1)}% edge)`,
+        type: 'win' as const,
+        horses: [],
+        horseNumbers: [bet.programNumber],
+        amount: bet.betAmountRounded,
+        totalCost: bet.betAmountRounded,
+        windowInstruction: `"Race ${raceNumber}, $${bet.betAmountRounded.toFixed(2)} to win on the ${bet.programNumber}"`,
+        potentialReturn: { min: bet.returnIfWins, max: bet.returnIfWins },
+        confidence: combination.avgConfidence,
+        icon: 'balance',
+        isRecommended: true,
+        overlayPercent: 0,
+        evPerDollar: combination.edgePercent / 100,
+        specialCategory: null,
+        explanation: [
+          `Dutch book: ${combination.horseCount} horses for guaranteed profit`,
+          `If #${bet.programNumber} wins: return ${formatDutchCurrency(bet.returnIfWins)}`,
+          `Edge: ${combination.edgePercent.toFixed(1)}%`,
+        ],
+        narrative: `Dutch bet on #${bet.programNumber} ${bet.horseName}`,
+        scoringSources: ['dutch-optimizer'],
+        isSelected: true,
+        customAmount: bet.betAmountRounded,
+      }));
 
-    setSelectableBets(prev => [...dutchBets, ...prev])
-    setCopiedMessage(`Dutch book added: ${combination.horseCount} bets`)
-    setTimeout(() => setCopiedMessage(null), 2000)
-    setIsDutchPanelOpen(false)
-  }, [raceNumber])
+      setSelectableBets((prev) => [...dutchBets, ...prev]);
+      setCopiedMessage(`Dutch book added: ${combination.horseCount} bets`);
+      setTimeout(() => setCopiedMessage(null), 2000);
+      setIsDutchPanelOpen(false);
+    },
+    [raceNumber]
+  );
 
   const handleUseLiveDutch = useCallback(() => {
-    if (!liveDutchResult || !liveDutchResult.isValid) return
+    if (!liveDutchResult || !liveDutchResult.isValid) return;
 
     handleUseDutchCombination({
       id: `custom-${Date.now()}`,
-      horses: dutchCandidates.filter(h => selectedDutchHorses.includes(h.programNumber)),
+      horses: dutchCandidates.filter((h) => selectedDutchHorses.includes(h.programNumber)),
       horseCount: selectedDutchHorses.length,
       edgePercent: liveDutchResult.edgePercent,
-      edgeClass: liveDutchResult.edgePercent >= 10 ? 'good' : liveDutchResult.edgePercent >= 5 ? 'moderate' : 'marginal',
+      edgeClass:
+        liveDutchResult.edgePercent >= 10
+          ? 'good'
+          : liveDutchResult.edgePercent >= 5
+            ? 'moderate'
+            : 'marginal',
       sumOfImpliedProbs: liveDutchResult.sumOfImpliedProbs,
       isProfitable: liveDutchResult.hasProfitPotential,
-      description: `Custom Dutch: ${selectedDutchHorses.map(n => `#${n}`).join(', ')}`,
+      description: `Custom Dutch: ${selectedDutchHorses.map((n) => `#${n}`).join(', ')}`,
       tierMix: 'Custom',
       avgConfidence: 70,
       avgOdds: 5,
       recommendationStrength: 70,
       dutchResult: liveDutchResult,
-    })
+    });
 
-    setSelectedDutchHorses([])
-    setIsDutchBuilderOpen(false)
-  }, [liveDutchResult, selectedDutchHorses, dutchCandidates, handleUseDutchCombination])
+    setSelectedDutchHorses([]);
+    setIsDutchBuilderOpen(false);
+  }, [liveDutchResult, selectedDutchHorses, dutchCandidates, handleUseDutchCombination]);
 
   // Check if we have any recommendations
   if (generatorResult.allBets.length === 0) {
-    return null
+    return null;
   }
 
   // Group bets by tier for display
   const betsByTier = recommendations.map((tierRec) => ({
     ...tierRec,
-    selectableBets: selectableBets.filter((bet) => bet.tier === tierRec.tier && !bet.specialCategory),
-  }))
+    selectableBets: selectableBets.filter(
+      (bet) => bet.tier === tierRec.tier && !bet.specialCategory
+    ),
+  }));
 
   // Get special category bets
-  const specialBets = selectableBets.filter(bet => bet.specialCategory !== null)
+  const specialBets = selectableBets.filter((bet) => bet.specialCategory !== null);
 
   return (
     <div className="interactive-betting-container">
@@ -1239,7 +1302,7 @@ export function BettingRecommendations({
                 <div className="exotic-control-group">
                   <label className="exotic-control-label">Bet Type</label>
                   <div className="exotic-type-buttons">
-                    {(['exacta', 'trifecta', 'superfecta'] as ExoticBetType[]).map(type => (
+                    {(['exacta', 'trifecta', 'superfecta'] as ExoticBetType[]).map((type) => (
                       <button
                         key={type}
                         className={`exotic-type-btn ${selectedExoticType === type ? 'active' : ''}`}
@@ -1252,97 +1315,103 @@ export function BettingRecommendations({
                 </div>
 
                 {/* Optimization Result */}
-                {exoticOptimization && exoticOptimization.isValid && exoticOptimization.recommended && (
-                  <div className="exotic-recommendation">
-                    <div className="exotic-recommendation-header">
-                      <span className="material-icons">verified</span>
-                      <span>Recommended</span>
-                    </div>
-                    <div className="exotic-recommendation-content">
-                      <p className="exotic-recommendation-title">
-                        {exoticOptimization.recommended.description}
-                      </p>
-                      <div className="exotic-recommendation-stats">
-                        <div className="exotic-stat">
-                          <span className="exotic-stat-label">Cost</span>
-                          <span className="exotic-stat-value">
-                            {formatCurrency(exoticOptimization.recommended.cost.total)}
-                          </span>
-                        </div>
-                        <div className="exotic-stat">
-                          <span className="exotic-stat-label">Combos</span>
-                          <span className="exotic-stat-value">
-                            {exoticOptimization.recommended.cost.combinations}
-                          </span>
-                        </div>
-                        <div className="exotic-stat">
-                          <span className="exotic-stat-label">Hit %</span>
-                          <span className="exotic-stat-value">
-                            {(exoticOptimization.recommended.hitProbability * 100).toFixed(1)}%
-                          </span>
-                        </div>
+                {exoticOptimization &&
+                  exoticOptimization.isValid &&
+                  exoticOptimization.recommended && (
+                    <div className="exotic-recommendation">
+                      <div className="exotic-recommendation-header">
+                        <span className="material-icons">verified</span>
+                        <span>Recommended</span>
                       </div>
-                      <button
-                        className="exotic-use-btn"
-                        onClick={() => {
-                          handleExoticBetAdd({
-                            betType: selectedExoticType,
-                            structure: exoticOptimization.recommended!.structure,
-                            horses: exoticOptimization.recommended!.firstHorses,
-                            baseBet: exoticOptimization.recommended!.baseBet,
-                            totalCost: exoticOptimization.recommended!.cost.total,
-                            combinations: exoticOptimization.recommended!.cost.combinations,
-                            payoutRange: {
-                              min: 0,
-                              max: 0,
-                              likely: 0,
-                            },
-                            windowInstruction: `Race ${raceNumber}, $${exoticOptimization.recommended!.baseBet} ${selectedExoticType.toUpperCase()} ${exoticOptimization.recommended!.structure === 'box' ? 'BOX' : 'KEY'} ${exoticOptimization.recommended!.firstHorses.join(', ')}`,
-                          })
-                        }}
-                      >
-                        <span className="material-icons">add</span>
-                        Use This Bet
-                      </button>
+                      <div className="exotic-recommendation-content">
+                        <p className="exotic-recommendation-title">
+                          {exoticOptimization.recommended.description}
+                        </p>
+                        <div className="exotic-recommendation-stats">
+                          <div className="exotic-stat">
+                            <span className="exotic-stat-label">Cost</span>
+                            <span className="exotic-stat-value">
+                              {formatCurrency(exoticOptimization.recommended.cost.total)}
+                            </span>
+                          </div>
+                          <div className="exotic-stat">
+                            <span className="exotic-stat-label">Combos</span>
+                            <span className="exotic-stat-value">
+                              {exoticOptimization.recommended.cost.combinations}
+                            </span>
+                          </div>
+                          <div className="exotic-stat">
+                            <span className="exotic-stat-label">Hit %</span>
+                            <span className="exotic-stat-value">
+                              {(exoticOptimization.recommended.hitProbability * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          className="exotic-use-btn"
+                          onClick={() => {
+                            handleExoticBetAdd({
+                              betType: selectedExoticType,
+                              structure: exoticOptimization.recommended!.structure,
+                              horses: exoticOptimization.recommended!.firstHorses,
+                              baseBet: exoticOptimization.recommended!.baseBet,
+                              totalCost: exoticOptimization.recommended!.cost.total,
+                              combinations: exoticOptimization.recommended!.cost.combinations,
+                              payoutRange: {
+                                min: 0,
+                                max: 0,
+                                likely: 0,
+                              },
+                              windowInstruction: `Race ${raceNumber}, $${exoticOptimization.recommended!.baseBet} ${selectedExoticType.toUpperCase()} ${exoticOptimization.recommended!.structure === 'box' ? 'BOX' : 'KEY'} ${exoticOptimization.recommended!.firstHorses.join(', ')}`,
+                            });
+                          }}
+                        >
+                          <span className="material-icons">add</span>
+                          Use This Bet
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Comparison Table */}
-                {exoticComparison && exoticComparison.isValid && exoticComparison.rows.length > 0 && (
-                  <div className="exotic-comparison-section">
-                    <div className="exotic-comparison-header">
-                      <span className="material-icons">compare</span>
-                      <span>Compare Options</span>
-                    </div>
-                    <div className="exotic-comparison-table-wrapper">
-                      <table className="exotic-comparison-table">
-                        <thead>
-                          <tr>
-                            <th>Type</th>
-                            <th>Cost</th>
-                            <th>Combos</th>
-                            <th>EV</th>
-                            <th>Hit%</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {exoticComparison.rows.slice(0, 5).map(row => (
-                            <tr key={row.id} className={row.isRecommended ? 'recommended' : ''}>
-                              <td>{row.type} {row.displayName}</td>
-                              <td>{formatCurrency(row.cost.total)}</td>
-                              <td>{row.combinations}</td>
-                              <td className={row.expectedValue >= 0 ? 'positive' : 'negative'}>
-                                {row.evDisplay}
-                              </td>
-                              <td>{row.hitDisplay}</td>
+                {exoticComparison &&
+                  exoticComparison.isValid &&
+                  exoticComparison.rows.length > 0 && (
+                    <div className="exotic-comparison-section">
+                      <div className="exotic-comparison-header">
+                        <span className="material-icons">compare</span>
+                        <span>Compare Options</span>
+                      </div>
+                      <div className="exotic-comparison-table-wrapper">
+                        <table className="exotic-comparison-table">
+                          <thead>
+                            <tr>
+                              <th>Type</th>
+                              <th>Cost</th>
+                              <th>Combos</th>
+                              <th>EV</th>
+                              <th>Hit%</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {exoticComparison.rows.slice(0, 5).map((row) => (
+                              <tr key={row.id} className={row.isRecommended ? 'recommended' : ''}>
+                                <td>
+                                  {row.type} {row.displayName}
+                                </td>
+                                <td>{formatCurrency(row.cost.total)}</td>
+                                <td>{row.combinations}</td>
+                                <td className={row.expectedValue >= 0 ? 'positive' : 'negative'}>
+                                  {row.evDisplay}
+                                </td>
+                                <td>{row.hitDisplay}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Build Custom Button */}
                 <button
@@ -1458,32 +1527,40 @@ export function BettingRecommendations({
                         </div>
 
                         <p className="dutch-combination-horses">
-                          {combo.horses.map(h => `#${h.programNumber} ${h.horseName}`).join(', ')}
+                          {combo.horses.map((h) => `#${h.programNumber} ${h.horseName}`).join(', ')}
                         </p>
 
                         <div className="dutch-combination-stats">
                           <div className="dutch-stat">
                             <span className="dutch-stat-label">Stake</span>
                             <span className="dutch-stat-value">
-                              {combo.dutchResult ? formatCurrency(combo.dutchResult.actualTotalCost) : '-'}
+                              {combo.dutchResult
+                                ? formatCurrency(combo.dutchResult.actualTotalCost)
+                                : '-'}
                             </span>
                           </div>
                           <div className="dutch-stat">
                             <span className="dutch-stat-label">Return</span>
                             <span className="dutch-stat-value">
-                              {combo.dutchResult ? formatCurrency(combo.dutchResult.guaranteedReturn) : '-'}
+                              {combo.dutchResult
+                                ? formatCurrency(combo.dutchResult.guaranteedReturn)
+                                : '-'}
                             </span>
                           </div>
                           <div className="dutch-stat">
                             <span className="dutch-stat-label">Profit</span>
                             <span className="dutch-stat-value positive">
-                              {combo.dutchResult ? `+${formatCurrency(combo.dutchResult.guaranteedProfit)}` : '-'}
+                              {combo.dutchResult
+                                ? `+${formatCurrency(combo.dutchResult.guaranteedProfit)}`
+                                : '-'}
                             </span>
                           </div>
                           <div className="dutch-stat">
                             <span className="dutch-stat-label">ROI</span>
                             <span className="dutch-stat-value positive">
-                              {combo.dutchResult ? `${combo.dutchResult.roiPercent.toFixed(0)}%` : '-'}
+                              {combo.dutchResult
+                                ? `${combo.dutchResult.roiPercent.toFixed(0)}%`
+                                : '-'}
                             </span>
                           </div>
                         </div>
@@ -1491,10 +1568,12 @@ export function BettingRecommendations({
                         {/* Bet breakdown */}
                         {combo.dutchResult && (
                           <div className="dutch-combination-bets">
-                            {combo.dutchResult.bets.map(bet => (
+                            {combo.dutchResult.bets.map((bet) => (
                               <div key={bet.programNumber} className="dutch-bet-row">
                                 <span className="dutch-bet-horse">#{bet.programNumber}</span>
-                                <span className="dutch-bet-amount">{formatCurrency(bet.betAmountRounded)}</span>
+                                <span className="dutch-bet-amount">
+                                  {formatCurrency(bet.betAmountRounded)}
+                                </span>
                                 <span className="dutch-bet-odds">{bet.oddsDisplay}</span>
                                 <span className="dutch-bet-return">
                                   &rarr; {formatCurrency(bet.returnIfWins)}
@@ -1553,7 +1632,7 @@ export function BettingRecommendations({
                       </div>
 
                       <div className="dutch-horse-selection">
-                        {dutchCandidates.map(horse => (
+                        {dutchCandidates.map((horse) => (
                           <button
                             key={horse.programNumber}
                             className={`dutch-horse-option ${selectedDutchHorses.includes(horse.programNumber) ? 'selected' : ''}`}
@@ -1571,7 +1650,9 @@ export function BettingRecommendations({
 
                       {/* Live calculation */}
                       {liveDutchResult && (
-                        <div className={`dutch-live-result ${liveDutchResult.hasProfitPotential ? 'profitable' : 'unprofitable'}`}>
+                        <div
+                          className={`dutch-live-result ${liveDutchResult.hasProfitPotential ? 'profitable' : 'unprofitable'}`}
+                        >
                           {liveDutchResult.hasProfitPotential ? (
                             <>
                               <div className="dutch-live-header">
@@ -1592,13 +1673,12 @@ export function BettingRecommendations({
                                 </div>
                                 <div className="dutch-live-stat">
                                   <span>Profit:</span>
-                                  <span className="positive">+{formatCurrency(liveDutchResult.guaranteedProfit)}</span>
+                                  <span className="positive">
+                                    +{formatCurrency(liveDutchResult.guaranteedProfit)}
+                                  </span>
                                 </div>
                               </div>
-                              <button
-                                className="dutch-use-live-btn"
-                                onClick={handleUseLiveDutch}
-                              >
+                              <button className="dutch-use-live-btn" onClick={handleUseLiveDutch}>
                                 <span className="material-icons">add</span>
                                 Add to Bet Slip
                               </button>
@@ -1607,7 +1687,8 @@ export function BettingRecommendations({
                             <div className="dutch-live-warning">
                               <span className="material-icons">warning</span>
                               <span>
-                                No profit possible: book is {(liveDutchResult.sumOfImpliedProbs * 100).toFixed(1)}%
+                                No profit possible: book is{' '}
+                                {(liveDutchResult.sumOfImpliedProbs * 100).toFixed(1)}%
                               </span>
                             </div>
                           )}
@@ -1628,7 +1709,8 @@ export function BettingRecommendations({
                 <div className="dutch-explanation">
                   <span className="material-icons">help_outline</span>
                   <p>
-                    Dutch booking spreads risk across multiple horses. If any selected horse wins, you're guaranteed the same profit regardless of which one wins.
+                    Dutch booking spreads risk across multiple horses. If any selected horse wins,
+                    you're guaranteed the same profit regardless of which one wins.
                   </p>
                 </div>
               </motion.div>
@@ -1665,10 +1747,10 @@ export function BettingRecommendations({
       {/* Interactive Bet List */}
       <div className="interactive-bet-list">
         {betsByTier.map((tierGroup) => {
-          if (tierGroup.selectableBets.length === 0) return null
+          if (tierGroup.selectableBets.length === 0) return null;
 
-          const tierColor = TIER_COLORS[tierGroup.tier]
-          const tierIcon = TIER_ICONS[tierGroup.tier]
+          const tierColor = TIER_COLORS[tierGroup.tier];
+          const tierIcon = TIER_ICONS[tierGroup.tier];
 
           return (
             <div key={tierGroup.tier} className="tier-bet-group">
@@ -1684,9 +1766,7 @@ export function BettingRecommendations({
                   <span className="material-icons">{tierIcon}</span>
                   <span>{tierGroup.tierName}</span>
                 </div>
-                <span className="tier-bet-count">
-                  {tierGroup.selectableBets.length} bets
-                </span>
+                <span className="tier-bet-count">{tierGroup.selectableBets.length} bets</span>
               </div>
 
               <div className="tier-bets-list">
@@ -1704,7 +1784,7 @@ export function BettingRecommendations({
                 ))}
               </div>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -1765,7 +1845,7 @@ export function BettingRecommendations({
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }
 
-export default BettingRecommendations
+export default BettingRecommendations;

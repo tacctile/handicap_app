@@ -15,7 +15,7 @@
  *       Data reflects racing patterns at the original facility
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const belmontPark: TrackData = {
   code: 'BEL',
@@ -34,7 +34,7 @@ export const belmontPark: TrackData = {
       // Source: NYRA specifications - wide racing surface
       trackWidth: 80,
       // Source: Belmont - chutes allow one-turn races up to 1 1/8 miles
-      chutes: [6, 7, 8, 9]
+      chutes: [6, 7, 8, 9],
     },
     turf: {
       // Source: NYRA - Widener Turf Course 15/16 miles (0.9375)
@@ -46,8 +46,8 @@ export const belmontPark: TrackData = {
       turnRadius: 320,
       // Source: NYRA specifications
       trackWidth: 75,
-      chutes: [8, 9]
-    }
+      chutes: [8, 9],
+    },
   },
 
   postPositionBias: {
@@ -62,7 +62,8 @@ export const belmontPark: TrackData = {
         // Sample: 1,000+ dirt sprints
         winPercentByPost: [9.8, 11.2, 13.4, 14.8, 14.2, 12.8, 10.5, 7.8, 4.2, 1.3],
         favoredPosts: [4, 5],
-        biasDescription: 'Wide turns minimize post advantage; middle posts 4-5 slight edge in one-turn sprints'
+        biasDescription:
+          'Wide turns minimize post advantage; middle posts 4-5 slight edge in one-turn sprints',
       },
       {
         distance: 'route',
@@ -75,8 +76,9 @@ export const belmontPark: TrackData = {
         // Sample: 800+ dirt routes
         winPercentByPost: [12.8, 11.5, 12.9, 13.2, 14.1, 12.4, 10.2, 7.5, 3.8, 1.6],
         favoredPosts: [1, 4, 5],
-        biasDescription: 'Large oval equalizes; rail strong historically (24 Belmont winners); posts 4-5 consistent'
-      }
+        biasDescription:
+          'Large oval equalizes; rail strong historically (24 Belmont winners); posts 4-5 consistent',
+      },
     ],
     turf: [
       {
@@ -90,7 +92,8 @@ export const belmontPark: TrackData = {
         // Sample: 600+ turf sprints
         winPercentByPost: [4.8, 7.2, 10.4, 13.2, 15.1, 14.8, 13.5, 10.8, 6.8, 3.4],
         favoredPosts: [5, 6, 7],
-        biasDescription: 'Strong anti-inside bias; posts 1-3 struggle badly; middle-outside posts 5-7 best'
+        biasDescription:
+          'Strong anti-inside bias; posts 1-3 struggle badly; middle-outside posts 5-7 best',
       },
       {
         distance: 'route',
@@ -102,9 +105,9 @@ export const belmontPark: TrackData = {
         // Sample: 700+ turf routes
         winPercentByPost: [8.2, 10.5, 12.4, 14.2, 15.8, 14.5, 11.2, 8.1, 3.6, 1.5],
         favoredPosts: [5, 6],
-        biasDescription: 'Post 6 leads at 1 mile turf (18%); long stretch suits outside closers'
-      }
-    ]
+        biasDescription: 'Post 6 leads at 1 mile turf (18%); long stretch suits outside closers',
+      },
+    ],
   },
 
   speedBias: [
@@ -116,7 +119,8 @@ export const belmontPark: TrackData = {
       // Long stretch (1,097 ft) allows some rally but speed still prevails
       earlySpeedWinRate: 55,
       paceAdvantageRating: 6,
-      description: 'Speed favoring despite long stretch; wide sweeping turns benefit leaders; tactical speed key'
+      description:
+        'Speed favoring despite long stretch; wide sweeping turns benefit leaders; tactical speed key',
     },
     {
       surface: 'turf',
@@ -125,8 +129,9 @@ export const belmontPark: TrackData = {
       // Stalkers and closers competitive on grass
       earlySpeedWinRate: 46,
       paceAdvantageRating: 4,
-      description: 'Turf plays fairer than dirt; long stretch benefits off-the-pace runners; stalkers effective'
-    }
+      description:
+        'Turf plays fairer than dirt; long stretch benefits off-the-pace runners; stalkers effective',
+    },
   ],
 
   surfaces: [
@@ -134,9 +139,10 @@ export const belmontPark: TrackData = {
       baseType: 'dirt',
       // Source: NYRA track specifications, "The Big Sandy" nickname
       // Sandy loam cushion 4-5 inches over drainage mixture
-      composition: 'Sandy loam cushion (4-5 inches) over clay/silt/sand mixture and natural soil base',
+      composition:
+        'Sandy loam cushion (4-5 inches) over clay/silt/sand mixture and natural soil base',
       playingStyle: 'speed-favoring',
-      drainage: 'good'
+      drainage: 'good',
     },
     {
       baseType: 'turf',
@@ -144,8 +150,8 @@ export const belmontPark: TrackData = {
       // Kentucky Bluegrass base with perennial ryegrass overseed
       composition: 'Kentucky Bluegrass with perennial ryegrass; Widener and Inner configurations',
       playingStyle: 'fair',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -156,7 +162,7 @@ export const belmontPark: TrackData = {
       // Peak Belmont Stakes meet with top-class competition
       typicalCondition: 'Fast to Good; weather variable in June',
       speedAdjustment: 0,
-      notes: 'Belmont Stakes meet (late April-July); premier racing; Triple Crown finale in June'
+      notes: 'Belmont Stakes meet (late April-July); premier racing; Triple Crown finale in June',
     },
     {
       season: 'summer',
@@ -165,7 +171,7 @@ export const belmontPark: TrackData = {
       // Hot conditions, track runs faster
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Short July meet before Saratoga; hot/dry conditions produce fast track'
+      notes: 'Short July meet before Saratoga; hot/dry conditions produce fast track',
     },
     {
       season: 'fall',
@@ -174,8 +180,8 @@ export const belmontPark: TrackData = {
       // Quality racing before winter move to Aqueduct
       typicalCondition: 'Fast to Good',
       speedAdjustment: 0,
-      notes: 'Fall Championship meet; Breeders Cup prep races; excellent conditions'
-    }
+      notes: 'Fall Championship meet; Breeders Cup prep races; excellent conditions',
+    },
   ],
 
   winningTimes: [
@@ -187,7 +193,7 @@ export const belmontPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 64.5,
       allowanceAvg: 63.2,
-      stakesAvg: 62.0
+      stakesAvg: 62.0,
     },
     {
       distance: '6f',
@@ -196,7 +202,7 @@ export const belmontPark: TrackData = {
       // Track record: Lost in the Fog 1:07.70 (2005)
       claimingAvg: 70.0,
       allowanceAvg: 68.8,
-      stakesAvg: 67.6
+      stakesAvg: 67.6,
     },
     {
       distance: '7f',
@@ -204,7 +210,7 @@ export const belmontPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 83.2,
       allowanceAvg: 82.0,
-      stakesAvg: 80.8
+      stakesAvg: 80.8,
     },
     {
       distance: '1m',
@@ -213,7 +219,7 @@ export const belmontPark: TrackData = {
       // Track record: 1:32.24 (Najran, 2003)
       claimingAvg: 96.0,
       allowanceAvg: 94.5,
-      stakesAvg: 92.8
+      stakesAvg: 92.8,
     },
     {
       distance: '1m70y',
@@ -221,7 +227,7 @@ export const belmontPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 100.5,
       allowanceAvg: 98.8,
-      stakesAvg: 97.2
+      stakesAvg: 97.2,
     },
     {
       distance: '1 1/16m',
@@ -229,7 +235,7 @@ export const belmontPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 103.0,
       allowanceAvg: 101.2,
-      stakesAvg: 99.5
+      stakesAvg: 99.5,
     },
     {
       distance: '1 1/8m',
@@ -238,7 +244,7 @@ export const belmontPark: TrackData = {
       // One-turn configuration via backstretch chute
       claimingAvg: 110.8,
       allowanceAvg: 109.0,
-      stakesAvg: 107.2
+      stakesAvg: 107.2,
     },
     {
       distance: '1 1/4m',
@@ -246,7 +252,7 @@ export const belmontPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 124.5,
       allowanceAvg: 122.0,
-      stakesAvg: 119.5
+      stakesAvg: 119.5,
     },
     {
       distance: '1 1/2m',
@@ -255,7 +261,7 @@ export const belmontPark: TrackData = {
       // Belmont Stakes distance - Track record: Secretariat 2:24 (1973)
       claimingAvg: 154.0,
       allowanceAvg: 150.5,
-      stakesAvg: 146.0
+      stakesAvg: 146.0,
     },
     // Turf times
     {
@@ -264,7 +270,7 @@ export const belmontPark: TrackData = {
       surface: 'turf',
       claimingAvg: 63.8,
       allowanceAvg: 62.5,
-      stakesAvg: 61.2
+      stakesAvg: 61.2,
     },
     {
       distance: '1m',
@@ -273,7 +279,7 @@ export const belmontPark: TrackData = {
       // Track record: 1:31.63 (Seek Again, 2014)
       claimingAvg: 95.0,
       allowanceAvg: 93.5,
-      stakesAvg: 91.8
+      stakesAvg: 91.8,
     },
     {
       distance: '1 1/16m',
@@ -281,7 +287,7 @@ export const belmontPark: TrackData = {
       surface: 'turf',
       claimingAvg: 101.8,
       allowanceAvg: 100.2,
-      stakesAvg: 98.5
+      stakesAvg: 98.5,
     },
     {
       distance: '1 1/8m',
@@ -289,10 +295,10 @@ export const belmontPark: TrackData = {
       surface: 'turf',
       claimingAvg: 108.8,
       allowanceAvg: 107.0,
-      stakesAvg: 105.2
-    }
+      stakesAvg: 105.2,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

@@ -15,7 +15,7 @@
  * NOTE: Unique heavy reddish clay base creates challenging off-track conditions
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const oaklawnPark: TrackData = {
   code: 'OP',
@@ -35,8 +35,8 @@ export const oaklawnPark: TrackData = {
       // Source: Oaklawn specifications
       trackWidth: 80,
       // Source: Oaklawn - 6 furlong chute in backstretch
-      chutes: [6]
-    }
+      chutes: [6],
+    },
     // NOTE: Oaklawn has no turf course - dirt only facility
   },
 
@@ -53,7 +53,8 @@ export const oaklawnPark: TrackData = {
         // Sample: 389 sprints in 2023-24 season
         winPercentByPost: [12.2, 12.5, 12.8, 12.0, 10.5, 10.2, 9.8, 9.5, 7.5, 3.0],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Sprints play fair; posts 1-4 slight edge (12% each); running style matters more than post'
+        biasDescription:
+          'Sprints play fair; posts 1-4 slight edge (12% each); running style matters more than post',
       },
       {
         distance: 'route',
@@ -67,9 +68,10 @@ export const oaklawnPark: TrackData = {
         // Sample: 138 races at 1 1/16m in 2023-24; 400+ since 2021
         winPercentByPost: [15.2, 14.8, 13.5, 12.8, 11.2, 10.5, 9.2, 7.2, 4.0, 1.6],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Strong inside bias at 1 1/16m (posts 1-3 win 41%); short stretch hurts outside closers'
-      }
-    ]
+        biasDescription:
+          'Strong inside bias at 1 1/16m (posts 1-3 win 41%); short stretch hurts outside closers',
+      },
+    ],
     // NOTE: No turf post position data - Oaklawn is dirt only
   },
 
@@ -85,8 +87,9 @@ export const oaklawnPark: TrackData = {
       // Short stretch run favors tactical speed
       earlySpeedWinRate: 52,
       paceAdvantageRating: 6,
-      description: 'Speed/tactical speed favored; short stretch limits closing; stalkers often best in routes'
-    }
+      description:
+        'Speed/tactical speed favored; short stretch limits closing; stalkers often best in routes',
+    },
     // NOTE: No turf speed bias data - Oaklawn is dirt only
   ],
 
@@ -99,8 +102,8 @@ export const oaklawnPark: TrackData = {
       // One of the most challenging off-tracks in the country
       composition: 'Heavy reddish clay base with sandy loam top; dramatic off-track transformation',
       playingStyle: 'speed-favoring',
-      drainage: 'fair'
-    }
+      drainage: 'fair',
+    },
     // NOTE: No turf surface - Oaklawn is dirt only
   ],
 
@@ -113,7 +116,8 @@ export const oaklawnPark: TrackData = {
       // Weather can significantly impact surface
       typicalCondition: 'Fast to Muddy; weather variable',
       speedAdjustment: -1,
-      notes: 'Winter meet opens early December; weather impacts common; off-track conditions frequent'
+      notes:
+        'Winter meet opens early December; weather impacts common; off-track conditions frequent',
     },
     {
       season: 'spring',
@@ -123,8 +127,9 @@ export const oaklawnPark: TrackData = {
       // Racing ends early May
       typicalCondition: 'Fast to Good',
       speedAdjustment: 1,
-      notes: 'Spring stakes season; Arkansas Derby G1 prep; Racing Festival of the South; meet ends early May'
-    }
+      notes:
+        'Spring stakes season; Arkansas Derby G1 prep; Racing Festival of the South; meet ends early May',
+    },
   ],
 
   winningTimes: [
@@ -136,7 +141,7 @@ export const oaklawnPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 64.8,
       allowanceAvg: 63.5,
-      stakesAvg: 62.2
+      stakesAvg: 62.2,
     },
     {
       distance: '6f',
@@ -145,7 +150,7 @@ export const oaklawnPark: TrackData = {
       // Recent fast track times: 1:10.82-1:11.22 (Jan 2025)
       claimingAvg: 70.5,
       allowanceAvg: 69.2,
-      stakesAvg: 67.8
+      stakesAvg: 67.8,
     },
     {
       distance: '7f',
@@ -153,7 +158,7 @@ export const oaklawnPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 83.8,
       allowanceAvg: 82.5,
-      stakesAvg: 81.0
+      stakesAvg: 81.0,
     },
     {
       distance: '1m',
@@ -162,7 +167,7 @@ export const oaklawnPark: TrackData = {
       // One-turn mile configuration
       claimingAvg: 97.0,
       allowanceAvg: 95.5,
-      stakesAvg: 93.8
+      stakesAvg: 93.8,
     },
     {
       distance: '1m70y',
@@ -170,7 +175,7 @@ export const oaklawnPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 101.2,
       allowanceAvg: 99.5,
-      stakesAvg: 97.8
+      stakesAvg: 97.8,
     },
     {
       distance: '1 1/16m',
@@ -179,7 +184,7 @@ export const oaklawnPark: TrackData = {
       // Most common route distance; recent times: 1:45.13-1:46.17 (Jan 2025)
       claimingAvg: 103.8,
       allowanceAvg: 102.0,
-      stakesAvg: 100.2
+      stakesAvg: 100.2,
     },
     {
       distance: '1 1/8m',
@@ -188,7 +193,7 @@ export const oaklawnPark: TrackData = {
       // Arkansas Derby distance
       claimingAvg: 111.5,
       allowanceAvg: 109.8,
-      stakesAvg: 108.0
+      stakesAvg: 108.0,
     },
     {
       distance: '1 1/4m',
@@ -196,7 +201,7 @@ export const oaklawnPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 125.5,
       allowanceAvg: 123.0,
-      stakesAvg: 120.5
+      stakesAvg: 120.5,
     },
     {
       distance: '1 5/8m',
@@ -205,10 +210,10 @@ export const oaklawnPark: TrackData = {
       // Gus Fonner Stakes distance (1 1/16 at Fonner, but longer distances run at Oaklawn)
       claimingAvg: 167.0,
       allowanceAvg: 164.0,
-      stakesAvg: 160.5
-    }
+      stakesAvg: 160.5,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

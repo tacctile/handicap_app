@@ -17,8 +17,8 @@
  * @see https://github.com/GoogleChrome/web-vitals
  */
 
-import type { WebVitalMetric, WebVitalCallback, WebVitalName } from './types'
-import { performanceService } from './index'
+import type { WebVitalMetric, WebVitalCallback, WebVitalName } from './types';
+import { performanceService } from './index';
 
 // ============================================================================
 // WEB VITALS THRESHOLDS
@@ -39,7 +39,7 @@ export const WEB_VITALS_THRESHOLDS: Record<
   cls: { good: 0.1, needsImprovement: 0.25 }, // score
   ttfb: { good: 800, needsImprovement: 1800 }, // ms
   fcp: { good: 1800, needsImprovement: 3000 }, // ms
-}
+};
 
 /**
  * Get the rating for a Web Vital metric
@@ -48,14 +48,14 @@ export function getWebVitalRating(
   name: WebVitalName,
   value: number
 ): 'good' | 'needs-improvement' | 'poor' {
-  const thresholds = WEB_VITALS_THRESHOLDS[name]
+  const thresholds = WEB_VITALS_THRESHOLDS[name];
   if (value <= thresholds.good) {
-    return 'good'
+    return 'good';
   }
   if (value <= thresholds.needsImprovement) {
-    return 'needs-improvement'
+    return 'needs-improvement';
   }
-  return 'poor'
+  return 'poor';
 }
 
 // ============================================================================
@@ -67,15 +67,15 @@ const RATING_COLORS = {
   good: '#10b981', // Success green
   'needs-improvement': '#f59e0b', // Warning amber
   poor: '#ef4444', // Error red
-}
+};
 
 /**
  * Log a Web Vital metric to console with color-coded rating
  */
 function logWebVital(metric: WebVitalMetric): void {
-  const color = RATING_COLORS[metric.rating]
-  const displayName = metric.name.toUpperCase()
-  const unit = metric.name === 'cls' ? '' : 'ms'
+  const color = RATING_COLORS[metric.rating];
+  const displayName = metric.name.toUpperCase();
+  const unit = metric.name === 'cls' ? '' : 'ms';
 
   console.log(
     `%c[WEB VITAL]%c ${displayName}: %c${metric.value.toFixed(2)}${unit} %c(${metric.rating})`,
@@ -83,7 +83,7 @@ function logWebVital(metric: WebVitalMetric): void {
     'color: inherit',
     `color: ${color}; font-weight: bold`,
     `color: ${color}`
-  )
+  );
 }
 
 // ============================================================================
@@ -104,7 +104,7 @@ function createMockMetric(name: WebVitalName, value: number): WebVitalMetric {
     delta: value, // First report, delta equals value
     id: `v1-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     entries: [], // Would contain PerformanceEntry objects
-  }
+  };
 }
 
 /**
@@ -112,7 +112,7 @@ function createMockMetric(name: WebVitalName, value: number): WebVitalMetric {
  */
 function defaultWebVitalHandler(metric: WebVitalMetric): void {
   // Log to console
-  logWebVital(metric)
+  logWebVital(metric);
 
   // Track in performance service
   performanceService.trackMetric(
@@ -124,7 +124,7 @@ function defaultWebVitalHandler(metric: WebVitalMetric): void {
       component: 'WebVitals',
       rating: metric.rating,
     }
-  )
+  );
 }
 
 // ============================================================================
@@ -205,47 +205,47 @@ function transformWebVitalMetric(metric: Metric, name: WebVitalName): WebVitalMe
  * })
  */
 export function reportWebVitals(onMetric?: WebVitalCallback): void {
-  const handler = onMetric ?? defaultWebVitalHandler
+  const handler = onMetric ?? defaultWebVitalHandler;
 
   // Log scaffolding message
   console.log(
     '%c[WEB VITALS]%c Scaffolded - install web-vitals package to enable real metrics',
     'color: #19abb5; font-weight: bold',
     'color: #888888'
-  )
+  );
 
   // For development/demo purposes, simulate metrics after a delay
   // Remove this block when real implementation is enabled
   if (import.meta.env?.DEV) {
     // Simulate TTFB (fires quickly)
     setTimeout(() => {
-      const ttfb = createMockMetric('ttfb', 150 + Math.random() * 200)
-      handler(ttfb)
-    }, 100)
+      const ttfb = createMockMetric('ttfb', 150 + Math.random() * 200);
+      handler(ttfb);
+    }, 100);
 
     // Simulate FCP
     setTimeout(() => {
-      const fcp = createMockMetric('fcp', 800 + Math.random() * 400)
-      handler(fcp)
-    }, 500)
+      const fcp = createMockMetric('fcp', 800 + Math.random() * 400);
+      handler(fcp);
+    }, 500);
 
     // Simulate LCP
     setTimeout(() => {
-      const lcp = createMockMetric('lcp', 1200 + Math.random() * 800)
-      handler(lcp)
-    }, 1500)
+      const lcp = createMockMetric('lcp', 1200 + Math.random() * 800);
+      handler(lcp);
+    }, 1500);
 
     // Simulate FID (requires user interaction, so we just log a sample)
     setTimeout(() => {
-      const fid = createMockMetric('fid', 20 + Math.random() * 50)
-      handler(fid)
-    }, 2000)
+      const fid = createMockMetric('fid', 20 + Math.random() * 50);
+      handler(fid);
+    }, 2000);
 
     // Simulate CLS
     setTimeout(() => {
-      const cls = createMockMetric('cls', 0.02 + Math.random() * 0.05)
-      handler(cls)
-    }, 3000)
+      const cls = createMockMetric('cls', 0.02 + Math.random() * 0.05);
+      handler(cls);
+    }, 3000);
   }
 }
 
@@ -266,16 +266,14 @@ export async function getWebVital(name: WebVitalName): Promise<WebVitalMetric | 
       cls: 0.03 + Math.random() * 0.04,
       ttfb: 180 + Math.random() * 120,
       fcp: 900 + Math.random() * 300,
-    }
+    };
 
-    return createMockMetric(name, mockValues[name])
+    return createMockMetric(name, mockValues[name]);
   }
 
   // In production without web-vitals, return null
-  console.warn(
-    `[WebVitals] Cannot get ${name} - web-vitals package not installed`
-  )
-  return null
+  console.warn(`[WebVitals] Cannot get ${name} - web-vitals package not installed`);
+  return null;
 }
 
 /**
@@ -288,11 +286,11 @@ export function isWebVitalsSupported(): boolean {
     typeof PerformanceObserver !== 'undefined' &&
     typeof performance !== 'undefined' &&
     typeof performance.getEntriesByType === 'function'
-  )
+  );
 }
 
 // ============================================================================
 // EXPORTS
 // ============================================================================
 
-export type { WebVitalMetric, WebVitalCallback, WebVitalName } from './types'
+export type { WebVitalMetric, WebVitalCallback, WebVitalName } from './types';

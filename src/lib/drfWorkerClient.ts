@@ -10,29 +10,29 @@ import type {
   DRFWorkerRequest,
   DRFWorkerResponse,
   DRFWorkerProgressMessage,
-} from '../types/drf'
-import { logger } from '../services/logging'
+} from '../types/drf';
+import { logger } from '../services/logging';
 
 /** Default timeout for parsing operations (30 seconds) */
-const DEFAULT_TIMEOUT_MS = 30000
+const DEFAULT_TIMEOUT_MS = 30000;
 
 /** Progress callback type */
-export type ProgressCallback = (progress: DRFWorkerProgressMessage) => void
+export type ProgressCallback = (progress: DRFWorkerProgressMessage) => void;
 
 /** Options for parseFileAsync */
 export interface ParseFileOptions {
   /** Timeout in milliseconds (default: 30000) */
-  timeout?: number
+  timeout?: number;
   /** Callback for progress updates */
-  onProgress?: ProgressCallback
+  onProgress?: ProgressCallback;
 }
 
 /** Result from worker client operations */
 export interface WorkerClientResult {
-  success: boolean
-  data?: ParsedDRFFile
-  error?: string
-  usedFallback: boolean
+  success: boolean;
+  data?: ParsedDRFFile;
+  error?: string;
+  usedFallback: boolean;
 }
 
 /**
@@ -41,17 +41,14 @@ export interface WorkerClientResult {
  */
 function createWorker(): Worker | null {
   try {
-    const worker = new Worker(
-      new URL('./drfWorker.ts', import.meta.url),
-      { type: 'module' }
-    )
-    return worker
+    const worker = new Worker(new URL('./drfWorker.ts', import.meta.url), { type: 'module' });
+    return worker;
   } catch (error) {
     logger.logWarning('Failed to create Web Worker', {
       error: error instanceof Error ? error.message : String(error),
       component: 'drfWorkerClient',
-    })
-    return null
+    });
+    return null;
   }
 }
 
@@ -59,7 +56,7 @@ function createWorker(): Worker | null {
  * Check if Web Workers are supported in the current environment
  */
 export function isWorkerSupported(): boolean {
-  return typeof Worker !== 'undefined'
+  return typeof Worker !== 'undefined';
 }
 
 /**
@@ -82,61 +79,61 @@ export function parseFileAsync(
   filename: string,
   options: ParseFileOptions = {}
 ): Promise<ParsedDRFFile> {
-  const { timeout = DEFAULT_TIMEOUT_MS, onProgress } = options
+  const { timeout = DEFAULT_TIMEOUT_MS, onProgress } = options;
 
   return new Promise((resolve, reject) => {
     // Check worker support
     if (!isWorkerSupported()) {
-      reject(new Error('Web Workers are not supported in this environment'))
-      return
+      reject(new Error('Web Workers are not supported in this environment'));
+      return;
     }
 
     // Create worker
-    const worker = createWorker()
+    const worker = createWorker();
     if (!worker) {
-      reject(new Error('Failed to initialize parsing worker'))
-      return
+      reject(new Error('Failed to initialize parsing worker'));
+      return;
     }
 
     // Setup timeout
-    let timeoutId: ReturnType<typeof setTimeout> | null = null
-    let isResolved = false
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let isResolved = false;
 
     const cleanup = () => {
       if (timeoutId) {
-        clearTimeout(timeoutId)
-        timeoutId = null
+        clearTimeout(timeoutId);
+        timeoutId = null;
       }
-      worker.terminate()
-    }
+      worker.terminate();
+    };
 
     timeoutId = setTimeout(() => {
       if (!isResolved) {
-        isResolved = true
-        cleanup()
+        isResolved = true;
+        cleanup();
         logger.logWarning('DRF parsing timed out', {
           filename,
           timeoutMs: timeout,
           component: 'drfWorkerClient',
-        })
-        reject(new Error(`Parsing timed out after ${timeout / 1000} seconds`))
+        });
+        reject(new Error(`Parsing timed out after ${timeout / 1000} seconds`));
       }
-    }, timeout)
+    }, timeout);
 
     // Handle worker messages
     worker.onmessage = (event: MessageEvent<DRFWorkerResponse>) => {
-      const response = event.data
+      const response = event.data;
 
       // Handle progress updates
       if (response.type === 'progress') {
-        onProgress?.(response)
-        return
+        onProgress?.(response);
+        return;
       }
 
       // Handle completion
-      if (isResolved) return
-      isResolved = true
-      cleanup()
+      if (isResolved) return;
+      isResolved = true;
+      cleanup();
 
       if (response.type === 'success' && response.data) {
         logger.logInfo('DRF file parsed successfully via worker', {
@@ -144,63 +141,64 @@ export function parseFileAsync(
           racesCount: response.data.races.length,
           parseTimeMs: response.data.stats.parseTimeMs,
           component: 'drfWorkerClient',
-        })
-        resolve(response.data)
+        });
+        resolve(response.data);
       } else if (response.type === 'error') {
         logger.logWarning('DRF parsing failed in worker', {
           filename,
           error: response.error,
           errorCode: response.errorCode,
           component: 'drfWorkerClient',
-        })
-        reject(new Error(response.error || 'Unknown parsing error'))
+        });
+        reject(new Error(response.error || 'Unknown parsing error'));
       }
-    }
+    };
 
     // Handle worker errors
     worker.onerror = (error) => {
-      if (isResolved) return
-      isResolved = true
-      cleanup()
+      if (isResolved) return;
+      isResolved = true;
+      cleanup();
 
-      const errorMessage = error.message || 'Worker execution failed'
+      const errorMessage = error.message || 'Worker execution failed';
       logger.logError(new Error(errorMessage), {
         filename,
         component: 'drfWorkerClient',
-      })
-      reject(new Error(errorMessage))
-    }
+      });
+      reject(new Error(errorMessage));
+    };
 
     // Handle worker message errors
     worker.onmessageerror = () => {
-      if (isResolved) return
-      isResolved = true
-      cleanup()
+      if (isResolved) return;
+      isResolved = true;
+      cleanup();
 
-      const errorMessage = 'Failed to deserialize worker message'
+      const errorMessage = 'Failed to deserialize worker message';
       logger.logError(new Error(errorMessage), {
         filename,
         component: 'drfWorkerClient',
-      })
-      reject(new Error(errorMessage))
-    }
+      });
+      reject(new Error(errorMessage));
+    };
 
     // Send parse request to worker
     const request: DRFWorkerRequest = {
       type: 'parse',
       fileContent,
       filename,
-    }
+    };
 
     try {
-      worker.postMessage(request)
+      worker.postMessage(request);
     } catch (error) {
-      isResolved = true
-      cleanup()
-      const errorMessage = error instanceof Error ? error.message : 'Failed to send message to worker'
-      reject(new Error(errorMessage))
+      isResolved = true;
+      cleanup();
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to send message to worker';
+      reject(new Error(errorMessage));
     }
-  })
+  });
 }
 
 /**
@@ -220,41 +218,41 @@ export async function parseFileWithFallback(
   filename: string,
   options: ParseFileOptions = {}
 ): Promise<WorkerClientResult> {
-  const { onProgress } = options
+  const { onProgress } = options;
 
   // First try with worker
   try {
-    const data = await parseFileAsync(fileContent, filename, options)
+    const data = await parseFileAsync(fileContent, filename, options);
     return {
       success: true,
       data,
       usedFallback: false,
-    }
+    };
   } catch (workerError) {
     logger.logWarning('Worker parsing failed, falling back to main thread', {
       filename,
       error: workerError instanceof Error ? workerError.message : String(workerError),
       component: 'drfWorkerClient',
-    })
+    });
 
     // Fall back to main thread parsing
     try {
       // Dynamically import parser to avoid bundling issues
-      const { parseDRFFile } = await import('./drfParser')
+      const { parseDRFFile } = await import('./drfParser');
 
       // Create a progress adapter
       const progressAdapter = onProgress
         ? (message: DRFWorkerProgressMessage) => onProgress(message)
-        : undefined
+        : undefined;
 
-      const data = parseDRFFile(fileContent, filename, progressAdapter)
+      const data = parseDRFFile(fileContent, filename, progressAdapter);
 
       if (!data.isValid && data.errors.length > 0) {
         return {
           success: false,
           error: data.errors[0] || 'Parsing failed',
           usedFallback: true,
-        }
+        };
       }
 
       logger.logInfo('DRF file parsed successfully via main thread fallback', {
@@ -262,29 +260,28 @@ export async function parseFileWithFallback(
         racesCount: data.races.length,
         parseTimeMs: data.stats.parseTimeMs,
         component: 'drfWorkerClient',
-      })
+      });
 
       return {
         success: true,
         data,
         usedFallback: true,
-      }
+      };
     } catch (fallbackError) {
-      const errorMessage = fallbackError instanceof Error
-        ? fallbackError.message
-        : 'Main thread parsing failed'
+      const errorMessage =
+        fallbackError instanceof Error ? fallbackError.message : 'Main thread parsing failed';
 
       logger.logError(new Error(errorMessage), {
         filename,
         component: 'drfWorkerClient',
         stage: 'fallback',
-      })
+      });
 
       return {
         success: false,
         error: errorMessage,
         usedFallback: true,
-      }
+      };
     }
   }
 }
@@ -296,8 +293,8 @@ export async function parseFileWithFallback(
  * reuse the same worker instance for efficiency.
  */
 export class DRFWorkerClient {
-  private worker: Worker | null = null
-  private isTerminated = false
+  private worker: Worker | null = null;
+  private isTerminated = false;
 
   /**
    * Initialize the worker client
@@ -305,26 +302,26 @@ export class DRFWorkerClient {
    */
   initialize(): boolean {
     if (this.worker) {
-      return true
+      return true;
     }
 
     if (!isWorkerSupported()) {
       logger.logWarning('Web Workers not supported', {
         component: 'DRFWorkerClient',
-      })
-      return false
+      });
+      return false;
     }
 
-    this.worker = createWorker()
-    this.isTerminated = false
-    return this.worker !== null
+    this.worker = createWorker();
+    this.isTerminated = false;
+    return this.worker !== null;
   }
 
   /**
    * Check if the worker is ready
    */
   isReady(): boolean {
-    return this.worker !== null && !this.isTerminated
+    return this.worker !== null && !this.isTerminated;
   }
 
   /**
@@ -336,14 +333,14 @@ export class DRFWorkerClient {
     options: ParseFileOptions = {}
   ): Promise<ParsedDRFFile> {
     if (!this.isReady()) {
-      const initialized = this.initialize()
+      const initialized = this.initialize();
       if (!initialized) {
-        throw new Error('Failed to initialize worker')
+        throw new Error('Failed to initialize worker');
       }
     }
 
     // Use the standalone function with our existing worker
-    return parseFileAsync(fileContent, filename, options)
+    return parseFileAsync(fileContent, filename, options);
   }
 
   /**
@@ -351,22 +348,22 @@ export class DRFWorkerClient {
    */
   terminate(): void {
     if (this.worker) {
-      this.worker.terminate()
-      this.worker = null
+      this.worker.terminate();
+      this.worker = null;
     }
-    this.isTerminated = true
+    this.isTerminated = true;
   }
 }
 
 // Export a singleton instance for convenience
-let defaultClient: DRFWorkerClient | null = null
+let defaultClient: DRFWorkerClient | null = null;
 
 /**
  * Get the default worker client singleton
  */
 export function getDefaultClient(): DRFWorkerClient {
   if (!defaultClient) {
-    defaultClient = new DRFWorkerClient()
+    defaultClient = new DRFWorkerClient();
   }
-  return defaultClient
+  return defaultClient;
 }

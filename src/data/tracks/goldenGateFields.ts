@@ -15,7 +15,7 @@
  *       Currently dirt main track and turf course; bay-adjacent location creates unique weather
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const goldenGateFields: TrackData = {
   code: 'GG',
@@ -34,7 +34,7 @@ export const goldenGateFields: TrackData = {
       // Source: California Horse Racing Board - 80 feet wide
       trackWidth: 80,
       // Source: Golden Gate Fields - chutes at 5.5f and 7f
-      chutes: [5.5, 7]
+      chutes: [5.5, 7],
     },
     turf: {
       // Source: Golden Gate Fields official - 7/8 mile turf course
@@ -45,8 +45,8 @@ export const goldenGateFields: TrackData = {
       turnRadius: 240,
       // Source: California Horse Racing Board
       trackWidth: 70,
-      chutes: [8, 10]
-    }
+      chutes: [8, 10],
+    },
   },
 
   postPositionBias: {
@@ -63,7 +63,8 @@ export const goldenGateFields: TrackData = {
         // Sample: 700+ dirt sprints annually
         winPercentByPost: [14.8, 15.2, 13.8, 12.0, 10.5, 9.5, 8.2, 7.0, 5.5, 3.5],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Strong rail bias in sprints; posts 1-3 have significant advantage; short run to turn at 6f critical; moisture from bay keeps rail live'
+        biasDescription:
+          'Strong rail bias in sprints; posts 1-3 have significant advantage; short run to turn at 6f critical; moisture from bay keeps rail live',
       },
       {
         distance: 'route',
@@ -76,8 +77,9 @@ export const goldenGateFields: TrackData = {
         // Sample: 350+ dirt routes annually
         winPercentByPost: [12.5, 14.0, 14.5, 13.0, 11.5, 10.5, 9.0, 7.5, 5.0, 2.5],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Inside advantage continues in routes; posts 2-4 optimal; rail generally live; closers can rally with pace'
-      }
+        biasDescription:
+          'Inside advantage continues in routes; posts 2-4 optimal; rail generally live; closers can rally with pace',
+      },
     ],
     turf: [
       {
@@ -91,7 +93,8 @@ export const goldenGateFields: TrackData = {
         // Sample: 150+ turf sprints annually
         winPercentByPost: [15.5, 15.0, 13.2, 11.5, 10.0, 9.5, 9.0, 8.0, 5.5, 2.8],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Very strong inside bias on turf sprints; posts 1-3 dominate; tight course rewards rail position'
+        biasDescription:
+          'Very strong inside bias on turf sprints; posts 1-3 dominate; tight course rewards rail position',
       },
       {
         distance: 'route',
@@ -103,9 +106,10 @@ export const goldenGateFields: TrackData = {
         // Sample: 200+ turf routes annually
         winPercentByPost: [14.0, 14.5, 13.5, 12.0, 11.0, 10.0, 9.0, 8.0, 5.5, 2.5],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Inside advantage in turf routes; posts 1-3 favored; 7/8 mile course rewards ground savers'
-      }
-    ]
+        biasDescription:
+          'Inside advantage in turf routes; posts 1-3 favored; 7/8 mile course rewards ground savers',
+      },
+    ],
   },
 
   speedBias: [
@@ -118,7 +122,8 @@ export const goldenGateFields: TrackData = {
       // Closers have reasonable shot
       earlySpeedWinRate: 54,
       paceAdvantageRating: 6,
-      description: 'Moderate speed bias; 54% early speed win rate; bay moisture can tire horses; closers competitive with pace scenario'
+      description:
+        'Moderate speed bias; 54% early speed win rate; bay moisture can tire horses; closers competitive with pace scenario',
     },
     {
       surface: 'turf',
@@ -128,8 +133,9 @@ export const goldenGateFields: TrackData = {
       // Firm conditions enhance speed advantage
       earlySpeedWinRate: 56,
       paceAdvantageRating: 7,
-      description: 'Speed-favoring turf; tight course limits closing ability; 56% early speed win rate; firm conditions help front-runners'
-    }
+      description:
+        'Speed-favoring turf; tight course limits closing ability; 56% early speed win rate; firm conditions help front-runners',
+    },
   ],
 
   surfaces: [
@@ -138,19 +144,21 @@ export const goldenGateFields: TrackData = {
       // Source: California Horse Racing Board, Golden Gate Fields grounds crew
       // Sandy loam composition; bay humidity affects cushion
       // Track can become deep after rain
-      composition: 'Sandy loam cushion over clay base; 3-inch cushion depth; bay humidity affects moisture content; can become deep after rain',
+      composition:
+        'Sandy loam cushion over clay base; 3-inch cushion depth; bay humidity affects moisture content; can become deep after rain',
       playingStyle: 'fair',
-      drainage: 'fair'
+      drainage: 'fair',
     },
     {
       baseType: 'turf',
       // Source: Golden Gate Fields grounds specifications
       // Perennial ryegrass and bluegrass blend
       // Bay climate provides natural moisture
-      composition: 'Perennial ryegrass/Kentucky bluegrass blend; bay microclimate provides consistent moisture; typically runs firm to good',
+      composition:
+        'Perennial ryegrass/Kentucky bluegrass blend; bay microclimate provides consistent moisture; typically runs firm to good',
       playingStyle: 'fair',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -162,7 +170,7 @@ export const goldenGateFields: TrackData = {
       // Track can be slower after precipitation
       typicalCondition: 'Fast to Good; occasional off-track from spring rains',
       speedAdjustment: 0,
-      notes: 'Variable conditions; spring rains affect track; bay fog can create moisture'
+      notes: 'Variable conditions; spring rains affect track; bay fog can create moisture',
     },
     {
       season: 'summer',
@@ -172,7 +180,8 @@ export const goldenGateFields: TrackData = {
       // Generally fair racing strip
       typicalCondition: 'Fast; moderate bay climate',
       speedAdjustment: 0,
-      notes: 'Bay fog keeps conditions moderate; not as hot as inland California tracks; fair racing surface'
+      notes:
+        'Bay fog keeps conditions moderate; not as hot as inland California tracks; fair racing surface',
     },
     {
       season: 'fall',
@@ -182,7 +191,7 @@ export const goldenGateFields: TrackData = {
       // Track typically fast
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Premier racing season; optimal conditions; track tends to play faster'
+      notes: 'Premier racing season; optimal conditions; track tends to play faster',
     },
     {
       season: 'winter',
@@ -192,8 +201,9 @@ export const goldenGateFields: TrackData = {
       // Off-tracks common
       typicalCondition: 'Good to Sloppy; frequent off-track conditions',
       speedAdjustment: -1,
-      notes: 'Rainy season; expect off-track conditions; inside may become heavy; adjust for surface'
-    }
+      notes:
+        'Rainy season; expect off-track conditions; inside may become heavy; adjust for surface',
+    },
   ],
 
   winningTimes: [
@@ -205,7 +215,7 @@ export const goldenGateFields: TrackData = {
       surface: 'dirt',
       claimingAvg: 58.5,
       allowanceAvg: 57.2,
-      stakesAvg: 56.5
+      stakesAvg: 56.5,
     },
     {
       distance: '5.5f',
@@ -213,7 +223,7 @@ export const goldenGateFields: TrackData = {
       surface: 'dirt',
       claimingAvg: 64.5,
       allowanceAvg: 63.2,
-      stakesAvg: 62.5
+      stakesAvg: 62.5,
     },
     {
       distance: '6f',
@@ -222,7 +232,7 @@ export const goldenGateFields: TrackData = {
       // Track record: 1:07.40
       claimingAvg: 70.8,
       allowanceAvg: 69.5,
-      stakesAvg: 68.5
+      stakesAvg: 68.5,
     },
     {
       distance: '6.5f',
@@ -230,7 +240,7 @@ export const goldenGateFields: TrackData = {
       surface: 'dirt',
       claimingAvg: 77.2,
       allowanceAvg: 75.8,
-      stakesAvg: 75.0
+      stakesAvg: 75.0,
     },
     {
       distance: '7f',
@@ -238,7 +248,7 @@ export const goldenGateFields: TrackData = {
       surface: 'dirt',
       claimingAvg: 83.5,
       allowanceAvg: 82.0,
-      stakesAvg: 81.0
+      stakesAvg: 81.0,
     },
     {
       distance: '1m',
@@ -246,7 +256,7 @@ export const goldenGateFields: TrackData = {
       surface: 'dirt',
       claimingAvg: 97.5,
       allowanceAvg: 96.0,
-      stakesAvg: 94.5
+      stakesAvg: 94.5,
     },
     {
       distance: '1m70y',
@@ -254,7 +264,7 @@ export const goldenGateFields: TrackData = {
       surface: 'dirt',
       claimingAvg: 102.0,
       allowanceAvg: 100.5,
-      stakesAvg: 99.0
+      stakesAvg: 99.0,
     },
     {
       distance: '1 1/16m',
@@ -262,7 +272,7 @@ export const goldenGateFields: TrackData = {
       surface: 'dirt',
       claimingAvg: 104.5,
       allowanceAvg: 103.0,
-      stakesAvg: 101.5
+      stakesAvg: 101.5,
     },
     {
       distance: '1 1/8m',
@@ -271,7 +281,7 @@ export const goldenGateFields: TrackData = {
       // Track record: 1:47.20
       claimingAvg: 111.5,
       allowanceAvg: 109.5,
-      stakesAvg: 107.5
+      stakesAvg: 107.5,
     },
     {
       distance: '1 1/4m',
@@ -279,7 +289,7 @@ export const goldenGateFields: TrackData = {
       surface: 'dirt',
       claimingAvg: 125.0,
       allowanceAvg: 122.5,
-      stakesAvg: 120.0
+      stakesAvg: 120.0,
     },
     // Turf times
     {
@@ -288,7 +298,7 @@ export const goldenGateFields: TrackData = {
       surface: 'turf',
       claimingAvg: 57.0,
       allowanceAvg: 55.8,
-      stakesAvg: 55.0
+      stakesAvg: 55.0,
     },
     {
       distance: '1m',
@@ -296,7 +306,7 @@ export const goldenGateFields: TrackData = {
       surface: 'turf',
       claimingAvg: 96.0,
       allowanceAvg: 94.5,
-      stakesAvg: 93.0
+      stakesAvg: 93.0,
     },
     {
       distance: '1 1/16m',
@@ -304,7 +314,7 @@ export const goldenGateFields: TrackData = {
       surface: 'turf',
       claimingAvg: 103.0,
       allowanceAvg: 101.5,
-      stakesAvg: 100.0
+      stakesAvg: 100.0,
     },
     {
       distance: '1 1/8m',
@@ -312,10 +322,10 @@ export const goldenGateFields: TrackData = {
       surface: 'turf',
       claimingAvg: 109.5,
       allowanceAvg: 108.0,
-      stakesAvg: 106.5
-    }
+      stakesAvg: 106.5,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

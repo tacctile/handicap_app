@@ -5,9 +5,9 @@
  * Single tier model: $24.99/month as per MASTER_CONTEXT.md
  */
 
-import { useState } from 'react'
-import { useSubscription } from '../../hooks/useSubscription'
-import { logger } from '../../services/logging'
+import { useState } from 'react';
+import { useSubscription } from '../../hooks/useSubscription';
+import { logger } from '../../services/logging';
 
 // ============================================================================
 // TYPES
@@ -15,9 +15,9 @@ import { logger } from '../../services/logging'
 
 export interface PricingCardProps {
   /** Optional callback after successful subscription initiation */
-  onSubscribe?: () => void
+  onSubscribe?: () => void;
   /** Show compact version */
-  compact?: boolean
+  compact?: boolean;
 }
 
 // ============================================================================
@@ -45,7 +45,7 @@ const FEATURES = [
     title: 'Offline Access',
     description: 'Full functionality at the track, no signal needed',
   },
-]
+];
 
 // ============================================================================
 // STYLES
@@ -203,7 +203,7 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
     lineHeight: 1.4,
   },
-}
+};
 
 // ============================================================================
 // COMPONENT
@@ -218,47 +218,47 @@ const styles: Record<string, React.CSSProperties> = {
  * ```
  */
 export function PricingCard({ onSubscribe, compact = false }: PricingCardProps) {
-  const { openCheckout, isLoading, error, clearError } = useSubscription()
-  const [isHovered, setIsHovered] = useState(false)
+  const { openCheckout, isLoading, error, clearError } = useSubscription();
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleSubscribe = async () => {
     try {
-      clearError()
+      clearError();
       logger.logInfo('Initiating subscription checkout', {
         component: 'PricingCard',
-      })
+      });
 
-      const url = await openCheckout('monthly')
+      const url = await openCheckout('monthly');
 
       logger.logInfo('Checkout session created', {
         component: 'PricingCard',
         hasUrl: !!url,
-      })
+      });
 
       // In production, redirect to Stripe checkout
       // For mock, the subscription is created immediately
       if (url) {
-        window.open(url, '_blank')
+        window.open(url, '_blank');
       }
 
-      onSubscribe?.()
+      onSubscribe?.();
     } catch (err) {
       logger.logError(err instanceof Error ? err : new Error('Failed to open checkout'), {
         component: 'PricingCard',
-      })
+      });
     }
-  }
+  };
 
   const cardStyle = {
     ...styles.card,
     ...(compact ? styles.cardCompact : {}),
-  }
+  };
 
   const buttonStyle = {
     ...styles.subscribeButton,
     ...(isHovered && !isLoading ? styles.subscribeButtonHover : {}),
     ...(isLoading ? styles.subscribeButtonDisabled : {}),
-  }
+  };
 
   return (
     <div style={cardStyle}>
@@ -282,9 +282,7 @@ export function PricingCard({ onSubscribe, compact = false }: PricingCardProps) 
             </div>
             <div style={styles.featureText}>
               <p style={styles.featureTitle}>{feature.title}</p>
-              {!compact && (
-                <p style={styles.featureDescription}>{feature.description}</p>
-              )}
+              {!compact && <p style={styles.featureDescription}>{feature.description}</p>}
             </div>
           </div>
         ))}
@@ -331,7 +329,7 @@ export function PricingCard({ onSubscribe, compact = false }: PricingCardProps) 
         Cancel anytime. No refunds.
       </p>
     </div>
-  )
+  );
 }
 
-export default PricingCard
+export default PricingCard;

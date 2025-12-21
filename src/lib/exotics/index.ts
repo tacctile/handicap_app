@@ -32,7 +32,7 @@ export {
   type BetStructure,
   type ExoticCost,
   type ExoticBetConfig,
-} from './exoticCalculator'
+} from './exoticCalculator';
 
 // Optimizer exports
 export {
@@ -43,7 +43,7 @@ export {
   type OptimizationConfig,
   type OptimizedBetOption,
   type OptimizationResult,
-} from './exoticOptimizer'
+} from './exoticOptimizer';
 
 // Payout estimator exports
 export {
@@ -58,7 +58,7 @@ export {
   type PayoutRange,
   type PayoutEstimate,
   type PayoutScenario,
-} from './exoticPayoutEstimator'
+} from './exoticPayoutEstimator';
 
 // Comparison exports
 export {
@@ -68,4 +68,4 @@ export {
   type ComparisonRow,
   type ComparisonTable,
   type ComparisonConfig,
-} from './exoticComparison'
+} from './exoticComparison';

@@ -13,17 +13,17 @@
  * Possible subscription statuses
  */
 export type SubscriptionStatus =
-  | 'active'      // Subscription is active and paid
-  | 'canceled'    // Subscription was canceled but may still have access until period end
-  | 'past_due'    // Payment failed, grace period
-  | 'trialing'    // In trial period
-  | 'none'        // No subscription
+  | 'active' // Subscription is active and paid
+  | 'canceled' // Subscription was canceled but may still have access until period end
+  | 'past_due' // Payment failed, grace period
+  | 'trialing' // In trial period
+  | 'none'; // No subscription
 
 /**
  * Check if a status grants access to paid features
  */
 export function hasActiveAccess(status: SubscriptionStatus): boolean {
-  return status === 'active' || status === 'trialing'
+  return status === 'active' || status === 'trialing';
 }
 
 // ============================================================================
@@ -33,32 +33,32 @@ export function hasActiveAccess(status: SubscriptionStatus): boolean {
 /**
  * Billing interval
  */
-export type BillingInterval = 'month' | 'year'
+export type BillingInterval = 'month' | 'year';
 
 /**
  * Subscription plan definition
  */
 export interface Plan {
   /** Unique plan identifier */
-  id: string
+  id: string;
   /** Display name */
-  name: string
+  name: string;
   /** Description */
-  description: string
+  description: string;
   /** Price in cents (e.g., 1999 = $19.99) */
-  priceInCents: number
+  priceInCents: number;
   /** Formatted price string (e.g., "$19.99") */
-  priceFormatted: string
+  priceFormatted: string;
   /** Billing interval */
-  interval: BillingInterval
+  interval: BillingInterval;
   /** Currency code */
-  currency: string
+  currency: string;
   /** Features included in this plan */
-  features: string[]
+  features: string[];
   /** Whether this is the recommended plan */
-  isRecommended?: boolean
+  isRecommended?: boolean;
   /** Stripe price ID (for integration) */
-  stripePriceId?: string
+  stripePriceId?: string;
 }
 
 /**
@@ -80,7 +80,7 @@ export const DEFAULT_PLAN: Plan = {
     'Offline access',
   ],
   isRecommended: true,
-}
+};
 
 // ============================================================================
 // SUBSCRIPTION TYPES
@@ -91,49 +91,49 @@ export const DEFAULT_PLAN: Plan = {
  */
 export interface Subscription {
   /** Subscription ID */
-  id: string
+  id: string;
   /** User ID */
-  userId: string
+  userId: string;
   /** Current status */
-  status: SubscriptionStatus
+  status: SubscriptionStatus;
   /** Plan ID */
-  planId: string
+  planId: string;
   /** Plan details */
-  plan: Plan
+  plan: Plan;
   /** Start of current billing period */
-  currentPeriodStart: Date
+  currentPeriodStart: Date;
   /** End of current billing period */
-  currentPeriodEnd: Date
+  currentPeriodEnd: Date;
   /** Whether subscription will cancel at period end */
-  cancelAtPeriodEnd: boolean
+  cancelAtPeriodEnd: boolean;
   /** When the subscription was created */
-  createdAt: Date
+  createdAt: Date;
   /** When the subscription was last updated */
-  updatedAt: Date
+  updatedAt: Date;
   /** Trial end date (if trialing) */
-  trialEnd?: Date
+  trialEnd?: Date;
   /** Stripe subscription ID (for integration) */
-  stripeSubscriptionId?: string
+  stripeSubscriptionId?: string;
   /** Stripe customer ID (for integration) */
-  stripeCustomerId?: string
+  stripeCustomerId?: string;
 }
 
 /**
  * Subscription data for storage (JSON-serializable)
  */
 export interface SubscriptionData {
-  id: string
-  userId: string
-  status: SubscriptionStatus
-  planId: string
-  currentPeriodStart: string
-  currentPeriodEnd: string
-  cancelAtPeriodEnd: boolean
-  createdAt: string
-  updatedAt: string
-  trialEnd?: string
-  stripeSubscriptionId?: string
-  stripeCustomerId?: string
+  id: string;
+  userId: string;
+  status: SubscriptionStatus;
+  planId: string;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  createdAt: string;
+  updatedAt: string;
+  trialEnd?: string;
+  stripeSubscriptionId?: string;
+  stripeCustomerId?: string;
 }
 
 // ============================================================================
@@ -143,24 +143,24 @@ export interface SubscriptionData {
 /**
  * Payment provider types
  */
-export type PaymentProvider = 'stripe' | 'mock'
+export type PaymentProvider = 'stripe' | 'mock';
 
 /**
  * Configuration for subscription service
  */
 export interface SubscriptionConfig {
   /** Which payment provider to use */
-  provider: PaymentProvider
+  provider: PaymentProvider;
   /** Mock delay in ms (for mock provider) */
-  mockDelayMs?: number
+  mockDelayMs?: number;
   /** Storage key for persisting subscription state */
-  storageKey?: string
+  storageKey?: string;
   /** Whether to persist subscription state */
-  persistSubscription?: boolean
+  persistSubscription?: boolean;
   /** Default subscription status for mock */
-  mockDefaultStatus?: SubscriptionStatus
+  mockDefaultStatus?: SubscriptionStatus;
   /** Available plans */
-  plans?: Plan[]
+  plans?: Plan[];
 }
 
 /**
@@ -173,7 +173,7 @@ export const defaultSubscriptionConfig: SubscriptionConfig = {
   persistSubscription: true,
   mockDefaultStatus: 'none',
   plans: [DEFAULT_PLAN],
-}
+};
 
 // ============================================================================
 // ERROR TYPES
@@ -191,15 +191,15 @@ export type SubscriptionErrorCode =
   | 'CANNOT_CANCEL'
   | 'NETWORK_ERROR'
   | 'PROVIDER_ERROR'
-  | 'UNKNOWN_ERROR'
+  | 'UNKNOWN_ERROR';
 
 /**
  * Structured subscription error
  */
 export interface SubscriptionError {
-  code: SubscriptionErrorCode
-  message: string
-  originalError?: unknown
+  code: SubscriptionErrorCode;
+  message: string;
+  originalError?: unknown;
 }
 
 /**
@@ -210,19 +210,14 @@ export function createSubscriptionError(
   message: string,
   originalError?: unknown
 ): SubscriptionError {
-  return { code, message, originalError }
+  return { code, message, originalError };
 }
 
 /**
  * Type guard for SubscriptionError
  */
 export function isSubscriptionError(error: unknown): error is SubscriptionError {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    'message' in error
-  )
+  return typeof error === 'object' && error !== null && 'code' in error && 'message' in error;
 }
 
 // ============================================================================
@@ -232,21 +227,21 @@ export function isSubscriptionError(error: unknown): error is SubscriptionError 
 /**
  * Unsubscribe function returned by listeners
  */
-export type Unsubscribe = () => void
+export type Unsubscribe = () => void;
 
 /**
  * Subscription state change callback
  */
-export type SubscriptionCallback = (subscription: Subscription | null) => void
+export type SubscriptionCallback = (subscription: Subscription | null) => void;
 
 /**
  * Checkout session result
  */
 export interface CheckoutSession {
   /** Session ID */
-  id: string
+  id: string;
   /** Checkout URL to redirect to */
-  url: string
+  url: string;
 }
 
 /**
@@ -254,9 +249,9 @@ export interface CheckoutSession {
  */
 export interface PortalSession {
   /** Session ID */
-  id: string
+  id: string;
   /** Portal URL to redirect to */
-  url: string
+  url: string;
 }
 
 /**
@@ -268,51 +263,51 @@ export interface ISubscriptionService {
    * Get subscription for a user
    * Returns null if no subscription exists
    */
-  getSubscription(userId: string): Promise<Subscription | null>
+  getSubscription(userId: string): Promise<Subscription | null>;
 
   /**
    * Create a checkout session for a plan
    * Returns the checkout URL
    */
-  createCheckoutSession(userId: string, planId: string): Promise<string>
+  createCheckoutSession(userId: string, planId: string): Promise<string>;
 
   /**
    * Create a billing portal session for managing subscription
    * Returns the portal URL
    */
-  createPortalSession(userId: string): Promise<string>
+  createPortalSession(userId: string): Promise<string>;
 
   /**
    * Cancel a subscription
    * Sets cancelAtPeriodEnd to true
    */
-  cancelSubscription(subscriptionId: string): Promise<void>
+  cancelSubscription(subscriptionId: string): Promise<void>;
 
   /**
    * Resume a canceled subscription
    */
-  resumeSubscription?(subscriptionId: string): Promise<void>
+  resumeSubscription?(subscriptionId: string): Promise<void>;
 
   /**
    * Subscribe to subscription changes for a user
    * Returns an unsubscribe function
    */
-  onSubscriptionChange(userId: string, callback: SubscriptionCallback): Unsubscribe
+  onSubscriptionChange(userId: string, callback: SubscriptionCallback): Unsubscribe;
 
   /**
    * Get available plans
    */
-  getPlans(): Plan[]
+  getPlans(): Plan[];
 
   /**
    * Check if user has active subscription (convenience method)
    */
-  hasActiveSubscription(userId: string): Promise<boolean>
+  hasActiveSubscription(userId: string): Promise<boolean>;
 
   /**
    * For mock: Set subscription status for testing
    */
-  setMockSubscription?(userId: string, status: SubscriptionStatus): void
+  setMockSubscription?(userId: string, status: SubscriptionStatus): void;
 }
 
 // ============================================================================
@@ -336,7 +331,7 @@ export function subscriptionToData(subscription: Subscription): SubscriptionData
     trialEnd: subscription.trialEnd?.toISOString(),
     stripeSubscriptionId: subscription.stripeSubscriptionId,
     stripeCustomerId: subscription.stripeCustomerId,
-  }
+  };
 }
 
 /**
@@ -357,22 +352,22 @@ export function dataToSubscription(data: SubscriptionData, plan: Plan): Subscrip
     trialEnd: data.trialEnd ? new Date(data.trialEnd) : undefined,
     stripeSubscriptionId: data.stripeSubscriptionId,
     stripeCustomerId: data.stripeCustomerId,
-  }
+  };
 }
 
 /**
  * Calculate days remaining in subscription period
  */
 export function getDaysRemaining(subscription: Subscription | null): number {
-  if (!subscription) return 0
-  if (!hasActiveAccess(subscription.status)) return 0
+  if (!subscription) return 0;
+  if (!hasActiveAccess(subscription.status)) return 0;
 
-  const now = new Date()
-  const end = subscription.currentPeriodEnd
-  const diffMs = end.getTime() - now.getTime()
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+  const now = new Date();
+  const end = subscription.currentPeriodEnd;
+  const diffMs = end.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
-  return Math.max(0, diffDays)
+  return Math.max(0, diffDays);
 }
 
 /**
@@ -381,17 +376,17 @@ export function getDaysRemaining(subscription: Subscription | null): number {
 export function formatSubscriptionStatus(status: SubscriptionStatus): string {
   switch (status) {
     case 'active':
-      return 'Active'
+      return 'Active';
     case 'canceled':
-      return 'Canceled'
+      return 'Canceled';
     case 'past_due':
-      return 'Past Due'
+      return 'Past Due';
     case 'trialing':
-      return 'Trial'
+      return 'Trial';
     case 'none':
-      return 'No Subscription'
+      return 'No Subscription';
     default:
-      return 'Unknown'
+      return 'Unknown';
   }
 }
 
@@ -402,13 +397,13 @@ export function getStatusColor(status: SubscriptionStatus): string {
   switch (status) {
     case 'active':
     case 'trialing':
-      return '#10b981' // Success green
+      return '#10b981'; // Success green
     case 'canceled':
-      return '#f59e0b' // Warning yellow
+      return '#f59e0b'; // Warning yellow
     case 'past_due':
-      return '#ef4444' // Error red
+      return '#ef4444'; // Error red
     case 'none':
     default:
-      return '#6E6E70' // Tertiary text
+      return '#6E6E70'; // Tertiary text
   }
 }

@@ -5,17 +5,17 @@
  * Critical for providing feedback when user is at the track with no signal.
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react';
 
 interface OnlineStatus {
   /** True if browser reports online */
-  isOnline: boolean
+  isOnline: boolean;
   /** True if browser reports offline */
-  isOffline: boolean
+  isOffline: boolean;
   /** Timestamp of last status change */
-  lastChanged: Date | null
+  lastChanged: Date | null;
   /** Force a connectivity check */
-  checkConnectivity: () => Promise<boolean>
+  checkConnectivity: () => Promise<boolean>;
 }
 
 /**
@@ -24,30 +24,30 @@ interface OnlineStatus {
 export function useOnlineStatus(): OnlineStatus {
   const [isOnline, setIsOnline] = useState(() => {
     // Default to true during SSR or if navigator is unavailable
-    if (typeof navigator === 'undefined') return true
-    return navigator.onLine
-  })
-  const [lastChanged, setLastChanged] = useState<Date | null>(null)
+    if (typeof navigator === 'undefined') return true;
+    return navigator.onLine;
+  });
+  const [lastChanged, setLastChanged] = useState<Date | null>(null);
 
   useEffect(() => {
     const handleOnline = () => {
-      setIsOnline(true)
-      setLastChanged(new Date())
-    }
+      setIsOnline(true);
+      setLastChanged(new Date());
+    };
 
     const handleOffline = () => {
-      setIsOnline(false)
-      setLastChanged(new Date())
-    }
+      setIsOnline(false);
+      setLastChanged(new Date());
+    };
 
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
-  }, [])
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   /**
    * Force a connectivity check by attempting to fetch a small resource
@@ -59,24 +59,24 @@ export function useOnlineStatus(): OnlineStatus {
       const response = await fetch('/favicon.svg', {
         method: 'HEAD',
         cache: 'no-store',
-      })
-      const online = response.ok
-      setIsOnline(online)
-      if (!online) setLastChanged(new Date())
-      return online
+      });
+      const online = response.ok;
+      setIsOnline(online);
+      if (!online) setLastChanged(new Date());
+      return online;
     } catch {
-      setIsOnline(false)
-      setLastChanged(new Date())
-      return false
+      setIsOnline(false);
+      setLastChanged(new Date());
+      return false;
     }
-  }, [])
+  }, []);
 
   return {
     isOnline,
     isOffline: !isOnline,
     lastChanged,
     checkConnectivity,
-  }
+  };
 }
 
-export default useOnlineStatus
+export default useOnlineStatus;

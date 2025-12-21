@@ -21,25 +21,25 @@
 
 :root {
   /* Spacing scale for different screen sizes */
-  --spacing-xs: 0.25rem;   /* 4px */
-  --spacing-sm: 0.5rem;    /* 8px */
-  --spacing-md: 1rem;      /* 16px */
-  --spacing-lg: 1.5rem;    /* 24px */
-  --spacing-xl: 2rem;      /* 32px */
-  --spacing-2xl: 3rem;     /* 48px */
+  --spacing-xs: 0.25rem; /* 4px */
+  --spacing-sm: 0.5rem; /* 8px */
+  --spacing-md: 1rem; /* 16px */
+  --spacing-lg: 1.5rem; /* 24px */
+  --spacing-xl: 2rem; /* 32px */
+  --spacing-2xl: 3rem; /* 48px */
 
   /* Touch targets - minimum 44px for accessibility */
   --touch-target-min: 44px;
   --touch-target-lg: 48px;
 
   /* Typography scale */
-  --text-xs: 0.75rem;      /* 12px */
-  --text-sm: 0.8125rem;    /* 13px */
-  --text-base: 0.875rem;   /* 14px - mobile minimum */
-  --text-md: 1rem;         /* 16px */
-  --text-lg: 1.125rem;     /* 18px */
-  --text-xl: 1.25rem;      /* 20px */
-  --text-2xl: 1.5rem;      /* 24px */
+  --text-xs: 0.75rem; /* 12px */
+  --text-sm: 0.8125rem; /* 13px */
+  --text-base: 0.875rem; /* 14px - mobile minimum */
+  --text-md: 1rem; /* 16px */
+  --text-lg: 1.125rem; /* 18px */
+  --text-xl: 1.25rem; /* 20px */
+  --text-2xl: 1.5rem; /* 24px */
 
   /* Layout widths */
   --container-max: 1200px;
@@ -753,7 +753,7 @@
   border-radius: 12px;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   cursor: pointer;
 }
 
@@ -789,7 +789,7 @@
   background: none;
   border: none;
   border-bottom: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   cursor: pointer;
   text-align: left;
 }
@@ -855,7 +855,7 @@
   border-radius: 12px;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -970,7 +970,7 @@
 .exotic-recommendation-title {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   margin: 0 0 0.75rem;
 }
 
@@ -996,7 +996,7 @@
 .exotic-stat-value {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .exotic-use-btn {
@@ -1071,7 +1071,7 @@
 }
 
 .exotic-comparison-table td {
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .exotic-comparison-table tr:last-child td {
@@ -1137,7 +1137,7 @@
   border-radius: 12px;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   cursor: pointer;
   transition: all 0.15s ease;
   flex-wrap: wrap;
@@ -1217,7 +1217,7 @@
   gap: 0.5rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   margin-bottom: 0.75rem;
 }
 
@@ -1262,7 +1262,7 @@
 .dutch-combination-name {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .dutch-combination-badge {
@@ -1304,7 +1304,7 @@
 .dutch-stat-value {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .dutch-stat-value.positive {
@@ -1336,7 +1336,7 @@
 }
 
 .dutch-bet-amount {
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .dutch-bet-odds {
@@ -1493,7 +1493,7 @@
 
 .dutch-horse-name {
   font-size: 0.75rem;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1567,7 +1567,7 @@
 }
 
 .dutch-live-stat span:last-child {
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   font-weight: 500;
 }
 
@@ -1668,7 +1668,7 @@
   border-radius: 12px;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   cursor: pointer;
   transition: all 0.15s ease;
   flex-wrap: wrap;
@@ -1732,7 +1732,7 @@
   border-radius: 8px;
   margin-bottom: 0.75rem;
   font-size: 0.8125rem;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .multirace-analysis-summary .material-icons {
@@ -1836,7 +1836,7 @@
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .multirace-bet-card-races {
@@ -1877,7 +1877,7 @@
 .multirace-bet-card-stat-value {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .multirace-bet-card-footer {
@@ -1935,7 +1935,7 @@
 }
 
 .multirace-strategy-hint strong {
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 /* ============================================
@@ -1965,7 +1965,7 @@
 .multirace-builder-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   margin: 0;
 }
 
@@ -2124,7 +2124,7 @@
 .multirace-race-tab-number {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .multirace-race-tab.active .multirace-race-tab-number {
@@ -2182,7 +2182,7 @@
 .multirace-race-title {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .multirace-race-strength-badge {
@@ -2240,7 +2240,7 @@
 .multirace-suggestion-text {
   flex: 1;
   font-size: 0.8125rem;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .multirace-suggestion-apply {
@@ -2315,7 +2315,7 @@
 
 .multirace-horse-name {
   font-size: 0.75rem;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   margin-bottom: 0.25rem;
   white-space: nowrap;
   overflow: hidden;
@@ -2464,7 +2464,7 @@
 .multirace-preview-spread {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .multirace-preview-combos {
@@ -2493,7 +2493,7 @@
 .multirace-preview-value {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .multirace-preview-value.cost {
@@ -2566,7 +2566,7 @@
 
 .multirace-builder-btn.secondary:hover {
   border-color: rgba(255, 255, 255, 0.2);
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .multirace-builder-btn.primary {
@@ -2680,7 +2680,7 @@
 .bet-type-name {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .bet-confidence-badge {
@@ -2851,7 +2851,7 @@
   border: none;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   text-align: right;
 }
 
@@ -2879,7 +2879,7 @@
 .bet-amount-value {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .bet-amount-edit {
@@ -2954,7 +2954,7 @@
 .sticky-stat-value {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .sticky-stat-value.over-budget {
@@ -3054,7 +3054,7 @@
 
 .sticky-action-btn.secondary:hover:not(:disabled) {
   border-color: rgba(255, 255, 255, 0.2);
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .sticky-action-btn.primary {
@@ -3224,7 +3224,7 @@
 .exotic-builder-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   margin: 0;
 }
 
@@ -3309,7 +3309,7 @@
   display: block;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   margin-bottom: 0.125rem;
 }
 
@@ -3406,7 +3406,7 @@
 
 .exotic-horse-name {
   font-size: 0.75rem;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   margin-bottom: 0.25rem;
   white-space: nowrap;
   overflow: hidden;
@@ -3426,7 +3426,7 @@
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
   border-radius: 4px;
   font-size: 0.6875rem;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   cursor: pointer;
 }
 
@@ -3489,7 +3489,7 @@
 .exotic-preview-value {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .exotic-preview-value.cost {
@@ -3567,7 +3567,7 @@
 }
 
 .exotic-comparison-table td {
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .exotic-comparison-table tr.recommended {
@@ -3628,7 +3628,7 @@
 
 .exotic-builder-btn.secondary:hover {
   border-color: rgba(255, 255, 255, 0.2);
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .exotic-builder-btn.primary {
@@ -3684,7 +3684,7 @@
 .bet-slip-modal-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
   margin: 0;
 }
 
@@ -3784,7 +3784,7 @@
 .bet-slip-item-name {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .bet-slip-item-amount {
@@ -3866,7 +3866,7 @@
 
 .bet-slip-total-value {
   font-weight: 600;
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .bet-slip-modal-actions {
@@ -3897,7 +3897,7 @@
 
 .bet-slip-btn-secondary:hover {
   border-color: rgba(255, 255, 255, 0.2);
-  color: var(--color-on-surface, #EEEFF1);
+  color: var(--color-on-surface, #eeeff1);
 }
 
 .bet-slip-btn-primary {

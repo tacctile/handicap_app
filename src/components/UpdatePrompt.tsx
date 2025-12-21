@@ -7,17 +7,17 @@
  * Uses vite-plugin-pwa's registerSW for update detection.
  */
 
-import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useRegisterSW } from 'virtual:pwa-register/react'
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRegisterSW } from 'virtual:pwa-register/react';
 
 interface UpdatePromptProps {
   /** Optional className for custom positioning */
-  className?: string
+  className?: string;
 }
 
 export function UpdatePrompt({ className = '' }: UpdatePromptProps) {
-  const [showPrompt, setShowPrompt] = useState(false)
+  const [showPrompt, setShowPrompt] = useState(false);
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -26,32 +26,35 @@ export function UpdatePrompt({ className = '' }: UpdatePromptProps) {
     onRegisteredSW(_swUrl, registration) {
       // Check for updates periodically (every 1 hour)
       if (registration) {
-        setInterval(() => {
-          registration.update()
-        }, 60 * 60 * 1000)
+        setInterval(
+          () => {
+            registration.update();
+          },
+          60 * 60 * 1000
+        );
       }
     },
     onRegisterError(error) {
-      console.error('[SW] Registration error:', error)
+      console.error('[SW] Registration error:', error);
     },
-  })
+  });
 
   // Show prompt when update is available
   useEffect(() => {
     if (needRefresh) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state
-      setShowPrompt(true)
+      setShowPrompt(true);
     }
-  }, [needRefresh])
+  }, [needRefresh]);
 
   const handleUpdate = useCallback(() => {
-    updateServiceWorker(true)
-  }, [updateServiceWorker])
+    updateServiceWorker(true);
+  }, [updateServiceWorker]);
 
   const handleDismiss = useCallback(() => {
-    setShowPrompt(false)
-    setNeedRefresh(false)
-  }, [setNeedRefresh])
+    setShowPrompt(false);
+    setNeedRefresh(false);
+  }, [setNeedRefresh]);
 
   return (
     <AnimatePresence>
@@ -70,24 +73,16 @@ export function UpdatePrompt({ className = '' }: UpdatePromptProps) {
               <span className="material-icons">system_update</span>
             </div>
             <div className="update-prompt-text">
-              <span className="update-prompt-title">
-                New version available
-              </span>
+              <span className="update-prompt-title">New version available</span>
               <span className="update-prompt-description">
                 Refresh to get the latest features and fixes.
               </span>
             </div>
             <div className="update-prompt-actions">
-              <button
-                onClick={handleDismiss}
-                className="update-prompt-dismiss"
-              >
+              <button onClick={handleDismiss} className="update-prompt-dismiss">
                 Later
               </button>
-              <button
-                onClick={handleUpdate}
-                className="update-prompt-update"
-              >
+              <button onClick={handleUpdate} className="update-prompt-update">
                 <span className="material-icons">refresh</span>
                 Update now
               </button>
@@ -96,12 +91,12 @@ export function UpdatePrompt({ className = '' }: UpdatePromptProps) {
         </motion.div>
       )}
     </AnimatePresence>
-  )
+  );
 }
 
 // Minimal update notification (toast-style)
 export function UpdateToast({ className = '' }: { className?: string }) {
-  const [showToast, setShowToast] = useState(false)
+  const [showToast, setShowToast] = useState(false);
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -109,21 +104,24 @@ export function UpdateToast({ className = '' }: { className?: string }) {
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
       if (registration) {
-        setInterval(() => {
-          registration.update()
-        }, 60 * 60 * 1000)
+        setInterval(
+          () => {
+            registration.update();
+          },
+          60 * 60 * 1000
+        );
       }
     },
-  })
+  });
 
   useEffect(() => {
     if (needRefresh) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state
-      setShowToast(true)
+      setShowToast(true);
     }
-  }, [needRefresh])
+  }, [needRefresh]);
 
-  if (!showToast) return null
+  if (!showToast) return null;
 
   return (
     <motion.div
@@ -134,23 +132,20 @@ export function UpdateToast({ className = '' }: { className?: string }) {
     >
       <span className="material-icons">update</span>
       <span>Update available</span>
-      <button
-        onClick={() => updateServiceWorker(true)}
-        className="update-toast-button"
-      >
+      <button onClick={() => updateServiceWorker(true)} className="update-toast-button">
         Refresh
       </button>
       <button
         onClick={() => {
-          setShowToast(false)
-          setNeedRefresh(false)
+          setShowToast(false);
+          setNeedRefresh(false);
         }}
         className="update-toast-close"
       >
         <span className="material-icons">close</span>
       </button>
     </motion.div>
-  )
+  );
 }
 
 // Styles
@@ -334,17 +329,17 @@ const styles = `
   font-size: 1rem;
   color: #EEEFF1;
 }
-`
+`;
 
 // Inject styles
 if (typeof document !== 'undefined') {
-  const styleId = 'update-prompt-styles'
+  const styleId = 'update-prompt-styles';
   if (!document.getElementById(styleId)) {
-    const styleElement = document.createElement('style')
-    styleElement.id = styleId
-    styleElement.textContent = styles
-    document.head.appendChild(styleElement)
+    const styleElement = document.createElement('style');
+    styleElement.id = styleId;
+    styleElement.textContent = styles;
+    document.head.appendChild(styleElement);
   }
 }
 
-export default UpdatePrompt
+export default UpdatePrompt;

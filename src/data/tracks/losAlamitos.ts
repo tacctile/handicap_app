@@ -15,7 +15,7 @@
  *       Unique configuration creates extreme inside bias; no turf course
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const losAlamitos: TrackData = {
   code: 'LRC',
@@ -34,8 +34,8 @@ export const losAlamitos: TrackData = {
       // Source: California Horse Racing Board - 70 feet wide
       trackWidth: 70,
       // Source: Los Alamitos - no chutes, all races start from main track
-      chutes: []
-    }
+      chutes: [],
+    },
     // NOTE: No turf course at Los Alamitos
   },
 
@@ -54,7 +54,8 @@ export const losAlamitos: TrackData = {
         // Sample: 900+ Thoroughbred sprints annually
         winPercentByPost: [18.5, 17.2, 14.0, 11.5, 9.5, 8.0, 7.0, 6.0, 5.0, 3.3],
         favoredPosts: [1, 2],
-        biasDescription: 'EXTREME inside bias; posts 1-2 dominate; 5/8 mile track with tight turns; outside posts severely disadvantaged; short run to first turn critical'
+        biasDescription:
+          'EXTREME inside bias; posts 1-2 dominate; 5/8 mile track with tight turns; outside posts severely disadvantaged; short run to first turn critical',
       },
       {
         distance: 'route',
@@ -67,9 +68,10 @@ export const losAlamitos: TrackData = {
         // Sample: 200+ Thoroughbred routes annually
         winPercentByPost: [16.5, 15.5, 14.0, 12.0, 10.5, 9.0, 7.5, 6.5, 5.0, 3.5],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Strong inside advantage in routes; multiple turns amplify inside edge; posts 1-3 essential on small oval'
-      }
-    ]
+        biasDescription:
+          'Strong inside advantage in routes; multiple turns amplify inside edge; posts 1-3 essential on small oval',
+      },
+    ],
   },
 
   speedBias: [
@@ -83,8 +85,9 @@ export const losAlamitos: TrackData = {
       // One of highest speed bias tracks in country
       earlySpeedWinRate: 65,
       paceAdvantageRating: 9,
-      description: 'EXTREME speed bias; 65% early speed win rate; one of highest in country; short stretch (660ft) limits rallies; wire-to-wire very common'
-    }
+      description:
+        'EXTREME speed bias; 65% early speed win rate; one of highest in country; short stretch (660ft) limits rallies; wire-to-wire very common',
+    },
   ],
 
   surfaces: [
@@ -94,10 +97,11 @@ export const losAlamitos: TrackData = {
       // Quarter Horse racing heritage influences surface
       // Typically fast and speed-favoring
       // Well-maintained compact surface
-      composition: 'Sandy loam cushion over clay base; 2.5-inch cushion depth; compact, fast surface; Quarter Horse heritage; maintained for speed',
+      composition:
+        'Sandy loam cushion over clay base; 2.5-inch cushion depth; compact, fast surface; Quarter Horse heritage; maintained for speed',
       playingStyle: 'speed-favoring',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -109,7 +113,7 @@ export const losAlamitos: TrackData = {
       // Nighttime racing; cooler conditions
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Consistent fast conditions; nighttime racing; speed bias remains strong year-round'
+      notes: 'Consistent fast conditions; nighttime racing; speed bias remains strong year-round',
     },
     {
       season: 'summer',
@@ -119,7 +123,8 @@ export const losAlamitos: TrackData = {
       // Surface maintained at optimal
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Prime racing season; nighttime racing avoids daytime heat; optimal track conditions; speed bias peaks'
+      notes:
+        'Prime racing season; nighttime racing avoids daytime heat; optimal track conditions; speed bias peaks',
     },
     {
       season: 'fall',
@@ -129,7 +134,7 @@ export const losAlamitos: TrackData = {
       // Track continues to run fast
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Prime conditions continue; consistent fast track; speed advantage maintains'
+      notes: 'Prime conditions continue; consistent fast track; speed advantage maintains',
     },
     {
       season: 'winter',
@@ -139,8 +144,9 @@ export const losAlamitos: TrackData = {
       // Off-track can develop
       typicalCondition: 'Fast to Good; occasional off-track from winter rains',
       speedAdjustment: 0,
-      notes: 'Mild SoCal winter; occasional rain affects track; speed bias slightly reduced on off-tracks'
-    }
+      notes:
+        'Mild SoCal winter; occasional rain affects track; speed bias slightly reduced on off-tracks',
+    },
   ],
 
   winningTimes: [
@@ -152,7 +158,7 @@ export const losAlamitos: TrackData = {
       surface: 'dirt',
       claimingAvg: 52.0,
       allowanceAvg: 50.8,
-      stakesAvg: 50.0
+      stakesAvg: 50.0,
     },
     {
       distance: '5f',
@@ -160,7 +166,7 @@ export const losAlamitos: TrackData = {
       surface: 'dirt',
       claimingAvg: 57.5,
       allowanceAvg: 56.2,
-      stakesAvg: 55.5
+      stakesAvg: 55.5,
     },
     {
       distance: '5.5f',
@@ -168,7 +174,7 @@ export const losAlamitos: TrackData = {
       surface: 'dirt',
       claimingAvg: 63.8,
       allowanceAvg: 62.5,
-      stakesAvg: 61.8
+      stakesAvg: 61.8,
     },
     {
       distance: '6f',
@@ -177,7 +183,7 @@ export const losAlamitos: TrackData = {
       // Track record: 1:07.60
       claimingAvg: 70.0,
       allowanceAvg: 68.8,
-      stakesAvg: 68.0
+      stakesAvg: 68.0,
     },
     {
       distance: '6.5f',
@@ -185,7 +191,7 @@ export const losAlamitos: TrackData = {
       surface: 'dirt',
       claimingAvg: 76.0,
       allowanceAvg: 74.8,
-      stakesAvg: 74.0
+      stakesAvg: 74.0,
     },
     {
       distance: '7f',
@@ -193,7 +199,7 @@ export const losAlamitos: TrackData = {
       surface: 'dirt',
       claimingAvg: 82.5,
       allowanceAvg: 81.2,
-      stakesAvg: 80.2
+      stakesAvg: 80.2,
     },
     {
       distance: '1m',
@@ -202,7 +208,7 @@ export const losAlamitos: TrackData = {
       // Less common distance at Los Alamitos
       claimingAvg: 97.0,
       allowanceAvg: 95.5,
-      stakesAvg: 94.0
+      stakesAvg: 94.0,
     },
     {
       distance: '1 1/16m',
@@ -210,7 +216,7 @@ export const losAlamitos: TrackData = {
       surface: 'dirt',
       claimingAvg: 103.5,
       allowanceAvg: 102.0,
-      stakesAvg: 100.5
+      stakesAvg: 100.5,
     },
     {
       distance: '1 1/8m',
@@ -218,10 +224,10 @@ export const losAlamitos: TrackData = {
       surface: 'dirt',
       claimingAvg: 110.5,
       allowanceAvg: 109.0,
-      stakesAvg: 107.5
-    }
+      stakesAvg: 107.5,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

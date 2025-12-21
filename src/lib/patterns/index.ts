@@ -38,7 +38,7 @@ export {
   buildTrainerProfile,
   calculateTrainerPatternScore,
   getTrainerPatternDisplay,
-} from './trainerPatterns'
+} from './trainerPatterns';
 
 // Jockey patterns
 export {
@@ -55,7 +55,7 @@ export {
   buildJockeyProfile,
   calculateJockeyPatternScore,
   getJockeyPatternDisplay,
-} from './jockeyPatterns'
+} from './jockeyPatterns';
 
 // Connection synergy
 export {
@@ -70,7 +70,7 @@ export {
   getJockeyPartnerships,
   getSynergyDisplay,
   hasSignificantPartnership,
-} from './connectionSynergy'
+} from './connectionSynergy';
 
 // Pattern database
 export {
@@ -81,4 +81,4 @@ export {
   analyzeRacePatterns,
   clearPatternCaches,
   getPatternCacheStats,
-} from './patternDatabase'
+} from './patternDatabase';

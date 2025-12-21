@@ -1,12 +1,12 @@
-import { useState, useCallback, useMemo, useEffect, useRef, memo } from 'react'
-import type { ParsedRace, HorseEntry } from '../types/drf'
-import type { TrackCondition, UseRaceStateReturn } from '../hooks/useRaceState'
-import type { UseBankrollReturn } from '../hooks/useBankroll'
-import { RaceControls } from './RaceControls'
-import { BettingRecommendations } from './BettingRecommendations'
-import { HorseDetailModal } from './HorseDetailModal'
-import { CalculationStatus } from './CalculationStatus'
-import { ToastContainer, useToasts } from './Toast'
+import { useState, useCallback, useMemo, useEffect, useRef, memo } from 'react';
+import type { ParsedRace, HorseEntry } from '../types/drf';
+import type { TrackCondition, UseRaceStateReturn } from '../hooks/useRaceState';
+import type { UseBankrollReturn } from '../hooks/useBankroll';
+import { RaceControls } from './RaceControls';
+import { BettingRecommendations } from './BettingRecommendations';
+import { HorseDetailModal } from './HorseDetailModal';
+import { CalculationStatus } from './CalculationStatus';
+import { ToastContainer, useToasts } from './Toast';
 import {
   calculateRaceScores,
   calculateRaceConfidence,
@@ -32,26 +32,26 @@ import {
   type HorseScore,
   type OverlayAnalysis,
   type ValuePlay,
-} from '../lib/scoring'
-import { getTrackBiasSummary } from '../lib/trackIntelligence'
+} from '../lib/scoring';
+import { getTrackBiasSummary } from '../lib/trackIntelligence';
 import {
   analyzeRaceLongshots,
   type RaceLongshotSummary,
   type LongshotAnalysisResult,
-} from '../lib/longshots'
+} from '../lib/longshots';
 import {
   analyzeRaceDiamonds,
   type RaceDiamondSummary,
   type DiamondAnalysis,
   getDiamondColor,
   getDiamondBgColor,
-} from '../lib/diamonds'
+} from '../lib/diamonds';
 
 interface RaceTableProps {
-  race: ParsedRace
-  raceState: UseRaceStateReturn
-  bankroll: UseBankrollReturn
-  onOpenBankrollSettings: () => void
+  race: ParsedRace;
+  raceState: UseRaceStateReturn;
+  bankroll: UseBankrollReturn;
+  onOpenBankrollSettings: () => void;
 }
 
 // Material Icon component for cleaner usage
@@ -60,16 +60,16 @@ function Icon({ name, className = '' }: { name: string; className?: string }) {
     <span className={`material-icons ${className}`} aria-hidden="true">
       {name}
     </span>
-  )
+  );
 }
 
 // Editable odds field component with highlight animation
 interface EditableOddsProps {
-  value: string
-  onChange: (value: string) => void
-  hasChanged: boolean
-  disabled?: boolean
-  isHighlighted?: boolean
+  value: string;
+  onChange: (value: string) => void;
+  hasChanged: boolean;
+  disabled?: boolean;
+  isHighlighted?: boolean;
 }
 
 const EditableOdds = memo(function EditableOdds({
@@ -79,31 +79,34 @@ const EditableOdds = memo(function EditableOdds({
   disabled,
   isHighlighted = false,
 }: EditableOddsProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [editValue, setEditValue] = useState(value)
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(value);
 
   const handleClick = useCallback(() => {
     if (!disabled) {
-      setEditValue(value)
-      setIsEditing(true)
+      setEditValue(value);
+      setIsEditing(true);
     }
-  }, [disabled, value])
+  }, [disabled, value]);
 
   const handleBlur = useCallback(() => {
-    setIsEditing(false)
+    setIsEditing(false);
     if (editValue.trim() && editValue !== value) {
-      onChange(editValue.trim())
+      onChange(editValue.trim());
     }
-  }, [editValue, value, onChange])
+  }, [editValue, value, onChange]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.currentTarget.blur()
-    } else if (e.key === 'Escape') {
-      setEditValue(value)
-      setIsEditing(false)
-    }
-  }, [value])
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.currentTarget.blur();
+      } else if (e.key === 'Escape') {
+        setEditValue(value);
+        setIsEditing(false);
+      }
+    },
+    [value]
+  );
 
   if (isEditing) {
     return (
@@ -116,7 +119,7 @@ const EditableOdds = memo(function EditableOdds({
         onKeyDown={handleKeyDown}
         autoFocus
       />
-    )
+    );
   }
 
   return (
@@ -129,47 +132,49 @@ const EditableOdds = memo(function EditableOdds({
       <span className="tabular-nums">{value}</span>
       {!disabled && <Icon name="edit" className="odds-edit-icon" />}
     </button>
-  )
-})
+  );
+});
 
 // Scratch checkbox component
 interface ScratchCheckboxProps {
-  checked: boolean
-  onChange: () => void
-  horseName: string
+  checked: boolean;
+  onChange: () => void;
+  horseName: string;
 }
 
-const ScratchCheckbox = memo(function ScratchCheckbox({ checked, onChange, horseName }: ScratchCheckboxProps) {
+const ScratchCheckbox = memo(function ScratchCheckbox({
+  checked,
+  onChange,
+  horseName,
+}: ScratchCheckboxProps) {
   return (
-    <label className="scratch-checkbox" title={checked ? `Unscratsch ${horseName}` : `Scratch ${horseName}`}>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="scratch-input"
-      />
+    <label
+      className="scratch-checkbox"
+      title={checked ? `Unscratsch ${horseName}` : `Scratch ${horseName}`}
+    >
+      <input type="checkbox" checked={checked} onChange={onChange} className="scratch-input" />
       <span className="scratch-box">
         <Icon name={checked ? 'close' : 'check_box_outline_blank'} className="scratch-icon" />
       </span>
     </label>
-  )
-})
+  );
+});
 
 // Rank badge component for top 3 horses
 interface RankBadgeProps {
-  rank: number
+  rank: number;
 }
 
 const RankBadge = memo(function RankBadge({ rank }: RankBadgeProps) {
-  if (rank > 3) return null
+  if (rank > 3) return null;
 
   const colors = {
-    1: { bg: '#FFD700', text: '#1a1a1a' },  // Gold
-    2: { bg: '#C0C0C0', text: '#1a1a1a' },  // Silver
-    3: { bg: '#CD7F32', text: '#1a1a1a' },  // Bronze
-  }
+    1: { bg: '#FFD700', text: '#1a1a1a' }, // Gold
+    2: { bg: '#C0C0C0', text: '#1a1a1a' }, // Silver
+    3: { bg: '#CD7F32', text: '#1a1a1a' }, // Bronze
+  };
 
-  const { bg, text } = colors[rank as 1 | 2 | 3]
+  const { bg, text } = colors[rank as 1 | 2 | 3];
 
   return (
     <div
@@ -181,18 +186,18 @@ const RankBadge = memo(function RankBadge({ rank }: RankBadgeProps) {
     >
       #{rank}
     </div>
-  )
-})
+  );
+});
 
 // Overlay badge component for displaying value
 interface OverlayBadgeProps {
-  overlay: OverlayAnalysis
-  compact?: boolean
+  overlay: OverlayAnalysis;
+  compact?: boolean;
 }
 
 const OverlayBadge = memo(function OverlayBadge({ overlay, compact = false }: OverlayBadgeProps) {
-  const color = getOverlayColor(overlay.overlayPercent)
-  const bgColor = getOverlayBgColor(overlay.overlayPercent)
+  const color = getOverlayColor(overlay.overlayPercent);
+  const bgColor = getOverlayBgColor(overlay.overlayPercent);
 
   if (compact) {
     return (
@@ -207,7 +212,7 @@ const OverlayBadge = memo(function OverlayBadge({ overlay, compact = false }: Ov
       >
         {formatOverlayPercent(overlay.overlayPercent)}
       </span>
-    )
+    );
   }
 
   return (
@@ -223,12 +228,12 @@ const OverlayBadge = memo(function OverlayBadge({ overlay, compact = false }: Ov
       <span className="overlay-percent">{formatOverlayPercent(overlay.overlayPercent)}</span>
       <span className="overlay-label">{VALUE_LABELS[overlay.valueClass]}</span>
     </div>
-  )
-})
+  );
+});
 
 // Fair odds display component
 interface FairOddsDisplayProps {
-  overlay: OverlayAnalysis
+  overlay: OverlayAnalysis;
 }
 
 const FairOddsDisplay = memo(function FairOddsDisplay({ overlay }: FairOddsDisplayProps) {
@@ -239,17 +244,17 @@ const FairOddsDisplay = memo(function FairOddsDisplay({ overlay }: FairOddsDispl
     >
       {overlay.fairOddsDisplay}
     </span>
-  )
-})
+  );
+});
 
 // EV display component
 interface EVDisplayProps {
-  overlay: OverlayAnalysis
+  overlay: OverlayAnalysis;
 }
 
 const EVDisplay = memo(function EVDisplay({ overlay }: EVDisplayProps) {
-  const isPositive = overlay.evPerDollar > 0
-  const color = isPositive ? '#22c55e' : overlay.evPerDollar < -0.05 ? '#ef4444' : '#9ca3af'
+  const isPositive = overlay.evPerDollar > 0;
+  const color = isPositive ? '#22c55e' : overlay.evPerDollar < -0.05 ? '#ef4444' : '#9ca3af';
 
   return (
     <span
@@ -259,25 +264,25 @@ const EVDisplay = memo(function EVDisplay({ overlay }: EVDisplayProps) {
     >
       {formatEV(overlay.evPerDollar)}
     </span>
-  )
-})
+  );
+});
 
 // Equipment badge component for displaying equipment changes
 interface EquipmentBadgeProps {
-  horse: HorseEntry
+  horse: HorseEntry;
 }
 
 const EquipmentBadge = memo(function EquipmentBadge({ horse }: EquipmentBadgeProps) {
-  const equipmentInfo = getEquipmentImpactSummary(horse)
+  const equipmentInfo = getEquipmentImpactSummary(horse);
 
   if (!equipmentInfo.hasChanges || !equipmentInfo.primaryChange) {
-    return <span className="text-white/30">—</span>
+    return <span className="text-white/30">—</span>;
   }
 
-  const { primaryChange, totalImpact, hasTrainerPattern } = equipmentInfo
-  const isPositive = totalImpact > 0
-  const color = getImpactColor(primaryChange.impact)
-  const icon = getImpactIcon(primaryChange.impact)
+  const { primaryChange, totalImpact, hasTrainerPattern } = equipmentInfo;
+  const isPositive = totalImpact > 0;
+  const color = getImpactColor(primaryChange.impact);
+  const icon = getImpactIcon(primaryChange.impact);
 
   return (
     <div
@@ -296,47 +301,47 @@ const EquipmentBadge = memo(function EquipmentBadge({ horse }: EquipmentBadgePro
       {isPositive && <Icon name="arrow_upward" className="equipment-badge-arrow" />}
       {totalImpact < 0 && <Icon name="arrow_downward" className="equipment-badge-arrow" />}
     </div>
-  )
-})
+  );
+});
 
 // Class movement badge component for displaying class changes
 interface ClassBadgeProps {
-  score: HorseScore
+  score: HorseScore;
 }
 
 const ClassBadge = memo(function ClassBadge({ score }: ClassBadgeProps) {
   if (!score.classScore) {
-    return <span className="text-white/30">—</span>
+    return <span className="text-white/30">—</span>;
   }
 
-  const { analysis } = score.classScore
-  const direction = analysis.movement.direction
-  const color = getClassMovementColor(direction)
-  const icon = getClassMovementIcon(direction)
-  const hasHiddenDrops = analysis.hiddenDrops.length > 0
-  const hiddenDropsSummary = getHiddenDropsSummary(analysis.hiddenDrops)
+  const { analysis } = score.classScore;
+  const direction = analysis.movement.direction;
+  const color = getClassMovementColor(direction);
+  const icon = getClassMovementIcon(direction);
+  const hasHiddenDrops = analysis.hiddenDrops.length > 0;
+  const hiddenDropsSummary = getHiddenDropsSummary(analysis.hiddenDrops);
 
   // Build tooltip
   const tooltipParts = [
     `${direction === 'drop' ? 'Dropping' : direction === 'rise' ? 'Rising' : direction === 'lateral' ? 'Same class' : 'First start'}`,
-  ]
+  ];
 
   if (analysis.lastRaceClass) {
-    tooltipParts.push(`From: ${getClassLevelAbbrev(analysis.lastRaceClass)}`)
+    tooltipParts.push(`From: ${getClassLevelAbbrev(analysis.lastRaceClass)}`);
   }
-  tooltipParts.push(`To: ${getClassLevelAbbrev(analysis.currentClass)}`)
+  tooltipParts.push(`To: ${getClassLevelAbbrev(analysis.currentClass)}`);
 
   if (hasHiddenDrops) {
-    tooltipParts.push(`Hidden edges: ${hiddenDropsSummary}`)
+    tooltipParts.push(`Hidden edges: ${hiddenDropsSummary}`);
   }
 
   if (analysis.provenAtLevel.hasWon) {
-    tooltipParts.push(`Proven: ${analysis.provenAtLevel.winsAtLevel}W at level`)
+    tooltipParts.push(`Proven: ${analysis.provenAtLevel.winsAtLevel}W at level`);
   } else if (analysis.provenAtLevel.hasPlaced) {
-    tooltipParts.push(`Proven: ${analysis.provenAtLevel.itmAtLevel} ITM`)
+    tooltipParts.push(`Proven: ${analysis.provenAtLevel.itmAtLevel} ITM`);
   }
 
-  tooltipParts.push(`Class Score: ${score.classScore.total}/20`)
+  tooltipParts.push(`Class Score: ${score.classScore.total}/20`);
 
   return (
     <div
@@ -360,37 +365,42 @@ const ClassBadge = memo(function ClassBadge({ score }: ClassBadgeProps) {
       <span style={{ fontSize: '0.9rem' }}>{icon}</span>
       <span>{getClassLevelAbbrev(analysis.currentClass)}</span>
       {hasHiddenDrops && (
-        <span style={{
-          backgroundColor: '#22c55e',
-          color: '#fff',
-          borderRadius: '50%',
-          width: '14px',
-          height: '14px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '0.6rem',
-          fontWeight: 700,
-          marginLeft: '2px',
-        }}>
+        <span
+          style={{
+            backgroundColor: '#22c55e',
+            color: '#fff',
+            borderRadius: '50%',
+            width: '14px',
+            height: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '0.6rem',
+            fontWeight: 700,
+            marginLeft: '2px',
+          }}
+        >
           {analysis.hiddenDrops.length}
         </span>
       )}
     </div>
-  )
-})
+  );
+});
 
 // Value plays detector badge for race header
 interface ValuePlaysDetectorProps {
-  valuePlays: ValuePlay[]
-  onHighlightHorse?: (index: number) => void
+  valuePlays: ValuePlay[];
+  onHighlightHorse?: (index: number) => void;
 }
 
-const ValuePlaysDetector = memo(function ValuePlaysDetector({ valuePlays, onHighlightHorse }: ValuePlaysDetectorProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const summary = useMemo(() => getValuePlaysSummary(valuePlays), [valuePlays])
+const ValuePlaysDetector = memo(function ValuePlaysDetector({
+  valuePlays,
+  onHighlightHorse,
+}: ValuePlaysDetectorProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const summary = useMemo(() => getValuePlaysSummary(valuePlays), [valuePlays]);
 
-  if (summary.totalCount === 0) return null
+  if (summary.totalCount === 0) return null;
 
   return (
     <div className="value-plays-detector">
@@ -435,30 +445,33 @@ const ValuePlaysDetector = memo(function ValuePlaysDetector({ valuePlays, onHigh
         </div>
       )}
     </div>
-  )
-})
+  );
+});
 
 // Diamond in Rough detector badge for race header
 interface DiamondDetectorProps {
-  diamondSummary: RaceDiamondSummary
-  onHighlightHorse?: (index: number) => void
+  diamondSummary: RaceDiamondSummary;
+  onHighlightHorse?: (index: number) => void;
 }
 
 const DiamondDetector = memo(function DiamondDetector({
   diamondSummary,
   onHighlightHorse,
 }: DiamondDetectorProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  if (!diamondSummary.hasDiamonds) return null
+  if (!diamondSummary.hasDiamonds) return null;
 
-  const diamondColor = getDiamondColor()
-  const diamondBg = getDiamondBgColor(0.2)
+  const diamondColor = getDiamondColor();
+  const diamondBg = getDiamondBgColor(0.2);
 
   return (
-    <div className="diamond-detector" style={{
-      marginBottom: '12px',
-    }}>
+    <div
+      className="diamond-detector"
+      style={{
+        marginBottom: '12px',
+      }}
+    >
       <button
         type="button"
         style={{
@@ -481,16 +494,19 @@ const DiamondDetector = memo(function DiamondDetector({
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '1.3rem' }}>💎</span>
           <span>
-            {diamondSummary.diamondCount} Hidden Gem{diamondSummary.diamondCount > 1 ? 's' : ''} Detected!
+            {diamondSummary.diamondCount} Hidden Gem{diamondSummary.diamondCount > 1 ? 's' : ''}{' '}
+            Detected!
           </span>
-          <span style={{
-            backgroundColor: diamondColor,
-            color: '#1a1a1a',
-            padding: '2px 8px',
-            borderRadius: '4px',
-            fontSize: '0.7rem',
-            fontWeight: 800,
-          }}>
+          <span
+            style={{
+              backgroundColor: diamondColor,
+              color: '#1a1a1a',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              fontSize: '0.7rem',
+              fontWeight: 800,
+            }}
+          >
             RARE FIND
           </span>
         </div>
@@ -498,14 +514,16 @@ const DiamondDetector = memo(function DiamondDetector({
       </button>
 
       {isExpanded && (
-        <div style={{
-          backgroundColor: '#1a1a1a',
-          borderRadius: '0 0 8px 8px',
-          border: `1px solid ${diamondColor}40`,
-          borderTop: 'none',
-          marginTop: '-4px',
-          paddingTop: '8px',
-        }}>
+        <div
+          style={{
+            backgroundColor: '#1a1a1a',
+            borderRadius: '0 0 8px 8px',
+            border: `1px solid ${diamondColor}40`,
+            borderTop: 'none',
+            marginTop: '-4px',
+            paddingTop: '8px',
+          }}
+        >
           {diamondSummary.diamonds.map((diamond) => (
             <button
               key={diamond.programNumber}
@@ -525,92 +543,101 @@ const DiamondDetector = memo(function DiamondDetector({
               onClick={() => onHighlightHorse?.(diamond.horseIndex)}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{
-                  backgroundColor: diamondColor,
-                  color: '#1a1a1a',
-                  padding: '3px 8px',
-                  borderRadius: '4px',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                }}>
+                <span
+                  style={{
+                    backgroundColor: diamondColor,
+                    color: '#1a1a1a',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                  }}
+                >
                   #{diamond.programNumber}
                 </span>
                 <div style={{ textAlign: 'left' }}>
                   <div style={{ fontWeight: 600 }}>{diamond.horseName}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#888' }}>
-                    {diamond.story}
-                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#888' }}>{diamond.story}</div>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span style={{ color: diamondColor, fontSize: '0.85rem' }}>
                   {diamond.oddsDisplay}
                 </span>
-                <span style={{
-                  color: '#22c55e',
-                  fontWeight: 600,
-                  fontSize: '0.8rem',
-                }}>
+                <span
+                  style={{
+                    color: '#22c55e',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                  }}
+                >
                   +{diamond.overlayPercent.toFixed(0)}%
                 </span>
-                <span style={{
-                  backgroundColor: `${diamondColor}20`,
-                  color: diamondColor,
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontWeight: 700,
-                  fontSize: '0.75rem',
-                }}>
+                <span
+                  style={{
+                    backgroundColor: `${diamondColor}20`,
+                    color: diamondColor,
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                  }}
+                >
                   {diamond.confidence}% conf
                 </span>
               </div>
             </button>
           ))}
 
-          <div style={{
-            padding: '10px 12px',
-            fontSize: '0.8rem',
-            color: diamondColor,
-            fontStyle: 'italic',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}>
+          <div
+            style={{
+              padding: '10px 12px',
+              fontSize: '0.8rem',
+              color: diamondColor,
+              fontStyle: 'italic',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
             <span>💎</span>
             <span>Click horse to highlight in table</span>
           </div>
         </div>
       )}
     </div>
-  )
-})
+  );
+});
 
 // Nuclear Longshots detector badge for race header
 interface NuclearLongshotsDetectorProps {
-  longshotSummary: RaceLongshotSummary
-  onHighlightHorse?: (index: number) => void
+  longshotSummary: RaceLongshotSummary;
+  onHighlightHorse?: (index: number) => void;
 }
 
 const NuclearLongshotsDetector = memo(function NuclearLongshotsDetector({
   longshotSummary,
   onHighlightHorse,
 }: NuclearLongshotsDetectorProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Only show if we have nuclear or live longshots
-  if (!longshotSummary.hasNuclear && !longshotSummary.hasLive) return null
+  if (!longshotSummary.hasNuclear && !longshotSummary.hasLive) return null;
 
-  const nuclearCount = longshotSummary.nuclearLongshots.length
-  const liveCount = longshotSummary.liveLongshots.length
+  const nuclearCount = longshotSummary.nuclearLongshots.length;
+  const liveCount = longshotSummary.liveLongshots.length;
 
-  const bgColor = longshotSummary.hasNuclear ? '#ef444420' : '#f59e0b20'
-  const borderColor = longshotSummary.hasNuclear ? '#ef4444' : '#f59e0b'
-  const textColor = longshotSummary.hasNuclear ? '#ef4444' : '#f59e0b'
+  const bgColor = longshotSummary.hasNuclear ? '#ef444420' : '#f59e0b20';
+  const borderColor = longshotSummary.hasNuclear ? '#ef4444' : '#f59e0b';
+  const textColor = longshotSummary.hasNuclear ? '#ef4444' : '#f59e0b';
 
   return (
-    <div className="nuclear-longshots-detector" style={{
-      marginBottom: '12px',
-    }}>
+    <div
+      className="nuclear-longshots-detector"
+      style={{
+        marginBottom: '12px',
+      }}
+    >
       <button
         type="button"
         style={{
@@ -635,22 +662,24 @@ const NuclearLongshotsDetector = memo(function NuclearLongshotsDetector({
           <span>
             {nuclearCount > 0 && `${nuclearCount} NUCLEAR`}
             {nuclearCount > 0 && liveCount > 0 && ' + '}
-            {liveCount > 0 && `${liveCount} Live`}
-            {' '}Longshot{(nuclearCount + liveCount) > 1 ? 's' : ''} Detected
+            {liveCount > 0 && `${liveCount} Live`} Longshot{nuclearCount + liveCount > 1 ? 's' : ''}{' '}
+            Detected
           </span>
         </div>
         <Icon name={isExpanded ? 'expand_less' : 'expand_more'} />
       </button>
 
       {isExpanded && (
-        <div style={{
-          backgroundColor: '#1a1a1a',
-          borderRadius: '0 0 8px 8px',
-          border: '1px solid #333',
-          borderTop: 'none',
-          marginTop: '-4px',
-          paddingTop: '8px',
-        }}>
+        <div
+          style={{
+            backgroundColor: '#1a1a1a',
+            borderRadius: '0 0 8px 8px',
+            border: '1px solid #333',
+            borderTop: 'none',
+            marginTop: '-4px',
+            paddingTop: '8px',
+          }}
+        >
           {/* Nuclear Longshots */}
           {longshotSummary.nuclearLongshots.map((longshot) => (
             <button
@@ -671,25 +700,29 @@ const NuclearLongshotsDetector = memo(function NuclearLongshotsDetector({
               onClick={() => onHighlightHorse?.(longshot.programNumber - 1)}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{
-                  backgroundColor: '#ef4444',
-                  color: '#fff',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                }}>
+                <span
+                  style={{
+                    backgroundColor: '#ef4444',
+                    color: '#fff',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                  }}
+                >
                   #{longshot.programNumber}
                 </span>
                 <span style={{ fontWeight: 500 }}>{longshot.horseName}</span>
                 <span style={{ color: '#888', fontSize: '0.85rem' }}>{longshot.oddsDisplay}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{
-                  color: '#ef4444',
-                  fontWeight: 600,
-                  fontSize: '0.8rem',
-                }}>
+                <span
+                  style={{
+                    color: '#ef4444',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                  }}
+                >
                   {longshot.totalAnglePoints} pts
                 </span>
                 <span style={{ color: '#22c55e', fontSize: '0.8rem' }}>
@@ -719,25 +752,29 @@ const NuclearLongshotsDetector = memo(function NuclearLongshotsDetector({
               onClick={() => onHighlightHorse?.(longshot.programNumber - 1)}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{
-                  backgroundColor: '#f59e0b',
-                  color: '#fff',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                }}>
+                <span
+                  style={{
+                    backgroundColor: '#f59e0b',
+                    color: '#fff',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                  }}
+                >
                   #{longshot.programNumber}
                 </span>
                 <span style={{ fontWeight: 500 }}>{longshot.horseName}</span>
                 <span style={{ color: '#888', fontSize: '0.85rem' }}>{longshot.oddsDisplay}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{
-                  color: '#f59e0b',
-                  fontWeight: 600,
-                  fontSize: '0.8rem',
-                }}>
+                <span
+                  style={{
+                    color: '#f59e0b',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                  }}
+                >
                   {longshot.totalAnglePoints} pts
                 </span>
                 <span style={{ color: '#22c55e', fontSize: '0.8rem' }}>
@@ -747,40 +784,42 @@ const NuclearLongshotsDetector = memo(function NuclearLongshotsDetector({
             </button>
           ))}
 
-          <div style={{
-            padding: '8px 12px',
-            fontSize: '0.75rem',
-            color: '#888',
-            fontStyle: 'italic',
-          }}>
+          <div
+            style={{
+              padding: '8px 12px',
+              fontSize: '0.75rem',
+              color: '#888',
+              fontStyle: 'italic',
+            }}
+          >
             Click horse to highlight in table
           </div>
         </div>
       )}
     </div>
-  )
-})
+  );
+});
 
 // Score badge component with pulse animation and tier coloring
 interface ScoreBadgeProps {
-  score: HorseScore
-  rank: number
-  hasChanged?: boolean
+  score: HorseScore;
+  rank: number;
+  hasChanged?: boolean;
 }
 
 const ScoreBadge = memo(function ScoreBadge({ score, rank, hasChanged = false }: ScoreBadgeProps) {
-  const color = getScoreColor(score.total, score.isScratched)
-  const tier = getScoreTier(score.total)
-  const [shouldAnimate, setShouldAnimate] = useState(false)
+  const color = getScoreColor(score.total, score.isScratched);
+  const tier = getScoreTier(score.total);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
 
   useEffect(() => {
     if (hasChanged) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing animation state
-      setShouldAnimate(true)
-      const timer = setTimeout(() => setShouldAnimate(false), 600)
-      return () => clearTimeout(timer)
+      setShouldAnimate(true);
+      const timer = setTimeout(() => setShouldAnimate(false), 600);
+      return () => clearTimeout(timer);
     }
-  }, [hasChanged, score.total])
+  }, [hasChanged, score.total]);
 
   // Build detailed tooltip
   const tooltipParts = [
@@ -791,7 +830,7 @@ const ScoreBadge = memo(function ScoreBadge({ score, rank, hasChanged = false }:
     `Form: ${score.breakdown.form.total}`,
     `Equipment: ${score.breakdown.equipment.total}`,
     `Pace: ${score.breakdown.pace.total}`,
-  ]
+  ];
 
   return (
     <div className="score-badge-container">
@@ -805,37 +844,40 @@ const ScoreBadge = memo(function ScoreBadge({ score, rank, hasChanged = false }:
         }}
         title={score.isScratched ? 'Scratched' : tooltipParts.join('\n')}
       >
-        <span className="tabular-nums font-semibold">
-          {score.isScratched ? '—' : score.total}
-        </span>
+        <span className="tabular-nums font-semibold">{score.isScratched ? '—' : score.total}</span>
       </div>
     </div>
-  )
-})
+  );
+});
 
 // Track bias info component with tooltip
 interface TrackBiasInfoProps {
-  trackCode: string
-  distance: string
-  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather'
+  trackCode: string;
+  distance: string;
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather';
 }
 
-const TrackBiasInfo = memo(function TrackBiasInfo({ trackCode, distance, surface }: TrackBiasInfoProps) {
-  const [showTooltip, setShowTooltip] = useState(false)
+const TrackBiasInfo = memo(function TrackBiasInfo({
+  trackCode,
+  distance,
+  surface,
+}: TrackBiasInfoProps) {
+  const [showTooltip, setShowTooltip] = useState(false);
   const biasSummary = useMemo(
     () => getTrackBiasSummary(trackCode, distance, surface),
     [trackCode, distance, surface]
-  )
+  );
 
   if (!biasSummary.isDataAvailable) {
-    return null
+    return null;
   }
 
-  const speedBiasLabel = biasSummary.speedBiasPercent >= 55
-    ? 'Speed favoring'
-    : biasSummary.speedBiasPercent <= 45
-    ? 'Closer friendly'
-    : 'Fair track'
+  const speedBiasLabel =
+    biasSummary.speedBiasPercent >= 55
+      ? 'Speed favoring'
+      : biasSummary.speedBiasPercent <= 45
+        ? 'Closer friendly'
+        : 'Fair track';
 
   return (
     <div className="track-bias-container">
@@ -889,22 +931,22 @@ const TrackBiasInfo = memo(function TrackBiasInfo({ trackCode, distance, surface
         </div>
       )}
     </div>
-  )
-})
+  );
+});
 
 // Race header card component
 interface RaceHeaderProps {
-  race: ParsedRace
-  trackCondition: TrackCondition
-  onTrackConditionChange: (condition: TrackCondition) => void
-  hasChanges: boolean
-  onReset: () => void
-  scratchesCount: number
-  oddsChangesCount: number
-  valuePlays: ValuePlay[]
-  longshotSummary: RaceLongshotSummary | null
-  diamondSummary: RaceDiamondSummary | null
-  onHighlightHorse?: (index: number) => void
+  race: ParsedRace;
+  trackCondition: TrackCondition;
+  onTrackConditionChange: (condition: TrackCondition) => void;
+  hasChanges: boolean;
+  onReset: () => void;
+  scratchesCount: number;
+  oddsChangesCount: number;
+  valuePlays: ValuePlay[];
+  longshotSummary: RaceLongshotSummary | null;
+  diamondSummary: RaceDiamondSummary | null;
+  onHighlightHorse?: (index: number) => void;
 }
 
 const RaceHeader = memo(function RaceHeader({
@@ -920,10 +962,10 @@ const RaceHeader = memo(function RaceHeader({
   diamondSummary,
   onHighlightHorse,
 }: RaceHeaderProps) {
-  const { header } = race
+  const { header } = race;
 
   // Format surface for display
-  const surfaceLabel = header.surface.charAt(0).toUpperCase() + header.surface.slice(1)
+  const surfaceLabel = header.surface.charAt(0).toUpperCase() + header.surface.slice(1);
 
   return (
     <div className="race-header-card">
@@ -934,9 +976,7 @@ const RaceHeader = memo(function RaceHeader({
               <Icon name="location_on" className="text-lg" />
               <span className="font-semibold">{header.trackCode}</span>
             </div>
-            <div className="race-number">
-              Race {header.raceNumber}
-            </div>
+            <div className="race-number">Race {header.raceNumber}</div>
           </div>
 
           <div className="flex flex-wrap items-center gap-4 text-sm">
@@ -948,9 +988,7 @@ const RaceHeader = memo(function RaceHeader({
               <Icon name="terrain" className="text-base" />
               <span>{surfaceLabel}</span>
             </div>
-            <div className="text-white/40 text-xs">
-              {header.raceDate}
-            </div>
+            <div className="text-white/40 text-xs">{header.raceDate}</div>
           </div>
         </div>
 
@@ -961,7 +999,10 @@ const RaceHeader = memo(function RaceHeader({
 
         {/* Nuclear Longshots Detection Badge */}
         {longshotSummary && (
-          <NuclearLongshotsDetector longshotSummary={longshotSummary} onHighlightHorse={onHighlightHorse} />
+          <NuclearLongshotsDetector
+            longshotSummary={longshotSummary}
+            onHighlightHorse={onHighlightHorse}
+          />
         )}
 
         {/* Value Plays Detection Badge */}
@@ -986,20 +1027,20 @@ const RaceHeader = memo(function RaceHeader({
         />
       </div>
     </div>
-  )
-})
+  );
+});
 
 // Modal state interface
 interface SelectedHorseData {
-  horse: HorseEntry
-  score: HorseScore
-  index: number
-  predictedPosition: number
+  horse: HorseEntry;
+  score: HorseScore;
+  index: number;
+  predictedPosition: number;
 }
 
 // Main RaceTable component
 export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }: RaceTableProps) {
-  const { horses, header } = race
+  const { horses, header } = race;
   const {
     trackCondition,
     setTrackCondition,
@@ -1012,45 +1053,39 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
     hasChanges,
     calculationState,
     clearChangeHighlights,
-  } = raceState
+  } = raceState;
 
   // Toast notifications
-  const { toasts, addToast, dismissToast } = useToasts()
+  const { toasts, addToast, dismissToast } = useToasts();
 
   // Track previous calculation version for toast notifications
-  const prevVersionRef = useRef(calculationState.calculationVersion)
+  const prevVersionRef = useRef(calculationState.calculationVersion);
 
   // Modal state
-  const [selectedHorse, setSelectedHorse] = useState<SelectedHorseData | null>(null)
+  const [selectedHorse, setSelectedHorse] = useState<SelectedHorseData | null>(null);
 
   // Highlighted horse index (from value plays click)
-  const [highlightedHorseIndex, setHighlightedHorseIndex] = useState<number | null>(null)
+  const [highlightedHorseIndex, setHighlightedHorseIndex] = useState<number | null>(null);
 
   // Track previous scores for change detection
-  const prevScoresRef = useRef<Map<number, number>>(new Map())
+  const prevScoresRef = useRef<Map<number, number>>(new Map());
 
   // Calculate and sort scores - recalculates when odds, scratches, or track condition change
   const scoredHorses = useMemo(() => {
-    return calculateRaceScores(
-      horses,
-      header,
-      getOdds,
-      isScratched,
-      trackCondition
-    )
-  }, [horses, header, getOdds, isScratched, trackCondition])
+    return calculateRaceScores(horses, header, getOdds, isScratched, trackCondition);
+  }, [horses, header, getOdds, isScratched, trackCondition]);
 
   // Calculate overlay analysis for each horse
   const overlaysByIndex = useMemo(() => {
-    const overlays: Map<number, OverlayAnalysis> = new Map()
+    const overlays: Map<number, OverlayAnalysis> = new Map();
     for (const { horse, index, score } of scoredHorses) {
       if (!score.isScratched) {
-        const currentOdds = getOdds(index, horse.morningLineOdds)
-        overlays.set(index, analyzeOverlay(score.total, currentOdds))
+        const currentOdds = getOdds(index, horse.morningLineOdds);
+        overlays.set(index, analyzeOverlay(score.total, currentOdds));
       }
     }
-    return overlays
-  }, [scoredHorses, getOdds])
+    return overlays;
+  }, [scoredHorses, getOdds]);
 
   // Detect value plays for the race header badge
   const valuePlays = useMemo(() => {
@@ -1061,79 +1096,79 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
       score: score.total,
       currentOdds: getOdds(index, horse.morningLineOdds),
       isScratched: score.isScratched,
-    }))
-    return detectValuePlays(horsesData, 10) // 10% minimum overlay
-  }, [scoredHorses, getOdds])
+    }));
+    return detectValuePlays(horsesData, 10); // 10% minimum overlay
+  }, [scoredHorses, getOdds]);
 
   // Analyze nuclear longshots
   const longshotSummary = useMemo(() => {
     // Create a scores map for the longshot analyzer
-    const scoresMap = new Map<number, HorseScore>()
+    const scoresMap = new Map<number, HorseScore>();
     for (const { horse, score } of scoredHorses) {
-      scoresMap.set(horse.programNumber, score)
+      scoresMap.set(horse.programNumber, score);
     }
-    return analyzeRaceLongshots(horses, header, scoresMap)
-  }, [horses, header, scoredHorses])
+    return analyzeRaceLongshots(horses, header, scoresMap);
+  }, [horses, header, scoredHorses]);
 
   // Analyze diamonds in rough
   const diamondSummary = useMemo(() => {
-    const scoresMap = new Map<number, HorseScore>()
+    const scoresMap = new Map<number, HorseScore>();
     for (const { index, score } of scoredHorses) {
-      scoresMap.set(index, score)
+      scoresMap.set(index, score);
     }
-    return analyzeRaceDiamonds(horses, scoresMap, header, getOdds)
-  }, [horses, header, scoredHorses, getOdds])
+    return analyzeRaceDiamonds(horses, scoresMap, header, getOdds);
+  }, [horses, header, scoredHorses, getOdds]);
 
   // Create a map of program number to diamond analysis for easy lookup
   const diamondsByProgram = useMemo(() => {
-    const map = new Map<number, DiamondAnalysis>()
+    const map = new Map<number, DiamondAnalysis>();
     for (const diamond of diamondSummary.diamonds) {
-      map.set(diamond.programNumber, diamond)
+      map.set(diamond.programNumber, diamond);
     }
-    return map
-  }, [diamondSummary])
+    return map;
+  }, [diamondSummary]);
 
   // Create a map of program number to longshot analysis for easy lookup
   const longshotsByProgram = useMemo(() => {
-    const map = new Map<number, LongshotAnalysisResult>()
+    const map = new Map<number, LongshotAnalysisResult>();
     for (const longshot of longshotSummary.allLongshots) {
-      map.set(longshot.programNumber, longshot)
+      map.set(longshot.programNumber, longshot);
     }
-    return map
-  }, [longshotSummary])
+    return map;
+  }, [longshotSummary]);
 
   // Handle highlight horse from value plays click
   const handleHighlightHorse = useCallback((index: number) => {
-    setHighlightedHorseIndex(index)
+    setHighlightedHorseIndex(index);
     // Auto-clear highlight after 3 seconds
-    setTimeout(() => setHighlightedHorseIndex(null), 3000)
+    setTimeout(() => setHighlightedHorseIndex(null), 3000);
     // Scroll to the horse row
-    const row = document.querySelector(`[data-horse-index="${index}"]`)
+    const row = document.querySelector(`[data-horse-index="${index}"]`);
     if (row) {
-      row.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }, [])
+  }, []);
 
   // Detect score changes and track them
-  const [changedScoreIndices, setChangedScoreIndices] = useState<Set<number>>(new Set())
+  const [changedScoreIndices, setChangedScoreIndices] = useState<Set<number>>(new Set());
 
   // Update changed scores and previous scores after render
   useEffect(() => {
-    const changed = new Set<number>()
-    const newMap = new Map<number, number>()
+    const changed = new Set<number>();
+    const newMap = new Map<number, number>();
 
     for (const { index, score } of scoredHorses) {
-      const prevScore = prevScoresRef.current.get(index)
+      const prevScore = prevScoresRef.current.get(index);
       if (prevScore !== undefined && prevScore !== score.total) {
-        changed.add(index)
+        changed.add(index);
       }
-      newMap.set(index, score.total)
+      newMap.set(index, score.total);
     }
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Tracking score changes
-    setChangedScoreIndices(changed)
-    prevScoresRef.current = newMap
-  }, [scoredHorses])
+    setChangedScoreIndices(changed);
+    prevScoresRef.current = newMap;
+  }, [scoredHorses]);
 
   // Show toast when recalculation completes (after first load)
   useEffect(() => {
@@ -1142,48 +1177,46 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
       calculationState.calculationVersion !== prevVersionRef.current &&
       !calculationState.isCalculating
     ) {
-      addToast('Recalculated based on changes', 'success', { duration: 2000 })
+      addToast('Recalculated based on changes', 'success', { duration: 2000 });
     }
-    prevVersionRef.current = calculationState.calculationVersion
-  }, [calculationState.calculationVersion, calculationState.isCalculating, addToast])
+    prevVersionRef.current = calculationState.calculationVersion;
+  }, [calculationState.calculationVersion, calculationState.isCalculating, addToast]);
 
   // Clear highlights after animation
   useEffect(() => {
     if (changedScoreIndices.size > 0) {
       const timer = setTimeout(() => {
-        clearChangeHighlights()
-      }, 2000)
-      return () => clearTimeout(timer)
+        clearChangeHighlights();
+      }, 2000);
+      return () => clearTimeout(timer);
     }
-  }, [changedScoreIndices.size, clearChangeHighlights])
+  }, [changedScoreIndices.size, clearChangeHighlights]);
 
   // Calculate stats for CalculationStatus
-  const activeHorses = scoredHorses.filter(h => !h.score.isScratched).length
+  const activeHorses = scoredHorses.filter((h) => !h.score.isScratched).length;
   // Use centralized confidence calculation from scoring module
   const confidenceLevel = useMemo(() => {
-    return calculateRaceConfidence(scoredHorses)
-  }, [scoredHorses])
+    return calculateRaceConfidence(scoredHorses);
+  }, [scoredHorses]);
 
   // Handle row click to open modal
-  const handleRowClick = useCallback((
-    horse: HorseEntry,
-    score: HorseScore,
-    index: number,
-    predictedPosition: number
-  ) => {
-    setSelectedHorse({ horse, score, index, predictedPosition })
-  }, [])
+  const handleRowClick = useCallback(
+    (horse: HorseEntry, score: HorseScore, index: number, predictedPosition: number) => {
+      setSelectedHorse({ horse, score, index, predictedPosition });
+    },
+    []
+  );
 
   // Close modal
   const handleCloseModal = useCallback(() => {
-    setSelectedHorse(null)
-  }, [])
+    setSelectedHorse(null);
+  }, []);
 
   // Handle reset with toast
   const handleReset = useCallback(() => {
-    resetAll()
-    addToast('All changes reset to original', 'info', { duration: 2500 })
-  }, [resetAll, addToast])
+    resetAll();
+    addToast('All changes reset to original', 'info', { duration: 2500 });
+  }, [resetAll, addToast]);
 
   return (
     <div className="race-table-container">
@@ -1212,48 +1245,65 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
               <th className="w-20 text-center">Score</th>
               <th className="w-16 text-center">PP</th>
               <th className="text-left">Horse</th>
-              <th className="w-24 text-center hide-on-small" title="Class movement (↓drop ↑rise →lateral)">Class</th>
-              <th className="w-20 text-center hide-on-small" title="Equipment changes">Equip</th>
+              <th
+                className="w-24 text-center hide-on-small"
+                title="Class movement (↓drop ↑rise →lateral)"
+              >
+                Class
+              </th>
+              <th className="w-20 text-center hide-on-small" title="Equipment changes">
+                Equip
+              </th>
               <th className="text-left hide-on-small">Trainer</th>
               <th className="text-left hide-on-small">Jockey</th>
               <th className="w-20 text-right">Odds</th>
-              <th className="w-16 text-center" title="Fair Odds based on score">Fair</th>
-              <th className="w-20 text-center" title="Overlay percentage (value)">Overlay</th>
-              <th className="w-16 text-center" title="Expected Value per $1">EV</th>
+              <th className="w-16 text-center" title="Fair Odds based on score">
+                Fair
+              </th>
+              <th className="w-20 text-center" title="Overlay percentage (value)">
+                Overlay
+              </th>
+              <th className="w-16 text-center" title="Expected Value per $1">
+                EV
+              </th>
               <th className="w-10"></th>
             </tr>
           </thead>
           <tbody>
             {scoredHorses.map(({ horse, index, score, rank }) => {
-              const scratched = score.isScratched
-              const currentOdds = getOdds(index, horse.morningLineOdds)
-              const oddsChanged = hasOddsChanged(index)
-              const scoreChanged = changedScoreIndices.has(index)
-              const oddsHighlighted = calculationState.changedOddsIndices.has(index)
-              const overlay = overlaysByIndex.get(index)
-              const isHighlighted = highlightedHorseIndex === index
-              const longshotAnalysis = longshotsByProgram.get(horse.programNumber)
-              const isNuclear = longshotAnalysis?.classification === 'nuclear'
-              const isLive = longshotAnalysis?.classification === 'live'
-              const diamondAnalysis = diamondsByProgram.get(horse.programNumber)
-              const isDiamond = !!diamondAnalysis
-              const diamondColor = getDiamondColor()
+              const scratched = score.isScratched;
+              const currentOdds = getOdds(index, horse.morningLineOdds);
+              const oddsChanged = hasOddsChanged(index);
+              const scoreChanged = changedScoreIndices.has(index);
+              const oddsHighlighted = calculationState.changedOddsIndices.has(index);
+              const overlay = overlaysByIndex.get(index);
+              const isHighlighted = highlightedHorseIndex === index;
+              const longshotAnalysis = longshotsByProgram.get(horse.programNumber);
+              const isNuclear = longshotAnalysis?.classification === 'nuclear';
+              const isLive = longshotAnalysis?.classification === 'live';
+              const diamondAnalysis = diamondsByProgram.get(horse.programNumber);
+              const isDiamond = !!diamondAnalysis;
+              const diamondColor = getDiamondColor();
 
               return (
                 <tr
                   key={index}
                   data-horse-index={index}
                   className={`race-row race-row-clickable ${scratched ? 'race-row-scratched' : ''} ${isHighlighted ? 'race-row-highlighted' : ''} ${isDiamond && !scratched ? 'race-row-diamond' : ''}`}
-                  style={isDiamond && !scratched ? {
-                    backgroundColor: getDiamondBgColor(0.08),
-                    borderLeft: `3px solid ${diamondColor}`,
-                  } : undefined}
+                  style={
+                    isDiamond && !scratched
+                      ? {
+                          backgroundColor: getDiamondBgColor(0.08),
+                          borderLeft: `3px solid ${diamondColor}`,
+                        }
+                      : undefined
+                  }
                   onClick={() => handleRowClick(horse, score, index, rank)}
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      handleRowClick(horse, score, index, rank)
+                      e.preventDefault();
+                      handleRowClick(horse, score, index, rank);
                     }
                   }}
                   role="button"
@@ -1269,10 +1319,10 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                   <td className="text-center">
                     <ScoreBadge score={score} rank={rank} hasChanged={scoreChanged} />
                   </td>
-                  <td className="text-center tabular-nums font-medium">
-                    {horse.postPosition}
-                  </td>
-                  <td className={`font-medium ${scratched ? 'horse-name-scratched' : 'text-foreground'}`}>
+                  <td className="text-center tabular-nums font-medium">{horse.postPosition}</td>
+                  <td
+                    className={`font-medium ${scratched ? 'horse-name-scratched' : 'text-foreground'}`}
+                  >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       {horse.horseName}
                       {isDiamond && !scratched && (
@@ -1295,7 +1345,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                       )}
                       {isNuclear && !scratched && (
                         <span
-                          title={`NUCLEAR LONGSHOT: ${longshotAnalysis?.totalAnglePoints} pts - ${longshotAnalysis?.detectedAngles.map(a => a.name).join(' + ')}`}
+                          title={`NUCLEAR LONGSHOT: ${longshotAnalysis?.totalAnglePoints} pts - ${longshotAnalysis?.detectedAngles.map((a) => a.name).join(' + ')}`}
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -1312,7 +1362,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                       )}
                       {isLive && !scratched && (
                         <span
-                          title={`Live Longshot: ${longshotAnalysis?.totalAnglePoints} pts - ${longshotAnalysis?.detectedAngles.map(a => a.name).join(' + ')}`}
+                          title={`Live Longshot: ${longshotAnalysis?.totalAnglePoints} pts - ${longshotAnalysis?.detectedAngles.map((a) => a.name).join(' + ')}`}
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -1330,17 +1380,21 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                     </div>
                   </td>
                   <td className="text-center hide-on-small">
-                    {!scratched ? <ClassBadge score={score} /> : <span className="text-white/30">—</span>}
+                    {!scratched ? (
+                      <ClassBadge score={score} />
+                    ) : (
+                      <span className="text-white/30">—</span>
+                    )}
                   </td>
                   <td className="text-center hide-on-small">
-                    {!scratched ? <EquipmentBadge horse={horse} /> : <span className="text-white/30">—</span>}
+                    {!scratched ? (
+                      <EquipmentBadge horse={horse} />
+                    ) : (
+                      <span className="text-white/30">—</span>
+                    )}
                   </td>
-                  <td className="text-white/70 hide-on-small">
-                    {horse.trainerName}
-                  </td>
-                  <td className="text-white/70 hide-on-small">
-                    {horse.jockeyName}
-                  </td>
+                  <td className="text-white/70 hide-on-small">{horse.trainerName}</td>
+                  <td className="text-white/70 hide-on-small">{horse.jockeyName}</td>
                   <td className="text-right" onClick={(e) => e.stopPropagation()}>
                     <EditableOdds
                       value={currentOdds}
@@ -1375,7 +1429,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                     <Icon name="chevron_right" className="row-chevron" />
                   </td>
                 </tr>
-              )
+              );
             })}
           </tbody>
         </table>
@@ -1384,36 +1438,40 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
       {/* Mobile Card View - visible below 768px */}
       <div className="mobile-cards-container">
         {scoredHorses.map(({ horse, index, score, rank }) => {
-          const scratched = score.isScratched
-          const currentOdds = getOdds(index, horse.morningLineOdds)
-          const oddsChanged = hasOddsChanged(index)
-          const scoreChanged = changedScoreIndices.has(index)
-          const oddsHighlighted = calculationState.changedOddsIndices.has(index)
-          const overlay = overlaysByIndex.get(index)
-          const isHighlighted = highlightedHorseIndex === index
-          const longshotAnalysisMobile = longshotsByProgram.get(horse.programNumber)
-          const isNuclearMobile = longshotAnalysisMobile?.classification === 'nuclear'
-          const isLiveMobile = longshotAnalysisMobile?.classification === 'live'
-          const diamondAnalysisMobile = diamondsByProgram.get(horse.programNumber)
-          const isDiamondMobile = !!diamondAnalysisMobile
-          const diamondColorMobile = getDiamondColor()
+          const scratched = score.isScratched;
+          const currentOdds = getOdds(index, horse.morningLineOdds);
+          const oddsChanged = hasOddsChanged(index);
+          const scoreChanged = changedScoreIndices.has(index);
+          const oddsHighlighted = calculationState.changedOddsIndices.has(index);
+          const overlay = overlaysByIndex.get(index);
+          const isHighlighted = highlightedHorseIndex === index;
+          const longshotAnalysisMobile = longshotsByProgram.get(horse.programNumber);
+          const isNuclearMobile = longshotAnalysisMobile?.classification === 'nuclear';
+          const isLiveMobile = longshotAnalysisMobile?.classification === 'live';
+          const diamondAnalysisMobile = diamondsByProgram.get(horse.programNumber);
+          const isDiamondMobile = !!diamondAnalysisMobile;
+          const diamondColorMobile = getDiamondColor();
 
           return (
             <div
               key={index}
               data-horse-index={index}
               className={`mobile-horse-card mobile-card-clickable ${scratched ? 'mobile-card-scratched' : ''} ${isHighlighted ? 'mobile-card-highlighted' : ''} ${isDiamondMobile && !scratched ? 'mobile-card-diamond' : ''}`}
-              style={isDiamondMobile && !scratched ? {
-                backgroundColor: getDiamondBgColor(0.08),
-                borderLeft: `3px solid ${diamondColorMobile}`,
-              } : undefined}
+              style={
+                isDiamondMobile && !scratched
+                  ? {
+                      backgroundColor: getDiamondBgColor(0.08),
+                      borderLeft: `3px solid ${diamondColorMobile}`,
+                    }
+                  : undefined
+              }
               onClick={() => handleRowClick(horse, score, index, rank)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  handleRowClick(horse, score, index, rank)
+                  e.preventDefault();
+                  handleRowClick(horse, score, index, rank);
                 }
               }}
               aria-label={`View details for ${horse.horseName}. Tap to expand for full details.`}
@@ -1433,9 +1491,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                       />
                     </div>
                     <ScoreBadge score={score} rank={rank} hasChanged={scoreChanged} />
-                    <div className="pp-badge">
-                      {horse.postPosition}
-                    </div>
+                    <div className="pp-badge">{horse.postPosition}</div>
                   </div>
                   <div className="mobile-card-right" onClick={(e) => e.stopPropagation()}>
                     <EditableOdds
@@ -1449,45 +1505,54 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                 </div>
 
                 <div className="mobile-card-body">
-                  <div className={`mobile-horse-name ${scratched ? 'horse-name-scratched' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div
+                    className={`mobile-horse-name ${scratched ? 'horse-name-scratched' : ''}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
                     {horse.horseName}
                     {isDiamondMobile && !scratched && (
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '22px',
-                        height: '22px',
-                        backgroundColor: diamondColorMobile,
-                        borderRadius: '4px',
-                        fontSize: '0.85rem',
-                      }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '22px',
+                          height: '22px',
+                          backgroundColor: diamondColorMobile,
+                          borderRadius: '4px',
+                          fontSize: '0.85rem',
+                        }}
+                      >
                         💎
                       </span>
                     )}
                     {isNuclearMobile && !scratched && (
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '20px',
-                        height: '20px',
-                        backgroundColor: '#ef4444',
-                        borderRadius: '50%',
-                      }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '20px',
+                          height: '20px',
+                          backgroundColor: '#ef4444',
+                          borderRadius: '50%',
+                        }}
+                      >
                         <Icon name="local_fire_department" className="text-xs text-white" />
                       </span>
                     )}
                     {isLiveMobile && !scratched && (
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '18px',
-                        height: '18px',
-                        backgroundColor: '#f59e0b',
-                        borderRadius: '50%',
-                      }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '18px',
+                          height: '18px',
+                          backgroundColor: '#f59e0b',
+                          borderRadius: '50%',
+                        }}
+                      >
                         <Icon name="bolt" className="text-xs text-white" />
                       </span>
                     )}
@@ -1502,12 +1567,15 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                   </div>
                   {/* Class info row for mobile */}
                   {!scratched && (
-                    <div className="mobile-class-row" style={{
-                      marginTop: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}>
+                    <div
+                      className="mobile-class-row"
+                      style={{
+                        marginTop: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                      }}
+                    >
                       <span style={{ color: '#888', fontSize: '0.75rem' }}>Class:</span>
                       <ClassBadge score={score} />
                     </div>
@@ -1537,7 +1605,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                 </div>
               </div>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -1580,5 +1648,5 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
-  )
+  );
 }

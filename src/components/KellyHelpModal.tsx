@@ -5,16 +5,16 @@
  * for users who want to learn more about optimal bet sizing.
  */
 
-import { motion, AnimatePresence } from 'framer-motion'
-import { KELLY_EDUCATION } from '../lib/betting/kellySettings'
+import { motion, AnimatePresence } from 'framer-motion';
+import { KELLY_EDUCATION } from '../lib/betting/kellySettings';
 
 interface KellyHelpModalProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export function KellyHelpModal({ isOpen, onClose }: KellyHelpModalProps) {
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <AnimatePresence>
@@ -49,11 +49,7 @@ export function KellyHelpModal({ isOpen, onClose }: KellyHelpModalProps) {
                   <span className="material-icons kelly-help-icon">functions</span>
                   <h2 className="kelly-help-title">{KELLY_EDUCATION.title}</h2>
                 </div>
-                <button
-                  className="kelly-help-close"
-                  onClick={onClose}
-                  aria-label="Close help"
-                >
+                <button className="kelly-help-close" onClick={onClose} aria-label="Close help">
                   <span className="material-icons">close</span>
                 </button>
               </div>
@@ -84,7 +80,9 @@ export function KellyHelpModal({ isOpen, onClose }: KellyHelpModalProps) {
                     <span className="material-icons">school</span>
                     Example Calculation
                   </h3>
-                  <pre className="kelly-help-code kelly-help-example">{KELLY_EDUCATION.example}</pre>
+                  <pre className="kelly-help-code kelly-help-example">
+                    {KELLY_EDUCATION.example}
+                  </pre>
                 </section>
 
                 {/* Fractional Kelly */}
@@ -121,9 +119,7 @@ export function KellyHelpModal({ isOpen, onClose }: KellyHelpModalProps) {
                   <dl className="kelly-help-glossary">
                     {Object.entries(KELLY_EDUCATION.glossary).map(([term, definition]) => (
                       <div key={term} className="kelly-help-glossary-item">
-                        <dt className="kelly-help-term">
-                          {term.replace(/_/g, ' ')}
-                        </dt>
+                        <dt className="kelly-help-term">{term.replace(/_/g, ' ')}</dt>
                         <dd className="kelly-help-definition">{definition}</dd>
                       </div>
                     ))}
@@ -142,7 +138,7 @@ export function KellyHelpModal({ isOpen, onClose }: KellyHelpModalProps) {
         </>
       )}
     </AnimatePresence>
-  )
+  );
 }
 
-export default KellyHelpModal
+export default KellyHelpModal;

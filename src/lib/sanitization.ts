@@ -27,7 +27,7 @@ const HTML_ENTITIES: Record<string, string> = {
   '/': '&#x2F;',
   '`': '&#x60;',
   '=': '&#x3D;',
-}
+};
 
 /**
  * Sanitize a string by escaping HTML entities and removing dangerous content.
@@ -42,23 +42,23 @@ const HTML_ENTITIES: Record<string, string> = {
  */
 export function sanitizeString(input: string): string {
   if (typeof input !== 'string') {
-    return ''
+    return '';
   }
 
   // Trim whitespace
-  let sanitized = input.trim()
+  let sanitized = input.trim();
 
   // Remove null bytes (can cause issues in some systems)
-  sanitized = sanitized.replace(/\0/g, '')
+  sanitized = sanitized.replace(/\0/g, '');
 
   // Escape HTML entities
-  sanitized = sanitized.replace(/[&<>"'`=/]/g, (char) => HTML_ENTITIES[char] || char)
+  sanitized = sanitized.replace(/[&<>"'`=/]/g, (char) => HTML_ENTITIES[char] || char);
 
   // Remove any remaining control characters (except newlines and tabs)
   // eslint-disable-next-line no-control-regex
-  sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+  sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 
-  return sanitized
+  return sanitized;
 }
 
 /**
@@ -70,14 +70,14 @@ export function sanitizeString(input: string): string {
  */
 export function sanitizeMultilineString(input: string): string {
   if (typeof input !== 'string') {
-    return ''
+    return '';
   }
 
   // Split by newlines, sanitize each line, rejoin
   return input
     .split('\n')
     .map((line) => sanitizeString(line))
-    .join('\n')
+    .join('\n');
 }
 
 // ============================================================================
@@ -88,12 +88,13 @@ export function sanitizeMultilineString(input: string): string {
  * Email validation regex (RFC 5322 simplified)
  * Matches most valid email formats while rejecting obvious invalids
  */
-const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+const EMAIL_REGEX =
+  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
 /**
  * Maximum email length per RFC 5321
  */
-const MAX_EMAIL_LENGTH = 254
+const MAX_EMAIL_LENGTH = 254;
 
 /**
  * Sanitize and validate an email address.
@@ -111,32 +112,32 @@ const MAX_EMAIL_LENGTH = 254
  */
 export function sanitizeEmail(input: string): string {
   if (typeof input !== 'string') {
-    return ''
+    return '';
   }
 
   // Trim and lowercase
-  const email = input.trim().toLowerCase()
+  const email = input.trim().toLowerCase();
 
   // Check length
   if (email.length === 0 || email.length > MAX_EMAIL_LENGTH) {
-    return ''
+    return '';
   }
 
   // Validate format
   if (!EMAIL_REGEX.test(email)) {
-    return ''
+    return '';
   }
 
   // Additional checks for obviously invalid emails
   if (email.startsWith('.') || email.endsWith('.')) {
-    return ''
+    return '';
   }
 
   if (email.includes('..')) {
-    return ''
+    return '';
   }
 
-  return email
+  return email;
 }
 
 /**
@@ -146,7 +147,7 @@ export function sanitizeEmail(input: string): string {
  * @returns true if email is valid
  */
 export function isValidEmail(email: string): boolean {
-  return sanitizeEmail(email) !== ''
+  return sanitizeEmail(email) !== '';
 }
 
 // ============================================================================
@@ -160,22 +161,17 @@ export const ALLOWED_DRF_TYPES = [
   'text/plain',
   'text/csv',
   'application/octet-stream', // Generic binary, DRF files often have this
-] as const
+] as const;
 
 /**
  * Common allowed image MIME types
  */
-export const ALLOWED_IMAGE_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-] as const
+export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const;
 
 /**
  * Default maximum file size: 10MB
  */
-export const DEFAULT_MAX_FILE_SIZE = 10 * 1024 * 1024
+export const DEFAULT_MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 /**
  * Validate that a file's MIME type is in the allowed list.
@@ -191,21 +187,21 @@ export const DEFAULT_MAX_FILE_SIZE = 10 * 1024 * 1024
  */
 export function validateFileType(file: File, allowedTypes: readonly string[]): boolean {
   if (!(file instanceof File)) {
-    return false
+    return false;
   }
 
   // Check MIME type
-  const mimeType = file.type.toLowerCase()
+  const mimeType = file.type.toLowerCase();
 
   // Empty MIME type check - browser couldn't determine type
   // For DRF files, we may need to allow this and check extension
   if (!mimeType && allowedTypes.includes('application/octet-stream')) {
     // Check file extension for DRF files
-    const extension = getFileExtension(file.name)
-    return ['drf', 'txt', 'csv'].includes(extension)
+    const extension = getFileExtension(file.name);
+    return ['drf', 'txt', 'csv'].includes(extension);
   }
 
-  return allowedTypes.some((allowed) => mimeType === allowed.toLowerCase())
+  return allowedTypes.some((allowed) => mimeType === allowed.toLowerCase());
 }
 
 /**
@@ -221,25 +217,25 @@ export function validateFileType(file: File, allowedTypes: readonly string[]): b
  */
 export function validateFileSize(file: File, maxBytes: number): boolean {
   if (!(file instanceof File)) {
-    return false
+    return false;
   }
 
   if (typeof maxBytes !== 'number' || maxBytes <= 0) {
-    return false
+    return false;
   }
 
-  return file.size <= maxBytes
+  return file.size <= maxBytes;
 }
 
 /**
  * Get file extension from filename (lowercase, without dot)
  */
 function getFileExtension(filename: string): string {
-  const lastDot = filename.lastIndexOf('.')
+  const lastDot = filename.lastIndexOf('.');
   if (lastDot === -1 || lastDot === filename.length - 1) {
-    return ''
+    return '';
   }
-  return filename.substring(lastDot + 1).toLowerCase()
+  return filename.substring(lastDot + 1).toLowerCase();
 }
 
 /**
@@ -251,37 +247,37 @@ function getFileExtension(filename: string): string {
  */
 export function validateFilename(filename: string): boolean {
   if (typeof filename !== 'string' || filename.length === 0) {
-    return false
+    return false;
   }
 
   // Max filename length
   if (filename.length > 255) {
-    return false
+    return false;
   }
 
   // No path traversal
   if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
-    return false
+    return false;
   }
 
   // No null bytes
   if (filename.includes('\0')) {
-    return false
+    return false;
   }
 
   // No control characters
   // eslint-disable-next-line no-control-regex
   if (/[\x00-\x1F\x7F]/.test(filename)) {
-    return false
+    return false;
   }
 
   // No reserved Windows names
-  const reserved = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i
+  const reserved = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i;
   if (reserved.test(filename)) {
-    return false
+    return false;
   }
 
-  return true
+  return true;
 }
 
 // ============================================================================
@@ -302,29 +298,29 @@ export function validateNumber(
   defaultValue: number,
   options?: { min?: number; max?: number }
 ): number {
-  let num: number
+  let num: number;
 
   if (typeof input === 'number') {
-    num = input
+    num = input;
   } else if (typeof input === 'string') {
-    num = parseFloat(input)
+    num = parseFloat(input);
   } else {
-    return defaultValue
+    return defaultValue;
   }
 
   if (!Number.isFinite(num)) {
-    return defaultValue
+    return defaultValue;
   }
 
   if (options?.min !== undefined && num < options.min) {
-    return options.min
+    return options.min;
   }
 
   if (options?.max !== undefined && num > options.max) {
-    return options.max
+    return options.max;
   }
 
-  return num
+  return num;
 }
 
 // ============================================================================
@@ -343,14 +339,14 @@ export function validateUrl(
   allowedProtocols: string[] = ['https:', 'http:']
 ): boolean {
   if (typeof url !== 'string' || url.length === 0) {
-    return false
+    return false;
   }
 
   try {
-    const parsed = new URL(url)
-    return allowedProtocols.includes(parsed.protocol)
+    const parsed = new URL(url);
+    return allowedProtocols.includes(parsed.protocol);
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -362,17 +358,17 @@ export function validateUrl(
  * Result of comprehensive file validation
  */
 export interface FileValidationResult {
-  valid: boolean
-  errors: string[]
+  valid: boolean;
+  errors: string[];
 }
 
 /**
  * Options for file validation
  */
 export interface FileValidationOptions {
-  allowedTypes: readonly string[]
-  maxBytes: number
-  allowEmptyFile?: boolean
+  allowedTypes: readonly string[];
+  maxBytes: number;
+  allowEmptyFile?: boolean;
 }
 
 /**
@@ -384,36 +380,36 @@ export interface FileValidationOptions {
  * @returns Validation result with any error messages
  */
 export function validateFile(file: File, options: FileValidationOptions): FileValidationResult {
-  const errors: string[] = []
+  const errors: string[] = [];
 
   // Check if it's actually a File object
   if (!(file instanceof File)) {
-    return { valid: false, errors: ['Invalid file object'] }
+    return { valid: false, errors: ['Invalid file object'] };
   }
 
   // Validate filename
   if (!validateFilename(file.name)) {
-    errors.push('Invalid filename')
+    errors.push('Invalid filename');
   }
 
   // Validate file type
   if (!validateFileType(file, options.allowedTypes)) {
-    errors.push(`File type not allowed. Allowed types: ${options.allowedTypes.join(', ')}`)
+    errors.push(`File type not allowed. Allowed types: ${options.allowedTypes.join(', ')}`);
   }
 
   // Validate file size
   if (!validateFileSize(file, options.maxBytes)) {
-    const maxMB = (options.maxBytes / (1024 * 1024)).toFixed(1)
-    errors.push(`File too large. Maximum size: ${maxMB}MB`)
+    const maxMB = (options.maxBytes / (1024 * 1024)).toFixed(1);
+    errors.push(`File too large. Maximum size: ${maxMB}MB`);
   }
 
   // Check for empty files (unless allowed)
   if (!options.allowEmptyFile && file.size === 0) {
-    errors.push('File is empty')
+    errors.push('File is empty');
   }
 
   return {
     valid: errors.length === 0,
     errors,
-  }
+  };
 }

@@ -1,25 +1,25 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { PulsingGlow } from '../motion'
-import { BankrollSummaryCard } from '../BankrollSummaryCard'
-import { TopBarCountdown } from '../PostTimeCountdown'
-import type { UseBankrollReturn } from '../../hooks/useBankroll'
-import type { CountdownState } from '../../hooks/usePostTime'
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { PulsingGlow } from '../motion';
+import { BankrollSummaryCard } from '../BankrollSummaryCard';
+import { TopBarCountdown } from '../PostTimeCountdown';
+import type { UseBankrollReturn } from '../../hooks/useBankroll';
+import type { CountdownState } from '../../hooks/usePostTime';
 
 interface TopBarProps {
   currentRace?: {
-    trackName?: string
-    raceNumber?: number
-    postTime?: string
-  }
-  onUploadClick: () => void
-  onSettingsClick?: () => void
-  onMenuClick: () => void
-  hasData: boolean
-  bankroll?: UseBankrollReturn
-  onOpenBankrollSettings?: () => void
-  countdown?: CountdownState
-  onCountdownClick?: () => void
+    trackName?: string;
+    raceNumber?: number;
+    postTime?: string;
+  };
+  onUploadClick: () => void;
+  onSettingsClick?: () => void;
+  onMenuClick: () => void;
+  hasData: boolean;
+  bankroll?: UseBankrollReturn;
+  onOpenBankrollSettings?: () => void;
+  countdown?: CountdownState;
+  onCountdownClick?: () => void;
 }
 
 export function TopBar({
@@ -33,26 +33,26 @@ export function TopBar({
   countdown,
   onCountdownClick,
 }: TopBarProps) {
-  const [currentTime, setCurrentTime] = useState(new Date())
-  const [showNotifications, setShowNotifications] = useState(false)
-  const notificationRef = useRef<HTMLDivElement>(null)
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
 
   // Update clock every second
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Close notifications on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-        setShowNotifications(false)
+        setShowNotifications(false);
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const formatTime = useCallback((date: Date) => {
     return date.toLocaleTimeString('en-US', {
@@ -60,15 +60,15 @@ export function TopBar({
       minute: '2-digit',
       second: '2-digit',
       hour12: true,
-    })
-  }, [])
+    });
+  }, []);
 
   const raceInfo = currentRace?.trackName
     ? `${currentRace.trackName} - Race ${currentRace.raceNumber}`
-    : 'No race loaded'
+    : 'No race loaded';
 
   // Check if countdown is valid
-  const hasValidCountdown = countdown && countdown.totalMs >= 0 && !countdown.isExpired
+  const hasValidCountdown = countdown && countdown.totalMs >= 0 && !countdown.isExpired;
 
   return (
     <header className="topbar" role="banner">
@@ -133,9 +133,13 @@ export function TopBar({
             >
               <motion.span
                 className="material-icons"
-                animate={countdown.isCritical && !countdown.isExpired ? {
-                  scale: [1, 1.2, 1],
-                } : {}}
+                animate={
+                  countdown.isCritical && !countdown.isExpired
+                    ? {
+                        scale: [1, 1.2, 1],
+                      }
+                    : {}
+                }
                 transition={{ duration: 0.8, repeat: Infinity }}
               >
                 timer
@@ -168,11 +172,7 @@ export function TopBar({
           )}
 
           {/* Settings button */}
-          <button
-            className="topbar-icon-btn"
-            onClick={onSettingsClick}
-            aria-label="Settings"
-          >
+          <button className="topbar-icon-btn" onClick={onSettingsClick} aria-label="Settings">
             <span className="material-icons">tune</span>
           </button>
 
@@ -221,7 +221,7 @@ export function TopBar({
         </div>
       </div>
     </header>
-  )
+  );
 }
 
-export default TopBar
+export default TopBar;

@@ -14,7 +14,7 @@
  * NOTE: Exclusively night racing; pronounced inside/speed bias; tight turns
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const pennNational: TrackData = {
   code: 'PEN',
@@ -33,7 +33,7 @@ export const pennNational: TrackData = {
       // Source: Pennsylvania Racing Commission - 75 feet wide
       trackWidth: 75,
       // Source: Penn National - chutes at 6f and 7f
-      chutes: [6, 7]
+      chutes: [6, 7],
     },
     turf: {
       // Source: Penn National official - 7/8 mile turf course
@@ -44,8 +44,8 @@ export const pennNational: TrackData = {
       turnRadius: 240,
       // Source: Pennsylvania Racing Commission
       trackWidth: 70,
-      chutes: [8]
-    }
+      chutes: [8],
+    },
   },
 
   postPositionBias: {
@@ -62,7 +62,8 @@ export const pennNational: TrackData = {
         // Sample: 2,000+ dirt sprints annually
         winPercentByPost: [16.5, 15.2, 13.0, 11.5, 10.5, 9.8, 9.0, 7.5, 5.0, 2.0],
         favoredPosts: [1, 2],
-        biasDescription: 'Extreme inside bias; rail wins 16%+; posts 1-2 dominant; tight turns penalize outside draws heavily'
+        biasDescription:
+          'Extreme inside bias; rail wins 16%+; posts 1-2 dominant; tight turns penalize outside draws heavily',
       },
       {
         distance: 'route',
@@ -74,8 +75,9 @@ export const pennNational: TrackData = {
         // Sample: 600+ dirt routes
         winPercentByPost: [15.0, 14.5, 13.2, 12.0, 11.0, 10.2, 9.5, 7.8, 5.0, 1.8],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Strong inside bias in routes; posts 1-3 favored; tight turns limit outside rallies'
-      }
+        biasDescription:
+          'Strong inside bias in routes; posts 1-3 favored; tight turns limit outside rallies',
+      },
     ],
     turf: [
       {
@@ -88,7 +90,8 @@ export const pennNational: TrackData = {
         // Sample: 300+ turf sprints
         winPercentByPost: [15.5, 14.8, 13.2, 12.0, 11.0, 10.5, 9.5, 7.5, 4.5, 1.5],
         favoredPosts: [1, 2],
-        biasDescription: 'Strong inside bias in turf sprints; tight 7/8 mile course; posts 1-2 dominant'
+        biasDescription:
+          'Strong inside bias in turf sprints; tight 7/8 mile course; posts 1-2 dominant',
       },
       {
         distance: 'route',
@@ -100,9 +103,10 @@ export const pennNational: TrackData = {
         // Sample: 250+ turf routes
         winPercentByPost: [15.8, 14.5, 13.0, 11.8, 10.8, 10.2, 9.8, 8.0, 4.5, 1.6],
         favoredPosts: [1, 2],
-        biasDescription: 'Extreme inside bias in turf routes; very tight turns; posts 1-2 heavily favored'
-      }
-    ]
+        biasDescription:
+          'Extreme inside bias in turf routes; very tight turns; posts 1-2 heavily favored',
+      },
+    ],
   },
 
   speedBias: [
@@ -116,7 +120,8 @@ export const pennNational: TrackData = {
       // Front-runners rarely caught
       earlySpeedWinRate: 64,
       paceAdvantageRating: 9,
-      description: 'Extreme speed-favoring track; 64%+ early speed win rate; tight turns; wire-to-wire very common; closers rarely win'
+      description:
+        'Extreme speed-favoring track; 64%+ early speed win rate; tight turns; wire-to-wire very common; closers rarely win',
     },
     {
       surface: 'turf',
@@ -126,8 +131,9 @@ export const pennNational: TrackData = {
       // Forward position key
       earlySpeedWinRate: 56,
       paceAdvantageRating: 7,
-      description: 'Turf speed bias strong for configuration; tight 7/8 mile course; tactical speed essential'
-    }
+      description:
+        'Turf speed bias strong for configuration; tight 7/8 mile course; tactical speed essential',
+    },
   ],
 
   surfaces: [
@@ -136,9 +142,10 @@ export const pennNational: TrackData = {
       // Source: Pennsylvania Racing Commission
       // Well-maintained for night racing
       // Consistent surface under lights
-      composition: 'Sandy loam cushion over clay base; 4-inch cushion depth; consistent under night racing conditions',
+      composition:
+        'Sandy loam cushion over clay base; 4-inch cushion depth; consistent under night racing conditions',
       playingStyle: 'speed-favoring',
-      drainage: 'good'
+      drainage: 'good',
     },
     {
       baseType: 'turf',
@@ -146,8 +153,8 @@ export const pennNational: TrackData = {
       // Kentucky Bluegrass composition
       composition: 'Kentucky Bluegrass with perennial ryegrass overseed',
       playingStyle: 'speed-favoring',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -159,7 +166,8 @@ export const pennNational: TrackData = {
       // Primary Mid-Atlantic night venue
       typicalCondition: 'Fast to Good; frozen track possible',
       speedAdjustment: -1,
-      notes: 'Year-round night racing; off-track conditions more frequent in winter; consistent lighting conditions'
+      notes:
+        'Year-round night racing; off-track conditions more frequent in winter; consistent lighting conditions',
     },
     {
       season: 'spring',
@@ -168,7 +176,7 @@ export const pennNational: TrackData = {
       // Improving conditions
       typicalCondition: 'Fast to Good',
       speedAdjustment: 0,
-      notes: 'Spring night racing; turf opens when ground permits; weather variable'
+      notes: 'Spring night racing; turf opens when ground permits; weather variable',
     },
     {
       season: 'summer',
@@ -177,7 +185,8 @@ export const pennNational: TrackData = {
       // Fast track predominates
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Peak summer meet; fast track; Penn Mile (G3 Turf) in June; Hollywood Casino Presents Stakes'
+      notes:
+        'Peak summer meet; fast track; Penn Mile (G3 Turf) in June; Hollywood Casino Presents Stakes',
     },
     {
       season: 'fall',
@@ -186,8 +195,8 @@ export const pennNational: TrackData = {
       // Quality racing continues
       typicalCondition: 'Fast to Good',
       speedAdjustment: 0,
-      notes: 'Fall stakes racing; Pennsylvania Nursery Stakes; consistent night racing conditions'
-    }
+      notes: 'Fall stakes racing; Pennsylvania Nursery Stakes; consistent night racing conditions',
+    },
   ],
 
   winningTimes: [
@@ -199,7 +208,7 @@ export const pennNational: TrackData = {
       surface: 'dirt',
       claimingAvg: 53.0,
       allowanceAvg: 51.8,
-      stakesAvg: 50.5
+      stakesAvg: 50.5,
     },
     {
       distance: '5f',
@@ -207,7 +216,7 @@ export const pennNational: TrackData = {
       surface: 'dirt',
       claimingAvg: 59.2,
       allowanceAvg: 58.0,
-      stakesAvg: 56.8
+      stakesAvg: 56.8,
     },
     {
       distance: '5.5f',
@@ -215,7 +224,7 @@ export const pennNational: TrackData = {
       surface: 'dirt',
       claimingAvg: 65.5,
       allowanceAvg: 64.2,
-      stakesAvg: 62.8
+      stakesAvg: 62.8,
     },
     {
       distance: '6f',
@@ -224,7 +233,7 @@ export const pennNational: TrackData = {
       // Track record: 1:08.65 (multiple)
       claimingAvg: 71.5,
       allowanceAvg: 70.0,
-      stakesAvg: 68.8
+      stakesAvg: 68.8,
     },
     {
       distance: '6.5f',
@@ -232,7 +241,7 @@ export const pennNational: TrackData = {
       surface: 'dirt',
       claimingAvg: 78.0,
       allowanceAvg: 76.5,
-      stakesAvg: 75.0
+      stakesAvg: 75.0,
     },
     {
       distance: '7f',
@@ -240,7 +249,7 @@ export const pennNational: TrackData = {
       surface: 'dirt',
       claimingAvg: 84.5,
       allowanceAvg: 83.0,
-      stakesAvg: 81.5
+      stakesAvg: 81.5,
     },
     {
       distance: '1m',
@@ -248,7 +257,7 @@ export const pennNational: TrackData = {
       surface: 'dirt',
       claimingAvg: 98.0,
       allowanceAvg: 96.2,
-      stakesAvg: 94.5
+      stakesAvg: 94.5,
     },
     {
       distance: '1m70y',
@@ -256,7 +265,7 @@ export const pennNational: TrackData = {
       surface: 'dirt',
       claimingAvg: 103.0,
       allowanceAvg: 101.0,
-      stakesAvg: 99.2
+      stakesAvg: 99.2,
     },
     {
       distance: '1 1/16m',
@@ -264,7 +273,7 @@ export const pennNational: TrackData = {
       surface: 'dirt',
       claimingAvg: 105.5,
       allowanceAvg: 103.5,
-      stakesAvg: 101.8
+      stakesAvg: 101.8,
     },
     {
       distance: '1 1/8m',
@@ -272,7 +281,7 @@ export const pennNational: TrackData = {
       surface: 'dirt',
       claimingAvg: 113.0,
       allowanceAvg: 111.0,
-      stakesAvg: 109.0
+      stakesAvg: 109.0,
     },
     {
       distance: '1 1/4m',
@@ -280,7 +289,7 @@ export const pennNational: TrackData = {
       surface: 'dirt',
       claimingAvg: 127.0,
       allowanceAvg: 124.5,
-      stakesAvg: 122.0
+      stakesAvg: 122.0,
     },
     // Turf times
     {
@@ -289,7 +298,7 @@ export const pennNational: TrackData = {
       surface: 'turf',
       claimingAvg: 58.0,
       allowanceAvg: 56.8,
-      stakesAvg: 55.5
+      stakesAvg: 55.5,
     },
     {
       distance: '5.5f',
@@ -297,7 +306,7 @@ export const pennNational: TrackData = {
       surface: 'turf',
       claimingAvg: 64.5,
       allowanceAvg: 63.2,
-      stakesAvg: 62.0
+      stakesAvg: 62.0,
     },
     {
       distance: '1m',
@@ -306,7 +315,7 @@ export const pennNational: TrackData = {
       // Penn Mile distance
       claimingAvg: 97.0,
       allowanceAvg: 95.2,
-      stakesAvg: 93.5
+      stakesAvg: 93.5,
     },
     {
       distance: '1 1/16m',
@@ -314,7 +323,7 @@ export const pennNational: TrackData = {
       surface: 'turf',
       claimingAvg: 104.0,
       allowanceAvg: 102.0,
-      stakesAvg: 100.2
+      stakesAvg: 100.2,
     },
     {
       distance: '1 1/8m',
@@ -322,10 +331,10 @@ export const pennNational: TrackData = {
       surface: 'turf',
       claimingAvg: 111.0,
       allowanceAvg: 109.0,
-      stakesAvg: 107.0
-    }
+      stakesAvg: 107.0,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

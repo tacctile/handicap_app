@@ -8,25 +8,21 @@
  * - Track mandatory payout dates
  */
 
-import { validateNumber, sanitizeString } from '../sanitization'
-import {
-  type CarryoverInfo,
-  CARRYOVER_THRESHOLDS,
-  getBetConfig,
-} from './multiraceTypes'
+import { validateNumber, sanitizeString } from '../sanitization';
+import { type CarryoverInfo, CARRYOVER_THRESHOLDS, getBetConfig } from './multiraceTypes';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
 /** High-value carryover threshold for alerts */
-export const HIGH_VALUE_THRESHOLD = 50000
+export const HIGH_VALUE_THRESHOLD = 50000;
 
 /** Local storage key for saved carryovers */
-const CARRYOVER_STORAGE_KEY = 'multirace_carryovers'
+const CARRYOVER_STORAGE_KEY = 'multirace_carryovers';
 
 /** How long carryover data is considered fresh (hours) */
-const DATA_FRESHNESS_HOURS = 6
+const DATA_FRESHNESS_HOURS = 6;
 
 // ============================================================================
 // CARRYOVER VALUE CLASSIFICATION
@@ -39,12 +35,12 @@ export function classifyCarryoverValue(
   betType: 'pick_5' | 'pick_6',
   amount: number
 ): 'low' | 'medium' | 'high' | 'exceptional' {
-  const thresholds = CARRYOVER_THRESHOLDS[betType]
+  const thresholds = CARRYOVER_THRESHOLDS[betType];
 
-  if (amount >= thresholds.exceptional) return 'exceptional'
-  if (amount >= thresholds.high) return 'high'
-  if (amount >= thresholds.medium) return 'medium'
-  return 'low'
+  if (amount >= thresholds.exceptional) return 'exceptional';
+  if (amount >= thresholds.high) return 'high';
+  if (amount >= thresholds.medium) return 'medium';
+  return 'low';
 }
 
 /**
@@ -55,26 +51,26 @@ export function getCarryoverRecommendation(
   amount: number,
   isMandatory: boolean
 ): string {
-  const valueClass = classifyCarryoverValue(betType, amount)
-  const config = getBetConfig(betType)
+  const valueClass = classifyCarryoverValue(betType, amount);
+  const config = getBetConfig(betType);
 
   if (isMandatory) {
-    return `MANDATORY PAYOUT DAY - Entire ${config.displayName} pool must be paid out today. High action expected.`
+    return `MANDATORY PAYOUT DAY - Entire ${config.displayName} pool must be paid out today. High action expected.`;
   }
 
   switch (valueClass) {
     case 'exceptional':
-      return `Exceptional carryover ($${formatCarryoverAmount(amount)}) - Consider increased investment. Pool edge significantly in player's favor.`
+      return `Exceptional carryover ($${formatCarryoverAmount(amount)}) - Consider increased investment. Pool edge significantly in player's favor.`;
     case 'high':
-      return `High-value carryover day ($${formatCarryoverAmount(amount)}) - Good opportunity for multi-race action.`
+      return `High-value carryover day ($${formatCarryoverAmount(amount)}) - Good opportunity for multi-race action.`;
     case 'medium':
-      return `Moderate carryover ($${formatCarryoverAmount(amount)}) - Worth considering if you like the races.`
+      return `Moderate carryover ($${formatCarryoverAmount(amount)}) - Worth considering if you like the races.`;
     case 'low':
       return amount > 0
         ? `Small carryover ($${formatCarryoverAmount(amount)}) - Normal pool expected.`
-        : 'No carryover - Fresh pool starting today.'
+        : 'No carryover - Fresh pool starting today.';
     default:
-      return ''
+      return '';
   }
 }
 
@@ -83,12 +79,12 @@ export function getCarryoverRecommendation(
  */
 export function formatCarryoverAmount(amount: number): string {
   if (amount >= 1000000) {
-    return `${(amount / 1000000).toFixed(2)}M`
+    return `${(amount / 1000000).toFixed(2)}M`;
   }
   if (amount >= 1000) {
-    return `${(amount / 1000).toFixed(0)}K`
+    return `${(amount / 1000).toFixed(0)}K`;
   }
-  return amount.toFixed(0)
+  return amount.toFixed(0);
 }
 
 // ============================================================================
@@ -99,14 +95,14 @@ export function formatCarryoverAmount(amount: number): string {
  * Create carryover info from raw data
  */
 export function createCarryoverInfo(params: {
-  betType: 'pick_5' | 'pick_6'
-  trackCode: string
-  trackName: string
-  carryoverAmount: number
-  daysWithoutWinner?: number
-  estimatedPoolToday?: number
-  isMandatory?: boolean
-  mandatoryDate?: string
+  betType: 'pick_5' | 'pick_6';
+  trackCode: string;
+  trackName: string;
+  carryoverAmount: number;
+  daysWithoutWinner?: number;
+  estimatedPoolToday?: number;
+  isMandatory?: boolean;
+  mandatoryDate?: string;
 }): CarryoverInfo {
   const {
     betType,
@@ -117,14 +113,14 @@ export function createCarryoverInfo(params: {
     estimatedPoolToday = 0,
     isMandatory = false,
     mandatoryDate,
-  } = params
+  } = params;
 
-  const validatedAmount = validateNumber(carryoverAmount, 0, { min: 0, max: 100000000 })
-  const validatedPool = validateNumber(estimatedPoolToday, 0, { min: 0, max: 100000000 })
-  const totalPool = validatedAmount + validatedPool
+  const validatedAmount = validateNumber(carryoverAmount, 0, { min: 0, max: 100000000 });
+  const validatedPool = validateNumber(estimatedPoolToday, 0, { min: 0, max: 100000000 });
+  const totalPool = validatedAmount + validatedPool;
 
-  const valueClass = classifyCarryoverValue(betType, validatedAmount)
-  const recommendation = getCarryoverRecommendation(betType, validatedAmount, isMandatory)
+  const valueClass = classifyCarryoverValue(betType, validatedAmount);
+  const recommendation = getCarryoverRecommendation(betType, validatedAmount, isMandatory);
 
   return {
     betType,
@@ -139,7 +135,7 @@ export function createCarryoverInfo(params: {
     valueClass,
     recommendation,
     lastUpdated: new Date().toISOString(),
-  }
+  };
 }
 
 // ============================================================================
@@ -156,34 +152,34 @@ export function createCarryoverInfo(params: {
  * - "Carryover: $50K"
  */
 export function parseCarryoverAmount(text: string): number {
-  if (!text || typeof text !== 'string') return 0
+  if (!text || typeof text !== 'string') return 0;
 
-  const cleanText = text.replace(/[,\s]/g, '').toUpperCase()
+  const cleanText = text.replace(/[,\s]/g, '').toUpperCase();
 
   // Look for amount patterns
   const patterns = [
-    /\$?([\d.]+)M/i,           // "$1.5M" or "1.5M"
-    /\$?([\d.]+)K/i,           // "$50K" or "50K"
-    /\$?([\d]+(?:\.\d+)?)/,    // "$50000" or "50000"
-  ]
+    /\$?([\d.]+)M/i, // "$1.5M" or "1.5M"
+    /\$?([\d.]+)K/i, // "$50K" or "50K"
+    /\$?([\d]+(?:\.\d+)?)/, // "$50000" or "50000"
+  ];
 
   for (const pattern of patterns) {
-    const match = cleanText.match(pattern)
+    const match = cleanText.match(pattern);
     if (match) {
-      let amount = parseFloat(match[1])
+      let amount = parseFloat(match[1]);
 
       // Apply multiplier
       if (pattern.source.includes('M')) {
-        amount *= 1000000
+        amount *= 1000000;
       } else if (pattern.source.includes('K')) {
-        amount *= 1000
+        amount *= 1000;
       }
 
-      return Math.round(amount)
+      return Math.round(amount);
     }
   }
 
-  return 0
+  return 0;
 }
 
 /**
@@ -194,37 +190,41 @@ export function parseCarryoverFromDRF(
   trackCode: string,
   trackName: string
 ): Array<CarryoverInfo> {
-  const results: CarryoverInfo[] = []
+  const results: CarryoverInfo[] = [];
 
   // Look for Pick 5 carryover
-  const pick5Match = text.match(/pick\s*5[^$]*\$?([\d,.]+K?M?)/i)
+  const pick5Match = text.match(/pick\s*5[^$]*\$?([\d,.]+K?M?)/i);
   if (pick5Match) {
-    const amount = parseCarryoverAmount(pick5Match[1])
+    const amount = parseCarryoverAmount(pick5Match[1]);
     if (amount > 0) {
-      results.push(createCarryoverInfo({
-        betType: 'pick_5',
-        trackCode,
-        trackName,
-        carryoverAmount: amount,
-      }))
+      results.push(
+        createCarryoverInfo({
+          betType: 'pick_5',
+          trackCode,
+          trackName,
+          carryoverAmount: amount,
+        })
+      );
     }
   }
 
   // Look for Pick 6 carryover
-  const pick6Match = text.match(/pick\s*6[^$]*\$?([\d,.]+K?M?)/i)
+  const pick6Match = text.match(/pick\s*6[^$]*\$?([\d,.]+K?M?)/i);
   if (pick6Match) {
-    const amount = parseCarryoverAmount(pick6Match[1])
+    const amount = parseCarryoverAmount(pick6Match[1]);
     if (amount > 0) {
-      results.push(createCarryoverInfo({
-        betType: 'pick_6',
-        trackCode,
-        trackName,
-        carryoverAmount: amount,
-      }))
+      results.push(
+        createCarryoverInfo({
+          betType: 'pick_6',
+          trackCode,
+          trackName,
+          carryoverAmount: amount,
+        })
+      );
     }
   }
 
-  return results
+  return results;
 }
 
 // ============================================================================
@@ -237,16 +237,16 @@ export function parseCarryoverFromDRF(
  * Carryover increases pool size, improving EV for all ticket holders
  */
 export function calculateCarryoverAdjustedEV(params: {
-  baseCost: number
-  baseProbability: number
-  carryoverAmount: number
-  estimatedPoolToday: number
-  takeoutRate?: number
+  baseCost: number;
+  baseProbability: number;
+  carryoverAmount: number;
+  estimatedPoolToday: number;
+  takeoutRate?: number;
 }): {
-  baseEV: number
-  adjustedEV: number
-  evBoost: number
-  boostPercent: number
+  baseEV: number;
+  adjustedEV: number;
+  evBoost: number;
+  boostPercent: number;
 } {
   const {
     baseCost,
@@ -254,27 +254,27 @@ export function calculateCarryoverAdjustedEV(params: {
     carryoverAmount,
     estimatedPoolToday,
     takeoutRate = 0.25, // Typical Pick 5/6 takeout
-  } = params
+  } = params;
 
   // Without carryover: expected return is pool * (1 - takeout)
-  const normalPoolReturn = estimatedPoolToday * (1 - takeoutRate)
-  const baseExpectedReturn = baseProbability * normalPoolReturn
-  const baseEV = baseExpectedReturn - baseCost
+  const normalPoolReturn = estimatedPoolToday * (1 - takeoutRate);
+  const baseExpectedReturn = baseProbability * normalPoolReturn;
+  const baseEV = baseExpectedReturn - baseCost;
 
   // With carryover: pool is larger
-  const carryoverPoolReturn = estimatedPoolToday * (1 - takeoutRate) + carryoverAmount
-  const adjustedExpectedReturn = baseProbability * carryoverPoolReturn
-  const adjustedEV = adjustedExpectedReturn - baseCost
+  const carryoverPoolReturn = estimatedPoolToday * (1 - takeoutRate) + carryoverAmount;
+  const adjustedExpectedReturn = baseProbability * carryoverPoolReturn;
+  const adjustedEV = adjustedExpectedReturn - baseCost;
 
-  const evBoost = adjustedEV - baseEV
-  const boostPercent = baseEV !== 0 ? (evBoost / Math.abs(baseEV)) * 100 : 0
+  const evBoost = adjustedEV - baseEV;
+  const boostPercent = baseEV !== 0 ? (evBoost / Math.abs(baseEV)) * 100 : 0;
 
   return {
     baseEV,
     adjustedEV,
     evBoost,
     boostPercent,
-  }
+  };
 }
 
 // ============================================================================
@@ -289,11 +289,11 @@ export function saveCarryovers(carryovers: CarryoverInfo[]): void {
     const data = {
       carryovers,
       savedAt: new Date().toISOString(),
-    }
-    localStorage.setItem(CARRYOVER_STORAGE_KEY, JSON.stringify(data))
+    };
+    localStorage.setItem(CARRYOVER_STORAGE_KEY, JSON.stringify(data));
   } catch {
     // Storage may be unavailable or full
-    console.warn('Unable to save carryover data')
+    console.warn('Unable to save carryover data');
   }
 }
 
@@ -302,22 +302,22 @@ export function saveCarryovers(carryovers: CarryoverInfo[]): void {
  */
 export function loadCarryovers(): CarryoverInfo[] {
   try {
-    const stored = localStorage.getItem(CARRYOVER_STORAGE_KEY)
-    if (!stored) return []
+    const stored = localStorage.getItem(CARRYOVER_STORAGE_KEY);
+    if (!stored) return [];
 
-    const data = JSON.parse(stored)
-    const savedAt = new Date(data.savedAt)
-    const now = new Date()
-    const hoursSinceSave = (now.getTime() - savedAt.getTime()) / (1000 * 60 * 60)
+    const data = JSON.parse(stored);
+    const savedAt = new Date(data.savedAt);
+    const now = new Date();
+    const hoursSinceSave = (now.getTime() - savedAt.getTime()) / (1000 * 60 * 60);
 
     // Return empty if data is stale
     if (hoursSinceSave > DATA_FRESHNESS_HOURS) {
-      return []
+      return [];
     }
 
-    return data.carryovers || []
+    return data.carryovers || [];
   } catch {
-    return []
+    return [];
   }
 }
 
@@ -328,29 +328,29 @@ export function getCarryover(
   trackCode: string,
   betType: 'pick_5' | 'pick_6'
 ): CarryoverInfo | null {
-  const carryovers = loadCarryovers()
-  return carryovers.find(
-    c => c.trackCode === trackCode.toUpperCase() && c.betType === betType
-  ) || null
+  const carryovers = loadCarryovers();
+  return (
+    carryovers.find((c) => c.trackCode === trackCode.toUpperCase() && c.betType === betType) || null
+  );
 }
 
 /**
  * Update or add a carryover
  */
 export function updateCarryover(carryover: CarryoverInfo): void {
-  const carryovers = loadCarryovers()
+  const carryovers = loadCarryovers();
 
   const existingIndex = carryovers.findIndex(
-    c => c.trackCode === carryover.trackCode && c.betType === carryover.betType
-  )
+    (c) => c.trackCode === carryover.trackCode && c.betType === carryover.betType
+  );
 
   if (existingIndex >= 0) {
-    carryovers[existingIndex] = carryover
+    carryovers[existingIndex] = carryover;
   } else {
-    carryovers.push(carryover)
+    carryovers.push(carryover);
   }
 
-  saveCarryovers(carryovers)
+  saveCarryovers(carryovers);
 }
 
 /**
@@ -358,7 +358,7 @@ export function updateCarryover(carryover: CarryoverInfo): void {
  */
 export function clearCarryovers(): void {
   try {
-    localStorage.removeItem(CARRYOVER_STORAGE_KEY)
+    localStorage.removeItem(CARRYOVER_STORAGE_KEY);
   } catch {
     // Ignore storage errors
   }
@@ -377,26 +377,26 @@ export function shouldAlertCarryover(carryover: CarryoverInfo): boolean {
     carryover.valueClass === 'exceptional' ||
     carryover.valueClass === 'high' ||
     carryover.carryoverAmount >= HIGH_VALUE_THRESHOLD
-  )
+  );
 }
 
 /**
  * Get all high-value carryovers for today
  */
 export function getHighValueCarryovers(): CarryoverInfo[] {
-  return loadCarryovers().filter(shouldAlertCarryover)
+  return loadCarryovers().filter(shouldAlertCarryover);
 }
 
 /**
  * Create alert message for carryover
  */
 export function createCarryoverAlert(carryover: CarryoverInfo): {
-  title: string
-  message: string
-  priority: 'low' | 'medium' | 'high'
-  icon: string
+  title: string;
+  message: string;
+  priority: 'low' | 'medium' | 'high';
+  icon: string;
 } {
-  const config = getBetConfig(carryover.betType)
+  const config = getBetConfig(carryover.betType);
 
   if (carryover.isMandatory) {
     return {
@@ -404,7 +404,7 @@ export function createCarryoverAlert(carryover: CarryoverInfo): {
       message: `${carryover.trackName}: Entire pool ($${formatCarryoverAmount(carryover.totalExpectedPool)}) must be paid today`,
       priority: 'high',
       icon: 'priority_high',
-    }
+    };
   }
 
   if (carryover.valueClass === 'exceptional') {
@@ -413,7 +413,7 @@ export function createCarryoverAlert(carryover: CarryoverInfo): {
       message: `${carryover.trackName}: $${formatCarryoverAmount(carryover.carryoverAmount)} carryover - strong betting opportunity`,
       priority: 'high',
       icon: 'stars',
-    }
+    };
   }
 
   if (carryover.valueClass === 'high') {
@@ -422,7 +422,7 @@ export function createCarryoverAlert(carryover: CarryoverInfo): {
       message: `${carryover.trackName}: $${formatCarryoverAmount(carryover.carryoverAmount)} carryover`,
       priority: 'medium',
       icon: 'trending_up',
-    }
+    };
   }
 
   return {
@@ -430,7 +430,7 @@ export function createCarryoverAlert(carryover: CarryoverInfo): {
     message: `${carryover.trackName}: $${formatCarryoverAmount(carryover.carryoverAmount)}`,
     priority: 'low',
     icon: 'info',
-  }
+  };
 }
 
 // ============================================================================
@@ -441,20 +441,24 @@ export function createCarryoverAlert(carryover: CarryoverInfo): {
  * Get display badge color for carryover value class
  */
 export function getCarryoverBadgeColor(valueClass: 'low' | 'medium' | 'high' | 'exceptional'): {
-  bg: string
-  text: string
-  border: string
+  bg: string;
+  text: string;
+  border: string;
 } {
   switch (valueClass) {
     case 'exceptional':
-      return { bg: 'rgba(234, 179, 8, 0.2)', text: '#eab308', border: 'rgba(234, 179, 8, 0.5)' }
+      return { bg: 'rgba(234, 179, 8, 0.2)', text: '#eab308', border: 'rgba(234, 179, 8, 0.5)' };
     case 'high':
-      return { bg: 'rgba(34, 197, 94, 0.2)', text: '#22c55e', border: 'rgba(34, 197, 94, 0.5)' }
+      return { bg: 'rgba(34, 197, 94, 0.2)', text: '#22c55e', border: 'rgba(34, 197, 94, 0.5)' };
     case 'medium':
-      return { bg: 'rgba(59, 130, 246, 0.2)', text: '#3b82f6', border: 'rgba(59, 130, 246, 0.5)' }
+      return { bg: 'rgba(59, 130, 246, 0.2)', text: '#3b82f6', border: 'rgba(59, 130, 246, 0.5)' };
     case 'low':
     default:
-      return { bg: 'rgba(156, 163, 175, 0.2)', text: '#9ca3af', border: 'rgba(156, 163, 175, 0.5)' }
+      return {
+        bg: 'rgba(156, 163, 175, 0.2)',
+        text: '#9ca3af',
+        border: 'rgba(156, 163, 175, 0.5)',
+      };
   }
 }
 
@@ -462,21 +466,20 @@ export function getCarryoverBadgeColor(valueClass: 'low' | 'medium' | 'high' | '
  * Format carryover for display
  */
 export function formatCarryoverDisplay(carryover: CarryoverInfo): {
-  amountDisplay: string
-  poolDisplay: string
-  daysDisplay: string
-  valueLabel: string
-  icon: string
+  amountDisplay: string;
+  poolDisplay: string;
+  daysDisplay: string;
+  valueLabel: string;
+  icon: string;
 } {
   return {
     amountDisplay: `$${formatCarryoverAmount(carryover.carryoverAmount)}`,
     poolDisplay: `Est. Total: $${formatCarryoverAmount(carryover.totalExpectedPool)}`,
-    daysDisplay: carryover.daysWithoutWinner > 0
-      ? `${carryover.daysWithoutWinner} day${carryover.daysWithoutWinner > 1 ? 's' : ''} without winner`
-      : 'Fresh pool',
-    valueLabel: carryover.isMandatory
-      ? 'MANDATORY'
-      : carryover.valueClass.toUpperCase(),
+    daysDisplay:
+      carryover.daysWithoutWinner > 0
+        ? `${carryover.daysWithoutWinner} day${carryover.daysWithoutWinner > 1 ? 's' : ''} without winner`
+        : 'Fresh pool',
+    valueLabel: carryover.isMandatory ? 'MANDATORY' : carryover.valueClass.toUpperCase(),
     icon: carryover.isMandatory
       ? 'priority_high'
       : carryover.valueClass === 'exceptional'
@@ -484,5 +487,5 @@ export function formatCarryoverDisplay(carryover: CarryoverInfo): {
         : carryover.valueClass === 'high'
           ? 'trending_up'
           : 'monetization_on',
-  }
+  };
 }

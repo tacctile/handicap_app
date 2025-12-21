@@ -9,15 +9,24 @@
  * - Minimum sample size requirements
  */
 
-import { describe, it, expect } from 'vitest'
-import type { HorseEntry, PastPerformance, RaceHeader, SpeedFigures, RunningLine, Equipment, Medication, Breeding } from '../../../types/drf'
+import { describe, it, expect } from 'vitest';
+import type {
+  HorseEntry,
+  PastPerformance,
+  RaceHeader,
+  SpeedFigures,
+  RunningLine,
+  Equipment,
+  Medication,
+  Breeding,
+} from '../../../types/drf';
 import {
   normalizeTrainerName,
   extractTrainerPatternsFromHorse,
   buildTrainerProfile,
   calculateTrainerPatternScore,
   MIN_STARTS_FOR_CREDIBILITY,
-} from '../trainerPatterns'
+} from '../trainerPatterns';
 
 // ============================================================================
 // TEST FIXTURES
@@ -31,7 +40,7 @@ function createMockSpeedFigures(beyer: number | null = 78): SpeedFigures {
     trackVariant: null,
     dirtVariant: null,
     turfVariant: null,
-  }
+  };
 }
 
 function createMockRunningLine(overrides: Partial<RunningLine> = {}): RunningLine {
@@ -48,7 +57,7 @@ function createMockRunningLine(overrides: Partial<RunningLine> = {}): RunningLin
     finish: 3,
     finishLengths: 2,
     ...overrides,
-  }
+  };
 }
 
 function createMockEquipment(): Equipment {
@@ -66,7 +75,7 @@ function createMockEquipment(): Equipment {
     firstTimeEquipment: [],
     equipmentChanges: [],
     raw: '',
-  }
+  };
 }
 
 function createMockMedication(): Medication {
@@ -77,7 +86,7 @@ function createMockMedication(): Medication {
     bute: false,
     other: [],
     raw: '',
-  }
+  };
 }
 
 function createMockBreeding(): Breeding {
@@ -89,7 +98,7 @@ function createMockBreeding(): Breeding {
     breeder: 'Test Breeder',
     whereBred: 'KY',
     studFee: null,
-  }
+  };
 }
 
 function createMockPastPerformance(overrides: Partial<PastPerformance> = {}): PastPerformance {
@@ -129,7 +138,7 @@ function createMockPastPerformance(overrides: Partial<PastPerformance> = {}): Pa
     equipment: '',
     medication: '',
     ...overrides,
-  }
+  };
 }
 
 function createMockHorse(overrides: Partial<HorseEntry> = {}): HorseEntry {
@@ -202,7 +211,7 @@ function createMockHorse(overrides: Partial<HorseEntry> = {}): HorseEntry {
     coupledWith: [],
     rawLine: '',
     ...overrides,
-  }
+  };
 }
 
 function createMockRaceHeader(overrides: Partial<RaceHeader> = {}): RaceHeader {
@@ -243,7 +252,7 @@ function createMockRaceHeader(overrides: Partial<RaceHeader> = {}): RaceHeader {
     fieldSize: 8,
     probableFavorite: null,
     ...overrides,
-  }
+  };
 }
 
 // ============================================================================
@@ -252,26 +261,26 @@ function createMockRaceHeader(overrides: Partial<RaceHeader> = {}): RaceHeader {
 
 describe('normalizeTrainerName', () => {
   it('should convert to uppercase', () => {
-    expect(normalizeTrainerName('Smith, John')).toBe('SMITH JOHN')
-  })
+    expect(normalizeTrainerName('Smith, John')).toBe('SMITH JOHN');
+  });
 
   it('should remove periods and commas', () => {
-    expect(normalizeTrainerName('Smith, J.')).toBe('SMITH J')
-    expect(normalizeTrainerName('O\'Brien, A.')).toBe("O'BRIEN A")
-  })
+    expect(normalizeTrainerName('Smith, J.')).toBe('SMITH J');
+    expect(normalizeTrainerName("O'Brien, A.")).toBe("O'BRIEN A");
+  });
 
   it('should collapse multiple spaces', () => {
-    expect(normalizeTrainerName('Smith   John')).toBe('SMITH JOHN')
-  })
+    expect(normalizeTrainerName('Smith   John')).toBe('SMITH JOHN');
+  });
 
   it('should trim whitespace', () => {
-    expect(normalizeTrainerName('  Smith John  ')).toBe('SMITH JOHN')
-  })
+    expect(normalizeTrainerName('  Smith John  ')).toBe('SMITH JOHN');
+  });
 
   it('should handle empty strings', () => {
-    expect(normalizeTrainerName('')).toBe('')
-  })
-})
+    expect(normalizeTrainerName('')).toBe('');
+  });
+});
 
 // ============================================================================
 // TESTS: Pattern Extraction
@@ -285,19 +294,19 @@ describe('extractTrainerPatternsFromHorse', () => {
         createMockPastPerformance({ finishPosition: 2 }),
         createMockPastPerformance({ finishPosition: 3 }),
       ],
-    })
+    });
 
-    const patterns = extractTrainerPatternsFromHorse(horse)
-    const overall = patterns.get('overall')
+    const patterns = extractTrainerPatternsFromHorse(horse);
+    const overall = patterns.get('overall');
 
-    expect(overall).toBeDefined()
-    expect(overall!.wins).toBe(1)
-    expect(overall!.starts).toBe(3)
-    expect(overall!.places).toBe(1)
-    expect(overall!.shows).toBe(1)
-    expect(overall!.winRate).toBeCloseTo(33.33, 1)
-    expect(overall!.itmRate).toBe(100)
-  })
+    expect(overall).toBeDefined();
+    expect(overall!.wins).toBe(1);
+    expect(overall!.starts).toBe(3);
+    expect(overall!.places).toBe(1);
+    expect(overall!.shows).toBe(1);
+    expect(overall!.winRate).toBeCloseTo(33.33, 1);
+    expect(overall!.itmRate).toBe(100);
+  });
 
   it('should extract track-specific patterns', () => {
     const horse = createMockHorse({
@@ -306,21 +315,21 @@ describe('extractTrainerPatternsFromHorse', () => {
         createMockPastPerformance({ track: 'CD', finishPosition: 1 }),
         createMockPastPerformance({ track: 'SA', finishPosition: 4 }),
       ],
-    })
+    });
 
-    const patterns = extractTrainerPatternsFromHorse(horse)
-    const cdPattern = patterns.get('track:CD')
-    const saPattern = patterns.get('track:SA')
+    const patterns = extractTrainerPatternsFromHorse(horse);
+    const cdPattern = patterns.get('track:CD');
+    const saPattern = patterns.get('track:SA');
 
-    expect(cdPattern).toBeDefined()
-    expect(cdPattern!.wins).toBe(2)
-    expect(cdPattern!.starts).toBe(2)
-    expect(cdPattern!.winRate).toBe(100)
+    expect(cdPattern).toBeDefined();
+    expect(cdPattern!.wins).toBe(2);
+    expect(cdPattern!.starts).toBe(2);
+    expect(cdPattern!.winRate).toBe(100);
 
-    expect(saPattern).toBeDefined()
-    expect(saPattern!.wins).toBe(0)
-    expect(saPattern!.starts).toBe(1)
-  })
+    expect(saPattern).toBeDefined();
+    expect(saPattern!.wins).toBe(0);
+    expect(saPattern!.starts).toBe(1);
+  });
 
   it('should extract surface patterns', () => {
     const horse = createMockHorse({
@@ -328,19 +337,19 @@ describe('extractTrainerPatternsFromHorse', () => {
         createMockPastPerformance({ surface: 'dirt', finishPosition: 1 }),
         createMockPastPerformance({ surface: 'turf', finishPosition: 5 }),
       ],
-    })
+    });
 
-    const patterns = extractTrainerPatternsFromHorse(horse)
-    const dirtPattern = patterns.get('surface:dirt')
-    const turfPattern = patterns.get('surface:turf')
+    const patterns = extractTrainerPatternsFromHorse(horse);
+    const dirtPattern = patterns.get('surface:dirt');
+    const turfPattern = patterns.get('surface:turf');
 
-    expect(dirtPattern).toBeDefined()
-    expect(dirtPattern!.wins).toBe(1)
-    expect(dirtPattern!.winRate).toBe(100)
+    expect(dirtPattern).toBeDefined();
+    expect(dirtPattern!.wins).toBe(1);
+    expect(dirtPattern!.winRate).toBe(100);
 
-    expect(turfPattern).toBeDefined()
-    expect(turfPattern!.wins).toBe(0)
-  })
+    expect(turfPattern).toBeDefined();
+    expect(turfPattern!.wins).toBe(0);
+  });
 
   it('should extract distance category patterns', () => {
     const horse = createMockHorse({
@@ -348,20 +357,20 @@ describe('extractTrainerPatternsFromHorse', () => {
         createMockPastPerformance({ distanceFurlongs: 6, finishPosition: 1 }),
         createMockPastPerformance({ distanceFurlongs: 10, finishPosition: 3 }),
       ],
-    })
+    });
 
-    const patterns = extractTrainerPatternsFromHorse(horse)
-    const sprintPattern = patterns.get('dist:sprint')
-    const routePattern = patterns.get('dist:route')
+    const patterns = extractTrainerPatternsFromHorse(horse);
+    const sprintPattern = patterns.get('dist:sprint');
+    const routePattern = patterns.get('dist:route');
 
-    expect(sprintPattern).toBeDefined()
-    expect(sprintPattern!.wins).toBe(1)
-    expect(sprintPattern!.description).toContain('sprint')
+    expect(sprintPattern).toBeDefined();
+    expect(sprintPattern!.wins).toBe(1);
+    expect(sprintPattern!.description).toContain('sprint');
 
-    expect(routePattern).toBeDefined()
-    expect(routePattern!.wins).toBe(0)
-    expect(routePattern!.description).toContain('route')
-  })
+    expect(routePattern).toBeDefined();
+    expect(routePattern!.wins).toBe(0);
+    expect(routePattern!.description).toContain('route');
+  });
 
   it('should extract combined patterns', () => {
     const horse = createMockHorse({
@@ -373,27 +382,27 @@ describe('extractTrainerPatternsFromHorse', () => {
           finishPosition: 1,
         }),
       ],
-    })
+    });
 
-    const patterns = extractTrainerPatternsFromHorse(horse)
-    const comboPattern = patterns.get('combo:CD:turf:route')
+    const patterns = extractTrainerPatternsFromHorse(horse);
+    const comboPattern = patterns.get('combo:CD:turf:route');
 
-    expect(comboPattern).toBeDefined()
-    expect(comboPattern!.wins).toBe(1)
-    expect(comboPattern!.description).toContain('turf')
+    expect(comboPattern).toBeDefined();
+    expect(comboPattern!.wins).toBe(1);
+    expect(comboPattern!.description).toContain('turf');
     // Description uses full track name when available
-    expect(comboPattern!.description).toContain('Churchill Downs')
-  })
+    expect(comboPattern!.description).toContain('Churchill Downs');
+  });
 
   it('should handle empty past performances', () => {
-    const horse = createMockHorse({ pastPerformances: [] })
-    const patterns = extractTrainerPatternsFromHorse(horse)
+    const horse = createMockHorse({ pastPerformances: [] });
+    const patterns = extractTrainerPatternsFromHorse(horse);
 
-    expect(patterns.size).toBe(1) // Just overall
-    const overall = patterns.get('overall')
-    expect(overall!.starts).toBe(0)
-  })
-})
+    expect(patterns.size).toBe(1); // Just overall
+    const overall = patterns.get('overall');
+    expect(overall!.starts).toBe(0);
+  });
+});
 
 // ============================================================================
 // TESTS: Trainer Profile Building
@@ -411,46 +420,44 @@ describe('buildTrainerProfile', () => {
       }),
       createMockHorse({
         trainerName: 'Baffert, B.',
-        pastPerformances: [
-          createMockPastPerformance({ finishPosition: 2 }),
-        ],
+        pastPerformances: [createMockPastPerformance({ finishPosition: 2 })],
       }),
       createMockHorse({
         trainerName: 'Pletcher, T.', // Different trainer
-        pastPerformances: [
-          createMockPastPerformance({ finishPosition: 1 }),
-        ],
+        pastPerformances: [createMockPastPerformance({ finishPosition: 1 })],
       }),
-    ]
+    ];
 
-    const profile = buildTrainerProfile('Baffert, B.', horses)
+    const profile = buildTrainerProfile('Baffert, B.', horses);
 
-    expect(profile.trainerName).toBe('BAFFERT B')
-    expect(profile.overall.wins).toBe(2)
-    expect(profile.overall.starts).toBe(3)
-    expect(profile.overall.winRate).toBeCloseTo(66.67, 1)
-  })
+    expect(profile.trainerName).toBe('BAFFERT B');
+    expect(profile.overall.wins).toBe(2);
+    expect(profile.overall.starts).toBe(3);
+    expect(profile.overall.winRate).toBeCloseTo(66.67, 1);
+  });
 
   it('should identify best pattern with credible sample', () => {
-    const pps: PastPerformance[] = []
+    const pps: PastPerformance[] = [];
     // Create 20 PPs at CD with 5 wins (25% win rate)
     for (let i = 0; i < 20; i++) {
-      pps.push(createMockPastPerformance({
-        track: 'CD',
-        finishPosition: i < 5 ? 1 : 4,
-      }))
+      pps.push(
+        createMockPastPerformance({
+          track: 'CD',
+          finishPosition: i < 5 ? 1 : 4,
+        })
+      );
     }
 
     const horse = createMockHorse({
       trainerName: 'Test Trainer',
       pastPerformances: pps,
-    })
+    });
 
-    const profile = buildTrainerProfile('Test Trainer', [horse])
+    const profile = buildTrainerProfile('Test Trainer', [horse]);
 
-    expect(profile.bestPattern).toBeDefined()
-    expect(profile.bestPattern!.starts).toBeGreaterThanOrEqual(MIN_STARTS_FOR_CREDIBILITY)
-  })
+    expect(profile.bestPattern).toBeDefined();
+    expect(profile.bestPattern!.starts).toBeGreaterThanOrEqual(MIN_STARTS_FOR_CREDIBILITY);
+  });
 
   it('should return null bestPattern when no credible patterns', () => {
     const horse = createMockHorse({
@@ -459,14 +466,14 @@ describe('buildTrainerProfile', () => {
         createMockPastPerformance({ finishPosition: 1 }),
         createMockPastPerformance({ finishPosition: 1 }),
       ],
-    })
+    });
 
-    const profile = buildTrainerProfile('Test Trainer', [horse])
+    const profile = buildTrainerProfile('Test Trainer', [horse]);
 
-    expect(profile.bestPattern).toBeNull()
-    expect(profile.overall.starts).toBe(2)
-  })
-})
+    expect(profile.bestPattern).toBeNull();
+    expect(profile.overall.starts).toBe(2);
+  });
+});
 
 // ============================================================================
 // TESTS: Scoring
@@ -474,116 +481,124 @@ describe('buildTrainerProfile', () => {
 
 describe('calculateTrainerPatternScore', () => {
   it('should score elite trainer (25%+ win rate, 15+ starts)', () => {
-    const pps: PastPerformance[] = []
+    const pps: PastPerformance[] = [];
     // 5 wins in 18 starts = 27.8% win rate
     for (let i = 0; i < 18; i++) {
-      pps.push(createMockPastPerformance({
-        track: 'CD',
-        finishPosition: i < 5 ? 1 : 4,
-      }))
+      pps.push(
+        createMockPastPerformance({
+          track: 'CD',
+          finishPosition: i < 5 ? 1 : 4,
+        })
+      );
     }
 
     const horse = createMockHorse({
       trainerName: 'Elite Trainer',
       pastPerformances: pps,
-    })
-    const header = createMockRaceHeader({ trackCode: 'CD' })
+    });
+    const header = createMockRaceHeader({ trackCode: 'CD' });
 
-    const result = calculateTrainerPatternScore(horse, header, [horse])
+    const result = calculateTrainerPatternScore(horse, header, [horse]);
 
-    expect(result.score).toBe(35) // Elite score
-    expect(result.profile.tier).toBe('elite')
-  })
+    expect(result.score).toBe(35); // Elite score
+    expect(result.profile.tier).toBe('elite');
+  });
 
   it('should score strong trainer (20-24% win rate)', () => {
-    const pps: PastPerformance[] = []
+    const pps: PastPerformance[] = [];
     // 4 wins in 18 starts = 22.2% win rate
     for (let i = 0; i < 18; i++) {
-      pps.push(createMockPastPerformance({
-        track: 'CD',
-        finishPosition: i < 4 ? 1 : 4,
-      }))
+      pps.push(
+        createMockPastPerformance({
+          track: 'CD',
+          finishPosition: i < 4 ? 1 : 4,
+        })
+      );
     }
 
     const horse = createMockHorse({
       trainerName: 'Strong Trainer',
       pastPerformances: pps,
-    })
-    const header = createMockRaceHeader({ trackCode: 'CD' })
+    });
+    const header = createMockRaceHeader({ trackCode: 'CD' });
 
-    const result = calculateTrainerPatternScore(horse, header, [horse])
+    const result = calculateTrainerPatternScore(horse, header, [horse]);
 
-    expect(result.score).toBe(28) // Strong score
-    expect(result.profile.tier).toBe('strong')
-  })
+    expect(result.score).toBe(28); // Strong score
+    expect(result.profile.tier).toBe('strong');
+  });
 
   it('should return default score with insufficient data', () => {
     const horse = createMockHorse({
       trainerName: 'Unknown Trainer',
-      pastPerformances: [
-        createMockPastPerformance({ finishPosition: 1 }),
-      ],
-    })
-    const header = createMockRaceHeader()
+      pastPerformances: [createMockPastPerformance({ finishPosition: 1 })],
+    });
+    const header = createMockRaceHeader();
 
-    const result = calculateTrainerPatternScore(horse, header, [horse])
+    const result = calculateTrainerPatternScore(horse, header, [horse]);
 
-    expect(result.score).toBe(10) // Default score
-    expect(result.relevantPattern).toBeNull()
-  })
+    expect(result.score).toBe(10); // Default score
+    expect(result.relevantPattern).toBeNull();
+  });
 
   it('should prefer track-specific pattern when available', () => {
-    const pps: PastPerformance[] = []
+    const pps: PastPerformance[] = [];
     // 8 wins at CD in 20 starts = 40% win rate at CD
     for (let i = 0; i < 20; i++) {
-      pps.push(createMockPastPerformance({
-        track: 'CD',
-        finishPosition: i < 8 ? 1 : 4,
-      }))
+      pps.push(
+        createMockPastPerformance({
+          track: 'CD',
+          finishPosition: i < 8 ? 1 : 4,
+        })
+      );
     }
     // 0 wins at other tracks
     for (let i = 0; i < 10; i++) {
-      pps.push(createMockPastPerformance({
-        track: 'SA',
-        finishPosition: 5,
-      }))
+      pps.push(
+        createMockPastPerformance({
+          track: 'SA',
+          finishPosition: 5,
+        })
+      );
     }
 
     const horse = createMockHorse({
       trainerName: 'CD Specialist',
       pastPerformances: pps,
-    })
-    const header = createMockRaceHeader({ trackCode: 'CD' })
+    });
+    const header = createMockRaceHeader({ trackCode: 'CD' });
 
-    const result = calculateTrainerPatternScore(horse, header, [horse])
+    const result = calculateTrainerPatternScore(horse, header, [horse]);
 
-    expect(result.relevantPattern).toBeDefined()
-    expect(result.relevantPattern!.context.trackCode).toBe('CD')
-    expect(result.relevantPattern!.winRate).toBeCloseTo(40, 0)
-  })
+    expect(result.relevantPattern).toBeDefined();
+    expect(result.relevantPattern!.context.trackCode).toBe('CD');
+    expect(result.relevantPattern!.winRate).toBeCloseTo(40, 0);
+  });
 
   it('should include evidence strings', () => {
-    const pps: PastPerformance[] = []
+    const pps: PastPerformance[] = [];
     for (let i = 0; i < 20; i++) {
-      pps.push(createMockPastPerformance({
-        track: 'CD',
-        finishPosition: i < 4 ? 1 : 4,
-      }))
+      pps.push(
+        createMockPastPerformance({
+          track: 'CD',
+          finishPosition: i < 4 ? 1 : 4,
+        })
+      );
     }
 
     const horse = createMockHorse({
       trainerName: 'Evidence Trainer',
       pastPerformances: pps,
-    })
-    const header = createMockRaceHeader({ trackCode: 'CD' })
+    });
+    const header = createMockRaceHeader({ trackCode: 'CD' });
 
-    const result = calculateTrainerPatternScore(horse, header, [horse])
+    const result = calculateTrainerPatternScore(horse, header, [horse]);
 
-    expect(result.evidence.length).toBeGreaterThan(0)
-    expect(result.evidence[0]).toContain('20%')
-    expect(result.evidence[0]).toContain('20 starts')
-  })
-})
+    expect(result.evidence.length).toBeGreaterThan(0);
+    expect(result.evidence[0]).toContain('20%');
+    expect(result.evidence[0]).toContain('20 starts');
+  });
+});
 
 // ============================================================================
 // TESTS: Minimum Sample Size
@@ -591,29 +606,31 @@ describe('calculateTrainerPatternScore', () => {
 
 describe('Minimum sample size requirements', () => {
   it('should respect MIN_STARTS_FOR_CREDIBILITY constant', () => {
-    expect(MIN_STARTS_FOR_CREDIBILITY).toBe(15)
-  })
+    expect(MIN_STARTS_FOR_CREDIBILITY).toBe(15);
+  });
 
   it('should not give elite score with fewer than 15 starts', () => {
-    const pps: PastPerformance[] = []
+    const pps: PastPerformance[] = [];
     // 4 wins in 10 starts = 40% win rate (elite level)
     for (let i = 0; i < 10; i++) {
-      pps.push(createMockPastPerformance({
-        track: 'CD',
-        finishPosition: i < 4 ? 1 : 4,
-      }))
+      pps.push(
+        createMockPastPerformance({
+          track: 'CD',
+          finishPosition: i < 4 ? 1 : 4,
+        })
+      );
     }
 
     const horse = createMockHorse({
       trainerName: 'Small Sample Trainer',
       pastPerformances: pps,
-    })
-    const header = createMockRaceHeader({ trackCode: 'CD' })
+    });
+    const header = createMockRaceHeader({ trackCode: 'CD' });
 
-    const result = calculateTrainerPatternScore(horse, header, [horse])
+    const result = calculateTrainerPatternScore(horse, header, [horse]);
 
     // Should not get elite 35 pts despite high win rate
-    expect(result.score).toBe(10) // Default score
-    expect(result.profile.tier).toBe('average')
-  })
-})
+    expect(result.score).toBe(10); // Default score
+    expect(result.profile.tier).toBe('average');
+  });
+});

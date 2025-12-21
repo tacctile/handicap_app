@@ -1,41 +1,41 @@
-import { useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Skeleton, SlideUp } from '../motion'
-import { RaceCardCountdown } from '../PostTimeCountdown'
-import type { CountdownState } from '../../hooks/usePostTime'
-import type { PaceScenarioAnalysis } from '../../lib/scoring'
+import { useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Skeleton, SlideUp } from '../motion';
+import { RaceCardCountdown } from '../PostTimeCountdown';
+import type { CountdownState } from '../../hooks/usePostTime';
+import type { PaceScenarioAnalysis } from '../../lib/scoring';
 
 /**
  * Equipment changes summary for display
  */
 export interface EquipmentChangesSummary {
-  total: number
-  significant: number
-  positive: number
-  negative: number
+  total: number;
+  significant: number;
+  positive: number;
+  negative: number;
 }
 
 interface RaceOverviewCardProps {
   race?: {
-    trackName?: string
-    raceNumber?: number
-    distance?: string
-    surface?: string
-    conditions?: string
-    purse?: string
-    postTime?: string
-  }
+    trackName?: string;
+    raceNumber?: number;
+    distance?: string;
+    surface?: string;
+    conditions?: string;
+    purse?: string;
+    postTime?: string;
+  };
   weather?: {
-    temp?: number
-    condition?: 'sunny' | 'cloudy' | 'rainy' | 'overcast'
-  }
-  isLoading?: boolean
-  countdown?: CountdownState
-  postTimeFormatted?: string
+    temp?: number;
+    condition?: 'sunny' | 'cloudy' | 'rainy' | 'overcast';
+  };
+  isLoading?: boolean;
+  countdown?: CountdownState;
+  postTimeFormatted?: string;
   /** Pace scenario analysis for the race */
-  paceScenario?: PaceScenarioAnalysis
+  paceScenario?: PaceScenarioAnalysis;
   /** Equipment changes summary */
-  equipmentChanges?: EquipmentChangesSummary
+  equipmentChanges?: EquipmentChangesSummary;
 }
 
 const weatherIcons: Record<string, string> = {
@@ -43,18 +43,23 @@ const weatherIcons: Record<string, string> = {
   cloudy: 'cloud',
   rainy: 'water_drop',
   overcast: 'filter_drama',
-}
+};
 
 /**
  * Get pace scenario icon based on type
  */
 function getPaceIcon(scenario: PaceScenarioAnalysis['scenario']): string {
   switch (scenario) {
-    case 'soft': return 'trending_flat'
-    case 'moderate': return 'trending_up'
-    case 'contested': return 'local_fire_department'
-    case 'speed_duel': return 'whatshot'
-    default: return 'help_outline'
+    case 'soft':
+      return 'trending_flat';
+    case 'moderate':
+      return 'trending_up';
+    case 'contested':
+      return 'local_fire_department';
+    case 'speed_duel':
+      return 'whatshot';
+    default:
+      return 'help_outline';
   }
 }
 
@@ -62,22 +67,22 @@ function getPaceIcon(scenario: PaceScenarioAnalysis['scenario']): string {
  * Format style breakdown for compact display
  */
 function formatCompactBreakdown(breakdown: PaceScenarioAnalysis['styleBreakdown']): string {
-  const parts: string[] = []
+  const parts: string[] = [];
 
   if (breakdown.earlySpeed.length > 0) {
-    parts.push(`E: ${breakdown.earlySpeed.map(n => `#${n}`).join(', ')}`)
+    parts.push(`E: ${breakdown.earlySpeed.map((n) => `#${n}`).join(', ')}`);
   }
   if (breakdown.pressers.length > 0) {
-    parts.push(`P: ${breakdown.pressers.map(n => `#${n}`).join(', ')}`)
+    parts.push(`P: ${breakdown.pressers.map((n) => `#${n}`).join(', ')}`);
   }
   if (breakdown.closers.length > 0) {
-    parts.push(`C: ${breakdown.closers.map(n => `#${n}`).join(', ')}`)
+    parts.push(`C: ${breakdown.closers.map((n) => `#${n}`).join(', ')}`);
   }
   if (breakdown.sustained.length > 0) {
-    parts.push(`S: ${breakdown.sustained.map(n => `#${n}`).join(', ')}`)
+    parts.push(`S: ${breakdown.sustained.map((n) => `#${n}`).join(', ')}`);
   }
 
-  return parts.join(' | ') || 'No data'
+  return parts.join(' | ') || 'No data';
 }
 
 export function RaceOverviewCard({
@@ -89,14 +94,14 @@ export function RaceOverviewCard({
   paceScenario,
   equipmentChanges,
 }: RaceOverviewCardProps) {
-  const hasData = !!race?.trackName
-  const hasCountdown = countdown && (countdown.totalMs >= 0 || countdown.isExpired)
-  const hasPaceData = !!paceScenario && paceScenario.fieldSize > 0
-  const hasEquipmentChanges = equipmentChanges && equipmentChanges.total > 0
+  const hasData = !!race?.trackName;
+  const hasCountdown = countdown && (countdown.totalMs >= 0 || countdown.isExpired);
+  const hasPaceData = !!paceScenario && paceScenario.fieldSize > 0;
+  const hasEquipmentChanges = equipmentChanges && equipmentChanges.total > 0;
 
   const getWeatherIcon = useCallback(() => {
-    return weatherIcons[weather?.condition || 'sunny']
-  }, [weather?.condition])
+    return weatherIcons[weather?.condition || 'sunny'];
+  }, [weather?.condition]);
 
   if (isLoading) {
     return (
@@ -111,7 +116,7 @@ export function RaceOverviewCard({
           <Skeleton width="60%" height="16px" />
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -125,14 +130,10 @@ export function RaceOverviewCard({
         <div className="race-overview-header">
           <div className="race-overview-title">
             <span className="material-icons race-overview-icon">emoji_events</span>
-            <h3 className="race-overview-track">
-              {hasData ? race!.trackName : 'Track Name'}
-            </h3>
+            <h3 className="race-overview-track">{hasData ? race!.trackName : 'Track Name'}</h3>
           </div>
           {hasData && race?.raceNumber && (
-            <div className="race-overview-number">
-              Race {race.raceNumber}
-            </div>
+            <div className="race-overview-number">Race {race.raceNumber}</div>
           )}
         </div>
 
@@ -140,20 +141,22 @@ export function RaceOverviewCard({
         {hasData && (
           <div className="race-overview-countdown-section">
             <RaceCardCountdown
-              countdown={countdown || {
-                totalMs: -1,
-                hours: 0,
-                minutes: 0,
-                seconds: 0,
-                formatted: '--:--:--',
-                shortFormatted: '--:--',
-                isExpired: false,
-                isCritical: false,
-                isWarning: false,
-                isImminent: false,
-                progress: 0,
-                colorClass: 'normal',
-              }}
+              countdown={
+                countdown || {
+                  totalMs: -1,
+                  hours: 0,
+                  minutes: 0,
+                  seconds: 0,
+                  formatted: '--:--:--',
+                  shortFormatted: '--:--',
+                  isExpired: false,
+                  isCritical: false,
+                  isWarning: false,
+                  isImminent: false,
+                  progress: 0,
+                  colorClass: 'normal',
+                }
+              }
               postTimeFormatted={postTimeFormatted || '--:--'}
               isValid={!!hasCountdown}
             />
@@ -282,7 +285,8 @@ export function RaceOverviewCard({
                       fontWeight: 600,
                     }}
                   >
-                    {equipmentChanges.total} horse{equipmentChanges.total > 1 ? 's' : ''} with changes
+                    {equipmentChanges.total} horse{equipmentChanges.total > 1 ? 's' : ''} with
+                    changes
                   </span>
                 </div>
                 {equipmentChanges.significant > 0 && (
@@ -294,7 +298,9 @@ export function RaceOverviewCard({
                       borderColor: '#36d1da40',
                     }}
                   >
-                    <span className="material-icons" style={{ fontSize: '14px' }}>star</span>
+                    <span className="material-icons" style={{ fontSize: '14px' }}>
+                      star
+                    </span>
                     <span>{equipmentChanges.significant} significant</span>
                   </div>
                 )}
@@ -304,13 +310,17 @@ export function RaceOverviewCard({
               <div className="race-overview-equipment-breakdown">
                 {equipmentChanges.positive > 0 && (
                   <span className="equipment-breakdown-item positive">
-                    <span className="material-icons" style={{ fontSize: '14px' }}>arrow_upward</span>
+                    <span className="material-icons" style={{ fontSize: '14px' }}>
+                      arrow_upward
+                    </span>
                     {equipmentChanges.positive} positive
                   </span>
                 )}
                 {equipmentChanges.negative > 0 && (
                   <span className="equipment-breakdown-item negative">
-                    <span className="material-icons" style={{ fontSize: '14px' }}>arrow_downward</span>
+                    <span className="material-icons" style={{ fontSize: '14px' }}>
+                      arrow_downward
+                    </span>
                     {equipmentChanges.negative} negative
                   </span>
                 )}
@@ -339,9 +349,7 @@ export function RaceOverviewCard({
             >
               {getWeatherIcon()}
             </motion.span>
-            <span className="weather-temp">
-              {weather?.temp ? `${weather.temp}°F` : '—°F'}
-            </span>
+            <span className="weather-temp">{weather?.temp ? `${weather.temp}°F` : '—°F'}</span>
           </div>
 
           {/* Quick countdown badge for reference */}
@@ -379,7 +387,7 @@ export function RaceOverviewCard({
         )}
       </motion.div>
     </SlideUp>
-  )
+  );
 }
 
-export default RaceOverviewCard
+export default RaceOverviewCard;

@@ -75,6 +75,7 @@ src/docs/
 **Purpose:** Defines the universal 6-category scoring system (0-240 base points)
 
 **Key Contents:**
+
 - Category 1: Elite Connections (50 pts max)
 - Category 2: Post Position & Track Bias (45 pts max)
 - Category 3: Speed Figures & Class (50 pts max)
@@ -93,6 +94,7 @@ src/docs/
 **Purpose:** Complete mapping of all 1,435 DRF file fields
 
 **Key Contents:**
+
 - 26 sections covering all data points
 - Field numbers, names, and purposes
 - Category mapping (which fields feed which scoring category)
@@ -108,6 +110,7 @@ src/docs/
 **Purpose:** Defines the ±50 point race-day adjustment system
 
 **Key Contents:**
+
 - Section A: Pace Dynamics & Bias (±20 pts)
 - Section B: Form Cycle & Conditioning (±15 pts)
 - Section C: Trip Analysis & Trouble (±12 pts)
@@ -128,6 +131,7 @@ src/docs/
 **Purpose:** Handles special situations outside standard scoring
 
 **Key Contents:**
+
 - Protocol 1: Diamond in the Rough (120-139 point horses with extreme value)
 - Protocol 2: Lightly Raced Enhancement (<8 starts, breeding analysis)
 - Protocol 3: Nuclear Longshot Detection (25/1+ with specific angle)
@@ -144,6 +148,7 @@ src/docs/
 **Purpose:** Three-tier betting structure and output formatting
 
 **Key Contents:**
+
 - Tier 1: Cover Chalk (180+ points, foundation bets)
 - Tier 2: Logical Alternatives (160-179 points, value plays)
 - Tier 3: Value Bombs (140-159 points, longshot specials)
@@ -161,6 +166,7 @@ src/docs/
 **Purpose:** Track database schema and scoring integration
 
 **Key Contents:**
+
 - TrackData interface definition
 - Post position bias matrices
 - Speed bias data structure
@@ -176,14 +182,14 @@ src/docs/
 
 ## SCORING THRESHOLDS
 
-| Final Score | Category | Betting Tier | Action |
-|-------------|----------|--------------|--------|
-| 200+ | Elite | Tier 1 | Maximum confidence plays |
-| 180-199 | Strong | Tier 1 | Foundation betting |
-| 160-179 | Competitive | Tier 2 | Value seeking |
-| 140-159 | Marginal | Tier 3 | Selective longshots |
-| 120-139 | Sub-threshold | Diamond Check | Special review only |
-| <120 | Non-competitive | Pass | No betting consideration |
+| Final Score | Category        | Betting Tier  | Action                   |
+| ----------- | --------------- | ------------- | ------------------------ |
+| 200+        | Elite           | Tier 1        | Maximum confidence plays |
+| 180-199     | Strong          | Tier 1        | Foundation betting       |
+| 160-179     | Competitive     | Tier 2        | Value seeking            |
+| 140-159     | Marginal        | Tier 3        | Selective longshots      |
+| 120-139     | Sub-threshold   | Diamond Check | Special review only      |
+| <120        | Non-competitive | Pass          | No betting consideration |
 
 ---
 
@@ -270,6 +276,7 @@ KRI 0: -3 points
 ### Document Updates
 
 When updating methodology:
+
 1. Update the relevant document
 2. Increment version number at document bottom
 3. Update this index if structure changes
@@ -278,6 +285,7 @@ When updating methodology:
 ### Track Database Updates
 
 Recommended update frequency:
+
 - Elite connections: Quarterly
 - Post position bias: Annually (or after track changes)
 - Speed bias: Seasonally
@@ -285,9 +293,9 @@ Recommended update frequency:
 
 ### Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | 2024-12 | Initial methodology documentation |
+| Version | Date    | Changes                           |
+| ------- | ------- | --------------------------------- |
+| 1.0     | 2024-12 | Initial methodology documentation |
 
 ---
 
@@ -298,6 +306,7 @@ Recommended update frequency:
 **Architecture:** React + TypeScript + Vite
 
 **Related Files:**
+
 - `src/lib/drfParser.ts` - DRF parsing implementation
 - `src/lib/scoringEngine.ts` - Scoring calculations
 - `src/data/tracks/` - Track database files
@@ -305,6 +314,6 @@ Recommended update frequency:
 
 ---
 
-*Document Version: 1.0*
-*Status: Complete Methodology Index*
-*Purpose: Entry point and navigation for all methodology documentation*
+_Document Version: 1.0_
+_Status: Complete Methodology Index_
+_Purpose: Entry point and navigation for all methodology documentation_

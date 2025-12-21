@@ -35,8 +35,8 @@ import type {
   MetricUnit,
   TimingContext,
   StopTimerFn,
-} from './types'
-import { DEFAULT_PERFORMANCE_CONFIG } from './types'
+} from './types';
+import { DEFAULT_PERFORMANCE_CONFIG } from './types';
 
 // ============================================================================
 // CONSTANTS
@@ -48,7 +48,7 @@ const PERF_LOG_COLORS = {
   timing: '#19abb5', // Primary teal
   timer: '#f59e0b', // Warning amber
   info: '#888888', // Secondary gray
-}
+};
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -58,41 +58,41 @@ const PERF_LOG_COLORS = {
  * Format a metric for console output
  */
 function formatMetricForConsole(metric: PerformanceMetric): string {
-  const contextParts: string[] = []
+  const contextParts: string[] = [];
 
   if (metric.context?.component) {
-    contextParts.push(`[${metric.context.component}]`)
+    contextParts.push(`[${metric.context.component}]`);
   }
   if (metric.context?.action) {
-    contextParts.push(metric.context.action)
+    contextParts.push(metric.context.action);
   }
   if (metric.context?.dataSize !== undefined) {
-    contextParts.push(`size: ${metric.context.dataSize}`)
+    contextParts.push(`size: ${metric.context.dataSize}`);
   }
 
-  const contextStr = contextParts.length > 0 ? ` | ${contextParts.join(' ')}` : ''
-  return `${metric.name}: ${metric.value}${metric.unit}${contextStr}`
+  const contextStr = contextParts.length > 0 ? ` | ${contextParts.join(' ')}` : '';
+  return `${metric.name}: ${metric.value}${metric.unit}${contextStr}`;
 }
 
 /**
  * Get a formatted timestamp for logs
  */
 function getTimestamp(): string {
-  const now = new Date()
+  const now = new Date();
   return now.toLocaleTimeString('en-US', {
     hour12: false,
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
     fractionalSecondDigits: 3,
-  })
+  });
 }
 
 /**
  * Check if we should sample this metric (based on sample rate)
  */
 function shouldSample(sampleRate: number): boolean {
-  return Math.random() < sampleRate
+  return Math.random() < sampleRate;
 }
 
 // ============================================================================
@@ -106,13 +106,13 @@ function shouldSample(sampleRate: number): boolean {
  * In production, swap to DataDog or New Relic provider.
  */
 class MockPerformanceService implements PerformanceProvider {
-  readonly name: PerformanceProviderType = 'mock'
+  readonly name: PerformanceProviderType = 'mock';
 
-  private config: PerformanceConfig
-  private metrics: PerformanceMetric[] = []
+  private config: PerformanceConfig;
+  private metrics: PerformanceMetric[] = [];
 
   constructor(config: Partial<PerformanceConfig> = {}) {
-    this.config = { ...DEFAULT_PERFORMANCE_CONFIG, ...config }
+    this.config = { ...DEFAULT_PERFORMANCE_CONFIG, ...config };
   }
 
   /**
@@ -124,8 +124,8 @@ class MockPerformanceService implements PerformanceProvider {
     unit: MetricUnit,
     context?: TimingContext
   ): void {
-    if (!this.config.enabled) return
-    if (!shouldSample(this.config.sampleRate)) return
+    if (!this.config.enabled) return;
+    if (!shouldSample(this.config.sampleRate)) return;
 
     const metric: PerformanceMetric = {
       name,
@@ -133,37 +133,33 @@ class MockPerformanceService implements PerformanceProvider {
       unit,
       timestamp: new Date().toISOString(),
       context,
-    }
+    };
 
     // Store metric
-    this.metrics.push(metric)
+    this.metrics.push(metric);
 
     // Trim to max size
     if (this.metrics.length > this.config.maxMetrics) {
-      this.metrics = this.metrics.slice(-this.config.maxMetrics)
+      this.metrics = this.metrics.slice(-this.config.maxMetrics);
     }
 
     // Console log in development
     if (this.config.consoleLogging) {
-      const formatted = formatMetricForConsole(metric)
+      const formatted = formatMetricForConsole(metric);
       console.log(
         `%c[PERF]%c ${getTimestamp()} %c${formatted}`,
         `color: ${PERF_LOG_COLORS.metric}; font-weight: bold`,
         `color: ${PERF_LOG_COLORS.info}`,
         `color: inherit`
-      )
+      );
     }
   }
 
   /**
    * Track a timing metric (shorthand for trackMetric with 'ms' unit)
    */
-  trackTiming(
-    name: MetricName | string,
-    durationMs: number,
-    context?: TimingContext
-  ): void {
-    this.trackMetric(name, durationMs, 'ms', context)
+  trackTiming(name: MetricName | string, durationMs: number, context?: TimingContext): void {
+    this.trackMetric(name, durationMs, 'ms', context);
   }
 
   /**
@@ -175,32 +171,32 @@ class MockPerformanceService implements PerformanceProvider {
    * stop() // Logs: score_calculation_time: 123ms
    */
   startTimer(name: MetricName | string, context?: TimingContext): StopTimerFn {
-    const startTime = performance.now()
+    const startTime = performance.now();
 
     return () => {
-      const duration = performance.now() - startTime
-      this.trackTiming(name, Math.round(duration * 100) / 100, context)
-    }
+      const duration = performance.now() - startTime;
+      this.trackTiming(name, Math.round(duration * 100) / 100, context);
+    };
   }
 
   /**
    * Get all recorded metrics
    */
   getMetrics(): PerformanceMetric[] {
-    return [...this.metrics]
+    return [...this.metrics];
   }
 
   /**
    * Clear all recorded metrics
    */
   clearMetrics(): void {
-    this.metrics = []
+    this.metrics = [];
     if (this.config.consoleLogging) {
       console.log(
         `%c[PERF]%c Metrics cleared`,
         `color: ${PERF_LOG_COLORS.info}; font-weight: bold`,
         `color: ${PERF_LOG_COLORS.info}`
-      )
+      );
     }
   }
 
@@ -208,14 +204,14 @@ class MockPerformanceService implements PerformanceProvider {
    * Get current configuration
    */
   getConfig(): PerformanceConfig {
-    return { ...this.config }
+    return { ...this.config };
   }
 
   /**
    * Update configuration
    */
   configure(config: Partial<PerformanceConfig>): void {
-    this.config = { ...this.config, ...config }
+    this.config = { ...this.config, ...config };
   }
 }
 
@@ -233,20 +229,20 @@ class MockPerformanceService implements PerformanceProvider {
  * - Use datadogRum.addAction() for user actions
  */
 class DataDogPerformanceService implements PerformanceProvider {
-  readonly name: PerformanceProviderType = 'datadog'
+  readonly name: PerformanceProviderType = 'datadog';
 
-  private config: PerformanceConfig
-  private metrics: PerformanceMetric[] = []
+  private config: PerformanceConfig;
+  private metrics: PerformanceMetric[] = [];
 
   constructor(config: Partial<PerformanceConfig> = {}) {
-    this.config = { ...DEFAULT_PERFORMANCE_CONFIG, ...config }
+    this.config = { ...DEFAULT_PERFORMANCE_CONFIG, ...config };
 
     // Log that DataDog is not yet configured
     if (this.config.consoleLogging) {
       console.warn(
         '[Performance] DataDog provider is scaffolded but not wired. ' +
           'Install @datadog/browser-rum and configure to enable.'
-      )
+      );
     }
   }
 
@@ -256,7 +252,7 @@ class DataDogPerformanceService implements PerformanceProvider {
     unit: MetricUnit,
     context?: TimingContext
   ): void {
-    if (!this.config.enabled) return
+    if (!this.config.enabled) return;
 
     const metric: PerformanceMetric = {
       name,
@@ -264,11 +260,11 @@ class DataDogPerformanceService implements PerformanceProvider {
       unit,
       timestamp: new Date().toISOString(),
       context,
-    }
+    };
 
-    this.metrics.push(metric)
+    this.metrics.push(metric);
     if (this.metrics.length > this.config.maxMetrics) {
-      this.metrics = this.metrics.slice(-this.config.maxMetrics)
+      this.metrics = this.metrics.slice(-this.config.maxMetrics);
     }
 
     // TODO: When DataDog is wired, use:
@@ -276,24 +272,20 @@ class DataDogPerformanceService implements PerformanceProvider {
     // or datadogRum.addAction(name, { value, ...context })
 
     if (this.config.consoleLogging) {
-      console.log(`[DataDog] Would track: ${name} = ${value}${unit}`)
+      console.log(`[DataDog] Would track: ${name} = ${value}${unit}`);
     }
   }
 
-  trackTiming(
-    name: MetricName | string,
-    durationMs: number,
-    context?: TimingContext
-  ): void {
-    this.trackMetric(name, durationMs, 'ms', context)
+  trackTiming(name: MetricName | string, durationMs: number, context?: TimingContext): void {
+    this.trackMetric(name, durationMs, 'ms', context);
   }
 
   getMetrics(): PerformanceMetric[] {
-    return [...this.metrics]
+    return [...this.metrics];
   }
 
   clearMetrics(): void {
-    this.metrics = []
+    this.metrics = [];
   }
 }
 
@@ -311,20 +303,20 @@ class DataDogPerformanceService implements PerformanceProvider {
  * - Use window.NREUM.addToTrace() for timing data
  */
 class NewRelicPerformanceService implements PerformanceProvider {
-  readonly name: PerformanceProviderType = 'newrelic'
+  readonly name: PerformanceProviderType = 'newrelic';
 
-  private config: PerformanceConfig
-  private metrics: PerformanceMetric[] = []
+  private config: PerformanceConfig;
+  private metrics: PerformanceMetric[] = [];
 
   constructor(config: Partial<PerformanceConfig> = {}) {
-    this.config = { ...DEFAULT_PERFORMANCE_CONFIG, ...config }
+    this.config = { ...DEFAULT_PERFORMANCE_CONFIG, ...config };
 
     // Log that New Relic is not yet configured
     if (this.config.consoleLogging) {
       console.warn(
         '[Performance] New Relic provider is scaffolded but not wired. ' +
           'Install @newrelic/browser-agent and configure to enable.'
-      )
+      );
     }
   }
 
@@ -334,7 +326,7 @@ class NewRelicPerformanceService implements PerformanceProvider {
     unit: MetricUnit,
     context?: TimingContext
   ): void {
-    if (!this.config.enabled) return
+    if (!this.config.enabled) return;
 
     const metric: PerformanceMetric = {
       name,
@@ -342,35 +334,31 @@ class NewRelicPerformanceService implements PerformanceProvider {
       unit,
       timestamp: new Date().toISOString(),
       context,
-    }
+    };
 
-    this.metrics.push(metric)
+    this.metrics.push(metric);
     if (this.metrics.length > this.config.maxMetrics) {
-      this.metrics = this.metrics.slice(-this.config.maxMetrics)
+      this.metrics = this.metrics.slice(-this.config.maxMetrics);
     }
 
     // TODO: When New Relic is wired, use:
     // window.newrelic?.addPageAction(name, { value, ...context })
 
     if (this.config.consoleLogging) {
-      console.log(`[NewRelic] Would track: ${name} = ${value}${unit}`)
+      console.log(`[NewRelic] Would track: ${name} = ${value}${unit}`);
     }
   }
 
-  trackTiming(
-    name: MetricName | string,
-    durationMs: number,
-    context?: TimingContext
-  ): void {
-    this.trackMetric(name, durationMs, 'ms', context)
+  trackTiming(name: MetricName | string, durationMs: number, context?: TimingContext): void {
+    this.trackMetric(name, durationMs, 'ms', context);
   }
 
   getMetrics(): PerformanceMetric[] {
-    return [...this.metrics]
+    return [...this.metrics];
   }
 
   clearMetrics(): void {
-    this.metrics = []
+    this.metrics = [];
   }
 }
 
@@ -379,7 +367,7 @@ class NewRelicPerformanceService implements PerformanceProvider {
 // ============================================================================
 
 /** Cache of provider instances */
-const providerCache: Partial<Record<PerformanceProviderType, PerformanceProvider>> = {}
+const providerCache: Partial<Record<PerformanceProviderType, PerformanceProvider>> = {};
 
 /**
  * Get a performance provider by type
@@ -398,30 +386,30 @@ export function getPerformanceProvider(
 ): PerformanceProvider {
   // Return cached instance if no config override
   if (!config && providerCache[type]) {
-    return providerCache[type]!
+    return providerCache[type]!;
   }
 
-  let provider: PerformanceProvider
+  let provider: PerformanceProvider;
 
   switch (type) {
     case 'datadog':
-      provider = new DataDogPerformanceService(config)
-      break
+      provider = new DataDogPerformanceService(config);
+      break;
     case 'newrelic':
-      provider = new NewRelicPerformanceService(config)
-      break
+      provider = new NewRelicPerformanceService(config);
+      break;
     case 'mock':
     default:
-      provider = new MockPerformanceService(config)
-      break
+      provider = new MockPerformanceService(config);
+      break;
   }
 
   // Cache the instance
   if (!config) {
-    providerCache[type] = provider
+    providerCache[type] = provider;
   }
 
-  return provider
+  return provider;
 }
 
 // ============================================================================
@@ -433,7 +421,7 @@ export function getPerformanceProvider(
  *
  * This is the primary export for application-wide performance tracking.
  */
-export const performanceService = new MockPerformanceService()
+export const performanceService = new MockPerformanceService();
 
 // ============================================================================
 // CONVENIENCE EXPORTS
@@ -443,31 +431,31 @@ export const performanceService = new MockPerformanceService()
  * Track a custom metric
  * @see MockPerformanceService.trackMetric
  */
-export const trackMetric = performanceService.trackMetric.bind(performanceService)
+export const trackMetric = performanceService.trackMetric.bind(performanceService);
 
 /**
  * Track a timing metric
  * @see MockPerformanceService.trackTiming
  */
-export const trackTiming = performanceService.trackTiming.bind(performanceService)
+export const trackTiming = performanceService.trackTiming.bind(performanceService);
 
 /**
  * Start a timer
  * @see MockPerformanceService.startTimer
  */
-export const startTimer = performanceService.startTimer.bind(performanceService)
+export const startTimer = performanceService.startTimer.bind(performanceService);
 
 /**
  * Get all recorded metrics
  * @see MockPerformanceService.getMetrics
  */
-export const getMetrics = performanceService.getMetrics.bind(performanceService)
+export const getMetrics = performanceService.getMetrics.bind(performanceService);
 
 /**
  * Clear all recorded metrics
  * @see MockPerformanceService.clearMetrics
  */
-export const clearMetrics = performanceService.clearMetrics.bind(performanceService)
+export const clearMetrics = performanceService.clearMetrics.bind(performanceService);
 
 // ============================================================================
 // TYPE RE-EXPORTS
@@ -485,9 +473,9 @@ export type {
   WebVitalName,
   WebVitalMetric,
   WebVitalCallback,
-} from './types'
+} from './types';
 
-export { DEFAULT_PERFORMANCE_CONFIG } from './types'
+export { DEFAULT_PERFORMANCE_CONFIG } from './types';
 
 // Default export
-export default performanceService
+export default performanceService;

@@ -4,7 +4,7 @@
  * @vitest
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect } from 'vitest';
 import {
   analyzeMarketInefficiency,
   analyzeRaceInefficiencies,
@@ -14,9 +14,9 @@ import {
   formatMagnitude,
   getInefficiencyBadge,
   INEFFICIENCY_META,
-} from '../marketInefficiency'
-import type { HorseEntry, RaceHeader, PastPerformance } from '../../../types/drf'
-import type { HorseScore } from '../../scoring'
+} from '../marketInefficiency';
+import type { HorseEntry, RaceHeader, PastPerformance } from '../../../types/drf';
+import type { HorseScore } from '../../scoring';
 
 // Create mock past performance
 function createMockPP(overrides?: Partial<PastPerformance>): PastPerformance {
@@ -48,7 +48,7 @@ function createMockPP(overrides?: Partial<PastPerformance>): PastPerformance {
       aqha: null,
     },
     ...overrides,
-  } as PastPerformance
+  } as PastPerformance;
 }
 
 // Create mock horse
@@ -96,15 +96,12 @@ function createMockHorse(overrides?: Partial<HorseEntry>): HorseEntry {
     sex: 'C',
     age: 4,
     color: 'Bay',
-    pastPerformances: [
-      createMockPP({ finishPosition: 3 }),
-      createMockPP({ finishPosition: 2 }),
-    ],
+    pastPerformances: [createMockPP({ finishPosition: 3 }), createMockPP({ finishPosition: 2 })],
     workoutHistory: [],
     trainerStats: null,
     jockeyStats: null,
     ...overrides,
-  } as HorseEntry
+  } as HorseEntry;
 }
 
 // Create mock race header
@@ -125,7 +122,7 @@ function createMockRaceHeader(overrides?: Partial<RaceHeader>): RaceHeader {
     fieldSize: 10,
     postTime: '1:00 PM',
     ...overrides,
-  } as RaceHeader
+  } as RaceHeader;
 }
 
 // Create mock score
@@ -138,30 +135,44 @@ function createMockScore(total: number, overrides?: Partial<HorseScore>): HorseS
     breakdown: {
       connections: { total: 30, trainer: 20, jockey: 10, partnershipBonus: 0, reasoning: '' },
       postPosition: { total: 30, trackBiasApplied: false, isGoldenPost: false, reasoning: '' },
-      speedClass: { total: 30, speedScore: 20, classScore: 10, bestFigure: 85, classMovement: 'lateral', reasoning: '' },
-      form: { total: 20, recentFormScore: 15, layoffScore: 5, consistencyBonus: 0, formTrend: 'steady', reasoning: '' },
+      speedClass: {
+        total: 30,
+        speedScore: 20,
+        classScore: 10,
+        bestFigure: 85,
+        classMovement: 'lateral',
+        reasoning: '',
+      },
+      form: {
+        total: 20,
+        recentFormScore: 15,
+        layoffScore: 5,
+        consistencyBonus: 0,
+        formTrend: 'steady',
+        reasoning: '',
+      },
       equipment: { total: 10, hasChanges: false, reasoning: '' },
       pace: { total: 25, runningStyle: 'E', paceFit: 'good', reasoning: '' },
     },
     ...overrides,
-  } as HorseScore
+  } as HorseScore;
 }
 
 describe('analyzeMarketInefficiency', () => {
   it('should analyze market inefficiency for a horse', () => {
-    const horse = createMockHorse()
-    const score = createMockScore(170)
-    const raceHeader = createMockRaceHeader()
+    const horse = createMockHorse();
+    const score = createMockScore(170);
+    const raceHeader = createMockRaceHeader();
 
-    const analysis = analyzeMarketInefficiency(horse, score, raceHeader)
+    const analysis = analyzeMarketInefficiency(horse, score, raceHeader);
 
-    expect(analysis.programNumber).toBe(1)
-    expect(analysis.horseName).toBe('Test Horse')
-    expect(analysis.inefficiencies).toBeDefined()
-    expect(Array.isArray(analysis.inefficiencies)).toBe(true)
-    expect(analysis.summary).toBeDefined()
-    expect(analysis.recommendation).toBeDefined()
-  })
+    expect(analysis.programNumber).toBe(1);
+    expect(analysis.horseName).toBe('Test Horse');
+    expect(analysis.inefficiencies).toBeDefined();
+    expect(Array.isArray(analysis.inefficiencies)).toBe(true);
+    expect(analysis.summary).toBeDefined();
+    expect(analysis.recommendation).toBeDefined();
+  });
 
   it('should detect public overreaction after bad race', () => {
     // Horse with terrible last race but good overall score
@@ -172,17 +183,17 @@ describe('analyzeMarketInefficiency', () => {
         createMockPP({ finishPosition: 2 }), // Good prior race
         createMockPP({ finishPosition: 1 }), // Won before
       ],
-    })
+    });
     // High score despite bad last race (we see through it)
-    const score = createMockScore(175)
-    const raceHeader = createMockRaceHeader()
+    const score = createMockScore(175);
+    const raceHeader = createMockRaceHeader();
 
-    const analysis = analyzeMarketInefficiency(horse, score, raceHeader)
+    const analysis = analyzeMarketInefficiency(horse, score, raceHeader);
 
     // Should detect some form of public avoidance/overreaction
     // The exact detection depends on edge calculation
-    expect(analysis.summary).toBeDefined()
-  })
+    expect(analysis.summary).toBeDefined();
+  });
 
   it('should detect recency bias on recent loser', () => {
     // Horse with multiple recent losses
@@ -194,43 +205,43 @@ describe('analyzeMarketInefficiency', () => {
         createMockPP({ finishPosition: 6 }),
         createMockPP({ finishPosition: 2 }), // Was better before
       ],
-    })
-    const score = createMockScore(160) // Decent score
-    const raceHeader = createMockRaceHeader()
+    });
+    const score = createMockScore(160); // Decent score
+    const raceHeader = createMockRaceHeader();
 
-    const analysis = analyzeMarketInefficiency(horse, score, raceHeader)
+    const analysis = analyzeMarketInefficiency(horse, score, raceHeader);
 
-    expect(analysis).toBeDefined()
-    expect(analysis.summary).toBeDefined()
-  })
+    expect(analysis).toBeDefined();
+    expect(analysis.summary).toBeDefined();
+  });
 
   it('should handle horse with no inefficiencies', () => {
-    const horse = createMockHorse({ morningLineOdds: '3-1' })
-    const score = createMockScore(150) // Average score, fair odds
-    const raceHeader = createMockRaceHeader()
+    const horse = createMockHorse({ morningLineOdds: '3-1' });
+    const score = createMockScore(150); // Average score, fair odds
+    const raceHeader = createMockRaceHeader();
 
-    const analysis = analyzeMarketInefficiency(horse, score, raceHeader)
+    const analysis = analyzeMarketInefficiency(horse, score, raceHeader);
 
-    expect(analysis.inefficiencies.length).toBeGreaterThanOrEqual(0)
-    expect(analysis.summary).toBeDefined()
-  })
+    expect(analysis.inefficiencies.length).toBeGreaterThanOrEqual(0);
+    expect(analysis.summary).toBeDefined();
+  });
 
   it('should include primary inefficiency when found', () => {
     const horse = createMockHorse({
       morningLineOdds: '20-1', // Very high odds
-    })
-    const score = createMockScore(185) // Strong score = big edge
-    const raceHeader = createMockRaceHeader()
+    });
+    const score = createMockScore(185); // Strong score = big edge
+    const raceHeader = createMockRaceHeader();
 
-    const analysis = analyzeMarketInefficiency(horse, score, raceHeader)
+    const analysis = analyzeMarketInefficiency(horse, score, raceHeader);
 
     // With strong score and high odds, should have inefficiencies
     if (analysis.inefficiencies.length > 0) {
-      expect(analysis.primaryInefficiency).toBeDefined()
-      expect(analysis.primaryInefficiency?.magnitude).toBeGreaterThan(0)
+      expect(analysis.primaryInefficiency).toBeDefined();
+      expect(analysis.primaryInefficiency?.magnitude).toBeGreaterThan(0);
     }
-  })
-})
+  });
+});
 
 describe('analyzeRaceInefficiencies', () => {
   it('should analyze all horses in a race', () => {
@@ -238,30 +249,33 @@ describe('analyzeRaceInefficiencies', () => {
       { horse: createMockHorse({ programNumber: 1 }), score: createMockScore(180) },
       { horse: createMockHorse({ programNumber: 2 }), score: createMockScore(160) },
       { horse: createMockHorse({ programNumber: 3 }), score: createMockScore(140) },
-    ]
-    const raceHeader = createMockRaceHeader()
+    ];
+    const raceHeader = createMockRaceHeader();
 
-    const analyses = analyzeRaceInefficiencies(horses, raceHeader)
+    const analyses = analyzeRaceInefficiencies(horses, raceHeader);
 
-    expect(analyses.length).toBe(3)
+    expect(analyses.length).toBe(3);
     analyses.forEach((analysis, i) => {
-      expect(analysis.programNumber).toBe(i + 1)
-    })
-  })
+      expect(analysis.programNumber).toBe(i + 1);
+    });
+  });
 
   it('should filter out scratched horses', () => {
     const horses = [
       { horse: createMockHorse({ programNumber: 1 }), score: createMockScore(180) },
-      { horse: createMockHorse({ programNumber: 2 }), score: { ...createMockScore(160), isScratched: true } },
-    ]
-    const raceHeader = createMockRaceHeader()
+      {
+        horse: createMockHorse({ programNumber: 2 }),
+        score: { ...createMockScore(160), isScratched: true },
+      },
+    ];
+    const raceHeader = createMockRaceHeader();
 
-    const analyses = analyzeRaceInefficiencies(horses, raceHeader)
+    const analyses = analyzeRaceInefficiencies(horses, raceHeader);
 
-    expect(analyses.length).toBe(1)
-    expect(analyses[0].programNumber).toBe(1)
-  })
-})
+    expect(analyses.length).toBe(1);
+    expect(analyses[0].programNumber).toBe(1);
+  });
+});
 
 describe('getBestInefficiencyPlays', () => {
   it('should return top inefficiency plays sorted by magnitude', () => {
@@ -299,14 +313,14 @@ describe('getBestInefficiencyPlays', () => {
         summary: '',
         recommendation: 'watch' as const,
       },
-    ]
+    ];
 
-    const bestPlays = getBestInefficiencyPlays(analyses, 2)
+    const bestPlays = getBestInefficiencyPlays(analyses, 2);
 
-    expect(bestPlays.length).toBe(2)
-    expect(bestPlays[0].programNumber).toBe(2) // Highest magnitude
-    expect(bestPlays[1].programNumber).toBe(3) // Second highest
-  })
+    expect(bestPlays.length).toBe(2);
+    expect(bestPlays[0].programNumber).toBe(2); // Highest magnitude
+    expect(bestPlays[1].programNumber).toBe(3); // Second highest
+  });
 
   it('should only return plays with exploitable inefficiency', () => {
     const analyses = [
@@ -321,13 +335,13 @@ describe('getBestInefficiencyPlays', () => {
         summary: '',
         recommendation: 'neutral' as const,
       },
-    ]
+    ];
 
-    const bestPlays = getBestInefficiencyPlays(analyses)
+    const bestPlays = getBestInefficiencyPlays(analyses);
 
-    expect(bestPlays.length).toBe(0)
-  })
-})
+    expect(bestPlays.length).toBe(0);
+  });
+});
 
 describe('INEFFICIENCY_META', () => {
   it('should have metadata for all inefficiency types', () => {
@@ -338,46 +352,46 @@ describe('INEFFICIENCY_META', () => {
       'post_position_panic',
       'class_confusion',
       'equipment_misunderstanding',
-    ]
+    ];
 
     for (const type of types) {
-      const meta = INEFFICIENCY_META[type as keyof typeof INEFFICIENCY_META]
-      expect(meta).toBeDefined()
-      expect(meta.name).toBeDefined()
-      expect(meta.icon).toBeDefined()
-      expect(meta.color).toMatch(/^#[0-9a-f]{6}$/i)
+      const meta = INEFFICIENCY_META[type as keyof typeof INEFFICIENCY_META];
+      expect(meta).toBeDefined();
+      expect(meta.name).toBeDefined();
+      expect(meta.icon).toBeDefined();
+      expect(meta.color).toMatch(/^#[0-9a-f]{6}$/i);
     }
-  })
-})
+  });
+});
 
 describe('getInefficiencyIcon', () => {
   it('should return icon for each type', () => {
-    expect(getInefficiencyIcon('public_overreaction')).toBe('trending_down')
-    expect(getInefficiencyIcon('recency_bias')).toBe('history')
-    expect(getInefficiencyIcon('name_recognition')).toBe('person_search')
-    expect(getInefficiencyIcon('class_confusion')).toBe('swap_vert')
-  })
-})
+    expect(getInefficiencyIcon('public_overreaction')).toBe('trending_down');
+    expect(getInefficiencyIcon('recency_bias')).toBe('history');
+    expect(getInefficiencyIcon('name_recognition')).toBe('person_search');
+    expect(getInefficiencyIcon('class_confusion')).toBe('swap_vert');
+  });
+});
 
 describe('getInefficiencyColor', () => {
   it('should return color for each type', () => {
-    expect(getInefficiencyColor('public_overreaction')).toMatch(/^#[0-9a-f]{6}$/i)
-    expect(getInefficiencyColor('recency_bias')).toMatch(/^#[0-9a-f]{6}$/i)
-  })
-})
+    expect(getInefficiencyColor('public_overreaction')).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(getInefficiencyColor('recency_bias')).toMatch(/^#[0-9a-f]{6}$/i);
+  });
+});
 
 describe('formatMagnitude', () => {
   it('should format magnitude levels correctly', () => {
-    expect(formatMagnitude(8)).toBe('Very Strong')
-    expect(formatMagnitude(9)).toBe('Very Strong')
-    expect(formatMagnitude(6)).toBe('Strong')
-    expect(formatMagnitude(7)).toBe('Strong')
-    expect(formatMagnitude(4)).toBe('Moderate')
-    expect(formatMagnitude(5)).toBe('Moderate')
-    expect(formatMagnitude(3)).toBe('Slight')
-    expect(formatMagnitude(2)).toBe('Slight')
-  })
-})
+    expect(formatMagnitude(8)).toBe('Very Strong');
+    expect(formatMagnitude(9)).toBe('Very Strong');
+    expect(formatMagnitude(6)).toBe('Strong');
+    expect(formatMagnitude(7)).toBe('Strong');
+    expect(formatMagnitude(4)).toBe('Moderate');
+    expect(formatMagnitude(5)).toBe('Moderate');
+    expect(formatMagnitude(3)).toBe('Slight');
+    expect(formatMagnitude(2)).toBe('Slight');
+  });
+});
 
 describe('getInefficiencyBadge', () => {
   it('should return badge info for an inefficiency', () => {
@@ -391,13 +405,13 @@ describe('getInefficiencyBadge', () => {
       valueReason: 'Test reason',
       evidence: [],
       evBonus: 14,
-    }
+    };
 
-    const badge = getInefficiencyBadge(detection)
+    const badge = getInefficiencyBadge(detection);
 
-    expect(badge.text).toContain('Public Overreaction')
-    expect(badge.text).toContain('Strong')
-    expect(badge.color).toMatch(/^#[0-9a-f]{6}$/i)
-    expect(badge.bgColor).toBeDefined()
-  })
-})
+    expect(badge.text).toContain('Public Overreaction');
+    expect(badge.text).toContain('Strong');
+    expect(badge.color).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(badge.bgColor).toBeDefined();
+  });
+});

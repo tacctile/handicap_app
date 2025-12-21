@@ -1,11 +1,11 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react';
 
-const ONBOARDING_STORAGE_KEY = 'furlong_onboarding_complete'
+const ONBOARDING_STORAGE_KEY = 'furlong_onboarding_complete';
 
 interface UseOnboardingReturn {
-  isOnboardingComplete: boolean
-  completeOnboarding: () => void
-  resetOnboarding: () => void
+  isOnboardingComplete: boolean;
+  completeOnboarding: () => void;
+  resetOnboarding: () => void;
 }
 
 /**
@@ -16,34 +16,34 @@ interface UseOnboardingReturn {
 export function useOnboarding(): UseOnboardingReturn {
   const [isOnboardingComplete, setIsOnboardingComplete] = useState<boolean>(() => {
     try {
-      const stored = localStorage.getItem(ONBOARDING_STORAGE_KEY)
-      return stored === 'true'
+      const stored = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+      return stored === 'true';
     } catch {
       // localStorage might not be available
-      return false
+      return false;
     }
-  })
+  });
 
   // Sync state to localStorage when it changes
   useEffect(() => {
     try {
-      localStorage.setItem(ONBOARDING_STORAGE_KEY, String(isOnboardingComplete))
+      localStorage.setItem(ONBOARDING_STORAGE_KEY, String(isOnboardingComplete));
     } catch {
       // localStorage might not be available
     }
-  }, [isOnboardingComplete])
+  }, [isOnboardingComplete]);
 
   const completeOnboarding = useCallback(() => {
-    setIsOnboardingComplete(true)
-  }, [])
+    setIsOnboardingComplete(true);
+  }, []);
 
   const resetOnboarding = useCallback(() => {
-    setIsOnboardingComplete(false)
-  }, [])
+    setIsOnboardingComplete(false);
+  }, []);
 
   return {
     isOnboardingComplete,
     completeOnboarding,
     resetOnboarding,
-  }
+  };
 }

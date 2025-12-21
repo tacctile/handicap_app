@@ -29,7 +29,7 @@ export type {
   TicketBuilderState,
   LegSuggestion,
   MultiRaceTicketDisplay,
-} from './multiraceTypes'
+} from './multiraceTypes';
 
 // Type configs and utilities
 export {
@@ -39,7 +39,7 @@ export {
   getAllBetTypes,
   supportsCarryover,
   getAvailableBetTypes,
-} from './multiraceTypes'
+} from './multiraceTypes';
 
 // Calculator
 export {
@@ -60,7 +60,7 @@ export {
   MAX_TICKET_COST,
   MAX_SELECTIONS_PER_RACE,
   MIN_SELECTIONS_PER_RACE,
-} from './multiraceCalculator'
+} from './multiraceCalculator';
 
 // Optimizer
 export {
@@ -80,7 +80,7 @@ export {
   optimizePick6,
   getAvailableMultiRaceBets,
   analyzeRaceCard,
-} from './multiraceOptimizer'
+} from './multiraceOptimizer';
 
 // Carryover Tracker
 export {
@@ -102,7 +102,7 @@ export {
   getCarryoverBadgeColor,
   formatCarryoverDisplay,
   HIGH_VALUE_THRESHOLD,
-} from './carryoverTracker'
+} from './carryoverTracker';
 
 // Ticket Builder
 export {
@@ -128,4 +128,4 @@ export {
   getEVColor,
   formatProbability,
   formatEV,
-} from './multiraceBuilder'
+} from './multiraceBuilder';

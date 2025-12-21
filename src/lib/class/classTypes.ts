@@ -57,9 +57,9 @@ export const ClassLevel = {
   STAKES_GRADE_3: 95,
   STAKES_GRADE_2: 100,
   STAKES_GRADE_1: 105,
-} as const
+} as const;
 
-export type ClassLevel = (typeof ClassLevel)[keyof typeof ClassLevel]
+export type ClassLevel = (typeof ClassLevel)[keyof typeof ClassLevel];
 
 // ============================================================================
 // CLASS LEVEL METADATA
@@ -67,17 +67,17 @@ export type ClassLevel = (typeof ClassLevel)[keyof typeof ClassLevel]
 
 export interface ClassLevelMetadata {
   /** Display name for UI */
-  name: string
+  name: string;
   /** Short abbreviation */
-  abbrev: string
+  abbrev: string;
   /** Numeric value for comparison */
-  value: number
+  value: number;
   /** Typical purse range [min, max] */
-  typicalPurseRange: [number, number]
+  typicalPurseRange: [number, number];
   /** Par Beyer figure for this class */
-  parBeyer: number
+  parBeyer: number;
   /** Description */
-  description: string
+  description: string;
 }
 
 /**
@@ -236,31 +236,31 @@ export const CLASS_LEVEL_METADATA: Record<ClassLevel, ClassLevelMetadata> = {
     parBeyer: 108,
     description: 'Grade 1 stakes race - highest level',
   },
-}
+};
 
 // ============================================================================
 // CLASS MOVEMENT TYPES
 // ============================================================================
 
-export type ClassMovementDirection = 'drop' | 'rise' | 'lateral' | 'unknown'
+export type ClassMovementDirection = 'drop' | 'rise' | 'lateral' | 'unknown';
 
-export type ClassMovementMagnitude = 'minor' | 'moderate' | 'major' | 'extreme'
+export type ClassMovementMagnitude = 'minor' | 'moderate' | 'major' | 'extreme';
 
 export interface ClassMovement {
   /** Direction of class movement */
-  direction: ClassMovementDirection
+  direction: ClassMovementDirection;
   /** Magnitude of the move (1-3 levels vs 4+) */
-  magnitude: ClassMovementMagnitude
+  magnitude: ClassMovementMagnitude;
   /** Number of levels moved (positive = rise, negative = drop) */
-  levelsDifference: number
+  levelsDifference: number;
   /** Description for UI */
-  description: string
+  description: string;
   /** From class level */
-  fromLevel: ClassLevel
+  fromLevel: ClassLevel;
   /** To class level (current race) */
-  toLevel: ClassLevel
+  toLevel: ClassLevel;
   /** Claiming price drop if applicable */
-  claimingPriceDrop: number | null
+  claimingPriceDrop: number | null;
 }
 
 // ============================================================================
@@ -269,23 +269,23 @@ export interface ClassMovement {
 
 export interface ClassAnalysisResult {
   /** Current race class level */
-  currentClass: ClassLevel
+  currentClass: ClassLevel;
   /** Last race class level */
-  lastRaceClass: ClassLevel | null
+  lastRaceClass: ClassLevel | null;
   /** Class levels from last 3 races */
-  recentClassLevels: ClassLevel[]
+  recentClassLevels: ClassLevel[];
   /** Class movement analysis */
-  movement: ClassMovement
+  movement: ClassMovement;
   /** Whether horse has proven at this level */
-  provenAtLevel: ProvenAtLevelResult
+  provenAtLevel: ProvenAtLevelResult;
   /** Hidden class drop indicators */
-  hiddenDrops: HiddenClassDrop[]
+  hiddenDrops: HiddenClassDrop[];
   /** Track tier movement (if applicable) */
-  trackTierMovement: TrackTierMovement | null
+  trackTierMovement: TrackTierMovement | null;
   /** Overall class score contribution */
-  classScore: number
+  classScore: number;
   /** Detailed reasoning */
-  reasoning: string[]
+  reasoning: string[];
 }
 
 // ============================================================================
@@ -294,21 +294,21 @@ export interface ClassAnalysisResult {
 
 export interface ProvenAtLevelResult {
   /** Has won at this class or higher */
-  hasWon: boolean
+  hasWon: boolean;
   /** Number of wins at this class or higher */
-  winsAtLevel: number
+  winsAtLevel: number;
   /** Has placed (2nd/3rd) at this class or higher */
-  hasPlaced: boolean
+  hasPlaced: boolean;
   /** Number of ITM finishes at level */
-  itmAtLevel: number
+  itmAtLevel: number;
   /** Was competitive (within 5 lengths) at level */
-  wasCompetitive: boolean
+  wasCompetitive: boolean;
   /** Number of competitive races at level */
-  competitiveRacesAtLevel: number
+  competitiveRacesAtLevel: number;
   /** Best finish at this class or higher */
-  bestFinish: number | null
+  bestFinish: number | null;
   /** Best Beyer at this class or higher */
-  bestBeyerAtLevel: number | null
+  bestBeyerAtLevel: number | null;
 }
 
 // ============================================================================
@@ -320,38 +320,38 @@ export type HiddenDropType =
   | 'purse_drop'
   | 'claiming_price_drop'
   | 'runner_up_key_race'
-  | 'shipper_from_elite'
+  | 'shipper_from_elite';
 
 export interface HiddenClassDrop {
   /** Type of hidden drop */
-  type: HiddenDropType
+  type: HiddenDropType;
   /** Description for display */
-  description: string
+  description: string;
   /** Points bonus for this hidden drop */
-  pointsBonus: number
+  pointsBonus: number;
   /** Detailed explanation */
-  explanation: string
+  explanation: string;
 }
 
 // ============================================================================
 // TRACK TIER MOVEMENT
 // ============================================================================
 
-export type TrackTier = 'A' | 'B' | 'C'
+export type TrackTier = 'A' | 'B' | 'C';
 
 export interface TrackTierMovement {
   /** Previous track tier */
-  fromTier: TrackTier
+  fromTier: TrackTier;
   /** Current track tier */
-  toTier: TrackTier
+  toTier: TrackTier;
   /** Previous track code */
-  fromTrack: string
+  fromTrack: string;
   /** Current track code */
-  toTrack: string
+  toTrack: string;
   /** Description */
-  description: string
+  description: string;
   /** Points adjustment */
-  pointsAdjustment: number
+  pointsAdjustment: number;
 }
 
 // ============================================================================
@@ -362,21 +362,21 @@ export interface TrackTierMovement {
  * Get class level display name
  */
 export function getClassLevelName(level: ClassLevel): string {
-  return CLASS_LEVEL_METADATA[level]?.name ?? 'Unknown'
+  return CLASS_LEVEL_METADATA[level]?.name ?? 'Unknown';
 }
 
 /**
  * Get class level abbreviation
  */
 export function getClassLevelAbbrev(level: ClassLevel): string {
-  return CLASS_LEVEL_METADATA[level]?.abbrev ?? 'UNK'
+  return CLASS_LEVEL_METADATA[level]?.abbrev ?? 'UNK';
 }
 
 /**
  * Get par Beyer for class level
  */
 export function getClassParBeyer(level: ClassLevel): number {
-  return CLASS_LEVEL_METADATA[level]?.parBeyer ?? 75
+  return CLASS_LEVEL_METADATA[level]?.parBeyer ?? 75;
 }
 
 /**
@@ -384,20 +384,20 @@ export function getClassParBeyer(level: ClassLevel): number {
  * Returns: negative if a < b, 0 if equal, positive if a > b
  */
 export function compareClassLevels(a: ClassLevel, b: ClassLevel): number {
-  const aValue = CLASS_LEVEL_METADATA[a]?.value ?? 0
-  const bValue = CLASS_LEVEL_METADATA[b]?.value ?? 0
-  return aValue - bValue
+  const aValue = CLASS_LEVEL_METADATA[a]?.value ?? 0;
+  const bValue = CLASS_LEVEL_METADATA[b]?.value ?? 0;
+  return aValue - bValue;
 }
 
 /**
  * Calculate the magnitude of class movement
  */
 export function getMovementMagnitude(levelsDifference: number): ClassMovementMagnitude {
-  const absLevels = Math.abs(levelsDifference)
-  if (absLevels <= 1) return 'minor'
-  if (absLevels <= 2) return 'moderate'
-  if (absLevels <= 3) return 'major'
-  return 'extreme'
+  const absLevels = Math.abs(levelsDifference);
+  if (absLevels <= 1) return 'minor';
+  if (absLevels <= 2) return 'moderate';
+  if (absLevels <= 3) return 'major';
+  return 'extreme';
 }
 
 /**
@@ -406,13 +406,13 @@ export function getMovementMagnitude(levelsDifference: number): ClassMovementMag
 export function getClassMovementColor(direction: ClassMovementDirection): string {
   switch (direction) {
     case 'drop':
-      return '#22c55e' // Green - favorable
+      return '#22c55e'; // Green - favorable
     case 'rise':
-      return '#ef4444' // Red - challenging
+      return '#ef4444'; // Red - challenging
     case 'lateral':
-      return '#6b7280' // Gray - neutral
+      return '#6b7280'; // Gray - neutral
     default:
-      return '#6b7280'
+      return '#6b7280';
   }
 }
 
@@ -422,12 +422,12 @@ export function getClassMovementColor(direction: ClassMovementDirection): string
 export function getClassMovementIcon(direction: ClassMovementDirection): string {
   switch (direction) {
     case 'drop':
-      return '↓'
+      return '↓';
     case 'rise':
-      return '↑'
+      return '↑';
     case 'lateral':
-      return '→'
+      return '→';
     default:
-      return '?'
+      return '?';
   }
 }
