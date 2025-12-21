@@ -70,14 +70,6 @@ export const Dashboard: React.FC = () => {
               {sidebarExpanded && <span className="app-sidebar__label">Multi-window</span>}
             </button>
           </nav>
-
-          {/* Footer Navigation */}
-          <nav className="app-sidebar__nav app-sidebar__nav--footer">
-            <button className="app-sidebar__item">
-              <span className="material-icons">gavel</span>
-              {sidebarExpanded && <span className="app-sidebar__label">Legal</span>}
-            </button>
-          </nav>
         </aside>
 
         {/* MAIN CONTENT AREA */}
@@ -102,6 +94,16 @@ export const Dashboard: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* BOTTOM BAR */}
+      <footer className="app-bottombar">
+        <button className="app-bottombar__item">
+          <span className="material-icons">gavel</span>
+          <span>Legal</span>
+        </button>
+        <div className="app-bottombar__spacer"></div>
+        {/* Future items will go here */}
+      </footer>
     </div>
   );
 };
