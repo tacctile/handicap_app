@@ -8,19 +8,18 @@
   border-bottom: 2px solid var(--color-border);
   border-left: 4px solid var(--color-border); /* Will inherit tier color */
   overflow: hidden;
-  animation: expandIn 300ms ease;
+  animation: expandIn 200ms ease-out; /* Faster, snappier animation */
+  /* NO fixed height, NO min-height, NO max-height - grows dynamically */
 }
 
 @keyframes expandIn {
   from {
     opacity: 0;
-    max-height: 0;
-    padding-top: 0;
-    padding-bottom: 0;
+    transform: translateY(-8px);
   }
   to {
     opacity: 1;
-    max-height: 2000px; /* Large enough for any content */
+    transform: translateY(0);
   }
 }
 
@@ -53,7 +52,7 @@
    ============================================ */
 
 .horse-expanded-view__section {
-  padding: 8px 16px;
+  padding: 6px 12px; /* Reduced from 8px 16px */
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -68,7 +67,7 @@
 
 /* Section-specific backgrounds for visual distinction */
 .horse-expanded-view__section--scoring {
-  padding: 8px 16px;
+  padding: 6px 12px; /* Reduced from 8px 16px */
   background: var(--color-elevated);
   border-bottom: 1px solid var(--color-border);
 }
@@ -81,8 +80,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  line-height: 1.2;
+  gap: 6px; /* Reduced from 8px */
+  line-height: 1.1;
 }
 
 /* Total Score */
@@ -101,13 +100,13 @@
 }
 
 .horse-scoring__total-value {
-  font-size: 18px;
+  font-size: 16px; /* Reduced from 18px */
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 
 .horse-scoring__total-max {
-  font-size: 12px;
+  font-size: 11px; /* Reduced from 12px */
   font-weight: 500;
   color: var(--color-text-tertiary);
 }
@@ -163,7 +162,7 @@
 .horse-scoring__category {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px; /* Reduced from 4px */
 }
 
 .horse-scoring__cat-label {
@@ -176,8 +175,8 @@
 }
 
 .horse-scoring__cat-bar-wrap {
-  width: 40px;
-  height: 6px;
+  width: 32px; /* Reduced from 40px */
+  height: 5px; /* Reduced from 6px */
   background: var(--color-base);
   border-radius: 3px;
   overflow: hidden;
@@ -191,11 +190,11 @@
 }
 
 .horse-scoring__cat-value {
-  font-size: 10px;
+  font-size: 9px; /* Reduced from 10px */
   font-weight: 600;
   color: var(--color-text-secondary);
   font-variant-numeric: tabular-nums;
-  min-width: 32px;
+  min-width: 28px; /* Reduced from 32px */
 }
 
 /* Confidence */
@@ -254,64 +253,37 @@
 
 .horse-expanded-view__section--identity {
   background: var(--color-card);
-  padding: 8px 16px;
+  padding: 5px 12px; /* Reduced from 8px 16px */
 }
 
 .horse-expanded-view__section--stats {
-  background: var(--color-card);
+  background: var(--color-base);
 }
 
 .horse-expanded-view__section--performances {
   /* Force light theme for this section regardless of app theme */
-  --pp-bg: #f8f8f8;
+  --pp-bg: #f5f5f5;
   --pp-header-bg: #e8e8e8;
   --pp-text: #1a1a1a;
   --pp-text-muted: #666;
   --pp-border: #ccc;
 
-  padding: 0;
+  padding: 0; /* PP section handles its own padding */
   background: var(--pp-bg);
   color: var(--pp-text);
 }
 
 .horse-expanded-view__section--workouts {
-  background: var(--color-base);
+  background: var(--color-card);
 }
 
 /* ============================================
-   PLACEHOLDER STYLING (Temporary)
+   PLACEHOLDER STYLING - Hidden (sections are now built)
    ============================================ */
 
-.horse-expanded-view__section-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  text-align: center;
-  border: 2px dashed var(--color-border);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.horse-expanded-view__section--performances .horse-expanded-view__section-placeholder {
-  color: #666;
-  border-color: #ccc;
-  background: rgba(0, 0, 0, 0.03);
-}
-
+.horse-expanded-view__section-placeholder,
 .horse-expanded-view__placeholder-note {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--color-text-tertiary);
-  margin-top: 4px;
-}
-
-.horse-expanded-view__section--performances .horse-expanded-view__placeholder-note {
-  color: #999;
+  display: none;
 }
 
 /* ============================================
@@ -321,15 +293,15 @@
 .horse-identity {
   display: flex;
   flex-direction: column;
-  gap: 4px; /* Tight vertical spacing between rows */
+  gap: 2px; /* Reduced from 4px */
 }
 
 .horse-identity__row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  line-height: 1.3;
+  gap: 4px; /* Reduced from 6px */
+  line-height: 1.2;
 }
 
 .horse-identity__field {
@@ -339,7 +311,7 @@
 }
 
 .horse-identity__label {
-  font-size: 10px;
+  font-size: 9px; /* Reduced from 10px */
   font-weight: 500;
   color: var(--color-text-tertiary);
   text-transform: uppercase;
@@ -347,7 +319,7 @@
 }
 
 .horse-identity__value {
-  font-size: 12px;
+  font-size: 11px; /* Reduced from 12px */
   font-weight: 600;
   color: var(--color-text-primary);
 }
@@ -382,9 +354,9 @@
 
 .horse-identity__divider {
   color: var(--color-border);
-  font-size: 12px;
+  font-size: 10px; /* Reduced from 12px */
   font-weight: 300;
-  margin: 0 2px;
+  margin: 0 1px; /* Reduced from 0 2px */
   user-select: none;
 }
 
@@ -408,7 +380,7 @@
    ============================================ */
 
 .horse-expanded-view__section--stats {
-  padding: 6px 16px;
+  padding: 4px 12px; /* Reduced from 6px 16px */
   background: var(--color-base);
 }
 
@@ -416,8 +388,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  line-height: 1.2;
+  gap: 4px; /* Reduced from 6px */
+  line-height: 1.1;
 }
 
 .horse-stats__group {
@@ -438,7 +410,7 @@
 .horse-stats__item {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px; /* Reduced from 4px */
 }
 
 .horse-stats__item--split {
@@ -446,7 +418,7 @@
 }
 
 .horse-stats__label {
-  font-size: 9px;
+  font-size: 8px; /* Reduced from 9px */
   font-weight: 600;
   color: var(--color-text-tertiary);
   text-transform: uppercase;
@@ -454,19 +426,19 @@
 }
 
 .horse-stats__record {
-  font-size: 12px;
+  font-size: 11px; /* Reduced from 12px */
   font-weight: 700;
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
 }
 
 .horse-stats__item--split .horse-stats__record {
-  font-size: 11px;
+  font-size: 10px; /* Reduced from 11px */
   font-weight: 600;
 }
 
 .horse-stats__earnings {
-  font-size: 11px;
+  font-size: 10px; /* Reduced from 11px */
   font-weight: 500;
   color: var(--color-tier-good);
   margin-left: 2px;
@@ -474,9 +446,9 @@
 
 .horse-stats__divider {
   color: var(--color-border);
-  font-size: 11px;
+  font-size: 10px; /* Reduced from 11px */
   font-weight: 300;
-  margin: 0 1px;
+  margin: 0; /* Reduced from 0 1px */
   user-select: none;
 }
 
@@ -511,14 +483,14 @@
 .horse-pp__header {
   display: flex;
   align-items: center;
-  padding: 4px 8px;
+  padding: 3px 8px; /* Reduced from 4px 8px */
   background: var(--pp-header-bg, #e8e8e8);
   border-bottom: 1px solid var(--pp-border, #ccc);
   gap: 0;
 }
 
 .horse-pp__col {
-  font-size: 9px;
+  font-size: 8px; /* Reduced from 9px */
   font-weight: 700;
   color: var(--pp-text, #333);
   text-transform: uppercase;
@@ -531,8 +503,8 @@
 
 /* Column Widths - Fixed for alignment */
 .horse-pp__col--date {
-  width: 70px;
-  min-width: 70px;
+  width: 62px; /* Reduced from 70px */
+  min-width: 62px;
 }
 
 .horse-pp__col--track {
@@ -577,13 +549,13 @@
 }
 
 .horse-pp__col--running {
-  width: 140px;
-  min-width: 140px;
+  width: 120px; /* Reduced from 140px */
+  min-width: 120px;
 }
 
 .horse-pp__col--jockey {
-  width: 90px;
-  min-width: 90px;
+  width: 80px; /* Reduced from 90px */
+  min-width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -618,9 +590,9 @@
 }
 
 .horse-pp__no-data {
-  padding: 12px 8px;
-  font-size: 11px;
-  color: #999;
+  padding: 8px; /* Reduced from 12px 8px */
+  font-size: 10px; /* Reduced from 11px */
+  color: var(--color-text-tertiary);
   text-align: center;
   font-style: italic;
 }
@@ -635,38 +607,40 @@
    ============================================ */
 
 .horse-expanded-view__section--workouts {
-  padding: 6px 16px;
-  background: var(--color-base);
+  padding: 5px 12px; /* Reduced from 6px 16px */
+  background: var(--color-card);
   border-top: 1px solid var(--color-border);
 }
 
 .horse-workouts {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  line-height: 1.3;
+  gap: 8px; /* Reduced from 12px */
+  line-height: 1.2; /* Reduced from 1.3 */
 }
 
 .horse-workouts__label {
-  font-size: 9px;
+  font-size: 8px; /* Reduced from 9px */
   font-weight: 700;
   color: var(--color-text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding-top: 2px;
+  padding-top: 1px;
   flex-shrink: 0;
 }
 
 .horse-workouts__list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px; /* Reduced from 2px */
 }
 
 .horse-workouts__none {
+  padding: 8px;
   font-size: 10px;
   font-style: italic;
   color: var(--color-text-tertiary);
+  text-align: center;
 }
 
 /* ============================================
@@ -676,9 +650,9 @@
 .horse-workouts__item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px; /* Reduced from 6px */
   font-family: 'SF Mono', 'Monaco', 'Consolas', 'Courier New', monospace;
-  font-size: 10px;
+  font-size: 9px; /* Reduced from 10px */
   color: var(--color-text-secondary);
 }
 
