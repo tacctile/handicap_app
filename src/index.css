@@ -20,6 +20,30 @@ body {
   color: var(--color-foreground);
 }
 
+/* ============================================
+   Global Overflow Prevention
+   Prevents horizontal scrolling across all screens
+   ============================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+#root {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 /* Material Design 3 Custom Properties */
 :root {
   --color-primary: #19abb5;
