@@ -35,6 +35,7 @@
   grid-template-columns: var(--dimension-bar) 1fr;
   overflow: hidden;
   transition: width var(--transition-normal);
+  width: 100%;
 }
 
 /* ============================================
@@ -460,6 +461,7 @@
   background: var(--color-base);
   padding: 0;
   margin: 0;
+  width: 100%;
 }
 
 /* Legacy flexbox main content */
@@ -482,6 +484,7 @@
   overflow-x: hidden;
   padding: 0; /* NO padding - content goes to edges */
   margin: 0;
+  width: 100%;
 }
 
 /* Placeholder states get their own padding */
@@ -1209,6 +1212,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  width: 100%;
 }
 
 .horse-list-header__cell {
