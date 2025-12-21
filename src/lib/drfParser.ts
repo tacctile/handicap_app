@@ -1088,6 +1088,7 @@ function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance
   const PP_SECOND = 415; // Field 416
   const PP_THIRD = 425; // Field 426
   const PP_TRIP_SHORT = 395; // Field 396
+  const PP_WEIGHT = 435; // Field 436 - Weight per PP
   // PP_TRAINER = 1055 (Field 1056) - available for future use
   const PP_JOCKEY = 1065; // Field 1066
   const PP_TRIP_DETAILED = 1382; // Field 1383
@@ -1145,7 +1146,7 @@ function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance
         finishLengths: parseFloatSafe(getField(fields, PP_FINISH_MARGIN + i)),
       },
       jockey: getField(fields, PP_JOCKEY + i, 'Unknown'),
-      weight: 0, // In weight per PP fields (436-445)
+      weight: parseIntSafe(getField(fields, PP_WEIGHT + i), 0),
       apprenticeAllowance: 0,
       equipment: getField(fields, PP_EQUIPMENT + i),
       medication: getField(fields, PP_MEDICATION + i),
@@ -1199,22 +1200,35 @@ function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance
 function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
   const workouts: Workout[] = [];
 
-  // Field range starting indices (0-based)
-  const WK_DATE = 255; // Field 256 - Workout dates
+  // Field range starting indices (0-based) - verified against actual DRF data
+  const WK_DATE = 255; // Field 256 - Workout dates (YYYYMMDD)
   const WK_DAYS_SINCE = 265; // Field 266 - Days since each work
   const WK_TRACK = 275; // Field 276 - Track codes (2 fields per work)
-  const WK_POST = 295; // Field 296 - Workout post position (gate works)
-  const WK_CONDITION = 305; // Field 306 - Track condition
-  const WK_DISTANCE = 315; // Field 316 - Distance
+  const WK_RANK = 295; // Field 296 - Workout rank position (was previously mislabeled as post)
+  const WK_CONDITION = 305; // Field 306 - Track condition (FT, GD, etc.)
+  const WK_DISTANCE_FEET = 315; // Field 316 - Distance in FEET (not furlongs)
+  const WK_SURFACE = 325; // Field 326 - Surface (D, T)
+  const WK_TOTAL_WORKS = 345; // Field 346 - Total works that day at track/distance
 
   for (let i = 0; i < maxWorkouts; i++) {
     // Check if we have data for this workout by looking at the date
     const wkDate = getField(fields, WK_DATE + i);
     if (!wkDate) break;
 
-    // Parse distance
-    const rawDistance = getField(fields, WK_DISTANCE + i);
-    const distData = parseDistance('', rawDistance);
+    // Parse distance (convert from yards to furlongs: 220 yards per furlong)
+    // DRF stores workout distances in yards (e.g., 1320y = 6f, 1760y = 1 mile)
+    const distanceYards = parseFloatSafe(getField(fields, WK_DISTANCE_FEET + i));
+    const distanceFurlongs = distanceYards > 0 ? distanceYards / 220 : 0;
+    // Format as standard workout distances
+    let distanceStr = '';
+    if (distanceFurlongs >= 7.5) {
+      // 1 mile or longer - display as miles
+      const miles = distanceFurlongs / 8;
+      distanceStr = miles === 1 ? '1m' : `${miles.toFixed(2).replace(/\.?0+$/, '')}m`;
+    } else if (distanceFurlongs > 0) {
+      // Less than 1 mile - display as furlongs
+      distanceStr = `${distanceFurlongs.toFixed(1).replace('.0', '')}f`;
+    }
 
     // Track code (2 fields per work: track + inner/outer indicator)
     const track = getField(fields, WK_TRACK + i * 2, 'UNK');
@@ -1222,32 +1236,37 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
     // Track condition
     const conditionCode = getField(fields, WK_CONDITION + i, 'FT');
 
+    // Surface from dedicated field
+    const surfaceCode = getField(fields, WK_SURFACE + i, 'D');
+
     // Days since workout (can calculate recency)
     const daysSince = parseIntNullable(getField(fields, WK_DAYS_SINCE + i));
 
-    // Post position / gate indicator
-    const postField = getField(fields, WK_POST + i);
-    const fromGate = postField.toLowerCase().includes('g') || postField === '1';
+    // Ranking data
+    const rankNum = parseIntNullable(getField(fields, WK_RANK + i));
+    const totalWorks = parseIntNullable(getField(fields, WK_TOTAL_WORKS + i));
+    const isBullet = rankNum === 1;
+    const rankingStr = rankNum && totalWorks ? `${rankNum}/${totalWorks}` : '';
 
-    // Note: Time, type, ranking are not in the documented field ranges
-    // These may be in extended workout fields or need different parsing
+    // Note: Workout time and type are not available in standard DRF format
+    // These would require extended field parsing or supplemental data
 
     const workout: Workout = {
       date: wkDate,
       track,
-      distanceFurlongs: distData.furlongs,
-      distance: distData.distance,
-      timeSeconds: 0, // Not directly available in documented fields
-      timeFormatted: '',
-      type: 'unknown', // Would need extended field parsing
+      distanceFurlongs: distanceFurlongs,
+      distance: distanceStr,
+      timeSeconds: 0, // Not available in standard DRF format
+      timeFormatted: '', // Not available in standard DRF format
+      type: 'unknown', // Not available in standard DRF format
       trackCondition: parseTrackCondition(conditionCode),
-      surface: parseSurface(conditionCode.substring(0, 1)),
-      ranking: '',
-      rankNumber: null,
-      totalWorks: null,
-      isBullet: false, // Would need ranking data
-      fromGate,
-      notes: daysSince !== null ? `${daysSince} days ago` : '',
+      surface: parseSurface(surfaceCode),
+      ranking: rankingStr,
+      rankNumber: rankNum,
+      totalWorks: totalWorks,
+      isBullet: isBullet,
+      fromGate: false, // Would need separate gate indicator field
+      notes: daysSince !== null ? `${daysSince}d ago` : '',
     };
 
     workouts.push(workout);
