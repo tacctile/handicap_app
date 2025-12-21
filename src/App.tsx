@@ -305,6 +305,8 @@ function AppContent() {
         trackCondition={raceState.trackCondition}
         onTrackConditionChange={raceState.setTrackCondition}
         raceState={raceState}
+        isLoading={isLoading}
+        onParsed={handleParsed}
       />
     </ErrorBoundary>
   );

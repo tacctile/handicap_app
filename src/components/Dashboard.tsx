@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import './Dashboard.css';
 import { usePostTime } from '../hooks/usePostTime';
 import { useBankroll } from '../hooks/useBankroll';
 import { BankrollSettings } from './BankrollSettings';
 import { BettingRecommendations } from './BettingRecommendations';
+import { FileUpload } from './FileUpload';
 import { calculateRaceScores } from '../lib/scoring';
 import type { ParsedDRFFile } from '../types/drf';
 import type { useRaceState } from '../hooks/useRaceState';
@@ -15,6 +16,8 @@ interface DashboardProps {
   trackCondition: RaceStateTrackCondition;
   onTrackConditionChange: (condition: RaceStateTrackCondition) => void;
   raceState: ReturnType<typeof useRaceState>;
+  isLoading?: boolean;
+  onParsed?: (data: ParsedDRFFile) => void;
 }
 
 // Format currency helper
@@ -33,12 +36,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
   trackCondition,
   onTrackConditionChange,
   raceState,
+  isLoading = false,
+  onParsed,
 }) => {
   // Bankroll management hook
   const bankroll = useBankroll();
 
   // UI state for bankroll config slide-out
   const [bankrollConfigOpen, setBankrollConfigOpen] = useState(false);
+
+  // Debug: Log parsed data when it changes
+  useEffect(() => {
+    if (parsedData) {
+      console.log('Parsed DRF data:', parsedData);
+      console.log('Track:', parsedData.races?.[0]?.header?.trackCode);
+      console.log('Date:', parsedData.races?.[0]?.header?.raceDateRaw);
+      console.log('Races:', parsedData.races?.length);
+    }
+  }, [parsedData]);
 
   // Calculate scored horses for current race (needed for betting recommendations)
   const currentRaceScoredHorses = useMemo(() => {
@@ -127,9 +142,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return 'normal';
   };
 
-  // Handle file upload click
+  // Handle file upload click - trigger the hidden FileUpload's input
   const handleFileUpload = () => {
-    // Trigger the hidden file input
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     if (fileInput) {
       fileInput.click();
@@ -160,9 +174,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <button
               className="app-topbar__upload-btn app-topbar__upload-btn--large"
               onClick={handleFileUpload}
+              disabled={isLoading}
             >
-              <span className="material-icons">upload_file</span>
-              <span>Upload DRF File</span>
+              <span className="material-icons">
+                {isLoading ? 'hourglass_empty' : 'upload_file'}
+              </span>
+              <span>{isLoading ? 'Parsing...' : 'Upload DRF File'}</span>
             </button>
           </div>
         ) : (
@@ -218,9 +235,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <button
               className="app-topbar__upload-btn app-topbar__upload-btn--small"
               onClick={handleFileUpload}
+              disabled={isLoading}
             >
-              <span className="material-icons">upload_file</span>
-              <span>Upload</span>
+              <span className="material-icons">
+                {isLoading ? 'hourglass_empty' : 'upload_file'}
+              </span>
+              <span>{isLoading ? 'Parsing...' : 'Upload'}</span>
             </button>
           </>
         )}
@@ -425,6 +445,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
         </>
+      )}
+
+      {/* Hidden file upload - FileUpload component handles parsing */}
+      <div className="sr-only">
+        <FileUpload onParsed={onParsed} />
+      </div>
+
+      {/* Loading overlay */}
+      {isLoading && (
+        <div className="app-loading-overlay">
+          <div className="app-loading-spinner">
+            <span className="material-icons spinning">sync</span>
+            <span>Parsing DRF file...</span>
+          </div>
+        </div>
       )}
     </div>
   );
