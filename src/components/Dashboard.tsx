@@ -5,7 +5,8 @@ import { useBankroll } from '../hooks/useBankroll';
 import { BankrollSettings } from './BankrollSettings';
 import { BettingRecommendations } from './BettingRecommendations';
 import { FileUpload } from './FileUpload';
-import { calculateRaceScores } from '../lib/scoring';
+import { HorseSummaryBar } from './HorseSummaryBar';
+import { calculateRaceScores, MAX_SCORE, analyzeOverlay } from '../lib/scoring';
 import type { ParsedDRFFile, ParsedRace } from '../types/drf';
 import type { useRaceState } from '../hooks/useRaceState';
 import type { TrackCondition as RaceStateTrackCondition } from '../hooks/useRaceState';
@@ -46,6 +47,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // UI state for bankroll config slide-out
   const [bankrollConfigOpen, setBankrollConfigOpen] = useState(false);
+
+  // State for expanded horse in horse list
+  const [expandedHorseId, setExpandedHorseId] = useState<string | number | null>(null);
+
+  const toggleHorseExpand = (horseId: string | number) => {
+    setExpandedHorseId((prev) => (prev === horseId ? null : horseId));
+  };
 
   // Debug: Log parsed data when it changes
   useEffect(() => {
@@ -357,17 +365,68 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* MAIN CONTENT - 2/3 width */}
         <main className="app-main">
           <div className="app-main__content">
-            {/* Placeholder for race tabs + horse table */}
-            <div className="app-main__placeholder">
-              <span
-                className="material-icons"
-                style={{ fontSize: '48px', marginBottom: 'var(--gap-container)' }}
-              >
-                analytics
-              </span>
-              <h2>Race Analysis</h2>
-              <p>Race tabs and horse table will appear here</p>
-            </div>
+            {!parsedData ? (
+              <div className="app-main__placeholder">
+                <span
+                  className="material-icons"
+                  style={{ fontSize: '48px', marginBottom: 'var(--gap-container)' }}
+                >
+                  upload_file
+                </span>
+                <h2>No Race Data</h2>
+                <p>Upload a DRF file to see horses and analysis</p>
+              </div>
+            ) : !currentRaceScoredHorses?.length ? (
+              <div className="app-main__placeholder">
+                <span
+                  className="material-icons"
+                  style={{ fontSize: '48px', marginBottom: 'var(--gap-container)' }}
+                >
+                  analytics
+                </span>
+                <h2>Select a Race</h2>
+                <p>Click a race on the left to see horses</p>
+              </div>
+            ) : (
+              <div className="horse-list">
+                {currentRaceScoredHorses.map((scoredHorse, index) => {
+                  const horse = scoredHorse.horse;
+                  const horseId = horse.programNumber || index;
+                  const currentOdds = raceState.getOdds(scoredHorse.index, horse.morningLineOdds);
+
+                  // Calculate overlay analysis for fair odds and value percent
+                  const overlay = analyzeOverlay(scoredHorse.score.total, currentOdds);
+
+                  // Parse fair odds display (e.g., "3-1" to numerator/denominator)
+                  const fairOddsParts = overlay.fairOddsDisplay.split('-');
+                  const fairOddsNum = parseInt(fairOddsParts[0] || '2', 10);
+                  const fairOddsDen = parseInt(fairOddsParts[1] || '1', 10);
+
+                  return (
+                    <div key={horseId} className="horse-list__item">
+                      <HorseSummaryBar
+                        horse={horse}
+                        rank={scoredHorse.rank}
+                        isExpanded={expandedHorseId === horseId}
+                        onToggleExpand={() => toggleHorseExpand(horseId)}
+                        maxScore={MAX_SCORE}
+                        score={scoredHorse.score.total}
+                        fairOddsNum={fairOddsNum}
+                        fairOddsDen={fairOddsDen}
+                        valuePercent={overlay.overlayPercent}
+                      />
+                      {expandedHorseId === horseId && (
+                        <div className="horse-expanded">
+                          <div className="horse-expanded__placeholder">
+                            Full DRF past performances will appear here (Prompt 2)
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </main>
 
