@@ -96,6 +96,14 @@ function AppContent() {
   }, [trackEvent])
 
   const handleParsed = useCallback((data: ParsedDRFFile) => {
+    // DIAGNOSTIC: Log when handleParsed is called
+    console.log('[DIAG App] handleParsed called with:', {
+      filename: data?.filename,
+      raceCount: data?.races?.length,
+      isValid: data?.isValid,
+      errors: data?.errors,
+    })
+
     setIsLoading(true)
 
     // Small delay to show loading state
@@ -103,7 +111,22 @@ function AppContent() {
       // Validate the parsed data
       const validationResult = validateParsedData(data)
 
-      if (!isDataUsable(validationResult)) {
+      // DIAGNOSTIC: Log validation result
+      console.log('[DIAG App] Validation result:', {
+        isValid: validationResult.isValid,
+        totalRaces: validationResult.stats.totalRaces,
+        totalHorses: validationResult.stats.totalHorses,
+        completeHorses: validationResult.stats.completeHorses,
+        errorCount: validationResult.errors.length,
+        warningCount: validationResult.warnings.length,
+      })
+
+      const isUsable = isDataUsable(validationResult)
+      console.log('[DIAG App] isDataUsable:', isUsable)
+
+      if (!isUsable) {
+        // DIAGNOSTIC: Log when data is rejected
+        console.log('[DIAG App] Data rejected! Validation errors:', validationResult.errors)
         setIsLoading(false)
         return
       }
@@ -113,10 +136,13 @@ function AppContent() {
       setValidationWarnings(warnings)
       setShowWarnings(warnings.length > 0)
 
+      // DIAGNOSTIC: Log before setting parsed data
+      console.log('[DIAG App] Setting parsedData with', data.races.length, 'races')
       setParsedData(data)
       setIsLoading(false)
       // Reset race state when new file is loaded
       raceState.resetAll()
+      console.log('[DIAG App] State update complete')
     }, 100)
   }, [raceState])
 

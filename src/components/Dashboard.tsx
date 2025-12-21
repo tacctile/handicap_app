@@ -53,6 +53,14 @@ export function Dashboard({
   onOpenLegalModal,
   onNavigateToAccount,
 }: DashboardProps) {
+  // DIAGNOSTIC: Log when Dashboard receives new parsedData
+  console.log('[DIAG Dashboard] Render with:', {
+    hasParsedData: !!parsedData,
+    raceCount: parsedData?.races?.length ?? 0,
+    isLoading,
+    filename: parsedData?.filename,
+  })
+
   // View management state
   const [currentView, setCurrentView] = useState<ViewMode>('overview')
   const [selectedRaceIndex, setSelectedRaceIndex] = useState(0)
@@ -70,6 +78,13 @@ export function Dashboard({
   const { toasts, dismissToast, addPostTimeNotification } = useToasts()
 
   const hasData = !!parsedData && parsedData.races.length > 0
+
+  // DIAGNOSTIC: Log hasData result
+  console.log('[DIAG Dashboard] hasData check:', {
+    hasData,
+    parsedDataExists: !!parsedData,
+    racesLength: parsedData?.races?.length ?? 0,
+  })
 
   // Reset to overview when new file is loaded
   useEffect(() => {

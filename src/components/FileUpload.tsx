@@ -34,6 +34,13 @@ export function FileUpload({ onParsed }: FileUploadProps) {
   }
 
   const processFile = async (file: File) => {
+    // DIAGNOSTIC: Log file selection
+    console.log('[DIAG FileUpload] File selected:', {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    })
+
     if (!file.name.endsWith('.drf')) {
       setParseStatus('error')
       setErrorMessage('Only .drf files are accepted')
@@ -52,6 +59,7 @@ export function FileUpload({ onParsed }: FileUploadProps) {
       const content = await readFileAsText(file)
 
       if (!content) {
+        console.log('[DIAG FileUpload] File content is null/empty')
         setIsParsing(false)
         setParseStatus('error')
         setErrorMessage('Failed to read file content')
@@ -59,10 +67,24 @@ export function FileUpload({ onParsed }: FileUploadProps) {
         return
       }
 
+      // DIAGNOSTIC: Log content length
+      console.log('[DIAG FileUpload] File content read:', {
+        contentLength: content.length,
+        firstChars: content.substring(0, 100),
+      })
+
       // Parse using worker with automatic fallback
+      console.log('[DIAG FileUpload] Calling parseFileWithFallback...')
       const result = await parseFileWithFallback(content, file.name, {
         timeout: 30000,
         onProgress: handleProgress,
+      })
+      console.log('[DIAG FileUpload] parseFileWithFallback returned:', {
+        success: result.success,
+        usedFallback: result.usedFallback,
+        hasData: !!result.data,
+        error: result.error,
+        raceCount: result.data?.races?.length ?? 'N/A',
       })
 
       setIsParsing(false)
@@ -85,7 +107,16 @@ export function FileUpload({ onParsed }: FileUploadProps) {
           used_fallback: result.usedFallback,
         })
 
+        // DIAGNOSTIC: Log before calling onParsed
+        console.log('[DIAG FileUpload] About to call onParsed with:', {
+          filename: result.data.filename,
+          raceCount: result.data.races.length,
+          isValid: result.data.isValid,
+          errors: result.data.errors,
+          onParsedExists: typeof onParsed === 'function',
+        })
         onParsed?.(result.data)
+        console.log('[DIAG FileUpload] onParsed callback invoked')
       } else {
         setParseStatus('error')
         setErrorMessage(result.error || 'Failed to parse file')

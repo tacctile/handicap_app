@@ -222,15 +222,28 @@ export async function parseFileWithFallback(
 ): Promise<WorkerClientResult> {
   const { onProgress } = options
 
+  // DIAGNOSTIC: Log entry to parseFileWithFallback
+  console.log('[DIAG drfWorkerClient] parseFileWithFallback called:', {
+    filename,
+    contentLength: fileContent?.length,
+    hasProgressCallback: !!onProgress,
+  })
+
   // First try with worker
   try {
+    console.log('[DIAG drfWorkerClient] Attempting worker parse...')
     const data = await parseFileAsync(fileContent, filename, options)
+    console.log('[DIAG drfWorkerClient] Worker parse succeeded:', {
+      raceCount: data?.races?.length,
+      isValid: data?.isValid,
+    })
     return {
       success: true,
       data,
       usedFallback: false,
     }
   } catch (workerError) {
+    console.log('[DIAG drfWorkerClient] Worker parse failed:', workerError)
     logger.logWarning('Worker parsing failed, falling back to main thread', {
       filename,
       error: workerError instanceof Error ? workerError.message : String(workerError),
@@ -239,6 +252,7 @@ export async function parseFileWithFallback(
 
     // Fall back to main thread parsing
     try {
+      console.log('[DIAG drfWorkerClient] Attempting main thread fallback parse...')
       // Dynamically import parser to avoid bundling issues
       const { parseDRFFile } = await import('./drfParser')
 
@@ -249,7 +263,15 @@ export async function parseFileWithFallback(
 
       const data = parseDRFFile(fileContent, filename, progressAdapter)
 
+      console.log('[DIAG drfWorkerClient] Main thread parse result:', {
+        isValid: data.isValid,
+        raceCount: data.races?.length,
+        errorCount: data.errors?.length,
+        errors: data.errors,
+      })
+
       if (!data.isValid && data.errors.length > 0) {
+        console.log('[DIAG drfWorkerClient] Fallback parse failed - invalid data')
         return {
           success: false,
           error: data.errors[0] || 'Parsing failed',
