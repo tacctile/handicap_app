@@ -17,6 +17,24 @@ const getTierClass = (value: number): string => {
   return 'bad';
 };
 
+// Format earnings with K/M abbreviations
+const formatEarnings = (amount: number): string => {
+  if (!amount || amount === 0) return '0';
+  if (amount >= 1000000) {
+    return (amount / 1000000).toFixed(1) + 'M';
+  }
+  if (amount >= 1000) {
+    return (amount / 1000).toFixed(0) + 'K';
+  }
+  return amount.toLocaleString();
+};
+
+// Helper to determine if win rate is good (25%+)
+const isGoodWinRate = (starts: number, wins: number): boolean => {
+  if (!starts || starts < 2) return false;
+  return wins / starts >= 0.25;
+};
+
 export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   horse,
   isVisible,
@@ -159,12 +177,118 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
 
       {/* Section 3: Statistics Table */}
       <section className="horse-expanded-view__section horse-expanded-view__section--stats">
-        <div className="horse-expanded-view__section-placeholder">
-          STATISTICS TABLE
-          <span className="horse-expanded-view__placeholder-note">
-            (Lifetime, Current Year, Previous Year, Surface Splits)
-          </span>
-          <span className="horse-expanded-view__placeholder-note">(Prompt 3)</span>
+        <div className="horse-stats">
+          {/* Primary Records */}
+          <div className="horse-stats__group horse-stats__group--primary">
+            {/* Lifetime */}
+            <div className="horse-stats__item">
+              <span className="horse-stats__label">LIFE:</span>
+              <span className="horse-stats__record">
+                {horse.lifetimeStarts || 0}-{horse.lifetimeWins || 0}-{horse.lifetimePlaces || 0}-
+                {horse.lifetimeShows || 0}
+              </span>
+              {(horse.lifetimeEarnings || 0) > 0 && (
+                <span className="horse-stats__earnings">
+                  ${formatEarnings(horse.lifetimeEarnings)}
+                </span>
+              )}
+            </div>
+
+            <span className="horse-stats__divider">|</span>
+
+            {/* Current Year */}
+            <div className="horse-stats__item">
+              <span className="horse-stats__label">{new Date().getFullYear()}:</span>
+              <span className="horse-stats__record">
+                {horse.currentYearStarts || 0}-{horse.currentYearWins || 0}-
+                {horse.currentYearPlaces || 0}-{horse.currentYearShows || 0}
+              </span>
+              {(horse.currentYearEarnings || 0) > 0 && (
+                <span className="horse-stats__earnings">
+                  ${formatEarnings(horse.currentYearEarnings)}
+                </span>
+              )}
+            </div>
+
+            <span className="horse-stats__divider">|</span>
+
+            {/* Previous Year */}
+            <div className="horse-stats__item">
+              <span className="horse-stats__label">{new Date().getFullYear() - 1}:</span>
+              <span className="horse-stats__record">
+                {horse.previousYearStarts || 0}-{horse.previousYearWins || 0}-
+                {horse.previousYearPlaces || 0}-{horse.previousYearShows || 0}
+              </span>
+              {(horse.previousYearEarnings || 0) > 0 && (
+                <span className="horse-stats__earnings">
+                  ${formatEarnings(horse.previousYearEarnings)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Surface/Distance Splits */}
+          <div className="horse-stats__group horse-stats__group--splits">
+            <span className="horse-stats__divider horse-stats__divider--section">│</span>
+
+            {/* Dirt Fast */}
+            <div className="horse-stats__item horse-stats__item--split">
+              <span className="horse-stats__label">D.Fst:</span>
+              <span
+                className={`horse-stats__record ${isGoodWinRate(horse.surfaceStarts || 0, horse.surfaceWins || 0) ? 'horse-stats__record--hot' : ''}`}
+              >
+                {horse.surfaceStarts || 0}-{horse.surfaceWins || 0}
+              </span>
+            </div>
+
+            <span className="horse-stats__divider">|</span>
+
+            {/* Wet */}
+            <div className="horse-stats__item horse-stats__item--split">
+              <span className="horse-stats__label">Wet:</span>
+              <span
+                className={`horse-stats__record ${isGoodWinRate(horse.wetStarts || 0, horse.wetWins || 0) ? 'horse-stats__record--hot' : ''}`}
+              >
+                {horse.wetStarts || 0}-{horse.wetWins || 0}
+              </span>
+            </div>
+
+            <span className="horse-stats__divider">|</span>
+
+            {/* Turf */}
+            <div className="horse-stats__item horse-stats__item--split">
+              <span className="horse-stats__label">Turf:</span>
+              <span
+                className={`horse-stats__record ${isGoodWinRate(horse.turfStarts || 0, horse.turfWins || 0) ? 'horse-stats__record--hot' : ''}`}
+              >
+                {horse.turfStarts || 0}-{horse.turfWins || 0}
+              </span>
+            </div>
+
+            <span className="horse-stats__divider">|</span>
+
+            {/* Distance */}
+            <div className="horse-stats__item horse-stats__item--split">
+              <span className="horse-stats__label">Dist:</span>
+              <span
+                className={`horse-stats__record ${isGoodWinRate(horse.distanceStarts || 0, horse.distanceWins || 0) ? 'horse-stats__record--hot' : ''}`}
+              >
+                {horse.distanceStarts || 0}-{horse.distanceWins || 0}
+              </span>
+            </div>
+
+            <span className="horse-stats__divider">|</span>
+
+            {/* Track */}
+            <div className="horse-stats__item horse-stats__item--split">
+              <span className="horse-stats__label">Trk:</span>
+              <span
+                className={`horse-stats__record ${isGoodWinRate(horse.trackStarts || 0, horse.trackWins || 0) ? 'horse-stats__record--hot' : ''}`}
+              >
+                {horse.trackStarts || 0}-{horse.trackWins || 0}
+              </span>
+            </div>
+          </div>
         </div>
       </section>
 
