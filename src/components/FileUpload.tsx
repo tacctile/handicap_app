@@ -1,9 +1,16 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import type { DragEvent, ChangeEvent } from 'react'
-import type { ParsedDRFFile, DRFWorkerRequest, DRFWorkerResponse } from '../types/drf'
+import type { ParsedDRFFile, DRFWorkerProgressMessage } from '../types/drf'
+import { parseFileWithFallback } from '../lib/drfWorkerClient'
 
 interface FileUploadProps {
   onParsed?: (data: ParsedDRFFile) => void
+}
+
+interface ParsingProgress {
+  percent: number
+  step: string
+  message: string
 }
 
 export function FileUpload({ onParsed }: FileUploadProps) {
@@ -12,44 +19,19 @@ export function FileUpload({ onParsed }: FileUploadProps) {
   const [isParsing, setIsParsing] = useState(false)
   const [parseStatus, setParseStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [progress, setProgress] = useState<ParsingProgress | null>(null)
+  const [usedFallback, setUsedFallback] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const workerRef = useRef<Worker | null>(null)
 
-  useEffect(() => {
-    // Initialize the worker
-    workerRef.current = new Worker(
-      new URL('../lib/drfWorker.ts', import.meta.url),
-      { type: 'module' }
-    )
+  const handleProgress = (progressMessage: DRFWorkerProgressMessage) => {
+    setProgress({
+      percent: progressMessage.progress,
+      step: progressMessage.step,
+      message: progressMessage.message,
+    })
+  }
 
-    workerRef.current.onmessage = (event: MessageEvent<DRFWorkerResponse>) => {
-      setIsParsing(false)
-      const response = event.data
-
-      if (response.type === 'success' && response.data) {
-        setParseStatus('success')
-        setErrorMessage(null)
-        onParsed?.(response.data)
-      } else if (response.type === 'error') {
-        setParseStatus('error')
-        setErrorMessage(response.error || 'Failed to parse file')
-      } else if (response.type === 'progress') {
-        // Progress updates are handled separately if needed
-      }
-    }
-
-    workerRef.current.onerror = (error) => {
-      setIsParsing(false)
-      setParseStatus('error')
-      setErrorMessage(error.message || 'Worker error')
-    }
-
-    return () => {
-      workerRef.current?.terminate()
-    }
-  }, [onParsed])
-
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     if (!file.name.endsWith('.drf')) {
       setParseStatus('error')
       setErrorMessage('Only .drf files are accepted')
@@ -60,25 +42,58 @@ export function FileUpload({ onParsed }: FileUploadProps) {
     setIsParsing(true)
     setParseStatus('idle')
     setErrorMessage(null)
+    setProgress({ percent: 0, step: 'reading', message: 'Reading file...' })
+    setUsedFallback(false)
 
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const content = e.target?.result as string
-      if (workerRef.current && content) {
-        const request: DRFWorkerRequest = {
-          type: 'parse',
-          fileContent: content,
-          filename: file.name,
-        }
-        workerRef.current.postMessage(request)
+    try {
+      // Read file content
+      const content = await readFileAsText(file)
+
+      if (!content) {
+        setIsParsing(false)
+        setParseStatus('error')
+        setErrorMessage('Failed to read file content')
+        setProgress(null)
+        return
       }
-    }
-    reader.onerror = () => {
+
+      // Parse using worker with automatic fallback
+      const result = await parseFileWithFallback(content, file.name, {
+        timeout: 30000,
+        onProgress: handleProgress,
+      })
+
+      setIsParsing(false)
+      setProgress(null)
+      setUsedFallback(result.usedFallback)
+
+      if (result.success && result.data) {
+        setParseStatus('success')
+        setErrorMessage(null)
+        onParsed?.(result.data)
+      } else {
+        setParseStatus('error')
+        setErrorMessage(result.error || 'Failed to parse file')
+      }
+    } catch (error) {
       setIsParsing(false)
       setParseStatus('error')
-      setErrorMessage('Failed to read file')
+      setErrorMessage(error instanceof Error ? error.message : 'An unexpected error occurred')
+      setProgress(null)
     }
-    reader.readAsText(file)
+  }
+
+  const readFileAsText = (file: File): Promise<string | null> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        resolve(e.target?.result as string | null)
+      }
+      reader.onerror = () => {
+        resolve(null)
+      }
+      reader.readAsText(file)
+    })
   }
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
@@ -110,6 +125,35 @@ export function FileUpload({ onParsed }: FileUploadProps) {
 
   const handleButtonClick = () => {
     inputRef.current?.click()
+  }
+
+  const getProgressLabel = (): string => {
+    if (!progress) return 'Parsing...'
+
+    switch (progress.step) {
+      case 'reading':
+        return 'Reading file...'
+      case 'initializing':
+        return 'Initializing parser...'
+      case 'detecting-format':
+        return 'Detecting format...'
+      case 'extracting-races':
+        return 'Extracting races...'
+      case 'parsing-horses':
+        return 'Parsing horses...'
+      case 'loading-past-performances':
+        return 'Loading past performances...'
+      case 'processing-workouts':
+        return 'Processing workouts...'
+      case 'validating-data':
+        return 'Validating data...'
+      case 'finalizing':
+        return 'Finalizing...'
+      case 'complete':
+        return 'Complete!'
+      default:
+        return progress.message || 'Parsing...'
+    }
   }
 
   return (
@@ -203,14 +247,32 @@ export function FileUpload({ onParsed }: FileUploadProps) {
           </div>
 
           {isParsing ? (
-            <div className="text-center">
-              <p className="text-sm font-medium text-foreground">Parsing...</p>
+            <div className="text-center w-full">
+              <p className="text-sm font-medium text-foreground">{getProgressLabel()}</p>
               <p className="mt-1 text-xs text-white/40">{fileName}</p>
+              {progress && progress.percent > 0 && (
+                <div className="mt-3 w-full max-w-xs mx-auto">
+                  <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#19abb5] rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${progress.percent}%` }}
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-white/30 tabular-nums">
+                    {progress.percent}%
+                  </p>
+                </div>
+              )}
             </div>
           ) : parseStatus === 'success' ? (
             <div className="text-center">
               <p className="text-sm font-medium text-green-400">File parsed successfully</p>
               <p className="mt-1 text-xs text-white/40">{fileName}</p>
+              {usedFallback && (
+                <p className="mt-1 text-xs text-yellow-400/60">
+                  (parsed on main thread)
+                </p>
+              )}
             </div>
           ) : parseStatus === 'error' ? (
             <div className="text-center">
