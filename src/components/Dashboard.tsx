@@ -12,7 +12,7 @@ import { FadeIn } from './motion'
 import { BankrollSettings } from './BankrollSettings'
 import { BankrollSummaryCard } from './BankrollSummaryCard'
 import { PostTimeDetailModal } from './PostTimeCountdown'
-import { ResponsiveToastContainer, useToasts } from './Toast'
+import { useToastContext } from '../contexts/ToastContext'
 import { OfflineIndicator } from './OfflineIndicator'
 import { InstallPrompt } from './InstallPrompt'
 import { UpdatePrompt } from './UpdatePrompt'
@@ -66,8 +66,8 @@ export function Dashboard({
   // Bankroll management hook
   const bankroll = useBankroll()
 
-  // Toast notifications
-  const { toasts, dismissToast, addPostTimeNotification } = useToasts()
+  // Toast notifications (from context - container rendered by ToastProvider)
+  const { addPostTimeNotification } = useToastContext()
 
   const hasData = !!parsedData && parsedData.races.length > 0
 
@@ -510,11 +510,7 @@ export function Dashboard({
         hasData={hasData}
       />
 
-      {/* Toast Notifications */}
-      <ResponsiveToastContainer
-        toasts={toasts}
-        onDismiss={dismissToast}
-      />
+      {/* Toast Notifications - Container is rendered by ToastProvider in App.tsx */}
 
       {/* Bankroll Settings Modal */}
       <BankrollSettings

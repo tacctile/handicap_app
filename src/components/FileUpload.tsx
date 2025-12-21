@@ -3,6 +3,8 @@ import type { DragEvent, ChangeEvent } from 'react'
 import type { ParsedDRFFile, DRFWorkerProgressMessage } from '../types/drf'
 import { parseFileWithFallback } from '../lib/drfWorkerClient'
 import { useAnalytics } from '../hooks/useAnalytics'
+import { useToastContext } from '../contexts/ToastContext'
+import { logger } from '../services/logging'
 
 interface FileUploadProps {
   onParsed?: (data: ParsedDRFFile) => void
@@ -24,6 +26,7 @@ export function FileUpload({ onParsed }: FileUploadProps) {
   const [usedFallback, setUsedFallback] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const { trackEvent } = useAnalytics()
+  const { addToast } = useToastContext()
 
   const handleProgress = (progressMessage: DRFWorkerProgressMessage) => {
     setProgress({
@@ -37,6 +40,11 @@ export function FileUpload({ onParsed }: FileUploadProps) {
     if (!file.name.endsWith('.drf')) {
       setParseStatus('error')
       setErrorMessage('Only .drf files are accepted')
+      addToast(
+        'Invalid file type: Only .drf files are accepted',
+        'warning',
+        { duration: 5000, icon: 'warning' }
+      )
       return
     }
 
@@ -56,6 +64,14 @@ export function FileUpload({ onParsed }: FileUploadProps) {
         setParseStatus('error')
         setErrorMessage('Failed to read file content')
         setProgress(null)
+
+        // Log and show toast for file read failure
+        logger.logWarning('Failed to read file content', { fileName: file.name, fileSize: file.size })
+        addToast(
+          'Failed to read file content. The file may be corrupted.',
+          'critical',
+          { duration: 6000, icon: 'error' }
+        )
         return
       }
 
@@ -87,14 +103,54 @@ export function FileUpload({ onParsed }: FileUploadProps) {
 
         onParsed?.(result.data)
       } else {
+        // Parse failed - surface error to user via toast
+        const errorMsg = result.error || 'Failed to parse file'
         setParseStatus('error')
-        setErrorMessage(result.error || 'Failed to parse file')
+        setErrorMessage(errorMsg)
+
+        // Log detailed error for debugging
+        logger.logError(new Error(`DRF parse failed: ${errorMsg}`), {
+          fileName: file.name,
+          fileSize: file.size,
+          usedFallback: result.usedFallback,
+          error: result.error,
+        })
+        console.log('[DEBUG] Parse failure details:', {
+          fileName: file.name,
+          error: result.error,
+          result,
+        })
+
+        // Show toast notification to user
+        addToast(
+          `Failed to parse DRF file: ${errorMsg}`,
+          'critical',
+          { duration: 8000, icon: 'error' }
+        )
+
+        // Do not call onParsed - parsing failed
       }
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'An unexpected error occurred'
       setIsParsing(false)
       setParseStatus('error')
-      setErrorMessage(error instanceof Error ? error.message : 'An unexpected error occurred')
+      setErrorMessage(errorMsg)
       setProgress(null)
+
+      // Log error for debugging
+      logger.logError(error instanceof Error ? error : new Error(String(error)), {
+        fileName: file.name,
+        fileSize: file.size,
+        component: 'FileUpload',
+      })
+      console.log('[DEBUG] File processing error:', error)
+
+      // Show toast notification
+      addToast(
+        `Error processing file: ${errorMsg}`,
+        'critical',
+        { duration: 8000, icon: 'error' }
+      )
     }
   }
 
