@@ -18,7 +18,7 @@ const getTierClass = (value: number): string => {
 };
 
 export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
-  horse: _horse,
+  horse,
   isVisible,
   valuePercent = 0,
 }) => {
@@ -38,12 +38,122 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
 
       {/* Section 2: Horse Identity & Connections */}
       <section className="horse-expanded-view__section horse-expanded-view__section--identity">
-        <div className="horse-expanded-view__section-placeholder">
-          HORSE IDENTITY & CONNECTIONS
-          <span className="horse-expanded-view__placeholder-note">
-            (Color/Sex/Age, Breeding, Owner, Trainer, Jockey, Weight)
-          </span>
-          <span className="horse-expanded-view__placeholder-note">(Prompt 2)</span>
+        <div className="horse-identity">
+          {/* Row 1: Horse info + Breeding */}
+          <div className="horse-identity__row">
+            {/* Color/Sex/Age */}
+            <div className="horse-identity__field horse-identity__field--profile">
+              <span className="horse-identity__value horse-identity__value--highlight">
+                {horse.color || 'B'}. {horse.sexFull || horse.sex || 'c'}. {horse.age || '?'}
+              </span>
+              {horse.breeding?.whereBred && (
+                <span className="horse-identity__bred">({horse.breeding.whereBred})</span>
+              )}
+            </div>
+
+            <span className="horse-identity__divider">|</span>
+
+            {/* Sire */}
+            <div className="horse-identity__field">
+              <span className="horse-identity__label">Sire:</span>
+              <span className="horse-identity__value">
+                {horse.breeding?.sire || '—'}
+                {horse.breeding?.sireOfSire && (
+                  <span className="horse-identity__sub">({horse.breeding.sireOfSire})</span>
+                )}
+              </span>
+            </div>
+
+            <span className="horse-identity__divider">|</span>
+
+            {/* Dam */}
+            <div className="horse-identity__field">
+              <span className="horse-identity__label">Dam:</span>
+              <span className="horse-identity__value">
+                {horse.breeding?.dam || '—'}
+                {horse.breeding?.damSire && (
+                  <span className="horse-identity__sub">({horse.breeding.damSire})</span>
+                )}
+              </span>
+            </div>
+
+            <span className="horse-identity__divider">|</span>
+
+            {/* Breeder */}
+            <div className="horse-identity__field">
+              <span className="horse-identity__label">Breeder:</span>
+              <span className="horse-identity__value">{horse.breeding?.breeder || '—'}</span>
+            </div>
+          </div>
+
+          {/* Row 2: Connections */}
+          <div className="horse-identity__row">
+            {/* Owner */}
+            <div className="horse-identity__field">
+              <span className="horse-identity__label">Owner:</span>
+              <span className="horse-identity__value">{horse.owner || '—'}</span>
+            </div>
+
+            <span className="horse-identity__divider">|</span>
+
+            {/* Trainer */}
+            <div className="horse-identity__field">
+              <span className="horse-identity__label">Trainer:</span>
+              <span className="horse-identity__value">
+                {horse.trainerName || '—'}
+                {horse.trainerStats && (
+                  <span className="horse-identity__stat">({horse.trainerStats})</span>
+                )}
+              </span>
+            </div>
+
+            <span className="horse-identity__divider">|</span>
+
+            {/* Jockey */}
+            <div className="horse-identity__field">
+              <span className="horse-identity__label">Jockey:</span>
+              <span className="horse-identity__value">
+                {horse.jockeyName || '—'}
+                {horse.jockeyStats && (
+                  <span className="horse-identity__stat">({horse.jockeyStats})</span>
+                )}
+              </span>
+            </div>
+
+            <span className="horse-identity__divider">|</span>
+
+            {/* Weight */}
+            <div className="horse-identity__field">
+              <span className="horse-identity__label">Wt:</span>
+              <span className="horse-identity__value">{horse.weight || '—'}</span>
+            </div>
+
+            {/* Equipment if any */}
+            {horse.equipment?.raw && (
+              <>
+                <span className="horse-identity__divider">|</span>
+                <div className="horse-identity__field">
+                  <span className="horse-identity__label">Equip:</span>
+                  <span className="horse-identity__value horse-identity__value--equip">
+                    {horse.equipment.raw}
+                  </span>
+                </div>
+              </>
+            )}
+
+            {/* Medication if any */}
+            {horse.medication?.raw && (
+              <>
+                <span className="horse-identity__divider">|</span>
+                <div className="horse-identity__field">
+                  <span className="horse-identity__label">Med:</span>
+                  <span className="horse-identity__value horse-identity__value--med">
+                    {horse.medication.raw}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </section>
 
