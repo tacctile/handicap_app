@@ -1,6 +1,7 @@
 import { Component } from 'react'
 import type { ReactNode } from 'react'
 import { logger } from '../services/logging'
+import type { ErrorSeverity } from '../services/logging'
 import {
   isAppError,
   isDRFParseError,
@@ -43,15 +44,44 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log the error with full context using the logging service
-    logger.logError(error, {
+    // Determine severity based on error type
+    let severity: ErrorSeverity = 'error'
+    if (isAppError(error)) {
+      severity = error.recoverable ? 'warning' : 'error'
+    }
+
+    // Capture the error with full context using the enhanced logging service
+    // This includes breadcrumbs automatically from the logger's internal state
+    const capturedError = logger.captureError(error, {
       component: this.props.componentName || 'ErrorBoundary',
       componentStack: errorInfo.componentStack || undefined,
       errorCode: isAppError(error) ? error.code : undefined,
       errorCategory: isAppError(error) ? error.category : undefined,
       recoverable: isAppError(error) ? error.recoverable : true,
       url: typeof window !== 'undefined' ? window.location.href : undefined,
-      ...this.props.context,
+      action: 'component_render',
+      additionalData: {
+        ...this.props.context,
+        errorBoundaryName: this.props.componentName,
+        reactErrorInfo: {
+          componentStack: errorInfo.componentStack,
+        },
+      },
+    }, severity)
+
+    // Also log to the standard error log for backwards compatibility
+    logger.logError(error, {
+      component: this.props.componentName || 'ErrorBoundary',
+      componentStack: errorInfo.componentStack || undefined,
+    })
+
+    // Log that we captured the error (useful for debugging)
+    logger.logInfo(`Error captured by ErrorBoundary: ${capturedError.message}`, {
+      component: 'ErrorBoundary',
+      additionalData: {
+        breadcrumbCount: capturedError.breadcrumbs.length,
+        severity: capturedError.severity,
+      },
     })
 
     this.setState({
