@@ -629,3 +629,129 @@
 .horse-expanded-view__section--performances .horse-expanded-view__section-placeholder {
   display: none;
 }
+
+/* ============================================
+   WORKOUTS SECTION (Compact)
+   ============================================ */
+
+.horse-expanded-view__section--workouts {
+  padding: 6px 16px;
+  background: var(--color-base);
+  border-top: 1px solid var(--color-border);
+}
+
+.horse-workouts {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  line-height: 1.3;
+}
+
+.horse-workouts__label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+
+.horse-workouts__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.horse-workouts__none {
+  font-size: 10px;
+  font-style: italic;
+  color: var(--color-text-tertiary);
+}
+
+/* ============================================
+   SINGLE WORKOUT ITEM
+   ============================================ */
+
+.horse-workouts__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-size: 10px;
+  color: var(--color-text-secondary);
+}
+
+.horse-workouts__item--bullet {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.horse-workouts__date {
+  width: 42px;
+  min-width: 42px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.horse-workouts__track {
+  width: 24px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.horse-workouts__dist {
+  width: 24px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.horse-workouts__cond {
+  width: 24px;
+  min-width: 24px;
+  text-align: center;
+  font-size: 9px;
+  color: var(--color-text-tertiary);
+}
+
+.horse-workouts__time {
+  width: 48px;
+  min-width: 48px;
+  text-align: right;
+  font-weight: 600;
+}
+
+.horse-workouts__item--bullet .horse-workouts__time {
+  color: var(--color-tier-good);
+}
+
+.horse-workouts__type {
+  width: 12px;
+  min-width: 12px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.horse-workouts__rank {
+  width: 36px;
+  min-width: 36px;
+  text-align: right;
+  font-size: 9px;
+}
+
+.horse-workouts__bullet-icon {
+  color: var(--color-tier-elite);
+  font-size: 8px;
+  margin-left: 2px;
+}
+
+.horse-workouts__gate-icon {
+  font-size: 8px;
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+/* Hide placeholder */
+.horse-expanded-view__section--workouts .horse-expanded-view__section-placeholder {
+  display: none;
+}
