@@ -1,0 +1,201 @@
+/* ============================================
+   HORSE SUMMARY BAR
+   ============================================ */
+
+.horse-summary-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-element);
+  padding: 10px var(--gap-container);
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-border);
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.horse-summary-bar:hover {
+  background: var(--color-elevated);
+}
+
+.horse-summary-bar--expanded {
+  background: var(--color-elevated);
+  border-bottom-color: transparent;
+}
+
+/* Scratch placeholder - will be replaced */
+.horse-summary-bar__scratch-placeholder {
+  width: 24px;
+  flex-shrink: 0;
+}
+
+/* Program number */
+.horse-summary-bar__pp {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  min-width: 36px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Horse name */
+.horse-summary-bar__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  min-width: 150px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Trainer */
+.horse-summary-bar__trainer {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  min-width: 80px;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Weight */
+.horse-summary-bar__weight {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  min-width: 36px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Odds placeholder */
+.horse-summary-bar__odds-placeholder {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  min-width: 60px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Shared label styling */
+.horse-summary-bar__label {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-right: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* Shared value styling */
+.horse-summary-bar__value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.horse-summary-bar__value--score {
+  color: var(--color-primary);
+}
+
+/* Lifetime record */
+.horse-summary-bar__lifetime {
+  display: flex;
+  align-items: baseline;
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+/* Furlong score */
+.horse-summary-bar__score {
+  display: flex;
+  align-items: baseline;
+  min-width: 95px;
+  flex-shrink: 0;
+}
+
+/* Fair odds */
+.horse-summary-bar__fair {
+  display: flex;
+  align-items: baseline;
+  min-width: 70px;
+  flex-shrink: 0;
+}
+
+/* Value percentage */
+.horse-summary-bar__value-percent {
+  display: flex;
+  align-items: baseline;
+  min-width: 130px;
+  flex-shrink: 0;
+}
+
+.horse-summary-bar__suffix {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-left: 4px;
+}
+
+/* Tier badge - colors added in Prompt 3A */
+.horse-summary-bar__tier {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: var(--color-elevated);
+  color: var(--color-text-secondary);
+  min-width: 110px;
+  text-align: center;
+}
+
+/* Expand indicator */
+.horse-summary-bar__expand {
+  margin-left: auto;
+  color: var(--color-text-tertiary);
+  transition: transform 200ms ease;
+  flex-shrink: 0;
+}
+
+.horse-summary-bar--expanded .horse-summary-bar__expand {
+  transform: rotate(180deg);
+}
+
+/* ============================================
+   HORSE LIST CONTAINER
+   ============================================ */
+
+.horse-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.horse-list__item {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Expanded content area */
+.horse-expanded {
+  background: var(--color-base);
+  border-bottom: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-border);
+}
+
+.horse-expanded__placeholder {
+  padding: var(--gap-container);
+  color: var(--color-text-tertiary);
+  text-align: center;
+  font-size: 14px;
+}
