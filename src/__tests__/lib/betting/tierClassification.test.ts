@@ -13,11 +13,7 @@ import {
   TIER_DESCRIPTIONS,
   TIER_EXPECTED_HIT_RATE,
 } from '../../../lib/betting/tierClassification'
-import {
-  createHorseEntry,
-  createPastPerformance,
-  createSpeedFigures,
-} from '../../fixtures/testHelpers'
+import { createHorseEntry } from '../../fixtures/testHelpers'
 import type { HorseScore, ScoreBreakdown } from '../../../lib/scoring'
 
 // Helper to create a mock score

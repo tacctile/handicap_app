@@ -30,6 +30,7 @@ import {
 } from '../diamondTypes'
 import type { HorseEntry, RaceHeader } from '../../../types/drf'
 import type { HorseScore, ScoreBreakdown } from '../../scoring'
+import type { SireProfile } from '../../../lib/breeding/types'
 
 // Mock the logger
 vi.mock('../../../services/logging', () => ({
@@ -220,9 +221,9 @@ function createMockScore(total: number, overrides: Partial<HorseScore> = {}): Ho
     breedingScore: {
       wasApplied: false,
       total: 0,
-      sireDetails: { score: 0, profile: null, tierLabel: '', tierColor: '', reasoning: '' },
-      damDetails: { score: 0, profile: null, tierLabel: '', tierColor: '', reasoning: '' },
-      damsireDetails: { score: 0, profile: null, tierLabel: '', tierColor: '', reasoning: '' },
+      sireDetails: { score: 0, profile: null, tierLabel: '', tierColor: '#888888', reasoning: '' },
+      damDetails: { score: 0, profile: null, tierLabel: '', tierColor: '#888888', reasoning: '' },
+      damsireDetails: { score: 0, profile: null, tierLabel: '', tierColor: '#888888', reasoning: '' },
       bonuses: { eliteSireDebut: 0, surfaceFit: 0, distanceFit: 0, total: 0, reasons: [] },
     },
     ...overrides,
@@ -913,20 +914,23 @@ describe('Perfect Storm Detection', () => {
           total: 45,
           sireDetails: {
             score: 20,
-            profile: { name: 'Top Sire' } as any,
+            profile: { name: 'Top Sire' } as unknown as SireProfile,
             tierLabel: 'Elite',
+            tierColor: '#22c55e',
             reasoning: 'Elite sire',
           },
           damDetails: {
             score: 15,
             profile: null,
-            tierLabel: null,
+            tierLabel: '',
+            tierColor: '#888888',
             reasoning: '',
           },
           damsireDetails: {
             score: 10,
             profile: null,
-            tierLabel: null,
+            tierLabel: '',
+            tierColor: '#888888',
             reasoning: '',
           },
           bonuses: {
@@ -936,7 +940,7 @@ describe('Perfect Storm Detection', () => {
             total: 0,
             reasons: [],
           },
-        } as any,
+        } as unknown as import('../../scoring').DetailedBreedingScore,
       })
       const header = createMockRaceHeader()
 

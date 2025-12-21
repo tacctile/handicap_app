@@ -10,7 +10,7 @@ import {
   formatCurrency,
 } from '../../../lib/betting/betRecommendations'
 import type { TierGroup, ClassifiedHorse } from '../../../lib/betting/tierClassification'
-import { createHorseEntry, createPastPerformance, createSpeedFigures } from '../../fixtures/testHelpers'
+import { createHorseEntry } from '../../fixtures/testHelpers'
 
 // Helper to create a mock classified horse
 function createClassifiedHorse(

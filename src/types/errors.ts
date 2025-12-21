@@ -43,10 +43,10 @@ export abstract class AppError extends Error {
 
     // Maintain proper stack trace in V8 engines
     const ErrorWithStackTrace = Error as typeof Error & {
-      captureStackTrace?: (target: object, constructor: Function) => void
+      captureStackTrace?: (target: object, constructor: (...args: unknown[]) => unknown) => void
     }
     if (typeof ErrorWithStackTrace.captureStackTrace === 'function') {
-      ErrorWithStackTrace.captureStackTrace(this, this.constructor)
+      ErrorWithStackTrace.captureStackTrace(this, this.constructor as (...args: unknown[]) => unknown)
     }
   }
 

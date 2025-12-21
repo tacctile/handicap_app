@@ -96,6 +96,7 @@ export function BankrollSettings({
   // Sync form state when settings change externally or modal opens
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state when modal opens
       setFormState(settings)
       if (notificationSettings) {
         setNotifState(notificationSettings)

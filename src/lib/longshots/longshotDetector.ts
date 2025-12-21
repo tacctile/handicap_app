@@ -108,7 +108,7 @@ export function detectPaceDevastation(
       hasAllRequiredEvidence: true,
       bonusPoints: Math.min(bonusPoints, 10),
     }
-  } catch (error) {
+  } catch (_error) {
     logger.logWarning('Error detecting pace devastation angle', {
       component: 'longshotDetector',
       horseName: horse.horseName,
@@ -201,7 +201,7 @@ export function detectClassRelief(
       hasAllRequiredEvidence: true,
       bonusPoints: Math.min(bonusPoints, 10),
     }
-  } catch (error) {
+  } catch (_error) {
     logger.logWarning('Error detecting class relief angle', {
       component: 'longshotDetector',
       horseName: horse.horseName,
@@ -319,7 +319,7 @@ export function detectEquipmentRescue(
       hasAllRequiredEvidence: hasFirstTimeLasix && hasBlinkersOn && trainerWinRate >= 20,
       bonusPoints: Math.min(bonusPoints, 10),
     }
-  } catch (error) {
+  } catch (_error) {
     logger.logWarning('Error detecting equipment rescue angle', {
       component: 'longshotDetector',
       horseName: horse.horseName,
@@ -448,7 +448,7 @@ export function detectTrainerPattern(
       hasAllRequiredEvidence: avgWinRate >= 20,
       bonusPoints: Math.min(bonusPoints, 15),
     }
-  } catch (error) {
+  } catch (_error) {
     logger.logWarning('Error detecting trainer pattern angle', {
       component: 'longshotDetector',
       horseName: horse.horseName,
@@ -553,7 +553,7 @@ export function detectTrackBiasFit(
       hasAllRequiredEvidence: true,
       bonusPoints: Math.min(bonusPoints, 10),
     }
-  } catch (error) {
+  } catch (_error) {
     logger.logWarning('Error detecting track bias fit angle', {
       component: 'longshotDetector',
       horseName: horse.horseName,
@@ -759,7 +759,7 @@ export function detectHiddenForm(
       hasAllRequiredEvidence: workoutAnalysis.isSharp && hasPositiveFactor,
       bonusPoints: Math.min(bonusPoints, 10),
     }
-  } catch (error) {
+  } catch (_error) {
     logger.logWarning('Error detecting hidden form angle', {
       component: 'longshotDetector',
       horseName: horse.horseName,
@@ -847,7 +847,7 @@ export function detectAllUpsetAngles(
         points: formAngle.points,
       })
     }
-  } catch (error) {
+  } catch (_error) {
     logger.logWarning('Error detecting upset angles', {
       component: 'longshotDetector',
       horseName: horse.horseName,

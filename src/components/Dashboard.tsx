@@ -81,6 +81,7 @@ export function Dashboard({
   // Reset to overview when new file is loaded
   useEffect(() => {
     if (parsedData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state when new data is loaded
       setCurrentView('overview')
       setSelectedRaceIndex(0)
     }

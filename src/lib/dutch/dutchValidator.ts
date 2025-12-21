@@ -303,11 +303,40 @@ export function validateHorse(horse: unknown): {
 
   // Parse and validate odds
   let decimalOdds = h.decimalOdds
-  if (typeof decimalOdds !== 'number' || decimalOdds <= 1) {
-    decimalOdds = parseOddsToDecimal(h.oddsDisplay || '')
+  const originalOddsInvalid = typeof decimalOdds !== 'number' || decimalOdds <= 1
+
+  if (originalOddsInvalid) {
+    // Only try to parse display if there's a valid oddsDisplay string
+    // that looks like actual odds (contains numbers, dashes, or is EVEN/EVN)
+    const display = h.oddsDisplay
+    if (display && typeof display === 'string') {
+      const trimmed = display.trim().toUpperCase()
+      // Check if it looks like valid odds format
+      const looksLikeOdds = /^(EVEN|EVN|[+-]?\d+[-/]\d+|[+-]?\d+)$/.test(trimmed)
+      if (looksLikeOdds) {
+        decimalOdds = parseOddsToDecimal(display)
+      } else {
+        // oddsDisplay doesn't look like valid odds
+        return {
+          isValid: false,
+          sanitizedHorse: null,
+          error: `Invalid odds for horse ${h.programNumber}`,
+        }
+      }
+    } else {
+      // No valid odds provided at all
+      return {
+        isValid: false,
+        sanitizedHorse: null,
+        error: `Invalid odds for horse ${h.programNumber}`,
+      }
+    }
   }
 
-  if (decimalOdds <= 1) {
+  // At this point, decimalOdds is guaranteed to be a valid number
+  const validatedOdds = decimalOdds as number
+
+  if (validatedOdds <= 1) {
     return {
       isValid: false,
       sanitizedHorse: null,
@@ -320,9 +349,9 @@ export function validateHorse(horse: unknown): {
     sanitizedHorse: {
       programNumber: Math.floor(h.programNumber),
       horseName: typeof h.horseName === 'string' ? h.horseName : `Horse ${h.programNumber}`,
-      decimalOdds,
-      oddsDisplay: h.oddsDisplay || formatDecimalAsOdds(decimalOdds),
-      impliedProbability: calculateImpliedProbability(decimalOdds),
+      decimalOdds: validatedOdds,
+      oddsDisplay: h.oddsDisplay || formatDecimalAsOdds(validatedOdds),
+      impliedProbability: calculateImpliedProbability(validatedOdds),
       estimatedWinProb: h.estimatedWinProb,
       fairOdds: h.fairOdds,
       overlayPercent: h.overlayPercent,

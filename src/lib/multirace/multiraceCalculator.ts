@@ -498,7 +498,7 @@ export function findMaxSelectionsForBudget(
   const bet = baseBet ?? config.minBaseBet
 
   // Start with 1 selection per race and increase
-  let currentSelections = new Array(raceCount).fill(1)
+  const currentSelections = new Array(raceCount).fill(1)
   let lastValidSelections = [...currentSelections]
   let lastValidCost = calculateBasicCost(currentSelections, bet)
 

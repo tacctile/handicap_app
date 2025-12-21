@@ -395,11 +395,11 @@ describe('Ticket Optimization', () => {
     })
 
     it('should provide multiple ticket options', () => {
+      // Don't pass strategy to get all three options
       const result = optimizeMultiRaceBet({
         betType: 'daily_double',
         races,
         budget: 100,
-        strategy: 'balanced',
       })
 
       expect(result.isValid).toBe(true)

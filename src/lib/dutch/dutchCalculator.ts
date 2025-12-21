@@ -261,15 +261,15 @@ export function calculateDutchBook(config: DutchConfig): DutchResult {
 
   const warnings: string[] = []
 
-  // Validate total stake
+  // Validate total stake - check original value first
+  if (typeof totalStake !== 'number' || !Number.isFinite(totalStake) || totalStake < MINIMUM_TOTAL_STAKE) {
+    return createErrorResult(`Total stake must be at least $${MINIMUM_TOTAL_STAKE}`)
+  }
+
   const validatedStake = validateNumber(totalStake, MINIMUM_TOTAL_STAKE, {
     min: MINIMUM_TOTAL_STAKE,
     max: 100000,
   })
-
-  if (validatedStake < MINIMUM_TOTAL_STAKE) {
-    return createErrorResult(`Total stake must be at least $${MINIMUM_TOTAL_STAKE}`)
-  }
 
   // Validate and sanitize horses
   if (!Array.isArray(horses) || horses.length < 2) {

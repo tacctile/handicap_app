@@ -61,7 +61,7 @@ function parseBreedingContent(content: string, result: BreedingParseResult): Bre
   // 5. "Sire"
 
   // Normalize separators
-  let normalized = content
+  const normalized = content
     .replace(/\s*[-–—]+\s*/g, ' - ') // Normalize dashes
     .replace(/\s+/g, ' ') // Normalize whitespace
     .trim()

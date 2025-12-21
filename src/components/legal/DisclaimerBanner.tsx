@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useState, useEffect, useCallback } from 'react'
 import { DISCLAIMER_ABBREVIATED } from '../../legal'
 import { logger } from '../../services/logging'
@@ -23,6 +24,7 @@ export function DisclaimerBanner({ onViewFull }: DisclaimerBannerProps) {
     try {
       const acknowledged = localStorage.getItem(DISCLAIMER_STORAGE_KEY)
       if (!acknowledged) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Initialization from localStorage
         setIsVisible(true)
         logger.logInfo('Disclaimer banner displayed', { component: 'DisclaimerBanner' })
       }

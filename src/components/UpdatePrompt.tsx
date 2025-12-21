@@ -39,6 +39,7 @@ export function UpdatePrompt({ className = '' }: UpdatePromptProps) {
   // Show prompt when update is available
   useEffect(() => {
     if (needRefresh) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state
       setShowPrompt(true)
     }
   }, [needRefresh])
@@ -117,6 +118,7 @@ export function UpdateToast({ className = '' }: { className?: string }) {
 
   useEffect(() => {
     if (needRefresh) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state
       setShowToast(true)
     }
   }, [needRefresh])

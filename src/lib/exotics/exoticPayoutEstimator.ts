@@ -169,7 +169,7 @@ function calculateRawPayout(
   const takeout = TRACK_TAKEOUT[betType]
 
   // Base calculation: multiply all odds together
-  let oddsProduct = odds.reduce((product, o) => product * o, 1)
+  const oddsProduct = odds.reduce((product, o) => product * o, 1)
 
   // Apply multiplier and adjust for takeout
   const grossPayout = oddsProduct * multiplier * baseBet

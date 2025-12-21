@@ -27,6 +27,7 @@ import {
   getOverlayColor,
   VALUE_COLORS,
   type ValueClassification,
+  type BettingRecommendation,
 } from '../overlayAnalysis'
 
 describe('Overlay Analysis', () => {
@@ -503,7 +504,7 @@ describe('Overlay Analysis', () => {
           evPerDollar: 1.5,
           fairOddsDisplay: '3-1',
           actualOddsDisplay: '12-1',
-          recommendation: {} as any,
+          recommendation: {} as unknown as BettingRecommendation,
         },
         {
           horseIndex: 1,
@@ -515,7 +516,7 @@ describe('Overlay Analysis', () => {
           evPerDollar: 0.8,
           fairOddsDisplay: '4-1',
           actualOddsDisplay: '8-1',
-          recommendation: {} as any,
+          recommendation: {} as unknown as BettingRecommendation,
         },
         {
           horseIndex: 2,
@@ -527,7 +528,7 @@ describe('Overlay Analysis', () => {
           evPerDollar: 0.4,
           fairOddsDisplay: '5-1',
           actualOddsDisplay: '7-1',
-          recommendation: {} as any,
+          recommendation: {} as unknown as BettingRecommendation,
         },
       ]
 

@@ -254,16 +254,18 @@ export function ExoticBuilderModal({
       case 'box':
         instruction += `${betType.toUpperCase()} BOX ${horseNums.join(', ')}`
         break
-      case 'key_over':
+      case 'key_over': {
         const keyHorse = selected.find(h => h.position === 'first')?.programNumber || horseNums[0]
         const others = horseNums.filter(n => n !== keyHorse)
         instruction += `${betType.toUpperCase()}, #${keyHorse} on top with ${others.join(', ')}`
         break
-      case 'key_under':
+      }
+      case 'key_under': {
         const underHorse = selected.find(h => h.position === 'second')?.programNumber || horseNums[0]
         const topHorses = horseNums.filter(n => n !== underHorse)
         instruction += `${betType.toUpperCase()}, ${topHorses.join(', ')} with #${underHorse} second`
         break
+      }
       case 'straight':
         instruction += `${betType.toUpperCase()} ${horseNums.join('-')}`
         break

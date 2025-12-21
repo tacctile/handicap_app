@@ -546,7 +546,7 @@ export function saveCalibrationResult(result: CalibrationResult): void {
 
     results.push(result)
     localStorage.setItem(CALIBRATION_RESULTS_KEY, JSON.stringify(results))
-  } catch (error) {
+  } catch (_error) {
     logger.logWarning('Failed to save calibration result', {
       component: 'confidenceCalibration',
     })
@@ -571,7 +571,7 @@ export function loadCalibrationResults(): CalibrationResult[] {
 export function saveCalibrationProfile(profile: CalibrationProfile): void {
   try {
     localStorage.setItem(CALIBRATION_PROFILE_KEY, JSON.stringify(profile))
-  } catch (error) {
+  } catch (_error) {
     logger.logWarning('Failed to save calibration profile', {
       component: 'confidenceCalibration',
     })

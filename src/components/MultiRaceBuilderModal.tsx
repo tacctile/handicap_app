@@ -214,6 +214,7 @@ export function MultiRaceBuilderModal({
   // Reset when modal opens
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state when modal opens
       setState(createBuilderState(betType, startingRace, multiRaceData, budget, trackCode))
       setCurrentLeg(0)
     }

@@ -62,7 +62,7 @@ function isValidOdds(odds: string): boolean {
   if (!odds) return false
 
   // Handle fractional odds (e.g., "5-2", "3/1")
-  const fractionalMatch = odds.match(/^(\d+)[-\/](\d+)$/)
+  const fractionalMatch = odds.match(/^(\d+)[-/](\d+)$/)
   if (fractionalMatch) {
     const numerator = parseInt(fractionalMatch[1], 10)
     const denominator = parseInt(fractionalMatch[2], 10)
@@ -81,7 +81,7 @@ export function oddsToDecimal(odds: string): number {
   if (!odds) return 0
 
   // Handle fractional odds
-  const fractionalMatch = odds.match(/^(\d+)[-\/](\d+)$/)
+  const fractionalMatch = odds.match(/^(\d+)[-/](\d+)$/)
   if (fractionalMatch) {
     const numerator = parseInt(fractionalMatch[1], 10)
     const denominator = parseInt(fractionalMatch[2], 10)
