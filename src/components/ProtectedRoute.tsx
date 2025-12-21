@@ -10,6 +10,7 @@ import { type ReactNode } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useSubscription } from '../hooks/useSubscription'
 import { useFeatureFlag } from '../hooks/useFeatureFlag'
+import { logger } from '../services/logging'
 
 // ============================================================================
 // TYPES
@@ -266,11 +267,12 @@ export function ProtectedRoute({
     const handleSubscribe = onNeedSubscription || (async () => {
       try {
         const url = await openCheckout()
-        // In real app, you would redirect to checkout URL
-        console.log('Checkout URL:', url)
         window.open(url, '_blank')
       } catch (err) {
-        console.error('Failed to open checkout:', err)
+        logger.logError(err instanceof Error ? err : new Error(String(err)), {
+          component: 'ProtectedRoute',
+          action: 'openCheckout',
+        })
       }
     })
 

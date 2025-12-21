@@ -115,17 +115,11 @@ export function FileUpload({ onParsed }: FileUploadProps) {
         setParseStatus('error')
         setErrorMessage(errorMsg)
 
-        // Log detailed error for debugging
         logger.logError(new Error(`DRF parse failed: ${errorMsg}`), {
           fileName: file.name,
           fileSize: file.size,
           usedFallback: result.usedFallback,
           error: result.error,
-        })
-        console.log('[DEBUG] Parse failure details:', {
-          fileName: file.name,
-          error: result.error,
-          result,
         })
 
         // Show toast notification to user
@@ -144,13 +138,11 @@ export function FileUpload({ onParsed }: FileUploadProps) {
       setErrorMessage(errorMsg)
       setProgress(null)
 
-      // Log error for debugging
       logger.logError(error instanceof Error ? error : new Error(String(error)), {
         fileName: file.name,
         fileSize: file.size,
         component: 'FileUpload',
       })
-      console.log('[DEBUG] File processing error:', error)
 
       // Show toast notification
       addToast(
