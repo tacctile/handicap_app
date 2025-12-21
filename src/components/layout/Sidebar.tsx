@@ -9,6 +9,7 @@ interface SidebarProps {
   trackDbLoaded?: boolean
   onOpenLegalModal?: (type: LegalContentType) => void
   onNavigateToAccount?: () => void
+  onNavigateToHelp?: () => void
 }
 
 interface NavItem {
@@ -23,13 +24,13 @@ interface NavItem {
 const navItems: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', active: true },
   { id: 'settings', label: 'Settings', icon: 'settings', disabled: true },
-  { id: 'help', label: 'Help Center', icon: 'help_outline', disabled: true },
+  { id: 'help', label: 'Help Center', icon: 'help_outline', disabled: false },
   { id: 'signout', label: 'Sign Out', icon: 'logout', disabled: true },
 ]
 
 const VERSION = 'v2.0.0'
 
-export function Sidebar({ isOpen, onToggle, trackDbLoaded = true, onOpenLegalModal, onNavigateToAccount }: SidebarProps) {
+export function Sidebar({ isOpen, onToggle, trackDbLoaded = true, onOpenLegalModal, onNavigateToAccount, onNavigateToHelp }: SidebarProps) {
   const [activeItem, setActiveItem] = useState('dashboard')
 
   // Handle legal link click
@@ -52,6 +53,15 @@ export function Sidebar({ isOpen, onToggle, trackDbLoaded = true, onOpenLegalMod
     onNavigateToAccount?.()
     onToggle() // Close sidebar on mobile
   }, [onNavigateToAccount, onToggle])
+
+  // Handle help navigation
+  const handleHelpClick = useCallback(() => {
+    logger.logInfo('Help Center clicked from sidebar', {
+      component: 'Sidebar',
+    })
+    onNavigateToHelp?.()
+    onToggle() // Close sidebar on mobile
+  }, [onNavigateToHelp, onToggle])
 
   // Close sidebar on escape key
   useEffect(() => {
@@ -112,6 +122,8 @@ export function Sidebar({ isOpen, onToggle, trackDbLoaded = true, onOpenLegalMod
           onLegalClick={handleLegalClick}
           onAccountClick={handleAccountClick}
           hasAccountNavigation={!!onNavigateToAccount}
+          onHelpClick={handleHelpClick}
+          hasHelpNavigation={!!onNavigateToHelp}
         />
       </aside>
 
@@ -142,6 +154,8 @@ export function Sidebar({ isOpen, onToggle, trackDbLoaded = true, onOpenLegalMod
               onLegalClick={handleLegalClick}
               onAccountClick={handleAccountClick}
               hasAccountNavigation={!!onNavigateToAccount}
+              onHelpClick={handleHelpClick}
+              hasHelpNavigation={!!onNavigateToHelp}
             />
           </motion.aside>
         )}
@@ -157,13 +171,19 @@ interface SidebarContentProps {
   onLegalClick: (type: LegalContentType) => void
   onAccountClick: () => void
   hasAccountNavigation: boolean
+  onHelpClick: () => void
+  hasHelpNavigation: boolean
 }
 
-function SidebarContent({ activeItem, onNavClick, trackDbLoaded, onLegalClick, onAccountClick, hasAccountNavigation }: SidebarContentProps) {
+function SidebarContent({ activeItem, onNavClick, trackDbLoaded, onLegalClick, onAccountClick, hasAccountNavigation, onHelpClick, hasHelpNavigation }: SidebarContentProps) {
   // Override navItems to enable account-related items when auth is available
   const currentNavItems = navItems.map((item) => {
     if (item.id === 'settings' && hasAccountNavigation) {
       return { ...item, label: 'Account', icon: 'account_circle', disabled: false }
+    }
+    // Help is enabled when help navigation is available
+    if (item.id === 'help' && hasHelpNavigation) {
+      return { ...item, disabled: false }
     }
     return item
   })
@@ -171,6 +191,8 @@ function SidebarContent({ activeItem, onNavClick, trackDbLoaded, onLegalClick, o
   const handleItemClick = (item: NavItem) => {
     if (item.id === 'settings' && hasAccountNavigation) {
       onAccountClick()
+    } else if (item.id === 'help' && hasHelpNavigation) {
+      onHelpClick()
     } else {
       onNavClick(item)
     }
