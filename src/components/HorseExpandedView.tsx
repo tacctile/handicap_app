@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import './HorseExpandedView.css';
 import { PPLine } from './PPLine';
 import type { HorseEntry, PastPerformance, Workout } from '../types/drf';
@@ -262,26 +262,6 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   valuePercent = 0,
   score,
 }) => {
-  // Debug logging to inspect data structures
-  useEffect(() => {
-    if (!isVisible) return;
-
-    const firstWorkout = horse.workouts?.[0];
-    if (firstWorkout) {
-      console.log('=== WORKOUT DATA STRUCTURE ===');
-      console.log('First workout:', firstWorkout);
-      console.log('Workout keys:', Object.keys(firstWorkout));
-    }
-
-    const firstPP = horse.pastPerformances?.[0];
-    if (firstPP) {
-      console.log('=== PP DATA STRUCTURE ===');
-      console.log('First PP:', firstPP);
-      console.log('PP keys:', Object.keys(firstPP));
-      console.log('Running line:', firstPP.runningLine);
-    }
-  }, [horse, isVisible]);
-
   if (!isVisible) return null;
 
   const tierClass = getTierClass(valuePercent);

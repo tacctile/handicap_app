@@ -151,99 +151,132 @@ export const PPLine: React.FC<PPLineProps> = ({ pp, index }) => {
     return prefix + (odds < 10 ? odds.toFixed(1) : Math.round(odds).toString());
   };
 
-  // Format lengths with superscript-style characters
-  const formatLengthsSuper = (lengths: unknown): string => {
-    if (!lengths) return '';
-    const l = String(lengths).toLowerCase().trim();
-    if (!l || l === 'undefined' || l === 'null' || l === 'nan') return '';
+  // Convert regular digits to Unicode superscript digits
+  const toSuperscript = (str: string): string => {
+    const superMap: Record<string, string> = {
+      '0': '⁰',
+      '1': '¹',
+      '2': '²',
+      '3': '³',
+      '4': '⁴',
+      '5': '⁵',
+      '6': '⁶',
+      '7': '⁷',
+      '8': '⁸',
+      '9': '⁹',
+      '.': '·',
+      '/': '⁄',
+      '-': '⁻',
+    };
+    return str
+      .split('')
+      .map((c) => superMap[c] || c)
+      .join('');
+  };
 
-    // Common length abbreviations
+  // Format lengths with superscript notation for running line display
+  // e.g., 3.5 lengths behind becomes "³·⁵" or "3½"
+  const formatLengthsSuper = (lengths: unknown): string => {
+    if (lengths === null || lengths === undefined) return '';
+    const num = Number(lengths);
+    if (isNaN(num) || num === 0) return '';
+
+    // For very large margins, don't clutter the display
+    if (num > 20) return '';
+
+    // Common text abbreviations (head, neck, nose)
+    const l = String(lengths).toLowerCase().trim();
     if (l === 'head' || l === 'hd') return 'ʰᵈ';
     if (l === 'neck' || l === 'nk') return 'ⁿᵏ';
     if (l === 'nose' || l === 'ns') return 'ⁿˢ';
 
-    // Handle numeric lengths
-    return l.replace('.5', '½').replace('0.5', '½').replace('1/2', '½');
+    // Format common fractions
+    if (num === 0.5) return '½';
+    if (num === 0.25) return '¼';
+    if (num === 0.75) return '¾';
+
+    // For small whole numbers with fractions, use superscript
+    const whole = Math.floor(num);
+    const frac = num - whole;
+
+    if (frac === 0) {
+      // Whole number only - use superscript
+      return toSuperscript(String(whole));
+    } else if (frac === 0.5) {
+      return whole > 0 ? `${toSuperscript(String(whole))}½` : '½';
+    } else if (frac === 0.25) {
+      return whole > 0 ? `${toSuperscript(String(whole))}¼` : '¼';
+    } else if (frac === 0.75) {
+      return whole > 0 ? `${toSuperscript(String(whole))}¾` : '¾';
+    } else {
+      // Arbitrary decimal - use full superscript
+      return toSuperscript(num.toFixed(1));
+    }
   };
 
-  // Format running line properly
+  // Format a single running line position with optional lengths margin
+  const formatPositionWithMargin = (
+    position: number | null | undefined,
+    lengths: number | null | undefined
+  ): string => {
+    if (position === null || position === undefined || isNaN(Number(position))) return '';
+
+    const pos = String(position);
+    const len = formatLengthsSuper(lengths);
+
+    // Show position with superscript lengths if available and reasonable
+    if (len) {
+      return `${pos}${len}`;
+    }
+    return pos;
+  };
+
+  // Format running line properly - shows call positions like "8 9 7 6 4"
   const formatRunningLine = (rl: RunningLine | null | undefined | unknown): string => {
     if (!rl) return '—';
 
     // If it's a string, it might already be formatted
     if (typeof rl === 'string') {
-      // Clean up and return if it looks valid
       const cleaned = rl.trim();
       if (cleaned && cleaned !== 'undefined' && cleaned !== 'null') {
-        return cleaned.slice(0, 20);
+        return cleaned.slice(0, 22);
       }
       return '—';
     }
 
     // If it's an object with position properties
     const rlObj = rl as RunningLine;
-    const positions: (string | number)[] = [];
+    const calls: string[] = [];
 
-    // Start position (no lengths)
+    // Start position (no lengths displayed)
     if (rlObj.start !== null && rlObj.start !== undefined && !isNaN(Number(rlObj.start))) {
-      positions.push(String(rlObj.start));
+      calls.push(String(rlObj.start));
     }
 
-    // Quarter mile
-    if (
-      rlObj.quarterMile !== null &&
-      rlObj.quarterMile !== undefined &&
-      !isNaN(Number(rlObj.quarterMile))
-    ) {
-      if (rlObj.quarterMileLengths !== null && rlObj.quarterMileLengths !== undefined) {
-        positions.push(`${rlObj.quarterMile}${formatLengthsSuper(rlObj.quarterMileLengths)}`);
-      } else {
-        positions.push(String(rlObj.quarterMile));
-      }
-    }
+    // First call (quarter mile for sprints)
+    const firstCall = formatPositionWithMargin(rlObj.quarterMile, rlObj.quarterMileLengths);
+    if (firstCall) calls.push(firstCall);
 
-    // Half mile
-    if (rlObj.halfMile !== null && rlObj.halfMile !== undefined && !isNaN(Number(rlObj.halfMile))) {
-      if (rlObj.halfMileLengths !== null && rlObj.halfMileLengths !== undefined) {
-        positions.push(`${rlObj.halfMile}${formatLengthsSuper(rlObj.halfMileLengths)}`);
-      } else {
-        positions.push(String(rlObj.halfMile));
-      }
-    }
+    // Second call (half mile)
+    const secondCall = formatPositionWithMargin(rlObj.halfMile, rlObj.halfMileLengths);
+    if (secondCall) calls.push(secondCall);
 
-    // Three quarters
-    if (
-      rlObj.threeQuarters !== null &&
-      rlObj.threeQuarters !== undefined &&
-      !isNaN(Number(rlObj.threeQuarters))
-    ) {
-      if (rlObj.threeQuartersLengths !== null && rlObj.threeQuartersLengths !== undefined) {
-        positions.push(`${rlObj.threeQuarters}${formatLengthsSuper(rlObj.threeQuartersLengths)}`);
-      } else {
-        positions.push(String(rlObj.threeQuarters));
-      }
-    }
+    // Third call (three quarters - for routes)
+    const thirdCall = formatPositionWithMargin(rlObj.threeQuarters, rlObj.threeQuartersLengths);
+    if (thirdCall) calls.push(thirdCall);
 
-    // Stretch
-    if (rlObj.stretch !== null && rlObj.stretch !== undefined && !isNaN(Number(rlObj.stretch))) {
-      if (rlObj.stretchLengths !== null && rlObj.stretchLengths !== undefined) {
-        positions.push(`${rlObj.stretch}${formatLengthsSuper(rlObj.stretchLengths)}`);
-      } else {
-        positions.push(String(rlObj.stretch));
-      }
-    }
+    // Stretch call
+    const stretchCall = formatPositionWithMargin(rlObj.stretch, rlObj.stretchLengths);
+    if (stretchCall) calls.push(stretchCall);
 
-    // Finish
-    if (rlObj.finish !== null && rlObj.finish !== undefined && !isNaN(Number(rlObj.finish))) {
-      if (rlObj.finishLengths !== null && rlObj.finishLengths !== undefined) {
-        positions.push(`${rlObj.finish}${formatLengthsSuper(rlObj.finishLengths)}`);
-      } else {
-        positions.push(String(rlObj.finish));
-      }
-    }
+    // Finish position
+    const finishCall = formatPositionWithMargin(rlObj.finish, rlObj.finishLengths);
+    if (finishCall) calls.push(finishCall);
 
-    if (positions.length === 0) return '—';
-    return positions.join(' ').slice(0, 20);
+    if (calls.length === 0) return '—';
+
+    // Join with spaces for clear separation
+    return calls.join(' ').slice(0, 22);
   };
 
   // Format jockey name: "Rosario J" or "Prat F"
