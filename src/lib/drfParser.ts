@@ -1385,6 +1385,72 @@ export function parseDRFFile(
   const lines = content.split(/\r?\n/).filter((line) => line.trim().length > 0)
   const totalLines = lines.length
 
+  // =========================================================================
+  // DIAGNOSTIC LOGGING - TEMPORARY DEBUG CODE
+  // Purpose: Identify correct morning line odds column position
+  // =========================================================================
+  if (totalLines > 0) {
+    // Part 1: Log first raw CSV line (unsplit)
+    console.log('\n========== DRF DIAGNOSTIC: RAW DATA DUMP ==========')
+    console.log('First row (raw, unsplit):')
+    console.log(lines[0].substring(0, 500) + '...[truncated]')
+    console.log('')
+
+    // Parse first line to get column data
+    const firstLineFields = parseCSVLine(lines[0])
+
+    // Part 2: Log columns 20-50 for first horse
+    console.log('Columns 20-50 for first horse:')
+    for (let colIdx = 20; colIdx <= 50 && colIdx < firstLineFields.length; colIdx++) {
+      const value = firstLineFields[colIdx] || '[empty]'
+      console.log(`Col ${colIdx}: [${value}]`)
+    }
+    console.log('')
+
+    // Part 3: Log column 22 value for first 3 horses
+    console.log('Column 22 (current morning line index) for first 3 horses:')
+    for (let horseIdx = 0; horseIdx < Math.min(3, lines.length); horseIdx++) {
+      const horseFields = parseCSVLine(lines[horseIdx])
+      const horseName = horseFields[5] || 'Unknown'
+      const col22Value = horseFields[22] || '[empty]'
+      console.log(`Horse ${horseIdx + 1} (${horseName}): Col 22 = [${col22Value}]`)
+    }
+    console.log('')
+
+    // Part 4: Search columns 0-100 for odds-like patterns
+    // Odds patterns: "5-2", "3-1", "7/2", "10-1", "4-5", etc.
+    const oddsPattern = /^\d{1,3}[-\/]\d{1,2}$/
+    console.log('Searching columns 0-100 for odds-like values (X-X or X/X pattern):')
+    let foundOddsColumns: { col: number; value: string }[] = []
+
+    for (let colIdx = 0; colIdx < Math.min(100, firstLineFields.length); colIdx++) {
+      const value = (firstLineFields[colIdx] || '').trim()
+      if (value && oddsPattern.test(value)) {
+        foundOddsColumns.push({ col: colIdx, value })
+        console.log(`Possible odds found at column ${colIdx}: [${value}]`)
+      }
+    }
+
+    if (foundOddsColumns.length === 0) {
+      console.log('No odds-like values found in columns 0-100 with pattern X-X or X/X')
+
+      // Also check for decimal odds or whole numbers that could be odds
+      console.log('\nExpanded search for decimal/whole number odds patterns:')
+      const expandedPattern = /^(\d{1,2}(\.\d+)?|even|e)$/i
+      for (let colIdx = 0; colIdx < Math.min(100, firstLineFields.length); colIdx++) {
+        const value = (firstLineFields[colIdx] || '').trim()
+        if (value && expandedPattern.test(value) && parseFloat(value) > 0 && parseFloat(value) < 100) {
+          console.log(`Possible decimal/whole odds at column ${colIdx}: [${value}]`)
+        }
+      }
+    }
+
+    console.log('\n========== END DRF DIAGNOSTIC ==========\n')
+  }
+  // =========================================================================
+  // END DIAGNOSTIC LOGGING
+  // =========================================================================
+
   if (totalLines === 0) {
     const emptyError = new DRFParseError('EMPTY_FILE', 'No data lines found in file', {
       context: { filename },
