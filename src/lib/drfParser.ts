@@ -621,38 +621,65 @@ function parseDistance(rawYards: string, rawFurlongs: string): { distance: strin
 
 /**
  * Parse morning line odds to string and decimal
+ *
+ * Supports multiple formats found in DRF files:
+ * - Fractional: "5-2", "7/2", "3-1", "9/5"
+ * - Fractional with spaces: "5 - 2", "5 / 2", "5- 2", "5 -2"
+ * - Decimal: "2.5", "3.5"
+ * - Whole number: "5", "10" (treated as X-1 odds)
+ * - Even odds: "even", "E", "EVEN"
+ *
+ * Returns decimal odds for internal use (e.g., 5-2 returns 2.5)
+ * If odds are missing/empty, returns decimal: 0 (not an error)
  */
 function parseOdds(raw: string): { odds: string; decimal: number } {
   const trimmed = raw.trim()
 
+  // Empty or missing - return 0 (not an error, will be handled at race level)
   if (!trimmed) {
-    return { odds: '0-0', decimal: 0 }
+    return { odds: '', decimal: 0 }
   }
 
-  // Handle fractional odds (e.g., "5-1", "3/2", "9-5")
-  const fractionalMatch = trimmed.match(/^(\d+)[-\/](\d+)$/)
-  if (fractionalMatch) {
-    const num = parseInt(fractionalMatch[1], 10)
-    const den = parseInt(fractionalMatch[2], 10)
-    const decimal = den > 0 ? num / den : 0
-    return { odds: `${num}-${den}`, decimal }
-  }
+  // Normalize: remove extra spaces around dashes and slashes
+  const normalized = trimmed.replace(/\s*[-\/]\s*/g, '-')
 
-  // Handle decimal odds (e.g., "2.5", "10")
-  const decimalValue = parseFloat(trimmed)
-  if (!isNaN(decimalValue)) {
-    if (decimalValue >= 1) {
-      return { odds: `${Math.round(decimalValue)}-1`, decimal: decimalValue }
-    }
-    return { odds: trimmed, decimal: decimalValue }
-  }
-
-  // Handle "even" or "E"
-  if (trimmed.toLowerCase() === 'even' || trimmed.toLowerCase() === 'e') {
+  // Handle "even" or "E" or "EVEN"
+  if (normalized.toLowerCase() === 'even' || normalized.toLowerCase() === 'e') {
     return { odds: '1-1', decimal: 1 }
   }
 
-  return { odds: trimmed || '0-0', decimal: 0 }
+  // Handle fractional odds (e.g., "5-1", "3-2", "9-5" after normalization)
+  // Also handles "7/2" → "7-2" after normalization
+  const fractionalMatch = normalized.match(/^(\d+)-(\d+)$/)
+  if (fractionalMatch) {
+    const num = parseInt(fractionalMatch[1], 10)
+    const den = parseInt(fractionalMatch[2], 10)
+    if (den > 0) {
+      const decimal = num / den
+      return { odds: `${num}-${den}`, decimal }
+    }
+  }
+
+  // Handle decimal odds (e.g., "2.5", "3.5")
+  // Check for decimal point to distinguish from whole numbers
+  if (normalized.includes('.')) {
+    const decimalValue = parseFloat(normalized)
+    if (!isNaN(decimalValue) && decimalValue > 0) {
+      // Convert decimal to fractional for display
+      // e.g., 2.5 becomes "5-2" (2.5 = 5/2)
+      // For simplicity, keep decimal display but store decimal value
+      return { odds: normalized, decimal: decimalValue }
+    }
+  }
+
+  // Handle whole number odds (e.g., "5", "10" = X-1 odds)
+  const wholeNumber = parseInt(normalized, 10)
+  if (!isNaN(wholeNumber) && wholeNumber > 0) {
+    return { odds: `${wholeNumber}-1`, decimal: wholeNumber }
+  }
+
+  // Couldn't parse - return 0
+  return { odds: trimmed, decimal: 0 }
 }
 
 // ============================================================================
@@ -1542,15 +1569,31 @@ export function parseDRFFile(
       race.warnings.push(`Race ${race.header.raceNumber}: Only ${race.horses.length} horse(s) found`)
     }
 
+    // Track horses with missing data for consolidated warnings
+    let missingNameCount = 0
+    let missingOddsCount = 0
+
     // Check for missing data
     race.horses.forEach((horse, idx) => {
       if (!horse.horseName || horse.horseName.startsWith('Horse ')) {
+        missingNameCount++
         race.warnings.push(`Horse #${idx + 1}: Missing horse name`)
       }
       if (horse.morningLineDecimal === 0) {
-        race.warnings.push(`${horse.horseName}: Invalid or missing odds`)
+        missingOddsCount++
       }
     })
+
+    // Consolidate morning line odds warnings (one per race, not per horse)
+    if (missingOddsCount > 0 && race.horses.length > 0) {
+      if (missingOddsCount === race.horses.length) {
+        // ALL horses missing odds - this is an error condition
+        race.errors.push(`Race ${race.header.raceNumber}: All ${missingOddsCount} horses missing morning line odds`)
+      } else {
+        // Some horses missing odds - just a warning
+        race.warnings.push(`Race ${race.header.raceNumber}: ${missingOddsCount} horse(s) missing morning line odds`)
+      }
+    }
   })
 
   sendProgress(90, 'finalizing', 'Finalizing results...')
