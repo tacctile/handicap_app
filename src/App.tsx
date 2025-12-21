@@ -7,6 +7,7 @@ import { DisclaimerBanner, LegalModal } from './components/legal';
 import type { LegalContentType } from './components/legal';
 import { AuthPage, AccountSettings } from './components/auth';
 import { HelpCenter } from './components/help';
+import { LayoutDemo } from './components/LayoutDemo';
 import { useRaceState } from './hooks/useRaceState';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAnalytics } from './hooks/useAnalytics';
@@ -22,7 +23,7 @@ import './styles/help.css';
 // ROUTE TYPES
 // ============================================================================
 
-type AppRoute = 'dashboard' | 'account' | 'help';
+type AppRoute = 'dashboard' | 'account' | 'help' | 'layout-demo';
 
 function AppContent() {
   const [parsedData, setParsedData] = useState<ParsedDRFFile | null>(null);
@@ -68,6 +69,15 @@ function AppContent() {
 
   const navigateToHelp = useCallback(() => {
     setCurrentRoute('help');
+  }, []);
+
+  // Check for layout demo URL parameter on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('demo') === 'layout') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial route based on URL params
+      setCurrentRoute('layout-demo');
+    }
   }, []);
 
   // Handle successful auth (login/signup)
@@ -235,6 +245,15 @@ function AppContent() {
     return (
       <ErrorBoundary onReset={handleFullReset}>
         <AuthPage onAuthSuccess={handleAuthSuccess} />
+      </ErrorBoundary>
+    );
+  }
+
+  // Show layout demo
+  if (currentRoute === 'layout-demo') {
+    return (
+      <ErrorBoundary onReset={handleFullReset}>
+        <LayoutDemo onExit={navigateToDashboard} />
       </ErrorBoundary>
     );
   }

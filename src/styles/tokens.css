@@ -1,0 +1,56 @@
+/* ============================================
+   Design Tokens
+   Core design system tokens for the Bloomberg-style panel architecture
+   ============================================ */
+
+:root {
+  /* ----------------------------------------
+     Border Radius Tokens
+     ---------------------------------------- */
+  --radius-sm: 4px; /* badges, chips */
+  --radius-md: 6px; /* buttons, inputs */
+  --radius-lg: 8px; /* cards, panels, modals */
+
+  /* ----------------------------------------
+     Spacing Tokens (8px grid)
+     ---------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* ----------------------------------------
+     Gap Tokens
+     ---------------------------------------- */
+  --gap-panel: 16px; /* between major panels */
+  --gap-card: 16px; /* between cards */
+  --gap-element: 8px; /* between elements within a card */
+  --gap-tight: 4px; /* compact spacing */
+
+  /* ----------------------------------------
+     Color Tokens (referenced from existing palette)
+     These map to the design system colors in MASTER_CONTEXT.md
+     ---------------------------------------- */
+  --color-base: #0a0a0b;
+  --color-cards: #0f0f10;
+  --color-elevated: #1a1a1c;
+  --color-border-subtle: #2a2a2c;
+  --color-border-prominent: #3a3a3c;
+  --color-text-primary: #eeeff1;
+  --color-text-secondary: #b4b4b6;
+  --color-text-tertiary: #6e6e70;
+
+  /* ----------------------------------------
+     Layout Dimensions
+     ---------------------------------------- */
+  --topbar-height: 56px;
+  --race-tabs-height: 48px;
+  --status-bar-height: 32px;
+  --drawer-collapsed-width: 48px;
+  --drawer-expanded-width: 380px;
+  --drawer-transition: 200ms ease-out;
+}
