@@ -37,7 +37,14 @@ export function FileUpload({ onParsed }: FileUploadProps) {
   }
 
   const processFile = async (file: File) => {
-    if (!file.name.endsWith('.drf')) {
+    // Extract and normalize extension for case-insensitive comparison
+    const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
+    logger.logInfo('Processing file upload', {
+      originalFilename: file.name,
+      normalizedExtension: fileExtension,
+    })
+
+    if (fileExtension !== '.drf') {
       setParseStatus('error')
       setErrorMessage('Only .drf files are accepted')
       addToast(
