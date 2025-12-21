@@ -213,3 +213,96 @@
   background: var(--color-primary-muted);
   color: var(--color-primary);
 }
+
+/* ============================================
+   STATISTICS TABLE (Compact Single Row)
+   ============================================ */
+
+.horse-expanded-view__section--stats {
+  padding: 6px 16px;
+  background: var(--color-base);
+}
+
+.horse-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.2;
+}
+
+.horse-stats__group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.horse-stats__group--primary {
+  /* Primary records slightly emphasized */
+}
+
+.horse-stats__group--splits {
+  /* Splits are secondary info */
+}
+
+.horse-stats__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.horse-stats__item--split {
+  /* Splits are slightly smaller */
+}
+
+.horse-stats__label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.horse-stats__record {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.horse-stats__item--split .horse-stats__record {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.horse-stats__earnings {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-tier-good);
+  margin-left: 2px;
+}
+
+.horse-stats__divider {
+  color: var(--color-border);
+  font-size: 11px;
+  font-weight: 300;
+  margin: 0 1px;
+  user-select: none;
+}
+
+.horse-stats__divider--section {
+  color: var(--color-text-tertiary);
+  font-weight: 400;
+  margin: 0 4px;
+}
+
+/* Hide placeholder */
+.horse-expanded-view__section--stats .horse-expanded-view__section-placeholder {
+  display: none;
+}
+
+/* Good win rate highlight */
+.horse-stats__record--hot {
+  color: var(--color-tier-good);
+}
