@@ -1,7 +1,7 @@
 import React from 'react';
 import './HorseExpandedView.css';
 import { PPLine } from './PPLine';
-import type { HorseEntry, PastPerformance } from '../types/drf';
+import type { HorseEntry, PastPerformance, Workout } from '../types/drf';
 import type { HorseScore } from '../lib/scoring';
 
 interface HorseExpandedViewProps {
@@ -57,6 +57,127 @@ const getScoreTierClass = (score: number): string => {
   if (score >= 140) return 'neutral';
   return 'bad';
 };
+
+// ============================================================================
+// WORKOUT ITEM COMPONENT
+// ============================================================================
+
+interface WorkoutItemProps {
+  workout: Workout;
+}
+
+const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
+  // Format date: "Dec10" or "Jan03"
+  const formatWorkoutDate = (dateStr: string): string => {
+    if (!dateStr) return '—';
+    try {
+      const date = new Date(dateStr);
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      const month = months[date.getMonth()];
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${month}${day}`;
+    } catch {
+      return dateStr.slice(0, 5) || '—';
+    }
+  };
+
+  // Format distance: "4f", "5f", "6f"
+  const formatWorkoutDist = (furlongs: number, distStr?: string): string => {
+    if (distStr) {
+      return distStr.replace('furlongs', 'f').replace('furlong', 'f').replace(' ', '').slice(0, 3);
+    }
+    if (!furlongs) return '—';
+    return `${furlongs}f`;
+  };
+
+  // Format time: ":48.20" or "1:00.40"
+  const formatWorkoutTime = (seconds: number, formatted?: string): string => {
+    if (formatted) return formatted;
+    if (!seconds) return '—';
+    if (seconds < 60) {
+      return `:${seconds.toFixed(2)}`;
+    }
+    const mins = Math.floor(seconds / 60);
+    const secs = (seconds % 60).toFixed(2);
+    return `${mins}:${secs.padStart(5, '0')}`;
+  };
+
+  // Format type: "H" for handily, "B" for breezing, "D" for driving, "E" for easy
+  const formatWorkoutType = (type: string): string => {
+    if (!type) return '';
+    const abbrevs: Record<string, string> = {
+      handily: 'H',
+      breezing: 'B',
+      breeze: 'B',
+      driving: 'D',
+      easy: 'E',
+    };
+    return abbrevs[type.toLowerCase()] || type.charAt(0).toUpperCase();
+  };
+
+  // Format surface/condition: "fst", "gd", "sly"
+  const formatWorkoutCond = (condition: string, surface?: string): string => {
+    const cond = condition || surface || '';
+    const abbrevs: Record<string, string> = {
+      fast: 'fst',
+      good: 'gd',
+      sloppy: 'sly',
+      muddy: 'my',
+      firm: 'fm',
+      dirt: 'd',
+      turf: 't',
+    };
+    return abbrevs[cond.toLowerCase()] || cond.slice(0, 3).toLowerCase();
+  };
+
+  // Format ranking: "2/35"
+  const formatRanking = (rank: number | null, total: number | null, rankStr?: string): string => {
+    if (rankStr) return rankStr;
+    if (rank && total) return `${rank}/${total}`;
+    return '';
+  };
+
+  const isBullet = workout.isBullet || workout.rankNumber === 1;
+
+  return (
+    <div className={`horse-workouts__item ${isBullet ? 'horse-workouts__item--bullet' : ''}`}>
+      <span className="horse-workouts__date">{formatWorkoutDate(workout.date)}</span>
+      <span className="horse-workouts__track">{workout.track || '—'}</span>
+      <span className="horse-workouts__dist">
+        {formatWorkoutDist(workout.distanceFurlongs, workout.distance)}
+      </span>
+      <span className="horse-workouts__cond">
+        {formatWorkoutCond(workout.trackCondition, workout.surface)}
+      </span>
+      <span className="horse-workouts__time">
+        {formatWorkoutTime(workout.timeSeconds, workout.timeFormatted)}
+      </span>
+      <span className="horse-workouts__type">{formatWorkoutType(workout.type)}</span>
+      <span className="horse-workouts__rank">
+        {formatRanking(workout.rankNumber, workout.totalWorks, workout.ranking)}
+      </span>
+      {isBullet && <span className="horse-workouts__bullet-icon">●</span>}
+      {workout.fromGate && <span className="horse-workouts__gate-icon">g</span>}
+    </div>
+  );
+};
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 
 export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   horse,
@@ -494,10 +615,18 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
 
       {/* Section 5: Workouts */}
       <section className="horse-expanded-view__section horse-expanded-view__section--workouts">
-        <div className="horse-expanded-view__section-placeholder">
-          WORKOUTS
-          <span className="horse-expanded-view__placeholder-note">(Up to 5 recent workouts)</span>
-          <span className="horse-expanded-view__placeholder-note">(Prompt 8)</span>
+        <div className="horse-workouts">
+          <span className="horse-workouts__label">WORKOUTS</span>
+
+          {horse.workouts && horse.workouts.length > 0 ? (
+            <div className="horse-workouts__list">
+              {horse.workouts.slice(0, 5).map((workout: Workout, index: number) => (
+                <WorkoutItem key={`${workout.date}-${workout.track}-${index}`} workout={workout} />
+              ))}
+            </div>
+          ) : (
+            <span className="horse-workouts__none">No workouts available</span>
+          )}
         </div>
       </section>
     </div>
