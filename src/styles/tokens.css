@@ -84,6 +84,14 @@
   --color-tier-scratched-bg: rgba(110, 110, 112, 0.15);
 
   /* ============================================
+     TRANSITION TIMING
+     Consistent timing for smooth animations
+     ============================================ */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+  --transition-slow: 500ms ease;
+
+  /* ============================================
      HORSE LIST GRID COLUMNS
      Single source of truth for header + rows
      9 columns: icons | PP | name | odds | score | fair | value | rating | expand

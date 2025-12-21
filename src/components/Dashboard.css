@@ -15,7 +15,8 @@
     -apple-system,
     BlinkMacSystemFont,
     sans-serif;
-  transition: grid-template-columns 300ms ease;
+  transition: grid-template-columns var(--transition-normal);
+  will-change: grid-template-columns;
 }
 
 /* Betting panel collapse/expand states */
@@ -33,7 +34,7 @@
   grid-template-rows: var(--dimension-bar) 1fr var(--dimension-bar);
   grid-template-columns: var(--dimension-bar) 1fr;
   overflow: hidden;
-  transition: width 300ms ease;
+  transition: width var(--transition-normal);
 }
 
 /* ============================================
@@ -69,7 +70,7 @@
   height: var(--dimension-bar);
   z-index: 100;
   gap: var(--gap-container);
-  transition: width 300ms ease;
+  transition: width var(--transition-normal);
 }
 
 /* Legacy flexbox topbar */
@@ -145,7 +146,13 @@
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 150ms ease;
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.app-topbar__upload-btn--large:active {
+  transform: scale(0.98);
 }
 
 .app-topbar__upload-btn--large:hover {
@@ -170,8 +177,14 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 150ms ease;
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast);
   flex-shrink: 0;
+}
+
+.app-topbar__upload-btn--small:active {
+  transform: scale(0.98);
 }
 
 .app-topbar__upload-btn--small:hover {
@@ -268,7 +281,9 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%23B4B4B6'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 8px center;
-  transition: all 150ms ease;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
 .app-topbar__condition-select:hover {
@@ -328,7 +343,10 @@
   border: none;
   border-bottom: 1px solid var(--color-border);
   cursor: pointer;
-  transition: all 150ms ease;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    opacity var(--transition-fast);
   position: relative;
   padding: var(--gap-tight);
   min-height: 0; /* Allow flexbox to shrink */
@@ -372,6 +390,7 @@
   color: var(--color-text-secondary);
   line-height: 1;
   font-variant-numeric: tabular-nums;
+  transition: color var(--transition-fast);
 }
 
 /* Status states */
@@ -507,7 +526,8 @@
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  transition: width 300ms ease;
+  transition: width var(--transition-normal);
+  will-change: width;
 }
 
 /* Legacy flexbox betting panel */
@@ -571,7 +591,7 @@
   border-top: 1px solid var(--color-border);
   height: var(--dimension-bar);
   gap: 8px;
-  transition: width 300ms ease;
+  transition: width var(--transition-normal);
 }
 
 /* Legacy flexbox bottombar */
@@ -597,12 +617,14 @@
   display: flex;
   align-items: center;
   gap: 16px;
+  transition: transform var(--transition-normal);
 }
 
 .app-bottombar__right {
   display: flex;
   align-items: center;
   gap: 16px;
+  transition: transform var(--transition-normal);
 }
 
 .app-bottombar__separator {
@@ -628,7 +650,9 @@
   cursor: pointer;
   font-family: inherit;
   font-size: 14px;
-  transition: all 150ms ease;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
   white-space: nowrap;
 }
 
@@ -664,7 +688,9 @@
   margin: var(--gap-container);
   margin-bottom: 0;
   cursor: pointer;
-  transition: all 150ms ease;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
   text-align: left;
   width: calc(100% - var(--gap-container) * 2);
 }
@@ -834,7 +860,7 @@
   height: 100%;
   padding: 16px 0;
   gap: 12px;
-  transition: background 150ms ease;
+  transition: background var(--transition-fast);
 }
 
 /* $ icon with static green glow */
@@ -847,7 +873,7 @@
     0 0 20px rgba(34, 197, 94, 0.3),
     0 0 30px rgba(34, 197, 94, 0.2);
   /* NO animation - static glow */
-  transition: text-shadow 150ms ease;
+  transition: text-shadow var(--transition-fast);
 }
 
 /* "Expand" text written vertically */
@@ -885,7 +911,20 @@
   flex-direction: column;
   height: 100%;
   position: relative;
-  transition: opacity 200ms ease;
+  opacity: 1;
+  transition: opacity var(--transition-fast);
+}
+
+/* Fade out expanded content when collapsed */
+.app-betting-panel--collapsed .app-betting-panel__expanded-content {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Fade out collapsed content when expanded */
+.app-betting-panel:not(.app-betting-panel--collapsed) .app-betting-panel__collapsed-content {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Content wrapper to hold actual content */
@@ -912,7 +951,10 @@
   border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all 150ms ease;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
   z-index: 10;
 }
 
@@ -1014,7 +1056,9 @@
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all 150ms ease;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .app-config-panel__close:hover {
