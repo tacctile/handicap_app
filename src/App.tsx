@@ -31,6 +31,7 @@ function AppContent() {
   const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
   const [showWarnings, setShowWarnings] = useState(true);
   const [modalOpen] = useState(false);
+  const [selectedRaceIndex, setSelectedRaceIndex] = useState(0);
 
   // Routing state - check URL on initial load
   const getInitialRoute = (): AppRoute => {
@@ -171,8 +172,9 @@ function AppContent() {
 
         setParsedData(data);
         setIsLoading(false);
-        // Reset race state when new file is loaded
+        // Reset race state and selected race when new file is loaded
         raceState.resetAll();
+        setSelectedRaceIndex(0);
       }, 100);
     },
     [raceState, addToast]
@@ -187,6 +189,7 @@ function AppContent() {
     setValidationWarnings([]);
     setShowWarnings(true);
     raceState.resetAll();
+    setSelectedRaceIndex(0);
   }, [raceState]);
 
   const handleDismissWarnings = useCallback(() => {
@@ -296,7 +299,12 @@ function AppContent() {
   // Show new dashboard shell at root route
   return (
     <ErrorBoundary onReset={handleFullReset}>
-      <Dashboard />
+      <Dashboard
+        parsedData={parsedData}
+        selectedRaceIndex={selectedRaceIndex}
+        trackCondition={raceState.trackCondition}
+        onTrackConditionChange={raceState.setTrackCondition}
+      />
     </ErrorBoundary>
   );
 }

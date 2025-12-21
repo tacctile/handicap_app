@@ -16,7 +16,7 @@
 }
 
 /* ============================================
-   TOP BAR - Full Width Header
+   TOP BAR
    ============================================ */
 
 .app-topbar {
@@ -31,12 +31,12 @@
   gap: var(--gap-container);
 }
 
+/* Logo */
 .app-topbar__logo {
   display: flex;
   align-items: center;
   gap: var(--gap-element);
-  padding-right: var(--gap-container);
-  border-right: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
 
 .app-topbar__logo-icon {
@@ -61,11 +61,165 @@
   letter-spacing: -0.01em;
 }
 
-.app-topbar__content {
+/* Separator - partial height */
+.app-topbar__separator {
+  width: 1px;
+  height: 32px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+/* Empty state - centered upload button */
+.app-topbar__empty {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: var(--gap-container);
+  justify-content: center;
+}
+
+/* Upload button - large (empty state) */
+.app-topbar__upload-btn--large {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-element);
+  padding: var(--gap-element) var(--gap-container);
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.app-topbar__upload-btn--large:hover {
+  background: var(--color-primary-hover);
+}
+
+.app-topbar__upload-btn--large .material-icons {
+  font-size: 20px;
+}
+
+/* Upload button - small (loaded state) */
+.app-topbar__upload-btn--small {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-element);
+  padding: var(--gap-element) var(--gap-container);
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+
+.app-topbar__upload-btn--small:hover {
+  background: var(--color-primary-hover);
+}
+
+.app-topbar__upload-btn--small .material-icons {
+  font-size: 18px;
+}
+
+/* Track info section */
+.app-topbar__info {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-element);
+  font-size: 14px;
+  color: var(--color-text-primary);
+  flex-shrink: 0;
+}
+
+.app-topbar__track {
+  font-weight: 500;
+}
+
+.app-topbar__dot {
+  color: var(--color-text-tertiary);
+}
+
+.app-topbar__date,
+.app-topbar__races {
+  color: var(--color-text-primary);
+}
+
+/* Countdown section */
+.app-topbar__countdown {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-tight);
+  font-size: 14px;
+  flex-shrink: 0;
+  min-width: 140px; /* Fixed width to prevent layout shift */
+}
+
+.app-topbar__countdown-time {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Countdown urgency states */
+.app-topbar__countdown--normal {
+  color: var(--color-success);
+}
+
+.app-topbar__countdown--warning {
+  color: var(--color-warning);
+}
+
+.app-topbar__countdown--critical {
+  color: var(--color-error);
+  animation: pulse-critical 2s ease-in-out infinite;
+}
+
+@keyframes pulse-critical {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Track condition dropdown */
+.app-topbar__condition {
+  flex-shrink: 0;
+}
+
+.app-topbar__condition-select {
+  padding: var(--gap-element) var(--gap-container);
+  padding-right: calc(var(--gap-container) + 16px);
+  background: var(--color-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%23B4B4B6'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  transition: all 150ms ease;
+}
+
+.app-topbar__condition-select:hover {
+  border-color: var(--color-border-prominent);
+  background-color: var(--color-card);
+}
+
+.app-topbar__condition-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 
 /* ============================================
