@@ -16,8 +16,10 @@ import { useToastContext } from '../contexts/ToastContext'
 import { OfflineIndicator } from './OfflineIndicator'
 import { InstallPrompt } from './InstallPrompt'
 import { UpdatePrompt } from './UpdatePrompt'
+import { OnboardingFlow } from './onboarding'
 import { useBankroll } from '../hooks/useBankroll'
 import { usePostTime } from '../hooks/usePostTime'
+import { useOnboarding } from '../hooks/useOnboarding'
 import {
   calculateRaceScores,
   calculateRaceConfidence,
@@ -65,6 +67,9 @@ export function Dashboard({
 
   // Bankroll management hook
   const bankroll = useBankroll()
+
+  // Onboarding hook
+  const { isOnboardingComplete, completeOnboarding } = useOnboarding()
 
   // Toast notifications (from context - container rendered by ToastProvider)
   const { addPostTimeNotification } = useToastContext()
@@ -237,6 +242,21 @@ export function Dashboard({
       horses: parsedData.races.reduce((sum, race) => sum + race.horses.length, 0),
     }
   }, [parsedData])
+
+  // Handle file upload from onboarding flow
+  const handleOnboardingFileUpload = useCallback((data: ParsedDRFFile) => {
+    onParsed(data)
+  }, [onParsed])
+
+  // Show onboarding for new users who haven't completed it and have no data
+  if (!isOnboardingComplete && !hasData) {
+    return (
+      <OnboardingFlow
+        onComplete={completeOnboarding}
+        onFileUploaded={handleOnboardingFileUpload}
+      />
+    )
+  }
 
   return (
     <div className="dashboard">
