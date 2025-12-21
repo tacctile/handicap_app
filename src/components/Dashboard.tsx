@@ -38,10 +38,6 @@ export const Dashboard: React.FC = () => {
 
         {/* BETTING PANEL - 1/3 width, always visible */}
         <aside className="app-betting-panel">
-          <div className="app-betting-panel__header">
-            <span className="material-icons">payments</span>
-            <span>Betting</span>
-          </div>
           <div className="app-betting-panel__content">
             {/* Bankroll summary section */}
             <div className="app-betting-panel__section">
@@ -85,12 +81,19 @@ export const Dashboard: React.FC = () => {
         {/* Separator */}
         <div className="app-bottombar__separator"></div>
 
-        {/* Right cluster - Help, Legal */}
+        {/* Right cluster - Help */}
         <div className="app-bottombar__cluster">
           <button className="app-bottombar__item">
             <span className="material-icons">help_outline</span>
             <span>Help</span>
           </button>
+        </div>
+
+        {/* Separator */}
+        <div className="app-bottombar__separator"></div>
+
+        {/* Legal */}
+        <div className="app-bottombar__cluster">
           <button className="app-bottombar__item">
             <span className="material-icons">gavel</span>
             <span>Legal</span>

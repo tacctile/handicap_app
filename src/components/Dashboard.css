@@ -88,7 +88,6 @@
   flex-direction: column;
   overflow: hidden;
   background: var(--color-base);
-  border-right: 1px solid var(--color-border);
 }
 
 .app-main__content {
@@ -129,25 +128,9 @@
   flex-direction: column;
   background: var(--color-card);
   overflow: hidden;
-  min-width: 320px;
-  max-width: 450px;
-}
-
-.app-betting-panel__header {
-  display: flex;
-  align-items: center;
-  gap: var(--gap-element);
-  padding: var(--gap-container);
-  border-bottom: 1px solid var(--color-border);
-  font-weight: 600;
-  font-size: 16px;
-  color: var(--color-text-primary);
-  flex-shrink: 0;
-}
-
-.app-betting-panel__header .material-icons {
-  font-size: 20px;
-  color: var(--color-primary);
+  min-width: 380px;
+  max-width: 500px;
+  border-left: 1px solid var(--color-border);
 }
 
 .app-betting-panel__content {
@@ -206,7 +189,7 @@
 
 .app-bottombar__separator {
   width: 1px;
-  height: 24px;
+  height: 32px;
   background: var(--color-border);
   flex-shrink: 0;
 }
