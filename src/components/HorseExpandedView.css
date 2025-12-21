@@ -1,0 +1,120 @@
+/* ============================================
+   HORSE EXPANDED VIEW - Container Structure
+   ============================================ */
+
+.horse-expanded-view {
+  width: 100%;
+  background: var(--color-base);
+  border-bottom: 2px solid var(--color-border);
+  border-left: 4px solid var(--color-border); /* Will inherit tier color */
+  overflow: hidden;
+  animation: expandIn 300ms ease;
+}
+
+@keyframes expandIn {
+  from {
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 2000px; /* Large enough for any content */
+  }
+}
+
+/* ============================================
+   TIER BORDER COLORS
+   ============================================ */
+
+.horse-expanded-view--tier-elite {
+  border-left-color: var(--color-tier-elite);
+}
+
+.horse-expanded-view--tier-good {
+  border-left-color: var(--color-tier-good);
+}
+
+.horse-expanded-view--tier-fair {
+  border-left-color: var(--color-tier-fair);
+}
+
+.horse-expanded-view--tier-neutral {
+  border-left-color: var(--color-tier-neutral);
+}
+
+.horse-expanded-view--tier-bad {
+  border-left-color: var(--color-tier-bad);
+}
+
+/* ============================================
+   SECTIONS
+   ============================================ */
+
+.horse-expanded-view__section {
+  padding: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.horse-expanded-view__section:last-child {
+  border-bottom: none;
+}
+
+/* Section-specific backgrounds for visual distinction */
+.horse-expanded-view__section--scoring {
+  background: var(--color-card);
+}
+
+.horse-expanded-view__section--identity {
+  background: var(--color-base);
+}
+
+.horse-expanded-view__section--stats {
+  background: var(--color-card);
+}
+
+.horse-expanded-view__section--performances {
+  background: #f5f5f5; /* Light background for DRF-style PP section */
+  color: #1a1a1a; /* Dark text for contrast */
+}
+
+.horse-expanded-view__section--workouts {
+  background: var(--color-base);
+}
+
+/* ============================================
+   PLACEHOLDER STYLING (Temporary)
+   ============================================ */
+
+.horse-expanded-view__section-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-align: center;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.horse-expanded-view__section--performances .horse-expanded-view__section-placeholder {
+  color: #666;
+  border-color: #ccc;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.horse-expanded-view__placeholder-note {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+  margin-top: 4px;
+}
+
+.horse-expanded-view__section--performances .horse-expanded-view__placeholder-note {
+  color: #999;
+}

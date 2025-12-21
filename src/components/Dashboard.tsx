@@ -5,6 +5,7 @@ import { useBankroll } from '../hooks/useBankroll';
 import { BankrollSettings } from './BankrollSettings';
 import { BettingRecommendations } from './BettingRecommendations';
 import { FileUpload } from './FileUpload';
+import { HorseExpandedView } from './HorseExpandedView';
 import { HorseSummaryBar } from './HorseSummaryBar';
 import { calculateRaceScores, MAX_SCORE, analyzeOverlay } from '../lib/scoring';
 import type { ParsedDRFFile, ParsedRace } from '../types/drf';
@@ -695,13 +696,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         isCompareSelected={compareHorses.has(pp)}
                         onCompareToggle={(selected) => handleCompareToggle(pp, selected)}
                       />
-                      {expandedHorseId === horseId && !isScratched && (
-                        <div className="horse-expanded">
-                          <div className="horse-expanded__placeholder">
-                            Full DRF past performances will appear here (Prompt 2)
-                          </div>
-                        </div>
-                      )}
+                      <HorseExpandedView
+                        horse={horse}
+                        isVisible={expandedHorseId === horseId && !isScratched}
+                        valuePercent={overlay.overlayPercent}
+                      />
                     </div>
                   );
                 })}
