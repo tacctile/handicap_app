@@ -21,25 +21,13 @@
 
 .horse-summary-bar {
   display: grid;
-  grid-template-columns:
-    40px /* scratch */
-    50px /* pp */
-    1fr /* horse name - flexible */
-    120px /* trainer */
-    50px /* weight */
-    120px /* odds */
-    80px /* life */
-    80px /* score */
-    70px /* fair */
-    100px /* value */
-    130px /* tier */
-    40px; /* expand */
+  grid-template-columns: var(--horse-list-grid);
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
   background: var(--color-card);
   border-bottom: 1px solid var(--color-border);
-  border-left: 4px solid var(--color-border);
+  border-left: 4px solid transparent;
   cursor: pointer;
   transition: background 150ms ease;
   width: 100%;
@@ -134,6 +122,12 @@
   text-align: center;
 }
 
+/* Odds wrapper */
+.horse-summary-bar__odds {
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* Lifetime record - right aligned */
 .horse-summary-bar__lifetime {
   font-size: 12px;
@@ -190,12 +184,17 @@
   justify-self: center;
 }
 
+/* Expand wrapper - centered */
+.horse-summary-bar__expand-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Expand chevron - centered */
 .horse-summary-bar__expand {
   color: var(--color-text-tertiary);
   transition: transform 200ms ease;
-  text-align: center;
-  justify-self: center;
 }
 
 .horse-summary-bar--expanded .horse-summary-bar__expand {

@@ -280,13 +280,15 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       {/* Weight */}
       <div className="horse-summary-bar__weight">{weight}</div>
 
-      {/* Live odds input */}
-      <OddsInput
-        numerator={currentOdds.numerator}
-        denominator={currentOdds.denominator}
-        onChange={onOddsChange}
-        disabled={isScratched}
-      />
+      {/* Column 6: Live odds input */}
+      <div className="horse-summary-bar__odds">
+        <OddsInput
+          numerator={currentOdds.numerator}
+          denominator={currentOdds.denominator}
+          onChange={onOddsChange}
+          disabled={isScratched}
+        />
+      </div>
 
       {/* Lifetime record - just the data, no label */}
       <div className="horse-summary-bar__lifetime">
@@ -321,8 +323,10 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         <span className="horse-summary-bar__tier-label">{tier.label}</span>
       </div>
 
-      {/* Expand indicator */}
-      <span className="material-icons horse-summary-bar__expand">expand_more</span>
+      {/* Column 12: Expand indicator */}
+      <div className="horse-summary-bar__expand-wrapper">
+        <span className="material-icons horse-summary-bar__expand">expand_more</span>
+      </div>
     </div>
   );
 };

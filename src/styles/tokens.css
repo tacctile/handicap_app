@@ -79,4 +79,12 @@
   /* Scratched state */
   --color-tier-scratched: #6e6e70;
   --color-tier-scratched-bg: rgba(110, 110, 112, 0.15);
+
+  /* ============================================
+     HORSE LIST GRID COLUMNS
+     Single source of truth for header + rows
+     ============================================ */
+  --horse-list-grid: 48px /* scratch checkbox */ 48px /* PP */ 180px /* horse name */ 150px
+    /* trainer */ 48px /* weight */ 130px /* live odds */ 100px /* life record */ 80px /* score */
+    70px /* fair odds */ 90px /* value % */ 150px /* rating badge */ 40px; /* expand chevron */
 }
