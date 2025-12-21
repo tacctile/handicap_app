@@ -15,7 +15,9 @@
     "audit:check": "npm audit --audit-level=high",
     "audit:fix": "npm audit fix",
     "lighthouse": "lhci autorun",
-    "lighthouse:collect": "lhci collect --staticDistDir=./dist"
+    "lighthouse:collect": "lhci collect --staticDistDir=./dist",
+    "analyze": "ANALYZE=true npm run build && open stats.html",
+    "analyze:ci": "ANALYZE=true npm run build"
   },
   "dependencies": {
     "framer-motion": "^12.23.26",
@@ -45,6 +47,7 @@
     "jsdom": "^27.3.0",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
+    "rollup-plugin-visualizer": "^6.0.5",
     "tailwindcss": "^4.1.18",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",

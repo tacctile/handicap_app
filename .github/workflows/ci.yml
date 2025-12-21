@@ -114,3 +114,53 @@ jobs:
           name: dist
           path: dist/
           retention-days: 7
+
+  bundle-size:
+    name: Check Bundle Size
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Check bundle size
+        run: |
+          # Target: 500kb gzipped per MASTER_CONTEXT.md
+          MAX_SIZE_KB=500
+
+          echo "📦 Bundle Size Report"
+          echo "===================="
+          echo ""
+          echo "JS files in dist/assets:"
+
+          # Calculate gzipped sizes for each JS file
+          TOTAL_GZIP_SIZE=0
+          for file in dist/assets/*.js; do
+            if [ -f "$file" ]; then
+              UNCOMPRESSED=$(stat --format="%s" "$file")
+              GZIP_SIZE=$(gzip -c "$file" | wc -c)
+              GZIP_KB=$((GZIP_SIZE / 1024))
+              UNCOMPRESSED_KB=$((UNCOMPRESSED / 1024))
+              TOTAL_GZIP_SIZE=$((TOTAL_GZIP_SIZE + GZIP_SIZE))
+              echo "  $(basename $file): ${UNCOMPRESSED_KB}KB (${GZIP_KB}KB gzipped)"
+            fi
+          done
+
+          # Convert total to KB
+          TOTAL_GZIP_KB=$((TOTAL_GZIP_SIZE / 1024))
+
+          echo ""
+          echo "Total gzipped JS size: ${TOTAL_GZIP_KB}KB"
+          echo "Budget: ${MAX_SIZE_KB}KB gzipped"
+          echo ""
+
+          if [ "$TOTAL_GZIP_KB" -gt "$MAX_SIZE_KB" ]; then
+            echo "❌ Bundle size exceeds ${MAX_SIZE_KB}KB gzipped limit!"
+            echo "Consider running 'npm run analyze' locally to identify large modules."
+            exit 1
+          else
+            echo "✅ Bundle size is within budget (${TOTAL_GZIP_KB}KB / ${MAX_SIZE_KB}KB gzipped)"
+          fi

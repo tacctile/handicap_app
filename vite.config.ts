@@ -2,12 +2,22 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    // Bundle analyzer - only runs when ANALYZE=true
+    process.env.ANALYZE === 'true' &&
+      visualizer({
+        filename: 'stats.html',
+        template: 'treemap',
+        open: false,
+        gzipSize: true,
+        brotliSize: true,
+      }),
     VitePWA({
       registerType: 'prompt', // Prompt user for updates
       includeAssets: [
