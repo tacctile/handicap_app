@@ -201,16 +201,34 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   const lifetimePlaces = horse.lifetimePlaces || 0;
   const lifetimeShows = horse.lifetimeShows || 0;
 
-  // Format trainer name (Last, First Initial)
+  // Format trainer name (Last, First Initial or best effort with available data)
   const formatTrainer = (name: string): string => {
     if (!name || name === '—') return '—';
-    const parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      const lastName = parts[parts.length - 1];
-      const firstInitial = parts[0]?.[0] || '';
-      return `${lastName} ${firstInitial}`;
+
+    const trimmed = name.trim();
+
+    // If it's already abbreviated (like "G D" or "JR S"), try to make it more readable
+    // by checking if all parts are 1-2 characters (likely initials)
+    const parts = trimmed.split(/\s+/);
+    const allAbbreviated = parts.every((p) => p.length <= 2);
+
+    if (allAbbreviated && parts.length >= 2) {
+      // These appear to be initials - format as "X. Y."
+      return parts.map((p) => (p.length === 1 ? `${p}.` : p)).join(' ');
     }
-    return name;
+
+    // If we have "First Last" format, convert to "Last, F"
+    if (parts.length >= 2) {
+      const lastName = parts[parts.length - 1] || '';
+      const firstName = parts[0] || '';
+      // Check if last name looks like a real name (> 2 chars)
+      if (lastName.length > 2 && firstName.length > 0) {
+        return `${lastName}, ${firstName.charAt(0)}`;
+      }
+    }
+
+    // Return as-is if we can't parse it
+    return trimmed;
   };
 
   // Get tier info for styling
@@ -270,41 +288,30 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         disabled={isScratched}
       />
 
-      {/* Lifetime record */}
+      {/* Lifetime record - just the data, no label */}
       <div className="horse-summary-bar__lifetime">
-        <span className="horse-summary-bar__label">Life:</span>
-        <span className="horse-summary-bar__value">
-          {lifetimeStarts}-{lifetimeWins}-{lifetimePlaces}-{lifetimeShows}
-        </span>
+        {lifetimeStarts}-{lifetimeWins}-{lifetimePlaces}-{lifetimeShows}
       </div>
 
-      {/* Furlong score */}
+      {/* Furlong score - just the data */}
       <div className="horse-summary-bar__score">
-        <span className="horse-summary-bar__label">Score:</span>
-        <span className="horse-summary-bar__value horse-summary-bar__value--score">
+        <span className="horse-summary-bar__score-value">
           {score}/{maxScore}
         </span>
       </div>
 
-      {/* Fair odds */}
+      {/* Fair odds - just the data */}
       <div className="horse-summary-bar__fair">
-        <span className="horse-summary-bar__label">Fair:</span>
-        <span className="horse-summary-bar__value">
-          {fairOddsNum}-{fairOddsDen}
-        </span>
+        {fairOddsNum}-{fairOddsDen}
       </div>
 
       {/* Value percentage - color matches tier */}
       <div className="horse-summary-bar__value-percent">
-        <span className="horse-summary-bar__label">Value:</span>
         <span
-          className={`horse-summary-bar__data horse-summary-bar__data--value horse-summary-bar__data--${tier.className}`}
+          className={`horse-summary-bar__value-number horse-summary-bar__value-number--${tier.className}`}
         >
           {valuePercent >= 0 ? '+' : ''}
           {valuePercent.toFixed(0)}%
-        </span>
-        <span className="horse-summary-bar__suffix">
-          ({valuePercent >= 0 ? 'overlay' : 'underlay'})
         </span>
       </div>
 
