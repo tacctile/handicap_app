@@ -6,13 +6,14 @@ import { BankrollSettings } from './BankrollSettings';
 import { BettingRecommendations } from './BettingRecommendations';
 import { FileUpload } from './FileUpload';
 import { calculateRaceScores } from '../lib/scoring';
-import type { ParsedDRFFile } from '../types/drf';
+import type { ParsedDRFFile, ParsedRace } from '../types/drf';
 import type { useRaceState } from '../hooks/useRaceState';
 import type { TrackCondition as RaceStateTrackCondition } from '../hooks/useRaceState';
 
 interface DashboardProps {
   parsedData: ParsedDRFFile | null;
   selectedRaceIndex: number;
+  onRaceSelect?: (index: number) => void;
   trackCondition: RaceStateTrackCondition;
   onTrackConditionChange: (condition: RaceStateTrackCondition) => void;
   raceState: ReturnType<typeof useRaceState>;
@@ -33,6 +34,7 @@ const formatCurrency = (amount: number): string => {
 export const Dashboard: React.FC<DashboardProps> = ({
   parsedData,
   selectedRaceIndex,
+  onRaceSelect,
   trackCondition,
   onTrackConditionChange,
   raceState,
@@ -142,6 +144,84 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return 'normal';
   };
 
+  // Format post time for display (e.g., "1:26 PM")
+  const formatPostTime = (postTime: string | undefined): string => {
+    if (!postTime) return '--:--';
+
+    try {
+      // DRF post times may be in various formats - adjust parsing as needed
+      // Common formats: "1326" (military), "1:26 PM", etc.
+      if (postTime.length === 4 && !postTime.includes(':')) {
+        // Military time format: "1326" -> "1:26 PM"
+        const hours = parseInt(postTime.substring(0, 2));
+        const minutes = postTime.substring(2);
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+        return `${displayHours}:${minutes} ${period}`;
+      }
+
+      // If already formatted, return as-is
+      return postTime;
+    } catch {
+      return postTime || '--:--';
+    }
+  };
+
+  // Determine race status based on post time
+  const getRaceStatus = (
+    race: ParsedRace,
+    _index: number
+  ): { status: 'final' | 'critical' | 'warning' | 'normal'; minutesToPost: number } => {
+    const postTime = race.header?.postTime;
+    if (!postTime) {
+      return { status: 'normal', minutesToPost: 999 };
+    }
+
+    try {
+      // Get current time
+      const now = new Date();
+
+      // Parse race post time - adjust based on actual DRF format
+      let postTimeDate: Date;
+
+      if (postTime.length === 4 && !postTime.includes(':')) {
+        // Military format "1326"
+        const hours = parseInt(postTime.substring(0, 2));
+        const minutes = parseInt(postTime.substring(2));
+        postTimeDate = new Date();
+        postTimeDate.setHours(hours, minutes, 0, 0);
+      } else {
+        // Try parsing as-is
+        postTimeDate = new Date(`${now.toDateString()} ${postTime}`);
+      }
+
+      const diffMs = postTimeDate.getTime() - now.getTime();
+      const diffMinutes = Math.floor(diffMs / 60000);
+
+      if (diffMinutes < -10) {
+        // Race was more than 10 minutes ago - consider it final
+        return { status: 'final', minutesToPost: diffMinutes };
+      } else if (diffMinutes < 5) {
+        // Less than 5 minutes to post
+        return { status: 'critical', minutesToPost: diffMinutes };
+      } else if (diffMinutes < 10) {
+        // 5-10 minutes to post
+        return { status: 'warning', minutesToPost: diffMinutes };
+      } else {
+        return { status: 'normal', minutesToPost: diffMinutes };
+      }
+    } catch {
+      return { status: 'normal', minutesToPost: 999 };
+    }
+  };
+
+  // Determine compactness based on number of races
+  const getRailCompactClass = (raceCount: number): string => {
+    if (raceCount > 14) return 'app-race-rail--very-compact';
+    if (raceCount > 10) return 'app-race-rail--compact';
+    return '';
+  };
+
   // Handle file upload click - trigger the hidden FileUpload's input
   const handleFileUpload = () => {
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -246,8 +326,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
         )}
       </header>
 
-      {/* BODY - Main + Betting Panel */}
+      {/* BODY - Race Rail + Main + Betting Panel */}
       <div className="app-body">
+        {/* LEFT RACE RAIL */}
+        <aside
+          className={`app-race-rail ${parsedData?.races ? getRailCompactClass(parsedData.races.length) : ''}`}
+        >
+          {parsedData?.races?.map((race, index) => {
+            const raceStatus = getRaceStatus(race, index);
+            const isActive = index === selectedRaceIndex;
+
+            return (
+              <button
+                key={index}
+                className={`app-race-rail__item ${isActive ? 'app-race-rail__item--active' : ''} app-race-rail__item--${raceStatus.status}`}
+                onClick={() => onRaceSelect?.(index)}
+              >
+                <span className="app-race-rail__number">
+                  R{race.header?.raceNumber || index + 1}
+                </span>
+                <span className="app-race-rail__time">
+                  {raceStatus.status === 'final' ? 'FINAL' : formatPostTime(race.header?.postTime)}
+                </span>
+              </button>
+            );
+          })}
+          {/* Empty state - rail exists but has no content */}
+        </aside>
+
         {/* MAIN CONTENT - 2/3 width */}
         <main className="app-main">
           <div className="app-main__content">
