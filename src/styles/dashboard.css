@@ -70,12 +70,10 @@
   --font-2xl: 1.5rem; /* 24px */
   --font-3xl: 2rem; /* 32px */
 
-  /* Border radius */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-2xl: 20px;
+  /* Border radius - uses tokens from tokens.css */
+  /* --radius-sm: 4px; (badges, chips) */
+  /* --radius-md: 6px; (buttons, inputs) */
+  /* --radius-lg: 8px; (cards, panels, modals) */
 
   /* Layout */
   --sidebar-width: 260px;
@@ -791,7 +789,7 @@ body::before {
   height: 16px;
   padding: 0 4px;
   background: var(--bg-hover);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   font-size: 10px;
   font-weight: 600;
   color: var(--text-tertiary);

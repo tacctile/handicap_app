@@ -2,7 +2,6 @@ import { memo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ParsedRace } from '../types/drf';
 import type { UseRaceStateReturn } from '../hooks/useRaceState';
-import type { UseBankrollReturn } from '../hooks/useBankroll';
 import { RaceTable } from './RaceTable';
 import {
   getConfidenceColor,
@@ -17,10 +16,8 @@ interface RaceDetailProps {
   race: ParsedRace;
   confidence: number;
   raceState: UseRaceStateReturn;
-  bankroll: UseBankrollReturn;
   diamondCount?: number;
   onBack: () => void;
-  onOpenBankrollSettings: () => void;
 }
 
 // Diamond alert banner component
@@ -111,10 +108,8 @@ export const RaceDetail = memo(function RaceDetail({
   race,
   confidence,
   raceState,
-  bankroll,
   diamondCount = 0,
   onBack,
-  onOpenBankrollSettings,
 }: RaceDetailProps) {
   const { header } = race;
   const { trackEvent } = useAnalytics();
@@ -201,8 +196,6 @@ export const RaceDetail = memo(function RaceDetail({
         <RaceTable
           race={race}
           raceState={raceState}
-          bankroll={bankroll}
-          onOpenBankrollSettings={onOpenBankrollSettings}
         />
       </div>
     </motion.div>

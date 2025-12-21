@@ -141,7 +141,7 @@ const styles = `
   z-index: 999;
   background: linear-gradient(135deg, #1a1a1c 0%, #242428 100%);
   border: 1px solid rgba(25, 171, 181, 0.3);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   max-width: 360px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -190,7 +190,7 @@ const styles = `
   width: 48px;
   height: 48px;
   background: linear-gradient(135deg, #19abb5 0%, #1b7583 100%);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   margin-bottom: 0.25rem;
 }
 
@@ -232,7 +232,7 @@ const styles = `
   padding: 0.625rem 1rem;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: rgba(238, 239, 241, 0.7);
   font-size: 0.875rem;
   font-weight: 500;
@@ -254,7 +254,7 @@ const styles = `
   padding: 0.625rem 1rem;
   background: linear-gradient(135deg, #19abb5 0%, #1b7583 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: #fff;
   font-size: 0.875rem;
   font-weight: 600;
@@ -318,7 +318,7 @@ const styles = `
   padding: 0.5rem 0.75rem;
   background: rgba(25, 171, 181, 0.1);
   border: 1px solid rgba(25, 171, 181, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: #19abb5;
   font-size: 0.875rem;
   font-weight: 500;

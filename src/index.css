@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './styles/tokens.css';
 
 @theme {
   --color-background: #0f0f10;
@@ -75,7 +76,7 @@ body {
 .race-header-card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-outline);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 1rem 1.25rem;
   margin-bottom: 0.5rem;
 }
@@ -104,7 +105,7 @@ body {
   color: var(--color-on-surface-variant);
   background-color: var(--color-surface-variant);
   padding: 0.25rem 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 /* Race Table */
@@ -114,7 +115,7 @@ body {
   border-spacing: 0;
   background-color: var(--color-surface);
   border: 1px solid var(--color-outline);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -165,7 +166,7 @@ body {
 .mobile-horse-card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-outline);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 0.875rem 1rem;
 }
 
@@ -177,7 +178,7 @@ body {
   width: 2rem;
   height: 2rem;
   background-color: var(--color-surface-variant);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--color-on-surface);
@@ -228,7 +229,7 @@ body {
   appearance: none;
   background-color: var(--color-surface-variant);
   border: 1px solid var(--color-outline);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 0.625rem 2.5rem 0.625rem 1rem;
   font-size: 0.875rem;
   color: var(--color-on-surface);
@@ -293,7 +294,7 @@ body {
   width: 1.75rem;
   height: 1.75rem;
   border: 1px solid var(--color-outline);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background-color: transparent;
   transition: all 0.15s ease;
 }
@@ -357,7 +358,7 @@ body {
   background: transparent;
   border: none;
   padding: 0.375rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-primary);
@@ -406,7 +407,7 @@ body {
 .odds-input {
   background-color: var(--color-surface-variant);
   border: 1px solid var(--color-primary);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 0.375rem 0.5rem;
   font-size: 0.875rem;
   font-weight: 500;
@@ -432,7 +433,7 @@ body {
   justify-content: center;
   min-width: 3rem;
   padding: 0.375rem 0.625rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid;
   font-size: 0.875rem;
   font-weight: 600;
@@ -465,7 +466,7 @@ body {
   min-width: 1.75rem;
   height: 1.5rem;
   padding: 0 0.375rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -512,7 +513,7 @@ body {
   align-items: center;
   gap: 0.375rem;
   padding: 0.375rem 0.75rem;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   font-size: 0.75rem;
   font-weight: 500;
 }
@@ -559,7 +560,7 @@ body {
   min-width: 280px;
   background-color: var(--color-surface);
   border: 1px solid var(--color-outline);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   animation: tooltip-fade-in 0.15s ease;
@@ -647,7 +648,7 @@ body {
   margin-top: 1rem;
   background-color: var(--color-surface);
   border: 1px solid var(--color-outline);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -689,7 +690,7 @@ body {
 .section-badge {
   font-size: 0.75rem;
   padding: 0.25rem 0.625rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background-color: rgba(25, 171, 181, 0.15);
   color: var(--color-primary);
   font-weight: 500;
@@ -731,7 +732,7 @@ body {
   margin-bottom: 0.5rem;
   background-color: var(--color-surface);
   border: 1px solid var(--color-outline);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -767,7 +768,7 @@ body {
   align-items: center;
   gap: 0.375rem;
   padding: 0.375rem 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid;
   font-weight: 600;
   font-size: 0.8125rem;
@@ -853,7 +854,7 @@ body {
   margin-bottom: 1rem;
   padding: 0.75rem;
   background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .hit-rate-item {
@@ -905,7 +906,7 @@ body {
   padding: 0.875rem;
   background-color: var(--color-surface-variant);
   border: 1px solid var(--color-outline);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 
 .bet-card-header {
@@ -958,7 +959,7 @@ body {
   padding: 0.25rem 0.5rem;
   background-color: rgba(25, 171, 181, 0.15);
   border: 1px solid rgba(25, 171, 181, 0.3);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--color-primary);
@@ -1025,7 +1026,7 @@ body {
   margin-top: 0.5rem;
   padding: 0.75rem;
   background-color: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px dashed rgba(25, 171, 181, 0.3);
 }
 
@@ -1046,7 +1047,7 @@ body {
   height: 32px;
   background-color: rgba(25, 171, 181, 0.15);
   border: 1px solid rgba(25, 171, 181, 0.3);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--color-primary);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -1070,7 +1071,7 @@ body {
   padding: 0.75rem;
   background-color: rgba(25, 171, 181, 0.1);
   border: 1px solid rgba(25, 171, 181, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .return-icon {
@@ -1246,7 +1247,7 @@ body {
   max-height: 90vh;
   background-color: var(--color-surface);
   border: 1px solid var(--color-outline);
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1343,7 +1344,7 @@ body {
   padding: 0.25rem 0.625rem;
   background-color: var(--color-surface);
   border: 1px solid var(--color-outline);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 600;
   color: rgba(238, 239, 241, 0.7);
@@ -1427,7 +1428,7 @@ body {
   padding: 0.5rem 0.75rem;
   background-color: var(--color-surface);
   border: 1px solid var(--color-outline);
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   font-size: 0.8125rem;
 }
 
@@ -1496,7 +1497,7 @@ body {
 .category-card {
   background-color: var(--color-surface-variant);
   border: 1px solid var(--color-outline);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   transition: border-color 0.15s ease;
 }
@@ -1551,7 +1552,7 @@ body {
 .category-score-badge {
   min-width: 2.5rem;
   padding: 0.25rem 0.625rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid;
   font-size: 0.8125rem;
   font-weight: 600;
@@ -1676,7 +1677,7 @@ body {
   padding: 0.625rem 0.875rem;
   background-color: var(--color-surface-variant);
   border: 1px solid var(--color-outline);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 
 .factor-icon {
@@ -1714,7 +1715,7 @@ body {
 .pace-scenario-box {
   background-color: var(--color-surface-variant);
   border: 1px solid var(--color-outline);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -1744,7 +1745,7 @@ body {
   padding: 0.375rem 0.75rem;
   background-color: rgba(25, 171, 181, 0.15);
   border: 1px solid rgba(25, 171, 181, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--color-primary);
@@ -1779,7 +1780,7 @@ body {
   padding: 0.625rem;
   background-color: var(--color-surface-variant);
   border: 1px solid var(--color-outline);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .drf-label {
@@ -1815,7 +1816,7 @@ body {
   padding: 0.625rem 0.875rem;
   background-color: rgba(25, 171, 181, 0.08);
   border: 1px solid rgba(25, 171, 181, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   color: rgba(238, 239, 241, 0.7);
 }
@@ -2013,7 +2014,7 @@ body {
   position: relative;
   background-color: var(--color-surface);
   border: 1px solid var(--color-outline);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   display: flex;
   gap: 0.75rem;
@@ -2374,7 +2375,7 @@ body {
     max-width: 100%;
     max-height: 90vh;
     height: auto;
-    border-radius: 20px;
+    border-radius: var(--radius-lg);
     transform: scale(0.95) translateY(10px);
     animation: modal-slide-in-tablet 0.25s ease forwards;
   }
@@ -2569,7 +2570,7 @@ body {
 @media (max-width: 767px) {
   .race-header-card {
     padding: 1rem;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
   }
 
   .track-badge {
@@ -2639,7 +2640,7 @@ body {
 
 .odds-highlight {
   animation: odds-highlight 2s ease-out forwards;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 /* Tier badge flash animation */
@@ -2691,7 +2692,7 @@ body {
 .calculation-status {
   background-color: var(--color-surface-variant);
   border: 1px solid var(--color-outline);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 0.625rem 1rem;
   margin-bottom: 0.75rem;
 }
@@ -2820,7 +2821,7 @@ body {
   padding: 0.875rem 1rem;
   background-color: var(--color-surface);
   border: 1px solid var(--color-outline);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   animation: toast-enter 0.3s ease-out;
 }
@@ -2942,7 +2943,7 @@ body {
   max-width: 420px;
   background-color: var(--color-surface);
   border: 1px solid var(--color-outline);
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   animation: dialog-slide-in 0.25s ease-out;
 }
@@ -3005,7 +3006,7 @@ body {
 .reset-changes-list {
   background-color: var(--color-surface-variant);
   border: 1px solid var(--color-outline);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 0.875rem 1rem;
 }
 
@@ -3055,7 +3056,7 @@ body {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.875rem 1.25rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -3115,7 +3116,7 @@ body {
   padding: 0.625rem 1rem;
   background-color: transparent;
   border: 1px solid var(--color-outline);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 500;
   color: rgba(238, 239, 241, 0.7);
@@ -3204,7 +3205,7 @@ body {
 .empty-state-card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-outline);
-  border-radius: 24px;
+  border-radius: var(--radius-lg);
   padding: 2.5rem;
   max-width: 480px;
   width: 100%;
@@ -3247,7 +3248,7 @@ body {
   padding: 0.875rem 1.5rem;
   background-color: var(--color-primary);
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.9375rem;
   font-weight: 600;
   color: #fff;
@@ -3273,7 +3274,7 @@ body {
   margin-top: 2rem;
   padding: 1rem;
   background-color: var(--color-surface-variant);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   text-align: left;
 }
 
@@ -3355,7 +3356,7 @@ body {
 .error-boundary-card {
   background-color: var(--color-surface);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 24px;
+  border-radius: var(--radius-lg);
   padding: 2.5rem;
   max-width: 480px;
   width: 100%;
@@ -3411,7 +3412,7 @@ body {
   color: rgba(238, 239, 241, 0.6);
   cursor: pointer;
   padding: 0.5rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: background-color 0.15s ease;
 }
 
@@ -3427,7 +3428,7 @@ body {
   margin: 0.5rem 0 0;
   padding: 0.75rem;
   background-color: var(--color-surface-variant);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
   font-size: 0.75rem;
   color: rgba(238, 239, 241, 0.8);
@@ -3448,7 +3449,7 @@ body {
   padding: 0.875rem 1.5rem;
   background-color: var(--color-primary);
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.9375rem;
   font-weight: 600;
   color: #fff;
@@ -3470,7 +3471,7 @@ body {
   padding: 0.75rem 1rem;
   background-color: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .error-display-content {
@@ -3510,7 +3511,7 @@ body {
   height: 36px;
   background-color: transparent;
   border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: #ef4444;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -3529,7 +3530,7 @@ body {
   padding: 1rem;
   background-color: rgba(251, 191, 36, 0.1);
   border: 1px solid rgba(251, 191, 36, 0.3);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   margin-bottom: 1rem;
 }
 
@@ -3562,7 +3563,7 @@ body {
   border: none;
   color: rgba(238, 239, 241, 0.5);
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: all 0.15s ease;
 }
 
@@ -3810,7 +3811,7 @@ body {
 }
 
 .skeleton-rectangular {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .skeleton-circular {
@@ -3855,7 +3856,7 @@ body {
   height: 44px;
   background-color: transparent;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: rgba(238, 239, 241, 0.7);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -3901,7 +3902,7 @@ body {
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   background-color: var(--color-surface-variant);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .header-file-icon {
@@ -3943,7 +3944,7 @@ body {
   height: 44px;
   background-color: transparent;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: rgba(238, 239, 241, 0.7);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -3979,7 +3980,7 @@ body {
 .reset-confirm-dialog {
   background-color: var(--color-surface);
   border: 1px solid var(--color-outline);
-  border-radius: 24px;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   max-width: 400px;
   width: 90%;
@@ -4027,7 +4028,7 @@ body {
   padding: 0.75rem 1rem;
   background-color: var(--color-surface-variant);
   border: 1px solid var(--color-outline);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-on-surface);
@@ -4048,7 +4049,7 @@ body {
   padding: 0.75rem 1rem;
   background-color: #ef4444;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.875rem;
   font-weight: 600;
   color: #fff;
@@ -4287,7 +4288,7 @@ select:focus-visible {
 
 .file-upload-compact > div {
   padding: 0.75rem 1rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .file-upload-compact .flex.flex-col.items-center {
@@ -4360,7 +4361,7 @@ select:focus-visible {
   padding: 0.75rem 1rem;
   background-color: var(--color-surface);
   border: 1px solid var(--color-outline);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   margin-bottom: 1.5rem;
 }
 
@@ -4493,7 +4494,7 @@ select:focus-visible {
   padding: 0.375rem 0.75rem;
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -4535,7 +4536,7 @@ select:focus-visible {
   margin-top: 0.5rem;
   background: var(--surface-card);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   min-width: 280px;
   z-index: 100;
@@ -4619,7 +4620,7 @@ select:focus-visible {
 /* Overlay Analysis Box in Modal */
 .overlay-analysis-box {
   background: var(--surface-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 1rem;
   border: 1px solid var(--border-color);
 }
@@ -4629,7 +4630,7 @@ select:focus-visible {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 1rem;
 }
 
@@ -4673,7 +4674,7 @@ select:focus-visible {
 .overlay-detail-item {
   background: var(--surface-card);
   padding: 0.75rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   text-align: center;
   border: 1px solid var(--border-subtle);
 }
@@ -4703,7 +4704,7 @@ select:focus-visible {
 /* Overlay Recommendation Box */
 .overlay-recommendation-box {
   padding: 0.75rem 1rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border-left: 4px solid;
 }
 
@@ -4754,7 +4755,7 @@ select:focus-visible {
   margin-top: 0.75rem;
   padding: 0.625rem 0.75rem;
   background: var(--surface-card);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   color: var(--text-tertiary);
   line-height: 1.4;
@@ -4909,7 +4910,7 @@ select:focus-visible {
 /* Breeding Info Box */
 .breeding-info-box {
   background: var(--surface-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 1rem;
   border: 1px solid var(--border-color);
 }
@@ -4929,7 +4930,7 @@ select:focus-visible {
   align-items: center;
   gap: 0.375rem;
   padding: 0.375rem 0.75rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -4970,7 +4971,7 @@ select:focus-visible {
   gap: 0.25rem;
   padding: 0.5rem 0.75rem;
   background: var(--surface-card);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
 }
 
@@ -5018,7 +5019,7 @@ select:focus-visible {
   color: var(--text-tertiary);
   padding: 0.5rem 0.75rem;
   background: var(--surface-card);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px dashed var(--border-subtle);
 }
 
@@ -5054,7 +5055,7 @@ select:focus-visible {
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -5117,7 +5118,7 @@ select:focus-visible {
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.7rem;
   font-weight: 600;
   border: 1px solid;
@@ -5234,7 +5235,7 @@ select:focus-visible {
   padding: 0.5rem 1rem;
   background-color: transparent;
   border: 1px solid var(--color-primary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--color-primary);
@@ -5255,7 +5256,7 @@ select:focus-visible {
   height: 36px;
   background-color: transparent;
   border: 1px solid var(--color-border-subtle);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: rgba(238, 239, 241, 0.6);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -5330,7 +5331,7 @@ select:focus-visible {
   max-height: calc(100vh - 2rem);
   background-color: var(--color-surface);
   border: 1px solid var(--color-border-subtle);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   animation: slideIn 0.3s ease-out;
 }
@@ -5378,7 +5379,7 @@ select:focus-visible {
   height: 36px;
   background-color: transparent;
   border: 1px solid var(--color-border-subtle);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: rgba(238, 239, 241, 0.6);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -5423,7 +5424,7 @@ select:focus-visible {
   padding: 0.75rem 1.5rem;
   background-color: var(--color-primary);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.9375rem;
   font-weight: 600;
   color: #fff;
@@ -5496,7 +5497,7 @@ select:focus-visible {
   max-width: 480px;
   background-color: var(--color-surface);
   border: 1px solid var(--color-outline);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 2rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
@@ -5579,7 +5580,7 @@ select:focus-visible {
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   background-color: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
   color: var(--color-on-surface);
   text-align: left;
@@ -5607,7 +5608,7 @@ select:focus-visible {
   gap: 0.5rem;
   padding: 0.75rem;
   background-color: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   min-width: 90px;
 }
 
@@ -5672,7 +5673,7 @@ select:focus-visible {
   align-items: center;
   gap: 0.375rem;
   padding: 0.625rem 1.25rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -5742,4 +5743,367 @@ select:focus-visible {
     width: 100%;
     justify-content: center;
   }
+}
+
+/* ============================================
+   Race Tabs Bar Styles (Panel Architecture)
+   ============================================ */
+
+.race-tabs-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  background-color: #0f0f10;
+  border-bottom: 1px solid #2a2a2c;
+  padding: 0 var(--gap-panel);
+}
+
+.race-tabs-container {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-element);
+  overflow-x: auto;
+  flex: 1;
+  /* Hide scrollbar styling */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.race-tabs-container::-webkit-scrollbar {
+  display: none;
+}
+
+.race-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--gap-tight) var(--gap-element);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #b4b4b6;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  min-width: 56px;
+  height: 44px;
+}
+
+.race-tab:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #eeeff1;
+}
+
+.race-tab.active {
+  border-bottom-color: #19abb5;
+  color: #19abb5;
+}
+
+.race-tab-number {
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.race-tab-details {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.6875rem;
+  color: inherit;
+  opacity: 0.7;
+}
+
+.race-tab-surface-icon {
+  font-size: 0.75rem;
+}
+
+.race-tab-distance {
+  font-variant-numeric: tabular-nums;
+}
+
+.race-tabs-info {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-element);
+  padding-left: var(--gap-panel);
+  border-left: 1px solid #2a2a2c;
+  margin-left: var(--gap-element);
+  flex-shrink: 0;
+}
+
+.race-tabs-track {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #19abb5;
+}
+
+.race-tabs-date {
+  font-size: 0.75rem;
+  color: #6e6e70;
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .race-tabs-info {
+    display: none;
+  }
+
+  .race-tabs-bar {
+    padding: 0 var(--gap-element);
+  }
+}
+
+/* ============================================
+   Betting Drawer Styles (Panel Architecture)
+   ============================================ */
+
+.betting-drawer {
+  display: flex;
+  flex-direction: column;
+  background-color: #0f0f10;
+  border-left: 1px solid #2a2a2c;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  transition: width 200ms ease-out;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.betting-drawer.collapsed {
+  width: 48px;
+}
+
+.betting-drawer.expanded {
+  width: 380px;
+}
+
+.betting-drawer-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 48px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #2a2a2c;
+  color: #b4b4b6;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.betting-drawer-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #eeeff1;
+}
+
+.betting-drawer-toggle .material-icons {
+  font-size: 1.25rem;
+  transition: transform 200ms ease-out;
+}
+
+.betting-drawer.collapsed .betting-drawer-toggle .material-icons {
+  transform: rotate(180deg);
+}
+
+.betting-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 var(--gap-panel);
+  border-bottom: 1px solid #2a2a2c;
+}
+
+.betting-drawer-title {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-element);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #eeeff1;
+}
+
+.betting-drawer-title .material-icons {
+  font-size: 1.125rem;
+  color: #19abb5;
+}
+
+.betting-drawer-collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: #6e6e70;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.betting-drawer-collapse-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #eeeff1;
+}
+
+.betting-drawer-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.betting-drawer-bankroll {
+  flex-shrink: 0;
+  padding: var(--gap-panel);
+  border-bottom: 1px solid #2a2a2c;
+}
+
+.betting-drawer-recommendations {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--gap-panel);
+}
+
+.betting-drawer-charts {
+  flex-shrink: 0;
+  padding: var(--gap-panel);
+  border-top: 1px solid #2a2a2c;
+  text-align: center;
+}
+
+.betting-drawer-charts-placeholder {
+  font-size: 0.75rem;
+  color: #6e6e70;
+  font-style: italic;
+  padding: var(--gap-element);
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+}
+
+/* Collapsed state content visibility */
+.betting-drawer.collapsed .betting-drawer-header,
+.betting-drawer.collapsed .betting-drawer-content {
+  display: none;
+}
+
+/* Mobile: drawer becomes bottom sheet */
+@media (max-width: 1023px) {
+  .betting-drawer {
+    display: none;
+  }
+}
+
+/* ============================================
+   Status Bar Styles (Panel Architecture)
+   ============================================ */
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  background-color: #1a1a1c;
+  padding: 0 var(--gap-panel);
+  flex-shrink: 0;
+}
+
+.status-bar-left,
+.status-bar-center,
+.status-bar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-element);
+}
+
+.status-bar-left {
+  flex: 1;
+}
+
+.status-bar-center {
+  justify-content: center;
+}
+
+.status-bar-right {
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.status-bar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-tight);
+  font-size: 0.6875rem;
+  color: #6e6e70;
+}
+
+.status-bar-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #6e6e70;
+}
+
+.status-bar-dot.active {
+  background-color: #10b981;
+}
+
+.status-bar-dot.warning {
+  background-color: #f59e0b;
+}
+
+.status-bar-dot.error {
+  background-color: #ef4444;
+}
+
+.status-bar-label {
+  color: inherit;
+}
+
+/* Hide status bar on mobile */
+@media (max-width: 767px) {
+  .status-bar {
+    display: none;
+  }
+}
+
+/* ============================================
+   Panel Layout Grid Styles
+   ============================================ */
+
+.panel-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.panel-layout-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.panel-layout-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Analysis area within panel layout */
+.analysis-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.analysis-area-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--gap-panel);
 }

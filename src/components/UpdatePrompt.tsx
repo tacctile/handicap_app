@@ -158,7 +158,7 @@ const styles = `
   z-index: 1001;
   background: linear-gradient(135deg, #1a1a1c 0%, #242428 100%);
   border: 1px solid rgba(25, 171, 181, 0.3);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   max-width: 400px;
   width: calc(100% - 2rem);
@@ -187,7 +187,7 @@ const styles = `
   width: 48px;
   height: 48px;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .update-prompt-icon .material-icons {
@@ -224,7 +224,7 @@ const styles = `
   padding: 0.625rem 1rem;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: rgba(238, 239, 241, 0.7);
   font-size: 0.875rem;
   font-weight: 500;
@@ -246,7 +246,7 @@ const styles = `
   padding: 0.625rem 1rem;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: #fff;
   font-size: 0.875rem;
   font-weight: 600;
@@ -273,7 +273,7 @@ const styles = `
   gap: 0.5rem;
   background: #1a1a1c;
   border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 0.625rem 1rem;
   color: #EEEFF1;
   font-size: 0.875rem;
@@ -298,7 +298,7 @@ const styles = `
   padding: 0.375rem 0.75rem;
   background: #10b981;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: #fff;
   font-size: 0.75rem;
   font-weight: 600;

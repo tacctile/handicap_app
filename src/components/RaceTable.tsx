@@ -1,9 +1,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef, memo } from 'react';
 import type { ParsedRace, HorseEntry } from '../types/drf';
 import type { TrackCondition, UseRaceStateReturn } from '../hooks/useRaceState';
-import type { UseBankrollReturn } from '../hooks/useBankroll';
 import { RaceControls } from './RaceControls';
-import { BettingRecommendations } from './BettingRecommendations';
 import { HorseDetailModal } from './HorseDetailModal';
 import { CalculationStatus } from './CalculationStatus';
 import { ToastContainer, useToasts } from './Toast';
@@ -50,8 +48,6 @@ import {
 interface RaceTableProps {
   race: ParsedRace;
   raceState: UseRaceStateReturn;
-  bankroll: UseBankrollReturn;
-  onOpenBankrollSettings: () => void;
 }
 
 // Material Icon component for cleaner usage
@@ -1040,7 +1036,7 @@ interface SelectedHorseData {
 }
 
 // Main RaceTable component
-export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }: RaceTableProps) {
+export function RaceTable({ race, raceState }: RaceTableProps) {
   const { horses, header } = race;
   const {
     trackCondition,
@@ -1611,22 +1607,14 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
         })}
       </div>
 
-      {/* Betting Recommendations with Calculation Status */}
+      {/* Calculation Status */}
       {scoredHorses.length > 0 && (
-        <>
-          <CalculationStatus
-            calculationState={calculationState}
-            horsesAnalyzed={horses.length}
-            activeHorses={activeHorses}
-            confidenceLevel={confidenceLevel}
-          />
-          <BettingRecommendations
-            horses={scoredHorses}
-            raceNumber={header.raceNumber}
-            bankroll={bankroll}
-            onOpenBankrollSettings={onOpenBankrollSettings}
-          />
-        </>
+        <CalculationStatus
+          calculationState={calculationState}
+          horsesAnalyzed={horses.length}
+          activeHorses={activeHorses}
+          confidenceLevel={confidenceLevel}
+        />
       )}
 
       {/* Horse Detail Modal */}
