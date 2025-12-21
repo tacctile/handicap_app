@@ -13,6 +13,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useSubscription } from '../hooks/useSubscription'
 import { useFeatureFlag } from '../hooks/useFeatureFlag'
 import { SubscriptionPage } from './subscription'
+import { logger } from '../services/logging'
 
 // ============================================================================
 // TYPES
@@ -334,7 +335,7 @@ export function SubscriptionGate({
           <BlurredPreview
             featureName={featureName}
             onSubscribe={() => {
-              console.log('Need to authenticate first')
+              // User needs to authenticate first - callback is a no-op
             }}
             isLoading={false}
           >
@@ -349,7 +350,7 @@ export function SubscriptionGate({
         <InlineUpgradePrompt
           featureName={featureName}
           onSubscribe={() => {
-            console.log('Need to authenticate first')
+            // User needs to authenticate first - callback is a no-op
           }}
           isLoading={false}
         />
@@ -361,10 +362,12 @@ export function SubscriptionGate({
   const handleSubscribe = async () => {
     try {
       const url = await openCheckout()
-      console.log('Checkout URL:', url)
       window.open(url, '_blank')
     } catch (err) {
-      console.error('Failed to open checkout:', err)
+      logger.logError(err instanceof Error ? err : new Error(String(err)), {
+        component: 'SubscriptionGate',
+        action: 'openCheckout',
+      })
     }
   }
 

@@ -123,7 +123,6 @@ function AppContent() {
       if (!isDataUsable(validationResult)) {
         setIsLoading(false)
 
-        // Log full validation result for debugging
         logger.logWarning('DRF validation failed - data not usable', {
           validationResult,
           parsedDataStructure: {
@@ -132,8 +131,6 @@ function AppContent() {
             filename: data?.filename,
           },
         })
-        console.log('[DEBUG] Full validation result:', validationResult)
-        console.log('[DEBUG] Parsed data structure:', data)
 
         // Surface validation errors to user via toast
         if (validationResult.errors.length > 0) {
