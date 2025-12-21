@@ -569,44 +569,43 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             ) : (
               <div className="horse-list">
-                {/* Column Headers */}
+                {/* Column Headers - 9 columns */}
                 <div className="horse-list-header">
-                  <div className="horse-list-header__cell horse-list-header__cell--scratch">
-                    <span className="horse-list-header__label">SCR</span>
+                  {/* Column 1: Scratch/Compare icons */}
+                  <div className="horse-list-header__cell horse-list-header__cell--icons">
+                    {/* Empty header for icon column */}
                   </div>
-                  <div className="horse-list-header__cell horse-list-header__cell--pp">
-                    <span className="horse-list-header__label">PP</span>
-                  </div>
-                  <div className="horse-list-header__cell horse-list-header__cell--name">
-                    <span className="horse-list-header__label">HORSE</span>
-                  </div>
-                  <div className="horse-list-header__cell horse-list-header__cell--trainer">
-                    <span className="horse-list-header__label">TRAINER</span>
-                  </div>
-                  <div className="horse-list-header__cell horse-list-header__cell--weight">
-                    <span className="horse-list-header__label">WT</span>
-                  </div>
-                  <div className="horse-list-header__cell horse-list-header__cell--odds">
-                    <span className="horse-list-header__label">LIVE ODDS</span>
-                  </div>
-                  <div className="horse-list-header__cell horse-list-header__cell--life">
-                    <span className="horse-list-header__label">LIFE</span>
-                    <span className="horse-list-header__sublabel">W-P-S</span>
-                  </div>
+
+                  {/* Column 2: PP */}
+                  <div className="horse-list-header__cell horse-list-header__cell--pp">PP</div>
+
+                  {/* Column 3: Horse Name */}
+                  <div className="horse-list-header__cell horse-list-header__cell--name">HORSE</div>
+
+                  {/* Column 4: Live Odds */}
+                  <div className="horse-list-header__cell horse-list-header__cell--odds">ODDS</div>
+
+                  {/* Column 5: Score */}
                   <div className="horse-list-header__cell horse-list-header__cell--score">
-                    <span className="horse-list-header__label">SCORE</span>
+                    SCORE
                   </div>
-                  <div className="horse-list-header__cell horse-list-header__cell--fair">
-                    <span className="horse-list-header__label">FAIR</span>
-                  </div>
+
+                  {/* Column 6: Fair Odds */}
+                  <div className="horse-list-header__cell horse-list-header__cell--fair">FAIR</div>
+
+                  {/* Column 7: Value */}
                   <div className="horse-list-header__cell horse-list-header__cell--value">
-                    <span className="horse-list-header__label">VALUE</span>
+                    VALUE
                   </div>
-                  <div className="horse-list-header__cell horse-list-header__cell--tier">
-                    <span className="horse-list-header__label">RATING</span>
+
+                  {/* Column 8: Rating */}
+                  <div className="horse-list-header__cell horse-list-header__cell--rating">
+                    RATING
                   </div>
+
+                  {/* Column 9: Expand */}
                   <div className="horse-list-header__cell horse-list-header__cell--expand">
-                    {/* Empty for expand chevron column */}
+                    {/* Empty */}
                   </div>
                 </div>
 

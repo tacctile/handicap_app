@@ -1189,18 +1189,30 @@
   letter-spacing: 0.02em;
 }
 
+/* Icons column - empty or minimal */
+.horse-list-header__cell--icons {
+  /* Empty header for icon column */
+}
+
 /* Center align certain columns */
-.horse-list-header__cell--scratch,
-.horse-list-header__cell--pp,
-.horse-list-header__cell--weight,
-.horse-list-header__cell--expand {
+.horse-list-header__cell--pp {
+  text-align: center;
+  align-items: center;
+}
+
+/* Name column - left aligned */
+.horse-list-header__cell--name {
+  text-align: left;
+  align-items: flex-start;
+}
+
+/* Odds column - centered */
+.horse-list-header__cell--odds {
   text-align: center;
   align-items: center;
 }
 
 /* Right align numeric columns */
-.horse-list-header__cell--odds,
-.horse-list-header__cell--life,
 .horse-list-header__cell--score,
 .horse-list-header__cell--fair,
 .horse-list-header__cell--value {
@@ -1208,8 +1220,13 @@
   align-items: flex-end;
 }
 
-/* Tier column - center */
-.horse-list-header__cell--tier {
+/* Rating column - center */
+.horse-list-header__cell--rating {
   text-align: center;
   align-items: center;
+}
+
+/* Expand column - empty */
+.horse-list-header__cell--expand {
+  /* Empty for expand chevron column */
 }
