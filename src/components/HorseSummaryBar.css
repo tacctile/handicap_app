@@ -30,8 +30,12 @@
   border-bottom: 1px solid var(--color-border);
   border-left: 4px solid transparent;
   cursor: pointer;
-  transition: background 150ms ease;
+  transition:
+    background var(--transition-fast),
+    opacity var(--transition-fast),
+    border-left-color var(--transition-fast);
   width: 100%;
+  will-change: background, opacity;
 }
 
 .horse-summary-bar:hover {
@@ -73,7 +77,10 @@
   padding: 0;
   cursor: pointer;
   color: var(--color-text-tertiary);
-  transition: color 150ms ease;
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast),
+    opacity var(--transition-fast);
   border-radius: 2px;
 }
 
@@ -115,6 +122,7 @@
 .horse-summary-bar--scratched {
   opacity: 0.5;
   cursor: default;
+  transition: opacity var(--transition-normal);
 }
 
 .horse-summary-bar--scratched .horse-summary-bar__name {
@@ -209,6 +217,9 @@
   background: var(--color-elevated);
   color: var(--color-text-secondary);
   justify-self: center;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 /* Expand wrapper - centered */
@@ -221,7 +232,7 @@
 /* Expand chevron - centered */
 .horse-summary-bar__expand {
   color: var(--color-text-tertiary);
-  transition: transform 200ms ease;
+  transition: transform var(--transition-fast);
 }
 
 .horse-summary-bar--expanded .horse-summary-bar__expand {
@@ -256,6 +267,19 @@
   background: var(--color-base);
   border-bottom: 1px solid var(--color-border);
   border-left: 4px solid var(--color-border);
+  overflow: hidden;
+  animation: expandIn var(--transition-normal);
+}
+
+@keyframes expandIn {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
 }
 
 .horse-expanded__placeholder {
@@ -366,27 +390,14 @@
 }
 
 /* ============================================
-   ELITE DIAMOND WITH GLOW AND PULSE
+   ELITE DIAMOND WITH STATIC GLOW (NO PULSE)
    ============================================ */
 
 .horse-summary-bar__diamond {
   font-size: 12px;
   line-height: 1;
   filter: drop-shadow(0 0 4px var(--color-tier-elite-glow));
-  animation: diamond-pulse 2.5s ease-in-out infinite;
-}
-
-@keyframes diamond-pulse {
-  0%,
-  100% {
-    filter: drop-shadow(0 0 4px var(--color-tier-elite-glow));
-    opacity: 1;
-  }
-  50% {
-    filter: drop-shadow(0 0 10px var(--color-tier-elite-glow))
-      drop-shadow(0 0 20px var(--color-tier-elite-glow));
-    opacity: 0.9;
-  }
+  /* NO animation - static glow only */
 }
 
 /* ============================================
