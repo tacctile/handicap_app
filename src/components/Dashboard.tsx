@@ -62,6 +62,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
       console.log('Track:', parsedData.races?.[0]?.header?.trackCode);
       console.log('Date:', parsedData.races?.[0]?.header?.raceDateRaw);
       console.log('Races:', parsedData.races?.length);
+
+      // Debug: Log all race post time fields to find missing data patterns
+      parsedData.races?.forEach((race, index) => {
+        const header = race.header as unknown as Record<string, unknown>;
+        console.log(`Race ${index + 1} post time fields:`, {
+          postTime: header?.postTime,
+          post_time: header?.post_time,
+          PostTime: header?.PostTime,
+          racePostTime: header?.racePostTime,
+          postTimeText: header?.postTimeText,
+          time: header?.time,
+          raceTime: header?.raceTime,
+          allKeys: header ? Object.keys(header) : [],
+        });
+      });
     }
   }, [parsedData]);
 
@@ -143,12 +158,82 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return trackSizes[code || ''] || '1mi';
   };
 
-  // Format countdown for display
-  const formatCountdown = (seconds: number | undefined): string => {
-    if (seconds === undefined || seconds <= 0) return '--:--';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  // Format countdown for display - handles past races
+  const formatCountdownDisplay = (
+    postTime: string | undefined,
+    raceDate: string | undefined,
+    _countdownMs: number
+  ): { text: string; isPosted: boolean } => {
+    if (!postTime) return { text: '--:--', isPosted: false };
+
+    try {
+      // Construct full datetime from race date and post time
+      let raceDateTime: Date;
+      const timeStr = String(postTime).trim();
+
+      // Parse the race date (YYYYMMDD format)
+      let targetDate = new Date();
+      if (raceDate && /^\d{8}$/.test(raceDate)) {
+        const year = parseInt(raceDate.substring(0, 4));
+        const month = parseInt(raceDate.substring(4, 6)) - 1; // 0-indexed
+        const day = parseInt(raceDate.substring(6, 8));
+        targetDate = new Date(year, month, day);
+      }
+
+      // Handle HHMM format (e.g., "1326" for 1:26 PM)
+      if (/^\d{3,4}$/.test(timeStr)) {
+        const padded = timeStr.padStart(4, '0');
+        const hours = parseInt(padded.substring(0, 2));
+        const minutes = parseInt(padded.substring(2));
+        raceDateTime = new Date(targetDate);
+        raceDateTime.setHours(hours, minutes, 0, 0);
+      } else if (timeStr.includes(':')) {
+        // Handle "HH:MM" or "H:MM" format
+        const parts = timeStr.replace(/\s*(AM|PM)/i, '').split(':');
+        let hours = parseInt(parts[0] || '0');
+        const minutes = parseInt(parts[1] || '0');
+
+        // Check for AM/PM
+        if (/PM/i.test(timeStr) && hours < 12) hours += 12;
+        if (/AM/i.test(timeStr) && hours === 12) hours = 0;
+
+        raceDateTime = new Date(targetDate);
+        raceDateTime.setHours(hours, minutes, 0, 0);
+      } else {
+        return { text: '--:--', isPosted: false };
+      }
+
+      const now = new Date();
+      const diffMs = raceDateTime.getTime() - now.getTime();
+
+      // If race is in the past, show "POSTED"
+      if (diffMs < 0) {
+        return { text: 'POSTED', isPosted: true };
+      }
+
+      // Convert to seconds
+      const diffSeconds = Math.floor(diffMs / 1000);
+      const minutes = Math.floor(diffSeconds / 60);
+      const seconds = diffSeconds % 60;
+
+      // If more than 60 minutes, show hours:minutes:seconds
+      if (minutes >= 60) {
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+        return {
+          text: `${hours}:${remainingMinutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`,
+          isPosted: false,
+        };
+      }
+
+      // Show minutes:seconds
+      return {
+        text: `${minutes}:${seconds.toString().padStart(2, '0')}`,
+        isPosted: false,
+      };
+    } catch {
+      return { text: '--:--', isPosted: false };
+    }
   };
 
   // Get countdown urgency level
@@ -157,6 +242,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
     if (seconds <= 300) return 'critical'; // 5 minutes
     if (seconds <= 600) return 'warning'; // 10 minutes
     return 'normal';
+  };
+
+  // Get post time from race header, checking all possible field names
+  const getPostTime = (race: ParsedRace | undefined): string | number | undefined => {
+    if (!race?.header) return undefined;
+
+    const header = race.header as unknown as Record<string, unknown>;
+
+    // Try all possible field names
+    const timeValue =
+      header.postTime ||
+      header.post_time ||
+      header.PostTime ||
+      header.racePostTime ||
+      header.postTimeText ||
+      header.time ||
+      header.raceTime;
+
+    return timeValue as string | number | undefined;
   };
 
   // Format post time for display (e.g., "1:26 PM")
@@ -231,8 +335,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     race: ParsedRace,
     _index: number
   ): { status: 'final' | 'critical' | 'warning' | 'normal'; minutesToPost: number } => {
-    const postTime = race.header?.postTime;
-    if (!postTime) {
+    const postTimeValue = getPostTime(race);
+    if (!postTimeValue) {
       return { status: 'normal', minutesToPost: 999 };
     }
 
@@ -240,13 +344,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
       // Get current time
       const now = new Date();
 
+      // Convert to string for parsing
+      const postTime = String(postTimeValue).trim();
+
       // Parse race post time - adjust based on actual DRF format
       let postTimeDate: Date;
 
-      if (postTime.length === 4 && !postTime.includes(':')) {
-        // Military format "1326"
-        const hours = parseInt(postTime.substring(0, 2));
-        const minutes = parseInt(postTime.substring(2));
+      if (/^\d{3,4}$/.test(postTime) && !postTime.includes(':')) {
+        // Military format "1326" or "326"
+        const padded = postTime.padStart(4, '0');
+        const hours = parseInt(padded.substring(0, 2));
+        const minutes = parseInt(padded.substring(2));
         postTimeDate = new Date();
         postTimeDate.setHours(hours, minutes, 0, 0);
       } else {
@@ -289,7 +397,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
-  // Get countdown seconds from the countdown state
+  // Get countdown display info
+  const countdownDisplay = formatCountdownDisplay(
+    postTimeString,
+    raceDateString,
+    countdown.totalMs
+  );
+
+  // Get countdown seconds from the countdown state (for urgency calculation)
   const countdownSeconds = countdown.totalMs > 0 ? Math.floor(countdown.totalMs / 1000) : 0;
 
   return (
@@ -340,12 +455,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
             {/* Post time countdown */}
             <div
-              className={`app-topbar__countdown app-topbar__countdown--${getCountdownUrgency(countdownSeconds)}`}
+              className={`app-topbar__countdown ${countdownDisplay.isPosted ? 'app-topbar__countdown--posted' : `app-topbar__countdown--${getCountdownUrgency(countdownSeconds)}`}`}
             >
-              <span>R{selectedRaceIndex + 1} posts in </span>
-              <span className="app-topbar__countdown-time">
-                {formatCountdown(countdownSeconds)}
-              </span>
+              {countdownDisplay.isPosted ? (
+                <span className="app-topbar__countdown-time">{countdownDisplay.text}</span>
+              ) : (
+                <>
+                  <span>R{selectedRaceIndex + 1} posts in </span>
+                  <span className="app-topbar__countdown-time">{countdownDisplay.text}</span>
+                </>
+              )}
             </div>
 
             {/* Separator */}
@@ -405,7 +524,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   R{race.header?.raceNumber || index + 1}
                 </span>
                 <span className="app-race-rail__time">
-                  {raceStatus.status === 'final' ? 'FINAL' : formatPostTime(race.header?.postTime)}
+                  {raceStatus.status === 'final' ? 'FINAL' : formatPostTime(getPostTime(race))}
                 </span>
               </button>
             );
