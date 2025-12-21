@@ -1,6 +1,14 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sidebar, TopBar, MobileNav, Footer, RaceTabsBar, BettingDrawer, StatusBar } from './layout';
+import {
+  Sidebar,
+  TopBar,
+  MobileNav,
+  Footer,
+  RaceTabsBar,
+  BettingDrawer,
+  StatusBar,
+} from './layout';
 import type { LegalContentType } from './legal';
 import { EmptyStateTable } from './cards';
 import { FileUpload } from './FileUpload';
@@ -80,11 +88,11 @@ export function Dashboard({
 
   const hasData = !!parsedData && parsedData.races.length > 0;
 
-  // Reset to overview when new file is loaded
+  // Go to detail view when new file is loaded (panel layout is the main UI)
   useEffect(() => {
     if (parsedData) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state when new data is loaded
-      setCurrentView('overview');
+      setCurrentView('detail');
       setSelectedRaceIndex(0);
     }
   }, [parsedData]);
@@ -572,11 +580,7 @@ export function Dashboard({
                 </div>
 
                 {/* Status Bar */}
-                <StatusBar
-                  trackDbLoaded={true}
-                  isCalculating={false}
-                  isOffline={false}
-                />
+                <StatusBar trackDbLoaded={true} isCalculating={false} isOffline={false} />
               </motion.div>
             ) : null}
           </AnimatePresence>
