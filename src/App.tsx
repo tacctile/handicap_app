@@ -304,6 +304,7 @@ function AppContent() {
         selectedRaceIndex={selectedRaceIndex}
         trackCondition={raceState.trackCondition}
         onTrackConditionChange={raceState.setTrackCondition}
+        raceState={raceState}
       />
     </ErrorBoundary>
   );
