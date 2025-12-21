@@ -825,8 +825,60 @@ export function validateParsedData(data: ParsedDRFFile | null): ValidationResult
     }
   }
 
+  // Handle malformed data structure (not a valid ParsedDRFFile)
+  if (typeof data !== 'object' || data === null) {
+    return {
+      isValid: false,
+      warnings: [],
+      errors: [
+        {
+          type: 'invalid',
+          field: 'data',
+          message: 'Invalid data structure - expected parsed DRF file object',
+          severity: 'high',
+          suggestion: 'The file format may not be recognized',
+        },
+      ],
+      stats: {
+        totalRaces: 0,
+        totalHorses: 0,
+        totalPastPerformances: 0,
+        totalWorkouts: 0,
+        horsesWithMissingData: 0,
+        completeHorses: 0,
+        validationScore: 0,
+      },
+    }
+  }
+
+  // Handle missing races property (malformed structure)
+  if (!('races' in data)) {
+    return {
+      isValid: false,
+      warnings: [],
+      errors: [
+        {
+          type: 'invalid',
+          field: 'races',
+          message: 'Malformed DRF structure - missing races data',
+          severity: 'high',
+          suggestion: 'The file does not contain recognizable race data',
+        },
+      ],
+      stats: {
+        totalRaces: 0,
+        totalHorses: 0,
+        totalPastPerformances: 0,
+        totalWorkouts: 0,
+        horsesWithMissingData: 0,
+        completeHorses: 0,
+        validationScore: 0,
+      },
+    }
+  }
+
   // Handle empty races array
-  if (!data.races || data.races.length === 0) {
+  if (!data.races || !Array.isArray(data.races) || data.races.length === 0) {
     return {
       isValid: false,
       warnings: [],
@@ -857,11 +909,17 @@ export function validateParsedData(data: ParsedDRFFile | null): ValidationResult
   let totalPastPerformances = 0
   let totalWorkouts = 0
   let horsesWithMissingData = 0
+  let racesWithEnoughHorses = 0
 
   // Validate each race
   data.races.forEach((race, raceIndex) => {
     const raceWarnings = validateRace(race, raceIndex)
     allWarnings.push(...raceWarnings)
+
+    // Track races with enough horses for analysis
+    if (race.horses && race.horses.length >= 2) {
+      racesWithEnoughHorses++
+    }
 
     // Count horses and data
     race.horses.forEach((horse) => {
@@ -882,6 +940,28 @@ export function validateParsedData(data: ParsedDRFFile | null): ValidationResult
       }
     })
   })
+
+  // Add error if no races have enough horses
+  if (racesWithEnoughHorses === 0) {
+    allWarnings.push({
+      type: 'incomplete',
+      field: 'races',
+      message: `All ${data.races.length} race(s) have fewer than 2 horses - cannot analyze`,
+      severity: 'high',
+      suggestion: 'Each race needs at least 2 horses for handicapping analysis',
+    })
+  }
+
+  // Add error if we have races but no horses at all
+  if (totalHorses === 0) {
+    allWarnings.push({
+      type: 'missing',
+      field: 'horses',
+      message: 'No horse entries found in any race',
+      severity: 'high',
+      suggestion: 'The DRF file may be empty or improperly formatted',
+    })
+  }
 
   // Separate errors from warnings
   const errors = allWarnings.filter((w) => w.severity === 'high')

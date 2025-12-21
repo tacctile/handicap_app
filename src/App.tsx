@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { Dashboard } from './components/Dashboard'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { AuthProvider, useAuthContext } from './contexts/AuthContext'
+import { ToastProvider, useToastContext } from './contexts/ToastContext'
 import { DisclaimerBanner, LegalModal } from './components/legal'
 import type { LegalContentType } from './components/legal'
 import { AuthPage, AccountSettings } from './components/auth'
@@ -10,6 +11,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useAnalytics } from './hooks/useAnalytics'
 import { useFeatureFlag } from './hooks/useFeatureFlag'
 import { validateParsedData, getValidationSummary, isDataUsable } from './lib/validation'
+import { logger } from './services/logging'
 import type { ParsedDRFFile } from './types/drf'
 import './styles/responsive.css'
 import './styles/dashboard.css'
@@ -51,6 +53,7 @@ function AppContent() {
 
   const raceState = useRaceState()
   const { trackEvent } = useAnalytics()
+  const { addToast } = useToastContext()
 
   // Navigation handlers
   const navigateToAccount = useCallback(() => {
@@ -103,8 +106,51 @@ function AppContent() {
       // Validate the parsed data
       const validationResult = validateParsedData(data)
 
+      // Log validation result for debugging
+      logger.logInfo('DRF validation result', {
+        isValid: validationResult.isValid,
+        stats: validationResult.stats,
+        errorCount: validationResult.errors.length,
+        warningCount: validationResult.warnings.length,
+      })
+
       if (!isDataUsable(validationResult)) {
         setIsLoading(false)
+
+        // Log full validation result for debugging
+        logger.logWarning('DRF validation failed - data not usable', {
+          validationResult,
+          parsedDataStructure: {
+            hasRaces: !!data?.races,
+            raceCount: data?.races?.length ?? 0,
+            filename: data?.filename,
+          },
+        })
+        console.log('[DEBUG] Full validation result:', validationResult)
+        console.log('[DEBUG] Parsed data structure:', data)
+
+        // Surface validation errors to user via toast
+        if (validationResult.errors.length > 0) {
+          // Show specific validation errors
+          const errorMessages = validationResult.errors
+            .slice(0, 3) // Limit to first 3 errors for toast readability
+            .map(err => err.message)
+            .join('. ')
+
+          addToast(
+            `File validation failed: ${errorMessages}`,
+            'critical',
+            { duration: 8000, icon: 'error' }
+          )
+        } else {
+          // No specific errors but still failed - generic message
+          addToast(
+            'File parsed but contained no usable race data. Check console for details.',
+            'critical',
+            { duration: 8000, icon: 'error' }
+          )
+        }
+
         return
       }
 
@@ -118,7 +164,7 @@ function AppContent() {
       // Reset race state when new file is loaded
       raceState.resetAll()
     }, 100)
-  }, [raceState])
+  }, [raceState, addToast])
 
   const handleReset = useCallback(() => {
     raceState.resetAll()
@@ -234,11 +280,14 @@ function AppContent() {
 /**
  * App component wrapped with providers
  * AuthProvider is always present but auth is controlled by feature flags
+ * ToastProvider enables app-wide toast notifications
  */
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </AuthProvider>
   )
 }
