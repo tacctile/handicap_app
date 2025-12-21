@@ -5096,3 +5096,320 @@ select:focus-visible {
     display: none;
   }
 }
+
+/* ============================================
+   Legal Components
+   ============================================ */
+
+/* Disclaimer Banner */
+.disclaimer-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 1rem;
+  background: linear-gradient(180deg, rgba(15, 15, 16, 0.95) 0%, rgba(15, 15, 16, 0.98) 100%);
+  border-top: 1px solid var(--color-border-subtle);
+  backdrop-filter: blur(8px);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.disclaimer-banner-exit {
+  animation: slideDown 0.3s ease-out forwards;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+.disclaimer-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.disclaimer-banner-icon {
+  font-size: 1.5rem;
+  color: var(--color-warning);
+  flex-shrink: 0;
+}
+
+.disclaimer-banner-text {
+  flex: 1;
+  margin: 0;
+  font-size: 0.875rem;
+  color: rgba(238, 239, 241, 0.8);
+  line-height: 1.5;
+}
+
+.disclaimer-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.disclaimer-banner-link {
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  border: 1px solid var(--color-primary);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.disclaimer-banner-link:hover {
+  background-color: rgba(25, 171, 181, 0.1);
+}
+
+.disclaimer-banner-dismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background-color: transparent;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  color: rgba(238, 239, 241, 0.6);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.disclaimer-banner-dismiss:hover {
+  background-color: var(--color-surface-variant);
+  border-color: var(--color-border-prominent);
+  color: var(--color-on-surface);
+}
+
+.disclaimer-banner-dismiss .material-icons {
+  font-size: 1.25rem;
+}
+
+/* Mobile adjustments for disclaimer banner */
+@media (max-width: 640px) {
+  .disclaimer-banner {
+    padding: 0.75rem;
+  }
+
+  .disclaimer-banner-content {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .disclaimer-banner-icon {
+    display: none;
+  }
+
+  .disclaimer-banner-text {
+    font-size: 0.8125rem;
+    width: 100%;
+    order: 1;
+  }
+
+  .disclaimer-banner-actions {
+    width: 100%;
+    justify-content: flex-end;
+    order: 2;
+  }
+}
+
+/* Legal Modal */
+.legal-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.legal-modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 640px;
+  max-height: calc(100vh - 2rem);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 16px;
+  overflow: hidden;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.legal-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(180deg, var(--color-surface-variant) 0%, var(--color-surface) 100%);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.legal-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.legal-modal-icon {
+  font-size: 1.5rem;
+  color: var(--color-primary);
+}
+
+.legal-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background-color: transparent;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  color: rgba(238, 239, 241, 0.6);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.legal-modal-close:hover {
+  background-color: var(--color-surface-variant);
+  border-color: var(--color-border-prominent);
+  color: var(--color-on-surface);
+}
+
+.legal-modal-close .material-icons {
+  font-size: 1.25rem;
+}
+
+.legal-modal-content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.legal-modal-text {
+  margin: 0;
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: rgba(238, 239, 241, 0.85);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.legal-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--color-border-subtle);
+  background-color: var(--color-surface-variant);
+}
+
+.legal-modal-button {
+  padding: 0.75rem 1.5rem;
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.legal-modal-button:hover {
+  background-color: #1bc5d0;
+}
+
+.legal-modal-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(25, 171, 181, 0.3);
+}
+
+/* Mobile adjustments for legal modal */
+@media (max-width: 640px) {
+  .legal-modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .legal-modal {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .legal-modal-header {
+    padding: 1rem;
+  }
+
+  .legal-modal-title {
+    font-size: 1rem;
+  }
+
+  .legal-modal-content {
+    padding: 1rem;
+  }
+
+  .legal-modal-text {
+    font-size: 0.8125rem;
+  }
+
+  .legal-modal-footer {
+    padding: 0.875rem 1rem;
+  }
+}
