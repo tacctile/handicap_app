@@ -408,105 +408,107 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const countdownSeconds = countdown.totalMs > 0 ? Math.floor(countdown.totalMs / 1000) : 0;
 
   return (
-    <div className="app-shell">
-      {/* TOP BAR - Full width, always visible */}
-      <header className="app-topbar">
-        {/* Logo - always visible */}
-        <div className="app-topbar__logo">
-          <div className="app-topbar__logo-icon">
-            <span className="material-icons">casino</span>
-          </div>
-          <span className="app-topbar__logo-text">Furlong</span>
-        </div>
-
-        {/* Separator after logo */}
-        <div className="app-topbar__separator"></div>
-
-        {!parsedData ? (
-          /* EMPTY STATE - No DRF loaded */
-          <div className="app-topbar__empty">
-            <button
-              className="app-topbar__upload-btn app-topbar__upload-btn--large"
-              onClick={handleFileUpload}
-              disabled={isLoading}
-            >
-              <span className="material-icons">
-                {isLoading ? 'hourglass_empty' : 'upload_file'}
-              </span>
-              <span>{isLoading ? 'Parsing...' : 'Upload DRF File'}</span>
-            </button>
-          </div>
-        ) : (
-          /* LOADED STATE - DRF file loaded */
-          <>
-            {/* Track info */}
-            <div className="app-topbar__info">
-              <span className="app-topbar__track">
-                {trackCode || 'UNK'} ({getTrackSize(trackCode)})
-              </span>
-              <span className="app-topbar__dot">•</span>
-              <span className="app-topbar__date">{formatRaceDate(raceDate)}</span>
-              <span className="app-topbar__dot">•</span>
-              <span className="app-topbar__races">{parsedData.races?.length || 0} races</span>
+    <div className="app-layout">
+      {/* LEFT ZONE: Top bar, Race rail + Main content, Bottom bar */}
+      <div className="app-left-zone">
+        {/* Top Bar */}
+        <header className="app-topbar">
+          {/* Logo - always visible */}
+          <div className="app-topbar__logo">
+            <div className="app-topbar__logo-icon">
+              <span className="material-icons">casino</span>
             </div>
+            <span className="app-topbar__logo-text">Furlong</span>
+          </div>
 
-            {/* Separator */}
-            <div className="app-topbar__separator"></div>
+          {/* Separator after logo */}
+          <div className="app-topbar__separator"></div>
 
-            {/* Post time countdown */}
-            <div
-              className={`app-topbar__countdown ${countdownDisplay.isPosted ? 'app-topbar__countdown--posted' : `app-topbar__countdown--${getCountdownUrgency(countdownSeconds)}`}`}
-            >
-              {countdownDisplay.isPosted ? (
-                <span className="app-topbar__countdown-time">{countdownDisplay.text}</span>
-              ) : (
-                <>
-                  <span>R{selectedRaceIndex + 1} posts in </span>
-                  <span className="app-topbar__countdown-time">{countdownDisplay.text}</span>
-                </>
-              )}
-            </div>
-
-            {/* Separator */}
-            <div className="app-topbar__separator"></div>
-
-            {/* Track condition dropdown */}
-            <div className="app-topbar__condition">
-              <select
-                className="app-topbar__condition-select"
-                value={trackCondition}
-                onChange={(e) => onTrackConditionChange(e.target.value as RaceStateTrackCondition)}
+          {!parsedData ? (
+            /* EMPTY STATE - No DRF loaded */
+            <div className="app-topbar__empty">
+              <button
+                className="app-topbar__upload-btn app-topbar__upload-btn--large"
+                onClick={handleFileUpload}
+                disabled={isLoading}
               >
-                <option value="fast">Fast</option>
-                <option value="good">Good</option>
-                <option value="muddy">Muddy</option>
-                <option value="sloppy">Sloppy</option>
-                <option value="yielding">Yielding</option>
-                <option value="firm">Firm</option>
-              </select>
+                <span className="material-icons">
+                  {isLoading ? 'hourglass_empty' : 'upload_file'}
+                </span>
+                <span>{isLoading ? 'Parsing...' : 'Upload DRF File'}</span>
+              </button>
             </div>
+          ) : (
+            /* LOADED STATE - DRF file loaded */
+            <>
+              {/* Track info */}
+              <div className="app-topbar__info">
+                <span className="app-topbar__track">
+                  {trackCode || 'UNK'} ({getTrackSize(trackCode)})
+                </span>
+                <span className="app-topbar__dot">•</span>
+                <span className="app-topbar__date">{formatRaceDate(raceDate)}</span>
+                <span className="app-topbar__dot">•</span>
+                <span className="app-topbar__races">{parsedData.races?.length || 0} races</span>
+              </div>
 
-            {/* Separator */}
-            <div className="app-topbar__separator"></div>
+              {/* Separator */}
+              <div className="app-topbar__separator"></div>
 
-            {/* Small upload button */}
-            <button
-              className="app-topbar__upload-btn app-topbar__upload-btn--small"
-              onClick={handleFileUpload}
-              disabled={isLoading}
-            >
-              <span className="material-icons">
-                {isLoading ? 'hourglass_empty' : 'upload_file'}
-              </span>
-              <span>{isLoading ? 'Parsing...' : 'Upload'}</span>
-            </button>
-          </>
-        )}
-      </header>
+              {/* Post time countdown */}
+              <div
+                className={`app-topbar__countdown ${countdownDisplay.isPosted ? 'app-topbar__countdown--posted' : `app-topbar__countdown--${getCountdownUrgency(countdownSeconds)}`}`}
+              >
+                {countdownDisplay.isPosted ? (
+                  <span className="app-topbar__countdown-time">{countdownDisplay.text}</span>
+                ) : (
+                  <>
+                    <span>R{selectedRaceIndex + 1} posts in </span>
+                    <span className="app-topbar__countdown-time">{countdownDisplay.text}</span>
+                  </>
+                )}
+              </div>
 
-      {/* BODY - Race Rail + Main + Betting Panel */}
-      <div className="app-body">
-        {/* LEFT RACE RAIL */}
+              {/* Separator */}
+              <div className="app-topbar__separator"></div>
+
+              {/* Track condition dropdown */}
+              <div className="app-topbar__condition">
+                <select
+                  className="app-topbar__condition-select"
+                  value={trackCondition}
+                  onChange={(e) =>
+                    onTrackConditionChange(e.target.value as RaceStateTrackCondition)
+                  }
+                >
+                  <option value="fast">Fast</option>
+                  <option value="good">Good</option>
+                  <option value="muddy">Muddy</option>
+                  <option value="sloppy">Sloppy</option>
+                  <option value="yielding">Yielding</option>
+                  <option value="firm">Firm</option>
+                </select>
+              </div>
+
+              {/* Separator */}
+              <div className="app-topbar__separator"></div>
+
+              {/* Small upload button */}
+              <button
+                className="app-topbar__upload-btn app-topbar__upload-btn--small"
+                onClick={handleFileUpload}
+                disabled={isLoading}
+              >
+                <span className="material-icons">
+                  {isLoading ? 'hourglass_empty' : 'upload_file'}
+                </span>
+                <span>{isLoading ? 'Parsing...' : 'Upload'}</span>
+              </button>
+            </>
+          )}
+        </header>
+
+        {/* Race Rail */}
         <aside
           className={`app-race-rail ${parsedData?.races ? getRailCompactClass(parsedData.races.length) : ''}`}
         >
@@ -529,10 +531,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </button>
             );
           })}
-          {/* Empty state - rail exists but has no content */}
         </aside>
 
-        {/* MAIN CONTENT - 2/3 width */}
+        {/* Main Content */}
         <main className="app-main">
           <div className="app-main__content">
             {!parsedData ? (
@@ -673,151 +674,151 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </main>
 
-        {/* BETTING PANEL - 1/3 width, always visible */}
-        <aside className="app-betting-panel">
-          {/* Bankroll Summary - Clickable to open config */}
-          <button
-            className="app-betting-panel__bankroll"
-            onClick={() => setBankrollConfigOpen(true)}
-          >
-            <div className="app-betting-panel__bankroll-header">
-              <span className="material-icons">account_balance_wallet</span>
-              <span>Today's Bankroll</span>
-              <span className="material-icons app-betting-panel__bankroll-config">settings</span>
-            </div>
-            <div className="app-betting-panel__bankroll-stats">
-              <div className="app-betting-panel__stat">
-                <span className="app-betting-panel__stat-label">P&L</span>
-                <span
-                  className={`app-betting-panel__stat-value ${bankroll.dailyPL >= 0 ? 'app-betting-panel__stat-value--positive' : 'app-betting-panel__stat-value--negative'}`}
-                >
-                  {bankroll.dailyPL >= 0 ? '+' : ''}
-                  {formatCurrency(bankroll.dailyPL)}
-                </span>
-              </div>
-              <div className="app-betting-panel__stat">
-                <span className="app-betting-panel__stat-label">Spent</span>
-                <span className="app-betting-panel__stat-value">
-                  {formatCurrency(bankroll.getSpentToday?.() || 0)}
-                </span>
-              </div>
-              <div className="app-betting-panel__stat">
-                <span className="app-betting-panel__stat-label">Budget</span>
-                <span className="app-betting-panel__stat-value">
-                  {formatCurrency(
-                    bankroll.getDailyBudget?.() || bankroll.settings?.dailyBudgetValue || 0
-                  )}
-                </span>
-              </div>
-            </div>
-            <div className="app-betting-panel__bankroll-mode">
-              <span>{bankroll.settings?.complexityMode || 'Simple'} Mode</span>
-              <span className="app-betting-panel__bankroll-race">
-                ${bankroll.getRaceBudget?.() || bankroll.settings?.perRaceBudget || 20}/race
-              </span>
-            </div>
-          </button>
-
-          {/* Betting Recommendations */}
-          <div className="app-betting-panel__recommendations">
-            <div className="app-betting-panel__recommendations-header">
-              <span className="material-icons">tips_and_updates</span>
-              <span>Recommendations</span>
-              {parsedData && (
-                <span className="app-betting-panel__recommendations-race">
-                  R{selectedRaceIndex + 1}
-                </span>
-              )}
-            </div>
-            <div className="app-betting-panel__recommendations-content">
-              {!parsedData ? (
-                <div className="app-betting-panel__empty">
-                  <span className="material-icons">upload_file</span>
-                  <p>Upload a DRF file to see betting recommendations</p>
-                </div>
-              ) : !currentRaceScoredHorses?.length ? (
-                <div className="app-betting-panel__empty">
-                  <span className="material-icons">analytics</span>
-                  <p>Select a race to see recommendations</p>
-                </div>
-              ) : (
-                <BettingRecommendations
-                  horses={currentRaceScoredHorses}
-                  bankroll={bankroll}
-                  raceNumber={selectedRaceIndex + 1}
-                  onOpenBankrollSettings={() => setBankrollConfigOpen(true)}
-                />
-              )}
-            </div>
+        {/* Bottom Bar */}
+        <footer className="app-bottombar">
+          {/* Left cluster - Account */}
+          <div className="app-bottombar__cluster">
+            <button className="app-bottombar__item">
+              <span className="material-icons">person</span>
+              <span>Guest</span>
+            </button>
           </div>
-        </aside>
+
+          {/* Separator between Account and Settings */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* Settings cluster */}
+          <div className="app-bottombar__cluster">
+            <button className="app-bottombar__item">
+              <span className="material-icons">settings</span>
+              <span>Settings</span>
+            </button>
+          </div>
+
+          {/* Separator after Settings */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* Center spacer */}
+          <div className="app-bottombar__spacer"></div>
+
+          {/* Separator */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* Right cluster - Help */}
+          <div className="app-bottombar__cluster">
+            <button className="app-bottombar__item">
+              <span className="material-icons">help_outline</span>
+              <span>Help</span>
+            </button>
+          </div>
+
+          {/* Separator */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* Legal */}
+          <div className="app-bottombar__cluster">
+            <button className="app-bottombar__item">
+              <span className="material-icons">gavel</span>
+              <span>Legal</span>
+            </button>
+          </div>
+
+          {/* Separator */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* Icon-only cluster - Fullscreen, Multi-window */}
+          <div className="app-bottombar__cluster">
+            <button
+              className="app-bottombar__item app-bottombar__item--icon-only"
+              title="Fullscreen"
+            >
+              <span className="material-icons">fullscreen</span>
+            </button>
+            <button
+              className="app-bottombar__item app-bottombar__item--icon-only"
+              title="Multi-window"
+            >
+              <span className="material-icons">open_in_new</span>
+            </button>
+          </div>
+        </footer>
       </div>
 
-      {/* BOTTOM BAR */}
-      <footer className="app-bottombar">
-        {/* Left cluster - Account */}
-        <div className="app-bottombar__cluster">
-          <button className="app-bottombar__item">
-            <span className="material-icons">person</span>
-            <span>Guest</span>
-          </button>
+      {/* RIGHT ZONE: Betting Panel (full height) */}
+      <aside className="app-betting-panel">
+        {/* Bankroll Summary - Clickable to open config */}
+        <button className="app-betting-panel__bankroll" onClick={() => setBankrollConfigOpen(true)}>
+          <div className="app-betting-panel__bankroll-header">
+            <span className="material-icons">account_balance_wallet</span>
+            <span>Today's Bankroll</span>
+            <span className="material-icons app-betting-panel__bankroll-config">settings</span>
+          </div>
+          <div className="app-betting-panel__bankroll-stats">
+            <div className="app-betting-panel__stat">
+              <span className="app-betting-panel__stat-label">P&L</span>
+              <span
+                className={`app-betting-panel__stat-value ${bankroll.dailyPL >= 0 ? 'app-betting-panel__stat-value--positive' : 'app-betting-panel__stat-value--negative'}`}
+              >
+                {bankroll.dailyPL >= 0 ? '+' : ''}
+                {formatCurrency(bankroll.dailyPL)}
+              </span>
+            </div>
+            <div className="app-betting-panel__stat">
+              <span className="app-betting-panel__stat-label">Spent</span>
+              <span className="app-betting-panel__stat-value">
+                {formatCurrency(bankroll.getSpentToday?.() || 0)}
+              </span>
+            </div>
+            <div className="app-betting-panel__stat">
+              <span className="app-betting-panel__stat-label">Budget</span>
+              <span className="app-betting-panel__stat-value">
+                {formatCurrency(
+                  bankroll.getDailyBudget?.() || bankroll.settings?.dailyBudgetValue || 0
+                )}
+              </span>
+            </div>
+          </div>
+          <div className="app-betting-panel__bankroll-mode">
+            <span>{bankroll.settings?.complexityMode || 'Simple'} Mode</span>
+            <span className="app-betting-panel__bankroll-race">
+              ${bankroll.getRaceBudget?.() || bankroll.settings?.perRaceBudget || 20}/race
+            </span>
+          </div>
+        </button>
+
+        {/* Betting Recommendations */}
+        <div className="app-betting-panel__recommendations">
+          <div className="app-betting-panel__recommendations-header">
+            <span className="material-icons">tips_and_updates</span>
+            <span>Recommendations</span>
+            {parsedData && (
+              <span className="app-betting-panel__recommendations-race">
+                R{selectedRaceIndex + 1}
+              </span>
+            )}
+          </div>
+          <div className="app-betting-panel__recommendations-content">
+            {!parsedData ? (
+              <div className="app-betting-panel__empty">
+                <span className="material-icons">upload_file</span>
+                <p>Upload a DRF file to see betting recommendations</p>
+              </div>
+            ) : !currentRaceScoredHorses?.length ? (
+              <div className="app-betting-panel__empty">
+                <span className="material-icons">analytics</span>
+                <p>Select a race to see recommendations</p>
+              </div>
+            ) : (
+              <BettingRecommendations
+                horses={currentRaceScoredHorses}
+                bankroll={bankroll}
+                raceNumber={selectedRaceIndex + 1}
+                onOpenBankrollSettings={() => setBankrollConfigOpen(true)}
+              />
+            )}
+          </div>
         </div>
-
-        {/* Separator between Account and Settings */}
-        <div className="app-bottombar__separator"></div>
-
-        {/* Settings cluster */}
-        <div className="app-bottombar__cluster">
-          <button className="app-bottombar__item">
-            <span className="material-icons">settings</span>
-            <span>Settings</span>
-          </button>
-        </div>
-
-        {/* Separator after Settings */}
-        <div className="app-bottombar__separator"></div>
-
-        {/* Center spacer */}
-        <div className="app-bottombar__spacer"></div>
-
-        {/* Separator */}
-        <div className="app-bottombar__separator"></div>
-
-        {/* Right cluster - Help */}
-        <div className="app-bottombar__cluster">
-          <button className="app-bottombar__item">
-            <span className="material-icons">help_outline</span>
-            <span>Help</span>
-          </button>
-        </div>
-
-        {/* Separator */}
-        <div className="app-bottombar__separator"></div>
-
-        {/* Legal */}
-        <div className="app-bottombar__cluster">
-          <button className="app-bottombar__item">
-            <span className="material-icons">gavel</span>
-            <span>Legal</span>
-          </button>
-        </div>
-
-        {/* Separator */}
-        <div className="app-bottombar__separator"></div>
-
-        {/* Icon-only cluster - Fullscreen, Multi-window */}
-        <div className="app-bottombar__cluster">
-          <button className="app-bottombar__item app-bottombar__item--icon-only" title="Fullscreen">
-            <span className="material-icons">fullscreen</span>
-          </button>
-          <button
-            className="app-bottombar__item app-bottombar__item--icon-only"
-            title="Multi-window"
-          >
-            <span className="material-icons">open_in_new</span>
-          </button>
-        </div>
-      </footer>
+      </aside>
 
       {/* Bankroll Config Slide-out */}
       {bankrollConfigOpen && (

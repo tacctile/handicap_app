@@ -1,5 +1,32 @@
 /* ============================================
-   APP SHELL - Persistent Layout Architecture
+   APP LAYOUT - CSS Grid Architecture
+   ============================================ */
+
+.app-layout {
+  display: grid;
+  grid-template-columns: 1fr var(--betting-panel-width, 400px);
+  grid-template-rows: 1fr;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--color-base);
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+}
+
+/* Left zone: contains top bar, race rail + main content, bottom bar */
+.app-left-zone {
+  display: grid;
+  grid-template-rows: var(--dimension-bar) 1fr var(--dimension-bar);
+  grid-template-columns: var(--dimension-bar) 1fr;
+  overflow: hidden;
+}
+
+/* ============================================
+   APP SHELL - Legacy (kept for compatibility)
    ============================================ */
 
 .app-shell {
@@ -19,7 +46,22 @@
    TOP BAR
    ============================================ */
 
-.app-topbar {
+/* Grid-based topbar - spans full width of left zone */
+.app-layout .app-topbar {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
+  height: var(--dimension-bar);
+  z-index: 100;
+  gap: var(--gap-container);
+}
+
+/* Legacy flexbox topbar */
+.app-shell .app-topbar {
   display: flex;
   align-items: center;
   height: var(--dimension-bar);
@@ -241,7 +283,20 @@
    LEFT RACE RAIL
    ============================================ */
 
-.app-race-rail {
+/* Grid-based race rail - left column */
+.app-layout .app-race-rail {
+  grid-column: 1;
+  grid-row: 2;
+  width: var(--dimension-bar);
+  background: var(--color-card);
+  border-right: 1px solid var(--color-border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Legacy flexbox race rail */
+.app-shell .app-race-rail {
   width: var(--dimension-bar);
   display: flex;
   flex-direction: column;
@@ -361,10 +416,23 @@
 }
 
 /* ============================================
-   MAIN CONTENT AREA - 2/3 width
+   MAIN CONTENT AREA
    ============================================ */
 
-.app-main {
+/* Grid-based main content */
+.app-layout .app-main {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--color-base);
+  padding: 0;
+  margin: 0;
+}
+
+/* Legacy flexbox main content */
+.app-shell .app-main {
   flex: 2;
   display: flex;
   flex-direction: column;
@@ -412,10 +480,25 @@
 }
 
 /* ============================================
-   BETTING PANEL - 1/3 width, always visible
+   BETTING PANEL - Full height right column
    ============================================ */
 
-.app-betting-panel {
+/* Grid-based betting panel - full height */
+.app-layout > .app-betting-panel {
+  grid-column: 2;
+  grid-row: 1;
+  width: var(--betting-panel-width, 400px);
+  height: 100vh;
+  background: var(--color-card);
+  border-left: 1px solid var(--color-border);
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Legacy flexbox betting panel */
+.app-shell .app-betting-panel {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -463,7 +546,22 @@
    BOTTOM BAR
    ============================================ */
 
-.app-bottombar {
+/* Grid-based bottombar - spans full width of left zone */
+.app-layout .app-bottombar {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: var(--color-card);
+  border-top: 1px solid var(--color-border);
+  height: var(--dimension-bar);
+  gap: 8px;
+}
+
+/* Legacy flexbox bottombar */
+.app-shell .app-bottombar {
   display: flex;
   align-items: center;
   height: var(--dimension-bar);
@@ -478,6 +576,19 @@
   display: flex;
   align-items: center;
   gap: var(--gap-element);
+}
+
+/* Bottom bar left/right groupings for grid layout */
+.app-bottombar__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.app-bottombar__right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .app-bottombar__separator {

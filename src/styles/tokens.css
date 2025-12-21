@@ -11,6 +11,9 @@
   /* Universal dimension - top bar, bottom bar, sidebar collapsed width */
   --dimension-bar: 64px;
 
+  /* Betting panel width */
+  --betting-panel-width: 400px;
+
   /* Spacing - 8px base grid */
   --space-1: 4px;
   --space-2: 8px;
