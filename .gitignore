@@ -140,3 +140,7 @@ vite.config.ts.timestamp-*
 
 # Bundle analyzer output
 stats.html
+
+# Playwright
+playwright-report/
+test-results/
