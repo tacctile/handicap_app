@@ -95,8 +95,9 @@
      HORSE LIST GRID COLUMNS
      Single source of truth for header + rows
      9 columns: icons | PP | name | odds | score | fair | value | rating | expand
+     Using 1fr on horse name ensures grid expands to fill available width
      ============================================ */
-  --horse-list-grid: 80px /* scratch/compare icons with labels */ 48px /* PP */ minmax(200px, 1fr)
-    /* horse name - flexible, shows full name */ 90px /* live odds */ 80px /* score */ 70px
-    /* fair odds */ 90px /* value % */ 170px /* rating badge */ 40px; /* expand chevron */
+  --horse-list-grid: 80px /* scratch/compare icons */ 48px /* PP */ minmax(150px, 1fr)
+    /* horse name - FLEXIBLE, takes remaining space */ 80px /* odds */ 80px /* score */ 70px
+    /* fair */ 80px /* value */ 160px /* rating */ 40px; /* expand */
 }
