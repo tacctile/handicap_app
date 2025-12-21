@@ -32,7 +32,6 @@ import type {
   RaceClassification,
   PastPerformance,
   Workout,
-  WorkoutType,
   Breeding,
   Equipment,
   Medication,
@@ -1060,12 +1059,12 @@ function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance
   const PP_DATE_START = 101; // Field 102
   const PP_DISTANCE_FURLONGS = 113; // Field 114
   const PP_TRACK = 125; // Field 126
-  const _PP_DISTANCE_FEET = 137; // Field 138 (reserved for future use)
+  // PP_DISTANCE_FEET = 137 (Field 138) - available for future use
   const PP_CONDITION = 149; // Field 150
   const PP_EQUIPMENT = 161; // Field 162
   const PP_MEDICATION = 173; // Field 174
   const PP_FIELD_SIZE = 185; // Field 186
-  const _PP_POST_POSITION = 197; // Field 198 (reserved for future use)
+  // PP_POST_POSITION = 197 (Field 198) - available for future use
   const PP_FINISH_POSITION = 355; // Field 356
   const PP_FINISH_MARGIN = 365; // Field 366
   const PP_ODDS = 515; // Field 516
@@ -1089,7 +1088,7 @@ function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance
   const PP_SECOND = 415; // Field 416
   const PP_THIRD = 425; // Field 426
   const PP_TRIP_SHORT = 395; // Field 396
-  const _PP_TRAINER = 1055; // Field 1056 (reserved for future use)
+  // PP_TRAINER = 1055 (Field 1056) - available for future use
   const PP_JOCKEY = 1065; // Field 1066
   const PP_TRIP_DETAILED = 1382; // Field 1383
 
@@ -1183,32 +1182,6 @@ function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance
 // ============================================================================
 // WORKOUT PARSING
 // ============================================================================
-
-/**
- * Parse workout type code
- * Note: Currently not used as workout type data is not in documented field ranges
- * Kept for future use when extended workout fields are added
- */
-function _parseWorkoutType(code: string): WorkoutType {
-  const normalized = code.trim().toLowerCase();
-  switch (normalized) {
-    case 'b':
-    case 'breeze':
-    case 'breezing':
-      return 'breeze';
-    case 'h':
-    case 'handily':
-      return 'handily';
-    case 'd':
-    case 'driving':
-      return 'driving';
-    case 'e':
-    case 'easy':
-      return 'easy';
-    default:
-      return 'unknown';
-  }
-}
 
 /**
  * Parse workout data from fields
