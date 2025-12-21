@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import './Dashboard.css';
 import { usePostTime } from '../hooks/usePostTime';
+import { useBankroll } from '../hooks/useBankroll';
+import { BankrollSettings } from './BankrollSettings';
+import { BettingRecommendations } from './BettingRecommendations';
+import { calculateRaceScores } from '../lib/scoring';
 import type { ParsedDRFFile } from '../types/drf';
+import type { useRaceState } from '../hooks/useRaceState';
 import type { TrackCondition as RaceStateTrackCondition } from '../hooks/useRaceState';
 
 interface DashboardProps {
@@ -9,14 +14,48 @@ interface DashboardProps {
   selectedRaceIndex: number;
   trackCondition: RaceStateTrackCondition;
   onTrackConditionChange: (condition: RaceStateTrackCondition) => void;
+  raceState: ReturnType<typeof useRaceState>;
 }
+
+// Format currency helper
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
 
 export const Dashboard: React.FC<DashboardProps> = ({
   parsedData,
   selectedRaceIndex,
   trackCondition,
   onTrackConditionChange,
+  raceState,
 }) => {
+  // Bankroll management hook
+  const bankroll = useBankroll();
+
+  // UI state for bankroll config slide-out
+  const [bankrollConfigOpen, setBankrollConfigOpen] = useState(false);
+
+  // Calculate scored horses for current race (needed for betting recommendations)
+  const currentRaceScoredHorses = useMemo(() => {
+    if (!parsedData) return [];
+
+    const race = parsedData.races[selectedRaceIndex];
+    if (!race) return [];
+
+    return calculateRaceScores(
+      race.horses,
+      race.header,
+      (i, originalOdds) => raceState.getOdds(i, originalOdds),
+      (i) => raceState.isScratched(i),
+      raceState.trackCondition
+    );
+  }, [parsedData, selectedRaceIndex, raceState]);
+
   // Get current race data
   const currentRace = parsedData?.races?.[selectedRaceIndex];
   const postTimeString = currentRace?.header?.postTime;
@@ -208,21 +247,79 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* BETTING PANEL - 1/3 width, always visible */}
         <aside className="app-betting-panel">
-          <div className="app-betting-panel__content">
-            {/* Bankroll summary section */}
-            <div className="app-betting-panel__section">
-              <h3 className="app-betting-panel__section-title">Bankroll</h3>
-              <div className="app-betting-panel__placeholder">
-                Bankroll summary will appear here
+          {/* Bankroll Summary - Clickable to open config */}
+          <button
+            className="app-betting-panel__bankroll"
+            onClick={() => setBankrollConfigOpen(true)}
+          >
+            <div className="app-betting-panel__bankroll-header">
+              <span className="material-icons">account_balance_wallet</span>
+              <span>Today's Bankroll</span>
+              <span className="material-icons app-betting-panel__bankroll-config">settings</span>
+            </div>
+            <div className="app-betting-panel__bankroll-stats">
+              <div className="app-betting-panel__stat">
+                <span className="app-betting-panel__stat-label">P&L</span>
+                <span
+                  className={`app-betting-panel__stat-value ${bankroll.dailyPL >= 0 ? 'app-betting-panel__stat-value--positive' : 'app-betting-panel__stat-value--negative'}`}
+                >
+                  {bankroll.dailyPL >= 0 ? '+' : ''}
+                  {formatCurrency(bankroll.dailyPL)}
+                </span>
+              </div>
+              <div className="app-betting-panel__stat">
+                <span className="app-betting-panel__stat-label">Spent</span>
+                <span className="app-betting-panel__stat-value">
+                  {formatCurrency(bankroll.getSpentToday?.() || 0)}
+                </span>
+              </div>
+              <div className="app-betting-panel__stat">
+                <span className="app-betting-panel__stat-label">Budget</span>
+                <span className="app-betting-panel__stat-value">
+                  {formatCurrency(
+                    bankroll.getDailyBudget?.() || bankroll.settings?.dailyBudgetValue || 0
+                  )}
+                </span>
               </div>
             </div>
+            <div className="app-betting-panel__bankroll-mode">
+              <span>{bankroll.settings?.complexityMode || 'Simple'} Mode</span>
+              <span className="app-betting-panel__bankroll-race">
+                ${bankroll.getRaceBudget?.() || bankroll.settings?.perRaceBudget || 20}/race
+              </span>
+            </div>
+          </button>
 
-            {/* Betting recommendations section */}
-            <div className="app-betting-panel__section">
-              <h3 className="app-betting-panel__section-title">Recommendations</h3>
-              <div className="app-betting-panel__placeholder">
-                Betting recommendations will appear here
-              </div>
+          {/* Betting Recommendations */}
+          <div className="app-betting-panel__recommendations">
+            <div className="app-betting-panel__recommendations-header">
+              <span className="material-icons">tips_and_updates</span>
+              <span>Recommendations</span>
+              {parsedData && (
+                <span className="app-betting-panel__recommendations-race">
+                  R{selectedRaceIndex + 1}
+                </span>
+              )}
+            </div>
+            <div className="app-betting-panel__recommendations-content">
+              {!parsedData ? (
+                <div className="app-betting-panel__empty">
+                  <span className="material-icons">upload_file</span>
+                  <p>Upload a DRF file to see betting recommendations</p>
+                </div>
+              ) : !currentRaceScoredHorses?.length ? (
+                <div className="app-betting-panel__empty">
+                  <span className="material-icons">analytics</span>
+                  <p>Select a race to see recommendations</p>
+                </div>
+              ) : (
+                <BettingRecommendations
+                  horses={currentRaceScoredHorses}
+                  bankroll={bankroll}
+                  raceNumber={selectedRaceIndex + 1}
+                  onOpenBankrollSettings={() => setBankrollConfigOpen(true)}
+                />
+              )}
             </div>
           </div>
         </aside>
@@ -293,6 +390,42 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </button>
         </div>
       </footer>
+
+      {/* Bankroll Config Slide-out */}
+      {bankrollConfigOpen && (
+        <>
+          {/* Overlay - covers race analysis, click to close */}
+          <div className="app-config-overlay" onClick={() => setBankrollConfigOpen(false)} />
+          {/* Config Panel */}
+          <div className="app-config-panel">
+            <div className="app-config-panel__header">
+              <div className="app-config-panel__title">
+                <span className="material-icons">account_balance_wallet</span>
+                <span>Bankroll Settings</span>
+              </div>
+              <button
+                className="app-config-panel__close"
+                onClick={() => setBankrollConfigOpen(false)}
+              >
+                <span className="material-icons">close</span>
+              </button>
+            </div>
+            <div className="app-config-panel__content">
+              <BankrollSettings
+                isOpen={true}
+                onClose={() => setBankrollConfigOpen(false)}
+                settings={bankroll.settings}
+                onSave={bankroll.updateSettings}
+                onReset={bankroll.resetToDefaults}
+                dailyPL={bankroll.dailyPL}
+                spentToday={bankroll.getSpentToday()}
+                dailyBudget={bankroll.getDailyBudget()}
+                embedded={true}
+              />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

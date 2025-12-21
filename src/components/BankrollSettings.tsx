@@ -42,6 +42,8 @@ interface BankrollSettingsProps {
   dailyBudget: number;
   notificationSettings?: NotificationSettings;
   onNotificationSettingsChange?: (settings: Partial<NotificationSettings>) => void;
+  /** When true, renders just the content without modal wrapper - for slide-out panels */
+  embedded?: boolean;
 }
 
 const RISK_OPTIONS: { value: RiskTolerance; label: string; description: string; range: string }[] =
@@ -99,6 +101,7 @@ export function BankrollSettings({
   dailyBudget,
   notificationSettings,
   onNotificationSettingsChange,
+  embedded = false,
 }: BankrollSettingsProps) {
   // Local form state
   const [formState, setFormState] = useState<BankrollSettingsType>(settings);
@@ -1002,6 +1005,160 @@ export function BankrollSettings({
     </motion.div>
   );
 
+  // Embedded mode - render just the content for slide-out panels
+  if (embedded) {
+    return (
+      <div className="bankroll-settings-embedded">
+        {/* Tabs */}
+        <div className="bankroll-modal-tabs">
+          <button
+            className={`bankroll-modal-tab ${activeTab === 'bankroll' ? 'active' : ''}`}
+            onClick={() => setActiveTab('bankroll')}
+          >
+            <span className="material-icons">account_balance_wallet</span>
+            <span>Bankroll</span>
+          </button>
+          <button
+            className={`bankroll-modal-tab ${activeTab === 'notifications' ? 'active' : ''}`}
+            onClick={() => setActiveTab('notifications')}
+          >
+            <span className="material-icons">notifications</span>
+            <span>Notifications</span>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="bankroll-modal-content">
+          <AnimatePresence mode="wait">
+            {activeTab === 'bankroll' ? (
+              <motion.div
+                key="bankroll"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                {/* Mode Selector */}
+                {renderModeSelector()}
+
+                {/* Form content based on mode */}
+                <AnimatePresence mode="wait">
+                  {formState.complexityMode === 'simple' && renderSimpleMode()}
+                  {formState.complexityMode === 'moderate' && renderModerateMode()}
+                  {formState.complexityMode === 'advanced' && renderAdvancedMode()}
+                </AnimatePresence>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="notifications"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="notification-settings"
+              >
+                {/* Enable Notifications */}
+                <div className="notification-toggle-group">
+                  <div className="notification-toggle-header">
+                    <span className="material-icons">notifications_active</span>
+                    <div className="notification-toggle-text">
+                      <span className="notification-toggle-label">Post Time Alerts</span>
+                      <span className="notification-toggle-description">
+                        Get notified when race time is approaching
+                      </span>
+                    </div>
+                  </div>
+                  <label className="notification-switch">
+                    <input
+                      type="checkbox"
+                      checked={notifState.enabled}
+                      onChange={(e) => updateNotifField('enabled', e.target.checked)}
+                    />
+                    <span className="notification-switch-slider" />
+                  </label>
+                </div>
+
+                {/* Sound Alerts */}
+                <div className="notification-toggle-group">
+                  <div className="notification-toggle-header">
+                    <span className="material-icons">volume_up</span>
+                    <div className="notification-toggle-text">
+                      <span className="notification-toggle-label">Sound Alerts</span>
+                      <span className="notification-toggle-description">
+                        Play a sound with notifications
+                      </span>
+                    </div>
+                  </div>
+                  <label className="notification-switch">
+                    <input
+                      type="checkbox"
+                      checked={notifState.soundEnabled}
+                      onChange={(e) => updateNotifField('soundEnabled', e.target.checked)}
+                      disabled={!notifState.enabled}
+                    />
+                    <span
+                      className={`notification-switch-slider ${!notifState.enabled ? 'disabled' : ''}`}
+                    />
+                  </label>
+                </div>
+
+                {/* Notification Timing */}
+                <div className="notification-timing-section">
+                  <div className="notification-timing-header">
+                    <span className="material-icons">schedule</span>
+                    <div className="notification-timing-text">
+                      <span className="notification-timing-label">Notification Timing</span>
+                      <span className="notification-timing-description">
+                        Choose when to receive alerts before post time
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="notification-timing-options">
+                    {NOTIFICATION_TIMING_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={`notification-timing-chip ${notifState.timings.includes(option.value) ? 'selected' : ''}`}
+                        onClick={() => toggleNotifTiming(option.value)}
+                        disabled={!notifState.enabled}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Footer */}
+        <div className="bankroll-modal-footer">
+          <button type="button" className="bankroll-btn bankroll-btn-ghost" onClick={handleReset}>
+            <span className="material-icons">restart_alt</span>
+            Reset
+          </button>
+          <div className="bankroll-footer-actions">
+            <button
+              type="button"
+              className="bankroll-btn bankroll-btn-primary"
+              onClick={handleSave}
+              disabled={!hasChanges}
+            >
+              <span className="material-icons">save</span>
+              Save
+            </button>
+          </div>
+        </div>
+
+        {/* Kelly Help Modal */}
+        <KellyHelpModal isOpen={showKellyHelp} onClose={() => setShowKellyHelp(false)} />
+      </div>
+    );
+  }
+
+  // Modal mode - full modal with backdrop
   return (
     <AnimatePresence>
       {isOpen && (
