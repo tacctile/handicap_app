@@ -13,7 +13,9 @@
     "test:ui": "vitest --ui",
     "prepare": "husky",
     "audit:check": "npm audit --audit-level=high",
-    "audit:fix": "npm audit fix"
+    "audit:fix": "npm audit fix",
+    "lighthouse": "lhci autorun",
+    "lighthouse:collect": "lhci collect --staticDistDir=./dist"
   },
   "dependencies": {
     "framer-motion": "^12.23.26",
@@ -24,6 +26,7 @@
     "@commitlint/cli": "^20.2.0",
     "@commitlint/config-conventional": "^20.2.0",
     "@eslint/js": "^9.39.1",
+    "@lhci/cli": "^0.15.1",
     "@tailwindcss/vite": "^4.1.18",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.1",
