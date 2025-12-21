@@ -537,9 +537,7 @@ export function Dashboard({
                         race={parsedData.races[selectedRaceIndex]}
                         confidence={currentRaceConfidence}
                         raceState={raceState}
-                        bankroll={bankroll}
                         onBack={handleBackToOverview}
-                        onOpenBankrollSettings={openBankrollSettings}
                       />
                     </div>
                   </div>

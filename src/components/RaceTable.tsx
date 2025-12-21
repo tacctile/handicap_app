@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef, memo } from 'react';
 import type { ParsedRace, HorseEntry } from '../types/drf';
 import type { TrackCondition, UseRaceStateReturn } from '../hooks/useRaceState';
-import type { UseBankrollReturn } from '../hooks/useBankroll';
 import { RaceControls } from './RaceControls';
 import { HorseDetailModal } from './HorseDetailModal';
 import { CalculationStatus } from './CalculationStatus';
@@ -49,8 +48,6 @@ import {
 interface RaceTableProps {
   race: ParsedRace;
   raceState: UseRaceStateReturn;
-  bankroll: UseBankrollReturn;
-  onOpenBankrollSettings: () => void;
 }
 
 // Material Icon component for cleaner usage
@@ -1039,7 +1036,7 @@ interface SelectedHorseData {
 }
 
 // Main RaceTable component
-export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }: RaceTableProps) {
+export function RaceTable({ race, raceState }: RaceTableProps) {
   const { horses, header } = race;
   const {
     trackCondition,
