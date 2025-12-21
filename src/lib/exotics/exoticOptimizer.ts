@@ -277,14 +277,18 @@ function findOptimalBaseBet(budget: number, combinations: number, maxBaseBet: nu
 
   // Find the highest base bet that fits within budget
   for (let i = availableBets.length - 1; i >= 0; i--) {
-    const cost = availableBets[i] * combinations;
-    if (cost <= budget) {
-      return availableBets[i];
+    const bet = availableBets[i];
+    if (bet !== undefined) {
+      const cost = bet * combinations;
+      if (cost <= budget) {
+        return bet;
+      }
     }
   }
 
   // If nothing fits, return minimum
-  return availableBets[0];
+  const minBet = availableBets[0];
+  return minBet ?? 0.1;
 }
 
 // ============================================================================
@@ -732,7 +736,20 @@ export function optimizeExoticBet(config: OptimizationConfig): OptimizationResul
   options.sort((a, b) => b.expectedValue - a.expectedValue);
 
   // Mark the best option as recommended
-  const recommended = options[0];
+  const topOption = options[0];
+  if (!topOption) {
+    return {
+      options: [],
+      recommended: null,
+      budgetUsed: 0,
+      budgetRemaining: validatedBudget,
+      summary: `No viable ${betType} options within $${validatedBudget} budget`,
+      isValid: false,
+      error: 'No options available after filtering',
+    };
+  }
+
+  const recommended = topOption;
   recommended.isRecommended = true;
   recommended.reasoning = `Best EV: ${recommended.expectedValue > 0 ? '+' : ''}$${recommended.expectedValue.toFixed(2)} per bet`;
 

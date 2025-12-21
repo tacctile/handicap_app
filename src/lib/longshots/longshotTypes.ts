@@ -332,7 +332,7 @@ export function parseOddsToDecimal(oddsStr: string): number {
 
   // Handle "25-1" or "25/1" format
   const match = oddsStr.match(/(\d+(?:\.\d+)?)\s*[-/]\s*(\d+)/);
-  if (match) {
+  if (match && match[1] && match[2]) {
     const numerator = parseFloat(match[1]);
     const denominator = parseFloat(match[2]);
     return numerator / denominator + 1; // +1 for decimal odds

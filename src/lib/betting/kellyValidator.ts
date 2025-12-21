@@ -311,10 +311,16 @@ export function sanitizeOdds(odds: unknown): number | null {
     // Handle fractional odds (e.g., "5-1", "9/2")
     const fractionalMatch = odds.match(/^(\d+(?:\.\d+)?)\s*[-/]\s*(\d+(?:\.\d+)?)$/);
     if (fractionalMatch) {
-      const num = parseFloat(fractionalMatch[1]);
-      const den = parseFloat(fractionalMatch[2]);
-      if (den > 0) {
-        value = num / den + 1;
+      const numStr = fractionalMatch[1];
+      const denStr = fractionalMatch[2];
+      if (numStr && denStr) {
+        const num = parseFloat(numStr);
+        const den = parseFloat(denStr);
+        if (den > 0) {
+          value = num / den + 1;
+        } else {
+          return null;
+        }
       } else {
         return null;
       }

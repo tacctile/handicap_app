@@ -282,9 +282,8 @@ export async function buildPatternDatabase(
     const uniqueTrainers = new Set(horses.map((h) => normalizeTrainerName(h.trainerName)));
 
     for (const trainerNorm of uniqueTrainers) {
-      const originalName =
-        horses.find((h) => normalizeTrainerName(h.trainerName) === trainerNorm)?.trainerName ||
-        trainerNorm;
+      const matchingHorse = horses.find((h) => normalizeTrainerName(h.trainerName) === trainerNorm);
+      const originalName = matchingHorse?.trainerName ?? trainerNorm;
       const profile = buildTrainerProfile(originalName, horses);
       trainerProfiles.set(trainerNorm, profile);
     }
@@ -505,6 +504,7 @@ export async function analyzeRacePatterns(
     // Analyze each horse
     for (let i = 0; i < race.horses.length; i++) {
       const horse = race.horses[i];
+      if (!horse) continue;
       const analysis = analyzeHorsePatterns(horse, race.header, database, race.horses);
       results.set(i, analysis);
     }

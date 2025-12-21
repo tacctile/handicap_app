@@ -88,6 +88,7 @@ export function LegalModal({ type, isOpen, onClose }: LegalModalProps) {
         document.body.style.overflow = '';
       };
     }
+    return undefined;
   }, [isOpen, handleKeyDown, type]);
 
   // Scroll to top when content changes

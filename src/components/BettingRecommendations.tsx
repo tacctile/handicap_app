@@ -707,7 +707,7 @@ export function BettingRecommendations({
     if (raceHeader) return raceHeader;
     // Create a minimal header from available data
     const today = new Date();
-    const dateStr = today.toISOString().split('T')[0];
+    const dateStr = today.toISOString().split('T')[0] ?? '';
     return {
       trackCode: 'UNK',
       trackName: 'Unknown Track',
@@ -857,7 +857,7 @@ export function BettingRecommendations({
 
       const oddsMatch = h.horse.morningLineOdds.match(/(\d+(?:\.\d+)?)[/-](\d+(?:\.\d+)?)?/);
       const odds = oddsMatch
-        ? parseFloat(oddsMatch[1]) / (oddsMatch[2] ? parseFloat(oddsMatch[2]) : 1)
+        ? parseFloat(oddsMatch[1] ?? '5') / (oddsMatch[2] ? parseFloat(oddsMatch[2]) : 1)
         : 5;
       const winProb = 1 / (odds + 1);
 

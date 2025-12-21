@@ -244,7 +244,10 @@ function generateExactaComparisons(config: ComparisonConfig, baseBet: number): C
 
   // Key over (top horse over others)
   if (horses.length >= 2) {
-    const keyHorse = [horses[0].programNumber];
+    const firstHorse = horses[0];
+    if (!firstHorse) return rows;
+
+    const keyHorse = [firstHorse.programNumber];
     const otherHorses = horses.slice(1).map((h) => h.programNumber);
     const cost = calculateExactaKeyOverCost(keyHorse, otherHorses, baseBet);
 
@@ -259,11 +262,14 @@ function generateExactaComparisons(config: ComparisonConfig, baseBet: number): C
       );
       const ev = calculateExpectedValue(hitProb, payoutRange.likely, cost.total);
 
+      const keyHorseNum = keyHorse[0];
+      if (keyHorseNum === undefined) return rows;
+
       const row: ComparisonRow = {
         id: 'exacta-key-over',
         type: 'exacta',
         structure: 'key_over',
-        displayName: `Key #${keyHorse[0]}`,
+        displayName: `Key #${keyHorseNum}`,
         cost,
         combinations: cost.combinations,
         payoutRange,
@@ -273,7 +279,7 @@ function generateExactaComparisons(config: ComparisonConfig, baseBet: number): C
         hitDisplay: `${(hitProb * 100).toFixed(1)}%`,
         isRecommended: false,
         score: 0,
-        notes: `#${keyHorse[0]} must win, others second`,
+        notes: `#${keyHorseNum} must win, others second`,
       };
       row.score = calculateScore(row);
       rows.push(row);
@@ -282,7 +288,10 @@ function generateExactaComparisons(config: ComparisonConfig, baseBet: number): C
 
   // Wheel (top horse over entire field)
   if (horses.length >= 1 && fieldSize > horses.length) {
-    const keyHorse = [horses[0].programNumber];
+    const firstHorse = horses[0];
+    if (!firstHorse) return rows;
+
+    const keyHorse = [firstHorse.programNumber];
     const cost = calculateExactaWheelCost(keyHorse, fieldSize, baseBet);
 
     if (cost.isValid && cost.total <= budget) {
@@ -296,11 +305,14 @@ function generateExactaComparisons(config: ComparisonConfig, baseBet: number): C
       );
       const ev = calculateExpectedValue(hitProb, payoutRange.likely * 1.3, cost.total);
 
+      const keyHorseNum = keyHorse[0];
+      if (keyHorseNum === undefined) return rows;
+
       const row: ComparisonRow = {
         id: 'exacta-wheel',
         type: 'exacta',
         structure: 'wheel',
-        displayName: `Wheel #${keyHorse[0]}`,
+        displayName: `Wheel #${keyHorseNum}`,
         cost,
         combinations: cost.combinations,
         payoutRange: {
@@ -314,7 +326,7 @@ function generateExactaComparisons(config: ComparisonConfig, baseBet: number): C
         hitDisplay: `${(hitProb * 100).toFixed(1)}%`,
         isRecommended: false,
         score: 0,
-        notes: `#${keyHorse[0]} over all ${fieldSize - 1} others`,
+        notes: `#${keyHorseNum} over all ${fieldSize - 1} others`,
       };
       row.score = calculateScore(row);
       rows.push(row);
@@ -372,7 +384,10 @@ function generateTrifectaComparisons(config: ComparisonConfig, baseBet: number):
 
   // Key bet (top horse first, others for 2nd/3rd)
   if (horses.length >= 3) {
-    const keyHorse = [horses[0].programNumber];
+    const firstHorse = horses[0];
+    if (!firstHorse) return rows;
+
+    const keyHorse = [firstHorse.programNumber];
     const otherHorses = horses.slice(1).map((h) => h.programNumber);
     const cost = calculateTrifectaKeyCost(keyHorse, otherHorses, otherHorses, baseBet);
 
@@ -387,11 +402,14 @@ function generateTrifectaComparisons(config: ComparisonConfig, baseBet: number):
       );
       const ev = calculateExpectedValue(hitProb, payoutRange.likely, cost.total);
 
+      const keyHorseNum = keyHorse[0];
+      if (keyHorseNum === undefined) return rows;
+
       const row: ComparisonRow = {
         id: 'trifecta-key',
         type: 'trifecta',
         structure: 'key_over',
-        displayName: `Key #${keyHorse[0]}`,
+        displayName: `Key #${keyHorseNum}`,
         cost,
         combinations: cost.combinations,
         payoutRange,
@@ -401,7 +419,7 @@ function generateTrifectaComparisons(config: ComparisonConfig, baseBet: number):
         hitDisplay: `${(hitProb * 100).toFixed(1)}%`,
         isRecommended: false,
         score: 0,
-        notes: `#${keyHorse[0]} must win, others fill places`,
+        notes: `#${keyHorseNum} must win, others fill places`,
       };
       row.score = calculateScore(row);
       rows.push(row);
@@ -448,7 +466,10 @@ function generateTrifectaComparisons(config: ComparisonConfig, baseBet: number):
 
   // Wheel
   if (horses.length >= 1 && fieldSize >= 3) {
-    const keyHorse = [horses[0].programNumber];
+    const firstHorse = horses[0];
+    if (!firstHorse) return rows;
+
+    const keyHorse = [firstHorse.programNumber];
     const cost = calculateTrifectaWheelCost(keyHorse, fieldSize, baseBet);
 
     if (cost.isValid && cost.total <= budget) {
@@ -462,11 +483,14 @@ function generateTrifectaComparisons(config: ComparisonConfig, baseBet: number):
       );
       const ev = calculateExpectedValue(hitProb, payoutRange.likely * 1.5, cost.total);
 
+      const keyHorseNum = keyHorse[0];
+      if (keyHorseNum === undefined) return rows;
+
       const row: ComparisonRow = {
         id: 'trifecta-wheel',
         type: 'trifecta',
         structure: 'wheel',
-        displayName: `Wheel #${keyHorse[0]}`,
+        displayName: `Wheel #${keyHorseNum}`,
         cost,
         combinations: cost.combinations,
         payoutRange: {
@@ -480,7 +504,7 @@ function generateTrifectaComparisons(config: ComparisonConfig, baseBet: number):
         hitDisplay: `${(hitProb * 100).toFixed(1)}%`,
         isRecommended: false,
         score: 0,
-        notes: `#${keyHorse[0]} with ALL for 2nd and 3rd`,
+        notes: `#${keyHorseNum} with ALL for 2nd and 3rd`,
       };
       row.score = calculateScore(row);
       rows.push(row);
@@ -538,7 +562,10 @@ function generateSuperfectaComparisons(config: ComparisonConfig, baseBet: number
 
   // Key bet
   if (horses.length >= 4) {
-    const keyHorse = [horses[0].programNumber];
+    const firstHorse = horses[0];
+    if (!firstHorse) return rows;
+
+    const keyHorse = [firstHorse.programNumber];
     const otherHorses = horses.slice(1).map((h) => h.programNumber);
     const cost = calculateSuperfectaKeyCost(
       keyHorse,
@@ -559,11 +586,14 @@ function generateSuperfectaComparisons(config: ComparisonConfig, baseBet: number
       );
       const ev = calculateExpectedValue(hitProb, payoutRange.likely, cost.total);
 
+      const keyHorseNum = keyHorse[0];
+      if (keyHorseNum === undefined) return rows;
+
       const row: ComparisonRow = {
         id: 'superfecta-key',
         type: 'superfecta',
         structure: 'key_over',
-        displayName: `Key #${keyHorse[0]}`,
+        displayName: `Key #${keyHorseNum}`,
         cost,
         combinations: cost.combinations,
         payoutRange,
@@ -573,7 +603,7 @@ function generateSuperfectaComparisons(config: ComparisonConfig, baseBet: number
         hitDisplay: `${(hitProb * 100).toFixed(1)}%`,
         isRecommended: false,
         score: 0,
-        notes: `#${keyHorse[0]} must win, others fill 2-3-4`,
+        notes: `#${keyHorseNum} must win, others fill 2-3-4`,
       };
       row.score = calculateScore(row);
       rows.push(row);
@@ -693,8 +723,20 @@ export function generateComparisonTable(config: ComparisonConfig): ComparisonTab
   }
 
   // Mark top recommendation
-  filteredRows[0].isRecommended = true;
-  const recommended = filteredRows[0];
+  const topRow = filteredRows[0];
+  if (!topRow) {
+    return {
+      rows: [],
+      recommended: null,
+      budget: validatedBudget,
+      summary: 'No viable exotic options within budget',
+      isValid: false,
+      error: 'No options available',
+    };
+  }
+
+  topRow.isRecommended = true;
+  const recommended = topRow;
 
   return {
     rows: filteredRows,

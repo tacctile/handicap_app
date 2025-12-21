@@ -884,8 +884,19 @@ export function calculateExoticCost(config: ExoticBetConfig): ExoticCost {
           return calculateExactaKeyUnderCost(firstPosition, secondPosition, baseBet);
         case 'wheel':
           return calculateExactaWheelCost(firstPosition, fieldSize, baseBet);
-        case 'straight':
-          return calculateExactaStraightCost(firstPosition[0], secondPosition[0], baseBet);
+        case 'straight': {
+          const first = firstPosition[0];
+          const second = secondPosition[0];
+          if (first === undefined || second === undefined) {
+            return createErrorResult(
+              betType,
+              structure,
+              baseBet,
+              'Straight exacta requires first and second position horses'
+            );
+          }
+          return calculateExactaStraightCost(first, second, baseBet);
+        }
         default:
           return createErrorResult(betType, structure, baseBet, `Unknown structure: ${structure}`);
       }

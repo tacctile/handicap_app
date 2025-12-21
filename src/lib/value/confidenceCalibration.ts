@@ -172,8 +172,8 @@ export function scoreToWinProbability(
 
       // Get next tier probability for interpolation
       const nextTierIdx = calibration.tiers.findIndex((t) => t === tier) - 1;
-      const nextTierProb =
-        nextTierIdx >= 0 ? calibration.tiers[nextTierIdx].winProbability : tier.winProbability + 10;
+      const nextTier = nextTierIdx >= 0 ? calibration.tiers[nextTierIdx] : undefined;
+      const nextTierProb = nextTier?.winProbability ?? tier.winProbability + 10;
 
       // Interpolate between current and next tier
       const interpolated =
@@ -326,7 +326,9 @@ export function calculateTierMetrics(
   let totalWagered = 0;
 
   for (const r of results) {
-    const odds = parseFloat(r.odds.split('-')[0]) || 5;
+    const oddsParts = r.odds.split('-');
+    const oddsValue = oddsParts[0];
+    const odds = oddsValue ? parseFloat(oddsValue) : 5;
     totalWagered++;
     if (r.actualOutcome === 1) {
       totalReturns += odds + 1;

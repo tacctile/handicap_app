@@ -288,6 +288,8 @@ export function detectHiddenClassDrops(
   if (pps.length === 0) return drops;
 
   const lastPP = pps[0];
+  if (!lastPP) return drops;
+
   const currentTrack = raceHeader.trackCode;
 
   // 1. Track tier drop (ran at better track, now at lesser track)
@@ -345,6 +347,7 @@ export function detectHiddenClassDrops(
   // Look for horses that ran 2nd to a next-out winner
   for (let i = 0; i < Math.min(3, pps.length); i++) {
     const pp = pps[i];
+    if (!pp) continue;
     if (pp.finishPosition === 2 && pp.lengthsBehind <= 2) {
       // Finished close 2nd - potential key race
       const ppClass = extractClassFromPP(pp);
@@ -377,11 +380,12 @@ export function analyzeClass(horse: HorseEntry, raceHeader: RaceHeader): ClassAn
 
   // Get recent class levels
   const recentClassLevels = getRecentClassLevels(pps, 3);
-  const lastRaceClass = recentClassLevels.length > 0 ? recentClassLevels[0] : null;
+  const lastRaceClass =
+    recentClassLevels.length > 0 && recentClassLevels[0] ? recentClassLevels[0] : null;
 
   // Analyze movement
   const currentClaimingPrice = raceHeader.claimingPriceMax ?? raceHeader.claimingPriceMin;
-  const lastClaimingPrice = pps.length > 0 ? pps[0].claimingPrice : null;
+  const lastClaimingPrice = pps.length > 0 && pps[0] ? pps[0].claimingPrice : null;
 
   const movement = analyzeClassMovementWithClaiming(
     currentClass,
@@ -398,7 +402,7 @@ export function analyzeClass(horse: HorseEntry, raceHeader: RaceHeader): ClassAn
 
   // Track tier movement
   const trackTierMovement =
-    pps.length > 0 ? analyzeTrackTierMovement(pps[0].track, raceHeader.trackCode) : null;
+    pps.length > 0 && pps[0] ? analyzeTrackTierMovement(pps[0].track, raceHeader.trackCode) : null;
 
   // Build reasoning
   const reasoning: string[] = [];
@@ -508,7 +512,7 @@ export function parseClassFromConditions(conditions: string): ClassLevel {
   // Claiming - try to extract price
   if (cond.includes('claiming') || cond.includes('clm')) {
     const priceMatch = cond.match(/(\d{1,3}),?(\d{3})?/);
-    if (priceMatch) {
+    if (priceMatch && priceMatch[0]) {
       const price = parseInt(priceMatch[0].replace(',', ''));
       return mapClaimingPriceToLevel(price);
     }

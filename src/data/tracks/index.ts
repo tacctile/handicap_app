@@ -290,7 +290,7 @@ export function getFallbackTrackData(trackCode: string): TrackData {
         stakesAvg: 93.5,
       },
     ],
-    lastUpdated: new Date().toISOString().split('T')[0],
+    lastUpdated: new Date().toISOString().split('T')[0] ?? '',
     dataQuality: 'estimated',
   };
 }

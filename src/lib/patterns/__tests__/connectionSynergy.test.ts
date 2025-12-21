@@ -461,7 +461,11 @@ describe('getConnectionSynergy', () => {
       }),
     ];
 
-    const result = getConnectionSynergy(horses[0], horses);
+    const firstHorse = horses[0];
+    if (!firstHorse) {
+      throw new Error('Test setup failed: first horse not defined');
+    }
+    const result = getConnectionSynergy(firstHorse, horses);
 
     expect(result.partnership).toBeDefined();
     expect(result.bonus).toBeGreaterThan(0);

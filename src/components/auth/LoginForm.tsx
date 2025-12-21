@@ -197,21 +197,21 @@ export function LoginForm({ onSwitchToSignup, onSuccess }: LoginFormProps) {
     addToast('Password reset coming soon', 'info', { duration: 3000 });
   }, [addToast]);
 
-  const getInputStyle = (fieldName: string, hasError: boolean = false) => ({
-    ...styles.input,
-    ...(focusedField === fieldName ? styles.inputFocus : {}),
-    ...(hasError && focusedField !== fieldName ? styles.inputError : {}),
+  const getInputStyle = (fieldName: string, hasError: boolean = false): React.CSSProperties => ({
+    ...(styles.input ?? {}),
+    ...(focusedField === fieldName ? (styles.inputFocus ?? {}) : {}),
+    ...(hasError && focusedField !== fieldName ? (styles.inputError ?? {}) : {}),
   });
 
   const getButtonStyle = (
     buttonName: string,
-    baseStyle: React.CSSProperties,
-    hoverStyle: React.CSSProperties,
+    baseStyle: React.CSSProperties | undefined,
+    hoverStyle: React.CSSProperties | undefined,
     disabled?: boolean
-  ) => ({
-    ...baseStyle,
-    ...(hoveredButton === buttonName && !disabled ? hoverStyle : {}),
-    ...(disabled ? styles.submitButtonDisabled : {}),
+  ): React.CSSProperties => ({
+    ...(baseStyle ?? {}),
+    ...(hoveredButton === buttonName && !disabled ? (hoverStyle ?? {}) : {}),
+    ...(disabled ? (styles.submitButtonDisabled ?? {}) : {}),
   });
 
   const isFormValid = email.trim().length > 0 && password.length > 0;

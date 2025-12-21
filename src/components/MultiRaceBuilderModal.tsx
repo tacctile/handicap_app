@@ -136,14 +136,15 @@ function convertToMultiRaceData(raceData: RaceData): MultiRaceRaceData {
       else if (h.score.total >= 160) tier = 2;
 
       const oddsMatch = h.horse.morningLineOdds.match(/(\d+(?:\.\d+)?)[/-](\d+(?:\.\d+)?)?/);
-      const decimalOdds = oddsMatch
-        ? parseFloat(oddsMatch[1]) / (oddsMatch[2] ? parseFloat(oddsMatch[2]) : 1)
-        : 5;
+      const decimalOdds =
+        oddsMatch && oddsMatch[1]
+          ? parseFloat(oddsMatch[1]) / (oddsMatch[2] ? parseFloat(oddsMatch[2]) : 1)
+          : 5;
       const winProbability = 1 / (decimalOdds + 1);
 
       const sorted = [...raceData.horses].sort((a, b) => b.score.total - a.score.total);
       const nextHorse = sorted[idx + 1];
-      const scoreGapToNext = nextHorse ? h.score.total - nextHorse.score.total : 0;
+      const scoreGapToNext = nextHorse !== undefined ? h.score.total - nextHorse.score.total : 0;
 
       return {
         programNumber: h.horse.programNumber,
@@ -384,7 +385,9 @@ export function MultiRaceBuilderModal({
           <div className="multirace-race-tabs">
             {state.selections.map((sel, idx) => {
               const race = multiRaceData[idx];
-              const strengthColor = RACE_STRENGTH_COLORS[race?.strength || 'weak'];
+              const strengthColor = race
+                ? RACE_STRENGTH_COLORS[race.strength]
+                : RACE_STRENGTH_COLORS.weak;
               const hasSelections = sel.selections.length > 0;
 
               return (
@@ -394,14 +397,16 @@ export function MultiRaceBuilderModal({
                   onClick={() => setCurrentLeg(idx)}
                 >
                   <span className="multirace-race-tab-number">R{sel.raceNumber}</span>
-                  <span
-                    className="multirace-race-tab-strength"
-                    style={{ backgroundColor: strengthColor.bg, color: strengthColor.text }}
-                  >
-                    <span className="material-icons" style={{ fontSize: 12 }}>
-                      {strengthColor.icon}
+                  {race && strengthColor && (
+                    <span
+                      className="multirace-race-tab-strength"
+                      style={{ backgroundColor: strengthColor.bg, color: strengthColor.text }}
+                    >
+                      <span className="material-icons" style={{ fontSize: 12 }}>
+                        {strengthColor.icon}
+                      </span>
                     </span>
-                  </span>
+                  )}
                   {hasSelections && (
                     <span className="multirace-race-tab-count">{sel.selections.length}</span>
                   )}
@@ -412,96 +417,118 @@ export function MultiRaceBuilderModal({
 
           {/* Current Race Content */}
           <div className="multirace-race-content">
-            {currentRace && currentSelection && (
-              <>
-                {/* Race Header */}
-                <div className="multirace-race-header">
-                  <div className="multirace-race-info">
-                    <span className="multirace-race-title">Race {currentSelection.raceNumber}</span>
-                    <span
-                      className="multirace-race-strength-badge"
-                      style={{
-                        backgroundColor: RACE_STRENGTH_COLORS[currentRace.strength].bg,
-                        color: RACE_STRENGTH_COLORS[currentRace.strength].text,
-                      }}
-                    >
-                      <span className="material-icons" style={{ fontSize: 14 }}>
-                        {RACE_STRENGTH_COLORS[currentRace.strength].icon}
-                      </span>
-                      {currentRace.strength.charAt(0).toUpperCase() + currentRace.strength.slice(1)}
-                    </span>
-                  </div>
-                  <button
-                    className="multirace-all-btn"
-                    onClick={() => handleToggleAll(currentSelection.legNumber)}
-                  >
-                    <span className="material-icons">
-                      {currentSelection.isAllSelected ? 'check_box' : 'select_all'}
-                    </span>
-                    {currentSelection.isAllSelected ? 'Clear All' : 'Use All'}
-                  </button>
-                </div>
-
-                {/* Suggestion */}
-                {currentSuggestion && (
-                  <div className="multirace-suggestion">
-                    <span className="material-icons">{currentSuggestion.icon}</span>
-                    <span className="multirace-suggestion-text">{currentSuggestion.reason}</span>
-                    <button
-                      className="multirace-suggestion-apply"
-                      onClick={() => handleApplySuggestion(currentSuggestion)}
-                    >
-                      Apply
-                    </button>
-                  </div>
-                )}
-
-                {/* Horse Selection Grid */}
-                <div className="multirace-horses-grid">
-                  {currentRace.horses.map((horse) => {
-                    const isSelected = currentSelection.selections.includes(horse.programNumber);
-                    const tierColor = TIER_COLORS[horse.tier];
-
-                    return (
+            {currentRace &&
+              currentSelection &&
+              (() => {
+                const strengthColorLookup = RACE_STRENGTH_COLORS[currentRace.strength];
+                const strengthColor = strengthColorLookup ?? {
+                  bg: 'rgba(239, 68, 68, 0.15)',
+                  text: '#ef4444',
+                  icon: 'help_outline',
+                };
+                return (
+                  <>
+                    {/* Race Header */}
+                    <div className="multirace-race-header">
+                      <div className="multirace-race-info">
+                        <span className="multirace-race-title">
+                          Race {currentSelection.raceNumber}
+                        </span>
+                        <span
+                          className="multirace-race-strength-badge"
+                          style={{
+                            backgroundColor: strengthColor.bg,
+                            color: strengthColor.text,
+                          }}
+                        >
+                          <span className="material-icons" style={{ fontSize: 14 }}>
+                            {strengthColor.icon}
+                          </span>
+                          {currentRace.strength.charAt(0).toUpperCase() +
+                            currentRace.strength.slice(1)}
+                        </span>
+                      </div>
                       <button
-                        key={horse.programNumber}
-                        className={`multirace-horse-card ${isSelected ? 'selected' : ''}`}
-                        onClick={() =>
-                          handleHorseToggle(currentSelection.legNumber, horse.programNumber)
-                        }
-                        style={{
-                          borderColor: isSelected ? tierColor.border : undefined,
-                          backgroundColor: isSelected ? tierColor.bg : undefined,
-                        }}
+                        className="multirace-all-btn"
+                        onClick={() => handleToggleAll(currentSelection.legNumber)}
                       >
-                        <div className="multirace-horse-header">
-                          <span className="multirace-horse-number">#{horse.programNumber}</span>
-                          <span className="multirace-horse-score">{horse.score}pts</span>
-                        </div>
-                        <div className="multirace-horse-name">{horse.horseName}</div>
-                        <div className="multirace-horse-footer">
-                          <span className="multirace-horse-odds">{horse.morningLineOdds}</span>
-                          <span className="multirace-horse-tier" style={{ color: tierColor.text }}>
-                            T{horse.tier}
-                          </span>
-                        </div>
-                        {horse.isSingleCandidate && (
-                          <span className="multirace-horse-single-badge">
-                            <span className="material-icons" style={{ fontSize: 12 }}>
-                              verified
-                            </span>
-                            Single
-                          </span>
-                        )}
-                        {isSelected && (
-                          <span className="material-icons multirace-horse-check">check_circle</span>
-                        )}
+                        <span className="material-icons">
+                          {currentSelection.isAllSelected ? 'check_box' : 'select_all'}
+                        </span>
+                        {currentSelection.isAllSelected ? 'Clear All' : 'Use All'}
                       </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
+                    </div>
+
+                    {/* Suggestion */}
+                    {currentSuggestion && (
+                      <div className="multirace-suggestion">
+                        <span className="material-icons">{currentSuggestion.icon}</span>
+                        <span className="multirace-suggestion-text">
+                          {currentSuggestion.reason}
+                        </span>
+                        <button
+                          className="multirace-suggestion-apply"
+                          onClick={() => handleApplySuggestion(currentSuggestion)}
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Horse Selection Grid */}
+                    <div className="multirace-horses-grid">
+                      {currentRace.horses.map((horse) => {
+                        const isSelected = currentSelection.selections.includes(
+                          horse.programNumber
+                        );
+                        const tierColor = TIER_COLORS[horse.tier];
+
+                        return (
+                          <button
+                            key={horse.programNumber}
+                            className={`multirace-horse-card ${isSelected ? 'selected' : ''}`}
+                            onClick={() =>
+                              handleHorseToggle(currentSelection.legNumber, horse.programNumber)
+                            }
+                            style={{
+                              borderColor: isSelected ? tierColor.border : undefined,
+                              backgroundColor: isSelected ? tierColor.bg : undefined,
+                            }}
+                          >
+                            <div className="multirace-horse-header">
+                              <span className="multirace-horse-number">#{horse.programNumber}</span>
+                              <span className="multirace-horse-score">{horse.score}pts</span>
+                            </div>
+                            <div className="multirace-horse-name">{horse.horseName}</div>
+                            <div className="multirace-horse-footer">
+                              <span className="multirace-horse-odds">{horse.morningLineOdds}</span>
+                              <span
+                                className="multirace-horse-tier"
+                                style={{ color: tierColor.text }}
+                              >
+                                T{horse.tier}
+                              </span>
+                            </div>
+                            {horse.isSingleCandidate && (
+                              <span className="multirace-horse-single-badge">
+                                <span className="material-icons" style={{ fontSize: 12 }}>
+                                  verified
+                                </span>
+                                Single
+                              </span>
+                            )}
+                            {isSelected && (
+                              <span className="material-icons multirace-horse-check">
+                                check_circle
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
           </div>
 
           {/* Quick Actions */}

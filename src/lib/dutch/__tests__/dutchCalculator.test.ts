@@ -268,7 +268,9 @@ describe('Dutch Book Calculator', () => {
       });
 
       expect(result.warnings.length).toBeGreaterThan(0);
-      expect(result.warnings[0]).toContain('below');
+      const firstWarning = result.warnings[0];
+      expect(firstWarning).toBeDefined();
+      expect(firstWarning).toContain('below');
     });
 
     it('handles 4-horse Dutch', () => {
@@ -397,8 +399,12 @@ describe('Dutch Book Validator', () => {
     });
 
     it('reports errors for too few horses', () => {
+      const horses = createTestHorses();
+      const firstHorse = horses[0];
+      if (!firstHorse) throw new Error('Test setup failed');
+
       const result = validateDutchBook({
-        horses: [createTestHorses()[0]],
+        horses: [firstHorse],
         totalStake: 100,
       });
 
@@ -537,7 +543,11 @@ describe('Dutch Book Validator', () => {
     });
 
     it('returns false for single horse', () => {
-      expect(canFormProfitableDutch([createTestHorses()[0]])).toBe(false);
+      const horses = createTestHorses();
+      const firstHorse = horses[0];
+      if (!firstHorse) throw new Error('Test setup failed');
+
+      expect(canFormProfitableDutch([firstHorse])).toBe(false);
     });
   });
 });
@@ -635,7 +645,11 @@ describe('Dutch Book Optimizer', () => {
     });
 
     it('returns false for insufficient horses', () => {
-      expect(hasProfitableDutch([createCandidateHorses()[0]])).toBe(false);
+      const horses = createCandidateHorses();
+      const firstHorse = horses[0];
+      if (!firstHorse) throw new Error('Test setup failed');
+
+      expect(hasProfitableDutch([firstHorse])).toBe(false);
     });
   });
 
@@ -649,9 +663,13 @@ describe('Dutch Book Optimizer', () => {
       const opportunities = getTopDutchOpportunities(createCandidateHorses(), 5);
 
       for (let i = 1; i < opportunities.length; i++) {
-        expect(opportunities[i - 1].recommendationStrength).toBeGreaterThanOrEqual(
-          opportunities[i].recommendationStrength
-        );
+        const prev = opportunities[i - 1];
+        const curr = opportunities[i];
+        expect(prev).toBeDefined();
+        expect(curr).toBeDefined();
+        if (prev && curr) {
+          expect(prev.recommendationStrength).toBeGreaterThanOrEqual(curr.recommendationStrength);
+        }
       }
     });
   });
@@ -680,8 +698,12 @@ describe('Dutch Book Optimizer', () => {
       const candidates = convertToDutchCandidates(input);
 
       expect(candidates.length).toBe(2);
-      expect(candidates[0].decimalOdds).toBe(3.0);
-      expect(candidates[1].decimalOdds).toBe(6.0);
+      const firstCandidate = candidates[0];
+      const secondCandidate = candidates[1];
+      expect(firstCandidate).toBeDefined();
+      expect(secondCandidate).toBeDefined();
+      expect(firstCandidate?.decimalOdds).toBe(3.0);
+      expect(secondCandidate?.decimalOdds).toBe(6.0);
     });
   });
 
@@ -779,7 +801,11 @@ describe('Dutch Book Display', () => {
         horses: createTestHorses(),
       });
 
-      const instruction = generateBetInstruction(result.bets[0], 5);
+      const firstBet = result.bets[0];
+      expect(firstBet).toBeDefined();
+      if (!firstBet) throw new Error('No bets found');
+
+      const instruction = generateBetInstruction(firstBet, 5);
 
       expect(instruction.windowInstruction).toContain('Race 5');
       expect(instruction.windowInstruction).toContain('to win on the');
@@ -796,7 +822,9 @@ describe('Dutch Book Display', () => {
       const explanations = generateDutchExplanation(result);
 
       expect(explanations.length).toBeGreaterThan(0);
-      expect(explanations[0]).toContain('Why Dutch');
+      const firstExplanation = explanations[0];
+      expect(firstExplanation).toBeDefined();
+      expect(firstExplanation).toContain('Why Dutch');
     });
   });
 

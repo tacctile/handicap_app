@@ -304,7 +304,7 @@ export function validateTrainerPattern(
     let winRate = 0;
     if (evidence) {
       const match = evidence.match(/(\d+(?:\.\d+)?)\s*%/);
-      if (match) {
+      if (match && match[1]) {
         winRate = parseFloat(match[1]);
       }
     }
@@ -415,8 +415,8 @@ export function validateWorkoutPattern(
  */
 export function validateTripExcuse(pastPerformances: PastPerformance[]): EvidenceValidation {
   try {
-    const lastRace = pastPerformances[0];
-    if (!lastRace) {
+    const lastPerformance = pastPerformances[0];
+    if (!lastPerformance) {
       return {
         evidenceType: 'trip_excuse',
         isValid: false,
@@ -429,7 +429,7 @@ export function validateTripExcuse(pastPerformances: PastPerformance[]): Evidenc
     }
 
     // Sanitize and check comment
-    const comment = sanitizeString(lastRace.tripComment || '').toLowerCase();
+    const comment = sanitizeString(lastPerformance.tripComment || '').toLowerCase();
 
     // Look for excuse keywords
     const excuseKeywords = [
@@ -465,7 +465,7 @@ export function validateTripExcuse(pastPerformances: PastPerformance[]): Evidenc
       actualValue: foundExcuse || 'No excuse found',
       threshold: 'Trip trouble keyword',
       message: isValid
-        ? `Valid excuse: "${foundExcuse}" in "${lastRace.tripComment}"`
+        ? `Valid excuse: "${foundExcuse}" in "${lastPerformance.tripComment}"`
         : `No valid excuse in trip comment`,
     };
   } catch {
@@ -610,6 +610,6 @@ export function getValidatedAngles(
 ): DetectedUpsetAngle[] {
   return angles.filter((_angle, index) => {
     const validation = validations[index];
-    return validation && validation.isValid;
+    return validation !== undefined && validation.isValid;
   });
 }

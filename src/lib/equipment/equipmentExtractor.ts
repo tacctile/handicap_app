@@ -16,6 +16,18 @@ import {
   getImpactClassification,
 } from './equipmentTypes';
 
+/**
+ * Get equipment type definition with type safety
+ * Throws an error if the equipment type doesn't exist (should never happen with valid keys)
+ */
+function getEquipType(key: keyof typeof EQUIPMENT_TYPES): EquipmentTypeDefinition {
+  const equipType = EQUIPMENT_TYPES[key];
+  if (!equipType) {
+    throw new Error(`Equipment type '${key}' not found in EQUIPMENT_TYPES`);
+  }
+  return equipType;
+}
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -128,9 +140,9 @@ function detectChanges(
 
   // Check Lasix first (most impactful)
   if (current.lasixFirstTime) {
-    changes.push(createChange(EQUIPMENT_TYPES.lasix, 'added', true, 'First-time Lasix'));
+    changes.push(createChange(getEquipType('lasix'), 'added', true, 'First-time Lasix'));
   } else if (current.lasixOff) {
-    changes.push(createChange(EQUIPMENT_TYPES.lasix, 'removed', false, 'Lasix removed'));
+    changes.push(createChange(getEquipType('lasix'), 'removed', false, 'Lasix removed'));
   }
 
   // Check blinkers
@@ -138,14 +150,14 @@ function detectChanges(
     const isFirstTime = firstTimeSet.has('b') || firstTimeSet.has('blinkers');
     changes.push(
       createChange(
-        EQUIPMENT_TYPES.blinkers,
+        getEquipType('blinkers'),
         'added',
         isFirstTime,
         isFirstTime ? 'Blinkers ON (first time)' : 'Blinkers ON'
       )
     );
   } else if (current.blinkersOff || (previous?.blinkers && !current.blinkers)) {
-    changes.push(createChange(EQUIPMENT_TYPES.blinkers, 'removed', false, 'Blinkers OFF'));
+    changes.push(createChange(getEquipType('blinkers'), 'removed', false, 'Blinkers OFF'));
   }
 
   // Check tongue tie
@@ -153,14 +165,14 @@ function detectChanges(
     const isFirstTime = firstTimeSet.has('tt') || firstTimeSet.has('tongue tie');
     changes.push(
       createChange(
-        EQUIPMENT_TYPES.tongueTie,
+        getEquipType('tongueTie'),
         'added',
         isFirstTime,
         isFirstTime ? 'Tongue tie added (first time)' : 'Tongue tie added'
       )
     );
   } else if (previous?.tongueTie && !current.tongueTie) {
-    changes.push(createChange(EQUIPMENT_TYPES.tongueTie, 'removed', false, 'Tongue tie removed'));
+    changes.push(createChange(getEquipType('tongueTie'), 'removed', false, 'Tongue tie removed'));
   }
 
   // Check nasal strip
@@ -168,7 +180,7 @@ function detectChanges(
     const isFirstTime = firstTimeSet.has('ns') || firstTimeSet.has('nasal strip');
     changes.push(
       createChange(
-        EQUIPMENT_TYPES.nasalStrip,
+        getEquipType('nasalStrip'),
         'added',
         isFirstTime,
         isFirstTime ? 'Nasal strip added (first time)' : 'Nasal strip added'
@@ -180,7 +192,7 @@ function detectChanges(
   if (current.shadowRoll && !previous?.shadowRoll) {
     const isFirstTime = firstTimeSet.has('sr') || firstTimeSet.has('shadow roll');
     changes.push(
-      createChange(EQUIPMENT_TYPES.shadowRoll, 'added', isFirstTime, 'Shadow roll added')
+      createChange(getEquipType('shadowRoll'), 'added', isFirstTime, 'Shadow roll added')
     );
   }
 
@@ -188,20 +200,20 @@ function detectChanges(
   if (current.cheekPieces && !previous?.cheekPieces) {
     const isFirstTime = firstTimeSet.has('cp') || firstTimeSet.has('cheek pieces');
     changes.push(
-      createChange(EQUIPMENT_TYPES.cheekPieces, 'added', isFirstTime, 'Cheek pieces added')
+      createChange(getEquipType('cheekPieces'), 'added', isFirstTime, 'Cheek pieces added')
     );
   }
 
   // Check front bandages
   if (current.frontBandages && !previous?.frontBandages) {
     changes.push(
-      createChange(EQUIPMENT_TYPES.frontBandages, 'added', false, 'Front bandages added')
+      createChange(getEquipType('frontBandages'), 'added', false, 'Front bandages added')
     );
   }
 
   // Check hind bandages
   if (current.hindBandages && !previous?.hindBandages) {
-    changes.push(createChange(EQUIPMENT_TYPES.hindBandages, 'added', false, 'Hind bandages added'));
+    changes.push(createChange(getEquipType('hindBandages'), 'added', false, 'Hind bandages added'));
   }
 
   // Check all bandages (both front and hind)
@@ -215,21 +227,21 @@ function detectChanges(
       (c) => c.equipmentType.id !== 'frontBandages' && c.equipmentType.id !== 'hindBandages'
     );
     filteredChanges.push(
-      createChange(EQUIPMENT_TYPES.allBandages, 'added', false, 'All bandages (4 legs)')
+      createChange(getEquipType('allBandages'), 'added', false, 'All bandages (4 legs)')
     );
     return filteredChanges;
   }
 
   // Check bar shoes
   if (current.barShoes && !previous?.barShoes) {
-    changes.push(createChange(EQUIPMENT_TYPES.barShoes, 'added', false, 'Bar shoes added'));
+    changes.push(createChange(getEquipType('barShoes'), 'added', false, 'Bar shoes added'));
   } else if (previous?.barShoes && !current.barShoes) {
-    changes.push(createChange(EQUIPMENT_TYPES.barShoes, 'removed', false, 'Bar shoes removed'));
+    changes.push(createChange(getEquipType('barShoes'), 'removed', false, 'Bar shoes removed'));
   }
 
   // Check mud caulks (usually only added)
   if (current.mudCaulks && !previous?.mudCaulks) {
-    changes.push(createChange(EQUIPMENT_TYPES.mudCaulks, 'added', false, 'Mud caulks added'));
+    changes.push(createChange(getEquipType('mudCaulks'), 'added', false, 'Mud caulks added'));
   }
 
   return changes;
@@ -354,8 +366,10 @@ export function extractEquipmentInfo(horse: HorseEntry): EquipmentExtractionResu
 
   if (horse.pastPerformances.length > 0) {
     const lastPP = horse.pastPerformances[0];
-    lastRaceEquipment = `${lastPP.equipment} ${lastPP.medication}`.trim();
-    previous = parseEquipmentString(lastRaceEquipment);
+    if (lastPP) {
+      lastRaceEquipment = `${lastPP.equipment} ${lastPP.medication}`.trim();
+      previous = parseEquipmentString(lastRaceEquipment);
+    }
   }
 
   // Detect changes
@@ -403,7 +417,7 @@ export function getEquipmentChangeSummary(horse: HorseEntry): {
   const sortedChanges = [...result.changes].sort(
     (a, b) => Math.abs(b.basePoints) - Math.abs(a.basePoints)
   );
-  const primaryChange = sortedChanges[0];
+  const primaryChange = sortedChanges[0] ?? null;
 
   // Build summary
   const summary = result.changes.map((c) => c.changeDescription).join(', ');

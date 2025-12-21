@@ -340,21 +340,21 @@ export function AccountSettings({ onLogout, onBack }: AccountSettingsProps) {
     }
   }, [addToast]);
 
-  const getInputStyle = (fieldName: string) => ({
-    ...styles.input,
-    ...(focusedField === fieldName ? styles.inputFocus : {}),
+  const getInputStyle = (fieldName: string): React.CSSProperties => ({
+    ...(styles.input ?? {}),
+    ...(focusedField === fieldName ? (styles.inputFocus ?? {}) : {}),
   });
 
   const getButtonStyle = (
     buttonName: string,
-    baseStyle: React.CSSProperties,
-    hoverStyle: React.CSSProperties,
+    baseStyle: React.CSSProperties | undefined,
+    hoverStyle: React.CSSProperties | undefined,
     disabled?: boolean
-  ) => ({
-    ...styles.button,
-    ...baseStyle,
-    ...(hoveredButton === buttonName && !disabled ? hoverStyle : {}),
-    ...(disabled ? styles.buttonDisabled : {}),
+  ): React.CSSProperties => ({
+    ...(styles.button ?? {}),
+    ...(baseStyle ?? {}),
+    ...(hoveredButton === buttonName && !disabled ? (hoverStyle ?? {}) : {}),
+    ...(disabled ? (styles.buttonDisabled ?? {}) : {}),
   });
 
   return (

@@ -43,7 +43,7 @@ export function parseBreedingLine(breedingLine: string): BreedingParseResult {
   // Try to extract content from parentheses if present
   // Format: "Horse Name (Sire - Dam, by Damsire)"
   const parenMatch = trimmed.match(/\(([^)]+)\)/);
-  const content = parenMatch ? parenMatch[1] : trimmed;
+  const content = parenMatch && parenMatch[1] ? parenMatch[1] : trimmed;
 
   // Parse the breeding content
   return parseBreedingContent(content, result);
@@ -70,7 +70,7 @@ function parseBreedingContent(content: string, result: BreedingParseResult): Bre
   const fullPattern = /^(.+?)\s*-\s*(.+?)(?:,\s*by|\s+by)\s+(.+)$/i;
   const fullMatch = normalized.match(fullPattern);
 
-  if (fullMatch) {
+  if (fullMatch && fullMatch[1] && fullMatch[2] && fullMatch[3]) {
     result.sire = cleanName(fullMatch[1]);
     result.dam = cleanName(fullMatch[2]);
     result.damsire = cleanName(fullMatch[3]);
@@ -82,7 +82,7 @@ function parseBreedingContent(content: string, result: BreedingParseResult): Bre
   const sireDamPattern = /^(.+?)\s*-\s*(.+)$/;
   const sireDamMatch = normalized.match(sireDamPattern);
 
-  if (sireDamMatch) {
+  if (sireDamMatch && sireDamMatch[1] && sireDamMatch[2]) {
     result.sire = cleanName(sireDamMatch[1]);
     result.dam = cleanName(sireDamMatch[2]);
     result.warnings.push('No damsire found in breeding line');

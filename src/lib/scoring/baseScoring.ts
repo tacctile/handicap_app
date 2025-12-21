@@ -80,7 +80,7 @@ function parseDistance(distance: string): {
   // Handle mile distances
   if (distLower.includes('m')) {
     const mileMatch = distLower.match(/(\d+\.?\d*)\s*m/);
-    if (mileMatch) {
+    if (mileMatch && mileMatch[1]) {
       const miles = parseFloat(mileMatch[1]);
       const furlongs = miles * 8;
       return { isSprint: false, isRoute: true, furlongs };
@@ -89,7 +89,7 @@ function parseDistance(distance: string): {
 
   // Handle furlong distances
   const furlongMatch = distLower.match(/(\d+\.?\d*)\s*f/);
-  if (furlongMatch) {
+  if (furlongMatch && furlongMatch[1]) {
     const furlongs = parseFloat(furlongMatch[1]);
     return {
       isSprint: furlongs >= 6 && furlongs <= 7,
@@ -220,14 +220,19 @@ export function parseOdds(oddsStr: string): number {
 
   // Handle "X-1" format (e.g., "5-1")
   if (cleaned.includes('-')) {
-    const [num] = cleaned.split('-');
-    return parseFloat(num) || 10;
+    const parts = cleaned.split('-');
+    const num = parts[0];
+    return num ? parseFloat(num) || 10 : 10;
   }
 
   // Handle "X/Y" format (e.g., "5/2")
   if (cleaned.includes('/')) {
-    const [num, denom] = cleaned.split('/');
-    return parseFloat(num) / (parseFloat(denom) || 1);
+    const parts = cleaned.split('/');
+    const num = parts[0];
+    const denom = parts[1];
+    const numerator = num ? parseFloat(num) : 0;
+    const denominator = denom ? parseFloat(denom) : 1;
+    return numerator / (denominator || 1);
   }
 
   // Handle plain number

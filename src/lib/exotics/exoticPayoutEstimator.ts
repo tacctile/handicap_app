@@ -126,7 +126,7 @@ export function parseOddsToDecimal(oddsString: string): number {
 
   // Handle fractional odds like "5-1", "3/1"
   const match = oddsString.match(/(\d+(?:\.\d+)?)[/-](\d+(?:\.\d+)?)?/);
-  if (match) {
+  if (match && match[1]) {
     const numerator = parseFloat(match[1]);
     const denominator = match[2] ? parseFloat(match[2]) : 1;
     return numerator / denominator;
@@ -224,35 +224,49 @@ function generateExactaScenarios(horses: HorseOdds[], baseBet: number): PayoutSc
 
   // Scenario 1: Chalk (favorites 1-2)
   const chalkHorses = sorted.slice(0, 2);
-  const chalkPayout = calculateExactaPayout(chalkHorses[0].odds, chalkHorses[1].odds, baseBet);
-  scenarios.push({
-    name: 'Chalk',
-    description: 'Favorites finish 1-2',
-    horses: chalkHorses,
-    payout: chalkPayout,
-    probability: 0.25,
-    display: `$${chalkPayout.toFixed(0)} (favorites 1-2)`,
-  });
+  const firstHorse = chalkHorses[0];
+  const secondHorse = chalkHorses[1];
 
-  // Scenario 2: Mixed (favorite wins, longer shot second)
-  if (sorted.length >= 3) {
-    const mixedHorses = [sorted[0], sorted[2]];
-    const mixedPayout = calculateExactaPayout(mixedHorses[0].odds, mixedHorses[1].odds, baseBet);
+  if (firstHorse && secondHorse) {
+    const chalkPayout = calculateExactaPayout(firstHorse.odds, secondHorse.odds, baseBet);
     scenarios.push({
-      name: 'Mixed',
-      description: 'Favorite wins, value horse second',
-      horses: mixedHorses,
-      payout: mixedPayout,
-      probability: 0.15,
-      display: `$${mixedPayout.toFixed(0)} (favorite/value)`,
+      name: 'Chalk',
+      description: 'Favorites finish 1-2',
+      horses: chalkHorses,
+      payout: chalkPayout,
+      probability: 0.25,
+      display: `$${chalkPayout.toFixed(0)} (favorites 1-2)`,
     });
   }
 
+  // Scenario 2: Mixed (favorite wins, longer shot second)
+  if (sorted.length >= 3) {
+    const firstHorse = sorted[0];
+    const thirdHorse = sorted[2];
+
+    if (firstHorse && thirdHorse) {
+      const mixedHorses = [firstHorse, thirdHorse];
+      const mixedPayout = calculateExactaPayout(firstHorse.odds, thirdHorse.odds, baseBet);
+      scenarios.push({
+        name: 'Mixed',
+        description: 'Favorite wins, value horse second',
+        horses: mixedHorses,
+        payout: mixedPayout,
+        probability: 0.15,
+        display: `$${mixedPayout.toFixed(0)} (favorite/value)`,
+      });
+    }
+  }
+
   // Scenario 3: Upset (longer shot wins)
-  const longshotIndex = sorted.findIndex((h) => h.isLongshot) || sorted.length - 1;
-  if (longshotIndex >= 0 && longshotIndex < sorted.length) {
-    const upsetHorses = [sorted[longshotIndex], sorted[0]];
-    const upsetPayout = calculateExactaPayout(upsetHorses[0].odds, upsetHorses[1].odds, baseBet);
+  const longshotIndex = sorted.findIndex((h) => h.isLongshot);
+  const validLongshotIndex = longshotIndex >= 0 ? longshotIndex : sorted.length - 1;
+  const longshotHorse = sorted[validLongshotIndex];
+  const favoriteHorse = sorted[0];
+
+  if (longshotHorse && favoriteHorse && validLongshotIndex < sorted.length) {
+    const upsetHorses = [longshotHorse, favoriteHorse];
+    const upsetPayout = calculateExactaPayout(longshotHorse.odds, favoriteHorse.odds, baseBet);
     scenarios.push({
       name: 'Upset',
       description: 'Longshot wins, favorite second',
@@ -277,48 +291,64 @@ function generateTrifectaScenarios(horses: HorseOdds[], baseBet: number): Payout
 
   // Scenario 1: Chalk (favorites 1-2-3)
   const chalkHorses = sorted.slice(0, 3);
-  const chalkPayout = calculateTrifectaPayout(
-    chalkHorses[0].odds,
-    chalkHorses[1].odds,
-    chalkHorses[2].odds,
-    baseBet
-  );
-  scenarios.push({
-    name: 'Chalk',
-    description: 'Top 3 favorites finish 1-2-3',
-    horses: chalkHorses,
-    payout: chalkPayout,
-    probability: 0.08,
-    display: `$${chalkPayout.toFixed(0)} (chalk)`,
-  });
+  const firstHorse = chalkHorses[0];
+  const secondHorse = chalkHorses[1];
+  const thirdHorse = chalkHorses[2];
 
-  // Scenario 2: Mixed (2 favorites + 1 price)
-  if (sorted.length >= 4) {
-    const mixedHorses = [sorted[0], sorted[1], sorted[3]];
-    const mixedPayout = calculateTrifectaPayout(
-      mixedHorses[0].odds,
-      mixedHorses[1].odds,
-      mixedHorses[2].odds,
+  if (firstHorse && secondHorse && thirdHorse) {
+    const chalkPayout = calculateTrifectaPayout(
+      firstHorse.odds,
+      secondHorse.odds,
+      thirdHorse.odds,
       baseBet
     );
     scenarios.push({
-      name: 'Mixed',
-      description: '2 favorites with value horse',
-      horses: mixedHorses,
-      payout: mixedPayout,
-      probability: 0.12,
-      display: `$${mixedPayout.toFixed(0)} (mixed)`,
+      name: 'Chalk',
+      description: 'Top 3 favorites finish 1-2-3',
+      horses: chalkHorses,
+      payout: chalkPayout,
+      probability: 0.08,
+      display: `$${chalkPayout.toFixed(0)} (chalk)`,
     });
+  }
+
+  // Scenario 2: Mixed (2 favorites + 1 price)
+  if (sorted.length >= 4) {
+    const firstHorse = sorted[0];
+    const secondHorse = sorted[1];
+    const fourthHorse = sorted[3];
+
+    if (firstHorse && secondHorse && fourthHorse) {
+      const mixedHorses = [firstHorse, secondHorse, fourthHorse];
+      const mixedPayout = calculateTrifectaPayout(
+        firstHorse.odds,
+        secondHorse.odds,
+        fourthHorse.odds,
+        baseBet
+      );
+      scenarios.push({
+        name: 'Mixed',
+        description: '2 favorites with value horse',
+        horses: mixedHorses,
+        payout: mixedPayout,
+        probability: 0.12,
+        display: `$${mixedPayout.toFixed(0)} (mixed)`,
+      });
+    }
   }
 
   // Scenario 3: Value (includes a longshot)
   const longshots = sorted.filter((h) => h.isLongshot);
-  if (longshots.length > 0) {
-    const valueHorses = [sorted[0], longshots[0], sorted[1]];
+  const firstLongshot = longshots[0];
+  const valueFirstHorse = sorted[0];
+  const valueSecondHorse = sorted[1];
+
+  if (firstLongshot && valueFirstHorse && valueSecondHorse) {
+    const valueHorses = [valueFirstHorse, firstLongshot, valueSecondHorse];
     const valuePayout = calculateTrifectaPayout(
-      valueHorses[0].odds,
-      valueHorses[1].odds,
-      valueHorses[2].odds,
+      valueFirstHorse.odds,
+      firstLongshot.odds,
+      valueSecondHorse.odds,
       baseBet
     );
     scenarios.push({
@@ -345,51 +375,70 @@ function generateSuperfectaScenarios(horses: HorseOdds[], baseBet: number): Payo
 
   // Scenario 1: Chalk (favorites 1-2-3-4)
   const chalkHorses = sorted.slice(0, 4);
-  const chalkPayout = calculateSuperfectaPayout(
-    chalkHorses[0].odds,
-    chalkHorses[1].odds,
-    chalkHorses[2].odds,
-    chalkHorses[3].odds,
-    baseBet
-  );
-  scenarios.push({
-    name: 'Chalk',
-    description: 'Top 4 favorites finish in order',
-    horses: chalkHorses,
-    payout: chalkPayout,
-    probability: 0.01,
-    display: `$${chalkPayout.toFixed(0)} (chalk)`,
-  });
+  const firstHorse = chalkHorses[0];
+  const secondHorse = chalkHorses[1];
+  const thirdHorse = chalkHorses[2];
+  const fourthHorse = chalkHorses[3];
 
-  // Scenario 2: Mixed
-  if (sorted.length >= 5) {
-    const mixedHorses = [sorted[0], sorted[1], sorted[4], sorted[2]];
-    const mixedPayout = calculateSuperfectaPayout(
-      mixedHorses[0].odds,
-      mixedHorses[1].odds,
-      mixedHorses[2].odds,
-      mixedHorses[3].odds,
+  if (firstHorse && secondHorse && thirdHorse && fourthHorse) {
+    const chalkPayout = calculateSuperfectaPayout(
+      firstHorse.odds,
+      secondHorse.odds,
+      thirdHorse.odds,
+      fourthHorse.odds,
       baseBet
     );
     scenarios.push({
-      name: 'Mixed',
-      description: 'Favorites with a price horse',
-      horses: mixedHorses,
-      payout: mixedPayout,
-      probability: 0.02,
-      display: `$${mixedPayout.toFixed(0)} (mixed)`,
+      name: 'Chalk',
+      description: 'Top 4 favorites finish in order',
+      horses: chalkHorses,
+      payout: chalkPayout,
+      probability: 0.01,
+      display: `$${chalkPayout.toFixed(0)} (chalk)`,
     });
+  }
+
+  // Scenario 2: Mixed
+  if (sorted.length >= 5) {
+    const firstHorse = sorted[0];
+    const secondHorse = sorted[1];
+    const thirdHorse = sorted[2];
+    const fifthHorse = sorted[4];
+
+    if (firstHorse && secondHorse && thirdHorse && fifthHorse) {
+      const mixedHorses = [firstHorse, secondHorse, fifthHorse, thirdHorse];
+      const mixedPayout = calculateSuperfectaPayout(
+        firstHorse.odds,
+        secondHorse.odds,
+        fifthHorse.odds,
+        thirdHorse.odds,
+        baseBet
+      );
+      scenarios.push({
+        name: 'Mixed',
+        description: 'Favorites with a price horse',
+        horses: mixedHorses,
+        payout: mixedPayout,
+        probability: 0.02,
+        display: `$${mixedPayout.toFixed(0)} (mixed)`,
+      });
+    }
   }
 
   // Scenario 3: Bomb (longshot in the mix)
   const longshots = sorted.filter((h) => h.isLongshot);
-  if (longshots.length > 0 && sorted.length >= 4) {
-    const bombHorses = [sorted[0], longshots[0], sorted[1], sorted[2]];
+  const firstLongshot = longshots[0];
+  const bombFirstHorse = sorted[0];
+  const bombSecondHorse = sorted[1];
+  const bombThirdHorse = sorted[2];
+
+  if (firstLongshot && bombFirstHorse && bombSecondHorse && bombThirdHorse && sorted.length >= 4) {
+    const bombHorses = [bombFirstHorse, firstLongshot, bombSecondHorse, bombThirdHorse];
     const bombPayout = calculateSuperfectaPayout(
-      bombHorses[0].odds,
-      bombHorses[1].odds,
-      bombHorses[2].odds,
-      bombHorses[3].odds,
+      bombFirstHorse.odds,
+      firstLongshot.odds,
+      bombSecondHorse.odds,
+      bombThirdHorse.odds,
       baseBet
     );
     scenarios.push({
@@ -504,8 +553,8 @@ export function quickPayoutEstimate(
 
   const sortedOdds = [...odds].sort((a, b) => a - b);
   const avgOdds = odds.reduce((sum, o) => sum + o, 0) / odds.length;
-  const minOdds = sortedOdds[0];
-  const maxOdds = sortedOdds[sortedOdds.length - 1];
+  const minOdds = sortedOdds[0] ?? 2;
+  const maxOdds = sortedOdds[sortedOdds.length - 1] ?? 10;
 
   const multiplier = PAYOUT_MULTIPLIERS[betType];
   const takeout = TRACK_TAKEOUT[betType];
@@ -514,30 +563,32 @@ export function quickPayoutEstimate(
   let min: number, max: number, likely: number;
 
   switch (betType) {
-    case 'exacta':
-      min = baseBet * minOdds * sortedOdds[1] * multiplier * netFactor;
+    case 'exacta': {
+      const secondOdds = sortedOdds[1] ?? minOdds;
+      min = baseBet * minOdds * secondOdds * multiplier * netFactor;
       max = baseBet * maxOdds * avgOdds * multiplier * netFactor;
       likely = baseBet * avgOdds * avgOdds * 0.8 * multiplier * netFactor;
       break;
+    }
 
-    case 'trifecta':
-      min = baseBet * minOdds * sortedOdds[1] * sortedOdds[2] * multiplier * netFactor;
+    case 'trifecta': {
+      const secondOdds = sortedOdds[1] ?? minOdds;
+      const thirdOdds = sortedOdds[2] ?? minOdds;
+      min = baseBet * minOdds * secondOdds * thirdOdds * multiplier * netFactor;
       max = baseBet * maxOdds * avgOdds * avgOdds * multiplier * netFactor;
       likely = baseBet * avgOdds * avgOdds * avgOdds * 0.5 * multiplier * netFactor;
       break;
+    }
 
-    case 'superfecta':
-      min =
-        baseBet *
-        minOdds *
-        sortedOdds[1] *
-        sortedOdds[2] *
-        (sortedOdds[3] || sortedOdds[2]) *
-        multiplier *
-        netFactor;
+    case 'superfecta': {
+      const secondOdds = sortedOdds[1] ?? minOdds;
+      const thirdOdds = sortedOdds[2] ?? minOdds;
+      const fourthOdds = sortedOdds[3] ?? thirdOdds;
+      min = baseBet * minOdds * secondOdds * thirdOdds * fourthOdds * multiplier * netFactor;
       max = baseBet * maxOdds * avgOdds * avgOdds * avgOdds * multiplier * netFactor;
       likely = baseBet * avgOdds * avgOdds * avgOdds * avgOdds * 0.3 * multiplier * netFactor;
       break;
+    }
 
     default:
       min = 0;

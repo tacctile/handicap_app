@@ -89,6 +89,7 @@ export function classifyRaceStrength(horses: MultiRaceHorse[]): RaceStrength {
 
   // Check for standout
   if (
+    topHorse &&
     topHorse.score >= SCORE_THRESHOLDS.standout &&
     (!secondHorse || topHorse.score - secondHorse.score >= SCORE_THRESHOLDS.standoutGap)
   ) {
@@ -115,6 +116,7 @@ export function findStandoutHorse(horses: MultiRaceHorse[]): MultiRaceHorse | un
   const secondHorse = sorted[1];
 
   if (
+    topHorse &&
     topHorse.score >= SCORE_THRESHOLDS.standout &&
     (!secondHorse || topHorse.score - secondHorse.score >= SCORE_THRESHOLDS.standoutGap)
   ) {
@@ -247,6 +249,8 @@ export function generateOptimalSelections(
 
   for (let i = 0; i < races.length; i++) {
     const race = races[i];
+    if (!race) continue;
+
     const horsePicks = getTopHorsesForRace(race, strategy);
     const isAll = strategy === 'aggressive' && race.strength === 'weak';
 
@@ -327,7 +331,12 @@ export function buildOptimizedTicket(
   const expectedValue = calculateExpectedValue(probability, payoutRange.likely, cost.total);
 
   // Generate window instruction
-  const startRace = races[0].raceNumber;
+  const firstRace = races[0];
+  if (!firstRace) {
+    return null;
+  }
+
+  const startRace = firstRace.raceNumber;
   const windowInstruction = generateWindowInstruction(
     betType,
     startRace,
@@ -470,6 +479,19 @@ export function optimizeMultiRaceBet(
 
   // Mark best as recommended
   const recommended = tickets[0];
+  if (!recommended) {
+    return {
+      tickets: [],
+      recommended: null,
+      budgetUsed: 0,
+      budgetRemaining: validatedBudget,
+      summary: `No viable ${betConfig.displayName} tickets within $${validatedBudget} budget`,
+      isValid: false,
+      error: 'No tickets fit within budget',
+      warnings: [],
+    };
+  }
+
   recommended.isRecommended = true;
 
   // Check for bankroll warnings

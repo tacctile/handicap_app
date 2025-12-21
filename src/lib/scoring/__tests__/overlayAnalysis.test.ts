@@ -493,8 +493,14 @@ describe('Overlay Analysis', () => {
       // Should exclude scratched horse and no-value horse
       expect(valuePlays.length).toBe(2);
       // Should be sorted by overlay (best first)
-      expect(valuePlays[0].horseName).toBe('Big Overlay');
-      expect(valuePlays[0].overlayPercent).toBeGreaterThan(valuePlays[1].overlayPercent);
+      expect(valuePlays[0]?.horseName).toBe('Big Overlay');
+      const firstPlay = valuePlays[0];
+      const secondPlay = valuePlays[1];
+      expect(firstPlay).toBeDefined();
+      expect(secondPlay).toBeDefined();
+      if (firstPlay && secondPlay) {
+        expect(firstPlay.overlayPercent).toBeGreaterThan(secondPlay.overlayPercent);
+      }
     });
 
     it('returns empty array when no value plays exist', () => {

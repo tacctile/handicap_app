@@ -117,7 +117,8 @@ function detectEquipmentChangeFactor(horse: HorseEntry, score: HorseScore): Dete
   }
 
   // Check for blinkers
-  if (horse.equipment.blinkers && !horse.pastPerformances[0]?.equipment.includes('B')) {
+  const lastRace = horse.pastPerformances[0];
+  if (horse.equipment.blinkers && lastRace && !lastRace.equipment.includes('B')) {
     evidenceDetails.push('Blinkers being added');
   }
 
@@ -318,9 +319,9 @@ function detectHiddenFormFactor(horse: HorseEntry): DetectedFactor | null {
   }
 
   // Check for excuse in last race
-  const lastRace = horse.pastPerformances[0];
-  if (lastRace) {
-    const comment = lastRace.tripComment?.toLowerCase() || '';
+  const lastRaceData = horse.pastPerformances[0];
+  if (lastRaceData) {
+    const comment = lastRaceData.tripComment?.toLowerCase() || '';
     const excuseKeywords = ['wide', 'trouble', 'blocked', 'bumped', 'steadied', 'checked'];
 
     for (const keyword of excuseKeywords) {
@@ -456,11 +457,13 @@ function detectSurfaceSwitchFactor(
   horse: HorseEntry,
   raceHeader: RaceHeader
 ): DetectedFactor | null {
-  const lastRace = horse.pastPerformances[0];
-  if (!lastRace) return null;
-  if (lastRace.surface === raceHeader.surface) return null;
+  const lastPerformance = horse.pastPerformances[0];
+  if (!lastPerformance) return null;
+  if (lastPerformance.surface === raceHeader.surface) return null;
 
-  const evidenceDetails: string[] = [`Switching: ${lastRace.surface} → ${raceHeader.surface}`];
+  const evidenceDetails: string[] = [
+    `Switching: ${lastPerformance.surface} → ${raceHeader.surface}`,
+  ];
 
   let favorable = false;
 
@@ -498,10 +501,10 @@ function detectDistanceChangeFactor(
   horse: HorseEntry,
   raceHeader: RaceHeader
 ): DetectedFactor | null {
-  const lastRace = horse.pastPerformances[0];
-  if (!lastRace) return null;
+  const lastPerformanceDistance = horse.pastPerformances[0];
+  if (!lastPerformanceDistance) return null;
 
-  const distanceChange = raceHeader.distanceFurlongs - lastRace.distanceFurlongs;
+  const distanceChange = raceHeader.distanceFurlongs - lastPerformanceDistance.distanceFurlongs;
   if (Math.abs(distanceChange) < 1.5) return null; // Need significant change
 
   const evidenceDetails: string[] = [];
@@ -510,7 +513,7 @@ function detectDistanceChangeFactor(
   if (distanceChange > 0) {
     // Stretching out
     evidenceDetails.push(
-      `Stretching out: ${lastRace.distanceFurlongs}f → ${raceHeader.distanceFurlongs}f`
+      `Stretching out: ${lastPerformanceDistance.distanceFurlongs}f → ${raceHeader.distanceFurlongs}f`
     );
     if (horse.distanceWins > 0) {
       evidenceDetails.push(`Has ${horse.distanceWins} route wins`);
@@ -519,7 +522,7 @@ function detectDistanceChangeFactor(
   } else {
     // Cutting back
     evidenceDetails.push(
-      `Cutting back: ${lastRace.distanceFurlongs}f → ${raceHeader.distanceFurlongs}f`
+      `Cutting back: ${lastPerformanceDistance.distanceFurlongs}f → ${raceHeader.distanceFurlongs}f`
     );
     // Calculate sprint wins as lifetime wins minus distance/route wins
     const sprintWins = horse.lifetimeWins - horse.distanceWins;
@@ -617,7 +620,8 @@ function detectAllFactors(
  */
 function generateStory(factors: DetectedFactor[]): string {
   if (factors.length === 0) return 'No supporting factors';
-  if (factors.length === 1) return factors[0].evidence;
+  const firstFactor = factors[0];
+  if (factors.length === 1 && firstFactor) return firstFactor.evidence;
 
   // Build a narrative from the top 3 factors
   const topFactors = factors.sort((a, b) => b.confidence - a.confidence).slice(0, 3);
@@ -625,10 +629,18 @@ function generateStory(factors: DetectedFactor[]): string {
   const parts = topFactors.map((f) => f.name.toLowerCase());
 
   if (parts.length === 2) {
-    return `${parts[0]} + ${parts[1]} = upset potential at big odds`;
+    const [part0, part1] = parts;
+    if (part0 && part1) {
+      return `${part0} + ${part1} = upset potential at big odds`;
+    }
   }
 
-  return `${parts[0]} + ${parts[1]} + ${parts[2]} = perfect storm for upset`;
+  const [part0, part1, part2] = parts;
+  if (part0 && part1 && part2) {
+    return `${part0} + ${part1} + ${part2} = perfect storm for upset`;
+  }
+
+  return 'Multiple factors detected';
 }
 
 /**
@@ -784,6 +796,8 @@ export function analyzeRaceDiamonds(
 
   for (let i = 0; i < horses.length; i++) {
     const horse = horses[i];
+    if (!horse) continue;
+
     const score = scores.get(i) || scores.get(horse.programNumber);
 
     if (!score || score.isScratched) continue;
@@ -804,10 +818,11 @@ export function analyzeRaceDiamonds(
     diamonds.length > 0 ? diamonds.reduce((sum, d) => sum + d.confidence, 0) / diamonds.length : 0;
 
   let summary = '';
+  const firstDiamond = diamonds[0];
   if (diamonds.length === 0) {
     summary = 'No diamonds detected in this race';
-  } else if (diamonds.length === 1) {
-    summary = `1 diamond found: ${diamonds[0].horseName} at ${diamonds[0].oddsDisplay}`;
+  } else if (diamonds.length === 1 && firstDiamond) {
+    summary = `1 diamond found: ${firstDiamond.horseName} at ${firstDiamond.oddsDisplay}`;
   } else {
     summary = `${diamonds.length} diamonds found - hidden value in this race!`;
   }
@@ -819,7 +834,7 @@ export function analyzeRaceDiamonds(
     diamondCount: diamonds.length,
     diamonds,
     hasDiamonds: diamonds.length > 0,
-    bestDiamond: diamonds.length > 0 ? diamonds[0] : null,
+    bestDiamond: firstDiamond ?? null,
     totalFactors,
     averageConfidence: Math.round(averageConfidence),
     summary,

@@ -164,7 +164,7 @@ export function parseOddsToDecimal(oddsStr: string): number {
 
   // Handle "X-Y" format (e.g., "5-1", "4-5")
   const dashMatch = cleaned.match(/^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)$/);
-  if (dashMatch) {
+  if (dashMatch && dashMatch[1] && dashMatch[2]) {
     const num = parseFloat(dashMatch[1]);
     const denom = parseFloat(dashMatch[2]);
     if (!isNaN(num) && !isNaN(denom) && denom > 0) {
@@ -174,7 +174,7 @@ export function parseOddsToDecimal(oddsStr: string): number {
 
   // Handle "X/Y" format (e.g., "5/2")
   const slashMatch = cleaned.match(/^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/);
-  if (slashMatch) {
+  if (slashMatch && slashMatch[1] && slashMatch[2]) {
     const num = parseFloat(slashMatch[1]);
     const denom = parseFloat(slashMatch[2]);
     if (!isNaN(num) && !isNaN(denom) && denom > 0) {

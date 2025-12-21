@@ -131,8 +131,9 @@ function getLastBeyerFromEntry(horse: HorseEntry): number | null {
     return horse.lastBeyer;
   }
 
-  if (horse.pastPerformances.length > 0) {
-    return extractSpeedFigure(horse.pastPerformances[0]);
+  const firstPP = horse.pastPerformances[0];
+  if (horse.pastPerformances.length > 0 && firstPP) {
+    return extractSpeedFigure(firstPP);
   }
 
   return null;
@@ -208,8 +209,13 @@ function analyzeClassMovement(
     return 'unknown';
   }
 
+  const lastRace = pastPerformances[0];
+  if (!lastRace) {
+    return 'unknown';
+  }
+
   const currentLevel = CLASS_HIERARCHY[currentClass];
-  const lastRaceLevel = CLASS_HIERARCHY[pastPerformances[0].classification];
+  const lastRaceLevel = CLASS_HIERARCHY[lastRace.classification];
 
   if (currentLevel < lastRaceLevel) {
     return 'drop';
@@ -294,6 +300,12 @@ function calculateClassScore(
 
   const provenData = hasProvenAtClass(currentClass, pastPerformances);
   const lastRace = pastPerformances[0];
+  if (!lastRace) {
+    return {
+      score: 10,
+      reasoning: 'No recent race data',
+    };
+  }
   const hasExcuse = hasValidExcuse(lastRace);
 
   // Proven winner at this level

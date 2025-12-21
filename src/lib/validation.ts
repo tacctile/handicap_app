@@ -57,7 +57,7 @@ function isValidOdds(odds: string): boolean {
 
   // Handle fractional odds (e.g., "5-2", "3/1")
   const fractionalMatch = odds.match(/^(\d+)[-/](\d+)$/);
-  if (fractionalMatch) {
+  if (fractionalMatch && fractionalMatch[1] && fractionalMatch[2]) {
     const numerator = parseInt(fractionalMatch[1], 10);
     const denominator = parseInt(fractionalMatch[2], 10);
     return numerator > 0 && denominator > 0;
@@ -76,7 +76,7 @@ export function oddsToDecimal(odds: string): number {
 
   // Handle fractional odds
   const fractionalMatch = odds.match(/^(\d+)[-/](\d+)$/);
-  if (fractionalMatch) {
+  if (fractionalMatch && fractionalMatch[1] && fractionalMatch[2]) {
     const numerator = parseInt(fractionalMatch[1], 10);
     const denominator = parseInt(fractionalMatch[2], 10);
     return numerator / denominator;
@@ -228,6 +228,11 @@ export function validateFileContent(content: string, filename: string): FileVali
 
   // Analyze first line to detect format
   const firstLine = lines[0];
+  if (!firstLine) {
+    result.isValid = false;
+    result.errors.push('The file contains no readable data lines.');
+    return result;
+  }
   const isCSVFormat = firstLine.includes(',');
 
   if (!isCSVFormat && firstLine.length < 50) {
@@ -331,7 +336,8 @@ export function getValidationErrorMessage(result: FileValidationResult): string 
   }
 
   if (result.errors.length === 1) {
-    return result.errors[0];
+    const firstError = result.errors[0];
+    return firstError ?? 'Unknown validation error';
   }
 
   return `Multiple issues found:\n${result.errors.map((e) => `- ${e}`).join('\n')}`;

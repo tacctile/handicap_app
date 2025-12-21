@@ -138,25 +138,29 @@ export function buildConnectionsDatabase(horses: HorseEntry[]): ConnectionsDatab
         });
       }
 
-      const jockeyStats = jockeys.get(ppJockey)!;
-      jockeyStats.starts++;
-      if (pp.finishPosition === 1) jockeyStats.wins++;
-      if (pp.finishPosition === 2) jockeyStats.places++;
-      if (pp.finishPosition === 3) jockeyStats.shows++;
-      jockeyStats.winRate = (jockeyStats.wins / jockeyStats.starts) * 100;
-      jockeyStats.itmRate =
-        ((jockeyStats.wins + jockeyStats.places + jockeyStats.shows) / jockeyStats.starts) * 100;
+      const jockeyStats = jockeys.get(ppJockey);
+      if (jockeyStats) {
+        jockeyStats.starts++;
+        if (pp.finishPosition === 1) jockeyStats.wins++;
+        if (pp.finishPosition === 2) jockeyStats.places++;
+        if (pp.finishPosition === 3) jockeyStats.shows++;
+        jockeyStats.winRate = (jockeyStats.wins / jockeyStats.starts) * 100;
+        jockeyStats.itmRate =
+          ((jockeyStats.wins + jockeyStats.places + jockeyStats.shows) / jockeyStats.starts) * 100;
+      }
 
       // Update trainer stats (use current trainer for this horse's PPs)
-      const trainerStats = trainers.get(currentTrainer)!;
-      trainerStats.starts++;
-      if (pp.finishPosition === 1) trainerStats.wins++;
-      if (pp.finishPosition === 2) trainerStats.places++;
-      if (pp.finishPosition === 3) trainerStats.shows++;
-      trainerStats.winRate = (trainerStats.wins / trainerStats.starts) * 100;
-      trainerStats.itmRate =
-        ((trainerStats.wins + trainerStats.places + trainerStats.shows) / trainerStats.starts) *
-        100;
+      const trainerStats = trainers.get(currentTrainer);
+      if (trainerStats) {
+        trainerStats.starts++;
+        if (pp.finishPosition === 1) trainerStats.wins++;
+        if (pp.finishPosition === 2) trainerStats.places++;
+        if (pp.finishPosition === 3) trainerStats.shows++;
+        trainerStats.winRate = (trainerStats.wins / trainerStats.starts) * 100;
+        trainerStats.itmRate =
+          ((trainerStats.wins + trainerStats.places + trainerStats.shows) / trainerStats.starts) *
+          100;
+      }
 
       // Track trainer/jockey partnerships
       const partnerKey = `${currentTrainer}|${ppJockey}`;
@@ -170,10 +174,12 @@ export function buildConnectionsDatabase(horses: HorseEntry[]): ConnectionsDatab
         });
       }
 
-      const partnerStats = partnerships.get(partnerKey)!;
-      partnerStats.starts++;
-      if (pp.finishPosition === 1) partnerStats.wins++;
-      partnerStats.winRate = (partnerStats.wins / partnerStats.starts) * 100;
+      const partnerStats = partnerships.get(partnerKey);
+      if (partnerStats) {
+        partnerStats.starts++;
+        if (pp.finishPosition === 1) partnerStats.wins++;
+        partnerStats.winRate = (partnerStats.wins / partnerStats.starts) * 100;
+      }
     }
   }
 
@@ -373,7 +379,8 @@ export function calculateConnectionsScore(
   // Get trainer stats
   let trainerStats: ConnectionStats | null = null;
   if (database) {
-    trainerStats = database.trainers.get(normalizeName(horse.trainerName)) || null;
+    const dbTrainerStats = database.trainers.get(normalizeName(horse.trainerName));
+    trainerStats = dbTrainerStats ?? null;
   }
   if (!trainerStats) {
     trainerStats = extractTrainerStatsFromHorse(horse);
@@ -382,7 +389,8 @@ export function calculateConnectionsScore(
   // Get jockey stats
   let jockeyStats: ConnectionStats | null = null;
   if (database) {
-    jockeyStats = database.jockeys.get(normalizeName(horse.jockeyName)) || null;
+    const dbJockeyStats = database.jockeys.get(normalizeName(horse.jockeyName));
+    jockeyStats = dbJockeyStats ?? null;
   }
   if (!jockeyStats) {
     jockeyStats = extractJockeyStatsFromHorse(horse);
@@ -428,7 +436,10 @@ export function calculateRaceConnectionsScores(
   const results = new Map<number, ConnectionsScoreResult>();
 
   for (let i = 0; i < horses.length; i++) {
-    results.set(i, calculateConnectionsScore(horses[i], database));
+    const horse = horses[i];
+    if (horse) {
+      results.set(i, calculateConnectionsScore(horse, database));
+    }
   }
 
   return results;
@@ -571,7 +582,10 @@ export function calculateRaceDynamicConnectionsScores(
   const results = new Map<number, DynamicConnectionsScoreResult>();
 
   for (let i = 0; i < horses.length; i++) {
-    results.set(i, calculateDynamicConnectionsScore(horses[i], raceHeader, horses));
+    const horse = horses[i];
+    if (horse) {
+      results.set(i, calculateDynamicConnectionsScore(horse, raceHeader, horses));
+    }
   }
 
   return results;

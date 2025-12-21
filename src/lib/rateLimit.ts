@@ -175,10 +175,11 @@ export class RateLimiter {
         entry.tokens--;
       }
 
+      const oldestTimestamp = entry.timestamps[0] ?? now;
       return {
         allowed: true,
         remaining: config.maxRequests - entry.timestamps.length,
-        resetsAt: entry.timestamps[0] + config.windowMs,
+        resetsAt: oldestTimestamp + config.windowMs,
         retryAfter: 0,
       };
     }

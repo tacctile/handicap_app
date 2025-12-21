@@ -217,14 +217,19 @@ export function parseOdds(oddsStr: string): number {
 
   // Handle "X-1" format (e.g., "5-1")
   if (cleaned.includes('-')) {
-    const [num] = cleaned.split('-');
-    return parseFloat(num) || 10;
+    const parts = cleaned.split('-');
+    const num = parts[0];
+    return num ? parseFloat(num) || 10 : 10;
   }
 
   // Handle "X/Y" format (e.g., "5/2")
   if (cleaned.includes('/')) {
-    const [num, denom] = cleaned.split('/');
-    return parseFloat(num) / (parseFloat(denom) || 1);
+    const parts = cleaned.split('/');
+    const num = parts[0];
+    const denom = parts[1];
+    const numerator = num ? parseFloat(num) : 0;
+    const denominator = denom ? parseFloat(denom) : 1;
+    return numerator / (denominator || 1);
   }
 
   // Handle plain number
@@ -582,8 +587,9 @@ export function calculateRaceScores(
   // Assign ranks
   let currentRank = 1;
   for (let i = 0; i < scoredHorses.length; i++) {
-    if (!scoredHorses[i].score.isScratched) {
-      scoredHorses[i].rank = currentRank++;
+    const scoredHorse = scoredHorses[i];
+    if (scoredHorse && !scoredHorse.score.isScratched) {
+      scoredHorse.rank = currentRank++;
     }
   }
 
@@ -611,8 +617,9 @@ export function calculateRaceConfidence(scoredHorses: ScoredHorse[]): number {
 
   // Score separation (higher = more confident)
   const scores = activeHorses.map((h) => h.score.total).sort((a, b) => b - a);
-  const topScore = scores[0] || 0;
-  const separation = scores.length > 1 ? ((topScore - scores[1]) / topScore) * 30 : 0;
+  const topScore = scores[0] ?? 0;
+  const secondScore = scores[1];
+  const separation = secondScore !== undefined ? ((topScore - secondScore) / topScore) * 30 : 0;
 
   // Quality bonus
   const qualityBonus = Math.min(20, (topScore / MAX_SCORE) * 25);

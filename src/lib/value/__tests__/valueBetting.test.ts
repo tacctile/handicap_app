@@ -176,7 +176,13 @@ describe('generateValueBettingPlan', () => {
 
     // All bets should be ranked
     for (let i = 0; i < plan.allAnalyzed.length - 1; i++) {
-      expect(plan.allAnalyzed[i].valueRank).toBeLessThan(plan.allAnalyzed[i + 1].valueRank);
+      const currentBet = plan.allAnalyzed[i];
+      const nextBet = plan.allAnalyzed[i + 1];
+      expect(currentBet).toBeDefined();
+      expect(nextBet).toBeDefined();
+      if (currentBet && nextBet) {
+        expect(currentBet.valueRank).toBeLessThan(nextBet.valueRank);
+      }
     }
   });
 

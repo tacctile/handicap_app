@@ -167,7 +167,12 @@ function isBinaryContent(content: string): boolean {
     .split('')
     .map((c) => c.charCodeAt(0));
   for (const sig of BINARY_SIGNATURES) {
-    if (sig.every((byte, i) => bytes[i] === byte)) {
+    if (
+      sig.every((byte, i) => {
+        const b = bytes[i];
+        return b !== undefined && b === byte;
+      })
+    ) {
       return true;
     }
   }
@@ -354,6 +359,8 @@ function parseCSVLine(line: string): string[] {
 
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
+    if (char === undefined) continue;
+
     if (char === '"') {
       if (inQuotes && line[i + 1] === '"') {
         current += '"';
@@ -663,7 +670,7 @@ function parseOdds(raw: string): { odds: string; decimal: number } {
   // Handle fractional odds (e.g., "5-1", "3-2", "9-5" after normalization)
   // Also handles "7/2" → "7-2" after normalization
   const fractionalMatch = normalized.match(/^(\d+)-(\d+)$/);
-  if (fractionalMatch) {
+  if (fractionalMatch && fractionalMatch[1] && fractionalMatch[2]) {
     const num = parseInt(fractionalMatch[1], 10);
     const den = parseInt(fractionalMatch[2], 10);
     if (den > 0) {
@@ -988,8 +995,8 @@ function parseWorkouts(fields: string[], maxWorkouts = 5): Workout[] {
 
     // Parse ranking (e.g., "2/35" means 2nd of 35)
     const rankMatch = ranking.match(/(\d+)\/(\d+)/);
-    const rankNumber = rankMatch ? parseInt(rankMatch[1], 10) : null;
-    const totalWorks = rankMatch ? parseInt(rankMatch[2], 10) : null;
+    const rankNumber = rankMatch && rankMatch[1] ? parseInt(rankMatch[1], 10) : null;
+    const totalWorks = rankMatch && rankMatch[2] ? parseInt(rankMatch[2], 10) : null;
 
     const workout: Workout = {
       date: wkDate,
@@ -1410,7 +1417,11 @@ export function parseDRFFile(
   sendProgress(5, 'detecting-format', 'Detecting file format...');
 
   // Detect format: CSV (has commas) or fixed-width
-  const isCSV = lines[0].includes(',');
+  const firstLine = lines[0];
+  if (!firstLine) {
+    return createErrorResult('File contains no readable lines');
+  }
+  const isCSV = firstLine.includes(',');
   const format = isCSV ? 'csv' : 'fixed-width';
 
   sendProgress(10, 'extracting-races', 'Extracting race data...');
@@ -1442,7 +1453,12 @@ export function parseDRFFile(
     // =====================================================================
     // STEP 2: Validate each line before parsing
     // =====================================================================
-    const lineValidation = validateLine(line, lineNumber, filename);
+    const currentLine = line;
+    if (!currentLine) {
+      linesSkipped++;
+      continue;
+    }
+    const lineValidation = validateLine(currentLine, lineNumber, filename);
     if (lineValidation.warning) {
       warnings.push(lineValidation.warning);
     }
@@ -1453,7 +1469,7 @@ export function parseDRFFile(
 
     if (isCSV) {
       // Use safe CSV parsing with error handling
-      const parseResult = safeParseCSVLine(line, lineNumber, filename);
+      const parseResult = safeParseCSVLine(currentLine, lineNumber, filename);
       if (!parseResult) {
         linesSkipped++;
         continue;
@@ -1511,12 +1527,14 @@ export function parseDRFFile(
       // Parse horse entry with error handling
       if (fields.length >= 6) {
         try {
-          const race = racesMap.get(raceKey)!;
-          const horseEntry = parseHorseEntry(fields, race.horses.length);
-          race.horses.push(horseEntry);
-          totalHorses++;
-          totalPastPerformances += horseEntry.pastPerformances.length;
-          totalWorkouts += horseEntry.workouts.length;
+          const race = racesMap.get(raceKey);
+          if (race) {
+            const horseEntry = parseHorseEntry(fields, race.horses.length);
+            race.horses.push(horseEntry);
+            totalHorses++;
+            totalPastPerformances += horseEntry.pastPerformances.length;
+            totalWorkouts += horseEntry.workouts.length;
+          }
         } catch (horseError) {
           logger.logWarning(`Failed to parse horse entry at line ${lineNumber}`, {
             fileName: filename,
@@ -1530,37 +1548,39 @@ export function parseDRFFile(
       linesProcessed++;
     } else {
       // Fixed-width format parsing (simplified)
-      if (line.length < 20) {
+      if (currentLine.length < 20) {
         linesSkipped++;
         continue;
       }
 
       // For fixed-width, parse as if it's a delimited file with spaces
       try {
-        const fields = line.split(/\s+/);
+        const fields = currentLine.split(/\s+/);
         const trackCode = fields[0]?.substring(0, 3) || 'UNK';
-        const raceDate = fields[1] || '';
-        const raceNumber = parseIntSafe(fields[2] || '1', 1);
+        const raceDate = fields[1] ?? '';
+        const raceNumber = parseIntSafe(fields[2] ?? '1', 1);
         const raceKey = `${trackCode}-${raceDate}-${raceNumber}`;
 
         if (!racesMap.has(raceKey)) {
-          racesMap.set(raceKey, {
+          const newRace = {
             header: createDefaultRaceHeader(),
             horses: [],
             warnings: [],
             errors: [],
-          });
-          const race = racesMap.get(raceKey)!;
-          race.header.trackCode = trackCode;
-          race.header.raceDate = raceDate;
-          race.header.raceNumber = raceNumber;
+          };
+          newRace.header.trackCode = trackCode;
+          newRace.header.raceDate = raceDate;
+          newRace.header.raceNumber = raceNumber;
+          racesMap.set(raceKey, newRace);
         }
 
-        const race = racesMap.get(raceKey)!;
-        const horseEntry = createDefaultHorseEntry(race.horses.length);
-        horseEntry.horseName = fields[3] || `Horse ${race.horses.length + 1}`;
-        race.horses.push(horseEntry);
-        totalHorses++;
+        const race = racesMap.get(raceKey);
+        if (race) {
+          const horseEntry = createDefaultHorseEntry(race.horses.length);
+          horseEntry.horseName = fields[3] ?? `Horse ${race.horses.length + 1}`;
+          race.horses.push(horseEntry);
+          totalHorses++;
+        }
 
         linesProcessed++;
       } catch (fixedWidthError) {

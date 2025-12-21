@@ -109,8 +109,12 @@ function parsePostTime(postTimeStr: string | undefined, raceDateStr?: string): D
     // Parse hours:minutes
     const timeParts = timeStr.split(':');
     if (timeParts.length >= 2) {
-      hours = parseInt(timeParts[0], 10);
-      minutes = parseInt(timeParts[1], 10);
+      const hoursPart = timeParts[0];
+      const minutesPart = timeParts[1];
+      if (hoursPart && minutesPart) {
+        hours = parseInt(hoursPart, 10);
+        minutes = parseInt(minutesPart, 10);
+      }
     } else {
       // Try to parse as single number (hours only)
       hours = parseInt(timeStr, 10);
@@ -133,7 +137,7 @@ function parsePostTime(postTimeStr: string | undefined, raceDateStr?: string): D
     if (raceDateStr) {
       // Parse race date if provided (format: YYYYMMDD or similar)
       const dateMatch = raceDateStr.match(/(\d{4})(\d{2})(\d{2})/);
-      if (dateMatch) {
+      if (dateMatch && dateMatch[1] && dateMatch[2] && dateMatch[3]) {
         postDate = new Date(
           parseInt(dateMatch[1], 10),
           parseInt(dateMatch[2], 10) - 1,

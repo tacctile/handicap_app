@@ -419,7 +419,7 @@ export function Dashboard({
                           </div>
                           <div className="stat-item">
                             <span className="stat-value">
-                              {parsedData?.filename?.split('.')[0].slice(0, 8) || '—'}
+                              {parsedData?.filename?.split('.')[0]?.slice(0, 8) || '—'}
                             </span>
                             <span className="stat-label">File</span>
                           </div>
@@ -486,7 +486,7 @@ export function Dashboard({
                   </aside>
                 </div>
               </motion.div>
-            ) : (
+            ) : parsedData.races[selectedRaceIndex] ? (
               // Race Detail - single race deep dive
               <motion.div
                 key="detail"
@@ -505,7 +505,7 @@ export function Dashboard({
                   onOpenBankrollSettings={openBankrollSettings}
                 />
               </motion.div>
-            )}
+            ) : null}
           </AnimatePresence>
 
           {/* Footer - only show in overview */}

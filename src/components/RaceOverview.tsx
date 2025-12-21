@@ -206,16 +206,18 @@ const RaceCard = memo(function RaceCard({
         </div>
 
         {/* Top pick preview (if available) */}
-        {topHorses.length > 0 && topHorses[0].score.total >= SCORE_THRESHOLDS.fair && (
-          <div className="race-card-top-pick">
-            <Icon name="star" className="race-card-star" />
-            <span className="race-card-top-name">
-              {topHorses[0].horse.horseName.slice(0, 12)}
-              {topHorses[0].horse.horseName.length > 12 ? '...' : ''}
-            </span>
-            <span className="race-card-top-score tabular-nums">{topHorses[0].score.total}</span>
-          </div>
-        )}
+        {topHorses.length > 0 &&
+          topHorses[0] &&
+          topHorses[0].score.total >= SCORE_THRESHOLDS.fair && (
+            <div className="race-card-top-pick">
+              <Icon name="star" className="race-card-star" />
+              <span className="race-card-top-name">
+                {topHorses[0].horse.horseName.slice(0, 12)}
+                {topHorses[0].horse.horseName.length > 12 ? '...' : ''}
+              </span>
+              <span className="race-card-top-score tabular-nums">{topHorses[0].score.total}</span>
+            </div>
+          )}
       </div>
 
       {/* Confidence badge */}

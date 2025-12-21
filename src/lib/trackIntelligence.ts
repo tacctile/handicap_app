@@ -21,7 +21,7 @@ export function parseDistanceToFurlongs(distance: string): number {
   // Handle furlong formats: "6F", "5.5F", "6 1/2F"
   if (normalized.includes('F') && !normalized.includes('M')) {
     const match = normalized.match(/(\d+(?:\.\d+)?)\s*(?:(\d+)\/(\d+))?\s*F/);
-    if (match) {
+    if (match && match[1]) {
       const whole = parseFloat(match[1]);
       const numerator = match[2] ? parseInt(match[2]) : 0;
       const denominator = match[3] ? parseInt(match[3]) : 1;
@@ -33,7 +33,7 @@ export function parseDistanceToFurlongs(distance: string): number {
   if (normalized.includes('M')) {
     // Pattern for miles with fractions
     const match = normalized.match(/(\d+)\s*(?:(\d+)\/(\d+))?\s*M/);
-    if (match) {
+    if (match && match[1]) {
       const wholeMiles = parseInt(match[1]);
       const numerator = match[2] ? parseInt(match[2]) : 0;
       const denominator = match[3] ? parseInt(match[3]) : 1;
@@ -44,7 +44,7 @@ export function parseDistanceToFurlongs(distance: string): number {
 
   // Default fallback - try to parse as number
   const numMatch = normalized.match(/(\d+(?:\.\d+)?)/);
-  if (numMatch) {
+  if (numMatch && numMatch[1]) {
     return parseFloat(numMatch[1]);
   }
 
@@ -142,6 +142,12 @@ export function getPostPositionBiasMultiplier(
   }
 
   const winPct = bias.winPercentByPost[postIndex];
+  if (winPct === undefined) {
+    return {
+      multiplier: 0.8,
+      reasoning: 'Post position data not available',
+    };
+  }
   const avgWinPct = 100 / bias.winPercentByPost.length; // Fair share
 
   // Calculate multiplier based on how much better/worse than average

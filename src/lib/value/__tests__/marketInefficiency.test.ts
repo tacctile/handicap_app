@@ -273,7 +273,9 @@ describe('analyzeRaceInefficiencies', () => {
     const analyses = analyzeRaceInefficiencies(horses, raceHeader);
 
     expect(analyses.length).toBe(1);
-    expect(analyses[0].programNumber).toBe(1);
+    const firstAnalysis = analyses[0];
+    expect(firstAnalysis).toBeDefined();
+    expect(firstAnalysis?.programNumber).toBe(1);
   });
 });
 
@@ -318,8 +320,12 @@ describe('getBestInefficiencyPlays', () => {
     const bestPlays = getBestInefficiencyPlays(analyses, 2);
 
     expect(bestPlays.length).toBe(2);
-    expect(bestPlays[0].programNumber).toBe(2); // Highest magnitude
-    expect(bestPlays[1].programNumber).toBe(3); // Second highest
+    const firstPlay = bestPlays[0];
+    const secondPlay = bestPlays[1];
+    expect(firstPlay).toBeDefined();
+    expect(secondPlay).toBeDefined();
+    expect(firstPlay?.programNumber).toBe(2); // Highest magnitude
+    expect(secondPlay?.programNumber).toBe(3); // Second highest
   });
 
   it('should only return plays with exploitable inefficiency', () => {

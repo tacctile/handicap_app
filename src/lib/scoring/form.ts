@@ -97,6 +97,11 @@ function analyzeFormTrend(
   const mostRecent = scores[0];
   const oldest = scores[scores.length - 1];
 
+  // Check for undefined (shouldn't happen but TypeScript needs assurance)
+  if (mostRecent === undefined || oldest === undefined) {
+    return 'unknown';
+  }
+
   const diff = mostRecent - oldest;
 
   if (diff >= 3) return 'improving';
@@ -125,7 +130,9 @@ function calculateRecentFormScore(pastPerformances: PastPerformance[]): {
   let totalWeight = 0;
 
   for (let i = 0; i < recentPPs.length; i++) {
-    const raceScore = analyzeRaceFinish(recentPPs[i]);
+    const pp = recentPPs[i];
+    if (!pp) continue;
+    const raceScore = analyzeRaceFinish(pp);
     const weight = weights[i] ?? 0.1;
     weightedScore += raceScore * weight;
     totalWeight += weight;
@@ -136,6 +143,9 @@ function calculateRecentFormScore(pastPerformances: PastPerformance[]): {
 
   // Build last result string
   const lastPP = pastPerformances[0];
+  if (!lastPP) {
+    return { score: 8, lastResult: 'No race history' };
+  }
   let lastResult = `${ordinal(lastPP.finishPosition)} of ${lastPP.fieldSize}`;
   if (lastPP.lengthsBehind > 0) {
     lastResult += ` (${lastPP.lengthsBehind.toFixed(1)}L behind)`;
@@ -202,7 +212,7 @@ function checkLayoffPattern(pastPerformances: PastPerformance[]): boolean {
   // Look for wins after 60+ day layoffs
   for (let i = 0; i < pastPerformances.length - 1; i++) {
     const pp = pastPerformances[i];
-    if (pp.finishPosition === 1 && pp.daysSinceLast !== null && pp.daysSinceLast >= 60) {
+    if (pp && pp.finishPosition === 1 && pp.daysSinceLast !== null && pp.daysSinceLast >= 60) {
       return true;
     }
   }
@@ -289,7 +299,12 @@ function calculateConsistencyBonus(pastPerformances: PastPerformance[]): {
 function ordinal(n: number): string {
   const s = ['th', 'st', 'nd', 'rd'];
   const v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  const index1 = (v - 20) % 10;
+  const suffix =
+    (index1 >= 0 && index1 < s.length ? s[index1] : undefined) ??
+    (v >= 0 && v < s.length ? s[v] : undefined) ??
+    s[0];
+  return n + (suffix ?? 'th');
 }
 
 /**
