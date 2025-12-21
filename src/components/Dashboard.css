@@ -15,6 +15,16 @@
     -apple-system,
     BlinkMacSystemFont,
     sans-serif;
+  transition: grid-template-columns 300ms ease;
+}
+
+/* Betting panel collapse/expand states */
+.app-layout--betting-collapsed {
+  --betting-panel-width: var(--dimension-bar); /* 64px when collapsed */
+}
+
+.app-layout--betting-expanded {
+  --betting-panel-width: 400px;
 }
 
 /* Left zone: contains top bar, race rail + main content, bottom bar */
@@ -23,6 +33,7 @@
   grid-template-rows: var(--dimension-bar) 1fr var(--dimension-bar);
   grid-template-columns: var(--dimension-bar) 1fr;
   overflow: hidden;
+  transition: width 300ms ease;
 }
 
 /* ============================================
@@ -58,6 +69,7 @@
   height: var(--dimension-bar);
   z-index: 100;
   gap: var(--gap-container);
+  transition: width 300ms ease;
 }
 
 /* Legacy flexbox topbar */
@@ -495,6 +507,7 @@
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
+  transition: width 300ms ease;
 }
 
 /* Legacy flexbox betting panel */
@@ -558,6 +571,7 @@
   border-top: 1px solid var(--color-border);
   height: var(--dimension-bar);
   gap: 8px;
+  transition: width 300ms ease;
 }
 
 /* Legacy flexbox bottombar */
@@ -799,6 +813,122 @@
 .app-betting-panel__empty p {
   margin: 0;
   font-size: 13px;
+}
+
+/* ============================================
+   BETTING PANEL - Collapse/Expand Functionality
+   ============================================ */
+
+/* Collapsed betting panel */
+.app-betting-panel--collapsed {
+  width: var(--dimension-bar);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.app-betting-panel__collapsed-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 16px 0;
+  gap: 12px;
+  transition: background 150ms ease;
+}
+
+/* $ icon with static green glow */
+.app-betting-panel__collapsed-icon {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-tier-elite); /* Green color */
+  text-shadow:
+    0 0 10px rgba(34, 197, 94, 0.5),
+    0 0 20px rgba(34, 197, 94, 0.3),
+    0 0 30px rgba(34, 197, 94, 0.2);
+  /* NO animation - static glow */
+  transition: text-shadow 150ms ease;
+}
+
+/* "Expand" text written vertically */
+.app-betting-panel__collapsed-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Hover state for collapsed panel */
+.app-betting-panel__collapsed-content:hover {
+  background: var(--color-elevated);
+}
+
+.app-betting-panel__collapsed-content:hover .app-betting-panel__collapsed-icon {
+  text-shadow:
+    0 0 15px rgba(34, 197, 94, 0.7),
+    0 0 30px rgba(34, 197, 94, 0.5),
+    0 0 45px rgba(34, 197, 94, 0.3);
+}
+
+/* Focus state for accessibility */
+.app-betting-panel__collapsed-content:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+/* Expanded betting panel */
+.app-betting-panel__expanded-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  transition: opacity 200ms ease;
+}
+
+/* Content wrapper to hold actual content */
+.app-betting-panel__content-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  padding-top: 8px; /* Space for collapse button */
+}
+
+/* Collapse button - X in upper left */
+.app-betting-panel__collapse-btn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 150ms ease;
+  z-index: 10;
+}
+
+.app-betting-panel__collapse-btn:hover {
+  background: var(--color-card);
+  color: var(--color-text-primary);
+  border-color: var(--color-text-tertiary);
+}
+
+.app-betting-panel__collapse-btn:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.app-betting-panel__collapse-btn .material-icons {
+  font-size: 18px;
 }
 
 /* ============================================
