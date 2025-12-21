@@ -903,22 +903,10 @@
 
 .horse-list-header {
   display: grid;
-  grid-template-columns:
-    40px /* scratch */
-    50px /* pp */
-    1fr /* horse name - flexible */
-    120px /* trainer */
-    50px /* weight */
-    120px /* odds */
-    80px /* life */
-    80px /* score */
-    70px /* fair */
-    100px /* value */
-    130px /* tier */
-    40px; /* expand */
-  align-items: end;
+  grid-template-columns: var(--horse-list-grid);
+  align-items: center;
   gap: 8px;
-  padding: 12px 16px 8px 16px;
+  padding: 12px 16px;
   background: var(--color-elevated);
   border-bottom: 2px solid var(--color-border);
   position: sticky;
