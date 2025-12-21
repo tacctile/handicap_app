@@ -8,6 +8,7 @@ interface SidebarProps {
   onToggle: () => void
   trackDbLoaded?: boolean
   onOpenLegalModal?: (type: LegalContentType) => void
+  onNavigateToAccount?: () => void
 }
 
 interface NavItem {
@@ -28,7 +29,7 @@ const navItems: NavItem[] = [
 
 const VERSION = 'v2.0.0'
 
-export function Sidebar({ isOpen, onToggle, trackDbLoaded = true, onOpenLegalModal }: SidebarProps) {
+export function Sidebar({ isOpen, onToggle, trackDbLoaded = true, onOpenLegalModal, onNavigateToAccount }: SidebarProps) {
   const [activeItem, setActiveItem] = useState('dashboard')
 
   // Handle legal link click
@@ -42,6 +43,15 @@ export function Sidebar({ isOpen, onToggle, trackDbLoaded = true, onOpenLegalMod
     },
     [onOpenLegalModal]
   )
+
+  // Handle account navigation
+  const handleAccountClick = useCallback(() => {
+    logger.logInfo('Account settings clicked from sidebar', {
+      component: 'Sidebar',
+    })
+    onNavigateToAccount?.()
+    onToggle() // Close sidebar on mobile
+  }, [onNavigateToAccount, onToggle])
 
   // Close sidebar on escape key
   useEffect(() => {
@@ -100,6 +110,8 @@ export function Sidebar({ isOpen, onToggle, trackDbLoaded = true, onOpenLegalMod
           onNavClick={handleNavClick}
           trackDbLoaded={trackDbLoaded}
           onLegalClick={handleLegalClick}
+          onAccountClick={handleAccountClick}
+          hasAccountNavigation={!!onNavigateToAccount}
         />
       </aside>
 
@@ -128,6 +140,8 @@ export function Sidebar({ isOpen, onToggle, trackDbLoaded = true, onOpenLegalMod
               onNavClick={handleNavClick}
               trackDbLoaded={trackDbLoaded}
               onLegalClick={handleLegalClick}
+              onAccountClick={handleAccountClick}
+              hasAccountNavigation={!!onNavigateToAccount}
             />
           </motion.aside>
         )}
@@ -141,9 +155,26 @@ interface SidebarContentProps {
   onNavClick: (item: NavItem) => void
   trackDbLoaded: boolean
   onLegalClick: (type: LegalContentType) => void
+  onAccountClick: () => void
+  hasAccountNavigation: boolean
 }
 
-function SidebarContent({ activeItem, onNavClick, trackDbLoaded, onLegalClick }: SidebarContentProps) {
+function SidebarContent({ activeItem, onNavClick, trackDbLoaded, onLegalClick, onAccountClick, hasAccountNavigation }: SidebarContentProps) {
+  // Override navItems to enable account-related items when auth is available
+  const currentNavItems = navItems.map((item) => {
+    if (item.id === 'settings' && hasAccountNavigation) {
+      return { ...item, label: 'Account', icon: 'account_circle', disabled: false }
+    }
+    return item
+  })
+
+  const handleItemClick = (item: NavItem) => {
+    if (item.id === 'settings' && hasAccountNavigation) {
+      onAccountClick()
+    } else {
+      onNavClick(item)
+    }
+  }
   return (
     <div className="sidebar-content">
       {/* Logo section */}
@@ -160,11 +191,11 @@ function SidebarContent({ activeItem, onNavClick, trackDbLoaded, onLegalClick }:
       {/* Navigation */}
       <nav className="sidebar-nav" role="navigation">
         <ul className="sidebar-nav-list">
-          {navItems.map((item) => (
+          {currentNavItems.map((item) => (
             <li key={item.id}>
               <button
                 className={`sidebar-nav-item ${activeItem === item.id ? 'active' : ''} ${item.disabled ? 'disabled' : ''}`}
-                onClick={() => onNavClick(item)}
+                onClick={() => handleItemClick(item)}
                 disabled={item.disabled}
                 aria-current={activeItem === item.id ? 'page' : undefined}
               >

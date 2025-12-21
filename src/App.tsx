@@ -1,16 +1,24 @@
 import { useState, useCallback, useEffect } from 'react'
 import { Dashboard } from './components/Dashboard'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { AuthProvider } from './contexts/AuthContext'
+import { AuthProvider, useAuthContext } from './contexts/AuthContext'
 import { DisclaimerBanner, LegalModal } from './components/legal'
 import type { LegalContentType } from './components/legal'
+import { AuthPage, AccountSettings } from './components/auth'
 import { useRaceState } from './hooks/useRaceState'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useAnalytics } from './hooks/useAnalytics'
+import { useFeatureFlag } from './hooks/useFeatureFlag'
 import { validateParsedData, getValidationSummary, isDataUsable } from './lib/validation'
 import type { ParsedDRFFile } from './types/drf'
 import './styles/responsive.css'
 import './styles/dashboard.css'
+
+// ============================================================================
+// ROUTE TYPES
+// ============================================================================
+
+type AppRoute = 'dashboard' | 'account'
 
 function AppContent() {
   const [parsedData, setParsedData] = useState<ParsedDRFFile | null>(null)
@@ -18,6 +26,13 @@ function AppContent() {
   const [validationWarnings, setValidationWarnings] = useState<string[]>([])
   const [showWarnings, setShowWarnings] = useState(true)
   const [modalOpen] = useState(false)
+
+  // Routing state
+  const [currentRoute, setCurrentRoute] = useState<AppRoute>('dashboard')
+
+  // Auth state
+  const { isAuthenticated, isLoading: authLoading } = useAuthContext()
+  const authEnabled = useFeatureFlag('AUTH_ENABLED')
 
   // Legal modal state
   const [legalModalOpen, setLegalModalOpen] = useState(false)
@@ -36,6 +51,25 @@ function AppContent() {
 
   const raceState = useRaceState()
   const { trackEvent } = useAnalytics()
+
+  // Navigation handlers
+  const navigateToAccount = useCallback(() => {
+    setCurrentRoute('account')
+  }, [])
+
+  const navigateToDashboard = useCallback(() => {
+    setCurrentRoute('dashboard')
+  }, [])
+
+  // Handle successful auth (login/signup)
+  const handleAuthSuccess = useCallback(() => {
+    setCurrentRoute('dashboard')
+  }, [])
+
+  // Handle logout
+  const handleLogout = useCallback(() => {
+    setCurrentRoute('dashboard')
+  }, [])
 
   // Session tracking - track start on mount and end on beforeunload
   useEffect(() => {
@@ -112,6 +146,61 @@ function AppContent() {
     hasChanges: raceState.hasChanges,
   })
 
+  // Show loading state while checking auth
+  if (authEnabled && authLoading) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          backgroundColor: '#0A0A0B',
+        }}
+      >
+        <div
+          style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid #2A2A2C',
+            borderTopColor: '#19abb5',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+          }}
+        />
+        <style>
+          {`
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+          `}
+        </style>
+      </div>
+    )
+  }
+
+  // Show auth page if auth is enabled and user is not authenticated
+  if (authEnabled && !isAuthenticated) {
+    return (
+      <ErrorBoundary onReset={handleFullReset}>
+        <AuthPage onAuthSuccess={handleAuthSuccess} />
+      </ErrorBoundary>
+    )
+  }
+
+  // Show account settings page
+  if (currentRoute === 'account') {
+    return (
+      <ErrorBoundary onReset={handleFullReset}>
+        <AccountSettings
+          onLogout={handleLogout}
+          onBack={navigateToDashboard}
+        />
+      </ErrorBoundary>
+    )
+  }
+
+  // Show main dashboard
   return (
     <ErrorBoundary onReset={handleFullReset}>
       {/* Disclaimer Banner - shows on first visit */}
@@ -129,6 +218,7 @@ function AppContent() {
           setLegalModalType(type)
           setLegalModalOpen(true)
         }}
+        onNavigateToAccount={navigateToAccount}
       />
 
       {/* Legal Modal - shared across app */}
