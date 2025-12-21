@@ -1,0 +1,245 @@
+/* ============================================
+   APP SHELL - Persistent Layout Architecture
+   ============================================ */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--color-base);
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+}
+
+/* ============================================
+   TOP BAR - Full Width Header
+   ============================================ */
+
+.app-topbar {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  padding: 0 var(--gap-container);
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  z-index: 100;
+  gap: var(--gap-container);
+}
+
+.app-topbar__logo {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-element);
+  padding-right: var(--gap-container);
+  border-right: 1px solid var(--color-border);
+}
+
+.app-topbar__logo-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  border-radius: var(--radius-md);
+  color: white;
+}
+
+.app-topbar__logo-icon .material-icons {
+  font-size: 20px;
+}
+
+.app-topbar__logo-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.app-topbar__content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--gap-container);
+}
+
+/* ============================================
+   APP BODY - Sidebar + Main Container
+   ============================================ */
+
+.app-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ============================================
+   SIDEBAR - Collapsible Navigation
+   ============================================ */
+
+.app-sidebar {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-card);
+  border-right: 1px solid var(--color-border);
+  transition: width 200ms ease-out;
+  flex-shrink: 0;
+  position: relative;
+  padding: var(--gap-container) 0;
+}
+
+.app-sidebar--expanded {
+  width: 220px;
+}
+
+.app-sidebar--collapsed {
+  width: 64px;
+}
+
+/* Sidebar Toggle Tab */
+.app-sidebar__toggle {
+  position: absolute;
+  top: var(--gap-element);
+  right: -14px;
+  width: 14px;
+  height: 36px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-left: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 10;
+  transition: all 150ms ease;
+}
+
+.app-sidebar__toggle:hover {
+  background: var(--color-elevated);
+  color: var(--color-text-primary);
+}
+
+.app-sidebar__toggle .material-icons {
+  font-size: 14px;
+}
+
+/* Sidebar Navigation */
+.app-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--gap-element);
+  gap: var(--gap-tight);
+}
+
+.app-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-element);
+  padding: var(--gap-element) var(--gap-element);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 150ms ease;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.app-sidebar__item:hover {
+  background: var(--color-elevated);
+  color: var(--color-text-primary);
+}
+
+.app-sidebar__item--active {
+  background: var(--color-primary-muted);
+  color: var(--color-primary);
+}
+
+.app-sidebar__item--active:hover {
+  background: var(--color-primary-muted);
+  color: var(--color-primary);
+}
+
+.app-sidebar__item .material-icons {
+  font-size: 22px;
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+}
+
+.app-sidebar__label {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Collapsed state - center icons */
+.app-sidebar--collapsed .app-sidebar__item {
+  justify-content: center;
+  padding: var(--gap-element);
+}
+
+.app-sidebar--collapsed .app-sidebar__nav {
+  padding: 0 var(--gap-element);
+}
+
+/* Sidebar Spacer */
+.app-sidebar__spacer {
+  flex: 1;
+  min-height: var(--gap-container);
+}
+
+/* Sidebar Footer */
+.app-sidebar__nav--footer {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--gap-container);
+  margin-top: var(--gap-element);
+}
+
+/* ============================================
+   MAIN CONTENT AREA
+   ============================================ */
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--color-base);
+}
+
+/* Placeholder styling for development */
+.app-main__placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+  text-align: center;
+  padding: var(--gap-container);
+}
+
+.app-main__placeholder h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.app-main__placeholder p {
+  margin: var(--gap-element) 0 0 0;
+  font-size: 14px;
+}
