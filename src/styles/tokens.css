@@ -50,4 +50,33 @@
   --color-status-warning: #eab308; /* Goldenrod amber */
   --color-status-critical: #ef4444; /* Soft red */
   --color-status-final: var(--color-text-tertiary); /* Dimmed for completed */
+
+  /* ============================================
+     VALUE TIER COLORS (Red to Green Spectrum)
+     ============================================ */
+
+  /* Tier 5: Elite - Bright Green (+100% or more) */
+  --color-tier-elite: #22c55e;
+  --color-tier-elite-bg: rgba(34, 197, 94, 0.15);
+  --color-tier-elite-glow: rgba(34, 197, 94, 0.6);
+
+  /* Tier 4: Good - Light Green (+50% to +99%) */
+  --color-tier-good: #4ade80;
+  --color-tier-good-bg: rgba(74, 222, 128, 0.15);
+
+  /* Tier 3: Fair - Yellow/Amber (+10% to +49%) */
+  --color-tier-fair: #eab308;
+  --color-tier-fair-bg: rgba(234, 179, 8, 0.15);
+
+  /* Tier 2: Neutral - Orange (-10% to +9%) */
+  --color-tier-neutral: #f97316;
+  --color-tier-neutral-bg: rgba(249, 115, 22, 0.15);
+
+  /* Tier 1: Bad - Red (below -10%) */
+  --color-tier-bad: #ef4444;
+  --color-tier-bad-bg: rgba(239, 68, 68, 0.15);
+
+  /* Scratched state */
+  --color-tier-scratched: #6e6e70;
+  --color-tier-scratched-bg: rgba(110, 110, 112, 0.15);
 }
