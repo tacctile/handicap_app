@@ -65,6 +65,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   }, [parsedData]);
 
+  // Reset scratches, odds, and expanded state when race changes
+  useEffect(() => {
+    raceState.resetAll();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional reset on race selection change
+    setExpandedHorseId(null);
+  }, [selectedRaceIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Calculate scored horses for current race (needed for betting recommendations)
   const currentRaceScoredHorses = useMemo(() => {
     if (!parsedData) return [];
@@ -392,15 +399,43 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {currentRaceScoredHorses.map((scoredHorse, index) => {
                   const horse = scoredHorse.horse;
                   const horseId = horse.programNumber || index;
-                  const currentOdds = raceState.getOdds(scoredHorse.index, horse.morningLineOdds);
+                  const horseIndex = scoredHorse.index;
+                  const currentOddsString = raceState.getOdds(horseIndex, horse.morningLineOdds);
 
                   // Calculate overlay analysis for fair odds and value percent
-                  const overlay = analyzeOverlay(scoredHorse.score.total, currentOdds);
+                  const overlay = analyzeOverlay(scoredHorse.score.total, currentOddsString);
 
                   // Parse fair odds display (e.g., "3-1" to numerator/denominator)
                   const fairOddsParts = overlay.fairOddsDisplay.split('-');
                   const fairOddsNum = parseInt(fairOddsParts[0] || '2', 10);
                   const fairOddsDen = parseInt(fairOddsParts[1] || '1', 10);
+
+                  // Parse current odds to { numerator, denominator } format
+                  const parseOdds = (
+                    oddsStr: string
+                  ): { numerator: number; denominator: number } => {
+                    if (typeof oddsStr === 'string') {
+                      const parts = oddsStr.split('-');
+                      return {
+                        numerator: parseInt(parts[0] || '2', 10) || 2,
+                        denominator: parseInt(parts[1] || '1', 10) || 1,
+                      };
+                    }
+                    return { numerator: 2, denominator: 1 };
+                  };
+
+                  const currentOdds = parseOdds(currentOddsString);
+                  const isScratched = raceState.isScratched(horseIndex);
+
+                  // Handle odds change - convert back to string format for raceState
+                  const handleOddsChange = (odds: { numerator: number; denominator: number }) => {
+                    raceState.updateOdds(horseIndex, `${odds.numerator}-${odds.denominator}`);
+                  };
+
+                  // Handle scratch toggle
+                  const handleScratchToggle = (scratched: boolean) => {
+                    raceState.setScratch(horseIndex, scratched);
+                  };
 
                   return (
                     <div key={horseId} className="horse-list__item">
@@ -414,8 +449,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         fairOddsNum={fairOddsNum}
                         fairOddsDen={fairOddsDen}
                         valuePercent={overlay.overlayPercent}
+                        isScratched={isScratched}
+                        onScratchToggle={handleScratchToggle}
+                        currentOdds={currentOdds}
+                        onOddsChange={handleOddsChange}
                       />
-                      {expandedHorseId === horseId && (
+                      {expandedHorseId === horseId && !isScratched && (
                         <div className="horse-expanded">
                           <div className="horse-expanded__placeholder">
                             Full DRF past performances will appear here (Prompt 2)

@@ -12,7 +12,113 @@ interface HorseSummaryBarProps {
   fairOddsNum?: number;
   fairOddsDen?: number;
   valuePercent?: number;
+  // New props for interactive controls
+  isScratched: boolean;
+  onScratchToggle: (scratched: boolean) => void;
+  currentOdds: { numerator: number; denominator: number };
+  onOddsChange: (odds: { numerator: number; denominator: number }) => void;
 }
+
+// OddsInput component for adjusting live odds
+interface OddsInputProps {
+  numerator: number;
+  denominator: number;
+  onChange: (odds: { numerator: number; denominator: number }) => void;
+  disabled?: boolean;
+}
+
+const OddsInput: React.FC<OddsInputProps> = ({ numerator, denominator, onChange, disabled }) => {
+  const handleNumeratorChange = (delta: number) => {
+    const newVal = Math.max(1, numerator + delta);
+    onChange({ numerator: newVal, denominator });
+  };
+
+  const handleDenominatorChange = (delta: number) => {
+    const newVal = Math.max(1, denominator + delta);
+    onChange({ numerator, denominator: newVal });
+  };
+
+  const handleNumeratorInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseInt(e.target.value) || 1;
+    onChange({ numerator: Math.max(1, val), denominator });
+  };
+
+  const handleDenominatorInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseInt(e.target.value) || 1;
+    onChange({ numerator, denominator: Math.max(1, val) });
+  };
+
+  const stopPropagation = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
+  return (
+    <div className="odds-input" onClick={stopPropagation}>
+      {/* Left number controls - stacked on LEFT side */}
+      <div className="odds-input__control">
+        <button
+          type="button"
+          onClick={() => handleNumeratorChange(1)}
+          disabled={disabled}
+          className="odds-input__btn"
+        >
+          +
+        </button>
+        <button
+          type="button"
+          onClick={() => handleNumeratorChange(-1)}
+          disabled={disabled}
+          className="odds-input__btn"
+        >
+          −
+        </button>
+      </div>
+
+      {/* Left number input */}
+      <input
+        type="number"
+        value={numerator}
+        onChange={handleNumeratorInput}
+        disabled={disabled}
+        className="odds-input__number"
+        min="1"
+      />
+
+      {/* Separator */}
+      <span className="odds-input__separator">-</span>
+
+      {/* Right number input */}
+      <input
+        type="number"
+        value={denominator}
+        onChange={handleDenominatorInput}
+        disabled={disabled}
+        className="odds-input__number"
+        min="1"
+      />
+
+      {/* Right number controls - stacked on RIGHT side */}
+      <div className="odds-input__control">
+        <button
+          type="button"
+          onClick={() => handleDenominatorChange(1)}
+          disabled={disabled}
+          className="odds-input__btn"
+        >
+          +
+        </button>
+        <button
+          type="button"
+          onClick={() => handleDenominatorChange(-1)}
+          disabled={disabled}
+          className="odds-input__btn"
+        >
+          −
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   horse,
@@ -24,13 +130,16 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   fairOddsNum = 2,
   fairOddsDen = 1,
   valuePercent = 0,
+  isScratched,
+  onScratchToggle,
+  currentOdds,
+  onOddsChange,
 }) => {
   // Extract horse data from HorseEntry type
   const programNumber = horse.programNumber;
   const horseName = horse.horseName || 'UNKNOWN';
   const trainer = horse.trainerName || '—';
   const weight = horse.weight || '—';
-  const morningLine = horse.morningLineOdds || '2-1';
 
   // Lifetime record from HorseEntry
   const lifetimeStarts = horse.lifetimeStarts || 0;
@@ -59,13 +168,38 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
     return 'UNDERLAY';
   };
 
+  const handleRowClick = () => {
+    if (!isScratched) {
+      onToggleExpand();
+    }
+  };
+
+  const handleScratchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    onScratchToggle(e.target.checked);
+  };
+
+  const handleScratchClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <div
-      className={`horse-summary-bar ${isExpanded ? 'horse-summary-bar--expanded' : ''}`}
-      onClick={onToggleExpand}
+      className={`horse-summary-bar
+        ${isExpanded ? 'horse-summary-bar--expanded' : ''}
+        ${isScratched ? 'horse-summary-bar--scratched' : ''}`}
+      onClick={handleRowClick}
     >
-      {/* Scratch checkbox placeholder - added in Prompt 2A */}
-      <div className="horse-summary-bar__scratch-placeholder"></div>
+      {/* Scratch checkbox */}
+      <div className="horse-summary-bar__scratch" onClick={handleScratchClick}>
+        <input
+          type="checkbox"
+          checked={isScratched}
+          onChange={handleScratchChange}
+          title="Mark as scratched"
+          className="horse-summary-bar__scratch-input"
+        />
+      </div>
 
       {/* Program number */}
       <div className="horse-summary-bar__pp">#{programNumber}</div>
@@ -79,8 +213,13 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       {/* Weight */}
       <div className="horse-summary-bar__weight">{weight}</div>
 
-      {/* Odds placeholder - replaced with input in Prompt 2A */}
-      <div className="horse-summary-bar__odds-placeholder">{morningLine}</div>
+      {/* Live odds input */}
+      <OddsInput
+        numerator={currentOdds.numerator}
+        denominator={currentOdds.denominator}
+        onChange={onOddsChange}
+        disabled={isScratched}
+      />
 
       {/* Lifetime record */}
       <div className="horse-summary-bar__lifetime">
