@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import type { LegalContentType } from '../legal'
+import { logger } from '../../services/logging'
 
 interface SidebarProps {
   isOpen: boolean
   onToggle: () => void
   trackDbLoaded?: boolean
+  onOpenLegalModal?: (type: LegalContentType) => void
 }
 
 interface NavItem {
@@ -25,8 +28,20 @@ const navItems: NavItem[] = [
 
 const VERSION = 'v2.0.0'
 
-export function Sidebar({ isOpen, onToggle, trackDbLoaded = true }: SidebarProps) {
+export function Sidebar({ isOpen, onToggle, trackDbLoaded = true, onOpenLegalModal }: SidebarProps) {
   const [activeItem, setActiveItem] = useState('dashboard')
+
+  // Handle legal link click
+  const handleLegalClick = useCallback(
+    (type: LegalContentType) => {
+      logger.logInfo('Legal link clicked from sidebar', {
+        component: 'Sidebar',
+        legalType: type,
+      })
+      onOpenLegalModal?.(type)
+    },
+    [onOpenLegalModal]
+  )
 
   // Close sidebar on escape key
   useEffect(() => {
@@ -84,6 +99,7 @@ export function Sidebar({ isOpen, onToggle, trackDbLoaded = true }: SidebarProps
           activeItem={activeItem}
           onNavClick={handleNavClick}
           trackDbLoaded={trackDbLoaded}
+          onLegalClick={handleLegalClick}
         />
       </aside>
 
@@ -111,6 +127,7 @@ export function Sidebar({ isOpen, onToggle, trackDbLoaded = true }: SidebarProps
               activeItem={activeItem}
               onNavClick={handleNavClick}
               trackDbLoaded={trackDbLoaded}
+              onLegalClick={handleLegalClick}
             />
           </motion.aside>
         )}
@@ -123,9 +140,10 @@ interface SidebarContentProps {
   activeItem: string
   onNavClick: (item: NavItem) => void
   trackDbLoaded: boolean
+  onLegalClick: (type: LegalContentType) => void
 }
 
-function SidebarContent({ activeItem, onNavClick, trackDbLoaded }: SidebarContentProps) {
+function SidebarContent({ activeItem, onNavClick, trackDbLoaded, onLegalClick }: SidebarContentProps) {
   return (
     <div className="sidebar-content">
       {/* Logo section */}
@@ -172,6 +190,40 @@ function SidebarContent({ activeItem, onNavClick, trackDbLoaded }: SidebarConten
             {trackDbLoaded ? 'Track DB Loaded' : 'Track DB Offline'}
           </span>
         </div>
+      </div>
+
+      {/* Legal section */}
+      <div className="sidebar-legal">
+        <div className="sidebar-legal-header">
+          <span className="material-icons sidebar-legal-icon">gavel</span>
+          <span className="sidebar-legal-title">Legal</span>
+        </div>
+        <nav className="sidebar-legal-nav" aria-label="Legal links">
+          <button
+            type="button"
+            className="sidebar-legal-link"
+            onClick={() => onLegalClick('terms')}
+          >
+            <span className="material-icons sidebar-legal-link-icon">description</span>
+            <span className="sidebar-legal-link-label">Terms of Service</span>
+          </button>
+          <button
+            type="button"
+            className="sidebar-legal-link"
+            onClick={() => onLegalClick('privacy')}
+          >
+            <span className="material-icons sidebar-legal-link-icon">privacy_tip</span>
+            <span className="sidebar-legal-link-label">Privacy Policy</span>
+          </button>
+          <button
+            type="button"
+            className="sidebar-legal-link"
+            onClick={() => onLegalClick('disclaimer')}
+          >
+            <span className="material-icons sidebar-legal-link-icon">warning</span>
+            <span className="sidebar-legal-link-label">Disclaimer</span>
+          </button>
+        </nav>
       </div>
 
       {/* Footer */}

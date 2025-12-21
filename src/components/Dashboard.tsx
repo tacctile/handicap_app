@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sidebar, TopBar, MobileNav } from './layout'
+import { Sidebar, TopBar, MobileNav, Footer } from './layout'
+import type { LegalContentType } from './legal'
 import { EmptyStateTable } from './cards'
 import { FileUpload } from './FileUpload'
 import { RaceOverview } from './RaceOverview'
@@ -37,6 +38,7 @@ interface DashboardProps {
   onParsed: (data: ParsedDRFFile) => void
   onDismissWarnings: () => void
   raceState: ReturnType<typeof useRaceState>
+  onOpenLegalModal: (type: LegalContentType) => void
 }
 
 export function Dashboard({
@@ -47,6 +49,7 @@ export function Dashboard({
   onParsed,
   onDismissWarnings,
   raceState,
+  onOpenLegalModal,
 }: DashboardProps) {
   // View management state
   const [currentView, setCurrentView] = useState<ViewMode>('overview')
@@ -245,6 +248,7 @@ export function Dashboard({
         isOpen={sidebarOpen}
         onToggle={toggleSidebar}
         trackDbLoaded={true}
+        onOpenLegalModal={onOpenLegalModal}
       />
 
       {/* Main container */}
@@ -492,14 +496,8 @@ export function Dashboard({
           )}
         </main>
 
-        {/* Footer */}
-        <footer className="dashboard-footer">
-          <div className="footer-content">
-            <span className="footer-powered">Powered by Advanced AI Analytics</span>
-            <span className="footer-divider">•</span>
-            <span className="footer-version">Algorithm v2.0</span>
-          </div>
-        </footer>
+        {/* Footer with Legal Links */}
+        <Footer onOpenLegalModal={onOpenLegalModal} />
       </div>
 
       {/* Mobile bottom navigation */}

@@ -472,6 +472,75 @@ body::before {
   color: var(--text-disabled);
 }
 
+/* Sidebar Legal Section */
+.sidebar-legal {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.sidebar-legal-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.sidebar-legal-icon {
+  font-size: 1rem;
+  color: var(--text-tertiary);
+}
+
+.sidebar-legal-title {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sidebar-legal-nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-legal-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sidebar-legal-link:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.sidebar-legal-link-icon {
+  font-size: 1rem;
+  color: var(--text-tertiary);
+}
+
+.sidebar-legal-link:hover .sidebar-legal-link-icon {
+  color: var(--accent-primary);
+}
+
+.sidebar-legal-link-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ============================================
    Top Bar Styles
    ============================================ */
@@ -1588,6 +1657,93 @@ body::before {
 
 .footer-divider {
   color: var(--text-disabled);
+}
+
+/* ============================================
+   App Footer (with Legal Links)
+   ============================================ */
+
+.app-footer {
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  margin-bottom: var(--mobile-nav-height);
+}
+
+@media (min-width: 1024px) {
+  .app-footer {
+    margin-bottom: 0;
+  }
+}
+
+.app-footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: var(--font-xs);
+  color: var(--text-disabled);
+}
+
+.app-footer-copyright {
+  color: var(--text-tertiary);
+}
+
+.app-footer-divider {
+  color: var(--text-disabled);
+}
+
+.app-footer-legal {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.app-footer-link {
+  padding: var(--space-1) var(--space-2);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.app-footer-link:hover {
+  color: var(--accent-primary);
+  background: rgba(25, 171, 181, 0.1);
+}
+
+.app-footer-link:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+/* Mobile adjustments for app footer */
+@media (max-width: 640px) {
+  .app-footer {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .app-footer-content {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .app-footer-divider {
+    display: none;
+  }
+
+  .app-footer-legal {
+    gap: var(--space-1);
+  }
+
+  .app-footer-link {
+    font-size: 0.6875rem;
+    padding: var(--space-1);
+  }
 }
 
 /* ============================================
