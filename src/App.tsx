@@ -2,6 +2,8 @@ import { useState, useCallback, useEffect } from 'react'
 import { Dashboard } from './components/Dashboard'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { AuthProvider } from './contexts/AuthContext'
+import { DisclaimerBanner, LegalModal } from './components/legal'
+import type { LegalContentType } from './components/legal'
 import { useRaceState } from './hooks/useRaceState'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useAnalytics } from './hooks/useAnalytics'
@@ -16,6 +18,21 @@ function AppContent() {
   const [validationWarnings, setValidationWarnings] = useState<string[]>([])
   const [showWarnings, setShowWarnings] = useState(true)
   const [modalOpen] = useState(false)
+
+  // Legal modal state
+  const [legalModalOpen, setLegalModalOpen] = useState(false)
+  const [legalModalType, setLegalModalType] = useState<LegalContentType>('disclaimer')
+
+  // Handle opening legal modal from disclaimer banner
+  const handleViewFullDisclaimer = useCallback(() => {
+    setLegalModalType('disclaimer')
+    setLegalModalOpen(true)
+  }, [])
+
+  // Handle closing legal modal
+  const handleCloseLegalModal = useCallback(() => {
+    setLegalModalOpen(false)
+  }, [])
 
   const raceState = useRaceState()
   const { trackEvent } = useAnalytics()
@@ -97,6 +114,9 @@ function AppContent() {
 
   return (
     <ErrorBoundary onReset={handleFullReset}>
+      {/* Disclaimer Banner - shows on first visit */}
+      <DisclaimerBanner onViewFull={handleViewFullDisclaimer} />
+
       <Dashboard
         parsedData={parsedData}
         isLoading={isLoading}
@@ -105,6 +125,17 @@ function AppContent() {
         onParsed={handleParsed}
         onDismissWarnings={handleDismissWarnings}
         raceState={raceState}
+        onOpenLegalModal={(type: LegalContentType) => {
+          setLegalModalType(type)
+          setLegalModalOpen(true)
+        }}
+      />
+
+      {/* Legal Modal - shared across app */}
+      <LegalModal
+        type={legalModalType}
+        isOpen={legalModalOpen}
+        onClose={handleCloseLegalModal}
       />
     </ErrorBoundary>
   )
