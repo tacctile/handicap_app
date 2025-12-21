@@ -10,10 +10,10 @@
  * - Carryover display for Pick 5/6
  */
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import type { HorseEntry } from '../types/drf'
-import type { HorseScore } from '../lib/scoring'
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import type { HorseEntry } from '../types/drf';
+import type { HorseScore } from '../lib/scoring';
 import {
   type MultiRaceBetType,
   type MultiRaceStrategy,
@@ -43,48 +43,48 @@ import {
   calculateExpectedValue,
   classifyRaceStrength,
   findStandoutHorse,
-} from '../lib/multirace'
-import { formatCurrency } from '../lib/recommendations'
+} from '../lib/multirace';
+import { formatCurrency } from '../lib/recommendations';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 interface RaceData {
-  raceNumber: number
-  horses: Array<{ horse: HorseEntry; index: number; score: HorseScore }>
-  postTime?: string
+  raceNumber: number;
+  horses: Array<{ horse: HorseEntry; index: number; score: HorseScore }>;
+  postTime?: string;
 }
 
 interface MultiRaceBuilderModalProps {
-  isOpen: boolean
-  onClose: () => void
-  betType: MultiRaceBetType
-  races: RaceData[]
-  startingRace: number
-  trackCode?: string
-  budget: number
-  onAddToBetSlip: (ticket: MultiRaceTicketResult) => void
+  isOpen: boolean;
+  onClose: () => void;
+  betType: MultiRaceBetType;
+  races: RaceData[];
+  startingRace: number;
+  trackCode?: string;
+  budget: number;
+  onAddToBetSlip: (ticket: MultiRaceTicketResult) => void;
 }
 
 export interface MultiRaceTicketResult {
-  id: string
-  betType: MultiRaceBetType
-  displayName: string
-  raceRange: string
-  spreadNotation: string
-  totalCost: number
-  combinations: number
-  probability: number
-  payoutRange: { min: number; max: number }
-  expectedValue: number
-  windowInstruction: string
+  id: string;
+  betType: MultiRaceBetType;
+  displayName: string;
+  raceRange: string;
+  spreadNotation: string;
+  totalCost: number;
+  combinations: number;
+  probability: number;
+  payoutRange: { min: number; max: number };
+  expectedValue: number;
+  windowInstruction: string;
   raceInstructions: Array<{
-    raceNumber: number
-    horses: number[]
-  }>
-  hasCarryover: boolean
-  carryoverAmount?: number
+    raceNumber: number;
+    horses: number[];
+  }>;
+  hasCarryover: boolean;
+  carryoverAmount?: number;
 }
 
 // ============================================================================
@@ -95,55 +95,72 @@ const TIER_COLORS = {
   1: { bg: 'rgba(25, 171, 181, 0.15)', border: '#19abb5', text: '#19abb5' },
   2: { bg: 'rgba(59, 130, 246, 0.15)', border: '#3b82f6', text: '#3b82f6' },
   3: { bg: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b', text: '#f59e0b' },
-}
+};
 
-const STRATEGY_OPTIONS: { value: MultiRaceStrategy; label: string; icon: string; description: string }[] = [
-  { value: 'conservative', label: 'Conservative', icon: 'savings', description: 'Singles in standout races' },
+const STRATEGY_OPTIONS: {
+  value: MultiRaceStrategy;
+  label: string;
+  icon: string;
+  description: string;
+}[] = [
+  {
+    value: 'conservative',
+    label: 'Conservative',
+    icon: 'savings',
+    description: 'Singles in standout races',
+  },
   { value: 'balanced', label: 'Balanced', icon: 'balance', description: '2-3 horses per race' },
-  { value: 'aggressive', label: 'Aggressive', icon: 'local_fire_department', description: 'ALL in weak races' },
-]
+  {
+    value: 'aggressive',
+    label: 'Aggressive',
+    icon: 'local_fire_department',
+    description: 'ALL in weak races',
+  },
+];
 
 const RACE_STRENGTH_COLORS: Record<string, { bg: string; text: string; icon: string }> = {
   standout: { bg: 'rgba(34, 197, 94, 0.15)', text: '#22c55e', icon: 'verified' },
   competitive: { bg: 'rgba(234, 179, 8, 0.15)', text: '#eab308', icon: 'multiple_stop' },
   weak: { bg: 'rgba(239, 68, 68, 0.15)', text: '#ef4444', icon: 'help_outline' },
-}
+};
 
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 
 function convertToMultiRaceData(raceData: RaceData): MultiRaceRaceData {
-  const horses: MultiRaceHorse[] = raceData.horses.map((h, idx) => {
-    let tier: 1 | 2 | 3 = 3
-    if (h.score.total >= 180) tier = 1
-    else if (h.score.total >= 160) tier = 2
+  const horses: MultiRaceHorse[] = raceData.horses
+    .map((h, idx) => {
+      let tier: 1 | 2 | 3 = 3;
+      if (h.score.total >= 180) tier = 1;
+      else if (h.score.total >= 160) tier = 2;
 
-    const oddsMatch = h.horse.morningLineOdds.match(/(\d+(?:\.\d+)?)[/-](\d+(?:\.\d+)?)?/)
-    const decimalOdds = oddsMatch
-      ? parseFloat(oddsMatch[1]) / (oddsMatch[2] ? parseFloat(oddsMatch[2]) : 1)
-      : 5
-    const winProbability = 1 / (decimalOdds + 1)
+      const oddsMatch = h.horse.morningLineOdds.match(/(\d+(?:\.\d+)?)[/-](\d+(?:\.\d+)?)?/);
+      const decimalOdds = oddsMatch
+        ? parseFloat(oddsMatch[1]) / (oddsMatch[2] ? parseFloat(oddsMatch[2]) : 1)
+        : 5;
+      const winProbability = 1 / (decimalOdds + 1);
 
-    const sorted = [...raceData.horses].sort((a, b) => b.score.total - a.score.total)
-    const nextHorse = sorted[idx + 1]
-    const scoreGapToNext = nextHorse ? h.score.total - nextHorse.score.total : 0
+      const sorted = [...raceData.horses].sort((a, b) => b.score.total - a.score.total);
+      const nextHorse = sorted[idx + 1];
+      const scoreGapToNext = nextHorse ? h.score.total - nextHorse.score.total : 0;
 
-    return {
-      programNumber: h.horse.programNumber,
-      horseName: h.horse.horseName,
-      score: h.score.total,
-      morningLineOdds: h.horse.morningLineOdds,
-      decimalOdds,
-      winProbability,
-      tier,
-      isSingleCandidate: h.score.total >= 180 && scoreGapToNext >= 15,
-      scoreGapToNext,
-    }
-  }).sort((a, b) => b.score - a.score)
+      return {
+        programNumber: h.horse.programNumber,
+        horseName: h.horse.horseName,
+        score: h.score.total,
+        morningLineOdds: h.horse.morningLineOdds,
+        decimalOdds,
+        winProbability,
+        tier,
+        isSingleCandidate: h.score.total >= 180 && scoreGapToNext >= 15,
+        scoreGapToNext,
+      };
+    })
+    .sort((a, b) => b.score - a.score);
 
-  const strength = classifyRaceStrength(horses)
-  const standout = findStandoutHorse(horses)
+  const strength = classifyRaceStrength(horses);
+  const standout = findStandoutHorse(horses);
 
   return {
     raceNumber: raceData.raceNumber,
@@ -154,7 +171,7 @@ function convertToMultiRaceData(raceData: RaceData): MultiRaceRaceData {
     hasStandout: !!standout,
     standoutHorse: standout,
     isCancelled: false,
-  }
+  };
 }
 
 // ============================================================================
@@ -171,87 +188,87 @@ export function MultiRaceBuilderModal({
   budget,
   onAddToBetSlip,
 }: MultiRaceBuilderModalProps) {
-  const config = getBetConfig(betType)
+  const config = getBetConfig(betType);
 
   // Convert races to MultiRaceRaceData format
   const multiRaceData = useMemo(() => {
-    return races.slice(0, config.racesRequired).map(convertToMultiRaceData)
-  }, [races, config.racesRequired])
+    return races.slice(0, config.racesRequired).map(convertToMultiRaceData);
+  }, [races, config.racesRequired]);
 
   // Initialize builder state
   const [state, setState] = useState(() =>
     createBuilderState(betType, startingRace, multiRaceData, budget, trackCode)
-  )
+  );
 
   // Current leg being viewed
-  const [currentLeg, setCurrentLeg] = useState(0)
+  const [currentLeg, setCurrentLeg] = useState(0);
 
   // Suggestions
-  const suggestions = useMemo(() =>
-    generateAllSuggestions(state, multiRaceData),
+  const suggestions = useMemo(
+    () => generateAllSuggestions(state, multiRaceData),
     [state, multiRaceData]
-  )
+  );
 
   // Probability and payout calculations
   const probability = useMemo(() => {
-    if (!state.liveCost?.isValid) return 0
-    return calculateTicketProbability(multiRaceData, state.selections)
-  }, [state.liveCost, state.selections, multiRaceData])
+    if (!state.liveCost?.isValid) return 0;
+    return calculateTicketProbability(multiRaceData, state.selections);
+  }, [state.liveCost, state.selections, multiRaceData]);
 
   const payoutRange = useMemo(() => {
-    if (!state.liveCost?.isValid) return { min: 0, max: 0, likely: 0 }
-    return estimatePayoutRange(betType, state.liveCost, probability)
-  }, [betType, state.liveCost, probability])
+    if (!state.liveCost?.isValid) return { min: 0, max: 0, likely: 0 };
+    return estimatePayoutRange(betType, state.liveCost, probability);
+  }, [betType, state.liveCost, probability]);
 
   const expectedValue = useMemo(() => {
-    if (!state.liveCost?.isValid) return 0
-    return calculateExpectedValue(probability, payoutRange.likely, state.liveCost.total)
-  }, [probability, payoutRange.likely, state.liveCost])
+    if (!state.liveCost?.isValid) return 0;
+    return calculateExpectedValue(probability, payoutRange.likely, state.liveCost.total);
+  }, [probability, payoutRange.likely, state.liveCost]);
 
   // Validation
-  const validation = useMemo(() => validateBuilderState(state), [state])
+  const validation = useMemo(() => validateBuilderState(state), [state]);
 
   // Reset when modal opens
   useEffect(() => {
     if (isOpen) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing external state when modal opens
-      setState(createBuilderState(betType, startingRace, multiRaceData, budget, trackCode))
-      setCurrentLeg(0)
+      setState(createBuilderState(betType, startingRace, multiRaceData, budget, trackCode));
+      setCurrentLeg(0);
     }
-  }, [isOpen, betType, startingRace, multiRaceData, budget, trackCode])
+  }, [isOpen, betType, startingRace, multiRaceData, budget, trackCode]);
 
   // Handlers
   const handleHorseToggle = useCallback((legNumber: number, programNumber: number) => {
-    setState(prev => toggleHorseInLeg(prev, legNumber, programNumber))
-  }, [])
+    setState((prev) => toggleHorseInLeg(prev, legNumber, programNumber));
+  }, []);
 
   const handleToggleAll = useCallback((legNumber: number) => {
-    setState(prev => toggleAllForLeg(prev, legNumber))
-  }, [])
+    setState((prev) => toggleAllForLeg(prev, legNumber));
+  }, []);
 
   const handleBaseBetChange = useCallback((newBaseBet: number) => {
-    setState(prev => updateBaseBet(prev, newBaseBet))
-  }, [])
+    setState((prev) => updateBaseBet(prev, newBaseBet));
+  }, []);
 
   const handleStrategyChange = useCallback((newStrategy: MultiRaceStrategy) => {
-    setState(prev => updateStrategy(prev, newStrategy))
-  }, [])
+    setState((prev) => updateStrategy(prev, newStrategy));
+  }, []);
 
   const handleApplySuggestion = useCallback((suggestion: LegSuggestion) => {
-    setState(prev => applySuggestion(prev, suggestion))
-  }, [])
+    setState((prev) => applySuggestion(prev, suggestion));
+  }, []);
 
   const handleApplyAllSuggestions = useCallback(() => {
-    setState(prev => applyAllSuggestions(prev, multiRaceData))
-  }, [multiRaceData])
+    setState((prev) => applyAllSuggestions(prev, multiRaceData));
+  }, [multiRaceData]);
 
   const handleAutoOptimize = useCallback(() => {
-    setState(prev => autoOptimizeForBudget(prev, multiRaceData))
-  }, [multiRaceData])
+    setState((prev) => autoOptimizeForBudget(prev, multiRaceData));
+  }, [multiRaceData]);
 
   const handleAddToBetSlip = useCallback(() => {
-    const ticket = buildTicketFromState(state, multiRaceData)
-    if (!ticket) return
+    const ticket = buildTicketFromState(state, multiRaceData);
+    if (!ticket) return;
 
     const result: MultiRaceTicketResult = {
       id: ticket.id,
@@ -268,23 +285,23 @@ export function MultiRaceBuilderModal({
       },
       expectedValue: ticket.expectedValue,
       windowInstruction: ticket.windowInstruction,
-      raceInstructions: ticket.selections.map(s => ({
+      raceInstructions: ticket.selections.map((s) => ({
         raceNumber: s.raceNumber,
         horses: s.selections,
       })),
       hasCarryover: !!state.carryover,
       carryoverAmount: state.carryover?.carryoverAmount,
-    }
+    };
 
-    onAddToBetSlip(result)
-    onClose()
-  }, [state, multiRaceData, config.displayName, onAddToBetSlip, onClose])
+    onAddToBetSlip(result);
+    onClose();
+  }, [state, multiRaceData, config.displayName, onAddToBetSlip, onClose]);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
-  const currentRace = multiRaceData[currentLeg]
-  const currentSelection = state.selections[currentLeg]
-  const currentSuggestion = suggestions[currentLeg]
+  const currentRace = multiRaceData[currentLeg];
+  const currentSelection = state.selections[currentLeg];
+  const currentSuggestion = suggestions[currentLeg];
 
   return (
     <>
@@ -327,7 +344,10 @@ export function MultiRaceBuilderModal({
                 borderColor: getCarryoverBadgeColor(state.carryover.valueClass).border,
               }}
             >
-              <span className="material-icons" style={{ color: getCarryoverBadgeColor(state.carryover.valueClass).text }}>
+              <span
+                className="material-icons"
+                style={{ color: getCarryoverBadgeColor(state.carryover.valueClass).text }}
+              >
                 {state.carryover.isMandatory ? 'priority_high' : 'trending_up'}
               </span>
               <div className="multirace-carryover-info">
@@ -335,7 +355,9 @@ export function MultiRaceBuilderModal({
                   ${formatCarryoverAmount(state.carryover.carryoverAmount)} Carryover
                 </span>
                 <span className="multirace-carryover-text">
-                  {state.carryover.isMandatory ? 'MANDATORY PAYOUT' : state.carryover.recommendation}
+                  {state.carryover.isMandatory
+                    ? 'MANDATORY PAYOUT'
+                    : state.carryover.recommendation}
                 </span>
               </div>
             </div>
@@ -345,7 +367,7 @@ export function MultiRaceBuilderModal({
           <div className="multirace-strategy-section">
             <label className="multirace-section-label">Strategy</label>
             <div className="multirace-strategy-buttons">
-              {STRATEGY_OPTIONS.map(opt => (
+              {STRATEGY_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
                   className={`multirace-strategy-btn ${state.strategy === opt.value ? 'active' : ''}`}
@@ -361,9 +383,9 @@ export function MultiRaceBuilderModal({
           {/* Race Tabs */}
           <div className="multirace-race-tabs">
             {state.selections.map((sel, idx) => {
-              const race = multiRaceData[idx]
-              const strengthColor = RACE_STRENGTH_COLORS[race?.strength || 'weak']
-              const hasSelections = sel.selections.length > 0
+              const race = multiRaceData[idx];
+              const strengthColor = RACE_STRENGTH_COLORS[race?.strength || 'weak'];
+              const hasSelections = sel.selections.length > 0;
 
               return (
                 <button
@@ -376,13 +398,15 @@ export function MultiRaceBuilderModal({
                     className="multirace-race-tab-strength"
                     style={{ backgroundColor: strengthColor.bg, color: strengthColor.text }}
                   >
-                    <span className="material-icons" style={{ fontSize: 12 }}>{strengthColor.icon}</span>
+                    <span className="material-icons" style={{ fontSize: 12 }}>
+                      {strengthColor.icon}
+                    </span>
                   </span>
                   {hasSelections && (
                     <span className="multirace-race-tab-count">{sel.selections.length}</span>
                   )}
                 </button>
-              )
+              );
             })}
           </div>
 
@@ -434,15 +458,17 @@ export function MultiRaceBuilderModal({
 
                 {/* Horse Selection Grid */}
                 <div className="multirace-horses-grid">
-                  {currentRace.horses.map(horse => {
-                    const isSelected = currentSelection.selections.includes(horse.programNumber)
-                    const tierColor = TIER_COLORS[horse.tier]
+                  {currentRace.horses.map((horse) => {
+                    const isSelected = currentSelection.selections.includes(horse.programNumber);
+                    const tierColor = TIER_COLORS[horse.tier];
 
                     return (
                       <button
                         key={horse.programNumber}
                         className={`multirace-horse-card ${isSelected ? 'selected' : ''}`}
-                        onClick={() => handleHorseToggle(currentSelection.legNumber, horse.programNumber)}
+                        onClick={() =>
+                          handleHorseToggle(currentSelection.legNumber, horse.programNumber)
+                        }
                         style={{
                           borderColor: isSelected ? tierColor.border : undefined,
                           backgroundColor: isSelected ? tierColor.bg : undefined,
@@ -455,16 +481,15 @@ export function MultiRaceBuilderModal({
                         <div className="multirace-horse-name">{horse.horseName}</div>
                         <div className="multirace-horse-footer">
                           <span className="multirace-horse-odds">{horse.morningLineOdds}</span>
-                          <span
-                            className="multirace-horse-tier"
-                            style={{ color: tierColor.text }}
-                          >
+                          <span className="multirace-horse-tier" style={{ color: tierColor.text }}>
                             T{horse.tier}
                           </span>
                         </div>
                         {horse.isSingleCandidate && (
                           <span className="multirace-horse-single-badge">
-                            <span className="material-icons" style={{ fontSize: 12 }}>verified</span>
+                            <span className="material-icons" style={{ fontSize: 12 }}>
+                              verified
+                            </span>
                             Single
                           </span>
                         )}
@@ -472,7 +497,7 @@ export function MultiRaceBuilderModal({
                           <span className="material-icons multirace-horse-check">check_circle</span>
                         )}
                       </button>
-                    )
+                    );
                   })}
                 </div>
               </>
@@ -495,7 +520,7 @@ export function MultiRaceBuilderModal({
           <div className="multirace-basebet-section">
             <label className="multirace-section-label">Base Bet</label>
             <div className="multirace-basebet-buttons">
-              {config.baseBetOptions.map(amount => (
+              {config.baseBetOptions.map((amount) => (
                 <button
                   key={amount}
                   className={`multirace-basebet-btn ${state.baseBet === amount ? 'active' : ''}`}
@@ -516,7 +541,9 @@ export function MultiRaceBuilderModal({
               </div>
               <div className="multirace-preview-summary">
                 <span className="multirace-preview-spread">{state.liveCost.spreadNotation}</span>
-                <span className="multirace-preview-combos">{state.liveCost.combinations} combos</span>
+                <span className="multirace-preview-combos">
+                  {state.liveCost.combinations} combos
+                </span>
               </div>
               <div className="multirace-preview-stats">
                 <div className="multirace-preview-stat">
@@ -599,7 +626,7 @@ export function MultiRaceBuilderModal({
         </div>
       </motion.div>
     </>
-  )
+  );
 }
 
-export default MultiRaceBuilderModal
+export default MultiRaceBuilderModal;

@@ -13,26 +13,26 @@
  * - Pick 6: 4 × 3 × 3 × 2 × 2 × 3 × $0.50 = $432
  */
 
-import { validateNumber } from '../sanitization'
+import { validateNumber } from '../sanitization';
 import {
   type MultiRaceBetType,
   type MultiRaceCost,
   type RaceSelection,
   getBetConfig,
-} from './multiraceTypes'
+} from './multiraceTypes';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
 /** Maximum practical cost for a single ticket */
-export const MAX_TICKET_COST = 10000
+export const MAX_TICKET_COST = 10000;
 
 /** Maximum selections per race (to prevent runaway costs) */
-export const MAX_SELECTIONS_PER_RACE = 12
+export const MAX_SELECTIONS_PER_RACE = 12;
 
 /** Minimum selections per race */
-export const MIN_SELECTIONS_PER_RACE = 1
+export const MIN_SELECTIONS_PER_RACE = 1;
 
 // ============================================================================
 // VALIDATION UTILITIES
@@ -41,37 +41,33 @@ export const MIN_SELECTIONS_PER_RACE = 1
 /**
  * Validate and sanitize selections for a race
  */
-function sanitizeSelections(
-  selections: number[],
-  fieldSize: number
-): number[] {
-  if (!Array.isArray(selections)) return []
+function sanitizeSelections(selections: number[], fieldSize: number): number[] {
+  if (!Array.isArray(selections)) return [];
 
-  return [...new Set(
-    selections
-      .filter(s =>
-        typeof s === 'number' &&
-        Number.isFinite(s) &&
-        Number.isInteger(s) &&
-        s >= 1 &&
-        s <= fieldSize
+  return [
+    ...new Set(
+      selections.filter(
+        (s) =>
+          typeof s === 'number' &&
+          Number.isFinite(s) &&
+          Number.isInteger(s) &&
+          s >= 1 &&
+          s <= fieldSize
       )
-  )].sort((a, b) => a - b)
+    ),
+  ].sort((a, b) => a - b);
 }
 
 /**
  * Validate base bet amount
  */
-function validateBaseBet(
-  amount: number,
-  betType: MultiRaceBetType
-): number {
-  const config = getBetConfig(betType)
+function validateBaseBet(amount: number, betType: MultiRaceBetType): number {
+  const config = getBetConfig(betType);
   const validated = validateNumber(amount, config.defaultBaseBet, {
     min: config.minBaseBet,
     max: 100,
-  })
-  return Math.round(validated * 100) / 100
+  });
+  return Math.round(validated * 100) / 100;
 }
 
 /**
@@ -93,7 +89,7 @@ function createErrorResult(
     breakdown: error,
     isValid: false,
     error,
-  }
+  };
 }
 
 // ============================================================================
@@ -107,10 +103,10 @@ function createErrorResult(
  * @returns Total number of combinations
  */
 export function calculateCombinations(selectionsPerRace: number[]): number {
-  if (selectionsPerRace.length === 0) return 0
-  if (selectionsPerRace.some(s => s <= 0)) return 0
+  if (selectionsPerRace.length === 0) return 0;
+  if (selectionsPerRace.some((s) => s <= 0)) return 0;
 
-  return selectionsPerRace.reduce((product, count) => product * count, 1)
+  return selectionsPerRace.reduce((product, count) => product * count, 1);
 }
 
 /**
@@ -120,19 +116,16 @@ export function calculateCombinations(selectionsPerRace: number[]): number {
  * @param baseBet - Base bet amount per combination
  * @returns Total cost
  */
-export function calculateBasicCost(
-  selectionsPerRace: number[],
-  baseBet: number
-): number {
-  const combinations = calculateCombinations(selectionsPerRace)
-  return Math.round(combinations * baseBet * 100) / 100
+export function calculateBasicCost(selectionsPerRace: number[], baseBet: number): number {
+  const combinations = calculateCombinations(selectionsPerRace);
+  return Math.round(combinations * baseBet * 100) / 100;
 }
 
 /**
  * Generate spread notation (e.g., "2-3-2-1")
  */
 export function generateSpreadNotation(selectionsPerRace: number[]): string {
-  return selectionsPerRace.join('-')
+  return selectionsPerRace.join('-');
 }
 
 /**
@@ -142,13 +135,13 @@ export function generateSpreadNotation(selectionsPerRace: number[]): string {
  * @returns MultiRaceCost result
  */
 export function calculateMultiRaceCost(config: {
-  betType: MultiRaceBetType
-  selections: RaceSelection[]
-  baseBet: number
+  betType: MultiRaceBetType;
+  selections: RaceSelection[];
+  baseBet: number;
 }): MultiRaceCost {
-  const { betType, selections, baseBet } = config
-  const betConfig = getBetConfig(betType)
-  const validatedBaseBet = validateBaseBet(baseBet, betType)
+  const { betType, selections, baseBet } = config;
+  const betConfig = getBetConfig(betType);
+  const validatedBaseBet = validateBaseBet(baseBet, betType);
 
   // Validate number of races
   if (selections.length !== betConfig.racesRequired) {
@@ -156,39 +149,39 @@ export function calculateMultiRaceCost(config: {
       betType,
       validatedBaseBet,
       `${betConfig.displayName} requires exactly ${betConfig.racesRequired} races, got ${selections.length}`
-    )
+    );
   }
 
   // Validate each race has at least one selection
-  const selectionsPerRace: number[] = []
+  const selectionsPerRace: number[] = [];
   for (let i = 0; i < selections.length; i++) {
-    const leg = selections[i]
+    const leg = selections[i];
 
     if (leg.isAllSelected) {
-      selectionsPerRace.push(leg.fieldSize)
+      selectionsPerRace.push(leg.fieldSize);
     } else {
-      const sanitized = sanitizeSelections(leg.selections, leg.fieldSize)
+      const sanitized = sanitizeSelections(leg.selections, leg.fieldSize);
       if (sanitized.length < MIN_SELECTIONS_PER_RACE) {
         return createErrorResult(
           betType,
           validatedBaseBet,
           `Race ${leg.raceNumber} (leg ${i + 1}) requires at least ${MIN_SELECTIONS_PER_RACE} selection`
-        )
+        );
       }
       if (sanitized.length > MAX_SELECTIONS_PER_RACE) {
         return createErrorResult(
           betType,
           validatedBaseBet,
           `Race ${leg.raceNumber} (leg ${i + 1}) exceeds maximum ${MAX_SELECTIONS_PER_RACE} selections`
-        )
+        );
       }
-      selectionsPerRace.push(sanitized.length)
+      selectionsPerRace.push(sanitized.length);
     }
   }
 
   // Calculate combinations and cost
-  const combinations = calculateCombinations(selectionsPerRace)
-  const total = calculateBasicCost(selectionsPerRace, validatedBaseBet)
+  const combinations = calculateCombinations(selectionsPerRace);
+  const total = calculateBasicCost(selectionsPerRace, validatedBaseBet);
 
   // Check for excessive cost
   if (total > MAX_TICKET_COST) {
@@ -196,11 +189,11 @@ export function calculateMultiRaceCost(config: {
       betType,
       validatedBaseBet,
       `Ticket cost $${total.toFixed(2)} exceeds maximum $${MAX_TICKET_COST}`
-    )
+    );
   }
 
-  const spreadNotation = generateSpreadNotation(selectionsPerRace)
-  const breakdown = `${spreadNotation} × $${validatedBaseBet.toFixed(2)} = ${combinations} combos × $${validatedBaseBet.toFixed(2)} = $${total.toFixed(2)}`
+  const spreadNotation = generateSpreadNotation(selectionsPerRace);
+  const breakdown = `${spreadNotation} × $${validatedBaseBet.toFixed(2)} = ${combinations} combos × $${validatedBaseBet.toFixed(2)} = $${total.toFixed(2)}`;
 
   return {
     total,
@@ -212,7 +205,7 @@ export function calculateMultiRaceCost(config: {
     spreadNotation,
     breakdown,
     isValid: true,
-  }
+  };
 }
 
 // ============================================================================
@@ -227,16 +220,20 @@ export function calculateDailyDoubleCost(
   race2Selections: number,
   baseBet: number = 2
 ): MultiRaceCost {
-  const validatedBaseBet = validateBaseBet(baseBet, 'daily_double')
-  const selectionsPerRace = [race1Selections, race2Selections]
+  const validatedBaseBet = validateBaseBet(baseBet, 'daily_double');
+  const selectionsPerRace = [race1Selections, race2Selections];
 
   if (race1Selections < 1 || race2Selections < 1) {
-    return createErrorResult('daily_double', validatedBaseBet, 'Each race requires at least 1 selection')
+    return createErrorResult(
+      'daily_double',
+      validatedBaseBet,
+      'Each race requires at least 1 selection'
+    );
   }
 
-  const combinations = calculateCombinations(selectionsPerRace)
-  const total = calculateBasicCost(selectionsPerRace, validatedBaseBet)
-  const spreadNotation = generateSpreadNotation(selectionsPerRace)
+  const combinations = calculateCombinations(selectionsPerRace);
+  const total = calculateBasicCost(selectionsPerRace, validatedBaseBet);
+  const spreadNotation = generateSpreadNotation(selectionsPerRace);
 
   return {
     total,
@@ -248,7 +245,7 @@ export function calculateDailyDoubleCost(
     spreadNotation,
     breakdown: `${race1Selections} × ${race2Selections} × $${validatedBaseBet.toFixed(2)} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 /**
@@ -260,16 +257,16 @@ export function calculatePick3Cost(
   race3: number,
   baseBet: number = 1
 ): MultiRaceCost {
-  const validatedBaseBet = validateBaseBet(baseBet, 'pick_3')
-  const selectionsPerRace = [race1, race2, race3]
+  const validatedBaseBet = validateBaseBet(baseBet, 'pick_3');
+  const selectionsPerRace = [race1, race2, race3];
 
-  if (selectionsPerRace.some(s => s < 1)) {
-    return createErrorResult('pick_3', validatedBaseBet, 'Each race requires at least 1 selection')
+  if (selectionsPerRace.some((s) => s < 1)) {
+    return createErrorResult('pick_3', validatedBaseBet, 'Each race requires at least 1 selection');
   }
 
-  const combinations = calculateCombinations(selectionsPerRace)
-  const total = calculateBasicCost(selectionsPerRace, validatedBaseBet)
-  const spreadNotation = generateSpreadNotation(selectionsPerRace)
+  const combinations = calculateCombinations(selectionsPerRace);
+  const total = calculateBasicCost(selectionsPerRace, validatedBaseBet);
+  const spreadNotation = generateSpreadNotation(selectionsPerRace);
 
   return {
     total,
@@ -281,7 +278,7 @@ export function calculatePick3Cost(
     spreadNotation,
     breakdown: `${race1} × ${race2} × ${race3} × $${validatedBaseBet.toFixed(2)} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 /**
@@ -291,15 +288,15 @@ export function calculatePick4Cost(
   selectionsPerRace: [number, number, number, number],
   baseBet: number = 0.5
 ): MultiRaceCost {
-  const validatedBaseBet = validateBaseBet(baseBet, 'pick_4')
+  const validatedBaseBet = validateBaseBet(baseBet, 'pick_4');
 
-  if (selectionsPerRace.some(s => s < 1)) {
-    return createErrorResult('pick_4', validatedBaseBet, 'Each race requires at least 1 selection')
+  if (selectionsPerRace.some((s) => s < 1)) {
+    return createErrorResult('pick_4', validatedBaseBet, 'Each race requires at least 1 selection');
   }
 
-  const combinations = calculateCombinations(selectionsPerRace)
-  const total = calculateBasicCost(selectionsPerRace, validatedBaseBet)
-  const spreadNotation = generateSpreadNotation(selectionsPerRace)
+  const combinations = calculateCombinations(selectionsPerRace);
+  const total = calculateBasicCost(selectionsPerRace, validatedBaseBet);
+  const spreadNotation = generateSpreadNotation(selectionsPerRace);
 
   return {
     total,
@@ -311,7 +308,7 @@ export function calculatePick4Cost(
     spreadNotation,
     breakdown: `${spreadNotation} × $${validatedBaseBet.toFixed(2)} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 /**
@@ -321,15 +318,15 @@ export function calculatePick5Cost(
   selectionsPerRace: [number, number, number, number, number],
   baseBet: number = 0.5
 ): MultiRaceCost {
-  const validatedBaseBet = validateBaseBet(baseBet, 'pick_5')
+  const validatedBaseBet = validateBaseBet(baseBet, 'pick_5');
 
-  if (selectionsPerRace.some(s => s < 1)) {
-    return createErrorResult('pick_5', validatedBaseBet, 'Each race requires at least 1 selection')
+  if (selectionsPerRace.some((s) => s < 1)) {
+    return createErrorResult('pick_5', validatedBaseBet, 'Each race requires at least 1 selection');
   }
 
-  const combinations = calculateCombinations(selectionsPerRace)
-  const total = calculateBasicCost(selectionsPerRace, validatedBaseBet)
-  const spreadNotation = generateSpreadNotation(selectionsPerRace)
+  const combinations = calculateCombinations(selectionsPerRace);
+  const total = calculateBasicCost(selectionsPerRace, validatedBaseBet);
+  const spreadNotation = generateSpreadNotation(selectionsPerRace);
 
   return {
     total,
@@ -341,7 +338,7 @@ export function calculatePick5Cost(
     spreadNotation,
     breakdown: `${spreadNotation} × $${validatedBaseBet.toFixed(2)} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 /**
@@ -351,15 +348,15 @@ export function calculatePick6Cost(
   selectionsPerRace: [number, number, number, number, number, number],
   baseBet: number = 0.5
 ): MultiRaceCost {
-  const validatedBaseBet = validateBaseBet(baseBet, 'pick_6')
+  const validatedBaseBet = validateBaseBet(baseBet, 'pick_6');
 
-  if (selectionsPerRace.some(s => s < 1)) {
-    return createErrorResult('pick_6', validatedBaseBet, 'Each race requires at least 1 selection')
+  if (selectionsPerRace.some((s) => s < 1)) {
+    return createErrorResult('pick_6', validatedBaseBet, 'Each race requires at least 1 selection');
   }
 
-  const combinations = calculateCombinations(selectionsPerRace)
-  const total = calculateBasicCost(selectionsPerRace, validatedBaseBet)
-  const spreadNotation = generateSpreadNotation(selectionsPerRace)
+  const combinations = calculateCombinations(selectionsPerRace);
+  const total = calculateBasicCost(selectionsPerRace, validatedBaseBet);
+  const spreadNotation = generateSpreadNotation(selectionsPerRace);
 
   return {
     total,
@@ -371,7 +368,7 @@ export function calculatePick6Cost(
     spreadNotation,
     breakdown: `${spreadNotation} × $${validatedBaseBet.toFixed(2)} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 // ============================================================================
@@ -388,28 +385,28 @@ export function calculatePick6Cost(
  * @returns Cost with and without "All" comparison
  */
 export function calculateWithAllOption(config: {
-  betType: MultiRaceBetType
-  currentSelections: number[]
-  fieldSizes: number[]
-  allLegs: number[]  // Leg indices (0-based) where "All" is used
-  baseBet: number
+  betType: MultiRaceBetType;
+  currentSelections: number[];
+  fieldSizes: number[];
+  allLegs: number[]; // Leg indices (0-based) where "All" is used
+  baseBet: number;
 }): {
-  withAll: MultiRaceCost
-  withoutAll: MultiRaceCost | null
-  costDifference: number
-  allAddsCombinations: number
+  withAll: MultiRaceCost;
+  withoutAll: MultiRaceCost | null;
+  costDifference: number;
+  allAddsCombinations: number;
 } {
-  const { betType, currentSelections, fieldSizes, allLegs, baseBet } = config
-  const betConfig = getBetConfig(betType)
-  const validatedBaseBet = validateBaseBet(baseBet, betType)
+  const { betType, currentSelections, fieldSizes, allLegs, baseBet } = config;
+  const betConfig = getBetConfig(betType);
+  const validatedBaseBet = validateBaseBet(baseBet, betType);
 
   // Calculate with "All" substituted
   const selectionsWithAll = currentSelections.map((sel, idx) =>
     allLegs.includes(idx) ? fieldSizes[idx] : sel
-  )
+  );
 
-  const withAllCombos = calculateCombinations(selectionsWithAll)
-  const withAllCost = calculateBasicCost(selectionsWithAll, validatedBaseBet)
+  const withAllCombos = calculateCombinations(selectionsWithAll);
+  const withAllCost = calculateBasicCost(selectionsWithAll, validatedBaseBet);
 
   const withAll: MultiRaceCost = {
     total: withAllCost,
@@ -421,13 +418,13 @@ export function calculateWithAllOption(config: {
     spreadNotation: generateSpreadNotation(selectionsWithAll),
     breakdown: `Using "All" in ${allLegs.length} leg(s): ${generateSpreadNotation(selectionsWithAll)} × $${validatedBaseBet.toFixed(2)} = $${withAllCost.toFixed(2)}`,
     isValid: withAllCombos > 0 && selectionsWithAll.length === betConfig.racesRequired,
-  }
+  };
 
   // Calculate without All for comparison
-  let withoutAll: MultiRaceCost | null = null
-  if (currentSelections.every(s => s > 0)) {
-    const withoutCombos = calculateCombinations(currentSelections)
-    const withoutCost = calculateBasicCost(currentSelections, validatedBaseBet)
+  let withoutAll: MultiRaceCost | null = null;
+  if (currentSelections.every((s) => s > 0)) {
+    const withoutCombos = calculateCombinations(currentSelections);
+    const withoutCost = calculateBasicCost(currentSelections, validatedBaseBet);
 
     withoutAll = {
       total: withoutCost,
@@ -439,7 +436,7 @@ export function calculateWithAllOption(config: {
       spreadNotation: generateSpreadNotation(currentSelections),
       breakdown: `Without "All": ${generateSpreadNotation(currentSelections)} × $${validatedBaseBet.toFixed(2)} = $${withoutCost.toFixed(2)}`,
       isValid: true,
-    }
+    };
   }
 
   return {
@@ -447,7 +444,7 @@ export function calculateWithAllOption(config: {
     withoutAll,
     costDifference: withoutAll ? withAllCost - withoutAll.total : withAllCost,
     allAddsCombinations: withoutAll ? withAllCombos - withoutAll.combinations : withAllCombos,
-  }
+  };
 }
 
 // ============================================================================
@@ -462,26 +459,26 @@ export function findOptimalBaseBet(
   selectionsPerRace: number[],
   budget: number
 ): { baseBet: number; cost: number; fits: boolean } {
-  const config = getBetConfig(betType)
-  const combinations = calculateCombinations(selectionsPerRace)
+  const config = getBetConfig(betType);
+  const combinations = calculateCombinations(selectionsPerRace);
 
   if (combinations === 0) {
-    return { baseBet: config.defaultBaseBet, cost: 0, fits: false }
+    return { baseBet: config.defaultBaseBet, cost: 0, fits: false };
   }
 
   // Try each base bet option from highest to lowest
-  const options = [...config.baseBetOptions].sort((a, b) => b - a)
+  const options = [...config.baseBetOptions].sort((a, b) => b - a);
 
   for (const bet of options) {
-    const cost = calculateBasicCost(selectionsPerRace, bet)
+    const cost = calculateBasicCost(selectionsPerRace, bet);
     if (cost <= budget) {
-      return { baseBet: bet, cost, fits: true }
+      return { baseBet: bet, cost, fits: true };
     }
   }
 
   // Nothing fits, return minimum with actual cost
-  const minCost = calculateBasicCost(selectionsPerRace, config.minBaseBet)
-  return { baseBet: config.minBaseBet, cost: minCost, fits: false }
+  const minCost = calculateBasicCost(selectionsPerRace, config.minBaseBet);
+  return { baseBet: config.minBaseBet, cost: minCost, fits: false };
 }
 
 /**
@@ -494,24 +491,24 @@ export function findMaxSelectionsForBudget(
   budget: number,
   baseBet?: number
 ): { selectionsPerRace: number[]; cost: number; fits: boolean } {
-  const config = getBetConfig(betType)
-  const bet = baseBet ?? config.minBaseBet
+  const config = getBetConfig(betType);
+  const bet = baseBet ?? config.minBaseBet;
 
   // Start with 1 selection per race and increase
-  const currentSelections = new Array(raceCount).fill(1)
-  let lastValidSelections = [...currentSelections]
-  let lastValidCost = calculateBasicCost(currentSelections, bet)
+  const currentSelections = new Array(raceCount).fill(1);
+  let lastValidSelections = [...currentSelections];
+  let lastValidCost = calculateBasicCost(currentSelections, bet);
 
   // Iteratively increase selections
   for (let targetPerRace = 2; targetPerRace <= MAX_SELECTIONS_PER_RACE; targetPerRace++) {
-    const testSelections = new Array(raceCount).fill(targetPerRace)
-    const cost = calculateBasicCost(testSelections, bet)
+    const testSelections = new Array(raceCount).fill(targetPerRace);
+    const cost = calculateBasicCost(testSelections, bet);
 
     if (cost <= budget) {
-      lastValidSelections = testSelections
-      lastValidCost = cost
+      lastValidSelections = testSelections;
+      lastValidCost = cost;
     } else {
-      break
+      break;
     }
   }
 
@@ -519,7 +516,7 @@ export function findMaxSelectionsForBudget(
     selectionsPerRace: lastValidSelections,
     cost: lastValidCost,
     fits: lastValidCost <= budget,
-  }
+  };
 }
 
 // ============================================================================
@@ -534,30 +531,30 @@ export function compareSpreads(
   spreads: number[][],
   baseBet: number
 ): Array<{
-  spread: number[]
-  notation: string
-  combinations: number
-  cost: number
-  isValid: boolean
+  spread: number[];
+  notation: string;
+  combinations: number;
+  cost: number;
+  isValid: boolean;
 }> {
-  const config = getBetConfig(betType)
-  const validatedBaseBet = validateBaseBet(baseBet, betType)
+  const config = getBetConfig(betType);
+  const validatedBaseBet = validateBaseBet(baseBet, betType);
 
   return spreads
-    .filter(spread => spread.length === config.racesRequired)
-    .map(spread => {
-      const combinations = calculateCombinations(spread)
-      const cost = calculateBasicCost(spread, validatedBaseBet)
+    .filter((spread) => spread.length === config.racesRequired)
+    .map((spread) => {
+      const combinations = calculateCombinations(spread);
+      const cost = calculateBasicCost(spread, validatedBaseBet);
 
       return {
         spread,
         notation: generateSpreadNotation(spread),
         combinations,
         cost,
-        isValid: spread.every(s => s >= 1),
-      }
+        isValid: spread.every((s) => s >= 1),
+      };
     })
-    .sort((a, b) => a.cost - b.cost)
+    .sort((a, b) => a.cost - b.cost);
 }
 
 /**
@@ -569,22 +566,18 @@ export function generateWindowInstruction(
   selections: Array<{ raceNumber: number; horses: number[] }>,
   baseBet: number
 ): string {
-  const config = getBetConfig(betType)
-  const validatedBaseBet = validateBaseBet(baseBet, betType)
+  const config = getBetConfig(betType);
+  const validatedBaseBet = validateBaseBet(baseBet, betType);
 
-  const endRace = startRace + config.racesRequired - 1
-  const betName = config.displayName.toUpperCase()
+  const endRace = startRace + config.racesRequired - 1;
+  const betName = config.displayName.toUpperCase();
 
-  const parts = [
-    `$${validatedBaseBet.toFixed(2)} ${betName}, Races ${startRace}-${endRace}`,
-  ]
+  const parts = [`$${validatedBaseBet.toFixed(2)} ${betName}, Races ${startRace}-${endRace}`];
 
   for (const sel of selections) {
-    const horsesStr = sel.horses.length === 1
-      ? sel.horses[0].toString()
-      : sel.horses.join(', ')
-    parts.push(`Race ${sel.raceNumber}: ${horsesStr}`)
+    const horsesStr = sel.horses.length === 1 ? sel.horses[0].toString() : sel.horses.join(', ');
+    parts.push(`Race ${sel.raceNumber}: ${horsesStr}`);
   }
 
-  return parts.join('\n')
+  return parts.join('\n');
 }

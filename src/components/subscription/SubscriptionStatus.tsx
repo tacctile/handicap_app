@@ -5,10 +5,10 @@
  * Shows plan, billing info, and cancel/reactivate actions.
  */
 
-import { useState, useCallback } from 'react'
-import { useSubscription } from '../../hooks/useSubscription'
-import { formatSubscriptionStatus, getStatusColor } from '../../services/payments/types'
-import { logger } from '../../services/logging'
+import { useState, useCallback } from 'react';
+import { useSubscription } from '../../hooks/useSubscription';
+import { formatSubscriptionStatus, getStatusColor } from '../../services/payments/types';
+import { logger } from '../../services/logging';
 
 // ============================================================================
 // TYPES
@@ -16,11 +16,11 @@ import { logger } from '../../services/logging'
 
 export interface SubscriptionStatusProps {
   /** Optional callback after subscription is cancelled */
-  onCancel?: () => void
+  onCancel?: () => void;
   /** Optional callback after subscription is reactivated */
-  onReactivate?: () => void
+  onReactivate?: () => void;
   /** Show in compact card format */
-  compact?: boolean
+  compact?: boolean;
 }
 
 // ============================================================================
@@ -280,7 +280,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#6E6E70',
     margin: 0,
   },
-}
+};
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -291,7 +291,7 @@ function formatDate(date: Date): string {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-  })
+  });
 }
 
 // ============================================================================
@@ -325,67 +325,67 @@ export function SubscriptionStatus({
     cancel,
     resume,
     clearError,
-  } = useSubscription()
+  } = useSubscription();
 
-  const [showCancelModal, setShowCancelModal] = useState(false)
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleCancelClick = useCallback(() => {
-    setShowCancelModal(true)
-  }, [])
+    setShowCancelModal(true);
+  }, []);
 
   const handleCancelConfirm = useCallback(async () => {
-    setIsProcessing(true)
-    clearError()
+    setIsProcessing(true);
+    clearError();
 
     try {
       logger.logInfo('Cancelling subscription', {
         component: 'SubscriptionStatus',
         subscriptionId: subscription?.id,
-      })
+      });
 
-      await cancel()
+      await cancel();
 
       logger.logInfo('Subscription cancelled successfully', {
         component: 'SubscriptionStatus',
-      })
+      });
 
-      setShowCancelModal(false)
-      onCancel?.()
+      setShowCancelModal(false);
+      onCancel?.();
     } catch (err) {
       logger.logError(err instanceof Error ? err : new Error('Failed to cancel'), {
         component: 'SubscriptionStatus',
-      })
+      });
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }, [cancel, clearError, subscription, onCancel])
+  }, [cancel, clearError, subscription, onCancel]);
 
   const handleReactivate = useCallback(async () => {
-    setIsProcessing(true)
-    clearError()
+    setIsProcessing(true);
+    clearError();
 
     try {
       logger.logInfo('Reactivating subscription', {
         component: 'SubscriptionStatus',
         subscriptionId: subscription?.id,
-      })
+      });
 
-      await resume()
+      await resume();
 
       logger.logInfo('Subscription reactivated successfully', {
         component: 'SubscriptionStatus',
-      })
+      });
 
-      onReactivate?.()
+      onReactivate?.();
     } catch (err) {
       logger.logError(err instanceof Error ? err : new Error('Failed to reactivate'), {
         component: 'SubscriptionStatus',
-      })
+      });
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }, [resume, clearError, subscription, onReactivate])
+  }, [resume, clearError, subscription, onReactivate]);
 
   // Loading state
   if (isLoading && !subscription) {
@@ -395,7 +395,7 @@ export function SubscriptionStatus({
           <p style={styles.loadingText}>Loading subscription details...</p>
         </div>
       </div>
-    )
+    );
   }
 
   // No subscription
@@ -406,11 +406,11 @@ export function SubscriptionStatus({
           <p style={styles.noSubscriptionText}>No active subscription</p>
         </div>
       </div>
-    )
+    );
   }
 
-  const statusColor = getStatusColor(status)
-  const statusText = formatSubscriptionStatus(status)
+  const statusColor = getStatusColor(status);
+  const statusText = formatSubscriptionStatus(status);
 
   return (
     <>
@@ -446,8 +446,8 @@ export function SubscriptionStatus({
               warning
             </span>
             <p style={styles.warningText}>
-              Your subscription will end on {formatDate(subscription.currentPeriodEnd)}.
-              You'll continue to have access until then.
+              Your subscription will end on {formatDate(subscription.currentPeriodEnd)}. You'll
+              continue to have access until then.
             </p>
           </div>
         )}
@@ -549,7 +549,7 @@ export function SubscriptionStatus({
           style={styles.modal}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
-              setShowCancelModal(false)
+              setShowCancelModal(false);
             }
           }}
         >
@@ -562,8 +562,8 @@ export function SubscriptionStatus({
             </h3>
             <p style={styles.modalText}>
               Are you sure you want to cancel? Your subscription will remain active until{' '}
-              <strong>{formatDate(subscription.currentPeriodEnd)}</strong>, and you won't
-              be charged again. No refunds are provided for the current billing period.
+              <strong>{formatDate(subscription.currentPeriodEnd)}</strong>, and you won't be charged
+              again. No refunds are provided for the current billing period.
             </p>
             <div style={styles.modalActions}>
               <button
@@ -590,7 +590,7 @@ export function SubscriptionStatus({
         </div>
       )}
     </>
-  )
+  );
 }
 
-export default SubscriptionStatus
+export default SubscriptionStatus;

@@ -5,10 +5,10 @@
  * forgot password link, and signup navigation.
  */
 
-import { useState, useCallback, type FormEvent } from 'react'
-import { useAuthContext } from '../../contexts/AuthContext'
-import { useToasts, ResponsiveToastContainer } from '../Toast'
-import type { AuthError } from '../../services/auth/types'
+import { useState, useCallback, type FormEvent } from 'react';
+import { useAuthContext } from '../../contexts/AuthContext';
+import { useToasts, ResponsiveToastContainer } from '../Toast';
+import type { AuthError } from '../../services/auth/types';
 
 // ============================================================================
 // TYPES
@@ -16,9 +16,9 @@ import type { AuthError } from '../../services/auth/types'
 
 export interface LoginFormProps {
   /** Callback when user wants to switch to signup */
-  onSwitchToSignup: () => void
+  onSwitchToSignup: () => void;
   /** Callback after successful login */
-  onSuccess?: () => void
+  onSuccess?: () => void;
 }
 
 // ============================================================================
@@ -144,7 +144,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '50%',
     animation: 'spin 0.8s linear infinite',
   },
-}
+};
 
 // ============================================================================
 // COMPONENT
@@ -162,55 +162,60 @@ const styles: Record<string, React.CSSProperties> = {
  * ```
  */
 export function LoginForm({ onSwitchToSignup, onSuccess }: LoginFormProps) {
-  const { signIn, isLoading, error, clearError } = useAuthContext()
-  const { toasts, addToast, dismissToast } = useToasts()
+  const { signIn, isLoading, error, clearError } = useAuthContext();
+  const { toasts, addToast, dismissToast } = useToasts();
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [focusedField, setFocusedField] = useState<string | null>(null)
-  const [hoveredButton, setHoveredButton] = useState<string | null>(null)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
 
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
-      e.preventDefault()
-      clearError()
+      e.preventDefault();
+      clearError();
 
       if (!email.trim() || !password) {
-        return
+        return;
       }
 
       try {
-        await signIn(email.trim(), password)
-        onSuccess?.()
+        await signIn(email.trim(), password);
+        onSuccess?.();
       } catch (err) {
         // Error is already in context state
-        const authError = err as AuthError
+        const authError = err as AuthError;
         if (authError?.message) {
           // Error already displayed via error state
         }
       }
     },
     [email, password, signIn, clearError, onSuccess]
-  )
+  );
 
   const handleForgotPassword = useCallback(() => {
-    addToast('Password reset coming soon', 'info', { duration: 3000 })
-  }, [addToast])
+    addToast('Password reset coming soon', 'info', { duration: 3000 });
+  }, [addToast]);
 
   const getInputStyle = (fieldName: string, hasError: boolean = false) => ({
     ...styles.input,
     ...(focusedField === fieldName ? styles.inputFocus : {}),
     ...(hasError && focusedField !== fieldName ? styles.inputError : {}),
-  })
+  });
 
-  const getButtonStyle = (buttonName: string, baseStyle: React.CSSProperties, hoverStyle: React.CSSProperties, disabled?: boolean) => ({
+  const getButtonStyle = (
+    buttonName: string,
+    baseStyle: React.CSSProperties,
+    hoverStyle: React.CSSProperties,
+    disabled?: boolean
+  ) => ({
     ...baseStyle,
     ...(hoveredButton === buttonName && !disabled ? hoverStyle : {}),
     ...(disabled ? styles.submitButtonDisabled : {}),
-  })
+  });
 
-  const isFormValid = email.trim().length > 0 && password.length > 0
-  const isSubmitDisabled = isLoading || !isFormValid
+  const isFormValid = email.trim().length > 0 && password.length > 0;
+  const isSubmitDisabled = isLoading || !isFormValid;
 
   return (
     <>
@@ -280,7 +285,12 @@ export function LoginForm({ onSwitchToSignup, onSuccess }: LoginFormProps) {
           disabled={isSubmitDisabled}
           onMouseEnter={() => setHoveredButton('submit')}
           onMouseLeave={() => setHoveredButton(null)}
-          style={getButtonStyle('submit', styles.submitButton, styles.submitButtonHover, isSubmitDisabled)}
+          style={getButtonStyle(
+            'submit',
+            styles.submitButton,
+            styles.submitButtonHover,
+            isSubmitDisabled
+          )}
         >
           {isLoading ? (
             <>
@@ -324,7 +334,7 @@ export function LoginForm({ onSwitchToSignup, onSuccess }: LoginFormProps) {
         `}
       </style>
     </>
-  )
+  );
 }
 
-export default LoginForm
+export default LoginForm;

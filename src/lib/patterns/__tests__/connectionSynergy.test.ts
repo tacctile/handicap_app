@@ -8,15 +8,23 @@
  * - Bonus point calculations
  */
 
-import { describe, it, expect } from 'vitest'
-import type { HorseEntry, PastPerformance, SpeedFigures, RunningLine, Equipment, Medication, Breeding } from '../../../types/drf'
+import { describe, it, expect } from 'vitest';
+import type {
+  HorseEntry,
+  PastPerformance,
+  SpeedFigures,
+  RunningLine,
+  Equipment,
+  Medication,
+  Breeding,
+} from '../../../types/drf';
 import {
   buildPartnershipDatabase,
   getPartnershipStats,
   calculateSynergyBonus,
   getConnectionSynergy,
   hasSignificantPartnership,
-} from '../connectionSynergy'
+} from '../connectionSynergy';
 
 // ============================================================================
 // TEST FIXTURES
@@ -30,7 +38,7 @@ function createMockSpeedFigures(beyer: number | null = 78): SpeedFigures {
     trackVariant: null,
     dirtVariant: null,
     turfVariant: null,
-  }
+  };
 }
 
 function createMockRunningLine(overrides: Partial<RunningLine> = {}): RunningLine {
@@ -47,7 +55,7 @@ function createMockRunningLine(overrides: Partial<RunningLine> = {}): RunningLin
     finish: 3,
     finishLengths: 2,
     ...overrides,
-  }
+  };
 }
 
 function createMockEquipment(): Equipment {
@@ -65,7 +73,7 @@ function createMockEquipment(): Equipment {
     firstTimeEquipment: [],
     equipmentChanges: [],
     raw: '',
-  }
+  };
 }
 
 function createMockMedication(): Medication {
@@ -76,7 +84,7 @@ function createMockMedication(): Medication {
     bute: false,
     other: [],
     raw: '',
-  }
+  };
 }
 
 function createMockBreeding(): Breeding {
@@ -88,7 +96,7 @@ function createMockBreeding(): Breeding {
     breeder: 'Test Breeder',
     whereBred: 'KY',
     studFee: null,
-  }
+  };
 }
 
 function createMockPastPerformance(overrides: Partial<PastPerformance> = {}): PastPerformance {
@@ -128,7 +136,7 @@ function createMockPastPerformance(overrides: Partial<PastPerformance> = {}): Pa
     equipment: '',
     medication: '',
     ...overrides,
-  }
+  };
 }
 
 function createMockHorse(overrides: Partial<HorseEntry> = {}): HorseEntry {
@@ -201,7 +209,7 @@ function createMockHorse(overrides: Partial<HorseEntry> = {}): HorseEntry {
     coupledWith: [],
     rawLine: '',
     ...overrides,
-  }
+  };
 }
 
 // ============================================================================
@@ -219,12 +227,12 @@ describe('buildPartnershipDatabase', () => {
           createMockPastPerformance({ jockey: 'Jones, M.', finishPosition: 1 }),
         ],
       }),
-    ]
+    ];
 
-    const db = buildPartnershipDatabase(horses)
+    const db = buildPartnershipDatabase(horses);
 
-    expect(db.partnerships.size).toBeGreaterThan(0)
-  })
+    expect(db.partnerships.size).toBeGreaterThan(0);
+  });
 
   it('should track partnership statistics correctly', () => {
     const horses = [
@@ -236,16 +244,16 @@ describe('buildPartnershipDatabase', () => {
           createMockPastPerformance({ jockey: 'Test Jockey', finishPosition: 1 }),
         ],
       }),
-    ]
+    ];
 
-    const db = buildPartnershipDatabase(horses)
-    const stats = getPartnershipStats('Test Trainer', 'Test Jockey', db)
+    const db = buildPartnershipDatabase(horses);
+    const stats = getPartnershipStats('Test Trainer', 'Test Jockey', db);
 
-    expect(stats).toBeDefined()
-    expect(stats!.wins).toBe(2)
-    expect(stats!.starts).toBe(3)
-    expect(stats!.winRate).toBeCloseTo(66.67, 1)
-  })
+    expect(stats).toBeDefined();
+    expect(stats!.wins).toBe(2);
+    expect(stats!.starts).toBe(3);
+    expect(stats!.winRate).toBeCloseTo(66.67, 1);
+  });
 
   it('should build lookup maps by trainer and jockey', () => {
     const horses = [
@@ -256,35 +264,51 @@ describe('buildPartnershipDatabase', () => {
           createMockPastPerformance({ jockey: 'Jockey 2', finishPosition: 2 }),
         ],
       }),
-    ]
+    ];
 
-    const db = buildPartnershipDatabase(horses)
+    const db = buildPartnershipDatabase(horses);
 
-    expect(db.byTrainer.has('TRAINER A')).toBe(true)
-    expect(db.byJockey.has('JOCKEY 1')).toBe(true)
-    expect(db.byJockey.has('JOCKEY 2')).toBe(true)
-  })
+    expect(db.byTrainer.has('TRAINER A')).toBe(true);
+    expect(db.byJockey.has('JOCKEY 1')).toBe(true);
+    expect(db.byJockey.has('JOCKEY 2')).toBe(true);
+  });
 
   it('should track recent wins for hot combo detection', () => {
     const horses = [
       createMockHorse({
         trainerName: 'Hot Trainer',
         pastPerformances: [
-          createMockPastPerformance({ jockey: 'Hot Jockey', finishPosition: 1, date: '2024-01-15' }),
-          createMockPastPerformance({ jockey: 'Hot Jockey', finishPosition: 1, date: '2024-01-10' }),
-          createMockPastPerformance({ jockey: 'Hot Jockey', finishPosition: 1, date: '2024-01-05' }),
-          createMockPastPerformance({ jockey: 'Hot Jockey', finishPosition: 4, date: '2024-01-01' }),
+          createMockPastPerformance({
+            jockey: 'Hot Jockey',
+            finishPosition: 1,
+            date: '2024-01-15',
+          }),
+          createMockPastPerformance({
+            jockey: 'Hot Jockey',
+            finishPosition: 1,
+            date: '2024-01-10',
+          }),
+          createMockPastPerformance({
+            jockey: 'Hot Jockey',
+            finishPosition: 1,
+            date: '2024-01-05',
+          }),
+          createMockPastPerformance({
+            jockey: 'Hot Jockey',
+            finishPosition: 4,
+            date: '2024-01-01',
+          }),
         ],
       }),
-    ]
+    ];
 
-    const db = buildPartnershipDatabase(horses)
-    const stats = getPartnershipStats('Hot Trainer', 'Hot Jockey', db)
+    const db = buildPartnershipDatabase(horses);
+    const stats = getPartnershipStats('Hot Trainer', 'Hot Jockey', db);
 
-    expect(stats!.recentWins).toBe(3)
-    expect(stats!.recentStarts).toBe(4)
-  })
-})
+    expect(stats!.recentWins).toBe(3);
+    expect(stats!.recentStarts).toBe(4);
+  });
+});
 
 // ============================================================================
 // TESTS: Synergy Bonus Calculation
@@ -292,11 +316,11 @@ describe('buildPartnershipDatabase', () => {
 
 describe('calculateSynergyBonus', () => {
   it('should return no bonus for null stats', () => {
-    const result = calculateSynergyBonus(null)
+    const result = calculateSynergyBonus(null);
 
-    expect(result.bonus).toBe(0)
-    expect(result.level).toBe('none')
-  })
+    expect(result.bonus).toBe(0);
+    expect(result.level).toBe('none');
+  });
 
   it('should award elite bonus for 25%+ win rate with 20+ starts', () => {
     const stats = {
@@ -313,14 +337,14 @@ describe('calculateSynergyBonus', () => {
       recentWinRate: 20,
       firstStartDate: '2023-01-01',
       lastStartDate: '2024-01-15',
-    }
+    };
 
-    const result = calculateSynergyBonus(stats)
+    const result = calculateSynergyBonus(stats);
 
-    expect(result.bonus).toBe(10) // Elite bonus
-    expect(result.level).toBe('elite')
-    expect(result.evidence.length).toBeGreaterThan(0)
-  })
+    expect(result.bonus).toBe(10); // Elite bonus
+    expect(result.level).toBe('elite');
+    expect(result.evidence.length).toBeGreaterThan(0);
+  });
 
   it('should award strong bonus for 20-24% win rate with 15+ starts', () => {
     const stats = {
@@ -337,13 +361,13 @@ describe('calculateSynergyBonus', () => {
       recentWinRate: 20,
       firstStartDate: '2023-06-01',
       lastStartDate: '2024-01-15',
-    }
+    };
 
-    const result = calculateSynergyBonus(stats)
+    const result = calculateSynergyBonus(stats);
 
-    expect(result.bonus).toBe(6) // Strong bonus
-    expect(result.level).toBe('strong')
-  })
+    expect(result.bonus).toBe(6); // Strong bonus
+    expect(result.level).toBe('strong');
+  });
 
   it('should detect hot combo with 2+ recent wins', () => {
     const stats = {
@@ -360,13 +384,13 @@ describe('calculateSynergyBonus', () => {
       recentWinRate: 60,
       firstStartDate: '2023-10-01',
       lastStartDate: '2024-01-15',
-    }
+    };
 
-    const result = calculateSynergyBonus(stats)
+    const result = calculateSynergyBonus(stats);
 
-    expect(result.isHotCombo).toBe(true)
-    expect(result.evidence.some(e => e.includes('Hot combo'))).toBe(true)
-  })
+    expect(result.isHotCombo).toBe(true);
+    expect(result.evidence.some((e) => e.includes('Hot combo'))).toBe(true);
+  });
 
   it('should award developing bonus for 10+ starts', () => {
     const stats = {
@@ -383,13 +407,13 @@ describe('calculateSynergyBonus', () => {
       recentWinRate: 0,
       firstStartDate: '2023-11-01',
       lastStartDate: '2024-01-15',
-    }
+    };
 
-    const result = calculateSynergyBonus(stats)
+    const result = calculateSynergyBonus(stats);
 
-    expect(result.bonus).toBe(3) // Developing bonus
-    expect(result.level).toBe('developing')
-  })
+    expect(result.bonus).toBe(3); // Developing bonus
+    expect(result.level).toBe('developing');
+  });
 
   it('should return new level for fewer than 10 starts (without hot combo)', () => {
     const stats = {
@@ -406,14 +430,14 @@ describe('calculateSynergyBonus', () => {
       recentWinRate: 20,
       firstStartDate: '2024-01-01',
       lastStartDate: '2024-01-15',
-    }
+    };
 
-    const result = calculateSynergyBonus(stats)
+    const result = calculateSynergyBonus(stats);
 
-    expect(result.level).toBe('new')
-    expect(result.bonus).toBe(0)
-  })
-})
+    expect(result.level).toBe('new');
+    expect(result.bonus).toBe(0);
+  });
+});
 
 // ============================================================================
 // TESTS: Connection Synergy Integration
@@ -425,21 +449,23 @@ describe('getConnectionSynergy', () => {
       createMockHorse({
         trainerName: 'Synergy Trainer',
         jockeyName: 'Synergy Jockey',
-        pastPerformances: Array(25).fill(null).map((_, i) =>
-          createMockPastPerformance({
-            jockey: 'Synergy Jockey',
-            finishPosition: i < 6 ? 1 : 4, // 24% win rate
-            date: `2024-01-${String(i + 1).padStart(2, '0')}`,
-          })
-        ),
+        pastPerformances: Array(25)
+          .fill(null)
+          .map((_, i) =>
+            createMockPastPerformance({
+              jockey: 'Synergy Jockey',
+              finishPosition: i < 6 ? 1 : 4, // 24% win rate
+              date: `2024-01-${String(i + 1).padStart(2, '0')}`,
+            })
+          ),
       }),
-    ]
+    ];
 
-    const result = getConnectionSynergy(horses[0], horses)
+    const result = getConnectionSynergy(horses[0], horses);
 
-    expect(result.partnership).toBeDefined()
-    expect(result.bonus).toBeGreaterThan(0)
-  })
+    expect(result.partnership).toBeDefined();
+    expect(result.bonus).toBeGreaterThan(0);
+  });
 
   it('should return no synergy for horse with different jockey in current race', () => {
     const horse = createMockHorse({
@@ -449,27 +475,27 @@ describe('getConnectionSynergy', () => {
         createMockPastPerformance({ jockey: 'Old Jockey', finishPosition: 1 }),
         createMockPastPerformance({ jockey: 'Other Jockey', finishPosition: 2 }),
       ],
-    })
+    });
 
-    const result = getConnectionSynergy(horse, [horse])
+    const result = getConnectionSynergy(horse, [horse]);
 
     // No partnership data for current trainer+jockey combo
-    expect(result.partnership).toBeNull()
-  })
+    expect(result.partnership).toBeNull();
+  });
 
   it('should handle empty past performances gracefully', () => {
     const horse = createMockHorse({
       trainerName: 'Empty Trainer',
       jockeyName: 'Empty Jockey',
       pastPerformances: [],
-    })
+    });
 
-    const result = getConnectionSynergy(horse, [horse])
+    const result = getConnectionSynergy(horse, [horse]);
 
-    expect(result.bonus).toBe(0)
-    expect(result.level).toBe('none')
-  })
-})
+    expect(result.bonus).toBe(0);
+    expect(result.level).toBe('none');
+  });
+});
 
 // ============================================================================
 // TESTS: Utility Functions
@@ -499,10 +525,10 @@ describe('hasSignificantPartnership', () => {
       evidence: [],
       isHotCombo: false,
       recentForm: '',
-    }
+    };
 
-    expect(hasSignificantPartnership(result)).toBe(true)
-  })
+    expect(hasSignificantPartnership(result)).toBe(true);
+  });
 
   it('should return false for no partnership', () => {
     const result = {
@@ -513,10 +539,10 @@ describe('hasSignificantPartnership', () => {
       evidence: [],
       isHotCombo: false,
       recentForm: '',
-    }
+    };
 
-    expect(hasSignificantPartnership(result)).toBe(false)
-  })
+    expect(hasSignificantPartnership(result)).toBe(false);
+  });
 
   it('should return true for developing partnerships even without bonus', () => {
     const result = {
@@ -541,11 +567,11 @@ describe('hasSignificantPartnership', () => {
       evidence: [],
       isHotCombo: false,
       recentForm: '',
-    }
+    };
 
-    expect(hasSignificantPartnership(result)).toBe(true)
-  })
-})
+    expect(hasSignificantPartnership(result)).toBe(true);
+  });
+});
 
 // ============================================================================
 // TESTS: Edge Cases
@@ -566,15 +592,15 @@ describe('Edge cases', () => {
           createMockPastPerformance({ jockey: 'Shared Jockey', finishPosition: 1 }),
         ],
       }),
-    ]
+    ];
 
-    const db = buildPartnershipDatabase(horses)
-    const stats = getPartnershipStats('Shared Trainer', 'Shared Jockey', db)
+    const db = buildPartnershipDatabase(horses);
+    const stats = getPartnershipStats('Shared Trainer', 'Shared Jockey', db);
 
-    expect(stats).toBeDefined()
-    expect(stats!.starts).toBe(2)
-    expect(stats!.wins).toBe(2)
-  })
+    expect(stats).toBeDefined();
+    expect(stats!.starts).toBe(2);
+    expect(stats!.wins).toBe(2);
+  });
 
   it('should handle special characters in names', () => {
     const horses = [
@@ -584,10 +610,10 @@ describe('Edge cases', () => {
           createMockPastPerformance({ jockey: 'De Sousa, S.', finishPosition: 1 }),
         ],
       }),
-    ]
+    ];
 
-    const db = buildPartnershipDatabase(horses)
+    const db = buildPartnershipDatabase(horses);
 
-    expect(db.partnerships.size).toBeGreaterThan(0)
-  })
-})
+    expect(db.partnerships.size).toBeGreaterThan(0);
+  });
+});

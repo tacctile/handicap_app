@@ -1,13 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useState, useEffect, useCallback } from 'react'
-import { DISCLAIMER_ABBREVIATED } from '../../legal'
-import { logger } from '../../services/logging'
+import { useState, useEffect, useCallback } from 'react';
+import { DISCLAIMER_ABBREVIATED } from '../../legal';
+import { logger } from '../../services/logging';
 
-const DISCLAIMER_STORAGE_KEY = 'handicap_disclaimer_acknowledged'
+const DISCLAIMER_STORAGE_KEY = 'handicap_disclaimer_acknowledged';
 
 interface DisclaimerBannerProps {
   /** Callback when user clicks "View Full" */
-  onViewFull?: () => void
+  onViewFull?: () => void;
 }
 
 /**
@@ -17,56 +17,56 @@ interface DisclaimerBannerProps {
  * Stores acknowledgment in localStorage to prevent re-display.
  */
 export function DisclaimerBanner({ onViewFull }: DisclaimerBannerProps) {
-  const [isVisible, setIsVisible] = useState(false)
-  const [isAnimatingOut, setIsAnimatingOut] = useState(false)
+  const [isVisible, setIsVisible] = useState(false);
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
 
   useEffect(() => {
     try {
-      const acknowledged = localStorage.getItem(DISCLAIMER_STORAGE_KEY)
+      const acknowledged = localStorage.getItem(DISCLAIMER_STORAGE_KEY);
       if (!acknowledged) {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- Initialization from localStorage
-        setIsVisible(true)
-        logger.logInfo('Disclaimer banner displayed', { component: 'DisclaimerBanner' })
+        setIsVisible(true);
+        logger.logInfo('Disclaimer banner displayed', { component: 'DisclaimerBanner' });
       }
     } catch (error) {
       // localStorage might be unavailable (private browsing, etc.)
       logger.logWarning('Could not access localStorage for disclaimer check', {
         component: 'DisclaimerBanner',
         error: error instanceof Error ? error.message : 'Unknown error',
-      })
+      });
       // Show banner if we can't check storage
-      setIsVisible(true)
+      setIsVisible(true);
     }
-  }, [])
+  }, []);
 
   const handleDismiss = useCallback(() => {
-    setIsAnimatingOut(true)
+    setIsAnimatingOut(true);
 
     // Store acknowledgment
     try {
-      localStorage.setItem(DISCLAIMER_STORAGE_KEY, new Date().toISOString())
-      logger.logInfo('Disclaimer acknowledged and stored', { component: 'DisclaimerBanner' })
+      localStorage.setItem(DISCLAIMER_STORAGE_KEY, new Date().toISOString());
+      logger.logInfo('Disclaimer acknowledged and stored', { component: 'DisclaimerBanner' });
     } catch (error) {
       logger.logWarning('Could not store disclaimer acknowledgment', {
         component: 'DisclaimerBanner',
         error: error instanceof Error ? error.message : 'Unknown error',
-      })
+      });
     }
 
     // Wait for animation then hide
     setTimeout(() => {
-      setIsVisible(false)
-      setIsAnimatingOut(false)
-    }, 300)
-  }, [])
+      setIsVisible(false);
+      setIsAnimatingOut(false);
+    }, 300);
+  }, []);
 
   const handleViewFull = useCallback(() => {
-    logger.logInfo('User clicked View Full Disclaimer', { component: 'DisclaimerBanner' })
-    onViewFull?.()
-  }, [onViewFull])
+    logger.logInfo('User clicked View Full Disclaimer', { component: 'DisclaimerBanner' });
+    onViewFull?.();
+  }, [onViewFull]);
 
   if (!isVisible) {
-    return null
+    return null;
   }
 
   return (
@@ -100,7 +100,7 @@ export function DisclaimerBanner({ onViewFull }: DisclaimerBannerProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 /**
@@ -108,13 +108,13 @@ export function DisclaimerBanner({ onViewFull }: DisclaimerBannerProps) {
  */
 export function clearDisclaimerAcknowledgment(): void {
   try {
-    localStorage.removeItem(DISCLAIMER_STORAGE_KEY)
-    logger.logInfo('Disclaimer acknowledgment cleared', { component: 'DisclaimerBanner' })
+    localStorage.removeItem(DISCLAIMER_STORAGE_KEY);
+    logger.logInfo('Disclaimer acknowledgment cleared', { component: 'DisclaimerBanner' });
   } catch (error) {
     logger.logWarning('Could not clear disclaimer acknowledgment', {
       component: 'DisclaimerBanner',
       error: error instanceof Error ? error.message : 'Unknown error',
-    })
+    });
   }
 }
 
@@ -123,8 +123,8 @@ export function clearDisclaimerAcknowledgment(): void {
  */
 export function isDisclaimerAcknowledged(): boolean {
   try {
-    return localStorage.getItem(DISCLAIMER_STORAGE_KEY) !== null
+    return localStorage.getItem(DISCLAIMER_STORAGE_KEY) !== null;
   } catch {
-    return false
+    return false;
   }
 }

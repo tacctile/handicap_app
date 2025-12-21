@@ -16,7 +16,7 @@ export {
   type GeneratedTierBets,
   type SpecialCategoryBets,
   type BetGeneratorResult,
-} from './betGenerator'
+} from './betGenerator';
 
 // Bet Sizing
 export {
@@ -43,7 +43,7 @@ export {
   type KellySettings,
   type KellyFraction,
   type KellyResult,
-} from './betSizing'
+} from './betSizing';
 
 // Window Instructions
 export {
@@ -64,7 +64,7 @@ export {
   type WindowInstruction,
   type BetSlipEntry,
   type FormattedBetSlip,
-} from './windowInstructions'
+} from './windowInstructions';
 
 // Bet Explanations
 export {
@@ -75,7 +75,7 @@ export {
   formatExplanationForDisplay,
   type ExplanationSection,
   type BetExplanation,
-} from './betExplanations'
+} from './betExplanations';
 
 // Re-export commonly used types from other modules
 export type {
@@ -84,7 +84,7 @@ export type {
   ClassifiedHorse,
   TierGroup,
   BettingTier,
-} from '../betting'
+} from '../betting';
 
-export type { ScoredHorse, HorseScore, ScoreBreakdown } from '../scoring'
-export type { UseBankrollReturn, BettingStyle, ComplexityMode } from '../../hooks/useBankroll'
+export type { ScoredHorse, HorseScore, ScoreBreakdown } from '../scoring';
+export type { UseBankrollReturn, BettingStyle, ComplexityMode } from '../../hooks/useBankroll';

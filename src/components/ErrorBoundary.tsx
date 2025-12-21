@@ -1,79 +1,83 @@
-import { Component } from 'react'
-import type { ReactNode } from 'react'
-import { logger } from '../services/logging'
-import type { ErrorSeverity } from '../services/logging'
+import { Component } from 'react';
+import type { ReactNode } from 'react';
+import { logger } from '../services/logging';
+import type { ErrorSeverity } from '../services/logging';
 import {
   isAppError,
   isDRFParseError,
   isFileFormatError,
   getUserFriendlyMessage,
   getErrorSuggestion,
-} from '../types/errors'
+} from '../types/errors';
 
 interface ErrorBoundaryProps {
-  children: ReactNode
-  onReset?: () => void
-  fallback?: ReactNode
+  children: ReactNode;
+  onReset?: () => void;
+  fallback?: ReactNode;
   /** Component name for context in error logs */
-  componentName?: string
+  componentName?: string;
   /** Additional context to include in error logs */
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>;
 }
 
 interface ErrorBoundaryState {
-  hasError: boolean
-  error: Error | null
-  errorInfo: string | null
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: string | null;
 }
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
-    super(props)
+    super(props);
     this.state = {
       hasError: false,
       error: null,
       errorInfo: null,
-    }
+    };
   }
 
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return {
       hasError: true,
       error,
-    }
+    };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Determine severity based on error type
-    let severity: ErrorSeverity = 'error'
+    let severity: ErrorSeverity = 'error';
     if (isAppError(error)) {
-      severity = error.recoverable ? 'warning' : 'error'
+      severity = error.recoverable ? 'warning' : 'error';
     }
 
     // Capture the error with full context using the enhanced logging service
     // This includes breadcrumbs automatically from the logger's internal state
-    const capturedError = logger.captureError(error, {
-      component: this.props.componentName || 'ErrorBoundary',
-      componentStack: errorInfo.componentStack || undefined,
-      errorCode: isAppError(error) ? error.code : undefined,
-      errorCategory: isAppError(error) ? error.category : undefined,
-      recoverable: isAppError(error) ? error.recoverable : true,
-      url: typeof window !== 'undefined' ? window.location.href : undefined,
-      action: 'component_render',
-      additionalData: {
-        ...this.props.context,
-        errorBoundaryName: this.props.componentName,
-        reactErrorInfo: {
-          componentStack: errorInfo.componentStack,
+    const capturedError = logger.captureError(
+      error,
+      {
+        component: this.props.componentName || 'ErrorBoundary',
+        componentStack: errorInfo.componentStack || undefined,
+        errorCode: isAppError(error) ? error.code : undefined,
+        errorCategory: isAppError(error) ? error.category : undefined,
+        recoverable: isAppError(error) ? error.recoverable : true,
+        url: typeof window !== 'undefined' ? window.location.href : undefined,
+        action: 'component_render',
+        additionalData: {
+          ...this.props.context,
+          errorBoundaryName: this.props.componentName,
+          reactErrorInfo: {
+            componentStack: errorInfo.componentStack,
+          },
         },
       },
-    }, severity)
+      severity
+    );
 
     // Also log to the standard error log for backwards compatibility
     logger.logError(error, {
       component: this.props.componentName || 'ErrorBoundary',
       componentStack: errorInfo.componentStack || undefined,
-    })
+    });
 
     // Log that we captured the error (useful for debugging)
     logger.logInfo(`Error captured by ErrorBoundary: ${capturedError.message}`, {
@@ -82,11 +86,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         breadcrumbCount: capturedError.breadcrumbs.length,
         severity: capturedError.severity,
       },
-    })
+    });
 
     this.setState({
       errorInfo: errorInfo.componentStack || null,
-    })
+    });
   }
 
   handleReset = () => {
@@ -94,66 +98,64 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       hasError: false,
       error: null,
       errorInfo: null,
-    })
-    this.props.onReset?.()
-  }
+    });
+    this.props.onReset?.();
+  };
 
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
-        return this.props.fallback
+        return this.props.fallback;
       }
 
-      return <ErrorFallback
-        error={this.state.error}
-        onReset={this.handleReset}
-      />
+      return <ErrorFallback error={this.state.error} onReset={this.handleReset} />;
     }
 
-    return this.props.children
+    return this.props.children;
   }
 }
 
 interface ErrorFallbackProps {
-  error: Error | null
-  onReset: () => void
+  error: Error | null;
+  onReset: () => void;
 }
 
 function ErrorFallback({ error, onReset }: ErrorFallbackProps) {
   // Use the error utilities to get proper messages based on error type
-  let title = 'Something went wrong'
-  let description = 'An unexpected error occurred while processing your request.'
-  let suggestion = 'Please try again or contact support if the problem persists.'
+  let title = 'Something went wrong';
+  let description = 'An unexpected error occurred while processing your request.';
+  let suggestion = 'Please try again or contact support if the problem persists.';
 
   if (error) {
     // Check for our custom error types first
     if (isAppError(error)) {
-      title = error.category
-      description = getUserFriendlyMessage(error)
-      suggestion = getErrorSuggestion(error)
+      title = error.category;
+      description = getUserFriendlyMessage(error);
+      suggestion = getErrorSuggestion(error);
     } else if (isDRFParseError(error)) {
-      title = 'File Parsing Error'
-      description = error.getUserMessage()
-      suggestion = error.getSuggestion()
+      title = 'File Parsing Error';
+      description = error.getUserMessage();
+      suggestion = error.getSuggestion();
     } else if (isFileFormatError(error)) {
-      title = 'File Format Error'
-      description = error.getUserMessage()
-      suggestion = error.getSuggestion()
+      title = 'File Format Error';
+      description = error.getUserMessage();
+      suggestion = error.getSuggestion();
     } else {
       // Fallback to message pattern matching for generic errors
-      const msg = error.message?.toLowerCase() || ''
+      const msg = error.message?.toLowerCase() || '';
       if (msg.includes('parse') || msg.includes('drf')) {
-        title = 'File Parsing Error'
-        description = 'We couldn\'t parse the DRF file. The file format may be incorrect or unsupported.'
-        suggestion = 'Make sure you\'re uploading a valid .drf file from Daily Racing Form.'
+        title = 'File Parsing Error';
+        description =
+          "We couldn't parse the DRF file. The file format may be incorrect or unsupported.";
+        suggestion = "Make sure you're uploading a valid .drf file from Daily Racing Form.";
       } else if (msg.includes('corrupt') || msg.includes('invalid')) {
-        title = 'Corrupted File Detected'
-        description = 'The DRF file appears to be corrupted or contains invalid data.'
-        suggestion = 'Try downloading the file again or use a different DRF file.'
+        title = 'Corrupted File Detected';
+        description = 'The DRF file appears to be corrupted or contains invalid data.';
+        suggestion = 'Try downloading the file again or use a different DRF file.';
       } else if (msg.includes('file') || msg.includes('read')) {
-        title = 'File Read Error'
-        description = 'There was a problem reading the file.'
-        suggestion = 'Make sure the file is accessible and try again.'
+        title = 'File Read Error';
+        description = 'There was a problem reading the file.';
+        suggestion = 'Make sure the file is accessible and try again.';
       }
     }
   }
@@ -182,9 +184,7 @@ function ErrorFallback({ error, onReset }: ErrorFallbackProps) {
               <span className="material-icons">code</span>
               Technical Details
             </summary>
-            <pre className="error-details-content">
-              {error.message}
-            </pre>
+            <pre className="error-details-content">{error.message}</pre>
           </details>
         )}
 
@@ -197,14 +197,14 @@ function ErrorFallback({ error, onReset }: ErrorFallbackProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // Standalone error display for non-boundary errors
 interface ErrorDisplayProps {
-  title?: string
-  message: string
-  onRetry?: () => void
+  title?: string;
+  message: string;
+  onRetry?: () => void;
 }
 
 export function ErrorDisplay({ title = 'Error', message, onRetry }: ErrorDisplayProps) {
@@ -223,17 +223,17 @@ export function ErrorDisplay({ title = 'Error', message, onRetry }: ErrorDisplay
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // Data validation error display
 interface DataValidationWarningProps {
-  warnings: string[]
-  onDismiss?: () => void
+  warnings: string[];
+  onDismiss?: () => void;
 }
 
 export function DataValidationWarning({ warnings, onDismiss }: DataValidationWarningProps) {
-  if (warnings.length === 0) return null
+  if (warnings.length === 0) return null;
 
   return (
     <div className="validation-warning">
@@ -257,5 +257,5 @@ export function DataValidationWarning({ warnings, onDismiss }: DataValidationWar
         Continuing with available data. Some analysis may be incomplete.
       </p>
     </div>
-  )
+  );
 }

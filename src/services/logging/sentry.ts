@@ -28,29 +28,29 @@ import type {
   CapturedError,
   Breadcrumb,
   ErrorSeverity,
-} from './types'
+} from './types';
 
 // ============================================================================
 // SENTRY CONFIGURATION
 // ============================================================================
 
 interface SentryConfig {
-  dsn: string
-  environment: string
-  release?: string
-  enabled: boolean
-  debug: boolean
-  sampleRate: number
-  tracesSampleRate: number
+  dsn: string;
+  environment: string;
+  release?: string;
+  enabled: boolean;
+  debug: boolean;
+  sampleRate: number;
+  tracesSampleRate: number;
 }
 
-let sentryConfig: SentryConfig | null = null
+let sentryConfig: SentryConfig | null = null;
 
 /**
  * Check if running in development mode
  */
 function isDevelopment(): boolean {
-  return import.meta.env.MODE === 'development'
+  return import.meta.env.MODE === 'development';
 }
 
 /**
@@ -59,10 +59,7 @@ function isDevelopment(): boolean {
  * Currently a stub that logs initialization info to console.
  * When Sentry package is installed, this will call Sentry.init()
  */
-export function initSentry(
-  dsn: string,
-  options: Partial<Omit<SentryConfig, 'dsn'>> = {}
-): void {
+export function initSentry(dsn: string, options: Partial<Omit<SentryConfig, 'dsn'>> = {}): void {
   sentryConfig = {
     dsn,
     environment: options.environment ?? import.meta.env.MODE ?? 'development',
@@ -71,16 +68,21 @@ export function initSentry(
     debug: options.debug ?? isDevelopment(),
     sampleRate: options.sampleRate ?? 1.0,
     tracesSampleRate: options.tracesSampleRate ?? 0.1,
-  }
+  };
 
   if (isDevelopment()) {
-    console.log('%c[SENTRY STUB]', 'color: #362d59; font-weight: bold', 'Sentry would initialize with config:', sentryConfig)
-    console.log('%c[SENTRY STUB]', 'color: #362d59; font-weight: bold', 'To enable Sentry:')
-    console.log('  1. npm install @sentry/react')
-    console.log('  2. Update initSentry() in sentry.ts')
-    console.log('  3. Replace stub methods with real Sentry calls')
+    console.log(
+      '%c[SENTRY STUB]',
+      'color: #362d59; font-weight: bold',
+      'Sentry would initialize with config:',
+      sentryConfig
+    );
+    console.log('%c[SENTRY STUB]', 'color: #362d59; font-weight: bold', 'To enable Sentry:');
+    console.log('  1. npm install @sentry/react');
+    console.log('  2. Update initSentry() in sentry.ts');
+    console.log('  3. Replace stub methods with real Sentry calls');
   } else {
-    console.log('[SENTRY] Would initialize with DSN:', dsn.substring(0, 20) + '...')
+    console.log('[SENTRY] Would initialize with DSN:', dsn.substring(0, 20) + '...');
   }
 }
 
@@ -88,14 +90,14 @@ export function initSentry(
  * Check if Sentry is initialized
  */
 export function isSentryInitialized(): boolean {
-  return sentryConfig !== null && sentryConfig.enabled
+  return sentryConfig !== null && sentryConfig.enabled;
 }
 
 /**
  * Get Sentry configuration (for debugging)
  */
 export function getSentryConfig(): SentryConfig | null {
-  return sentryConfig ? { ...sentryConfig } : null
+  return sentryConfig ? { ...sentryConfig } : null;
 }
 
 // ============================================================================
@@ -111,8 +113,8 @@ function toSentryLevel(severity: ErrorSeverity): string {
     error: 'error',
     warning: 'warning',
     info: 'info',
-  }
-  return mapping[severity]
+  };
+  return mapping[severity];
 }
 
 /**
@@ -136,7 +138,7 @@ function formatForSentry(captured: CapturedError): Record<string, unknown> {
       componentStack: captured.context.componentStack,
     },
     breadcrumbs: captured.breadcrumbs.map(formatBreadcrumbForSentry),
-  }
+  };
 }
 
 /**
@@ -149,7 +151,7 @@ function formatBreadcrumbForSentry(crumb: Breadcrumb): Record<string, unknown> {
     timestamp: crumb.timestamp,
     data: crumb.data,
     level: 'info',
-  }
+  };
 }
 
 /**
@@ -159,14 +161,14 @@ function formatBreadcrumbForSentry(crumb: Breadcrumb): Record<string, unknown> {
  * When Sentry is installed and configured, this will send real data.
  */
 class SentryLogHandler implements LogHandler {
-  name = 'sentry'
-  private pendingEvents: CapturedError[] = []
-  private maxPendingEvents = 50
+  name = 'sentry';
+  private pendingEvents: CapturedError[] = [];
+  private maxPendingEvents = 50;
 
   handle(entry: LogEntry): void {
     // Only handle errors and warnings
     if (entry.level !== 'error' && entry.level !== 'warn') {
-      return
+      return;
     }
 
     if (isDevelopment()) {
@@ -181,9 +183,9 @@ class SentryLogHandler implements LogHandler {
           context: entry.context,
           error: entry.error,
         }
-      )
+      );
     } else {
-      console.log('[SENTRY] Would send:', entry.level, entry.message)
+      console.log('[SENTRY] Would send:', entry.level, entry.message);
     }
   }
 
@@ -195,19 +197,19 @@ class SentryLogHandler implements LogHandler {
       context: context ?? {},
       timestamp: new Date().toISOString(),
       breadcrumbs: [],
-    }
+    };
 
-    this.queueEvent(captured)
+    this.queueEvent(captured);
 
     if (isDevelopment()) {
-      console.group('%c[SENTRY STUB]', 'color: #362d59; font-weight: bold', 'Would capture error:')
-      console.log('%cError:', 'font-weight: bold', error.message)
-      console.log('%cStack:', 'font-weight: bold', error.stack)
-      console.log('%cContext:', 'font-weight: bold', context)
-      console.log('%cFormatted for Sentry:', 'font-weight: bold', formatForSentry(captured))
-      console.groupEnd()
+      console.group('%c[SENTRY STUB]', 'color: #362d59; font-weight: bold', 'Would capture error:');
+      console.log('%cError:', 'font-weight: bold', error.message);
+      console.log('%cStack:', 'font-weight: bold', error.stack);
+      console.log('%cContext:', 'font-weight: bold', context);
+      console.log('%cFormatted for Sentry:', 'font-weight: bold', formatForSentry(captured));
+      console.groupEnd();
     } else {
-      console.log('[SENTRY] Would capture error:', error.message)
+      console.log('[SENTRY] Would capture error:', error.message);
     }
   }
 
@@ -217,28 +219,28 @@ class SentryLogHandler implements LogHandler {
         '%c[SENTRY STUB]',
         'color: #362d59; font-weight: bold',
         userId ? `Would set user: ${userId}` : 'Would clear user'
-      )
+      );
     } else {
-      console.log('[SENTRY] Would set user:', userId)
+      console.log('[SENTRY] Would set user:', userId);
     }
   }
 
   async flush(): Promise<void> {
     if (this.pendingEvents.length === 0) {
-      return
+      return;
     }
 
-    const events = [...this.pendingEvents]
-    this.pendingEvents = []
+    const events = [...this.pendingEvents];
+    this.pendingEvents = [];
 
     if (isDevelopment()) {
       console.log(
         '%c[SENTRY STUB]',
         'color: #362d59; font-weight: bold',
         `Would flush ${events.length} events to Sentry`
-      )
+      );
     } else {
-      console.log('[SENTRY] Would flush', events.length, 'events')
+      console.log('[SENTRY] Would flush', events.length, 'events');
     }
 
     // In production with real Sentry, this would batch send events
@@ -246,9 +248,9 @@ class SentryLogHandler implements LogHandler {
   }
 
   private queueEvent(captured: CapturedError): void {
-    this.pendingEvents.push(captured)
+    this.pendingEvents.push(captured);
     if (this.pendingEvents.length > this.maxPendingEvents) {
-      this.pendingEvents.shift()
+      this.pendingEvents.shift();
     }
   }
 
@@ -263,18 +265,22 @@ class SentryLogHandler implements LogHandler {
       context: context ?? {},
       timestamp: new Date().toISOString(),
       breadcrumbs: [],
-    }
+    };
 
-    this.queueEvent(captured)
+    this.queueEvent(captured);
 
     if (isDevelopment()) {
-      console.group('%c[SENTRY STUB]', 'color: #362d59; font-weight: bold', `Would capture ${severity}:`)
-      console.log('%cError:', 'font-weight: bold', error.message)
-      console.log('%cSeverity:', 'font-weight: bold', severity)
-      console.log('%cFormatted:', 'font-weight: bold', formatForSentry(captured))
-      console.groupEnd()
+      console.group(
+        '%c[SENTRY STUB]',
+        'color: #362d59; font-weight: bold',
+        `Would capture ${severity}:`
+      );
+      console.log('%cError:', 'font-weight: bold', error.message);
+      console.log('%cSeverity:', 'font-weight: bold', severity);
+      console.log('%cFormatted:', 'font-weight: bold', formatForSentry(captured));
+      console.groupEnd();
     } else {
-      console.log(`[SENTRY] Would capture ${severity}:`, error.message)
+      console.log(`[SENTRY] Would capture ${severity}:`, error.message);
     }
   }
 
@@ -288,9 +294,9 @@ class SentryLogHandler implements LogHandler {
       context: context ?? {},
       timestamp: new Date().toISOString(),
       breadcrumbs: [],
-    }
+    };
 
-    this.queueEvent(captured)
+    this.queueEvent(captured);
 
     if (isDevelopment()) {
       console.log(
@@ -298,9 +304,9 @@ class SentryLogHandler implements LogHandler {
         'color: #362d59; font-weight: bold',
         `Would capture message (${severity}):`,
         message
-      )
+      );
     } else {
-      console.log(`[SENTRY] Would capture message (${severity}):`, message)
+      console.log(`[SENTRY] Would capture message (${severity}):`, message);
     }
   }
 
@@ -313,7 +319,7 @@ class SentryLogHandler implements LogHandler {
       category,
       timestamp: new Date().toISOString(),
       data,
-    }
+    };
 
     if (isDevelopment()) {
       console.log(
@@ -321,7 +327,7 @@ class SentryLogHandler implements LogHandler {
         'color: #362d59; font-weight: bold',
         `Would add breadcrumb [${category ?? 'default'}]:`,
         message
-      )
+      );
     }
 
     // In production with real Sentry:
@@ -331,7 +337,7 @@ class SentryLogHandler implements LogHandler {
     //   data,
     //   level: 'info',
     // })
-    void crumb // Satisfy TypeScript (used in real implementation)
+    void crumb; // Satisfy TypeScript (used in real implementation)
   }
 
   /**
@@ -344,7 +350,7 @@ class SentryLogHandler implements LogHandler {
         'color: #362d59; font-weight: bold',
         `Would set context "${name}":`,
         context
-      )
+      );
     }
 
     // In production with real Sentry:
@@ -361,7 +367,7 @@ class SentryLogHandler implements LogHandler {
         'color: #362d59; font-weight: bold',
         `Would set tag "${key}":`,
         value
-      )
+      );
     }
 
     // In production with real Sentry:
@@ -372,7 +378,7 @@ class SentryLogHandler implements LogHandler {
 /**
  * Singleton Sentry provider instance
  */
-export const sentryProvider = new SentryLogHandler()
+export const sentryProvider = new SentryLogHandler();
 
 // ============================================================================
 // CONVENIENCE EXPORTS
@@ -382,21 +388,21 @@ export const sentryProvider = new SentryLogHandler()
  * Quick capture error (uses singleton provider)
  */
 export function captureException(error: Error, context?: ErrorContext): void {
-  sentryProvider.captureError(error, context, 'error')
+  sentryProvider.captureError(error, context, 'error');
 }
 
 /**
  * Quick capture message (uses singleton provider)
  */
 export function captureMessage(message: string, severity: ErrorSeverity = 'info'): void {
-  sentryProvider.captureMessage(message, undefined, severity)
+  sentryProvider.captureMessage(message, undefined, severity);
 }
 
 /**
  * Quick add breadcrumb (uses singleton provider)
  */
 export function addBreadcrumb(message: string, category?: string): void {
-  sentryProvider.addBreadcrumb(message, category)
+  sentryProvider.addBreadcrumb(message, category);
 }
 
-export type { SentryConfig }
+export type { SentryConfig };

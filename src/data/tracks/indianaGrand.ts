@@ -14,7 +14,7 @@
  * NOTE: April-November racing; Indiana Derby venue; significant stakes schedule
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const indianaGrand: TrackData = {
   code: 'IND',
@@ -33,7 +33,7 @@ export const indianaGrand: TrackData = {
       // Source: Indiana Horse Racing Commission - 80 feet wide
       trackWidth: 80,
       // Source: Indiana Grand - chutes at 6f and 7f
-      chutes: [6, 7]
+      chutes: [6, 7],
     },
     turf: {
       // Source: Indiana Grand official - 7.5 furlong turf course
@@ -44,8 +44,8 @@ export const indianaGrand: TrackData = {
       turnRadius: 260,
       // Source: Indiana Horse Racing Commission
       trackWidth: 70,
-      chutes: [8, 10]
-    }
+      chutes: [8, 10],
+    },
   },
 
   postPositionBias: {
@@ -62,7 +62,8 @@ export const indianaGrand: TrackData = {
         // Sample: 700+ dirt sprints annually
         winPercentByPost: [13.2, 14.0, 13.5, 12.5, 11.5, 10.5, 9.2, 7.8, 5.5, 2.3],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Speed bias; posts 1-3 advantage in sprints; inside positions save ground on turns; rail is live'
+        biasDescription:
+          'Speed bias; posts 1-3 advantage in sprints; inside positions save ground on turns; rail is live',
       },
       {
         distance: 'route',
@@ -75,8 +76,9 @@ export const indianaGrand: TrackData = {
         // Sample: 450+ dirt routes annually
         winPercentByPost: [11.0, 12.5, 13.8, 14.5, 13.2, 11.5, 9.5, 7.8, 4.5, 1.7],
         favoredPosts: [3, 4, 5],
-        biasDescription: 'Moderate inside edge in routes; posts 3-5 optimal for Indiana Derby; stalking trips effective'
-      }
+        biasDescription:
+          'Moderate inside edge in routes; posts 3-5 optimal for Indiana Derby; stalking trips effective',
+      },
     ],
     turf: [
       {
@@ -89,7 +91,8 @@ export const indianaGrand: TrackData = {
         // Sample: 180+ turf sprints annually
         winPercentByPost: [14.2, 14.5, 13.5, 12.2, 11.0, 10.0, 9.0, 8.0, 5.5, 2.1],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Strong inside advantage in turf sprints; posts 1-3 favored; ground savings critical'
+        biasDescription:
+          'Strong inside advantage in turf sprints; posts 1-3 favored; ground savings critical',
       },
       {
         distance: 'route',
@@ -101,9 +104,10 @@ export const indianaGrand: TrackData = {
         // Sample: 220+ turf routes annually
         winPercentByPost: [13.5, 14.0, 13.8, 12.5, 11.2, 10.2, 9.2, 8.2, 5.5, 1.9],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Inside advantage in turf routes; posts 1-3 favored; firm conditions favor speed'
-      }
-    ]
+        biasDescription:
+          'Inside advantage in turf routes; posts 1-3 favored; firm conditions favor speed',
+      },
+    ],
   },
 
   speedBias: [
@@ -116,7 +120,8 @@ export const indianaGrand: TrackData = {
       // Indiana Grand Derby data shows speed success
       earlySpeedWinRate: 56,
       paceAdvantageRating: 6,
-      description: 'Notable speed bias; 56% early speed win rate; surface plays fast; Indiana Derby favors forwardly-placed horses'
+      description:
+        'Notable speed bias; 56% early speed win rate; surface plays fast; Indiana Derby favors forwardly-placed horses',
     },
     {
       surface: 'turf',
@@ -126,8 +131,9 @@ export const indianaGrand: TrackData = {
       // Bluegrass-based turf
       earlySpeedWinRate: 52,
       paceAdvantageRating: 5,
-      description: 'Slight speed bias on turf; 52% early speed success; well-maintained turf course; firm conditions favor speed'
-    }
+      description:
+        'Slight speed bias on turf; 52% early speed success; well-maintained turf course; firm conditions favor speed',
+    },
   ],
 
   surfaces: [
@@ -137,18 +143,20 @@ export const indianaGrand: TrackData = {
       // Sandy loam composition
       // Good drainage for Midwest storms
       // Modern facility with well-maintained surface
-      composition: 'Sandy loam cushion over clay base; 2.75-inch cushion depth; modern facility maintains consistent fast surface',
+      composition:
+        'Sandy loam cushion over clay base; 2.75-inch cushion depth; modern facility maintains consistent fast surface',
       playingStyle: 'speed-favoring',
-      drainage: 'good'
+      drainage: 'good',
     },
     {
       baseType: 'turf',
       // Source: Indiana Grand grounds specifications
       // Kentucky bluegrass suited for Indiana climate
-      composition: 'Kentucky bluegrass base; 7.5-furlong course; maintained for consistent play during racing season',
+      composition:
+        'Kentucky bluegrass base; 7.5-furlong course; maintained for consistent play during racing season',
       playingStyle: 'fair',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -160,7 +168,8 @@ export const indianaGrand: TrackData = {
       // Variable Midwest spring weather
       typicalCondition: 'Good to Fast; variable conditions',
       speedAdjustment: 0,
-      notes: 'Meet opens mid-April; variable spring conditions; track conditioning phase; rain common'
+      notes:
+        'Meet opens mid-April; variable spring conditions; track conditioning phase; rain common',
     },
     {
       season: 'summer',
@@ -170,7 +179,8 @@ export const indianaGrand: TrackData = {
       // Peak of racing season
       typicalCondition: 'Fast; occasionally sloppy after thunderstorms',
       speedAdjustment: 1,
-      notes: 'Indiana Derby highlight; hot humid conditions; speed bias increases; afternoon storms common'
+      notes:
+        'Indiana Derby highlight; hot humid conditions; speed bias increases; afternoon storms common',
     },
     {
       season: 'fall',
@@ -180,7 +190,8 @@ export const indianaGrand: TrackData = {
       // Meet extends through November
       typicalCondition: 'Fast to Good',
       speedAdjustment: 0,
-      notes: 'Fall stakes season; cooling temperatures; consistent conditions; meet ends late November'
+      notes:
+        'Fall stakes season; cooling temperatures; consistent conditions; meet ends late November',
     },
     {
       season: 'winter',
@@ -188,8 +199,8 @@ export const indianaGrand: TrackData = {
       // Source: Indiana Grand closed for winter
       typicalCondition: 'No Racing',
       speedAdjustment: 0,
-      notes: 'Track closed December through mid-April; Indiana winter prevents racing'
-    }
+      notes: 'Track closed December through mid-April; Indiana winter prevents racing',
+    },
   ],
 
   winningTimes: [
@@ -201,7 +212,7 @@ export const indianaGrand: TrackData = {
       surface: 'dirt',
       claimingAvg: 58.0,
       allowanceAvg: 56.8,
-      stakesAvg: 55.5
+      stakesAvg: 55.5,
     },
     {
       distance: '5.5f',
@@ -209,7 +220,7 @@ export const indianaGrand: TrackData = {
       surface: 'dirt',
       claimingAvg: 64.2,
       allowanceAvg: 63.0,
-      stakesAvg: 61.8
+      stakesAvg: 61.8,
     },
     {
       distance: '6f',
@@ -218,7 +229,7 @@ export const indianaGrand: TrackData = {
       // Track record: 1:08.00
       claimingAvg: 70.5,
       allowanceAvg: 69.2,
-      stakesAvg: 68.0
+      stakesAvg: 68.0,
     },
     {
       distance: '6.5f',
@@ -226,7 +237,7 @@ export const indianaGrand: TrackData = {
       surface: 'dirt',
       claimingAvg: 76.8,
       allowanceAvg: 75.5,
-      stakesAvg: 74.2
+      stakesAvg: 74.2,
     },
     {
       distance: '7f',
@@ -234,7 +245,7 @@ export const indianaGrand: TrackData = {
       surface: 'dirt',
       claimingAvg: 83.5,
       allowanceAvg: 82.0,
-      stakesAvg: 80.5
+      stakesAvg: 80.5,
     },
     {
       distance: '1m',
@@ -242,7 +253,7 @@ export const indianaGrand: TrackData = {
       surface: 'dirt',
       claimingAvg: 96.5,
       allowanceAvg: 95.0,
-      stakesAvg: 93.5
+      stakesAvg: 93.5,
     },
     {
       distance: '1m70y',
@@ -250,7 +261,7 @@ export const indianaGrand: TrackData = {
       surface: 'dirt',
       claimingAvg: 101.0,
       allowanceAvg: 99.5,
-      stakesAvg: 98.0
+      stakesAvg: 98.0,
     },
     {
       distance: '1 1/16m',
@@ -258,7 +269,7 @@ export const indianaGrand: TrackData = {
       surface: 'dirt',
       claimingAvg: 103.5,
       allowanceAvg: 102.0,
-      stakesAvg: 100.5
+      stakesAvg: 100.5,
     },
     {
       distance: '1 1/8m',
@@ -267,7 +278,7 @@ export const indianaGrand: TrackData = {
       // Track record: 1:47.80 - Indiana Derby distance
       claimingAvg: 110.5,
       allowanceAvg: 108.5,
-      stakesAvg: 106.5
+      stakesAvg: 106.5,
     },
     {
       distance: '1 1/4m',
@@ -275,7 +286,7 @@ export const indianaGrand: TrackData = {
       surface: 'dirt',
       claimingAvg: 124.0,
       allowanceAvg: 121.5,
-      stakesAvg: 119.0
+      stakesAvg: 119.0,
     },
     // Turf times
     {
@@ -284,7 +295,7 @@ export const indianaGrand: TrackData = {
       surface: 'turf',
       claimingAvg: 56.8,
       allowanceAvg: 55.5,
-      stakesAvg: 54.2
+      stakesAvg: 54.2,
     },
     {
       distance: '1m',
@@ -292,7 +303,7 @@ export const indianaGrand: TrackData = {
       surface: 'turf',
       claimingAvg: 95.5,
       allowanceAvg: 94.0,
-      stakesAvg: 92.5
+      stakesAvg: 92.5,
     },
     {
       distance: '1 1/16m',
@@ -300,7 +311,7 @@ export const indianaGrand: TrackData = {
       surface: 'turf',
       claimingAvg: 102.0,
       allowanceAvg: 100.5,
-      stakesAvg: 99.0
+      stakesAvg: 99.0,
     },
     {
       distance: '1 1/8m',
@@ -308,10 +319,10 @@ export const indianaGrand: TrackData = {
       surface: 'turf',
       claimingAvg: 109.0,
       allowanceAvg: 107.5,
-      stakesAvg: 106.0
-    }
+      stakesAvg: 106.0,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

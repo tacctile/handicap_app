@@ -1,2 +1,2 @@
-export { OnboardingFlow } from './OnboardingFlow'
-export { OnboardingStep } from './OnboardingStep'
+export { OnboardingFlow } from './OnboardingFlow';
+export { OnboardingStep } from './OnboardingStep';

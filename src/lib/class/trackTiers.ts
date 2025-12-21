@@ -9,7 +9,7 @@
  * Tier C: Regional tracks - lower level competition
  */
 
-import type { TrackTier, TrackTierMovement } from './classTypes'
+import type { TrackTier, TrackTierMovement } from './classTypes';
 
 // ============================================================================
 // TRACK TIER DEFINITIONS
@@ -17,15 +17,15 @@ import type { TrackTier, TrackTierMovement } from './classTypes'
 
 export interface TrackInfo {
   /** Track code (e.g., "SAR", "CD") */
-  code: string
+  code: string;
   /** Full track name */
-  name: string
+  name: string;
   /** Track tier */
-  tier: TrackTier
+  tier: TrackTier;
   /** State */
-  state: string
+  state: string;
   /** Brief notes */
-  notes?: string
+  notes?: string;
 }
 
 /**
@@ -39,12 +39,12 @@ export const TIER_A_TRACKS: TrackInfo[] = [
   { code: 'CD', name: 'Churchill Downs', tier: 'A', state: 'KY', notes: 'Kentucky Derby' },
   { code: 'KEE', name: 'Keeneland', tier: 'A', state: 'KY', notes: 'Premier meets' },
   { code: 'DMR', name: 'Del Mar', tier: 'A', state: 'CA', notes: 'Where turf meets surf' },
-  { code: 'SA', name: 'Santa Anita', tier: 'A', state: 'CA', notes: "Great Race Place" },
+  { code: 'SA', name: 'Santa Anita', tier: 'A', state: 'CA', notes: 'Great Race Place' },
   { code: 'GP', name: 'Gulfstream Park', tier: 'A', state: 'FL', notes: 'Florida Derby' },
   { code: 'OP', name: 'Oaklawn Park', tier: 'A', state: 'AR', notes: 'Arkansas Derby' },
   { code: 'PIM', name: 'Pimlico', tier: 'A', state: 'MD', notes: 'Preakness Stakes' },
   { code: 'MTH', name: 'Monmouth Park', tier: 'A', state: 'NJ', notes: 'Haskell' },
-]
+];
 
 /**
  * Tier B Tracks - Good quality racing, competitive fields
@@ -75,7 +75,7 @@ export const TIER_B_TRACKS: TrackInfo[] = [
   { code: 'TUP', name: 'Turf Paradise', tier: 'B', state: 'AZ' },
   { code: 'MVR', name: 'Mountaineer', tier: 'B', state: 'WV' },
   { code: 'GPW', name: 'Gulfstream Park West', tier: 'B', state: 'FL' },
-]
+];
 
 /**
  * Tier C Tracks - Smaller regional tracks, lower level competition
@@ -102,7 +102,7 @@ export const TIER_C_TRACKS: TrackInfo[] = [
   { code: 'ASI', name: 'Assiniboia Downs', tier: 'C', state: 'MB' },
   { code: 'CTP', name: 'Century Downs', tier: 'C', state: 'AB' },
   { code: 'WBS', name: 'Woodbine Mohawk Park', tier: 'C', state: 'ON' },
-]
+];
 
 // ============================================================================
 // TRACK LOOKUP
@@ -111,40 +111,40 @@ export const TIER_C_TRACKS: TrackInfo[] = [
 /**
  * All tracks indexed by code
  */
-const ALL_TRACKS: Map<string, TrackInfo> = new Map()
+const ALL_TRACKS: Map<string, TrackInfo> = new Map();
 
 // Populate the map
-;[...TIER_A_TRACKS, ...TIER_B_TRACKS, ...TIER_C_TRACKS].forEach(track => {
-  ALL_TRACKS.set(track.code.toUpperCase(), track)
-})
+[...TIER_A_TRACKS, ...TIER_B_TRACKS, ...TIER_C_TRACKS].forEach((track) => {
+  ALL_TRACKS.set(track.code.toUpperCase(), track);
+});
 
 /**
  * Get track tier by code
  */
 export function getTrackTier(trackCode: string): TrackTier {
-  const track = ALL_TRACKS.get(trackCode.toUpperCase())
-  return track?.tier ?? 'C' // Default to tier C for unknown tracks
+  const track = ALL_TRACKS.get(trackCode.toUpperCase());
+  return track?.tier ?? 'C'; // Default to tier C for unknown tracks
 }
 
 /**
  * Get track info by code
  */
 export function getTrackInfo(trackCode: string): TrackInfo | null {
-  return ALL_TRACKS.get(trackCode.toUpperCase()) ?? null
+  return ALL_TRACKS.get(trackCode.toUpperCase()) ?? null;
 }
 
 /**
  * Check if track is tier A (premier)
  */
 export function isTierATrack(trackCode: string): boolean {
-  return getTrackTier(trackCode) === 'A'
+  return getTrackTier(trackCode) === 'A';
 }
 
 /**
  * Check if track is tier C (regional)
  */
 export function isTierCTrack(trackCode: string): boolean {
-  return getTrackTier(trackCode) === 'C'
+  return getTrackTier(trackCode) === 'C';
 }
 
 // ============================================================================
@@ -159,46 +159,46 @@ export function analyzeTrackTierMovement(
   previousTrackCode: string,
   currentTrackCode: string
 ): TrackTierMovement | null {
-  const fromTier = getTrackTier(previousTrackCode)
-  const toTier = getTrackTier(currentTrackCode)
+  const fromTier = getTrackTier(previousTrackCode);
+  const toTier = getTrackTier(currentTrackCode);
 
   // No movement if same tier
   if (fromTier === toTier) {
-    return null
+    return null;
   }
 
   // Calculate tier movement
-  const tierValues: Record<TrackTier, number> = { A: 3, B: 2, C: 1 }
-  const tierDiff = tierValues[fromTier] - tierValues[toTier]
+  const tierValues: Record<TrackTier, number> = { A: 3, B: 2, C: 1 };
+  const tierDiff = tierValues[fromTier] - tierValues[toTier];
 
-  let description: string
-  let pointsAdjustment: number
+  let description: string;
+  let pointsAdjustment: number;
 
   if (tierDiff > 0) {
     // Dropping in tier (A→B, A→C, B→C) - favorable
     if (fromTier === 'A' && toTier === 'C') {
-      description = `Major tier drop: ${previousTrackCode} (A) → ${currentTrackCode} (C)`
-      pointsAdjustment = 8
+      description = `Major tier drop: ${previousTrackCode} (A) → ${currentTrackCode} (C)`;
+      pointsAdjustment = 8;
     } else if (fromTier === 'A' && toTier === 'B') {
-      description = `Tier drop: ${previousTrackCode} (A) → ${currentTrackCode} (B)`
-      pointsAdjustment = 4
+      description = `Tier drop: ${previousTrackCode} (A) → ${currentTrackCode} (B)`;
+      pointsAdjustment = 4;
     } else {
       // B→C
-      description = `Tier drop: ${previousTrackCode} (B) → ${currentTrackCode} (C)`
-      pointsAdjustment = 5
+      description = `Tier drop: ${previousTrackCode} (B) → ${currentTrackCode} (C)`;
+      pointsAdjustment = 5;
     }
   } else {
     // Rising in tier (C→B, C→A, B→A) - challenging
     if (fromTier === 'C' && toTier === 'A') {
-      description = `Major tier rise: ${previousTrackCode} (C) → ${currentTrackCode} (A)`
-      pointsAdjustment = -6
+      description = `Major tier rise: ${previousTrackCode} (C) → ${currentTrackCode} (A)`;
+      pointsAdjustment = -6;
     } else if (fromTier === 'B' && toTier === 'A') {
-      description = `Tier rise: ${previousTrackCode} (B) → ${currentTrackCode} (A)`
-      pointsAdjustment = -3
+      description = `Tier rise: ${previousTrackCode} (B) → ${currentTrackCode} (A)`;
+      pointsAdjustment = -3;
     } else {
       // C→B
-      description = `Tier rise: ${previousTrackCode} (C) → ${currentTrackCode} (B)`
-      pointsAdjustment = -2
+      description = `Tier rise: ${previousTrackCode} (C) → ${currentTrackCode} (B)`;
+      pointsAdjustment = -2;
     }
   }
 
@@ -209,7 +209,7 @@ export function analyzeTrackTierMovement(
     toTrack: currentTrackCode.toUpperCase(),
     description,
     pointsAdjustment,
-  }
+  };
 }
 
 /**
@@ -218,13 +218,13 @@ export function analyzeTrackTierMovement(
 export function getTierColor(tier: TrackTier): string {
   switch (tier) {
     case 'A':
-      return '#fbbf24' // Gold
+      return '#fbbf24'; // Gold
     case 'B':
-      return '#94a3b8' // Silver
+      return '#94a3b8'; // Silver
     case 'C':
-      return '#a8a29e' // Bronze/stone
+      return '#a8a29e'; // Bronze/stone
     default:
-      return '#6b7280'
+      return '#6b7280';
   }
 }
 
@@ -234,13 +234,13 @@ export function getTierColor(tier: TrackTier): string {
 export function getTierDisplayName(tier: TrackTier): string {
   switch (tier) {
     case 'A':
-      return 'Premier'
+      return 'Premier';
     case 'B':
-      return 'Quality'
+      return 'Quality';
     case 'C':
-      return 'Regional'
+      return 'Regional';
     default:
-      return 'Unknown'
+      return 'Unknown';
   }
 }
 
@@ -250,24 +250,21 @@ export function getTierDisplayName(tier: TrackTier): string {
 export function getTracksByTier(tier: TrackTier): TrackInfo[] {
   switch (tier) {
     case 'A':
-      return [...TIER_A_TRACKS]
+      return [...TIER_A_TRACKS];
     case 'B':
-      return [...TIER_B_TRACKS]
+      return [...TIER_B_TRACKS];
     case 'C':
-      return [...TIER_C_TRACKS]
+      return [...TIER_C_TRACKS];
     default:
-      return []
+      return [];
   }
 }
 
 /**
  * Check if shipper from elite (tier A) track to lower tier
  */
-export function isShipperFromElite(
-  previousTrackCode: string,
-  currentTrackCode: string
-): boolean {
-  const fromTier = getTrackTier(previousTrackCode)
-  const toTier = getTrackTier(currentTrackCode)
-  return fromTier === 'A' && (toTier === 'B' || toTier === 'C')
+export function isShipperFromElite(previousTrackCode: string, currentTrackCode: string): boolean {
+  const fromTier = getTrackTier(previousTrackCode);
+  const toTier = getTrackTier(currentTrackCode);
+  return fromTier === 'A' && (toTier === 'B' || toTier === 'C');
 }

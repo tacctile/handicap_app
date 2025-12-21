@@ -21,21 +21,17 @@ export type {
   DetectedEquipmentChange,
   EquipmentAnalysis,
   EquipmentHistoryEntry,
-} from './equipmentTypes'
+} from './equipmentTypes';
 
-export type {
-  EquipmentExtractionResult,
-} from './equipmentExtractor'
+export type { EquipmentExtractionResult } from './equipmentExtractor';
 
 export type {
   EquipmentChangeType,
   TrainerEquipmentPattern,
   TrainerProfile,
-} from './trainerPatterns'
+} from './trainerPatterns';
 
-export type {
-  EquipmentScoreResult,
-} from './equipmentScoring'
+export type { EquipmentScoreResult } from './equipmentScoring';
 
 // ============================================================================
 // EQUIPMENT TYPES
@@ -50,7 +46,7 @@ export {
   getImpactColor,
   getImpactIcon,
   getCategoryIcon,
-} from './equipmentTypes'
+} from './equipmentTypes';
 
 // ============================================================================
 // EQUIPMENT EXTRACTION
@@ -62,7 +58,7 @@ export {
   analyzeEquipmentHistory,
   hasEquipment,
   hasUsedEquipmentBefore,
-} from './equipmentExtractor'
+} from './equipmentExtractor';
 
 // ============================================================================
 // TRAINER PATTERNS
@@ -81,7 +77,7 @@ export {
   getTopLasixTrainers,
   getTopBlinkersTrainers,
   compareToBaseRate,
-} from './trainerPatterns'
+} from './trainerPatterns';
 
 // ============================================================================
 // EQUIPMENT SCORING
@@ -98,4 +94,4 @@ export {
   formatEquipmentChange,
   getHorsesWithEquipmentChanges,
   countEquipmentChanges,
-} from './equipmentScoring'
+} from './equipmentScoring';

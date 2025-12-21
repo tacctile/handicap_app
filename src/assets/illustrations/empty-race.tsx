@@ -68,7 +68,16 @@ export function EmptyRaceIllustration({ className = '' }: { className?: string }
       <circle cx="20" cy="120" r="2.5" fill="currentColor" opacity="0.15" />
 
       {/* Ground line */}
-      <line x1="20" y1="140" x2="180" y2="140" stroke="currentColor" opacity="0.1" strokeWidth="1" strokeDasharray="4 4" />
+      <line
+        x1="20"
+        y1="140"
+        x2="180"
+        y2="140"
+        stroke="currentColor"
+        opacity="0.1"
+        strokeWidth="1"
+        strokeDasharray="4 4"
+      />
     </svg>
-  )
+  );
 }

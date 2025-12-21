@@ -15,7 +15,7 @@
  *       Located on Texas border near El Paso; 1 mile dirt main track; no turf course
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const sunlandPark: TrackData = {
   code: 'SUN',
@@ -34,8 +34,8 @@ export const sunlandPark: TrackData = {
       // Source: New Mexico Racing Commission - 80 feet wide
       trackWidth: 80,
       // Source: Sunland Park - chutes at 6f and 7f
-      chutes: [6, 7]
-    }
+      chutes: [6, 7],
+    },
     // NOTE: No turf course at Sunland Park
   },
 
@@ -53,7 +53,8 @@ export const sunlandPark: TrackData = {
         // Sample: 600+ dirt sprints annually
         winPercentByPost: [14.5, 14.8, 13.5, 12.0, 10.8, 9.8, 8.5, 7.5, 5.5, 3.1],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Strong inside bias in sprints; posts 1-3 have advantage; desert surface runs fast; short run to turn at 6f critical'
+        biasDescription:
+          'Strong inside bias in sprints; posts 1-3 have advantage; desert surface runs fast; short run to turn at 6f critical',
       },
       {
         distance: 'route',
@@ -66,9 +67,10 @@ export const sunlandPark: TrackData = {
         // Sample: 300+ dirt routes annually
         winPercentByPost: [12.0, 14.0, 14.5, 13.5, 11.5, 10.0, 9.0, 7.5, 5.5, 2.5],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Inside advantage in routes; posts 2-4 optimal; Sunland Derby favors stalkers; tactical speed rewarded'
-      }
-    ]
+        biasDescription:
+          'Inside advantage in routes; posts 2-4 optimal; Sunland Derby favors stalkers; tactical speed rewarded',
+      },
+    ],
   },
 
   speedBias: [
@@ -81,8 +83,9 @@ export const sunlandPark: TrackData = {
       // Closers need pace help
       earlySpeedWinRate: 56,
       paceAdvantageRating: 7,
-      description: 'Strong speed bias; 56% early speed win rate; desert climate creates fast, hard surface; wire-to-wire common; Sunland Derby favors stalkers'
-    }
+      description:
+        'Strong speed bias; 56% early speed win rate; desert climate creates fast, hard surface; wire-to-wire common; Sunland Derby favors stalkers',
+    },
   ],
 
   surfaces: [
@@ -92,10 +95,11 @@ export const sunlandPark: TrackData = {
       // Desert sandy loam; hard compact surface
       // Low humidity; consistent fast conditions
       // Similar to Turf Paradise in Arizona
-      composition: 'Desert sandy loam cushion over clay base; 2.5-inch cushion depth; hard, compact surface; low Southwest humidity creates fast, consistent conditions',
+      composition:
+        'Desert sandy loam cushion over clay base; 2.5-inch cushion depth; hard, compact surface; low Southwest humidity creates fast, consistent conditions',
       playingStyle: 'speed-favoring',
-      drainage: 'excellent'
-    }
+      drainage: 'excellent',
+    },
   ],
 
   seasonalPatterns: [
@@ -108,7 +112,8 @@ export const sunlandPark: TrackData = {
       // Track fast from start
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Season opener; excellent Southwest fall weather; track runs fast; speed bias strong from start'
+      notes:
+        'Season opener; excellent Southwest fall weather; track runs fast; speed bias strong from start',
     },
     {
       season: 'winter',
@@ -119,7 +124,8 @@ export const sunlandPark: TrackData = {
       // Fast track; developing 3-year-olds
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Prime racing season; Southwest winter mild; consistently fast track; 3-year-old development races'
+      notes:
+        'Prime racing season; Southwest winter mild; consistently fast track; 3-year-old development races',
     },
     {
       season: 'spring',
@@ -130,7 +136,8 @@ export const sunlandPark: TrackData = {
       // Track at peak condition
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Sunland Derby season; optimal conditions; track runs very fast; major Kentucky Derby prep'
+      notes:
+        'Sunland Derby season; optimal conditions; track runs very fast; major Kentucky Derby prep',
     },
     {
       season: 'summer',
@@ -140,8 +147,9 @@ export const sunlandPark: TrackData = {
       // No live racing
       typicalCondition: 'Closed - no racing',
       speedAdjustment: 0,
-      notes: 'Track closed for summer; Southwest heat unsuitable for racing; season resumes in November'
-    }
+      notes:
+        'Track closed for summer; Southwest heat unsuitable for racing; season resumes in November',
+    },
   ],
 
   winningTimes: [
@@ -153,7 +161,7 @@ export const sunlandPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 57.8,
       allowanceAvg: 56.5,
-      stakesAvg: 55.8
+      stakesAvg: 55.8,
     },
     {
       distance: '5.5f',
@@ -161,7 +169,7 @@ export const sunlandPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 63.8,
       allowanceAvg: 62.5,
-      stakesAvg: 61.8
+      stakesAvg: 61.8,
     },
     {
       distance: '6f',
@@ -170,7 +178,7 @@ export const sunlandPark: TrackData = {
       // Track record: 1:07.40
       claimingAvg: 70.0,
       allowanceAvg: 68.8,
-      stakesAvg: 67.8
+      stakesAvg: 67.8,
     },
     {
       distance: '6.5f',
@@ -178,7 +186,7 @@ export const sunlandPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 76.2,
       allowanceAvg: 75.0,
-      stakesAvg: 74.0
+      stakesAvg: 74.0,
     },
     {
       distance: '7f',
@@ -186,7 +194,7 @@ export const sunlandPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 82.8,
       allowanceAvg: 81.5,
-      stakesAvg: 80.5
+      stakesAvg: 80.5,
     },
     {
       distance: '1m',
@@ -194,7 +202,7 @@ export const sunlandPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 96.5,
       allowanceAvg: 95.0,
-      stakesAvg: 93.5
+      stakesAvg: 93.5,
     },
     {
       distance: '1m70y',
@@ -202,7 +210,7 @@ export const sunlandPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 101.0,
       allowanceAvg: 99.5,
-      stakesAvg: 98.0
+      stakesAvg: 98.0,
     },
     {
       distance: '1 1/16m',
@@ -210,7 +218,7 @@ export const sunlandPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 103.5,
       allowanceAvg: 102.0,
-      stakesAvg: 100.5
+      stakesAvg: 100.5,
     },
     {
       distance: '1 1/8m',
@@ -220,7 +228,7 @@ export const sunlandPark: TrackData = {
       // Track record: 1:47.00
       claimingAvg: 110.0,
       allowanceAvg: 108.5,
-      stakesAvg: 106.5
+      stakesAvg: 106.5,
     },
     {
       distance: '1 1/4m',
@@ -228,10 +236,10 @@ export const sunlandPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 123.5,
       allowanceAvg: 121.5,
-      stakesAvg: 119.0
-    }
+      stakesAvg: 119.0,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

@@ -8,7 +8,7 @@ export {
   DisclaimerBanner,
   clearDisclaimerAcknowledgment,
   isDisclaimerAcknowledged,
-} from './DisclaimerBanner'
+} from './DisclaimerBanner';
 
-export { LegalModal } from './LegalModal'
-export type { LegalContentType } from './LegalModal'
+export { LegalModal } from './LegalModal';
+export type { LegalContentType } from './LegalModal';

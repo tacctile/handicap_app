@@ -16,35 +16,35 @@
  * Total Range: 0-25 points
  */
 
-import type { HorseEntry, RaceHeader } from '../../types/drf'
+import type { HorseEntry, RaceHeader } from '../../types/drf';
 import {
   calculateEquipmentImpactScore,
   getEquipmentImpactSummary,
   hasSignificantEquipmentImpact,
   type DetectedEquipmentChange,
-} from '../equipment'
+} from '../equipment';
 
 // ============================================================================
 // TYPES (Backwards Compatible)
 // ============================================================================
 
 export interface EquipmentChange {
-  type: 'lasix_first' | 'lasix_off' | 'blinkers_on' | 'blinkers_off' | 'other'
-  description: string
-  impact: 'positive' | 'neutral' | 'negative'
-  points: number
+  type: 'lasix_first' | 'lasix_off' | 'blinkers_on' | 'blinkers_off' | 'other';
+  description: string;
+  impact: 'positive' | 'neutral' | 'negative';
+  points: number;
 }
 
 export interface EquipmentScoreResult {
-  total: number
-  baseScore: number
-  changes: EquipmentChange[]
-  hasSignificantChange: boolean
-  reasoning: string
+  total: number;
+  baseScore: number;
+  changes: EquipmentChange[];
+  hasSignificantChange: boolean;
+  reasoning: string;
   /** Detailed changes from new equipment module */
-  detailedChanges?: DetectedEquipmentChange[]
+  detailedChanges?: DetectedEquipmentChange[];
   /** Trainer pattern evidence if applicable */
-  trainerEvidence?: string | null
+  trainerEvidence?: string | null;
 }
 
 // ============================================================================
@@ -56,20 +56,20 @@ export interface EquipmentScoreResult {
  */
 function convertToLegacyChange(change: DetectedEquipmentChange): EquipmentChange {
   // Map equipment type to legacy type
-  let type: EquipmentChange['type'] = 'other'
+  let type: EquipmentChange['type'] = 'other';
 
   if (change.equipmentType.id === 'lasix') {
-    type = change.direction === 'added' ? 'lasix_first' : 'lasix_off'
+    type = change.direction === 'added' ? 'lasix_first' : 'lasix_off';
   } else if (change.equipmentType.id === 'blinkers') {
-    type = change.direction === 'added' ? 'blinkers_on' : 'blinkers_off'
+    type = change.direction === 'added' ? 'blinkers_on' : 'blinkers_off';
   }
 
   // Map impact
-  let impact: EquipmentChange['impact'] = 'neutral'
+  let impact: EquipmentChange['impact'] = 'neutral';
   if (change.adjustedPoints >= 5) {
-    impact = 'positive'
+    impact = 'positive';
   } else if (change.adjustedPoints < 0) {
-    impact = 'negative'
+    impact = 'negative';
   }
 
   return {
@@ -77,7 +77,7 @@ function convertToLegacyChange(change: DetectedEquipmentChange): EquipmentChange
     description: change.changeDescription,
     impact,
     points: change.adjustedPoints,
-  }
+  };
 }
 
 // ============================================================================
@@ -96,10 +96,10 @@ export function calculateEquipmentScore(
   raceHeader?: RaceHeader
 ): EquipmentScoreResult {
   // Use new comprehensive equipment scoring
-  const detailed = calculateEquipmentImpactScore(horse, raceHeader)
+  const detailed = calculateEquipmentImpactScore(horse, raceHeader);
 
   // Convert to legacy format for backwards compatibility
-  const legacyChanges = detailed.changes.map(convertToLegacyChange)
+  const legacyChanges = detailed.changes.map(convertToLegacyChange);
 
   return {
     total: detailed.total,
@@ -109,28 +109,26 @@ export function calculateEquipmentScore(
     reasoning: detailed.reasoning,
     detailedChanges: detailed.changes,
     trainerEvidence: detailed.trainerEvidence,
-  }
+  };
 }
 
 /**
  * Get equipment changes summary for display
  */
-export function getEquipmentSummary(
-  horse: HorseEntry
-): { hasChanges: boolean; summary: string } {
-  const result = getEquipmentImpactSummary(horse)
+export function getEquipmentSummary(horse: HorseEntry): { hasChanges: boolean; summary: string } {
+  const result = getEquipmentImpactSummary(horse);
 
   return {
     hasChanges: result.hasChanges,
     summary: result.summary,
-  }
+  };
 }
 
 /**
  * Check if horse has significant equipment change
  */
 export function hasSignificantEquipmentChange(horse: HorseEntry): boolean {
-  return hasSignificantEquipmentImpact(horse)
+  return hasSignificantEquipmentImpact(horse);
 }
 
 // ============================================================================
@@ -177,4 +175,4 @@ export {
   getTopLasixTrainers,
   getTopBlinkersTrainers,
   compareToBaseRate,
-} from '../equipment'
+} from '../equipment';

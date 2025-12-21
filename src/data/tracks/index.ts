@@ -74,49 +74,49 @@
  * - WO = Woodbine Racetrack
  */
 
-import type { TrackData, TrackBiasSummary } from './trackSchema'
+import type { TrackData, TrackBiasSummary } from './trackSchema';
 
 // Import individual track data files (alphabetical order)
-import { aqueduct } from './aqueduct'
-import { belmontPark } from './belmontPark'
-import { belterraPark } from './belterraPark'
-import { canterburyPark } from './canterburyPark'
-import { charlesTownRaces } from './charlesTownRaces'
-import { churchillDowns } from './churchillDowns'
-import { delawarePark } from './delawarePark'
-import { deltaDowns } from './deltaDowns'
-import { delMar } from './delMar'
-import { ellisPark } from './ellisPark'
-import { emeraldDowns } from './emeraldDowns'
-import { evangelineDowns } from './evangelineDowns'
-import { fairGrounds } from './fairGrounds'
-import { fingerLakes } from './fingerLakes'
-import { fonnerPark } from './fonnerPark'
-import { goldenGateFields } from './goldenGateFields'
-import { gulfstreamPark } from './gulfstreamPark'
-import { hastingsRacecourse } from './hastingsRacecourse'
-import { hoosierPark } from './hoosierPark'
-import { indianaGrand } from './indianaGrand'
-import { keeneland } from './keeneland'
-import { laurelPark } from './laurelPark'
-import { loneStarPark } from './loneStarPark'
-import { losAlamitos } from './losAlamitos'
-import { monmouthPark } from './monmouthPark'
-import { mountaineer } from './mountaineer'
-import { oaklawnPark } from './oaklawnPark'
-import { parxRacing } from './parxRacing'
-import { pennNational } from './pennNational'
-import { pimlico } from './pimlico'
-import { prairieMeadows } from './prairieMeadows'
-import { remingtonPark } from './remingtonPark'
-import { samHoustonRacePark } from './samHoustonRacePark'
-import { santaAnita } from './santaAnita'
-import { saratoga } from './saratoga'
-import { sunlandPark } from './sunlandPark'
-import { tampaBayDowns } from './tampaBayDowns'
-import { turfParadise } from './turfParadise'
-import { turfwayPark } from './turfwayPark'
-import { woodbine } from './woodbine'
+import { aqueduct } from './aqueduct';
+import { belmontPark } from './belmontPark';
+import { belterraPark } from './belterraPark';
+import { canterburyPark } from './canterburyPark';
+import { charlesTownRaces } from './charlesTownRaces';
+import { churchillDowns } from './churchillDowns';
+import { delawarePark } from './delawarePark';
+import { deltaDowns } from './deltaDowns';
+import { delMar } from './delMar';
+import { ellisPark } from './ellisPark';
+import { emeraldDowns } from './emeraldDowns';
+import { evangelineDowns } from './evangelineDowns';
+import { fairGrounds } from './fairGrounds';
+import { fingerLakes } from './fingerLakes';
+import { fonnerPark } from './fonnerPark';
+import { goldenGateFields } from './goldenGateFields';
+import { gulfstreamPark } from './gulfstreamPark';
+import { hastingsRacecourse } from './hastingsRacecourse';
+import { hoosierPark } from './hoosierPark';
+import { indianaGrand } from './indianaGrand';
+import { keeneland } from './keeneland';
+import { laurelPark } from './laurelPark';
+import { loneStarPark } from './loneStarPark';
+import { losAlamitos } from './losAlamitos';
+import { monmouthPark } from './monmouthPark';
+import { mountaineer } from './mountaineer';
+import { oaklawnPark } from './oaklawnPark';
+import { parxRacing } from './parxRacing';
+import { pennNational } from './pennNational';
+import { pimlico } from './pimlico';
+import { prairieMeadows } from './prairieMeadows';
+import { remingtonPark } from './remingtonPark';
+import { samHoustonRacePark } from './samHoustonRacePark';
+import { santaAnita } from './santaAnita';
+import { saratoga } from './saratoga';
+import { sunlandPark } from './sunlandPark';
+import { tampaBayDowns } from './tampaBayDowns';
+import { turfParadise } from './turfParadise';
+import { turfwayPark } from './turfwayPark';
+import { woodbine } from './woodbine';
 
 /**
  * Track database indexed by standard track code
@@ -162,14 +162,14 @@ export const trackDatabase: Map<string, TrackData> = new Map([
   ['TAM', tampaBayDowns],
   ['TP', turfwayPark],
   ['TUP', turfParadise],
-  ['WO', woodbine]
-])
+  ['WO', woodbine],
+]);
 
 /**
  * Get list of all available track codes
  */
 export function getAvailableTrackCodes(): string[] {
-  return Array.from(trackDatabase.keys())
+  return Array.from(trackDatabase.keys());
 }
 
 /**
@@ -178,7 +178,7 @@ export function getAvailableTrackCodes(): string[] {
  * @returns true if track data exists
  */
 export function hasTrackData(trackCode: string): boolean {
-  return trackDatabase.has(trackCode.toUpperCase())
+  return trackDatabase.has(trackCode.toUpperCase());
 }
 
 /**
@@ -187,7 +187,7 @@ export function hasTrackData(trackCode: string): boolean {
  * @returns TrackData or undefined if not found
  */
 export function getTrackData(trackCode: string): TrackData | undefined {
-  return trackDatabase.get(trackCode.toUpperCase())
+  return trackDatabase.get(trackCode.toUpperCase());
 }
 
 /**
@@ -196,22 +196,23 @@ export function getTrackData(trackCode: string): TrackData | undefined {
  * @returns TrackBiasSummary for display purposes
  */
 export function getTrackBiasSummary(trackCode: string): TrackBiasSummary | null {
-  const track = trackDatabase.get(trackCode.toUpperCase())
+  const track = trackDatabase.get(trackCode.toUpperCase());
   if (!track) {
-    return null
+    return null;
   }
 
   // Get the primary dirt speed bias
-  const dirtBias = track.speedBias.find(b => b.surface === 'dirt')
+  const dirtBias = track.speedBias.find((b) => b.surface === 'dirt');
 
   return {
     trackCode: track.code,
     trackName: track.name,
     speedBiasPercent: dirtBias?.earlySpeedWinRate ?? 50,
     speedBiasDescription: dirtBias?.description ?? 'No bias data available',
-    favoredPostsDescription: track.postPositionBias.dirt[0]?.biasDescription ?? 'No post position data',
-    isDataAvailable: true
-  }
+    favoredPostsDescription:
+      track.postPositionBias.dirt[0]?.biasDescription ?? 'No post position data',
+    isDataAvailable: true,
+  };
 }
 
 /**
@@ -230,8 +231,8 @@ export function getFallbackTrackData(trackCode: string): TrackData {
         stretchLength: 1000,
         turnRadius: 280,
         trackWidth: 80,
-        chutes: [6, 7]
-      }
+        chutes: [6, 7],
+      },
     },
     postPositionBias: {
       dirt: [
@@ -241,7 +242,7 @@ export function getFallbackTrackData(trackCode: string): TrackData {
           maxFurlongs: 7,
           winPercentByPost: [10, 12, 14, 16, 15, 13, 11, 9],
           favoredPosts: [4, 5],
-          biasDescription: 'Using national average defaults - middle posts typically favored'
+          biasDescription: 'Using national average defaults - middle posts typically favored',
         },
         {
           distance: 'route',
@@ -249,34 +250,49 @@ export function getFallbackTrackData(trackCode: string): TrackData {
           maxFurlongs: 12,
           winPercentByPost: [11, 13, 14, 15, 16, 13, 10, 8],
           favoredPosts: [5],
-          biasDescription: 'Using national average defaults - middle posts typically favored in routes'
-        }
-      ]
+          biasDescription:
+            'Using national average defaults - middle posts typically favored in routes',
+        },
+      ],
     },
     speedBias: [
       {
         surface: 'dirt',
         earlySpeedWinRate: 55,
         paceAdvantageRating: 5,
-        description: 'National average defaults - slight speed advantage typical'
-      }
+        description: 'National average defaults - slight speed advantage typical',
+      },
     ],
     surfaces: [
       {
         baseType: 'dirt',
         composition: 'Unknown - using typical dirt track assumptions',
         playingStyle: 'fair',
-        drainage: 'good'
-      }
+        drainage: 'good',
+      },
     ],
     seasonalPatterns: [],
     winningTimes: [
-      { distance: '6f', furlongs: 6, surface: 'dirt', claimingAvg: 70.5, allowanceAvg: 69.0, stakesAvg: 67.5 },
-      { distance: '1m', furlongs: 8, surface: 'dirt', claimingAvg: 96.5, allowanceAvg: 95.0, stakesAvg: 93.5 }
+      {
+        distance: '6f',
+        furlongs: 6,
+        surface: 'dirt',
+        claimingAvg: 70.5,
+        allowanceAvg: 69.0,
+        stakesAvg: 67.5,
+      },
+      {
+        distance: '1m',
+        furlongs: 8,
+        surface: 'dirt',
+        claimingAvg: 96.5,
+        allowanceAvg: 95.0,
+        stakesAvg: 93.5,
+      },
     ],
     lastUpdated: new Date().toISOString().split('T')[0],
-    dataQuality: 'estimated'
-  }
+    dataQuality: 'estimated',
+  };
 }
 
 // Re-export types for convenience
@@ -288,8 +304,8 @@ export type {
   SurfaceCharacteristics,
   SeasonalPattern,
   WinningTimeByDistance,
-  TrackBiasSummary
-} from './trackSchema'
+  TrackBiasSummary,
+} from './trackSchema';
 
 // Export individual track data for direct access if needed (alphabetical order)
 export {
@@ -332,5 +348,5 @@ export {
   tampaBayDowns,
   turfParadise,
   turfwayPark,
-  woodbine
-}
+  woodbine,
+};

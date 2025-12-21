@@ -6,9 +6,9 @@
  * analytics failures never break the app.
  */
 
-import { useCallback, useMemo } from 'react'
-import { getAnalyticsService } from '../services/analytics'
-import type { EventName, EventProperties } from '../services/analytics/types'
+import { useCallback, useMemo } from 'react';
+import { getAnalyticsService } from '../services/analytics';
+import type { EventName, EventProperties } from '../services/analytics/types';
 
 interface UseAnalyticsReturn {
   /**
@@ -16,7 +16,7 @@ interface UseAnalyticsReturn {
    * @param eventName The name of the event to track
    * @param properties Additional properties for the event
    */
-  trackEvent: (eventName: EventName, properties?: EventProperties) => void
+  trackEvent: (eventName: EventName, properties?: EventProperties) => void;
 }
 
 /**
@@ -35,43 +35,43 @@ export function useAnalytics(): UseAnalyticsReturn {
   // Get the singleton analytics service instance
   const analyticsService = useMemo(() => {
     try {
-      return getAnalyticsService({ debug: true })
+      return getAnalyticsService({ debug: true });
     } catch {
       // If service fails to initialize, return null
       // trackEvent will handle this gracefully
-      return null
+      return null;
     }
-  }, [])
+  }, []);
 
   const trackEvent = useCallback(
     (eventName: EventName, properties: EventProperties = {}) => {
       try {
         if (!analyticsService) {
-          return
+          return;
         }
 
         // Add timestamp to all events
         const enrichedProperties: EventProperties = {
           ...properties,
           tracked_at: Date.now(),
-        }
+        };
 
         // Track the event - service handles logging internally
-        analyticsService.trackEvent(eventName, enrichedProperties)
+        analyticsService.trackEvent(eventName, enrichedProperties);
       } catch {
         // Silently fail - analytics should never break the app
         // In development, log for debugging (Vite exposes dev mode via import.meta)
         if (import.meta.env?.DEV) {
-          console.warn(`[useAnalytics] Failed to track event: ${eventName}`)
+          console.warn(`[useAnalytics] Failed to track event: ${eventName}`);
         }
       }
     },
     [analyticsService]
-  )
+  );
 
   return {
     trackEvent,
-  }
+  };
 }
 
-export default useAnalytics
+export default useAnalytics;

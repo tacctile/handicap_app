@@ -26,7 +26,7 @@ export {
   type DutchBet,
   type DutchResult,
   type DutchConfig,
-} from './dutchCalculator'
+} from './dutchCalculator';
 
 // Validator
 export {
@@ -45,7 +45,7 @@ export {
   type DutchValidationResult,
   type EdgeAnalysis,
   type EdgeClassification,
-} from './dutchValidator'
+} from './dutchValidator';
 
 // Optimizer
 export {
@@ -60,7 +60,7 @@ export {
   type OptimizationResult,
   type OptimizationConfig,
   type HorseTierForDutch,
-} from './dutchOptimizer'
+} from './dutchOptimizer';
 
 // Display
 export {
@@ -84,7 +84,7 @@ export {
   type DutchDisplaySummary,
   type DutchBetInstruction,
   type DutchFullDisplay,
-} from './dutchDisplay'
+} from './dutchDisplay';
 
 // Settings
 export {
@@ -100,4 +100,4 @@ export {
   DUTCH_EDUCATION,
   type DutchSettings,
   type DutchRiskPreset,
-} from './dutchSettings'
+} from './dutchSettings';

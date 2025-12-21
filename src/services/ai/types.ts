@@ -12,22 +12,22 @@
 /**
  * Supported AI providers
  */
-export type AIProviderType = 'mock' | 'gemini' | 'claude' | 'openai'
+export type AIProviderType = 'mock' | 'gemini' | 'claude' | 'openai';
 
 /**
  * Configuration for AI service
  */
 export interface AIConfig {
   /** Which AI provider to use */
-  provider: AIProviderType
+  provider: AIProviderType;
   /** API key for the provider (not used by mock) */
-  apiKey?: string
+  apiKey?: string;
   /** Mock delay in ms (for mock provider) */
-  mockDelayMs?: number
+  mockDelayMs?: number;
   /** Default max tokens for requests */
-  defaultMaxTokens?: number
+  defaultMaxTokens?: number;
   /** Model name/version to use */
-  model?: string
+  model?: string;
 }
 
 /**
@@ -37,7 +37,7 @@ export const defaultAIConfig: AIConfig = {
   provider: 'mock',
   mockDelayMs: 500,
   defaultMaxTokens: 1024,
-}
+};
 
 // ============================================================================
 // REQUEST/RESPONSE TYPES
@@ -48,13 +48,13 @@ export const defaultAIConfig: AIConfig = {
  */
 export interface AIRequest {
   /** The prompt to send to the AI */
-  prompt: string
+  prompt: string;
   /** Additional context for the request */
-  context?: string
+  context?: string;
   /** Maximum tokens to generate */
-  maxTokens?: number
+  maxTokens?: number;
   /** Temperature for generation (0-1) */
-  temperature?: number
+  temperature?: number;
 }
 
 /**
@@ -62,15 +62,15 @@ export interface AIRequest {
  */
 export interface AIResponse {
   /** The generated content */
-  content: string
+  content: string;
   /** Number of tokens used in the response */
-  tokensUsed: number
+  tokensUsed: number;
   /** Which provider generated this response */
-  provider: AIProviderType
+  provider: AIProviderType;
   /** Model used for generation */
-  model?: string
+  model?: string;
   /** Time taken to generate in ms */
-  durationMs?: number
+  durationMs?: number;
 }
 
 /**
@@ -78,24 +78,24 @@ export interface AIResponse {
  */
 export interface NarrativeContext {
   /** Race number */
-  raceNumber: number
+  raceNumber: number;
   /** Track name */
-  trackName: string
+  trackName: string;
   /** Race distance */
-  distance: string
+  distance: string;
   /** Race surface */
-  surface: string
+  surface: string;
   /** Race class/type */
-  raceClass: string
+  raceClass: string;
   /** Horse data for the race */
   horses: Array<{
-    name: string
-    score: number
-    tier: number
-    jockey: string
-    trainer: string
-    keyFactors: string[]
-  }>
+    name: string;
+    score: number;
+    tier: number;
+    jockey: string;
+    trainer: string;
+    keyFactors: string[];
+  }>;
 }
 
 /**
@@ -103,13 +103,13 @@ export interface NarrativeContext {
  */
 export interface TripNoteContext {
   /** The raw trip note text */
-  tripNote: string
+  tripNote: string;
   /** Horse name */
-  horseName: string
+  horseName: string;
   /** Race date */
-  raceDate?: string
+  raceDate?: string;
   /** Track name */
-  trackName?: string
+  trackName?: string;
 }
 
 /**
@@ -117,11 +117,11 @@ export interface TripNoteContext {
  */
 export interface QueryContext {
   /** The user's question */
-  query: string
+  query: string;
   /** Race data to query against */
-  raceData?: unknown
+  raceData?: unknown;
   /** Additional context about the current view/state */
-  viewContext?: string
+  viewContext?: string;
 }
 
 // ============================================================================
@@ -141,20 +141,20 @@ export type AIErrorCode =
   | 'AUTHENTICATION_ERROR'
   | 'CONTENT_FILTERED'
   | 'TIMEOUT'
-  | 'UNKNOWN_ERROR'
+  | 'UNKNOWN_ERROR';
 
 /**
  * Structured AI error
  */
 export interface AIError {
   /** Error code for programmatic handling */
-  code: AIErrorCode
+  code: AIErrorCode;
   /** Human-readable error message */
-  message: string
+  message: string;
   /** Whether the request can be retried */
-  retryable: boolean
+  retryable: boolean;
   /** Original error from the provider */
-  originalError?: unknown
+  originalError?: unknown;
 }
 
 /**
@@ -166,7 +166,7 @@ export function createAIError(
   retryable: boolean = false,
   originalError?: unknown
 ): AIError {
-  return { code, message, retryable, originalError }
+  return { code, message, retryable, originalError };
 }
 
 /**
@@ -179,7 +179,7 @@ export function isAIError(error: unknown): error is AIError {
     'code' in error &&
     'message' in error &&
     'retryable' in error
-  )
+  );
 }
 
 // ============================================================================
@@ -196,31 +196,31 @@ export interface IAIProvider {
    * @param context Race context including horses and their scores
    * @returns AI-generated narrative
    */
-  generateNarrative(context: NarrativeContext): Promise<AIResponse>
+  generateNarrative(context: NarrativeContext): Promise<AIResponse>;
 
   /**
    * Interpret and explain trip notes
    * @param context Trip note context
    * @returns AI-generated interpretation
    */
-  interpretTripNotes(context: TripNoteContext): Promise<AIResponse>
+  interpretTripNotes(context: TripNoteContext): Promise<AIResponse>;
 
   /**
    * Answer natural language queries about race data
    * @param context Query context with the question and relevant data
    * @returns AI-generated answer
    */
-  answerQuery(context: QueryContext): Promise<AIResponse>
+  answerQuery(context: QueryContext): Promise<AIResponse>;
 
   /**
    * Get the provider type
    */
-  getProviderType(): AIProviderType
+  getProviderType(): AIProviderType;
 
   /**
    * Check if the provider is available/configured
    */
-  isAvailable(): boolean
+  isAvailable(): boolean;
 }
 
 // ============================================================================
@@ -230,36 +230,27 @@ export interface IAIProvider {
 /**
  * Result type for async AI operations
  */
-export type AIResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: AIError }
+export type AIResult<T> = { success: true; data: T } | { success: false; error: AIError };
 
 /**
  * Wrap async AI operation in result type
  */
-export async function wrapAIResult<T>(
-  operation: () => Promise<T>
-): Promise<AIResult<T>> {
+export async function wrapAIResult<T>(operation: () => Promise<T>): Promise<AIResult<T>> {
   try {
-    const data = await operation()
-    return { success: true, data }
+    const data = await operation();
+    return { success: true, data };
   } catch (error) {
     if (isAIError(error)) {
-      return { success: false, error }
+      return { success: false, error };
     }
     return {
       success: false,
-      error: createAIError(
-        'UNKNOWN_ERROR',
-        'An unexpected error occurred',
-        false,
-        error
-      ),
-    }
+      error: createAIError('UNKNOWN_ERROR', 'An unexpected error occurred', false, error),
+    };
   }
 }
 
 /**
  * Unsubscribe function returned by listeners (for future use)
  */
-export type Unsubscribe = () => void
+export type Unsubscribe = () => void;

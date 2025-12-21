@@ -14,27 +14,27 @@
  */
 export interface BreedingInfo {
   /** Sire (father) name */
-  sire: string
+  sire: string;
   /** Dam (mother) name */
-  dam: string
+  dam: string;
   /** Damsire (maternal grandsire / broodmare sire) */
-  damsire: string
+  damsire: string;
   /** Total lifetime starts */
-  lifetimeStarts: number
+  lifetimeStarts: number;
   /** Whether this is a lightly raced horse (<8 starts) */
-  isLightlyRaced: boolean
+  isLightlyRaced: boolean;
   /** Whether this is a debut (first-time starter, 0 starts) */
-  isDebut: boolean
+  isDebut: boolean;
   /** Whether breeding info is complete */
-  isComplete: boolean
+  isComplete: boolean;
   /** Where the horse was bred */
-  whereBred: string
+  whereBred: string;
 }
 
 /**
  * Categories for experience level based on starts
  */
-export type ExperienceLevel = 'debut' | 'lightly_raced' | 'experienced'
+export type ExperienceLevel = 'debut' | 'lightly_raced' | 'experienced';
 
 /**
  * Thresholds for experience classification
@@ -46,7 +46,7 @@ export const EXPERIENCE_THRESHOLDS = {
   LIGHTLY_RACED_MAX: 7,
   /** 8+ starts = experienced (normal handicapping applies) */
   EXPERIENCED_MIN: 8,
-} as const
+} as const;
 
 // ============================================================================
 // SIRE PROFILE
@@ -58,32 +58,32 @@ export const EXPERIENCE_THRESHOLDS = {
  */
 export interface SireProfile {
   /** Sire name */
-  name: string
+  name: string;
   /** Overall win rate as a percentage (0-100) */
-  winRate: number
+  winRate: number;
   /** Average earnings per start in dollars */
-  earningsPerStart: number
+  earningsPerStart: number;
   /** Preferred surface: 'dirt', 'turf', 'synthetic', or 'versatile' */
-  surfacePreference: SurfacePreference
+  surfacePreference: SurfacePreference;
   /** Optimal distance range in furlongs */
-  distancePreference: DistancePreference
+  distancePreference: DistancePreference;
   /** First-time starter win rate */
-  firstTimeStarterWinRate: number
+  firstTimeStarterWinRate: number;
   /** Win rate for lightly raced horses (2-7 starts) */
-  lightlyRacedWinRate: number
+  lightlyRacedWinRate: number;
   /** Whether sire data is available in database */
-  isKnown: boolean
+  isKnown: boolean;
 }
 
-export type SurfacePreference = 'dirt' | 'turf' | 'synthetic' | 'versatile' | 'unknown'
+export type SurfacePreference = 'dirt' | 'turf' | 'synthetic' | 'versatile' | 'unknown';
 
 export interface DistancePreference {
   /** Preferred minimum distance in furlongs */
-  minFurlongs: number
+  minFurlongs: number;
   /** Preferred maximum distance in furlongs */
-  maxFurlongs: number
+  maxFurlongs: number;
   /** Category: 'sprint', 'route', 'versatile' */
-  category: 'sprint' | 'route' | 'versatile' | 'unknown'
+  category: 'sprint' | 'route' | 'versatile' | 'unknown';
 }
 
 /**
@@ -102,7 +102,7 @@ export const DEFAULT_SIRE_PROFILE: SireProfile = {
   firstTimeStarterWinRate: 6.5,
   lightlyRacedWinRate: 8.0,
   isKnown: false,
-}
+};
 
 // ============================================================================
 // DAM PROFILE
@@ -114,17 +114,17 @@ export const DEFAULT_SIRE_PROFILE: SireProfile = {
  */
 export interface DamProfile {
   /** Dam name */
-  name: string
+  name: string;
   /** Quality rating as a producer (0-100) */
-  producerQuality: number
+  producerQuality: number;
   /** Overall win rate of offspring */
-  offspringWinRate: number
+  offspringWinRate: number;
   /** Number of named foals produced */
-  foalsProduced: number
+  foalsProduced: number;
   /** Stakes winners produced */
-  stakesWinnersProduced: number
+  stakesWinnersProduced: number;
   /** Whether dam data is available */
-  isKnown: boolean
+  isKnown: boolean;
 }
 
 /**
@@ -137,7 +137,7 @@ export const DEFAULT_DAM_PROFILE: DamProfile = {
   foalsProduced: 0,
   stakesWinnersProduced: 0,
   isKnown: false,
-}
+};
 
 // ============================================================================
 // DAMSIRE PROFILE
@@ -149,15 +149,15 @@ export const DEFAULT_DAM_PROFILE: DamProfile = {
  */
 export interface DamsireProfile {
   /** Damsire name */
-  name: string
+  name: string;
   /** Broodmare sire index rating */
-  broodmareSireIndex: number
+  broodmareSireIndex: number;
   /** Surface influence on offspring */
-  surfaceInfluence: SurfacePreference
+  surfaceInfluence: SurfacePreference;
   /** Stamina influence (higher = more stamina) */
-  staminaInfluence: number
+  staminaInfluence: number;
   /** Whether damsire data is available */
-  isKnown: boolean
+  isKnown: boolean;
 }
 
 /**
@@ -169,7 +169,7 @@ export const DEFAULT_DAMSIRE_PROFILE: DamsireProfile = {
   surfaceInfluence: 'unknown',
   staminaInfluence: 50,
   isKnown: false,
-}
+};
 
 // ============================================================================
 // BREEDING SCORE
@@ -181,31 +181,31 @@ export const DEFAULT_DAMSIRE_PROFILE: DamsireProfile = {
  */
 export interface BreedingScore {
   /** Total breeding score (0-60) */
-  total: number
+  total: number;
   /** Breakdown by category */
-  breakdown: BreedingScoreBreakdown
+  breakdown: BreedingScoreBreakdown;
   /** Confidence level in the assessment */
-  confidence: BreedingConfidence
+  confidence: BreedingConfidence;
   /** Human-readable summary */
-  summary: string
+  summary: string;
   /** Whether breeding analysis was applied */
-  wasApplied: boolean
+  wasApplied: boolean;
   /** Reason if not applied */
-  notAppliedReason?: string
+  notAppliedReason?: string;
 }
 
 export interface BreedingScoreBreakdown {
   /** Sire reputation and statistics (0-25) */
-  sireScore: number
+  sireScore: number;
   /** Dam production quality (0-15) */
-  damScore: number
+  damScore: number;
   /** Damsire influence (0-10) */
-  damsireScore: number
+  damsireScore: number;
   /** Surface/distance fit based on pedigree (0-10) */
-  fitScore: number
+  fitScore: number;
 }
 
-export type BreedingConfidence = 'high' | 'medium' | 'low' | 'none'
+export type BreedingConfidence = 'high' | 'medium' | 'low' | 'none';
 
 /**
  * Score limits for breeding categories
@@ -216,7 +216,7 @@ export const BREEDING_SCORE_LIMITS = {
   damsire: 10,
   fit: 10,
   total: 60,
-} as const
+} as const;
 
 /**
  * Empty breeding score (no analysis applied)
@@ -233,7 +233,7 @@ export const EMPTY_BREEDING_SCORE: BreedingScore = {
   summary: 'Breeding analysis not applicable',
   wasApplied: false,
   notAppliedReason: 'Horse has sufficient race history',
-}
+};
 
 // ============================================================================
 // BREEDING PARSING RESULT
@@ -244,17 +244,17 @@ export const EMPTY_BREEDING_SCORE: BreedingScore = {
  */
 export interface BreedingParseResult {
   /** Parsed sire name (or null if not found) */
-  sire: string | null
+  sire: string | null;
   /** Parsed dam name (or null if not found) */
-  dam: string | null
+  dam: string | null;
   /** Parsed damsire name (or null if not found) */
-  damsire: string | null
+  damsire: string | null;
   /** Whether parsing was successful */
-  success: boolean
+  success: boolean;
   /** Any warnings during parsing */
-  warnings: string[]
+  warnings: string[];
   /** Original input string */
-  original: string
+  original: string;
 }
 
 // ============================================================================
@@ -265,24 +265,24 @@ export interface BreedingParseResult {
  * Quick display info for breeding section in UI
  */
 export interface BreedingDisplayInfo {
-  sire: string
-  dam: string
-  damsire: string
-  starts: number
-  experienceLabel: string
-  experienceLevel: ExperienceLevel
-  showBreedingScore: boolean
-  whereBred: string
+  sire: string;
+  dam: string;
+  damsire: string;
+  starts: number;
+  experienceLabel: string;
+  experienceLevel: ExperienceLevel;
+  showBreedingScore: boolean;
+  whereBred: string;
 }
 
 /**
  * Breeding analysis result combining all data
  */
 export interface BreedingAnalysis {
-  info: BreedingInfo
-  sireProfile: SireProfile
-  damProfile: DamProfile
-  damsireProfile: DamsireProfile
-  score: BreedingScore
-  displayInfo: BreedingDisplayInfo
+  info: BreedingInfo;
+  sireProfile: SireProfile;
+  damProfile: DamProfile;
+  damsireProfile: DamsireProfile;
+  score: BreedingScore;
+  displayInfo: BreedingDisplayInfo;
 }

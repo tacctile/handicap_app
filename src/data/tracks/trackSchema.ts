@@ -8,17 +8,17 @@
  */
 export interface PostPositionBias {
   /** Distance range identifier (e.g., "6f", "1m", "1m1/4") */
-  distance: string
+  distance: string;
   /** Minimum distance in furlongs for this range */
-  minFurlongs: number
+  minFurlongs: number;
   /** Maximum distance in furlongs for this range */
-  maxFurlongs: number
+  maxFurlongs: number;
   /** Win percentage by post position (index 0 = post 1, etc.) */
-  winPercentByPost: number[]
+  winPercentByPost: number[];
   /** Posts that are statistically favored (1-indexed) */
-  favoredPosts: number[]
+  favoredPosts: number[];
   /** Brief description of the bias pattern */
-  biasDescription: string
+  biasDescription: string;
 }
 
 /**
@@ -26,13 +26,13 @@ export interface PostPositionBias {
  */
 export interface SpeedBias {
   /** Surface type this bias applies to */
-  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather'
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather';
   /** Percentage of races won by early speed horses */
-  earlySpeedWinRate: number
+  earlySpeedWinRate: number;
   /** Rating from 1-10 indicating pace advantage (10 = very strong speed bias) */
-  paceAdvantageRating: number
+  paceAdvantageRating: number;
   /** Description of track's pace tendencies */
-  description: string
+  description: string;
 }
 
 /**
@@ -40,15 +40,15 @@ export interface SpeedBias {
  */
 export interface TrackMeasurements {
   /** Main track circumference in miles */
-  circumference: number
+  circumference: number;
   /** Stretch length in feet */
-  stretchLength: number
+  stretchLength: number;
   /** Turn radius in feet (approximate) */
-  turnRadius: number
+  turnRadius: number;
   /** Width of track in feet */
-  trackWidth: number
+  trackWidth: number;
   /** Chute distances available (in furlongs) */
-  chutes: number[]
+  chutes: number[];
 }
 
 /**
@@ -56,13 +56,13 @@ export interface TrackMeasurements {
  */
 export interface SurfaceCharacteristics {
   /** Base material type */
-  baseType: 'dirt' | 'turf' | 'synthetic'
+  baseType: 'dirt' | 'turf' | 'synthetic';
   /** Specific surface composition or turf type */
-  composition: string
+  composition: string;
   /** How the surface typically plays (speed-favoring, fair, tiring) */
-  playingStyle: 'speed-favoring' | 'fair' | 'tiring' | 'deep'
+  playingStyle: 'speed-favoring' | 'fair' | 'tiring' | 'deep';
   /** Drainage quality affecting off-track conditions */
-  drainage: 'excellent' | 'good' | 'fair' | 'poor'
+  drainage: 'excellent' | 'good' | 'fair' | 'poor';
 }
 
 /**
@@ -70,15 +70,15 @@ export interface SurfaceCharacteristics {
  */
 export interface SeasonalPattern {
   /** Season identifier */
-  season: 'winter' | 'spring' | 'summer' | 'fall'
+  season: 'winter' | 'spring' | 'summer' | 'fall';
   /** Months this pattern applies to */
-  months: number[]
+  months: number[];
   /** Expected track condition variance */
-  typicalCondition: string
+  typicalCondition: string;
   /** Speed figure adjustment (positive = faster times expected) */
-  speedAdjustment: number
+  speedAdjustment: number;
   /** Notes about seasonal impact */
-  notes: string
+  notes: string;
 }
 
 /**
@@ -86,17 +86,17 @@ export interface SeasonalPattern {
  */
 export interface WinningTimeByDistance {
   /** Distance identifier */
-  distance: string
+  distance: string;
   /** Distance in furlongs */
-  furlongs: number
+  furlongs: number;
   /** Surface type */
-  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather'
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather';
   /** Average winning time in seconds for claiming races ($25k-$50k) */
-  claimingAvg: number
+  claimingAvg: number;
   /** Average winning time in seconds for allowance races */
-  allowanceAvg: number
+  allowanceAvg: number;
   /** Average winning time in seconds for stakes races */
-  stakesAvg: number
+  stakesAvg: number;
 }
 
 /**
@@ -104,45 +104,45 @@ export interface WinningTimeByDistance {
  */
 export interface TrackData {
   /** Unique track code (e.g., "SA", "GP", "CD") */
-  code: string
+  code: string;
   /** Full track name */
-  name: string
+  name: string;
   /** City and state location */
-  location: string
+  location: string;
   /** State abbreviation */
-  state: string
+  state: string;
   /** Track measurements and dimensions */
   measurements: {
-    dirt: TrackMeasurements
-    turf?: TrackMeasurements
-  }
+    dirt: TrackMeasurements;
+    turf?: TrackMeasurements;
+  };
   /** Post position biases by distance and surface */
   postPositionBias: {
-    dirt: PostPositionBias[]
-    turf?: PostPositionBias[]
-  }
+    dirt: PostPositionBias[];
+    turf?: PostPositionBias[];
+  };
   /** Speed/pace bias data by surface */
-  speedBias: SpeedBias[]
+  speedBias: SpeedBias[];
   /** Surface characteristics */
-  surfaces: SurfaceCharacteristics[]
+  surfaces: SurfaceCharacteristics[];
   /** Seasonal patterns */
-  seasonalPatterns: SeasonalPattern[]
+  seasonalPatterns: SeasonalPattern[];
   /** Average winning times by distance */
-  winningTimes: WinningTimeByDistance[]
+  winningTimes: WinningTimeByDistance[];
   /** Last updated timestamp */
-  lastUpdated: string
+  lastUpdated: string;
   /** Data quality indicator */
-  dataQuality: 'verified' | 'preliminary' | 'estimated'
+  dataQuality: 'verified' | 'preliminary' | 'estimated';
 }
 
 /**
  * Simplified track bias summary for UI display
  */
 export interface TrackBiasSummary {
-  trackCode: string
-  trackName: string
-  speedBiasPercent: number
-  speedBiasDescription: string
-  favoredPostsDescription: string
-  isDataAvailable: boolean
+  trackCode: string;
+  trackName: string;
+  speedBiasPercent: number;
+  speedBiasDescription: string;
+  favoredPostsDescription: string;
+  isDataAvailable: boolean;
 }

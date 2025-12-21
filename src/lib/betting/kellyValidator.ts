@@ -15,7 +15,7 @@
  * @module betting/kellyValidator
  */
 
-import { logger } from '../../services/logging'
+import { logger } from '../../services/logging';
 
 // ============================================================================
 // TYPES
@@ -23,50 +23,50 @@ import { logger } from '../../services/logging'
 
 export interface KellyValidationInput {
   /** Win probability as decimal (0.0 to 1.0) or percentage (0 to 100) */
-  winProbability: number
+  winProbability: number;
   /** Decimal odds (e.g., 5.0 for 4/1) */
-  decimalOdds: number
+  decimalOdds: number;
   /** Current bankroll in dollars */
-  bankroll: number
+  bankroll: number;
 }
 
 export interface KellyValidationResult {
   /** Whether all inputs are valid */
-  isValid: boolean
+  isValid: boolean;
   /** Sanitized win probability (0.0 to 1.0) */
-  sanitizedProbability: number
+  sanitizedProbability: number;
   /** Sanitized decimal odds */
-  sanitizedOdds: number
+  sanitizedOdds: number;
   /** Sanitized bankroll */
-  sanitizedBankroll: number
+  sanitizedBankroll: number;
   /** Validation errors */
-  errors: string[]
+  errors: string[];
   /** Validation warnings (not blocking) */
-  warnings: string[]
+  warnings: string[];
 }
 
 export interface EdgeValidation {
   /** Whether bet has positive edge */
-  hasEdge: boolean
+  hasEdge: boolean;
   /** Edge percentage */
-  edgePercent: number
+  edgePercent: number;
   /** Is this an underlay? */
-  isUnderlay: boolean
+  isUnderlay: boolean;
   /** Implied probability from odds */
-  impliedProbability: number
+  impliedProbability: number;
   /** Our probability advantage */
-  probabilityAdvantage: number
+  probabilityAdvantage: number;
 }
 
 export interface BankrollValidation {
   /** Whether bankroll is sufficient */
-  isSufficient: boolean
+  isSufficient: boolean;
   /** Minimum bet amount */
-  minimumBet: number
+  minimumBet: number;
   /** Can place minimum bet? */
-  canPlaceMinBet: boolean
+  canPlaceMinBet: boolean;
   /** Warning if bankroll is low */
-  warning: string | null
+  warning: string | null;
 }
 
 // ============================================================================
@@ -74,25 +74,25 @@ export interface BankrollValidation {
 // ============================================================================
 
 /** Minimum valid probability */
-export const MIN_PROBABILITY = 0.001 // 0.1%
+export const MIN_PROBABILITY = 0.001; // 0.1%
 
 /** Maximum valid probability */
-export const MAX_PROBABILITY = 0.999 // 99.9%
+export const MAX_PROBABILITY = 0.999; // 99.9%
 
 /** Minimum valid decimal odds */
-export const MIN_DECIMAL_ODDS = 1.01 // Just above even
+export const MIN_DECIMAL_ODDS = 1.01; // Just above even
 
 /** Maximum reasonable decimal odds (1000/1) */
-export const MAX_DECIMAL_ODDS = 1001
+export const MAX_DECIMAL_ODDS = 1001;
 
 /** Minimum bankroll for betting */
-export const MIN_BANKROLL = 10
+export const MIN_BANKROLL = 10;
 
 /** Standard minimum bet amount */
-export const MINIMUM_BET_AMOUNT = 2
+export const MINIMUM_BET_AMOUNT = 2;
 
 /** Threshold for "aggressive" Kelly */
-export const AGGRESSIVE_KELLY_THRESHOLD = 0.25 // 25%
+export const AGGRESSIVE_KELLY_THRESHOLD = 0.25; // 25%
 
 // ============================================================================
 // CORE VALIDATION
@@ -102,49 +102,49 @@ export const AGGRESSIVE_KELLY_THRESHOLD = 0.25 // 25%
  * Validate and sanitize Kelly Criterion inputs
  */
 export function validateKellyInputs(input: KellyValidationInput): KellyValidationResult {
-  const errors: string[] = []
-  const warnings: string[] = []
+  const errors: string[] = [];
+  const warnings: string[] = [];
 
   // Validate and sanitize probability
-  let sanitizedProbability = sanitizeProbability(input.winProbability)
+  let sanitizedProbability = sanitizeProbability(input.winProbability);
   if (sanitizedProbability === null) {
-    errors.push('Invalid win probability')
-    sanitizedProbability = 0
+    errors.push('Invalid win probability');
+    sanitizedProbability = 0;
   }
 
   // Validate and sanitize odds
-  let sanitizedOdds = sanitizeOdds(input.decimalOdds)
+  let sanitizedOdds = sanitizeOdds(input.decimalOdds);
   if (sanitizedOdds === null) {
-    errors.push('Invalid odds')
-    sanitizedOdds = 2.0
+    errors.push('Invalid odds');
+    sanitizedOdds = 2.0;
   }
 
   // Validate and sanitize bankroll
-  let sanitizedBankroll = sanitizeBankroll(input.bankroll)
+  let sanitizedBankroll = sanitizeBankroll(input.bankroll);
   if (sanitizedBankroll === null) {
-    errors.push('Invalid bankroll')
-    sanitizedBankroll = 0
+    errors.push('Invalid bankroll');
+    sanitizedBankroll = 0;
   }
 
   // Check for low bankroll warning
   if (sanitizedBankroll > 0 && sanitizedBankroll < MIN_BANKROLL) {
-    warnings.push(`Bankroll $${sanitizedBankroll.toFixed(2)} is very low`)
+    warnings.push(`Bankroll $${sanitizedBankroll.toFixed(2)} is very low`);
   }
 
   // Check if probability is extremely high or low
   if (sanitizedProbability > 0.5) {
-    warnings.push('Win probability > 50% is unusual for horse racing')
+    warnings.push('Win probability > 50% is unusual for horse racing');
   }
   if (sanitizedProbability < 0.02) {
-    warnings.push('Win probability < 2% may not justify the risk')
+    warnings.push('Win probability < 2% may not justify the risk');
   }
 
   // Check if odds are unusual
   if (sanitizedOdds < 1.5) {
-    warnings.push('Very short odds - minimal potential profit')
+    warnings.push('Very short odds - minimal potential profit');
   }
   if (sanitizedOdds > 100) {
-    warnings.push('Extreme longshot odds - high variance')
+    warnings.push('Extreme longshot odds - high variance');
   }
 
   // Log validation issues
@@ -154,7 +154,7 @@ export function validateKellyInputs(input: KellyValidationInput): KellyValidatio
       errors,
       warnings,
       input,
-    })
+    });
   }
 
   return {
@@ -164,29 +164,26 @@ export function validateKellyInputs(input: KellyValidationInput): KellyValidatio
     sanitizedBankroll,
     errors,
     warnings,
-  }
+  };
 }
 
 /**
  * Validate edge (probability vs implied probability)
  */
-export function validateEdge(
-  winProbability: number,
-  decimalOdds: number
-): EdgeValidation {
+export function validateEdge(winProbability: number, decimalOdds: number): EdgeValidation {
   // Implied probability from odds
-  const impliedProbability = 1 / decimalOdds
+  const impliedProbability = 1 / decimalOdds;
 
   // Our edge = difference between our probability and implied
-  const probabilityAdvantage = winProbability - impliedProbability
+  const probabilityAdvantage = winProbability - impliedProbability;
 
   // Edge percentage (based on expected profit per $1)
-  const b = decimalOdds - 1
-  const edge = b * winProbability - (1 - winProbability)
-  const edgePercent = edge * 100
+  const b = decimalOdds - 1;
+  const edge = b * winProbability - (1 - winProbability);
+  const edgePercent = edge * 100;
 
   // Is this an underlay (negative edge)?
-  const isUnderlay = winProbability < impliedProbability
+  const isUnderlay = winProbability < impliedProbability;
 
   return {
     hasEdge: !isUnderlay && edge > 0,
@@ -194,7 +191,7 @@ export function validateEdge(
     isUnderlay,
     impliedProbability,
     probabilityAdvantage,
-  }
+  };
 }
 
 /**
@@ -204,14 +201,14 @@ export function validateBankroll(
   bankroll: number,
   minimumBet: number = MINIMUM_BET_AMOUNT
 ): BankrollValidation {
-  const isSufficient = bankroll >= MIN_BANKROLL
-  const canPlaceMinBet = bankroll >= minimumBet
+  const isSufficient = bankroll >= MIN_BANKROLL;
+  const canPlaceMinBet = bankroll >= minimumBet;
 
-  let warning: string | null = null
+  let warning: string | null = null;
   if (!canPlaceMinBet) {
-    warning = `Bankroll $${bankroll.toFixed(2)} is below minimum bet $${minimumBet}`
+    warning = `Bankroll $${bankroll.toFixed(2)} is below minimum bet $${minimumBet}`;
   } else if (!isSufficient) {
-    warning = `Bankroll $${bankroll.toFixed(2)} is very low for proper bankroll management`
+    warning = `Bankroll $${bankroll.toFixed(2)} is very low for proper bankroll management`;
   }
 
   return {
@@ -219,7 +216,7 @@ export function validateBankroll(
     minimumBet,
     canPlaceMinBet,
     warning,
-  }
+  };
 }
 
 /**
@@ -229,11 +226,11 @@ export function validateKellyAggression(
   kellyFraction: number,
   maxAllowed: number = AGGRESSIVE_KELLY_THRESHOLD
 ): {
-  isAggressive: boolean
-  cappedFraction: number
-  warning: string | null
+  isAggressive: boolean;
+  cappedFraction: number;
+  warning: string | null;
 } {
-  const isAggressive = kellyFraction > maxAllowed
+  const isAggressive = kellyFraction > maxAllowed;
 
   return {
     isAggressive,
@@ -241,7 +238,7 @@ export function validateKellyAggression(
     warning: isAggressive
       ? `Kelly ${(kellyFraction * 100).toFixed(1)}% exceeds ${(maxAllowed * 100).toFixed(0)}% cap`
       : null,
-  }
+  };
 }
 
 // ============================================================================
@@ -258,42 +255,42 @@ export function validateKellyAggression(
  */
 export function sanitizeProbability(probability: unknown): number | null {
   if (probability === null || probability === undefined) {
-    return null
+    return null;
   }
 
-  let value: number
+  let value: number;
 
   if (typeof probability === 'string') {
     // Remove % sign if present
-    const cleaned = probability.replace(/%/g, '').trim()
-    value = parseFloat(cleaned)
+    const cleaned = probability.replace(/%/g, '').trim();
+    value = parseFloat(cleaned);
     if (isNaN(value)) {
-      return null
+      return null;
     }
     // If string contained %, assume percentage
     if (probability.includes('%')) {
-      value = value / 100
+      value = value / 100;
     }
   } else if (typeof probability === 'number') {
-    value = probability
+    value = probability;
   } else {
-    return null
+    return null;
   }
 
   // If value > 1, assume it's a percentage and convert
   if (value > 1 && value <= 100) {
-    value = value / 100
+    value = value / 100;
   }
 
   // Clamp to valid range
   if (value < MIN_PROBABILITY || value > MAX_PROBABILITY) {
     if (value < 0 || value > 100) {
-      return null
+      return null;
     }
-    value = Math.max(MIN_PROBABILITY, Math.min(MAX_PROBABILITY, value))
+    value = Math.max(MIN_PROBABILITY, Math.min(MAX_PROBABILITY, value));
   }
 
-  return value
+  return value;
 }
 
 /**
@@ -305,43 +302,43 @@ export function sanitizeProbability(probability: unknown): number | null {
  */
 export function sanitizeOdds(odds: unknown): number | null {
   if (odds === null || odds === undefined) {
-    return null
+    return null;
   }
 
-  let value: number
+  let value: number;
 
   if (typeof odds === 'string') {
     // Handle fractional odds (e.g., "5-1", "9/2")
-    const fractionalMatch = odds.match(/^(\d+(?:\.\d+)?)\s*[-/]\s*(\d+(?:\.\d+)?)$/)
+    const fractionalMatch = odds.match(/^(\d+(?:\.\d+)?)\s*[-/]\s*(\d+(?:\.\d+)?)$/);
     if (fractionalMatch) {
-      const num = parseFloat(fractionalMatch[1])
-      const den = parseFloat(fractionalMatch[2])
+      const num = parseFloat(fractionalMatch[1]);
+      const den = parseFloat(fractionalMatch[2]);
       if (den > 0) {
-        value = num / den + 1
+        value = num / den + 1;
       } else {
-        return null
+        return null;
       }
     } else if (/^even$/i.test(odds.trim()) || /^evn$/i.test(odds.trim())) {
-      value = 2.0
+      value = 2.0;
     } else {
-      value = parseFloat(odds)
+      value = parseFloat(odds);
     }
   } else if (typeof odds === 'number') {
-    value = odds
+    value = odds;
   } else {
-    return null
+    return null;
   }
 
   if (isNaN(value)) {
-    return null
+    return null;
   }
 
   // Validate range
   if (value < MIN_DECIMAL_ODDS || value > MAX_DECIMAL_ODDS) {
-    return null
+    return null;
   }
 
-  return value
+  return value;
 }
 
 /**
@@ -349,26 +346,26 @@ export function sanitizeOdds(odds: unknown): number | null {
  */
 export function sanitizeBankroll(bankroll: unknown): number | null {
   if (bankroll === null || bankroll === undefined) {
-    return null
+    return null;
   }
 
-  let value: number
+  let value: number;
 
   if (typeof bankroll === 'string') {
     // Remove currency symbols and commas
-    const cleaned = bankroll.replace(/[$,]/g, '').trim()
-    value = parseFloat(cleaned)
+    const cleaned = bankroll.replace(/[$,]/g, '').trim();
+    value = parseFloat(cleaned);
   } else if (typeof bankroll === 'number') {
-    value = bankroll
+    value = bankroll;
   } else {
-    return null
+    return null;
   }
 
   if (isNaN(value) || value < 0) {
-    return null
+    return null;
   }
 
-  return value
+  return value;
 }
 
 // ============================================================================
@@ -385,23 +382,23 @@ export function performFullKellyValidation(
   minEdgeRequired: number = 0.05,
   maxKellyAllowed: number = 0.25
 ): {
-  isValid: boolean
-  shouldBet: boolean
-  reason: string | null
-  inputValidation: KellyValidationResult
-  edgeValidation: EdgeValidation
-  bankrollValidation: BankrollValidation
-  kellyFraction: number
-  warnings: string[]
+  isValid: boolean;
+  shouldBet: boolean;
+  reason: string | null;
+  inputValidation: KellyValidationResult;
+  edgeValidation: EdgeValidation;
+  bankrollValidation: BankrollValidation;
+  kellyFraction: number;
+  warnings: string[];
 } {
-  const warnings: string[] = []
+  const warnings: string[] = [];
 
   // Validate inputs
   const inputValidation = validateKellyInputs({
     winProbability,
     decimalOdds,
     bankroll,
-  })
+  });
 
   if (!inputValidation.isValid) {
     return {
@@ -413,16 +410,16 @@ export function performFullKellyValidation(
       bankrollValidation: validateBankroll(0),
       kellyFraction: 0,
       warnings: inputValidation.warnings,
-    }
+    };
   }
 
   // Use sanitized values
-  const p = inputValidation.sanitizedProbability
-  const odds = inputValidation.sanitizedOdds
-  const roll = inputValidation.sanitizedBankroll
+  const p = inputValidation.sanitizedProbability;
+  const odds = inputValidation.sanitizedOdds;
+  const roll = inputValidation.sanitizedBankroll;
 
   // Validate edge
-  const edgeValidation = validateEdge(p, odds)
+  const edgeValidation = validateEdge(p, odds);
   if (edgeValidation.isUnderlay) {
     return {
       isValid: true,
@@ -433,7 +430,7 @@ export function performFullKellyValidation(
       bankrollValidation: validateBankroll(roll),
       kellyFraction: 0,
       warnings: [...inputValidation.warnings, 'This is an underlay bet'],
-    }
+    };
   }
 
   // Check minimum edge
@@ -447,11 +444,11 @@ export function performFullKellyValidation(
       bankrollValidation: validateBankroll(roll),
       kellyFraction: 0,
       warnings: [...inputValidation.warnings, 'Edge too small'],
-    }
+    };
   }
 
   // Validate bankroll
-  const bankrollValidation = validateBankroll(roll)
+  const bankrollValidation = validateBankroll(roll);
   if (!bankrollValidation.canPlaceMinBet) {
     return {
       isValid: true,
@@ -462,18 +459,18 @@ export function performFullKellyValidation(
       bankrollValidation,
       kellyFraction: 0,
       warnings: [...inputValidation.warnings],
-    }
+    };
   }
 
   // Calculate Kelly fraction
-  const b = odds - 1
-  const q = 1 - p
-  const kellyFraction = (b * p - q) / b
+  const b = odds - 1;
+  const q = 1 - p;
+  const kellyFraction = (b * p - q) / b;
 
   // Check aggression
-  const aggressionCheck = validateKellyAggression(kellyFraction, maxKellyAllowed)
+  const aggressionCheck = validateKellyAggression(kellyFraction, maxKellyAllowed);
   if (aggressionCheck.warning) {
-    warnings.push(aggressionCheck.warning)
+    warnings.push(aggressionCheck.warning);
   }
 
   return {
@@ -485,5 +482,5 @@ export function performFullKellyValidation(
     bankrollValidation,
     kellyFraction,
     warnings: [...inputValidation.warnings, ...warnings],
-  }
+  };
 }

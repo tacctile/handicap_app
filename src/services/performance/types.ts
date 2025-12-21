@@ -34,27 +34,27 @@ export type MetricName =
   | 'fid'
   | 'cls'
   | 'ttfb'
-  | 'fcp'
+  | 'fcp';
 
 /**
  * Unit of measurement for metrics
  */
-export type MetricUnit = 'ms' | 's' | 'score' | 'ratio' | 'count' | 'bytes'
+export type MetricUnit = 'ms' | 's' | 'score' | 'ratio' | 'count' | 'bytes';
 
 /**
  * A single performance metric
  */
 export interface PerformanceMetric {
   /** Name of the metric */
-  name: MetricName | string
+  name: MetricName | string;
   /** Numeric value of the metric */
-  value: number
+  value: number;
   /** Unit of measurement */
-  unit: MetricUnit
+  unit: MetricUnit;
   /** ISO timestamp when metric was recorded */
-  timestamp: string
+  timestamp: string;
   /** Optional additional context */
-  context?: TimingContext
+  context?: TimingContext;
 }
 
 /**
@@ -62,13 +62,13 @@ export interface PerformanceMetric {
  */
 export interface TimingContext {
   /** Component where the timing was recorded */
-  component?: string
+  component?: string;
   /** Action being timed */
-  action?: string
+  action?: string;
   /** Size of data being processed (e.g., number of horses) */
-  dataSize?: number
+  dataSize?: number;
   /** Additional metadata */
-  [key: string]: unknown
+  [key: string]: unknown;
 }
 
 // ============================================================================
@@ -78,7 +78,7 @@ export interface TimingContext {
 /**
  * Provider type for performance monitoring backends
  */
-export type PerformanceProviderType = 'mock' | 'datadog' | 'newrelic'
+export type PerformanceProviderType = 'mock' | 'datadog' | 'newrelic';
 
 /**
  * Interface for performance monitoring providers
@@ -88,7 +88,7 @@ export type PerformanceProviderType = 'mock' | 'datadog' | 'newrelic'
  */
 export interface PerformanceProvider {
   /** Provider name for identification */
-  readonly name: PerformanceProviderType
+  readonly name: PerformanceProviderType;
 
   /**
    * Track a custom metric
@@ -102,7 +102,7 @@ export interface PerformanceProvider {
     value: number,
     unit: MetricUnit,
     context?: TimingContext
-  ): void
+  ): void;
 
   /**
    * Track a timing metric (shorthand for trackMetric with 'ms' unit)
@@ -110,22 +110,18 @@ export interface PerformanceProvider {
    * @param durationMs Duration in milliseconds
    * @param context Optional context
    */
-  trackTiming(
-    name: MetricName | string,
-    durationMs: number,
-    context?: TimingContext
-  ): void
+  trackTiming(name: MetricName | string, durationMs: number, context?: TimingContext): void;
 
   /**
    * Get all recorded metrics
    * @returns Array of recorded metrics
    */
-  getMetrics(): PerformanceMetric[]
+  getMetrics(): PerformanceMetric[];
 
   /**
    * Clear all recorded metrics
    */
-  clearMetrics(): void
+  clearMetrics(): void;
 }
 
 // ============================================================================
@@ -137,13 +133,13 @@ export interface PerformanceProvider {
  */
 export interface PerformanceConfig {
   /** Whether performance tracking is enabled */
-  enabled: boolean
+  enabled: boolean;
   /** Maximum number of metrics to store in memory */
-  maxMetrics: number
+  maxMetrics: number;
   /** Whether to log metrics to console (development) */
-  consoleLogging: boolean
+  consoleLogging: boolean;
   /** Sample rate for metrics (0-1, where 1 = 100%) */
-  sampleRate: number
+  sampleRate: number;
 }
 
 /**
@@ -154,7 +150,7 @@ export const DEFAULT_PERFORMANCE_CONFIG: PerformanceConfig = {
   maxMetrics: 100,
   consoleLogging: true,
   sampleRate: 1.0,
-}
+};
 
 // ============================================================================
 // WEB VITALS TYPES
@@ -163,30 +159,30 @@ export const DEFAULT_PERFORMANCE_CONFIG: PerformanceConfig = {
 /**
  * Web Vitals metric names
  */
-export type WebVitalName = 'lcp' | 'fid' | 'cls' | 'ttfb' | 'fcp'
+export type WebVitalName = 'lcp' | 'fid' | 'cls' | 'ttfb' | 'fcp';
 
 /**
  * Web Vitals metric entry (compatible with web-vitals library)
  */
 export interface WebVitalMetric {
   /** Metric name */
-  name: WebVitalName
+  name: WebVitalName;
   /** Metric value */
-  value: number
+  value: number;
   /** Rating: good, needs-improvement, or poor */
-  rating: 'good' | 'needs-improvement' | 'poor'
+  rating: 'good' | 'needs-improvement' | 'poor';
   /** Delta from last report (for CLS) */
-  delta: number
+  delta: number;
   /** Unique ID for the metric */
-  id: string
+  id: string;
   /** Metric entries (for debugging) */
-  entries: PerformanceEntry[]
+  entries: PerformanceEntry[];
 }
 
 /**
  * Callback for web vitals reporting
  */
-export type WebVitalCallback = (metric: WebVitalMetric) => void
+export type WebVitalCallback = (metric: WebVitalMetric) => void;
 
 // ============================================================================
 // TIMER TYPES
@@ -195,14 +191,14 @@ export type WebVitalCallback = (metric: WebVitalMetric) => void
 /**
  * Function returned by startTimer() to stop timing and record the metric
  */
-export type StopTimerFn = () => void
+export type StopTimerFn = () => void;
 
 /**
  * Extended stop function that also returns the duration
  */
 export interface TimerResult {
   /** Duration in milliseconds */
-  duration: number
+  duration: number;
   /** The recorded metric */
-  metric: PerformanceMetric
+  metric: PerformanceMetric;
 }

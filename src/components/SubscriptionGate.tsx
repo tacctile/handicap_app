@@ -8,12 +8,12 @@
  * Can also show a full-page subscription page for route-level gating.
  */
 
-import { type ReactNode, type CSSProperties } from 'react'
-import { useAuth } from '../hooks/useAuth'
-import { useSubscription } from '../hooks/useSubscription'
-import { useFeatureFlag } from '../hooks/useFeatureFlag'
-import { SubscriptionPage } from './subscription'
-import { logger } from '../services/logging'
+import { type ReactNode, type CSSProperties } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { useSubscription } from '../hooks/useSubscription';
+import { useFeatureFlag } from '../hooks/useFeatureFlag';
+import { SubscriptionPage } from './subscription';
+import { logger } from '../services/logging';
 
 // ============================================================================
 // TYPES
@@ -21,21 +21,21 @@ import { logger } from '../services/logging'
 
 export interface SubscriptionGateProps {
   /** Child components to render when authorized */
-  children: ReactNode
+  children: ReactNode;
   /** Feature name for display in upgrade prompt */
-  featureName?: string
+  featureName?: string;
   /** Custom prompt to show when not subscribed */
-  fallback?: ReactNode
+  fallback?: ReactNode;
   /** Whether to show a blurred preview of the content */
-  showPreview?: boolean
+  showPreview?: boolean;
   /** Custom styles for the gate container */
-  style?: CSSProperties
+  style?: CSSProperties;
   /** Custom class name */
-  className?: string
+  className?: string;
   /** Whether to hide completely instead of showing prompt */
-  hideWhenLocked?: boolean
+  hideWhenLocked?: boolean;
   /** Show full-page subscription page instead of inline prompt */
-  fullPage?: boolean
+  fullPage?: boolean;
 }
 
 // ============================================================================
@@ -43,16 +43,12 @@ export interface SubscriptionGateProps {
 // ============================================================================
 
 interface InlineUpgradePromptProps {
-  featureName?: string
-  onSubscribe: () => void
-  isLoading: boolean
+  featureName?: string;
+  onSubscribe: () => void;
+  isLoading: boolean;
 }
 
-function InlineUpgradePrompt({
-  featureName,
-  onSubscribe,
-  isLoading,
-}: InlineUpgradePromptProps) {
+function InlineUpgradePrompt({ featureName, onSubscribe, isLoading }: InlineUpgradePromptProps) {
   return (
     <div
       style={{
@@ -147,7 +143,7 @@ function InlineUpgradePrompt({
         {isLoading ? 'Loading...' : 'Upgrade'}
       </button>
     </div>
-  )
+  );
 }
 
 // ============================================================================
@@ -155,18 +151,13 @@ function InlineUpgradePrompt({
 // ============================================================================
 
 interface BlurredPreviewProps {
-  children: ReactNode
-  featureName?: string
-  onSubscribe: () => void
-  isLoading: boolean
+  children: ReactNode;
+  featureName?: string;
+  onSubscribe: () => void;
+  isLoading: boolean;
 }
 
-function BlurredPreview({
-  children,
-  featureName,
-  onSubscribe,
-  isLoading,
-}: BlurredPreviewProps) {
+function BlurredPreview({ children, featureName, onSubscribe, isLoading }: BlurredPreviewProps) {
   return (
     <div style={{ position: 'relative' }}>
       {/* Blurred content */}
@@ -200,7 +191,7 @@ function BlurredPreview({
         />
       </div>
     </div>
-  )
+  );
 }
 
 // ============================================================================
@@ -251,13 +242,13 @@ export function SubscriptionGate({
   hideWhenLocked = false,
   fullPage = false,
 }: SubscriptionGateProps) {
-  const subscriptionRequired = useFeatureFlag('SUBSCRIPTION_REQUIRED')
-  const { isAuthenticated } = useAuth()
-  const { isActive, isLoading, openCheckout, refresh } = useSubscription()
+  const subscriptionRequired = useFeatureFlag('SUBSCRIPTION_REQUIRED');
+  const { isAuthenticated } = useAuth();
+  const { isActive, isLoading, openCheckout, refresh } = useSubscription();
 
   // If subscription checking is disabled, show content
   if (!subscriptionRequired) {
-    return <>{children}</>
+    return <>{children}</>;
   }
 
   // Handle loading state for full-page mode
@@ -306,14 +297,14 @@ export function SubscriptionGate({
           `}</style>
         </div>
       </div>
-    )
+    );
   }
 
   // If user is not authenticated, they can't have a subscription
   // But we still show the content if subscription isn't required
   if (!isAuthenticated) {
     if (hideWhenLocked) {
-      return null
+      return null;
     }
 
     // Show full-page subscription page for unauthenticated users too
@@ -322,11 +313,15 @@ export function SubscriptionGate({
         <SubscriptionPage
           context={featureName ? `${featureName} requires a subscription` : undefined}
         />
-      )
+      );
     }
 
     if (fallback) {
-      return <div style={style} className={className}>{fallback}</div>
+      return (
+        <div style={style} className={className}>
+          {fallback}
+        </div>
+      );
     }
 
     if (showPreview) {
@@ -342,7 +337,7 @@ export function SubscriptionGate({
             {children}
           </BlurredPreview>
         </div>
-      )
+      );
     }
 
     return (
@@ -355,30 +350,30 @@ export function SubscriptionGate({
           isLoading={false}
         />
       </div>
-    )
+    );
   }
 
   // Handle subscribe button click
   const handleSubscribe = async () => {
     try {
-      const url = await openCheckout()
-      window.open(url, '_blank')
+      const url = await openCheckout();
+      window.open(url, '_blank');
     } catch (err) {
       logger.logError(err instanceof Error ? err : new Error(String(err)), {
         component: 'SubscriptionGate',
         action: 'openCheckout',
-      })
+      });
     }
-  }
+  };
 
   // If user has active subscription, show content
   if (isActive) {
-    return <>{children}</>
+    return <>{children}</>;
   }
 
   // User is authenticated but not subscribed
   if (hideWhenLocked) {
-    return null
+    return null;
   }
 
   // Show full-page subscription page
@@ -388,12 +383,16 @@ export function SubscriptionGate({
         context={featureName ? `${featureName} requires a subscription` : undefined}
         onSubscribe={refresh}
       />
-    )
+    );
   }
 
   // Show custom fallback if provided
   if (fallback) {
-    return <div style={style} className={className}>{fallback}</div>
+    return (
+      <div style={style} className={className}>
+        {fallback}
+      </div>
+    );
   }
 
   // Show blurred preview with overlay
@@ -408,7 +407,7 @@ export function SubscriptionGate({
           {children}
         </BlurredPreview>
       </div>
-    )
+    );
   }
 
   // Show inline upgrade prompt
@@ -420,7 +419,7 @@ export function SubscriptionGate({
         isLoading={isLoading}
       />
     </div>
-  )
+  );
 }
 
-export default SubscriptionGate
+export default SubscriptionGate;

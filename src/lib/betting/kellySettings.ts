@@ -20,40 +20,40 @@
 // ============================================================================
 
 /** Kelly fraction options */
-export type KellyFraction = 'quarter' | 'half' | 'full'
+export type KellyFraction = 'quarter' | 'half' | 'full';
 
 /** Risk tolerance levels for Kelly */
-export type RiskToleranceKelly = 'conservative' | 'moderate' | 'aggressive'
+export type RiskToleranceKelly = 'conservative' | 'moderate' | 'aggressive';
 
 /** Kelly Criterion settings */
 export interface KellySettings {
   /** Whether Kelly Criterion is enabled */
-  enabled: boolean
+  enabled: boolean;
   /** Kelly fraction to use */
-  kellyFraction: KellyFraction
+  kellyFraction: KellyFraction;
   /** Maximum bet as percentage of bankroll (1-20) */
-  maxBetPercent: number
+  maxBetPercent: number;
   /** Minimum edge required to bet (1-25) */
-  minEdgeRequired: number
+  minEdgeRequired: number;
 }
 
 /** Kelly preset configuration */
 export interface KellyPreset {
   /** Preset name */
-  name: string
+  name: string;
   /** Description */
-  description: string
+  description: string;
   /** Settings for this preset */
-  settings: Omit<KellySettings, 'enabled'>
+  settings: Omit<KellySettings, 'enabled'>;
 }
 
 /** Kelly display info for UI */
 export interface KellyDisplayInfo {
-  label: string
-  shortLabel: string
-  description: string
-  riskLevel: 'low' | 'medium' | 'high'
-  color: string
+  label: string;
+  shortLabel: string;
+  description: string;
+  riskLevel: 'low' | 'medium' | 'high';
+  color: string;
 }
 
 // ============================================================================
@@ -66,15 +66,15 @@ export const DEFAULT_KELLY_SETTINGS: KellySettings = {
   kellyFraction: 'quarter',
   maxBetPercent: 10,
   minEdgeRequired: 10,
-}
+};
 
 /** Kelly fraction options for UI */
 export const KELLY_FRACTION_OPTIONS: Array<{
-  value: KellyFraction
-  label: string
-  shortLabel: string
-  description: string
-  multiplier: number
+  value: KellyFraction;
+  label: string;
+  shortLabel: string;
+  description: string;
+  multiplier: number;
 }> = [
   {
     value: 'quarter',
@@ -88,16 +88,16 @@ export const KELLY_FRACTION_OPTIONS: Array<{
     label: 'Half Kelly (1/2)',
     shortLabel: '1/2 Kelly',
     description: 'Balanced - 50% of optimal bet',
-    multiplier: 0.50,
+    multiplier: 0.5,
   },
   {
     value: 'full',
     label: 'Full Kelly',
     shortLabel: 'Full Kelly',
     description: 'Optimal growth but higher variance',
-    multiplier: 1.00,
+    multiplier: 1.0,
   },
-]
+];
 
 /** Maximum bet percentage options */
 export const MAX_BET_PERCENT_OPTIONS = [
@@ -105,7 +105,7 @@ export const MAX_BET_PERCENT_OPTIONS = [
   { value: 10, label: '10%', description: 'Standard max' },
   { value: 15, label: '15%', description: 'Aggressive max' },
   { value: 20, label: '20%', description: 'Very aggressive' },
-]
+];
 
 /** Minimum edge required options */
 export const MIN_EDGE_OPTIONS = [
@@ -114,7 +114,7 @@ export const MIN_EDGE_OPTIONS = [
   { value: 15, label: '15%', description: 'Require clear edge' },
   { value: 20, label: '20%', description: 'Strong edges only' },
   { value: 25, label: '25%', description: 'Premium edges only' },
-]
+];
 
 /** Risk tolerance presets */
 export const KELLY_RISK_PRESETS: Record<RiskToleranceKelly, KellyPreset> = {
@@ -145,7 +145,7 @@ export const KELLY_RISK_PRESETS: Record<RiskToleranceKelly, KellyPreset> = {
       minEdgeRequired: 5,
     },
   },
-}
+};
 
 /** Kelly fraction display info */
 export const KELLY_FRACTION_INFO: Record<KellyFraction, KellyDisplayInfo> = {
@@ -170,7 +170,7 @@ export const KELLY_FRACTION_INFO: Record<KellyFraction, KellyDisplayInfo> = {
     riskLevel: 'high',
     color: '#ef4444', // red
   },
-}
+};
 
 // ============================================================================
 // SETTINGS HELPERS
@@ -180,11 +180,11 @@ export const KELLY_FRACTION_INFO: Record<KellyFraction, KellyDisplayInfo> = {
  * Get Kelly settings for a risk tolerance level
  */
 export function getKellyPresetForRisk(riskTolerance: RiskToleranceKelly): KellySettings {
-  const preset = KELLY_RISK_PRESETS[riskTolerance]
+  const preset = KELLY_RISK_PRESETS[riskTolerance];
   return {
     enabled: true,
     ...preset.settings,
-  }
+  };
 }
 
 /**
@@ -194,7 +194,7 @@ export function mergeKellySettings(
   userSettings: Partial<KellySettings> | undefined
 ): KellySettings {
   if (!userSettings) {
-    return { ...DEFAULT_KELLY_SETTINGS }
+    return { ...DEFAULT_KELLY_SETTINGS };
   }
 
   return {
@@ -202,62 +202,62 @@ export function mergeKellySettings(
     kellyFraction: userSettings.kellyFraction ?? DEFAULT_KELLY_SETTINGS.kellyFraction,
     maxBetPercent: userSettings.maxBetPercent ?? DEFAULT_KELLY_SETTINGS.maxBetPercent,
     minEdgeRequired: userSettings.minEdgeRequired ?? DEFAULT_KELLY_SETTINGS.minEdgeRequired,
-  }
+  };
 }
 
 /**
  * Validate Kelly settings
  */
 export function validateKellySettings(settings: Partial<KellySettings>): {
-  isValid: boolean
-  errors: string[]
+  isValid: boolean;
+  errors: string[];
 } {
-  const errors: string[] = []
+  const errors: string[] = [];
 
   if (settings.maxBetPercent !== undefined) {
     if (settings.maxBetPercent < 1 || settings.maxBetPercent > 20) {
-      errors.push('Max bet percent must be between 1% and 20%')
+      errors.push('Max bet percent must be between 1% and 20%');
     }
   }
 
   if (settings.minEdgeRequired !== undefined) {
     if (settings.minEdgeRequired < 1 || settings.minEdgeRequired > 25) {
-      errors.push('Minimum edge must be between 1% and 25%')
+      errors.push('Minimum edge must be between 1% and 25%');
     }
   }
 
   if (settings.kellyFraction !== undefined) {
     if (!['quarter', 'half', 'full'].includes(settings.kellyFraction)) {
-      errors.push('Invalid Kelly fraction')
+      errors.push('Invalid Kelly fraction');
     }
   }
 
   return {
     isValid: errors.length === 0,
     errors,
-  }
+  };
 }
 
 /**
  * Get Kelly fraction multiplier
  */
 export function getKellyMultiplier(fraction: KellyFraction): number {
-  const option = KELLY_FRACTION_OPTIONS.find(o => o.value === fraction)
-  return option?.multiplier ?? 0.25
+  const option = KELLY_FRACTION_OPTIONS.find((o) => o.value === fraction);
+  return option?.multiplier ?? 0.25;
 }
 
 /**
  * Get display label for Kelly fraction
  */
 export function getKellyFractionLabel(fraction: KellyFraction): string {
-  return KELLY_FRACTION_INFO[fraction]?.label ?? 'Quarter Kelly'
+  return KELLY_FRACTION_INFO[fraction]?.label ?? 'Quarter Kelly';
 }
 
 /**
  * Get short label for Kelly fraction (for compact display)
  */
 export function getKellyFractionShortLabel(fraction: KellyFraction): string {
-  return KELLY_FRACTION_INFO[fraction]?.shortLabel ?? '1/4'
+  return KELLY_FRACTION_INFO[fraction]?.shortLabel ?? '1/4';
 }
 
 // ============================================================================
@@ -318,7 +318,7 @@ Quarter Kelly is recommended because:
 
   warnings: [
     'Never bet if Kelly is negative (you have no edge)',
-    'Kelly assumes you know true probabilities (you don\'t perfectly)',
+    "Kelly assumes you know true probabilities (you don't perfectly)",
     'Full Kelly can lead to 90% drawdowns even with an edge',
     'Start with Quarter Kelly until you trust your estimates',
     'Kelly is for long-term growth, not short-term wins',
@@ -327,40 +327,42 @@ Quarter Kelly is recommended because:
   glossary: {
     edge: 'Your probability advantage over the implied odds',
     overlay: 'When your estimated probability exceeds the implied probability',
-    underlay: 'When your estimated probability is below the implied probability - don\'t bet!',
+    underlay: "When your estimated probability is below the implied probability - don't bet!",
     implied_probability: 'The probability suggested by the odds (1/decimal odds)',
     fractional_kelly: 'Using a fraction (1/4, 1/2) of the full Kelly to reduce variance',
     expected_growth: 'The geometric mean of expected bankroll growth per bet',
   },
-}
+};
 
 /**
  * Get Kelly education section by key
  */
-export function getKellyEducation(section: keyof typeof KELLY_EDUCATION): string | string[] | Record<string, string> {
-  return KELLY_EDUCATION[section]
+export function getKellyEducation(
+  section: keyof typeof KELLY_EDUCATION
+): string | string[] | Record<string, string> {
+  return KELLY_EDUCATION[section];
 }
 
 // ============================================================================
 // STORAGE HELPERS
 // ============================================================================
 
-const KELLY_SETTINGS_KEY = 'furlong_kelly_settings'
+const KELLY_SETTINGS_KEY = 'furlong_kelly_settings';
 
 /**
  * Load Kelly settings from localStorage
  */
 export function loadKellySettings(): KellySettings {
   try {
-    const stored = localStorage.getItem(KELLY_SETTINGS_KEY)
+    const stored = localStorage.getItem(KELLY_SETTINGS_KEY);
     if (stored) {
-      const parsed = JSON.parse(stored)
-      return mergeKellySettings(parsed)
+      const parsed = JSON.parse(stored);
+      return mergeKellySettings(parsed);
     }
   } catch {
     // Ignore parse errors
   }
-  return { ...DEFAULT_KELLY_SETTINGS }
+  return { ...DEFAULT_KELLY_SETTINGS };
 }
 
 /**
@@ -368,7 +370,7 @@ export function loadKellySettings(): KellySettings {
  */
 export function saveKellySettings(settings: KellySettings): void {
   try {
-    localStorage.setItem(KELLY_SETTINGS_KEY, JSON.stringify(settings))
+    localStorage.setItem(KELLY_SETTINGS_KEY, JSON.stringify(settings));
   } catch {
     // Ignore storage errors
   }
@@ -379,7 +381,7 @@ export function saveKellySettings(settings: KellySettings): void {
  */
 export function resetKellySettings(): void {
   try {
-    localStorage.removeItem(KELLY_SETTINGS_KEY)
+    localStorage.removeItem(KELLY_SETTINGS_KEY);
   } catch {
     // Ignore storage errors
   }

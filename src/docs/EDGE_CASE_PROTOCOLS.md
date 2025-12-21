@@ -15,11 +15,13 @@
 **Horses scoring 120-139 points (just below betting threshold) qualify for special review IF they meet ANY of the following:**
 
 **Ultra-High Overlay Situations:**
+
 - Horse should be 8/1 or lower but is 20/1+ (250%+ overlay)
 - Morning line 12/1+ but mathematical analysis suggests 6/1 or better
 - Massive market inefficiency detected (3x+ overlay minimum)
 
 **Perfect Storm Scenarios:**
+
 - Lone speed in field with all closers AND drawn inside
 - Only closer in field of pure speed types AND hot pace guaranteed
 - Class dropper with valid excuse AND connections upgrade AND equipment change
@@ -31,42 +33,42 @@
 
 **Nuclear Pace Setup Bonus:**
 
-| Scenario | Bonus |
-|----------|-------|
-| Lone speed in field of 8+ closers | +25 points |
-| Single closer in field of 6+ speed horses | +25 points |
+| Scenario                                             | Bonus      |
+| ---------------------------------------------------- | ---------- |
+| Lone speed in field of 8+ closers                    | +25 points |
+| Single closer in field of 6+ speed horses            | +25 points |
 | Perfect tactical setup with no competition for style | +20 points |
 
 **Extreme Class Relief Bonus:**
 
-| Scenario | Bonus |
-|----------|-------|
-| Dropping 50%+ in claiming price with valid excuse | +20 points |
+| Scenario                                                       | Bonus      |
+| -------------------------------------------------------------- | ---------- |
+| Dropping 50%+ in claiming price with valid excuse              | +20 points |
 | Stakes horse dropping to claiming with connections maintaining | +15 points |
-| Allowance regular dropping to bottom-level claiming | +18 points |
+| Allowance regular dropping to bottom-level claiming            | +18 points |
 
 **Elite Connections Rescue Bonus:**
 
-| Scenario | Bonus |
-|----------|-------|
+| Scenario                                               | Bonus      |
+| ------------------------------------------------------ | ---------- |
 | Claimed by elite trainer last race, making first start | +15 points |
-| Switching to track's leading rider for first time | +10 points |
-| Moving to elite barn with proven claiming record | +12 points |
+| Switching to track's leading rider for first time      | +10 points |
+| Moving to elite barn with proven claiming record       | +12 points |
 
 **Equipment Transformation Bonus:**
 
-| Scenario | Bonus |
-|----------|-------|
+| Scenario                                                | Bonus      |
+| ------------------------------------------------------- | ---------- |
 | First-time Lasix for chronic bleeder with elite trainer | +15 points |
-| Blinkers off for known dueling horse in soft pace | +12 points |
-| First-time equipment with trainer 50%+ success rate | +10 points |
+| Blinkers off for known dueling horse in soft pace       | +12 points |
+| First-time equipment with trainer 50%+ success rate     | +10 points |
 
 **Hidden Form Bonus:**
 
-| Scenario | Bonus |
-|----------|-------|
-| Last race troubled trip with competitive speed figure | +12 points |
-| Wide trip entire race but finished within 3 lengths | +8 points |
+| Scenario                                                     | Bonus      |
+| ------------------------------------------------------------ | ---------- |
+| Last race troubled trip with competitive speed figure        | +12 points |
+| Wide trip entire race but finished within 3 lengths          | +8 points  |
 | Major excuse (interference/stumble) with sharp workout since | +10 points |
 
 #### Diamond Upgrade Calculation
@@ -127,6 +129,7 @@ EXPECTED VALUE: [EXTREME/HIGH/MODERATE]
 #### Integration with Main System
 
 **Application Order:**
+
 1. Calculate base score using available performance data
 2. Apply standard DRF overlay analysis
 3. If score is 120-139, check Diamond activation criteria
@@ -143,6 +146,7 @@ EXPECTED VALUE: [EXTREME/HIGH/MODERATE]
 #### Activation Criteria
 
 **Horses qualifying for enhanced analysis:**
+
 - Fewer than 8 lifetime starts (limited performance data)
 - Maidens with fewer than 5 starts
 - First-time starters with strong breeding/connections
@@ -155,76 +159,76 @@ EXPECTED VALUE: [EXTREME/HIGH/MODERATE]
 
 **Elite Sire Bonus:**
 
-| Criteria | Bonus |
-|----------|-------|
+| Criteria                                            | Bonus      |
+| --------------------------------------------------- | ---------- |
 | Sire stud fee $25,000+ with strong offspring record | +15 points |
-| Sire with 15%+ stakes winners from foals | +15 points |
-| Sire with 20%+ winners from starters at distance | +15 points |
-| Proven sire at current track specifically | +15 points |
+| Sire with 15%+ stakes winners from foals            | +15 points |
+| Sire with 20%+ winners from starters at distance    | +15 points |
+| Proven sire at current track specifically           | +15 points |
 
 **Specialist Sire Bonus:**
 
-| Criteria | Bonus |
-|----------|-------|
-| Sire with 25%+ first-time starter winners | +10 points |
+| Criteria                                             | Bonus      |
+| ---------------------------------------------------- | ---------- |
+| Sire with 25%+ first-time starter winners            | +10 points |
 | Sire with 30%+ 2-year-old winners (for young horses) | +10 points |
-| Sire with 20%+ winners at exact distance | +10 points |
-| Sire with outstanding surface record (25%+ winners) | +10 points |
+| Sire with 20%+ winners at exact distance             | +10 points |
+| Sire with outstanding surface record (25%+ winners)  | +10 points |
 
 **Distance/Surface Sire Match:**
 
-| Criteria | Bonus |
-|----------|-------|
-| Sire offspring excel at today's distance (18%+ winners) | +8 points |
-| Sire has strong surface record matching today's race | +8 points |
+| Criteria                                                          | Bonus     |
+| ----------------------------------------------------------------- | --------- |
+| Sire offspring excel at today's distance (18%+ winners)           | +8 points |
+| Sire has strong surface record matching today's race              | +8 points |
 | Sire known for early speed/closing ability matching horse's style | +8 points |
-| Regional sire success (state-bred advantage) | +8 points |
+| Regional sire success (state-bred advantage)                      | +8 points |
 
 **Dam/Family Enhancement:**
 
 **Producer Dam Bonus:**
 
-| Criteria | Bonus |
-|----------|-------|
-| Dam has produced 3+ winners | +8 points |
-| Dam has produced stakes winner | +12 points |
-| Dam was stakes winner herself | +8 points |
-| Dam's other offspring successful at this level | +6 points |
+| Criteria                                       | Bonus      |
+| ---------------------------------------------- | ---------- |
+| Dam has produced 3+ winners                    | +8 points  |
+| Dam has produced stakes winner                 | +12 points |
+| Dam was stakes winner herself                  | +8 points  |
+| Dam's other offspring successful at this level | +6 points  |
 
 **Family Pattern Bonus:**
 
-| Criteria | Bonus |
-|----------|-------|
+| Criteria                                              | Bonus     |
+| ----------------------------------------------------- | --------- |
 | Strong distaff family with multiple stakes performers | +8 points |
-| Immediate family successful at current track | +6 points |
-| Half-siblings successful at similar conditions | +5 points |
+| Immediate family successful at current track          | +6 points |
+| Half-siblings successful at similar conditions        | +5 points |
 
 #### First-Time Starter Special Analysis
 
 **Trainer First-Timer Success Patterns:**
 
-| Trainer Pattern | Bonus |
-|-----------------|-------|
-| Elite trainer with 30%+ first-timer success | +20 points |
+| Trainer Pattern                              | Bonus      |
+| -------------------------------------------- | ---------- |
+| Elite trainer with 30%+ first-timer success  | +20 points |
 | Strong trainer with 25%+ first-timer success | +18 points |
-| Trainer with 20%+ first-timer success | +15 points |
+| Trainer with 20%+ first-timer success        | +15 points |
 
 **Workout Pattern Analysis for First-Timers:**
 
-| Pattern | Bonus |
-|---------|-------|
-| 3+ bullets in last 30 days | +15 points |
-| Gate work within 10 days | +8 points |
-| Series of improving work times | +10 points |
-| Working in company with quality horses | +6 points |
+| Pattern                                | Bonus      |
+| -------------------------------------- | ---------- |
+| 3+ bullets in last 30 days             | +15 points |
+| Gate work within 10 days               | +8 points  |
+| Series of improving work times         | +10 points |
+| Working in company with quality horses | +6 points  |
 
 **Equipment Readiness Indicators:**
 
-| Indicator | Bonus |
-|-----------|-------|
-| Racing equipment in workouts | +5 points |
+| Indicator                              | Bonus     |
+| -------------------------------------- | --------- |
+| Racing equipment in workouts           | +5 points |
 | Blinkers in works (suggests readiness) | +3 points |
-| Consistent equipment pattern | +4 points |
+| Consistent equipment pattern           | +4 points |
 
 #### Maiden Special Considerations
 
@@ -232,28 +236,28 @@ EXPECTED VALUE: [EXTREME/HIGH/MODERATE]
 
 **Class Drop Maidens:**
 
-| Scenario | Bonus |
-|----------|-------|
-| Dropping from MSW to maiden claiming | +8 points |
+| Scenario                                  | Bonus      |
+| ----------------------------------------- | ---------- |
+| Dropping from MSW to maiden claiming      | +8 points  |
 | Significant drop in maiden claiming level | +12 points |
-| Moving to more suitable class level | +6 points |
+| Moving to more suitable class level       | +6 points  |
 
 **Improvement Pattern Recognition:**
 
-| Pattern | Bonus |
-|---------|-------|
-| Consistent speed figure improvement | +8 points |
-| Reducing beaten lengths each start | +6 points |
-| Better positioning in recent races | +4 points |
+| Pattern                              | Bonus     |
+| ------------------------------------ | --------- |
+| Consistent speed figure improvement  | +8 points |
+| Reducing beaten lengths each start   | +6 points |
+| Better positioning in recent races   | +4 points |
 | Learning/experience curve indicators | +5 points |
 
 **Maiden Pace Advantage:**
 
-| Scenario | Bonus |
-|----------|-------|
+| Scenario                                     | Bonus     |
+| -------------------------------------------- | --------- |
 | Lone speed in field of inexperienced closers | +8 points |
-| Tactical speed advantage in maiden field | +6 points |
-| Experience edge in large maiden field | +4 points |
+| Tactical speed advantage in maiden field     | +6 points |
+| Experience edge in large maiden field        | +4 points |
 
 #### Limited Surface/Distance Data Compensation
 
@@ -261,19 +265,19 @@ EXPECTED VALUE: [EXTREME/HIGH/MODERATE]
 
 **Breeding-Based Surface Projection:**
 
-| Scenario | Bonus |
-|----------|-------|
-| Strong turf breeding making turf debut | +8 points |
-| Dirt breeding returning to dirt from turf | +6 points |
+| Scenario                                     | Bonus     |
+| -------------------------------------------- | --------- |
+| Strong turf breeding making turf debut       | +8 points |
+| Dirt breeding returning to dirt from turf    | +6 points |
 | Synthetic-to-dirt with dirt breeding support | +5 points |
 
 **Distance Extension/Cutback Projection:**
 
-| Scenario | Bonus |
-|----------|-------|
+| Scenario                                  | Bonus     |
+| ----------------------------------------- | --------- |
 | Breeding suggests stamina for stretch-out | +6 points |
 | Speed breeding supports cutback to sprint | +5 points |
-| Family pattern matches distance change | +4 points |
+| Family pattern matches distance change    | +4 points |
 
 #### Recent Arrival/Shipper Enhancement
 
@@ -281,19 +285,19 @@ EXPECTED VALUE: [EXTREME/HIGH/MODERATE]
 
 **Class Adjustment for Track Quality:**
 
-| Scenario | Bonus |
-|----------|-------|
+| Scenario                                       | Bonus      |
+| ---------------------------------------------- | ---------- |
 | Shipping down from Grade 1 tracks (NYRA, etc.) | +15 points |
-| Moving from strong regional tracks | +10 points |
-| Dropping from higher-tier circuit | +8 points |
+| Moving from strong regional tracks             | +10 points |
+| Dropping from higher-tier circuit              | +8 points  |
 
 **Form Translation Analysis:**
 
-| Scenario | Bonus |
-|----------|-------|
-| Speed figures translate favorably | +6 points |
-| Running style suits track bias | +5 points |
-| Connections familiar with track | +3 points |
+| Scenario                                | Bonus     |
+| --------------------------------------- | --------- |
+| Speed figures translate favorably       | +6 points |
+| Running style suits track bias          | +5 points |
+| Connections familiar with track         | +3 points |
 | Surface/distance match previous success | +4 points |
 
 #### Lightly Raced Final Integration
@@ -310,12 +314,12 @@ Total Possible Enhancement: +60 points for lightly raced horses
 
 **Enhanced Confidence Adjustments:**
 
-| Factor | Confidence Adjustment |
-|--------|----------------------|
-| Breeding strongly supports | +10% confidence |
-| Trainer pattern match | +8% confidence |
-| Workout pattern impressive | +6% confidence |
-| Limited data acknowledged | -5% confidence (honesty factor) |
+| Factor                     | Confidence Adjustment           |
+| -------------------------- | ------------------------------- |
+| Breeding strongly supports | +10% confidence                 |
+| Trainer pattern match      | +8% confidence                  |
+| Workout pattern impressive | +6% confidence                  |
+| Limited data acknowledged  | -5% confidence (honesty factor) |
 
 #### Lightly Raced Output Format
 
@@ -358,6 +362,7 @@ ENHANCED CONFIDENCE: [XX]% (breeding-supported projection)
 **Category A: Pace Devastation Setups**
 
 **Speed Massacre Scenario:**
+
 - 5+ confirmed speed horses in field
 - Lone deep closer with proven late kick
 - Route race where pace collapse likely
@@ -365,6 +370,7 @@ ENHANCED CONFIDENCE: [XX]% (breeding-supported projection)
 - **Upgrade Potential:** 40+ points if all factors align
 
 **Soft Pace Exploitation:**
+
 - Field lacks any true early speed
 - Horse has ANY tactical speed ability
 - Others likely to wait too long
@@ -374,6 +380,7 @@ ENHANCED CONFIDENCE: [XX]% (breeding-supported projection)
 **Category B: Connections Transformation**
 
 **Elite Barn Rescue Mission:**
+
 - Claimed by elite trainer last race
 - Horse was previously mismanaged or misplaced
 - New barn has specific success pattern with this type
@@ -381,6 +388,7 @@ ENHANCED CONFIDENCE: [XX]% (breeding-supported projection)
 - **Upgrade Potential:** 30+ points for proven rescue pattern
 
 **Jockey Upgrade Impact:**
+
 - Switch to track's leading rider
 - Previous jockey significantly inferior
 - New jockey has strong history with trainer/horse type
@@ -390,6 +398,7 @@ ENHANCED CONFIDENCE: [XX]% (breeding-supported projection)
 **Category C: Hidden Class/Form Revelations**
 
 **Disguised Class Relief:**
+
 - Form looks poor but excuses validate
 - Significant class drop masked by surface/distance change
 - Previous efforts at higher level show true ability
@@ -397,6 +406,7 @@ ENHANCED CONFIDENCE: [XX]% (breeding-supported projection)
 - **Upgrade Potential:** 35+ points for major class relief
 
 **Equipment Transformation:**
+
 - Major equipment change (first-time Lasix, blinkers off, etc.)
 - Trainer has exceptional record with this change
 - Horse's problems clearly addressed by equipment
@@ -406,6 +416,7 @@ ENHANCED CONFIDENCE: [XX]% (breeding-supported projection)
 **Category D: Situational Perfection**
 
 **Track Bias Exploitation:**
+
 - Strong track bias favors this horse's style exclusively
 - All other contenders fight the bias
 - Post position perfect for bias exploitation
@@ -413,6 +424,7 @@ ENHANCED CONFIDENCE: [XX]% (breeding-supported projection)
 - **Upgrade Potential:** 30+ points for perfect bias match
 
 **Distance/Surface Specialization:**
+
 - Moving to horse's optimal distance/surface
 - Previous efforts show preference clearly
 - Field lacks specialists at this condition
@@ -444,19 +456,19 @@ Each Nuclear Category can contribute 0-40 upgrade points:
 
 **Field Chaos Factor:**
 
-| Scenario | Modifier |
-|----------|----------|
+| Scenario                                 | Modifier   |
+| ---------------------------------------- | ---------- |
 | Highly competitive field (close ratings) | +10 points |
-| Weak field (major class drops) | +5 points |
-| Elite field (outclassed) | -10 points |
+| Weak field (major class drops)           | +5 points  |
+| Elite field (outclassed)                 | -10 points |
 
 **Upset History Factor:**
 
-| Scenario | Modifier |
-|----------|----------|
-| Track known for upsets | +5 points |
+| Scenario                       | Modifier  |
+| ------------------------------ | --------- |
+| Track known for upsets         | +5 points |
 | Trainer history with longshots | +5 points |
-| Jockey effective on longshots | +3 points |
+| Jockey effective on longshots  | +3 points |
 
 #### Nuclear Betting Strategy Matrix
 
@@ -490,6 +502,7 @@ Confidence: 8-20% (longshot with strong angle)
 #### Nuclear Quality Control
 
 **Mandatory Nuclear Verification:**
+
 - Confirm mathematical overlay calculation accurate
 - Verify nuclear factors genuinely apply (not wishful thinking)
 - Assess realistic upset probability (not just possible)
@@ -497,6 +510,7 @@ Confidence: 8-20% (longshot with strong angle)
 - Document specific nuclear angle clearly
 
 **Nuclear Elimination Triggers:**
+
 - Odds move significantly against horse before post
 - Key nuclear factor eliminated (scratch affects pace, etc.)
 - New information contradicts nuclear angle
@@ -529,6 +543,7 @@ NUCLEAR BETTING STRATEGY: [Specific approach for this bomb]
 #### Integration with Main Betting Tiers
 
 **Nuclear Integration Rules:**
+
 - Qualifying nuclear longshots receive separate betting category
 - Nuclear bets are IN ADDITION to standard three-tier structure
 - Nuclear investment limited to 10% of daily betting budget
@@ -681,47 +696,50 @@ CAUTION FLAGS:
 
 **Major Late Adjustments (±20 points):**
 
-| Change | Adjustment |
-|--------|------------|
-| Key pace rival scratches | +20 points to beneficiaries |
-| Surface condition dramatically changes | ±15 points |
-| Elite jockey pickup | +15 points |
-| Major equipment revelation | +10 points |
+| Change                                 | Adjustment                  |
+| -------------------------------------- | --------------------------- |
+| Key pace rival scratches               | +20 points to beneficiaries |
+| Surface condition dramatically changes | ±15 points                  |
+| Elite jockey pickup                    | +15 points                  |
+| Major equipment revelation             | +10 points                  |
 
 **Moderate Late Adjustments (±10 points):**
 
-| Change | Adjustment |
-|--------|------------|
-| Post position improvements | +8 points |
-| Minor equipment changes | +5 points |
-| Weather condition shifts | +5 points |
-| Jockey downgrades | -8 points |
+| Change                     | Adjustment |
+| -------------------------- | ---------- |
+| Post position improvements | +8 points  |
+| Minor equipment changes    | +5 points  |
+| Weather condition shifts   | +5 points  |
+| Jockey downgrades          | -8 points  |
 
 **Minor Late Adjustments (±5 points):**
 
-| Change | Adjustment |
-|--------|------------|
-| Slight track condition changes | +3 points |
-| Market movement confirmation | +2 points |
-| Minor tactical changes | +2 points |
+| Change                         | Adjustment |
+| ------------------------------ | ---------- |
+| Slight track condition changes | +3 points  |
+| Market movement confirmation   | +2 points  |
+| Minor tactical changes         | +2 points  |
 
 #### Real-Time Decision Matrix
 
 **Decision Tree for Late Information:**
 
 **CRITICAL CHANGES (Require immediate analysis revision):**
+
 - Pace scenario fundamentally altered
 - Track condition changes surface completely
 - Elite connections added/removed
 - Major equipment changes discovered
 
 **IMPORTANT CHANGES (Adjust existing recommendations):**
+
 - Post position improvements from scratches
 - Jockey upgrades/downgrades
 - Weather impacts track surface
 - Market movement suggests insider info
 
 **MINOR CHANGES (Note but maintain recommendations):**
+
 - Slight odds adjustments
 - Minor equipment clarifications
 - Weather changes within normal ranges
@@ -732,18 +750,21 @@ CAUTION FLAGS:
 **Time-Based Response System:**
 
 **2+ Hours Before Post:**
+
 - Full analysis revision possible
 - Complete score recalculation
 - Betting strategy overhaul acceptable
 - All factors can be integrated
 
 **30 Minutes to 2 Hours Before Post:**
+
 - Major factor integration only
 - Score adjustments for significant changes
 - Betting modifications for key alterations
 - Focus on high-impact changes only
 
 **Under 30 Minutes Before Post:**
+
 - Emergency changes only
 - Scratch impact assessment priority
 - Maintain existing strategy unless critical change
@@ -831,6 +852,7 @@ IF LATE EQUIPMENT CHANGES DISCOVERED:
 ### Quality Control for Edge Cases
 
 **Mandatory Verification:**
+
 - Confirm activation criteria genuinely met
 - Verify enhancement calculations accurate
 - Ensure no double-counting with base/overlay scoring
@@ -838,6 +860,7 @@ IF LATE EQUIPMENT CHANGES DISCOVERED:
 - Adjust confidence for increased uncertainty
 
 **Edge Case Betting Discipline:**
+
 - Reduce standard bet sizing by 25% for Diamond plays
 - Nuclear plays from separate 10% budget allocation
 - Maximum 2 nuclear plays per day
@@ -845,6 +868,6 @@ IF LATE EQUIPMENT CHANGES DISCOVERED:
 
 ---
 
-*Document Version: 1.0*
-*Status: Complete Edge Case Protocol Specification*
-*Integration: Applied after standard scoring, before final betting recommendations*
+_Document Version: 1.0_
+_Status: Complete Edge Case Protocol Specification_
+_Integration: Applied after standard scoring, before final betting recommendations_

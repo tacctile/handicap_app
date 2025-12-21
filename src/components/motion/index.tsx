@@ -1,8 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
-import { motion } from 'framer-motion'
-import type { HTMLMotionProps, Variants } from 'framer-motion'
-import { forwardRef } from 'react'
-import type { ReactNode } from 'react'
+import { motion } from 'framer-motion';
+import type { HTMLMotionProps, Variants } from 'framer-motion';
+import { forwardRef } from 'react';
+import type { ReactNode } from 'react';
 
 // Animation variants for staggered children
 export const staggerContainer: Variants = {
@@ -14,7 +14,7 @@ export const staggerContainer: Variants = {
       delayChildren: 0.1,
     },
   },
-}
+};
 
 export const staggerItem: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -27,7 +27,7 @@ export const staggerItem: Variants = {
       damping: 24,
     },
   },
-}
+};
 
 // Fade in animation
 export const fadeIn: Variants = {
@@ -36,7 +36,7 @@ export const fadeIn: Variants = {
     opacity: 1,
     transition: { duration: 0.3, ease: 'easeOut' },
   },
-}
+};
 
 // Slide up animation
 export const slideUp: Variants = {
@@ -46,7 +46,7 @@ export const slideUp: Variants = {
     y: 0,
     transition: { type: 'spring', stiffness: 300, damping: 30 },
   },
-}
+};
 
 // Scale animation for cards/buttons
 export const scaleIn: Variants = {
@@ -56,24 +56,24 @@ export const scaleIn: Variants = {
     scale: 1,
     transition: { type: 'spring', stiffness: 400, damping: 25 },
   },
-}
+};
 
 // Hover animations
 export const hoverScale = {
   scale: 1.02,
   transition: { type: 'spring', stiffness: 400, damping: 20 },
-}
+};
 
 export const tapScale = {
   scale: 0.98,
-}
+};
 
 // Card hover with glow
 export const cardHover = {
   y: -2,
   boxShadow: '0 8px 30px rgba(25, 171, 181, 0.15)',
   transition: { type: 'spring', stiffness: 300, damping: 25 },
-}
+};
 
 // Skeleton loader animation
 export const skeletonPulse: Variants = {
@@ -82,13 +82,13 @@ export const skeletonPulse: Variants = {
     opacity: [0.4, 0.7, 0.4],
     transition: { duration: 1.5, repeat: Infinity, ease: 'easeInOut' },
   },
-}
+};
 
 // Ripple effect component for buttons
 interface RippleProps {
-  x: number
-  y: number
-  size: number
+  x: number;
+  y: number;
+  size: number;
 }
 
 export function Ripple({ x, y, size }: RippleProps) {
@@ -106,14 +106,14 @@ export function Ripple({ x, y, size }: RippleProps) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
     />
-  )
+  );
 }
 
 // Skeleton component
 interface SkeletonProps {
-  className?: string
-  width?: string | number
-  height?: string | number
+  className?: string;
+  width?: string | number;
+  height?: string | number;
 }
 
 export function Skeleton({ className = '', width, height }: SkeletonProps) {
@@ -125,14 +125,14 @@ export function Skeleton({ className = '', width, height }: SkeletonProps) {
       initial="initial"
       animate="animate"
     />
-  )
+  );
 }
 
 // Animated container with stagger effect
 interface StaggerContainerProps {
-  children: ReactNode
-  className?: string
-  delay?: number
+  children: ReactNode;
+  className?: string;
+  delay?: number;
 }
 
 export function StaggerContainer({ children, className = '', delay = 0 }: StaggerContainerProps) {
@@ -146,13 +146,13 @@ export function StaggerContainer({ children, className = '', delay = 0 }: Stagge
     >
       {children}
     </motion.div>
-  )
+  );
 }
 
 // Animated item for use inside StaggerContainer
 interface StaggerItemProps extends HTMLMotionProps<'div'> {
-  children: ReactNode
-  className?: string
+  children: ReactNode;
+  className?: string;
 }
 
 export const StaggerItem = forwardRef<HTMLDivElement, StaggerItemProps>(
@@ -161,17 +161,17 @@ export const StaggerItem = forwardRef<HTMLDivElement, StaggerItemProps>(
       <motion.div ref={ref} className={className} variants={staggerItem} {...props}>
         {children}
       </motion.div>
-    )
+    );
   }
-)
+);
 
-StaggerItem.displayName = 'StaggerItem'
+StaggerItem.displayName = 'StaggerItem';
 
 // Fade in wrapper
 interface FadeInProps extends HTMLMotionProps<'div'> {
-  children: ReactNode
-  className?: string
-  delay?: number
+  children: ReactNode;
+  className?: string;
+  delay?: number;
 }
 
 export function FadeIn({ children, className = '', delay = 0, ...props }: FadeInProps) {
@@ -185,14 +185,14 @@ export function FadeIn({ children, className = '', delay = 0, ...props }: FadeIn
     >
       {children}
     </motion.div>
-  )
+  );
 }
 
 // Slide up wrapper
 interface SlideUpProps extends HTMLMotionProps<'div'> {
-  children: ReactNode
-  className?: string
-  delay?: number
+  children: ReactNode;
+  className?: string;
+  delay?: number;
 }
 
 export function SlideUp({ children, className = '', delay = 0, ...props }: SlideUpProps) {
@@ -206,11 +206,17 @@ export function SlideUp({ children, className = '', delay = 0, ...props }: Slide
     >
       {children}
     </motion.div>
-  )
+  );
 }
 
 // Pulsing glow effect for CTA buttons
-export function PulsingGlow({ children, className = '' }: { children: ReactNode; className?: string }) {
+export function PulsingGlow({
+  children,
+  className = '',
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <motion.div
       className={`relative ${className}`}
@@ -225,11 +231,17 @@ export function PulsingGlow({ children, className = '' }: { children: ReactNode;
     >
       {children}
     </motion.div>
-  )
+  );
 }
 
 // Page transition wrapper
-export function PageTransition({ children, className = '' }: { children: ReactNode; className?: string }) {
+export function PageTransition({
+  children,
+  className = '',
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <motion.div
       className={className}
@@ -240,14 +252,14 @@ export function PageTransition({ children, className = '' }: { children: ReactNo
     >
       {children}
     </motion.div>
-  )
+  );
 }
 
 // Number counter animation
 interface AnimatedNumberProps {
-  value: number
-  duration?: number
-  className?: string
+  value: number;
+  duration?: number;
+  className?: string;
 }
 
 export function AnimatedNumber({ value, duration = 0.5, className = '' }: AnimatedNumberProps) {
@@ -266,18 +278,18 @@ export function AnimatedNumber({ value, duration = 0.5, className = '' }: Animat
         {value}
       </motion.span>
     </motion.span>
-  )
+  );
 }
 
 // Confidence meter animation
 interface ConfidenceMeterProps {
-  value: number
-  maxValue?: number
-  className?: string
+  value: number;
+  maxValue?: number;
+  className?: string;
 }
 
 export function ConfidenceMeter({ value, maxValue = 100, className = '' }: ConfidenceMeterProps) {
-  const percentage = Math.min((value / maxValue) * 100, 100)
+  const percentage = Math.min((value / maxValue) * 100, 100);
 
   return (
     <div className={`relative h-2 bg-white/10 rounded-full overflow-hidden ${className}`}>
@@ -288,8 +300,8 @@ export function ConfidenceMeter({ value, maxValue = 100, className = '' }: Confi
         transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
       />
     </div>
-  )
+  );
 }
 
 // Export motion for custom usage
-export { motion }
+export { motion };

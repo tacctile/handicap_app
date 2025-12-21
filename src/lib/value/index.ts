@@ -48,7 +48,7 @@ export {
   type ValueClassification,
   type ValueAnalysis,
   type ValueAnalysisBatch,
-} from './valueDetector'
+} from './valueDetector';
 
 // ============================================================================
 // MARKET INEFFICIENCY EXPORTS
@@ -74,7 +74,7 @@ export {
   type InefficiencyDirection,
   type InefficiencyDetection,
   type MarketInefficiencyAnalysis,
-} from './marketInefficiency'
+} from './marketInefficiency';
 
 // ============================================================================
 // VALUE BETTING EXPORTS
@@ -104,7 +104,7 @@ export {
   type ValueBet,
   type ValueBettingPlan,
   type ValueStrategyConfig,
-} from './valueBetting'
+} from './valueBetting';
 
 // ============================================================================
 // CONFIDENCE CALIBRATION EXPORTS
@@ -142,18 +142,18 @@ export {
   type CalibrationMetrics,
   type TierMetrics,
   type CalibrationSummary,
-} from './confidenceCalibration'
+} from './confidenceCalibration';
 
 // ============================================================================
 // CONVENIENCE FUNCTIONS
 // ============================================================================
 
-import type { HorseEntry, RaceHeader } from '../../types/drf'
-import type { HorseScore } from '../scoring'
-import { analyzeValue } from './valueDetector'
-import { analyzeMarketInefficiency } from './marketInefficiency'
-import { generateValueBettingPlan } from './valueBetting'
-import { loadCalibrationProfile } from './confidenceCalibration'
+import type { HorseEntry, RaceHeader } from '../../types/drf';
+import type { HorseScore } from '../scoring';
+import { analyzeValue } from './valueDetector';
+import { analyzeMarketInefficiency } from './marketInefficiency';
+import { generateValueBettingPlan } from './valueBetting';
+import { loadCalibrationProfile } from './confidenceCalibration';
 
 /**
  * Complete value analysis for a race
@@ -164,42 +164,50 @@ export function analyzeRaceValueComplete(
   horses: Array<{ horse: HorseEntry; score: HorseScore }>,
   raceHeader: RaceHeader,
   options?: {
-    budget?: number
-    mode?: 'pure_value' | 'balanced_value' | 'conservative_value'
+    budget?: number;
+    mode?: 'pure_value' | 'balanced_value' | 'conservative_value';
   }
 ): {
-  valueAnalyses: Array<{ horse: HorseEntry; score: HorseScore; value: ReturnType<typeof analyzeValue> }>
-  inefficiencies: Array<{ horse: HorseEntry; score: HorseScore; inefficiency: ReturnType<typeof analyzeMarketInefficiency> }>
-  bettingPlan: ReturnType<typeof generateValueBettingPlan>
+  valueAnalyses: Array<{
+    horse: HorseEntry;
+    score: HorseScore;
+    value: ReturnType<typeof analyzeValue>;
+  }>;
+  inefficiencies: Array<{
+    horse: HorseEntry;
+    score: HorseScore;
+    inefficiency: ReturnType<typeof analyzeMarketInefficiency>;
+  }>;
+  bettingPlan: ReturnType<typeof generateValueBettingPlan>;
 } {
-  const calibration = loadCalibrationProfile()
+  const calibration = loadCalibrationProfile();
 
   // Analyze value for each horse
   const valueAnalyses = horses.map(({ horse, score }) => ({
     horse,
     score,
     value: analyzeValue(horse, score, calibration),
-  }))
+  }));
 
   // Analyze inefficiencies
   const inefficiencies = horses.map(({ horse, score }) => ({
     horse,
     score,
     inefficiency: analyzeMarketInefficiency(horse, score, raceHeader),
-  }))
+  }));
 
   // Generate betting plan
   const bettingPlan = generateValueBettingPlan(horses, raceHeader, {
     raceBudget: options?.budget ?? 50,
     mode: options?.mode ?? 'balanced_value',
     calibration,
-  })
+  });
 
   return {
     valueAnalyses,
     inefficiencies,
     bettingPlan,
-  }
+  };
 }
 
 /**
@@ -209,13 +217,13 @@ export function hasValueBets(
   horses: Array<{ horse: HorseEntry; score: HorseScore }>,
   minEVPercent: number = 5
 ): boolean {
-  const calibration = loadCalibrationProfile()
+  const calibration = loadCalibrationProfile();
 
   return horses.some(({ horse, score }) => {
-    if (score.isScratched) return false
-    const value = analyzeValue(horse, score, calibration)
-    return value.evPercent >= minEVPercent
-  })
+    if (score.isScratched) return false;
+    const value = analyzeValue(horse, score, calibration);
+    return value.evPercent >= minEVPercent;
+  });
 }
 
 /**
@@ -224,22 +232,26 @@ export function hasValueBets(
 export function getBestValueBet(
   horses: Array<{ horse: HorseEntry; score: HorseScore }>
 ): { horse: HorseEntry; score: HorseScore; value: ReturnType<typeof analyzeValue> } | null {
-  const calibration = loadCalibrationProfile()
+  const calibration = loadCalibrationProfile();
 
-  let best: { horse: HorseEntry; score: HorseScore; value: ReturnType<typeof analyzeValue> } | null = null
-  let bestEV = -Infinity
+  let best: {
+    horse: HorseEntry;
+    score: HorseScore;
+    value: ReturnType<typeof analyzeValue>;
+  } | null = null;
+  let bestEV = -Infinity;
 
   for (const { horse, score } of horses) {
-    if (score.isScratched) continue
-    const value = analyzeValue(horse, score, calibration)
+    if (score.isScratched) continue;
+    const value = analyzeValue(horse, score, calibration);
 
     if (value.evPercent > bestEV) {
-      bestEV = value.evPercent
-      best = { horse, score, value }
+      bestEV = value.evPercent;
+      best = { horse, score, value };
     }
   }
 
-  return best
+  return best;
 }
 
 /**
@@ -248,11 +260,11 @@ export function getBestValueBet(
 export function countPositiveEVHorses(
   horses: Array<{ horse: HorseEntry; score: HorseScore }>
 ): number {
-  const calibration = loadCalibrationProfile()
+  const calibration = loadCalibrationProfile();
 
   return horses.filter(({ horse, score }) => {
-    if (score.isScratched) return false
-    const value = analyzeValue(horse, score, calibration)
-    return value.isPositiveEV
-  }).length
+    if (score.isScratched) return false;
+    const value = analyzeValue(horse, score, calibration);
+    return value.isPositiveEV;
+  }).length;
 }

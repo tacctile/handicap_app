@@ -18,19 +18,19 @@
 // ============================================================================
 
 /** Minimum odds (decimal) to qualify as a longshot (25/1 = 26.0 decimal) */
-export const MIN_LONGSHOT_ODDS_DECIMAL = 26.0
+export const MIN_LONGSHOT_ODDS_DECIMAL = 26.0;
 
 /** Minimum odds ratio (25/1) */
-export const MIN_LONGSHOT_ODDS_RATIO = 25
+export const MIN_LONGSHOT_ODDS_RATIO = 25;
 
 /** Minimum base score to consider (not complete trash) */
-export const MIN_BASE_SCORE = 100
+export const MIN_BASE_SCORE = 100;
 
 /** Minimum angle points needed to be classified as LIVE (2+ angles) */
-export const MIN_ANGLE_POINTS_LIVE = 60
+export const MIN_ANGLE_POINTS_LIVE = 60;
 
 /** Minimum angle points for NUCLEAR classification */
-export const MIN_ANGLE_POINTS_NUCLEAR = 100
+export const MIN_ANGLE_POINTS_NUCLEAR = 100;
 
 // ============================================================================
 // UPSET ANGLE TYPES
@@ -45,7 +45,7 @@ export type UpsetAngleCategory =
   | 'equipment_rescue'
   | 'trainer_pattern'
   | 'track_bias_fit'
-  | 'hidden_form'
+  | 'hidden_form';
 
 /**
  * Display names for upset angle categories
@@ -57,7 +57,7 @@ export const UPSET_ANGLE_NAMES: Record<UpsetAngleCategory, string> = {
   trainer_pattern: 'Trainer Pattern',
   track_bias_fit: 'Track Bias Fit',
   hidden_form: 'Hidden Form',
-}
+};
 
 /**
  * Icons for upset angle categories
@@ -69,31 +69,31 @@ export const UPSET_ANGLE_ICONS: Record<UpsetAngleCategory, string> = {
   trainer_pattern: 'person_pin',
   track_bias_fit: 'track_changes',
   hidden_form: 'visibility',
-}
+};
 
 /**
  * Colors for upset angle categories
  */
 export const UPSET_ANGLE_COLORS: Record<UpsetAngleCategory, string> = {
   pace_devastation: '#ef4444', // Red - explosive
-  class_relief: '#22c55e',     // Green - favorable
+  class_relief: '#22c55e', // Green - favorable
   equipment_rescue: '#3b82f6', // Blue - equipment
-  trainer_pattern: '#f59e0b',  // Amber - trainer
-  track_bias_fit: '#8b5cf6',   // Purple - track
-  hidden_form: '#06b6d4',      // Cyan - hidden
-}
+  trainer_pattern: '#f59e0b', // Amber - trainer
+  track_bias_fit: '#8b5cf6', // Purple - track
+  hidden_form: '#06b6d4', // Cyan - hidden
+};
 
 /**
  * Base point values for each upset angle category
  */
 export const UPSET_ANGLE_BASE_POINTS: Record<UpsetAngleCategory, number> = {
-  pace_devastation: 40,  // Strongest angle - pace collapse
-  class_relief: 35,      // Very strong - proven at higher level
-  equipment_rescue: 30,  // Strong - equipment + trainer pattern
-  trainer_pattern: 35,   // Very strong - trainer data is reliable
-  track_bias_fit: 30,    // Strong - track bias is measurable
-  hidden_form: 25,       // Moderate - more speculative
-}
+  pace_devastation: 40, // Strongest angle - pace collapse
+  class_relief: 35, // Very strong - proven at higher level
+  equipment_rescue: 30, // Strong - equipment + trainer pattern
+  trainer_pattern: 35, // Very strong - trainer data is reliable
+  track_bias_fit: 30, // Strong - track bias is measurable
+  hidden_form: 25, // Moderate - more speculative
+};
 
 // ============================================================================
 // UPSET ANGLE DEFINITION
@@ -104,19 +104,19 @@ export const UPSET_ANGLE_BASE_POINTS: Record<UpsetAngleCategory, number> = {
  */
 export interface UpsetAngleDefinition {
   /** Category of the angle */
-  category: UpsetAngleCategory
+  category: UpsetAngleCategory;
   /** Display name */
-  name: string
+  name: string;
   /** Full description */
-  description: string
+  description: string;
   /** Point value when criteria met */
-  basePoints: number
+  basePoints: number;
   /** Required evidence fields */
-  requiredEvidence: string[]
+  requiredEvidence: string[];
   /** Optional bonus evidence fields */
-  bonusEvidence?: string[]
+  bonusEvidence?: string[];
   /** Maximum bonus points */
-  maxBonusPoints?: number
+  maxBonusPoints?: number;
 }
 
 /**
@@ -126,7 +126,8 @@ export const UPSET_ANGLE_DEFINITIONS: Record<UpsetAngleCategory, UpsetAngleDefin
   pace_devastation: {
     category: 'pace_devastation',
     name: 'Pace Devastation',
-    description: 'Speed duel scenario where early speed horses will collapse, setting up this closer',
+    description:
+      'Speed duel scenario where early speed horses will collapse, setting up this closer',
     basePoints: 40,
     requiredEvidence: ['ppi_above_50', 'is_lone_closer', 'speed_count_4_plus'],
     bonusEvidence: ['has_rail_speed', 'proven_closer'],
@@ -177,7 +178,7 @@ export const UPSET_ANGLE_DEFINITIONS: Record<UpsetAngleCategory, UpsetAngleDefin
     bonusEvidence: ['bullet_work', 'surface_switch_favorable', 'distance_change_favorable'],
     maxBonusPoints: 10,
   },
-}
+};
 
 // ============================================================================
 // DETECTED UPSET ANGLE
@@ -188,21 +189,21 @@ export const UPSET_ANGLE_DEFINITIONS: Record<UpsetAngleCategory, UpsetAngleDefin
  */
 export interface DetectedUpsetAngle {
   /** The angle category */
-  category: UpsetAngleCategory
+  category: UpsetAngleCategory;
   /** Display name */
-  name: string
+  name: string;
   /** Points awarded for this angle */
-  points: number
+  points: number;
   /** Evidence string explaining why this angle applies */
-  evidence: string
+  evidence: string;
   /** Detailed breakdown of evidence */
-  evidenceDetails: string[]
+  evidenceDetails: string[];
   /** Confidence in this angle (0-100) */
-  confidence: number
+  confidence: number;
   /** Whether all required evidence was found */
-  hasAllRequiredEvidence: boolean
+  hasAllRequiredEvidence: boolean;
   /** Bonus points from optional evidence */
-  bonusPoints: number
+  bonusPoints: number;
 }
 
 // ============================================================================
@@ -213,23 +214,26 @@ export interface DetectedUpsetAngle {
  * Classification levels for nuclear longshots
  */
 export type LongshotClassification =
-  | 'nuclear'   // 100+ angle pts - serious upset candidate, bet
-  | 'live'      // 60-99 angle pts - playable longshot, small bet
-  | 'lottery'   // 40-59 angle pts - low probability, pass usually
-  | 'dead'      // 0-39 angle pts - no chance, ignore
+  | 'nuclear' // 100+ angle pts - serious upset candidate, bet
+  | 'live' // 60-99 angle pts - playable longshot, small bet
+  | 'lottery' // 40-59 angle pts - low probability, pass usually
+  | 'dead'; // 0-39 angle pts - no chance, ignore
 
 /**
  * Metadata for longshot classifications
  */
-export const LONGSHOT_CLASSIFICATION_META: Record<LongshotClassification, {
-  name: string
-  description: string
-  color: string
-  icon: string
-  recommendation: string
-  minPoints: number
-  maxPoints: number
-}> = {
+export const LONGSHOT_CLASSIFICATION_META: Record<
+  LongshotClassification,
+  {
+    name: string;
+    description: string;
+    color: string;
+    icon: string;
+    recommendation: string;
+    minPoints: number;
+    maxPoints: number;
+  }
+> = {
   nuclear: {
     name: 'NUCLEAR',
     description: 'Serious upset candidate with multiple strong angles',
@@ -266,7 +270,7 @@ export const LONGSHOT_CLASSIFICATION_META: Record<LongshotClassification, {
     minPoints: 0,
     maxPoints: 39,
   },
-}
+};
 
 // ============================================================================
 // LONGSHOT ANALYSIS RESULT
@@ -277,43 +281,43 @@ export const LONGSHOT_CLASSIFICATION_META: Record<LongshotClassification, {
  */
 export interface LongshotAnalysisResult {
   /** Horse's program number */
-  programNumber: number
+  programNumber: number;
   /** Horse name */
-  horseName: string
+  horseName: string;
   /** Decimal odds */
-  oddsDecimal: number
+  oddsDecimal: number;
   /** Odds display string */
-  oddsDisplay: string
+  oddsDisplay: string;
   /** Whether horse qualifies as a longshot (25/1+) */
-  isLongshot: boolean
+  isLongshot: boolean;
   /** Base score (from standard scoring) */
-  baseScore: number
+  baseScore: number;
   /** Whether base score meets minimum threshold */
-  meetsBaseScoreMinimum: boolean
+  meetsBaseScoreMinimum: boolean;
   /** All detected upset angles */
-  detectedAngles: DetectedUpsetAngle[]
+  detectedAngles: DetectedUpsetAngle[];
   /** Total angle points */
-  totalAnglePoints: number
+  totalAnglePoints: number;
   /** Number of angles detected */
-  angleCount: number
+  angleCount: number;
   /** Classification (nuclear/live/lottery/dead) */
-  classification: LongshotClassification
+  classification: LongshotClassification;
   /** Classification metadata */
-  classificationMeta: typeof LONGSHOT_CLASSIFICATION_META[LongshotClassification]
+  classificationMeta: (typeof LONGSHOT_CLASSIFICATION_META)[LongshotClassification];
   /** Calculated upset probability based on angles */
-  upsetProbability: number
+  upsetProbability: number;
   /** Expected value calculation */
-  expectedValue: number
+  expectedValue: number;
   /** ROI multiplier (odds × probability) */
-  roiMultiplier: number
+  roiMultiplier: number;
   /** Summary description */
-  summary: string
+  summary: string;
   /** Full reasoning for display */
-  reasoning: string[]
+  reasoning: string[];
   /** Whether this horse should be flagged in UI */
-  shouldFlag: boolean
+  shouldFlag: boolean;
   /** Bet recommendation if applicable */
-  betRecommendation: string | null
+  betRecommendation: string | null;
 }
 
 // ============================================================================
@@ -324,49 +328,49 @@ export interface LongshotAnalysisResult {
  * Parse odds string to decimal (25/1 = 26.0)
  */
 export function parseOddsToDecimal(oddsStr: string): number {
-  if (!oddsStr) return 0
+  if (!oddsStr) return 0;
 
   // Handle "25-1" or "25/1" format
-  const match = oddsStr.match(/(\d+(?:\.\d+)?)\s*[-/]\s*(\d+)/)
+  const match = oddsStr.match(/(\d+(?:\.\d+)?)\s*[-/]\s*(\d+)/);
   if (match) {
-    const numerator = parseFloat(match[1])
-    const denominator = parseFloat(match[2])
-    return (numerator / denominator) + 1 // +1 for decimal odds
+    const numerator = parseFloat(match[1]);
+    const denominator = parseFloat(match[2]);
+    return numerator / denominator + 1; // +1 for decimal odds
   }
 
   // Handle decimal odds directly
-  const decimal = parseFloat(oddsStr)
+  const decimal = parseFloat(oddsStr);
   if (!isNaN(decimal)) {
-    return decimal
+    return decimal;
   }
 
-  return 0
+  return 0;
 }
 
 /**
  * Format decimal odds to display string
  */
 export function formatOddsDisplay(decimalOdds: number): string {
-  const ratio = Math.round(decimalOdds - 1)
-  return `${ratio}/1`
+  const ratio = Math.round(decimalOdds - 1);
+  return `${ratio}/1`;
 }
 
 /**
  * Check if odds qualify as a longshot (25/1+)
  */
 export function isLongshotOdds(oddsStr: string): boolean {
-  const decimal = parseOddsToDecimal(oddsStr)
-  return decimal >= MIN_LONGSHOT_ODDS_DECIMAL
+  const decimal = parseOddsToDecimal(oddsStr);
+  return decimal >= MIN_LONGSHOT_ODDS_DECIMAL;
 }
 
 /**
  * Get classification based on angle points
  */
 export function getClassificationFromPoints(points: number): LongshotClassification {
-  if (points >= MIN_ANGLE_POINTS_NUCLEAR) return 'nuclear'
-  if (points >= MIN_ANGLE_POINTS_LIVE) return 'live'
-  if (points >= 40) return 'lottery'
-  return 'dead'
+  if (points >= MIN_ANGLE_POINTS_NUCLEAR) return 'nuclear';
+  if (points >= MIN_ANGLE_POINTS_LIVE) return 'live';
+  if (points >= 40) return 'lottery';
+  return 'dead';
 }
 
 /**
@@ -376,10 +380,10 @@ export function getClassificationFromPoints(points: number): LongshotClassificat
  */
 export function calculateUpsetProbability(anglePoints: number): number {
   // Base probability from angle points (1% per 10 points)
-  const baseProbability = (anglePoints / 100) * 0.15
+  const baseProbability = (anglePoints / 100) * 0.15;
 
   // Cap at 25% - these are still longshots
-  return Math.min(0.25, baseProbability)
+  return Math.min(0.25, baseProbability);
 }
 
 /**
@@ -387,23 +391,20 @@ export function calculateUpsetProbability(anglePoints: number): number {
  * EV = (odds × probability) - 1
  * Positive EV means profitable bet
  */
-export function calculateExpectedValue(
-  decimalOdds: number,
-  upsetProbability: number
-): number {
-  return (decimalOdds * upsetProbability) - (1 - upsetProbability)
+export function calculateExpectedValue(decimalOdds: number, upsetProbability: number): number {
+  return decimalOdds * upsetProbability - (1 - upsetProbability);
 }
 
 /**
  * Get color for longshot classification
  */
 export function getClassificationColor(classification: LongshotClassification): string {
-  return LONGSHOT_CLASSIFICATION_META[classification].color
+  return LONGSHOT_CLASSIFICATION_META[classification].color;
 }
 
 /**
  * Get icon for longshot classification
  */
 export function getClassificationIcon(classification: LongshotClassification): string {
-  return LONGSHOT_CLASSIFICATION_META[classification].icon
+  return LONGSHOT_CLASSIFICATION_META[classification].icon;
 }

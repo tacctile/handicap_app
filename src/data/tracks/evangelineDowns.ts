@@ -14,7 +14,7 @@
  * NOTE: Spring through fall racing; 1-mile dirt track; night racing; Evangeline Mile; fair to slightly speed-favoring
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const evangelineDowns: TrackData = {
   code: 'EVD',
@@ -33,8 +33,8 @@ export const evangelineDowns: TrackData = {
       // Source: Louisiana State Racing Commission - 75 feet wide
       trackWidth: 75,
       // Source: Evangeline Downs - chutes at 6f and 7f
-      chutes: [6, 7]
-    }
+      chutes: [6, 7],
+    },
     // No turf course at Evangeline Downs
   },
 
@@ -53,7 +53,8 @@ export const evangelineDowns: TrackData = {
         // Sample: 550+ dirt sprints
         winPercentByPost: [12.5, 14.2, 14.8, 13.5, 11.8, 10.5, 9.0, 7.5, 4.5, 1.7],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Fair to slightly speed-favoring; posts 2-4 slight advantage; standard 990-ft stretch'
+        biasDescription:
+          'Fair to slightly speed-favoring; posts 2-4 slight advantage; standard 990-ft stretch',
       },
       {
         distance: 'route',
@@ -67,9 +68,10 @@ export const evangelineDowns: TrackData = {
         // Sample: 300+ dirt routes
         winPercentByPost: [11.5, 13.0, 14.2, 14.5, 12.5, 11.0, 9.5, 7.5, 4.5, 1.8],
         favoredPosts: [3, 4, 5],
-        biasDescription: 'Fair in routes; posts 3-5 slight edge; standard two-turn racing; rail consistent'
-      }
-    ]
+        biasDescription:
+          'Fair in routes; posts 3-5 slight edge; standard two-turn racing; rail consistent',
+      },
+    ],
   },
 
   speedBias: [
@@ -84,8 +86,9 @@ export const evangelineDowns: TrackData = {
       // Better than Delta Downs for closers
       earlySpeedWinRate: 56,
       paceAdvantageRating: 6,
-      description: 'Fair to slightly speed-favoring; 56% early speed win rate; 990-ft stretch gives closers chance; night racing consistent'
-    }
+      description:
+        'Fair to slightly speed-favoring; 56% early speed win rate; 990-ft stretch gives closers chance; night racing consistent',
+    },
   ],
 
   surfaces: [
@@ -95,10 +98,11 @@ export const evangelineDowns: TrackData = {
       // Sandy composition typical of Louisiana
       // Maintained for night racing
       // Good drainage for Louisiana climate
-      composition: 'Sandy loam cushion over limestone base; 3-inch cushion depth; good drainage; maintained for night racing',
+      composition:
+        'Sandy loam cushion over limestone base; 3-inch cushion depth; good drainage; maintained for night racing',
       playingStyle: 'fair',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -110,7 +114,7 @@ export const evangelineDowns: TrackData = {
       // Building toward summer stakes
       typicalCondition: 'Fast',
       speedAdjustment: 0,
-      notes: 'Meet opens in April; spring conditions; building toward stakes season; night racing'
+      notes: 'Meet opens in April; spring conditions; building toward stakes season; night racing',
     },
     {
       season: 'summer',
@@ -121,7 +125,7 @@ export const evangelineDowns: TrackData = {
       // Night racing helps avoid heat
       typicalCondition: 'Fast; hot and humid',
       speedAdjustment: 1,
-      notes: 'Peak season; Evangeline Mile; hot humid Louisiana summer; night racing critical'
+      notes: 'Peak season; Evangeline Mile; hot humid Louisiana summer; night racing critical',
     },
     {
       season: 'fall',
@@ -132,7 +136,8 @@ export const evangelineDowns: TrackData = {
       // Quality racing continues
       typicalCondition: 'Fast',
       speedAdjustment: 0,
-      notes: 'Fall racing; cooling temperatures; meet continues through fall; good racing conditions'
+      notes:
+        'Fall racing; cooling temperatures; meet continues through fall; good racing conditions',
     },
     {
       season: 'winter',
@@ -142,8 +147,8 @@ export const evangelineDowns: TrackData = {
       // Fair Grounds hosts Louisiana winter racing
       typicalCondition: 'Limited Racing or No Racing',
       speedAdjustment: 0,
-      notes: 'Limited racing; Louisiana winter racing shifts to Fair Grounds in New Orleans'
-    }
+      notes: 'Limited racing; Louisiana winter racing shifts to Fair Grounds in New Orleans',
+    },
   ],
 
   winningTimes: [
@@ -155,7 +160,7 @@ export const evangelineDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 58.5,
       allowanceAvg: 57.2,
-      stakesAvg: 56.0
+      stakesAvg: 56.0,
     },
     {
       distance: '5.5f',
@@ -163,7 +168,7 @@ export const evangelineDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 65.0,
       allowanceAvg: 63.8,
-      stakesAvg: 62.5
+      stakesAvg: 62.5,
     },
     {
       distance: '6f',
@@ -172,7 +177,7 @@ export const evangelineDowns: TrackData = {
       // Track record: 1:09.20
       claimingAvg: 71.5,
       allowanceAvg: 70.0,
-      stakesAvg: 68.8
+      stakesAvg: 68.8,
     },
     {
       distance: '6.5f',
@@ -180,7 +185,7 @@ export const evangelineDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 77.8,
       allowanceAvg: 76.5,
-      stakesAvg: 75.2
+      stakesAvg: 75.2,
     },
     {
       distance: '7f',
@@ -188,7 +193,7 @@ export const evangelineDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 84.2,
       allowanceAvg: 82.8,
-      stakesAvg: 81.2
+      stakesAvg: 81.2,
     },
     {
       distance: '1m',
@@ -197,7 +202,7 @@ export const evangelineDowns: TrackData = {
       // Evangeline Mile distance
       claimingAvg: 97.5,
       allowanceAvg: 96.0,
-      stakesAvg: 94.5
+      stakesAvg: 94.5,
     },
     {
       distance: '1m70y',
@@ -205,7 +210,7 @@ export const evangelineDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 102.0,
       allowanceAvg: 100.5,
-      stakesAvg: 99.0
+      stakesAvg: 99.0,
     },
     {
       distance: '1 1/16m',
@@ -213,7 +218,7 @@ export const evangelineDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 104.5,
       allowanceAvg: 103.0,
-      stakesAvg: 101.5
+      stakesAvg: 101.5,
     },
     {
       distance: '1 1/8m',
@@ -222,7 +227,7 @@ export const evangelineDowns: TrackData = {
       // Track record: 1:49.60
       claimingAvg: 111.5,
       allowanceAvg: 109.5,
-      stakesAvg: 107.5
+      stakesAvg: 107.5,
     },
     {
       distance: '1 3/16m',
@@ -230,7 +235,7 @@ export const evangelineDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 118.0,
       allowanceAvg: 116.0,
-      stakesAvg: 114.0
+      stakesAvg: 114.0,
     },
     {
       distance: '1 1/4m',
@@ -238,10 +243,10 @@ export const evangelineDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 125.0,
       allowanceAvg: 122.5,
-      stakesAvg: 120.5
-    }
+      stakesAvg: 120.5,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

@@ -13,8 +13,8 @@
  * - DEAD (0-39 angle pts): No chance, ignore
  */
 
-import type { HorseEntry, RaceHeader } from '../../types/drf'
-import type { HorseScore } from '../scoring'
+import type { HorseEntry, RaceHeader } from '../../types/drf';
+import type { HorseScore } from '../scoring';
 import {
   type LongshotAnalysisResult,
   type LongshotClassification,
@@ -27,16 +27,16 @@ import {
   getClassificationFromPoints,
   calculateUpsetProbability,
   calculateExpectedValue,
-} from './longshotTypes'
-import { detectAllUpsetAngles } from './longshotDetector'
+} from './longshotTypes';
+import { detectAllUpsetAngles } from './longshotDetector';
 import {
   analyzePaceScenario,
   parseRunningStyle,
   type PaceScenarioAnalysis,
-} from '../scoring/paceAnalysis'
-import { calculateClassScore } from '../class/classScoring'
-import { calculateEquipmentImpactScore } from '../equipment/equipmentScoring'
-import { logger } from '../../services/logging'
+} from '../scoring/paceAnalysis';
+import { calculateClassScore } from '../class/classScoring';
+import { calculateEquipmentImpactScore } from '../equipment/equipmentScoring';
+import { logger } from '../../services/logging';
 
 // ============================================================================
 // SCORING FUNCTIONS
@@ -46,7 +46,7 @@ import { logger } from '../../services/logging'
  * Calculate total angle points from detected angles
  */
 export function calculateTotalAnglePoints(angles: DetectedUpsetAngle[]): number {
-  return angles.reduce((sum, angle) => sum + angle.points, 0)
+  return angles.reduce((sum, angle) => sum + angle.points, 0);
 }
 
 /**
@@ -58,20 +58,20 @@ function generateSummary(
   oddsDisplay: string
 ): string {
   if (angles.length === 0) {
-    return `No upset angles at ${oddsDisplay} - just a longshot`
+    return `No upset angles at ${oddsDisplay} - just a longshot`;
   }
 
-  const angleNames = angles.map(a => a.name).join(' + ')
+  const angleNames = angles.map((a) => a.name).join(' + ');
 
   switch (classification) {
     case 'nuclear':
-      return `NUCLEAR VALUE at ${oddsDisplay}: ${angleNames}`
+      return `NUCLEAR VALUE at ${oddsDisplay}: ${angleNames}`;
     case 'live':
-      return `Live longshot at ${oddsDisplay}: ${angleNames}`
+      return `Live longshot at ${oddsDisplay}: ${angleNames}`;
     case 'lottery':
-      return `Lottery ticket at ${oddsDisplay}: ${angleNames}`
+      return `Lottery ticket at ${oddsDisplay}: ${angleNames}`;
     case 'dead':
-      return `No real angle at ${oddsDisplay}`
+      return `No real angle at ${oddsDisplay}`;
   }
 }
 
@@ -83,31 +83,31 @@ function generateReasoning(
   baseScore: number,
   classification: LongshotClassification
 ): string[] {
-  const reasoning: string[] = []
+  const reasoning: string[] = [];
 
   if (baseScore < MIN_BASE_SCORE) {
-    reasoning.push(`Base score ${baseScore} below minimum ${MIN_BASE_SCORE}`)
+    reasoning.push(`Base score ${baseScore} below minimum ${MIN_BASE_SCORE}`);
   } else {
-    reasoning.push(`Base score ${baseScore} meets minimum threshold`)
+    reasoning.push(`Base score ${baseScore} meets minimum threshold`);
   }
 
   if (angles.length === 0) {
-    reasoning.push('No upset angles detected')
-    return reasoning
+    reasoning.push('No upset angles detected');
+    return reasoning;
   }
 
-  reasoning.push(`${angles.length} upset angle(s) detected:`)
+  reasoning.push(`${angles.length} upset angle(s) detected:`);
 
   for (const angle of angles) {
-    reasoning.push(`• ${angle.name} (+${angle.points} pts): ${angle.evidence}`)
+    reasoning.push(`• ${angle.name} (+${angle.points} pts): ${angle.evidence}`);
   }
 
-  const totalPoints = calculateTotalAnglePoints(angles)
-  reasoning.push(`Total angle points: ${totalPoints}`)
-  reasoning.push(`Classification: ${LONGSHOT_CLASSIFICATION_META[classification].name}`)
-  reasoning.push(LONGSHOT_CLASSIFICATION_META[classification].recommendation)
+  const totalPoints = calculateTotalAnglePoints(angles);
+  reasoning.push(`Total angle points: ${totalPoints}`);
+  reasoning.push(`Classification: ${LONGSHOT_CLASSIFICATION_META[classification].name}`);
+  reasoning.push(LONGSHOT_CLASSIFICATION_META[classification].recommendation);
 
-  return reasoning
+  return reasoning;
 }
 
 /**
@@ -120,20 +120,23 @@ function getBetRecommendation(
   ev: number
 ): string | null {
   if (classification === 'dead' || classification === 'lottery') {
-    return null
+    return null;
   }
 
-  const angleNames = angles.slice(0, 2).map(a => a.name).join(' + ')
+  const angleNames = angles
+    .slice(0, 2)
+    .map((a) => a.name)
+    .join(' + ');
 
   if (classification === 'nuclear') {
-    return `VALUE BOMB: $5 Win at ${oddsDisplay}. ${angleNames}. EV: ${ev.toFixed(2)}x`
+    return `VALUE BOMB: $5 Win at ${oddsDisplay}. ${angleNames}. EV: ${ev.toFixed(2)}x`;
   }
 
   if (classification === 'live') {
-    return `Small play: $2 Win at ${oddsDisplay}. ${angleNames}. EV: ${ev.toFixed(2)}x`
+    return `Small play: $2 Win at ${oddsDisplay}. ${angleNames}. EV: ${ev.toFixed(2)}x`;
   }
 
-  return null
+  return null;
 }
 
 // ============================================================================
@@ -152,12 +155,12 @@ export function analyzeLongshot(
 ): LongshotAnalysisResult {
   try {
     // Parse odds
-    const oddsDecimal = parseOddsToDecimal(horse.morningLineOdds)
-    const oddsDisplay = horse.morningLineOdds || formatOddsDisplay(oddsDecimal)
+    const oddsDecimal = parseOddsToDecimal(horse.morningLineOdds);
+    const oddsDisplay = horse.morningLineOdds || formatOddsDisplay(oddsDecimal);
 
     // Check if qualifies as longshot
-    const isLongshot = oddsDecimal >= MIN_LONGSHOT_ODDS_DECIMAL
-    const meetsBaseScoreMinimum = score.total >= MIN_BASE_SCORE
+    const isLongshot = oddsDecimal >= MIN_LONGSHOT_ODDS_DECIMAL;
+    const meetsBaseScoreMinimum = score.total >= MIN_BASE_SCORE;
 
     // If not a longshot, return early
     if (!isLongshot) {
@@ -181,18 +184,18 @@ export function analyzeLongshot(
         reasoning: ['Odds below 25/1 threshold'],
         shouldFlag: false,
         betRecommendation: null,
-      }
+      };
     }
 
     // Get or calculate pace scenario
-    const scenario = paceScenario || analyzePaceScenario(allHorses)
+    const scenario = paceScenario || analyzePaceScenario(allHorses);
 
     // Get running style
-    const runningStyle = parseRunningStyle(horse)
+    const runningStyle = parseRunningStyle(horse);
 
     // Calculate class and equipment scores
-    const classScore = calculateClassScore(horse, raceHeader)
-    const equipmentScore = calculateEquipmentImpactScore(horse, raceHeader)
+    const classScore = calculateClassScore(horse, raceHeader);
+    const equipmentScore = calculateEquipmentImpactScore(horse, raceHeader);
 
     // Detect all upset angles
     const detectedAngles = detectAllUpsetAngles(
@@ -203,27 +206,28 @@ export function analyzeLongshot(
       runningStyle,
       classScore,
       equipmentScore
-    )
+    );
 
     // Calculate totals
-    const totalAnglePoints = calculateTotalAnglePoints(detectedAngles)
-    const angleCount = detectedAngles.length
+    const totalAnglePoints = calculateTotalAnglePoints(detectedAngles);
+    const angleCount = detectedAngles.length;
 
     // Determine classification
-    const classification = getClassificationFromPoints(totalAnglePoints)
-    const classificationMeta = LONGSHOT_CLASSIFICATION_META[classification]
+    const classification = getClassificationFromPoints(totalAnglePoints);
+    const classificationMeta = LONGSHOT_CLASSIFICATION_META[classification];
 
     // Calculate probabilities
-    const upsetProbability = calculateUpsetProbability(totalAnglePoints)
-    const expectedValue = calculateExpectedValue(oddsDecimal, upsetProbability)
-    const roiMultiplier = oddsDecimal * upsetProbability
+    const upsetProbability = calculateUpsetProbability(totalAnglePoints);
+    const expectedValue = calculateExpectedValue(oddsDecimal, upsetProbability);
+    const roiMultiplier = oddsDecimal * upsetProbability;
 
     // Generate outputs
-    const summary = generateSummary(detectedAngles, classification, oddsDisplay)
-    const reasoning = generateReasoning(detectedAngles, score.total, classification)
+    const summary = generateSummary(detectedAngles, classification, oddsDisplay);
+    const reasoning = generateReasoning(detectedAngles, score.total, classification);
 
     // Determine if should flag
-    const shouldFlag = classification === 'nuclear' || (classification === 'live' && expectedValue > 0)
+    const shouldFlag =
+      classification === 'nuclear' || (classification === 'live' && expectedValue > 0);
 
     // Get bet recommendation
     const betRecommendation = getBetRecommendation(
@@ -231,7 +235,7 @@ export function analyzeLongshot(
       detectedAngles,
       oddsDisplay,
       expectedValue
-    )
+    );
 
     // Log nuclear detections
     if (classification === 'nuclear') {
@@ -241,7 +245,7 @@ export function analyzeLongshot(
         programNumber: horse.programNumber,
         totalAnglePoints,
         angleCount,
-      })
+      });
     }
 
     return {
@@ -264,13 +268,13 @@ export function analyzeLongshot(
       reasoning,
       shouldFlag,
       betRecommendation,
-    }
+    };
   } catch (error) {
     logger.logWarning('Error analyzing longshot', {
       component: 'longshotScoring',
       horseName: horse.horseName,
       error: error instanceof Error ? error.message : 'Unknown error',
-    })
+    });
 
     // Return safe default
     return {
@@ -293,7 +297,7 @@ export function analyzeLongshot(
       reasoning: ['Error during longshot analysis'],
       shouldFlag: false,
       betRecommendation: null,
-    }
+    };
   }
 }
 
@@ -306,21 +310,21 @@ export function analyzeLongshot(
  */
 export interface RaceLongshotSummary {
   /** Total longshots in race (25/1+) */
-  longshotCount: number
+  longshotCount: number;
   /** Nuclear longshots (serious upset candidates) */
-  nuclearLongshots: LongshotAnalysisResult[]
+  nuclearLongshots: LongshotAnalysisResult[];
   /** Live longshots (playable) */
-  liveLongshots: LongshotAnalysisResult[]
+  liveLongshots: LongshotAnalysisResult[];
   /** All longshot analyses */
-  allLongshots: LongshotAnalysisResult[]
+  allLongshots: LongshotAnalysisResult[];
   /** Whether any nuclear longshots exist */
-  hasNuclear: boolean
+  hasNuclear: boolean;
   /** Whether any live longshots exist */
-  hasLive: boolean
+  hasLive: boolean;
   /** Summary for display */
-  summary: string
+  summary: string;
   /** Alert level for UI */
-  alertLevel: 'nuclear' | 'live' | 'none'
+  alertLevel: 'nuclear' | 'live' | 'none';
 }
 
 /**
@@ -332,46 +336,46 @@ export function analyzeRaceLongshots(
   scores: Map<number, HorseScore>
 ): RaceLongshotSummary {
   // Calculate pace scenario once
-  const paceScenario = analyzePaceScenario(horses)
+  const paceScenario = analyzePaceScenario(horses);
 
   // Analyze each horse
-  const allLongshots: LongshotAnalysisResult[] = []
+  const allLongshots: LongshotAnalysisResult[] = [];
 
   for (const horse of horses) {
-    if (horse.isScratched) continue
+    if (horse.isScratched) continue;
 
-    const score = scores.get(horse.programNumber)
-    if (!score) continue
+    const score = scores.get(horse.programNumber);
+    if (!score) continue;
 
-    const analysis = analyzeLongshot(horse, horses, raceHeader, score, paceScenario)
+    const analysis = analyzeLongshot(horse, horses, raceHeader, score, paceScenario);
 
     if (analysis.isLongshot) {
-      allLongshots.push(analysis)
+      allLongshots.push(analysis);
     }
   }
 
   // Categorize
-  const nuclearLongshots = allLongshots.filter(l => l.classification === 'nuclear')
-  const liveLongshots = allLongshots.filter(l => l.classification === 'live')
+  const nuclearLongshots = allLongshots.filter((l) => l.classification === 'nuclear');
+  const liveLongshots = allLongshots.filter((l) => l.classification === 'live');
 
   // Determine alert level
-  let alertLevel: 'nuclear' | 'live' | 'none' = 'none'
+  let alertLevel: 'nuclear' | 'live' | 'none' = 'none';
   if (nuclearLongshots.length > 0) {
-    alertLevel = 'nuclear'
+    alertLevel = 'nuclear';
   } else if (liveLongshots.length > 0) {
-    alertLevel = 'live'
+    alertLevel = 'live';
   }
 
   // Generate summary
-  let summary = ''
+  let summary = '';
   if (nuclearLongshots.length > 0) {
-    summary = `${nuclearLongshots.length} NUCLEAR longshot(s) detected!`
+    summary = `${nuclearLongshots.length} NUCLEAR longshot(s) detected!`;
   } else if (liveLongshots.length > 0) {
-    summary = `${liveLongshots.length} live longshot(s) worth consideration`
+    summary = `${liveLongshots.length} live longshot(s) worth consideration`;
   } else if (allLongshots.length > 0) {
-    summary = `${allLongshots.length} longshot(s) without strong angles`
+    summary = `${allLongshots.length} longshot(s) without strong angles`;
   } else {
-    summary = 'No qualifying longshots (25/1+)'
+    summary = 'No qualifying longshots (25/1+)';
   }
 
   return {
@@ -383,7 +387,7 @@ export function analyzeRaceLongshots(
     hasLive: liveLongshots.length > 0,
     summary,
     alertLevel,
-  }
+  };
 }
 
 // ============================================================================
@@ -394,54 +398,54 @@ export function analyzeRaceLongshots(
  * Get the best upset angle for a longshot
  */
 export function getBestAngle(analysis: LongshotAnalysisResult): DetectedUpsetAngle | null {
-  if (analysis.detectedAngles.length === 0) return null
+  if (analysis.detectedAngles.length === 0) return null;
 
   return analysis.detectedAngles.reduce((best, current) =>
     current.points > best.points ? current : best
-  )
+  );
 }
 
 /**
  * Format EV for display
  */
 export function formatExpectedValue(ev: number): string {
-  if (ev <= 0) return 'Negative EV'
-  return `${ev.toFixed(2)}x EV`
+  if (ev <= 0) return 'Negative EV';
+  return `${ev.toFixed(2)}x EV`;
 }
 
 /**
  * Format upset probability for display
  */
 export function formatUpsetProbability(probability: number): string {
-  return `${(probability * 100).toFixed(1)}% chance`
+  return `${(probability * 100).toFixed(1)}% chance`;
 }
 
 /**
  * Format ROI potential for display
  */
 export function formatROIPotential(odds: number, probability: number): string {
-  const roiMultiplier = odds * probability
-  if (roiMultiplier <= 1) return 'Below breakeven'
-  return `${roiMultiplier.toFixed(2)}x ROI potential`
+  const roiMultiplier = odds * probability;
+  if (roiMultiplier <= 1) return 'Below breakeven';
+  return `${roiMultiplier.toFixed(2)}x ROI potential`;
 }
 
 /**
  * Get display color based on classification
  */
 export function getClassificationDisplayColor(classification: LongshotClassification): {
-  bg: string
-  text: string
-  border: string
+  bg: string;
+  text: string;
+  border: string;
 } {
   switch (classification) {
     case 'nuclear':
-      return { bg: '#fef2f2', text: '#dc2626', border: '#ef4444' }
+      return { bg: '#fef2f2', text: '#dc2626', border: '#ef4444' };
     case 'live':
-      return { bg: '#fffbeb', text: '#d97706', border: '#f59e0b' }
+      return { bg: '#fffbeb', text: '#d97706', border: '#f59e0b' };
     case 'lottery':
-      return { bg: '#f3f4f6', text: '#6b7280', border: '#9ca3af' }
+      return { bg: '#f3f4f6', text: '#6b7280', border: '#9ca3af' };
     case 'dead':
-      return { bg: '#f9fafb', text: '#374151', border: '#d1d5db' }
+      return { bg: '#f9fafb', text: '#374151', border: '#d1d5db' };
   }
 }
 
@@ -458,13 +462,13 @@ export function sortLongshotsByQuality(
       live: 1,
       lottery: 2,
       dead: 3,
-    }
+    };
 
     if (classOrder[a.classification] !== classOrder[b.classification]) {
-      return classOrder[a.classification] - classOrder[b.classification]
+      return classOrder[a.classification] - classOrder[b.classification];
     }
 
     // Then by expected value
-    return b.expectedValue - a.expectedValue
-  })
+    return b.expectedValue - a.expectedValue;
+  });
 }

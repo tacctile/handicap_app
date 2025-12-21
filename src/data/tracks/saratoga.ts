@@ -13,7 +13,7 @@
  * Sample sizes: 1000+ races per surface for post position analysis (2022-2024)
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const saratoga: TrackData = {
   code: 'SAR',
@@ -32,7 +32,7 @@ export const saratoga: TrackData = {
       // Source: Industry standard for major tracks
       trackWidth: 80,
       // Source: NYRA - Wilson Mile chute restored 2022
-      chutes: [7, 8]
+      chutes: [7, 8],
     },
     turf: {
       // Source: NYRA - Mellon Turf Course is 1 mile (8 furlongs)
@@ -44,8 +44,8 @@ export const saratoga: TrackData = {
       turnRadius: 400,
       // Source: NYRA specifications
       trackWidth: 75,
-      chutes: [8, 8.5]
-    }
+      chutes: [8, 8.5],
+    },
   },
 
   postPositionBias: {
@@ -60,7 +60,8 @@ export const saratoga: TrackData = {
         // Inside posts no advantage in sprints; middle posts dominate
         winPercentByPost: [6.8, 10.2, 13.1, 16.5, 15.9, 14.2, 11.2, 7.8, 3.2, 1.1],
         favoredPosts: [4, 5, 6],
-        biasDescription: 'Middle posts 4-6 most productive in dirt sprints; inside offers no advantage; posts 9+ struggle badly'
+        biasDescription:
+          'Middle posts 4-6 most productive in dirt sprints; inside offers no advantage; posts 9+ struggle badly',
       },
       {
         distance: 'route',
@@ -71,8 +72,9 @@ export const saratoga: TrackData = {
         // Less inside bias than Belmont due to larger circumference
         winPercentByPost: [10.2, 12.1, 13.5, 15.2, 14.8, 13.2, 10.8, 6.5, 2.8, 0.9],
         favoredPosts: [4, 5],
-        biasDescription: 'Posts 4-7 ideal in 1 1/4 mile routes; 9-furlong main track reduces tight-turn bias'
-      }
+        biasDescription:
+          'Posts 4-7 ideal in 1 1/4 mile routes; 9-furlong main track reduces tight-turn bias',
+      },
     ],
     turf: [
       {
@@ -85,7 +87,8 @@ export const saratoga: TrackData = {
         // Inside posts historically underperform in big fields
         winPercentByPost: [9.2, 11.5, 13.8, 15.2, 14.8, 13.5, 11.2, 7.2, 2.8, 0.8],
         favoredPosts: [4, 5],
-        biasDescription: 'Downgrade rail in large fields (9+); middle posts 4-5 perform best overall'
+        biasDescription:
+          'Downgrade rail in large fields (9+); middle posts 4-5 perform best overall',
       },
       {
         distance: 'route',
@@ -97,9 +100,10 @@ export const saratoga: TrackData = {
         // 1 1/16 mile: posts 7+ won 48%
         winPercentByPost: [13.8, 14.5, 13.2, 12.8, 12.2, 11.5, 10.2, 7.5, 3.2, 1.1],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Posts 1-3 strongly favored at 1 mile (start in turn); at 1 1/16m+ outside posts improve'
-      }
-    ]
+        biasDescription:
+          'Posts 1-3 strongly favored at 1 mile (start in turn); at 1 1/16m+ outside posts improve',
+      },
+    ],
   },
 
   speedBias: [
@@ -112,7 +116,8 @@ export const saratoga: TrackData = {
       // Strong speed bias in sprints
       earlySpeedWinRate: 58,
       paceAdvantageRating: 7,
-      description: 'Strong dirt speed bias in sprints (58% early speed win rate); closers struggle badly (10%)'
+      description:
+        'Strong dirt speed bias in sprints (58% early speed win rate); closers struggle badly (10%)',
     },
     {
       surface: 'turf',
@@ -122,8 +127,9 @@ export const saratoga: TrackData = {
       // Deep closers: 14% win rate (below stalkers 40%+)
       earlySpeedWinRate: 45,
       paceAdvantageRating: 5,
-      description: 'Turf plays more fair; stalkers best (49% in sprints); deep closers still struggle (14%)'
-    }
+      description:
+        'Turf plays more fair; stalkers best (49% in sprints); deep closers still struggle (14%)',
+    },
   ],
 
   surfaces: [
@@ -134,7 +140,7 @@ export const saratoga: TrackData = {
       // Sand drainage course over natural soil
       composition: 'Sandy loam cushion (4+ inches) over clay-silt-sand base; sand drainage layer',
       playingStyle: 'speed-favoring',
-      drainage: 'good'
+      drainage: 'good',
     },
     {
       baseType: 'turf',
@@ -142,8 +148,8 @@ export const saratoga: TrackData = {
       // Both Mellon (outer) and inner turf courses
       composition: 'Kentucky Bluegrass and perennial ryegrass blend',
       playingStyle: 'fair',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -155,8 +161,9 @@ export const saratoga: TrackData = {
       // Weather: Hot and humid, afternoon thunderstorms possible
       typicalCondition: 'Fast; occasional afternoon storms',
       speedAdjustment: 1,
-      notes: 'Premier 40-day summer meet (July-September); highest quality racing; speed bias pronounced on sealed track'
-    }
+      notes:
+        'Premier 40-day summer meet (July-September); highest quality racing; speed bias pronounced on sealed track',
+    },
   ],
 
   winningTimes: [
@@ -168,7 +175,7 @@ export const saratoga: TrackData = {
       surface: 'dirt',
       claimingAvg: 64.5,
       allowanceAvg: 63.2,
-      stakesAvg: 62.0
+      stakesAvg: 62.0,
     },
     {
       distance: '6f',
@@ -177,7 +184,7 @@ export const saratoga: TrackData = {
       // Sample race times: 1:10.31-1:10.68 for claiming/allowance level
       claimingAvg: 70.5,
       allowanceAvg: 69.2,
-      stakesAvg: 67.8
+      stakesAvg: 67.8,
     },
     {
       distance: '7f',
@@ -186,7 +193,7 @@ export const saratoga: TrackData = {
       // Note: 400+ feet more straightaway than Belmont at 7f
       claimingAvg: 83.2,
       allowanceAvg: 81.8,
-      stakesAvg: 80.5
+      stakesAvg: 80.5,
     },
     {
       distance: '1m',
@@ -195,7 +202,7 @@ export const saratoga: TrackData = {
       // Wilson Mile chute configuration
       claimingAvg: 96.2,
       allowanceAvg: 94.5,
-      stakesAvg: 93.0
+      stakesAvg: 93.0,
     },
     {
       distance: '1 1/16m',
@@ -203,7 +210,7 @@ export const saratoga: TrackData = {
       surface: 'dirt',
       claimingAvg: 103.2,
       allowanceAvg: 101.5,
-      stakesAvg: 99.8
+      stakesAvg: 99.8,
     },
     {
       distance: '1 1/8m',
@@ -211,7 +218,7 @@ export const saratoga: TrackData = {
       surface: 'dirt',
       claimingAvg: 110.5,
       allowanceAvg: 108.8,
-      stakesAvg: 107.2
+      stakesAvg: 107.2,
     },
     {
       distance: '1 1/4m',
@@ -220,7 +227,7 @@ export const saratoga: TrackData = {
       // Travers Stakes distance
       claimingAvg: 124.5,
       allowanceAvg: 122.0,
-      stakesAvg: 120.0
+      stakesAvg: 120.0,
     },
     // Turf times
     {
@@ -229,7 +236,7 @@ export const saratoga: TrackData = {
       surface: 'turf',
       claimingAvg: 63.8,
       allowanceAvg: 62.5,
-      stakesAvg: 61.2
+      stakesAvg: 61.2,
     },
     {
       distance: '1m',
@@ -237,7 +244,7 @@ export const saratoga: TrackData = {
       surface: 'turf',
       claimingAvg: 95.2,
       allowanceAvg: 93.5,
-      stakesAvg: 92.0
+      stakesAvg: 92.0,
     },
     {
       distance: '1 1/16m',
@@ -245,7 +252,7 @@ export const saratoga: TrackData = {
       surface: 'turf',
       claimingAvg: 102.0,
       allowanceAvg: 100.2,
-      stakesAvg: 98.5
+      stakesAvg: 98.5,
     },
     {
       distance: '1 1/8m',
@@ -253,7 +260,7 @@ export const saratoga: TrackData = {
       surface: 'turf',
       claimingAvg: 108.8,
       allowanceAvg: 107.0,
-      stakesAvg: 105.5
+      stakesAvg: 105.5,
     },
     {
       distance: '1 3/8m',
@@ -262,10 +269,10 @@ export const saratoga: TrackData = {
       // Sword Dancer Stakes distance
       claimingAvg: 137.5,
       allowanceAvg: 135.5,
-      stakesAvg: 133.5
-    }
+      stakesAvg: 133.5,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

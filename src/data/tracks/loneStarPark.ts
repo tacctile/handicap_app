@@ -14,7 +14,7 @@
  * NOTE: Spring and fall meets; Texas Mile (G3) and other major stakes; speed-favoring surface
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const loneStarPark: TrackData = {
   code: 'LS',
@@ -33,7 +33,7 @@ export const loneStarPark: TrackData = {
       // Source: Texas Racing Commission - 80 feet wide
       trackWidth: 80,
       // Source: Lone Star Park - chutes at 6f and 7f
-      chutes: [6, 7]
+      chutes: [6, 7],
     },
     turf: {
       // Source: Lone Star Park official - 7/8 mile turf course
@@ -44,8 +44,8 @@ export const loneStarPark: TrackData = {
       turnRadius: 250,
       // Source: Texas Racing Commission
       trackWidth: 70,
-      chutes: [8, 10]
-    }
+      chutes: [8, 10],
+    },
   },
 
   postPositionBias: {
@@ -62,7 +62,8 @@ export const loneStarPark: TrackData = {
         // Sample: 600+ dirt sprints
         winPercentByPost: [14.5, 15.2, 14.0, 12.5, 11.0, 10.0, 8.8, 7.2, 4.8, 2.0],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Speed-favoring; posts 1-3 strong advantage; fast surface; get position early or lose'
+        biasDescription:
+          'Speed-favoring; posts 1-3 strong advantage; fast surface; get position early or lose',
       },
       {
         distance: 'route',
@@ -76,8 +77,9 @@ export const loneStarPark: TrackData = {
         // Sample: 350+ dirt routes
         winPercentByPost: [12.5, 14.2, 14.5, 13.2, 11.5, 10.5, 9.2, 8.0, 4.5, 1.9],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Speed-favoring in routes; posts 2-4 favored; wire-to-wire winners common; difficult to rally'
-      }
+        biasDescription:
+          'Speed-favoring in routes; posts 2-4 favored; wire-to-wire winners common; difficult to rally',
+      },
     ],
     turf: [
       {
@@ -91,7 +93,8 @@ export const loneStarPark: TrackData = {
         // Sample: 200+ turf sprints
         winPercentByPost: [14.8, 15.0, 13.5, 12.0, 10.8, 10.0, 9.0, 8.2, 4.8, 1.9],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Strong inside advantage in turf sprints; posts 1-3 heavily favored; ground savings critical'
+        biasDescription:
+          'Strong inside advantage in turf sprints; posts 1-3 heavily favored; ground savings critical',
       },
       {
         distance: 'route',
@@ -103,9 +106,9 @@ export const loneStarPark: TrackData = {
         // Sample: 250+ turf routes
         winPercentByPost: [13.8, 14.5, 13.5, 12.2, 11.2, 10.5, 9.5, 8.2, 4.8, 1.8],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Inside posts 1-3 favored; firm Texas turf favors speed; closers struggle'
-      }
-    ]
+        biasDescription: 'Inside posts 1-3 favored; firm Texas turf favors speed; closers struggle',
+      },
+    ],
   },
 
   speedBias: [
@@ -119,7 +122,8 @@ export const loneStarPark: TrackData = {
       // Texas Mile often won from the front
       earlySpeedWinRate: 62,
       paceAdvantageRating: 7,
-      description: 'Speed-favoring track; 62% early speed win rate; hard fast surface; wire-to-wire common; Texas heat aids front-runners'
+      description:
+        'Speed-favoring track; 62% early speed win rate; hard fast surface; wire-to-wire common; Texas heat aids front-runners',
     },
     {
       surface: 'turf',
@@ -129,8 +133,9 @@ export const loneStarPark: TrackData = {
       // Early speed wins at 56%
       earlySpeedWinRate: 56,
       paceAdvantageRating: 6,
-      description: 'Speed-favoring turf; firm Texas conditions; 56% early speed win rate; stalkers best alternative'
-    }
+      description:
+        'Speed-favoring turf; firm Texas conditions; 56% early speed win rate; stalkers best alternative',
+    },
   ],
 
   surfaces: [
@@ -140,9 +145,10 @@ export const loneStarPark: TrackData = {
       // Sandy composition with firm base
       // Fast, hard surface in Texas heat
       // Excellent drainage for rare rain
-      composition: 'Sandy loam over hard limestone base; 2.5-inch cushion depth; fast hard surface in Texas climate',
+      composition:
+        'Sandy loam over hard limestone base; 2.5-inch cushion depth; fast hard surface in Texas climate',
       playingStyle: 'speed-favoring',
-      drainage: 'excellent'
+      drainage: 'excellent',
     },
     {
       baseType: 'turf',
@@ -151,8 +157,8 @@ export const loneStarPark: TrackData = {
       // Firm surface typical
       composition: 'Bermuda grass base; firm conditions typical in Texas heat; excellent drainage',
       playingStyle: 'speed-favoring',
-      drainage: 'excellent'
-    }
+      drainage: 'excellent',
+    },
   ],
 
   seasonalPatterns: [
@@ -164,7 +170,8 @@ export const loneStarPark: TrackData = {
       // Lone Star Park Handicap, Texas Mile
       typicalCondition: 'Fast; hard surface in summer heat',
       speedAdjustment: 2,
-      notes: 'Thoroughbred meet; Texas Mile (G3); hot conditions by June-July; track plays very fast'
+      notes:
+        'Thoroughbred meet; Texas Mile (G3); hot conditions by June-July; track plays very fast',
     },
     {
       season: 'summer',
@@ -174,7 +181,7 @@ export const loneStarPark: TrackData = {
       // Extreme Texas heat
       typicalCondition: 'Fast; very hard in extreme heat',
       speedAdjustment: 2,
-      notes: 'Extreme Texas heat; track very fast; favor horses with speed'
+      notes: 'Extreme Texas heat; track very fast; favor horses with speed',
     },
     {
       season: 'fall',
@@ -184,7 +191,7 @@ export const loneStarPark: TrackData = {
       // Some thoroughbred racing
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Fall meet; mixed thoroughbred and quarter horse cards; cooling temperatures'
+      notes: 'Fall meet; mixed thoroughbred and quarter horse cards; cooling temperatures',
     },
     {
       season: 'winter',
@@ -192,8 +199,8 @@ export const loneStarPark: TrackData = {
       // Source: Lone Star Park closed
       typicalCondition: 'No Racing',
       speedAdjustment: 0,
-      notes: 'Track closed for winter months and September'
-    }
+      notes: 'Track closed for winter months and September',
+    },
   ],
 
   winningTimes: [
@@ -206,7 +213,7 @@ export const loneStarPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 57.8,
       allowanceAvg: 56.5,
-      stakesAvg: 55.5
+      stakesAvg: 55.5,
     },
     {
       distance: '5.5f',
@@ -214,7 +221,7 @@ export const loneStarPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 64.0,
       allowanceAvg: 62.8,
-      stakesAvg: 61.8
+      stakesAvg: 61.8,
     },
     {
       distance: '6f',
@@ -223,7 +230,7 @@ export const loneStarPark: TrackData = {
       // Track record: 1:07.87
       claimingAvg: 70.2,
       allowanceAvg: 69.0,
-      stakesAvg: 67.8
+      stakesAvg: 67.8,
     },
     {
       distance: '6.5f',
@@ -231,7 +238,7 @@ export const loneStarPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 76.5,
       allowanceAvg: 75.2,
-      stakesAvg: 74.0
+      stakesAvg: 74.0,
     },
     {
       distance: '7f',
@@ -239,7 +246,7 @@ export const loneStarPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 83.0,
       allowanceAvg: 81.5,
-      stakesAvg: 80.0
+      stakesAvg: 80.0,
     },
     {
       distance: '1m',
@@ -248,7 +255,7 @@ export const loneStarPark: TrackData = {
       // Texas Mile distance
       claimingAvg: 96.5,
       allowanceAvg: 95.0,
-      stakesAvg: 93.5
+      stakesAvg: 93.5,
     },
     {
       distance: '1m70y',
@@ -256,7 +263,7 @@ export const loneStarPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 101.0,
       allowanceAvg: 99.5,
-      stakesAvg: 98.0
+      stakesAvg: 98.0,
     },
     {
       distance: '1 1/16m',
@@ -264,7 +271,7 @@ export const loneStarPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 103.5,
       allowanceAvg: 102.0,
-      stakesAvg: 100.5
+      stakesAvg: 100.5,
     },
     {
       distance: '1 1/8m',
@@ -273,7 +280,7 @@ export const loneStarPark: TrackData = {
       // Track record: 1:47.20
       claimingAvg: 110.5,
       allowanceAvg: 108.5,
-      stakesAvg: 106.5
+      stakesAvg: 106.5,
     },
     {
       distance: '1 1/4m',
@@ -281,7 +288,7 @@ export const loneStarPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 124.0,
       allowanceAvg: 121.5,
-      stakesAvg: 119.5
+      stakesAvg: 119.5,
     },
     // Turf times
     {
@@ -290,7 +297,7 @@ export const loneStarPark: TrackData = {
       surface: 'turf',
       claimingAvg: 56.5,
       allowanceAvg: 55.2,
-      stakesAvg: 54.2
+      stakesAvg: 54.2,
     },
     {
       distance: '5.5f',
@@ -298,7 +305,7 @@ export const loneStarPark: TrackData = {
       surface: 'turf',
       claimingAvg: 62.5,
       allowanceAvg: 61.2,
-      stakesAvg: 60.0
+      stakesAvg: 60.0,
     },
     {
       distance: '1m',
@@ -306,7 +313,7 @@ export const loneStarPark: TrackData = {
       surface: 'turf',
       claimingAvg: 95.0,
       allowanceAvg: 93.5,
-      stakesAvg: 92.0
+      stakesAvg: 92.0,
     },
     {
       distance: '1 1/16m',
@@ -314,7 +321,7 @@ export const loneStarPark: TrackData = {
       surface: 'turf',
       claimingAvg: 101.5,
       allowanceAvg: 100.0,
-      stakesAvg: 98.5
+      stakesAvg: 98.5,
     },
     {
       distance: '1 1/8m',
@@ -322,10 +329,10 @@ export const loneStarPark: TrackData = {
       surface: 'turf',
       claimingAvg: 108.5,
       allowanceAvg: 107.0,
-      stakesAvg: 105.5
-    }
+      stakesAvg: 105.5,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

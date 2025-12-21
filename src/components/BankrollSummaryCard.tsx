@@ -1,13 +1,13 @@
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import type { UseBankrollReturn } from '../hooks/useBankroll'
-import { BETTING_STYLE_INFO } from '../hooks/useBankroll'
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { UseBankrollReturn } from '../hooks/useBankroll';
+import { BETTING_STYLE_INFO } from '../hooks/useBankroll';
 
 interface BankrollSummaryCardProps {
-  bankroll: UseBankrollReturn
-  onOpenSettings: () => void
-  className?: string
-  variant?: 'full' | 'compact' | 'mobile'
+  bankroll: UseBankrollReturn;
+  onOpenSettings: () => void;
+  className?: string;
+  variant?: 'full' | 'compact' | 'mobile';
 }
 
 export function BankrollSummaryCard({
@@ -16,7 +16,7 @@ export function BankrollSummaryCard({
   className = '',
   variant = 'full',
 }: BankrollSummaryCardProps) {
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const {
     settings,
@@ -33,16 +33,16 @@ export function BankrollSummaryCard({
     getComplexityMode,
     getBettingStyleLabel,
     getSelectedBetTypesLabel,
-  } = bankroll
+  } = bankroll;
 
-  const mode = getComplexityMode()
-  const dailyBudget = getDailyBudget()
-  const remaining = getRemainingDaily()
-  const spent = getSpentToday()
-  const raceBudget = getRaceBudget()
-  const unitSize = getUnitSize()
-  const progressPercent = Math.min(100, (spent / dailyBudget) * 100)
-  const warningMessage = getWarningMessage()
+  const mode = getComplexityMode();
+  const dailyBudget = getDailyBudget();
+  const remaining = getRemainingDaily();
+  const spent = getSpentToday();
+  const raceBudget = getRaceBudget();
+  const unitSize = getUnitSize();
+  const progressPercent = Math.min(100, (spent / dailyBudget) * 100);
+  const warningMessage = getWarningMessage();
 
   // Render compact version for mobile header
   if (variant === 'compact') {
@@ -62,19 +62,20 @@ export function BankrollSummaryCard({
             <span className="bankroll-indicator-label">
               {mode === 'simple' ? 'Style' : mode === 'moderate' ? 'Risk' : 'Daily'}
             </span>
-            <span className={`bankroll-indicator-value ${isOverBudget() ? 'over' : isApproachingLimit() ? 'warning' : ''}`}>
+            <span
+              className={`bankroll-indicator-value ${isOverBudget() ? 'over' : isApproachingLimit() ? 'warning' : ''}`}
+            >
               {mode === 'simple'
                 ? BETTING_STYLE_INFO[settings.simpleBettingStyle].emoji
                 : mode === 'moderate'
-                ? settings.moderateRiskLevel.charAt(0).toUpperCase()
-                : `${formatCurrency(spent)}/${formatCurrency(dailyBudget)}`
-              }
+                  ? settings.moderateRiskLevel.charAt(0).toUpperCase()
+                  : `${formatCurrency(spent)}/${formatCurrency(dailyBudget)}`}
             </span>
           </div>
         </div>
         <span className="material-icons bankroll-indicator-arrow">chevron_right</span>
       </button>
-    )
+    );
   }
 
   // Render mobile collapsible version
@@ -100,10 +101,10 @@ export function BankrollSummaryCard({
             </span>
           </div>
           <div className="bankroll-summary-collapse-right">
-            <span className="bankroll-summary-collapse-amount">
-              {formatCurrency(raceBudget)}
-            </span>
-            <span className={`material-icons bankroll-summary-chevron ${isExpanded ? 'expanded' : ''}`}>
+            <span className="bankroll-summary-collapse-amount">{formatCurrency(raceBudget)}</span>
+            <span
+              className={`material-icons bankroll-summary-chevron ${isExpanded ? 'expanded' : ''}`}
+            >
               expand_more
             </span>
           </div>
@@ -122,9 +123,7 @@ export function BankrollSummaryCard({
               {/* Warning banner */}
               {warningMessage && mode === 'advanced' && (
                 <div className={`bankroll-warning-banner ${isOverBudget() ? 'error' : 'warning'}`}>
-                  <span className="material-icons">
-                    {isOverBudget() ? 'error' : 'warning'}
-                  </span>
+                  <span className="material-icons">{isOverBudget() ? 'error' : 'warning'}</span>
                   <span>{warningMessage}</span>
                 </div>
               )}
@@ -152,12 +151,15 @@ export function BankrollSummaryCard({
                   <div className="bankroll-moderate-row">
                     <span className="bankroll-moderate-label">Risk</span>
                     <span className={`bankroll-moderate-value risk-${settings.moderateRiskLevel}`}>
-                      {settings.moderateRiskLevel.charAt(0).toUpperCase() + settings.moderateRiskLevel.slice(1)}
+                      {settings.moderateRiskLevel.charAt(0).toUpperCase() +
+                        settings.moderateRiskLevel.slice(1)}
                     </span>
                   </div>
                   <div className="bankroll-moderate-row">
                     <span className="bankroll-moderate-label">Bet Types</span>
-                    <span className="bankroll-moderate-value types">{getSelectedBetTypesLabel()}</span>
+                    <span className="bankroll-moderate-value types">
+                      {getSelectedBetTypesLabel()}
+                    </span>
                   </div>
                 </div>
               )}
@@ -191,8 +193,11 @@ export function BankrollSummaryCard({
                       <span className="material-icons bankroll-stat-icon">trending_up</span>
                       <div className="bankroll-stat-content">
                         <span className="bankroll-stat-label">Today's P&L</span>
-                        <span className={`bankroll-stat-value ${dailyPL >= 0 ? 'positive' : 'negative'}`}>
-                          {dailyPL >= 0 ? '+' : ''}{formatCurrency(dailyPL)}
+                        <span
+                          className={`bankroll-stat-value ${dailyPL >= 0 ? 'positive' : 'negative'}`}
+                        >
+                          {dailyPL >= 0 ? '+' : ''}
+                          {formatCurrency(dailyPL)}
                         </span>
                       </div>
                     </div>
@@ -220,10 +225,7 @@ export function BankrollSummaryCard({
               )}
 
               {/* Settings button */}
-              <button
-                className="bankroll-summary-settings-btn"
-                onClick={onOpenSettings}
-              >
+              <button className="bankroll-summary-settings-btn" onClick={onOpenSettings}>
                 <span className="material-icons">tune</span>
                 Adjust
               </button>
@@ -231,7 +233,7 @@ export function BankrollSummaryCard({
           )}
         </AnimatePresence>
       </motion.div>
-    )
+    );
   }
 
   // Full desktop version - mode-aware
@@ -247,7 +249,11 @@ export function BankrollSummaryCard({
         <div className="bankroll-summary-title-group">
           <span className="material-icons bankroll-summary-icon">account_balance_wallet</span>
           <h3 className="bankroll-summary-title">
-            {mode === 'simple' ? 'Race Budget' : mode === 'moderate' ? 'Betting Setup' : 'Bankroll Summary'}
+            {mode === 'simple'
+              ? 'Race Budget'
+              : mode === 'moderate'
+                ? 'Betting Setup'
+                : 'Bankroll Summary'}
           </h3>
         </div>
         <span className={`bankroll-summary-mode-badge mode-${mode}`}>
@@ -258,9 +264,7 @@ export function BankrollSummaryCard({
       {/* Warning banner - only for advanced mode */}
       {warningMessage && mode === 'advanced' && (
         <div className={`bankroll-warning-banner ${isOverBudget() ? 'error' : 'warning'}`}>
-          <span className="material-icons">
-            {isOverBudget() ? 'error' : 'warning'}
-          </span>
+          <span className="material-icons">{isOverBudget() ? 'error' : 'warning'}</span>
           <span>{warningMessage}</span>
         </div>
       )}
@@ -295,7 +299,8 @@ export function BankrollSummaryCard({
               <span className="material-icons">speed</span>
               <span className="bankroll-moderate-detail-label">Risk:</span>
               <span className={`bankroll-moderate-detail-value risk-${settings.moderateRiskLevel}`}>
-                {settings.moderateRiskLevel.charAt(0).toUpperCase() + settings.moderateRiskLevel.slice(1)}
+                {settings.moderateRiskLevel.charAt(0).toUpperCase() +
+                  settings.moderateRiskLevel.slice(1)}
               </span>
             </div>
             <div className="bankroll-moderate-detail">
@@ -313,7 +318,9 @@ export function BankrollSummaryCard({
           {/* Total bankroll */}
           <div className="bankroll-summary-total">
             <span className="bankroll-summary-total-label">Total Bankroll</span>
-            <span className="bankroll-summary-total-value">{formatCurrency(settings.totalBankroll)}</span>
+            <span className="bankroll-summary-total-value">
+              {formatCurrency(settings.totalBankroll)}
+            </span>
           </div>
 
           {/* Stats grid */}
@@ -367,22 +374,20 @@ export function BankrollSummaryCard({
             <span className="material-icons">trending_up</span>
             <span className="bankroll-summary-pl-label">Today's P&L</span>
             <span className={`bankroll-summary-pl-value ${dailyPL >= 0 ? 'positive' : 'negative'}`}>
-              {dailyPL >= 0 ? '+' : ''}{formatCurrency(dailyPL)}
+              {dailyPL >= 0 ? '+' : ''}
+              {formatCurrency(dailyPL)}
             </span>
           </div>
         </>
       )}
 
       {/* Settings button */}
-      <button
-        className="bankroll-summary-btn"
-        onClick={onOpenSettings}
-      >
+      <button className="bankroll-summary-btn" onClick={onOpenSettings}>
         <span className="material-icons">tune</span>
         {mode === 'simple' ? 'Adjust' : mode === 'moderate' ? 'Adjust' : 'Adjust Settings'}
       </button>
     </motion.div>
-  )
+  );
 }
 
-export default BankrollSummaryCard
+export default BankrollSummaryCard;

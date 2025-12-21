@@ -15,7 +15,7 @@
  * NOTE: Inner track used for winter racing (limestone base for freeze resistance)
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const aqueduct: TrackData = {
   code: 'AQU',
@@ -35,7 +35,7 @@ export const aqueduct: TrackData = {
       // Source: NYRA specifications
       trackWidth: 90,
       // Source: Aqueduct chute configurations
-      chutes: [6, 7]
+      chutes: [6, 7],
     },
     turf: {
       // Source: NYRA - Inner Turf Course 7 furlongs plus 43 feet
@@ -46,8 +46,8 @@ export const aqueduct: TrackData = {
       turnRadius: 240,
       // Source: NYRA specifications
       trackWidth: 70,
-      chutes: [8]
-    }
+      chutes: [8],
+    },
   },
 
   postPositionBias: {
@@ -63,7 +63,8 @@ export const aqueduct: TrackData = {
         // Sample: 800+ dirt sprints on outer track
         winPercentByPost: [11.5, 13.2, 14.0, 14.5, 13.8, 12.2, 10.0, 6.5, 3.2, 1.1],
         favoredPosts: [3, 4, 5],
-        biasDescription: 'Inside-middle posts 1-6 favored in sprints; rail good but not dominant; outside struggles'
+        biasDescription:
+          'Inside-middle posts 1-6 favored in sprints; rail good but not dominant; outside struggles',
       },
       {
         distance: 'route',
@@ -76,8 +77,9 @@ export const aqueduct: TrackData = {
         // Sample: 600+ dirt routes
         winPercentByPost: [14.8, 14.2, 13.5, 12.8, 11.2, 10.2, 9.0, 7.5, 4.8, 2.0],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Strong inside bias in routes; posts 1-4 dominate at 1 1/8m; rail often advantageous'
-      }
+        biasDescription:
+          'Strong inside bias in routes; posts 1-4 dominate at 1 1/8m; rail often advantageous',
+      },
     ],
     turf: [
       {
@@ -89,7 +91,8 @@ export const aqueduct: TrackData = {
         // Sample: 300+ turf sprints
         winPercentByPost: [12.5, 13.8, 13.5, 13.0, 12.2, 11.5, 10.2, 7.8, 4.0, 1.5],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Slight inside edge in turf sprints; posts 2-4 most productive; plays relatively fair'
+        biasDescription:
+          'Slight inside edge in turf sprints; posts 2-4 most productive; plays relatively fair',
       },
       {
         distance: 'route',
@@ -100,9 +103,10 @@ export const aqueduct: TrackData = {
         // Sample: 400+ turf routes
         winPercentByPost: [11.2, 13.0, 13.5, 13.8, 13.2, 12.0, 10.5, 7.5, 3.8, 1.5],
         favoredPosts: [3, 4, 5],
-        biasDescription: 'Posts 3-5 slight edge in turf routes; track plays fair overall; closers competitive'
-      }
-    ]
+        biasDescription:
+          'Posts 3-5 slight edge in turf routes; track plays fair overall; closers competitive',
+      },
+    ],
   },
 
   speedBias: [
@@ -115,7 +119,8 @@ export const aqueduct: TrackData = {
       // Many riders avoid inside, creating opportunity for rail speed
       earlySpeedWinRate: 52,
       paceAdvantageRating: 5,
-      description: 'Slight speed advantage; rail position helpful; track often plays fair with day-to-day variation'
+      description:
+        'Slight speed advantage; rail position helpful; track often plays fair with day-to-day variation',
     },
     {
       surface: 'turf',
@@ -124,8 +129,9 @@ export const aqueduct: TrackData = {
       // Stalkers and off-pace runners effective
       earlySpeedWinRate: 46,
       paceAdvantageRating: 4,
-      description: 'Turf course plays fair; closers and stalkers competitive; tactical speed helpful'
-    }
+      description:
+        'Turf course plays fair; closers and stalkers competitive; tactical speed helpful',
+    },
   ],
 
   surfaces: [
@@ -134,9 +140,10 @@ export const aqueduct: TrackData = {
       // Source: NYRA track specifications
       // Main/Outer track: standard dirt composition
       // Inner track: limestone screening base for winter freeze resistance
-      composition: 'Outer: Sandy loam cushion over base; Inner (winter): Limestone screening base for freeze resistance',
+      composition:
+        'Outer: Sandy loam cushion over base; Inner (winter): Limestone screening base for freeze resistance',
       playingStyle: 'fair',
-      drainage: 'good'
+      drainage: 'good',
     },
     {
       baseType: 'turf',
@@ -144,8 +151,8 @@ export const aqueduct: TrackData = {
       // Standard northeastern turf mix
       composition: 'Kentucky Bluegrass and perennial ryegrass blend',
       playingStyle: 'fair',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -158,7 +165,8 @@ export const aqueduct: TrackData = {
       // Inner track from late November through early April typically
       typicalCondition: 'Fast to Frozen; variable winter conditions',
       speedAdjustment: -2,
-      notes: 'Winter meet on inner dirt track; limestone base resists freezing; challenging weather conditions'
+      notes:
+        'Winter meet on inner dirt track; limestone base resists freezing; challenging weather conditions',
     },
     {
       season: 'spring',
@@ -167,7 +175,8 @@ export const aqueduct: TrackData = {
       // Transition to outer track, Wood Memorial prep
       typicalCondition: 'Fast to Good',
       speedAdjustment: 0,
-      notes: 'Outer track racing resumes; Wood Memorial Kentucky Derby prep; transition from winter meet'
+      notes:
+        'Outer track racing resumes; Wood Memorial Kentucky Derby prep; transition from winter meet',
     },
     {
       season: 'fall',
@@ -176,8 +185,8 @@ export const aqueduct: TrackData = {
       // Fall stakes before winter meet begins
       typicalCondition: 'Fast',
       speedAdjustment: 0,
-      notes: 'Fall stakes racing; Cigar Mile; transition before winter inner track racing begins'
-    }
+      notes: 'Fall stakes racing; Cigar Mile; transition before winter inner track racing begins',
+    },
   ],
 
   winningTimes: [
@@ -189,7 +198,7 @@ export const aqueduct: TrackData = {
       surface: 'dirt',
       claimingAvg: 65.0,
       allowanceAvg: 63.8,
-      stakesAvg: 62.5
+      stakesAvg: 62.5,
     },
     {
       distance: '6f',
@@ -197,7 +206,7 @@ export const aqueduct: TrackData = {
       surface: 'dirt',
       claimingAvg: 70.5,
       allowanceAvg: 69.2,
-      stakesAvg: 67.8
+      stakesAvg: 67.8,
     },
     {
       distance: '7f',
@@ -205,7 +214,7 @@ export const aqueduct: TrackData = {
       surface: 'dirt',
       claimingAvg: 83.5,
       allowanceAvg: 82.2,
-      stakesAvg: 80.8
+      stakesAvg: 80.8,
     },
     {
       distance: '1m',
@@ -213,7 +222,7 @@ export const aqueduct: TrackData = {
       surface: 'dirt',
       claimingAvg: 97.2,
       allowanceAvg: 95.5,
-      stakesAvg: 93.8
+      stakesAvg: 93.8,
     },
     {
       distance: '1m70y',
@@ -221,7 +230,7 @@ export const aqueduct: TrackData = {
       surface: 'dirt',
       claimingAvg: 101.5,
       allowanceAvg: 99.8,
-      stakesAvg: 98.0
+      stakesAvg: 98.0,
     },
     {
       distance: '1 1/16m',
@@ -229,7 +238,7 @@ export const aqueduct: TrackData = {
       surface: 'dirt',
       claimingAvg: 104.0,
       allowanceAvg: 102.2,
-      stakesAvg: 100.5
+      stakesAvg: 100.5,
     },
     {
       distance: '1 1/8m',
@@ -238,7 +247,7 @@ export const aqueduct: TrackData = {
       // Cigar Mile distance
       claimingAvg: 111.5,
       allowanceAvg: 109.8,
-      stakesAvg: 108.0
+      stakesAvg: 108.0,
     },
     {
       distance: '1 1/4m',
@@ -246,7 +255,7 @@ export const aqueduct: TrackData = {
       surface: 'dirt',
       claimingAvg: 125.0,
       allowanceAvg: 122.5,
-      stakesAvg: 120.0
+      stakesAvg: 120.0,
     },
     // Turf times
     {
@@ -255,7 +264,7 @@ export const aqueduct: TrackData = {
       surface: 'turf',
       claimingAvg: 64.2,
       allowanceAvg: 63.0,
-      stakesAvg: 61.8
+      stakesAvg: 61.8,
     },
     {
       distance: '1m',
@@ -264,7 +273,7 @@ export const aqueduct: TrackData = {
       // Track record: 1:46.06 (Integration, equal to Slew the Dragon 1985)
       claimingAvg: 95.8,
       allowanceAvg: 94.2,
-      stakesAvg: 92.5
+      stakesAvg: 92.5,
     },
     {
       distance: '1 1/16m',
@@ -272,7 +281,7 @@ export const aqueduct: TrackData = {
       surface: 'turf',
       claimingAvg: 102.2,
       allowanceAvg: 100.5,
-      stakesAvg: 98.8
+      stakesAvg: 98.8,
     },
     {
       distance: '1 1/8m',
@@ -280,10 +289,10 @@ export const aqueduct: TrackData = {
       surface: 'turf',
       claimingAvg: 109.5,
       allowanceAvg: 107.8,
-      stakesAvg: 106.0
-    }
+      stakesAvg: 106.0,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

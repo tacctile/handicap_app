@@ -13,7 +13,7 @@ import type {
   Workout,
   SpeedFigures,
   RunningLine,
-} from '../../types/drf'
+} from '../../types/drf';
 
 // ============================================================================
 // DEFAULT FACTORIES
@@ -31,7 +31,7 @@ export function createSpeedFigures(overrides: Partial<SpeedFigures> = {}): Speed
     dirtVariant: null,
     turfVariant: null,
     ...overrides,
-  }
+  };
 }
 
 /**
@@ -51,7 +51,7 @@ export function createRunningLine(overrides: Partial<RunningLine> = {}): Running
     finish: null,
     finishLengths: null,
     ...overrides,
-  }
+  };
 }
 
 /**
@@ -94,7 +94,7 @@ export function createPastPerformance(overrides: Partial<PastPerformance> = {}):
     claimedFrom: null,
     daysSinceLast: 21,
     ...overrides,
-  }
+  };
 }
 
 /**
@@ -116,7 +116,7 @@ export function createEquipment(overrides: Partial<Equipment> = {}): Equipment {
     equipmentChanges: [],
     raw: '',
     ...overrides,
-  }
+  };
 }
 
 /**
@@ -131,7 +131,7 @@ export function createMedication(overrides: Partial<Medication> = {}): Medicatio
     other: [],
     raw: '',
     ...overrides,
-  }
+  };
 }
 
 /**
@@ -147,7 +147,7 @@ export function createBreeding(overrides: Partial<Breeding> = {}): Breeding {
     whereBred: 'KY',
     studFee: null,
     ...overrides,
-  }
+  };
 }
 
 /**
@@ -171,7 +171,7 @@ export function createWorkout(overrides: Partial<Workout> = {}): Workout {
     fromGate: false,
     notes: '',
     ...overrides,
-  }
+  };
 }
 
 /**
@@ -247,7 +247,7 @@ export function createHorseEntry(overrides: Partial<HorseEntry> = {}): HorseEntr
     coupledWith: [],
     rawLine: '',
     ...overrides,
-  }
+  };
 }
 
 /**
@@ -291,7 +291,7 @@ export function createRaceHeader(overrides: Partial<RaceHeader> = {}): RaceHeade
     fieldSize: 10,
     probableFavorite: null,
     ...overrides,
-  }
+  };
 }
 
 // ============================================================================
@@ -302,18 +302,18 @@ export function createRaceHeader(overrides: Partial<RaceHeader> = {}): RaceHeade
  * Create a horse with winning trainer stats
  */
 export function createWinningTrainerHorse(wins: number): HorseEntry {
-  const starts = wins > 0 ? Math.ceil(wins / 0.2) : 10 // 20% win rate base
+  const starts = wins > 0 ? Math.ceil(wins / 0.2) : 10; // 20% win rate base
   const pastPerformances = Array.from({ length: Math.min(starts, 10) }, (_, i) =>
     createPastPerformance({
       finishPosition: i < wins ? 1 : Math.floor(Math.random() * 5) + 2,
       date: `2024-0${Math.max(1, 10 - i)}-15`,
     })
-  )
+  );
 
   return createHorseEntry({
     trainerName: `Trainer_${wins}wins`,
     pastPerformances,
-  })
+  });
 }
 
 /**
@@ -322,10 +322,8 @@ export function createWinningTrainerHorse(wins: number): HorseEntry {
 export function createLayoffHorse(daysSinceLastRace: number): HorseEntry {
   return createHorseEntry({
     daysSinceLastRace,
-    pastPerformances: [
-      createPastPerformance({ daysSinceLast: daysSinceLastRace }),
-    ],
-  })
+    pastPerformances: [createPastPerformance({ daysSinceLast: daysSinceLastRace })],
+  });
 }
 
 /**
@@ -341,7 +339,7 @@ export function createFirstTimeStarter(): HorseEntry {
     averageBeyer: null,
     bestBeyer: null,
     lastBeyer: null,
-  })
+  });
 }
 
 /**
@@ -354,19 +352,37 @@ export function createSpeedHorse(): HorseEntry {
     earlySpeedRating: 90,
     pastPerformances: [
       createPastPerformance({
-        runningLine: createRunningLine({ start: 1, quarterMile: 1, halfMile: 1, stretch: 2, finish: 2 }),
+        runningLine: createRunningLine({
+          start: 1,
+          quarterMile: 1,
+          halfMile: 1,
+          stretch: 2,
+          finish: 2,
+        }),
         finishPosition: 2,
       }),
       createPastPerformance({
-        runningLine: createRunningLine({ start: 1, quarterMile: 1, halfMile: 1, stretch: 1, finish: 1 }),
+        runningLine: createRunningLine({
+          start: 1,
+          quarterMile: 1,
+          halfMile: 1,
+          stretch: 1,
+          finish: 1,
+        }),
         finishPosition: 1,
       }),
       createPastPerformance({
-        runningLine: createRunningLine({ start: 1, quarterMile: 1, halfMile: 2, stretch: 3, finish: 4 }),
+        runningLine: createRunningLine({
+          start: 1,
+          quarterMile: 1,
+          halfMile: 2,
+          stretch: 3,
+          finish: 4,
+        }),
         finishPosition: 4,
       }),
     ],
-  })
+  });
 }
 
 /**
@@ -379,15 +395,27 @@ export function createCloser(): HorseEntry {
     earlySpeedRating: 30,
     pastPerformances: [
       createPastPerformance({
-        runningLine: createRunningLine({ start: 8, quarterMile: 8, halfMile: 7, stretch: 4, finish: 1 }),
+        runningLine: createRunningLine({
+          start: 8,
+          quarterMile: 8,
+          halfMile: 7,
+          stretch: 4,
+          finish: 1,
+        }),
         finishPosition: 1,
       }),
       createPastPerformance({
-        runningLine: createRunningLine({ start: 9, quarterMile: 9, halfMile: 8, stretch: 5, finish: 2 }),
+        runningLine: createRunningLine({
+          start: 9,
+          quarterMile: 9,
+          halfMile: 8,
+          stretch: 5,
+          finish: 2,
+        }),
         finishPosition: 2,
       }),
     ],
-  })
+  });
 }
 
 /**
@@ -400,35 +428,49 @@ export function createPresser(): HorseEntry {
     earlySpeedRating: 60,
     pastPerformances: [
       createPastPerformance({
-        runningLine: createRunningLine({ start: 3, quarterMile: 3, halfMile: 2, stretch: 2, finish: 1 }),
+        runningLine: createRunningLine({
+          start: 3,
+          quarterMile: 3,
+          halfMile: 2,
+          stretch: 2,
+          finish: 1,
+        }),
         finishPosition: 1,
       }),
       createPastPerformance({
-        runningLine: createRunningLine({ start: 4, quarterMile: 4, halfMile: 3, stretch: 2, finish: 2 }),
+        runningLine: createRunningLine({
+          start: 4,
+          quarterMile: 4,
+          halfMile: 3,
+          stretch: 2,
+          finish: 2,
+        }),
         finishPosition: 2,
       }),
     ],
-  })
+  });
 }
 
 /**
  * Create a horse with equipment changes
  */
-export function createEquipmentChangeHorse(changeType: 'blinkers_on' | 'blinkers_off' | 'lasix_first'): HorseEntry {
-  const equipment = createEquipment()
-  const medication = createMedication()
+export function createEquipmentChangeHorse(
+  changeType: 'blinkers_on' | 'blinkers_off' | 'lasix_first'
+): HorseEntry {
+  const equipment = createEquipment();
+  const medication = createMedication();
 
   if (changeType === 'blinkers_on') {
-    equipment.blinkers = true
-    equipment.firstTimeEquipment = ['blinkers']
-    equipment.raw = 'B'
+    equipment.blinkers = true;
+    equipment.firstTimeEquipment = ['blinkers'];
+    equipment.raw = 'B';
   } else if (changeType === 'blinkers_off') {
-    equipment.blinkersOff = true
-    equipment.raw = 'BO'
+    equipment.blinkersOff = true;
+    equipment.raw = 'BO';
   } else if (changeType === 'lasix_first') {
-    medication.lasixFirstTime = true
-    medication.lasix = true
-    medication.raw = 'L1'
+    medication.lasixFirstTime = true;
+    medication.lasix = true;
+    medication.raw = 'L1';
   }
 
   return createHorseEntry({
@@ -440,7 +482,7 @@ export function createEquipmentChangeHorse(changeType: 'blinkers_on' | 'blinkers
         medication: changeType === 'lasix_first' ? '' : 'L',
       }),
     ],
-  })
+  });
 }
 
 /**
@@ -452,14 +494,14 @@ export function createSpeedFigureHorse(figures: number[]): HorseEntry {
       speedFigures: createSpeedFigures({ beyer }),
       date: `2024-0${Math.max(1, 10 - i)}-15`,
     })
-  )
+  );
 
   return createHorseEntry({
     bestBeyer: Math.max(...figures),
     averageBeyer: Math.round(figures.reduce((a, b) => a + b, 0) / figures.length),
     lastBeyer: figures[0],
     pastPerformances,
-  })
+  });
 }
 
 /**
@@ -479,5 +521,5 @@ export function createTestField(count: number = 10): HorseEntry[] {
         createPastPerformance({ finishPosition: Math.floor(Math.random() * 5) + 1 }),
       ],
     })
-  )
+  );
 }

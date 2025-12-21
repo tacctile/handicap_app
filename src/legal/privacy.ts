@@ -171,4 +171,4 @@ ADDITIONAL SECTIONS TO BE ADDED:
 ---
 
 By using this application, you acknowledge that you have read and understood this Privacy Policy.
-`.trim()
+`.trim();

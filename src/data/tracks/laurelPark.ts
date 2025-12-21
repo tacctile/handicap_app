@@ -14,7 +14,7 @@
  * NOTE: 1-1/8 mile track (larger than average); longer stretch (1,344 feet) allows closers
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const laurelPark: TrackData = {
   code: 'LRL',
@@ -33,7 +33,7 @@ export const laurelPark: TrackData = {
       // Source: Maryland Racing Commission - 80 feet wide
       trackWidth: 80,
       // Source: Laurel Park - chutes at 6f, 7f, 1-1/4m
-      chutes: [6, 7, 10]
+      chutes: [6, 7, 10],
     },
     turf: {
       // Source: Laurel Park official - 7/8 mile turf course
@@ -44,8 +44,8 @@ export const laurelPark: TrackData = {
       turnRadius: 260,
       // Source: Maryland Racing Commission
       trackWidth: 72,
-      chutes: [8]
-    }
+      chutes: [8],
+    },
   },
 
   postPositionBias: {
@@ -61,7 +61,8 @@ export const laurelPark: TrackData = {
         // Sample: 1,200+ dirt sprints
         winPercentByPost: [12.8, 13.5, 13.8, 13.2, 12.5, 11.5, 10.2, 7.5, 3.8, 1.2],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Slight inside-middle advantage; posts 2-4 favored; long 1,344-foot stretch allows rally from mid-posts'
+        biasDescription:
+          'Slight inside-middle advantage; posts 2-4 favored; long 1,344-foot stretch allows rally from mid-posts',
       },
       {
         distance: 'route',
@@ -74,8 +75,9 @@ export const laurelPark: TrackData = {
         // Sample: 700+ dirt routes
         winPercentByPost: [11.8, 12.5, 13.5, 14.0, 13.2, 12.0, 10.5, 7.8, 3.5, 1.2],
         favoredPosts: [3, 4, 5],
-        biasDescription: 'Fair track for routes; middle posts 3-5 optimal; long stretch allows closers; sweeping turns favor ground-savers'
-      }
+        biasDescription:
+          'Fair track for routes; middle posts 3-5 optimal; long stretch allows closers; sweeping turns favor ground-savers',
+      },
     ],
     turf: [
       {
@@ -88,7 +90,8 @@ export const laurelPark: TrackData = {
         // Sample: 400+ turf sprints
         winPercentByPost: [13.0, 13.8, 13.5, 12.8, 12.0, 11.2, 10.0, 8.0, 4.2, 1.5],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Inside-middle posts 2-4 favored in turf sprints; standard 7/8 mile course dynamics'
+        biasDescription:
+          'Inside-middle posts 2-4 favored in turf sprints; standard 7/8 mile course dynamics',
       },
       {
         distance: 'route',
@@ -100,9 +103,10 @@ export const laurelPark: TrackData = {
         // Sample: 350+ turf routes
         winPercentByPost: [12.5, 13.2, 13.5, 13.0, 12.2, 11.5, 10.5, 8.2, 4.0, 1.4],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Fair turf course; posts 2-4 slight edge; good racing surface allows tactics'
-      }
-    ]
+        biasDescription:
+          'Fair turf course; posts 2-4 slight edge; good racing surface allows tactics',
+      },
+    ],
   },
 
   speedBias: [
@@ -115,7 +119,8 @@ export const laurelPark: TrackData = {
       // Stalkers and closers competitive
       earlySpeedWinRate: 50,
       paceAdvantageRating: 5,
-      description: 'Fair track; long 1,344-foot stretch allows closers; balanced pace scenarios; stalkers effective'
+      description:
+        'Fair track; long 1,344-foot stretch allows closers; balanced pace scenarios; stalkers effective',
     },
     {
       surface: 'turf',
@@ -125,8 +130,9 @@ export const laurelPark: TrackData = {
       // Off-pace running styles effective
       earlySpeedWinRate: 46,
       paceAdvantageRating: 4,
-      description: 'Turf plays fair to slight closer advantage; tactical speed helpful but not essential'
-    }
+      description:
+        'Turf plays fair to slight closer advantage; tactical speed helpful but not essential',
+    },
   ],
 
   surfaces: [
@@ -137,7 +143,7 @@ export const laurelPark: TrackData = {
       // Well-maintained year-round
       composition: 'Sandy loam cushion over stone dust base; 3.5-inch cushion depth; good drainage',
       playingStyle: 'fair',
-      drainage: 'good'
+      drainage: 'good',
     },
     {
       baseType: 'turf',
@@ -145,8 +151,8 @@ export const laurelPark: TrackData = {
       // Tall fescue and bluegrass blend
       composition: 'Tall fescue and Kentucky Bluegrass blend; maintained at 4-5 inches',
       playingStyle: 'fair',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -158,7 +164,7 @@ export const laurelPark: TrackData = {
       // Racing continues through winter
       typicalCondition: 'Fast to Good; off-track conditions possible',
       speedAdjustment: 0,
-      notes: 'Year-round racing; Maryland primary winter venue; Frank J. De Francis Memorial Dash'
+      notes: 'Year-round racing; Maryland primary winter venue; Frank J. De Francis Memorial Dash',
     },
     {
       season: 'spring',
@@ -167,7 +173,7 @@ export const laurelPark: TrackData = {
       // Racing between winter and summer
       typicalCondition: 'Fast to Good',
       speedAdjustment: 0,
-      notes: 'Spring meet; Federico Tesio Stakes; turf opens when weather permits'
+      notes: 'Spring meet; Federico Tesio Stakes; turf opens when weather permits',
     },
     {
       season: 'summer',
@@ -176,7 +182,8 @@ export const laurelPark: TrackData = {
       // Quality summer racing before Pimlico shift
       typicalCondition: 'Fast',
       speedAdjustment: 0,
-      notes: 'Summer meet; fast track predominates; Virginia Derby simulcast; quality stakes racing'
+      notes:
+        'Summer meet; fast track predominates; Virginia Derby simulcast; quality stakes racing',
     },
     {
       season: 'fall',
@@ -185,8 +192,9 @@ export const laurelPark: TrackData = {
       // Maryland Million in October is premier event
       typicalCondition: 'Fast',
       speedAdjustment: 0,
-      notes: 'Maryland Million Day (October); Barbara Fritchie Stakes (G3); De Francis Memorial Dash (G3)'
-    }
+      notes:
+        'Maryland Million Day (October); Barbara Fritchie Stakes (G3); De Francis Memorial Dash (G3)',
+    },
   ],
 
   winningTimes: [
@@ -198,7 +206,7 @@ export const laurelPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 58.5,
       allowanceAvg: 57.2,
-      stakesAvg: 56.0
+      stakesAvg: 56.0,
     },
     {
       distance: '5.5f',
@@ -206,7 +214,7 @@ export const laurelPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 64.5,
       allowanceAvg: 63.2,
-      stakesAvg: 62.0
+      stakesAvg: 62.0,
     },
     {
       distance: '6f',
@@ -215,7 +223,7 @@ export const laurelPark: TrackData = {
       // Track record: 1:08.19 (Corinthian, 2007)
       claimingAvg: 70.5,
       allowanceAvg: 69.0,
-      stakesAvg: 67.8
+      stakesAvg: 67.8,
     },
     {
       distance: '7f',
@@ -223,7 +231,7 @@ export const laurelPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 83.5,
       allowanceAvg: 82.0,
-      stakesAvg: 80.5
+      stakesAvg: 80.5,
     },
     {
       distance: '1m',
@@ -231,7 +239,7 @@ export const laurelPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 97.0,
       allowanceAvg: 95.2,
-      stakesAvg: 93.5
+      stakesAvg: 93.5,
     },
     {
       distance: '1m70y',
@@ -239,7 +247,7 @@ export const laurelPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 101.5,
       allowanceAvg: 99.5,
-      stakesAvg: 97.8
+      stakesAvg: 97.8,
     },
     {
       distance: '1 1/16m',
@@ -247,7 +255,7 @@ export const laurelPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 104.0,
       allowanceAvg: 102.0,
-      stakesAvg: 100.2
+      stakesAvg: 100.2,
     },
     {
       distance: '1 1/8m',
@@ -257,7 +265,7 @@ export const laurelPark: TrackData = {
       // Track record: 1:47.74 (Gio Ponti, 2010)
       claimingAvg: 111.0,
       allowanceAvg: 109.0,
-      stakesAvg: 107.0
+      stakesAvg: 107.0,
     },
     {
       distance: '1 1/4m',
@@ -265,7 +273,7 @@ export const laurelPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 124.5,
       allowanceAvg: 122.0,
-      stakesAvg: 119.5
+      stakesAvg: 119.5,
     },
     {
       distance: '1 1/2m',
@@ -273,7 +281,7 @@ export const laurelPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 152.0,
       allowanceAvg: 149.0,
-      stakesAvg: 146.0
+      stakesAvg: 146.0,
     },
     // Turf times
     {
@@ -282,7 +290,7 @@ export const laurelPark: TrackData = {
       surface: 'turf',
       claimingAvg: 57.5,
       allowanceAvg: 56.2,
-      stakesAvg: 55.0
+      stakesAvg: 55.0,
     },
     {
       distance: '5.5f',
@@ -290,7 +298,7 @@ export const laurelPark: TrackData = {
       surface: 'turf',
       claimingAvg: 63.5,
       allowanceAvg: 62.2,
-      stakesAvg: 61.0
+      stakesAvg: 61.0,
     },
     {
       distance: '1m',
@@ -298,7 +306,7 @@ export const laurelPark: TrackData = {
       surface: 'turf',
       claimingAvg: 95.5,
       allowanceAvg: 93.8,
-      stakesAvg: 92.0
+      stakesAvg: 92.0,
     },
     {
       distance: '1 1/16m',
@@ -306,7 +314,7 @@ export const laurelPark: TrackData = {
       surface: 'turf',
       claimingAvg: 102.0,
       allowanceAvg: 100.0,
-      stakesAvg: 98.2
+      stakesAvg: 98.2,
     },
     {
       distance: '1 1/8m',
@@ -314,7 +322,7 @@ export const laurelPark: TrackData = {
       surface: 'turf',
       claimingAvg: 109.0,
       allowanceAvg: 107.0,
-      stakesAvg: 105.0
+      stakesAvg: 105.0,
     },
     {
       distance: '1 3/8m',
@@ -322,10 +330,10 @@ export const laurelPark: TrackData = {
       surface: 'turf',
       claimingAvg: 137.5,
       allowanceAvg: 135.0,
-      stakesAvg: 132.5
-    }
+      stakesAvg: 132.5,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

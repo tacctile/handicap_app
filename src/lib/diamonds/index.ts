@@ -12,7 +12,7 @@ export type {
   DetectedFactor,
   DiamondAnalysis,
   RaceDiamondSummary,
-} from './diamondTypes'
+} from './diamondTypes';
 
 // Constants
 export {
@@ -24,7 +24,7 @@ export {
   FACTOR_NAMES,
   FACTOR_ICONS,
   FACTOR_COLORS,
-} from './diamondTypes'
+} from './diamondTypes';
 
 // Utility Functions
 export {
@@ -35,14 +35,10 @@ export {
   getDiamondColor,
   getDiamondBgColor,
   getDiamondBorderColor,
-} from './diamondTypes'
+} from './diamondTypes';
 
 // Detector Functions
-export {
-  analyzeDiamondCandidate,
-  analyzeRaceDiamonds,
-  mightBeDiamond,
-} from './diamondDetector'
+export { analyzeDiamondCandidate, analyzeRaceDiamonds, mightBeDiamond } from './diamondDetector';
 
 // Validator Functions and Types
 export {
@@ -52,4 +48,4 @@ export {
   isDiamondValid,
   type FactorValidationResult,
   type DiamondValidationResult,
-} from './diamondValidator'
+} from './diamondValidator';

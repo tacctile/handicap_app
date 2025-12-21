@@ -6,7 +6,7 @@
  * flags first-time usage, and tracks patterns across past performances.
  */
 
-import type { HorseEntry, Equipment, Medication, PastPerformance } from '../../types/drf'
+import type { HorseEntry, Equipment, Medication, PastPerformance } from '../../types/drf';
 import {
   EQUIPMENT_TYPES,
   type DetectedEquipmentChange,
@@ -14,7 +14,7 @@ import {
   type EquipmentChangeDirection,
   type EquipmentTypeDefinition,
   getImpactClassification,
-} from './equipmentTypes'
+} from './equipmentTypes';
 
 // ============================================================================
 // TYPES
@@ -25,38 +25,38 @@ import {
  */
 export interface EquipmentExtractionResult {
   /** Current race equipment raw string */
-  currentEquipment: string
+  currentEquipment: string;
   /** Last race equipment raw string */
-  lastRaceEquipment: string | null
+  lastRaceEquipment: string | null;
   /** All detected equipment changes */
-  changes: DetectedEquipmentChange[]
+  changes: DetectedEquipmentChange[];
   /** Historical equipment usage */
-  history: EquipmentHistoryEntry[]
+  history: EquipmentHistoryEntry[];
   /** Has any changes */
-  hasChanges: boolean
+  hasChanges: boolean;
   /** Has significant changes (Lasix, blinkers) */
-  hasSignificantChange: boolean
+  hasSignificantChange: boolean;
 }
 
 /**
  * Parsed equipment flags from raw string
  */
 interface ParsedEquipment {
-  blinkers: boolean
-  blinkersOff: boolean
-  frontBandages: boolean
-  hindBandages: boolean
-  barShoes: boolean
-  mudCaulks: boolean
-  tongueTie: boolean
-  nasalStrip: boolean
-  shadowRoll: boolean
-  cheekPieces: boolean
-  lasix: boolean
-  lasixFirstTime: boolean
-  lasixOff: boolean
-  bute: boolean
-  raw: string
+  blinkers: boolean;
+  blinkersOff: boolean;
+  frontBandages: boolean;
+  hindBandages: boolean;
+  barShoes: boolean;
+  mudCaulks: boolean;
+  tongueTie: boolean;
+  nasalStrip: boolean;
+  shadowRoll: boolean;
+  cheekPieces: boolean;
+  lasix: boolean;
+  lasixFirstTime: boolean;
+  lasixOff: boolean;
+  bute: boolean;
+  raw: string;
 }
 
 // ============================================================================
@@ -67,7 +67,7 @@ interface ParsedEquipment {
  * Parse equipment from raw DRF string
  */
 function parseEquipmentString(equipStr: string): ParsedEquipment {
-  const str = equipStr.toLowerCase().trim()
+  const str = equipStr.toLowerCase().trim();
 
   return {
     blinkers: /\bb\b|blink/i.test(str),
@@ -85,7 +85,7 @@ function parseEquipmentString(equipStr: string): ParsedEquipment {
     lasixOff: /\blo\b|lasix\s*off/i.test(str),
     bute: /\bbu\b|bute/i.test(str),
     raw: equipStr,
-  }
+  };
 }
 
 /**
@@ -108,7 +108,7 @@ function getEquipmentFromEntry(equipment: Equipment, medication: Medication): Pa
     lasixOff: medication.lasixOff,
     bute: medication.bute,
     raw: `${equipment.raw} ${medication.raw}`.trim(),
-  }
+  };
 }
 
 // ============================================================================
@@ -123,149 +123,116 @@ function detectChanges(
   previous: ParsedEquipment | null,
   firstTimeEquipment: string[]
 ): DetectedEquipmentChange[] {
-  const changes: DetectedEquipmentChange[] = []
-  const firstTimeSet = new Set(firstTimeEquipment.map(e => e.toLowerCase()))
+  const changes: DetectedEquipmentChange[] = [];
+  const firstTimeSet = new Set(firstTimeEquipment.map((e) => e.toLowerCase()));
 
   // Check Lasix first (most impactful)
   if (current.lasixFirstTime) {
-    changes.push(createChange(EQUIPMENT_TYPES.lasix, 'added', true, 'First-time Lasix'))
+    changes.push(createChange(EQUIPMENT_TYPES.lasix, 'added', true, 'First-time Lasix'));
   } else if (current.lasixOff) {
-    changes.push(createChange(EQUIPMENT_TYPES.lasix, 'removed', false, 'Lasix removed'))
+    changes.push(createChange(EQUIPMENT_TYPES.lasix, 'removed', false, 'Lasix removed'));
   }
 
   // Check blinkers
   if (current.blinkers && !previous?.blinkers) {
-    const isFirstTime = firstTimeSet.has('b') || firstTimeSet.has('blinkers')
-    changes.push(createChange(
-      EQUIPMENT_TYPES.blinkers,
-      'added',
-      isFirstTime,
-      isFirstTime ? 'Blinkers ON (first time)' : 'Blinkers ON'
-    ))
+    const isFirstTime = firstTimeSet.has('b') || firstTimeSet.has('blinkers');
+    changes.push(
+      createChange(
+        EQUIPMENT_TYPES.blinkers,
+        'added',
+        isFirstTime,
+        isFirstTime ? 'Blinkers ON (first time)' : 'Blinkers ON'
+      )
+    );
   } else if (current.blinkersOff || (previous?.blinkers && !current.blinkers)) {
-    changes.push(createChange(
-      EQUIPMENT_TYPES.blinkers,
-      'removed',
-      false,
-      'Blinkers OFF'
-    ))
+    changes.push(createChange(EQUIPMENT_TYPES.blinkers, 'removed', false, 'Blinkers OFF'));
   }
 
   // Check tongue tie
   if (current.tongueTie && !previous?.tongueTie) {
-    const isFirstTime = firstTimeSet.has('tt') || firstTimeSet.has('tongue tie')
-    changes.push(createChange(
-      EQUIPMENT_TYPES.tongueTie,
-      'added',
-      isFirstTime,
-      isFirstTime ? 'Tongue tie added (first time)' : 'Tongue tie added'
-    ))
+    const isFirstTime = firstTimeSet.has('tt') || firstTimeSet.has('tongue tie');
+    changes.push(
+      createChange(
+        EQUIPMENT_TYPES.tongueTie,
+        'added',
+        isFirstTime,
+        isFirstTime ? 'Tongue tie added (first time)' : 'Tongue tie added'
+      )
+    );
   } else if (previous?.tongueTie && !current.tongueTie) {
-    changes.push(createChange(
-      EQUIPMENT_TYPES.tongueTie,
-      'removed',
-      false,
-      'Tongue tie removed'
-    ))
+    changes.push(createChange(EQUIPMENT_TYPES.tongueTie, 'removed', false, 'Tongue tie removed'));
   }
 
   // Check nasal strip
   if (current.nasalStrip && !previous?.nasalStrip) {
-    const isFirstTime = firstTimeSet.has('ns') || firstTimeSet.has('nasal strip')
-    changes.push(createChange(
-      EQUIPMENT_TYPES.nasalStrip,
-      'added',
-      isFirstTime,
-      isFirstTime ? 'Nasal strip added (first time)' : 'Nasal strip added'
-    ))
+    const isFirstTime = firstTimeSet.has('ns') || firstTimeSet.has('nasal strip');
+    changes.push(
+      createChange(
+        EQUIPMENT_TYPES.nasalStrip,
+        'added',
+        isFirstTime,
+        isFirstTime ? 'Nasal strip added (first time)' : 'Nasal strip added'
+      )
+    );
   }
 
   // Check shadow roll
   if (current.shadowRoll && !previous?.shadowRoll) {
-    const isFirstTime = firstTimeSet.has('sr') || firstTimeSet.has('shadow roll')
-    changes.push(createChange(
-      EQUIPMENT_TYPES.shadowRoll,
-      'added',
-      isFirstTime,
-      'Shadow roll added'
-    ))
+    const isFirstTime = firstTimeSet.has('sr') || firstTimeSet.has('shadow roll');
+    changes.push(
+      createChange(EQUIPMENT_TYPES.shadowRoll, 'added', isFirstTime, 'Shadow roll added')
+    );
   }
 
   // Check cheek pieces
   if (current.cheekPieces && !previous?.cheekPieces) {
-    const isFirstTime = firstTimeSet.has('cp') || firstTimeSet.has('cheek pieces')
-    changes.push(createChange(
-      EQUIPMENT_TYPES.cheekPieces,
-      'added',
-      isFirstTime,
-      'Cheek pieces added'
-    ))
+    const isFirstTime = firstTimeSet.has('cp') || firstTimeSet.has('cheek pieces');
+    changes.push(
+      createChange(EQUIPMENT_TYPES.cheekPieces, 'added', isFirstTime, 'Cheek pieces added')
+    );
   }
 
   // Check front bandages
   if (current.frontBandages && !previous?.frontBandages) {
-    changes.push(createChange(
-      EQUIPMENT_TYPES.frontBandages,
-      'added',
-      false,
-      'Front bandages added'
-    ))
+    changes.push(
+      createChange(EQUIPMENT_TYPES.frontBandages, 'added', false, 'Front bandages added')
+    );
   }
 
   // Check hind bandages
   if (current.hindBandages && !previous?.hindBandages) {
-    changes.push(createChange(
-      EQUIPMENT_TYPES.hindBandages,
-      'added',
-      false,
-      'Hind bandages added'
-    ))
+    changes.push(createChange(EQUIPMENT_TYPES.hindBandages, 'added', false, 'Hind bandages added'));
   }
 
   // Check all bandages (both front and hind)
-  if (current.frontBandages && current.hindBandages &&
-      (!previous?.frontBandages || !previous?.hindBandages)) {
+  if (
+    current.frontBandages &&
+    current.hindBandages &&
+    (!previous?.frontBandages || !previous?.hindBandages)
+  ) {
     // Remove individual bandage changes if we have all
-    const filteredChanges = changes.filter(c =>
-      c.equipmentType.id !== 'frontBandages' && c.equipmentType.id !== 'hindBandages'
-    )
-    filteredChanges.push(createChange(
-      EQUIPMENT_TYPES.allBandages,
-      'added',
-      false,
-      'All bandages (4 legs)'
-    ))
-    return filteredChanges
+    const filteredChanges = changes.filter(
+      (c) => c.equipmentType.id !== 'frontBandages' && c.equipmentType.id !== 'hindBandages'
+    );
+    filteredChanges.push(
+      createChange(EQUIPMENT_TYPES.allBandages, 'added', false, 'All bandages (4 legs)')
+    );
+    return filteredChanges;
   }
 
   // Check bar shoes
   if (current.barShoes && !previous?.barShoes) {
-    changes.push(createChange(
-      EQUIPMENT_TYPES.barShoes,
-      'added',
-      false,
-      'Bar shoes added'
-    ))
+    changes.push(createChange(EQUIPMENT_TYPES.barShoes, 'added', false, 'Bar shoes added'));
   } else if (previous?.barShoes && !current.barShoes) {
-    changes.push(createChange(
-      EQUIPMENT_TYPES.barShoes,
-      'removed',
-      false,
-      'Bar shoes removed'
-    ))
+    changes.push(createChange(EQUIPMENT_TYPES.barShoes, 'removed', false, 'Bar shoes removed'));
   }
 
   // Check mud caulks (usually only added)
   if (current.mudCaulks && !previous?.mudCaulks) {
-    changes.push(createChange(
-      EQUIPMENT_TYPES.mudCaulks,
-      'added',
-      false,
-      'Mud caulks added'
-    ))
+    changes.push(createChange(EQUIPMENT_TYPES.mudCaulks, 'added', false, 'Mud caulks added'));
   }
 
-  return changes
+  return changes;
 }
 
 /**
@@ -277,18 +244,20 @@ function createChange(
   isFirstTime: boolean,
   description: string
 ): DetectedEquipmentChange {
-  let basePoints: number
+  let basePoints: number;
 
   if (direction === 'added') {
-    basePoints = equipmentType.impactAdded
+    basePoints = equipmentType.impactAdded;
     if (isFirstTime && equipmentType.significantFirstTime) {
-      basePoints += equipmentType.firstTimeBonus
+      basePoints += equipmentType.firstTimeBonus;
     }
   } else if (direction === 'removed') {
-    basePoints = equipmentType.impactRemoved
+    basePoints = equipmentType.impactRemoved;
   } else {
     // Switched - average of added and removed
-    basePoints = Math.round((equipmentType.impactAdded + Math.abs(equipmentType.impactRemoved)) / 2)
+    basePoints = Math.round(
+      (equipmentType.impactAdded + Math.abs(equipmentType.impactRemoved)) / 2
+    );
   }
 
   return {
@@ -299,7 +268,7 @@ function createChange(
     adjustedPoints: basePoints, // Will be adjusted by trainer patterns
     changeDescription: description,
     impact: getImpactClassification(basePoints),
-  }
+  };
 }
 
 // ============================================================================
@@ -310,53 +279,53 @@ function createChange(
  * Extract equipment history from past performances
  */
 function extractEquipmentHistory(pastPerformances: PastPerformance[]): EquipmentHistoryEntry[] {
-  return pastPerformances.map(pp => ({
+  return pastPerformances.map((pp) => ({
     date: pp.date,
     track: pp.track,
     equipment: pp.equipment || '',
     medication: pp.medication || '',
     finishPosition: pp.finishPosition,
     won: pp.finishPosition === 1,
-  }))
+  }));
 }
 
 /**
  * Analyze equipment history for patterns
  */
 export function analyzeEquipmentHistory(history: EquipmentHistoryEntry[]): {
-  usedLasix: boolean
-  usedBlinkers: boolean
-  blinkersWinRate: number
-  lasixWinRate: number
-  equipmentChangeRaces: number
+  usedLasix: boolean;
+  usedBlinkers: boolean;
+  blinkersWinRate: number;
+  lasixWinRate: number;
+  equipmentChangeRaces: number;
 } {
-  let lasixRaces = 0
-  let lasixWins = 0
-  let blinkerRaces = 0
-  let blinkerWins = 0
-  let prevEquipment = ''
-  let equipmentChangeRaces = 0
+  let lasixRaces = 0;
+  let lasixWins = 0;
+  let blinkerRaces = 0;
+  let blinkerWins = 0;
+  let prevEquipment = '';
+  let equipmentChangeRaces = 0;
 
   for (const entry of history) {
-    const combined = `${entry.equipment} ${entry.medication}`.toLowerCase()
+    const combined = `${entry.equipment} ${entry.medication}`.toLowerCase();
 
     // Check Lasix usage
     if (/\bl\b|lasix/i.test(combined)) {
-      lasixRaces++
-      if (entry.won) lasixWins++
+      lasixRaces++;
+      if (entry.won) lasixWins++;
     }
 
     // Check blinkers usage
     if (/\bb\b|blink/i.test(combined)) {
-      blinkerRaces++
-      if (entry.won) blinkerWins++
+      blinkerRaces++;
+      if (entry.won) blinkerWins++;
     }
 
     // Check for equipment changes
     if (prevEquipment && prevEquipment !== combined) {
-      equipmentChangeRaces++
+      equipmentChangeRaces++;
     }
-    prevEquipment = combined
+    prevEquipment = combined;
   }
 
   return {
@@ -365,7 +334,7 @@ export function analyzeEquipmentHistory(history: EquipmentHistoryEntry[]): {
     blinkersWinRate: blinkerRaces > 0 ? (blinkerWins / blinkerRaces) * 100 : 0,
     lasixWinRate: lasixRaces > 0 ? (lasixWins / lasixRaces) * 100 : 0,
     equipmentChangeRaces,
-  }
+  };
 }
 
 // ============================================================================
@@ -377,34 +346,28 @@ export function analyzeEquipmentHistory(history: EquipmentHistoryEntry[]): {
  */
 export function extractEquipmentInfo(horse: HorseEntry): EquipmentExtractionResult {
   // Get current equipment
-  const current = getEquipmentFromEntry(horse.equipment, horse.medication)
+  const current = getEquipmentFromEntry(horse.equipment, horse.medication);
 
   // Get last race equipment (if available)
-  let lastRaceEquipment: string | null = null
-  let previous: ParsedEquipment | null = null
+  let lastRaceEquipment: string | null = null;
+  let previous: ParsedEquipment | null = null;
 
   if (horse.pastPerformances.length > 0) {
-    const lastPP = horse.pastPerformances[0]
-    lastRaceEquipment = `${lastPP.equipment} ${lastPP.medication}`.trim()
-    previous = parseEquipmentString(lastRaceEquipment)
+    const lastPP = horse.pastPerformances[0];
+    lastRaceEquipment = `${lastPP.equipment} ${lastPP.medication}`.trim();
+    previous = parseEquipmentString(lastRaceEquipment);
   }
 
   // Detect changes
-  const changes = detectChanges(
-    current,
-    previous,
-    horse.equipment.firstTimeEquipment
-  )
+  const changes = detectChanges(current, previous, horse.equipment.firstTimeEquipment);
 
   // Extract history
-  const history = extractEquipmentHistory(horse.pastPerformances)
+  const history = extractEquipmentHistory(horse.pastPerformances);
 
   // Determine if significant
-  const hasSignificantChange = changes.some(c =>
-    c.equipmentType.id === 'lasix' ||
-    c.equipmentType.id === 'blinkers' ||
-    c.isFirstTime
-  )
+  const hasSignificantChange = changes.some(
+    (c) => c.equipmentType.id === 'lasix' || c.equipmentType.id === 'blinkers' || c.isFirstTime
+  );
 
   return {
     currentEquipment: current.raw,
@@ -413,19 +376,19 @@ export function extractEquipmentInfo(horse: HorseEntry): EquipmentExtractionResu
     history,
     hasChanges: changes.length > 0,
     hasSignificantChange,
-  }
+  };
 }
 
 /**
  * Get a quick summary of equipment changes for display
  */
 export function getEquipmentChangeSummary(horse: HorseEntry): {
-  hasChanges: boolean
-  count: number
-  summary: string
-  primaryChange: DetectedEquipmentChange | null
+  hasChanges: boolean;
+  count: number;
+  summary: string;
+  primaryChange: DetectedEquipmentChange | null;
 } {
-  const result = extractEquipmentInfo(horse)
+  const result = extractEquipmentInfo(horse);
 
   if (!result.hasChanges) {
     return {
@@ -433,58 +396,56 @@ export function getEquipmentChangeSummary(horse: HorseEntry): {
       count: 0,
       summary: '',
       primaryChange: null,
-    }
+    };
   }
 
   // Get the most significant change (highest points)
-  const sortedChanges = [...result.changes].sort((a, b) =>
-    Math.abs(b.basePoints) - Math.abs(a.basePoints)
-  )
-  const primaryChange = sortedChanges[0]
+  const sortedChanges = [...result.changes].sort(
+    (a, b) => Math.abs(b.basePoints) - Math.abs(a.basePoints)
+  );
+  const primaryChange = sortedChanges[0];
 
   // Build summary
-  const summary = result.changes
-    .map(c => c.changeDescription)
-    .join(', ')
+  const summary = result.changes.map((c) => c.changeDescription).join(', ');
 
   return {
     hasChanges: true,
     count: result.changes.length,
     summary,
     primaryChange,
-  }
+  };
 }
 
 /**
  * Check if horse has specific equipment in current race
  */
 export function hasEquipment(horse: HorseEntry, equipmentId: string): boolean {
-  const equip = horse.equipment
-  const med = horse.medication
+  const equip = horse.equipment;
+  const med = horse.medication;
 
   switch (equipmentId) {
     case 'lasix':
-      return med.lasix || med.lasixFirstTime
+      return med.lasix || med.lasixFirstTime;
     case 'blinkers':
-      return equip.blinkers
+      return equip.blinkers;
     case 'tongueTie':
-      return equip.tongueTie
+      return equip.tongueTie;
     case 'nasalStrip':
-      return equip.nasalStrip
+      return equip.nasalStrip;
     case 'shadowRoll':
-      return equip.shadowRoll
+      return equip.shadowRoll;
     case 'cheekPieces':
-      return equip.cheekPieces
+      return equip.cheekPieces;
     case 'frontBandages':
-      return equip.frontBandages
+      return equip.frontBandages;
     case 'hindBandages':
-      return equip.rearBandages
+      return equip.rearBandages;
     case 'barShoes':
-      return equip.barShoes
+      return equip.barShoes;
     case 'mudCaulks':
-      return equip.mudCaulks
+      return equip.mudCaulks;
     default:
-      return false
+      return false;
   }
 }
 
@@ -495,43 +456,43 @@ export function hasUsedEquipmentBefore(
   horse: HorseEntry,
   equipmentId: string
 ): { used: boolean; timesUsed: number; lastUsed: string | null } {
-  const history = extractEquipmentHistory(horse.pastPerformances)
+  const history = extractEquipmentHistory(horse.pastPerformances);
 
-  let timesUsed = 0
-  let lastUsed: string | null = null
+  let timesUsed = 0;
+  let lastUsed: string | null = null;
 
   for (const entry of history) {
-    const combined = `${entry.equipment} ${entry.medication}`.toLowerCase()
-    let found = false
+    const combined = `${entry.equipment} ${entry.medication}`.toLowerCase();
+    let found = false;
 
     switch (equipmentId) {
       case 'lasix':
-        found = /\bl\b|lasix/i.test(combined)
-        break
+        found = /\bl\b|lasix/i.test(combined);
+        break;
       case 'blinkers':
-        found = /\bb\b|blink/i.test(combined)
-        break
+        found = /\bb\b|blink/i.test(combined);
+        break;
       case 'tongueTie':
-        found = /\btt\b|tongue/i.test(combined)
-        break
+        found = /\btt\b|tongue/i.test(combined);
+        break;
       case 'nasalStrip':
-        found = /\bns\b|nasal/i.test(combined)
-        break
+        found = /\bns\b|nasal/i.test(combined);
+        break;
       case 'shadowRoll':
-        found = /\bsr\b|shadow/i.test(combined)
-        break
+        found = /\bsr\b|shadow/i.test(combined);
+        break;
       case 'cheekPieces':
-        found = /\bcp\b|cheek/i.test(combined)
-        break
+        found = /\bcp\b|cheek/i.test(combined);
+        break;
       case 'barShoes':
-        found = /\bbs\b|bar/i.test(combined)
-        break
+        found = /\bbs\b|bar/i.test(combined);
+        break;
     }
 
     if (found) {
-      timesUsed++
+      timesUsed++;
       if (!lastUsed) {
-        lastUsed = entry.date
+        lastUsed = entry.date;
       }
     }
   }
@@ -540,5 +501,5 @@ export function hasUsedEquipmentBefore(
     used: timesUsed > 0,
     timesUsed,
     lastUsed,
-  }
+  };
 }

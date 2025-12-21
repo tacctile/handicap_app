@@ -9,7 +9,7 @@
 /**
  * Log levels in order of severity
  */
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 /**
  * Severity levels for error classification (Sentry-compatible)
@@ -18,20 +18,20 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
  * - warning: Potential issue or degraded experience
  * - info: Informational, for context
  */
-export type ErrorSeverity = 'fatal' | 'error' | 'warning' | 'info'
+export type ErrorSeverity = 'fatal' | 'error' | 'warning' | 'info';
 
 /**
  * Breadcrumb for tracking user actions leading up to an error
  */
 export interface Breadcrumb {
   /** The breadcrumb message */
-  message: string
+  message: string;
   /** Category of the breadcrumb (e.g., 'navigation', 'user', 'http') */
-  category?: string
+  category?: string;
   /** ISO timestamp when the breadcrumb was recorded */
-  timestamp: string
+  timestamp: string;
   /** Additional data associated with the breadcrumb */
-  data?: Record<string, unknown>
+  data?: Record<string, unknown>;
 }
 
 /**
@@ -39,17 +39,17 @@ export interface Breadcrumb {
  */
 export interface CapturedError {
   /** Error message */
-  message: string
+  message: string;
   /** Stack trace if available */
-  stack?: string
+  stack?: string;
   /** Error severity level */
-  severity: ErrorSeverity
+  severity: ErrorSeverity;
   /** Context at the time of error */
-  context: ErrorContext
+  context: ErrorContext;
   /** ISO timestamp when error was captured */
-  timestamp: string
+  timestamp: string;
   /** Breadcrumbs leading up to the error */
-  breadcrumbs: Breadcrumb[]
+  breadcrumbs: Breadcrumb[];
 }
 
 /**
@@ -57,31 +57,31 @@ export interface CapturedError {
  */
 export interface LogContext {
   /** User identifier (when auth is implemented) */
-  userId?: string | null
+  userId?: string | null;
 
   /** Current session ID */
-  sessionId?: string
+  sessionId?: string;
 
   /** Component or module where log originated */
-  component?: string
+  component?: string;
 
   /** Current race being analyzed */
-  raceNumber?: number
+  raceNumber?: number;
 
   /** Current track code */
-  trackCode?: string
+  trackCode?: string;
 
   /** File being processed */
-  fileName?: string
+  fileName?: string;
 
   /** Browser/environment info */
-  userAgent?: string
+  userAgent?: string;
 
   /** App version */
-  appVersion?: string
+  appVersion?: string;
 
   /** Any additional context */
-  [key: string]: unknown
+  [key: string]: unknown;
 }
 
 /**
@@ -89,31 +89,31 @@ export interface LogContext {
  */
 export interface ErrorContext extends LogContext {
   /** Error code if available */
-  errorCode?: string
+  errorCode?: string;
 
   /** Error category */
-  errorCategory?: string
+  errorCategory?: string;
 
   /** Whether the error is recoverable */
-  recoverable?: boolean
+  recoverable?: boolean;
 
   /** Component stack trace (for React errors) */
-  componentStack?: string
+  componentStack?: string;
 
   /** URL where error occurred */
-  url?: string
+  url?: string;
 
   /** Timestamp of error */
-  timestamp?: string
+  timestamp?: string;
 
   /** The action being performed when the error occurred */
-  action?: string
+  action?: string;
 
   /** Race ID if applicable */
-  raceId?: string
+  raceId?: string;
 
   /** Additional arbitrary data for debugging */
-  additionalData?: Record<string, unknown>
+  additionalData?: Record<string, unknown>;
 }
 
 /**
@@ -121,25 +121,25 @@ export interface ErrorContext extends LogContext {
  */
 export interface LogEntry {
   /** Log level */
-  level: LogLevel
+  level: LogLevel;
 
   /** Log message */
-  message: string
+  message: string;
 
   /** ISO timestamp */
-  timestamp: string
+  timestamp: string;
 
   /** Additional context */
-  context: LogContext
+  context: LogContext;
 
   /** Error details if applicable */
   error?: {
-    name: string
-    message: string
-    stack?: string
-    code?: string
-    category?: string
-  }
+    name: string;
+    message: string;
+    stack?: string;
+    code?: string;
+    category?: string;
+  };
 }
 
 /**
@@ -147,22 +147,22 @@ export interface LogEntry {
  */
 export interface LoggingConfig {
   /** Minimum log level to output */
-  minLevel: LogLevel
+  minLevel: LogLevel;
 
   /** Whether to include timestamps in console output */
-  showTimestamps: boolean
+  showTimestamps: boolean;
 
   /** Whether to include context in console output */
-  showContext: boolean
+  showContext: boolean;
 
   /** Maximum context object depth for serialization */
-  maxContextDepth: number
+  maxContextDepth: number;
 
   /** Whether logging is enabled */
-  enabled: boolean
+  enabled: boolean;
 
   /** Custom log handlers for production integration */
-  handlers?: LogHandler[]
+  handlers?: LogHandler[];
 }
 
 /**
@@ -171,19 +171,19 @@ export interface LoggingConfig {
  */
 export interface LogHandler {
   /** Handler name for identification */
-  name: string
+  name: string;
 
   /** Process a log entry */
-  handle(entry: LogEntry): void
+  handle(entry: LogEntry): void;
 
   /** Process an error specifically */
-  handleError?(error: Error, context?: ErrorContext): void
+  handleError?(error: Error, context?: ErrorContext): void;
 
   /** Set user context for the handler */
-  setUser?(userId: string | null): void
+  setUser?(userId: string | null): void;
 
   /** Flush any buffered logs */
-  flush?(): Promise<void>
+  flush?(): Promise<void>;
 }
 
 /**
@@ -193,84 +193,84 @@ export interface LoggingService {
   /**
    * Log an error with optional context
    */
-  logError(error: Error, context?: ErrorContext): void
+  logError(error: Error, context?: ErrorContext): void;
 
   /**
    * Log a warning message
    */
-  logWarning(message: string, context?: LogContext): void
+  logWarning(message: string, context?: LogContext): void;
 
   /**
    * Log an informational message
    */
-  logInfo(message: string, context?: LogContext): void
+  logInfo(message: string, context?: LogContext): void;
 
   /**
    * Log a debug message (development only)
    */
-  logDebug(message: string, context?: LogContext): void
+  logDebug(message: string, context?: LogContext): void;
 
   /**
    * Set the current user context (for when auth is implemented)
    */
-  setUser(userId: string | null): void
+  setUser(userId: string | null): void;
 
   /**
    * Set global context that applies to all logs
    */
-  setGlobalContext(context: Partial<LogContext>): void
+  setGlobalContext(context: Partial<LogContext>): void;
 
   /**
    * Get the current configuration
    */
-  getConfig(): LoggingConfig
+  getConfig(): LoggingConfig;
 
   /**
    * Update configuration
    */
-  configure(config: Partial<LoggingConfig>): void
+  configure(config: Partial<LoggingConfig>): void;
 
   /**
    * Flush any buffered logs (for production handlers)
    */
-  flush(): Promise<void>
+  flush(): Promise<void>;
 
   /**
    * Capture an error for Sentry-style reporting
    * Returns CapturedError for inspection/testing
    */
-  captureError(error: Error, context?: ErrorContext, severity?: ErrorSeverity): CapturedError
+  captureError(error: Error, context?: ErrorContext, severity?: ErrorSeverity): CapturedError;
 
   /**
    * Capture a message for Sentry-style reporting
    * Returns CapturedError for inspection/testing
    */
-  captureMessage(message: string, context?: ErrorContext, severity?: ErrorSeverity): CapturedError
+  captureMessage(message: string, context?: ErrorContext, severity?: ErrorSeverity): CapturedError;
 
   /**
    * Add a breadcrumb to track user actions
    */
-  breadcrumb(message: string, category?: string, data?: Record<string, unknown>): void
+  breadcrumb(message: string, category?: string, data?: Record<string, unknown>): void;
 
   /**
    * Get current breadcrumbs (useful for error reports)
    */
-  getBreadcrumbs(): Breadcrumb[]
+  getBreadcrumbs(): Breadcrumb[];
 
   /**
    * Clear all breadcrumbs
    */
-  clearBreadcrumbs(): void
+  clearBreadcrumbs(): void;
 
   /**
    * Get the error queue (for batch sending when Sentry is wired)
    */
-  getErrorQueue(): CapturedError[]
+  getErrorQueue(): CapturedError[];
 
   /**
    * Clear the error queue
    */
-  clearErrorQueue(): void
+  clearErrorQueue(): void;
 }
 
 /**
@@ -281,13 +281,13 @@ export const LOG_LEVEL_VALUES: Record<LogLevel, number> = {
   info: 1,
   warn: 2,
   error: 3,
-}
+};
 
 /**
  * Check if a log level should be output given a minimum level
  */
 export function shouldLog(level: LogLevel, minLevel: LogLevel): boolean {
-  return LOG_LEVEL_VALUES[level] >= LOG_LEVEL_VALUES[minLevel]
+  return LOG_LEVEL_VALUES[level] >= LOG_LEVEL_VALUES[minLevel];
 }
 
 /**
@@ -298,7 +298,7 @@ export const LOG_LEVEL_COLORS: Record<LogLevel, string> = {
   info: '#19abb5',
   warn: '#f59e0b',
   error: '#ef4444',
-}
+};
 
 /**
  * Console icons for different log levels
@@ -308,4 +308,4 @@ export const LOG_LEVEL_ICONS: Record<LogLevel, string> = {
   info: '[INFO]',
   warn: '[WARN]',
   error: '[ERROR]',
-}
+};

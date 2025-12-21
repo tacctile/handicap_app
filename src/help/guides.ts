@@ -5,10 +5,10 @@
  */
 
 export interface GuideSection {
-  id: string
-  title: string
-  icon: string
-  content: string
+  id: string;
+  title: string;
+  icon: string;
+  content: string;
 }
 
 export const GUIDE_SECTIONS: GuideSection[] = [
@@ -287,4 +287,4 @@ Furlong works completely offline at the track:
 
 Install Furlong to your home screen for the best offline experience.`,
   },
-]
+];

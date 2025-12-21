@@ -5,9 +5,9 @@
  * loading state, error display, and login navigation.
  */
 
-import { useState, useCallback, type FormEvent, useMemo } from 'react'
-import { useAuthContext } from '../../contexts/AuthContext'
-import type { AuthError } from '../../services/auth/types'
+import { useState, useCallback, type FormEvent, useMemo } from 'react';
+import { useAuthContext } from '../../contexts/AuthContext';
+import type { AuthError } from '../../services/auth/types';
 
 // ============================================================================
 // TYPES
@@ -15,9 +15,9 @@ import type { AuthError } from '../../services/auth/types'
 
 export interface SignupFormProps {
   /** Callback when user wants to switch to login */
-  onSwitchToLogin: () => void
+  onSwitchToLogin: () => void;
   /** Callback after successful signup */
-  onSuccess?: () => void
+  onSuccess?: () => void;
 }
 
 // ============================================================================
@@ -153,7 +153,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '50%',
     animation: 'spin 0.8s linear infinite',
   },
-}
+};
 
 // ============================================================================
 // COMPONENT
@@ -171,21 +171,21 @@ const styles: Record<string, React.CSSProperties> = {
  * ```
  */
 export function SignupForm({ onSwitchToLogin, onSuccess }: SignupFormProps) {
-  const { signUp, isLoading, error, clearError } = useAuthContext()
+  const { signUp, isLoading, error, clearError } = useAuthContext();
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [focusedField, setFocusedField] = useState<string | null>(null)
-  const [hoveredButton, setHoveredButton] = useState<string | null>(null)
-  const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   // Validation
   const validation = useMemo(() => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    const isEmailValid = emailRegex.test(email)
-    const isPasswordLongEnough = password.length >= 8
-    const doPasswordsMatch = password === confirmPassword && confirmPassword.length > 0
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isEmailValid = emailRegex.test(email);
+    const isPasswordLongEnough = password.length >= 8;
+    const doPasswordsMatch = password === confirmPassword && confirmPassword.length > 0;
 
     return {
       email: {
@@ -194,73 +194,89 @@ export function SignupForm({ onSwitchToLogin, onSuccess }: SignupFormProps) {
       },
       password: {
         valid: isPasswordLongEnough,
-        error: touched.password && !isPasswordLongEnough ? 'Password must be at least 8 characters' : null,
+        error:
+          touched.password && !isPasswordLongEnough
+            ? 'Password must be at least 8 characters'
+            : null,
       },
       confirmPassword: {
         valid: doPasswordsMatch,
         error: touched.confirmPassword && !doPasswordsMatch ? 'Passwords do not match' : null,
       },
-    }
-  }, [email, password, confirmPassword, touched])
+    };
+  }, [email, password, confirmPassword, touched]);
 
   const handleBlur = useCallback((field: string) => {
-    setFocusedField(null)
-    setTouched((prev) => ({ ...prev, [field]: true }))
-  }, [])
+    setFocusedField(null);
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  }, []);
 
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
-      e.preventDefault()
-      clearError()
+      e.preventDefault();
+      clearError();
 
       // Mark all fields as touched
-      setTouched({ email: true, password: true, confirmPassword: true })
+      setTouched({ email: true, password: true, confirmPassword: true });
 
       // Validate
-      if (!validation.email.valid || !validation.password.valid || !validation.confirmPassword.valid) {
-        return
+      if (
+        !validation.email.valid ||
+        !validation.password.valid ||
+        !validation.confirmPassword.valid
+      ) {
+        return;
       }
 
       try {
-        await signUp(email.trim(), password)
-        onSuccess?.()
+        await signUp(email.trim(), password);
+        onSuccess?.();
       } catch (err) {
         // Error is already in context state
-        const authError = err as AuthError
+        const authError = err as AuthError;
         if (authError?.message) {
           // Error already displayed via error state
         }
       }
     },
     [email, password, validation, signUp, clearError, onSuccess]
-  )
+  );
 
-  const getInputStyle = (fieldName: string, validationState: { valid: boolean; error: string | null }) => {
-    const base = { ...styles.input }
+  const getInputStyle = (
+    fieldName: string,
+    validationState: { valid: boolean; error: string | null }
+  ) => {
+    const base = { ...styles.input };
 
     if (focusedField === fieldName) {
-      return { ...base, ...styles.inputFocus }
+      return { ...base, ...styles.inputFocus };
     }
 
     if (validationState.error) {
-      return { ...base, ...styles.inputError }
+      return { ...base, ...styles.inputError };
     }
 
     if (touched[fieldName] && validationState.valid) {
-      return { ...base, ...styles.inputValid }
+      return { ...base, ...styles.inputValid };
     }
 
-    return base
-  }
+    return base;
+  };
 
-  const getButtonStyle = (buttonName: string, baseStyle: React.CSSProperties, hoverStyle: React.CSSProperties, disabled?: boolean) => ({
+  const getButtonStyle = (
+    buttonName: string,
+    baseStyle: React.CSSProperties,
+    hoverStyle: React.CSSProperties,
+    disabled?: boolean
+  ) => ({
     ...baseStyle,
     ...(hoveredButton === buttonName && !disabled ? hoverStyle : {}),
     ...(disabled ? styles.submitButtonDisabled : {}),
-  })
+  });
 
-  const isFormValid = validation.email.valid && validation.password.valid && validation.confirmPassword.valid
-  const isSubmitDisabled = isLoading || !isFormValid
+  const isFormValid =
+    validation.email.valid && validation.password.valid && validation.confirmPassword.valid;
+  const isSubmitDisabled = isLoading || !isFormValid;
 
   return (
     <>
@@ -361,7 +377,12 @@ export function SignupForm({ onSwitchToLogin, onSuccess }: SignupFormProps) {
           disabled={isSubmitDisabled}
           onMouseEnter={() => setHoveredButton('submit')}
           onMouseLeave={() => setHoveredButton(null)}
-          style={getButtonStyle('submit', styles.submitButton, styles.submitButtonHover, isSubmitDisabled)}
+          style={getButtonStyle(
+            'submit',
+            styles.submitButton,
+            styles.submitButtonHover,
+            isSubmitDisabled
+          )}
         >
           {isLoading ? (
             <>
@@ -402,7 +423,7 @@ export function SignupForm({ onSwitchToLogin, onSuccess }: SignupFormProps) {
         `}
       </style>
     </>
-  )
+  );
 }
 
-export default SignupForm
+export default SignupForm;

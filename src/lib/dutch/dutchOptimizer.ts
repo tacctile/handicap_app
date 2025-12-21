@@ -15,102 +15,102 @@
  * @module dutch/dutchOptimizer
  */
 
-import { logger } from '../../services/logging'
+import { logger } from '../../services/logging';
 import {
   type DutchHorse,
   type DutchResult,
   calculateDutchBook,
   calculateImpliedProbability,
   parseOddsToDecimal,
-} from './dutchCalculator'
-import { analyzeEdge, type EdgeClassification } from './dutchValidator'
+} from './dutchCalculator';
+import { analyzeEdge, type EdgeClassification } from './dutchValidator';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export type HorseTierForDutch = 1 | 2 | 3
+export type HorseTierForDutch = 1 | 2 | 3;
 
 export interface DutchCandidateHorse extends DutchHorse {
   /** Horse tier (1 = top, 2 = mid, 3 = value) */
-  tier: HorseTierForDutch
+  tier: HorseTierForDutch;
   /** Confidence score (0-100) */
-  confidence: number
+  confidence: number;
   /** Total handicapping score */
-  score: number
+  score: number;
   /** Our estimated win probability */
-  estimatedWinProb: number
+  estimatedWinProb: number;
   /** Whether this horse has a positive overlay */
-  hasOverlay: boolean
+  hasOverlay: boolean;
 }
 
 export interface DutchCombination {
   /** Unique ID for this combination */
-  id: string
+  id: string;
   /** Horses in this combination */
-  horses: DutchCandidateHorse[]
+  horses: DutchCandidateHorse[];
   /** Number of horses */
-  horseCount: number
+  horseCount: number;
   /** Edge percentage */
-  edgePercent: number
+  edgePercent: number;
   /** Edge classification */
-  edgeClass: EdgeClassification
+  edgeClass: EdgeClassification;
   /** Sum of implied probabilities */
-  sumOfImpliedProbs: number
+  sumOfImpliedProbs: number;
   /** Is this profitable? */
-  isProfitable: boolean
+  isProfitable: boolean;
   /** Description of the combination */
-  description: string
+  description: string;
   /** Tier mix description */
-  tierMix: string
+  tierMix: string;
   /** Average confidence of horses */
-  avgConfidence: number
+  avgConfidence: number;
   /** Average odds */
-  avgOdds: number
+  avgOdds: number;
   /** Recommendation strength (0-100) */
-  recommendationStrength: number
+  recommendationStrength: number;
   /** Full Dutch result for a given stake */
-  dutchResult?: DutchResult
+  dutchResult?: DutchResult;
 }
 
 export interface OptimizationResult {
   /** All valid Dutch combinations found */
-  combinations: DutchCombination[]
+  combinations: DutchCombination[];
   /** Best 2-horse Dutch */
-  best2Horse: DutchCombination | null
+  best2Horse: DutchCombination | null;
   /** Best 3-horse Dutch */
-  best3Horse: DutchCombination | null
+  best3Horse: DutchCombination | null;
   /** Best 4-horse Dutch */
-  best4Horse: DutchCombination | null
+  best4Horse: DutchCombination | null;
   /** Overall best Dutch */
-  overallBest: DutchCombination | null
+  overallBest: DutchCombination | null;
   /** Total combinations analyzed */
-  totalCombinationsAnalyzed: number
+  totalCombinationsAnalyzed: number;
   /** Number of profitable combinations */
-  profitableCombinations: number
+  profitableCombinations: number;
   /** Optimization metadata */
   meta: {
-    raceHorseCount: number
-    eligibleHorseCount: number
-    optimizationTime: number
-  }
+    raceHorseCount: number;
+    eligibleHorseCount: number;
+    optimizationTime: number;
+  };
 }
 
 export interface OptimizationConfig {
   /** Candidate horses for Dutch */
-  horses: DutchCandidateHorse[]
+  horses: DutchCandidateHorse[];
   /** Minimum edge required (default 5%) */
-  minEdgeRequired?: number
+  minEdgeRequired?: number;
   /** Maximum horses in a Dutch (default 5) */
-  maxHorses?: number
+  maxHorses?: number;
   /** Only include horses with overlays */
-  overlayOnly?: boolean
+  overlayOnly?: boolean;
   /** Prefer tier mixing */
-  preferMixedTiers?: boolean
+  preferMixedTiers?: boolean;
   /** Total stake for calculating Dutch results */
-  stake?: number
+  stake?: number;
   /** Maximum combinations to evaluate */
-  maxCombinations?: number
+  maxCombinations?: number;
 }
 
 // ============================================================================
@@ -118,7 +118,7 @@ export interface OptimizationConfig {
 // ============================================================================
 
 /** Maximum combinations to evaluate to prevent performance issues */
-const MAX_COMBINATIONS_DEFAULT = 500
+const MAX_COMBINATIONS_DEFAULT = 500;
 
 /** Weights for recommendation score calculation */
 const RECOMMENDATION_WEIGHTS = {
@@ -126,7 +126,7 @@ const RECOMMENDATION_WEIGHTS = {
   confidence: 0.25,
   tierMix: 0.2,
   horseCount: 0.15,
-}
+};
 
 /** Ideal horse count bonus */
 const IDEAL_HORSE_COUNTS = {
@@ -134,7 +134,7 @@ const IDEAL_HORSE_COUNTS = {
   3: 1.0, // 3 horses - ideal balance
   4: 0.9, // 4 horses - good coverage
   5: 0.7, // 5 horses - spread thin
-}
+};
 
 // ============================================================================
 // OPTIMIZATION FUNCTIONS
@@ -146,10 +146,8 @@ const IDEAL_HORSE_COUNTS = {
  * @param config - Optimization configuration
  * @returns Optimization result with ranked combinations
  */
-export function findOptimalDutchCombinations(
-  config: OptimizationConfig
-): OptimizationResult {
-  const startTime = performance.now()
+export function findOptimalDutchCombinations(config: OptimizationConfig): OptimizationResult {
+  const startTime = performance.now();
 
   const {
     horses,
@@ -159,18 +157,18 @@ export function findOptimalDutchCombinations(
     preferMixedTiers = true,
     stake = 100,
     maxCombinations = MAX_COMBINATIONS_DEFAULT,
-  } = config
+  } = config;
 
   // Filter eligible horses
   const eligibleHorses = horses.filter((horse) => {
     // Basic validation
-    if (horse.decimalOdds <= 1) return false
+    if (horse.decimalOdds <= 1) return false;
 
     // If overlay only, require positive overlay
-    if (overlayOnly && !horse.hasOverlay) return false
+    if (overlayOnly && !horse.hasOverlay) return false;
 
-    return true
-  })
+    return true;
+  });
 
   logger.logInfo('Starting Dutch optimization', {
     component: 'dutchOptimizer',
@@ -178,44 +176,44 @@ export function findOptimalDutchCombinations(
     eligibleHorses: eligibleHorses.length,
     minEdgeRequired,
     maxHorses,
-  })
+  });
 
   if (eligibleHorses.length < 2) {
-    return createEmptyResult(horses.length, eligibleHorses.length, performance.now() - startTime)
+    return createEmptyResult(horses.length, eligibleHorses.length, performance.now() - startTime);
   }
 
   // Generate all combinations
-  const allCombinations: DutchCombination[] = []
-  let totalAnalyzed = 0
+  const allCombinations: DutchCombination[] = [];
+  let totalAnalyzed = 0;
 
   // Generate combinations for each size (2, 3, 4, ... maxHorses)
   for (let size = 2; size <= Math.min(maxHorses, eligibleHorses.length); size++) {
-    const combinations = generateCombinations(eligibleHorses, size)
+    const combinations = generateCombinations(eligibleHorses, size);
 
     for (const combo of combinations) {
-      if (totalAnalyzed >= maxCombinations) break
+      if (totalAnalyzed >= maxCombinations) break;
 
-      const analysis = analyzeCombination(combo, stake, preferMixedTiers)
-      totalAnalyzed++
+      const analysis = analyzeCombination(combo, stake, preferMixedTiers);
+      totalAnalyzed++;
 
       if (analysis.isProfitable && analysis.edgePercent >= minEdgeRequired) {
-        allCombinations.push(analysis)
+        allCombinations.push(analysis);
       }
     }
 
-    if (totalAnalyzed >= maxCombinations) break
+    if (totalAnalyzed >= maxCombinations) break;
   }
 
   // Sort by recommendation strength
-  allCombinations.sort((a, b) => b.recommendationStrength - a.recommendationStrength)
+  allCombinations.sort((a, b) => b.recommendationStrength - a.recommendationStrength);
 
   // Find best for each size
-  const best2Horse = allCombinations.find((c) => c.horseCount === 2) || null
-  const best3Horse = allCombinations.find((c) => c.horseCount === 3) || null
-  const best4Horse = allCombinations.find((c) => c.horseCount === 4) || null
-  const overallBest = allCombinations[0] || null
+  const best2Horse = allCombinations.find((c) => c.horseCount === 2) || null;
+  const best3Horse = allCombinations.find((c) => c.horseCount === 3) || null;
+  const best4Horse = allCombinations.find((c) => c.horseCount === 4) || null;
+  const overallBest = allCombinations[0] || null;
 
-  const endTime = performance.now()
+  const endTime = performance.now();
 
   logger.logInfo('Dutch optimization complete', {
     component: 'dutchOptimizer',
@@ -223,7 +221,7 @@ export function findOptimalDutchCombinations(
     profitableCombinations: allCombinations.length,
     bestEdge: overallBest?.edgePercent || 0,
     optimizationTime: Math.round(endTime - startTime),
-  })
+  });
 
   return {
     combinations: allCombinations.slice(0, 20), // Top 20 combinations
@@ -238,7 +236,7 @@ export function findOptimalDutchCombinations(
       eligibleHorseCount: eligibleHorses.length,
       optimizationTime: Math.round(endTime - startTime),
     },
-  }
+  };
 }
 
 /**
@@ -253,24 +251,24 @@ function analyzeCombination(
   const sumOfImpliedProbs = horses.reduce(
     (sum, horse) => sum + calculateImpliedProbability(horse.decimalOdds),
     0
-  )
+  );
 
-  const edgePercent = (1 - sumOfImpliedProbs) * 100
-  const isProfitable = edgePercent > 0
-  const edgeAnalysis = analyzeEdge(edgePercent)
+  const edgePercent = (1 - sumOfImpliedProbs) * 100;
+  const isProfitable = edgePercent > 0;
+  const edgeAnalysis = analyzeEdge(edgePercent);
 
   // Calculate tier mix
-  const tierCounts = { 1: 0, 2: 0, 3: 0 }
+  const tierCounts = { 1: 0, 2: 0, 3: 0 };
   for (const horse of horses) {
-    tierCounts[horse.tier]++
+    tierCounts[horse.tier]++;
   }
 
-  const tierMix = getTierMixDescription(tierCounts)
-  const tierMixScore = calculateTierMixScore(tierCounts, preferMixedTiers)
+  const tierMix = getTierMixDescription(tierCounts);
+  const tierMixScore = calculateTierMixScore(tierCounts, preferMixedTiers);
 
   // Calculate averages
-  const avgConfidence = horses.reduce((sum, h) => sum + h.confidence, 0) / horses.length
-  const avgOdds = horses.reduce((sum, h) => sum + h.decimalOdds, 0) / horses.length
+  const avgConfidence = horses.reduce((sum, h) => sum + h.confidence, 0) / horses.length;
+  const avgOdds = horses.reduce((sum, h) => sum + h.decimalOdds, 0) / horses.length;
 
   // Calculate recommendation strength
   const recommendationStrength = calculateRecommendationStrength(
@@ -278,11 +276,14 @@ function analyzeCombination(
     avgConfidence,
     tierMixScore,
     horses.length
-  )
+  );
 
   // Generate ID and description
-  const id = horses.map((h) => h.programNumber).sort().join('-')
-  const description = generateCombinationDescription(horses)
+  const id = horses
+    .map((h) => h.programNumber)
+    .sort()
+    .join('-');
+  const description = generateCombinationDescription(horses);
 
   // Calculate full Dutch result
   const dutchResult = isProfitable
@@ -295,7 +296,7 @@ function analyzeCombination(
           oddsDisplay: h.oddsDisplay,
         })),
       })
-    : undefined
+    : undefined;
 
   return {
     id,
@@ -311,7 +312,7 @@ function analyzeCombination(
     avgOdds: Math.round(avgOdds * 10) / 10,
     recommendationStrength: Math.round(recommendationStrength),
     dutchResult,
-  }
+  };
 }
 
 // ============================================================================
@@ -330,29 +331,29 @@ export function findQuickBestDutch(
     horses,
     stake,
     maxCombinations: 100,
-  })
+  });
 
-  return result.overallBest
+  return result.overallBest;
 }
 
 /**
  * Check if any profitable Dutch exists for a set of horses
  */
 export function hasProfitableDutch(horses: DutchCandidateHorse[]): boolean {
-  if (horses.length < 2) return false
+  if (horses.length < 2) return false;
 
   // Check 2-horse combinations first (most likely to be profitable)
-  const combinations = generateCombinations(horses, 2)
+  const combinations = generateCombinations(horses, 2);
 
   for (const combo of combinations) {
     const sumOfImpliedProbs = combo.reduce(
       (sum, horse) => sum + calculateImpliedProbability(horse.decimalOdds),
       0
-    )
-    if (sumOfImpliedProbs < 1) return true
+    );
+    if (sumOfImpliedProbs < 1) return true;
   }
 
-  return false
+  return false;
 }
 
 /**
@@ -367,9 +368,9 @@ export function getTopDutchOpportunities(
     horses,
     stake,
     maxCombinations: 200,
-  })
+  });
 
-  return result.combinations.slice(0, count)
+  return result.combinations.slice(0, count);
 }
 
 // ============================================================================
@@ -380,72 +381,68 @@ export function getTopDutchOpportunities(
  * Generate all combinations of size n from array
  */
 function generateCombinations<T>(array: T[], size: number): T[][] {
-  const result: T[][] = []
+  const result: T[][] = [];
 
   function combine(start: number, combo: T[]) {
     if (combo.length === size) {
-      result.push([...combo])
-      return
+      result.push([...combo]);
+      return;
     }
 
     for (let i = start; i <= array.length - (size - combo.length); i++) {
-      combo.push(array[i])
-      combine(i + 1, combo)
-      combo.pop()
+      combo.push(array[i]);
+      combine(i + 1, combo);
+      combo.pop();
     }
   }
 
-  combine(0, [])
-  return result
+  combine(0, []);
+  return result;
 }
 
 /**
  * Get tier mix description
  */
 function getTierMixDescription(tierCounts: Record<number, number>): string {
-  const parts: string[] = []
+  const parts: string[] = [];
 
-  if (tierCounts[1] > 0) parts.push(`${tierCounts[1]} Tier 1`)
-  if (tierCounts[2] > 0) parts.push(`${tierCounts[2]} Tier 2`)
-  if (tierCounts[3] > 0) parts.push(`${tierCounts[3]} Tier 3`)
+  if (tierCounts[1] > 0) parts.push(`${tierCounts[1]} Tier 1`);
+  if (tierCounts[2] > 0) parts.push(`${tierCounts[2]} Tier 2`);
+  if (tierCounts[3] > 0) parts.push(`${tierCounts[3]} Tier 3`);
 
-  return parts.join(' + ')
+  return parts.join(' + ');
 }
 
 /**
  * Calculate tier mix score (0-100)
  * Mixed tiers score higher than all same tier
  */
-function calculateTierMixScore(
-  tierCounts: Record<number, number>,
-  preferMixed: boolean
-): number {
-  const totalHorses = tierCounts[1] + tierCounts[2] + tierCounts[3]
-  const tiersUsed = (tierCounts[1] > 0 ? 1 : 0) +
-                    (tierCounts[2] > 0 ? 1 : 0) +
-                    (tierCounts[3] > 0 ? 1 : 0)
+function calculateTierMixScore(tierCounts: Record<number, number>, preferMixed: boolean): number {
+  const totalHorses = tierCounts[1] + tierCounts[2] + tierCounts[3];
+  const tiersUsed =
+    (tierCounts[1] > 0 ? 1 : 0) + (tierCounts[2] > 0 ? 1 : 0) + (tierCounts[3] > 0 ? 1 : 0);
 
-  if (!preferMixed) return 50 // Neutral
+  if (!preferMixed) return 50; // Neutral
 
   // Prefer Tier 1 + Tier 2 combinations
   if (tierCounts[1] >= 1 && tierCounts[2] >= 1) {
-    if (tierCounts[3] === 0) return 100 // Best: T1 + T2 only
-    return 90 // Good: T1 + T2 + T3
+    if (tierCounts[3] === 0) return 100; // Best: T1 + T2 only
+    return 90; // Good: T1 + T2 + T3
   }
 
   // Tier 1 + Tier 3 is interesting (chalk + longshot)
   if (tierCounts[1] >= 1 && tierCounts[3] >= 1 && tierCounts[2] === 0) {
-    return 85
+    return 85;
   }
 
   // All same tier is less ideal
   if (tiersUsed === 1) {
-    if (tierCounts[1] === totalHorses) return 70 // All T1 - chalk-heavy
-    if (tierCounts[2] === totalHorses) return 60 // All T2
-    if (tierCounts[3] === totalHorses) return 40 // All T3 - risky
+    if (tierCounts[1] === totalHorses) return 70; // All T1 - chalk-heavy
+    if (tierCounts[2] === totalHorses) return 60; // All T2
+    if (tierCounts[3] === totalHorses) return 40; // All T3 - risky
   }
 
-  return 70 // Default
+  return 70; // Default
 }
 
 /**
@@ -458,36 +455,37 @@ function calculateRecommendationStrength(
   horseCount: number
 ): number {
   // Edge score (0-100)
-  const edgeScore = Math.min(100, Math.max(0, edgePercent * 5)) // 20% edge = 100
+  const edgeScore = Math.min(100, Math.max(0, edgePercent * 5)); // 20% edge = 100
 
   // Confidence score (already 0-100)
-  const confidenceScore = avgConfidence
+  const confidenceScore = avgConfidence;
 
   // Horse count score
-  const horseCountScore = (IDEAL_HORSE_COUNTS[horseCount as keyof typeof IDEAL_HORSE_COUNTS] ?? 0.5) * 100
+  const horseCountScore =
+    (IDEAL_HORSE_COUNTS[horseCount as keyof typeof IDEAL_HORSE_COUNTS] ?? 0.5) * 100;
 
   // Weighted average
   const score =
     edgeScore * RECOMMENDATION_WEIGHTS.edge +
     confidenceScore * RECOMMENDATION_WEIGHTS.confidence +
     tierMixScore * RECOMMENDATION_WEIGHTS.tierMix +
-    horseCountScore * RECOMMENDATION_WEIGHTS.horseCount
+    horseCountScore * RECOMMENDATION_WEIGHTS.horseCount;
 
-  return Math.round(Math.max(0, Math.min(100, score)))
+  return Math.round(Math.max(0, Math.min(100, score)));
 }
 
 /**
  * Generate human-readable combination description
  */
 function generateCombinationDescription(horses: DutchCandidateHorse[]): string {
-  const sorted = [...horses].sort((a, b) => a.decimalOdds - b.decimalOdds)
-  const names = sorted.map((h) => `#${h.programNumber} ${h.horseName}`).slice(0, 3)
+  const sorted = [...horses].sort((a, b) => a.decimalOdds - b.decimalOdds);
+  const names = sorted.map((h) => `#${h.programNumber} ${h.horseName}`).slice(0, 3);
 
   if (horses.length > 3) {
-    return `${names.join(', ')} +${horses.length - 3} more`
+    return `${names.join(', ')} +${horses.length - 3} more`;
   }
 
-  return names.join(', ')
+  return names.join(', ');
 }
 
 /**
@@ -511,7 +509,7 @@ function createEmptyResult(
       eligibleHorseCount: eligibleHorses,
       optimizationTime: Math.round(time),
     },
-  }
+  };
 }
 
 // ============================================================================
@@ -523,20 +521,20 @@ function createEmptyResult(
  */
 export function convertToDutchCandidates(
   horses: Array<{
-    programNumber: number
-    horseName: string
-    morningLineOdds: string
-    score: number
-    confidence: number
-    tier: 1 | 2 | 3
-    estimatedWinProb?: number
-    overlayPercent?: number
+    programNumber: number;
+    horseName: string;
+    morningLineOdds: string;
+    score: number;
+    confidence: number;
+    tier: 1 | 2 | 3;
+    estimatedWinProb?: number;
+    overlayPercent?: number;
   }>
 ): DutchCandidateHorse[] {
   return horses.map((horse) => {
-    const decimalOdds = parseOddsToDecimal(horse.morningLineOdds)
-    const impliedProb = calculateImpliedProbability(decimalOdds)
-    const estimatedWinProb = horse.estimatedWinProb ?? impliedProb
+    const decimalOdds = parseOddsToDecimal(horse.morningLineOdds);
+    const impliedProb = calculateImpliedProbability(decimalOdds);
+    const estimatedWinProb = horse.estimatedWinProb ?? impliedProb;
 
     return {
       programNumber: horse.programNumber,
@@ -550,8 +548,8 @@ export function convertToDutchCandidates(
       estimatedWinProb,
       hasOverlay: (horse.overlayPercent ?? 0) > 0,
       overlayPercent: horse.overlayPercent,
-    }
-  })
+    };
+  });
 }
 
 /**
@@ -560,10 +558,10 @@ export function convertToDutchCandidates(
 export function filterDutchCandidates(
   horses: DutchCandidateHorse[],
   options: {
-    minConfidence?: number
-    maxOdds?: number
-    minOverlay?: number
-    excludeTier3?: boolean
+    minConfidence?: number;
+    maxOdds?: number;
+    minOverlay?: number;
+    excludeTier3?: boolean;
   } = {}
 ): DutchCandidateHorse[] {
   const {
@@ -571,13 +569,13 @@ export function filterDutchCandidates(
     maxOdds = 50,
     minOverlay = -100, // Allow all by default
     excludeTier3 = false,
-  } = options
+  } = options;
 
   return horses.filter((horse) => {
-    if (horse.confidence < minConfidence) return false
-    if (horse.decimalOdds > maxOdds) return false
-    if ((horse.overlayPercent ?? 0) < minOverlay) return false
-    if (excludeTier3 && horse.tier === 3) return false
-    return true
-  })
+    if (horse.confidence < minConfidence) return false;
+    if (horse.decimalOdds > maxOdds) return false;
+    if ((horse.overlayPercent ?? 0) < minOverlay) return false;
+    if (excludeTier3 && horse.tier === 3) return false;
+    return true;
+  });
 }

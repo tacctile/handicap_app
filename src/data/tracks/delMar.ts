@@ -13,7 +13,7 @@
  * Sample sizes: 800+ races for post position analysis (2022-2024)
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const delMar: TrackData = {
   code: 'DMR',
@@ -33,7 +33,7 @@ export const delMar: TrackData = {
       // Source: Del Mar specifications
       trackWidth: 80,
       // Source: Del Mar - chutes for 7/8 mile and 1 1/4 mile races
-      chutes: [7, 10]
+      chutes: [7, 10],
     },
     turf: {
       // Source: Del Mar official - 7/8 mile turf course (opened 1960)
@@ -45,8 +45,8 @@ export const delMar: TrackData = {
       turnRadius: 240,
       // Source: Del Mar specifications - expanded to 80 feet
       trackWidth: 80,
-      chutes: [8.5, 9]
-    }
+      chutes: [8.5, 9],
+    },
   },
 
   postPositionBias: {
@@ -61,7 +61,8 @@ export const delMar: TrackData = {
         // Middle posts ideal for speed; inside slightly disadvantaged
         winPercentByPost: [8.5, 12.2, 14.8, 16.2, 15.5, 13.2, 10.5, 6.2, 2.2, 0.7],
         favoredPosts: [4, 5],
-        biasDescription: 'Posts 4-5 ideal in sprints; speed horses dominate (64% in 2024); closers struggle (8-9%)'
+        biasDescription:
+          'Posts 4-5 ideal in sprints; speed horses dominate (64% in 2024); closers struggle (8-9%)',
       },
       {
         distance: 'route',
@@ -73,8 +74,9 @@ export const delMar: TrackData = {
         // Strong tactical component
         winPercentByPost: [12.5, 14.2, 15.5, 14.8, 13.2, 11.5, 9.2, 5.8, 2.5, 0.8],
         favoredPosts: [3, 4, 5],
-        biasDescription: 'Posts 3-5 best in routes; speed from 1-3, stalkers from 4-6; closers struggle from inside'
-      }
+        biasDescription:
+          'Posts 3-5 best in routes; speed from 1-3, stalkers from 4-6; closers struggle from inside',
+      },
     ],
     turf: [
       {
@@ -86,7 +88,8 @@ export const delMar: TrackData = {
         // Posts relatively fair at 5 furlongs
         winPercentByPost: [11.2, 13.5, 14.2, 14.5, 13.8, 12.2, 10.2, 6.8, 2.8, 0.8],
         favoredPosts: [4, 5],
-        biasDescription: 'Turf sprints favor middle posts; speed/stalkers dominate; posts relatively fair'
+        biasDescription:
+          'Turf sprints favor middle posts; speed/stalkers dominate; posts relatively fair',
       },
       {
         distance: 'route',
@@ -99,9 +102,10 @@ export const delMar: TrackData = {
         // Only 1 winner from post 7+ at 1 1/16m and 1 1/8m in 2023
         winPercentByPost: [13.5, 14.8, 14.2, 13.5, 12.5, 11.2, 9.8, 6.5, 3.2, 0.8],
         favoredPosts: [2, 3],
-        biasDescription: '1 mile fair for all posts; 1 1/16m+ STRONG inside bias; posts 7+ nearly impossible'
-      }
-    ]
+        biasDescription:
+          '1 mile fair for all posts; 1 1/16m+ STRONG inside bias; posts 7+ nearly impossible',
+      },
+    ],
   },
 
   speedBias: [
@@ -115,7 +119,8 @@ export const delMar: TrackData = {
       // Surface can be biased - faster inside OR outside depending on maintenance
       earlySpeedWinRate: 58,
       paceAdvantageRating: 6,
-      description: 'Speed bias variable (47-64%); 2024 strongly speed-favoring; closers consistently poor (8-9%)'
+      description:
+        'Speed bias variable (47-64%); 2024 strongly speed-favoring; closers consistently poor (8-9%)',
     },
     {
       surface: 'turf',
@@ -125,8 +130,9 @@ export const delMar: TrackData = {
       // Year-to-year variance notable; generally closers have chance
       earlySpeedWinRate: 35,
       paceAdvantageRating: 4,
-      description: 'Turf plays fair to closers; 2023 closer-favoring (43%); 2024 balanced; varies by meet'
-    }
+      description:
+        'Turf plays fair to closers; 2023 closer-favoring (43%); 2024 balanced; varies by meet',
+    },
   ],
 
   surfaces: [
@@ -137,7 +143,7 @@ export const delMar: TrackData = {
       // "Biased racing surface" - requires careful handicapping
       composition: 'Natural dirt with variable bias; inside/outside speed dependent on maintenance',
       playingStyle: 'speed-favoring',
-      drainage: 'good'
+      drainage: 'good',
     },
     {
       baseType: 'turf',
@@ -146,8 +152,8 @@ export const delMar: TrackData = {
       // Installed 1960; widened/softened curves over time
       composition: 'Common Bermuda and Hybrid Bermuda (GN-1) blend; 7/8 mile oval',
       playingStyle: 'fair',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -159,7 +165,8 @@ export const delMar: TrackData = {
       // Perfect weather - cool ocean breezes, no rain
       typicalCondition: 'Fast; ideal weather',
       speedAdjustment: 1,
-      notes: 'Premier summer meet (July-Sept); Pacific Classic; perfect weather; speed bias varies year to year'
+      notes:
+        'Premier summer meet (July-Sept); Pacific Classic; perfect weather; speed bias varies year to year',
     },
     {
       season: 'fall',
@@ -168,8 +175,8 @@ export const delMar: TrackData = {
       // November fall meet - Breeders' Cup host in alternate years
       typicalCondition: 'Fast',
       speedAdjustment: 0,
-      notes: 'Bing Crosby fall meet (November); Breeders Cup host venue; excellent conditions'
-    }
+      notes: 'Bing Crosby fall meet (November); Breeders Cup host venue; excellent conditions',
+    },
   ],
 
   winningTimes: [
@@ -180,7 +187,7 @@ export const delMar: TrackData = {
       surface: 'dirt',
       claimingAvg: 57.2,
       allowanceAvg: 55.8,
-      stakesAvg: 54.5
+      stakesAvg: 54.5,
     },
     {
       distance: '5.5f',
@@ -188,7 +195,7 @@ export const delMar: TrackData = {
       surface: 'dirt',
       claimingAvg: 63.2,
       allowanceAvg: 61.8,
-      stakesAvg: 60.5
+      stakesAvg: 60.5,
     },
     {
       distance: '6f',
@@ -196,7 +203,7 @@ export const delMar: TrackData = {
       surface: 'dirt',
       claimingAvg: 69.8,
       allowanceAvg: 68.5,
-      stakesAvg: 67.2
+      stakesAvg: 67.2,
     },
     {
       distance: '6.5f',
@@ -204,7 +211,7 @@ export const delMar: TrackData = {
       surface: 'dirt',
       claimingAvg: 76.5,
       allowanceAvg: 75.2,
-      stakesAvg: 73.8
+      stakesAvg: 73.8,
     },
     {
       distance: '7f',
@@ -212,7 +219,7 @@ export const delMar: TrackData = {
       surface: 'dirt',
       claimingAvg: 83.2,
       allowanceAvg: 81.8,
-      stakesAvg: 80.2
+      stakesAvg: 80.2,
     },
     {
       distance: '1m',
@@ -220,7 +227,7 @@ export const delMar: TrackData = {
       surface: 'dirt',
       claimingAvg: 96.0,
       allowanceAvg: 94.2,
-      stakesAvg: 92.5
+      stakesAvg: 92.5,
     },
     {
       distance: '1 1/16m',
@@ -228,7 +235,7 @@ export const delMar: TrackData = {
       surface: 'dirt',
       claimingAvg: 103.0,
       allowanceAvg: 101.2,
-      stakesAvg: 99.5
+      stakesAvg: 99.5,
     },
     {
       distance: '1 1/8m',
@@ -236,7 +243,7 @@ export const delMar: TrackData = {
       surface: 'dirt',
       claimingAvg: 110.2,
       allowanceAvg: 108.5,
-      stakesAvg: 106.8
+      stakesAvg: 106.8,
     },
     {
       distance: '1 1/4m',
@@ -245,7 +252,7 @@ export const delMar: TrackData = {
       // Pacific Classic distance
       claimingAvg: 123.5,
       allowanceAvg: 121.5,
-      stakesAvg: 119.5
+      stakesAvg: 119.5,
     },
     // Turf times
     {
@@ -254,7 +261,7 @@ export const delMar: TrackData = {
       surface: 'turf',
       claimingAvg: 56.5,
       allowanceAvg: 55.2,
-      stakesAvg: 54.0
+      stakesAvg: 54.0,
     },
     {
       distance: '1m',
@@ -263,7 +270,7 @@ export const delMar: TrackData = {
       // Most common turf distance - 82 races in 2023
       claimingAvg: 94.8,
       allowanceAvg: 93.2,
-      stakesAvg: 91.5
+      stakesAvg: 91.5,
     },
     {
       distance: '1 1/16m',
@@ -272,7 +279,7 @@ export const delMar: TrackData = {
       // 26 races in 2023; strong inside post bias
       claimingAvg: 101.5,
       allowanceAvg: 99.8,
-      stakesAvg: 98.0
+      stakesAvg: 98.0,
     },
     {
       distance: '1 1/8m',
@@ -280,7 +287,7 @@ export const delMar: TrackData = {
       surface: 'turf',
       claimingAvg: 108.2,
       allowanceAvg: 106.5,
-      stakesAvg: 104.8
+      stakesAvg: 104.8,
     },
     {
       distance: '1 3/8m',
@@ -289,10 +296,10 @@ export const delMar: TrackData = {
       // Eddie Read Stakes distance
       claimingAvg: 135.5,
       allowanceAvg: 133.5,
-      stakesAvg: 131.5
-    }
+      stakesAvg: 131.5,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

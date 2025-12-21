@@ -13,60 +13,54 @@
  * - calculateExoticCost: Universal calculator for any exotic type
  */
 
-import { validateNumber } from '../sanitization'
+import { validateNumber } from '../sanitization';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export type ExoticBetType = 'exacta' | 'trifecta' | 'superfecta'
+export type ExoticBetType = 'exacta' | 'trifecta' | 'superfecta';
 
-export type BetStructure =
-  | 'box'
-  | 'key_over'
-  | 'key_under'
-  | 'wheel'
-  | 'part_wheel'
-  | 'straight'
+export type BetStructure = 'box' | 'key_over' | 'key_under' | 'wheel' | 'part_wheel' | 'straight';
 
 export interface ExoticCost {
   /** Total cost of the bet */
-  total: number
+  total: number;
   /** Number of combinations covered */
-  combinations: number
+  combinations: number;
   /** Cost per single combination */
-  costPerCombo: number
+  costPerCombo: number;
   /** Base bet amount used */
-  baseBet: number
+  baseBet: number;
   /** Bet type */
-  betType: ExoticBetType
+  betType: ExoticBetType;
   /** Bet structure */
-  structure: BetStructure
+  structure: BetStructure;
   /** Detailed breakdown of the calculation */
-  breakdown: string
+  breakdown: string;
   /** Whether the calculation is valid */
-  isValid: boolean
+  isValid: boolean;
   /** Error message if invalid */
-  error?: string
+  error?: string;
 }
 
 export interface ExoticBetConfig {
   /** Type of exotic bet */
-  betType: ExoticBetType
+  betType: ExoticBetType;
   /** Bet structure (box, key, wheel, etc.) */
-  structure: BetStructure
+  structure: BetStructure;
   /** Base bet amount ($0.10, $0.50, $1, $2, etc.) */
-  baseBet: number
+  baseBet: number;
   /** Horses in first position (for key/part-wheel bets) */
-  firstPosition: number[]
+  firstPosition: number[];
   /** Horses in second position */
-  secondPosition: number[]
+  secondPosition: number[];
   /** Horses in third position (for trifecta/superfecta) */
-  thirdPosition?: number[]
+  thirdPosition?: number[];
   /** Horses in fourth position (for superfecta) */
-  fourthPosition?: number[]
+  fourthPosition?: number[];
   /** Total field size (for wheel bets) */
-  fieldSize?: number
+  fieldSize?: number;
 }
 
 // ============================================================================
@@ -78,17 +72,17 @@ export const MIN_HORSES: Record<ExoticBetType, number> = {
   exacta: 2,
   trifecta: 3,
   superfecta: 4,
-}
+};
 
 /** Available base bet amounts */
-export const BASE_BET_OPTIONS = [0.1, 0.5, 1, 2, 5, 10] as const
+export const BASE_BET_OPTIONS = [0.1, 0.5, 1, 2, 5, 10] as const;
 
 /** Default base bets by bet type */
 export const DEFAULT_BASE_BETS: Record<ExoticBetType, number> = {
   exacta: 2,
   trifecta: 1,
   superfecta: 0.1,
-}
+};
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -98,36 +92,38 @@ export const DEFAULT_BASE_BETS: Record<ExoticBetType, number> = {
  * Calculate factorial
  */
 function factorial(n: number): number {
-  if (n <= 1) return 1
-  return n * factorial(n - 1)
+  if (n <= 1) return 1;
+  return n * factorial(n - 1);
 }
 
 /**
  * Calculate permutations: P(n, r) = n! / (n - r)!
  */
 function permutations(n: number, r: number): number {
-  if (n < r || r < 0 || n < 0) return 0
-  return factorial(n) / factorial(n - r)
+  if (n < r || r < 0 || n < 0) return 0;
+  return factorial(n) / factorial(n - r);
 }
 
 /**
  * Sanitize and validate horse numbers
  */
 function sanitizeHorseNumbers(horses: number[]): number[] {
-  if (!Array.isArray(horses)) return []
-  return [...new Set(
-    horses
-      .filter(h => typeof h === 'number' && Number.isFinite(h) && h > 0)
-      .map(h => Math.floor(h))
-  )]
+  if (!Array.isArray(horses)) return [];
+  return [
+    ...new Set(
+      horses
+        .filter((h) => typeof h === 'number' && Number.isFinite(h) && h > 0)
+        .map((h) => Math.floor(h))
+    ),
+  ];
 }
 
 /**
  * Validate base bet amount
  */
 function validateBaseBet(amount: number): number {
-  const validated = validateNumber(amount, 2, { min: 0.1, max: 100 })
-  return Math.round(validated * 100) / 100
+  const validated = validateNumber(amount, 2, { min: 0.1, max: 100 });
+  return Math.round(validated * 100) / 100;
 }
 
 /**
@@ -149,7 +145,7 @@ function createErrorResult(
     breakdown: error,
     isValid: false,
     error,
-  }
+  };
 }
 
 // ============================================================================
@@ -161,12 +157,9 @@ function createErrorResult(
  * Formula: horses × (horses - 1) × base bet
  * Example: 3-horse box at $2 = 3 × 2 × $2 = $12
  */
-export function calculateExactaBoxCost(
-  horses: number[],
-  baseBet: number
-): ExoticCost {
-  const sanitizedHorses = sanitizeHorseNumbers(horses)
-  const validatedBet = validateBaseBet(baseBet)
+export function calculateExactaBoxCost(horses: number[], baseBet: number): ExoticCost {
+  const sanitizedHorses = sanitizeHorseNumbers(horses);
+  const validatedBet = validateBaseBet(baseBet);
 
   if (sanitizedHorses.length < 2) {
     return createErrorResult(
@@ -174,12 +167,12 @@ export function calculateExactaBoxCost(
       'box',
       validatedBet,
       'Exacta box requires at least 2 horses'
-    )
+    );
   }
 
-  const n = sanitizedHorses.length
-  const combinations = n * (n - 1)
-  const total = combinations * validatedBet
+  const n = sanitizedHorses.length;
+  const combinations = n * (n - 1);
+  const total = combinations * validatedBet;
 
   return {
     total: Math.round(total * 100) / 100,
@@ -190,7 +183,7 @@ export function calculateExactaBoxCost(
     structure: 'box',
     breakdown: `${n} horses × ${n - 1} combinations × $${validatedBet} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 /**
@@ -203,12 +196,12 @@ export function calculateExactaKeyOverCost(
   otherHorses: number[],
   baseBet: number
 ): ExoticCost {
-  const sanitizedKey = sanitizeHorseNumbers(keyHorses)
-  const sanitizedOthers = sanitizeHorseNumbers(otherHorses)
-  const validatedBet = validateBaseBet(baseBet)
+  const sanitizedKey = sanitizeHorseNumbers(keyHorses);
+  const sanitizedOthers = sanitizeHorseNumbers(otherHorses);
+  const validatedBet = validateBaseBet(baseBet);
 
   // Remove any key horses from others
-  const filteredOthers = sanitizedOthers.filter(h => !sanitizedKey.includes(h))
+  const filteredOthers = sanitizedOthers.filter((h) => !sanitizedKey.includes(h));
 
   if (sanitizedKey.length < 1) {
     return createErrorResult(
@@ -216,7 +209,7 @@ export function calculateExactaKeyOverCost(
       'key_over',
       validatedBet,
       'Exacta key over requires at least 1 key horse'
-    )
+    );
   }
 
   if (filteredOthers.length < 1) {
@@ -225,11 +218,11 @@ export function calculateExactaKeyOverCost(
       'key_over',
       validatedBet,
       'Exacta key over requires at least 1 other horse'
-    )
+    );
   }
 
-  const combinations = sanitizedKey.length * filteredOthers.length
-  const total = combinations * validatedBet
+  const combinations = sanitizedKey.length * filteredOthers.length;
+  const total = combinations * validatedBet;
 
   return {
     total: Math.round(total * 100) / 100,
@@ -240,7 +233,7 @@ export function calculateExactaKeyOverCost(
     structure: 'key_over',
     breakdown: `${sanitizedKey.length} key × ${filteredOthers.length} others × $${validatedBet} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 /**
@@ -253,12 +246,12 @@ export function calculateExactaKeyUnderCost(
   otherHorses: number[],
   baseBet: number
 ): ExoticCost {
-  const sanitizedKey = sanitizeHorseNumbers(keyHorses)
-  const sanitizedOthers = sanitizeHorseNumbers(otherHorses)
-  const validatedBet = validateBaseBet(baseBet)
+  const sanitizedKey = sanitizeHorseNumbers(keyHorses);
+  const sanitizedOthers = sanitizeHorseNumbers(otherHorses);
+  const validatedBet = validateBaseBet(baseBet);
 
   // Remove any key horses from others
-  const filteredOthers = sanitizedOthers.filter(h => !sanitizedKey.includes(h))
+  const filteredOthers = sanitizedOthers.filter((h) => !sanitizedKey.includes(h));
 
   if (sanitizedKey.length < 1) {
     return createErrorResult(
@@ -266,7 +259,7 @@ export function calculateExactaKeyUnderCost(
       'key_under',
       validatedBet,
       'Exacta key under requires at least 1 key horse'
-    )
+    );
   }
 
   if (filteredOthers.length < 1) {
@@ -275,11 +268,11 @@ export function calculateExactaKeyUnderCost(
       'key_under',
       validatedBet,
       'Exacta key under requires at least 1 other horse'
-    )
+    );
   }
 
-  const combinations = filteredOthers.length * sanitizedKey.length
-  const total = combinations * validatedBet
+  const combinations = filteredOthers.length * sanitizedKey.length;
+  const total = combinations * validatedBet;
 
   return {
     total: Math.round(total * 100) / 100,
@@ -290,7 +283,7 @@ export function calculateExactaKeyUnderCost(
     structure: 'key_under',
     breakdown: `${filteredOthers.length} others × ${sanitizedKey.length} key × $${validatedBet} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 /**
@@ -303,9 +296,9 @@ export function calculateExactaWheelCost(
   fieldSize: number,
   baseBet: number
 ): ExoticCost {
-  const sanitizedKey = sanitizeHorseNumbers(keyHorses)
-  const validatedBet = validateBaseBet(baseBet)
-  const validatedField = validateNumber(fieldSize, 10, { min: 2, max: 20 })
+  const sanitizedKey = sanitizeHorseNumbers(keyHorses);
+  const validatedBet = validateBaseBet(baseBet);
+  const validatedField = validateNumber(fieldSize, 10, { min: 2, max: 20 });
 
   if (sanitizedKey.length < 1) {
     return createErrorResult(
@@ -313,21 +306,16 @@ export function calculateExactaWheelCost(
       'wheel',
       validatedBet,
       'Exacta wheel requires at least 1 key horse'
-    )
+    );
   }
 
   if (validatedField < 2) {
-    return createErrorResult(
-      'exacta',
-      'wheel',
-      validatedBet,
-      'Field size must be at least 2'
-    )
+    return createErrorResult('exacta', 'wheel', validatedBet, 'Field size must be at least 2');
   }
 
-  const otherHorses = validatedField - sanitizedKey.length
-  const combinations = sanitizedKey.length * otherHorses
-  const total = combinations * validatedBet
+  const otherHorses = validatedField - sanitizedKey.length;
+  const combinations = sanitizedKey.length * otherHorses;
+  const total = combinations * validatedBet;
 
   return {
     total: Math.round(total * 100) / 100,
@@ -338,7 +326,7 @@ export function calculateExactaWheelCost(
     structure: 'wheel',
     breakdown: `${sanitizedKey.length} key × ${otherHorses} field × $${validatedBet} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 /**
@@ -350,7 +338,7 @@ export function calculateExactaStraightCost(
   secondHorse: number,
   baseBet: number
 ): ExoticCost {
-  const validatedBet = validateBaseBet(baseBet)
+  const validatedBet = validateBaseBet(baseBet);
 
   if (!Number.isFinite(firstHorse) || firstHorse < 1) {
     return createErrorResult(
@@ -358,7 +346,7 @@ export function calculateExactaStraightCost(
       'straight',
       validatedBet,
       'First horse must be a valid number'
-    )
+    );
   }
 
   if (!Number.isFinite(secondHorse) || secondHorse < 1) {
@@ -367,7 +355,7 @@ export function calculateExactaStraightCost(
       'straight',
       validatedBet,
       'Second horse must be a valid number'
-    )
+    );
   }
 
   if (firstHorse === secondHorse) {
@@ -376,7 +364,7 @@ export function calculateExactaStraightCost(
       'straight',
       validatedBet,
       'First and second horses must be different'
-    )
+    );
   }
 
   return {
@@ -388,7 +376,7 @@ export function calculateExactaStraightCost(
     structure: 'straight',
     breakdown: `#${firstHorse} over #${secondHorse} × $${validatedBet} = $${validatedBet.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 // ============================================================================
@@ -400,12 +388,9 @@ export function calculateExactaStraightCost(
  * Formula: horses × (horses - 1) × (horses - 2) × base bet
  * Example: 4-horse box at $1 = 4 × 3 × 2 × $1 = $24
  */
-export function calculateTrifectaBoxCost(
-  horses: number[],
-  baseBet: number
-): ExoticCost {
-  const sanitizedHorses = sanitizeHorseNumbers(horses)
-  const validatedBet = validateBaseBet(baseBet)
+export function calculateTrifectaBoxCost(horses: number[], baseBet: number): ExoticCost {
+  const sanitizedHorses = sanitizeHorseNumbers(horses);
+  const validatedBet = validateBaseBet(baseBet);
 
   if (sanitizedHorses.length < 3) {
     return createErrorResult(
@@ -413,12 +398,12 @@ export function calculateTrifectaBoxCost(
       'box',
       validatedBet,
       'Trifecta box requires at least 3 horses'
-    )
+    );
   }
 
-  const n = sanitizedHorses.length
-  const combinations = permutations(n, 3)
-  const total = combinations * validatedBet
+  const n = sanitizedHorses.length;
+  const combinations = permutations(n, 3);
+  const total = combinations * validatedBet;
 
   return {
     total: Math.round(total * 100) / 100,
@@ -429,7 +414,7 @@ export function calculateTrifectaBoxCost(
     structure: 'box',
     breakdown: `${n} × ${n - 1} × ${n - 2} × $${validatedBet} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 /**
@@ -443,14 +428,14 @@ export function calculateTrifectaKeyCost(
   thirdHorses: number[],
   baseBet: number
 ): ExoticCost {
-  const sanitizedKey = sanitizeHorseNumbers(keyHorses)
-  const sanitizedSecond = sanitizeHorseNumbers(secondHorses)
-  const sanitizedThird = sanitizeHorseNumbers(thirdHorses)
-  const validatedBet = validateBaseBet(baseBet)
+  const sanitizedKey = sanitizeHorseNumbers(keyHorses);
+  const sanitizedSecond = sanitizeHorseNumbers(secondHorses);
+  const sanitizedThird = sanitizeHorseNumbers(thirdHorses);
+  const validatedBet = validateBaseBet(baseBet);
 
   // Remove key horses from second and third
-  const filteredSecond = sanitizedSecond.filter(h => !sanitizedKey.includes(h))
-  const filteredThird = sanitizedThird.filter(h => !sanitizedKey.includes(h))
+  const filteredSecond = sanitizedSecond.filter((h) => !sanitizedKey.includes(h));
+  const filteredThird = sanitizedThird.filter((h) => !sanitizedKey.includes(h));
 
   if (sanitizedKey.length < 1) {
     return createErrorResult(
@@ -458,7 +443,7 @@ export function calculateTrifectaKeyCost(
       'key_over',
       validatedBet,
       'Trifecta key requires at least 1 key horse'
-    )
+    );
   }
 
   if (filteredSecond.length < 1) {
@@ -467,7 +452,7 @@ export function calculateTrifectaKeyCost(
       'key_over',
       validatedBet,
       'Trifecta key requires at least 1 second position horse'
-    )
+    );
   }
 
   if (filteredThird.length < 1) {
@@ -476,22 +461,22 @@ export function calculateTrifectaKeyCost(
       'key_over',
       validatedBet,
       'Trifecta key requires at least 1 third position horse'
-    )
+    );
   }
 
   // Calculate combinations considering overlapping second/third horses
-  let combinations = 0
+  let combinations = 0;
   for (const first of sanitizedKey) {
     for (const second of filteredSecond) {
       for (const third of filteredThird) {
         if (first !== second && first !== third && second !== third) {
-          combinations++
+          combinations++;
         }
       }
     }
   }
 
-  const total = combinations * validatedBet
+  const total = combinations * validatedBet;
 
   return {
     total: Math.round(total * 100) / 100,
@@ -502,7 +487,7 @@ export function calculateTrifectaKeyCost(
     structure: 'key_over',
     breakdown: `${sanitizedKey.length} key × ${filteredSecond.length} second × ${filteredThird.length} third = ${combinations} combos × $${validatedBet} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 /**
@@ -517,10 +502,10 @@ export function calculateTrifectaPartWheelCost(
   thirdHorses: number[],
   baseBet: number
 ): ExoticCost {
-  const sanitizedFirst = sanitizeHorseNumbers(firstHorses)
-  const sanitizedSecond = sanitizeHorseNumbers(secondHorses)
-  const sanitizedThird = sanitizeHorseNumbers(thirdHorses)
-  const validatedBet = validateBaseBet(baseBet)
+  const sanitizedFirst = sanitizeHorseNumbers(firstHorses);
+  const sanitizedSecond = sanitizeHorseNumbers(secondHorses);
+  const sanitizedThird = sanitizeHorseNumbers(thirdHorses);
+  const validatedBet = validateBaseBet(baseBet);
 
   if (sanitizedFirst.length < 1) {
     return createErrorResult(
@@ -528,7 +513,7 @@ export function calculateTrifectaPartWheelCost(
       'part_wheel',
       validatedBet,
       'Trifecta part-wheel requires at least 1 first position horse'
-    )
+    );
   }
 
   if (sanitizedSecond.length < 1) {
@@ -537,7 +522,7 @@ export function calculateTrifectaPartWheelCost(
       'part_wheel',
       validatedBet,
       'Trifecta part-wheel requires at least 1 second position horse'
-    )
+    );
   }
 
   if (sanitizedThird.length < 1) {
@@ -546,16 +531,16 @@ export function calculateTrifectaPartWheelCost(
       'part_wheel',
       validatedBet,
       'Trifecta part-wheel requires at least 1 third position horse'
-    )
+    );
   }
 
   // Calculate combinations excluding duplicates
-  let combinations = 0
+  let combinations = 0;
   for (const first of sanitizedFirst) {
     for (const second of sanitizedSecond) {
       for (const third of sanitizedThird) {
         if (first !== second && first !== third && second !== third) {
-          combinations++
+          combinations++;
         }
       }
     }
@@ -567,10 +552,10 @@ export function calculateTrifectaPartWheelCost(
       'part_wheel',
       validatedBet,
       'No valid combinations possible with selected horses'
-    )
+    );
   }
 
-  const total = combinations * validatedBet
+  const total = combinations * validatedBet;
 
   return {
     total: Math.round(total * 100) / 100,
@@ -581,7 +566,7 @@ export function calculateTrifectaPartWheelCost(
     structure: 'part_wheel',
     breakdown: `${sanitizedFirst.length} first × ${sanitizedSecond.length} second × ${sanitizedThird.length} third = ${combinations} combos × $${validatedBet} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 /**
@@ -594,9 +579,9 @@ export function calculateTrifectaWheelCost(
   fieldSize: number,
   baseBet: number
 ): ExoticCost {
-  const sanitizedKey = sanitizeHorseNumbers(keyHorses)
-  const validatedBet = validateBaseBet(baseBet)
-  const validatedField = validateNumber(fieldSize, 10, { min: 3, max: 20 })
+  const sanitizedKey = sanitizeHorseNumbers(keyHorses);
+  const validatedBet = validateBaseBet(baseBet);
+  const validatedField = validateNumber(fieldSize, 10, { min: 3, max: 20 });
 
   if (sanitizedKey.length < 1) {
     return createErrorResult(
@@ -604,7 +589,7 @@ export function calculateTrifectaWheelCost(
       'wheel',
       validatedBet,
       'Trifecta wheel requires at least 1 key horse'
-    )
+    );
   }
 
   if (validatedField < 3) {
@@ -613,12 +598,12 @@ export function calculateTrifectaWheelCost(
       'wheel',
       validatedBet,
       'Field size must be at least 3 for trifecta'
-    )
+    );
   }
 
-  const otherHorses = validatedField - sanitizedKey.length
-  const combinations = sanitizedKey.length * otherHorses * (otherHorses - 1)
-  const total = combinations * validatedBet
+  const otherHorses = validatedField - sanitizedKey.length;
+  const combinations = sanitizedKey.length * otherHorses * (otherHorses - 1);
+  const total = combinations * validatedBet;
 
   return {
     total: Math.round(total * 100) / 100,
@@ -629,7 +614,7 @@ export function calculateTrifectaWheelCost(
     structure: 'wheel',
     breakdown: `${sanitizedKey.length} key × ${otherHorses} × ${otherHorses - 1} × $${validatedBet} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 // ============================================================================
@@ -641,12 +626,9 @@ export function calculateTrifectaWheelCost(
  * Formula: horses × (horses - 1) × (horses - 2) × (horses - 3) × base bet
  * Example: 5-horse box at $0.50 = 5 × 4 × 3 × 2 × $0.50 = $60
  */
-export function calculateSuperfectaBoxCost(
-  horses: number[],
-  baseBet: number
-): ExoticCost {
-  const sanitizedHorses = sanitizeHorseNumbers(horses)
-  const validatedBet = validateBaseBet(baseBet)
+export function calculateSuperfectaBoxCost(horses: number[], baseBet: number): ExoticCost {
+  const sanitizedHorses = sanitizeHorseNumbers(horses);
+  const validatedBet = validateBaseBet(baseBet);
 
   if (sanitizedHorses.length < 4) {
     return createErrorResult(
@@ -654,12 +636,12 @@ export function calculateSuperfectaBoxCost(
       'box',
       validatedBet,
       'Superfecta box requires at least 4 horses'
-    )
+    );
   }
 
-  const n = sanitizedHorses.length
-  const combinations = permutations(n, 4)
-  const total = combinations * validatedBet
+  const n = sanitizedHorses.length;
+  const combinations = permutations(n, 4);
+  const total = combinations * validatedBet;
 
   return {
     total: Math.round(total * 100) / 100,
@@ -670,7 +652,7 @@ export function calculateSuperfectaBoxCost(
     structure: 'box',
     breakdown: `${n} × ${n - 1} × ${n - 2} × ${n - 3} × $${validatedBet} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 /**
@@ -685,16 +667,16 @@ export function calculateSuperfectaKeyCost(
   fourthHorses: number[],
   baseBet: number
 ): ExoticCost {
-  const sanitizedKey = sanitizeHorseNumbers(keyHorses)
-  const sanitizedSecond = sanitizeHorseNumbers(secondHorses)
-  const sanitizedThird = sanitizeHorseNumbers(thirdHorses)
-  const sanitizedFourth = sanitizeHorseNumbers(fourthHorses)
-  const validatedBet = validateBaseBet(baseBet)
+  const sanitizedKey = sanitizeHorseNumbers(keyHorses);
+  const sanitizedSecond = sanitizeHorseNumbers(secondHorses);
+  const sanitizedThird = sanitizeHorseNumbers(thirdHorses);
+  const sanitizedFourth = sanitizeHorseNumbers(fourthHorses);
+  const validatedBet = validateBaseBet(baseBet);
 
   // Remove key horses from other positions
-  const filteredSecond = sanitizedSecond.filter(h => !sanitizedKey.includes(h))
-  const filteredThird = sanitizedThird.filter(h => !sanitizedKey.includes(h))
-  const filteredFourth = sanitizedFourth.filter(h => !sanitizedKey.includes(h))
+  const filteredSecond = sanitizedSecond.filter((h) => !sanitizedKey.includes(h));
+  const filteredThird = sanitizedThird.filter((h) => !sanitizedKey.includes(h));
+  const filteredFourth = sanitizedFourth.filter((h) => !sanitizedKey.includes(h));
 
   if (sanitizedKey.length < 1) {
     return createErrorResult(
@@ -702,7 +684,7 @@ export function calculateSuperfectaKeyCost(
       'key_over',
       validatedBet,
       'Superfecta key requires at least 1 key horse'
-    )
+    );
   }
 
   if (filteredSecond.length < 1 || filteredThird.length < 1 || filteredFourth.length < 1) {
@@ -711,11 +693,11 @@ export function calculateSuperfectaKeyCost(
       'key_over',
       validatedBet,
       'Superfecta key requires at least 1 horse in each position'
-    )
+    );
   }
 
   // Calculate combinations excluding duplicates
-  let combinations = 0
+  let combinations = 0;
   for (const first of sanitizedKey) {
     for (const second of filteredSecond) {
       for (const third of filteredThird) {
@@ -728,14 +710,14 @@ export function calculateSuperfectaKeyCost(
             second !== fourth &&
             third !== fourth
           ) {
-            combinations++
+            combinations++;
           }
         }
       }
     }
   }
 
-  const total = combinations * validatedBet
+  const total = combinations * validatedBet;
 
   return {
     total: Math.round(total * 100) / 100,
@@ -746,7 +728,7 @@ export function calculateSuperfectaKeyCost(
     structure: 'key_over',
     breakdown: `${sanitizedKey.length} key × ${filteredSecond.length} × ${filteredThird.length} × ${filteredFourth.length} = ${combinations} combos × $${validatedBet} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 /**
@@ -760,11 +742,11 @@ export function calculateSuperfectaPartWheelCost(
   fourthHorses: number[],
   baseBet: number
 ): ExoticCost {
-  const sanitizedFirst = sanitizeHorseNumbers(firstHorses)
-  const sanitizedSecond = sanitizeHorseNumbers(secondHorses)
-  const sanitizedThird = sanitizeHorseNumbers(thirdHorses)
-  const sanitizedFourth = sanitizeHorseNumbers(fourthHorses)
-  const validatedBet = validateBaseBet(baseBet)
+  const sanitizedFirst = sanitizeHorseNumbers(firstHorses);
+  const sanitizedSecond = sanitizeHorseNumbers(secondHorses);
+  const sanitizedThird = sanitizeHorseNumbers(thirdHorses);
+  const sanitizedFourth = sanitizeHorseNumbers(fourthHorses);
+  const validatedBet = validateBaseBet(baseBet);
 
   if (
     sanitizedFirst.length < 1 ||
@@ -777,11 +759,11 @@ export function calculateSuperfectaPartWheelCost(
       'part_wheel',
       validatedBet,
       'Superfecta part-wheel requires at least 1 horse in each position'
-    )
+    );
   }
 
   // Calculate combinations excluding duplicates
-  let combinations = 0
+  let combinations = 0;
   for (const first of sanitizedFirst) {
     for (const second of sanitizedSecond) {
       for (const third of sanitizedThird) {
@@ -794,7 +776,7 @@ export function calculateSuperfectaPartWheelCost(
             second !== fourth &&
             third !== fourth
           ) {
-            combinations++
+            combinations++;
           }
         }
       }
@@ -807,10 +789,10 @@ export function calculateSuperfectaPartWheelCost(
       'part_wheel',
       validatedBet,
       'No valid combinations possible with selected horses'
-    )
+    );
   }
 
-  const total = combinations * validatedBet
+  const total = combinations * validatedBet;
 
   return {
     total: Math.round(total * 100) / 100,
@@ -821,7 +803,7 @@ export function calculateSuperfectaPartWheelCost(
     structure: 'part_wheel',
     breakdown: `${sanitizedFirst.length} × ${sanitizedSecond.length} × ${sanitizedThird.length} × ${sanitizedFourth.length} = ${combinations} combos × $${validatedBet} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 /**
@@ -833,9 +815,9 @@ export function calculateSuperfectaWheelCost(
   fieldSize: number,
   baseBet: number
 ): ExoticCost {
-  const sanitizedKey = sanitizeHorseNumbers(keyHorses)
-  const validatedBet = validateBaseBet(baseBet)
-  const validatedField = validateNumber(fieldSize, 10, { min: 4, max: 20 })
+  const sanitizedKey = sanitizeHorseNumbers(keyHorses);
+  const validatedBet = validateBaseBet(baseBet);
+  const validatedField = validateNumber(fieldSize, 10, { min: 4, max: 20 });
 
   if (sanitizedKey.length < 1) {
     return createErrorResult(
@@ -843,7 +825,7 @@ export function calculateSuperfectaWheelCost(
       'wheel',
       validatedBet,
       'Superfecta wheel requires at least 1 key horse'
-    )
+    );
   }
 
   if (validatedField < 4) {
@@ -852,12 +834,12 @@ export function calculateSuperfectaWheelCost(
       'wheel',
       validatedBet,
       'Field size must be at least 4 for superfecta'
-    )
+    );
   }
 
-  const otherHorses = validatedField - sanitizedKey.length
-  const combinations = sanitizedKey.length * permutations(otherHorses, 3)
-  const total = combinations * validatedBet
+  const otherHorses = validatedField - sanitizedKey.length;
+  const combinations = sanitizedKey.length * permutations(otherHorses, 3);
+  const total = combinations * validatedBet;
 
   return {
     total: Math.round(total * 100) / 100,
@@ -868,7 +850,7 @@ export function calculateSuperfectaWheelCost(
     structure: 'wheel',
     breakdown: `${sanitizedKey.length} key × ${otherHorses} × ${otherHorses - 1} × ${otherHorses - 2} × $${validatedBet} = $${total.toFixed(2)}`,
     isValid: true,
-  }
+  };
 }
 
 // ============================================================================
@@ -889,43 +871,48 @@ export function calculateExoticCost(config: ExoticBetConfig): ExoticCost {
     thirdPosition = [],
     fourthPosition = [],
     fieldSize = 10,
-  } = config
+  } = config;
 
   switch (betType) {
     case 'exacta':
       switch (structure) {
         case 'box':
-          return calculateExactaBoxCost(firstPosition, baseBet)
+          return calculateExactaBoxCost(firstPosition, baseBet);
         case 'key_over':
-          return calculateExactaKeyOverCost(firstPosition, secondPosition, baseBet)
+          return calculateExactaKeyOverCost(firstPosition, secondPosition, baseBet);
         case 'key_under':
-          return calculateExactaKeyUnderCost(firstPosition, secondPosition, baseBet)
+          return calculateExactaKeyUnderCost(firstPosition, secondPosition, baseBet);
         case 'wheel':
-          return calculateExactaWheelCost(firstPosition, fieldSize, baseBet)
+          return calculateExactaWheelCost(firstPosition, fieldSize, baseBet);
         case 'straight':
-          return calculateExactaStraightCost(firstPosition[0], secondPosition[0], baseBet)
+          return calculateExactaStraightCost(firstPosition[0], secondPosition[0], baseBet);
         default:
-          return createErrorResult(betType, structure, baseBet, `Unknown structure: ${structure}`)
+          return createErrorResult(betType, structure, baseBet, `Unknown structure: ${structure}`);
       }
 
     case 'trifecta':
       switch (structure) {
         case 'box':
-          return calculateTrifectaBoxCost(firstPosition, baseBet)
+          return calculateTrifectaBoxCost(firstPosition, baseBet);
         case 'key_over':
-          return calculateTrifectaKeyCost(firstPosition, secondPosition, thirdPosition, baseBet)
+          return calculateTrifectaKeyCost(firstPosition, secondPosition, thirdPosition, baseBet);
         case 'part_wheel':
-          return calculateTrifectaPartWheelCost(firstPosition, secondPosition, thirdPosition, baseBet)
+          return calculateTrifectaPartWheelCost(
+            firstPosition,
+            secondPosition,
+            thirdPosition,
+            baseBet
+          );
         case 'wheel':
-          return calculateTrifectaWheelCost(firstPosition, fieldSize, baseBet)
+          return calculateTrifectaWheelCost(firstPosition, fieldSize, baseBet);
         default:
-          return createErrorResult(betType, structure, baseBet, `Unknown structure: ${structure}`)
+          return createErrorResult(betType, structure, baseBet, `Unknown structure: ${structure}`);
       }
 
     case 'superfecta':
       switch (structure) {
         case 'box':
-          return calculateSuperfectaBoxCost(firstPosition, baseBet)
+          return calculateSuperfectaBoxCost(firstPosition, baseBet);
         case 'key_over':
           return calculateSuperfectaKeyCost(
             firstPosition,
@@ -933,7 +920,7 @@ export function calculateExoticCost(config: ExoticBetConfig): ExoticCost {
             thirdPosition,
             fourthPosition,
             baseBet
-          )
+          );
         case 'part_wheel':
           return calculateSuperfectaPartWheelCost(
             firstPosition,
@@ -941,15 +928,15 @@ export function calculateExoticCost(config: ExoticBetConfig): ExoticCost {
             thirdPosition,
             fourthPosition,
             baseBet
-          )
+          );
         case 'wheel':
-          return calculateSuperfectaWheelCost(firstPosition, fieldSize, baseBet)
+          return calculateSuperfectaWheelCost(firstPosition, fieldSize, baseBet);
         default:
-          return createErrorResult(betType, structure, baseBet, `Unknown structure: ${structure}`)
+          return createErrorResult(betType, structure, baseBet, `Unknown structure: ${structure}`);
       }
 
     default:
-      return createErrorResult(betType, structure, baseBet, `Unknown bet type: ${betType}`)
+      return createErrorResult(betType, structure, baseBet, `Unknown bet type: ${betType}`);
   }
 }
 
@@ -957,14 +944,14 @@ export function calculateExoticCost(config: ExoticBetConfig): ExoticCost {
  * Calculate total cost for multiple exotic bets
  */
 export function calculateTotalExoticCost(configs: ExoticBetConfig[]): {
-  total: number
-  totalCombinations: number
-  bets: ExoticCost[]
-  isValid: boolean
-  errors: string[]
+  total: number;
+  totalCombinations: number;
+  bets: ExoticCost[];
+  isValid: boolean;
+  errors: string[];
 } {
-  const bets = configs.map(calculateExoticCost)
-  const errors = bets.filter(b => !b.isValid).map(b => b.error || 'Unknown error')
+  const bets = configs.map(calculateExoticCost);
+  const errors = bets.filter((b) => !b.isValid).map((b) => b.error || 'Unknown error');
 
   return {
     total: bets.reduce((sum, b) => sum + b.total, 0),
@@ -972,5 +959,5 @@ export function calculateTotalExoticCost(configs: ExoticBetConfig[]): {
     bets,
     isValid: errors.length === 0,
     errors,
-  }
+  };
 }

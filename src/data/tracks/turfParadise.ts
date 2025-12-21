@@ -15,7 +15,7 @@
  *       consistent conditions; 1 mile dirt main track with turf course; significant speed bias
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const turfParadise: TrackData = {
   code: 'TUP',
@@ -34,7 +34,7 @@ export const turfParadise: TrackData = {
       // Source: Arizona Department of Gaming - 80 feet wide
       trackWidth: 80,
       // Source: Turf Paradise - chutes at 6f and 7f
-      chutes: [6, 7]
+      chutes: [6, 7],
     },
     turf: {
       // Source: Turf Paradise official - 7/8 mile turf course
@@ -45,8 +45,8 @@ export const turfParadise: TrackData = {
       turnRadius: 240,
       // Source: Arizona Department of Gaming
       trackWidth: 70,
-      chutes: [8, 10]
-    }
+      chutes: [8, 10],
+    },
   },
 
   postPositionBias: {
@@ -63,7 +63,8 @@ export const turfParadise: TrackData = {
         // Sample: 700+ dirt sprints annually
         winPercentByPost: [14.5, 15.0, 14.0, 12.0, 10.5, 9.5, 8.5, 7.5, 5.5, 3.0],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Strong inside bias in sprints; posts 1-3 have advantage; fast desert surface; short run to turn at 6f critical'
+        biasDescription:
+          'Strong inside bias in sprints; posts 1-3 have advantage; fast desert surface; short run to turn at 6f critical',
       },
       {
         distance: 'route',
@@ -76,8 +77,9 @@ export const turfParadise: TrackData = {
         // Sample: 350+ dirt routes annually
         winPercentByPost: [12.5, 14.0, 14.5, 13.0, 11.5, 10.0, 9.0, 7.5, 5.5, 2.5],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Inside advantage in routes; posts 2-4 optimal; speed carries in desert conditions; tactical pace rewarded'
-      }
+        biasDescription:
+          'Inside advantage in routes; posts 2-4 optimal; speed carries in desert conditions; tactical pace rewarded',
+      },
     ],
     turf: [
       {
@@ -91,7 +93,8 @@ export const turfParadise: TrackData = {
         // Sample: 150+ turf sprints annually
         winPercentByPost: [15.0, 14.5, 13.5, 11.5, 10.5, 10.0, 9.0, 8.0, 5.5, 2.5],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Strong inside advantage in turf sprints; posts 1-3 dominate; firm Bermuda surface favors speed'
+        biasDescription:
+          'Strong inside advantage in turf sprints; posts 1-3 dominate; firm Bermuda surface favors speed',
       },
       {
         distance: 'route',
@@ -103,9 +106,10 @@ export const turfParadise: TrackData = {
         // Sample: 200+ turf routes annually
         winPercentByPost: [13.5, 14.0, 13.5, 12.5, 11.0, 10.0, 9.5, 8.5, 5.5, 2.0],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Inside advantage continues in turf routes; posts 1-3 favored; firm conditions help speed'
-      }
-    ]
+        biasDescription:
+          'Inside advantage continues in turf routes; posts 1-3 favored; firm conditions help speed',
+      },
+    ],
   },
 
   speedBias: [
@@ -118,7 +122,8 @@ export const turfParadise: TrackData = {
       // One of the faster tracks in the country
       earlySpeedWinRate: 58,
       paceAdvantageRating: 7,
-      description: 'Strong speed bias; 58% early speed win rate; desert climate creates fast, hard surface; wire-to-wire common; closers need hot pace'
+      description:
+        'Strong speed bias; 58% early speed win rate; desert climate creates fast, hard surface; wire-to-wire common; closers need hot pace',
     },
     {
       surface: 'turf',
@@ -128,8 +133,9 @@ export const turfParadise: TrackData = {
       // Speed has clear edge
       earlySpeedWinRate: 56,
       paceAdvantageRating: 7,
-      description: 'Speed-favoring turf; Bermuda grass runs firm; 56% early speed success; desert conditions enhance speed advantage'
-    }
+      description:
+        'Speed-favoring turf; Bermuda grass runs firm; 56% early speed success; desert conditions enhance speed advantage',
+    },
   ],
 
   surfaces: [
@@ -139,19 +145,21 @@ export const turfParadise: TrackData = {
       // Desert sandy loam; hard compact surface
       // Low humidity keeps track fast
       // Consistent conditions throughout meet
-      composition: 'Desert sandy loam cushion over clay base; 2.5-inch cushion depth; hard, compact surface; low desert humidity creates consistent, fast conditions',
+      composition:
+        'Desert sandy loam cushion over clay base; 2.5-inch cushion depth; hard, compact surface; low desert humidity creates consistent, fast conditions',
       playingStyle: 'speed-favoring',
-      drainage: 'excellent'
+      drainage: 'excellent',
     },
     {
       baseType: 'turf',
       // Source: Turf Paradise grounds specifications
       // Bermuda grass suited for Arizona desert
       // Maintained with irrigation; typically firm
-      composition: 'Bermuda grass base; maintained with irrigation; desert climate keeps surface firm; rarely soft or yielding',
+      composition:
+        'Bermuda grass base; maintained with irrigation; desert climate keeps surface firm; rarely soft or yielding',
       playingStyle: 'speed-favoring',
-      drainage: 'excellent'
-    }
+      drainage: 'excellent',
+    },
   ],
 
   seasonalPatterns: [
@@ -164,7 +172,8 @@ export const turfParadise: TrackData = {
       // Track fast from start
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Season opener; excellent Arizona fall weather; track runs fast; speed bias strong from start'
+      notes:
+        'Season opener; excellent Arizona fall weather; track runs fast; speed bias strong from start',
     },
     {
       season: 'winter',
@@ -175,7 +184,8 @@ export const turfParadise: TrackData = {
       // Fast track; visitors from cold weather tracks
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Prime racing season; Arizona winter ideal; consistently fast track; horses ship in from colder climates'
+      notes:
+        'Prime racing season; Arizona winter ideal; consistently fast track; horses ship in from colder climates',
     },
     {
       season: 'spring',
@@ -186,7 +196,8 @@ export const turfParadise: TrackData = {
       // Season winds down in May
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Continued fast conditions; warming temperatures; track maintains speed bias; season concludes in May'
+      notes:
+        'Continued fast conditions; warming temperatures; track maintains speed bias; season concludes in May',
     },
     {
       season: 'summer',
@@ -196,8 +207,9 @@ export const turfParadise: TrackData = {
       // No live racing
       typicalCondition: 'Closed - no racing',
       speedAdjustment: 0,
-      notes: 'Track closed for summer; Arizona heat unsuitable for racing; season resumes in October'
-    }
+      notes:
+        'Track closed for summer; Arizona heat unsuitable for racing; season resumes in October',
+    },
   ],
 
   winningTimes: [
@@ -209,7 +221,7 @@ export const turfParadise: TrackData = {
       surface: 'dirt',
       claimingAvg: 57.5,
       allowanceAvg: 56.2,
-      stakesAvg: 55.5
+      stakesAvg: 55.5,
     },
     {
       distance: '5.5f',
@@ -217,7 +229,7 @@ export const turfParadise: TrackData = {
       surface: 'dirt',
       claimingAvg: 63.5,
       allowanceAvg: 62.2,
-      stakesAvg: 61.5
+      stakesAvg: 61.5,
     },
     {
       distance: '6f',
@@ -226,7 +238,7 @@ export const turfParadise: TrackData = {
       // Track record: 1:07.20
       claimingAvg: 69.8,
       allowanceAvg: 68.5,
-      stakesAvg: 67.5
+      stakesAvg: 67.5,
     },
     {
       distance: '6.5f',
@@ -234,7 +246,7 @@ export const turfParadise: TrackData = {
       surface: 'dirt',
       claimingAvg: 76.0,
       allowanceAvg: 74.8,
-      stakesAvg: 73.8
+      stakesAvg: 73.8,
     },
     {
       distance: '7f',
@@ -242,7 +254,7 @@ export const turfParadise: TrackData = {
       surface: 'dirt',
       claimingAvg: 82.5,
       allowanceAvg: 81.2,
-      stakesAvg: 80.2
+      stakesAvg: 80.2,
     },
     {
       distance: '1m',
@@ -250,7 +262,7 @@ export const turfParadise: TrackData = {
       surface: 'dirt',
       claimingAvg: 96.0,
       allowanceAvg: 94.5,
-      stakesAvg: 93.0
+      stakesAvg: 93.0,
     },
     {
       distance: '1m70y',
@@ -258,7 +270,7 @@ export const turfParadise: TrackData = {
       surface: 'dirt',
       claimingAvg: 100.5,
       allowanceAvg: 99.0,
-      stakesAvg: 97.5
+      stakesAvg: 97.5,
     },
     {
       distance: '1 1/16m',
@@ -266,7 +278,7 @@ export const turfParadise: TrackData = {
       surface: 'dirt',
       claimingAvg: 103.0,
       allowanceAvg: 101.5,
-      stakesAvg: 100.0
+      stakesAvg: 100.0,
     },
     {
       distance: '1 1/8m',
@@ -275,7 +287,7 @@ export const turfParadise: TrackData = {
       // Track record: 1:46.80
       claimingAvg: 109.5,
       allowanceAvg: 108.0,
-      stakesAvg: 106.5
+      stakesAvg: 106.5,
     },
     {
       distance: '1 1/4m',
@@ -283,7 +295,7 @@ export const turfParadise: TrackData = {
       surface: 'dirt',
       claimingAvg: 123.0,
       allowanceAvg: 121.0,
-      stakesAvg: 118.5
+      stakesAvg: 118.5,
     },
     // Turf times
     {
@@ -292,7 +304,7 @@ export const turfParadise: TrackData = {
       surface: 'turf',
       claimingAvg: 56.5,
       allowanceAvg: 55.2,
-      stakesAvg: 54.2
+      stakesAvg: 54.2,
     },
     {
       distance: '1m',
@@ -300,7 +312,7 @@ export const turfParadise: TrackData = {
       surface: 'turf',
       claimingAvg: 95.0,
       allowanceAvg: 93.5,
-      stakesAvg: 92.0
+      stakesAvg: 92.0,
     },
     {
       distance: '1 1/16m',
@@ -308,7 +320,7 @@ export const turfParadise: TrackData = {
       surface: 'turf',
       claimingAvg: 101.5,
       allowanceAvg: 100.0,
-      stakesAvg: 98.5
+      stakesAvg: 98.5,
     },
     {
       distance: '1 1/8m',
@@ -316,10 +328,10 @@ export const turfParadise: TrackData = {
       surface: 'turf',
       claimingAvg: 108.5,
       allowanceAvg: 107.0,
-      stakesAvg: 105.5
-    }
+      stakesAvg: 105.5,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

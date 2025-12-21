@@ -1,24 +1,24 @@
-import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import type { LegalContentType } from '../legal'
-import { logger } from '../../services/logging'
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { LegalContentType } from '../legal';
+import { logger } from '../../services/logging';
 
 interface SidebarProps {
-  isOpen: boolean
-  onToggle: () => void
-  trackDbLoaded?: boolean
-  onOpenLegalModal?: (type: LegalContentType) => void
-  onNavigateToAccount?: () => void
-  onNavigateToHelp?: () => void
+  isOpen: boolean;
+  onToggle: () => void;
+  trackDbLoaded?: boolean;
+  onOpenLegalModal?: (type: LegalContentType) => void;
+  onNavigateToAccount?: () => void;
+  onNavigateToHelp?: () => void;
 }
 
 interface NavItem {
-  id: string
-  label: string
-  icon: string
-  active?: boolean
-  disabled?: boolean
-  badge?: string
+  id: string;
+  label: string;
+  icon: string;
+  active?: boolean;
+  disabled?: boolean;
+  badge?: string;
 }
 
 const navItems: NavItem[] = [
@@ -26,12 +26,19 @@ const navItems: NavItem[] = [
   { id: 'settings', label: 'Settings', icon: 'settings', disabled: true },
   { id: 'help', label: 'Help Center', icon: 'help_outline', disabled: false },
   { id: 'signout', label: 'Sign Out', icon: 'logout', disabled: true },
-]
+];
 
-const VERSION = 'v2.0.0'
+const VERSION = 'v2.0.0';
 
-export function Sidebar({ isOpen, onToggle, trackDbLoaded = true, onOpenLegalModal, onNavigateToAccount, onNavigateToHelp }: SidebarProps) {
-  const [activeItem, setActiveItem] = useState('dashboard')
+export function Sidebar({
+  isOpen,
+  onToggle,
+  trackDbLoaded = true,
+  onOpenLegalModal,
+  onNavigateToAccount,
+  onNavigateToHelp,
+}: SidebarProps) {
+  const [activeItem, setActiveItem] = useState('dashboard');
 
   // Handle legal link click
   const handleLegalClick = useCallback(
@@ -39,40 +46,40 @@ export function Sidebar({ isOpen, onToggle, trackDbLoaded = true, onOpenLegalMod
       logger.logInfo('Legal link clicked from sidebar', {
         component: 'Sidebar',
         legalType: type,
-      })
-      onOpenLegalModal?.(type)
+      });
+      onOpenLegalModal?.(type);
     },
     [onOpenLegalModal]
-  )
+  );
 
   // Handle account navigation
   const handleAccountClick = useCallback(() => {
     logger.logInfo('Account settings clicked from sidebar', {
       component: 'Sidebar',
-    })
-    onNavigateToAccount?.()
-    onToggle() // Close sidebar on mobile
-  }, [onNavigateToAccount, onToggle])
+    });
+    onNavigateToAccount?.();
+    onToggle(); // Close sidebar on mobile
+  }, [onNavigateToAccount, onToggle]);
 
   // Handle help navigation
   const handleHelpClick = useCallback(() => {
     logger.logInfo('Help Center clicked from sidebar', {
       component: 'Sidebar',
-    })
-    onNavigateToHelp?.()
-    onToggle() // Close sidebar on mobile
-  }, [onNavigateToHelp, onToggle])
+    });
+    onNavigateToHelp?.();
+    onToggle(); // Close sidebar on mobile
+  }, [onNavigateToHelp, onToggle]);
 
   // Close sidebar on escape key
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
-        onToggle()
+        onToggle();
       }
-    }
-    window.addEventListener('keydown', handleEsc)
-    return () => window.removeEventListener('keydown', handleEsc)
-  }, [isOpen, onToggle])
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onToggle]);
 
   const sidebarVariants = {
     open: {
@@ -83,18 +90,18 @@ export function Sidebar({ isOpen, onToggle, trackDbLoaded = true, onOpenLegalMod
       x: '-100%',
       transition: { type: 'spring' as const, stiffness: 300, damping: 30 },
     },
-  }
+  };
 
   const overlayVariants = {
     open: { opacity: 1 },
     closed: { opacity: 0 },
-  }
+  };
 
   const handleNavClick = (item: NavItem) => {
     if (!item.disabled) {
-      setActiveItem(item.id)
+      setActiveItem(item.id);
     }
-  }
+  };
 
   return (
     <>
@@ -161,42 +168,51 @@ export function Sidebar({ isOpen, onToggle, trackDbLoaded = true, onOpenLegalMod
         )}
       </AnimatePresence>
     </>
-  )
+  );
 }
 
 interface SidebarContentProps {
-  activeItem: string
-  onNavClick: (item: NavItem) => void
-  trackDbLoaded: boolean
-  onLegalClick: (type: LegalContentType) => void
-  onAccountClick: () => void
-  hasAccountNavigation: boolean
-  onHelpClick: () => void
-  hasHelpNavigation: boolean
+  activeItem: string;
+  onNavClick: (item: NavItem) => void;
+  trackDbLoaded: boolean;
+  onLegalClick: (type: LegalContentType) => void;
+  onAccountClick: () => void;
+  hasAccountNavigation: boolean;
+  onHelpClick: () => void;
+  hasHelpNavigation: boolean;
 }
 
-function SidebarContent({ activeItem, onNavClick, trackDbLoaded, onLegalClick, onAccountClick, hasAccountNavigation, onHelpClick, hasHelpNavigation }: SidebarContentProps) {
+function SidebarContent({
+  activeItem,
+  onNavClick,
+  trackDbLoaded,
+  onLegalClick,
+  onAccountClick,
+  hasAccountNavigation,
+  onHelpClick,
+  hasHelpNavigation,
+}: SidebarContentProps) {
   // Override navItems to enable account-related items when auth is available
   const currentNavItems = navItems.map((item) => {
     if (item.id === 'settings' && hasAccountNavigation) {
-      return { ...item, label: 'Account', icon: 'account_circle', disabled: false }
+      return { ...item, label: 'Account', icon: 'account_circle', disabled: false };
     }
     // Help is enabled when help navigation is available
     if (item.id === 'help' && hasHelpNavigation) {
-      return { ...item, disabled: false }
+      return { ...item, disabled: false };
     }
-    return item
-  })
+    return item;
+  });
 
   const handleItemClick = (item: NavItem) => {
     if (item.id === 'settings' && hasAccountNavigation) {
-      onAccountClick()
+      onAccountClick();
     } else if (item.id === 'help' && hasHelpNavigation) {
-      onHelpClick()
+      onHelpClick();
     } else {
-      onNavClick(item)
+      onNavClick(item);
     }
-  }
+  };
   return (
     <div className="sidebar-content">
       {/* Logo section */}
@@ -223,9 +239,7 @@ function SidebarContent({ activeItem, onNavClick, trackDbLoaded, onLegalClick, o
               >
                 <span className="material-icons sidebar-nav-icon">{item.icon}</span>
                 <span className="sidebar-nav-label">{item.label}</span>
-                {item.disabled && (
-                  <span className="sidebar-nav-badge">Soon</span>
-                )}
+                {item.disabled && <span className="sidebar-nav-badge">Soon</span>}
               </button>
             </li>
           ))}
@@ -285,7 +299,7 @@ function SidebarContent({ activeItem, onNavClick, trackDbLoaded, onLegalClick, o
         <span className="sidebar-copyright">Powered by AI Analytics</span>
       </div>
     </div>
-  )
+  );
 }
 
-export default Sidebar
+export default Sidebar;

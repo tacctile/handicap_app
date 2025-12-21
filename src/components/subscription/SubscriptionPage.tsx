@@ -5,10 +5,10 @@
  * Displays value proposition, PricingCard, and legal links.
  */
 
-import { useState } from 'react'
-import { PricingCard } from './PricingCard'
-import { LegalModal, type LegalContentType } from '../legal'
-import { logger } from '../../services/logging'
+import { useState } from 'react';
+import { PricingCard } from './PricingCard';
+import { LegalModal, type LegalContentType } from '../legal';
+import { logger } from '../../services/logging';
 
 // ============================================================================
 // TYPES
@@ -16,9 +16,9 @@ import { logger } from '../../services/logging'
 
 export interface SubscriptionPageProps {
   /** Optional callback after successful subscription initiation */
-  onSubscribe?: () => void
+  onSubscribe?: () => void;
   /** Context text explaining what feature requires subscription */
-  context?: string
+  context?: string;
 }
 
 // ============================================================================
@@ -136,7 +136,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '16px',
     color: '#10b981',
   },
-}
+};
 
 // ============================================================================
 // COMPONENT
@@ -154,25 +154,25 @@ const styles: Record<string, React.CSSProperties> = {
  * ```
  */
 export function SubscriptionPage({ onSubscribe, context }: SubscriptionPageProps) {
-  const [legalModalType, setLegalModalType] = useState<LegalContentType | null>(null)
-  const [hoveredLink, setHoveredLink] = useState<string | null>(null)
+  const [legalModalType, setLegalModalType] = useState<LegalContentType | null>(null);
+  const [hoveredLink, setHoveredLink] = useState<string | null>(null);
 
   const handleOpenLegal = (type: LegalContentType) => {
     logger.logInfo('Opening legal modal from subscription page', {
       component: 'SubscriptionPage',
       type,
-    })
-    setLegalModalType(type)
-  }
+    });
+    setLegalModalType(type);
+  };
 
   const handleCloseLegal = () => {
-    setLegalModalType(null)
-  }
+    setLegalModalType(null);
+  };
 
   const getLegalLinkStyle = (linkType: string) => ({
     ...styles.legalLink,
     ...(hoveredLink === linkType ? styles.legalLinkHover : {}),
-  })
+  });
 
   return (
     <div style={styles.container}>
@@ -185,9 +185,7 @@ export function SubscriptionPage({ onSubscribe, context }: SubscriptionPageProps
           </div>
 
           <h1 style={styles.title}>Unlock Pro Features</h1>
-          <p style={styles.subtitle}>
-            Professional-grade horse racing analysis at your fingertips
-          </p>
+          <p style={styles.subtitle}>Professional-grade horse racing analysis at your fingertips</p>
 
           {context && (
             <div style={styles.contextText}>
@@ -256,14 +254,10 @@ export function SubscriptionPage({ onSubscribe, context }: SubscriptionPageProps
       </div>
 
       {legalModalType && (
-        <LegalModal
-          type={legalModalType}
-          isOpen={true}
-          onClose={handleCloseLegal}
-        />
+        <LegalModal type={legalModalType} isOpen={true} onClose={handleCloseLegal} />
       )}
     </div>
-  )
+  );
 }
 
-export default SubscriptionPage
+export default SubscriptionPage;

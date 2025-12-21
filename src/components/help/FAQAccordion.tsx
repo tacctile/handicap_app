@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import type { FAQItem } from '../../help/faq'
-import { logger } from '../../services/logging'
+import { useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { FAQItem } from '../../help/faq';
+import { logger } from '../../services/logging';
 
 interface FAQAccordionProps {
-  items: FAQItem[]
+  items: FAQItem[];
 }
 
 /**
@@ -15,19 +15,19 @@ interface FAQAccordionProps {
  * Includes smooth expand/collapse animation.
  */
 export function FAQAccordion({ items }: FAQAccordionProps) {
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleToggle = useCallback((id: string) => {
     setExpandedId((current) => {
-      const newValue = current === id ? null : id
+      const newValue = current === id ? null : id;
       logger.logInfo('FAQ item toggled', {
         component: 'FAQAccordion',
         itemId: id,
         action: newValue === id ? 'expand' : 'collapse',
-      })
-      return newValue
-    })
-  }, [])
+      });
+      return newValue;
+    });
+  }, []);
 
   return (
     <div className="faq-accordion">
@@ -40,13 +40,13 @@ export function FAQAccordion({ items }: FAQAccordionProps) {
         />
       ))}
     </div>
-  )
+  );
 }
 
 interface FAQAccordionItemProps {
-  item: FAQItem
-  isExpanded: boolean
-  onToggle: () => void
+  item: FAQItem;
+  isExpanded: boolean;
+  onToggle: () => void;
 }
 
 function FAQAccordionItem({ item, isExpanded, onToggle }: FAQAccordionItemProps) {
@@ -82,7 +82,7 @@ function FAQAccordionItem({ item, isExpanded, onToggle }: FAQAccordionItemProps)
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }
 
-export default FAQAccordion
+export default FAQAccordion;

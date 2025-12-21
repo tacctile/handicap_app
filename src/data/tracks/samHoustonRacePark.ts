@@ -14,7 +14,7 @@
  * NOTE: Winter racing (January-March); Houston Ladies Classic (G3); fair to speed-favoring
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const samHoustonRacePark: TrackData = {
   code: 'HOU',
@@ -33,7 +33,7 @@ export const samHoustonRacePark: TrackData = {
       // Source: Texas Racing Commission - 80 feet wide
       trackWidth: 80,
       // Source: Sam Houston - chutes at 6f and 7f
-      chutes: [6, 7]
+      chutes: [6, 7],
     },
     turf: {
       // Source: Sam Houston Race Park official - 7/8 mile turf course
@@ -44,8 +44,8 @@ export const samHoustonRacePark: TrackData = {
       turnRadius: 250,
       // Source: Texas Racing Commission
       trackWidth: 70,
-      chutes: [8, 10]
-    }
+      chutes: [8, 10],
+    },
   },
 
   postPositionBias: {
@@ -62,7 +62,8 @@ export const samHoustonRacePark: TrackData = {
         // Sample: 650+ dirt sprints
         winPercentByPost: [12.5, 14.0, 14.5, 13.2, 11.8, 10.5, 9.2, 7.8, 4.5, 2.0],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Fair to speed-favoring; posts 2-4 slight advantage; 1,011-ft stretch; inside saves ground'
+        biasDescription:
+          'Fair to speed-favoring; posts 2-4 slight advantage; 1,011-ft stretch; inside saves ground',
       },
       {
         distance: 'route',
@@ -76,8 +77,9 @@ export const samHoustonRacePark: TrackData = {
         // Sample: 400+ dirt routes
         winPercentByPost: [11.5, 13.0, 14.0, 14.2, 12.5, 11.2, 9.8, 7.8, 4.2, 1.8],
         favoredPosts: [3, 4, 5],
-        biasDescription: 'Fair in routes; posts 3-5 favored; 1,011-ft stretch aids closers; rail variable in winter'
-      }
+        biasDescription:
+          'Fair in routes; posts 3-5 favored; 1,011-ft stretch aids closers; rail variable in winter',
+      },
     ],
     turf: [
       {
@@ -91,7 +93,8 @@ export const samHoustonRacePark: TrackData = {
         // Sample: 200+ turf sprints
         winPercentByPost: [14.0, 14.5, 13.5, 12.0, 11.0, 10.2, 9.5, 8.5, 5.0, 1.8],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Inside advantage in turf sprints; posts 1-3 favored; ground savings matter'
+        biasDescription:
+          'Inside advantage in turf sprints; posts 1-3 favored; ground savings matter',
       },
       {
         distance: 'route',
@@ -103,9 +106,10 @@ export const samHoustonRacePark: TrackData = {
         // Sample: 250+ turf routes
         winPercentByPost: [13.5, 14.0, 13.2, 12.5, 11.2, 10.5, 9.8, 8.5, 5.0, 1.8],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Fair in turf routes; inside posts 1-3 slight edge; winter conditions variable'
-      }
-    ]
+        biasDescription:
+          'Fair in turf routes; inside posts 1-3 slight edge; winter conditions variable',
+      },
+    ],
   },
 
   speedBias: [
@@ -119,7 +123,8 @@ export const samHoustonRacePark: TrackData = {
       // Houston Ladies Classic often contested
       earlySpeedWinRate: 55,
       paceAdvantageRating: 6,
-      description: 'Fair to slightly speed-favoring; 55% early speed win rate; 1,011-ft stretch gives closers chance; conditions variable'
+      description:
+        'Fair to slightly speed-favoring; 55% early speed win rate; 1,011-ft stretch gives closers chance; conditions variable',
     },
     {
       surface: 'turf',
@@ -129,8 +134,9 @@ export const samHoustonRacePark: TrackData = {
       // Slightly favors speed when firm
       earlySpeedWinRate: 52,
       paceAdvantageRating: 5,
-      description: 'Fair turf; 52% early speed win rate; winter conditions can soften surface; adaptable riders excel'
-    }
+      description:
+        'Fair turf; 52% early speed win rate; winter conditions can soften surface; adaptable riders excel',
+    },
   ],
 
   surfaces: [
@@ -140,9 +146,10 @@ export const samHoustonRacePark: TrackData = {
       // Sandy composition with good drainage
       // Winter conditions can affect surface
       // Maintained for heavy use
-      composition: 'Sandy loam over limestone base; 3-inch cushion depth; good drainage for winter meets',
+      composition:
+        'Sandy loam over limestone base; 3-inch cushion depth; good drainage for winter meets',
       playingStyle: 'fair',
-      drainage: 'good'
+      drainage: 'good',
     },
     {
       baseType: 'turf',
@@ -151,8 +158,8 @@ export const samHoustonRacePark: TrackData = {
       // Can be affected by Gulf Coast weather
       composition: 'Bermuda grass base with ryegrass overseed for winter racing; variable firmness',
       playingStyle: 'fair',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -164,7 +171,7 @@ export const samHoustonRacePark: TrackData = {
       // Gulf Coast winter weather variable
       typicalCondition: 'Fast to Good; rain possible',
       speedAdjustment: 0,
-      notes: 'Peak of meet; Houston Ladies Classic (G3) in January; Gulf Coast weather variable'
+      notes: 'Peak of meet; Houston Ladies Classic (G3) in January; Gulf Coast weather variable',
     },
     {
       season: 'spring',
@@ -174,7 +181,7 @@ export const samHoustonRacePark: TrackData = {
       // Improving conditions
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Late season racing; warming conditions; meet ends late March or April'
+      notes: 'Late season racing; warming conditions; meet ends late March or April',
     },
     {
       season: 'summer',
@@ -182,7 +189,7 @@ export const samHoustonRacePark: TrackData = {
       // Source: Sam Houston closed for summer/fall
       typicalCondition: 'No Racing',
       speedAdjustment: 0,
-      notes: 'Track closed for thoroughbred racing; quarter horse meet may continue'
+      notes: 'Track closed for thoroughbred racing; quarter horse meet may continue',
     },
     {
       season: 'fall',
@@ -192,8 +199,8 @@ export const samHoustonRacePark: TrackData = {
       // Building toward winter stakes
       typicalCondition: 'Fast to Good',
       speedAdjustment: 0,
-      notes: 'Meet opens in November or December; building toward stakes season'
-    }
+      notes: 'Meet opens in November or December; building toward stakes season',
+    },
   ],
 
   winningTimes: [
@@ -205,7 +212,7 @@ export const samHoustonRacePark: TrackData = {
       surface: 'dirt',
       claimingAvg: 58.2,
       allowanceAvg: 57.0,
-      stakesAvg: 55.8
+      stakesAvg: 55.8,
     },
     {
       distance: '5.5f',
@@ -213,7 +220,7 @@ export const samHoustonRacePark: TrackData = {
       surface: 'dirt',
       claimingAvg: 64.5,
       allowanceAvg: 63.2,
-      stakesAvg: 62.0
+      stakesAvg: 62.0,
     },
     {
       distance: '6f',
@@ -222,7 +229,7 @@ export const samHoustonRacePark: TrackData = {
       // Track record: 1:08.20
       claimingAvg: 70.8,
       allowanceAvg: 69.5,
-      stakesAvg: 68.2
+      stakesAvg: 68.2,
     },
     {
       distance: '6.5f',
@@ -230,7 +237,7 @@ export const samHoustonRacePark: TrackData = {
       surface: 'dirt',
       claimingAvg: 77.0,
       allowanceAvg: 75.8,
-      stakesAvg: 74.5
+      stakesAvg: 74.5,
     },
     {
       distance: '7f',
@@ -238,7 +245,7 @@ export const samHoustonRacePark: TrackData = {
       surface: 'dirt',
       claimingAvg: 83.5,
       allowanceAvg: 82.0,
-      stakesAvg: 80.5
+      stakesAvg: 80.5,
     },
     {
       distance: '1m',
@@ -246,7 +253,7 @@ export const samHoustonRacePark: TrackData = {
       surface: 'dirt',
       claimingAvg: 97.0,
       allowanceAvg: 95.5,
-      stakesAvg: 94.0
+      stakesAvg: 94.0,
     },
     {
       distance: '1m70y',
@@ -254,7 +261,7 @@ export const samHoustonRacePark: TrackData = {
       surface: 'dirt',
       claimingAvg: 101.5,
       allowanceAvg: 100.0,
-      stakesAvg: 98.5
+      stakesAvg: 98.5,
     },
     {
       distance: '1 1/16m',
@@ -262,7 +269,7 @@ export const samHoustonRacePark: TrackData = {
       surface: 'dirt',
       claimingAvg: 104.0,
       allowanceAvg: 102.5,
-      stakesAvg: 101.0
+      stakesAvg: 101.0,
     },
     {
       distance: '1 1/8m',
@@ -272,7 +279,7 @@ export const samHoustonRacePark: TrackData = {
       // Track record: 1:48.00
       claimingAvg: 111.0,
       allowanceAvg: 109.0,
-      stakesAvg: 107.0
+      stakesAvg: 107.0,
     },
     {
       distance: '1 1/4m',
@@ -280,7 +287,7 @@ export const samHoustonRacePark: TrackData = {
       surface: 'dirt',
       claimingAvg: 124.5,
       allowanceAvg: 122.0,
-      stakesAvg: 120.0
+      stakesAvg: 120.0,
     },
     // Turf times
     {
@@ -289,7 +296,7 @@ export const samHoustonRacePark: TrackData = {
       surface: 'turf',
       claimingAvg: 57.0,
       allowanceAvg: 55.8,
-      stakesAvg: 54.5
+      stakesAvg: 54.5,
     },
     {
       distance: '5.5f',
@@ -297,7 +304,7 @@ export const samHoustonRacePark: TrackData = {
       surface: 'turf',
       claimingAvg: 63.0,
       allowanceAvg: 61.8,
-      stakesAvg: 60.5
+      stakesAvg: 60.5,
     },
     {
       distance: '1m',
@@ -305,7 +312,7 @@ export const samHoustonRacePark: TrackData = {
       surface: 'turf',
       claimingAvg: 95.5,
       allowanceAvg: 94.0,
-      stakesAvg: 92.5
+      stakesAvg: 92.5,
     },
     {
       distance: '1 1/16m',
@@ -313,7 +320,7 @@ export const samHoustonRacePark: TrackData = {
       surface: 'turf',
       claimingAvg: 102.0,
       allowanceAvg: 100.5,
-      stakesAvg: 99.0
+      stakesAvg: 99.0,
     },
     {
       distance: '1 1/8m',
@@ -321,10 +328,10 @@ export const samHoustonRacePark: TrackData = {
       surface: 'turf',
       claimingAvg: 109.0,
       allowanceAvg: 107.5,
-      stakesAvg: 106.0
-    }
+      stakesAvg: 106.0,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

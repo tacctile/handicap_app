@@ -12,7 +12,7 @@
  * - Below Average (0-3): Limited success as broodmare sire
  */
 
-import type { DamsireProfile } from './types'
+import type { DamsireProfile } from './types';
 
 // ============================================================================
 // DAMSIRE TIER CONSTANTS
@@ -23,9 +23,9 @@ export const DAMSIRE_TIER_THRESHOLDS = {
   strong: { minIndex: 1.2, minScore: 8, maxScore: 11 },
   average: { minIndex: 0.9, minScore: 4, maxScore: 7 },
   belowAverage: { minIndex: 0, minScore: 0, maxScore: 3 },
-} as const
+} as const;
 
-export type DamsireTier = keyof typeof DAMSIRE_TIER_THRESHOLDS
+export type DamsireTier = keyof typeof DAMSIRE_TIER_THRESHOLDS;
 
 // ============================================================================
 // EXTENDED DAMSIRE PROFILE
@@ -33,13 +33,13 @@ export type DamsireTier = keyof typeof DAMSIRE_TIER_THRESHOLDS
 
 export interface ExtendedDamsireProfile extends DamsireProfile {
   /** Damsire tier classification */
-  tier: DamsireTier
+  tier: DamsireTier;
   /** Base score for this damsire (0-15) */
-  baseScore: number
+  baseScore: number;
   /** Notable offspring through daughters */
-  notableThroughDaughters: string[]
+  notableThroughDaughters: string[];
   /** Brief notes */
-  notes: string
+  notes: string;
 }
 
 // ============================================================================
@@ -67,8 +67,8 @@ export const DAMSIRE_DATABASE: Record<string, ExtendedDamsireProfile> = {
     notes: 'Elite broodmare sire, stamina and class influence',
   },
 
-  'GIANT\'S CAUSEWAY': {
-    name: 'Giant\'s Causeway',
+  "GIANT'S CAUSEWAY": {
+    name: "Giant's Causeway",
     broodmareSireIndex: 1.9,
     surfaceInfluence: 'versatile',
     staminaInfluence: 70,
@@ -79,15 +79,15 @@ export const DAMSIRE_DATABASE: Record<string, ExtendedDamsireProfile> = {
     notes: 'Versatile broodmare sire, international influence',
   },
 
-  'UNBRIDLED\'S SONG': {
-    name: 'Unbridled\'s Song',
+  "UNBRIDLED'S SONG": {
+    name: "Unbridled's Song",
     broodmareSireIndex: 1.85,
     surfaceInfluence: 'dirt',
     staminaInfluence: 65,
     isKnown: true,
     tier: 'elite',
     baseScore: 14,
-    notableThroughDaughters: ['Arrogate', 'Liam\'s Map'],
+    notableThroughDaughters: ['Arrogate', "Liam's Map"],
     notes: 'Strong dirt influence, classic stamina',
   },
 
@@ -127,7 +127,7 @@ export const DAMSIRE_DATABASE: Record<string, ExtendedDamsireProfile> = {
     notes: 'Strong dirt broodmare sire',
   },
 
-  'TAPIT': {
+  TAPIT: {
     name: 'Tapit',
     broodmareSireIndex: 1.65,
     surfaceInfluence: 'dirt',
@@ -151,8 +151,8 @@ export const DAMSIRE_DATABASE: Record<string, ExtendedDamsireProfile> = {
     notes: 'Stamina influence, classic types',
   },
 
-  'MEDAGLIA D\'ORO': {
-    name: 'Medaglia d\'Oro',
+  "MEDAGLIA D'ORO": {
+    name: "Medaglia d'Oro",
     broodmareSireIndex: 1.55,
     surfaceInfluence: 'versatile',
     staminaInfluence: 68,
@@ -179,7 +179,7 @@ export const DAMSIRE_DATABASE: Record<string, ExtendedDamsireProfile> = {
   // STRONG TIER (8-11 points)
   // ========================================================================
 
-  'PULPIT': {
+  PULPIT: {
     name: 'Pulpit',
     broodmareSireIndex: 1.45,
     surfaceInfluence: 'dirt',
@@ -203,7 +203,7 @@ export const DAMSIRE_DATABASE: Record<string, ExtendedDamsireProfile> = {
     notes: 'Speed influence, versatile surface',
   },
 
-  'TIZNOW': {
+  TIZNOW: {
     name: 'Tiznow',
     broodmareSireIndex: 1.4,
     surfaceInfluence: 'dirt',
@@ -212,10 +212,10 @@ export const DAMSIRE_DATABASE: Record<string, ExtendedDamsireProfile> = {
     tier: 'strong',
     baseScore: 11,
     notableThroughDaughters: ['Tourist', 'Destin'],
-    notes: 'Stamina influence, Breeders\' Cup type',
+    notes: "Stamina influence, Breeders' Cup type",
   },
 
-  'SPEIGHTSTOWN': {
+  SPEIGHTSTOWN: {
     name: 'Speightstown',
     broodmareSireIndex: 1.35,
     surfaceInfluence: 'dirt',
@@ -263,7 +263,7 @@ export const DAMSIRE_DATABASE: Record<string, ExtendedDamsireProfile> = {
     notes: 'Turf influence, quality runners',
   },
 
-  'CURLIN': {
+  CURLIN: {
     name: 'Curlin',
     broodmareSireIndex: 1.3,
     surfaceInfluence: 'dirt',
@@ -271,11 +271,11 @@ export const DAMSIRE_DATABASE: Record<string, ExtendedDamsireProfile> = {
     isKnown: true,
     tier: 'strong',
     baseScore: 10,
-    notableThroughDaughters: ['Nest', 'Cody\'s Wish'],
+    notableThroughDaughters: ['Nest', "Cody's Wish"],
     notes: 'Rising broodmare sire, stamina',
   },
 
-  'BERNARDINI': {
+  BERNARDINI: {
     name: 'Bernardini',
     broodmareSireIndex: 1.28,
     surfaceInfluence: 'dirt',
@@ -287,8 +287,8 @@ export const DAMSIRE_DATABASE: Record<string, ExtendedDamsireProfile> = {
     notes: 'Solid broodmare sire, Gun Runner success',
   },
 
-  'KITTEN\'S JOY': {
-    name: 'Kitten\'s Joy',
+  "KITTEN'S JOY": {
+    name: "Kitten's Joy",
     broodmareSireIndex: 1.25,
     surfaceInfluence: 'turf',
     staminaInfluence: 72,
@@ -307,7 +307,7 @@ export const DAMSIRE_DATABASE: Record<string, ExtendedDamsireProfile> = {
     isKnown: true,
     tier: 'strong',
     baseScore: 9,
-    notableThroughDaughters: ['Orb', 'Declan\'s Moon'],
+    notableThroughDaughters: ['Orb', "Declan's Moon"],
     notes: 'Solid broodmare sire influence',
   },
 
@@ -463,7 +463,7 @@ export const DAMSIRE_DATABASE: Record<string, ExtendedDamsireProfile> = {
   // BELOW AVERAGE TIER (0-3 points)
   // ========================================================================
 
-  'APTITUDE': {
+  APTITUDE: {
     name: 'Aptitude',
     broodmareSireIndex: 0.85,
     surfaceInfluence: 'dirt',
@@ -486,7 +486,7 @@ export const DAMSIRE_DATABASE: Record<string, ExtendedDamsireProfile> = {
     notableThroughDaughters: [],
     notes: 'Champion, limited stud success',
   },
-}
+};
 
 // ============================================================================
 // LOOKUP FUNCTIONS
@@ -496,11 +496,7 @@ export const DAMSIRE_DATABASE: Record<string, ExtendedDamsireProfile> = {
  * Normalize a damsire name for database lookup
  */
 export function normalizeDamsireName(name: string): string {
-  return name
-    .toUpperCase()
-    .trim()
-    .replace(/['']/g, '\'')
-    .replace(/\s+/g, ' ')
+  return name.toUpperCase().trim().replace(/['']/g, "'").replace(/\s+/g, ' ');
 }
 
 /**
@@ -508,15 +504,15 @@ export function normalizeDamsireName(name: string): string {
  * Returns the damsire profile if found, null otherwise
  */
 export function lookupDamsire(damsireName: string): ExtendedDamsireProfile | null {
-  const normalized = normalizeDamsireName(damsireName)
-  return DAMSIRE_DATABASE[normalized] || null
+  const normalized = normalizeDamsireName(damsireName);
+  return DAMSIRE_DATABASE[normalized] || null;
 }
 
 /**
  * Get all damsire names in the database
  */
 export function getAllDamsireNames(): string[] {
-  return Object.keys(DAMSIRE_DATABASE)
+  return Object.keys(DAMSIRE_DATABASE);
 }
 
 /**
@@ -529,11 +525,11 @@ export function getAllDamsireNames(): string[] {
 export function calculateDamsireScore(
   damsireName: string,
   context?: {
-    surface?: string
-    isRoute?: boolean
+    surface?: string;
+    isRoute?: boolean;
   }
 ): { score: number; profile: ExtendedDamsireProfile | null; reasoning: string } {
-  const profile = lookupDamsire(damsireName)
+  const profile = lookupDamsire(damsireName);
 
   if (!profile) {
     // Unknown damsire - give baseline score
@@ -541,38 +537,44 @@ export function calculateDamsireScore(
       score: 5,
       profile: null,
       reasoning: `Unknown damsire - baseline score`,
-    }
+    };
   }
 
-  let score = profile.baseScore
-  const reasons: string[] = [`${profile.name}: ${profile.tier} damsire (base ${profile.baseScore})`]
+  let score = profile.baseScore;
+  const reasons: string[] = [
+    `${profile.name}: ${profile.tier} damsire (base ${profile.baseScore})`,
+  ];
 
   // Surface fit bonus
-  if (context?.surface && profile.surfaceInfluence !== 'versatile' && profile.surfaceInfluence !== 'unknown') {
-    const surfaceLower = context.surface.toLowerCase()
+  if (
+    context?.surface &&
+    profile.surfaceInfluence !== 'versatile' &&
+    profile.surfaceInfluence !== 'unknown'
+  ) {
+    const surfaceLower = context.surface.toLowerCase();
     if (
       (surfaceLower === 'turf' && profile.surfaceInfluence === 'turf') ||
       (surfaceLower === 'dirt' && profile.surfaceInfluence === 'dirt')
     ) {
-      score += 1
-      reasons.push(`+1 surface fit`)
+      score += 1;
+      reasons.push(`+1 surface fit`);
     }
   }
 
   // Stamina influence for routes
   if (context?.isRoute && profile.staminaInfluence >= 70) {
-    score += 1
-    reasons.push(`+1 stamina for route`)
+    score += 1;
+    reasons.push(`+1 stamina for route`);
   }
 
   // Cap at 15
-  score = Math.min(15, Math.max(0, score))
+  score = Math.min(15, Math.max(0, score));
 
   return {
     score,
     profile,
     reasoning: reasons.join('; '),
-  }
+  };
 }
 
 /**
@@ -580,10 +582,14 @@ export function calculateDamsireScore(
  */
 export function getDamsireTierLabel(tier: DamsireTier): string {
   switch (tier) {
-    case 'elite': return 'Elite BMS'
-    case 'strong': return 'Strong BMS'
-    case 'average': return 'Average BMS'
-    case 'belowAverage': return 'Below Avg'
+    case 'elite':
+      return 'Elite BMS';
+    case 'strong':
+      return 'Strong BMS';
+    case 'average':
+      return 'Average BMS';
+    case 'belowAverage':
+      return 'Below Avg';
   }
 }
 
@@ -592,9 +598,13 @@ export function getDamsireTierLabel(tier: DamsireTier): string {
  */
 export function getDamsireTierColor(tier: DamsireTier): string {
   switch (tier) {
-    case 'elite': return '#22c55e'
-    case 'strong': return '#36d1da'
-    case 'average': return '#888888'
-    case 'belowAverage': return '#ef4444'
+    case 'elite':
+      return '#22c55e';
+    case 'strong':
+      return '#36d1da';
+    case 'average':
+      return '#888888';
+    case 'belowAverage':
+      return '#ef4444';
   }
 }

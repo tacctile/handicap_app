@@ -5,9 +5,9 @@
  */
 
 export interface FAQItem {
-  id: string
-  question: string
-  answer: string
+  id: string;
+  question: string;
+  answer: string;
 }
 
 export const FAQ_ITEMS: FAQItem[] = [
@@ -27,7 +27,7 @@ export const FAQ_ITEMS: FAQItem[] = [
     id: 'confidence-percentages',
     question: 'What do the confidence percentages mean?',
     answer:
-      "Confidence percentages indicate how strongly the algorithm rates a horse relative to the field. High confidence (70%+) means multiple scoring factors align favorably. Medium confidence (50-69%) indicates solid but not dominant scoring. Lower confidence means the horse has fewer standout factors. Confidence also factors in score separation from the field—a horse with moderate score but large gap to competitors may still show higher confidence.",
+      'Confidence percentages indicate how strongly the algorithm rates a horse relative to the field. High confidence (70%+) means multiple scoring factors align favorably. Medium confidence (50-69%) indicates solid but not dominant scoring. Lower confidence means the horse has fewer standout factors. Confidence also factors in score separation from the field—a horse with moderate score but large gap to competitors may still show higher confidence.',
   },
   {
     id: 'betting-tiers',
@@ -51,7 +51,7 @@ export const FAQ_ITEMS: FAQItem[] = [
     id: 'updating-odds',
     question: 'How do I update odds during the race?',
     answer:
-      "In the Race Detail view, you can manually update the morning line odds to reflect current tote board odds. Simply click on the odds field for any horse and enter the new value. The system will automatically recalculate value ratings and betting recommendations based on the updated odds. This is essential for finding overlays when public money shifts the odds.",
+      'In the Race Detail view, you can manually update the morning line odds to reflect current tote board odds. Simply click on the odds field for any horse and enter the new value. The system will automatically recalculate value ratings and betting recommendations based on the updated odds. This is essential for finding overlays when public money shifts the odds.',
   },
   {
     id: 'supported-tracks',
@@ -71,4 +71,4 @@ export const FAQ_ITEMS: FAQItem[] = [
     answer:
       "Horses with fewer than 8 starts trigger our 'Lightly Raced' protocol. The algorithm compensates for limited data by weighting breeding patterns, workout data, trainer debut statistics, and connection success rates more heavily. First-time starters receive breeding-based projections and are flagged for manual review. Their confidence percentages are adjusted to reflect the inherent uncertainty.",
   },
-]
+];

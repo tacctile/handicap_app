@@ -14,7 +14,7 @@
  * NOTE: May-October racing; Iowa Derby and Iowa Oaks; Thoroughbred/Quarter Horse meets
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const prairieMeadows: TrackData = {
   code: 'PRM',
@@ -33,7 +33,7 @@ export const prairieMeadows: TrackData = {
       // Source: Iowa Racing and Gaming Commission - 80 feet wide
       trackWidth: 80,
       // Source: Prairie Meadows - chutes at 6f and 7f
-      chutes: [6, 7]
+      chutes: [6, 7],
     },
     turf: {
       // Source: Prairie Meadows official - 7/8 mile turf course
@@ -44,8 +44,8 @@ export const prairieMeadows: TrackData = {
       turnRadius: 240,
       // Source: Iowa Racing and Gaming Commission
       trackWidth: 70,
-      chutes: [8, 10]
-    }
+      chutes: [8, 10],
+    },
   },
 
   postPositionBias: {
@@ -62,7 +62,8 @@ export const prairieMeadows: TrackData = {
         // Sample: 600+ dirt sprints annually
         winPercentByPost: [12.2, 13.8, 14.2, 13.2, 11.8, 10.5, 9.2, 7.8, 5.5, 1.8],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Fair to slight speed bias; posts 2-4 advantage; 990-ft stretch allows some late rally; Iowa surface plays honest'
+        biasDescription:
+          'Fair to slight speed bias; posts 2-4 advantage; 990-ft stretch allows some late rally; Iowa surface plays honest',
       },
       {
         distance: 'route',
@@ -75,8 +76,9 @@ export const prairieMeadows: TrackData = {
         // Sample: 350+ dirt routes annually
         winPercentByPost: [11.2, 12.8, 14.0, 14.2, 13.0, 11.5, 9.5, 7.5, 4.5, 1.8],
         favoredPosts: [3, 4, 5],
-        biasDescription: 'Fair in routes; posts 3-5 optimal; Iowa Derby favors stalkers; good rail position important'
-      }
+        biasDescription:
+          'Fair in routes; posts 3-5 optimal; Iowa Derby favors stalkers; good rail position important',
+      },
     ],
     turf: [
       {
@@ -89,7 +91,8 @@ export const prairieMeadows: TrackData = {
         // Sample: 130+ turf sprints annually
         winPercentByPost: [14.0, 14.5, 13.5, 12.2, 11.0, 10.0, 9.2, 8.2, 5.5, 1.9],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Inside advantage in turf sprints; posts 1-3 favored; ground savings critical'
+        biasDescription:
+          'Inside advantage in turf sprints; posts 1-3 favored; ground savings critical',
       },
       {
         distance: 'route',
@@ -101,9 +104,10 @@ export const prairieMeadows: TrackData = {
         // Sample: 170+ turf routes annually
         winPercentByPost: [13.5, 14.0, 13.8, 12.5, 11.2, 10.2, 9.5, 8.0, 5.5, 1.8],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Fair turf in routes; posts 1-3 slight edge; Iowa climate maintains consistent playing surface'
-      }
-    ]
+        biasDescription:
+          'Fair turf in routes; posts 1-3 slight edge; Iowa climate maintains consistent playing surface',
+      },
+    ],
   },
 
   speedBias: [
@@ -116,7 +120,8 @@ export const prairieMeadows: TrackData = {
       // Summer heat can create faster conditions
       earlySpeedWinRate: 54,
       paceAdvantageRating: 6,
-      description: 'Slight speed bias; 54% early speed win rate; surface plays fair to fast; hot Iowa summers can enhance speed advantage'
+      description:
+        'Slight speed bias; 54% early speed win rate; surface plays fair to fast; hot Iowa summers can enhance speed advantage',
     },
     {
       surface: 'turf',
@@ -126,8 +131,9 @@ export const prairieMeadows: TrackData = {
       // Bluegrass-based turf
       earlySpeedWinRate: 50,
       paceAdvantageRating: 5,
-      description: 'Fair turf; balanced between speed and closers; cool Iowa nights maintain turf integrity'
-    }
+      description:
+        'Fair turf; balanced between speed and closers; cool Iowa nights maintain turf integrity',
+    },
   ],
 
   surfaces: [
@@ -136,18 +142,20 @@ export const prairieMeadows: TrackData = {
       // Source: Iowa Racing and Gaming Commission, Prairie Meadows grounds crew
       // Sandy loam composition
       // Good drainage for Midwest storms
-      composition: 'Sandy loam cushion over clay base; 3-inch cushion depth; well-maintained for consistent play',
+      composition:
+        'Sandy loam cushion over clay base; 3-inch cushion depth; well-maintained for consistent play',
       playingStyle: 'fair',
-      drainage: 'good'
+      drainage: 'good',
     },
     {
       baseType: 'turf',
       // Source: Prairie Meadows grounds specifications
       // Kentucky bluegrass adapted to Iowa climate
-      composition: 'Kentucky bluegrass base; maintained for Iowa racing season; benefits from cool nights',
+      composition:
+        'Kentucky bluegrass base; maintained for Iowa racing season; benefits from cool nights',
       playingStyle: 'fair',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -159,7 +167,7 @@ export const prairieMeadows: TrackData = {
       // Track conditioning phase
       typicalCondition: 'Good to Fast; early season conditioning',
       speedAdjustment: 0,
-      notes: 'Thoroughbred meet opens; track being conditioned; variable spring conditions in Iowa'
+      notes: 'Thoroughbred meet opens; track being conditioned; variable spring conditions in Iowa',
     },
     {
       season: 'summer',
@@ -170,7 +178,8 @@ export const prairieMeadows: TrackData = {
       // Iowa Oaks
       typicalCondition: 'Fast; occasionally sloppy after storms',
       speedAdjustment: 1,
-      notes: 'Main stakes season; Iowa Derby and Iowa Oaks; hot conditions; thunderstorms common; speed bias increases'
+      notes:
+        'Main stakes season; Iowa Derby and Iowa Oaks; hot conditions; thunderstorms common; speed bias increases',
     },
     {
       season: 'fall',
@@ -180,7 +189,8 @@ export const prairieMeadows: TrackData = {
       // Cooling temperatures
       typicalCondition: 'Fast to Good',
       speedAdjustment: 0,
-      notes: 'Final weeks of meet; cooling temperatures; consistent track conditions; meet ends mid-October'
+      notes:
+        'Final weeks of meet; cooling temperatures; consistent track conditions; meet ends mid-October',
     },
     {
       season: 'winter',
@@ -188,8 +198,8 @@ export const prairieMeadows: TrackData = {
       // Source: Prairie Meadows closed for winter
       typicalCondition: 'No Racing',
       speedAdjustment: 0,
-      notes: 'Track closed late October through May; Iowa winter prevents Thoroughbred racing'
-    }
+      notes: 'Track closed late October through May; Iowa winter prevents Thoroughbred racing',
+    },
   ],
 
   winningTimes: [
@@ -201,7 +211,7 @@ export const prairieMeadows: TrackData = {
       surface: 'dirt',
       claimingAvg: 58.2,
       allowanceAvg: 57.0,
-      stakesAvg: 55.8
+      stakesAvg: 55.8,
     },
     {
       distance: '5.5f',
@@ -209,7 +219,7 @@ export const prairieMeadows: TrackData = {
       surface: 'dirt',
       claimingAvg: 64.5,
       allowanceAvg: 63.2,
-      stakesAvg: 62.0
+      stakesAvg: 62.0,
     },
     {
       distance: '6f',
@@ -218,7 +228,7 @@ export const prairieMeadows: TrackData = {
       // Track record: 1:08.20
       claimingAvg: 70.8,
       allowanceAvg: 69.5,
-      stakesAvg: 68.2
+      stakesAvg: 68.2,
     },
     {
       distance: '6.5f',
@@ -226,7 +236,7 @@ export const prairieMeadows: TrackData = {
       surface: 'dirt',
       claimingAvg: 77.0,
       allowanceAvg: 75.8,
-      stakesAvg: 74.5
+      stakesAvg: 74.5,
     },
     {
       distance: '7f',
@@ -234,7 +244,7 @@ export const prairieMeadows: TrackData = {
       surface: 'dirt',
       claimingAvg: 83.8,
       allowanceAvg: 82.2,
-      stakesAvg: 80.8
+      stakesAvg: 80.8,
     },
     {
       distance: '1m',
@@ -242,7 +252,7 @@ export const prairieMeadows: TrackData = {
       surface: 'dirt',
       claimingAvg: 97.0,
       allowanceAvg: 95.5,
-      stakesAvg: 94.0
+      stakesAvg: 94.0,
     },
     {
       distance: '1m70y',
@@ -250,7 +260,7 @@ export const prairieMeadows: TrackData = {
       surface: 'dirt',
       claimingAvg: 101.5,
       allowanceAvg: 100.0,
-      stakesAvg: 98.5
+      stakesAvg: 98.5,
     },
     {
       distance: '1 1/16m',
@@ -258,7 +268,7 @@ export const prairieMeadows: TrackData = {
       surface: 'dirt',
       claimingAvg: 104.0,
       allowanceAvg: 102.5,
-      stakesAvg: 101.0
+      stakesAvg: 101.0,
     },
     {
       distance: '1 1/8m',
@@ -267,7 +277,7 @@ export const prairieMeadows: TrackData = {
       // Track record: 1:48.40 - Iowa Derby distance
       claimingAvg: 111.0,
       allowanceAvg: 109.0,
-      stakesAvg: 107.0
+      stakesAvg: 107.0,
     },
     {
       distance: '1 1/4m',
@@ -275,7 +285,7 @@ export const prairieMeadows: TrackData = {
       surface: 'dirt',
       claimingAvg: 125.0,
       allowanceAvg: 122.5,
-      stakesAvg: 120.0
+      stakesAvg: 120.0,
     },
     // Turf times
     {
@@ -284,7 +294,7 @@ export const prairieMeadows: TrackData = {
       surface: 'turf',
       claimingAvg: 57.0,
       allowanceAvg: 55.8,
-      stakesAvg: 54.5
+      stakesAvg: 54.5,
     },
     {
       distance: '1m',
@@ -292,7 +302,7 @@ export const prairieMeadows: TrackData = {
       surface: 'turf',
       claimingAvg: 95.5,
       allowanceAvg: 94.0,
-      stakesAvg: 92.5
+      stakesAvg: 92.5,
     },
     {
       distance: '1 1/16m',
@@ -300,7 +310,7 @@ export const prairieMeadows: TrackData = {
       surface: 'turf',
       claimingAvg: 102.0,
       allowanceAvg: 100.5,
-      stakesAvg: 99.0
+      stakesAvg: 99.0,
     },
     {
       distance: '1 1/8m',
@@ -308,10 +318,10 @@ export const prairieMeadows: TrackData = {
       surface: 'turf',
       claimingAvg: 109.0,
       allowanceAvg: 107.5,
-      stakesAvg: 106.0
-    }
+      stakesAvg: 106.0,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

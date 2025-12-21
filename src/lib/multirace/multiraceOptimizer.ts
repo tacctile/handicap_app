@@ -12,7 +12,7 @@
  * - Aggressive: All horses in weak legs, singles in strong
  */
 
-import { validateNumber } from '../sanitization'
+import { validateNumber } from '../sanitization';
 import {
   type MultiRaceBetType,
   type MultiRaceStrategy,
@@ -25,12 +25,12 @@ import {
   type RaceStrength,
   type MultiRaceCost,
   getBetConfig,
-} from './multiraceTypes'
+} from './multiraceTypes';
 import {
   calculateMultiRaceCost,
   findOptimalBaseBet,
   generateWindowInstruction,
-} from './multiraceCalculator'
+} from './multiraceCalculator';
 
 // ============================================================================
 // CONSTANTS
@@ -38,18 +38,21 @@ import {
 
 /** Score thresholds for race strength classification */
 const SCORE_THRESHOLDS = {
-  standout: 180,         // Clear favorite threshold
-  competitive: 160,      // Strong contender threshold
-  standoutGap: 15,       // Minimum gap for standout
-  competitiveCount: 3,   // Min horses for competitive race
-}
+  standout: 180, // Clear favorite threshold
+  competitive: 160, // Strong contender threshold
+  standoutGap: 15, // Minimum gap for standout
+  competitiveCount: 3, // Min horses for competitive race
+};
 
 /** Strategy-specific selection limits */
-const STRATEGY_SELECTIONS: Record<MultiRaceStrategy, {
-  standout: { min: number; max: number }
-  competitive: { min: number; max: number }
-  weak: { min: number; max: number }
-}> = {
+const STRATEGY_SELECTIONS: Record<
+  MultiRaceStrategy,
+  {
+    standout: { min: number; max: number };
+    competitive: { min: number; max: number };
+    weak: { min: number; max: number };
+  }
+> = {
   conservative: {
     standout: { min: 1, max: 1 },
     competitive: { min: 1, max: 2 },
@@ -65,10 +68,10 @@ const STRATEGY_SELECTIONS: Record<MultiRaceStrategy, {
     competitive: { min: 3, max: 4 },
     weak: { min: 0, max: 0 }, // 0 means "All"
   },
-}
+};
 
 /** Bankroll warning threshold */
-const BANKROLL_WARNING_PERCENT = 0.5 // Warn if > 50% of daily bankroll
+const BANKROLL_WARNING_PERCENT = 0.5; // Warn if > 50% of daily bankroll
 
 // ============================================================================
 // RACE ANALYSIS
@@ -78,47 +81,47 @@ const BANKROLL_WARNING_PERCENT = 0.5 // Warn if > 50% of daily bankroll
  * Classify race strength based on horse scores
  */
 export function classifyRaceStrength(horses: MultiRaceHorse[]): RaceStrength {
-  if (horses.length === 0) return 'weak'
+  if (horses.length === 0) return 'weak';
 
-  const sorted = [...horses].sort((a, b) => b.score - a.score)
-  const topHorse = sorted[0]
-  const secondHorse = sorted[1]
+  const sorted = [...horses].sort((a, b) => b.score - a.score);
+  const topHorse = sorted[0];
+  const secondHorse = sorted[1];
 
   // Check for standout
   if (
     topHorse.score >= SCORE_THRESHOLDS.standout &&
     (!secondHorse || topHorse.score - secondHorse.score >= SCORE_THRESHOLDS.standoutGap)
   ) {
-    return 'standout'
+    return 'standout';
   }
 
   // Check for competitive
-  const competitiveHorses = horses.filter(h => h.score >= SCORE_THRESHOLDS.competitive)
+  const competitiveHorses = horses.filter((h) => h.score >= SCORE_THRESHOLDS.competitive);
   if (competitiveHorses.length >= SCORE_THRESHOLDS.competitiveCount) {
-    return 'competitive'
+    return 'competitive';
   }
 
-  return 'weak'
+  return 'weak';
 }
 
 /**
  * Find the standout horse in a race
  */
 export function findStandoutHorse(horses: MultiRaceHorse[]): MultiRaceHorse | undefined {
-  if (horses.length === 0) return undefined
+  if (horses.length === 0) return undefined;
 
-  const sorted = [...horses].sort((a, b) => b.score - a.score)
-  const topHorse = sorted[0]
-  const secondHorse = sorted[1]
+  const sorted = [...horses].sort((a, b) => b.score - a.score);
+  const topHorse = sorted[0];
+  const secondHorse = sorted[1];
 
   if (
     topHorse.score >= SCORE_THRESHOLDS.standout &&
     (!secondHorse || topHorse.score - secondHorse.score >= SCORE_THRESHOLDS.standoutGap)
   ) {
-    return topHorse
+    return topHorse;
   }
 
-  return undefined
+  return undefined;
 }
 
 /**
@@ -128,18 +131,18 @@ export function getTopHorsesForRace(
   race: MultiRaceRaceData,
   strategy: MultiRaceStrategy
 ): number[] {
-  const limits = STRATEGY_SELECTIONS[strategy][race.strength]
+  const limits = STRATEGY_SELECTIONS[strategy][race.strength];
 
   // Special case: "All" for aggressive strategy in weak races
   if (limits.max === 0) {
-    return race.horses.map(h => h.programNumber)
+    return race.horses.map((h) => h.programNumber);
   }
 
   // Sort by score and take top N
-  const sorted = [...race.horses].sort((a, b) => b.score - a.score)
-  const count = Math.min(limits.max, sorted.length)
+  const sorted = [...race.horses].sort((a, b) => b.score - a.score);
+  const count = Math.min(limits.max, sorted.length);
 
-  return sorted.slice(0, count).map(h => h.programNumber)
+  return sorted.slice(0, count).map((h) => h.programNumber);
 }
 
 // ============================================================================
@@ -157,36 +160,36 @@ export function calculateTicketProbability(
 ): number {
   // Empty selections means 0 probability
   if (selections.length === 0 || races.length === 0) {
-    return 0
+    return 0;
   }
 
-  let probability = 1
+  let probability = 1;
 
   for (let i = 0; i < selections.length; i++) {
-    const race = races[i]
-    const selection = selections[i]
+    const race = races[i];
+    const selection = selections[i];
 
     if (!race || !selection) {
-      probability = 0
-      break
+      probability = 0;
+      break;
     }
 
     // Sum probabilities of selected horses (any one winning)
-    let legProbability = 0
+    let legProbability = 0;
 
     for (const programNumber of selection.selections) {
-      const horse = race.horses.find(h => h.programNumber === programNumber)
+      const horse = race.horses.find((h) => h.programNumber === programNumber);
       if (horse) {
-        legProbability += horse.winProbability
+        legProbability += horse.winProbability;
       }
     }
 
     // Cap at reasonable max
-    legProbability = Math.min(0.9, legProbability)
-    probability *= legProbability
+    legProbability = Math.min(0.9, legProbability);
+    probability *= legProbability;
   }
 
-  return Math.max(0, Math.min(1, probability))
+  return Math.max(0, Math.min(1, probability));
 }
 
 /**
@@ -197,22 +200,22 @@ export function estimatePayoutRange(
   cost: MultiRaceCost,
   probability: number
 ): { min: number; max: number; likely: number } {
-  const config = getBetConfig(betType)
+  const config = getBetConfig(betType);
 
   // Base on typical payouts adjusted for probability
-  const probabilityMultiplier = Math.max(1, 1 / (probability * 10))
+  const probabilityMultiplier = Math.max(1, 1 / (probability * 10));
 
   // Use typical ranges as baseline
-  const { min: typicalMin, max: typicalMax, average } = config.typicalPayoutRange
+  const { min: typicalMin, max: typicalMax, average } = config.typicalPayoutRange;
 
   // Adjust based on cost (more coverage = lower payout)
-  const coverageAdjustment = Math.max(0.5, 1 / Math.sqrt(cost.combinations / 10))
+  const coverageAdjustment = Math.max(0.5, 1 / Math.sqrt(cost.combinations / 10));
 
   return {
     min: Math.round(typicalMin * coverageAdjustment),
     max: Math.round(typicalMax * probabilityMultiplier * coverageAdjustment),
     likely: Math.round(average * probabilityMultiplier * coverageAdjustment),
-  }
+  };
 }
 
 /**
@@ -224,7 +227,7 @@ export function calculateExpectedValue(
   payoutLikely: number,
   cost: number
 ): number {
-  return (probability * payoutLikely) - cost
+  return probability * payoutLikely - cost;
 }
 
 // ============================================================================
@@ -240,26 +243,26 @@ export function generateOptimalSelections(
   _budget?: number,
   _baseBet?: number
 ): RaceSelection[] {
-  const selections: RaceSelection[] = []
+  const selections: RaceSelection[] = [];
 
   for (let i = 0; i < races.length; i++) {
-    const race = races[i]
-    const horsePicks = getTopHorsesForRace(race, strategy)
-    const isAll = strategy === 'aggressive' && race.strength === 'weak'
+    const race = races[i];
+    const horsePicks = getTopHorsesForRace(race, strategy);
+    const isAll = strategy === 'aggressive' && race.strength === 'weak';
 
     selections.push({
       raceNumber: race.raceNumber,
       legNumber: i + 1,
-      selections: isAll ? race.horses.map(h => h.programNumber) : horsePicks,
+      selections: isAll ? race.horses.map((h) => h.programNumber) : horsePicks,
       isAllSelected: isAll,
       fieldSize: race.fieldSize,
       raceStrength: race.strength,
       suggestedSelections: horsePicks,
       suggestionReason: getSuggestionReason(race, strategy),
-    })
+    });
   }
 
-  return selections
+  return selections;
 }
 
 /**
@@ -268,19 +271,17 @@ export function generateOptimalSelections(
 function getSuggestionReason(race: MultiRaceRaceData, strategy: MultiRaceStrategy): string {
   switch (race.strength) {
     case 'standout':
-      return `Single this race - clear favorite (#${race.standoutHorse?.programNumber} at ${race.standoutHorse?.score} pts)`
+      return `Single this race - clear favorite (#${race.standoutHorse?.programNumber} at ${race.standoutHorse?.score} pts)`;
     case 'competitive': {
-      const topHorses = race.horses
-        .filter(h => h.score >= SCORE_THRESHOLDS.competitive)
-        .length
-      return `Spread here - competitive race (${topHorses} horses 160+)`
+      const topHorses = race.horses.filter((h) => h.score >= SCORE_THRESHOLDS.competitive).length;
+      return `Spread here - competitive race (${topHorses} horses 160+)`;
     }
     case 'weak':
       return strategy === 'aggressive'
         ? 'Use All - weak race, no standout'
-        : 'Spread wide - weak race, no standout'
+        : 'Spread wide - weak race, no standout';
     default:
-      return ''
+      return '';
   }
 }
 
@@ -295,22 +296,18 @@ export function buildOptimizedTicket(
   config: MultiRaceOptimizationConfig,
   strategy: MultiRaceStrategy
 ): OptimizedTicket | null {
-  const { betType, races, budget } = config
-  const betConfig = getBetConfig(betType)
+  const { betType, races, budget } = config;
+  const betConfig = getBetConfig(betType);
 
   // Generate selections for this strategy
-  const selections = generateOptimalSelections(races, strategy, budget, betConfig.defaultBaseBet)
+  const selections = generateOptimalSelections(races, strategy, budget, betConfig.defaultBaseBet);
 
   // Find optimal base bet
-  const selectionsPerRace = selections.map(s => s.selections.length)
-  const { baseBet, fits } = findOptimalBaseBet(
-    betType,
-    selectionsPerRace,
-    budget
-  )
+  const selectionsPerRace = selections.map((s) => s.selections.length);
+  const { baseBet, fits } = findOptimalBaseBet(betType, selectionsPerRace, budget);
 
   if (!fits) {
-    return null
+    return null;
   }
 
   // Calculate full cost
@@ -318,30 +315,30 @@ export function buildOptimizedTicket(
     betType,
     selections,
     baseBet,
-  })
+  });
 
   if (!cost.isValid) {
-    return null
+    return null;
   }
 
   // Calculate probability and payout
-  const probability = calculateTicketProbability(races, selections)
-  const payoutRange = estimatePayoutRange(betType, cost, probability)
-  const expectedValue = calculateExpectedValue(probability, payoutRange.likely, cost.total)
+  const probability = calculateTicketProbability(races, selections);
+  const payoutRange = estimatePayoutRange(betType, cost, probability);
+  const expectedValue = calculateExpectedValue(probability, payoutRange.likely, cost.total);
 
   // Generate window instruction
-  const startRace = races[0].raceNumber
+  const startRace = races[0].raceNumber;
   const windowInstruction = generateWindowInstruction(
     betType,
     startRace,
-    selections.map(s => ({
+    selections.map((s) => ({
       raceNumber: s.raceNumber,
       horses: s.selections,
     })),
     baseBet
-  )
+  );
 
-  const endRace = startRace + betConfig.racesRequired - 1
+  const endRace = startRace + betConfig.racesRequired - 1;
 
   return {
     id: `${betType}-${strategy}-${Date.now()}`,
@@ -356,7 +353,7 @@ export function buildOptimizedTicket(
     reasoning: getTicketReasoning(strategy, cost, probability, expectedValue),
     windowInstruction,
     raceRange: `${startRace}-${endRace}`,
-  }
+  };
 }
 
 /**
@@ -368,18 +365,18 @@ function getTicketReasoning(
   probability: number,
   expectedValue: number
 ): string {
-  const probPercent = (probability * 100).toFixed(1)
-  const evSign = expectedValue >= 0 ? '+' : ''
+  const probPercent = (probability * 100).toFixed(1);
+  const evSign = expectedValue >= 0 ? '+' : '';
 
   switch (strategy) {
     case 'conservative':
-      return `Low-cost approach: ${cost.combinations} combos at $${cost.total.toFixed(2)} (${probPercent}% hit rate, EV: ${evSign}$${expectedValue.toFixed(2)})`
+      return `Low-cost approach: ${cost.combinations} combos at $${cost.total.toFixed(2)} (${probPercent}% hit rate, EV: ${evSign}$${expectedValue.toFixed(2)})`;
     case 'balanced':
-      return `Balanced coverage: ${cost.combinations} combos (${probPercent}% hit rate, EV: ${evSign}$${expectedValue.toFixed(2)})`
+      return `Balanced coverage: ${cost.combinations} combos (${probPercent}% hit rate, EV: ${evSign}$${expectedValue.toFixed(2)})`;
     case 'aggressive':
-      return `Maximum coverage: ${cost.combinations} combos using ALL in weak races (${probPercent}% hit rate, EV: ${evSign}$${expectedValue.toFixed(2)})`
+      return `Maximum coverage: ${cost.combinations} combos using ALL in weak races (${probPercent}% hit rate, EV: ${evSign}$${expectedValue.toFixed(2)})`;
     default:
-      return ''
+      return '';
   }
 }
 
@@ -393,8 +390,8 @@ function getTicketReasoning(
 export function optimizeMultiRaceBet(
   config: MultiRaceOptimizationConfig
 ): MultiRaceOptimizationResult {
-  const { betType, races, budget, strategy, dailyBankroll } = config
-  const betConfig = getBetConfig(betType)
+  const { betType, races, budget, strategy, dailyBankroll } = config;
+  const betConfig = getBetConfig(betType);
 
   // Validate race count
   if (races.length < betConfig.racesRequired) {
@@ -407,11 +404,11 @@ export function optimizeMultiRaceBet(
       isValid: false,
       error: `Not enough races for ${betConfig.displayName}`,
       warnings: [],
-    }
+    };
   }
 
   // Validate budget
-  const validatedBudget = validateNumber(budget, 20, { min: 1, max: 10000 })
+  const validatedBudget = validateNumber(budget, 20, { min: 1, max: 10000 });
   if (validatedBudget <= 0) {
     return {
       tickets: [],
@@ -422,36 +419,36 @@ export function optimizeMultiRaceBet(
       isValid: false,
       error: 'Budget must be greater than 0',
       warnings: [],
-    }
+    };
   }
 
   // Check for cancelled races
-  const cancelledRaces = races.filter(r => r.isCancelled)
+  const cancelledRaces = races.filter((r) => r.isCancelled);
   if (cancelledRaces.length > 0) {
     return {
       tickets: [],
       recommended: null,
       budgetUsed: 0,
       budgetRemaining: validatedBudget,
-      summary: `Cannot build ticket: Race(s) ${cancelledRaces.map(r => r.raceNumber).join(', ')} cancelled`,
+      summary: `Cannot build ticket: Race(s) ${cancelledRaces.map((r) => r.raceNumber).join(', ')} cancelled`,
       isValid: false,
       error: 'One or more races cancelled',
       warnings: [],
-    }
+    };
   }
 
   // Build tickets for all strategies if none specified, or just the requested one
   const strategies: MultiRaceStrategy[] = strategy
     ? [strategy]
-    : ['conservative', 'balanced', 'aggressive']
+    : ['conservative', 'balanced', 'aggressive'];
 
-  const tickets: OptimizedTicket[] = []
-  const warnings: string[] = []
+  const tickets: OptimizedTicket[] = [];
+  const warnings: string[] = [];
 
   for (const strat of strategies) {
-    const ticket = buildOptimizedTicket({ ...config, budget: validatedBudget }, strat)
+    const ticket = buildOptimizedTicket({ ...config, budget: validatedBudget }, strat);
     if (ticket) {
-      tickets.push(ticket)
+      tickets.push(ticket);
     }
   }
 
@@ -465,20 +462,20 @@ export function optimizeMultiRaceBet(
       isValid: false,
       error: 'No tickets fit within budget',
       warnings: [],
-    }
+    };
   }
 
   // Sort by expected value (descending)
-  tickets.sort((a, b) => b.expectedValue - a.expectedValue)
+  tickets.sort((a, b) => b.expectedValue - a.expectedValue);
 
   // Mark best as recommended
-  const recommended = tickets[0]
-  recommended.isRecommended = true
+  const recommended = tickets[0];
+  recommended.isRecommended = true;
 
   // Check for bankroll warnings
   if (dailyBankroll && recommended.cost.total > dailyBankroll * BANKROLL_WARNING_PERCENT) {
-    const percentUsed = ((recommended.cost.total / dailyBankroll) * 100).toFixed(0)
-    warnings.push(`Warning: This ticket uses ${percentUsed}% of your daily bankroll`)
+    const percentUsed = ((recommended.cost.total / dailyBankroll) * 100).toFixed(0);
+    warnings.push(`Warning: This ticket uses ${percentUsed}% of your daily bankroll`);
   }
 
   return {
@@ -489,7 +486,7 @@ export function optimizeMultiRaceBet(
     summary: `Recommended: ${recommended.strategy} ${betConfig.displayName} using ${recommended.cost.spreadNotation} for $${recommended.cost.total.toFixed(2)}`,
     isValid: true,
     warnings,
-  }
+  };
 }
 
 // ============================================================================
@@ -510,7 +507,7 @@ export function optimizeDailyDouble(
     races: [race1, race2],
     budget,
     strategy: strategy || 'balanced',
-  })
+  });
 }
 
 /**
@@ -526,7 +523,7 @@ export function optimizePick3(
     races,
     budget,
     strategy: strategy || 'balanced',
-  })
+  });
 }
 
 /**
@@ -542,14 +539,20 @@ export function optimizePick4(
     races,
     budget,
     strategy: strategy || 'balanced',
-  })
+  });
 }
 
 /**
  * Quick optimize for Pick 5
  */
 export function optimizePick5(
-  races: [MultiRaceRaceData, MultiRaceRaceData, MultiRaceRaceData, MultiRaceRaceData, MultiRaceRaceData],
+  races: [
+    MultiRaceRaceData,
+    MultiRaceRaceData,
+    MultiRaceRaceData,
+    MultiRaceRaceData,
+    MultiRaceRaceData,
+  ],
   budget: number,
   strategy?: MultiRaceStrategy
 ): MultiRaceOptimizationResult {
@@ -558,14 +561,21 @@ export function optimizePick5(
     races,
     budget,
     strategy: strategy || 'balanced',
-  })
+  });
 }
 
 /**
  * Quick optimize for Pick 6
  */
 export function optimizePick6(
-  races: [MultiRaceRaceData, MultiRaceRaceData, MultiRaceRaceData, MultiRaceRaceData, MultiRaceRaceData, MultiRaceRaceData],
+  races: [
+    MultiRaceRaceData,
+    MultiRaceRaceData,
+    MultiRaceRaceData,
+    MultiRaceRaceData,
+    MultiRaceRaceData,
+    MultiRaceRaceData,
+  ],
   budget: number,
   strategy?: MultiRaceStrategy
 ): MultiRaceOptimizationResult {
@@ -574,7 +584,7 @@ export function optimizePick6(
     races,
     budget,
     strategy: strategy || 'balanced',
-  })
+  });
 }
 
 // ============================================================================
@@ -588,19 +598,19 @@ export function getAvailableMultiRaceBets(
   totalRaces: number,
   startingRace: number = 1
 ): Array<{
-  betType: MultiRaceBetType
-  displayName: string
-  startRace: number
-  endRace: number
-  isAvailable: boolean
+  betType: MultiRaceBetType;
+  displayName: string;
+  startRace: number;
+  endRace: number;
+  isAvailable: boolean;
 }> {
-  const betTypes: MultiRaceBetType[] = ['daily_double', 'pick_3', 'pick_4', 'pick_5', 'pick_6']
-  const results = []
+  const betTypes: MultiRaceBetType[] = ['daily_double', 'pick_3', 'pick_4', 'pick_5', 'pick_6'];
+  const results = [];
 
   for (const betType of betTypes) {
-    const config = getBetConfig(betType)
-    const remainingRaces = totalRaces - startingRace + 1
-    const isAvailable = remainingRaces >= config.racesRequired
+    const config = getBetConfig(betType);
+    const remainingRaces = totalRaces - startingRace + 1;
+    const isAvailable = remainingRaces >= config.racesRequired;
 
     results.push({
       betType,
@@ -608,57 +618,57 @@ export function getAvailableMultiRaceBets(
       startRace: startingRace,
       endRace: startingRace + config.racesRequired - 1,
       isAvailable,
-    })
+    });
   }
 
-  return results
+  return results;
 }
 
 /**
  * Analyze race card for multi-race opportunities
  */
 export function analyzeRaceCard(races: MultiRaceRaceData[]): {
-  totalRaces: number
-  standoutRaces: number[]
-  competitiveRaces: number[]
-  weakRaces: number[]
-  bestOpportunity: MultiRaceBetType | null
-  recommendation: string
+  totalRaces: number;
+  standoutRaces: number[];
+  competitiveRaces: number[];
+  weakRaces: number[];
+  bestOpportunity: MultiRaceBetType | null;
+  recommendation: string;
 } {
-  const standoutRaces: number[] = []
-  const competitiveRaces: number[] = []
-  const weakRaces: number[] = []
+  const standoutRaces: number[] = [];
+  const competitiveRaces: number[] = [];
+  const weakRaces: number[] = [];
 
   for (const race of races) {
     switch (race.strength) {
       case 'standout':
-        standoutRaces.push(race.raceNumber)
-        break
+        standoutRaces.push(race.raceNumber);
+        break;
       case 'competitive':
-        competitiveRaces.push(race.raceNumber)
-        break
+        competitiveRaces.push(race.raceNumber);
+        break;
       case 'weak':
-        weakRaces.push(race.raceNumber)
-        break
+        weakRaces.push(race.raceNumber);
+        break;
     }
   }
 
   // Determine best opportunity
-  let bestOpportunity: MultiRaceBetType | null = null
-  let recommendation = ''
+  let bestOpportunity: MultiRaceBetType | null = null;
+  let recommendation = '';
 
   if (races.length >= 6 && standoutRaces.length >= 2) {
-    bestOpportunity = 'pick_6'
-    recommendation = `Pick 6 opportunity: ${standoutRaces.length} standout races for singles, good structure`
+    bestOpportunity = 'pick_6';
+    recommendation = `Pick 6 opportunity: ${standoutRaces.length} standout races for singles, good structure`;
   } else if (races.length >= 4 && standoutRaces.length >= 1) {
-    bestOpportunity = 'pick_4'
-    recommendation = `Pick 4 opportunity: ${standoutRaces.length} singles, balanced coverage possible`
+    bestOpportunity = 'pick_4';
+    recommendation = `Pick 4 opportunity: ${standoutRaces.length} singles, balanced coverage possible`;
   } else if (races.length >= 3) {
-    bestOpportunity = 'pick_3'
-    recommendation = 'Pick 3 available for manageable multi-race action'
+    bestOpportunity = 'pick_3';
+    recommendation = 'Pick 3 available for manageable multi-race action';
   } else if (races.length >= 2) {
-    bestOpportunity = 'daily_double'
-    recommendation = 'Daily Double is the only multi-race option with this card'
+    bestOpportunity = 'daily_double';
+    recommendation = 'Daily Double is the only multi-race option with this card';
   }
 
   return {
@@ -668,5 +678,5 @@ export function analyzeRaceCard(races: MultiRaceRaceData[]): {
     weakRaces,
     bestOpportunity,
     recommendation,
-  }
+  };
 }

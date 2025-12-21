@@ -15,8 +15,8 @@
  * @module recommendations/betExplanations
  */
 
-import type { ClassifiedHorse } from '../betting/tierClassification'
-import type { HorseScore, ScoreBreakdown } from '../scoring'
+import type { ClassifiedHorse } from '../betting/tierClassification';
+import type { HorseScore, ScoreBreakdown } from '../scoring';
 
 // ============================================================================
 // TYPES
@@ -24,30 +24,30 @@ import type { HorseScore, ScoreBreakdown } from '../scoring'
 
 export interface ExplanationSection {
   /** Section title */
-  title: string
+  title: string;
   /** Explanation text */
-  text: string
+  text: string;
   /** Points contributed */
-  points?: number
+  points?: number;
   /** Relevance to bet decision */
-  relevance: 'high' | 'medium' | 'low'
+  relevance: 'high' | 'medium' | 'low';
   /** Icon for display */
-  icon?: string
+  icon?: string;
 }
 
 export interface BetExplanation {
   /** Main headline */
-  headline: string
+  headline: string;
   /** Short summary (1-2 sentences) */
-  summary: string
+  summary: string;
   /** Detailed explanation sections */
-  sections: ExplanationSection[]
+  sections: ExplanationSection[];
   /** Key factors list */
-  keyFactors: string[]
+  keyFactors: string[];
   /** Risk assessment */
-  riskAssessment: string
+  riskAssessment: string;
   /** Value assessment */
-  valueAssessment: string
+  valueAssessment: string;
 }
 
 // ============================================================================
@@ -63,7 +63,7 @@ const THRESHOLDS = {
   postPosition: { golden: 35, good: 25, moderate: 15 },
   breeding: { strong: 20, good: 15, moderate: 10 },
   overlay: { major: 50, good: 25, slight: 10 },
-} as const
+} as const;
 
 // ============================================================================
 // CORE EXPLANATION GENERATORS
@@ -73,21 +73,25 @@ const THRESHOLDS = {
  * Generate explanation for pace-related scoring
  */
 function explainPace(breakdown: ScoreBreakdown): ExplanationSection | null {
-  const pace = breakdown.pace
-  if (pace.total < THRESHOLDS.pace.moderate) return null
+  const pace = breakdown.pace;
+  if (pace.total < THRESHOLDS.pace.moderate) return null;
 
-  const relevance = pace.total >= THRESHOLDS.pace.strong ? 'high'
-    : pace.total >= THRESHOLDS.pace.good ? 'medium' : 'low'
+  const relevance =
+    pace.total >= THRESHOLDS.pace.strong
+      ? 'high'
+      : pace.total >= THRESHOLDS.pace.good
+        ? 'medium'
+        : 'low';
 
-  let text = ''
+  let text = '';
   if (pace.reasoning.includes('lone')) {
-    text = `Lone early speed in ${pace.paceFit} pace scenario`
+    text = `Lone early speed in ${pace.paceFit} pace scenario`;
   } else if (pace.reasoning.includes('closer') || pace.runningStyle.includes('Closer')) {
-    text = `Late-running style benefits from expected ${pace.paceFit} pace`
+    text = `Late-running style benefits from expected ${pace.paceFit} pace`;
   } else if (pace.reasoning.includes('stalker') || pace.runningStyle.includes('Stalker')) {
-    text = `Stalking style positioned to inherit lead in ${pace.paceFit} pace`
+    text = `Stalking style positioned to inherit lead in ${pace.paceFit} pace`;
   } else {
-    text = `${pace.runningStyle} fits ${pace.paceFit} pace scenario`
+    text = `${pace.runningStyle} fits ${pace.paceFit} pace scenario`;
   }
 
   return {
@@ -96,33 +100,37 @@ function explainPace(breakdown: ScoreBreakdown): ExplanationSection | null {
     points: pace.total,
     relevance,
     icon: 'speed',
-  }
+  };
 }
 
 /**
  * Generate explanation for connections (trainer/jockey)
  */
 function explainConnections(breakdown: ScoreBreakdown): ExplanationSection | null {
-  const conn = breakdown.connections
-  if (conn.total < THRESHOLDS.connections.moderate) return null
+  const conn = breakdown.connections;
+  if (conn.total < THRESHOLDS.connections.moderate) return null;
 
-  const relevance = conn.total >= THRESHOLDS.connections.strong ? 'high'
-    : conn.total >= THRESHOLDS.connections.good ? 'medium' : 'low'
+  const relevance =
+    conn.total >= THRESHOLDS.connections.strong
+      ? 'high'
+      : conn.total >= THRESHOLDS.connections.good
+        ? 'medium'
+        : 'low';
 
-  const parts: string[] = []
+  const parts: string[] = [];
 
   if (conn.trainer > 20) {
-    parts.push(`Strong trainer (${conn.trainer} pts)`)
+    parts.push(`Strong trainer (${conn.trainer} pts)`);
   }
   if (conn.jockey > 10) {
-    parts.push(`Top jockey (${conn.jockey} pts)`)
+    parts.push(`Top jockey (${conn.jockey} pts)`);
   }
   if (conn.partnershipBonus > 0) {
-    parts.push(`Winning partnership (+${conn.partnershipBonus} bonus)`)
+    parts.push(`Winning partnership (+${conn.partnershipBonus} bonus)`);
   }
 
   if (parts.length === 0) {
-    parts.push(conn.reasoning)
+    parts.push(conn.reasoning);
   }
 
   return {
@@ -131,33 +139,37 @@ function explainConnections(breakdown: ScoreBreakdown): ExplanationSection | nul
     points: conn.total,
     relevance,
     icon: 'groups',
-  }
+  };
 }
 
 /**
  * Generate explanation for speed and class
  */
 function explainSpeedClass(breakdown: ScoreBreakdown): ExplanationSection | null {
-  const sc = breakdown.speedClass
-  if (sc.total < THRESHOLDS.speedClass.moderate) return null
+  const sc = breakdown.speedClass;
+  if (sc.total < THRESHOLDS.speedClass.moderate) return null;
 
-  const relevance = sc.total >= THRESHOLDS.speedClass.strong ? 'high'
-    : sc.total >= THRESHOLDS.speedClass.good ? 'medium' : 'low'
+  const relevance =
+    sc.total >= THRESHOLDS.speedClass.strong
+      ? 'high'
+      : sc.total >= THRESHOLDS.speedClass.good
+        ? 'medium'
+        : 'low';
 
-  const parts: string[] = []
+  const parts: string[] = [];
 
   if (sc.bestFigure && sc.bestFigure > 0) {
-    parts.push(`Best Beyer: ${sc.bestFigure}`)
+    parts.push(`Best Beyer: ${sc.bestFigure}`);
   }
 
   if (sc.classMovement === 'dropping') {
-    parts.push('Class drop advantage')
+    parts.push('Class drop advantage');
   } else if (sc.classMovement === 'lateral') {
-    parts.push('Proven at class level')
+    parts.push('Proven at class level');
   }
 
   if (parts.length === 0) {
-    parts.push(sc.reasoning.split('|')[0].trim())
+    parts.push(sc.reasoning.split('|')[0].trim());
   }
 
   return {
@@ -166,32 +178,36 @@ function explainSpeedClass(breakdown: ScoreBreakdown): ExplanationSection | null
     points: sc.total,
     relevance,
     icon: 'bolt',
-  }
+  };
 }
 
 /**
  * Generate explanation for form
  */
 function explainForm(breakdown: ScoreBreakdown): ExplanationSection | null {
-  const form = breakdown.form
-  if (form.total < THRESHOLDS.form.moderate) return null
+  const form = breakdown.form;
+  if (form.total < THRESHOLDS.form.moderate) return null;
 
-  const relevance = form.total >= THRESHOLDS.form.strong ? 'high'
-    : form.total >= THRESHOLDS.form.good ? 'medium' : 'low'
+  const relevance =
+    form.total >= THRESHOLDS.form.strong
+      ? 'high'
+      : form.total >= THRESHOLDS.form.good
+        ? 'medium'
+        : 'low';
 
-  let text = ''
+  let text = '';
   if (form.formTrend === 'improving') {
-    text = 'Improving form trend'
+    text = 'Improving form trend';
   } else if (form.formTrend === 'peaking') {
-    text = 'Peak form condition'
+    text = 'Peak form condition';
   } else if (form.formTrend === 'consistent') {
-    text = 'Consistently competitive'
+    text = 'Consistently competitive';
   } else {
-    text = form.reasoning
+    text = form.reasoning;
   }
 
   if (form.consistencyBonus > 0) {
-    text += ` (+${form.consistencyBonus} consistency bonus)`
+    text += ` (+${form.consistencyBonus} consistency bonus)`;
   }
 
   return {
@@ -200,17 +216,17 @@ function explainForm(breakdown: ScoreBreakdown): ExplanationSection | null {
     points: form.total,
     relevance,
     icon: 'trending_up',
-  }
+  };
 }
 
 /**
  * Generate explanation for equipment changes
  */
 function explainEquipment(breakdown: ScoreBreakdown): ExplanationSection | null {
-  const equip = breakdown.equipment
-  if (!equip.hasChanges || equip.total < THRESHOLDS.equipment.notable) return null
+  const equip = breakdown.equipment;
+  if (!equip.hasChanges || equip.total < THRESHOLDS.equipment.notable) return null;
 
-  const relevance = equip.total >= THRESHOLDS.equipment.significant ? 'high' : 'medium'
+  const relevance = equip.total >= THRESHOLDS.equipment.significant ? 'high' : 'medium';
 
   return {
     title: 'Equipment Change',
@@ -218,25 +234,26 @@ function explainEquipment(breakdown: ScoreBreakdown): ExplanationSection | null 
     points: equip.total,
     relevance,
     icon: 'construction',
-  }
+  };
 }
 
 /**
  * Generate explanation for post position
  */
 function explainPostPosition(breakdown: ScoreBreakdown): ExplanationSection | null {
-  const post = breakdown.postPosition
-  if (post.total < THRESHOLDS.postPosition.moderate) return null
+  const post = breakdown.postPosition;
+  if (post.total < THRESHOLDS.postPosition.moderate) return null;
 
-  const relevance = post.isGoldenPost ? 'high'
-    : post.total >= THRESHOLDS.postPosition.good ? 'medium' : 'low'
+  const relevance = post.isGoldenPost
+    ? 'high'
+    : post.total >= THRESHOLDS.postPosition.good
+      ? 'medium'
+      : 'low';
 
-  let text = post.isGoldenPost
-    ? 'Golden post position for this distance'
-    : post.reasoning
+  let text = post.isGoldenPost ? 'Golden post position for this distance' : post.reasoning;
 
   if (post.trackBiasApplied) {
-    text += ' (track bias applied)'
+    text += ' (track bias applied)';
   }
 
   return {
@@ -245,18 +262,22 @@ function explainPostPosition(breakdown: ScoreBreakdown): ExplanationSection | nu
     points: post.total,
     relevance,
     icon: 'location_on',
-  }
+  };
 }
 
 /**
  * Generate explanation for breeding (lightly raced horses)
  */
 function explainBreeding(breakdown: ScoreBreakdown): ExplanationSection | null {
-  const breeding = breakdown.breeding
-  if (!breeding?.wasApplied || breeding.contribution < THRESHOLDS.breeding.moderate) return null
+  const breeding = breakdown.breeding;
+  if (!breeding?.wasApplied || breeding.contribution < THRESHOLDS.breeding.moderate) return null;
 
-  const relevance = breeding.contribution >= THRESHOLDS.breeding.strong ? 'high'
-    : breeding.contribution >= THRESHOLDS.breeding.good ? 'medium' : 'low'
+  const relevance =
+    breeding.contribution >= THRESHOLDS.breeding.strong
+      ? 'high'
+      : breeding.contribution >= THRESHOLDS.breeding.good
+        ? 'medium'
+        : 'low';
 
   return {
     title: 'Breeding',
@@ -264,35 +285,38 @@ function explainBreeding(breakdown: ScoreBreakdown): ExplanationSection | null {
     points: Math.round(breeding.contribution),
     relevance,
     icon: 'family_restroom',
-  }
+  };
 }
 
 /**
  * Generate explanation for class analysis
  */
 function explainClassAnalysis(breakdown: ScoreBreakdown): ExplanationSection | null {
-  const classAnalysis = breakdown.classAnalysis
-  if (!classAnalysis || classAnalysis.total < 10) return null
+  const classAnalysis = breakdown.classAnalysis;
+  if (!classAnalysis || classAnalysis.total < 10) return null;
 
-  const relevance = classAnalysis.isValuePlay ? 'high'
-    : classAnalysis.hiddenDropsScore > 5 ? 'high' : 'medium'
+  const relevance = classAnalysis.isValuePlay
+    ? 'high'
+    : classAnalysis.hiddenDropsScore > 5
+      ? 'high'
+      : 'medium';
 
-  const parts: string[] = []
+  const parts: string[] = [];
 
   if (classAnalysis.movement === 'dropping') {
-    parts.push('Class dropper')
+    parts.push('Class dropper');
   }
 
   if (classAnalysis.hiddenDrops.length > 0) {
-    const dropTypes = classAnalysis.hiddenDrops.map(d => d.type).join(', ')
-    parts.push(`Hidden drops: ${dropTypes}`)
+    const dropTypes = classAnalysis.hiddenDrops.map((d) => d.type).join(', ');
+    parts.push(`Hidden drops: ${dropTypes}`);
   }
 
   if (classAnalysis.provenAtLevelScore > 10) {
-    parts.push('Proven at this level')
+    parts.push('Proven at this level');
   }
 
-  if (parts.length === 0) return null
+  if (parts.length === 0) return null;
 
   return {
     title: 'Class Edge',
@@ -300,35 +324,39 @@ function explainClassAnalysis(breakdown: ScoreBreakdown): ExplanationSection | n
     points: classAnalysis.total,
     relevance,
     icon: 'school',
-  }
+  };
 }
 
 /**
  * Generate explanation for overlay/value
  */
 function explainOverlay(horse: ClassifiedHorse): ExplanationSection | null {
-  const overlay = horse.overlay
-  if (overlay.overlayPercent < THRESHOLDS.overlay.slight) return null
+  const overlay = horse.overlay;
+  if (overlay.overlayPercent < THRESHOLDS.overlay.slight) return null;
 
-  const relevance = overlay.overlayPercent >= THRESHOLDS.overlay.major ? 'high'
-    : overlay.overlayPercent >= THRESHOLDS.overlay.good ? 'high' : 'medium'
+  const relevance =
+    overlay.overlayPercent >= THRESHOLDS.overlay.major
+      ? 'high'
+      : overlay.overlayPercent >= THRESHOLDS.overlay.good
+        ? 'high'
+        : 'medium';
 
-  const parts: string[] = []
+  const parts: string[] = [];
 
-  parts.push(`${overlay.overlayPercent.toFixed(0)}% overlay`)
+  parts.push(`${overlay.overlayPercent.toFixed(0)}% overlay`);
 
   if (overlay.isPositiveEV) {
-    parts.push(`+EV: $${overlay.evPerDollar.toFixed(2)} per dollar wagered`)
+    parts.push(`+EV: $${overlay.evPerDollar.toFixed(2)} per dollar wagered`);
   }
 
-  parts.push(`Fair odds: ${overlay.fairOddsDecimal.toFixed(1)}-1 vs actual ${horse.oddsDisplay}`)
+  parts.push(`Fair odds: ${overlay.fairOddsDecimal.toFixed(1)}-1 vs actual ${horse.oddsDisplay}`);
 
   return {
     title: 'Value Overlay',
     text: parts.join('; '),
     relevance,
     icon: 'paid',
-  }
+  };
 }
 
 // ============================================================================
@@ -339,84 +367,95 @@ function explainOverlay(horse: ClassifiedHorse): ExplanationSection | null {
  * Generate bet explanation list for a bet
  * Returns array of explanation strings
  */
-export function generateBetExplanation(
-  horses: ClassifiedHorse[],
-  betType: string
-): string[] {
-  const explanations: string[] = []
+export function generateBetExplanation(horses: ClassifiedHorse[], betType: string): string[] {
+  const explanations: string[] = [];
 
   // Get primary horse for single-horse bets
-  const primaryHorse = horses[0]
-  if (!primaryHorse) return ['Unable to analyze - no horse data']
+  const primaryHorse = horses[0];
+  if (!primaryHorse) return ['Unable to analyze - no horse data'];
 
-  const breakdown = primaryHorse.score.breakdown
+  const breakdown = primaryHorse.score.breakdown;
 
   // Add pace explanation
   if (breakdown.pace.total >= 20) {
     if (breakdown.pace.reasoning.includes('lone')) {
-      explanations.push(`Lone ${breakdown.pace.runningStyle.toLowerCase()} in ${breakdown.pace.paceFit} pace (+${breakdown.pace.total} pace pts)`)
+      explanations.push(
+        `Lone ${breakdown.pace.runningStyle.toLowerCase()} in ${breakdown.pace.paceFit} pace (+${breakdown.pace.total} pace pts)`
+      );
     } else {
-      explanations.push(`${breakdown.pace.runningStyle} fits ${breakdown.pace.paceFit} pace (+${breakdown.pace.total} pts)`)
+      explanations.push(
+        `${breakdown.pace.runningStyle} fits ${breakdown.pace.paceFit} pace (+${breakdown.pace.total} pts)`
+      );
     }
   }
 
   // Add class drop explanation
   if (breakdown.classAnalysis?.movement === 'dropping') {
-    explanations.push(`Class drop from ${breakdown.speedClass.classMovement} (+${breakdown.classAnalysis.classMovementScore} pts)`)
+    explanations.push(
+      `Class drop from ${breakdown.speedClass.classMovement} (+${breakdown.classAnalysis.classMovementScore} pts)`
+    );
   }
 
   // Add trainer/jockey explanation
   if (breakdown.connections.total >= 30) {
-    explanations.push(`Strong connections: ${breakdown.connections.reasoning} (+${breakdown.connections.total} pts)`)
+    explanations.push(
+      `Strong connections: ${breakdown.connections.reasoning} (+${breakdown.connections.total} pts)`
+    );
   }
 
   // Add overlay explanation
   if (primaryHorse.overlay.overlayPercent >= 25) {
-    explanations.push(`${primaryHorse.overlay.overlayPercent.toFixed(0)}% overlay at ${primaryHorse.oddsDisplay}`)
+    explanations.push(
+      `${primaryHorse.overlay.overlayPercent.toFixed(0)}% overlay at ${primaryHorse.oddsDisplay}`
+    );
   }
 
   // Add EV explanation
   if (primaryHorse.overlay.isPositiveEV) {
-    explanations.push(`Expected value: +$${primaryHorse.overlay.evPerDollar.toFixed(2)} per dollar wagered`)
+    explanations.push(
+      `Expected value: +$${primaryHorse.overlay.evPerDollar.toFixed(2)} per dollar wagered`
+    );
   }
 
   // Add equipment change explanation
   if (breakdown.equipment.hasChanges && breakdown.equipment.total >= 10) {
-    explanations.push(`Equipment change: ${breakdown.equipment.reasoning} (+${breakdown.equipment.total} pts)`)
+    explanations.push(
+      `Equipment change: ${breakdown.equipment.reasoning} (+${breakdown.equipment.total} pts)`
+    );
   }
 
   // Add breeding explanation for lightly raced
   if (breakdown.breeding?.wasApplied) {
-    explanations.push(`Breeding advantage: ${breakdown.breeding.summary}`)
+    explanations.push(`Breeding advantage: ${breakdown.breeding.summary}`);
   }
 
   // Add speed figure explanation
   if (breakdown.speedClass.bestFigure && breakdown.speedClass.bestFigure >= 80) {
-    explanations.push(`Best Beyer ${breakdown.speedClass.bestFigure} competitive at this level`)
+    explanations.push(`Best Beyer ${breakdown.speedClass.bestFigure} competitive at this level`);
   }
 
   // Add special case explanation
   if (primaryHorse.isSpecialCase) {
     if (primaryHorse.specialCaseType === 'diamond_in_rough') {
-      explanations.push('Diamond in Rough: moderate score with massive overlay')
+      explanations.push('Diamond in Rough: moderate score with massive overlay');
     } else if (primaryHorse.specialCaseType === 'fool_gold') {
-      explanations.push('Caution: High score but poor value (underlay)')
+      explanations.push('Caution: High score but poor value (underlay)');
     }
   }
 
   // For multi-horse bets, add combination reasoning
   if (horses.length > 1 && betType.includes('exacta')) {
-    const tiers = new Set(horses.map(h => h.tier))
+    const tiers = new Set(horses.map((h) => h.tier));
     if (tiers.size > 1) {
-      explanations.push('Combines chalk with value for upset coverage')
+      explanations.push('Combines chalk with value for upset coverage');
     }
   }
 
   if (horses.length >= 3 && betType.includes('trifecta')) {
-    explanations.push('Box covers multiple finish permutations')
+    explanations.push('Box covers multiple finish permutations');
   }
 
-  return explanations.length > 0 ? explanations : ['Based on overall handicapping score']
+  return explanations.length > 0 ? explanations : ['Based on overall handicapping score'];
 }
 
 /**
@@ -427,41 +466,41 @@ export function generateBetNarrative(
   _betType: string,
   overlayPercent: number
 ): string {
-  const primaryHorse = horses[0]
-  if (!primaryHorse) return 'No data available'
+  const primaryHorse = horses[0];
+  if (!primaryHorse) return 'No data available';
 
-  const breakdown = primaryHorse.score.breakdown
-  const parts: string[] = []
+  const breakdown = primaryHorse.score.breakdown;
+  const parts: string[] = [];
 
   // Start with horse identity
-  parts.push(`#${primaryHorse.horse.programNumber} ${primaryHorse.horse.horseName}`)
+  parts.push(`#${primaryHorse.horse.programNumber} ${primaryHorse.horse.horseName}`);
 
   // Add key angle
   if (breakdown.pace.total >= 25) {
-    parts.push(`fits ${breakdown.pace.paceFit} pace`)
+    parts.push(`fits ${breakdown.pace.paceFit} pace`);
   } else if (breakdown.classAnalysis?.isValuePlay) {
-    parts.push('class edge')
+    parts.push('class edge');
   } else if (breakdown.connections.total >= 35) {
-    parts.push('top connections')
+    parts.push('top connections');
   }
 
   // Add value assessment
   if (overlayPercent >= 50) {
-    parts.push('at huge overlay')
+    parts.push('at huge overlay');
   } else if (overlayPercent >= 25) {
-    parts.push('with value')
+    parts.push('with value');
   } else if (primaryHorse.overlay.isPositiveEV) {
-    parts.push('+EV play')
+    parts.push('+EV play');
   }
 
   // Add tier context
   if (primaryHorse.tier === 'tier1') {
-    parts.push('(top contender)')
+    parts.push('(top contender)');
   } else if (primaryHorse.tier === 'tier3') {
-    parts.push('(value bomb)')
+    parts.push('(value bomb)');
   }
 
-  return parts.join(' ')
+  return parts.join(' ');
 }
 
 /**
@@ -471,7 +510,7 @@ export function generateFullBetExplanation(
   horses: ClassifiedHorse[],
   _betType: string
 ): BetExplanation {
-  const primaryHorse = horses[0]
+  const primaryHorse = horses[0];
   if (!primaryHorse) {
     return {
       headline: 'Unable to analyze',
@@ -480,79 +519,80 @@ export function generateFullBetExplanation(
       keyFactors: [],
       riskAssessment: 'Unknown',
       valueAssessment: 'Unknown',
-    }
+    };
   }
 
-  const breakdown = primaryHorse.score.breakdown
-  const sections: ExplanationSection[] = []
+  const breakdown = primaryHorse.score.breakdown;
+  const sections: ExplanationSection[] = [];
 
   // Collect all relevant sections
-  const paceSection = explainPace(breakdown)
-  if (paceSection) sections.push(paceSection)
+  const paceSection = explainPace(breakdown);
+  if (paceSection) sections.push(paceSection);
 
-  const connectionsSection = explainConnections(breakdown)
-  if (connectionsSection) sections.push(connectionsSection)
+  const connectionsSection = explainConnections(breakdown);
+  if (connectionsSection) sections.push(connectionsSection);
 
-  const speedClassSection = explainSpeedClass(breakdown)
-  if (speedClassSection) sections.push(speedClassSection)
+  const speedClassSection = explainSpeedClass(breakdown);
+  if (speedClassSection) sections.push(speedClassSection);
 
-  const formSection = explainForm(breakdown)
-  if (formSection) sections.push(formSection)
+  const formSection = explainForm(breakdown);
+  if (formSection) sections.push(formSection);
 
-  const equipmentSection = explainEquipment(breakdown)
-  if (equipmentSection) sections.push(equipmentSection)
+  const equipmentSection = explainEquipment(breakdown);
+  if (equipmentSection) sections.push(equipmentSection);
 
-  const postSection = explainPostPosition(breakdown)
-  if (postSection) sections.push(postSection)
+  const postSection = explainPostPosition(breakdown);
+  if (postSection) sections.push(postSection);
 
-  const breedingSection = explainBreeding(breakdown)
-  if (breedingSection) sections.push(breedingSection)
+  const breedingSection = explainBreeding(breakdown);
+  if (breedingSection) sections.push(breedingSection);
 
-  const classSection = explainClassAnalysis(breakdown)
-  if (classSection) sections.push(classSection)
+  const classSection = explainClassAnalysis(breakdown);
+  if (classSection) sections.push(classSection);
 
-  const overlaySection = explainOverlay(primaryHorse)
-  if (overlaySection) sections.push(overlaySection)
+  const overlaySection = explainOverlay(primaryHorse);
+  if (overlaySection) sections.push(overlaySection);
 
   // Sort by relevance
   sections.sort((a, b) => {
-    const order = { high: 0, medium: 1, low: 2 }
-    return order[a.relevance] - order[b.relevance]
-  })
+    const order = { high: 0, medium: 1, low: 2 };
+    return order[a.relevance] - order[b.relevance];
+  });
 
   // Generate headline
-  const topFactor = sections[0]?.title || 'Overall Score'
-  const headline = `${primaryHorse.horse.horseName}: ${topFactor} advantage at ${primaryHorse.oddsDisplay}`
+  const topFactor = sections[0]?.title || 'Overall Score';
+  const headline = `${primaryHorse.horse.horseName}: ${topFactor} advantage at ${primaryHorse.oddsDisplay}`;
 
   // Generate summary
-  const keyExplanations = sections.filter(s => s.relevance === 'high').slice(0, 2)
-  const summary = keyExplanations.length > 0
-    ? keyExplanations.map(s => s.text).join('. ')
-    : `Scored ${primaryHorse.score.total} with ${primaryHorse.confidence}% confidence.`
+  const keyExplanations = sections.filter((s) => s.relevance === 'high').slice(0, 2);
+  const summary =
+    keyExplanations.length > 0
+      ? keyExplanations.map((s) => s.text).join('. ')
+      : `Scored ${primaryHorse.score.total} with ${primaryHorse.confidence}% confidence.`;
 
   // Extract key factors
   const keyFactors = sections
-    .filter(s => s.relevance !== 'low')
-    .map(s => `${s.title}: ${s.text}`)
+    .filter((s) => s.relevance !== 'low')
+    .map((s) => `${s.title}: ${s.text}`);
 
   // Risk assessment
-  let riskAssessment = 'Moderate'
+  let riskAssessment = 'Moderate';
   if (primaryHorse.tier === 'tier1' && primaryHorse.confidence >= 80) {
-    riskAssessment = 'Lower risk - top contender'
+    riskAssessment = 'Lower risk - top contender';
   } else if (primaryHorse.tier === 'tier3' || primaryHorse.odds >= 15) {
-    riskAssessment = 'Higher risk - longshot play'
+    riskAssessment = 'Higher risk - longshot play';
   } else if (primaryHorse.overlay.overlayPercent >= 50) {
-    riskAssessment = 'Calculated risk - significant overlay'
+    riskAssessment = 'Calculated risk - significant overlay';
   }
 
   // Value assessment
-  let valueAssessment = 'Fair value'
+  let valueAssessment = 'Fair value';
   if (primaryHorse.overlay.overlayPercent >= 50) {
-    valueAssessment = `Excellent value: ${primaryHorse.overlay.overlayPercent.toFixed(0)}% overlay`
+    valueAssessment = `Excellent value: ${primaryHorse.overlay.overlayPercent.toFixed(0)}% overlay`;
   } else if (primaryHorse.overlay.isPositiveEV) {
-    valueAssessment = `Good value: +$${primaryHorse.overlay.evPerDollar.toFixed(2)} EV`
+    valueAssessment = `Good value: +$${primaryHorse.overlay.evPerDollar.toFixed(2)} EV`;
   } else if (primaryHorse.overlay.overlayPercent < 0) {
-    valueAssessment = `Underlay: ${Math.abs(primaryHorse.overlay.overlayPercent).toFixed(0)}% below fair odds`
+    valueAssessment = `Underlay: ${Math.abs(primaryHorse.overlay.overlayPercent).toFixed(0)}% below fair odds`;
   }
 
   return {
@@ -562,7 +602,7 @@ export function generateFullBetExplanation(
     keyFactors,
     riskAssessment,
     valueAssessment,
-  }
+  };
 }
 
 // ============================================================================
@@ -573,53 +613,53 @@ export function generateFullBetExplanation(
  * Get scoring sources that contributed to bet decision
  */
 export function getScoringSources(horses: ClassifiedHorse[]): string[] {
-  const sources = new Set<string>()
+  const sources = new Set<string>();
 
   for (const horse of horses) {
-    const b = horse.score.breakdown
+    const b = horse.score.breakdown;
 
-    if (b.pace.total >= 20) sources.add('Pace Analysis')
-    if (b.connections.total >= 25) sources.add('Connections')
-    if (b.speedClass.total >= 25) sources.add('Speed & Class')
-    if (b.form.total >= 15) sources.add('Form')
-    if (b.equipment.hasChanges) sources.add('Equipment')
-    if (b.postPosition.total >= 20) sources.add('Post Position')
-    if (b.breeding?.wasApplied) sources.add('Breeding')
-    if (b.classAnalysis?.total && b.classAnalysis.total >= 10) sources.add('Class Analysis')
-    if (horse.overlay.overlayPercent >= 25) sources.add('Overlay Analysis')
-    if (horse.isSpecialCase) sources.add('Special Detection')
+    if (b.pace.total >= 20) sources.add('Pace Analysis');
+    if (b.connections.total >= 25) sources.add('Connections');
+    if (b.speedClass.total >= 25) sources.add('Speed & Class');
+    if (b.form.total >= 15) sources.add('Form');
+    if (b.equipment.hasChanges) sources.add('Equipment');
+    if (b.postPosition.total >= 20) sources.add('Post Position');
+    if (b.breeding?.wasApplied) sources.add('Breeding');
+    if (b.classAnalysis?.total && b.classAnalysis.total >= 10) sources.add('Class Analysis');
+    if (horse.overlay.overlayPercent >= 25) sources.add('Overlay Analysis');
+    if (horse.isSpecialCase) sources.add('Special Detection');
   }
 
-  return Array.from(sources)
+  return Array.from(sources);
 }
 
 /**
  * Format explanation for display
  */
 export function formatExplanationForDisplay(explanation: BetExplanation): string {
-  const lines: string[] = []
+  const lines: string[] = [];
 
-  lines.push(`**${explanation.headline}**`)
-  lines.push('')
-  lines.push(explanation.summary)
-  lines.push('')
+  lines.push(`**${explanation.headline}**`);
+  lines.push('');
+  lines.push(explanation.summary);
+  lines.push('');
 
   if (explanation.sections.length > 0) {
-    lines.push('**Key Factors:**')
-    for (const section of explanation.sections.filter(s => s.relevance !== 'low')) {
-      lines.push(`- ${section.title}: ${section.text}`)
+    lines.push('**Key Factors:**');
+    for (const section of explanation.sections.filter((s) => s.relevance !== 'low')) {
+      lines.push(`- ${section.title}: ${section.text}`);
     }
-    lines.push('')
+    lines.push('');
   }
 
-  lines.push(`Risk: ${explanation.riskAssessment}`)
-  lines.push(`Value: ${explanation.valueAssessment}`)
+  lines.push(`Risk: ${explanation.riskAssessment}`);
+  lines.push(`Value: ${explanation.valueAssessment}`);
 
-  return lines.join('\n')
+  return lines.join('\n');
 }
 
 // ============================================================================
 // EXPORTS
 // ============================================================================
 
-export type { ClassifiedHorse, HorseScore, ScoreBreakdown }
+export type { ClassifiedHorse, HorseScore, ScoreBreakdown };

@@ -16,7 +16,7 @@
  * NOTE: Some data points marked NEEDS_VERIFICATION due to limited available statistics
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const fonnerPark: TrackData = {
   code: 'FON',
@@ -37,8 +37,8 @@ export const fonnerPark: TrackData = {
       // Source: Standard small track width
       trackWidth: 70,
       // Source: Fonner Park - limited chute configurations on small oval
-      chutes: [4.5, 5.5]
-    }
+      chutes: [4.5, 5.5],
+    },
     // NOTE: Fonner Park has no turf course - dirt only facility
   },
 
@@ -56,7 +56,8 @@ export const fonnerPark: TrackData = {
         // Sample: 300+ sprints (limited sample size noted)
         winPercentByPost: [16.5, 15.2, 13.8, 12.0, 10.5, 9.2, 8.0, 6.5, 5.0, 3.3],
         favoredPosts: [1, 2],
-        biasDescription: 'Strong inside bias on small 5/8 mile oval; tight turns strongly favor rail; outside posts struggle'
+        biasDescription:
+          'Strong inside bias on small 5/8 mile oval; tight turns strongly favor rail; outside posts struggle',
       },
       {
         distance: 'route',
@@ -70,9 +71,10 @@ export const fonnerPark: TrackData = {
         // Sample: 100+ routes (limited sample size noted)
         winPercentByPost: [18.0, 15.5, 13.2, 11.5, 10.2, 9.0, 8.0, 6.5, 5.0, 3.1],
         favoredPosts: [1, 2],
-        biasDescription: 'Very strong inside bias in routes; multiple tight turns favor rail; feature races at 1 1/16m'
-      }
-    ]
+        biasDescription:
+          'Very strong inside bias in routes; multiple tight turns favor rail; feature races at 1 1/16m',
+      },
+    ],
     // NOTE: No turf post position data - Fonner Park is dirt only
   },
 
@@ -87,8 +89,9 @@ export const fonnerPark: TrackData = {
       // NEEDS_VERIFICATION: Specific early speed win rate
       earlySpeedWinRate: 62,
       paceAdvantageRating: 8,
-      description: 'Strong speed bias on small 5/8 mile oval; limited closing room; wire-to-wire winners common'
-    }
+      description:
+        'Strong speed bias on small 5/8 mile oval; limited closing room; wire-to-wire winners common',
+    },
     // NOTE: No turf speed bias data - Fonner Park is dirt only
   ],
 
@@ -100,8 +103,8 @@ export const fonnerPark: TrackData = {
       // NEEDS_VERIFICATION: Exact composition details
       composition: 'Standard Midwestern dirt track; sandy loam cushion over base',
       playingStyle: 'speed-favoring',
-      drainage: 'fair'
-    }
+      drainage: 'fair',
+    },
     // NOTE: No turf surface - Fonner Park is dirt only
   ],
 
@@ -114,7 +117,7 @@ export const fonnerPark: TrackData = {
       // Cold Nebraska winter conditions
       typicalCondition: 'Fast to Frozen; variable winter conditions',
       speedAdjustment: -1,
-      notes: 'Winter meet begins February; cold conditions; weather impacts track surface'
+      notes: 'Winter meet begins February; cold conditions; weather impacts track surface',
     },
     {
       season: 'spring',
@@ -124,8 +127,9 @@ export const fonnerPark: TrackData = {
       // Feature stakes including Gus Fonner Stakes
       typicalCondition: 'Fast to Good',
       speedAdjustment: 1,
-      notes: 'Spring meet through early May; Bosselman/Gus Fonner Stakes ($75K at 1 1/16m); feature meet'
-    }
+      notes:
+        'Spring meet through early May; Bosselman/Gus Fonner Stakes ($75K at 1 1/16m); feature meet',
+    },
   ],
 
   winningTimes: [
@@ -139,7 +143,7 @@ export const fonnerPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 53.5,
       allowanceAvg: 52.2,
-      stakesAvg: 51.0
+      stakesAvg: 51.0,
     },
     {
       distance: '5f',
@@ -147,7 +151,7 @@ export const fonnerPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 60.5,
       allowanceAvg: 59.2,
-      stakesAvg: 58.0
+      stakesAvg: 58.0,
     },
     {
       distance: '5.5f',
@@ -155,7 +159,7 @@ export const fonnerPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 66.5,
       allowanceAvg: 65.0,
-      stakesAvg: 63.8
+      stakesAvg: 63.8,
     },
     {
       distance: '6f',
@@ -163,7 +167,7 @@ export const fonnerPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 72.5,
       allowanceAvg: 71.0,
-      stakesAvg: 69.5
+      stakesAvg: 69.5,
     },
     {
       distance: '7f',
@@ -171,7 +175,7 @@ export const fonnerPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 86.0,
       allowanceAvg: 84.5,
-      stakesAvg: 83.0
+      stakesAvg: 83.0,
     },
     {
       distance: '1m',
@@ -179,7 +183,7 @@ export const fonnerPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 99.5,
       allowanceAvg: 97.8,
-      stakesAvg: 96.0
+      stakesAvg: 96.0,
     },
     {
       distance: '1m70y',
@@ -187,7 +191,7 @@ export const fonnerPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 104.0,
       allowanceAvg: 102.2,
-      stakesAvg: 100.5
+      stakesAvg: 100.5,
     },
     {
       distance: '1 1/16m',
@@ -196,7 +200,7 @@ export const fonnerPark: TrackData = {
       // Gus Fonner Stakes distance - feature race
       claimingAvg: 107.0,
       allowanceAvg: 105.0,
-      stakesAvg: 103.0
+      stakesAvg: 103.0,
     },
     {
       distance: '1 1/8m',
@@ -204,10 +208,10 @@ export const fonnerPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 114.5,
       allowanceAvg: 112.5,
-      stakesAvg: 110.5
-    }
+      stakesAvg: 110.5,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'preliminary'
-}
+  dataQuality: 'preliminary',
+};

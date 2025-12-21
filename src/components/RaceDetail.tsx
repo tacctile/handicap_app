@@ -1,38 +1,34 @@
-import { memo, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import type { ParsedRace } from '../types/drf'
-import type { UseRaceStateReturn } from '../hooks/useRaceState'
-import type { UseBankrollReturn } from '../hooks/useBankroll'
-import { RaceTable } from './RaceTable'
+import { memo, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { ParsedRace } from '../types/drf';
+import type { UseRaceStateReturn } from '../hooks/useRaceState';
+import type { UseBankrollReturn } from '../hooks/useBankroll';
+import { RaceTable } from './RaceTable';
 import {
   getConfidenceColor,
   getConfidenceLabel,
   getConfidenceBgColor,
   getConfidenceBorderColor,
-} from '../lib/confidence'
-import { getDiamondColor, getDiamondBgColor } from '../lib/diamonds'
-import { useAnalytics } from '../hooks/useAnalytics'
+} from '../lib/confidence';
+import { getDiamondColor, getDiamondBgColor } from '../lib/diamonds';
+import { useAnalytics } from '../hooks/useAnalytics';
 
 interface RaceDetailProps {
-  race: ParsedRace
-  confidence: number
-  raceState: UseRaceStateReturn
-  bankroll: UseBankrollReturn
-  diamondCount?: number
-  onBack: () => void
-  onOpenBankrollSettings: () => void
+  race: ParsedRace;
+  confidence: number;
+  raceState: UseRaceStateReturn;
+  bankroll: UseBankrollReturn;
+  diamondCount?: number;
+  onBack: () => void;
+  onOpenBankrollSettings: () => void;
 }
 
 // Diamond alert banner component
-const DiamondAlertBanner = memo(function DiamondAlertBanner({
-  count,
-}: {
-  count: number
-}) {
-  if (count === 0) return null
+const DiamondAlertBanner = memo(function DiamondAlertBanner({ count }: { count: number }) {
+  if (count === 0) return null;
 
-  const diamondColor = getDiamondColor()
-  const diamondBg = getDiamondBgColor(0.15)
+  const diamondColor = getDiamondColor();
+  const diamondBg = getDiamondBgColor(0.15);
 
   return (
     <motion.div
@@ -58,23 +54,23 @@ const DiamondAlertBanner = memo(function DiamondAlertBanner({
       <span>
         {count} Hidden Gem{count > 1 ? 's' : ''} in this race!
       </span>
-      <span style={{
-        backgroundColor: diamondColor,
-        color: '#1a1a1a',
-        padding: '2px 8px',
-        borderRadius: '4px',
-        fontSize: '0.65rem',
-        fontWeight: 800,
-        letterSpacing: '0.5px',
-      }}>
+      <span
+        style={{
+          backgroundColor: diamondColor,
+          color: '#1a1a1a',
+          padding: '2px 8px',
+          borderRadius: '4px',
+          fontSize: '0.65rem',
+          fontWeight: 800,
+          letterSpacing: '0.5px',
+        }}
+      >
         RARE VALUE
       </span>
-      <span style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-        ↓ Scroll to see details
-      </span>
+      <span style={{ fontSize: '0.8rem', opacity: 0.9 }}>↓ Scroll to see details</span>
     </motion.div>
-  )
-})
+  );
+});
 
 // Material Icon component
 function Icon({ name, className = '' }: { name: string; className?: string }) {
@@ -82,21 +78,19 @@ function Icon({ name, className = '' }: { name: string; className?: string }) {
     <span className={`material-icons ${className}`} aria-hidden="true">
       {name}
     </span>
-  )
+  );
 }
 
 // Confidence badge component
 interface ConfidenceBadgeProps {
-  confidence: number
+  confidence: number;
 }
 
-const ConfidenceBadge = memo(function ConfidenceBadge({
-  confidence,
-}: ConfidenceBadgeProps) {
-  const color = getConfidenceColor(confidence)
-  const label = getConfidenceLabel(confidence)
-  const bgColor = getConfidenceBgColor(confidence)
-  const borderColor = getConfidenceBorderColor(confidence)
+const ConfidenceBadge = memo(function ConfidenceBadge({ confidence }: ConfidenceBadgeProps) {
+  const color = getConfidenceColor(confidence);
+  const label = getConfidenceLabel(confidence);
+  const bgColor = getConfidenceBgColor(confidence);
+  const borderColor = getConfidenceBorderColor(confidence);
 
   return (
     <div
@@ -110,8 +104,8 @@ const ConfidenceBadge = memo(function ConfidenceBadge({
       <span className="confidence-value tabular-nums">{confidence}%</span>
       <span className="confidence-label">{label}</span>
     </div>
-  )
-})
+  );
+});
 
 export const RaceDetail = memo(function RaceDetail({
   race,
@@ -122,9 +116,9 @@ export const RaceDetail = memo(function RaceDetail({
   onBack,
   onOpenBankrollSettings,
 }: RaceDetailProps) {
-  const { header } = race
-  const { trackEvent } = useAnalytics()
-  const lastTrackedRace = useRef<number | null>(null)
+  const { header } = race;
+  const { trackEvent } = useAnalytics();
+  const lastTrackedRace = useRef<number | null>(null);
 
   // Track race_analyzed when user views this race detail
   useEffect(() => {
@@ -136,25 +130,32 @@ export const RaceDetail = memo(function RaceDetail({
         surface: header.surface,
         distance: header.distance,
         confidence,
-      })
-      lastTrackedRace.current = header.raceNumber
+      });
+      lastTrackedRace.current = header.raceNumber;
     }
-  }, [header.raceNumber, race.horses.length, header.surface, header.distance, confidence, trackEvent])
+  }, [
+    header.raceNumber,
+    race.horses.length,
+    header.surface,
+    header.distance,
+    confidence,
+    trackEvent,
+  ]);
 
   // Handle Escape key to go back
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onBack()
+        onBack();
       }
-    }
+    };
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onBack])
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onBack]);
 
   // Format surface nicely
-  const surfaceLabel = header.surface.charAt(0).toUpperCase() + header.surface.slice(1)
+  const surfaceLabel = header.surface.charAt(0).toUpperCase() + header.surface.slice(1);
 
   return (
     <motion.div
@@ -183,9 +184,7 @@ export const RaceDetail = memo(function RaceDetail({
         <span className="race-detail-back-hint">(Esc)</span>
 
         <div className="race-detail-info">
-          <h1 className="race-detail-title">
-            Race {header.raceNumber}
-          </h1>
+          <h1 className="race-detail-title">Race {header.raceNumber}</h1>
           <span className="race-detail-subtitle">
             {header.distance} {surfaceLabel}
             {header.classification && ` • ${header.classification}`}
@@ -207,7 +206,7 @@ export const RaceDetail = memo(function RaceDetail({
         />
       </div>
     </motion.div>
-  )
-})
+  );
+});
 
-export default RaceDetail
+export default RaceDetail;

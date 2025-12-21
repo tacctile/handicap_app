@@ -15,7 +15,7 @@
  *       Indiana Derby was held here until 2015 before moving to Indiana Grand
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const hoosierPark: TrackData = {
   code: 'HOO',
@@ -35,8 +35,8 @@ export const hoosierPark: TrackData = {
       // Source: Indiana Horse Racing Commission - 75 feet wide
       trackWidth: 75,
       // Source: Hoosier Park - chutes at 6f and 7f
-      chutes: [6, 7]
-    }
+      chutes: [6, 7],
+    },
     // Note: Hoosier Park does not have a turf course
   },
 
@@ -54,7 +54,8 @@ export const hoosierPark: TrackData = {
         // Sample: 300+ dirt sprints annually
         winPercentByPost: [15.0, 14.5, 13.5, 12.0, 10.5, 9.5, 8.2, 7.0, 6.0, 3.8],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Strong inside bias; 7/8-mile track with tight turns; posts 1-3 heavily favored; outside posts lose significant ground'
+        biasDescription:
+          'Strong inside bias; 7/8-mile track with tight turns; posts 1-3 heavily favored; outside posts lose significant ground',
       },
       {
         distance: 'route',
@@ -67,9 +68,10 @@ export const hoosierPark: TrackData = {
         // Sample: 150+ dirt routes annually
         winPercentByPost: [14.5, 14.8, 14.0, 13.0, 11.0, 9.5, 8.5, 7.2, 5.0, 2.5],
         favoredPosts: [1, 2, 3, 4],
-        biasDescription: 'Very strong inside bias in routes; tight 7/8-mile configuration; posts 1-4 have significant advantage; avoid outside'
-      }
-    ]
+        biasDescription:
+          'Very strong inside bias in routes; tight 7/8-mile configuration; posts 1-4 have significant advantage; avoid outside',
+      },
+    ],
     // No turf racing at Hoosier Park
   },
 
@@ -83,8 +85,9 @@ export const hoosierPark: TrackData = {
       // Wire-to-wire winners common
       earlySpeedWinRate: 59,
       paceAdvantageRating: 7,
-      description: 'Strong speed bias; 59% early speed win rate; 7/8-mile configuration with short 840-ft stretch heavily favors speed; wire-to-wire trips common'
-    }
+      description:
+        'Strong speed bias; 59% early speed win rate; 7/8-mile configuration with short 840-ft stretch heavily favors speed; wire-to-wire trips common',
+    },
   ],
 
   surfaces: [
@@ -93,10 +96,11 @@ export const hoosierPark: TrackData = {
       // Source: Indiana Horse Racing Commission, Hoosier Park grounds crew
       // Sandy loam composition
       // Shared use with Standardbred racing affects surface
-      composition: 'Sandy loam cushion over clay base; 3-inch cushion depth; maintained for both Thoroughbred and Standardbred racing',
+      composition:
+        'Sandy loam cushion over clay base; 3-inch cushion depth; maintained for both Thoroughbred and Standardbred racing',
       playingStyle: 'speed-favoring',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -108,7 +112,8 @@ export const hoosierPark: TrackData = {
       // Variable Midwest spring weather
       typicalCondition: 'Good to Fast; spring conditioning',
       speedAdjustment: 0,
-      notes: 'Thoroughbred meet opens; track conditioning; variable spring conditions; shared with harness racing'
+      notes:
+        'Thoroughbred meet opens; track conditioning; variable spring conditions; shared with harness racing',
     },
     {
       season: 'summer',
@@ -118,7 +123,7 @@ export const hoosierPark: TrackData = {
       // Hot, humid conditions
       typicalCondition: 'Fast; occasionally sloppy',
       speedAdjustment: 1,
-      notes: 'Peak Thoroughbred racing; speed bias intensifies in heat; afternoon storms possible'
+      notes: 'Peak Thoroughbred racing; speed bias intensifies in heat; afternoon storms possible',
     },
     {
       season: 'fall',
@@ -128,7 +133,7 @@ export const hoosierPark: TrackData = {
       // Standardbred focus increases
       typicalCondition: 'Fast to Good',
       speedAdjustment: 0,
-      notes: 'Late Thoroughbred season; cooling temperatures; Standardbred racing predominates'
+      notes: 'Late Thoroughbred season; cooling temperatures; Standardbred racing predominates',
     },
     {
       season: 'winter',
@@ -138,8 +143,8 @@ export const hoosierPark: TrackData = {
       // Limited Thoroughbred activity
       typicalCondition: 'Limited Racing',
       speedAdjustment: 0,
-      notes: 'Minimal Thoroughbred racing; Standardbred focus; Indiana winter affects conditions'
-    }
+      notes: 'Minimal Thoroughbred racing; Standardbred focus; Indiana winter affects conditions',
+    },
   ],
 
   winningTimes: [
@@ -151,7 +156,7 @@ export const hoosierPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 59.0,
       allowanceAvg: 57.8,
-      stakesAvg: 56.5
+      stakesAvg: 56.5,
     },
     {
       distance: '5.5f',
@@ -159,7 +164,7 @@ export const hoosierPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 65.5,
       allowanceAvg: 64.0,
-      stakesAvg: 62.8
+      stakesAvg: 62.8,
     },
     {
       distance: '6f',
@@ -168,7 +173,7 @@ export const hoosierPark: TrackData = {
       // Track record: 1:09.00
       claimingAvg: 71.8,
       allowanceAvg: 70.5,
-      stakesAvg: 69.0
+      stakesAvg: 69.0,
     },
     {
       distance: '6.5f',
@@ -176,7 +181,7 @@ export const hoosierPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 78.2,
       allowanceAvg: 76.8,
-      stakesAvg: 75.5
+      stakesAvg: 75.5,
     },
     {
       distance: '7f',
@@ -184,7 +189,7 @@ export const hoosierPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 85.0,
       allowanceAvg: 83.5,
-      stakesAvg: 82.0
+      stakesAvg: 82.0,
     },
     {
       distance: '1m',
@@ -193,7 +198,7 @@ export const hoosierPark: TrackData = {
       // Tight turns affect times
       claimingAvg: 99.0,
       allowanceAvg: 97.5,
-      stakesAvg: 95.8
+      stakesAvg: 95.8,
     },
     {
       distance: '1m70y',
@@ -201,7 +206,7 @@ export const hoosierPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 103.5,
       allowanceAvg: 102.0,
-      stakesAvg: 100.2
+      stakesAvg: 100.2,
     },
     {
       distance: '1 1/16m',
@@ -209,7 +214,7 @@ export const hoosierPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 106.0,
       allowanceAvg: 104.5,
-      stakesAvg: 102.8
+      stakesAvg: 102.8,
     },
     {
       distance: '1 1/8m',
@@ -218,7 +223,7 @@ export const hoosierPark: TrackData = {
       // Historical Indiana Derby distance (before 2016 move)
       claimingAvg: 113.5,
       allowanceAvg: 111.5,
-      stakesAvg: 109.5
+      stakesAvg: 109.5,
     },
     {
       distance: '1 1/4m',
@@ -226,10 +231,10 @@ export const hoosierPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 127.0,
       allowanceAvg: 124.5,
-      stakesAvg: 122.0
-    }
+      stakesAvg: 122.0,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

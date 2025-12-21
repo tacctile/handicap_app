@@ -16,18 +16,10 @@
  * - Other equipment: +2-5 pts
  */
 
-import type { HorseEntry, RaceHeader } from '../../types/drf'
-import {
-  type DetectedEquipmentChange,
-  getImpactClassification,
-} from './equipmentTypes'
-import {
-  extractEquipmentInfo,
-  type EquipmentExtractionResult,
-} from './equipmentExtractor'
-import {
-  calculateTrainerAdjustedPoints,
-} from './trainerPatterns'
+import type { HorseEntry, RaceHeader } from '../../types/drf';
+import { type DetectedEquipmentChange, getImpactClassification } from './equipmentTypes';
+import { extractEquipmentInfo, type EquipmentExtractionResult } from './equipmentExtractor';
+import { calculateTrainerAdjustedPoints } from './trainerPatterns';
 
 // ============================================================================
 // CONSTANTS
@@ -36,17 +28,17 @@ import {
 /**
  * Base equipment score when no changes
  */
-export const BASE_EQUIPMENT_SCORE = 10
+export const BASE_EQUIPMENT_SCORE = 10;
 
 /**
  * Maximum equipment score
  */
-export const MAX_EQUIPMENT_SCORE = 25
+export const MAX_EQUIPMENT_SCORE = 25;
 
 /**
  * Minimum equipment score
  */
-export const MIN_EQUIPMENT_SCORE = 0
+export const MIN_EQUIPMENT_SCORE = 0;
 
 // ============================================================================
 // TYPES
@@ -57,21 +49,21 @@ export const MIN_EQUIPMENT_SCORE = 0
  */
 export interface EquipmentScoreResult {
   /** Total equipment score (0-25) */
-  total: number
+  total: number;
   /** Base score before adjustments */
-  baseScore: number
+  baseScore: number;
   /** All detected changes with adjusted points */
-  changes: DetectedEquipmentChange[]
+  changes: DetectedEquipmentChange[];
   /** Has at least one significant change */
-  hasSignificantChange: boolean
+  hasSignificantChange: boolean;
   /** Summary reasoning */
-  reasoning: string
+  reasoning: string;
   /** Is trainer pattern being used */
-  usesTrainerPattern: boolean
+  usesTrainerPattern: boolean;
   /** Trainer pattern evidence (if any) */
-  trainerEvidence: string | null
+  trainerEvidence: string | null;
   /** Equipment analysis details */
-  analysis: EquipmentExtractionResult
+  analysis: EquipmentExtractionResult;
 }
 
 // ============================================================================
@@ -81,76 +73,75 @@ export interface EquipmentScoreResult {
 /**
  * Adjust bar shoes score based on surface
  */
-function adjustBarShoesForSurface(
-  change: DetectedEquipmentChange,
-  surface: string
-): number {
+function adjustBarShoesForSurface(change: DetectedEquipmentChange, surface: string): number {
   if (change.equipmentType.id !== 'barShoes') {
-    return change.adjustedPoints
+    return change.adjustedPoints;
   }
 
   // Bar shoes on turf: +2 (better grip)
   // Bar shoes on dirt: -1 (may indicate hoof concern)
   if (surface === 'turf') {
-    return change.adjustedPoints + 2
+    return change.adjustedPoints + 2;
   } else if (surface === 'dirt') {
-    return change.adjustedPoints - 2
+    return change.adjustedPoints - 2;
   }
 
-  return change.adjustedPoints
+  return change.adjustedPoints;
 }
 
 /**
  * Check for pace issues that blinkers-off might help
  */
 function checkForPaceIssues(horse: HorseEntry): boolean {
-  if (horse.pastPerformances.length === 0) return false
+  if (horse.pastPerformances.length === 0) return false;
 
-  const lastRaces = horse.pastPerformances.slice(0, 3)
+  const lastRaces = horse.pastPerformances.slice(0, 3);
 
   for (const pp of lastRaces) {
-    const runningLine = pp.runningLine
+    const runningLine = pp.runningLine;
 
     // Was leading or close early but faded badly
     if (runningLine.quarterMile !== null && runningLine.finish !== null) {
-      const earlyPosition = runningLine.quarterMile
-      const finalPosition = runningLine.finish
+      const earlyPosition = runningLine.quarterMile;
+      const finalPosition = runningLine.finish;
 
       // Led early (top 2) but finished poorly (outside top 5)
       if (earlyPosition <= 2 && finalPosition > 5) {
-        return true
+        return true;
       }
     }
 
     // Check trip comment for pace-related issues
-    const comment = pp.tripComment.toLowerCase()
-    if (comment.includes('hung') || comment.includes('lugged') ||
-        comment.includes('bore') || comment.includes('rank') ||
-        comment.includes('keen') || comment.includes('fought')) {
-      return true
+    const comment = pp.tripComment.toLowerCase();
+    if (
+      comment.includes('hung') ||
+      comment.includes('lugged') ||
+      comment.includes('bore') ||
+      comment.includes('rank') ||
+      comment.includes('keen') ||
+      comment.includes('fought')
+    ) {
+      return true;
     }
   }
 
-  return false
+  return false;
 }
 
 /**
  * Adjust blinkers-off score based on pace issues
  */
-function adjustBlinkersOffForPace(
-  change: DetectedEquipmentChange,
-  horse: HorseEntry
-): number {
+function adjustBlinkersOffForPace(change: DetectedEquipmentChange, horse: HorseEntry): number {
   if (change.equipmentType.id !== 'blinkers' || change.direction !== 'removed') {
-    return change.adjustedPoints
+    return change.adjustedPoints;
   }
 
   // Bonus if horse had pace issues (blinkers off may help)
   if (checkForPaceIssues(horse)) {
-    return change.adjustedPoints + 3
+    return change.adjustedPoints + 3;
   }
 
-  return change.adjustedPoints
+  return change.adjustedPoints;
 }
 
 // ============================================================================
@@ -165,7 +156,7 @@ export function calculateEquipmentImpactScore(
   raceHeader?: RaceHeader
 ): EquipmentScoreResult {
   // Extract equipment info
-  const extraction = extractEquipmentInfo(horse)
+  const extraction = extractEquipmentInfo(horse);
 
   // If no changes, return base score
   if (!extraction.hasChanges) {
@@ -178,14 +169,14 @@ export function calculateEquipmentImpactScore(
       usesTrainerPattern: false,
       trainerEvidence: null,
       analysis: extraction,
-    }
+    };
   }
 
   // Process each change with trainer patterns and context adjustments
-  const processedChanges: DetectedEquipmentChange[] = []
-  let totalPoints = 0
-  let usesTrainerPattern = false
-  let trainerEvidence: string | null = null
+  const processedChanges: DetectedEquipmentChange[] = [];
+  let totalPoints = 0;
+  let usesTrainerPattern = false;
+  let trainerEvidence: string | null = null;
 
   for (const change of extraction.changes) {
     // Check for trainer pattern
@@ -194,50 +185,47 @@ export function calculateEquipmentImpactScore(
       change.equipmentType.id,
       change.direction,
       change.basePoints
-    )
+    );
 
     // Create processed change with adjusted points
     const processedChange: DetectedEquipmentChange = {
       ...change,
       adjustedPoints: trainerResult.adjustedPoints,
-    }
+    };
 
     // Apply context adjustments
     if (raceHeader) {
       processedChange.adjustedPoints = adjustBarShoesForSurface(
         processedChange,
         raceHeader.surface
-      )
+      );
     }
 
     // Adjust blinkers-off based on pace issues
-    processedChange.adjustedPoints = adjustBlinkersOffForPace(
-      processedChange,
-      horse
-    )
+    processedChange.adjustedPoints = adjustBlinkersOffForPace(processedChange, horse);
 
     // Update impact classification based on final points
-    processedChange.impact = getImpactClassification(processedChange.adjustedPoints)
+    processedChange.impact = getImpactClassification(processedChange.adjustedPoints);
 
     // Add evidence if trainer pattern was used
     if (trainerResult.hasPattern) {
-      processedChange.evidence = trainerResult.evidence || undefined
-      usesTrainerPattern = true
+      processedChange.evidence = trainerResult.evidence || undefined;
+      usesTrainerPattern = true;
       if (!trainerEvidence) {
-        trainerEvidence = trainerResult.evidence
+        trainerEvidence = trainerResult.evidence;
       }
     }
 
-    processedChanges.push(processedChange)
-    totalPoints += processedChange.adjustedPoints
+    processedChanges.push(processedChange);
+    totalPoints += processedChange.adjustedPoints;
   }
 
   // Calculate total score (base + changes, clamped to range)
-  const rawTotal = BASE_EQUIPMENT_SCORE + totalPoints
-  const total = Math.max(MIN_EQUIPMENT_SCORE, Math.min(MAX_EQUIPMENT_SCORE, rawTotal))
+  const rawTotal = BASE_EQUIPMENT_SCORE + totalPoints;
+  const total = Math.max(MIN_EQUIPMENT_SCORE, Math.min(MAX_EQUIPMENT_SCORE, rawTotal));
 
   // Build reasoning string
-  const reasoning = buildReasoning(processedChanges, usesTrainerPattern, trainerEvidence)
+  const reasoning = buildReasoning(processedChanges, usesTrainerPattern, trainerEvidence);
 
   return {
     total,
@@ -248,7 +236,7 @@ export function calculateEquipmentImpactScore(
     usesTrainerPattern,
     trainerEvidence,
     analysis: extraction,
-  }
+  };
 }
 
 /**
@@ -260,26 +248,26 @@ function buildReasoning(
   trainerEvidence: string | null
 ): string {
   if (changes.length === 0) {
-    return 'No equipment changes'
+    return 'No equipment changes';
   }
 
-  const descriptions = changes.map(c => {
-    let desc = c.changeDescription
+  const descriptions = changes.map((c) => {
+    let desc = c.changeDescription;
     if (c.adjustedPoints > 0) {
-      desc += ` (+${c.adjustedPoints})`
+      desc += ` (+${c.adjustedPoints})`;
     } else if (c.adjustedPoints < 0) {
-      desc += ` (${c.adjustedPoints})`
+      desc += ` (${c.adjustedPoints})`;
     }
-    return desc
-  })
+    return desc;
+  });
 
-  let reasoning = descriptions.join(' + ')
+  let reasoning = descriptions.join(' + ');
 
   if (usesTrainerPattern && trainerEvidence) {
-    reasoning += ` | Trainer pattern: ${trainerEvidence}`
+    reasoning += ` | Trainer pattern: ${trainerEvidence}`;
   }
 
-  return reasoning
+  return reasoning;
 }
 
 // ============================================================================
@@ -289,16 +277,14 @@ function buildReasoning(
 /**
  * Get equipment changes summary for display
  */
-export function getEquipmentImpactSummary(
-  horse: HorseEntry
-): {
-  hasChanges: boolean
-  summary: string
-  totalImpact: number
-  primaryChange: DetectedEquipmentChange | null
-  hasTrainerPattern: boolean
+export function getEquipmentImpactSummary(horse: HorseEntry): {
+  hasChanges: boolean;
+  summary: string;
+  totalImpact: number;
+  primaryChange: DetectedEquipmentChange | null;
+  hasTrainerPattern: boolean;
 } {
-  const result = calculateEquipmentImpactScore(horse)
+  const result = calculateEquipmentImpactScore(horse);
 
   if (!result.hasSignificantChange && result.changes.length === 0) {
     return {
@@ -307,78 +293,79 @@ export function getEquipmentImpactSummary(
       totalImpact: 0,
       primaryChange: null,
       hasTrainerPattern: false,
-    }
+    };
   }
 
   // Get primary change (highest absolute impact)
-  const primaryChange = result.changes.length > 0
-    ? result.changes.reduce((max, c) =>
-        Math.abs(c.adjustedPoints) > Math.abs(max.adjustedPoints) ? c : max
-      )
-    : null
+  const primaryChange =
+    result.changes.length > 0
+      ? result.changes.reduce((max, c) =>
+          Math.abs(c.adjustedPoints) > Math.abs(max.adjustedPoints) ? c : max
+        )
+      : null;
 
   return {
     hasChanges: true,
-    summary: result.changes.map(c => c.changeDescription).join(', '),
+    summary: result.changes.map((c) => c.changeDescription).join(', '),
     totalImpact: result.total - BASE_EQUIPMENT_SCORE,
     primaryChange,
     hasTrainerPattern: result.usesTrainerPattern,
-  }
+  };
 }
 
 /**
  * Check if horse has any significant equipment change
  */
 export function hasSignificantEquipmentImpact(horse: HorseEntry): boolean {
-  const result = calculateEquipmentImpactScore(horse)
-  return result.hasSignificantChange
+  const result = calculateEquipmentImpactScore(horse);
+  return result.hasSignificantChange;
 }
 
 /**
  * Get equipment score color for UI
  */
 export function getEquipmentScoreColor(score: number): string {
-  if (score >= 20) return '#22c55e'  // Excellent - green
-  if (score >= 15) return '#36d1da'  // Good - cyan
-  if (score >= 10) return '#888888'  // Neutral - gray
-  if (score >= 5) return '#f97316'   // Concern - orange
-  return '#ef4444'                   // Poor - red
+  if (score >= 20) return '#22c55e'; // Excellent - green
+  if (score >= 15) return '#36d1da'; // Good - cyan
+  if (score >= 10) return '#888888'; // Neutral - gray
+  if (score >= 5) return '#f97316'; // Concern - orange
+  return '#ef4444'; // Poor - red
 }
 
 /**
  * Format equipment change for display
  */
 export function formatEquipmentChange(change: DetectedEquipmentChange): {
-  label: string
-  points: string
-  color: string
-  icon: string
+  label: string;
+  points: string;
+  color: string;
+  icon: string;
 } {
-  const isPositive = change.adjustedPoints > 0
-  const isNegative = change.adjustedPoints < 0
+  const isPositive = change.adjustedPoints > 0;
+  const isNegative = change.adjustedPoints < 0;
 
-  let color: string
-  let icon: string
+  let color: string;
+  let icon: string;
 
   if (isPositive) {
     if (change.adjustedPoints >= 10) {
-      color = '#22c55e'  // Bright green
-      icon = 'rocket_launch'
+      color = '#22c55e'; // Bright green
+      icon = 'rocket_launch';
     } else {
-      color = '#36d1da'  // Cyan
-      icon = 'trending_up'
+      color = '#36d1da'; // Cyan
+      icon = 'trending_up';
     }
   } else if (isNegative) {
     if (change.adjustedPoints <= -5) {
-      color = '#ef4444'  // Red
-      icon = 'warning'
+      color = '#ef4444'; // Red
+      icon = 'warning';
     } else {
-      color = '#f97316'  // Orange
-      icon = 'trending_down'
+      color = '#f97316'; // Orange
+      icon = 'trending_down';
     }
   } else {
-    color = '#888888'
-    icon = 'remove'
+    color = '#888888';
+    icon = 'remove';
   }
 
   return {
@@ -386,62 +373,60 @@ export function formatEquipmentChange(change: DetectedEquipmentChange): {
     points: isPositive ? `+${change.adjustedPoints}` : String(change.adjustedPoints),
     color,
     icon,
-  }
+  };
 }
 
 /**
  * Get all horses with equipment changes in a race
  */
-export function getHorsesWithEquipmentChanges(
-  horses: HorseEntry[]
-): {
-  horse: HorseEntry
-  changes: DetectedEquipmentChange[]
-  totalImpact: number
+export function getHorsesWithEquipmentChanges(horses: HorseEntry[]): {
+  horse: HorseEntry;
+  changes: DetectedEquipmentChange[];
+  totalImpact: number;
 }[] {
   return horses
-    .map(horse => {
-      const result = calculateEquipmentImpactScore(horse)
+    .map((horse) => {
+      const result = calculateEquipmentImpactScore(horse);
       return {
         horse,
         changes: result.changes,
         totalImpact: result.total - BASE_EQUIPMENT_SCORE,
-      }
+      };
     })
-    .filter(h => h.changes.length > 0)
-    .sort((a, b) => Math.abs(b.totalImpact) - Math.abs(a.totalImpact))
+    .filter((h) => h.changes.length > 0)
+    .sort((a, b) => Math.abs(b.totalImpact) - Math.abs(a.totalImpact));
 }
 
 /**
  * Count significant equipment changes in a race
  */
 export function countEquipmentChanges(horses: HorseEntry[]): {
-  total: number
-  significant: number
-  positive: number
-  negative: number
+  total: number;
+  significant: number;
+  positive: number;
+  negative: number;
 } {
-  let total = 0
-  let significant = 0
-  let positive = 0
-  let negative = 0
+  let total = 0;
+  let significant = 0;
+  let positive = 0;
+  let negative = 0;
 
   for (const horse of horses) {
-    const result = calculateEquipmentImpactScore(horse)
+    const result = calculateEquipmentImpactScore(horse);
 
     if (result.changes.length > 0) {
-      total += result.changes.length
+      total += result.changes.length;
 
       if (result.hasSignificantChange) {
-        significant++
+        significant++;
       }
 
       for (const change of result.changes) {
-        if (change.adjustedPoints > 0) positive++
-        else if (change.adjustedPoints < 0) negative++
+        if (change.adjustedPoints > 0) positive++;
+        else if (change.adjustedPoints < 0) negative++;
       }
     }
   }
 
-  return { total, significant, positive, negative }
+  return { total, significant, positive, negative };
 }

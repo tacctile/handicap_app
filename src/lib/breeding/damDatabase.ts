@@ -12,7 +12,7 @@
  * - Below Average (0-5): <40% winners
  */
 
-import type { DamProfile } from './types'
+import type { DamProfile } from './types';
 
 // ============================================================================
 // DAM TIER CONSTANTS
@@ -23,9 +23,9 @@ export const DAM_TIER_THRESHOLDS = {
   good: { minStakesWinners: 1, minWinnerRate: 0.6, minScore: 11, maxScore: 15 },
   average: { minStakesWinners: 0, minWinnerRate: 0.4, minScore: 6, maxScore: 10 },
   belowAverage: { minStakesWinners: 0, minWinnerRate: 0, minScore: 0, maxScore: 5 },
-} as const
+} as const;
 
-export type DamTier = keyof typeof DAM_TIER_THRESHOLDS
+export type DamTier = keyof typeof DAM_TIER_THRESHOLDS;
 
 // ============================================================================
 // EXTENDED DAM PROFILE
@@ -33,21 +33,21 @@ export type DamTier = keyof typeof DAM_TIER_THRESHOLDS
 
 export interface ExtendedDamProfile extends DamProfile {
   /** Dam tier classification */
-  tier: DamTier
+  tier: DamTier;
   /** Base score for this dam (0-20) */
-  baseScore: number
+  baseScore: number;
   /** Number of named foals */
-  foals: number
+  foals: number;
   /** Number of winners */
-  winners: number
+  winners: number;
   /** Winner rate (winners/foals) */
-  winnerRate: number
+  winnerRate: number;
   /** Graded stakes winners */
-  gradedStakesWinners: number
+  gradedStakesWinners: number;
   /** Notable offspring names */
-  notableOffspring: string[]
+  notableOffspring: string[];
   /** Brief notes */
-  notes: string
+  notes: string;
 }
 
 // ============================================================================
@@ -64,7 +64,7 @@ export const DAM_DATABASE: Record<string, ExtendedDamProfile> = {
   // ELITE PRODUCERS (16-20 points)
   // ========================================================================
 
-  'ZENYATTA': {
+  ZENYATTA: {
     name: 'Zenyatta',
     producerQuality: 95,
     offspringWinRate: 75,
@@ -81,7 +81,7 @@ export const DAM_DATABASE: Record<string, ExtendedDamProfile> = {
     notes: 'Champion racehorse, exceptional producer',
   },
 
-  'BEHOLDER': {
+  BEHOLDER: {
     name: 'Beholder',
     producerQuality: 92,
     offspringWinRate: 80,
@@ -92,10 +92,10 @@ export const DAM_DATABASE: Record<string, ExtendedDamProfile> = {
     baseScore: 19,
     foals: 5,
     winners: 4,
-    winnerRate: 0.80,
+    winnerRate: 0.8,
     gradedStakesWinners: 2,
     notableOffspring: ['Chillin With Jared', 'Behold Baby'],
-    notes: '3x Breeders\' Cup winner, elite producer',
+    notes: "3x Breeders' Cup winner, elite producer",
   },
 
   'TAKE CHARGE LADY': {
@@ -109,13 +109,13 @@ export const DAM_DATABASE: Record<string, ExtendedDamProfile> = {
     baseScore: 20,
     foals: 10,
     winners: 8,
-    winnerRate: 0.80,
+    winnerRate: 0.8,
     gradedStakesWinners: 4,
     notableOffspring: ['Will Take Charge', 'Take Charge Indy'],
     notes: 'Champion producer, multiple classic performers',
   },
 
-  'SONGBIRD': {
+  SONGBIRD: {
     name: 'Songbird',
     producerQuality: 88,
     offspringWinRate: 75,
@@ -143,9 +143,9 @@ export const DAM_DATABASE: Record<string, ExtendedDamProfile> = {
     baseScore: 17,
     foals: 5,
     winners: 4,
-    winnerRate: 0.80,
+    winnerRate: 0.8,
     gradedStakesWinners: 2,
-    notableOffspring: ['Jess\'s Dream', 'Rachel\'s Valentina'],
+    notableOffspring: ["Jess's Dream", "Rachel's Valentina"],
     notes: 'Horse of the Year, producing quality',
   },
 
@@ -187,7 +187,7 @@ export const DAM_DATABASE: Record<string, ExtendedDamProfile> = {
   // GOOD PRODUCERS (11-15 points)
   // ========================================================================
 
-  'LITTLEPRINCESSEMMA': {
+  LITTLEPRINCESSEMMA: {
     name: 'Littleprincessemma',
     producerQuality: 78,
     offspringWinRate: 65,
@@ -238,7 +238,7 @@ export const DAM_DATABASE: Record<string, ExtendedDamProfile> = {
     notes: 'Solid producer, consistent winners',
   },
 
-  'MUSHKA': {
+  MUSHKA: {
     name: 'Mushka',
     producerQuality: 70,
     offspringWinRate: 60,
@@ -310,7 +310,7 @@ export const DAM_DATABASE: Record<string, ExtendedDamProfile> = {
   // AVERAGE PRODUCERS (6-10 points)
   // ========================================================================
 
-  'STOPCHARGINGMARIA': {
+  STOPCHARGINGMARIA: {
     name: 'Stopchargingmaria',
     producerQuality: 55,
     offspringWinRate: 50,
@@ -321,13 +321,13 @@ export const DAM_DATABASE: Record<string, ExtendedDamProfile> = {
     baseScore: 8,
     foals: 5,
     winners: 3,
-    winnerRate: 0.60,
+    winnerRate: 0.6,
     gradedStakesWinners: 0,
     notableOffspring: [],
     notes: 'Champion mare, developing as producer',
   },
 
-  'TIZAMAZING': {
+  TIZAMAZING: {
     name: 'Tizamazing',
     producerQuality: 52,
     offspringWinRate: 48,
@@ -338,7 +338,7 @@ export const DAM_DATABASE: Record<string, ExtendedDamProfile> = {
     baseScore: 7,
     foals: 6,
     winners: 3,
-    winnerRate: 0.50,
+    winnerRate: 0.5,
     gradedStakesWinners: 0,
     notableOffspring: ['Tiz the Law'],
     notes: 'Dam of Belmont winner Tiz the Law',
@@ -360,7 +360,7 @@ export const DAM_DATABASE: Record<string, ExtendedDamProfile> = {
     notableOffspring: [],
     notes: 'Solid producer, consistent winners',
   },
-}
+};
 
 // ============================================================================
 // LOOKUP FUNCTIONS
@@ -370,11 +370,7 @@ export const DAM_DATABASE: Record<string, ExtendedDamProfile> = {
  * Normalize a dam name for database lookup
  */
 export function normalizeDamName(name: string): string {
-  return name
-    .toUpperCase()
-    .trim()
-    .replace(/['']/g, '\'')
-    .replace(/\s+/g, ' ')
+  return name.toUpperCase().trim().replace(/['']/g, "'").replace(/\s+/g, ' ');
 }
 
 /**
@@ -382,15 +378,15 @@ export function normalizeDamName(name: string): string {
  * Returns the dam profile if found, null otherwise
  */
 export function lookupDam(damName: string): ExtendedDamProfile | null {
-  const normalized = normalizeDamName(damName)
-  return DAM_DATABASE[normalized] || null
+  const normalized = normalizeDamName(damName);
+  return DAM_DATABASE[normalized] || null;
 }
 
 /**
  * Get all dam names in the database
  */
 export function getAllDamNames(): string[] {
-  return Object.keys(DAM_DATABASE)
+  return Object.keys(DAM_DATABASE);
 }
 
 /**
@@ -402,10 +398,12 @@ export function getAllDamNames(): string[] {
  * @param damName - Name of the dam
  * @returns Dam score (0-20) and profile
  */
-export function calculateDamScore(
-  damName: string
-): { score: number; profile: ExtendedDamProfile | null; reasoning: string } {
-  const profile = lookupDam(damName)
+export function calculateDamScore(damName: string): {
+  score: number;
+  profile: ExtendedDamProfile | null;
+  reasoning: string;
+} {
+  const profile = lookupDam(damName);
 
   if (!profile) {
     // Unknown dam - give baseline score (most dams will fall here)
@@ -413,24 +411,26 @@ export function calculateDamScore(
       score: 5,
       profile: null,
       reasoning: `Unknown dam - baseline score (most dams not in database)`,
-    }
+    };
   }
 
-  const score = profile.baseScore
-  const reasons: string[] = []
+  const score = profile.baseScore;
+  const reasons: string[] = [];
 
-  reasons.push(`${profile.name}: ${profile.tier} producer (${profile.baseScore} pts)`)
-  reasons.push(`${profile.winners}/${profile.foals} winners (${(profile.winnerRate * 100).toFixed(0)}%)`)
+  reasons.push(`${profile.name}: ${profile.tier} producer (${profile.baseScore} pts)`);
+  reasons.push(
+    `${profile.winners}/${profile.foals} winners (${(profile.winnerRate * 100).toFixed(0)}%)`
+  );
 
   if (profile.stakesWinnersProduced > 0) {
-    reasons.push(`${profile.stakesWinnersProduced} stakes winner(s)`)
+    reasons.push(`${profile.stakesWinnersProduced} stakes winner(s)`);
   }
 
   return {
     score,
     profile,
     reasoning: reasons.join('; '),
-  }
+  };
 }
 
 /**
@@ -438,10 +438,14 @@ export function calculateDamScore(
  */
 export function getDamTierLabel(tier: DamTier): string {
   switch (tier) {
-    case 'elite': return 'Elite Producer'
-    case 'good': return 'Good Producer'
-    case 'average': return 'Average'
-    case 'belowAverage': return 'Below Avg'
+    case 'elite':
+      return 'Elite Producer';
+    case 'good':
+      return 'Good Producer';
+    case 'average':
+      return 'Average';
+    case 'belowAverage':
+      return 'Below Avg';
   }
 }
 
@@ -450,10 +454,14 @@ export function getDamTierLabel(tier: DamTier): string {
  */
 export function getDamTierColor(tier: DamTier): string {
   switch (tier) {
-    case 'elite': return '#22c55e'
-    case 'good': return '#36d1da'
-    case 'average': return '#888888'
-    case 'belowAverage': return '#ef4444'
+    case 'elite':
+      return '#22c55e';
+    case 'good':
+      return '#36d1da';
+    case 'average':
+      return '#888888';
+    case 'belowAverage':
+      return '#ef4444';
   }
 }
 
@@ -462,16 +470,16 @@ export function getDamTierColor(tier: DamTier): string {
  * Used when dam is unknown but we want to estimate quality
  */
 export function estimateDamScoreFromClass(raceClass: string): number {
-  const classLower = raceClass.toLowerCase()
+  const classLower = raceClass.toLowerCase();
 
   // Stakes races suggest higher quality breeding
-  if (classLower.includes('g1') || classLower.includes('grade 1')) return 8
-  if (classLower.includes('g2') || classLower.includes('grade 2')) return 7
-  if (classLower.includes('g3') || classLower.includes('grade 3')) return 6
-  if (classLower.includes('stake')) return 6
-  if (classLower.includes('allowance')) return 5
-  if (classLower.includes('maiden special')) return 5
-  if (classLower.includes('claiming')) return 4
+  if (classLower.includes('g1') || classLower.includes('grade 1')) return 8;
+  if (classLower.includes('g2') || classLower.includes('grade 2')) return 7;
+  if (classLower.includes('g3') || classLower.includes('grade 3')) return 6;
+  if (classLower.includes('stake')) return 6;
+  if (classLower.includes('allowance')) return 5;
+  if (classLower.includes('maiden special')) return 5;
+  if (classLower.includes('claiming')) return 4;
 
-  return 5 // Default baseline
+  return 5; // Default baseline
 }

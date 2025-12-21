@@ -8,10 +8,10 @@
  * - Builder modal launch
  */
 
-import { useState, useMemo, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import type { HorseEntry } from '../types/drf'
-import type { HorseScore } from '../lib/scoring'
+import { useState, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { HorseEntry } from '../types/drf';
+import type { HorseScore } from '../lib/scoring';
 import {
   type MultiRaceBetType,
   type MultiRaceRaceData,
@@ -28,26 +28,26 @@ import {
   shouldAlertCarryover,
   formatCarryoverAmount,
   getCarryoverBadgeColor,
-} from '../lib/multirace'
-import { formatCurrency } from '../lib/recommendations'
-import { MultiRaceBuilderModal, type MultiRaceTicketResult } from './MultiRaceBuilderModal'
+} from '../lib/multirace';
+import { formatCurrency } from '../lib/recommendations';
+import { MultiRaceBuilderModal, type MultiRaceTicketResult } from './MultiRaceBuilderModal';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 interface RaceData {
-  raceNumber: number
-  horses: Array<{ horse: HorseEntry; index: number; score: HorseScore }>
-  postTime?: string
+  raceNumber: number;
+  horses: Array<{ horse: HorseEntry; index: number; score: HorseScore }>;
+  postTime?: string;
 }
 
 interface MultiRaceExoticsPanelProps {
-  races: RaceData[]
-  currentRaceNumber: number
-  trackCode?: string
-  budget: number
-  onAddToBetSlip: (ticket: MultiRaceTicketResult) => void
+  races: RaceData[];
+  currentRaceNumber: number;
+  trackCode?: string;
+  budget: number;
+  onAddToBetSlip: (ticket: MultiRaceTicketResult) => void;
 }
 
 // ============================================================================
@@ -55,36 +55,38 @@ interface MultiRaceExoticsPanelProps {
 // ============================================================================
 
 function convertToMultiRaceData(raceData: RaceData): MultiRaceRaceData {
-  const horses: MultiRaceHorse[] = raceData.horses.map((h, idx) => {
-    let tier: 1 | 2 | 3 = 3
-    if (h.score.total >= 180) tier = 1
-    else if (h.score.total >= 160) tier = 2
+  const horses: MultiRaceHorse[] = raceData.horses
+    .map((h, idx) => {
+      let tier: 1 | 2 | 3 = 3;
+      if (h.score.total >= 180) tier = 1;
+      else if (h.score.total >= 160) tier = 2;
 
-    const oddsMatch = h.horse.morningLineOdds.match(/(\d+(?:\.\d+)?)[/-](\d+(?:\.\d+)?)?/)
-    const decimalOdds = oddsMatch
-      ? parseFloat(oddsMatch[1]) / (oddsMatch[2] ? parseFloat(oddsMatch[2]) : 1)
-      : 5
-    const winProbability = 1 / (decimalOdds + 1)
+      const oddsMatch = h.horse.morningLineOdds.match(/(\d+(?:\.\d+)?)[/-](\d+(?:\.\d+)?)?/);
+      const decimalOdds = oddsMatch
+        ? parseFloat(oddsMatch[1]) / (oddsMatch[2] ? parseFloat(oddsMatch[2]) : 1)
+        : 5;
+      const winProbability = 1 / (decimalOdds + 1);
 
-    const sorted = [...raceData.horses].sort((a, b) => b.score.total - a.score.total)
-    const nextHorse = sorted[idx + 1]
-    const scoreGapToNext = nextHorse ? h.score.total - nextHorse.score.total : 0
+      const sorted = [...raceData.horses].sort((a, b) => b.score.total - a.score.total);
+      const nextHorse = sorted[idx + 1];
+      const scoreGapToNext = nextHorse ? h.score.total - nextHorse.score.total : 0;
 
-    return {
-      programNumber: h.horse.programNumber,
-      horseName: h.horse.horseName,
-      score: h.score.total,
-      morningLineOdds: h.horse.morningLineOdds,
-      decimalOdds,
-      winProbability,
-      tier,
-      isSingleCandidate: h.score.total >= 180 && scoreGapToNext >= 15,
-      scoreGapToNext,
-    }
-  }).sort((a, b) => b.score - a.score)
+      return {
+        programNumber: h.horse.programNumber,
+        horseName: h.horse.horseName,
+        score: h.score.total,
+        morningLineOdds: h.horse.morningLineOdds,
+        decimalOdds,
+        winProbability,
+        tier,
+        isSingleCandidate: h.score.total >= 180 && scoreGapToNext >= 15,
+        scoreGapToNext,
+      };
+    })
+    .sort((a, b) => b.score - a.score);
 
-  const strength = classifyRaceStrength(horses)
-  const standout = findStandoutHorse(horses)
+  const strength = classifyRaceStrength(horses);
+  const standout = findStandoutHorse(horses);
 
   return {
     raceNumber: raceData.raceNumber,
@@ -95,7 +97,7 @@ function convertToMultiRaceData(raceData: RaceData): MultiRaceRaceData {
     hasStandout: !!standout,
     standoutHorse: standout,
     isCancelled: false,
-  }
+  };
 }
 
 // ============================================================================
@@ -103,16 +105,16 @@ function convertToMultiRaceData(raceData: RaceData): MultiRaceRaceData {
 // ============================================================================
 
 interface BetTypeCardProps {
-  betType: MultiRaceBetType
-  startRace: number
-  endRace: number
-  isAvailable: boolean
+  betType: MultiRaceBetType;
+  startRace: number;
+  endRace: number;
+  isAvailable: boolean;
   optimization: {
-    recommended: OptimizedTicket | null
-    isValid: boolean
-  } | null
-  carryover?: CarryoverInfo | null
-  onBuild: () => void
+    recommended: OptimizedTicket | null;
+    isValid: boolean;
+  } | null;
+  carryover?: CarryoverInfo | null;
+  onBuild: () => void;
 }
 
 function BetTypeCard({
@@ -124,7 +126,7 @@ function BetTypeCard({
   carryover,
   onBuild,
 }: BetTypeCardProps) {
-  const config = getBetConfig(betType)
+  const config = getBetConfig(betType);
 
   return (
     <div className={`multirace-bet-card ${!isAvailable ? 'unavailable' : ''}`}>
@@ -178,17 +180,13 @@ function BetTypeCard({
       )}
 
       <div className="multirace-bet-card-footer">
-        <button
-          className="multirace-bet-card-btn"
-          onClick={onBuild}
-          disabled={!isAvailable}
-        >
+        <button className="multirace-bet-card-btn" onClick={onBuild} disabled={!isAvailable}>
           <span className="material-icons">build</span>
           Build Ticket
         </button>
       </div>
     </div>
-  )
+  );
 }
 
 // ============================================================================
@@ -202,95 +200,94 @@ export function MultiRaceExoticsPanel({
   budget,
   onAddToBetSlip,
 }: MultiRaceExoticsPanelProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [builderOpen, setBuilderOpen] = useState(false)
-  const [selectedBetType, setSelectedBetType] = useState<MultiRaceBetType>('daily_double')
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [selectedBetType, setSelectedBetType] = useState<MultiRaceBetType>('daily_double');
 
   // Convert races to MultiRaceRaceData
-  const multiRaceData = useMemo(() =>
-    races.map(convertToMultiRaceData),
-    [races]
-  )
+  const multiRaceData = useMemo(() => races.map(convertToMultiRaceData), [races]);
 
   // Get available bet types
   const availableBetTypes = useMemo(() => {
-    const remaining = races.length - currentRaceNumber + 1
-    return getAvailableBetTypes(remaining)
-  }, [races.length, currentRaceNumber])
+    const remaining = races.length - currentRaceNumber + 1;
+    return getAvailableBetTypes(remaining);
+  }, [races.length, currentRaceNumber]);
 
   // Analyze race card
-  const analysis = useMemo(() =>
-    analyzeRaceCard(multiRaceData.slice(currentRaceNumber - 1)),
+  const analysis = useMemo(
+    () => analyzeRaceCard(multiRaceData.slice(currentRaceNumber - 1)),
     [multiRaceData, currentRaceNumber]
-  )
+  );
 
   // Get carryovers
   const carryovers = useMemo(() => {
-    const result: Record<string, CarryoverInfo | null> = {}
+    const result: Record<string, CarryoverInfo | null> = {};
     if (trackCode) {
-      result.pick_5 = getCarryover(trackCode, 'pick_5')
-      result.pick_6 = getCarryover(trackCode, 'pick_6')
+      result.pick_5 = getCarryover(trackCode, 'pick_5');
+      result.pick_6 = getCarryover(trackCode, 'pick_6');
     }
-    return result
-  }, [trackCode])
+    return result;
+  }, [trackCode]);
 
   // Get optimizations for each bet type
   const optimizations = useMemo(() => {
-    const result: Record<MultiRaceBetType, { recommended: OptimizedTicket | null; isValid: boolean } | null> = {
+    const result: Record<
+      MultiRaceBetType,
+      { recommended: OptimizedTicket | null; isValid: boolean } | null
+    > = {
       daily_double: null,
       pick_3: null,
       pick_4: null,
       pick_5: null,
       pick_6: null,
-    }
+    };
 
-    const racesFromCurrent = multiRaceData.slice(currentRaceNumber - 1)
+    const racesFromCurrent = multiRaceData.slice(currentRaceNumber - 1);
 
     for (const betType of availableBetTypes) {
-      const config = getBetConfig(betType)
+      const config = getBetConfig(betType);
       if (racesFromCurrent.length >= config.racesRequired) {
         const optResult = optimizeMultiRaceBet({
           betType,
           races: racesFromCurrent.slice(0, config.racesRequired),
           budget,
           strategy: 'balanced',
-        })
+        });
         result[betType] = {
           recommended: optResult.recommended,
           isValid: optResult.isValid,
-        }
+        };
       }
     }
 
-    return result
-  }, [multiRaceData, currentRaceNumber, availableBetTypes, budget])
+    return result;
+  }, [multiRaceData, currentRaceNumber, availableBetTypes, budget]);
 
   // Handlers
   const handleOpenBuilder = useCallback((betType: MultiRaceBetType) => {
-    setSelectedBetType(betType)
-    setBuilderOpen(true)
-  }, [])
+    setSelectedBetType(betType);
+    setBuilderOpen(true);
+  }, []);
 
   // Check if we have enough races for any multi-race bet
   if (races.length < 2 || availableBetTypes.length === 0) {
-    return null
+    return null;
   }
 
   // Check for any high-value carryovers
-  const hasHighValueCarryover = Object.values(carryovers).some(c => c && shouldAlertCarryover(c))
+  const hasHighValueCarryover = Object.values(carryovers).some((c) => c && shouldAlertCarryover(c));
 
   return (
     <>
       <div className="multirace-exotics-section">
-        <button
-          className="multirace-exotics-toggle"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
+        <button className="multirace-exotics-toggle" onClick={() => setIsExpanded(!isExpanded)}>
           <span className="material-icons">casino</span>
           <span>Multi-Race Exotics</span>
           {hasHighValueCarryover && (
             <span className="multirace-carryover-indicator">
-              <span className="material-icons" style={{ fontSize: 16 }}>trending_up</span>
+              <span className="material-icons" style={{ fontSize: 16 }}>
+                trending_up
+              </span>
               Carryover
             </span>
           )}
@@ -299,9 +296,7 @@ export function MultiRaceExoticsPanel({
               {getBetConfig(analysis.bestOpportunity).shortName} opportunity
             </span>
           )}
-          <span className={`material-icons chevron ${isExpanded ? 'open' : ''}`}>
-            expand_more
-          </span>
+          <span className={`material-icons chevron ${isExpanded ? 'open' : ''}`}>expand_more</span>
         </button>
 
         <AnimatePresence>
@@ -348,11 +343,13 @@ export function MultiRaceExoticsPanel({
 
               {/* Bet Type Cards */}
               <div className="multirace-bet-cards">
-                {(['daily_double', 'pick_3', 'pick_4', 'pick_5', 'pick_6'] as MultiRaceBetType[]).map(betType => {
-                  const config = getBetConfig(betType)
-                  const isAvailable = availableBetTypes.includes(betType)
-                  const startRace = currentRaceNumber
-                  const endRace = currentRaceNumber + config.racesRequired - 1
+                {(
+                  ['daily_double', 'pick_3', 'pick_4', 'pick_5', 'pick_6'] as MultiRaceBetType[]
+                ).map((betType) => {
+                  const config = getBetConfig(betType);
+                  const isAvailable = availableBetTypes.includes(betType);
+                  const startRace = currentRaceNumber;
+                  const endRace = currentRaceNumber + config.racesRequired - 1;
 
                   return (
                     <BetTypeCard
@@ -363,13 +360,11 @@ export function MultiRaceExoticsPanel({
                       isAvailable={isAvailable}
                       optimization={optimizations[betType]}
                       carryover={
-                        (betType === 'pick_5' || betType === 'pick_6')
-                          ? carryovers[betType]
-                          : null
+                        betType === 'pick_5' || betType === 'pick_6' ? carryovers[betType] : null
                       }
                       onBuild={() => handleOpenBuilder(betType)}
                     />
-                  )
+                  );
                 })}
               </div>
 
@@ -377,8 +372,8 @@ export function MultiRaceExoticsPanel({
               <div className="multirace-strategy-hint">
                 <span className="material-icons">lightbulb</span>
                 <div>
-                  <strong>Tip:</strong> Multi-race bets are high-variance. Use singles in standout races,
-                  spread in competitive ones. Consider carryover days for better value.
+                  <strong>Tip:</strong> Multi-race bets are high-variance. Use singles in standout
+                  races, spread in competitive ones. Consider carryover days for better value.
                 </div>
               </div>
             </motion.div>
@@ -402,7 +397,7 @@ export function MultiRaceExoticsPanel({
         )}
       </AnimatePresence>
     </>
-  )
+  );
 }
 
-export default MultiRaceExoticsPanel
+export default MultiRaceExoticsPanel;

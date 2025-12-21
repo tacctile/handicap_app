@@ -13,17 +13,18 @@
 **Portfolio approach maximizes profit potential while minimizing variance:**
 
 **Risk Distribution Strategy:**
+
 - 40% of capital allocated to Tier 1 (Cover Chalk)
 - 35% of capital allocated to Tier 2 (Logical Alternatives)
 - 25% of capital allocated to Tier 3 (Value Bombs)
 
 **Expected Return Modeling:**
 
-| Tier | Expected Hit Rate | Profit Per Hit |
-|------|-------------------|----------------|
-| Tier 1 | 50-70% | Modest profit per hit |
-| Tier 2 | 20-40% | Solid profit per hit |
-| Tier 3 | 5-20% | Large profit per hit |
+| Tier   | Expected Hit Rate | Profit Per Hit        |
+| ------ | ----------------- | --------------------- |
+| Tier 1 | 50-70%            | Modest profit per hit |
+| Tier 2 | 20-40%            | Solid profit per hit  |
+| Tier 3 | 5-20%             | Large profit per hit  |
 
 Combined approach provides consistent daily returns with major score potential.
 
@@ -34,6 +35,7 @@ Combined approach provides consistent daily returns with major score potential.
 ### Target Identification Criteria
 
 **Horse Qualification Standards:**
+
 - Final Score: 180+ points (elite tier)
 - Confidence Level: 80%+
 - Win Probability: 35%+ calculated chance
@@ -44,13 +46,13 @@ Combined approach provides consistent daily returns with major score potential.
 
 **Minimum 5 Bets Required Per Qualifying Race:**
 
-| Priority | Bet Type | Purpose |
-|----------|----------|---------|
-| 1 | Win Bet | Primary foundation - largest single bet |
-| 2 | Place Bet | Safety component - insurance |
-| 3 | Exacta Box | Value addition - top 2-3 choices |
-| 4 | Exacta Key | Efficiency play - top choice over alternatives |
-| 5 | Trifecta Box | Coverage expansion - top 3 for bigger return |
+| Priority | Bet Type     | Purpose                                        |
+| -------- | ------------ | ---------------------------------------------- |
+| 1        | Win Bet      | Primary foundation - largest single bet        |
+| 2        | Place Bet    | Safety component - insurance                   |
+| 3        | Exacta Box   | Value addition - top 2-3 choices               |
+| 4        | Exacta Key   | Efficiency play - top choice over alternatives |
+| 5        | Trifecta Box | Coverage expansion - top 3 for bigger return   |
 
 ### Tier 1 Bet Construction
 
@@ -82,16 +84,19 @@ EXPECTED RETURN RANGE: $35-85 (based on current odds)
 ### Tier 1 Confidence Scaling
 
 **Maximum Confidence (90%+ scenarios):**
+
 - Increase bet sizing by 50%
 - Add superfecta coverage
 - Consider show bet for safety
 
 **High Confidence (80-89% scenarios):**
+
 - Standard bet sizing
 - Focus on win/place combination
 - Selective exotic coverage
 
 **Minimum Confidence (70-79% scenarios):**
+
 - Reduce bet sizing by 25%
 - Emphasize place bet safety
 - Minimal exotic exposure
@@ -103,6 +108,7 @@ EXPECTED RETURN RANGE: $35-85 (based on current odds)
 ### Target Identification Criteria
 
 **Horse Qualification Standards:**
+
 - Final Score: 160-179 points (strong tier)
 - Confidence Level: 60-79%
 - Win Probability: 15-35% calculated chance
@@ -113,13 +119,13 @@ EXPECTED RETURN RANGE: $35-85 (based on current odds)
 
 **Minimum 5 Bets Required Per Qualifying Race:**
 
-| Priority | Bet Type | Purpose |
-|----------|----------|---------|
-| 1 | Win Bet | Value focus - primary when odds exceed fair value |
-| 2 | Exacta Key | Leverage play - key over/under chalk |
-| 3 | Trifecta Key | Coverage play - multi-horse combinations |
-| 4 | Quinella | Safety exotic - reduced juice alternative |
-| 5 | Place Bet | High-probability safety - when place odds offer value |
+| Priority | Bet Type     | Purpose                                               |
+| -------- | ------------ | ----------------------------------------------------- |
+| 1        | Win Bet      | Value focus - primary when odds exceed fair value     |
+| 2        | Exacta Key   | Leverage play - key over/under chalk                  |
+| 3        | Trifecta Key | Coverage play - multi-horse combinations              |
+| 4        | Quinella     | Safety exotic - reduced juice alternative             |
+| 5        | Place Bet    | High-probability safety - when place odds offer value |
 
 ### Tier 2 Bet Construction
 
@@ -153,12 +159,13 @@ EXPECTED RETURN RANGE: $85-250 (based on current odds)
 **Overlay Requirements:**
 
 | Current Odds | Minimum Win Probability Required |
-|--------------|----------------------------------|
-| 4/1 | 30%+ calculated probability |
-| 6/1 | 20%+ calculated probability |
-| 8/1 | 15%+ calculated probability |
+| ------------ | -------------------------------- |
+| 4/1          | 30%+ calculated probability      |
+| 6/1          | 20%+ calculated probability      |
+| 8/1          | 15%+ calculated probability      |
 
 **Edge Identification:**
+
 - Pace scenario strongly favors this horse's style
 - Class drop with valid excuse provides hidden form
 - Connection upgrade or equipment change suggests improvement
@@ -171,6 +178,7 @@ EXPECTED RETURN RANGE: $85-250 (based on current odds)
 ### Target Identification Criteria
 
 **Horse Qualification Standards:**
+
 - Final Score: 140-179 points (depending on overlay size)
 - Confidence Level: 25-60% (lower acceptable for bigger prices)
 - Win Probability: 5-25% calculated chance
@@ -181,13 +189,13 @@ EXPECTED RETURN RANGE: $85-250 (based on current odds)
 
 **Minimum 5 Bets Required Per Qualifying Race:**
 
-| Priority | Bet Type | Purpose |
-|----------|----------|---------|
-| 1 | Win Bet | Lottery ticket - small bet, maximum return |
-| 2 | Exacta Key Over All | Covering bases - longshot over field |
-| 3 | Superfecta Coverage | Home run swing - multi-horse combinations |
-| 4 | Trifecta Wheel | Strategic coverage - with logical combinations |
-| 5 | Place Bet | Higher probability - sometimes better value than win |
+| Priority | Bet Type            | Purpose                                              |
+| -------- | ------------------- | ---------------------------------------------------- |
+| 1        | Win Bet             | Lottery ticket - small bet, maximum return           |
+| 2        | Exacta Key Over All | Covering bases - longshot over field                 |
+| 3        | Superfecta Coverage | Home run swing - multi-horse combinations            |
+| 4        | Trifecta Wheel      | Strategic coverage - with logical combinations       |
+| 5        | Place Bet           | Higher probability - sometimes better value than win |
 
 ### Tier 3 Bet Construction
 
@@ -219,6 +227,7 @@ EXPECTED RETURN RANGE: $150-1200+ (based on current odds)
 ### Tier 3 Angle Identification
 
 **Perfect Longshot Scenarios:**
+
 - Lone closer in hot pace with superior class
 - Shipper dropping dramatically in class with connections upgrade
 - Equipment change (first-time Lasix) with trainer specialist pattern
@@ -405,18 +414,21 @@ STRATEGY ADJUSTMENT:
 ### Betting Worthiness Assessment
 
 **Auto-Qualify Races:**
+
 - At least one horse scores 180+ points with 80%+ confidence
 - Clear pace scenario with 15+ point separation between top choices
 - Optimal field size (6-8 horses) with normal conditions
 - Expected value positive on multiple betting options
 
 **Conditional Qualify Races:**
+
 - Horse scores 160-179 points with specific advantages
 - Acceptable pace scenario with moderate separation
 - Field size or conditions require careful betting approach
 - Expected value positive on selective betting options
 
 **Auto-Reject Races:**
+
 - No horse scores above 140 points
 - Chaotic or unclear pace scenario
 - Extreme weather or surface concerns
@@ -427,24 +439,28 @@ STRATEGY ADJUSTMENT:
 **Race Classification for Betting Approach:**
 
 **Class A Races (Maximum Investment):**
+
 - Elite horse with maximum confidence
 - Multiple profitable betting angles available
 - Clear strategic advantage identified
 - Risk/reward ratio highly favorable
 
 **Class B Races (Standard Investment):**
+
 - Strong contender with high confidence
 - Selective betting opportunities
 - Good risk/reward balance
 - Standard approach with specific focus
 
 **Class C Races (Minimal Investment):**
+
 - Marginal opportunities only
 - High-risk betting scenarios
 - Limited investment justified
 - Specific value spots only
 
 **Class D Races (Pass Completely):**
+
 - No qualifying opportunities
 - Risk exceeds potential reward
 - Better opportunities available elsewhere
@@ -641,6 +657,6 @@ BANKROLL RISK: [LOW/MODERATE/HIGH] - [XX]% of bankroll at risk
 
 ---
 
-*Document Version: 1.0*
-*Status: Complete Betting Tier Specification*
-*Integration: Applied after scoring and overlay calculations, generates final betting recommendations*
+_Document Version: 1.0_
+_Status: Complete Betting Tier Specification_
+_Integration: Applied after scoring and overlay calculations, generates final betting recommendations_

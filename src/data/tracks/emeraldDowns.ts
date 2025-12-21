@@ -15,7 +15,7 @@
  *       Longacres Mile heritage; 1 mile dirt main track with turf course
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const emeraldDowns: TrackData = {
   code: 'EMD',
@@ -34,7 +34,7 @@ export const emeraldDowns: TrackData = {
       // Source: Washington Horse Racing Commission - 80 feet wide
       trackWidth: 80,
       // Source: Emerald Downs - chutes at 6f and 7f
-      chutes: [6, 7]
+      chutes: [6, 7],
     },
     turf: {
       // Source: Emerald Downs official - 7/8 mile turf course
@@ -45,8 +45,8 @@ export const emeraldDowns: TrackData = {
       turnRadius: 240,
       // Source: Washington Horse Racing Commission
       trackWidth: 70,
-      chutes: [8, 10]
-    }
+      chutes: [8, 10],
+    },
   },
 
   postPositionBias: {
@@ -63,7 +63,8 @@ export const emeraldDowns: TrackData = {
         // Sample: 500+ dirt sprints annually
         winPercentByPost: [12.5, 14.0, 14.5, 13.0, 11.5, 10.5, 9.0, 7.5, 5.0, 2.5],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Inside-leaning bias in sprints; posts 2-4 optimal; rail can become heavy after rain; short run to turn at 6f'
+        biasDescription:
+          'Inside-leaning bias in sprints; posts 2-4 optimal; rail can become heavy after rain; short run to turn at 6f',
       },
       {
         distance: 'route',
@@ -76,8 +77,9 @@ export const emeraldDowns: TrackData = {
         // Sample: 300+ dirt routes annually
         winPercentByPost: [12.0, 13.5, 14.0, 13.5, 12.0, 10.5, 9.0, 7.5, 5.5, 2.5],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Inside advantage in routes; posts 2-4 favored; Longacres Mile tradition; tactical speed rewarded'
-      }
+        biasDescription:
+          'Inside advantage in routes; posts 2-4 favored; Longacres Mile tradition; tactical speed rewarded',
+      },
     ],
     turf: [
       {
@@ -91,7 +93,8 @@ export const emeraldDowns: TrackData = {
         // Sample: 100+ turf sprints annually
         winPercentByPost: [14.5, 14.2, 13.5, 12.0, 10.5, 10.0, 9.5, 8.5, 5.0, 2.3],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Inside favored on turf sprints; posts 1-3 advantage; rain can soften course; ground savings important'
+        biasDescription:
+          'Inside favored on turf sprints; posts 1-3 advantage; rain can soften course; ground savings important',
       },
       {
         distance: 'route',
@@ -103,9 +106,10 @@ export const emeraldDowns: TrackData = {
         // Sample: 150+ turf routes annually
         winPercentByPost: [13.5, 13.8, 13.0, 12.0, 11.5, 10.5, 9.5, 8.5, 5.5, 2.2],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Inside advantage continues in turf routes; posts 1-3 favored; course condition affects bias'
-      }
-    ]
+        biasDescription:
+          'Inside advantage continues in turf routes; posts 1-3 favored; course condition affects bias',
+      },
+    ],
   },
 
   speedBias: [
@@ -118,7 +122,8 @@ export const emeraldDowns: TrackData = {
       // Closers can rally with pace scenario
       earlySpeedWinRate: 54,
       paceAdvantageRating: 6,
-      description: 'Moderate speed bias; 54% early speed win rate; rain can slow surface; closers competitive when pace is hot'
+      description:
+        'Moderate speed bias; 54% early speed win rate; rain can slow surface; closers competitive when pace is hot',
     },
     {
       surface: 'turf',
@@ -128,8 +133,9 @@ export const emeraldDowns: TrackData = {
       // Speed has slight edge
       earlySpeedWinRate: 52,
       paceAdvantageRating: 5,
-      description: 'Fair turf course; 52% early speed success; conditions vary with weather; rail position helps speed'
-    }
+      description:
+        'Fair turf course; 52% early speed success; conditions vary with weather; rail position helps speed',
+    },
   ],
 
   surfaces: [
@@ -138,19 +144,21 @@ export const emeraldDowns: TrackData = {
       // Source: Washington Horse Racing Commission, Emerald Downs grounds crew
       // Sandy loam composition; Pacific Northwest moisture influence
       // Track can become tiring after rain
-      composition: 'Sandy loam cushion over clay base; 3-inch cushion depth; Pacific Northwest climate affects moisture; can tire horses after rain',
+      composition:
+        'Sandy loam cushion over clay base; 3-inch cushion depth; Pacific Northwest climate affects moisture; can tire horses after rain',
       playingStyle: 'fair',
-      drainage: 'fair'
+      drainage: 'fair',
     },
     {
       baseType: 'turf',
       // Source: Emerald Downs grounds specifications
       // Perennial ryegrass suited for Pacific Northwest
       // Natural moisture from climate
-      composition: 'Perennial ryegrass; Pacific Northwest climate provides natural moisture; can be soft after rain; typically good to firm in summer',
+      composition:
+        'Perennial ryegrass; Pacific Northwest climate provides natural moisture; can be soft after rain; typically good to firm in summer',
       playingStyle: 'fair',
-      drainage: 'fair'
-    }
+      drainage: 'fair',
+    },
   ],
 
   seasonalPatterns: [
@@ -162,7 +170,8 @@ export const emeraldDowns: TrackData = {
       // Rain common; off-tracks possible
       typicalCondition: 'Good to Fast; occasional off-track from spring rains',
       speedAdjustment: 0,
-      notes: 'Season opener; variable conditions; spring rains affect track; allow for surface adjustment'
+      notes:
+        'Season opener; variable conditions; spring rains affect track; allow for surface adjustment',
     },
     {
       season: 'summer',
@@ -172,7 +181,8 @@ export const emeraldDowns: TrackData = {
       // Drier conditions; faster track
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Prime racing season; Pacific NW summer optimal; track runs fast; speed bias increases'
+      notes:
+        'Prime racing season; Pacific NW summer optimal; track runs fast; speed bias increases',
     },
     {
       season: 'fall',
@@ -183,7 +193,7 @@ export const emeraldDowns: TrackData = {
       // Rain returns
       typicalCondition: 'Fast to Good; increasing moisture as season ends',
       speedAdjustment: 0,
-      notes: 'Final weeks of meet; Longacres Mile; rain begins to return; track can slow'
+      notes: 'Final weeks of meet; Longacres Mile; rain begins to return; track can slow',
     },
     {
       season: 'winter',
@@ -192,8 +202,8 @@ export const emeraldDowns: TrackData = {
       // No racing during Pacific NW winter
       typicalCondition: 'Closed - no racing',
       speedAdjustment: 0,
-      notes: 'Track closed for winter; Pacific NW weather unsuitable; season resumes in April'
-    }
+      notes: 'Track closed for winter; Pacific NW weather unsuitable; season resumes in April',
+    },
   ],
 
   winningTimes: [
@@ -205,7 +215,7 @@ export const emeraldDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 58.2,
       allowanceAvg: 57.0,
-      stakesAvg: 56.2
+      stakesAvg: 56.2,
     },
     {
       distance: '5.5f',
@@ -213,7 +223,7 @@ export const emeraldDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 64.2,
       allowanceAvg: 63.0,
-      stakesAvg: 62.2
+      stakesAvg: 62.2,
     },
     {
       distance: '6f',
@@ -222,7 +232,7 @@ export const emeraldDowns: TrackData = {
       // Track record: 1:07.40
       claimingAvg: 70.5,
       allowanceAvg: 69.2,
-      stakesAvg: 68.2
+      stakesAvg: 68.2,
     },
     {
       distance: '6.5f',
@@ -230,7 +240,7 @@ export const emeraldDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 77.0,
       allowanceAvg: 75.5,
-      stakesAvg: 74.5
+      stakesAvg: 74.5,
     },
     {
       distance: '7f',
@@ -238,7 +248,7 @@ export const emeraldDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 83.2,
       allowanceAvg: 81.8,
-      stakesAvg: 80.8
+      stakesAvg: 80.8,
     },
     {
       distance: '1m',
@@ -247,7 +257,7 @@ export const emeraldDowns: TrackData = {
       // Longacres Mile distance
       claimingAvg: 97.0,
       allowanceAvg: 95.5,
-      stakesAvg: 94.0
+      stakesAvg: 94.0,
     },
     {
       distance: '1m70y',
@@ -255,7 +265,7 @@ export const emeraldDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 101.5,
       allowanceAvg: 100.0,
-      stakesAvg: 98.5
+      stakesAvg: 98.5,
     },
     {
       distance: '1 1/16m',
@@ -263,7 +273,7 @@ export const emeraldDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 104.0,
       allowanceAvg: 102.5,
-      stakesAvg: 101.0
+      stakesAvg: 101.0,
     },
     {
       distance: '1 1/8m',
@@ -272,7 +282,7 @@ export const emeraldDowns: TrackData = {
       // Track record: 1:47.80
       claimingAvg: 111.0,
       allowanceAvg: 109.0,
-      stakesAvg: 107.0
+      stakesAvg: 107.0,
     },
     {
       distance: '1 1/4m',
@@ -280,7 +290,7 @@ export const emeraldDowns: TrackData = {
       surface: 'dirt',
       claimingAvg: 124.5,
       allowanceAvg: 122.0,
-      stakesAvg: 119.5
+      stakesAvg: 119.5,
     },
     // Turf times
     {
@@ -289,7 +299,7 @@ export const emeraldDowns: TrackData = {
       surface: 'turf',
       claimingAvg: 56.8,
       allowanceAvg: 55.5,
-      stakesAvg: 54.5
+      stakesAvg: 54.5,
     },
     {
       distance: '1m',
@@ -297,7 +307,7 @@ export const emeraldDowns: TrackData = {
       surface: 'turf',
       claimingAvg: 95.5,
       allowanceAvg: 94.0,
-      stakesAvg: 92.5
+      stakesAvg: 92.5,
     },
     {
       distance: '1 1/16m',
@@ -305,7 +315,7 @@ export const emeraldDowns: TrackData = {
       surface: 'turf',
       claimingAvg: 102.5,
       allowanceAvg: 101.0,
-      stakesAvg: 99.5
+      stakesAvg: 99.5,
     },
     {
       distance: '1 1/8m',
@@ -313,10 +323,10 @@ export const emeraldDowns: TrackData = {
       surface: 'turf',
       claimingAvg: 109.5,
       allowanceAvg: 108.0,
-      stakesAvg: 106.5
-    }
+      stakesAvg: 106.5,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

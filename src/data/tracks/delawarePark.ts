@@ -14,7 +14,7 @@
  * NOTE: Summer meet May-October; speed-favoring track; Delaware Handicap (G2) tradition
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const delawarePark: TrackData = {
   code: 'DEL',
@@ -33,7 +33,7 @@ export const delawarePark: TrackData = {
       // Source: Delaware Racing Commission - 75 feet wide
       trackWidth: 75,
       // Source: Delaware Park - chutes at 6f and 7f
-      chutes: [6, 7]
+      chutes: [6, 7],
     },
     turf: {
       // Source: Delaware Park official - 7/8 mile turf course
@@ -44,8 +44,8 @@ export const delawarePark: TrackData = {
       turnRadius: 250,
       // Source: Delaware Racing Commission
       trackWidth: 70,
-      chutes: [8]
-    }
+      chutes: [8],
+    },
   },
 
   postPositionBias: {
@@ -61,7 +61,8 @@ export const delawarePark: TrackData = {
         // Sample: 600+ dirt sprints per season
         winPercentByPost: [13.5, 14.2, 13.8, 12.5, 11.5, 10.8, 10.0, 7.8, 4.5, 1.4],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Inside posts 1-3 favored in sprints; rail productive; speed track benefits inside draws'
+        biasDescription:
+          'Inside posts 1-3 favored in sprints; rail productive; speed track benefits inside draws',
       },
       {
         distance: 'route',
@@ -73,8 +74,9 @@ export const delawarePark: TrackData = {
         // Sample: 400+ dirt routes
         winPercentByPost: [13.8, 14.0, 13.5, 12.8, 11.5, 10.5, 10.0, 8.0, 4.5, 1.4],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Inside posts 1-3 favored in routes; short 990-foot stretch limits closers'
-      }
+        biasDescription:
+          'Inside posts 1-3 favored in routes; short 990-foot stretch limits closers',
+      },
     ],
     turf: [
       {
@@ -87,7 +89,8 @@ export const delawarePark: TrackData = {
         // Sample: 350+ turf sprints
         winPercentByPost: [13.0, 13.8, 13.5, 12.8, 12.0, 11.0, 10.2, 8.0, 4.2, 1.5],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Inside-middle posts 2-4 favored in turf sprints; standard 7/8 mile course'
+        biasDescription:
+          'Inside-middle posts 2-4 favored in turf sprints; standard 7/8 mile course',
       },
       {
         distance: 'route',
@@ -99,9 +102,9 @@ export const delawarePark: TrackData = {
         // Sample: 300+ turf routes
         winPercentByPost: [12.8, 13.5, 13.8, 13.0, 12.0, 11.2, 10.2, 8.0, 4.0, 1.5],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Inside-middle posts 2-4 favored in turf routes; standard turf dynamics'
-      }
-    ]
+        biasDescription: 'Inside-middle posts 2-4 favored in turf routes; standard turf dynamics',
+      },
+    ],
   },
 
   speedBias: [
@@ -114,7 +117,8 @@ export const delawarePark: TrackData = {
       // Wire-to-wire winners common
       earlySpeedWinRate: 57,
       paceAdvantageRating: 7,
-      description: 'Speed-favoring track; short 990-foot stretch; early speed wins 57%+; wire-to-wire common'
+      description:
+        'Speed-favoring track; short 990-foot stretch; early speed wins 57%+; wire-to-wire common',
     },
     {
       surface: 'turf',
@@ -124,8 +128,9 @@ export const delawarePark: TrackData = {
       // Stalkers competitive
       earlySpeedWinRate: 52,
       paceAdvantageRating: 6,
-      description: 'Turf slight speed advantage; 7/8 mile course favors forward runners; stalkers effective'
-    }
+      description:
+        'Turf slight speed advantage; 7/8 mile course favors forward runners; stalkers effective',
+    },
   ],
 
   surfaces: [
@@ -134,9 +139,10 @@ export const delawarePark: TrackData = {
       // Source: Delaware Racing Commission
       // Sandy loam composition with good summer drainage
       // Maintained for summer meet conditions
-      composition: 'Sandy loam cushion over limestone base; 3.5-inch cushion depth; excellent summer drainage',
+      composition:
+        'Sandy loam cushion over limestone base; 3.5-inch cushion depth; excellent summer drainage',
       playingStyle: 'speed-favoring',
-      drainage: 'good'
+      drainage: 'good',
     },
     {
       baseType: 'turf',
@@ -144,8 +150,8 @@ export const delawarePark: TrackData = {
       // Kentucky Bluegrass and perennial ryegrass
       composition: 'Kentucky Bluegrass and perennial ryegrass blend; well-maintained summer turf',
       playingStyle: 'fair',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -157,7 +163,7 @@ export const delawarePark: TrackData = {
       // Building toward summer stakes
       typicalCondition: 'Fast to Good; spring rain affects conditions',
       speedAdjustment: 0,
-      notes: 'Meet opens mid-May; building toward Delaware Handicap; weather variable early season'
+      notes: 'Meet opens mid-May; building toward Delaware Handicap; weather variable early season',
     },
     {
       season: 'summer',
@@ -167,7 +173,8 @@ export const delawarePark: TrackData = {
       // Prime racing conditions
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Peak summer meet; Delaware Handicap (G2) in July; Delaware Oaks (G2); fast track predominates'
+      notes:
+        'Peak summer meet; Delaware Handicap (G2) in July; Delaware Oaks (G2); fast track predominates',
     },
     {
       season: 'fall',
@@ -176,8 +183,9 @@ export const delawarePark: TrackData = {
       // Quality racing continues
       typicalCondition: 'Fast to Good',
       speedAdjustment: 0,
-      notes: 'Fall meet through mid-October; First State Stakes; Pleasant Colony Stakes; turf racing popular'
-    }
+      notes:
+        'Fall meet through mid-October; First State Stakes; Pleasant Colony Stakes; turf racing popular',
+    },
   ],
 
   winningTimes: [
@@ -188,7 +196,7 @@ export const delawarePark: TrackData = {
       surface: 'dirt',
       claimingAvg: 58.8,
       allowanceAvg: 57.5,
-      stakesAvg: 56.2
+      stakesAvg: 56.2,
     },
     {
       distance: '5.5f',
@@ -196,7 +204,7 @@ export const delawarePark: TrackData = {
       surface: 'dirt',
       claimingAvg: 65.0,
       allowanceAvg: 63.5,
-      stakesAvg: 62.2
+      stakesAvg: 62.2,
     },
     {
       distance: '6f',
@@ -205,7 +213,7 @@ export const delawarePark: TrackData = {
       // Track record: 1:07.92 (multiple)
       claimingAvg: 71.2,
       allowanceAvg: 69.5,
-      stakesAvg: 68.0
+      stakesAvg: 68.0,
     },
     {
       distance: '7f',
@@ -213,7 +221,7 @@ export const delawarePark: TrackData = {
       surface: 'dirt',
       claimingAvg: 84.0,
       allowanceAvg: 82.2,
-      stakesAvg: 80.8
+      stakesAvg: 80.8,
     },
     {
       distance: '1m',
@@ -221,7 +229,7 @@ export const delawarePark: TrackData = {
       surface: 'dirt',
       claimingAvg: 97.5,
       allowanceAvg: 95.5,
-      stakesAvg: 93.8
+      stakesAvg: 93.8,
     },
     {
       distance: '1m70y',
@@ -229,7 +237,7 @@ export const delawarePark: TrackData = {
       surface: 'dirt',
       claimingAvg: 102.0,
       allowanceAvg: 100.0,
-      stakesAvg: 98.2
+      stakesAvg: 98.2,
     },
     {
       distance: '1 1/16m',
@@ -237,7 +245,7 @@ export const delawarePark: TrackData = {
       surface: 'dirt',
       claimingAvg: 105.0,
       allowanceAvg: 103.0,
-      stakesAvg: 101.2
+      stakesAvg: 101.2,
     },
     {
       distance: '1 1/8m',
@@ -246,7 +254,7 @@ export const delawarePark: TrackData = {
       // Delaware Handicap distance
       claimingAvg: 112.5,
       allowanceAvg: 110.2,
-      stakesAvg: 108.0
+      stakesAvg: 108.0,
     },
     {
       distance: '1 1/4m',
@@ -254,7 +262,7 @@ export const delawarePark: TrackData = {
       surface: 'dirt',
       claimingAvg: 126.0,
       allowanceAvg: 123.5,
-      stakesAvg: 121.0
+      stakesAvg: 121.0,
     },
     // Turf times
     {
@@ -263,7 +271,7 @@ export const delawarePark: TrackData = {
       surface: 'turf',
       claimingAvg: 57.8,
       allowanceAvg: 56.5,
-      stakesAvg: 55.2
+      stakesAvg: 55.2,
     },
     {
       distance: '5.5f',
@@ -271,7 +279,7 @@ export const delawarePark: TrackData = {
       surface: 'turf',
       claimingAvg: 64.0,
       allowanceAvg: 62.8,
-      stakesAvg: 61.5
+      stakesAvg: 61.5,
     },
     {
       distance: '1m',
@@ -279,7 +287,7 @@ export const delawarePark: TrackData = {
       surface: 'turf',
       claimingAvg: 96.0,
       allowanceAvg: 94.2,
-      stakesAvg: 92.5
+      stakesAvg: 92.5,
     },
     {
       distance: '1 1/16m',
@@ -287,7 +295,7 @@ export const delawarePark: TrackData = {
       surface: 'turf',
       claimingAvg: 103.0,
       allowanceAvg: 101.0,
-      stakesAvg: 99.0
+      stakesAvg: 99.0,
     },
     {
       distance: '1 1/8m',
@@ -296,7 +304,7 @@ export const delawarePark: TrackData = {
       // Delaware Oaks turf distance
       claimingAvg: 110.0,
       allowanceAvg: 108.0,
-      stakesAvg: 106.0
+      stakesAvg: 106.0,
     },
     {
       distance: '1 3/8m',
@@ -304,10 +312,10 @@ export const delawarePark: TrackData = {
       surface: 'turf',
       claimingAvg: 139.0,
       allowanceAvg: 136.5,
-      stakesAvg: 134.0
-    }
+      stakesAvg: 134.0,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

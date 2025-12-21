@@ -21,7 +21,7 @@ export type {
   SurfacePreference,
   DistancePreference,
   ExperienceLevel,
-} from './types'
+} from './types';
 
 export {
   EXPERIENCE_THRESHOLDS,
@@ -30,7 +30,7 @@ export {
   DEFAULT_SIRE_PROFILE,
   DEFAULT_DAM_PROFILE,
   DEFAULT_DAMSIRE_PROFILE,
-} from './types'
+} from './types';
 
 // Data extraction utilities
 export {
@@ -46,7 +46,7 @@ export {
   getExperienceDescription,
   qualifiesForBreedingAnalysis,
   getBreedingWeight,
-} from './breedingData'
+} from './breedingData';
 
 // Main extraction functions
 export {
@@ -62,7 +62,7 @@ export {
   countDebutHorses,
   getLightlyRacedHorses,
   isLightlyRacedRace,
-} from './breedingExtractor'
+} from './breedingExtractor';
 
 // ============================================================================
 // PART 2: BREEDING DATABASES AND SCORING
@@ -81,7 +81,7 @@ export {
   normalizeSireName,
   type ExtendedSireProfile,
   type SireTier,
-} from './sireDatabase'
+} from './sireDatabase';
 
 // Dam database
 export {
@@ -96,7 +96,7 @@ export {
   estimateDamScoreFromClass,
   type ExtendedDamProfile,
   type DamTier,
-} from './damDatabase'
+} from './damDatabase';
 
 // Damsire database
 export {
@@ -110,7 +110,7 @@ export {
   normalizeDamsireName,
   type ExtendedDamsireProfile,
   type DamsireTier,
-} from './damsireDatabase'
+} from './damsireDatabase';
 
 // Breeding scoring
 export {
@@ -124,4 +124,4 @@ export {
   BREEDING_CATEGORY_LIMITS,
   type DetailedBreedingScore,
   type BreedingScoreContext,
-} from './breedingScoring'
+} from './breedingScoring';

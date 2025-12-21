@@ -33,7 +33,7 @@ export {
   calculateExpectedValue,
   getClassificationColor,
   getClassificationIcon,
-} from './longshotTypes'
+} from './longshotTypes';
 
 // Detector
 export {
@@ -44,7 +44,7 @@ export {
   detectTrackBiasFit,
   detectHiddenForm,
   detectAllUpsetAngles,
-} from './longshotDetector'
+} from './longshotDetector';
 
 // Scoring
 export {
@@ -58,7 +58,7 @@ export {
   formatROIPotential,
   getClassificationDisplayColor,
   sortLongshotsByQuality,
-} from './longshotScoring'
+} from './longshotScoring';
 
 // Validator
 export {
@@ -75,4 +75,4 @@ export {
   validateAngle,
   validateAllAngles,
   getValidatedAngles,
-} from './longshotValidator'
+} from './longshotValidator';

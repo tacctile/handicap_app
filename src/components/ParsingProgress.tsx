@@ -6,9 +6,9 @@
  * with progress bar, current step, and estimated time remaining.
  */
 
-import { motion, AnimatePresence } from 'framer-motion'
-import { useEffect, useState, useRef, memo } from 'react'
-import type { ParsingStep, DRFWorkerProgressMessage } from '../types/drf'
+import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState, useRef, memo } from 'react';
+import type { ParsingStep, DRFWorkerProgressMessage } from '../types/drf';
 
 // ============================================================================
 // TYPES
@@ -16,27 +16,27 @@ import type { ParsingStep, DRFWorkerProgressMessage } from '../types/drf'
 
 interface ParsingProgressProps {
   /** Whether the parsing is in progress */
-  isVisible: boolean
+  isVisible: boolean;
   /** Current progress (0-100) */
-  progress: number
+  progress: number;
   /** Current parsing step */
-  step: ParsingStep
+  step: ParsingStep;
   /** Current step message */
-  message: string
+  message: string;
   /** Additional details (e.g., current horse count) */
-  details?: DRFWorkerProgressMessage['details']
+  details?: DRFWorkerProgressMessage['details'];
   /** Error message if parsing failed */
-  error?: string | null
+  error?: string | null;
   /** Callback when user dismisses error */
-  onDismissError?: () => void
+  onDismissError?: () => void;
 }
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
-const ACCENT_COLOR = '#19abb5'
-const ACCENT_GLOW = 'rgba(25, 171, 181, 0.4)'
+const ACCENT_COLOR = '#19abb5';
+const ACCENT_GLOW = 'rgba(25, 171, 181, 0.4)';
 
 /**
  * Step descriptions for display
@@ -51,7 +51,7 @@ const STEP_DESCRIPTIONS: Record<ParsingStep, string> = {
   'validating-data': 'Validating data integrity...',
   finalizing: 'Finalizing results...',
   complete: 'Parsing complete!',
-}
+};
 
 /**
  * Step icons (using Material Icons)
@@ -66,18 +66,29 @@ const STEP_ICONS: Record<ParsingStep, string> = {
   'validating-data': 'verified',
   finalizing: 'check_circle',
   complete: 'done_all',
-}
+};
 
 // ============================================================================
 // HELPER COMPONENTS
 // ============================================================================
 
-function Icon({ name, className = '', style }: { name: string; className?: string; style?: React.CSSProperties }) {
+function Icon({
+  name,
+  className = '',
+  style,
+}: {
+  name: string;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
-    <span className={`material-icons ${className}`} style={{ fontFamily: 'Material Icons', ...style }}>
+    <span
+      className={`material-icons ${className}`}
+      style={{ fontFamily: 'Material Icons', ...style }}
+    >
       {name}
     </span>
-  )
+  );
 }
 
 // ============================================================================
@@ -135,8 +146,8 @@ const ProgressBar = memo(function ProgressBar({ progress }: { progress: number }
         />
       </motion.div>
     </div>
-  )
-})
+  );
+});
 
 // ============================================================================
 // SPINNING LOADER
@@ -157,8 +168,8 @@ const SpinningLoader = memo(function SpinningLoader() {
         ease: 'linear',
       }}
     />
-  )
-})
+  );
+});
 
 // ============================================================================
 // STEP INDICATOR
@@ -168,11 +179,11 @@ const StepIndicator = memo(function StepIndicator({
   step,
   message,
 }: {
-  step: ParsingStep
-  message: string
+  step: ParsingStep;
+  message: string;
 }) {
-  const icon = STEP_ICONS[step]
-  const description = STEP_DESCRIPTIONS[step]
+  const icon = STEP_ICONS[step];
+  const description = STEP_DESCRIPTIONS[step];
 
   return (
     <motion.div
@@ -204,48 +215,48 @@ const StepIndicator = memo(function StepIndicator({
         <span className="text-white/60 text-sm">{message}</span>
       </div>
     </motion.div>
-  )
-})
+  );
+});
 
 // ============================================================================
 // TIME REMAINING ESTIMATOR
 // ============================================================================
 
 function useTimeEstimate(progress: number): string | null {
-  const startTimeRef = useRef<number>(0)
-  const [estimate, setEstimate] = useState<string | null>(null)
+  const startTimeRef = useRef<number>(0);
+  const [estimate, setEstimate] = useState<string | null>(null);
 
   useEffect(() => {
     if (progress === 0) {
-      startTimeRef.current = Date.now()
+      startTimeRef.current = Date.now();
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Resetting state when progress resets
-      setEstimate(null)
-      return
+      setEstimate(null);
+      return;
     }
 
     if (progress >= 100) {
-      setEstimate(null)
-      return
+      setEstimate(null);
+      return;
     }
 
-    const elapsed = Date.now() - startTimeRef.current
-    const estimatedTotal = (elapsed / progress) * 100
-    const remaining = estimatedTotal - elapsed
+    const elapsed = Date.now() - startTimeRef.current;
+    const estimatedTotal = (elapsed / progress) * 100;
+    const remaining = estimatedTotal - elapsed;
 
     if (remaining < 1000) {
-      setEstimate('Almost done...')
+      setEstimate('Almost done...');
     } else if (remaining < 5000) {
-      setEstimate('A few seconds remaining')
+      setEstimate('A few seconds remaining');
     } else if (remaining < 10000) {
-      setEstimate(`~${Math.ceil(remaining / 1000)} seconds remaining`)
+      setEstimate(`~${Math.ceil(remaining / 1000)} seconds remaining`);
     } else if (remaining < 60000) {
-      setEstimate(`~${Math.ceil(remaining / 1000)} seconds remaining`)
+      setEstimate(`~${Math.ceil(remaining / 1000)} seconds remaining`);
     } else {
-      setEstimate(`~${Math.ceil(remaining / 60000)} minute(s) remaining`)
+      setEstimate(`~${Math.ceil(remaining / 60000)} minute(s) remaining`);
     }
-  }, [progress])
+  }, [progress]);
 
-  return estimate
+  return estimate;
 }
 
 // ============================================================================
@@ -256,8 +267,8 @@ const ErrorDisplay = memo(function ErrorDisplay({
   error,
   onDismiss,
 }: {
-  error: string
-  onDismiss?: () => void
+  error: string;
+  onDismiss?: () => void;
 }) {
   return (
     <motion.div
@@ -300,8 +311,8 @@ const ErrorDisplay = memo(function ErrorDisplay({
         </motion.button>
       )}
     </motion.div>
-  )
-})
+  );
+});
 
 // ============================================================================
 // SUCCESS DISPLAY
@@ -310,7 +321,7 @@ const ErrorDisplay = memo(function ErrorDisplay({
 const SuccessDisplay = memo(function SuccessDisplay({
   details,
 }: {
-  details?: DRFWorkerProgressMessage['details']
+  details?: DRFWorkerProgressMessage['details'];
 }) {
   return (
     <motion.div
@@ -346,8 +357,8 @@ const SuccessDisplay = memo(function SuccessDisplay({
         )}
       </div>
     </motion.div>
-  )
-})
+  );
+});
 
 // ============================================================================
 // MAIN COMPONENT
@@ -362,9 +373,9 @@ export const ParsingProgress = memo(function ParsingProgress({
   error,
   onDismissError,
 }: ParsingProgressProps) {
-  const timeEstimate = useTimeEstimate(progress)
-  const isComplete = step === 'complete'
-  const hasError = !!error
+  const timeEstimate = useTimeEstimate(progress);
+  const isComplete = step === 'complete';
+  const hasError = !!error;
 
   return (
     <AnimatePresence>
@@ -462,20 +473,20 @@ export const ParsingProgress = memo(function ParsingProgress({
         </motion.div>
       )}
     </AnimatePresence>
-  )
-})
+  );
+});
 
 // ============================================================================
 // HOOK FOR MANAGING PARSING STATE
 // ============================================================================
 
 export interface ParsingState {
-  isVisible: boolean
-  progress: number
-  step: ParsingStep
-  message: string
-  details?: DRFWorkerProgressMessage['details']
-  error: string | null
+  isVisible: boolean;
+  progress: number;
+  step: ParsingStep;
+  message: string;
+  details?: DRFWorkerProgressMessage['details'];
+  error: string | null;
 }
 
 export function useParsingProgress() {
@@ -486,7 +497,7 @@ export function useParsingProgress() {
     message: '',
     details: undefined,
     error: null,
-  })
+  });
 
   const show = () => {
     setState({
@@ -496,8 +507,8 @@ export function useParsingProgress() {
       message: 'Starting...',
       details: undefined,
       error: null,
-    })
-  }
+    });
+  };
 
   const updateProgress = (progressMessage: DRFWorkerProgressMessage) => {
     setState((prev) => ({
@@ -506,8 +517,8 @@ export function useParsingProgress() {
       step: progressMessage.step,
       message: progressMessage.message,
       details: progressMessage.details,
-    }))
-  }
+    }));
+  };
 
   const complete = (details?: DRFWorkerProgressMessage['details']) => {
     setState((prev) => ({
@@ -516,24 +527,24 @@ export function useParsingProgress() {
       step: 'complete',
       message: 'Parsing complete!',
       details,
-    }))
+    }));
 
     // Auto-hide after a short delay
     setTimeout(() => {
-      setState((prev) => ({ ...prev, isVisible: false }))
-    }, 1500)
-  }
+      setState((prev) => ({ ...prev, isVisible: false }));
+    }, 1500);
+  };
 
   const setError = (error: string) => {
     setState((prev) => ({
       ...prev,
       error,
-    }))
-  }
+    }));
+  };
 
   const hide = () => {
-    setState((prev) => ({ ...prev, isVisible: false, error: null }))
-  }
+    setState((prev) => ({ ...prev, isVisible: false, error: null }));
+  };
 
   const reset = () => {
     setState({
@@ -543,8 +554,8 @@ export function useParsingProgress() {
       message: '',
       details: undefined,
       error: null,
-    })
-  }
+    });
+  };
 
   return {
     state,
@@ -554,7 +565,7 @@ export function useParsingProgress() {
     setError,
     hide,
     reset,
-  }
+  };
 }
 
-export default ParsingProgress
+export default ParsingProgress;

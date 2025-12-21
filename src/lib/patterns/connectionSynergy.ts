@@ -12,10 +12,10 @@
  * Maximum synergy bonus: 10 pts
  */
 
-import type { HorseEntry } from '../../types/drf'
-import { logger } from '../../services/logging'
-import { normalizeTrainerName } from './trainerPatterns'
-import { normalizeJockeyName } from './jockeyPatterns'
+import type { HorseEntry } from '../../types/drf';
+import { logger } from '../../services/logging';
+import { normalizeTrainerName } from './trainerPatterns';
+import { normalizeJockeyName } from './jockeyPatterns';
 
 // ============================================================================
 // TYPES
@@ -23,57 +23,57 @@ import { normalizeJockeyName } from './jockeyPatterns'
 
 export interface PartnershipStats {
   /** Trainer name */
-  trainerName: string
+  trainerName: string;
   /** Jockey name */
-  jockeyName: string
+  jockeyName: string;
   /** Total wins together */
-  wins: number
+  wins: number;
   /** Total starts together */
-  starts: number
+  starts: number;
   /** Win rate percentage */
-  winRate: number
+  winRate: number;
   /** Place count */
-  places: number
+  places: number;
   /** Show count */
-  shows: number
+  shows: number;
   /** In-the-money percentage */
-  itmRate: number
+  itmRate: number;
   /** Wins in last 10 races together */
-  recentWins: number
+  recentWins: number;
   /** Recent starts together (up to 10) */
-  recentStarts: number
+  recentStarts: number;
   /** Recent win rate */
-  recentWinRate: number
+  recentWinRate: number;
   /** First start date together */
-  firstStartDate: string | null
+  firstStartDate: string | null;
   /** Most recent start date together */
-  lastStartDate: string | null
+  lastStartDate: string | null;
 }
 
 export interface SynergyResult {
   /** Partnership stats if found */
-  partnership: PartnershipStats | null
+  partnership: PartnershipStats | null;
   /** Synergy bonus points (0-10) */
-  bonus: number
+  bonus: number;
   /** Synergy level */
-  level: 'elite' | 'strong' | 'developing' | 'new' | 'none'
+  level: 'elite' | 'strong' | 'developing' | 'new' | 'none';
   /** Human-readable description */
-  description: string
+  description: string;
   /** Evidence for display */
-  evidence: string[]
+  evidence: string[];
   /** Is this a hot combo recently? */
-  isHotCombo: boolean
+  isHotCombo: boolean;
   /** Recent form description */
-  recentForm: string
+  recentForm: string;
 }
 
 export interface RacePartnershipDatabase {
   /** All partnerships found in race data */
-  partnerships: Map<string, PartnershipStats>
+  partnerships: Map<string, PartnershipStats>;
   /** Quick lookup by trainer */
-  byTrainer: Map<string, string[]>
+  byTrainer: Map<string, string[]>;
   /** Quick lookup by jockey */
-  byJockey: Map<string, string[]>
+  byJockey: Map<string, string[]>;
 }
 
 // ============================================================================
@@ -81,25 +81,25 @@ export interface RacePartnershipDatabase {
 // ============================================================================
 
 /** Minimum starts for elite partnership */
-const ELITE_MIN_STARTS = 20
+const ELITE_MIN_STARTS = 20;
 
 /** Minimum starts for strong partnership */
-const STRONG_MIN_STARTS = 15
+const STRONG_MIN_STARTS = 15;
 
 /** Minimum starts for developing partnership */
-const DEVELOPING_MIN_STARTS = 10
+const DEVELOPING_MIN_STARTS = 10;
 
 /** Elite partnership win rate threshold */
-const ELITE_WIN_RATE = 25
+const ELITE_WIN_RATE = 25;
 
 /** Strong partnership win rate threshold */
-const STRONG_WIN_RATE = 20
+const STRONG_WIN_RATE = 20;
 
 /** Recent form threshold (wins in last 10) */
-const HOT_COMBO_MIN_WINS = 2
+const HOT_COMBO_MIN_WINS = 2;
 
 /** Maximum recent races to consider */
-const RECENT_RACE_LIMIT = 10
+const RECENT_RACE_LIMIT = 10;
 
 /** Partnership bonuses */
 const PARTNERSHIP_BONUSES = {
@@ -108,7 +108,7 @@ const PARTNERSHIP_BONUSES = {
   hotCombo: 5,
   developing: 3,
   new: 0,
-} as const
+} as const;
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -118,7 +118,7 @@ const PARTNERSHIP_BONUSES = {
  * Create a unique partnership key
  */
 function createPartnershipKey(trainerName: string, jockeyName: string): string {
-  return `${normalizeTrainerName(trainerName)}|${normalizeJockeyName(jockeyName)}`
+  return `${normalizeTrainerName(trainerName)}|${normalizeJockeyName(jockeyName)}`;
 }
 
 /**
@@ -139,7 +139,7 @@ function createEmptyPartnership(trainerName: string, jockeyName: string): Partne
     recentWinRate: 0,
     firstStartDate: null,
     lastStartDate: null,
-  }
+  };
 }
 
 /**
@@ -150,27 +150,27 @@ function updatePartnershipStats(
   finishPosition: number,
   raceDate: string
 ): void {
-  stats.starts++
+  stats.starts++;
 
   if (finishPosition === 1) {
-    stats.wins++
+    stats.wins++;
   } else if (finishPosition === 2) {
-    stats.places++
+    stats.places++;
   } else if (finishPosition === 3) {
-    stats.shows++
+    stats.shows++;
   }
 
   // Update dates
   if (!stats.firstStartDate || raceDate < stats.firstStartDate) {
-    stats.firstStartDate = raceDate
+    stats.firstStartDate = raceDate;
   }
   if (!stats.lastStartDate || raceDate > stats.lastStartDate) {
-    stats.lastStartDate = raceDate
+    stats.lastStartDate = raceDate;
   }
 
   // Recalculate rates
-  stats.winRate = (stats.wins / stats.starts) * 100
-  stats.itmRate = ((stats.wins + stats.places + stats.shows) / stats.starts) * 100
+  stats.winRate = (stats.wins / stats.starts) * 100;
+  stats.itmRate = ((stats.wins + stats.places + stats.shows) / stats.starts) * 100;
 }
 
 // ============================================================================
@@ -181,79 +181,77 @@ function updatePartnershipStats(
  * Build a comprehensive partnership database from all horses in a race
  */
 export function buildPartnershipDatabase(horses: HorseEntry[]): RacePartnershipDatabase {
-  const partnerships = new Map<string, PartnershipStats>()
-  const byTrainer = new Map<string, string[]>()
-  const byJockey = new Map<string, string[]>()
+  const partnerships = new Map<string, PartnershipStats>();
+  const byTrainer = new Map<string, string[]>();
+  const byJockey = new Map<string, string[]>();
 
   // Track recent races for each partnership for recency analysis
-  const recentRaces = new Map<string, { date: string; won: boolean }[]>()
+  const recentRaces = new Map<string, { date: string; won: boolean }[]>();
 
   try {
     for (const horse of horses) {
-      const trainerNorm = normalizeTrainerName(horse.trainerName)
+      const trainerNorm = normalizeTrainerName(horse.trainerName);
 
       // Process past performances to find trainer-jockey combinations
       for (const pp of horse.pastPerformances) {
-        if (!pp.jockey) continue
+        if (!pp.jockey) continue;
 
-        const jockeyNorm = normalizeJockeyName(pp.jockey)
-        const key = createPartnershipKey(horse.trainerName, pp.jockey)
+        const jockeyNorm = normalizeJockeyName(pp.jockey);
+        const key = createPartnershipKey(horse.trainerName, pp.jockey);
 
         // Get or create partnership stats
         if (!partnerships.has(key)) {
-          partnerships.set(key, createEmptyPartnership(horse.trainerName, pp.jockey))
+          partnerships.set(key, createEmptyPartnership(horse.trainerName, pp.jockey));
 
           // Update lookup maps
           if (!byTrainer.has(trainerNorm)) {
-            byTrainer.set(trainerNorm, [])
+            byTrainer.set(trainerNorm, []);
           }
-          byTrainer.get(trainerNorm)!.push(key)
+          byTrainer.get(trainerNorm)!.push(key);
 
           if (!byJockey.has(jockeyNorm)) {
-            byJockey.set(jockeyNorm, [])
+            byJockey.set(jockeyNorm, []);
           }
-          byJockey.get(jockeyNorm)!.push(key)
+          byJockey.get(jockeyNorm)!.push(key);
         }
 
         // Update partnership stats
-        const stats = partnerships.get(key)!
-        updatePartnershipStats(stats, pp.finishPosition, pp.date)
+        const stats = partnerships.get(key)!;
+        updatePartnershipStats(stats, pp.finishPosition, pp.date);
 
         // Track recent races
         if (!recentRaces.has(key)) {
-          recentRaces.set(key, [])
+          recentRaces.set(key, []);
         }
-        const recent = recentRaces.get(key)!
+        const recent = recentRaces.get(key)!;
         recent.push({
           date: pp.date,
           won: pp.finishPosition === 1,
-        })
+        });
       }
     }
 
     // Calculate recent stats for each partnership
     for (const [key, races] of recentRaces) {
-      const stats = partnerships.get(key)!
+      const stats = partnerships.get(key)!;
 
       // Sort by date descending and take last 10
-      races.sort((a, b) => b.date.localeCompare(a.date))
-      const recentRacesSlice = races.slice(0, RECENT_RACE_LIMIT)
+      races.sort((a, b) => b.date.localeCompare(a.date));
+      const recentRacesSlice = races.slice(0, RECENT_RACE_LIMIT);
 
-      stats.recentStarts = recentRacesSlice.length
-      stats.recentWins = recentRacesSlice.filter((r) => r.won).length
+      stats.recentStarts = recentRacesSlice.length;
+      stats.recentWins = recentRacesSlice.filter((r) => r.won).length;
       stats.recentWinRate =
-        stats.recentStarts > 0
-          ? (stats.recentWins / stats.recentStarts) * 100
-          : 0
+        stats.recentStarts > 0 ? (stats.recentWins / stats.recentStarts) * 100 : 0;
     }
   } catch (error) {
     logger.logWarning('Error building partnership database', {
       component: 'ConnectionSynergy',
       errorMessage: error instanceof Error ? error.message : 'Unknown error',
-    })
+    });
   }
 
-  return { partnerships, byTrainer, byJockey }
+  return { partnerships, byTrainer, byJockey };
 }
 
 /**
@@ -264,16 +262,14 @@ export function getPartnershipStats(
   jockeyName: string,
   database: RacePartnershipDatabase
 ): PartnershipStats | null {
-  const key = createPartnershipKey(trainerName, jockeyName)
-  return database.partnerships.get(key) || null
+  const key = createPartnershipKey(trainerName, jockeyName);
+  return database.partnerships.get(key) || null;
 }
 
 /**
  * Calculate synergy bonus for a trainer-jockey partnership
  */
-export function calculateSynergyBonus(
-  stats: PartnershipStats | null
-): SynergyResult {
+export function calculateSynergyBonus(stats: PartnershipStats | null): SynergyResult {
   if (!stats || stats.starts === 0) {
     return {
       partnership: null,
@@ -283,54 +279,54 @@ export function calculateSynergyBonus(
       evidence: [],
       isHotCombo: false,
       recentForm: '',
-    }
+    };
   }
 
-  const evidence: string[] = []
-  let bonus = 0
-  let level: SynergyResult['level'] = 'new'
-  let isHotCombo = false
+  const evidence: string[] = [];
+  let bonus = 0;
+  let level: SynergyResult['level'] = 'new';
+  let isHotCombo = false;
 
   // Check for elite partnership
   if (stats.starts >= ELITE_MIN_STARTS && stats.winRate >= ELITE_WIN_RATE) {
-    bonus = PARTNERSHIP_BONUSES.elite
-    level = 'elite'
+    bonus = PARTNERSHIP_BONUSES.elite;
+    level = 'elite';
     evidence.push(
       `Elite combo: ${stats.winRate.toFixed(0)}% win together (${stats.wins}/${stats.starts})`
-    )
+    );
   }
   // Check for strong partnership
   else if (stats.starts >= STRONG_MIN_STARTS && stats.winRate >= STRONG_WIN_RATE) {
-    bonus = PARTNERSHIP_BONUSES.strong
-    level = 'strong'
+    bonus = PARTNERSHIP_BONUSES.strong;
+    level = 'strong';
     evidence.push(
       `Strong combo: ${stats.winRate.toFixed(0)}% win together (${stats.wins}/${stats.starts})`
-    )
+    );
   }
   // Check for developing partnership
   else if (stats.starts >= DEVELOPING_MIN_STARTS) {
-    bonus = PARTNERSHIP_BONUSES.developing
-    level = 'developing'
+    bonus = PARTNERSHIP_BONUSES.developing;
+    level = 'developing';
     evidence.push(
       `Developing combo: ${stats.winRate.toFixed(0)}% together (${stats.starts} starts)`
-    )
+    );
   }
   // New partnership
   else {
-    level = 'new'
-    evidence.push(`New pairing: ${stats.starts} start${stats.starts === 1 ? '' : 's'} together`)
+    level = 'new';
+    evidence.push(`New pairing: ${stats.starts} start${stats.starts === 1 ? '' : 's'} together`);
   }
 
   // Check for hot recent form (additional bonus)
   if (stats.recentWins >= HOT_COMBO_MIN_WINS) {
-    isHotCombo = true
+    isHotCombo = true;
     // Add hot combo bonus only if not already at max
     if (level !== 'elite') {
-      bonus = Math.min(bonus + PARTNERSHIP_BONUSES.hotCombo, PARTNERSHIP_BONUSES.elite)
+      bonus = Math.min(bonus + PARTNERSHIP_BONUSES.hotCombo, PARTNERSHIP_BONUSES.elite);
     }
     evidence.push(
       `Hot combo: ${stats.recentWins} wins in last ${stats.recentStarts} starts together`
-    )
+    );
   }
 
   // Build description
@@ -338,16 +334,16 @@ export function calculateSynergyBonus(
     level === 'elite'
       ? `Elite partnership (${stats.winRate.toFixed(0)}% together)`
       : level === 'strong'
-      ? `Strong partnership (${stats.winRate.toFixed(0)}% together)`
-      : level === 'developing'
-      ? `Developing partnership`
-      : `Limited history together`
+        ? `Strong partnership (${stats.winRate.toFixed(0)}% together)`
+        : level === 'developing'
+          ? `Developing partnership`
+          : `Limited history together`;
 
   // Build recent form string
   const recentForm =
     stats.recentStarts > 0
       ? `${stats.recentWins}/${stats.recentStarts} recently (${stats.recentWinRate.toFixed(0)}%)`
-      : ''
+      : '';
 
   return {
     partnership: stats,
@@ -357,27 +353,24 @@ export function calculateSynergyBonus(
     evidence,
     isHotCombo,
     recentForm,
-  }
+  };
 }
 
 /**
  * Get synergy result for a horse's connections
  */
-export function getConnectionSynergy(
-  horse: HorseEntry,
-  horses: HorseEntry[]
-): SynergyResult {
+export function getConnectionSynergy(horse: HorseEntry, horses: HorseEntry[]): SynergyResult {
   try {
-    const database = buildPartnershipDatabase(horses)
-    const stats = getPartnershipStats(horse.trainerName, horse.jockeyName, database)
-    return calculateSynergyBonus(stats)
+    const database = buildPartnershipDatabase(horses);
+    const stats = getPartnershipStats(horse.trainerName, horse.jockeyName, database);
+    return calculateSynergyBonus(stats);
   } catch (error) {
     logger.logError(error instanceof Error ? error : new Error('Unknown error'), {
       component: 'ConnectionSynergy',
       horseName: horse.horseName,
       trainerName: horse.trainerName,
       jockeyName: horse.jockeyName,
-    })
+    });
 
     return {
       partnership: null,
@@ -387,7 +380,7 @@ export function getConnectionSynergy(
       evidence: ['Partnership analysis failed'],
       isHotCombo: false,
       recentForm: '',
-    }
+    };
   }
 }
 
@@ -398,13 +391,13 @@ export function getTrainerPartnerships(
   trainerName: string,
   database: RacePartnershipDatabase
 ): PartnershipStats[] {
-  const trainerNorm = normalizeTrainerName(trainerName)
-  const partnershipKeys = database.byTrainer.get(trainerNorm) || []
+  const trainerNorm = normalizeTrainerName(trainerName);
+  const partnershipKeys = database.byTrainer.get(trainerNorm) || [];
 
   return partnershipKeys
     .map((key) => database.partnerships.get(key)!)
     .filter(Boolean)
-    .sort((a, b) => b.winRate - a.winRate)
+    .sort((a, b) => b.winRate - a.winRate);
 }
 
 /**
@@ -414,13 +407,13 @@ export function getJockeyPartnerships(
   jockeyName: string,
   database: RacePartnershipDatabase
 ): PartnershipStats[] {
-  const jockeyNorm = normalizeJockeyName(jockeyName)
-  const partnershipKeys = database.byJockey.get(jockeyNorm) || []
+  const jockeyNorm = normalizeJockeyName(jockeyName);
+  const partnershipKeys = database.byJockey.get(jockeyNorm) || [];
 
   return partnershipKeys
     .map((key) => database.partnerships.get(key)!)
     .filter(Boolean)
-    .sort((a, b) => b.winRate - a.winRate)
+    .sort((a, b) => b.winRate - a.winRate);
 }
 
 /**
@@ -428,25 +421,25 @@ export function getJockeyPartnerships(
  */
 export function getSynergyDisplay(result: SynergyResult): string {
   if (!result.partnership || result.level === 'none') {
-    return 'No partnership data'
+    return 'No partnership data';
   }
 
-  const { partnership } = result
-  const winPct = partnership.winRate.toFixed(0)
-  const starts = partnership.starts
+  const { partnership } = result;
+  const winPct = partnership.winRate.toFixed(0);
+  const starts = partnership.starts;
 
-  let display = `Together: ${winPct}% win (${starts} starts)`
+  let display = `Together: ${winPct}% win (${starts} starts)`;
 
   if (result.isHotCombo) {
-    display += ` - HOT`
+    display += ` - HOT`;
   }
 
-  return display
+  return display;
 }
 
 /**
  * Check if a partnership qualifies for any bonus
  */
 export function hasSignificantPartnership(result: SynergyResult): boolean {
-  return result.bonus > 0 || result.level !== 'none'
+  return result.bonus > 0 || result.level !== 'none';
 }

@@ -14,7 +14,7 @@
  * NOTE: Winter racing (Nov-March); home of Louisiana Derby (G2) and Lecomte (G3); fair playing surface
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const fairGrounds: TrackData = {
   code: 'FG',
@@ -33,7 +33,7 @@ export const fairGrounds: TrackData = {
       // Source: Louisiana Racing Commission - 80 feet wide
       trackWidth: 80,
       // Source: Fair Grounds - chutes at 6f and 7f
-      chutes: [6, 7]
+      chutes: [6, 7],
     },
     turf: {
       // Source: Fair Grounds official - 7/8 mile turf course
@@ -44,8 +44,8 @@ export const fairGrounds: TrackData = {
       turnRadius: 250,
       // Source: Louisiana Racing Commission
       trackWidth: 70,
-      chutes: [8, 10]
-    }
+      chutes: [8, 10],
+    },
   },
 
   postPositionBias: {
@@ -62,7 +62,8 @@ export const fairGrounds: TrackData = {
         // Sample: 1,000+ dirt sprints
         winPercentByPost: [12.0, 13.8, 14.2, 13.5, 12.2, 11.0, 9.5, 7.5, 4.5, 1.8],
         favoredPosts: [2, 3, 4],
-        biasDescription: 'Fair track; posts 2-4 slight advantage; long 1,346-ft stretch aids late runners; rail variable'
+        biasDescription:
+          'Fair track; posts 2-4 slight advantage; long 1,346-ft stretch aids late runners; rail variable',
       },
       {
         distance: 'route',
@@ -76,8 +77,9 @@ export const fairGrounds: TrackData = {
         // Sample: 500+ dirt routes
         winPercentByPost: [11.5, 13.0, 14.0, 14.0, 12.5, 11.5, 10.0, 7.5, 4.2, 1.8],
         favoredPosts: [3, 4],
-        biasDescription: 'Very fair in routes; posts 3-4 slight edge; 1,346-ft stretch allows strong closers to rally'
-      }
+        biasDescription:
+          'Very fair in routes; posts 3-4 slight edge; 1,346-ft stretch allows strong closers to rally',
+      },
     ],
     turf: [
       {
@@ -90,7 +92,8 @@ export const fairGrounds: TrackData = {
         // Sample: 250+ turf sprints
         winPercentByPost: [13.8, 14.2, 13.5, 12.5, 11.5, 10.8, 9.5, 8.0, 4.5, 1.7],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Slight inside advantage in turf sprints; posts 1-3 favored; ground savings matter'
+        biasDescription:
+          'Slight inside advantage in turf sprints; posts 1-3 favored; ground savings matter',
       },
       {
         distance: 'route',
@@ -102,9 +105,10 @@ export const fairGrounds: TrackData = {
         // Sample: 350+ turf routes
         winPercentByPost: [13.5, 13.8, 13.5, 12.5, 11.8, 10.8, 9.8, 8.0, 4.5, 1.8],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'Fair in turf routes; inside posts 1-3 slight edge; long homestretch aids closers'
-      }
-    ]
+        biasDescription:
+          'Fair in turf routes; inside posts 1-3 slight edge; long homestretch aids closers',
+      },
+    ],
   },
 
   speedBias: [
@@ -119,7 +123,8 @@ export const fairGrounds: TrackData = {
       // Louisiana Derby often won from off the pace
       earlySpeedWinRate: 48,
       paceAdvantageRating: 4,
-      description: 'Fair/closer-friendly track; only 48% early speed win rate; 1,346-ft stretch (longest in US) allows rallies'
+      description:
+        'Fair/closer-friendly track; only 48% early speed win rate; 1,346-ft stretch (longest in US) allows rallies',
     },
     {
       surface: 'turf',
@@ -129,8 +134,9 @@ export const fairGrounds: TrackData = {
       // Surface condition dependent
       earlySpeedWinRate: 46,
       paceAdvantageRating: 4,
-      description: 'Fair/closer-friendly turf; long stretch aids rallies; deep closers often reward at good prices'
-    }
+      description:
+        'Fair/closer-friendly turf; long stretch aids rallies; deep closers often reward at good prices',
+    },
   ],
 
   surfaces: [
@@ -139,9 +145,10 @@ export const fairGrounds: TrackData = {
       // Source: Louisiana Racing Commission, Fair Grounds grounds crew
       // Sandy loam composition with good drainage
       // Can become deep and tiring after rain
-      composition: 'Sandy loam cushion over limestone base; 3.5-inch cushion depth; can become deep after rain',
+      composition:
+        'Sandy loam cushion over limestone base; 3.5-inch cushion depth; can become deep after rain',
       playingStyle: 'fair',
-      drainage: 'good'
+      drainage: 'good',
     },
     {
       baseType: 'turf',
@@ -149,8 +156,8 @@ export const fairGrounds: TrackData = {
       // Bermuda grass primary with ryegrass overseed
       composition: 'Bermuda grass base with perennial ryegrass overseed in winter',
       playingStyle: 'fair',
-      drainage: 'good'
-    }
+      drainage: 'good',
+    },
   ],
 
   seasonalPatterns: [
@@ -162,7 +169,8 @@ export const fairGrounds: TrackData = {
       // Lecomte Stakes (G3) and other Derby preps
       typicalCondition: 'Fast to Good; rain common in winter',
       speedAdjustment: 0,
-      notes: 'Peak of meet; Lecomte (G3) in January; quality fields; New Orleans winter weather variable'
+      notes:
+        'Peak of meet; Lecomte (G3) in January; quality fields; New Orleans winter weather variable',
     },
     {
       season: 'spring',
@@ -172,7 +180,8 @@ export const fairGrounds: TrackData = {
       // Meet ends late March/early April
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Louisiana Derby (G2) in March; premier Kentucky Derby prep; meet ends April; warming conditions'
+      notes:
+        'Louisiana Derby (G2) in March; premier Kentucky Derby prep; meet ends April; warming conditions',
     },
     {
       season: 'summer',
@@ -180,7 +189,7 @@ export const fairGrounds: TrackData = {
       // Source: Fair Grounds closed for summer/fall
       typicalCondition: 'No Racing',
       speedAdjustment: 0,
-      notes: 'Track closed late spring through fall; racing resumes Thanksgiving'
+      notes: 'Track closed late spring through fall; racing resumes Thanksgiving',
     },
     {
       season: 'fall',
@@ -189,8 +198,8 @@ export const fairGrounds: TrackData = {
       // Meet opens Thanksgiving weekend
       typicalCondition: 'Fast',
       speedAdjustment: 0,
-      notes: 'Meet opens Thanksgiving weekend; early season racing; building toward winter stakes'
-    }
+      notes: 'Meet opens Thanksgiving weekend; early season racing; building toward winter stakes',
+    },
   ],
 
   winningTimes: [
@@ -202,7 +211,7 @@ export const fairGrounds: TrackData = {
       surface: 'dirt',
       claimingAvg: 58.5,
       allowanceAvg: 57.2,
-      stakesAvg: 56.0
+      stakesAvg: 56.0,
     },
     {
       distance: '5.5f',
@@ -210,7 +219,7 @@ export const fairGrounds: TrackData = {
       surface: 'dirt',
       claimingAvg: 64.8,
       allowanceAvg: 63.5,
-      stakesAvg: 62.2
+      stakesAvg: 62.2,
     },
     {
       distance: '6f',
@@ -219,7 +228,7 @@ export const fairGrounds: TrackData = {
       // Track record: 1:08.42
       claimingAvg: 71.0,
       allowanceAvg: 69.8,
-      stakesAvg: 68.5
+      stakesAvg: 68.5,
     },
     {
       distance: '6.5f',
@@ -227,7 +236,7 @@ export const fairGrounds: TrackData = {
       surface: 'dirt',
       claimingAvg: 77.2,
       allowanceAvg: 76.0,
-      stakesAvg: 74.8
+      stakesAvg: 74.8,
     },
     {
       distance: '7f',
@@ -235,7 +244,7 @@ export const fairGrounds: TrackData = {
       surface: 'dirt',
       claimingAvg: 83.8,
       allowanceAvg: 82.2,
-      stakesAvg: 80.8
+      stakesAvg: 80.8,
     },
     {
       distance: '1m',
@@ -243,7 +252,7 @@ export const fairGrounds: TrackData = {
       surface: 'dirt',
       claimingAvg: 97.5,
       allowanceAvg: 96.0,
-      stakesAvg: 94.5
+      stakesAvg: 94.5,
     },
     {
       distance: '1m70y',
@@ -252,7 +261,7 @@ export const fairGrounds: TrackData = {
       // Lecomte Stakes distance
       claimingAvg: 102.0,
       allowanceAvg: 100.5,
-      stakesAvg: 99.0
+      stakesAvg: 99.0,
     },
     {
       distance: '1 1/16m',
@@ -260,7 +269,7 @@ export const fairGrounds: TrackData = {
       surface: 'dirt',
       claimingAvg: 104.5,
       allowanceAvg: 103.0,
-      stakesAvg: 101.5
+      stakesAvg: 101.5,
     },
     {
       distance: '1 1/8m',
@@ -270,7 +279,7 @@ export const fairGrounds: TrackData = {
       // Track record: 1:48.41
       claimingAvg: 111.5,
       allowanceAvg: 109.5,
-      stakesAvg: 107.5
+      stakesAvg: 107.5,
     },
     {
       distance: '1 3/16m',
@@ -278,7 +287,7 @@ export const fairGrounds: TrackData = {
       surface: 'dirt',
       claimingAvg: 118.0,
       allowanceAvg: 116.0,
-      stakesAvg: 114.0
+      stakesAvg: 114.0,
     },
     {
       distance: '1 1/4m',
@@ -286,7 +295,7 @@ export const fairGrounds: TrackData = {
       surface: 'dirt',
       claimingAvg: 125.0,
       allowanceAvg: 122.5,
-      stakesAvg: 120.5
+      stakesAvg: 120.5,
     },
     // Turf times
     {
@@ -295,7 +304,7 @@ export const fairGrounds: TrackData = {
       surface: 'turf',
       claimingAvg: 57.2,
       allowanceAvg: 56.0,
-      stakesAvg: 54.8
+      stakesAvg: 54.8,
     },
     {
       distance: '5.5f',
@@ -303,7 +312,7 @@ export const fairGrounds: TrackData = {
       surface: 'turf',
       claimingAvg: 63.5,
       allowanceAvg: 62.2,
-      stakesAvg: 61.0
+      stakesAvg: 61.0,
     },
     {
       distance: '1m',
@@ -311,7 +320,7 @@ export const fairGrounds: TrackData = {
       surface: 'turf',
       claimingAvg: 96.0,
       allowanceAvg: 94.5,
-      stakesAvg: 93.0
+      stakesAvg: 93.0,
     },
     {
       distance: '1 1/16m',
@@ -319,7 +328,7 @@ export const fairGrounds: TrackData = {
       surface: 'turf',
       claimingAvg: 102.5,
       allowanceAvg: 101.0,
-      stakesAvg: 99.5
+      stakesAvg: 99.5,
     },
     {
       distance: '1 1/8m',
@@ -327,7 +336,7 @@ export const fairGrounds: TrackData = {
       surface: 'turf',
       claimingAvg: 109.5,
       allowanceAvg: 108.0,
-      stakesAvg: 106.5
+      stakesAvg: 106.5,
     },
     {
       distance: '1 1/4m',
@@ -335,10 +344,10 @@ export const fairGrounds: TrackData = {
       surface: 'turf',
       claimingAvg: 122.5,
       allowanceAvg: 120.5,
-      stakesAvg: 118.5
-    }
+      stakesAvg: 118.5,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

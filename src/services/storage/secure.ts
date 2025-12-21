@@ -27,11 +27,11 @@
  */
 export interface SecureStorageOptions {
   /** Time-to-live in milliseconds. Data expires after this duration. */
-  ttl?: number
+  ttl?: number;
   /** Whether this data requires encryption (future implementation) */
-  encrypt?: boolean
+  encrypt?: boolean;
   /** Storage scope for namespacing */
-  scope?: string
+  scope?: string;
 }
 
 /**
@@ -39,44 +39,44 @@ export interface SecureStorageOptions {
  */
 interface SecureStorageEntry<T> {
   /** The actual data being stored */
-  data: T
+  data: T;
   /** When this entry was created */
-  createdAt: number
+  createdAt: number;
   /** When this entry expires (undefined = never) */
-  expiresAt?: number
+  expiresAt?: number;
   /** Version for future migration support */
-  version: number
+  version: number;
   /** Whether data is encrypted (for future use) */
-  encrypted: boolean
+  encrypted: boolean;
   /** Scope/namespace for this entry */
-  scope: string
+  scope: string;
 }
 
 /**
  * Interface for encryption provider (to be implemented)
  */
 export interface IEncryptionProvider {
-  encrypt(data: string): Promise<string>
-  decrypt(data: string): Promise<string>
-  isAvailable(): boolean
+  encrypt(data: string): Promise<string>;
+  decrypt(data: string): Promise<string>;
+  isAvailable(): boolean;
 }
 
 /**
  * Result of a secure storage operation
  */
 export interface SecureStorageResult<T> {
-  success: boolean
-  data?: T
-  error?: string
+  success: boolean;
+  data?: T;
+  error?: string;
 }
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
-const SECURE_STORAGE_VERSION = 1
-const DEFAULT_SCOPE = 'app'
-const STORAGE_PREFIX = 'furlong_secure_'
+const SECURE_STORAGE_VERSION = 1;
+const DEFAULT_SCOPE = 'app';
+const STORAGE_PREFIX = 'furlong_secure_';
 
 // ============================================================================
 // PLACEHOLDER ENCRYPTION PROVIDER
@@ -91,22 +91,22 @@ class PlaceholderEncryptionProvider implements IEncryptionProvider {
   async encrypt(data: string): Promise<string> {
     // WARNING: This is NOT encryption - placeholder only
     // In production, implement using Web Crypto API
-    return btoa(encodeURIComponent(data))
+    return btoa(encodeURIComponent(data));
   }
 
   async decrypt(data: string): Promise<string> {
     // WARNING: This is NOT decryption - placeholder only
     try {
-      return decodeURIComponent(atob(data))
+      return decodeURIComponent(atob(data));
     } catch {
-      throw new Error('Failed to decode data')
+      throw new Error('Failed to decode data');
     }
   }
 
   isAvailable(): boolean {
     // Placeholder always available
     // Real implementation should check for crypto API availability
-    return true
+    return true;
   }
 }
 
@@ -135,30 +135,27 @@ class PlaceholderEncryptionProvider implements IEncryptionProvider {
  * ```
  */
 export class SecureStorage {
-  private encryptionProvider: IEncryptionProvider
-  private defaultScope: string
+  private encryptionProvider: IEncryptionProvider;
+  private defaultScope: string;
 
-  constructor(
-    encryptionProvider?: IEncryptionProvider,
-    defaultScope: string = DEFAULT_SCOPE
-  ) {
-    this.encryptionProvider = encryptionProvider || new PlaceholderEncryptionProvider()
-    this.defaultScope = defaultScope
+  constructor(encryptionProvider?: IEncryptionProvider, defaultScope: string = DEFAULT_SCOPE) {
+    this.encryptionProvider = encryptionProvider || new PlaceholderEncryptionProvider();
+    this.defaultScope = defaultScope;
   }
 
   /**
    * Generate storage key with prefix and scope
    */
   private getStorageKey(key: string, scope: string): string {
-    return `${STORAGE_PREFIX}${scope}_${key}`
+    return `${STORAGE_PREFIX}${scope}_${key}`;
   }
 
   /**
    * Check if an entry is expired
    */
   private isExpired(entry: SecureStorageEntry<unknown>): boolean {
-    if (!entry.expiresAt) return false
-    return Date.now() > entry.expiresAt
+    if (!entry.expiresAt) return false;
+    return Date.now() > entry.expiresAt;
   }
 
   /**
@@ -174,9 +171,9 @@ export class SecureStorage {
     options: SecureStorageOptions = {}
   ): Promise<SecureStorageResult<void>> {
     try {
-      const scope = options.scope || this.defaultScope
-      const storageKey = this.getStorageKey(key, scope)
-      const now = Date.now()
+      const scope = options.scope || this.defaultScope;
+      const storageKey = this.getStorageKey(key, scope);
+      const now = Date.now();
 
       const entry: SecureStorageEntry<T> = {
         data,
@@ -185,25 +182,25 @@ export class SecureStorage {
         version: SECURE_STORAGE_VERSION,
         encrypted: options.encrypt || false,
         scope,
-      }
+      };
 
-      let serialized = JSON.stringify(entry)
+      let serialized = JSON.stringify(entry);
 
       // Apply encoding (placeholder for encryption)
       if (options.encrypt && this.encryptionProvider.isAvailable()) {
-        serialized = await this.encryptionProvider.encrypt(serialized)
+        serialized = await this.encryptionProvider.encrypt(serialized);
       }
 
       // Use sessionStorage for more sensitive data that shouldn't persist
       // Use IndexedDB for larger data sets (see storage/index.ts)
       // localStorage is used here for simpler use cases
-      localStorage.setItem(storageKey, serialized)
+      localStorage.setItem(storageKey, serialized);
 
-      return { success: true }
+      return { success: true };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error'
-      console.error('[SecureStorage] Failed to set:', message)
-      return { success: false, error: message }
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('[SecureStorage] Failed to set:', message);
+      return { success: false, error: message };
     }
   }
 
@@ -218,46 +215,46 @@ export class SecureStorage {
     options: Pick<SecureStorageOptions, 'scope'> = {}
   ): Promise<SecureStorageResult<T>> {
     try {
-      const scope = options.scope || this.defaultScope
-      const storageKey = this.getStorageKey(key, scope)
+      const scope = options.scope || this.defaultScope;
+      const storageKey = this.getStorageKey(key, scope);
 
-      const stored = localStorage.getItem(storageKey)
+      const stored = localStorage.getItem(storageKey);
       if (!stored) {
-        return { success: false, error: 'Key not found' }
+        return { success: false, error: 'Key not found' };
       }
 
-      let serialized = stored
+      let serialized = stored;
 
       // Try to decrypt if it appears to be encoded
       // In real implementation, we'd have metadata about encryption
       try {
         if (this.encryptionProvider.isAvailable()) {
-          serialized = await this.encryptionProvider.decrypt(stored)
+          serialized = await this.encryptionProvider.decrypt(stored);
         }
       } catch {
         // If decryption fails, try using raw value (backwards compatibility)
-        serialized = stored
+        serialized = stored;
       }
 
-      const entry: SecureStorageEntry<T> = JSON.parse(serialized)
+      const entry: SecureStorageEntry<T> = JSON.parse(serialized);
 
       // Check version for migration
       if (entry.version !== SECURE_STORAGE_VERSION) {
         // Future: handle data migration
-        console.warn('[SecureStorage] Version mismatch, data may need migration')
+        console.warn('[SecureStorage] Version mismatch, data may need migration');
       }
 
       // Check expiration
       if (this.isExpired(entry)) {
-        await this.remove(key, { scope })
-        return { success: false, error: 'Data expired' }
+        await this.remove(key, { scope });
+        return { success: false, error: 'Data expired' };
       }
 
-      return { success: true, data: entry.data }
+      return { success: true, data: entry.data };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error'
-      console.error('[SecureStorage] Failed to get:', message)
-      return { success: false, error: message }
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('[SecureStorage] Failed to get:', message);
+      return { success: false, error: message };
     }
   }
 
@@ -272,25 +269,22 @@ export class SecureStorage {
     options: Pick<SecureStorageOptions, 'scope'> = {}
   ): Promise<SecureStorageResult<void>> {
     try {
-      const scope = options.scope || this.defaultScope
-      const storageKey = this.getStorageKey(key, scope)
-      localStorage.removeItem(storageKey)
-      return { success: true }
+      const scope = options.scope || this.defaultScope;
+      const storageKey = this.getStorageKey(key, scope);
+      localStorage.removeItem(storageKey);
+      return { success: true };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error'
-      return { success: false, error: message }
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: message };
     }
   }
 
   /**
    * Check if a key exists and is not expired
    */
-  async has(
-    key: string,
-    options: Pick<SecureStorageOptions, 'scope'> = {}
-  ): Promise<boolean> {
-    const result = await this.get(key, options)
-    return result.success
+  async has(key: string, options: Pick<SecureStorageOptions, 'scope'> = {}): Promise<boolean> {
+    const result = await this.get(key, options);
+    return result.success;
   }
 
   /**
@@ -300,22 +294,22 @@ export class SecureStorage {
    */
   async clearScope(scope: string): Promise<SecureStorageResult<void>> {
     try {
-      const prefix = `${STORAGE_PREFIX}${scope}_`
-      const keysToRemove: string[] = []
+      const prefix = `${STORAGE_PREFIX}${scope}_`;
+      const keysToRemove: string[] = [];
 
       for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
+        const key = localStorage.key(i);
         if (key && key.startsWith(prefix)) {
-          keysToRemove.push(key)
+          keysToRemove.push(key);
         }
       }
 
-      keysToRemove.forEach((key) => localStorage.removeItem(key))
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
 
-      return { success: true }
+      return { success: true };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error'
-      return { success: false, error: message }
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: message };
     }
   }
 
@@ -324,21 +318,21 @@ export class SecureStorage {
    */
   async clearAll(): Promise<SecureStorageResult<void>> {
     try {
-      const keysToRemove: string[] = []
+      const keysToRemove: string[] = [];
 
       for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
+        const key = localStorage.key(i);
         if (key && key.startsWith(STORAGE_PREFIX)) {
-          keysToRemove.push(key)
+          keysToRemove.push(key);
         }
       }
 
-      keysToRemove.forEach((key) => localStorage.removeItem(key))
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
 
-      return { success: true }
+      return { success: true };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error'
-      return { success: false, error: message }
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: message };
     }
   }
 
@@ -348,34 +342,34 @@ export class SecureStorage {
    * @returns Number of entries cleared
    */
   async clearExpired(): Promise<number> {
-    let clearedCount = 0
+    let clearedCount = 0;
 
     for (let i = localStorage.length - 1; i >= 0; i--) {
-      const key = localStorage.key(i)
-      if (!key || !key.startsWith(STORAGE_PREFIX)) continue
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(STORAGE_PREFIX)) continue;
 
       try {
-        const stored = localStorage.getItem(key)
-        if (!stored) continue
+        const stored = localStorage.getItem(key);
+        if (!stored) continue;
 
-        let serialized = stored
+        let serialized = stored;
         try {
-          serialized = await this.encryptionProvider.decrypt(stored)
+          serialized = await this.encryptionProvider.decrypt(stored);
         } catch {
           // Use raw value if decryption fails
         }
 
-        const entry: SecureStorageEntry<unknown> = JSON.parse(serialized)
+        const entry: SecureStorageEntry<unknown> = JSON.parse(serialized);
         if (this.isExpired(entry)) {
-          localStorage.removeItem(key)
-          clearedCount++
+          localStorage.removeItem(key);
+          clearedCount++;
         }
       } catch {
         // Skip entries that can't be parsed
       }
     }
 
-    return clearedCount
+    return clearedCount;
   }
 }
 
@@ -383,23 +377,23 @@ export class SecureStorage {
 // SINGLETON INSTANCE
 // ============================================================================
 
-let secureStorageInstance: SecureStorage | null = null
+let secureStorageInstance: SecureStorage | null = null;
 
 /**
  * Get the singleton secure storage instance
  */
 export function getSecureStorage(scope?: string): SecureStorage {
   if (!secureStorageInstance) {
-    secureStorageInstance = new SecureStorage(undefined, scope)
+    secureStorageInstance = new SecureStorage(undefined, scope);
   }
-  return secureStorageInstance
+  return secureStorageInstance;
 }
 
 /**
  * Reset the secure storage instance (for testing)
  */
 export function resetSecureStorage(): void {
-  secureStorageInstance = null
+  secureStorageInstance = null;
 }
 
 // ============================================================================
@@ -427,6 +421,6 @@ export const secureStorage = {
   clearAll: () => getSecureStorage().clearAll(),
 
   clearExpired: () => getSecureStorage().clearExpired(),
-}
+};
 
-export default secureStorage
+export default secureStorage;

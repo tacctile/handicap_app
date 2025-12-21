@@ -13,7 +13,7 @@
  * Sample sizes: 1000+ races for post position analysis (2022-2024)
  */
 
-import type { TrackData } from './trackSchema'
+import type { TrackData } from './trackSchema';
 
 export const gulfstreamPark: TrackData = {
   code: 'GP',
@@ -33,7 +33,7 @@ export const gulfstreamPark: TrackData = {
       // Source: Gulfstream specifications
       trackWidth: 80,
       // Source: Gulfstream - one-mile backstretch chute for one-turn mile
-      chutes: [7, 8]
+      chutes: [7, 8],
     },
     turf: {
       // Source: Wikipedia/Gulfstream - 7 furlong turf course
@@ -45,8 +45,8 @@ export const gulfstreamPark: TrackData = {
       turnRadius: 230,
       // Source: 2004 renovation widened turf to 170 feet
       trackWidth: 170,
-      chutes: []
-    }
+      chutes: [],
+    },
   },
 
   postPositionBias: {
@@ -61,7 +61,8 @@ export const gulfstreamPark: TrackData = {
         // Drop-off starts at post 7+
         winPercentByPost: [12.8, 15.2, 16.5, 15.8, 13.5, 11.2, 8.2, 4.8, 1.5, 0.5],
         favoredPosts: [3, 4, 5],
-        biasDescription: 'Inside posts 1-4 at 15% win rate; significant drop-off from post 7+; strong inside draw advantage'
+        biasDescription:
+          'Inside posts 1-4 at 15% win rate; significant drop-off from post 7+; strong inside draw advantage',
       },
       {
         distance: 'route',
@@ -74,8 +75,9 @@ export const gulfstreamPark: TrackData = {
         // Anything outside post 5 is a bad draw
         winPercentByPost: [18.2, 17.5, 18.0, 14.5, 12.2, 8.5, 5.2, 3.2, 1.8, 0.9],
         favoredPosts: [1, 2, 3],
-        biasDescription: 'STRONG inside bias in routes; posts 1-3 each at 18%; posts 8+ won only 5% (2-for-38)'
-      }
+        biasDescription:
+          'STRONG inside bias in routes; posts 1-3 each at 18%; posts 8+ won only 5% (2-for-38)',
+      },
     ],
     turf: [
       {
@@ -88,7 +90,8 @@ export const gulfstreamPark: TrackData = {
         // Running style bias stronger than post position
         winPercentByPost: [13.2, 14.5, 14.2, 13.5, 12.2, 11.5, 10.2, 7.2, 2.5, 1.0],
         favoredPosts: [2, 3],
-        biasDescription: 'Turf sprints relatively fair; 5f no post bias; at 7.5f outside posts actually advantaged (44%)'
+        biasDescription:
+          'Turf sprints relatively fair; 5f no post bias; at 7.5f outside posts actually advantaged (44%)',
       },
       {
         distance: 'route',
@@ -99,9 +102,10 @@ export const gulfstreamPark: TrackData = {
         // Long-term: outside horses have least disadvantage vs other tracks
         winPercentByPost: [11.8, 13.2, 13.8, 13.5, 12.8, 11.8, 10.5, 8.2, 3.5, 0.9],
         favoredPosts: [3, 4, 5],
-        biasDescription: 'Turf routes exceptionally fair; outside draws less disadvantaged than most tracks'
-      }
-    ]
+        biasDescription:
+          'Turf routes exceptionally fair; outside draws less disadvantaged than most tracks',
+      },
+    ],
   },
 
   speedBias: [
@@ -115,7 +119,8 @@ export const gulfstreamPark: TrackData = {
       // 2024 running style: Front Runners 21%, Pressers 24%, Stalkers 20%, Closers 18%
       earlySpeedWinRate: 62,
       paceAdvantageRating: 7,
-      description: 'STRONG speed bias; 56% of sprints won by pace; closers terrible (9%); anti-closer track'
+      description:
+        'STRONG speed bias; 56% of sprints won by pace; closers terrible (9%); anti-closer track',
     },
     {
       surface: 'turf',
@@ -125,8 +130,9 @@ export const gulfstreamPark: TrackData = {
       // Pace scenarios matter but not as extreme as dirt
       earlySpeedWinRate: 48,
       paceAdvantageRating: 5,
-      description: 'Turf more fair; 5f sprints favor early speed; routes tactical with pace scenarios key'
-    }
+      description:
+        'Turf more fair; 5f sprints favor early speed; routes tactical with pace scenarios key',
+    },
   ],
 
   surfaces: [
@@ -136,7 +142,7 @@ export const gulfstreamPark: TrackData = {
       // Sandy base - drains well, favors speed
       composition: 'Sandy dirt base with excellent drainage; speed-favoring surface',
       playingStyle: 'speed-favoring',
-      drainage: 'excellent'
+      drainage: 'excellent',
     },
     {
       baseType: 'turf',
@@ -144,7 +150,7 @@ export const gulfstreamPark: TrackData = {
       // Bermuda grass typical for Florida climate
       composition: 'Bermuda grass turf; widened to 170 feet in 2004 renovation',
       playingStyle: 'fair',
-      drainage: 'good'
+      drainage: 'good',
     },
     {
       baseType: 'synthetic',
@@ -152,8 +158,8 @@ export const gulfstreamPark: TrackData = {
       // 1 mile and 70 yards Tapeta track
       composition: 'Tapeta synthetic surface (installed 2021); 1 mile 70 yards',
       playingStyle: 'fair',
-      drainage: 'excellent'
-    }
+      drainage: 'excellent',
+    },
   ],
 
   seasonalPatterns: [
@@ -165,7 +171,8 @@ export const gulfstreamPark: TrackData = {
       // Best horses ship in from across country
       typicalCondition: 'Fast',
       speedAdjustment: 1,
-      notes: 'Championship Meet (Dec-April); Pegasus World Cup; highest quality racing; speed bias most pronounced'
+      notes:
+        'Championship Meet (Dec-April); Pegasus World Cup; highest quality racing; speed bias most pronounced',
     },
     {
       season: 'spring',
@@ -174,7 +181,7 @@ export const gulfstreamPark: TrackData = {
       // End of championship meet; quality still high
       typicalCondition: 'Fast to Good',
       speedAdjustment: 0,
-      notes: 'End of main meet; FL Derby; quality remains high before summer'
+      notes: 'End of main meet; FL Derby; quality remains high before summer',
     },
     {
       season: 'summer',
@@ -184,7 +191,8 @@ export const gulfstreamPark: TrackData = {
       // Track conditions can change rapidly
       typicalCondition: 'Fast/Sloppy (variable)',
       speedAdjustment: -1,
-      notes: 'Summer meet; afternoon thunderstorms frequent; track conditions variable; reduced quality'
+      notes:
+        'Summer meet; afternoon thunderstorms frequent; track conditions variable; reduced quality',
     },
     {
       season: 'fall',
@@ -193,8 +201,8 @@ export const gulfstreamPark: TrackData = {
       // Building toward Championship Meet
       typicalCondition: 'Fast',
       speedAdjustment: 0,
-      notes: 'Fall meet; building toward championship season; hurricane risk Sept-Oct'
-    }
+      notes: 'Fall meet; building toward championship season; hurricane risk Sept-Oct',
+    },
   ],
 
   winningTimes: [
@@ -205,7 +213,7 @@ export const gulfstreamPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 57.5,
       allowanceAvg: 56.2,
-      stakesAvg: 55.0
+      stakesAvg: 55.0,
     },
     {
       distance: '5.5f',
@@ -213,7 +221,7 @@ export const gulfstreamPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 63.2,
       allowanceAvg: 62.0,
-      stakesAvg: 60.8
+      stakesAvg: 60.8,
     },
     {
       distance: '6f',
@@ -221,7 +229,7 @@ export const gulfstreamPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 70.0,
       allowanceAvg: 68.8,
-      stakesAvg: 67.5
+      stakesAvg: 67.5,
     },
     {
       distance: '7f',
@@ -229,7 +237,7 @@ export const gulfstreamPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 83.0,
       allowanceAvg: 81.5,
-      stakesAvg: 80.0
+      stakesAvg: 80.0,
     },
     {
       distance: '1m',
@@ -238,7 +246,7 @@ export const gulfstreamPark: TrackData = {
       // One-turn mile from backstretch chute
       claimingAvg: 96.2,
       allowanceAvg: 94.5,
-      stakesAvg: 93.0
+      stakesAvg: 93.0,
     },
     {
       distance: '1 1/16m',
@@ -246,7 +254,7 @@ export const gulfstreamPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 103.0,
       allowanceAvg: 101.2,
-      stakesAvg: 99.5
+      stakesAvg: 99.5,
     },
     {
       distance: '1 1/8m',
@@ -255,7 +263,7 @@ export const gulfstreamPark: TrackData = {
       // Pegasus World Cup distance
       claimingAvg: 110.0,
       allowanceAvg: 108.2,
-      stakesAvg: 106.5
+      stakesAvg: 106.5,
     },
     {
       distance: '1 1/4m',
@@ -263,7 +271,7 @@ export const gulfstreamPark: TrackData = {
       surface: 'dirt',
       claimingAvg: 123.0,
       allowanceAvg: 121.0,
-      stakesAvg: 119.0
+      stakesAvg: 119.0,
     },
     // Turf times
     {
@@ -272,7 +280,7 @@ export const gulfstreamPark: TrackData = {
       surface: 'turf',
       claimingAvg: 57.0,
       allowanceAvg: 55.8,
-      stakesAvg: 54.5
+      stakesAvg: 54.5,
     },
     {
       distance: '7.5f',
@@ -281,7 +289,7 @@ export const gulfstreamPark: TrackData = {
       // Popular distance at Gulfstream (32 races at 2023-24 meet)
       claimingAvg: 88.5,
       allowanceAvg: 87.0,
-      stakesAvg: 85.5
+      stakesAvg: 85.5,
     },
     {
       distance: '1m',
@@ -289,7 +297,7 @@ export const gulfstreamPark: TrackData = {
       surface: 'turf',
       claimingAvg: 95.0,
       allowanceAvg: 93.5,
-      stakesAvg: 92.0
+      stakesAvg: 92.0,
     },
     {
       distance: '1 1/16m',
@@ -297,7 +305,7 @@ export const gulfstreamPark: TrackData = {
       surface: 'turf',
       claimingAvg: 101.8,
       allowanceAvg: 100.0,
-      stakesAvg: 98.2
+      stakesAvg: 98.2,
     },
     {
       distance: '1 1/8m',
@@ -305,10 +313,10 @@ export const gulfstreamPark: TrackData = {
       surface: 'turf',
       claimingAvg: 108.5,
       allowanceAvg: 106.8,
-      stakesAvg: 105.0
-    }
+      stakesAvg: 105.0,
+    },
   ],
 
   lastUpdated: '2024-12-20',
-  dataQuality: 'verified'
-}
+  dataQuality: 'verified',
+};

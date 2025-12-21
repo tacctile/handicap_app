@@ -1,23 +1,23 @@
-import { memo, useMemo, useCallback, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import type { ParsedRace, ParsedDRFFile } from '../types/drf'
-import type { ScoredHorse } from '../lib/scoring'
+import { memo, useMemo, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { ParsedRace, ParsedDRFFile } from '../types/drf';
+import type { ScoredHorse } from '../lib/scoring';
 import {
   getConfidenceColor,
   getConfidenceLabel,
   getConfidenceBgColor,
   getConfidenceBorderColor,
-} from '../lib/confidence'
-import { SCORE_THRESHOLDS } from '../lib/scoring'
-import { getDiamondColor, getDiamondBgColor } from '../lib/diamonds'
+} from '../lib/confidence';
+import { SCORE_THRESHOLDS } from '../lib/scoring';
+import { getDiamondColor, getDiamondBgColor } from '../lib/diamonds';
 
 interface RaceOverviewProps {
-  parsedData: ParsedDRFFile
-  raceConfidences: Map<number, number>
-  topHorsesByRace: Map<number, ScoredHorse[]>
-  diamondCountByRace?: Map<number, number>
-  eliteConnectionsCountByRace?: Map<number, number>
-  onRaceSelect: (raceIndex: number) => void
+  parsedData: ParsedDRFFile;
+  raceConfidences: Map<number, number>;
+  topHorsesByRace: Map<number, ScoredHorse[]>;
+  diamondCountByRace?: Map<number, number>;
+  eliteConnectionsCountByRace?: Map<number, number>;
+  onRaceSelect: (raceIndex: number) => void;
 }
 
 // Material Icon component
@@ -26,23 +26,23 @@ function Icon({ name, className = '' }: { name: string; className?: string }) {
     <span className={`material-icons ${className}`} aria-hidden="true">
       {name}
     </span>
-  )
+  );
 }
 
 // Confidence badge component
 interface ConfidenceBadgeProps {
-  confidence: number
-  size?: 'small' | 'normal'
+  confidence: number;
+  size?: 'small' | 'normal';
 }
 
 const ConfidenceBadge = memo(function ConfidenceBadge({
   confidence,
   size = 'normal',
 }: ConfidenceBadgeProps) {
-  const color = getConfidenceColor(confidence)
-  const label = getConfidenceLabel(confidence)
-  const bgColor = getConfidenceBgColor(confidence)
-  const borderColor = getConfidenceBorderColor(confidence)
+  const color = getConfidenceColor(confidence);
+  const label = getConfidenceLabel(confidence);
+  const bgColor = getConfidenceBgColor(confidence);
+  const borderColor = getConfidenceBorderColor(confidence);
 
   return (
     <div
@@ -56,16 +56,16 @@ const ConfidenceBadge = memo(function ConfidenceBadge({
       <span className="confidence-value tabular-nums">{confidence}%</span>
       <span className="confidence-label">{label}</span>
     </div>
-  )
-})
+  );
+});
 
 // Diamond badge component
 interface DiamondBadgeProps {
-  count: number
+  count: number;
 }
 
 const DiamondBadge = memo(function DiamondBadge({ count }: DiamondBadgeProps) {
-  if (count === 0) return null
+  if (count === 0) return null;
 
   return (
     <div
@@ -80,16 +80,18 @@ const DiamondBadge = memo(function DiamondBadge({ count }: DiamondBadgeProps) {
       <span className="diamond-badge-icon">💎</span>
       {count > 1 && <span className="diamond-badge-count">{count}</span>}
     </div>
-  )
-})
+  );
+});
 
 // Elite Connections badge component
 interface EliteConnectionsBadgeProps {
-  count: number
+  count: number;
 }
 
-const EliteConnectionsBadge = memo(function EliteConnectionsBadge({ count }: EliteConnectionsBadgeProps) {
-  if (count === 0) return null
+const EliteConnectionsBadge = memo(function EliteConnectionsBadge({
+  count,
+}: EliteConnectionsBadgeProps) {
+  if (count === 0) return null;
 
   return (
     <div
@@ -112,19 +114,19 @@ const EliteConnectionsBadge = memo(function EliteConnectionsBadge({ count }: Eli
       <span style={{ fontSize: '0.9rem' }}>🤝</span>
       {count > 1 && <span>{count}</span>}
     </div>
-  )
-})
+  );
+});
 
 // Race card component
 interface RaceCardProps {
-  race: ParsedRace
-  raceIndex: number
-  confidence: number
-  topHorses: ScoredHorse[]
-  scratchedCount: number
-  diamondCount: number
-  eliteConnectionsCount: number
-  onClick: () => void
+  race: ParsedRace;
+  raceIndex: number;
+  confidence: number;
+  topHorses: ScoredHorse[];
+  scratchedCount: number;
+  diamondCount: number;
+  eliteConnectionsCount: number;
+  onClick: () => void;
 }
 
 const RaceCard = memo(function RaceCard({
@@ -137,23 +139,23 @@ const RaceCard = memo(function RaceCard({
   eliteConnectionsCount,
   onClick,
 }: RaceCardProps) {
-  const { header, horses } = race
-  const activeCount = horses.length - scratchedCount
+  const { header, horses } = race;
+  const activeCount = horses.length - scratchedCount;
 
   // Check if there's a Tier 1 pick (180+ points)
-  const hasTier1Pick = topHorses.some(h => h.score.total >= SCORE_THRESHOLDS.strong)
+  const hasTier1Pick = topHorses.some((h) => h.score.total >= SCORE_THRESHOLDS.strong);
 
   // Check for diamonds
-  const hasDiamonds = diamondCount > 0
+  const hasDiamonds = diamondCount > 0;
 
   // Check for elite connections
-  const hasEliteConnections = eliteConnectionsCount > 0
+  const hasEliteConnections = eliteConnectionsCount > 0;
 
   // Format surface nicely
-  const surfaceLabel = header.surface.charAt(0).toUpperCase() + header.surface.slice(1)
+  const surfaceLabel = header.surface.charAt(0).toUpperCase() + header.surface.slice(1);
 
   // Get race class/type abbreviation
-  const classLabel = header.classification || header.raceType || ''
+  const classLabel = header.classification || header.raceType || '';
 
   return (
     <motion.button
@@ -187,9 +189,7 @@ const RaceCard = memo(function RaceCard({
 
         {/* Class and purse */}
         <div className="race-card-details">
-          {classLabel && (
-            <span className="race-card-class">{classLabel}</span>
-          )}
+          {classLabel && <span className="race-card-class">{classLabel}</span>}
           {header.purseFormatted && (
             <span className="race-card-purse">{header.purseFormatted}</span>
           )}
@@ -200,9 +200,7 @@ const RaceCard = memo(function RaceCard({
           <Icon name="pets" className="race-card-icon" />
           <span className="tabular-nums">
             {activeCount}
-            {scratchedCount > 0 && (
-              <span className="race-card-scratched">/{horses.length}</span>
-            )}
+            {scratchedCount > 0 && <span className="race-card-scratched">/{horses.length}</span>}
           </span>
           <span className="race-card-horses-label">horses</span>
         </div>
@@ -215,9 +213,7 @@ const RaceCard = memo(function RaceCard({
               {topHorses[0].horse.horseName.slice(0, 12)}
               {topHorses[0].horse.horseName.length > 12 ? '...' : ''}
             </span>
-            <span className="race-card-top-score tabular-nums">
-              {topHorses[0].score.total}
-            </span>
+            <span className="race-card-top-score tabular-nums">{topHorses[0].score.total}</span>
           </div>
         )}
       </div>
@@ -236,11 +232,14 @@ const RaceCard = memo(function RaceCard({
 
       {/* Elite Connections indicator */}
       {hasEliteConnections && (
-        <div className="race-card-elite-connections-indicator" style={{
-          position: 'absolute',
-          bottom: hasDiamonds ? '36px' : '8px',
-          right: '8px',
-        }}>
+        <div
+          className="race-card-elite-connections-indicator"
+          style={{
+            position: 'absolute',
+            bottom: hasDiamonds ? '36px' : '8px',
+            right: '8px',
+          }}
+        >
           <EliteConnectionsBadge count={eliteConnectionsCount} />
         </div>
       )}
@@ -257,8 +256,8 @@ const RaceCard = memo(function RaceCard({
         <Icon name="chevron_right" />
       </div>
     </motion.button>
-  )
-})
+  );
+});
 
 export const RaceOverview = memo(function RaceOverview({
   parsedData,
@@ -269,38 +268,41 @@ export const RaceOverview = memo(function RaceOverview({
   onRaceSelect,
 }: RaceOverviewProps) {
   // Handle keyboard navigation
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // Number keys 1-9 for quick race selection
-    const num = parseInt(e.key)
-    if (num >= 1 && num <= parsedData.races.length) {
-      onRaceSelect(num - 1)
-    }
-  }, [parsedData.races.length, onRaceSelect])
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      // Number keys 1-9 for quick race selection
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= parsedData.races.length) {
+        onRaceSelect(num - 1);
+      }
+    },
+    [parsedData.races.length, onRaceSelect]
+  );
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleKeyDown])
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
   // Summary stats
   const stats = useMemo(() => {
-    let totalHorses = 0
-    let tier1Races = 0
-    let totalDiamonds = 0
-    let totalEliteConnections = 0
+    let totalHorses = 0;
+    let tier1Races = 0;
+    let totalDiamonds = 0;
+    let totalEliteConnections = 0;
 
     parsedData.races.forEach((race, index) => {
-      totalHorses += race.horses.length
-      const topHorses = topHorsesByRace.get(index) || []
-      if (topHorses.some(h => h.score.total >= SCORE_THRESHOLDS.strong)) {
-        tier1Races++
+      totalHorses += race.horses.length;
+      const topHorses = topHorsesByRace.get(index) || [];
+      if (topHorses.some((h) => h.score.total >= SCORE_THRESHOLDS.strong)) {
+        tier1Races++;
       }
-      totalDiamonds += diamondCountByRace?.get(index) || 0
-      totalEliteConnections += eliteConnectionsCountByRace?.get(index) || 0
-    })
+      totalDiamonds += diamondCountByRace?.get(index) || 0;
+      totalEliteConnections += eliteConnectionsCountByRace?.get(index) || 0;
+    });
 
-    return { totalHorses, tier1Races, totalDiamonds, totalEliteConnections }
-  }, [parsedData.races, topHorsesByRace, diamondCountByRace, eliteConnectionsCountByRace])
+    return { totalHorses, tier1Races, totalDiamonds, totalEliteConnections };
+  }, [parsedData.races, topHorsesByRace, diamondCountByRace, eliteConnectionsCountByRace]);
 
   return (
     <div className="race-overview">
@@ -335,7 +337,8 @@ export const RaceOverview = memo(function RaceOverview({
                 style={{ color: getDiamondColor() }}
               >
                 <span className="race-overview-diamond-icon">💎</span>
-                <span className="tabular-nums">{stats.totalDiamonds}</span> Hidden Gem{stats.totalDiamonds > 1 ? 's' : ''}
+                <span className="tabular-nums">{stats.totalDiamonds}</span> Hidden Gem
+                {stats.totalDiamonds > 1 ? 's' : ''}
               </span>
             </>
           )}
@@ -347,7 +350,8 @@ export const RaceOverview = memo(function RaceOverview({
                 style={{ color: '#22c55e' }}
               >
                 <span style={{ marginRight: '4px' }}>🤝</span>
-                <span className="tabular-nums">{stats.totalEliteConnections}</span> Elite Connection{stats.totalEliteConnections > 1 ? 's' : ''}
+                <span className="tabular-nums">{stats.totalEliteConnections}</span> Elite Connection
+                {stats.totalEliteConnections > 1 ? 's' : ''}
               </span>
             </>
           )}
@@ -379,7 +383,7 @@ export const RaceOverview = memo(function RaceOverview({
         </AnimatePresence>
       </div>
     </div>
-  )
-})
+  );
+});
 
-export default RaceOverview
+export default RaceOverview;

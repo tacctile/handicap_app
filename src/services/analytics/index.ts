@@ -14,12 +14,12 @@ import type {
   EventProperties,
   UserActivity,
   IAnalyticsProvider,
-} from './types'
+} from './types';
 
-import { defaultAnalyticsConfig, createAnalyticsError } from './types'
+import { defaultAnalyticsConfig, createAnalyticsError } from './types';
 
 // Re-export types for convenience
-export * from './types'
+export * from './types';
 
 // ============================================================================
 // MOCK ANALYTICS SERVICE
@@ -30,14 +30,14 @@ export * from './types'
  * Logs events to console in dev mode and batches for simulated flush
  */
 class MockAnalyticsService implements IAnalyticsProvider {
-  private config: AnalyticsConfig
-  private eventQueue: AnalyticsEvent[] = []
-  private userActivities: Map<string, UserActivity> = new Map()
-  private flushTimer: ReturnType<typeof setTimeout> | null = null
+  private config: AnalyticsConfig;
+  private eventQueue: AnalyticsEvent[] = [];
+  private userActivities: Map<string, UserActivity> = new Map();
+  private flushTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(config: Partial<AnalyticsConfig> = {}) {
-    this.config = { ...defaultAnalyticsConfig, ...config }
-    this.startFlushTimer()
+    this.config = { ...defaultAnalyticsConfig, ...config };
+    this.startFlushTimer();
   }
 
   /**
@@ -45,19 +45,19 @@ class MockAnalyticsService implements IAnalyticsProvider {
    */
   private startFlushTimer(): void {
     if (this.flushTimer) {
-      clearInterval(this.flushTimer)
+      clearInterval(this.flushTimer);
     }
 
-    const interval = this.config.flushIntervalMs || 30000
+    const interval = this.config.flushIntervalMs || 30000;
     this.flushTimer = setInterval(() => {
       if (this.eventQueue.length > 0) {
         this.flush().catch((err) => {
           if (this.config.debug) {
-            console.error('[Analytics] Auto-flush failed:', err)
+            console.error('[Analytics] Auto-flush failed:', err);
           }
-        })
+        });
       }
-    }, interval)
+    }, interval);
   }
 
   /**
@@ -65,14 +65,11 @@ class MockAnalyticsService implements IAnalyticsProvider {
    */
   private logEvent(event: AnalyticsEvent): void {
     if (this.config.debug) {
-      console.log(
-        `[Analytics] Event: ${event.eventName}`,
-        {
-          timestamp: new Date(event.timestamp).toISOString(),
-          userId: event.userId || 'anonymous',
-          properties: event.properties,
-        }
-      )
+      console.log(`[Analytics] Event: ${event.eventName}`, {
+        timestamp: new Date(event.timestamp).toISOString(),
+        userId: event.userId || 'anonymous',
+        properties: event.properties,
+      });
     }
   }
 
@@ -80,13 +77,13 @@ class MockAnalyticsService implements IAnalyticsProvider {
    * Check if batch size reached and auto-flush if needed
    */
   private checkBatchSize(): void {
-    const batchSize = this.config.batchSize || 10
+    const batchSize = this.config.batchSize || 10;
     if (this.eventQueue.length >= batchSize) {
       this.flush().catch((err) => {
         if (this.config.debug) {
-          console.error('[Analytics] Batch flush failed:', err)
+          console.error('[Analytics] Batch flush failed:', err);
         }
-      })
+      });
     }
   }
 
@@ -94,14 +91,14 @@ class MockAnalyticsService implements IAnalyticsProvider {
    * Update user activity tracking
    */
   private updateUserActivity(event: AnalyticsEvent): void {
-    const userId = event.userId || 'anonymous'
-    const existing = this.userActivities.get(userId)
+    const userId = event.userId || 'anonymous';
+    const existing = this.userActivities.get(userId);
 
     if (existing) {
-      existing.events.push(event)
-      existing.lastActive = event.timestamp
+      existing.events.push(event);
+      existing.lastActive = event.timestamp;
       if (event.eventName === 'session_start') {
-        existing.sessionCount++
+        existing.sessionCount++;
       }
     } else {
       this.userActivities.set(userId, {
@@ -109,74 +106,70 @@ class MockAnalyticsService implements IAnalyticsProvider {
         events: [event],
         sessionCount: event.eventName === 'session_start' ? 1 : 0,
         lastActive: event.timestamp,
-      })
+      });
     }
   }
 
-  trackEvent(
-    eventName: EventName,
-    properties: EventProperties = {},
-    userId?: string
-  ): void {
+  trackEvent(eventName: EventName, properties: EventProperties = {}, userId?: string): void {
     const event: AnalyticsEvent = {
       eventName,
       timestamp: Date.now(),
       properties,
       userId,
-    }
+    };
 
     // Log immediately in dev mode
-    this.logEvent(event)
+    this.logEvent(event);
 
     // Add to queue
-    this.eventQueue.push(event)
+    this.eventQueue.push(event);
 
     // Track user activity
-    this.updateUserActivity(event)
+    this.updateUserActivity(event);
 
     // Check if we need to flush
-    this.checkBatchSize()
+    this.checkBatchSize();
   }
 
   async getActivity(userId: string): Promise<UserActivity | null> {
     // Simulate async lookup
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-    const activity = this.userActivities.get(userId)
+    const activity = this.userActivities.get(userId);
     if (activity) {
-      return { ...activity, events: [...activity.events] }
+      return { ...activity, events: [...activity.events] };
     }
-    return null
+    return null;
   }
 
   async flush(): Promise<void> {
     if (this.eventQueue.length === 0) {
-      return
+      return;
     }
 
-    const eventsToFlush = [...this.eventQueue]
-    this.eventQueue = []
+    const eventsToFlush = [...this.eventQueue];
+    this.eventQueue = [];
 
     if (this.config.debug) {
       console.log(
         `[Analytics] Flushing ${eventsToFlush.length} events (mock - not sent to server)`
-      )
+      );
     }
 
     // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     if (this.config.debug) {
-      console.log('[Analytics] Flush complete')
+      console.log('[Analytics] Flush complete');
     }
   }
 
   getProviderType(): AnalyticsProviderType {
-    return 'mock'
+    return 'mock';
   }
 
   isAvailable(): boolean {
-    return true // Mock is always available
+    return true; // Mock is always available
   }
 
   /**
@@ -184,8 +177,8 @@ class MockAnalyticsService implements IAnalyticsProvider {
    */
   destroy(): void {
     if (this.flushTimer) {
-      clearInterval(this.flushTimer)
-      this.flushTimer = null
+      clearInterval(this.flushTimer);
+      this.flushTimer = null;
     }
   }
 }
@@ -203,16 +196,12 @@ class MixpanelAnalyticsService implements IAnalyticsProvider {
     // Config would be used when implementing actual Mixpanel integration
   }
 
-  trackEvent(
-    _eventName: EventName,
-    _properties?: EventProperties,
-    _userId?: string
-  ): void {
+  trackEvent(_eventName: EventName, _properties?: EventProperties, _userId?: string): void {
     throw createAnalyticsError(
       'NOT_IMPLEMENTED',
       'Mixpanel analytics provider is not yet implemented',
       false
-    )
+    );
   }
 
   async getActivity(_userId: string): Promise<UserActivity | null> {
@@ -220,7 +209,7 @@ class MixpanelAnalyticsService implements IAnalyticsProvider {
       'NOT_IMPLEMENTED',
       'Mixpanel analytics provider is not yet implemented',
       false
-    )
+    );
   }
 
   async flush(): Promise<void> {
@@ -228,15 +217,15 @@ class MixpanelAnalyticsService implements IAnalyticsProvider {
       'NOT_IMPLEMENTED',
       'Mixpanel analytics provider is not yet implemented',
       false
-    )
+    );
   }
 
   getProviderType(): AnalyticsProviderType {
-    return 'mixpanel'
+    return 'mixpanel';
   }
 
   isAvailable(): boolean {
-    return false
+    return false;
   }
 }
 
@@ -249,16 +238,12 @@ class AmplitudeAnalyticsService implements IAnalyticsProvider {
     // Config would be used when implementing actual Amplitude integration
   }
 
-  trackEvent(
-    _eventName: EventName,
-    _properties?: EventProperties,
-    _userId?: string
-  ): void {
+  trackEvent(_eventName: EventName, _properties?: EventProperties, _userId?: string): void {
     throw createAnalyticsError(
       'NOT_IMPLEMENTED',
       'Amplitude analytics provider is not yet implemented',
       false
-    )
+    );
   }
 
   async getActivity(_userId: string): Promise<UserActivity | null> {
@@ -266,7 +251,7 @@ class AmplitudeAnalyticsService implements IAnalyticsProvider {
       'NOT_IMPLEMENTED',
       'Amplitude analytics provider is not yet implemented',
       false
-    )
+    );
   }
 
   async flush(): Promise<void> {
@@ -274,15 +259,15 @@ class AmplitudeAnalyticsService implements IAnalyticsProvider {
       'NOT_IMPLEMENTED',
       'Amplitude analytics provider is not yet implemented',
       false
-    )
+    );
   }
 
   getProviderType(): AnalyticsProviderType {
-    return 'amplitude'
+    return 'amplitude';
   }
 
   isAvailable(): boolean {
-    return false
+    return false;
   }
 }
 
@@ -300,20 +285,20 @@ export function getAnalyticsProvider(
   type: AnalyticsProviderType = 'mock',
   config: Partial<AnalyticsConfig> = {}
 ): IAnalyticsProvider {
-  const finalConfig = { ...defaultAnalyticsConfig, ...config, provider: type }
+  const finalConfig = { ...defaultAnalyticsConfig, ...config, provider: type };
 
   switch (type) {
     case 'mixpanel':
-      console.warn('[Analytics] Mixpanel provider not yet implemented, returning stub')
-      return new MixpanelAnalyticsService(finalConfig)
+      console.warn('[Analytics] Mixpanel provider not yet implemented, returning stub');
+      return new MixpanelAnalyticsService(finalConfig);
 
     case 'amplitude':
-      console.warn('[Analytics] Amplitude provider not yet implemented, returning stub')
-      return new AmplitudeAnalyticsService(finalConfig)
+      console.warn('[Analytics] Amplitude provider not yet implemented, returning stub');
+      return new AmplitudeAnalyticsService(finalConfig);
 
     case 'mock':
     default:
-      return new MockAnalyticsService(finalConfig)
+      return new MockAnalyticsService(finalConfig);
   }
 }
 
@@ -321,30 +306,26 @@ export function getAnalyticsProvider(
  * Create an analytics service instance based on configuration
  * Alias for getAnalyticsProvider for consistency with other services
  */
-export function createAnalyticsService(
-  config: Partial<AnalyticsConfig> = {}
-): IAnalyticsProvider {
-  const finalConfig = { ...defaultAnalyticsConfig, ...config }
-  return getAnalyticsProvider(finalConfig.provider, finalConfig)
+export function createAnalyticsService(config: Partial<AnalyticsConfig> = {}): IAnalyticsProvider {
+  const finalConfig = { ...defaultAnalyticsConfig, ...config };
+  return getAnalyticsProvider(finalConfig.provider, finalConfig);
 }
 
 // ============================================================================
 // SINGLETON INSTANCE
 // ============================================================================
 
-let analyticsServiceInstance: IAnalyticsProvider | null = null
+let analyticsServiceInstance: IAnalyticsProvider | null = null;
 
 /**
  * Get the singleton analytics service instance
  * Creates one if it doesn't exist (defaults to mock)
  */
-export function getAnalyticsService(
-  config?: Partial<AnalyticsConfig>
-): IAnalyticsProvider {
+export function getAnalyticsService(config?: Partial<AnalyticsConfig>): IAnalyticsProvider {
   if (!analyticsServiceInstance) {
-    analyticsServiceInstance = createAnalyticsService(config)
+    analyticsServiceInstance = createAnalyticsService(config);
   }
-  return analyticsServiceInstance
+  return analyticsServiceInstance;
 }
 
 /**
@@ -352,17 +333,17 @@ export function getAnalyticsService(
  */
 export function resetAnalyticsService(): void {
   if (analyticsServiceInstance && 'destroy' in analyticsServiceInstance) {
-    (analyticsServiceInstance as MockAnalyticsService).destroy()
+    (analyticsServiceInstance as MockAnalyticsService).destroy();
   }
-  analyticsServiceInstance = null
+  analyticsServiceInstance = null;
 }
 
 /**
  * Export the service classes for direct instantiation if needed
  */
-export { MockAnalyticsService, MixpanelAnalyticsService, AmplitudeAnalyticsService }
+export { MockAnalyticsService, MixpanelAnalyticsService, AmplitudeAnalyticsService };
 
 /**
  * Default export is the singleton getter
  */
-export default getAnalyticsService
+export default getAnalyticsService;

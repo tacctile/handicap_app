@@ -13,13 +13,13 @@
  * - DRF workouts: Workout data from past performances
  */
 
-import type { HorseEntry, RaceHeader, Workout, PastPerformance } from '../../types/drf'
-import type { DetectedUpsetAngle, UpsetAngleCategory } from './longshotTypes'
-import type { PaceScenarioAnalysis, RunningStyleProfile } from '../scoring/paceAnalysis'
-import type { ClassScoreResult } from '../class/classScoring'
-import type { EquipmentScoreResult } from '../equipment/equipmentScoring'
-import { sanitizeString } from '../sanitization'
-import { logger } from '../../services/logging'
+import type { HorseEntry, RaceHeader, Workout, PastPerformance } from '../../types/drf';
+import type { DetectedUpsetAngle, UpsetAngleCategory } from './longshotTypes';
+import type { PaceScenarioAnalysis, RunningStyleProfile } from '../scoring/paceAnalysis';
+import type { ClassScoreResult } from '../class/classScoring';
+import type { EquipmentScoreResult } from '../equipment/equipmentScoring';
+import { sanitizeString } from '../sanitization';
+import { logger } from '../../services/logging';
 
 // ============================================================================
 // VALIDATION TYPES
@@ -30,19 +30,19 @@ import { logger } from '../../services/logging'
  */
 export interface EvidenceValidation {
   /** Evidence type being validated */
-  evidenceType: string
+  evidenceType: string;
   /** Whether the evidence is valid */
-  isValid: boolean
+  isValid: boolean;
   /** Confidence in the validation (0-100) */
-  confidence: number
+  confidence: number;
   /** Source of the data */
-  dataSource: string
+  dataSource: string;
   /** Actual value found */
-  actualValue: string | number | null
+  actualValue: string | number | null;
   /** Threshold or expected value */
-  threshold: string | number | null
+  threshold: string | number | null;
   /** Detailed message */
-  message: string
+  message: string;
 }
 
 /**
@@ -50,19 +50,19 @@ export interface EvidenceValidation {
  */
 export interface AngleValidationResult {
   /** The angle category */
-  category: UpsetAngleCategory
+  category: UpsetAngleCategory;
   /** Whether the angle is fully validated */
-  isValid: boolean
+  isValid: boolean;
   /** Overall confidence (0-100) */
-  overallConfidence: number
+  overallConfidence: number;
   /** Individual evidence validations */
-  evidenceValidations: EvidenceValidation[]
+  evidenceValidations: EvidenceValidation[];
   /** Missing required evidence */
-  missingEvidence: string[]
+  missingEvidence: string[];
   /** Warnings about data quality */
-  warnings: string[]
+  warnings: string[];
   /** Summary message */
-  summary: string
+  summary: string;
 }
 
 // ============================================================================
@@ -72,15 +72,13 @@ export interface AngleValidationResult {
 /**
  * Validate pace scenario data
  */
-export function validatePaceScenarioData(
-  paceScenario: PaceScenarioAnalysis
-): EvidenceValidation {
+export function validatePaceScenarioData(paceScenario: PaceScenarioAnalysis): EvidenceValidation {
   try {
-    const ppi = paceScenario.ppi
-    const speedCount = paceScenario.styleBreakdown.earlySpeed.length
-    const fieldSize = paceScenario.fieldSize
+    const ppi = paceScenario.ppi;
+    const speedCount = paceScenario.styleBreakdown.earlySpeed.length;
+    const fieldSize = paceScenario.fieldSize;
 
-    const isValid = ppi > 0 && fieldSize > 0
+    const isValid = ppi > 0 && fieldSize > 0;
 
     return {
       evidenceType: 'pace_scenario',
@@ -92,7 +90,7 @@ export function validatePaceScenarioData(
       message: isValid
         ? `Valid pace data: PPI ${ppi}, ${speedCount} speed horses`
         : 'Invalid or missing pace scenario data',
-    }
+    };
   } catch {
     return {
       evidenceType: 'pace_scenario',
@@ -102,7 +100,7 @@ export function validatePaceScenarioData(
       actualValue: null,
       threshold: null,
       message: 'Error validating pace scenario data',
-    }
+    };
   }
 }
 
@@ -114,8 +112,8 @@ export function validateRunningStyleData(
   expectedStyle: 'E' | 'P' | 'C' | 'S'
 ): EvidenceValidation {
   try {
-    const isMatch = runningStyle.style === expectedStyle
-    const hasEvidence = runningStyle.evidence.length >= 2
+    const isMatch = runningStyle.style === expectedStyle;
+    const hasEvidence = runningStyle.evidence.length >= 2;
 
     return {
       evidenceType: 'running_style',
@@ -127,7 +125,7 @@ export function validateRunningStyleData(
       message: isMatch
         ? `Running style confirmed: ${runningStyle.styleName}`
         : `Running style mismatch: expected ${expectedStyle}, got ${runningStyle.style}`,
-    }
+    };
   } catch {
     return {
       evidenceType: 'running_style',
@@ -137,7 +135,7 @@ export function validateRunningStyleData(
       actualValue: null,
       threshold: null,
       message: 'Error validating running style',
-    }
+    };
   }
 }
 
@@ -153,11 +151,11 @@ export function validateClassMovement(
   minLevelsDrop: number
 ): EvidenceValidation {
   try {
-    const movement = classScore.analysis.movement
-    const levelsDiff = Math.abs(movement.levelsDifference)
-    const approximateLevels = Math.ceil(levelsDiff / 5)
+    const movement = classScore.analysis.movement;
+    const levelsDiff = Math.abs(movement.levelsDifference);
+    const approximateLevels = Math.ceil(levelsDiff / 5);
 
-    const isValid = movement.direction === 'drop' && approximateLevels >= minLevelsDrop
+    const isValid = movement.direction === 'drop' && approximateLevels >= minLevelsDrop;
 
     return {
       evidenceType: 'class_drop',
@@ -169,7 +167,7 @@ export function validateClassMovement(
       message: isValid
         ? `Valid class drop: ${movement.description}`
         : `Insufficient class drop: ${approximateLevels} levels (need ${minLevelsDrop})`,
-    }
+    };
   } catch {
     return {
       evidenceType: 'class_drop',
@@ -179,28 +177,26 @@ export function validateClassMovement(
       actualValue: null,
       threshold: null,
       message: 'Error validating class movement',
-    }
+    };
   }
 }
 
 /**
  * Validate proven at level data
  */
-export function validateProvenAtLevel(
-  classScore: ClassScoreResult
-): EvidenceValidation {
+export function validateProvenAtLevel(classScore: ClassScoreResult): EvidenceValidation {
   try {
-    const proven = classScore.analysis.provenAtLevel
+    const proven = classScore.analysis.provenAtLevel;
 
-    const isValid = proven.hasWon || proven.hasPlaced || proven.wasCompetitive
-    let confidence = 50
+    const isValid = proven.hasWon || proven.hasPlaced || proven.wasCompetitive;
+    let confidence = 50;
 
     if (proven.hasWon) {
-      confidence = Math.min(95, 70 + proven.winsAtLevel * 10)
+      confidence = Math.min(95, 70 + proven.winsAtLevel * 10);
     } else if (proven.hasPlaced) {
-      confidence = Math.min(85, 60 + proven.itmAtLevel * 5)
+      confidence = Math.min(85, 60 + proven.itmAtLevel * 5);
     } else if (proven.wasCompetitive) {
-      confidence = 55
+      confidence = 55;
     }
 
     return {
@@ -219,7 +215,7 @@ export function validateProvenAtLevel(
       message: isValid
         ? `Proven at level: ${proven.winsAtLevel}W ${proven.itmAtLevel}ITM`
         : 'Not proven at this class level',
-    }
+    };
   } catch {
     return {
       evidenceType: 'proven_at_level',
@@ -229,7 +225,7 @@ export function validateProvenAtLevel(
       actualValue: null,
       threshold: null,
       message: 'Error validating proven at level',
-    }
+    };
   }
 }
 
@@ -245,30 +241,28 @@ export function validateEquipmentChange(
   changeType: 'lasix' | 'blinkers' | 'both'
 ): EvidenceValidation {
   try {
-    const changes = equipmentScore.changes
-    const hasLasix = changes.some(
-      c => c.equipmentType.id === 'lasix' && c.direction === 'added'
-    )
+    const changes = equipmentScore.changes;
+    const hasLasix = changes.some((c) => c.equipmentType.id === 'lasix' && c.direction === 'added');
     const hasBlinkers = changes.some(
-      c => c.equipmentType.id === 'blinkers' && c.direction === 'added'
-    )
+      (c) => c.equipmentType.id === 'blinkers' && c.direction === 'added'
+    );
 
-    let isValid = false
-    let actualValue = ''
+    let isValid = false;
+    let actualValue = '';
 
     switch (changeType) {
       case 'lasix':
-        isValid = hasLasix
-        actualValue = hasLasix ? 'First-time Lasix' : 'No Lasix change'
-        break
+        isValid = hasLasix;
+        actualValue = hasLasix ? 'First-time Lasix' : 'No Lasix change';
+        break;
       case 'blinkers':
-        isValid = hasBlinkers
-        actualValue = hasBlinkers ? 'Blinkers ON' : 'No blinkers change'
-        break
+        isValid = hasBlinkers;
+        actualValue = hasBlinkers ? 'Blinkers ON' : 'No blinkers change';
+        break;
       case 'both':
-        isValid = hasLasix && hasBlinkers
-        actualValue = `Lasix: ${hasLasix}, Blinkers: ${hasBlinkers}`
-        break
+        isValid = hasLasix && hasBlinkers;
+        actualValue = `Lasix: ${hasLasix}, Blinkers: ${hasBlinkers}`;
+        break;
     }
 
     return {
@@ -281,7 +275,7 @@ export function validateEquipmentChange(
       message: isValid
         ? `Equipment change confirmed: ${actualValue}`
         : `Missing equipment change: ${changeType}`,
-    }
+    };
   } catch {
     return {
       evidenceType: 'equipment_change',
@@ -291,7 +285,7 @@ export function validateEquipmentChange(
       actualValue: null,
       threshold: null,
       message: 'Error validating equipment change',
-    }
+    };
   }
 }
 
@@ -303,19 +297,19 @@ export function validateTrainerPattern(
   minWinRate: number
 ): EvidenceValidation {
   try {
-    const hasPattern = equipmentScore.usesTrainerPattern
-    const evidence = equipmentScore.trainerEvidence
+    const hasPattern = equipmentScore.usesTrainerPattern;
+    const evidence = equipmentScore.trainerEvidence;
 
     // Try to extract win rate from evidence
-    let winRate = 0
+    let winRate = 0;
     if (evidence) {
-      const match = evidence.match(/(\d+(?:\.\d+)?)\s*%/)
+      const match = evidence.match(/(\d+(?:\.\d+)?)\s*%/);
       if (match) {
-        winRate = parseFloat(match[1])
+        winRate = parseFloat(match[1]);
       }
     }
 
-    const isValid = hasPattern && winRate >= minWinRate
+    const isValid = hasPattern && winRate >= minWinRate;
 
     return {
       evidenceType: 'trainer_pattern',
@@ -329,7 +323,7 @@ export function validateTrainerPattern(
         : hasPattern
           ? `Trainer pattern below threshold: ${winRate}%`
           : 'No trainer pattern found',
-    }
+    };
   } catch {
     return {
       evidenceType: 'trainer_pattern',
@@ -339,7 +333,7 @@ export function validateTrainerPattern(
       actualValue: null,
       threshold: null,
       message: 'Error validating trainer pattern',
-    }
+    };
   }
 }
 
@@ -364,29 +358,29 @@ export function validateWorkoutPattern(
         actualValue: 'No workouts',
         threshold: `Min ${minWorksIn14Days} works in 14 days`,
         message: 'No workout data available',
-      }
+      };
     }
 
-    const now = new Date()
-    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+    const now = new Date();
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-    let worksIn14Days = 0
-    let bulletCount = 0
+    let worksIn14Days = 0;
+    let bulletCount = 0;
 
     for (const work of workouts) {
       try {
-        const workDate = new Date(work.date)
+        const workDate = new Date(work.date);
         if (workDate >= fourteenDaysAgo) {
-          worksIn14Days++
-          if (work.isBullet) bulletCount++
+          worksIn14Days++;
+          if (work.isBullet) bulletCount++;
         }
       } catch {
         // Skip invalid dates
       }
     }
 
-    const isValid = worksIn14Days >= minWorksIn14Days
-    const bulletBonus = bulletCount > 0 ? 10 : 0
+    const isValid = worksIn14Days >= minWorksIn14Days;
+    const bulletBonus = bulletCount > 0 ? 10 : 0;
 
     return {
       evidenceType: 'workout_pattern',
@@ -398,7 +392,7 @@ export function validateWorkoutPattern(
       message: isValid
         ? `Sharp workout pattern: ${worksIn14Days} works, ${bulletCount} bullet(s)`
         : `Insufficient works: ${worksIn14Days} (need ${minWorksIn14Days})`,
-    }
+    };
   } catch {
     return {
       evidenceType: 'workout_pattern',
@@ -408,7 +402,7 @@ export function validateWorkoutPattern(
       actualValue: null,
       threshold: null,
       message: 'Error validating workout pattern',
-    }
+    };
   }
 }
 
@@ -419,11 +413,9 @@ export function validateWorkoutPattern(
 /**
  * Validate trip comment for excuse
  */
-export function validateTripExcuse(
-  pastPerformances: PastPerformance[]
-): EvidenceValidation {
+export function validateTripExcuse(pastPerformances: PastPerformance[]): EvidenceValidation {
   try {
-    const lastRace = pastPerformances[0]
+    const lastRace = pastPerformances[0];
     if (!lastRace) {
       return {
         evidenceType: 'trip_excuse',
@@ -433,28 +425,37 @@ export function validateTripExcuse(
         actualValue: 'No last race',
         threshold: 'Valid trip excuse',
         message: 'No past performance data available',
-      }
+      };
     }
 
     // Sanitize and check comment
-    const comment = sanitizeString(lastRace.tripComment || '').toLowerCase()
+    const comment = sanitizeString(lastRace.tripComment || '').toLowerCase();
 
     // Look for excuse keywords
     const excuseKeywords = [
-      'wide', 'traffic', 'blocked', 'bumped', 'checked',
-      'steadied', 'clipped heels', 'stumbled', 'off slow',
-      'broke outward', 'broke inward', 'dwelt',
-    ]
+      'wide',
+      'traffic',
+      'blocked',
+      'bumped',
+      'checked',
+      'steadied',
+      'clipped heels',
+      'stumbled',
+      'off slow',
+      'broke outward',
+      'broke inward',
+      'dwelt',
+    ];
 
-    let foundExcuse: string | null = null
+    let foundExcuse: string | null = null;
     for (const keyword of excuseKeywords) {
       if (comment.includes(keyword)) {
-        foundExcuse = keyword
-        break
+        foundExcuse = keyword;
+        break;
       }
     }
 
-    const isValid = foundExcuse !== null
+    const isValid = foundExcuse !== null;
 
     return {
       evidenceType: 'trip_excuse',
@@ -466,7 +467,7 @@ export function validateTripExcuse(
       message: isValid
         ? `Valid excuse: "${foundExcuse}" in "${lastRace.tripComment}"`
         : `No valid excuse in trip comment`,
-    }
+    };
   } catch {
     return {
       evidenceType: 'trip_excuse',
@@ -476,7 +477,7 @@ export function validateTripExcuse(
       actualValue: null,
       threshold: null,
       message: 'Error validating trip excuse',
-    }
+    };
   }
 }
 
@@ -496,60 +497,63 @@ export function validateAngle(
   classScore: ClassScoreResult,
   equipmentScore: EquipmentScoreResult
 ): AngleValidationResult {
-  const evidenceValidations: EvidenceValidation[] = []
-  const missingEvidence: string[] = []
-  const warnings: string[] = []
+  const evidenceValidations: EvidenceValidation[] = [];
+  const missingEvidence: string[] = [];
+  const warnings: string[] = [];
 
   try {
     switch (angle.category) {
       case 'pace_devastation':
-        evidenceValidations.push(validatePaceScenarioData(paceScenario))
-        evidenceValidations.push(validateRunningStyleData(runningStyle, 'C'))
-        break
+        evidenceValidations.push(validatePaceScenarioData(paceScenario));
+        evidenceValidations.push(validateRunningStyleData(runningStyle, 'C'));
+        break;
 
       case 'class_relief':
-        evidenceValidations.push(validateClassMovement(classScore, 3))
-        evidenceValidations.push(validateProvenAtLevel(classScore))
-        break
+        evidenceValidations.push(validateClassMovement(classScore, 3));
+        evidenceValidations.push(validateProvenAtLevel(classScore));
+        break;
 
       case 'equipment_rescue':
-        evidenceValidations.push(validateEquipmentChange(equipmentScore, 'both'))
-        evidenceValidations.push(validateTrainerPattern(equipmentScore, 20))
-        break
+        evidenceValidations.push(validateEquipmentChange(equipmentScore, 'both'));
+        evidenceValidations.push(validateTrainerPattern(equipmentScore, 20));
+        break;
 
       case 'trainer_pattern':
-        evidenceValidations.push(validateTrainerPattern(equipmentScore, 20))
-        break
+        evidenceValidations.push(validateTrainerPattern(equipmentScore, 20));
+        break;
 
       case 'track_bias_fit':
-        evidenceValidations.push(validatePaceScenarioData(paceScenario))
-        evidenceValidations.push(validateRunningStyleData(runningStyle, runningStyle.style as 'E' | 'P' | 'C' | 'S'))
-        break
+        evidenceValidations.push(validatePaceScenarioData(paceScenario));
+        evidenceValidations.push(
+          validateRunningStyleData(runningStyle, runningStyle.style as 'E' | 'P' | 'C' | 'S')
+        );
+        break;
 
       case 'hidden_form':
-        evidenceValidations.push(validateWorkoutPattern(horse.workouts, 3))
-        evidenceValidations.push(validateTripExcuse(horse.pastPerformances))
-        break
+        evidenceValidations.push(validateWorkoutPattern(horse.workouts, 3));
+        evidenceValidations.push(validateTripExcuse(horse.pastPerformances));
+        break;
     }
 
     // Check for missing evidence
     for (const validation of evidenceValidations) {
       if (!validation.isValid) {
-        missingEvidence.push(validation.evidenceType)
+        missingEvidence.push(validation.evidenceType);
       }
       if (validation.confidence < 50) {
-        warnings.push(`Low confidence on ${validation.evidenceType}: ${validation.confidence}%`)
+        warnings.push(`Low confidence on ${validation.evidenceType}: ${validation.confidence}%`);
       }
     }
 
     // Calculate overall confidence
-    const validCount = evidenceValidations.filter(v => v.isValid).length
-    const totalCount = evidenceValidations.length
-    const avgConfidence = totalCount > 0
-      ? evidenceValidations.reduce((sum, v) => sum + v.confidence, 0) / totalCount
-      : 0
+    const validCount = evidenceValidations.filter((v) => v.isValid).length;
+    const totalCount = evidenceValidations.length;
+    const avgConfidence =
+      totalCount > 0
+        ? evidenceValidations.reduce((sum, v) => sum + v.confidence, 0) / totalCount
+        : 0;
 
-    const isValid = validCount === totalCount
+    const isValid = validCount === totalCount;
 
     return {
       category: angle.category,
@@ -561,12 +565,12 @@ export function validateAngle(
       summary: isValid
         ? `${angle.name} validated with ${Math.round(avgConfidence)}% confidence`
         : `${angle.name} missing evidence: ${missingEvidence.join(', ')}`,
-    }
+    };
   } catch (_error) {
     logger.logWarning('Error validating angle', {
       component: 'longshotValidator',
       angle: angle.category,
-    })
+    });
 
     return {
       category: angle.category,
@@ -576,7 +580,7 @@ export function validateAngle(
       missingEvidence: ['validation_error'],
       warnings: ['Error during validation'],
       summary: 'Validation error occurred',
-    }
+    };
   }
 }
 
@@ -592,17 +596,9 @@ export function validateAllAngles(
   classScore: ClassScoreResult,
   equipmentScore: EquipmentScoreResult
 ): AngleValidationResult[] {
-  return angles.map(angle =>
-    validateAngle(
-      angle,
-      horse,
-      raceHeader,
-      paceScenario,
-      runningStyle,
-      classScore,
-      equipmentScore
-    )
-  )
+  return angles.map((angle) =>
+    validateAngle(angle, horse, raceHeader, paceScenario, runningStyle, classScore, equipmentScore)
+  );
 }
 
 /**
@@ -613,7 +609,7 @@ export function getValidatedAngles(
   validations: AngleValidationResult[]
 ): DetectedUpsetAngle[] {
   return angles.filter((_angle, index) => {
-    const validation = validations[index]
-    return validation && validation.isValid
-  })
+    const validation = validations[index];
+    return validation && validation.isValid;
+  });
 }

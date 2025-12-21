@@ -11,44 +11,38 @@
  * Never throws unhandled exceptions - returns clear error messages.
  */
 
-import type {
-  ParsedDRFFile,
-  ParsedRace,
-  HorseEntry,
-  PastPerformance,
-  Workout,
-} from '../types/drf'
+import type { ParsedDRFFile, ParsedRace, HorseEntry, PastPerformance, Workout } from '../types/drf';
 // Error types available for use if needed
 // import { FileFormatError, DRFParseError, ValidationError } from '../types/errors'
-import { logger } from '../services/logging'
+import { logger } from '../services/logging';
 
 // ============================================================================
 // VALIDATION TYPES
 // ============================================================================
 
 export interface ValidationWarning {
-  type: 'missing' | 'invalid' | 'incomplete' | 'approximated' | 'suspicious'
-  field: string
-  message: string
-  horseIndex?: number
-  raceIndex?: number
-  severity: 'low' | 'medium' | 'high'
-  suggestion?: string
+  type: 'missing' | 'invalid' | 'incomplete' | 'approximated' | 'suspicious';
+  field: string;
+  message: string;
+  horseIndex?: number;
+  raceIndex?: number;
+  severity: 'low' | 'medium' | 'high';
+  suggestion?: string;
 }
 
 export interface ValidationResult {
-  isValid: boolean
-  warnings: ValidationWarning[]
-  errors: ValidationWarning[]
+  isValid: boolean;
+  warnings: ValidationWarning[];
+  errors: ValidationWarning[];
   stats: {
-    totalRaces: number
-    totalHorses: number
-    totalPastPerformances: number
-    totalWorkouts: number
-    horsesWithMissingData: number
-    completeHorses: number
-    validationScore: number // 0-100
-  }
+    totalRaces: number;
+    totalHorses: number;
+    totalPastPerformances: number;
+    totalWorkouts: number;
+    horsesWithMissingData: number;
+    completeHorses: number;
+    validationScore: number; // 0-100
+  };
 }
 
 // ============================================================================
@@ -59,53 +53,53 @@ export interface ValidationResult {
  * Check if odds format is valid
  */
 function isValidOdds(odds: string): boolean {
-  if (!odds) return false
+  if (!odds) return false;
 
   // Handle fractional odds (e.g., "5-2", "3/1")
-  const fractionalMatch = odds.match(/^(\d+)[-/](\d+)$/)
+  const fractionalMatch = odds.match(/^(\d+)[-/](\d+)$/);
   if (fractionalMatch) {
-    const numerator = parseInt(fractionalMatch[1], 10)
-    const denominator = parseInt(fractionalMatch[2], 10)
-    return numerator > 0 && denominator > 0
+    const numerator = parseInt(fractionalMatch[1], 10);
+    const denominator = parseInt(fractionalMatch[2], 10);
+    return numerator > 0 && denominator > 0;
   }
 
   // Handle decimal odds (e.g., "2.5", "10")
-  const decimalValue = parseFloat(odds)
-  return !isNaN(decimalValue) && decimalValue > 0
+  const decimalValue = parseFloat(odds);
+  return !isNaN(decimalValue) && decimalValue > 0;
 }
 
 /**
  * Convert odds string to decimal for comparison
  */
 export function oddsToDecimal(odds: string): number {
-  if (!odds) return 0
+  if (!odds) return 0;
 
   // Handle fractional odds
-  const fractionalMatch = odds.match(/^(\d+)[-/](\d+)$/)
+  const fractionalMatch = odds.match(/^(\d+)[-/](\d+)$/);
   if (fractionalMatch) {
-    const numerator = parseInt(fractionalMatch[1], 10)
-    const denominator = parseInt(fractionalMatch[2], 10)
-    return numerator / denominator
+    const numerator = parseInt(fractionalMatch[1], 10);
+    const denominator = parseInt(fractionalMatch[2], 10);
+    return numerator / denominator;
   }
 
   // Handle decimal odds
-  const decimalValue = parseFloat(odds)
-  return isNaN(decimalValue) ? 0 : decimalValue
+  const decimalValue = parseFloat(odds);
+  return isNaN(decimalValue) ? 0 : decimalValue;
 }
 
 /**
  * Check if a string is non-empty
  */
 function isNonEmpty(value: string | undefined | null): boolean {
-  return typeof value === 'string' && value.trim().length > 0
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 /**
  * Check if a number is within a valid range
  */
 function isInRange(value: number | null | undefined, min: number, max: number): boolean {
-  if (value === null || value === undefined) return false
-  return value >= min && value <= max
+  if (value === null || value === undefined) return false;
+  return value >= min && value <= max;
 }
 
 // ============================================================================
@@ -116,15 +110,15 @@ function isInRange(value: number | null | undefined, min: number, max: number): 
  * Result of file validation
  */
 export interface FileValidationResult {
-  isValid: boolean
-  errors: string[]
-  warnings: string[]
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
   fileInfo: {
-    name: string
-    size: number
-    type: string
-    extension: string
-  }
+    name: string;
+    size: number;
+    type: string;
+    extension: string;
+  };
 }
 
 /**
@@ -142,37 +136,41 @@ export function validateFileBeforeParsing(file: File): FileValidationResult {
       type: file.type,
       extension: file.name.split('.').pop()?.toLowerCase() || '',
     },
-  }
+  };
 
   // Check file extension
-  const validExtensions = ['drf', 'csv', 'txt']
+  const validExtensions = ['drf', 'csv', 'txt'];
   if (!validExtensions.includes(result.fileInfo.extension)) {
     result.warnings.push(
       `Unusual file extension: .${result.fileInfo.extension}. Expected .drf, .csv, or .txt`
-    )
+    );
     // Don't fail - some DRF files may have different extensions
   }
 
   // Check file size limits
-  const MAX_SIZE = 10 * 1024 * 1024 // 10MB
-  const MIN_SIZE = 100 // 100 bytes - anything smaller is likely not valid
+  const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+  const MIN_SIZE = 100; // 100 bytes - anything smaller is likely not valid
 
   if (file.size > MAX_SIZE) {
-    result.isValid = false
-    result.errors.push(`File is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum size is 10MB.`)
+    result.isValid = false;
+    result.errors.push(
+      `File is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum size is 10MB.`
+    );
   }
 
   if (file.size < MIN_SIZE) {
-    result.isValid = false
-    result.errors.push(`File is too small (${file.size} bytes). The file may be empty or corrupted.`)
+    result.isValid = false;
+    result.errors.push(
+      `File is too small (${file.size} bytes). The file may be empty or corrupted.`
+    );
   }
 
   // Check MIME type - warn but don't fail (browsers may not always detect correctly)
-  const validTypes = ['text/plain', 'text/csv', 'application/csv', 'application/octet-stream', '']
+  const validTypes = ['text/plain', 'text/csv', 'application/csv', 'application/octet-stream', ''];
   if (!validTypes.includes(file.type)) {
     result.warnings.push(
       `Unusual file type detected: ${file.type}. DRF files should be text/CSV format.`
-    )
+    );
   }
 
   // Log validation result
@@ -182,10 +180,10 @@ export function validateFileBeforeParsing(file: File): FileValidationResult {
       fileSize: file.size,
       fileType: file.type,
       errors: result.errors,
-    })
+    });
   }
 
-  return result
+  return result;
 }
 
 /**
@@ -203,72 +201,68 @@ export function validateFileContent(content: string, filename: string): FileVali
       type: 'text/plain',
       extension: filename.split('.').pop()?.toLowerCase() || '',
     },
-  }
+  };
 
   // Check for empty content
   if (!content || content.trim().length === 0) {
-    result.isValid = false
-    result.errors.push('The file is empty or contains no readable data.')
-    return result
+    result.isValid = false;
+    result.errors.push('The file is empty or contains no readable data.');
+    return result;
   }
 
   // Check for binary content (null bytes indicate binary)
   if (content.includes('\x00')) {
-    result.isValid = false
-    result.errors.push('The file contains binary data and is not a valid text file.')
-    return result
+    result.isValid = false;
+    result.errors.push('The file contains binary data and is not a valid text file.');
+    return result;
   }
 
   // Split into lines for analysis
-  const lines = content.split(/\r?\n/).filter(line => line.trim().length > 0)
+  const lines = content.split(/\r?\n/).filter((line) => line.trim().length > 0);
 
   if (lines.length === 0) {
-    result.isValid = false
-    result.errors.push('The file contains no data lines.')
-    return result
+    result.isValid = false;
+    result.errors.push('The file contains no data lines.');
+    return result;
   }
 
   // Analyze first line to detect format
-  const firstLine = lines[0]
-  const isCSVFormat = firstLine.includes(',')
+  const firstLine = lines[0];
+  const isCSVFormat = firstLine.includes(',');
 
   if (!isCSVFormat && firstLine.length < 50) {
-    result.warnings.push('File format may not be standard DRF CSV format.')
+    result.warnings.push('File format may not be standard DRF CSV format.');
   }
 
   // Count fields in first line to check for DRF format
   if (isCSVFormat) {
-    const fieldCount = (firstLine.match(/,/g) || []).length + 1
+    const fieldCount = (firstLine.match(/,/g) || []).length + 1;
     if (fieldCount < 20) {
       result.warnings.push(
         `First line has only ${fieldCount} fields. Standard DRF files have 50+ fields.`
-      )
+      );
     }
     if (fieldCount < 5) {
-      result.isValid = false
-      result.errors.push('The file does not appear to be in DRF format (too few fields).')
+      result.isValid = false;
+      result.errors.push('The file does not appear to be in DRF format (too few fields).');
     }
   }
 
   // Check for consistent field counts (sample first 10 lines)
   if (isCSVFormat && lines.length > 1) {
-    const fieldCounts = lines.slice(0, 10).map(
-      line => (line.match(/,/g) || []).length + 1
-    )
-    const uniqueCounts = [...new Set(fieldCounts)]
+    const fieldCounts = lines.slice(0, 10).map((line) => (line.match(/,/g) || []).length + 1);
+    const uniqueCounts = [...new Set(fieldCounts)];
     if (uniqueCounts.length > 2) {
-      result.warnings.push(
-        'Lines have inconsistent field counts. Some data may be malformed.'
-      )
+      result.warnings.push('Lines have inconsistent field counts. Some data may be malformed.');
     }
   }
 
   // Check for potential encoding issues
-  const hasReplacementChar = content.includes('\uFFFD')
+  const hasReplacementChar = content.includes('\uFFFD');
   if (hasReplacementChar) {
     result.warnings.push(
       'File may have encoding issues. Some characters could not be read correctly.'
-    )
+    );
   }
 
   // Log validation result
@@ -278,16 +272,16 @@ export function validateFileContent(content: string, filename: string): FileVali
       errors: result.errors,
       warnings: result.warnings,
       lineCount: lines.length,
-    })
+    });
   } else if (result.warnings.length > 0) {
     logger.logInfo('File content validated with warnings', {
       fileName: filename,
       warnings: result.warnings,
       lineCount: lines.length,
-    })
+    });
   }
 
-  return result
+  return result;
 }
 
 /**
@@ -296,15 +290,15 @@ export function validateFileContent(content: string, filename: string): FileVali
  */
 export async function validateFile(file: File): Promise<FileValidationResult> {
   // First validate the file object
-  const fileResult = validateFileBeforeParsing(file)
+  const fileResult = validateFileBeforeParsing(file);
   if (!fileResult.isValid) {
-    return fileResult
+    return fileResult;
   }
 
   // Read and validate content
   try {
-    const content = await file.text()
-    const contentResult = validateFileContent(content, file.name)
+    const content = await file.text();
+    const contentResult = validateFileContent(content, file.name);
 
     // Merge results
     return {
@@ -312,19 +306,19 @@ export async function validateFile(file: File): Promise<FileValidationResult> {
       errors: [...fileResult.errors, ...contentResult.errors],
       warnings: [...fileResult.warnings, ...contentResult.warnings],
       fileInfo: contentResult.fileInfo,
-    }
+    };
   } catch (error) {
     logger.logError(error instanceof Error ? error : new Error(String(error)), {
       fileName: file.name,
       component: 'FileValidation',
-    })
+    });
 
     return {
       isValid: false,
       errors: ['Failed to read file content. The file may be corrupted or inaccessible.'],
       warnings: fileResult.warnings,
       fileInfo: fileResult.fileInfo,
-    }
+    };
   }
 }
 
@@ -333,14 +327,14 @@ export async function validateFile(file: File): Promise<FileValidationResult> {
  */
 export function getValidationErrorMessage(result: FileValidationResult): string {
   if (result.isValid) {
-    return ''
+    return '';
   }
 
   if (result.errors.length === 1) {
-    return result.errors[0]
+    return result.errors[0];
   }
 
-  return `Multiple issues found:\n${result.errors.map(e => `- ${e}`).join('\n')}`
+  return `Multiple issues found:\n${result.errors.map((e) => `- ${e}`).join('\n')}`;
 }
 
 // ============================================================================
@@ -355,8 +349,8 @@ function validateHorse(
   horseIndex: number,
   raceIndex: number
 ): ValidationWarning[] {
-  const warnings: ValidationWarning[] = []
-  const horseName = horse.horseName || `Horse #${horse.programNumber}`
+  const warnings: ValidationWarning[] = [];
+  const horseName = horse.horseName || `Horse #${horse.programNumber}`;
 
   // ===== CRITICAL FIELDS =====
 
@@ -370,7 +364,7 @@ function validateHorse(
       raceIndex,
       severity: 'high',
       suggestion: 'Horse name is required for accurate handicapping',
-    })
+    });
   }
 
   // Trainer name
@@ -383,7 +377,7 @@ function validateHorse(
       raceIndex,
       severity: 'medium',
       suggestion: 'Trainer statistics will not be available',
-    })
+    });
   }
 
   // Jockey name
@@ -396,7 +390,7 @@ function validateHorse(
       raceIndex,
       severity: 'medium',
       suggestion: 'Jockey statistics will not be available',
-    })
+    });
   }
 
   // ===== ODDS VALIDATION =====
@@ -410,10 +404,10 @@ function validateHorse(
       raceIndex,
       severity: 'high',
       suggestion: 'Enter odds manually before analyzing',
-    })
+    });
   } else {
     // Check for suspicious odds (too low or too high)
-    const decimalOdds = horse.morningLineDecimal
+    const decimalOdds = horse.morningLineDecimal;
     if (decimalOdds < 0.1) {
       warnings.push({
         type: 'suspicious',
@@ -422,7 +416,7 @@ function validateHorse(
         horseIndex,
         raceIndex,
         severity: 'low',
-      })
+      });
     } else if (decimalOdds > 99) {
       warnings.push({
         type: 'suspicious',
@@ -431,7 +425,7 @@ function validateHorse(
         horseIndex,
         raceIndex,
         severity: 'low',
-      })
+      });
     }
   }
 
@@ -446,7 +440,7 @@ function validateHorse(
       raceIndex,
       severity: 'medium',
       suggestion: 'Post position should be between 1 and 24',
-    })
+    });
   }
 
   if (!isInRange(horse.programNumber, 1, 99)) {
@@ -457,7 +451,7 @@ function validateHorse(
       horseIndex,
       raceIndex,
       severity: 'medium',
-    })
+    });
   }
 
   // ===== WEIGHT VALIDATION =====
@@ -472,7 +466,7 @@ function validateHorse(
         horseIndex,
         raceIndex,
         severity: 'low',
-      })
+      });
     } else {
       warnings.push({
         type: 'invalid',
@@ -482,7 +476,7 @@ function validateHorse(
         raceIndex,
         severity: 'low',
         suggestion: 'Weight typically ranges from 112-130 lbs',
-      })
+      });
     }
   }
 
@@ -497,7 +491,7 @@ function validateHorse(
       raceIndex,
       severity: 'low',
       suggestion: 'Age should be between 2 and 15 years',
-    })
+    });
   }
 
   // ===== SPEED FIGURE VALIDATION =====
@@ -511,7 +505,7 @@ function validateHorse(
       raceIndex,
       severity: 'low',
       suggestion: 'Beyer figures typically range from 0-120',
-    })
+    });
   }
 
   // ===== BREEDING VALIDATION =====
@@ -524,7 +518,7 @@ function validateHorse(
       horseIndex,
       raceIndex,
       severity: 'low',
-    })
+    });
   }
 
   if (!isNonEmpty(horse.breeding?.dam) || horse.breeding?.dam === 'Unknown') {
@@ -535,7 +529,7 @@ function validateHorse(
       horseIndex,
       raceIndex,
       severity: 'low',
-    })
+    });
   }
 
   // ===== PAST PERFORMANCE VALIDATION =====
@@ -549,13 +543,13 @@ function validateHorse(
       raceIndex,
       severity: 'medium',
       suggestion: 'May be a first-time starter or maiden',
-    })
+    });
   } else {
     // Validate each past performance
     horse.pastPerformances.forEach((pp, ppIndex) => {
-      const ppWarnings = validatePastPerformance(pp, ppIndex, horseIndex, raceIndex, horseName)
-      warnings.push(...ppWarnings)
-    })
+      const ppWarnings = validatePastPerformance(pp, ppIndex, horseIndex, raceIndex, horseName);
+      warnings.push(...ppWarnings);
+    });
   }
 
   // ===== WORKOUT VALIDATION =====
@@ -569,15 +563,15 @@ function validateHorse(
       raceIndex,
       severity: 'high',
       suggestion: 'Limited data for analysis - may be debut starter',
-    })
+    });
   } else if (horse.workouts.length > 0) {
     horse.workouts.forEach((workout, wkIndex) => {
-      const wkWarnings = validateWorkout(workout, wkIndex, horseIndex, raceIndex, horseName)
-      warnings.push(...wkWarnings)
-    })
+      const wkWarnings = validateWorkout(workout, wkIndex, horseIndex, raceIndex, horseName);
+      warnings.push(...wkWarnings);
+    });
   }
 
-  return warnings
+  return warnings;
 }
 
 // ============================================================================
@@ -594,7 +588,7 @@ function validatePastPerformance(
   raceIndex: number,
   horseName: string
 ): ValidationWarning[] {
-  const warnings: ValidationWarning[] = []
+  const warnings: ValidationWarning[] = [];
 
   // Date validation
   if (!isNonEmpty(pp.date)) {
@@ -605,7 +599,7 @@ function validatePastPerformance(
       horseIndex,
       raceIndex,
       severity: 'low',
-    })
+    });
   }
 
   // Finish position validation
@@ -617,7 +611,7 @@ function validatePastPerformance(
       horseIndex,
       raceIndex,
       severity: 'low',
-    })
+    });
   }
 
   // Beyer validation if present
@@ -629,10 +623,10 @@ function validatePastPerformance(
       horseIndex,
       raceIndex,
       severity: 'low',
-    })
+    });
   }
 
-  return warnings
+  return warnings;
 }
 
 // ============================================================================
@@ -649,7 +643,7 @@ function validateWorkout(
   raceIndex: number,
   horseName: string
 ): ValidationWarning[] {
-  const warnings: ValidationWarning[] = []
+  const warnings: ValidationWarning[] = [];
 
   // Date validation
   if (!isNonEmpty(workout.date)) {
@@ -660,7 +654,7 @@ function validateWorkout(
       horseIndex,
       raceIndex,
       severity: 'low',
-    })
+    });
   }
 
   // Time validation
@@ -672,7 +666,7 @@ function validateWorkout(
       horseIndex,
       raceIndex,
       severity: 'low',
-    })
+    });
   }
 
   // Distance validation
@@ -684,10 +678,10 @@ function validateWorkout(
       horseIndex,
       raceIndex,
       severity: 'low',
-    })
+    });
   }
 
-  return warnings
+  return warnings;
 }
 
 // ============================================================================
@@ -698,8 +692,8 @@ function validateWorkout(
  * Validate a single race
  */
 function validateRace(race: ParsedRace, raceIndex: number): ValidationWarning[] {
-  const warnings: ValidationWarning[] = []
-  const header = race.header
+  const warnings: ValidationWarning[] = [];
+  const header = race.header;
 
   // ===== TRACK VALIDATION =====
 
@@ -710,7 +704,7 @@ function validateRace(race: ParsedRace, raceIndex: number): ValidationWarning[] 
       message: `Race ${raceIndex + 1}: Missing track code`,
       raceIndex,
       severity: 'high',
-    })
+    });
   }
 
   // ===== DISTANCE VALIDATION =====
@@ -722,7 +716,7 @@ function validateRace(race: ParsedRace, raceIndex: number): ValidationWarning[] 
       message: `Race ${raceIndex + 1}: Missing distance`,
       raceIndex,
       severity: 'high',
-    })
+    });
   } else if (!isInRange(header.distanceFurlongs, 2, 16)) {
     warnings.push({
       type: 'invalid',
@@ -731,7 +725,7 @@ function validateRace(race: ParsedRace, raceIndex: number): ValidationWarning[] 
       raceIndex,
       severity: 'medium',
       suggestion: 'Distance should be between 2 and 16 furlongs',
-    })
+    });
   }
 
   // ===== FIELD SIZE VALIDATION =====
@@ -744,7 +738,7 @@ function validateRace(race: ParsedRace, raceIndex: number): ValidationWarning[] 
       raceIndex,
       severity: 'high',
       suggestion: 'Check if file is complete or if entries were scratched',
-    })
+    });
   } else if (race.horses.length > 20) {
     warnings.push({
       type: 'suspicious',
@@ -752,7 +746,7 @@ function validateRace(race: ParsedRace, raceIndex: number): ValidationWarning[] 
       message: `Race ${raceIndex + 1}: Large field size (${race.horses.length} horses)`,
       raceIndex,
       severity: 'low',
-    })
+    });
   }
 
   // ===== PURSE VALIDATION =====
@@ -764,20 +758,20 @@ function validateRace(race: ParsedRace, raceIndex: number): ValidationWarning[] 
       message: `Race ${raceIndex + 1}: Missing purse amount`,
       raceIndex,
       severity: 'low',
-    })
+    });
   }
 
   // ===== VALIDATE EACH HORSE =====
 
   race.horses.forEach((horse, horseIndex) => {
-    const horseWarnings = validateHorse(horse, horseIndex, raceIndex)
-    warnings.push(...horseWarnings)
-  })
+    const horseWarnings = validateHorse(horse, horseIndex, raceIndex);
+    warnings.push(...horseWarnings);
+  });
 
   // ===== CHECK FOR DUPLICATE POST POSITIONS =====
 
-  const postPositions = race.horses.map((h) => h.postPosition)
-  const duplicates = postPositions.filter((pos, idx) => postPositions.indexOf(pos) !== idx)
+  const postPositions = race.horses.map((h) => h.postPosition);
+  const duplicates = postPositions.filter((pos, idx) => postPositions.indexOf(pos) !== idx);
   if (duplicates.length > 0) {
     warnings.push({
       type: 'invalid',
@@ -786,10 +780,10 @@ function validateRace(race: ParsedRace, raceIndex: number): ValidationWarning[] 
       raceIndex,
       severity: 'medium',
       suggestion: 'May indicate coupled entries or data error',
-    })
+    });
   }
 
-  return warnings
+  return warnings;
 }
 
 // ============================================================================
@@ -822,7 +816,7 @@ export function validateParsedData(data: ParsedDRFFile | null): ValidationResult
         completeHorses: 0,
         validationScore: 0,
       },
-    }
+    };
   }
 
   // Handle malformed data structure (not a valid ParsedDRFFile)
@@ -848,7 +842,7 @@ export function validateParsedData(data: ParsedDRFFile | null): ValidationResult
         completeHorses: 0,
         validationScore: 0,
       },
-    }
+    };
   }
 
   // Handle missing races property (malformed structure)
@@ -874,7 +868,7 @@ export function validateParsedData(data: ParsedDRFFile | null): ValidationResult
         completeHorses: 0,
         validationScore: 0,
       },
-    }
+    };
   }
 
   // Handle empty races array
@@ -900,32 +894,32 @@ export function validateParsedData(data: ParsedDRFFile | null): ValidationResult
         completeHorses: 0,
         validationScore: 0,
       },
-    }
+    };
   }
 
   // Collect all warnings
-  const allWarnings: ValidationWarning[] = []
-  let totalHorses = 0
-  let totalPastPerformances = 0
-  let totalWorkouts = 0
-  let horsesWithMissingData = 0
-  let racesWithEnoughHorses = 0
+  const allWarnings: ValidationWarning[] = [];
+  let totalHorses = 0;
+  let totalPastPerformances = 0;
+  let totalWorkouts = 0;
+  let horsesWithMissingData = 0;
+  let racesWithEnoughHorses = 0;
 
   // Validate each race
   data.races.forEach((race, raceIndex) => {
-    const raceWarnings = validateRace(race, raceIndex)
-    allWarnings.push(...raceWarnings)
+    const raceWarnings = validateRace(race, raceIndex);
+    allWarnings.push(...raceWarnings);
 
     // Track races with enough horses for analysis
     if (race.horses && race.horses.length >= 2) {
-      racesWithEnoughHorses++
+      racesWithEnoughHorses++;
     }
 
     // Count horses and data
     race.horses.forEach((horse) => {
-      totalHorses++
-      totalPastPerformances += horse.pastPerformances?.length || 0
-      totalWorkouts += horse.workouts?.length || 0
+      totalHorses++;
+      totalPastPerformances += horse.pastPerformances?.length || 0;
+      totalWorkouts += horse.workouts?.length || 0;
 
       // Check for missing critical data
       const hasMissingData =
@@ -933,13 +927,13 @@ export function validateParsedData(data: ParsedDRFFile | null): ValidationResult
         horse.horseName.startsWith('Horse ') ||
         !isValidOdds(horse.morningLineOdds) ||
         horse.trainerName === 'Unknown' ||
-        horse.jockeyName === 'Unknown'
+        horse.jockeyName === 'Unknown';
 
       if (hasMissingData) {
-        horsesWithMissingData++
+        horsesWithMissingData++;
       }
-    })
-  })
+    });
+  });
 
   // Add error if no races have enough horses
   if (racesWithEnoughHorses === 0) {
@@ -949,7 +943,7 @@ export function validateParsedData(data: ParsedDRFFile | null): ValidationResult
       message: `All ${data.races.length} race(s) have fewer than 2 horses - cannot analyze`,
       severity: 'high',
       suggestion: 'Each race needs at least 2 horses for handicapping analysis',
-    })
+    });
   }
 
   // Add error if we have races but no horses at all
@@ -960,25 +954,26 @@ export function validateParsedData(data: ParsedDRFFile | null): ValidationResult
       message: 'No horse entries found in any race',
       severity: 'high',
       suggestion: 'The DRF file may be empty or improperly formatted',
-    })
+    });
   }
 
   // Separate errors from warnings
-  const errors = allWarnings.filter((w) => w.severity === 'high')
-  const warnings = allWarnings.filter((w) => w.severity !== 'high')
+  const errors = allWarnings.filter((w) => w.severity === 'high');
+  const warnings = allWarnings.filter((w) => w.severity !== 'high');
 
   // Calculate validation score (0-100)
-  const completeHorses = totalHorses - horsesWithMissingData
-  const dataCompleteness = totalHorses > 0 ? (completeHorses / totalHorses) * 100 : 0
-  const errorPenalty = Math.min(errors.length * 10, 50)
-  const warningPenalty = Math.min(warnings.length * 2, 30)
-  const validationScore = Math.max(0, Math.round(dataCompleteness - errorPenalty - warningPenalty))
+  const completeHorses = totalHorses - horsesWithMissingData;
+  const dataCompleteness = totalHorses > 0 ? (completeHorses / totalHorses) * 100 : 0;
+  const errorPenalty = Math.min(errors.length * 10, 50);
+  const warningPenalty = Math.min(warnings.length * 2, 30);
+  const validationScore = Math.max(0, Math.round(dataCompleteness - errorPenalty - warningPenalty));
 
   // Determine if data is valid (no critical errors)
   const criticalErrors = errors.filter(
-    (e) => e.field === 'races' || e.field === 'data' || (e.field === 'horses' && e.type === 'incomplete')
-  )
-  const isValid = criticalErrors.length === 0 && data.races.length > 0
+    (e) =>
+      e.field === 'races' || e.field === 'data' || (e.field === 'horses' && e.type === 'incomplete')
+  );
+  const isValid = criticalErrors.length === 0 && data.races.length > 0;
 
   return {
     isValid,
@@ -993,7 +988,7 @@ export function validateParsedData(data: ParsedDRFFile | null): ValidationResult
       completeHorses,
       validationScore,
     },
-  }
+  };
 }
 
 // ============================================================================
@@ -1004,40 +999,40 @@ export function validateParsedData(data: ParsedDRFFile | null): ValidationResult
  * Get human-readable summary of validation warnings
  */
 export function getValidationSummary(result: ValidationResult): string[] {
-  const summary: string[] = []
+  const summary: string[] = [];
 
   // Data completeness
   if (result.stats.horsesWithMissingData > 0) {
     summary.push(
       `${result.stats.horsesWithMissingData} of ${result.stats.totalHorses} horses have incomplete data`
-    )
+    );
   }
 
   // Group warnings by type
-  const missingTrainers = result.warnings.filter((w) => w.field === 'trainerName').length
-  const missingJockeys = result.warnings.filter((w) => w.field === 'jockeyName').length
-  const invalidOdds = result.warnings.filter((w) => w.field === 'morningLineOdds').length
-  const missingPPs = result.warnings.filter((w) => w.field === 'pastPerformances').length
+  const missingTrainers = result.warnings.filter((w) => w.field === 'trainerName').length;
+  const missingJockeys = result.warnings.filter((w) => w.field === 'jockeyName').length;
+  const invalidOdds = result.warnings.filter((w) => w.field === 'morningLineOdds').length;
+  const missingPPs = result.warnings.filter((w) => w.field === 'pastPerformances').length;
 
   if (missingTrainers > 0) {
-    summary.push(`${missingTrainers} horses missing trainer information`)
+    summary.push(`${missingTrainers} horses missing trainer information`);
   }
   if (missingJockeys > 0) {
-    summary.push(`${missingJockeys} horses missing jockey information`)
+    summary.push(`${missingJockeys} horses missing jockey information`);
   }
   if (invalidOdds > 0) {
-    summary.push(`${invalidOdds} horses with invalid odds`)
+    summary.push(`${invalidOdds} horses with invalid odds`);
   }
   if (missingPPs > 0) {
-    summary.push(`${missingPPs} horses with no past performances`)
+    summary.push(`${missingPPs} horses with no past performances`);
   }
 
   // Critical errors
   result.errors.forEach((error) => {
-    summary.push(`Error: ${error.message}`)
-  })
+    summary.push(`Error: ${error.message}`);
+  });
 
-  return summary
+  return summary;
 }
 
 /**
@@ -1045,47 +1040,44 @@ export function getValidationSummary(result: ValidationResult): string[] {
  */
 export function isDataUsable(result: ValidationResult): boolean {
   // Data is usable if we have at least one valid race with at least 2 complete horses
-  return (
-    result.isValid ||
-    (result.stats.totalRaces > 0 && result.stats.completeHorses >= 2)
-  )
+  return result.isValid || (result.stats.totalRaces > 0 && result.stats.completeHorses >= 2);
 }
 
 /**
  * Get suggestions for fixing common issues
  */
 export function getFixSuggestions(result: ValidationResult): string[] {
-  const suggestions: string[] = []
-  const seenSuggestions = new Set<string>()
+  const suggestions: string[] = [];
+  const seenSuggestions = new Set<string>();
 
   // Collect unique suggestions
-  ;[...result.errors, ...result.warnings].forEach((item) => {
+  [...result.errors, ...result.warnings].forEach((item) => {
     if (item.suggestion && !seenSuggestions.has(item.suggestion)) {
-      seenSuggestions.add(item.suggestion)
-      suggestions.push(item.suggestion)
+      seenSuggestions.add(item.suggestion);
+      suggestions.push(item.suggestion);
     }
-  })
+  });
 
-  return suggestions
+  return suggestions;
 }
 
 /**
  * Get validation score color
  */
 export function getValidationScoreColor(score: number): string {
-  if (score >= 80) return '#36d1da' // Green/teal
-  if (score >= 60) return '#19abb5' // Accent
-  if (score >= 40) return '#f59e0b' // Warning yellow
-  return '#ef4444' // Error red
+  if (score >= 80) return '#36d1da'; // Green/teal
+  if (score >= 60) return '#19abb5'; // Accent
+  if (score >= 40) return '#f59e0b'; // Warning yellow
+  return '#ef4444'; // Error red
 }
 
 /**
  * Get validation score label
  */
 export function getValidationScoreLabel(score: number): string {
-  if (score >= 90) return 'Excellent'
-  if (score >= 75) return 'Good'
-  if (score >= 60) return 'Fair'
-  if (score >= 40) return 'Poor'
-  return 'Critical Issues'
+  if (score >= 90) return 'Excellent';
+  if (score >= 75) return 'Good';
+  if (score >= 60) return 'Fair';
+  if (score >= 40) return 'Poor';
+  return 'Critical Issues';
 }

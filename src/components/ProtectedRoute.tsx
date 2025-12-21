@@ -6,11 +6,11 @@
  * Shows upgrade prompt if not subscribed (when subscription is required).
  */
 
-import { type ReactNode } from 'react'
-import { useAuth } from '../hooks/useAuth'
-import { useSubscription } from '../hooks/useSubscription'
-import { useFeatureFlag } from '../hooks/useFeatureFlag'
-import { logger } from '../services/logging'
+import { type ReactNode } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { useSubscription } from '../hooks/useSubscription';
+import { useFeatureFlag } from '../hooks/useFeatureFlag';
+import { logger } from '../services/logging';
 
 // ============================================================================
 // TYPES
@@ -18,17 +18,17 @@ import { logger } from '../services/logging'
 
 export interface ProtectedRouteProps {
   /** Child components to render when authorized */
-  children: ReactNode
+  children: ReactNode;
   /** Whether subscription is required for this route */
-  requireSubscription?: boolean
+  requireSubscription?: boolean;
   /** Custom component to show when not authenticated */
-  fallbackAuth?: ReactNode
+  fallbackAuth?: ReactNode;
   /** Custom component to show when not subscribed */
-  fallbackSubscription?: ReactNode
+  fallbackSubscription?: ReactNode;
   /** Callback when user needs to login */
-  onNeedAuth?: () => void
+  onNeedAuth?: () => void;
   /** Callback when user needs to subscribe */
-  onNeedSubscription?: () => void
+  onNeedSubscription?: () => void;
 }
 
 // ============================================================================
@@ -93,7 +93,7 @@ function DefaultAuthFallback({ onLogin }: { onLogin?: () => void }) {
         </button>
       )}
     </div>
-  )
+  );
 }
 
 function DefaultSubscriptionFallback({ onSubscribe }: { onSubscribe?: () => void }) {
@@ -154,7 +154,7 @@ function DefaultSubscriptionFallback({ onSubscribe }: { onSubscribe?: () => void
         </button>
       )}
     </div>
-  )
+  );
 }
 
 function LoadingState() {
@@ -185,7 +185,7 @@ function LoadingState() {
         `}
       </style>
     </div>
-  )
+  );
 }
 
 // ============================================================================
@@ -229,58 +229,61 @@ export function ProtectedRoute({
   onNeedAuth,
   onNeedSubscription,
 }: ProtectedRouteProps) {
-  const authEnabled = useFeatureFlag('AUTH_ENABLED')
-  const subscriptionRequired = useFeatureFlag('SUBSCRIPTION_REQUIRED')
+  const authEnabled = useFeatureFlag('AUTH_ENABLED');
+  const subscriptionRequired = useFeatureFlag('SUBSCRIPTION_REQUIRED');
 
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
-  const { isActive, isLoading: subscriptionLoading, openCheckout } = useSubscription()
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isActive, isLoading: subscriptionLoading, openCheckout } = useSubscription();
 
   // If auth is disabled, skip auth checks
-  const needsAuth = authEnabled && !isAuthenticated
+  const needsAuth = authEnabled && !isAuthenticated;
 
   // If subscription checking is disabled, skip subscription checks
   const needsSubscription =
-    subscriptionRequired && requireSubscription && !isActive && isAuthenticated
+    subscriptionRequired && requireSubscription && !isActive && isAuthenticated;
 
   // Show loading state while checking auth/subscription
-  const isLoading = authEnabled && authLoading ||
-    (subscriptionRequired && requireSubscription && subscriptionLoading)
+  const isLoading =
+    (authEnabled && authLoading) ||
+    (subscriptionRequired && requireSubscription && subscriptionLoading);
 
   if (isLoading) {
-    return <LoadingState />
+    return <LoadingState />;
   }
 
   // Check auth first
   if (needsAuth) {
     if (fallbackAuth) {
-      return <>{fallbackAuth}</>
+      return <>{fallbackAuth}</>;
     }
-    return <DefaultAuthFallback onLogin={onNeedAuth} />
+    return <DefaultAuthFallback onLogin={onNeedAuth} />;
   }
 
   // Then check subscription
   if (needsSubscription) {
     if (fallbackSubscription) {
-      return <>{fallbackSubscription}</>
+      return <>{fallbackSubscription}</>;
     }
 
-    const handleSubscribe = onNeedSubscription || (async () => {
-      try {
-        const url = await openCheckout()
-        window.open(url, '_blank')
-      } catch (err) {
-        logger.logError(err instanceof Error ? err : new Error(String(err)), {
-          component: 'ProtectedRoute',
-          action: 'openCheckout',
-        })
-      }
-    })
+    const handleSubscribe =
+      onNeedSubscription ||
+      (async () => {
+        try {
+          const url = await openCheckout();
+          window.open(url, '_blank');
+        } catch (err) {
+          logger.logError(err instanceof Error ? err : new Error(String(err)), {
+            component: 'ProtectedRoute',
+            action: 'openCheckout',
+          });
+        }
+      });
 
-    return <DefaultSubscriptionFallback onSubscribe={handleSubscribe} />
+    return <DefaultSubscriptionFallback onSubscribe={handleSubscribe} />;
   }
 
   // Authorized - render children
-  return <>{children}</>
+  return <>{children}</>;
 }
 
-export default ProtectedRoute
+export default ProtectedRoute;

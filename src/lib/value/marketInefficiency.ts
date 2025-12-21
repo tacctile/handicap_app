@@ -39,11 +39,11 @@
  * @module value/marketInefficiency
  */
 
-import { logger } from '../../services/logging'
-import type { HorseEntry, PastPerformance, RaceHeader } from '../../types/drf'
-import type { HorseScore } from '../scoring'
-import { parseOddsToDecimal } from '../betting/kellyCriterion'
-import { scoreToWinProbability, oddsToMarketProbability, calculateEdge } from './valueDetector'
+import { logger } from '../../services/logging';
+import type { HorseEntry, PastPerformance, RaceHeader } from '../../types/drf';
+import type { HorseScore } from '../scoring';
+import { parseOddsToDecimal } from '../betting/kellyCriterion';
+import { scoreToWinProbability, oddsToMarketProbability, calculateEdge } from './valueDetector';
 
 // ============================================================================
 // TYPES
@@ -56,55 +56,55 @@ export type InefficiencyType =
   | 'name_recognition'
   | 'post_position_panic'
   | 'class_confusion'
-  | 'equipment_misunderstanding'
+  | 'equipment_misunderstanding';
 
 /** Direction of the inefficiency */
 export type InefficiencyDirection =
-  | 'overbet'   // Public betting too heavily (odds too low)
-  | 'underbet'  // Public avoiding (odds too high - our opportunity)
+  | 'overbet' // Public betting too heavily (odds too low)
+  | 'underbet'; // Public avoiding (odds too high - our opportunity)
 
 /** Market inefficiency detection result */
 export interface InefficiencyDetection {
   /** Type of inefficiency detected */
-  type: InefficiencyType
+  type: InefficiencyType;
   /** Direction - underbet = opportunity */
-  direction: InefficiencyDirection
+  direction: InefficiencyDirection;
   /** Magnitude on 1-10 scale */
-  magnitude: number
+  magnitude: number;
   /** Confidence in detection (0-100%) */
-  confidence: number
+  confidence: number;
   /** Brief description */
-  title: string
+  title: string;
   /** Detailed explanation */
-  explanation: string
+  explanation: string;
   /** Why this creates value */
-  valueReason: string
+  valueReason: string;
   /** Evidence supporting detection */
-  evidence: string[]
+  evidence: string[];
   /** Additional magnitude modifier for EV */
-  evBonus: number
+  evBonus: number;
 }
 
 /** Complete inefficiency analysis for a horse */
 export interface MarketInefficiencyAnalysis {
   /** Program number */
-  programNumber: number
+  programNumber: number;
   /** Horse name */
-  horseName: string
+  horseName: string;
   /** All detected inefficiencies */
-  inefficiencies: InefficiencyDetection[]
+  inefficiencies: InefficiencyDetection[];
   /** Primary inefficiency (highest magnitude) */
-  primaryInefficiency: InefficiencyDetection | null
+  primaryInefficiency: InefficiencyDetection | null;
   /** Combined inefficiency score */
-  totalMagnitude: number
+  totalMagnitude: number;
   /** Has any exploitable inefficiency */
-  hasExploitableInefficiency: boolean
+  hasExploitableInefficiency: boolean;
   /** Market is mispricing this horse */
-  isMispriced: boolean
+  isMispriced: boolean;
   /** Summary for display */
-  summary: string
+  summary: string;
   /** Overall recommendation */
-  recommendation: 'strong_bet' | 'bet' | 'watch' | 'neutral' | 'avoid'
+  recommendation: 'strong_bet' | 'bet' | 'watch' | 'neutral' | 'avoid';
 }
 
 // ============================================================================
@@ -112,12 +112,15 @@ export interface MarketInefficiencyAnalysis {
 // ============================================================================
 
 /** Inefficiency type metadata */
-export const INEFFICIENCY_META: Record<InefficiencyType, {
-  name: string
-  icon: string
-  color: string
-  bgColor: string
-}> = {
+export const INEFFICIENCY_META: Record<
+  InefficiencyType,
+  {
+    name: string;
+    icon: string;
+    color: string;
+    bgColor: string;
+  }
+> = {
   public_overreaction: {
     name: 'Public Overreaction',
     icon: 'trending_down',
@@ -154,13 +157,13 @@ export const INEFFICIENCY_META: Record<InefficiencyType, {
     color: '#06b6d4',
     bgColor: '#06b6d420',
   },
-}
+};
 
 /** Minimum magnitude to flag inefficiency */
-const MIN_MAGNITUDE = 3
+const MIN_MAGNITUDE = 3;
 
 /** Minimum edge to consider exploitable */
-const MIN_EXPLOITABLE_EDGE = 5
+const MIN_EXPLOITABLE_EDGE = 5;
 
 // ============================================================================
 // DETECTION FUNCTIONS
@@ -176,43 +179,43 @@ function detectPublicOverreaction(
   score: HorseScore,
   edge: number
 ): InefficiencyDetection | null {
-  const pps = horse.pastPerformances
-  if (pps.length < 2) return null
+  const pps = horse.pastPerformances;
+  if (pps.length < 2) return null;
 
-  const lastRace = pps[0]
-  const priorRace = pps[1]
+  const lastRace = pps[0];
+  const priorRace = pps[1];
 
   // Check for terrible last race
-  const lastFinish = lastRace.finishPosition ?? 10
-  const priorFinish = priorRace?.finishPosition ?? lastFinish
-  const fieldSize = lastRace.fieldSize ?? 10
+  const lastFinish = lastRace.finishPosition ?? 10;
+  const priorFinish = priorRace?.finishPosition ?? lastFinish;
+  const fieldSize = lastRace.fieldSize ?? 10;
 
   // Only trigger if last race was notably worse
-  const wasDisaster = lastFinish > 6 && lastFinish > priorFinish + 2
-  const wasBackOfPack = lastFinish > fieldSize * 0.7
-  const hasExcuse = detectLegitimateExcuse(lastRace)
+  const wasDisaster = lastFinish > 6 && lastFinish > priorFinish + 2;
+  const wasBackOfPack = lastFinish > fieldSize * 0.7;
+  const hasExcuse = detectLegitimateExcuse(lastRace);
 
-  if (!wasDisaster && !wasBackOfPack) return null
-  if (edge < 10) return null // Need meaningful edge
+  if (!wasDisaster && !wasBackOfPack) return null;
+  if (edge < 10) return null; // Need meaningful edge
 
   // Calculate magnitude based on score vs odds discrepancy
-  const magnitude = Math.min(10, Math.round(edge / 5 + (hasExcuse ? 2 : 0)))
+  const magnitude = Math.min(10, Math.round(edge / 5 + (hasExcuse ? 2 : 0)));
 
-  if (magnitude < MIN_MAGNITUDE) return null
+  if (magnitude < MIN_MAGNITUDE) return null;
 
-  const evidence: string[] = []
-  evidence.push(`Last race finish: ${lastFinish}${lastFinish > 10 ? '+' : ''} of ${fieldSize}`)
+  const evidence: string[] = [];
+  evidence.push(`Last race finish: ${lastFinish}${lastFinish > 10 ? '+' : ''} of ${fieldSize}`);
 
   if (priorFinish <= 4) {
-    evidence.push(`Prior race finish: ${priorFinish} (much better)`)
+    evidence.push(`Prior race finish: ${priorFinish} (much better)`);
   }
 
   if (hasExcuse) {
-    evidence.push(`Legitimate excuse detected: ${hasExcuse}`)
+    evidence.push(`Legitimate excuse detected: ${hasExcuse}`);
   }
 
-  evidence.push(`Our score: ${score.total} pts (solid despite last race)`)
-  evidence.push(`Edge: +${edge.toFixed(0)}% over market`)
+  evidence.push(`Our score: ${score.total} pts (solid despite last race)`);
+  evidence.push(`Edge: +${edge.toFixed(0)}% over market`);
 
   return {
     type: 'public_overreaction',
@@ -224,7 +227,7 @@ function detectPublicOverreaction(
     valueReason: `Market odds reflect public avoidance, creating overlay of ${edge.toFixed(0)}%`,
     evidence,
     evBonus: magnitude * 2,
-  }
+  };
 }
 
 /**
@@ -232,37 +235,46 @@ function detectPublicOverreaction(
  */
 function detectLegitimateExcuse(pp: PastPerformance): string | null {
   // Check comment field for trip notes and excuses
-  const comments = (pp as { comment?: string }).comment?.toLowerCase() || ''
-  const notes = comments
+  const comments = (pp as { comment?: string }).comment?.toLowerCase() || '';
+  const notes = comments;
 
   // Wide trip
   if (notes.includes('wide') || notes.includes('4-5 wide') || notes.includes('parked')) {
-    return 'Wide trip'
+    return 'Wide trip';
   }
 
   // Traffic trouble
-  if (notes.includes('blocked') || notes.includes('in tight') || notes.includes('steadied') ||
-      notes.includes('checked') || notes.includes('bumped')) {
-    return 'Traffic trouble'
+  if (
+    notes.includes('blocked') ||
+    notes.includes('in tight') ||
+    notes.includes('steadied') ||
+    notes.includes('checked') ||
+    notes.includes('bumped')
+  ) {
+    return 'Traffic trouble';
   }
 
   // Bad start
-  if (notes.includes('stumbled') || notes.includes('dwelt') || notes.includes('slow break') ||
-      notes.includes('pinched back')) {
-    return 'Poor start'
+  if (
+    notes.includes('stumbled') ||
+    notes.includes('dwelt') ||
+    notes.includes('slow break') ||
+    notes.includes('pinched back')
+  ) {
+    return 'Poor start';
   }
 
   // Equipment issues
   if (notes.includes('lost shoe') || notes.includes('equipment')) {
-    return 'Equipment issue'
+    return 'Equipment issue';
   }
 
   // Track condition issues
-  if (notes.includes('didn\'t handle') || notes.includes('slipping')) {
-    return 'Track condition'
+  if (notes.includes("didn't handle") || notes.includes('slipping')) {
+    return 'Track condition';
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -275,24 +287,25 @@ function detectRecencyBias(
   score: HorseScore,
   edge: number
 ): InefficiencyDetection | null {
-  const pps = horse.pastPerformances
-  if (pps.length < 3) return null
+  const pps = horse.pastPerformances;
+  if (pps.length < 3) return null;
 
-  const recentResults = pps.slice(0, 3)
-  const wins = recentResults.filter(pp => pp.finishPosition === 1).length
-  const losses = recentResults.filter(pp => (pp.finishPosition ?? 10) > 5).length
+  const recentResults = pps.slice(0, 3);
+  const wins = recentResults.filter((pp) => pp.finishPosition === 1).length;
+  const losses = recentResults.filter((pp) => (pp.finishPosition ?? 10) > 5).length;
 
-  const decimalOdds = parseOddsToDecimal(horse.morningLineOdds)
-  const marketProb = oddsToMarketProbability(horse.morningLineOdds)
-  const ourProb = scoreToWinProbability(score.total)
+  const decimalOdds = parseOddsToDecimal(horse.morningLineOdds);
+  const marketProb = oddsToMarketProbability(horse.morningLineOdds);
+  const ourProb = scoreToWinProbability(score.total);
 
   // Recent loser being avoided (underbet) - our opportunity
   if (losses >= 2 && edge > 10 && score.total >= 140) {
     // Check if classAnalysis shows dropping (movement string contains "dropping")
-    const hasClassDrop = score.breakdown.classAnalysis?.movement.toLowerCase().includes('drop') ?? false
-    const magnitude = Math.min(10, Math.round(edge / 4) + (hasClassDrop ? 2 : 0))
+    const hasClassDrop =
+      score.breakdown.classAnalysis?.movement.toLowerCase().includes('drop') ?? false;
+    const magnitude = Math.min(10, Math.round(edge / 4) + (hasClassDrop ? 2 : 0));
 
-    if (magnitude < MIN_MAGNITUDE) return null
+    if (magnitude < MIN_MAGNITUDE) return null;
 
     return {
       type: 'recency_bias',
@@ -309,14 +322,14 @@ function detectRecencyBias(
       ].filter(Boolean),
       confidence: Math.min(80, 55 + magnitude * 2),
       evBonus: magnitude * 1.5,
-    }
+    };
   }
 
   // Recent winner being overbet (overbet) - avoid
   if (wins >= 2 && edge < -15 && decimalOdds < 3.0) {
-    const magnitude = Math.min(10, Math.round(Math.abs(edge) / 5))
+    const magnitude = Math.min(10, Math.round(Math.abs(edge) / 5));
 
-    if (magnitude < MIN_MAGNITUDE) return null
+    if (magnitude < MIN_MAGNITUDE) return null;
 
     return {
       type: 'recency_bias',
@@ -333,10 +346,10 @@ function detectRecencyBias(
       ],
       confidence: Math.min(75, 50 + magnitude * 2),
       evBonus: 0, // No bonus for bets to avoid
-    }
+    };
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -349,23 +362,31 @@ function detectNameRecognitionBias(
   score: HorseScore,
   edge: number
 ): InefficiencyDetection | null {
-  const trainerName = horse.trainerName.toLowerCase()
-  const jockeyName = horse.jockeyName.toLowerCase()
+  const trainerName = horse.trainerName.toLowerCase();
+  const jockeyName = horse.jockeyName.toLowerCase();
 
   // Famous names that get overbet
-  const famousTrainers = ['pletcher', 'baffert', 'brown', 'mott', 'cox', 'ward']
-  const famousJockeys = ['irad ortiz', 'ortiz jr', 'velazquez', 'rosario', 'prat', 'castellano', 'saez']
+  const famousTrainers = ['pletcher', 'baffert', 'brown', 'mott', 'cox', 'ward'];
+  const famousJockeys = [
+    'irad ortiz',
+    'ortiz jr',
+    'velazquez',
+    'rosario',
+    'prat',
+    'castellano',
+    'saez',
+  ];
 
-  const hasFamousTrainer = famousTrainers.some(n => trainerName.includes(n))
-  const hasFamousJockey = famousJockeys.some(n => jockeyName.includes(n))
+  const hasFamousTrainer = famousTrainers.some((n) => trainerName.includes(n));
+  const hasFamousJockey = famousJockeys.some((n) => jockeyName.includes(n));
 
-  const connectionScore = score.breakdown.connections.total
+  const connectionScore = score.breakdown.connections.total;
 
   // Unknown connections doing well - opportunity
   if (!hasFamousTrainer && !hasFamousJockey && connectionScore >= 35 && edge > 8) {
-    const magnitude = Math.min(10, Math.round(edge / 5) + 2)
+    const magnitude = Math.min(10, Math.round(edge / 5) + 2);
 
-    if (magnitude < MIN_MAGNITUDE) return null
+    if (magnitude < MIN_MAGNITUDE) return null;
 
     return {
       type: 'name_recognition',
@@ -382,16 +403,16 @@ function detectNameRecognitionBias(
       ],
       confidence: Math.min(75, 55 + magnitude * 2),
       evBonus: magnitude * 1.5,
-    }
+    };
   }
 
   // Famous connections but poor score - overbet
   if ((hasFamousTrainer || hasFamousJockey) && connectionScore < 25 && edge < -10) {
-    const magnitude = Math.min(10, Math.round(Math.abs(edge) / 5))
+    const magnitude = Math.min(10, Math.round(Math.abs(edge) / 5));
 
-    if (magnitude < MIN_MAGNITUDE) return null
+    if (magnitude < MIN_MAGNITUDE) return null;
 
-    const famous = hasFamousTrainer ? horse.trainerName : horse.jockeyName
+    const famous = hasFamousTrainer ? horse.trainerName : horse.jockeyName;
 
     return {
       type: 'name_recognition',
@@ -407,10 +428,10 @@ function detectNameRecognitionBias(
       ],
       confidence: Math.min(70, 50 + magnitude * 2),
       evBonus: 0,
-    }
+    };
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -424,18 +445,18 @@ function detectPostPositionPanic(
   edge: number,
   raceHeader: RaceHeader
 ): InefficiencyDetection | null {
-  const postPosition = horse.postPosition
-  const fieldSize = raceHeader.fieldSize
+  const postPosition = horse.postPosition;
+  const fieldSize = raceHeader.fieldSize;
 
-  const postScore = score.breakdown.postPosition
-  const isGoldenPost = postScore.isGoldenPost
-  const hasBias = postScore.trackBiasApplied
+  const postScore = score.breakdown.postPosition;
+  const isGoldenPost = postScore.isGoldenPost;
+  const hasBias = postScore.trackBiasApplied;
 
   // Outside post being avoided but we score it well
   if (postPosition >= fieldSize - 2 && postScore.total >= 30 && edge > 12) {
-    const magnitude = Math.min(10, Math.round(edge / 4) + 1)
+    const magnitude = Math.min(10, Math.round(edge / 4) + 1);
 
-    if (magnitude < MIN_MAGNITUDE) return null
+    if (magnitude < MIN_MAGNITUDE) return null;
 
     return {
       type: 'post_position_panic',
@@ -452,14 +473,14 @@ function detectPostPositionPanic(
       ],
       confidence: Math.min(75, 55 + magnitude * 2),
       evBonus: magnitude * 1.5,
-    }
+    };
   }
 
   // Golden post not reflected in odds - hidden value
   if (isGoldenPost && postScore.total >= 38 && edge > 8) {
-    const magnitude = Math.min(10, Math.round(edge / 3))
+    const magnitude = Math.min(10, Math.round(edge / 3));
 
-    if (magnitude < MIN_MAGNITUDE) return null
+    if (magnitude < MIN_MAGNITUDE) return null;
 
     return {
       type: 'post_position_panic',
@@ -476,10 +497,10 @@ function detectPostPositionPanic(
       ],
       confidence: Math.min(80, 60 + magnitude * 2),
       evBonus: magnitude * 2,
-    }
+    };
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -492,19 +513,19 @@ function detectClassConfusion(
   score: HorseScore,
   edge: number
 ): InefficiencyDetection | null {
-  const classAnalysis = score.breakdown.classAnalysis
-  if (!classAnalysis) return null
+  const classAnalysis = score.breakdown.classAnalysis;
+  if (!classAnalysis) return null;
 
-  const hiddenDrops = classAnalysis.hiddenDrops || []
-  const isValuePlay = classAnalysis.isValuePlay
+  const hiddenDrops = classAnalysis.hiddenDrops || [];
+  const isValuePlay = classAnalysis.isValuePlay;
 
   // Significant hidden drops not reflected in odds
   if (hiddenDrops.length > 0 && isValuePlay && edge > 10) {
-    const primaryDrop = hiddenDrops[0]
-    const totalDropsValue = hiddenDrops.reduce((sum, d) => sum + d.pointsBonus, 0)
-    const magnitude = Math.min(10, Math.round(totalDropsValue / 2) + Math.round(edge / 6))
+    const primaryDrop = hiddenDrops[0];
+    const totalDropsValue = hiddenDrops.reduce((sum, d) => sum + d.pointsBonus, 0);
+    const magnitude = Math.min(10, Math.round(totalDropsValue / 2) + Math.round(edge / 6));
 
-    if (magnitude < MIN_MAGNITUDE) return null
+    if (magnitude < MIN_MAGNITUDE) return null;
 
     return {
       type: 'class_confusion',
@@ -515,21 +536,21 @@ function detectClassConfusion(
       valueReason: `Hidden class advantage creating ${edge.toFixed(0)}% edge`,
       evidence: [
         `Primary drop: ${primaryDrop.type} - ${primaryDrop.description}`,
-        ...hiddenDrops.slice(1).map(d => `Additional: ${d.type}`),
+        ...hiddenDrops.slice(1).map((d) => `Additional: ${d.type}`),
         `Class analysis score: ${classAnalysis.total}`,
         `Movement: ${classAnalysis.movement}`,
       ],
       confidence: Math.min(85, 60 + magnitude * 2),
       evBonus: magnitude * 2.5,
-    }
+    };
   }
 
   // Class rise being avoided but horse proved at higher level
-  const movement = classAnalysis.movement.toLowerCase()
+  const movement = classAnalysis.movement.toLowerCase();
   if (movement.includes('rising') && classAnalysis.provenAtLevelScore > 8 && edge > 8) {
-    const magnitude = Math.min(8, Math.round(edge / 5))
+    const magnitude = Math.min(8, Math.round(edge / 5));
 
-    if (magnitude < MIN_MAGNITUDE) return null
+    if (magnitude < MIN_MAGNITUDE) return null;
 
     return {
       type: 'class_confusion',
@@ -545,10 +566,10 @@ function detectClassConfusion(
       ],
       confidence: Math.min(70, 50 + magnitude * 2),
       evBonus: magnitude * 1.5,
-    }
+    };
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -561,27 +582,23 @@ function detectEquipmentMisunderstanding(
   score: HorseScore,
   edge: number
 ): InefficiencyDetection | null {
-  const equipmentScore = score.breakdown.equipment
-  const hasChanges = equipmentScore.hasChanges
-  const equipmentTotal = equipmentScore.total
+  const equipmentScore = score.breakdown.equipment;
+  const hasChanges = equipmentScore.hasChanges;
+  const equipmentTotal = equipmentScore.total;
 
-  if (!hasChanges) return null
+  if (!hasChanges) return null;
 
-  const firstTimeEquip = horse.equipment.firstTimeEquipment || []
-  const hasBlinkers = firstTimeEquip.some(e =>
-    e.toLowerCase().includes('blinker') || e === 'b'
-  )
-  const hasLasix = firstTimeEquip.some(e =>
-    e.toLowerCase().includes('lasix') || e === 'l'
-  )
+  const firstTimeEquip = horse.equipment.firstTimeEquipment || [];
+  const hasBlinkers = firstTimeEquip.some((e) => e.toLowerCase().includes('blinker') || e === 'b');
+  const hasLasix = firstTimeEquip.some((e) => e.toLowerCase().includes('lasix') || e === 'l');
 
   // Strong equipment score but horse being avoided
   if (equipmentTotal >= 18 && edge > 12) {
-    const magnitude = Math.min(10, Math.round(edge / 4) + (equipmentTotal / 8))
+    const magnitude = Math.min(10, Math.round(edge / 4) + equipmentTotal / 8);
 
-    if (magnitude < MIN_MAGNITUDE) return null
+    if (magnitude < MIN_MAGNITUDE) return null;
 
-    const changeDesc = hasBlinkers ? 'Blinkers' : hasLasix ? 'First Lasix' : 'Equipment change'
+    const changeDesc = hasBlinkers ? 'Blinkers' : hasLasix ? 'First Lasix' : 'Equipment change';
 
     return {
       type: 'equipment_misunderstanding',
@@ -598,14 +615,14 @@ function detectEquipmentMisunderstanding(
       ],
       confidence: Math.min(75, 55 + magnitude * 2),
       evBonus: magnitude * 1.5,
-    }
+    };
   }
 
   // Blinkers off being penalized incorrectly
   if (equipmentTotal >= 15 && edge > 8) {
-    const magnitude = Math.min(8, Math.round(edge / 5))
+    const magnitude = Math.min(8, Math.round(edge / 5));
 
-    if (magnitude < MIN_MAGNITUDE) return null
+    if (magnitude < MIN_MAGNITUDE) return null;
 
     return {
       type: 'equipment_misunderstanding',
@@ -621,10 +638,10 @@ function detectEquipmentMisunderstanding(
       ],
       confidence: Math.min(70, 50 + magnitude * 2),
       evBonus: magnitude,
-    }
+    };
   }
 
-  return null
+  return null;
 }
 
 // ============================================================================
@@ -639,63 +656,63 @@ export function analyzeMarketInefficiency(
   score: HorseScore,
   raceHeader: RaceHeader
 ): MarketInefficiencyAnalysis {
-  const ourProb = scoreToWinProbability(score.total)
-  const marketProb = oddsToMarketProbability(horse.morningLineOdds)
-  const edge = calculateEdge(ourProb, marketProb)
+  const ourProb = scoreToWinProbability(score.total);
+  const marketProb = oddsToMarketProbability(horse.morningLineOdds);
+  const edge = calculateEdge(ourProb, marketProb);
 
-  const inefficiencies: InefficiencyDetection[] = []
+  const inefficiencies: InefficiencyDetection[] = [];
 
   // Run all detection functions
-  const overreaction = detectPublicOverreaction(horse, score, edge)
-  if (overreaction) inefficiencies.push(overreaction)
+  const overreaction = detectPublicOverreaction(horse, score, edge);
+  if (overreaction) inefficiencies.push(overreaction);
 
-  const recency = detectRecencyBias(horse, score, edge)
-  if (recency) inefficiencies.push(recency)
+  const recency = detectRecencyBias(horse, score, edge);
+  if (recency) inefficiencies.push(recency);
 
-  const nameRecog = detectNameRecognitionBias(horse, score, edge)
-  if (nameRecog) inefficiencies.push(nameRecog)
+  const nameRecog = detectNameRecognitionBias(horse, score, edge);
+  if (nameRecog) inefficiencies.push(nameRecog);
 
-  const postPanic = detectPostPositionPanic(horse, score, edge, raceHeader)
-  if (postPanic) inefficiencies.push(postPanic)
+  const postPanic = detectPostPositionPanic(horse, score, edge, raceHeader);
+  if (postPanic) inefficiencies.push(postPanic);
 
-  const classConf = detectClassConfusion(horse, score, edge)
-  if (classConf) inefficiencies.push(classConf)
+  const classConf = detectClassConfusion(horse, score, edge);
+  if (classConf) inefficiencies.push(classConf);
 
-  const equipment = detectEquipmentMisunderstanding(horse, score, edge)
-  if (equipment) inefficiencies.push(equipment)
+  const equipment = detectEquipmentMisunderstanding(horse, score, edge);
+  if (equipment) inefficiencies.push(equipment);
 
   // Sort by magnitude descending
-  inefficiencies.sort((a, b) => b.magnitude - a.magnitude)
+  inefficiencies.sort((a, b) => b.magnitude - a.magnitude);
 
-  const primaryInefficiency = inefficiencies.length > 0 ? inefficiencies[0] : null
-  const totalMagnitude = inefficiencies.reduce((sum, i) => sum + i.magnitude, 0)
+  const primaryInefficiency = inefficiencies.length > 0 ? inefficiencies[0] : null;
+  const totalMagnitude = inefficiencies.reduce((sum, i) => sum + i.magnitude, 0);
 
   const hasExploitableInefficiency = inefficiencies.some(
-    i => i.direction === 'underbet' && i.magnitude >= MIN_MAGNITUDE
-  )
+    (i) => i.direction === 'underbet' && i.magnitude >= MIN_MAGNITUDE
+  );
 
-  const isMispriced = Math.abs(edge) > MIN_EXPLOITABLE_EDGE && inefficiencies.length > 0
+  const isMispriced = Math.abs(edge) > MIN_EXPLOITABLE_EDGE && inefficiencies.length > 0;
 
   // Generate summary
-  let summary = 'No significant market inefficiencies detected.'
+  let summary = 'No significant market inefficiencies detected.';
   if (primaryInefficiency) {
-    const meta = INEFFICIENCY_META[primaryInefficiency.type]
-    summary = `${meta.name}: ${primaryInefficiency.title}. ${primaryInefficiency.explanation}`
+    const meta = INEFFICIENCY_META[primaryInefficiency.type];
+    summary = `${meta.name}: ${primaryInefficiency.title}. ${primaryInefficiency.explanation}`;
   }
 
   // Determine recommendation
-  let recommendation: MarketInefficiencyAnalysis['recommendation'] = 'neutral'
+  let recommendation: MarketInefficiencyAnalysis['recommendation'] = 'neutral';
 
   if (hasExploitableInefficiency) {
     if (totalMagnitude >= 15) {
-      recommendation = 'strong_bet'
+      recommendation = 'strong_bet';
     } else if (totalMagnitude >= 8) {
-      recommendation = 'bet'
+      recommendation = 'bet';
     } else {
-      recommendation = 'watch'
+      recommendation = 'watch';
     }
-  } else if (inefficiencies.some(i => i.direction === 'overbet')) {
-    recommendation = 'avoid'
+  } else if (inefficiencies.some((i) => i.direction === 'overbet')) {
+    recommendation = 'avoid';
   }
 
   logger.logDebug(`Market inefficiency analysis for ${horse.horseName}`, {
@@ -704,7 +721,7 @@ export function analyzeMarketInefficiency(
     inefficiencyCount: inefficiencies.length,
     primaryType: primaryInefficiency?.type || 'none',
     recommendation,
-  })
+  });
 
   return {
     programNumber: horse.programNumber,
@@ -716,7 +733,7 @@ export function analyzeMarketInefficiency(
     isMispriced,
     summary,
     recommendation,
-  }
+  };
 }
 
 /**
@@ -727,10 +744,8 @@ export function analyzeRaceInefficiencies(
   raceHeader: RaceHeader
 ): MarketInefficiencyAnalysis[] {
   return horses
-    .filter(h => !h.score.isScratched)
-    .map(({ horse, score }) =>
-      analyzeMarketInefficiency(horse, score, raceHeader)
-    )
+    .filter((h) => !h.score.isScratched)
+    .map(({ horse, score }) => analyzeMarketInefficiency(horse, score, raceHeader));
 }
 
 /**
@@ -741,9 +756,9 @@ export function getBestInefficiencyPlays(
   limit: number = 3
 ): MarketInefficiencyAnalysis[] {
   return analyses
-    .filter(a => a.hasExploitableInefficiency)
+    .filter((a) => a.hasExploitableInefficiency)
     .sort((a, b) => b.totalMagnitude - a.totalMagnitude)
-    .slice(0, limit)
+    .slice(0, limit);
 }
 
 // ============================================================================
@@ -754,37 +769,39 @@ export function getBestInefficiencyPlays(
  * Get icon for inefficiency type
  */
 export function getInefficiencyIcon(type: InefficiencyType): string {
-  return INEFFICIENCY_META[type].icon
+  return INEFFICIENCY_META[type].icon;
 }
 
 /**
  * Get color for inefficiency type
  */
 export function getInefficiencyColor(type: InefficiencyType): string {
-  return INEFFICIENCY_META[type].color
+  return INEFFICIENCY_META[type].color;
 }
 
 /**
  * Format magnitude for display
  */
 export function formatMagnitude(magnitude: number): string {
-  if (magnitude >= 8) return 'Very Strong'
-  if (magnitude >= 6) return 'Strong'
-  if (magnitude >= 4) return 'Moderate'
-  return 'Slight'
+  if (magnitude >= 8) return 'Very Strong';
+  if (magnitude >= 6) return 'Strong';
+  if (magnitude >= 4) return 'Moderate';
+  return 'Slight';
 }
 
 /**
  * Get display badge for inefficiency
  */
-export function getInefficiencyBadge(
-  detection: InefficiencyDetection
-): { text: string; color: string; bgColor: string } {
-  const meta = INEFFICIENCY_META[detection.type]
+export function getInefficiencyBadge(detection: InefficiencyDetection): {
+  text: string;
+  color: string;
+  bgColor: string;
+} {
+  const meta = INEFFICIENCY_META[detection.type];
 
   return {
     text: `${meta.name}: ${formatMagnitude(detection.magnitude)}`,
     color: meta.color,
     bgColor: meta.bgColor,
-  }
+  };
 }

@@ -18,19 +18,35 @@
  * Total max: ~60 points (theoretical max with all bonuses)
  */
 
-import type { HorseEntry, RaceHeader } from '../../types/drf'
-import type { BreedingScore, BreedingScoreBreakdown, BreedingConfidence } from './types'
-import { extractBreedingInfo } from './breedingExtractor'
-import { calculateSireScore, lookupSire, getSireTierLabel, getSireTierColor, type ExtendedSireProfile } from './sireDatabase'
-import { calculateDamScore, lookupDam, getDamTierLabel, type ExtendedDamProfile } from './damDatabase'
-import { calculateDamsireScore, lookupDamsire, getDamsireTierLabel, type ExtendedDamsireProfile } from './damsireDatabase'
+import type { HorseEntry, RaceHeader } from '../../types/drf';
+import type { BreedingScore, BreedingScoreBreakdown, BreedingConfidence } from './types';
+import { extractBreedingInfo } from './breedingExtractor';
+import {
+  calculateSireScore,
+  lookupSire,
+  getSireTierLabel,
+  getSireTierColor,
+  type ExtendedSireProfile,
+} from './sireDatabase';
+import {
+  calculateDamScore,
+  lookupDam,
+  getDamTierLabel,
+  type ExtendedDamProfile,
+} from './damDatabase';
+import {
+  calculateDamsireScore,
+  lookupDamsire,
+  getDamsireTierLabel,
+  type ExtendedDamsireProfile,
+} from './damsireDatabase';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
 /** Maximum starts for breeding analysis to apply */
-export const MAX_STARTS_FOR_BREEDING = 7
+export const MAX_STARTS_FOR_BREEDING = 7;
 
 /** Score limits for breeding categories */
 export const BREEDING_CATEGORY_LIMITS = {
@@ -43,51 +59,51 @@ export const BREEDING_CATEGORY_LIMITS = {
     distanceFit: 5,
   },
   total: 60,
-} as const
+} as const;
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 export interface BreedingScoreContext {
-  surface: string
-  distance: string
-  distanceCategory: 'sprint' | 'route' | 'versatile'
-  isDebut: boolean
-  starts: number
+  surface: string;
+  distance: string;
+  distanceCategory: 'sprint' | 'route' | 'versatile';
+  isDebut: boolean;
+  starts: number;
 }
 
 export interface DetailedBreedingScore extends BreedingScore {
   /** Detailed sire scoring info */
   sireDetails: {
-    score: number
-    profile: ExtendedSireProfile | null
-    tierLabel: string
-    tierColor: string
-    reasoning: string
-  }
+    score: number;
+    profile: ExtendedSireProfile | null;
+    tierLabel: string;
+    tierColor: string;
+    reasoning: string;
+  };
   /** Detailed dam scoring info */
   damDetails: {
-    score: number
-    profile: ExtendedDamProfile | null
-    tierLabel: string | null
-    reasoning: string
-  }
+    score: number;
+    profile: ExtendedDamProfile | null;
+    tierLabel: string | null;
+    reasoning: string;
+  };
   /** Detailed damsire scoring info */
   damsireDetails: {
-    score: number
-    profile: ExtendedDamsireProfile | null
-    tierLabel: string | null
-    reasoning: string
-  }
+    score: number;
+    profile: ExtendedDamsireProfile | null;
+    tierLabel: string | null;
+    reasoning: string;
+  };
   /** Bonus scoring info */
   bonuses: {
-    eliteSireDebut: number
-    surfaceFit: number
-    distanceFit: number
-    total: number
-    reasons: string[]
-  }
+    eliteSireDebut: number;
+    surfaceFit: number;
+    distanceFit: number;
+    total: number;
+    reasons: string[];
+  };
 }
 
 // ============================================================================
@@ -98,30 +114,30 @@ export interface DetailedBreedingScore extends BreedingScore {
  * Parse distance string to determine category
  */
 function parseDistanceCategory(distance: string): 'sprint' | 'route' | 'versatile' {
-  const distLower = distance.toLowerCase()
+  const distLower = distance.toLowerCase();
 
   // Handle mile distances
   if (distLower.includes('m')) {
-    const mileMatch = distLower.match(/(\d+\.?\d*)\s*m/)
+    const mileMatch = distLower.match(/(\d+\.?\d*)\s*m/);
     if (mileMatch) {
-      const miles = parseFloat(mileMatch[1])
-      const furlongs = miles * 8
-      if (furlongs >= 9) return 'route'
-      if (furlongs <= 7) return 'sprint'
-      return 'versatile'
+      const miles = parseFloat(mileMatch[1]);
+      const furlongs = miles * 8;
+      if (furlongs >= 9) return 'route';
+      if (furlongs <= 7) return 'sprint';
+      return 'versatile';
     }
   }
 
   // Handle furlong distances
-  const furlongMatch = distLower.match(/(\d+\.?\d*)\s*f/)
+  const furlongMatch = distLower.match(/(\d+\.?\d*)\s*f/);
   if (furlongMatch) {
-    const furlongs = parseFloat(furlongMatch[1])
-    if (furlongs <= 7) return 'sprint'
-    if (furlongs >= 9) return 'route'
-    return 'versatile'
+    const furlongs = parseFloat(furlongMatch[1]);
+    if (furlongs <= 7) return 'sprint';
+    if (furlongs >= 9) return 'route';
+    return 'versatile';
   }
 
-  return 'versatile'
+  return 'versatile';
 }
 
 /**
@@ -132,12 +148,12 @@ function determineConfidence(
   damProfile: ExtendedDamProfile | null,
   damsireProfile: ExtendedDamsireProfile | null
 ): BreedingConfidence {
-  const knownCount = [sireProfile, damProfile, damsireProfile].filter(p => p !== null).length
+  const knownCount = [sireProfile, damProfile, damsireProfile].filter((p) => p !== null).length;
 
-  if (knownCount === 3) return 'high'
-  if (knownCount >= 2) return 'medium'
-  if (knownCount === 1) return 'low'
-  return 'none'
+  if (knownCount === 3) return 'high';
+  if (knownCount >= 2) return 'medium';
+  if (knownCount === 1) return 'low';
+  return 'none';
 }
 
 /**
@@ -150,36 +166,36 @@ function generateSummary(
   starts: number
 ): string {
   if (starts >= 8) {
-    return 'Breeding analysis not applied (8+ starts - experience data prioritized)'
+    return 'Breeding analysis not applied (8+ starts - experience data prioritized)';
   }
 
   if (score >= 50) {
     if (isDebut && sireProfile?.tier === 'elite') {
-      return `Elite breeding profile: ${sireProfile.name} debut runner with top pedigree support`
+      return `Elite breeding profile: ${sireProfile.name} debut runner with top pedigree support`;
     }
-    return 'Exceptional breeding profile - strong from all angles'
+    return 'Exceptional breeding profile - strong from all angles';
   }
 
   if (score >= 40) {
     if (sireProfile) {
-      return `Strong breeding: ${sireProfile.name} progeny with solid pedigree`
+      return `Strong breeding: ${sireProfile.name} progeny with solid pedigree`;
     }
-    return 'Strong breeding profile with good pedigree support'
+    return 'Strong breeding profile with good pedigree support';
   }
 
   if (score >= 30) {
-    return 'Above average breeding - positive pedigree factors'
+    return 'Above average breeding - positive pedigree factors';
   }
 
   if (score >= 20) {
-    return 'Average breeding profile - standard expectations'
+    return 'Average breeding profile - standard expectations';
   }
 
   if (score >= 10) {
-    return 'Below average breeding profile'
+    return 'Below average breeding profile';
   }
 
-  return 'Limited breeding data available'
+  return 'Limited breeding data available';
 }
 
 // ============================================================================
@@ -197,8 +213,8 @@ export function calculateDetailedBreedingScore(
   horse: HorseEntry,
   raceHeader: RaceHeader
 ): DetailedBreedingScore {
-  const breedingInfo = extractBreedingInfo(horse)
-  const starts = breedingInfo.lifetimeStarts
+  const breedingInfo = extractBreedingInfo(horse);
+  const starts = breedingInfo.lifetimeStarts;
 
   // Build context
   const context: BreedingScoreContext = {
@@ -207,11 +223,13 @@ export function calculateDetailedBreedingScore(
     distanceCategory: parseDistanceCategory(raceHeader.distance),
     isDebut: starts === 0,
     starts,
-  }
+  };
 
   // Check if breeding analysis should apply
   if (starts >= 8) {
-    return createNotApplicableScore('Horse has 8+ starts - experience data prioritized over breeding')
+    return createNotApplicableScore(
+      'Horse has 8+ starts - experience data prioritized over breeding'
+    );
   }
 
   // Calculate sire score
@@ -219,30 +237,26 @@ export function calculateDetailedBreedingScore(
     surface: context.surface,
     distanceCategory: context.distanceCategory,
     isDebut: context.isDebut,
-  })
-  const sireProfile = lookupSire(breedingInfo.sire)
+  });
+  const sireProfile = lookupSire(breedingInfo.sire);
 
   // Calculate dam score
-  const damResult = calculateDamScore(breedingInfo.dam)
-  const damProfile = lookupDam(breedingInfo.dam)
+  const damResult = calculateDamScore(breedingInfo.dam);
+  const damProfile = lookupDam(breedingInfo.dam);
 
   // Calculate damsire score
   const damsireResult = calculateDamsireScore(breedingInfo.damsire, {
     surface: context.surface,
     isRoute: context.distanceCategory === 'route',
-  })
-  const damsireProfile = lookupDamsire(breedingInfo.damsire)
+  });
+  const damsireProfile = lookupDamsire(breedingInfo.damsire);
 
   // Calculate bonuses
-  const bonuses = calculateBonuses(
-    sireProfile,
-    damsireProfile,
-    context
-  )
+  const bonuses = calculateBonuses(sireProfile, damsireProfile, context);
 
   // Calculate total score (capped at 60)
-  const rawTotal = sireResult.score + damResult.score + damsireResult.score + bonuses.total
-  const total = Math.min(BREEDING_CATEGORY_LIMITS.total, rawTotal)
+  const rawTotal = sireResult.score + damResult.score + damsireResult.score + bonuses.total;
+  const total = Math.min(BREEDING_CATEGORY_LIMITS.total, rawTotal);
 
   // Build breakdown (using the types from breeding/types.ts which caps dam at 15 and damsire at 10)
   // But we'll use our actual calculated scores
@@ -251,13 +265,13 @@ export function calculateDetailedBreedingScore(
     damScore: damResult.score,
     damsireScore: damsireResult.score,
     fitScore: bonuses.total,
-  }
+  };
 
   // Determine confidence
-  const confidence = determineConfidence(sireProfile, damProfile, damsireProfile)
+  const confidence = determineConfidence(sireProfile, damProfile, damsireProfile);
 
   // Generate summary
-  const summary = generateSummary(total, sireProfile, context.isDebut, context.starts)
+  const summary = generateSummary(total, sireProfile, context.isDebut, context.starts);
 
   return {
     total,
@@ -285,7 +299,7 @@ export function calculateDetailedBreedingScore(
       reasoning: damsireResult.reasoning,
     },
     bonuses,
-  }
+  };
 }
 
 /**
@@ -296,11 +310,11 @@ function calculateBonuses(
   damsireProfile: ExtendedDamsireProfile | null,
   context: BreedingScoreContext
 ): {
-  eliteSireDebut: number
-  surfaceFit: number
-  distanceFit: number
-  total: number
-  reasons: string[]
+  eliteSireDebut: number;
+  surfaceFit: number;
+  distanceFit: number;
+  total: number;
+  reasons: string[];
 } {
   const bonuses = {
     eliteSireDebut: 0,
@@ -308,47 +322,51 @@ function calculateBonuses(
     distanceFit: 0,
     total: 0,
     reasons: [] as string[],
-  }
+  };
 
   // Elite sire debut bonus (+10)
   if (context.isDebut && sireProfile?.tier === 'elite') {
-    bonuses.eliteSireDebut = 10
-    bonuses.reasons.push(`+10 elite sire debut (${sireProfile.name} first-time starter)`)
+    bonuses.eliteSireDebut = 10;
+    bonuses.reasons.push(`+10 elite sire debut (${sireProfile.name} first-time starter)`);
   }
 
   // Surface fit bonus (+5)
-  const surfaceLower = context.surface.toLowerCase()
+  const surfaceLower = context.surface.toLowerCase();
   if (sireProfile) {
-    const sireSurface = sireProfile.surfacePreference
+    const sireSurface = sireProfile.surfacePreference;
     if (
       (surfaceLower === 'turf' && sireSurface === 'turf') ||
       (surfaceLower === 'dirt' && sireSurface === 'dirt')
     ) {
-      bonuses.surfaceFit = 5
-      bonuses.reasons.push(`+5 surface fit (${sireProfile.name} ${sireSurface} specialist on ${surfaceLower})`)
+      bonuses.surfaceFit = 5;
+      bonuses.reasons.push(
+        `+5 surface fit (${sireProfile.name} ${sireSurface} specialist on ${surfaceLower})`
+      );
     }
   } else if (damsireProfile) {
-    const damsireSurface = damsireProfile.surfaceInfluence
+    const damsireSurface = damsireProfile.surfaceInfluence;
     if (
       (surfaceLower === 'turf' && damsireSurface === 'turf') ||
       (surfaceLower === 'dirt' && damsireSurface === 'dirt')
     ) {
-      bonuses.surfaceFit = 3
-      bonuses.reasons.push(`+3 damsire surface influence`)
+      bonuses.surfaceFit = 3;
+      bonuses.reasons.push(`+3 damsire surface influence`);
     }
   }
 
   // Distance fit bonus (+5)
   if (sireProfile && sireProfile.distancePreference.category !== 'versatile') {
     if (sireProfile.distancePreference.category === context.distanceCategory) {
-      bonuses.distanceFit = 5
-      bonuses.reasons.push(`+5 distance fit (${sireProfile.name} ${context.distanceCategory} specialist)`)
+      bonuses.distanceFit = 5;
+      bonuses.reasons.push(
+        `+5 distance fit (${sireProfile.name} ${context.distanceCategory} specialist)`
+      );
     }
   }
 
-  bonuses.total = bonuses.eliteSireDebut + bonuses.surfaceFit + bonuses.distanceFit
+  bonuses.total = bonuses.eliteSireDebut + bonuses.surfaceFit + bonuses.distanceFit;
 
-  return bonuses
+  return bonuses;
 }
 
 /**
@@ -393,7 +411,7 @@ function createNotApplicableScore(reason: string): DetailedBreedingScore {
       total: 0,
       reasons: [],
     },
-  }
+  };
 }
 
 // ============================================================================
@@ -411,7 +429,7 @@ export function calculateBreedingScoreForHorse(
   horse: HorseEntry,
   raceHeader: RaceHeader
 ): BreedingScore {
-  const detailed = calculateDetailedBreedingScore(horse, raceHeader)
+  const detailed = calculateDetailedBreedingScore(horse, raceHeader);
 
   return {
     total: detailed.total,
@@ -420,7 +438,7 @@ export function calculateBreedingScoreForHorse(
     summary: detailed.summary,
     wasApplied: detailed.wasApplied,
     notAppliedReason: detailed.notAppliedReason,
-  }
+  };
 }
 
 // ============================================================================
@@ -431,8 +449,8 @@ export function calculateBreedingScoreForHorse(
  * Check if breeding analysis should be shown for a horse
  */
 export function shouldShowBreedingAnalysis(horse: HorseEntry): boolean {
-  const starts = horse.lifetimeStarts ?? 0
-  return starts < 8
+  const starts = horse.lifetimeStarts ?? 0;
+  return starts < 8;
 }
 
 /**
@@ -440,15 +458,15 @@ export function shouldShowBreedingAnalysis(horse: HorseEntry): boolean {
  * More weight for debut/fewer starts, less weight as experience increases
  */
 export function getBreedingScoreWeight(starts: number): number {
-  if (starts === 0) return 1.0    // Full weight for debuts
-  if (starts === 1) return 0.9    // 90% weight
-  if (starts === 2) return 0.8    // 80% weight
-  if (starts === 3) return 0.7    // 70% weight
-  if (starts === 4) return 0.6    // 60% weight
-  if (starts === 5) return 0.5    // 50% weight
-  if (starts === 6) return 0.4    // 40% weight
-  if (starts === 7) return 0.3    // 30% weight
-  return 0                         // No weight for 8+ starts
+  if (starts === 0) return 1.0; // Full weight for debuts
+  if (starts === 1) return 0.9; // 90% weight
+  if (starts === 2) return 0.8; // 80% weight
+  if (starts === 3) return 0.7; // 70% weight
+  if (starts === 4) return 0.6; // 60% weight
+  if (starts === 5) return 0.5; // 50% weight
+  if (starts === 6) return 0.4; // 40% weight
+  if (starts === 7) return 0.3; // 30% weight
+  return 0; // No weight for 8+ starts
 }
 
 /**
@@ -458,26 +476,26 @@ export function calculateBreedingContribution(
   breedingScore: BreedingScore,
   starts: number
 ): number {
-  if (!breedingScore.wasApplied) return 0
+  if (!breedingScore.wasApplied) return 0;
 
-  const weight = getBreedingScoreWeight(starts)
-  return Math.round(breedingScore.total * weight)
+  const weight = getBreedingScoreWeight(starts);
+  return Math.round(breedingScore.total * weight);
 }
 
 /**
  * Get display info for breeding section
  */
 export function getBreedingScoreDisplay(score: DetailedBreedingScore): {
-  label: string
-  color: string
-  description: string
+  label: string;
+  color: string;
+  description: string;
 } {
   if (!score.wasApplied) {
     return {
       label: 'N/A',
       color: '#888888',
       description: score.notAppliedReason || 'Not applicable',
-    }
+    };
   }
 
   if (score.total >= 50) {
@@ -485,7 +503,7 @@ export function getBreedingScoreDisplay(score: DetailedBreedingScore): {
       label: 'Elite',
       color: '#22c55e',
       description: 'Exceptional breeding profile',
-    }
+    };
   }
 
   if (score.total >= 40) {
@@ -493,7 +511,7 @@ export function getBreedingScoreDisplay(score: DetailedBreedingScore): {
       label: 'Strong',
       color: '#36d1da',
       description: 'Strong breeding profile',
-    }
+    };
   }
 
   if (score.total >= 30) {
@@ -501,7 +519,7 @@ export function getBreedingScoreDisplay(score: DetailedBreedingScore): {
       label: 'Above Avg',
       color: '#19abb5',
       description: 'Above average breeding',
-    }
+    };
   }
 
   if (score.total >= 20) {
@@ -509,12 +527,12 @@ export function getBreedingScoreDisplay(score: DetailedBreedingScore): {
       label: 'Average',
       color: '#888888',
       description: 'Average breeding profile',
-    }
+    };
   }
 
   return {
     label: 'Below Avg',
     color: '#ef4444',
     description: 'Limited breeding support',
-  }
+  };
 }

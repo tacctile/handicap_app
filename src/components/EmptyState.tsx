@@ -1,13 +1,13 @@
-import { useCallback } from 'react'
+import { useCallback } from 'react';
 
 interface EmptyStateProps {
-  onFileSelect?: () => void
+  onFileSelect?: () => void;
 }
 
 export function EmptyState({ onFileSelect }: EmptyStateProps) {
   const handleClick = useCallback(() => {
-    onFileSelect?.()
-  }, [onFileSelect])
+    onFileSelect?.();
+  }, [onFileSelect]);
 
   return (
     <div className="empty-state-container">
@@ -18,12 +18,8 @@ export function EmptyState({ onFileSelect }: EmptyStateProps) {
         </div>
 
         {/* Main message */}
-        <h2 className="empty-state-title">
-          Drop your .drf file here to get started
-        </h2>
-        <p className="empty-state-subtitle">
-          or click the button below to browse
-        </p>
+        <h2 className="empty-state-title">Drop your .drf file here to get started</h2>
+        <p className="empty-state-subtitle">or click the button below to browse</p>
 
         {/* Upload button */}
         <button onClick={handleClick} className="empty-state-button">
@@ -39,7 +35,8 @@ export function EmptyState({ onFileSelect }: EmptyStateProps) {
           </div>
           <p className="empty-state-info-text">
             DRF (Daily Racing Form) files contain past performance data for horse racing analysis.
-            These files include details like horse names, trainers, jockeys, odds, and historical race data.
+            These files include details like horse names, trainers, jockeys, odds, and historical
+            race data.
           </p>
         </div>
 
@@ -70,5 +67,5 @@ export function EmptyState({ onFileSelect }: EmptyStateProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

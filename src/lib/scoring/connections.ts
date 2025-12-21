@@ -17,7 +17,7 @@
  * - Combo patterns: "Trainer X in turf routes at Saratoga: 31% win (26 starts)"
  */
 
-import type { HorseEntry, RaceHeader } from '../../types/drf'
+import type { HorseEntry, RaceHeader } from '../../types/drf';
 import {
   type TrainerPatternResult,
   type JockeyPatternResult,
@@ -29,45 +29,45 @@ import {
   getJockeyPatternDisplay,
   getSynergyDisplay,
   hasSignificantPartnership,
-} from '../patterns'
+} from '../patterns';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 export interface ConnectionStats {
-  name: string
-  wins: number
-  starts: number
-  winRate: number
-  places: number
-  shows: number
-  itmRate: number  // In the money rate
+  name: string;
+  wins: number;
+  starts: number;
+  winRate: number;
+  places: number;
+  shows: number;
+  itmRate: number; // In the money rate
 }
 
 export interface PartnershipStats {
-  trainer: string
-  jockey: string
-  wins: number
-  starts: number
-  winRate: number
+  trainer: string;
+  jockey: string;
+  wins: number;
+  starts: number;
+  winRate: number;
 }
 
 export interface ConnectionsDatabase {
-  trainers: Map<string, ConnectionStats>
-  jockeys: Map<string, ConnectionStats>
-  partnerships: Map<string, PartnershipStats>  // Key: "trainer|jockey"
+  trainers: Map<string, ConnectionStats>;
+  jockeys: Map<string, ConnectionStats>;
+  partnerships: Map<string, PartnershipStats>; // Key: "trainer|jockey"
 }
 
 export interface ConnectionsScoreResult {
-  total: number
-  trainer: number
-  jockey: number
-  partnershipBonus: number
-  trainerStats: ConnectionStats | null
-  jockeyStats: ConnectionStats | null
-  partnershipStats: PartnershipStats | null
-  reasoning: string
+  total: number;
+  trainer: number;
+  jockey: number;
+  partnershipBonus: number;
+  trainerStats: ConnectionStats | null;
+  jockeyStats: ConnectionStats | null;
+  partnershipStats: PartnershipStats | null;
+  reasoning: string;
 }
 
 // ============================================================================
@@ -79,11 +79,7 @@ export interface ConnectionsScoreResult {
  * Handles "SMITH, J." vs "J. SMITH" vs "JOHN SMITH"
  */
 function normalizeName(name: string): string {
-  return name
-    .toUpperCase()
-    .replace(/[.,]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
+  return name.toUpperCase().replace(/[.,]/g, '').replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -91,15 +87,15 @@ function normalizeName(name: string): string {
  * This creates a dynamic trainer/jockey database from the actual DRF data
  */
 export function buildConnectionsDatabase(horses: HorseEntry[]): ConnectionsDatabase {
-  const trainers = new Map<string, ConnectionStats>()
-  const jockeys = new Map<string, ConnectionStats>()
-  const partnerships = new Map<string, PartnershipStats>()
+  const trainers = new Map<string, ConnectionStats>();
+  const jockeys = new Map<string, ConnectionStats>();
+  const partnerships = new Map<string, PartnershipStats>();
 
   // Process each horse's past performances
   for (const horse of horses) {
     // Add current race trainer/jockey to database (but don't count results yet)
-    const currentTrainer = normalizeName(horse.trainerName)
-    const currentJockey = normalizeName(horse.jockeyName)
+    const currentTrainer = normalizeName(horse.trainerName);
+    const currentJockey = normalizeName(horse.jockeyName);
 
     if (!trainers.has(currentTrainer)) {
       trainers.set(currentTrainer, {
@@ -110,7 +106,7 @@ export function buildConnectionsDatabase(horses: HorseEntry[]): ConnectionsDatab
         places: 0,
         shows: 0,
         itmRate: 0,
-      })
+      });
     }
 
     if (!jockeys.has(currentJockey)) {
@@ -122,12 +118,12 @@ export function buildConnectionsDatabase(horses: HorseEntry[]): ConnectionsDatab
         places: 0,
         shows: 0,
         itmRate: 0,
-      })
+      });
     }
 
     // Process past performances for historical data
     for (const pp of horse.pastPerformances) {
-      const ppJockey = normalizeName(pp.jockey)
+      const ppJockey = normalizeName(pp.jockey);
 
       // Update jockey stats from past performances
       if (!jockeys.has(ppJockey)) {
@@ -139,28 +135,31 @@ export function buildConnectionsDatabase(horses: HorseEntry[]): ConnectionsDatab
           places: 0,
           shows: 0,
           itmRate: 0,
-        })
+        });
       }
 
-      const jockeyStats = jockeys.get(ppJockey)!
-      jockeyStats.starts++
-      if (pp.finishPosition === 1) jockeyStats.wins++
-      if (pp.finishPosition === 2) jockeyStats.places++
-      if (pp.finishPosition === 3) jockeyStats.shows++
-      jockeyStats.winRate = (jockeyStats.wins / jockeyStats.starts) * 100
-      jockeyStats.itmRate = ((jockeyStats.wins + jockeyStats.places + jockeyStats.shows) / jockeyStats.starts) * 100
+      const jockeyStats = jockeys.get(ppJockey)!;
+      jockeyStats.starts++;
+      if (pp.finishPosition === 1) jockeyStats.wins++;
+      if (pp.finishPosition === 2) jockeyStats.places++;
+      if (pp.finishPosition === 3) jockeyStats.shows++;
+      jockeyStats.winRate = (jockeyStats.wins / jockeyStats.starts) * 100;
+      jockeyStats.itmRate =
+        ((jockeyStats.wins + jockeyStats.places + jockeyStats.shows) / jockeyStats.starts) * 100;
 
       // Update trainer stats (use current trainer for this horse's PPs)
-      const trainerStats = trainers.get(currentTrainer)!
-      trainerStats.starts++
-      if (pp.finishPosition === 1) trainerStats.wins++
-      if (pp.finishPosition === 2) trainerStats.places++
-      if (pp.finishPosition === 3) trainerStats.shows++
-      trainerStats.winRate = (trainerStats.wins / trainerStats.starts) * 100
-      trainerStats.itmRate = ((trainerStats.wins + trainerStats.places + trainerStats.shows) / trainerStats.starts) * 100
+      const trainerStats = trainers.get(currentTrainer)!;
+      trainerStats.starts++;
+      if (pp.finishPosition === 1) trainerStats.wins++;
+      if (pp.finishPosition === 2) trainerStats.places++;
+      if (pp.finishPosition === 3) trainerStats.shows++;
+      trainerStats.winRate = (trainerStats.wins / trainerStats.starts) * 100;
+      trainerStats.itmRate =
+        ((trainerStats.wins + trainerStats.places + trainerStats.shows) / trainerStats.starts) *
+        100;
 
       // Track trainer/jockey partnerships
-      const partnerKey = `${currentTrainer}|${ppJockey}`
+      const partnerKey = `${currentTrainer}|${ppJockey}`;
       if (!partnerships.has(partnerKey)) {
         partnerships.set(partnerKey, {
           trainer: horse.trainerName,
@@ -168,17 +167,17 @@ export function buildConnectionsDatabase(horses: HorseEntry[]): ConnectionsDatab
           wins: 0,
           starts: 0,
           winRate: 0,
-        })
+        });
       }
 
-      const partnerStats = partnerships.get(partnerKey)!
-      partnerStats.starts++
-      if (pp.finishPosition === 1) partnerStats.wins++
-      partnerStats.winRate = (partnerStats.wins / partnerStats.starts) * 100
+      const partnerStats = partnerships.get(partnerKey)!;
+      partnerStats.starts++;
+      if (pp.finishPosition === 1) partnerStats.wins++;
+      partnerStats.winRate = (partnerStats.wins / partnerStats.starts) * 100;
     }
   }
 
-  return { trainers, jockeys, partnerships }
+  return { trainers, jockeys, partnerships };
 }
 
 /**
@@ -188,12 +187,12 @@ export function buildConnectionsDatabase(horses: HorseEntry[]): ConnectionsDatab
 function extractTrainerStatsFromHorse(horse: HorseEntry): ConnectionStats | null {
   // Parse trainer stats string if available (format varies)
   // For now, build from past performances
-  const wins = horse.pastPerformances.filter(pp => pp.finishPosition === 1).length
-  const starts = horse.pastPerformances.length
-  const places = horse.pastPerformances.filter(pp => pp.finishPosition === 2).length
-  const shows = horse.pastPerformances.filter(pp => pp.finishPosition === 3).length
+  const wins = horse.pastPerformances.filter((pp) => pp.finishPosition === 1).length;
+  const starts = horse.pastPerformances.length;
+  const places = horse.pastPerformances.filter((pp) => pp.finishPosition === 2).length;
+  const shows = horse.pastPerformances.filter((pp) => pp.finishPosition === 3).length;
 
-  if (starts === 0) return null
+  if (starts === 0) return null;
 
   return {
     name: horse.trainerName,
@@ -203,7 +202,7 @@ function extractTrainerStatsFromHorse(horse: HorseEntry): ConnectionStats | null
     places,
     shows,
     itmRate: ((wins + places + shows) / starts) * 100,
-  }
+  };
 }
 
 /**
@@ -211,20 +210,18 @@ function extractTrainerStatsFromHorse(horse: HorseEntry): ConnectionStats | null
  */
 function extractJockeyStatsFromHorse(horse: HorseEntry): ConnectionStats | null {
   // Get stats for jockeys from past performances where same jockey rode
-  const jockeyNorm = normalizeName(horse.jockeyName)
+  const jockeyNorm = normalizeName(horse.jockeyName);
 
-  const jockeyPPs = horse.pastPerformances.filter(
-    pp => normalizeName(pp.jockey) === jockeyNorm
-  )
+  const jockeyPPs = horse.pastPerformances.filter((pp) => normalizeName(pp.jockey) === jockeyNorm);
 
   if (jockeyPPs.length === 0) {
     // First time with this jockey - check all PPs for any jockey data
-    const wins = horse.pastPerformances.filter(pp => pp.finishPosition === 1).length
-    const starts = horse.pastPerformances.length
-    const places = horse.pastPerformances.filter(pp => pp.finishPosition === 2).length
-    const shows = horse.pastPerformances.filter(pp => pp.finishPosition === 3).length
+    const wins = horse.pastPerformances.filter((pp) => pp.finishPosition === 1).length;
+    const starts = horse.pastPerformances.length;
+    const places = horse.pastPerformances.filter((pp) => pp.finishPosition === 2).length;
+    const shows = horse.pastPerformances.filter((pp) => pp.finishPosition === 3).length;
 
-    if (starts === 0) return null
+    if (starts === 0) return null;
 
     return {
       name: horse.jockeyName,
@@ -234,13 +231,13 @@ function extractJockeyStatsFromHorse(horse: HorseEntry): ConnectionStats | null 
       places,
       shows,
       itmRate: ((wins + places + shows) / starts) * 100,
-    }
+    };
   }
 
-  const wins = jockeyPPs.filter(pp => pp.finishPosition === 1).length
-  const starts = jockeyPPs.length
-  const places = jockeyPPs.filter(pp => pp.finishPosition === 2).length
-  const shows = jockeyPPs.filter(pp => pp.finishPosition === 3).length
+  const wins = jockeyPPs.filter((pp) => pp.finishPosition === 1).length;
+  const starts = jockeyPPs.length;
+  const places = jockeyPPs.filter((pp) => pp.finishPosition === 2).length;
+  const shows = jockeyPPs.filter((pp) => pp.finishPosition === 3).length;
 
   return {
     name: horse.jockeyName,
@@ -250,7 +247,7 @@ function extractJockeyStatsFromHorse(horse: HorseEntry): ConnectionStats | null 
     places,
     shows,
     itmRate: ((wins + places + shows) / starts) * 100,
-  }
+  };
 }
 
 // ============================================================================
@@ -264,16 +261,16 @@ function extractJockeyStatsFromHorse(horse: HorseEntry): ConnectionStats | null 
 function calculateTrainerScore(stats: ConnectionStats | null): number {
   if (!stats || stats.starts < 3) {
     // Insufficient data - return neutral score
-    return 15
+    return 15;
   }
 
-  const winRate = stats.winRate
+  const winRate = stats.winRate;
 
-  if (winRate >= 20) return 35      // Elite trainer (20%+ win rate)
-  if (winRate >= 15) return 28      // Very good trainer (15-19%)
-  if (winRate >= 10) return 20      // Good trainer (10-14%)
-  if (winRate >= 5) return 12       // Average trainer (5-9%)
-  return 5                           // Below average (<5%)
+  if (winRate >= 20) return 35; // Elite trainer (20%+ win rate)
+  if (winRate >= 15) return 28; // Very good trainer (15-19%)
+  if (winRate >= 10) return 20; // Good trainer (10-14%)
+  if (winRate >= 5) return 12; // Average trainer (5-9%)
+  return 5; // Below average (<5%)
 }
 
 /**
@@ -283,16 +280,16 @@ function calculateTrainerScore(stats: ConnectionStats | null): number {
 function calculateJockeyScore(stats: ConnectionStats | null): number {
   if (!stats || stats.starts < 3) {
     // Insufficient data - return neutral score
-    return 7
+    return 7;
   }
 
-  const winRate = stats.winRate
+  const winRate = stats.winRate;
 
-  if (winRate >= 20) return 15      // Elite jockey
-  if (winRate >= 15) return 12      // Very good jockey
-  if (winRate >= 10) return 9       // Good jockey
-  if (winRate >= 5) return 6        // Average jockey
-  return 3                           // Below average
+  if (winRate >= 20) return 15; // Elite jockey
+  if (winRate >= 15) return 12; // Very good jockey
+  if (winRate >= 10) return 9; // Good jockey
+  if (winRate >= 5) return 6; // Average jockey
+  return 3; // Below average
 }
 
 /**
@@ -305,25 +302,25 @@ function calculatePartnershipBonus(
   database: ConnectionsDatabase | null
 ): { bonus: number; stats: PartnershipStats | null } {
   if (!database) {
-    return { bonus: 0, stats: null }
+    return { bonus: 0, stats: null };
   }
 
-  const trainerNorm = normalizeName(trainerName)
-  const jockeyNorm = normalizeName(jockeyName)
-  const partnerKey = `${trainerNorm}|${jockeyNorm}`
+  const trainerNorm = normalizeName(trainerName);
+  const jockeyNorm = normalizeName(jockeyName);
+  const partnerKey = `${trainerNorm}|${jockeyNorm}`;
 
-  const stats = database.partnerships.get(partnerKey)
+  const stats = database.partnerships.get(partnerKey);
 
   if (!stats || stats.starts < 5) {
-    return { bonus: 0, stats: null }
+    return { bonus: 0, stats: null };
   }
 
   // Elite partnership: 25%+ win rate with at least 5 starts
   if (stats.winRate >= 25) {
-    return { bonus: 5, stats }
+    return { bonus: 5, stats };
   }
 
-  return { bonus: 0, stats }
+  return { bonus: 0, stats };
 }
 
 /**
@@ -335,25 +332,27 @@ function buildReasoning(
   partnershipStats: PartnershipStats | null,
   partnershipBonus: number
 ): string {
-  const parts: string[] = []
+  const parts: string[] = [];
 
   if (trainerStats && trainerStats.starts >= 3) {
-    parts.push(`T: ${trainerStats.winRate.toFixed(0)}% (${trainerStats.wins}/${trainerStats.starts})`)
+    parts.push(
+      `T: ${trainerStats.winRate.toFixed(0)}% (${trainerStats.wins}/${trainerStats.starts})`
+    );
   } else {
-    parts.push('T: Limited data')
+    parts.push('T: Limited data');
   }
 
   if (jockeyStats && jockeyStats.starts >= 3) {
-    parts.push(`J: ${jockeyStats.winRate.toFixed(0)}% (${jockeyStats.wins}/${jockeyStats.starts})`)
+    parts.push(`J: ${jockeyStats.winRate.toFixed(0)}% (${jockeyStats.wins}/${jockeyStats.starts})`);
   } else {
-    parts.push('J: Limited data')
+    parts.push('J: Limited data');
   }
 
   if (partnershipBonus > 0 && partnershipStats) {
-    parts.push(`Elite combo: ${partnershipStats.winRate.toFixed(0)}% together`)
+    parts.push(`Elite combo: ${partnershipStats.winRate.toFixed(0)}% together`);
   }
 
-  return parts.join(' | ')
+  return parts.join(' | ');
 }
 
 // ============================================================================
@@ -372,36 +371,36 @@ export function calculateConnectionsScore(
   database: ConnectionsDatabase | null = null
 ): ConnectionsScoreResult {
   // Get trainer stats
-  let trainerStats: ConnectionStats | null = null
+  let trainerStats: ConnectionStats | null = null;
   if (database) {
-    trainerStats = database.trainers.get(normalizeName(horse.trainerName)) || null
+    trainerStats = database.trainers.get(normalizeName(horse.trainerName)) || null;
   }
   if (!trainerStats) {
-    trainerStats = extractTrainerStatsFromHorse(horse)
+    trainerStats = extractTrainerStatsFromHorse(horse);
   }
 
   // Get jockey stats
-  let jockeyStats: ConnectionStats | null = null
+  let jockeyStats: ConnectionStats | null = null;
   if (database) {
-    jockeyStats = database.jockeys.get(normalizeName(horse.jockeyName)) || null
+    jockeyStats = database.jockeys.get(normalizeName(horse.jockeyName)) || null;
   }
   if (!jockeyStats) {
-    jockeyStats = extractJockeyStatsFromHorse(horse)
+    jockeyStats = extractJockeyStatsFromHorse(horse);
   }
 
   // Calculate individual scores
-  const trainerScore = calculateTrainerScore(trainerStats)
-  const jockeyScore = calculateJockeyScore(jockeyStats)
+  const trainerScore = calculateTrainerScore(trainerStats);
+  const jockeyScore = calculateJockeyScore(jockeyStats);
 
   // Check for elite partnership bonus
   const { bonus: partnershipBonus, stats: partnershipStats } = calculatePartnershipBonus(
     horse.trainerName,
     horse.jockeyName,
     database
-  )
+  );
 
   // Build reasoning
-  const reasoning = buildReasoning(trainerStats, jockeyStats, partnershipStats, partnershipBonus)
+  const reasoning = buildReasoning(trainerStats, jockeyStats, partnershipStats, partnershipBonus);
 
   return {
     total: trainerScore + jockeyScore + partnershipBonus,
@@ -412,7 +411,7 @@ export function calculateConnectionsScore(
     jockeyStats,
     partnershipStats,
     reasoning,
-  }
+  };
 }
 
 /**
@@ -423,16 +422,16 @@ export function calculateRaceConnectionsScores(
   horses: HorseEntry[]
 ): Map<number, ConnectionsScoreResult> {
   // Build database from all horses' past performances
-  const database = buildConnectionsDatabase(horses)
+  const database = buildConnectionsDatabase(horses);
 
   // Calculate score for each horse
-  const results = new Map<number, ConnectionsScoreResult>()
+  const results = new Map<number, ConnectionsScoreResult>();
 
   for (let i = 0; i < horses.length; i++) {
-    results.set(i, calculateConnectionsScore(horses[i], database))
+    results.set(i, calculateConnectionsScore(horses[i], database));
   }
 
-  return results
+  return results;
 }
 
 // ============================================================================
@@ -440,34 +439,34 @@ export function calculateRaceConnectionsScores(
 // ============================================================================
 
 /** Maximum combined score for connections */
-const MAX_CONNECTIONS_SCORE = 50
+const MAX_CONNECTIONS_SCORE = 50;
 
 /**
  * Extended connections score result with pattern analysis
  */
 export interface DynamicConnectionsScoreResult {
   /** Total connections score (0-50, capped) */
-  total: number
+  total: number;
   /** Trainer pattern score (0-35) */
-  trainerScore: number
+  trainerScore: number;
   /** Jockey pattern score (0-15) */
-  jockeyScore: number
+  jockeyScore: number;
   /** Synergy bonus (0-10) */
-  synergyBonus: number
+  synergyBonus: number;
   /** Trainer pattern analysis */
-  trainerPattern: TrainerPatternResult
+  trainerPattern: TrainerPatternResult;
   /** Jockey pattern analysis */
-  jockeyPattern: JockeyPatternResult
+  jockeyPattern: JockeyPatternResult;
   /** Synergy analysis */
-  synergy: SynergyResult
+  synergy: SynergyResult;
   /** Combined reasoning string */
-  reasoning: string
+  reasoning: string;
   /** All evidence strings for display */
-  evidence: string[]
+  evidence: string[];
   /** Summary for quick display */
-  summary: string
+  summary: string;
   /** Has significant partnership */
-  hasEliteConnections: boolean
+  hasEliteConnections: boolean;
 }
 
 /**
@@ -485,63 +484,63 @@ export function calculateDynamicConnectionsScore(
   allHorses: HorseEntry[]
 ): DynamicConnectionsScoreResult {
   // Calculate trainer pattern score
-  const trainerPattern = calculateTrainerPatternScore(horse, raceHeader, allHorses)
+  const trainerPattern = calculateTrainerPatternScore(horse, raceHeader, allHorses);
 
   // Calculate jockey pattern score
-  const jockeyPattern = calculateJockeyPatternScore(horse, raceHeader, allHorses)
+  const jockeyPattern = calculateJockeyPatternScore(horse, raceHeader, allHorses);
 
   // Calculate synergy
-  const synergy = getConnectionSynergy(horse, allHorses)
+  const synergy = getConnectionSynergy(horse, allHorses);
 
   // Calculate total (capped at 50)
-  const rawTotal = trainerPattern.score + jockeyPattern.score + synergy.bonus
-  const total = Math.min(rawTotal, MAX_CONNECTIONS_SCORE)
+  const rawTotal = trainerPattern.score + jockeyPattern.score + synergy.bonus;
+  const total = Math.min(rawTotal, MAX_CONNECTIONS_SCORE);
 
   // Collect all evidence
   const evidence: string[] = [
     ...trainerPattern.evidence,
     ...jockeyPattern.evidence,
     ...synergy.evidence,
-  ]
+  ];
 
   // Build reasoning
-  const reasoningParts: string[] = []
+  const reasoningParts: string[] = [];
 
   if (trainerPattern.relevantPattern) {
-    reasoningParts.push(getTrainerPatternDisplay(trainerPattern))
+    reasoningParts.push(getTrainerPatternDisplay(trainerPattern));
   } else {
-    reasoningParts.push('T: Limited data')
+    reasoningParts.push('T: Limited data');
   }
 
   if (jockeyPattern.relevantPattern) {
-    reasoningParts.push(getJockeyPatternDisplay(jockeyPattern))
+    reasoningParts.push(getJockeyPatternDisplay(jockeyPattern));
   } else {
-    reasoningParts.push('J: Limited data')
+    reasoningParts.push('J: Limited data');
   }
 
   if (hasSignificantPartnership(synergy)) {
-    reasoningParts.push(getSynergyDisplay(synergy))
+    reasoningParts.push(getSynergyDisplay(synergy));
   }
 
-  const reasoning = reasoningParts.join(' | ')
+  const reasoning = reasoningParts.join(' | ');
 
   // Build summary
-  const summaryParts: string[] = []
+  const summaryParts: string[] = [];
 
   if (trainerPattern.relevantPattern) {
-    summaryParts.push(`T: ${trainerPattern.relevantPattern.winRate.toFixed(0)}%`)
+    summaryParts.push(`T: ${trainerPattern.relevantPattern.winRate.toFixed(0)}%`);
   }
   if (jockeyPattern.relevantPattern) {
-    summaryParts.push(`J: ${jockeyPattern.relevantPattern.winRate.toFixed(0)}%`)
+    summaryParts.push(`J: ${jockeyPattern.relevantPattern.winRate.toFixed(0)}%`);
   }
   if (synergy.partnership && synergy.level !== 'none') {
-    summaryParts.push(`Pair: ${synergy.partnership.winRate.toFixed(0)}%`)
+    summaryParts.push(`Pair: ${synergy.partnership.winRate.toFixed(0)}%`);
   }
 
-  const summary = summaryParts.length > 0 ? summaryParts.join(' | ') : 'Limited data'
+  const summary = summaryParts.length > 0 ? summaryParts.join(' | ') : 'Limited data';
 
   // Check for elite connections (score >= 30)
-  const hasEliteConnections = total >= 30
+  const hasEliteConnections = total >= 30;
 
   return {
     total,
@@ -555,7 +554,7 @@ export function calculateDynamicConnectionsScore(
     evidence,
     summary,
     hasEliteConnections,
-  }
+  };
 }
 
 /**
@@ -569,23 +568,23 @@ export function calculateRaceDynamicConnectionsScores(
   horses: HorseEntry[],
   raceHeader: RaceHeader
 ): Map<number, DynamicConnectionsScoreResult> {
-  const results = new Map<number, DynamicConnectionsScoreResult>()
+  const results = new Map<number, DynamicConnectionsScoreResult>();
 
   for (let i = 0; i < horses.length; i++) {
-    results.set(i, calculateDynamicConnectionsScore(horses[i], raceHeader, horses))
+    results.set(i, calculateDynamicConnectionsScore(horses[i], raceHeader, horses));
   }
 
-  return results
+  return results;
 }
 
 /**
  * Get formatted display string for dynamic connections
  */
 export function getDynamicConnectionsDisplay(result: DynamicConnectionsScoreResult): {
-  trainer: string
-  jockey: string
-  partnership: string | null
-  total: string
+  trainer: string;
+  jockey: string;
+  partnership: string | null;
+  total: string;
 } {
   return {
     trainer: result.trainerPattern.relevantPattern
@@ -594,36 +593,37 @@ export function getDynamicConnectionsDisplay(result: DynamicConnectionsScoreResu
     jockey: result.jockeyPattern.relevantPattern
       ? `${result.jockeyPattern.relevantPattern.winRate.toFixed(0)}% win (${result.jockeyPattern.relevantPattern.starts} rides) ${result.jockeyPattern.relevantPattern.description.toLowerCase()}`
       : 'Limited jockey data',
-    partnership: hasSignificantPartnership(result.synergy) && result.synergy.partnership
-      ? `${result.synergy.partnership.winRate.toFixed(0)}% together (${result.synergy.partnership.starts} starts)`
-      : null,
+    partnership:
+      hasSignificantPartnership(result.synergy) && result.synergy.partnership
+        ? `${result.synergy.partnership.winRate.toFixed(0)}% together (${result.synergy.partnership.starts} starts)`
+        : null,
     total: `${result.total}/50 pts`,
-  }
+  };
 }
 
 /**
  * Check if a horse has elite connections (30+ points)
  */
 export function hasEliteConnections(result: DynamicConnectionsScoreResult): boolean {
-  return result.hasEliteConnections
+  return result.hasEliteConnections;
 }
 
 /**
  * Get the tier label for connections score
  */
 export function getConnectionsTier(score: number): 'elite' | 'strong' | 'average' | 'weak' {
-  if (score >= 35) return 'elite'
-  if (score >= 25) return 'strong'
-  if (score >= 15) return 'average'
-  return 'weak'
+  if (score >= 35) return 'elite';
+  if (score >= 25) return 'strong';
+  if (score >= 15) return 'average';
+  return 'weak';
 }
 
 /**
  * Get the tier color for connections score
  */
 export function getConnectionsTierColor(score: number): string {
-  if (score >= 35) return '#22c55e' // Green - elite
-  if (score >= 25) return '#3b82f6' // Blue - strong
-  if (score >= 15) return '#f59e0b' // Amber - average
-  return '#6b7280' // Gray - weak
+  if (score >= 35) return '#22c55e'; // Green - elite
+  if (score >= 25) return '#3b82f6'; // Blue - strong
+  if (score >= 15) return '#f59e0b'; // Amber - average
+  return '#6b7280'; // Gray - weak
 }

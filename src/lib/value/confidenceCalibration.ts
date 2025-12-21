@@ -21,7 +21,7 @@
  * @module value/confidenceCalibration
  */
 
-import { logger } from '../../services/logging'
+import { logger } from '../../services/logging';
 
 // ============================================================================
 // TYPES
@@ -30,83 +30,83 @@ import { logger } from '../../services/logging'
 /** Score tier definition */
 export interface ScoreTier {
   /** Minimum score for this tier */
-  minScore: number
+  minScore: number;
   /** Maximum score for this tier (exclusive) */
-  maxScore: number
+  maxScore: number;
   /** Default win probability for this tier */
-  winProbability: number
+  winProbability: number;
   /** Tier label */
-  label: string
+  label: string;
 }
 
 /** Calibration profile with tier probabilities */
 export interface CalibrationProfile {
   /** Profile name */
-  name: string
+  name: string;
   /** Score tiers with probabilities */
-  tiers: ScoreTier[]
+  tiers: ScoreTier[];
   /** Last updated timestamp */
-  lastUpdated: string
+  lastUpdated: string;
   /** Total sample size used for calibration */
-  sampleSize: number
+  sampleSize: number;
   /** Whether this is the default profile */
-  isDefault: boolean
+  isDefault: boolean;
 }
 
 /** Historical result for calibration tracking */
 export interface CalibrationResult {
   /** Score at time of prediction */
-  score: number
+  score: number;
   /** Predicted win probability */
-  predictedProb: number
+  predictedProb: number;
   /** Actual outcome (1 = win, 0 = loss) */
-  actualOutcome: 0 | 1
+  actualOutcome: 0 | 1;
   /** Odds at time of bet */
-  odds: string
+  odds: string;
   /** Timestamp */
-  timestamp: string
+  timestamp: string;
 }
 
 /** Calibration metrics */
 export interface CalibrationMetrics {
   /** Brier Score (0 = perfect, lower is better) */
-  brierScore: number
+  brierScore: number;
   /** Log Loss (lower is better) */
-  logLoss: number
+  logLoss: number;
   /** Calibration curve deviation */
-  calibrationError: number
+  calibrationError: number;
   /** Total predictions counted */
-  predictionCount: number
+  predictionCount: number;
   /** Metrics by tier */
-  tierMetrics: Map<string, TierMetrics>
+  tierMetrics: Map<string, TierMetrics>;
 }
 
 /** Per-tier calibration metrics */
 export interface TierMetrics {
   /** Tier label */
-  tierLabel: string
+  tierLabel: string;
   /** Predicted win rate (average) */
-  predictedWinRate: number
+  predictedWinRate: number;
   /** Actual win rate */
-  actualWinRate: number
+  actualWinRate: number;
   /** Number of samples */
-  sampleCount: number
+  sampleCount: number;
   /** ROI percentage */
-  roiPercent: number
+  roiPercent: number;
   /** Hit rate difference (actual - predicted) */
-  hitRateDiff: number
+  hitRateDiff: number;
 }
 
 /** Calibration summary for display */
 export interface CalibrationSummary {
   /** Overall accuracy assessment */
-  overallAccuracy: 'excellent' | 'good' | 'fair' | 'needs_adjustment'
+  overallAccuracy: 'excellent' | 'good' | 'fair' | 'needs_adjustment';
   /** Brier score interpretation */
-  brierInterpretation: string
+  brierInterpretation: string;
   /** Tier-level adjustments needed */
-  adjustments: string[]
+  adjustments: string[];
   /** Suggestions for improvement */
-  suggestions: string[]
+  suggestions: string[];
 }
 
 // ============================================================================
@@ -122,18 +122,18 @@ export const DEFAULT_TIERS: ScoreTier[] = [
   { minScore: 120, maxScore: 140, winProbability: 35, label: 'Below Avg (120-139)' },
   { minScore: 100, maxScore: 120, winProbability: 25, label: 'Weak (100-119)' },
   { minScore: 0, maxScore: 100, winProbability: 15, label: 'Poor (<100)' },
-]
+];
 
 /** Brier score thresholds for quality assessment */
 export const BRIER_THRESHOLDS = {
   excellent: 0.15,
-  good: 0.20,
+  good: 0.2,
   fair: 0.25,
-  poor: 0.30,
-} as const
+  poor: 0.3,
+} as const;
 
 /** Minimum sample size for reliable calibration */
-export const MIN_CALIBRATION_SAMPLES = 50
+export const MIN_CALIBRATION_SAMPLES = 50;
 
 // ============================================================================
 // DEFAULT CALIBRATION
@@ -149,7 +149,7 @@ export function getDefaultCalibration(): CalibrationProfile {
     lastUpdated: new Date().toISOString(),
     sampleSize: 0,
     isDefault: true,
-  }
+  };
 }
 
 /**
@@ -160,34 +160,34 @@ export function scoreToWinProbability(
   calibration: CalibrationProfile = getDefaultCalibration()
 ): number {
   // Validate score
-  const validScore = Math.max(0, Math.min(240, score))
+  const validScore = Math.max(0, Math.min(240, score));
 
   // Find matching tier
   for (const tier of calibration.tiers) {
     if (validScore >= tier.minScore && validScore < tier.maxScore) {
       // Linear interpolation within tier
-      const tierRange = tier.maxScore - tier.minScore
-      const scorePosition = validScore - tier.minScore
-      const tierFraction = tierRange > 0 ? scorePosition / tierRange : 0
+      const tierRange = tier.maxScore - tier.minScore;
+      const scorePosition = validScore - tier.minScore;
+      const tierFraction = tierRange > 0 ? scorePosition / tierRange : 0;
 
       // Get next tier probability for interpolation
-      const nextTierIdx = calibration.tiers.findIndex(t => t === tier) - 1
-      const nextTierProb = nextTierIdx >= 0
-        ? calibration.tiers[nextTierIdx].winProbability
-        : tier.winProbability + 10
+      const nextTierIdx = calibration.tiers.findIndex((t) => t === tier) - 1;
+      const nextTierProb =
+        nextTierIdx >= 0 ? calibration.tiers[nextTierIdx].winProbability : tier.winProbability + 10;
 
       // Interpolate between current and next tier
-      const interpolated = tier.winProbability + (tierFraction * (nextTierProb - tier.winProbability))
+      const interpolated =
+        tier.winProbability + tierFraction * (nextTierProb - tier.winProbability);
 
-      return Math.max(5, Math.min(85, interpolated))
+      return Math.max(5, Math.min(85, interpolated));
     }
   }
 
   // Fallback for edge cases
-  if (validScore >= 200) return 75
-  if (validScore < 100) return 15
+  if (validScore >= 200) return 75;
+  if (validScore < 100) return 15;
 
-  return 35 // Default mid-range
+  return 35; // Default mid-range
 }
 
 /**
@@ -204,12 +204,12 @@ export function probabilityToScoreRange(
         min: tier.minScore,
         max: tier.maxScore,
         label: tier.label,
-      }
+      };
     }
   }
 
   // Default range
-  return { min: 140, max: 160, label: 'Unknown' }
+  return { min: 140, max: 160, label: 'Unknown' };
 }
 
 // ============================================================================
@@ -227,15 +227,15 @@ export function probabilityToScoreRange(
  * - Lower is better
  */
 export function calculateBrierScore(results: CalibrationResult[]): number {
-  if (results.length === 0) return 0.25 // Default to random
+  if (results.length === 0) return 0.25; // Default to random
 
   const sumSquaredError = results.reduce((sum, r) => {
-    const prediction = r.predictedProb / 100
-    const error = prediction - r.actualOutcome
-    return sum + (error * error)
-  }, 0)
+    const prediction = r.predictedProb / 100;
+    const error = prediction - r.actualOutcome;
+    return sum + error * error;
+  }, 0);
 
-  return sumSquaredError / results.length
+  return sumSquaredError / results.length;
 }
 
 /**
@@ -246,19 +246,19 @@ export function calculateBrierScore(results: CalibrationResult[]): number {
  * Lower is better, penalizes confident wrong predictions heavily
  */
 export function calculateLogLoss(results: CalibrationResult[]): number {
-  if (results.length === 0) return 1
+  if (results.length === 0) return 1;
 
-  const epsilon = 1e-15 // Prevent log(0)
+  const epsilon = 1e-15; // Prevent log(0)
 
   const sumLogLoss = results.reduce((sum, r) => {
-    const p = Math.max(epsilon, Math.min(1 - epsilon, r.predictedProb / 100))
-    const y = r.actualOutcome
+    const p = Math.max(epsilon, Math.min(1 - epsilon, r.predictedProb / 100));
+    const y = r.actualOutcome;
 
-    const logLoss = -(y * Math.log(p) + (1 - y) * Math.log(1 - p))
-    return sum + logLoss
-  }, 0)
+    const logLoss = -(y * Math.log(p) + (1 - y) * Math.log(1 - p));
+    return sum + logLoss;
+  }, 0);
 
-  return sumLogLoss / results.length
+  return sumLogLoss / results.length;
 }
 
 /**
@@ -266,36 +266,36 @@ export function calculateLogLoss(results: CalibrationResult[]): number {
  * How much predicted probabilities differ from actual outcomes
  */
 export function calculateCalibrationError(results: CalibrationResult[]): number {
-  if (results.length < 10) return 0
+  if (results.length < 10) return 0;
 
   // Group by predicted probability buckets
-  const buckets = new Map<number, { predicted: number; actual: number; count: number }>()
+  const buckets = new Map<number, { predicted: number; actual: number; count: number }>();
 
   for (const r of results) {
     // Round to nearest 10%
-    const bucket = Math.round(r.predictedProb / 10) * 10
+    const bucket = Math.round(r.predictedProb / 10) * 10;
 
-    const current = buckets.get(bucket) || { predicted: 0, actual: 0, count: 0 }
-    current.predicted += r.predictedProb
-    current.actual += r.actualOutcome
-    current.count++
-    buckets.set(bucket, current)
+    const current = buckets.get(bucket) || { predicted: 0, actual: 0, count: 0 };
+    current.predicted += r.predictedProb;
+    current.actual += r.actualOutcome;
+    current.count++;
+    buckets.set(bucket, current);
   }
 
   // Calculate weighted absolute error
-  let totalError = 0
-  let totalWeight = 0
+  let totalError = 0;
+  let totalWeight = 0;
 
   for (const [_, bucket] of buckets) {
     if (bucket.count >= 3) {
-      const avgPredicted = bucket.predicted / bucket.count / 100
-      const avgActual = bucket.actual / bucket.count
-      totalError += Math.abs(avgPredicted - avgActual) * bucket.count
-      totalWeight += bucket.count
+      const avgPredicted = bucket.predicted / bucket.count / 100;
+      const avgActual = bucket.actual / bucket.count;
+      totalError += Math.abs(avgPredicted - avgActual) * bucket.count;
+      totalWeight += bucket.count;
     }
   }
 
-  return totalWeight > 0 ? totalError / totalWeight : 0
+  return totalWeight > 0 ? totalError / totalWeight : 0;
 }
 
 /**
@@ -314,28 +314,26 @@ export function calculateTierMetrics(
       sampleCount: 0,
       roiPercent: 0,
       hitRateDiff: 0,
-    }
+    };
   }
 
-  const wins = results.filter(r => r.actualOutcome === 1).length
-  const actualWinRate = (wins / results.length) * 100
-  const avgPredicted = results.reduce((sum, r) => sum + r.predictedProb, 0) / results.length
+  const wins = results.filter((r) => r.actualOutcome === 1).length;
+  const actualWinRate = (wins / results.length) * 100;
+  const avgPredicted = results.reduce((sum, r) => sum + r.predictedProb, 0) / results.length;
 
   // Calculate ROI (simplified - assumes flat betting)
-  let totalReturns = 0
-  let totalWagered = 0
+  let totalReturns = 0;
+  let totalWagered = 0;
 
   for (const r of results) {
-    const odds = parseFloat(r.odds.split('-')[0]) || 5
-    totalWagered++
+    const odds = parseFloat(r.odds.split('-')[0]) || 5;
+    totalWagered++;
     if (r.actualOutcome === 1) {
-      totalReturns += odds + 1
+      totalReturns += odds + 1;
     }
   }
 
-  const roiPercent = totalWagered > 0
-    ? ((totalReturns - totalWagered) / totalWagered) * 100
-    : 0
+  const roiPercent = totalWagered > 0 ? ((totalReturns - totalWagered) / totalWagered) * 100 : 0;
 
   return {
     tierLabel,
@@ -344,7 +342,7 @@ export function calculateTierMetrics(
     sampleCount: results.length,
     roiPercent,
     hitRateDiff: actualWinRate - avgPredicted,
-  }
+  };
 }
 
 /**
@@ -354,40 +352,35 @@ export function calculateCalibrationMetrics(
   results: CalibrationResult[],
   calibration: CalibrationProfile = getDefaultCalibration()
 ): CalibrationMetrics {
-  const brierScore = calculateBrierScore(results)
-  const logLoss = calculateLogLoss(results)
-  const calibrationError = calculateCalibrationError(results)
+  const brierScore = calculateBrierScore(results);
+  const logLoss = calculateLogLoss(results);
+  const calibrationError = calculateCalibrationError(results);
 
   // Group results by tier
-  const tierResults = new Map<string, CalibrationResult[]>()
+  const tierResults = new Map<string, CalibrationResult[]>();
 
   for (const r of results) {
-    const tier = calibration.tiers.find(t =>
-      r.score >= t.minScore && r.score < t.maxScore
-    )
-    const tierLabel = tier?.label || 'Unknown'
+    const tier = calibration.tiers.find((t) => r.score >= t.minScore && r.score < t.maxScore);
+    const tierLabel = tier?.label || 'Unknown';
 
-    const current = tierResults.get(tierLabel) || []
-    current.push(r)
-    tierResults.set(tierLabel, current)
+    const current = tierResults.get(tierLabel) || [];
+    current.push(r);
+    tierResults.set(tierLabel, current);
   }
 
   // Calculate per-tier metrics
-  const tierMetrics = new Map<string, TierMetrics>()
+  const tierMetrics = new Map<string, TierMetrics>();
 
   for (const tier of calibration.tiers) {
-    const tierData = tierResults.get(tier.label) || []
-    tierMetrics.set(
-      tier.label,
-      calculateTierMetrics(tier.label, tierData, tier.winProbability)
-    )
+    const tierData = tierResults.get(tier.label) || [];
+    tierMetrics.set(tier.label, calculateTierMetrics(tier.label, tierData, tier.winProbability));
   }
 
   logger.logDebug('Calibration metrics calculated', {
     component: 'confidenceCalibration',
     brierScore: brierScore.toFixed(3),
     predictionCount: results.length,
-  })
+  });
 
   return {
     brierScore,
@@ -395,7 +388,7 @@ export function calculateCalibrationMetrics(
     calibrationError,
     predictionCount: results.length,
     tierMetrics,
-  }
+  };
 }
 
 // ============================================================================
@@ -406,49 +399,50 @@ export function calculateCalibrationMetrics(
  * Generate calibration summary with recommendations
  */
 export function generateCalibrationSummary(metrics: CalibrationMetrics): CalibrationSummary {
-  const adjustments: string[] = []
-  const suggestions: string[] = []
+  const adjustments: string[] = [];
+  const suggestions: string[] = [];
 
   // Assess overall accuracy
-  let overallAccuracy: CalibrationSummary['overallAccuracy'] = 'good'
+  let overallAccuracy: CalibrationSummary['overallAccuracy'] = 'good';
 
   if (metrics.brierScore <= BRIER_THRESHOLDS.excellent) {
-    overallAccuracy = 'excellent'
+    overallAccuracy = 'excellent';
   } else if (metrics.brierScore <= BRIER_THRESHOLDS.good) {
-    overallAccuracy = 'good'
+    overallAccuracy = 'good';
   } else if (metrics.brierScore <= BRIER_THRESHOLDS.fair) {
-    overallAccuracy = 'fair'
+    overallAccuracy = 'fair';
   } else {
-    overallAccuracy = 'needs_adjustment'
+    overallAccuracy = 'needs_adjustment';
   }
 
   // Interpret Brier score
-  let brierInterpretation = ''
+  let brierInterpretation = '';
   if (metrics.brierScore < 0.15) {
-    brierInterpretation = 'Excellent prediction accuracy. Probabilities are well-calibrated.'
-  } else if (metrics.brierScore < 0.20) {
-    brierInterpretation = 'Good prediction accuracy. Minor calibration improvements possible.'
+    brierInterpretation = 'Excellent prediction accuracy. Probabilities are well-calibrated.';
+  } else if (metrics.brierScore < 0.2) {
+    brierInterpretation = 'Good prediction accuracy. Minor calibration improvements possible.';
   } else if (metrics.brierScore < 0.25) {
-    brierInterpretation = 'Fair prediction accuracy. Consider adjusting tier probabilities.'
+    brierInterpretation = 'Fair prediction accuracy. Consider adjusting tier probabilities.';
   } else {
-    brierInterpretation = 'Prediction accuracy needs improvement. Significant calibration required.'
+    brierInterpretation =
+      'Prediction accuracy needs improvement. Significant calibration required.';
   }
 
   // Check each tier for adjustments
   for (const [tierLabel, tierMetric] of metrics.tierMetrics) {
-    if (tierMetric.sampleCount < 10) continue
+    if (tierMetric.sampleCount < 10) continue;
 
-    const diff = tierMetric.hitRateDiff
+    const diff = tierMetric.hitRateDiff;
 
     if (Math.abs(diff) > 10) {
       if (diff > 0) {
         adjustments.push(
           `${tierLabel}: Underestimating win rate. Actual: ${tierMetric.actualWinRate.toFixed(0)}%, Predicted: ${tierMetric.predictedWinRate.toFixed(0)}%. Consider increasing probability.`
-        )
+        );
       } else {
         adjustments.push(
           `${tierLabel}: Overestimating win rate. Actual: ${tierMetric.actualWinRate.toFixed(0)}%, Predicted: ${tierMetric.predictedWinRate.toFixed(0)}%. Consider decreasing probability.`
-        )
+        );
       }
     }
 
@@ -456,11 +450,11 @@ export function generateCalibrationSummary(metrics: CalibrationMetrics): Calibra
     if (tierMetric.roiPercent < -20 && tierMetric.sampleCount >= 20) {
       suggestions.push(
         `${tierLabel}: Negative ROI (${tierMetric.roiPercent.toFixed(0)}%). May be overbetting this tier.`
-      )
+      );
     } else if (tierMetric.roiPercent > 20 && tierMetric.sampleCount >= 20) {
       suggestions.push(
         `${tierLabel}: Strong ROI (${tierMetric.roiPercent.toFixed(0)}%). Consider increasing bet size.`
-      )
+      );
     }
   }
 
@@ -468,13 +462,11 @@ export function generateCalibrationSummary(metrics: CalibrationMetrics): Calibra
   if (metrics.predictionCount < MIN_CALIBRATION_SAMPLES) {
     suggestions.push(
       `Need ${MIN_CALIBRATION_SAMPLES - metrics.predictionCount} more predictions for reliable calibration.`
-    )
+    );
   }
 
   if (metrics.calibrationError > 0.15) {
-    suggestions.push(
-      'High calibration error detected. Predictions may be over/underconfident.'
-    )
+    suggestions.push('High calibration error detected. Predictions may be over/underconfident.');
   }
 
   return {
@@ -482,7 +474,7 @@ export function generateCalibrationSummary(metrics: CalibrationMetrics): Calibra
     brierInterpretation,
     adjustments,
     suggestions,
-  }
+  };
 }
 
 /**
@@ -492,26 +484,24 @@ export function suggestAdjustedProbabilities(
   metrics: CalibrationMetrics,
   currentCalibration: CalibrationProfile
 ): CalibrationProfile {
-  const adjustedTiers = currentCalibration.tiers.map(tier => {
-    const tierMetric = metrics.tierMetrics.get(tier.label)
+  const adjustedTiers = currentCalibration.tiers.map((tier) => {
+    const tierMetric = metrics.tierMetrics.get(tier.label);
 
     if (!tierMetric || tierMetric.sampleCount < 20) {
-      return tier // Not enough data, keep current
+      return tier; // Not enough data, keep current
     }
 
     // Blend current probability with actual win rate
     // Weight towards actual as sample size grows
-    const sampleWeight = Math.min(0.7, tierMetric.sampleCount / 100)
-    const adjustedProb = (
-      tier.winProbability * (1 - sampleWeight) +
-      tierMetric.actualWinRate * sampleWeight
-    )
+    const sampleWeight = Math.min(0.7, tierMetric.sampleCount / 100);
+    const adjustedProb =
+      tier.winProbability * (1 - sampleWeight) + tierMetric.actualWinRate * sampleWeight;
 
     return {
       ...tier,
       winProbability: Math.round(adjustedProb),
-    }
-  })
+    };
+  });
 
   return {
     ...currentCalibration,
@@ -520,7 +510,7 @@ export function suggestAdjustedProbabilities(
     sampleSize: metrics.predictionCount,
     isDefault: false,
     name: 'Adjusted Calibration',
-  }
+  };
 }
 
 // ============================================================================
@@ -528,28 +518,28 @@ export function suggestAdjustedProbabilities(
 // ============================================================================
 
 /** Storage key for calibration results */
-const CALIBRATION_RESULTS_KEY = 'furlong_calibration_results'
-const CALIBRATION_PROFILE_KEY = 'furlong_calibration_profile'
+const CALIBRATION_RESULTS_KEY = 'furlong_calibration_results';
+const CALIBRATION_PROFILE_KEY = 'furlong_calibration_profile';
 
 /**
  * Save calibration result (prep for Phase 4)
  */
 export function saveCalibrationResult(result: CalibrationResult): void {
   try {
-    const stored = localStorage.getItem(CALIBRATION_RESULTS_KEY)
-    const results: CalibrationResult[] = stored ? JSON.parse(stored) : []
+    const stored = localStorage.getItem(CALIBRATION_RESULTS_KEY);
+    const results: CalibrationResult[] = stored ? JSON.parse(stored) : [];
 
     // Keep last 1000 results
     if (results.length >= 1000) {
-      results.shift()
+      results.shift();
     }
 
-    results.push(result)
-    localStorage.setItem(CALIBRATION_RESULTS_KEY, JSON.stringify(results))
+    results.push(result);
+    localStorage.setItem(CALIBRATION_RESULTS_KEY, JSON.stringify(results));
   } catch (_error) {
     logger.logWarning('Failed to save calibration result', {
       component: 'confidenceCalibration',
-    })
+    });
   }
 }
 
@@ -558,10 +548,10 @@ export function saveCalibrationResult(result: CalibrationResult): void {
  */
 export function loadCalibrationResults(): CalibrationResult[] {
   try {
-    const stored = localStorage.getItem(CALIBRATION_RESULTS_KEY)
-    return stored ? JSON.parse(stored) : []
+    const stored = localStorage.getItem(CALIBRATION_RESULTS_KEY);
+    return stored ? JSON.parse(stored) : [];
   } catch {
-    return []
+    return [];
   }
 }
 
@@ -570,11 +560,11 @@ export function loadCalibrationResults(): CalibrationResult[] {
  */
 export function saveCalibrationProfile(profile: CalibrationProfile): void {
   try {
-    localStorage.setItem(CALIBRATION_PROFILE_KEY, JSON.stringify(profile))
+    localStorage.setItem(CALIBRATION_PROFILE_KEY, JSON.stringify(profile));
   } catch (_error) {
     logger.logWarning('Failed to save calibration profile', {
       component: 'confidenceCalibration',
-    })
+    });
   }
 }
 
@@ -583,20 +573,20 @@ export function saveCalibrationProfile(profile: CalibrationProfile): void {
  */
 export function loadCalibrationProfile(): CalibrationProfile {
   try {
-    const stored = localStorage.getItem(CALIBRATION_PROFILE_KEY)
+    const stored = localStorage.getItem(CALIBRATION_PROFILE_KEY);
     if (stored) {
-      return JSON.parse(stored)
+      return JSON.parse(stored);
     }
   } catch {
     // Fall through to default
   }
-  return getDefaultCalibration()
+  return getDefaultCalibration();
 }
 
 /**
  * Clear calibration data
  */
 export function clearCalibrationData(): void {
-  localStorage.removeItem(CALIBRATION_RESULTS_KEY)
-  localStorage.removeItem(CALIBRATION_PROFILE_KEY)
+  localStorage.removeItem(CALIBRATION_RESULTS_KEY);
+  localStorage.removeItem(CALIBRATION_PROFILE_KEY);
 }
