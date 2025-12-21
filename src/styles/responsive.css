@@ -261,7 +261,7 @@
     max-width: var(--modal-max-tablet);
     height: auto;
     max-height: 90vh;
-    border-radius: 20px;
+    border-radius: var(--radius-lg);
   }
 }
 
@@ -528,7 +528,7 @@
   max-height: 90vh;
   background-color: var(--color-surface, #1a1a1c);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -577,7 +577,7 @@
   max-height: 90vh;
   background-color: var(--color-surface, #1a1a1c);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -637,7 +637,7 @@
   max-height: 90vh;
   background-color: var(--color-surface, #1a1a1c);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -693,7 +693,7 @@
   gap: 0.5rem;
   padding: 0.75rem;
   background-color: var(--color-surface-variant, #242428);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   margin-bottom: 1rem;
   max-width: 100%;
   overflow-x: hidden;
@@ -706,7 +706,7 @@
   padding: 0.5rem 0.875rem;
   background-color: var(--color-surface, #1a1a1c);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 500;
   color: rgba(238, 239, 241, 0.8);
@@ -750,7 +750,7 @@
   padding: 0.75rem 1rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-on-surface, #eeeff1);
@@ -774,7 +774,7 @@
   z-index: 100;
   background-color: var(--color-surface, #1a1a1c);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   max-width: 100%;
@@ -852,7 +852,7 @@
   padding: 0.875rem 1rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-on-surface, #eeeff1);
@@ -926,7 +926,7 @@
   padding: 0.625rem 0.75rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 500;
   color: rgba(238, 239, 241, 0.7);
@@ -944,7 +944,7 @@
 .exotic-recommendation {
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid rgba(34, 197, 94, 0.3);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   margin-bottom: 1rem;
   max-width: 100%;
@@ -1006,7 +1006,7 @@
   padding: 0.5rem 0.875rem;
   background-color: rgba(25, 171, 181, 0.15);
   border: 1px solid var(--color-primary, #19abb5);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--color-primary, #19abb5);
@@ -1042,7 +1042,7 @@
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
 }
 
@@ -1099,7 +1099,7 @@
   padding: 0.75rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px dashed var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 500;
   color: rgba(238, 239, 241, 0.7);
@@ -1134,7 +1134,7 @@
   padding: 0.875rem 1rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-on-surface, #eeeff1);
@@ -1165,7 +1165,7 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 500;
 }
@@ -1228,7 +1228,7 @@
 .dutch-combination-card {
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   margin-bottom: 0.75rem;
   max-width: 100%;
@@ -1270,7 +1270,7 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 500;
 }
@@ -1313,7 +1313,7 @@
 
 .dutch-combination-bets {
   background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 0.5rem;
   margin-bottom: 0.75rem;
   max-width: 100%;
@@ -1357,7 +1357,7 @@
   padding: 0.625rem;
   background-color: rgba(25, 171, 181, 0.15);
   border: 1px solid var(--color-primary, #19abb5);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--color-primary, #19abb5);
@@ -1407,7 +1407,7 @@
   padding: 0.75rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px dashed var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 500;
   color: rgba(238, 239, 241, 0.7);
@@ -1433,7 +1433,7 @@
 /* Dutch Builder Panel */
 .dutch-builder-panel {
   background-color: var(--color-surface-variant, #242428);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 1rem;
   margin-bottom: 0.75rem;
   max-width: 100%;
@@ -1469,7 +1469,7 @@
   padding: 0.625rem;
   background-color: var(--color-surface, #1a1a1c);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.15s ease;
   position: relative;
@@ -1515,7 +1515,7 @@
 /* Dutch Live Result */
 .dutch-live-result {
   padding: 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 0.75rem;
 }
 
@@ -1584,7 +1584,7 @@
   padding: 0.625rem;
   background-color: rgba(34, 197, 94, 0.15);
   border: 1px solid #22c55e;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 500;
   color: #22c55e;
@@ -1631,7 +1631,7 @@
   padding: 0.75rem;
   background-color: rgba(25, 171, 181, 0.1);
   border: 1px solid rgba(25, 171, 181, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   color: rgba(238, 239, 241, 0.7);
 }
@@ -1665,7 +1665,7 @@
   padding: 0.875rem 1rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-on-surface, #eeeff1);
@@ -1697,7 +1697,7 @@
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
   background-color: rgba(34, 197, 94, 0.15);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 500;
   color: #22c55e;
@@ -1706,7 +1706,7 @@
 .multirace-opportunity-badge {
   padding: 0.25rem 0.5rem;
   background-color: rgba(25, 171, 181, 0.15);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--color-primary, #19abb5);
@@ -1729,7 +1729,7 @@
   padding: 0.75rem;
   background-color: rgba(25, 171, 181, 0.1);
   border: 1px solid rgba(25, 171, 181, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 0.75rem;
   font-size: 0.8125rem;
   color: var(--color-on-surface, #eeeff1);
@@ -1753,7 +1753,7 @@
   align-items: center;
   gap: 0.375rem;
   padding: 0.375rem 0.625rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 500;
 }
@@ -1799,7 +1799,7 @@
 .multirace-bet-card {
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   transition: border-color 0.15s ease;
 }
@@ -1850,7 +1850,7 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 500;
 }
@@ -1892,7 +1892,7 @@
   padding: 0.5rem 0.75rem;
   background-color: rgba(25, 171, 181, 0.15);
   border: 1px solid var(--color-primary, #19abb5);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--color-primary, #19abb5);
@@ -1919,7 +1919,7 @@
   padding: 0.75rem;
   background-color: rgba(25, 171, 181, 0.1);
   border: 1px solid rgba(25, 171, 181, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   color: rgba(238, 239, 241, 0.7);
 }
@@ -2049,7 +2049,7 @@
   padding: 0.5rem 0.75rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 500;
   color: rgba(238, 239, 241, 0.7);
@@ -2105,7 +2105,7 @@
   padding: 0.5rem 0.75rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.15s ease;
   flex-shrink: 0;
@@ -2150,7 +2150,7 @@
   height: 16px;
   padding: 0 4px;
   background-color: var(--color-primary, #19abb5);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.625rem;
   font-weight: 600;
   color: #fff;
@@ -2190,7 +2190,7 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 500;
 }
@@ -2202,7 +2202,7 @@
   padding: 0.375rem 0.625rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 500;
   color: rgba(238, 239, 241, 0.7);
@@ -2227,7 +2227,7 @@
   padding: 0.625rem 0.75rem;
   background-color: rgba(25, 171, 181, 0.1);
   border: 1px solid rgba(25, 171, 181, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 0.75rem;
 }
 
@@ -2247,7 +2247,7 @@
   padding: 0.375rem 0.625rem;
   background-color: var(--color-primary, #19abb5);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 500;
   color: #fff;
@@ -2280,7 +2280,7 @@
   padding: 0.625rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.15s ease;
   position: relative;
@@ -2378,7 +2378,7 @@
   padding: 0.5rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.75rem;
   font-weight: 500;
   color: rgba(238, 239, 241, 0.7);
@@ -2411,7 +2411,7 @@
   padding: 0.5rem 0.875rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 500;
   color: rgba(238, 239, 241, 0.7);
@@ -2436,7 +2436,7 @@
   padding: 0.75rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .multirace-preview-header {
@@ -2512,7 +2512,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   margin-bottom: 0.375rem;
 }
@@ -2551,7 +2551,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -2603,7 +2603,7 @@
   padding: 0.875rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   margin-bottom: 0.5rem;
   transition: border-color 0.15s ease;
   max-width: 100%;
@@ -2633,7 +2633,7 @@
   height: 28px;
   background-color: var(--color-surface, #1a1a1c);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
   flex-shrink: 0;
@@ -2722,7 +2722,7 @@
   padding: 0.25rem 0.5rem;
   background-color: rgba(25, 171, 181, 0.15);
   border: 1px solid rgba(25, 171, 181, 0.3);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--color-primary, #19abb5);
@@ -2834,7 +2834,7 @@
   align-items: center;
   background-color: var(--color-surface, #1a1a1c);
   border: 1px solid var(--color-primary, #19abb5);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -2867,7 +2867,7 @@
   padding: 0.5rem 0.75rem;
   background-color: var(--color-surface, #1a1a1c);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -3039,7 +3039,7 @@
   align-items: center;
   gap: 0.375rem;
   padding: 0.625rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -3094,7 +3094,7 @@
   height: 20px;
   padding: 0 6px;
   background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-size: 0.6875rem;
   font-weight: 600;
 }
@@ -3125,7 +3125,7 @@
   gap: 0.375rem;
   padding: 0.375rem 0.75rem;
   border: 1px solid;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 600;
 }
@@ -3186,7 +3186,7 @@
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   background-color: #22c55e;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
   font-weight: 500;
   color: #fff;
@@ -3290,7 +3290,7 @@
   padding: 0.625rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.15s ease;
   text-align: left;
@@ -3333,7 +3333,7 @@
   padding: 0.5rem 0.875rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 500;
   color: rgba(238, 239, 241, 0.7);
@@ -3372,7 +3372,7 @@
   padding: 0.625rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.15s ease;
   position: relative;
@@ -3442,7 +3442,7 @@
 .exotic-preview-section {
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 0.75rem;
   margin-bottom: 1rem;
 }
@@ -3589,7 +3589,7 @@
   padding: 0.75rem;
   background-color: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   color: #ef4444;
 }
@@ -3613,7 +3613,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -3757,7 +3757,7 @@
   padding: 0.75rem;
   background-color: var(--color-surface-variant, #242428);
   border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .bet-slip-item-header {
@@ -3805,7 +3805,7 @@
   gap: 0.5rem;
   padding: 0.5rem;
   background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .bet-slip-instruction-text {
@@ -3882,7 +3882,7 @@
   justify-content: center;
   gap: 0.375rem;
   padding: 0.625rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;

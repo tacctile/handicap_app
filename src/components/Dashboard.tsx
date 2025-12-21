@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sidebar, TopBar, MobileNav, Footer } from './layout';
+import { Sidebar, TopBar, MobileNav, Footer, RaceTabsBar, BettingDrawer, StatusBar } from './layout';
 import type { LegalContentType } from './legal';
 import { EmptyStateTable } from './cards';
 import { FileUpload } from './FileUpload';
@@ -11,6 +11,7 @@ import { DataValidationWarning } from './ErrorBoundary';
 import { FadeIn } from './motion';
 import { BankrollSettings } from './BankrollSettings';
 import { BankrollSummaryCard } from './BankrollSummaryCard';
+import { BettingRecommendations } from './BettingRecommendations';
 import { PostTimeDetailModal } from './PostTimeCountdown';
 import { useToastContext } from '../contexts/ToastContext';
 import { OfflineIndicator } from './OfflineIndicator';
@@ -66,6 +67,7 @@ export function Dashboard({
   const [mobileTab, setMobileTab] = useState<'dashboard' | 'upload' | 'settings'>('dashboard');
   const [bankrollSettingsOpen, setBankrollSettingsOpen] = useState(false);
   const [postTimeDetailOpen, setPostTimeDetailOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(true);
 
   // Bankroll management hook
   const bankroll = useBankroll();
@@ -245,6 +247,27 @@ export function Dashboard({
       postTime: race?.header?.postTime,
     };
   }, [parsedData, selectedRaceIndex]);
+
+  // Compute race tabs data for panel architecture
+  const raceTabsData = useMemo(() => {
+    if (!parsedData || !parsedData.races.length) return [];
+
+    return parsedData.races.map((race, index) => ({
+      raceNumber: race.header.raceNumber,
+      surface: race.header.surface || 'Dirt',
+      distance: race.header.distance || '',
+      confidence: raceConfidences.get(index) || 0,
+    }));
+  }, [parsedData, raceConfidences]);
+
+  // Track code and date for RaceTabsBar
+  const trackCode = parsedData?.races[0]?.header?.trackCode || '';
+  const raceDate = parsedData?.races[0]?.header?.raceDate || '';
+
+  // Toggle drawer
+  const toggleDrawer = useCallback(() => {
+    setDrawerOpen((prev) => !prev);
+  }, []);
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -487,22 +510,74 @@ export function Dashboard({
                 </div>
               </motion.div>
             ) : parsedData.races[selectedRaceIndex] ? (
-              // Race Detail - single race deep dive
+              // Race Detail - single race deep dive with panel architecture
               <motion.div
                 key="detail"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
-                className="dashboard-detail-container"
+                className="dashboard-detail-container panel-layout"
               >
-                <RaceDetail
-                  race={parsedData.races[selectedRaceIndex]}
-                  confidence={currentRaceConfidence}
-                  raceState={raceState}
-                  bankroll={bankroll}
-                  onBack={handleBackToOverview}
-                  onOpenBankrollSettings={openBankrollSettings}
+                {/* Race Tabs Bar */}
+                <RaceTabsBar
+                  races={raceTabsData}
+                  activeRaceIndex={selectedRaceIndex}
+                  onRaceSelect={(index) => setSelectedRaceIndex(index)}
+                  trackCode={trackCode}
+                  raceDate={raceDate}
+                />
+
+                {/* Main content area with drawer */}
+                <div className="panel-layout-main">
+                  {/* Analysis Area */}
+                  <div className="analysis-area">
+                    <div className="analysis-area-content">
+                      <RaceDetail
+                        race={parsedData.races[selectedRaceIndex]}
+                        confidence={currentRaceConfidence}
+                        raceState={raceState}
+                        bankroll={bankroll}
+                        onBack={handleBackToOverview}
+                        onOpenBankrollSettings={openBankrollSettings}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Betting Drawer */}
+                  <BettingDrawer
+                    isOpen={drawerOpen}
+                    onToggle={toggleDrawer}
+                    bankrollContent={
+                      <BankrollSummaryCard
+                        bankroll={bankroll}
+                        onOpenSettings={openBankrollSettings}
+                        variant="compact"
+                      />
+                    }
+                    recommendationsContent={
+                      currentRaceScoredHorses.length > 0 ? (
+                        <BettingRecommendations
+                          horses={currentRaceScoredHorses}
+                          raceNumber={parsedData.races[selectedRaceIndex].header.raceNumber}
+                          bankroll={bankroll}
+                          onOpenBankrollSettings={openBankrollSettings}
+                        />
+                      ) : (
+                        <div className="betting-empty-state">
+                          <span className="material-icons betting-empty-icon">info</span>
+                          <p>No betting recommendations available</p>
+                        </div>
+                      )
+                    }
+                  />
+                </div>
+
+                {/* Status Bar */}
+                <StatusBar
+                  trackDbLoaded={true}
+                  isCalculating={false}
+                  isOffline={false}
                 />
               </motion.div>
             ) : null}

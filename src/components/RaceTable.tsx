@@ -3,7 +3,6 @@ import type { ParsedRace, HorseEntry } from '../types/drf';
 import type { TrackCondition, UseRaceStateReturn } from '../hooks/useRaceState';
 import type { UseBankrollReturn } from '../hooks/useBankroll';
 import { RaceControls } from './RaceControls';
-import { BettingRecommendations } from './BettingRecommendations';
 import { HorseDetailModal } from './HorseDetailModal';
 import { CalculationStatus } from './CalculationStatus';
 import { ToastContainer, useToasts } from './Toast';
@@ -1611,22 +1610,14 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
         })}
       </div>
 
-      {/* Betting Recommendations with Calculation Status */}
+      {/* Calculation Status */}
       {scoredHorses.length > 0 && (
-        <>
-          <CalculationStatus
-            calculationState={calculationState}
-            horsesAnalyzed={horses.length}
-            activeHorses={activeHorses}
-            confidenceLevel={confidenceLevel}
-          />
-          <BettingRecommendations
-            horses={scoredHorses}
-            raceNumber={header.raceNumber}
-            bankroll={bankroll}
-            onOpenBankrollSettings={onOpenBankrollSettings}
-          />
-        </>
+        <CalculationStatus
+          calculationState={calculationState}
+          horsesAnalyzed={horses.length}
+          activeHorses={activeHorses}
+          confidenceLevel={confidenceLevel}
+        />
       )}
 
       {/* Horse Detail Modal */}
