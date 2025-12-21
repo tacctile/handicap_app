@@ -4,12 +4,15 @@
  * Wraps features that require an active subscription.
  * Shows an inline upgrade prompt if user is not subscribed.
  * Useful for gating individual features within a page.
+ *
+ * Can also show a full-page subscription page for route-level gating.
  */
 
 import { type ReactNode, type CSSProperties } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useSubscription } from '../hooks/useSubscription'
 import { useFeatureFlag } from '../hooks/useFeatureFlag'
+import { SubscriptionPage } from './subscription'
 
 // ============================================================================
 // TYPES
@@ -30,6 +33,8 @@ export interface SubscriptionGateProps {
   className?: string
   /** Whether to hide completely instead of showing prompt */
   hideWhenLocked?: boolean
+  /** Show full-page subscription page instead of inline prompt */
+  fullPage?: boolean
 }
 
 // ============================================================================
@@ -228,6 +233,11 @@ function BlurredPreview({
  * <SubscriptionGate hideWhenLocked>
  *   <SecretFeature />
  * </SubscriptionGate>
+ *
+ * // Full page paywall
+ * <SubscriptionGate fullPage>
+ *   <Dashboard />
+ * </SubscriptionGate>
  * ```
  */
 export function SubscriptionGate({
@@ -238,14 +248,64 @@ export function SubscriptionGate({
   style,
   className,
   hideWhenLocked = false,
+  fullPage = false,
 }: SubscriptionGateProps) {
   const subscriptionRequired = useFeatureFlag('SUBSCRIPTION_REQUIRED')
   const { isAuthenticated } = useAuth()
-  const { isActive, isLoading, openCheckout } = useSubscription()
+  const { isActive, isLoading, openCheckout, refresh } = useSubscription()
 
   // If subscription checking is disabled, show content
   if (!subscriptionRequired) {
     return <>{children}</>
+  }
+
+  // Handle loading state for full-page mode
+  if (fullPage && isLoading) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#0A0A0B',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px',
+          }}
+        >
+          <div
+            style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              border: '3px solid #2A2A2C',
+              borderTopColor: '#19abb5',
+              animation: 'spin 1s linear infinite',
+            }}
+          />
+          <p
+            style={{
+              fontSize: '14px',
+              color: '#6E6E70',
+              margin: 0,
+            }}
+          >
+            Checking subscription...
+          </p>
+          <style>{`
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      </div>
+    )
   }
 
   // If user is not authenticated, they can't have a subscription
@@ -253,6 +313,15 @@ export function SubscriptionGate({
   if (!isAuthenticated) {
     if (hideWhenLocked) {
       return null
+    }
+
+    // Show full-page subscription page for unauthenticated users too
+    if (fullPage) {
+      return (
+        <SubscriptionPage
+          context={featureName ? `${featureName} requires a subscription` : undefined}
+        />
+      )
     }
 
     if (fallback) {
@@ -307,6 +376,16 @@ export function SubscriptionGate({
   // User is authenticated but not subscribed
   if (hideWhenLocked) {
     return null
+  }
+
+  // Show full-page subscription page
+  if (fullPage) {
+    return (
+      <SubscriptionPage
+        context={featureName ? `${featureName} requires a subscription` : undefined}
+        onSubscribe={refresh}
+      />
+    )
   }
 
   // Show custom fallback if provided
