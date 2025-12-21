@@ -42,6 +42,7 @@ interface DashboardProps {
   raceState: ReturnType<typeof useRaceState>
   onOpenLegalModal: (type: LegalContentType) => void
   onNavigateToAccount?: () => void
+  onNavigateToHelp?: () => void
 }
 
 export function Dashboard({
@@ -54,6 +55,7 @@ export function Dashboard({
   raceState,
   onOpenLegalModal,
   onNavigateToAccount,
+  onNavigateToHelp,
 }: DashboardProps) {
   // View management state
   const [currentView, setCurrentView] = useState<ViewMode>('overview')
@@ -272,6 +274,7 @@ export function Dashboard({
         trackDbLoaded={true}
         onOpenLegalModal={onOpenLegalModal}
         onNavigateToAccount={onNavigateToAccount}
+        onNavigateToHelp={onNavigateToHelp}
       />
 
       {/* Main container */}

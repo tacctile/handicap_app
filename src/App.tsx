@@ -6,6 +6,7 @@ import { ToastProvider, useToastContext } from './contexts/ToastContext'
 import { DisclaimerBanner, LegalModal } from './components/legal'
 import type { LegalContentType } from './components/legal'
 import { AuthPage, AccountSettings } from './components/auth'
+import { HelpCenter } from './components/help'
 import { useRaceState } from './hooks/useRaceState'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useAnalytics } from './hooks/useAnalytics'
@@ -15,12 +16,13 @@ import { logger } from './services/logging'
 import type { ParsedDRFFile } from './types/drf'
 import './styles/responsive.css'
 import './styles/dashboard.css'
+import './styles/help.css'
 
 // ============================================================================
 // ROUTE TYPES
 // ============================================================================
 
-type AppRoute = 'dashboard' | 'account'
+type AppRoute = 'dashboard' | 'account' | 'help'
 
 function AppContent() {
   const [parsedData, setParsedData] = useState<ParsedDRFFile | null>(null)
@@ -62,6 +64,10 @@ function AppContent() {
 
   const navigateToDashboard = useCallback(() => {
     setCurrentRoute('dashboard')
+  }, [])
+
+  const navigateToHelp = useCallback(() => {
+    setCurrentRoute('help')
   }, [])
 
   // Handle successful auth (login/signup)
@@ -234,6 +240,15 @@ function AppContent() {
     )
   }
 
+  // Show help center
+  if (currentRoute === 'help') {
+    return (
+      <ErrorBoundary onReset={handleFullReset}>
+        <HelpCenter onBack={navigateToDashboard} />
+      </ErrorBoundary>
+    )
+  }
+
   // Show account settings page
   if (currentRoute === 'account') {
     return (
@@ -265,6 +280,7 @@ function AppContent() {
           setLegalModalOpen(true)
         }}
         onNavigateToAccount={navigateToAccount}
+        onNavigateToHelp={navigateToHelp}
       />
 
       {/* Legal Modal - shared across app */}
