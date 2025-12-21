@@ -54,8 +54,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // State for expanded horse in horse list
   const [expandedHorseId, setExpandedHorseId] = useState<string | number | null>(null);
 
+  // State for horses selected for comparison
+  const [compareHorses, setCompareHorses] = useState<Set<number>>(new Set());
+
   const toggleHorseExpand = (horseId: string | number) => {
     setExpandedHorseId((prev) => (prev === horseId ? null : horseId));
+  };
+
+  // Handler for toggling compare selection
+  const handleCompareToggle = (programNumber: number, selected: boolean) => {
+    setCompareHorses((prev) => {
+      const next = new Set(prev);
+      if (selected) {
+        next.add(programNumber);
+      } else {
+        next.delete(programNumber);
+      }
+      return next;
+    });
   };
 
   // Debug: Log parsed data when it changes
@@ -87,11 +103,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   }, [parsedData]);
 
-  // Reset scratches, odds, and expanded state when race changes
+  // Reset scratches, odds, expanded state, and compare selections when race changes
   useEffect(() => {
     raceState.resetAll();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional reset on race selection change
     setExpandedHorseId(null);
+    setCompareHorses(new Set());
   }, [selectedRaceIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Calculate scored horses for current race (needed for betting recommendations)
@@ -639,15 +656,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                   const currentOdds = parseOdds(currentOddsString);
                   const isScratched = raceState.isScratched(horseIndex);
+                  const pp = horse.programNumber || horseIndex + 1;
 
                   // Handle odds change - convert back to string format for raceState
                   const handleOddsChange = (odds: { numerator: number; denominator: number }) => {
                     raceState.updateOdds(horseIndex, `${odds.numerator}-${odds.denominator}`);
                   };
 
-                  // Handle scratch toggle
+                  // Handle scratch toggle - also removes from compare if scratched
                   const handleScratchToggle = (scratched: boolean) => {
                     raceState.setScratch(horseIndex, scratched);
+                    // Also remove from compare if scratched
+                    if (scratched) {
+                      setCompareHorses((prev) => {
+                        const next = new Set(prev);
+                        next.delete(pp);
+                        return next;
+                      });
+                    }
                   };
 
                   return (
@@ -666,6 +692,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         onScratchToggle={handleScratchToggle}
                         currentOdds={currentOdds}
                         onOddsChange={handleOddsChange}
+                        isCompareSelected={compareHorses.has(pp)}
+                        onCompareToggle={(selected) => handleCompareToggle(pp, selected)}
                       />
                       {expandedHorseId === horseId && !isScratched && (
                         <div className="horse-expanded">
