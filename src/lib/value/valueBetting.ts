@@ -364,6 +364,9 @@ function optimizeBetAllocation(bets: ValueBet[], config: ValueStrategyConfig): V
   let remainingBudget = raceBudget;
   const optimized: ValueBet[] = [];
 
+  const bestBet = sorted[0];
+  if (!bestBet) return [];
+
   for (const bet of sorted) {
     if (remainingBudget <= 0) break;
 
@@ -375,7 +378,7 @@ function optimizeBetAllocation(bets: ValueBet[], config: ValueStrategyConfig): V
 
     if (maxAllocation >= bet.minAmount) {
       // Allocate based on EV proportion
-      const evWeight = bet.evPercent / sorted[0].evPercent; // Relative to best
+      const evWeight = bet.evPercent / bestBet.evPercent; // Relative to best
       const allocation = Math.round(maxAllocation * Math.min(1, evWeight));
 
       if (allocation >= bet.minAmount) {
@@ -481,7 +484,7 @@ export function generateValueBettingPlan(
     totalRecommendedWager,
     expectedProfit,
     expectedROI,
-    bestBet: recommendedBets.length > 0 ? recommendedBets[0] : null,
+    bestBet: recommendedBets[0] ?? null,
     positiveEVCount: allAnalyzed.filter((b) => b.evPercent > 0).length,
     negativeEVCount: allAnalyzed.filter((b) => b.evPercent < 0).length,
     stats,

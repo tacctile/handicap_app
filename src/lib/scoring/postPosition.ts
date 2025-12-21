@@ -154,6 +154,11 @@ function calculateTrackSpecificScore(
   }
 
   const winPct = winPercentByPost[postIndex];
+  // Safety check for undefined (should not happen after bounds check)
+  if (winPct === undefined) {
+    return { score: POST_TIERS.terrible, multiplier: 0.5, isGolden: false };
+  }
+
   const avgWinPct = 100 / winPercentByPost.length; // Fair share
   const isGolden = favoredPosts.includes(postPosition);
 

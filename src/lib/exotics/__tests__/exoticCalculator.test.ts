@@ -620,7 +620,11 @@ describe('Exotic Comparison', () => {
       });
 
       for (let i = 0; i < result.rows.length - 1; i++) {
-        expect(result.rows[i].score).toBeGreaterThanOrEqual(result.rows[i + 1].score);
+        const currentRow = result.rows[i];
+        const nextRow = result.rows[i + 1];
+        if (currentRow && nextRow) {
+          expect(currentRow.score).toBeGreaterThanOrEqual(nextRow.score);
+        }
       }
     });
 

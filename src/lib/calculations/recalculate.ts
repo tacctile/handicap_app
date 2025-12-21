@@ -72,6 +72,8 @@ function calculateConfidenceLevel(scores: number[]): number {
 
   const topScore = activeScores[0];
   const secondScore = activeScores[1];
+  if (topScore === undefined || secondScore === undefined) return 50;
+
   const avgScore = activeScores.reduce((a, b) => a + b, 0) / activeScores.length;
 
   // Score differential bonus
@@ -272,6 +274,8 @@ export function recalculateAffectedHorses(
   const updatedScoredHorses = previousResult.scoredHorses.map((item) => {
     if (affectedIndices.has(item.index)) {
       const horse = horses[item.index];
+      if (!horse) return item;
+
       const currentOdds = getOdds(item.index, horse.morningLineOdds);
       const scratched = isScratched(item.index);
       const score = calculateHorseScore(horse, raceHeader, currentOdds, trackCondition, scratched);

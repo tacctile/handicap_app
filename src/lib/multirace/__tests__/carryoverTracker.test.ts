@@ -170,8 +170,10 @@ describe('Carryover Parsing', () => {
       const results = parseCarryoverFromDRF(text, 'SA', 'Santa Anita');
 
       expect(results.length).toBeGreaterThanOrEqual(1);
-      expect(results[0].betType).toBe('pick_5');
-      expect(results[0].carryoverAmount).toBe(75000);
+      const firstResult = results[0];
+      expect(firstResult).toBeDefined();
+      expect(firstResult?.betType).toBe('pick_5');
+      expect(firstResult?.carryoverAmount).toBe(75000);
     });
 
     it('should parse Pick 6 carryover from text', () => {

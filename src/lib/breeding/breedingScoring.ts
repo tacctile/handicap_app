@@ -119,7 +119,7 @@ function parseDistanceCategory(distance: string): 'sprint' | 'route' | 'versatil
   // Handle mile distances
   if (distLower.includes('m')) {
     const mileMatch = distLower.match(/(\d+\.?\d*)\s*m/);
-    if (mileMatch) {
+    if (mileMatch && mileMatch[1]) {
       const miles = parseFloat(mileMatch[1]);
       const furlongs = miles * 8;
       if (furlongs >= 9) return 'route';
@@ -130,7 +130,7 @@ function parseDistanceCategory(distance: string): 'sprint' | 'route' | 'versatil
 
   // Handle furlong distances
   const furlongMatch = distLower.match(/(\d+\.?\d*)\s*f/);
-  if (furlongMatch) {
+  if (furlongMatch && furlongMatch[1]) {
     const furlongs = parseFloat(furlongMatch[1]);
     if (furlongs <= 7) return 'sprint';
     if (furlongs >= 9) return 'route';

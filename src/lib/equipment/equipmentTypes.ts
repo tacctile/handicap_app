@@ -344,8 +344,9 @@ export function getEquipmentType(idOrCode: string): EquipmentTypeDefinition | nu
   const normalized = idOrCode.toUpperCase();
 
   // Check by ID first
-  if (EQUIPMENT_TYPES[idOrCode.toLowerCase()]) {
-    return EQUIPMENT_TYPES[idOrCode.toLowerCase()];
+  const typeById = EQUIPMENT_TYPES[idOrCode.toLowerCase()];
+  if (typeById) {
+    return typeById;
   }
 
   // Check by code
@@ -363,7 +364,8 @@ export function getEquipmentType(idOrCode: string): EquipmentTypeDefinition | nu
  */
 export function equipmentCodeToName(code: string): string {
   const normalized = code.toUpperCase();
-  return EQUIPMENT_CODES[normalized as EquipmentCode] || code;
+  const codeName = EQUIPMENT_CODES[normalized as EquipmentCode];
+  return codeName ?? code;
 }
 
 /**

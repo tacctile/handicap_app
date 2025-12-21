@@ -166,7 +166,10 @@ export function parseCarryoverAmount(text: string): number {
   for (const pattern of patterns) {
     const match = cleanText.match(pattern);
     if (match) {
-      let amount = parseFloat(match[1]);
+      const amountStr = match[1];
+      if (!amountStr) continue;
+
+      let amount = parseFloat(amountStr);
 
       // Apply multiplier
       if (pattern.source.includes('M')) {
@@ -194,7 +197,7 @@ export function parseCarryoverFromDRF(
 
   // Look for Pick 5 carryover
   const pick5Match = text.match(/pick\s*5[^$]*\$?([\d,.]+K?M?)/i);
-  if (pick5Match) {
+  if (pick5Match && pick5Match[1]) {
     const amount = parseCarryoverAmount(pick5Match[1]);
     if (amount > 0) {
       results.push(
@@ -210,7 +213,7 @@ export function parseCarryoverFromDRF(
 
   // Look for Pick 6 carryover
   const pick6Match = text.match(/pick\s*6[^$]*\$?([\d,.]+K?M?)/i);
-  if (pick6Match) {
+  if (pick6Match && pick6Match[1]) {
     const amount = parseCarryoverAmount(pick6Match[1]);
     if (amount > 0) {
       results.push(
@@ -344,7 +347,7 @@ export function updateCarryover(carryover: CarryoverInfo): void {
     (c) => c.trackCode === carryover.trackCode && c.betType === carryover.betType
   );
 
-  if (existingIndex >= 0) {
+  if (existingIndex >= 0 && carryovers[existingIndex]) {
     carryovers[existingIndex] = carryover;
   } else {
     carryovers.push(carryover);

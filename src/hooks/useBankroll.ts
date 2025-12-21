@@ -150,7 +150,11 @@ const PL_KEY = 'furlong_daily_pl';
 
 // Helper: get today's date as ISO string
 function getTodayISO(): string {
-  return new Date().toISOString().split('T')[0];
+  const datePart = new Date().toISOString().split('T')[0];
+  if (!datePart) {
+    throw new Error('Failed to extract date from ISO string');
+  }
+  return datePart;
 }
 
 export interface UseBankrollReturn {

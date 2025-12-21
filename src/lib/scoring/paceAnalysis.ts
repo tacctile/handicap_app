@@ -253,7 +253,10 @@ export function parseRunningStyle(horse: HorseEntry): RunningStyleProfile {
 
   // If no clear dominant style, use most recent race
   if (maxCount === 0 && evidence.length > 0) {
-    dominantStyle = evidence[0].styleInRace;
+    const firstEvidence = evidence[0];
+    if (firstEvidence) {
+      dominantStyle = firstEvidence.styleInRace;
+    }
   }
 
   // Calculate stats

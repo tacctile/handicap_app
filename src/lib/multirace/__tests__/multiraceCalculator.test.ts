@@ -266,7 +266,10 @@ describe('Multi-Race Calculator', () => {
 
     it('should fail if any race has no selections', () => {
       const selections = createSelections([2, 0]);
-      selections[1].selections = [];
+      const secondSelection = selections[1];
+      if (secondSelection) {
+        secondSelection.selections = [];
+      }
 
       const result = calculateMultiRaceCost({
         betType: 'daily_double',
@@ -311,9 +314,9 @@ describe('Multi-Race Calculator', () => {
     it('should fail if cost exceeds maximum', () => {
       // Create a ticket that would exceed MAX_TICKET_COST
       const selections = createSelections([10, 10, 10, 10, 10, 10]);
-      selections.forEach((s) => {
+      for (const s of selections) {
         s.selections = Array.from({ length: 10 }, (_, i) => i + 1);
-      });
+      }
 
       const result = calculateMultiRaceCost({
         betType: 'pick_6',
@@ -345,8 +348,10 @@ describe('Multi-Race Calculator', () => {
       expect(result.withAll.total).toBe(48);
 
       expect(result.withoutAll).not.toBeNull();
-      expect(result.withoutAll!.combinations).toBe(6); // 2 × 3
-      expect(result.withoutAll!.total).toBe(12);
+      if (result.withoutAll) {
+        expect(result.withoutAll.combinations).toBe(6); // 2 × 3
+        expect(result.withoutAll.total).toBe(12);
+      }
 
       expect(result.costDifference).toBe(36); // 48 - 12
       expect(result.allAddsCombinations).toBe(18); // 24 - 6
@@ -430,8 +435,16 @@ describe('Multi-Race Calculator', () => {
       const result = compareSpreads('pick_4', spreads, 0.5);
 
       expect(result.length).toBe(3);
-      expect(result[0].cost).toBeLessThan(result[1].cost);
-      expect(result[1].cost).toBeLessThan(result[2].cost);
+      const first = result[0];
+      const second = result[1];
+      const third = result[2];
+      expect(first).toBeDefined();
+      expect(second).toBeDefined();
+      expect(third).toBeDefined();
+      if (first && second && third) {
+        expect(first.cost).toBeLessThan(second.cost);
+        expect(second.cost).toBeLessThan(third.cost);
+      }
     });
 
     it('should filter out invalid spreads', () => {

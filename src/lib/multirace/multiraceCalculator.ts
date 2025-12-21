@@ -156,6 +156,9 @@ export function calculateMultiRaceCost(config: {
   const selectionsPerRace: number[] = [];
   for (let i = 0; i < selections.length; i++) {
     const leg = selections[i];
+    if (!leg) {
+      return createErrorResult(betType, validatedBaseBet, `Missing selection for leg ${i + 1}`);
+    }
 
     if (leg.isAllSelected) {
       selectionsPerRace.push(leg.fieldSize);
@@ -401,8 +404,8 @@ export function calculateWithAllOption(config: {
   const validatedBaseBet = validateBaseBet(baseBet, betType);
 
   // Calculate with "All" substituted
-  const selectionsWithAll = currentSelections.map((sel, idx) =>
-    allLegs.includes(idx) ? fieldSizes[idx] : sel
+  const selectionsWithAll: number[] = currentSelections.map((sel, idx) =>
+    allLegs.includes(idx) ? (fieldSizes[idx] ?? sel) : sel
   );
 
   const withAllCombos = calculateCombinations(selectionsWithAll);
@@ -575,7 +578,11 @@ export function generateWindowInstruction(
   const parts = [`$${validatedBaseBet.toFixed(2)} ${betName}, Races ${startRace}-${endRace}`];
 
   for (const sel of selections) {
-    const horsesStr = sel.horses.length === 1 ? sel.horses[0].toString() : sel.horses.join(', ');
+    const firstHorse = sel.horses[0];
+    const horsesStr =
+      sel.horses.length === 1 && firstHorse !== undefined
+        ? firstHorse.toString()
+        : sel.horses.join(', ');
     parts.push(`Race ${sel.raceNumber}: ${horsesStr}`);
   }
 

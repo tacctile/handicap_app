@@ -390,9 +390,12 @@ function generateCombinations<T>(array: T[], size: number): T[][] {
     }
 
     for (let i = start; i <= array.length - (size - combo.length); i++) {
-      combo.push(array[i]);
-      combine(i + 1, combo);
-      combo.pop();
+      const element = array[i];
+      if (element !== undefined) {
+        combo.push(element);
+        combine(i + 1, combo);
+        combo.pop();
+      }
     }
   }
 
@@ -406,9 +409,13 @@ function generateCombinations<T>(array: T[], size: number): T[][] {
 function getTierMixDescription(tierCounts: Record<number, number>): string {
   const parts: string[] = [];
 
-  if (tierCounts[1] > 0) parts.push(`${tierCounts[1]} Tier 1`);
-  if (tierCounts[2] > 0) parts.push(`${tierCounts[2]} Tier 2`);
-  if (tierCounts[3] > 0) parts.push(`${tierCounts[3]} Tier 3`);
+  const tier1 = tierCounts[1] ?? 0;
+  const tier2 = tierCounts[2] ?? 0;
+  const tier3 = tierCounts[3] ?? 0;
+
+  if (tier1 > 0) parts.push(`${tier1} Tier 1`);
+  if (tier2 > 0) parts.push(`${tier2} Tier 2`);
+  if (tier3 > 0) parts.push(`${tier3} Tier 3`);
 
   return parts.join(' + ');
 }
@@ -418,28 +425,31 @@ function getTierMixDescription(tierCounts: Record<number, number>): string {
  * Mixed tiers score higher than all same tier
  */
 function calculateTierMixScore(tierCounts: Record<number, number>, preferMixed: boolean): number {
-  const totalHorses = tierCounts[1] + tierCounts[2] + tierCounts[3];
-  const tiersUsed =
-    (tierCounts[1] > 0 ? 1 : 0) + (tierCounts[2] > 0 ? 1 : 0) + (tierCounts[3] > 0 ? 1 : 0);
+  const tier1 = tierCounts[1] ?? 0;
+  const tier2 = tierCounts[2] ?? 0;
+  const tier3 = tierCounts[3] ?? 0;
+
+  const totalHorses = tier1 + tier2 + tier3;
+  const tiersUsed = (tier1 > 0 ? 1 : 0) + (tier2 > 0 ? 1 : 0) + (tier3 > 0 ? 1 : 0);
 
   if (!preferMixed) return 50; // Neutral
 
   // Prefer Tier 1 + Tier 2 combinations
-  if (tierCounts[1] >= 1 && tierCounts[2] >= 1) {
-    if (tierCounts[3] === 0) return 100; // Best: T1 + T2 only
+  if (tier1 >= 1 && tier2 >= 1) {
+    if (tier3 === 0) return 100; // Best: T1 + T2 only
     return 90; // Good: T1 + T2 + T3
   }
 
   // Tier 1 + Tier 3 is interesting (chalk + longshot)
-  if (tierCounts[1] >= 1 && tierCounts[3] >= 1 && tierCounts[2] === 0) {
+  if (tier1 >= 1 && tier3 >= 1 && tier2 === 0) {
     return 85;
   }
 
   // All same tier is less ideal
   if (tiersUsed === 1) {
-    if (tierCounts[1] === totalHorses) return 70; // All T1 - chalk-heavy
-    if (tierCounts[2] === totalHorses) return 60; // All T2
-    if (tierCounts[3] === totalHorses) return 40; // All T3 - risky
+    if (tier1 === totalHorses) return 70; // All T1 - chalk-heavy
+    if (tier2 === totalHorses) return 60; // All T2
+    if (tier3 === totalHorses) return 40; // All T3 - risky
   }
 
   return 70; // Default

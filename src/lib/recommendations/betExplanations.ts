@@ -169,7 +169,10 @@ function explainSpeedClass(breakdown: ScoreBreakdown): ExplanationSection | null
   }
 
   if (parts.length === 0) {
-    parts.push(sc.reasoning.split('|')[0].trim());
+    const firstReason = sc.reasoning.split('|')[0];
+    if (firstReason) {
+      parts.push(firstReason.trim());
+    }
   }
 
   return {
@@ -404,14 +407,14 @@ export function generateBetExplanation(horses: ClassifiedHorse[], betType: strin
   }
 
   // Add overlay explanation
-  if (primaryHorse.overlay.overlayPercent >= 25) {
+  if (primaryHorse.overlay?.overlayPercent >= 25) {
     explanations.push(
       `${primaryHorse.overlay.overlayPercent.toFixed(0)}% overlay at ${primaryHorse.oddsDisplay}`
     );
   }
 
   // Add EV explanation
-  if (primaryHorse.overlay.isPositiveEV) {
+  if (primaryHorse.overlay?.isPositiveEV) {
     explanations.push(
       `Expected value: +$${primaryHorse.overlay.evPerDollar.toFixed(2)} per dollar wagered`
     );
@@ -489,7 +492,7 @@ export function generateBetNarrative(
     parts.push('at huge overlay');
   } else if (overlayPercent >= 25) {
     parts.push('with value');
-  } else if (primaryHorse.overlay.isPositiveEV) {
+  } else if (primaryHorse.overlay?.isPositiveEV) {
     parts.push('+EV play');
   }
 

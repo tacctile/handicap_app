@@ -408,20 +408,28 @@ export function parseOddsToDecimal(oddsString: string): number {
   // Handle "X-Y" format (e.g., "5-1", "4-5")
   const dashMatch = cleanOdds.match(/^(\d+)-(\d+)$/);
   if (dashMatch) {
-    const num = parseInt(dashMatch[1], 10);
-    const den = parseInt(dashMatch[2], 10);
-    if (den > 0) {
-      return num / den + 1;
+    const numStr = dashMatch[1];
+    const denStr = dashMatch[2];
+    if (numStr && denStr) {
+      const num = parseInt(numStr, 10);
+      const den = parseInt(denStr, 10);
+      if (den > 0) {
+        return num / den + 1;
+      }
     }
   }
 
   // Handle "X/Y" format (e.g., "5/1", "9/2")
   const slashMatch = cleanOdds.match(/^(\d+)\/(\d+)$/);
   if (slashMatch) {
-    const num = parseInt(slashMatch[1], 10);
-    const den = parseInt(slashMatch[2], 10);
-    if (den > 0) {
-      return num / den + 1;
+    const numStr = slashMatch[1];
+    const denStr = slashMatch[2];
+    if (numStr && denStr) {
+      const num = parseInt(numStr, 10);
+      const den = parseInt(denStr, 10);
+      if (den > 0) {
+        return num / den + 1;
+      }
     }
   }
 

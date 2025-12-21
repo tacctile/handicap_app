@@ -271,14 +271,22 @@ export function parseOddsToDecimal(oddsStr: string): number {
 
   // Handle "X-1" format (e.g., "5-1")
   if (cleaned.includes('-')) {
-    const [num, denom] = cleaned.split('-');
-    return 1 + parseFloat(num) / (parseFloat(denom) || 1);
+    const parts = cleaned.split('-');
+    const num = parts[0];
+    const denom = parts[1];
+    const numerator = num ? parseFloat(num) : 0;
+    const denominator = denom ? parseFloat(denom) : 1;
+    return 1 + numerator / (denominator || 1);
   }
 
   // Handle "X/Y" format (e.g., "5/2")
   if (cleaned.includes('/')) {
-    const [num, denom] = cleaned.split('/');
-    return 1 + parseFloat(num) / (parseFloat(denom) || 1);
+    const parts = cleaned.split('/');
+    const num = parts[0];
+    const denom = parts[1];
+    const numerator = num ? parseFloat(num) : 0;
+    const denominator = denom ? parseFloat(denom) : 1;
+    return 1 + numerator / (denominator || 1);
   }
 
   // Handle plain number (already decimal)
@@ -560,7 +568,7 @@ export function getValuePlaysSummary(valuePlays: ValuePlay[]): {
     massiveCount,
     strongCount,
     moderateCount,
-    bestPlay: valuePlays.length > 0 ? valuePlays[0] : null,
+    bestPlay: valuePlays[0] ?? null,
     totalPositiveEV: Math.round(totalPositiveEV * 100) / 100,
   };
 }

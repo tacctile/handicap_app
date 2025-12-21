@@ -44,11 +44,13 @@ vi.mock('../../scoring/overlayAnalysis', () => ({
     // Parse odds to decimal (simplified)
     const parts = odds.split('-');
     let decimal = 2.0;
-    if (parts.length === 2) {
+    if (parts.length === 2 && parts[0] && parts[1]) {
       decimal = parseInt(parts[0]) / parseInt(parts[1]) + 1;
     } else if (odds.includes('/')) {
       const [num, den] = odds.split('/');
-      decimal = parseInt(num) / parseInt(den) + 1;
+      if (num && den) {
+        decimal = parseInt(num) / parseInt(den) + 1;
+      }
     } else {
       decimal = parseFloat(odds) || 2.0;
     }
@@ -67,7 +69,7 @@ vi.mock('../../scoring/overlayAnalysis', () => ({
   },
   parseOddsToDecimal: (odds: string) => {
     const parts = odds.split('-');
-    if (parts.length === 2) {
+    if (parts.length === 2 && parts[0] && parts[1]) {
       return parseInt(parts[0]) / parseInt(parts[1]) + 1;
     }
     return parseFloat(odds) || 2.0;

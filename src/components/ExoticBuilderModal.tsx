@@ -135,7 +135,7 @@ export function ExoticBuilderModal({
         // Parse odds
         const oddsMatch = h.horse.morningLineOdds.match(/(\d+(?:\.\d+)?)[/-](\d+(?:\.\d+)?)?/);
         const odds = oddsMatch
-          ? parseFloat(oddsMatch[1]) / (oddsMatch[2] ? parseFloat(oddsMatch[2]) : 1)
+          ? parseFloat(oddsMatch[1] ?? '5') / (oddsMatch[2] ? parseFloat(oddsMatch[2]) : 1)
           : 5;
 
         return {
@@ -159,7 +159,10 @@ export function ExoticBuilderModal({
 
   // Reset structure when bet type changes
   useEffect(() => {
-    setStructure(STRUCTURE_OPTIONS[betType][0].value);
+    const firstOption = STRUCTURE_OPTIONS[betType]?.[0];
+    if (firstOption) {
+      setStructure(firstOption.value);
+    }
     // Reset selections
     setSelectedHorses((prev) => prev.map((h) => ({ ...h, isSelected: false, position: null })));
   }, [betType]);

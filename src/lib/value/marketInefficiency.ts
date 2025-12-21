@@ -185,6 +185,8 @@ function detectPublicOverreaction(
   const lastRace = pps[0];
   const priorRace = pps[1];
 
+  if (!lastRace || !priorRace) return null;
+
   // Check for terrible last race
   const lastFinish = lastRace.finishPosition ?? 10;
   const priorFinish = priorRace?.finishPosition ?? lastFinish;
@@ -522,6 +524,9 @@ function detectClassConfusion(
   // Significant hidden drops not reflected in odds
   if (hiddenDrops.length > 0 && isValuePlay && edge > 10) {
     const primaryDrop = hiddenDrops[0];
+
+    if (!primaryDrop) return null;
+
     const totalDropsValue = hiddenDrops.reduce((sum, d) => sum + d.pointsBonus, 0);
     const magnitude = Math.min(10, Math.round(totalDropsValue / 2) + Math.round(edge / 6));
 
@@ -684,7 +689,7 @@ export function analyzeMarketInefficiency(
   // Sort by magnitude descending
   inefficiencies.sort((a, b) => b.magnitude - a.magnitude);
 
-  const primaryInefficiency = inefficiencies.length > 0 ? inefficiencies[0] : null;
+  const primaryInefficiency = inefficiencies[0] ?? null;
   const totalMagnitude = inefficiencies.reduce((sum, i) => sum + i.magnitude, 0);
 
   const hasExploitableInefficiency = inefficiencies.some(

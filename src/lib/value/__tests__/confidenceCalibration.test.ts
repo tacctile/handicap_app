@@ -85,7 +85,13 @@ describe('DEFAULT_TIERS', () => {
     // Tiers are sorted from high score to low score
     // Each tier's minScore should equal the next tier's maxScore
     for (let i = 0; i < DEFAULT_TIERS.length - 1; i++) {
-      expect(DEFAULT_TIERS[i].minScore).toBe(DEFAULT_TIERS[i + 1].maxScore);
+      const currentTier = DEFAULT_TIERS[i];
+      const nextTier = DEFAULT_TIERS[i + 1];
+      expect(currentTier).toBeDefined();
+      expect(nextTier).toBeDefined();
+      if (currentTier && nextTier) {
+        expect(currentTier.minScore).toBe(nextTier.maxScore);
+      }
     }
   });
 });
@@ -392,7 +398,9 @@ describe('Storage Functions', () => {
       const loaded = loadCalibrationResults();
 
       expect(loaded.length).toBe(1);
-      expect(loaded[0].score).toBe(180);
+      const firstResult = loaded[0];
+      expect(firstResult).toBeDefined();
+      expect(firstResult?.score).toBe(180);
     });
 
     it('should limit stored results to 1000', () => {

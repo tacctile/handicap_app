@@ -198,28 +198,40 @@ function generateWindowInstruction(
       return `"${racePrefix}${baseAmount} to SHOW on number ${numbers}"`;
     case 'exacta_box':
       return `"${racePrefix}${baseAmount} EXACTA BOX ${numbers}"`;
-    case 'exacta_key_over':
-      return `"${racePrefix}${baseAmount} EXACTA, number ${horses[0].horse.programNumber} on top with ${horses
+    case 'exacta_key_over': {
+      const keyHorse = horses[0];
+      if (!keyHorse) return `"${racePrefix}${baseAmount} EXACTA"`;
+      return `"${racePrefix}${baseAmount} EXACTA, number ${keyHorse.horse.programNumber} on top with ${horses
         .slice(1)
         .map((h) => h.horse.programNumber)
         .join(', ')}"`;
-    case 'exacta_key_under':
+    }
+    case 'exacta_key_under': {
+      const keyHorse = horses[0];
+      if (!keyHorse) return `"${racePrefix}${baseAmount} EXACTA"`;
       return `"${racePrefix}${baseAmount} EXACTA, ${horses
         .slice(1)
         .map((h) => h.horse.programNumber)
-        .join(', ')} with number ${horses[0].horse.programNumber} second"`;
+        .join(', ')} with number ${keyHorse.horse.programNumber} second"`;
+    }
     case 'trifecta_box':
       return `"${racePrefix}${baseAmount} TRIFECTA BOX ${numbers}"`;
-    case 'trifecta_key':
-      return `"${racePrefix}${baseAmount} TRIFECTA, number ${horses[0].horse.programNumber} first, with ${horses
+    case 'trifecta_key': {
+      const keyHorse = horses[0];
+      if (!keyHorse) return `"${racePrefix}${baseAmount} TRIFECTA"`;
+      return `"${racePrefix}${baseAmount} TRIFECTA, number ${keyHorse.horse.programNumber} first, with ${horses
         .slice(1)
         .map((h) => h.horse.programNumber)
         .join(', ')} for second and third"`;
-    case 'trifecta_wheel':
-      return `"${racePrefix}${baseAmount} TRIFECTA WHEEL, number ${horses[0].horse.programNumber} with ALL for second, ${horses
+    }
+    case 'trifecta_wheel': {
+      const keyHorse = horses[0];
+      if (!keyHorse) return `"${racePrefix}${baseAmount} TRIFECTA WHEEL"`;
+      return `"${racePrefix}${baseAmount} TRIFECTA WHEEL, number ${keyHorse.horse.programNumber} with ALL for second, ${horses
         .slice(1)
         .map((h) => h.horse.programNumber)
         .join(', ')} for third"`;
+    }
     case 'quinella':
       return `"${racePrefix}${baseAmount} QUINELLA ${numbers}"`;
     case 'superfecta':
@@ -247,6 +259,7 @@ function generateTier1Bets(
   if (tier1Horses.length === 0) return bets;
 
   const topHorse = tier1Horses[0];
+  if (!topHorse) return bets;
 
   // 1. Win bet on top pick
   const winAmount = baseAmount * 2;
@@ -387,6 +400,7 @@ function generateTier2Bets(
   if (tier2Horses.length === 0) return bets;
 
   const topValueHorse = tier2Horses[0];
+  if (!topValueHorse) return bets;
 
   // 1. Win bet (value focus)
   const winAmount = baseAmount;
@@ -446,21 +460,25 @@ function generateTier2Bets(
 
   // 4. Quinella with chalk
   if (tier1Horses.length > 0 && tier2Horses.length > 0) {
-    const quinellaHorses = [tier2Horses[0], tier1Horses[0]];
-    const quinellaAmount = baseAmount;
-    bets.push({
-      type: 'quinella',
-      typeName: BET_TYPE_CONFIG.quinella.name,
-      description: `Quinella: alternative with favorite`,
-      horses: quinellaHorses,
-      horseNumbers: quinellaHorses.map((h) => h.horse.programNumber),
-      amount: quinellaAmount,
-      totalCost: quinellaAmount,
-      windowInstruction: generateWindowInstruction('quinella', quinellaHorses, quinellaAmount),
-      potentialReturn: calculatePotentialReturn('quinella', quinellaHorses, quinellaAmount),
-      confidence: Math.round((quinellaHorses[0].confidence + quinellaHorses[1].confidence) / 2) - 5,
-      icon: BET_TYPE_CONFIG.quinella.icon,
-    });
+    const tier2Horse = tier2Horses[0];
+    const tier1Horse = tier1Horses[0];
+    if (tier2Horse && tier1Horse) {
+      const quinellaHorses = [tier2Horse, tier1Horse];
+      const quinellaAmount = baseAmount;
+      bets.push({
+        type: 'quinella',
+        typeName: BET_TYPE_CONFIG.quinella.name,
+        description: `Quinella: alternative with favorite`,
+        horses: quinellaHorses,
+        horseNumbers: quinellaHorses.map((h) => h.horse.programNumber),
+        amount: quinellaAmount,
+        totalCost: quinellaAmount,
+        windowInstruction: generateWindowInstruction('quinella', quinellaHorses, quinellaAmount),
+        potentialReturn: calculatePotentialReturn('quinella', quinellaHorses, quinellaAmount),
+        confidence: Math.round((tier2Horse.confidence + tier1Horse.confidence) / 2) - 5,
+        icon: BET_TYPE_CONFIG.quinella.icon,
+      });
+    }
   }
 
   // 5. Trifecta combinations
@@ -532,8 +550,8 @@ function generateTier3Bets(
     ) {
       const bombAmount = longshotAnalysis.classification === 'nuclear' ? 5 : 2; // Fixed bet $2-5
       const angleNames = longshotAnalysis.detectedAngles.map((a) => a.name).join(' + ');
-      const angleExplanation =
-        longshotAnalysis.detectedAngles[0]?.evidence || 'Multiple upset angles detected';
+      const firstAngle = longshotAnalysis.detectedAngles[0];
+      const angleExplanation = firstAngle?.evidence ?? 'Multiple upset angles detected';
 
       bets.push({
         type: 'value_bomb',
@@ -554,6 +572,7 @@ function generateTier3Bets(
   }
 
   const bombHorse = tier3Horses[0];
+  if (!bombHorse) return bets;
 
   // Skip normal win bet if we already have a value bomb for this horse
   const hasValueBomb = bets.some((b) => b.horseNumbers.includes(bombHorse.horse.programNumber));

@@ -62,14 +62,15 @@ function convertToMultiRaceData(raceData: RaceData): MultiRaceRaceData {
       else if (h.score.total >= 160) tier = 2;
 
       const oddsMatch = h.horse.morningLineOdds.match(/(\d+(?:\.\d+)?)[/-](\d+(?:\.\d+)?)?/);
-      const decimalOdds = oddsMatch
-        ? parseFloat(oddsMatch[1]) / (oddsMatch[2] ? parseFloat(oddsMatch[2]) : 1)
-        : 5;
+      const decimalOdds =
+        oddsMatch && oddsMatch[1]
+          ? parseFloat(oddsMatch[1]) / (oddsMatch[2] ? parseFloat(oddsMatch[2]) : 1)
+          : 5;
       const winProbability = 1 / (decimalOdds + 1);
 
       const sorted = [...raceData.horses].sort((a, b) => b.score.total - a.score.total);
       const nextHorse = sorted[idx + 1];
-      const scoreGapToNext = nextHorse ? h.score.total - nextHorse.score.total : 0;
+      const scoreGapToNext = nextHorse !== undefined ? h.score.total - nextHorse.score.total : 0;
 
       return {
         programNumber: h.horse.programNumber,

@@ -398,12 +398,13 @@ export function autoOptimizeForBudget(
 
   for (let i = 0; i < newSelections.length; i++) {
     const race = races[i];
-    if (!race) continue;
+    const selection = newSelections[i];
+    if (!race || !selection) continue;
 
     const standout = findStandoutHorse(race.horses);
     if (standout) {
       newSelections[i] = {
-        ...newSelections[i],
+        ...selection,
         selections: [standout.programNumber],
         isAllSelected: false,
       };
@@ -414,7 +415,7 @@ export function autoOptimizeForBudget(
         .slice(0, 2)
         .map((h) => h.programNumber);
       newSelections[i] = {
-        ...newSelections[i],
+        ...selection,
         selections: topTwo,
         isAllSelected: false,
       };

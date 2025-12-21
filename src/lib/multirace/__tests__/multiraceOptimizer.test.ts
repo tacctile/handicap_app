@@ -320,8 +320,10 @@ describe('Ticket Optimization', () => {
 
       expect(selections.length).toBe(2);
       // First race is standout - should single
-      expect(selections[0].selections.length).toBe(1);
-      expect(selections[0].selections).toContain(3);
+      const firstSelection = selections[0];
+      expect(firstSelection).toBeDefined();
+      expect(firstSelection?.selections.length).toBe(1);
+      expect(firstSelection?.selections).toContain(3);
     });
 
     it('should generate selections for balanced strategy', () => {
@@ -329,14 +331,20 @@ describe('Ticket Optimization', () => {
 
       expect(selections.length).toBe(2);
       // Competitive race should have 2-3 horses
-      expect(selections[1].selections.length).toBeGreaterThanOrEqual(2);
+      const secondSelection = selections[1];
+      expect(secondSelection).toBeDefined();
+      expect(secondSelection?.selections.length).toBeGreaterThanOrEqual(2);
     });
 
     it('should include suggestion reasons', () => {
       const selections = generateOptimalSelections(races, 'balanced', 50, 2);
 
-      expect(selections[0].suggestionReason).toContain('Single');
-      expect(selections[1].suggestionReason).toContain('Spread');
+      const firstSelection = selections[0];
+      const secondSelection = selections[1];
+      expect(firstSelection).toBeDefined();
+      expect(secondSelection).toBeDefined();
+      expect(firstSelection?.suggestionReason).toContain('Single');
+      expect(secondSelection?.suggestionReason).toContain('Spread');
     });
   });
 
@@ -392,9 +400,11 @@ describe('Ticket Optimization', () => {
       });
 
       for (let i = 1; i < result.tickets.length; i++) {
-        expect(result.tickets[i - 1].expectedValue).toBeGreaterThanOrEqual(
-          result.tickets[i].expectedValue
-        );
+        const prevTicket = result.tickets[i - 1];
+        const currentTicket = result.tickets[i];
+        if (prevTicket && currentTicket) {
+          expect(prevTicket.expectedValue).toBeGreaterThanOrEqual(currentTicket.expectedValue);
+        }
       }
     });
 
@@ -408,11 +418,18 @@ describe('Ticket Optimization', () => {
       });
 
       expect(result.warnings.length).toBeGreaterThan(0);
-      expect(result.warnings[0]).toContain('bankroll');
+      const firstWarning = result.warnings[0];
+      expect(firstWarning).toBeDefined();
+      expect(firstWarning).toContain('bankroll');
     });
 
     it('should handle cancelled races', () => {
-      const racesWithCancelled = [races[0], { ...races[1], isCancelled: true }];
+      const race0 = races[0];
+      const race1 = races[1];
+      if (!race0 || !race1) {
+        throw new Error('Test setup failed: races not defined');
+      }
+      const racesWithCancelled = [race0, { ...race1, isCancelled: true }];
 
       const result = optimizeMultiRaceBet({
         betType: 'daily_double',
@@ -437,23 +454,29 @@ describe('Race Card Analysis', () => {
       const available = getAvailableMultiRaceBets(6, 1);
 
       expect(available.length).toBe(5);
-      expect(available.find((b) => b.betType === 'daily_double')?.isAvailable).toBe(true);
-      expect(available.find((b) => b.betType === 'pick_6')?.isAvailable).toBe(true);
+      const dailyDouble = available.find((b) => b.betType === 'daily_double');
+      const pick6 = available.find((b) => b.betType === 'pick_6');
+      expect(dailyDouble?.isAvailable).toBe(true);
+      expect(pick6?.isAvailable).toBe(true);
     });
 
     it('should mark Pick 6 unavailable for 5 races', () => {
       const available = getAvailableMultiRaceBets(5, 1);
 
-      expect(available.find((b) => b.betType === 'pick_6')?.isAvailable).toBe(false);
-      expect(available.find((b) => b.betType === 'pick_5')?.isAvailable).toBe(true);
+      const pick6 = available.find((b) => b.betType === 'pick_6');
+      const pick5 = available.find((b) => b.betType === 'pick_5');
+      expect(pick6?.isAvailable).toBe(false);
+      expect(pick5?.isAvailable).toBe(true);
     });
 
     it('should handle starting race offset', () => {
       const available = getAvailableMultiRaceBets(8, 5);
 
       // Only 4 races remaining (5, 6, 7, 8)
-      expect(available.find((b) => b.betType === 'pick_4')?.isAvailable).toBe(true);
-      expect(available.find((b) => b.betType === 'pick_5')?.isAvailable).toBe(false);
+      const pick4 = available.find((b) => b.betType === 'pick_4');
+      const pick5 = available.find((b) => b.betType === 'pick_5');
+      expect(pick4?.isAvailable).toBe(true);
+      expect(pick5?.isAvailable).toBe(false);
     });
   });
 

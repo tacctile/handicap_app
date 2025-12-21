@@ -145,6 +145,8 @@ function generateTier1Bets(
   if (horses.length === 0) return bets;
 
   const topHorse = horses[0];
+  if (!topHorse) return bets;
+
   const baseAmount = calculateBetAmount(topHorse.confidence, 'tier1', bankroll);
 
   // 1. Win bet (largest allocation)
@@ -239,8 +241,8 @@ function generateTier1Bets(
   } else if (horses.length >= 2) {
     // Use tier 1 + next best horse for trifecta
     const nextBest = allClassifiedHorses.find((h) => !horses.includes(h));
-    if (nextBest) {
-      const triHorses = [...horses.slice(0, 2), nextBest];
+    if (nextBest && horses[0] && horses[1]) {
+      const triHorses = [horses[0], horses[1], nextBest];
       bets.push(
         createGeneratedBet({
           type: 'trifecta_box',
@@ -276,6 +278,8 @@ function generateTier2Bets(
   if (horses.length === 0) return bets;
 
   const topValueHorse = horses[0];
+  if (!topValueHorse) return bets;
+
   const baseAmount = calculateBetAmount(topValueHorse.confidence, 'tier2', bankroll);
 
   // 1. Win bet (value focus)
@@ -353,7 +357,11 @@ function generateTier2Bets(
 
   // 4. Quinella with Tier 1
   if (tier1Horses.length > 0 && horses.length > 0) {
-    const quinellaHorses = [horses[0], tier1Horses[0]];
+    const topTier2 = horses[0];
+    const topTier1 = tier1Horses[0];
+    if (!topTier2 || !topTier1) return bets;
+
+    const quinellaHorses = [topTier2, topTier1];
     bets.push(
       createGeneratedBet({
         type: 'quinella',
@@ -406,6 +414,8 @@ function generateTier3Bets(
   if (horses.length === 0) return bets;
 
   const bombHorse = horses[0];
+  if (!bombHorse) return bets;
+
   const baseAmount = calculateBetAmount(bombHorse.confidence, 'tier3', bankroll);
 
   // Check for nuclear longshots first - these get priority
@@ -417,6 +427,7 @@ function generateTier3Bets(
     ) {
       const bombAmount = longshotAnalysis.classification === 'nuclear' ? 5 : 2;
       const angleNames = longshotAnalysis.detectedAngles.map((a) => a.name).join(' + ');
+      const firstAngle = longshotAnalysis.detectedAngles[0];
 
       bets.push(
         createGeneratedBet({
@@ -430,7 +441,7 @@ function generateTier3Bets(
           confidence: Math.round(longshotAnalysis.upsetProbability * 100),
           icon: 'local_fire_department',
           specialCategory: 'nuclear',
-          longshotAngle: longshotAnalysis.detectedAngles[0]?.evidence,
+          longshotAngle: firstAngle?.evidence,
           isNuclearLongshot: longshotAnalysis.classification === 'nuclear',
         })
       );
@@ -561,6 +572,7 @@ function generateNuclearLongshotBets(
 
     const amount = longshot.classification === 'nuclear' ? 5 : 2;
     const angleNames = longshot.detectedAngles.map((a) => a.name).join(' + ');
+    const firstAngle = longshot.detectedAngles[0];
 
     bets.push(
       createGeneratedBet({
@@ -574,7 +586,7 @@ function generateNuclearLongshotBets(
         confidence: Math.round(longshot.upsetProbability * 100),
         icon: 'local_fire_department',
         specialCategory: 'nuclear',
-        longshotAngle: longshot.detectedAngles[0]?.evidence,
+        longshotAngle: firstAngle?.evidence,
         isNuclearLongshot: longshot.classification === 'nuclear',
       })
     );
@@ -949,7 +961,7 @@ export function generateRecommendations(input: GeneratorInput): BetGeneratorResu
     // Analyze for diamonds - provide getOdds callback
     const getOdds = (index: number, defaultOdds: string) => {
       const horse = scoredHorses[index];
-      return horse?.horse.morningLineOdds || defaultOdds;
+      return horse?.horse.morningLineOdds ?? defaultOdds;
     };
     const diamondSummary = analyzeRaceDiamonds(
       scoredHorses.map((sh) => sh.horse),

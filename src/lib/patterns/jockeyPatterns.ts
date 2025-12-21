@@ -319,7 +319,8 @@ export function extractJockeyPatternsFromHorses(horses: HorseEntry[]): Map<strin
           });
         }
 
-        const profile = jockeyProfiles.get(normalizedName)!;
+        const profile = jockeyProfiles.get(normalizedName);
+        if (!profile) continue;
 
         // Update overall
         updateJockeyPatternStats(profile.overall, pp.finishPosition, beyer);
@@ -335,7 +336,10 @@ export function extractJockeyPatternsFromHorses(horses: HorseEntry[]): Map<strin
             )
           );
         }
-        updateJockeyPatternStats(profile.byTrack.get(pp.track)!, pp.finishPosition, beyer);
+        const trackPattern = profile.byTrack.get(pp.track);
+        if (trackPattern) {
+          updateJockeyPatternStats(trackPattern, pp.finishPosition, beyer);
+        }
 
         // Update running style pattern
         if (runningStyle !== 'unknown') {
@@ -349,11 +353,10 @@ export function extractJockeyPatternsFromHorses(horses: HorseEntry[]): Map<strin
               )
             );
           }
-          updateJockeyPatternStats(
-            profile.byRunningStyle.get(runningStyle)!,
-            pp.finishPosition,
-            beyer
-          );
+          const stylePattern = profile.byRunningStyle.get(runningStyle);
+          if (stylePattern) {
+            updateJockeyPatternStats(stylePattern, pp.finishPosition, beyer);
+          }
         }
 
         // Update surface pattern
@@ -363,7 +366,10 @@ export function extractJockeyPatternsFromHorses(horses: HorseEntry[]): Map<strin
             createJockeyPatternStats(pp.jockey, { surface: pp.surface }, `On ${pp.surface}`)
           );
         }
-        updateJockeyPatternStats(profile.bySurface.get(pp.surface)!, pp.finishPosition, beyer);
+        const surfacePattern = profile.bySurface.get(pp.surface);
+        if (surfacePattern) {
+          updateJockeyPatternStats(surfacePattern, pp.finishPosition, beyer);
+        }
 
         // Update distance category pattern
         if (!profile.byDistanceCategory.has(distCat)) {
@@ -376,11 +382,10 @@ export function extractJockeyPatternsFromHorses(horses: HorseEntry[]): Map<strin
             )
           );
         }
-        updateJockeyPatternStats(
-          profile.byDistanceCategory.get(distCat)!,
-          pp.finishPosition,
-          beyer
-        );
+        const distancePattern = profile.byDistanceCategory.get(distCat);
+        if (distancePattern) {
+          updateJockeyPatternStats(distancePattern, pp.finishPosition, beyer);
+        }
       }
     }
 
@@ -468,10 +473,9 @@ export function calculateJockeyPatternScore(
     const profile = buildJockeyProfile(horse.jockeyName, allHorses);
 
     // Determine horse's running style for pattern matching
+    const firstPerformance = horse.pastPerformances[0];
     const horseRunningStyle =
-      horse.pastPerformances.length > 0
-        ? determineRunningStyle(horse.pastPerformances[0])
-        : 'unknown';
+      firstPerformance !== undefined ? determineRunningStyle(firstPerformance) : 'unknown';
 
     const currentTrack = raceHeader.trackCode;
     const currentSurface = raceHeader.surface;

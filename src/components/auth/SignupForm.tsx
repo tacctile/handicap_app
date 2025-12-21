@@ -245,19 +245,19 @@ export function SignupForm({ onSwitchToLogin, onSuccess }: SignupFormProps) {
   const getInputStyle = (
     fieldName: string,
     validationState: { valid: boolean; error: string | null }
-  ) => {
-    const base = { ...styles.input };
+  ): React.CSSProperties => {
+    const base = { ...(styles.input ?? {}) };
 
     if (focusedField === fieldName) {
-      return { ...base, ...styles.inputFocus };
+      return { ...base, ...(styles.inputFocus ?? {}) };
     }
 
     if (validationState.error) {
-      return { ...base, ...styles.inputError };
+      return { ...base, ...(styles.inputError ?? {}) };
     }
 
-    if (touched[fieldName] && validationState.valid) {
-      return { ...base, ...styles.inputValid };
+    if (touched[fieldName] === true && validationState.valid) {
+      return { ...base, ...(styles.inputValid ?? {}) };
     }
 
     return base;
@@ -265,13 +265,13 @@ export function SignupForm({ onSwitchToLogin, onSuccess }: SignupFormProps) {
 
   const getButtonStyle = (
     buttonName: string,
-    baseStyle: React.CSSProperties,
-    hoverStyle: React.CSSProperties,
+    baseStyle: React.CSSProperties | undefined,
+    hoverStyle: React.CSSProperties | undefined,
     disabled?: boolean
-  ) => ({
-    ...baseStyle,
-    ...(hoveredButton === buttonName && !disabled ? hoverStyle : {}),
-    ...(disabled ? styles.submitButtonDisabled : {}),
+  ): React.CSSProperties => ({
+    ...(baseStyle ?? {}),
+    ...(hoveredButton === buttonName && !disabled ? (hoverStyle ?? {}) : {}),
+    ...(disabled ? (styles.submitButtonDisabled ?? {}) : {}),
   });
 
   const isFormValid =

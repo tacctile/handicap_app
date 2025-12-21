@@ -642,7 +642,7 @@ export function analyzeRaceValue(
     eliteValue,
     strongValue,
     positiveEVCount: positiveEVHorses.length,
-    bestValuePlay: rankedByEV.length > 0 ? rankedByEV[0] : null,
+    bestValuePlay: rankedByEV[0] ?? null,
     stats,
   };
 }

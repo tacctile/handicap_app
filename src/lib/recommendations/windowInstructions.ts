@@ -141,46 +141,53 @@ export function generateWindowInstruction(
   const formattedAmount = formatAmount(amount);
   const numbers = formatHorseNumbers(horses);
 
+  const firstHorse = horses[0];
+  const firstHorseNum = firstHorse?.horse.programNumber ?? numbers;
+
   switch (betType) {
     case 'win':
-      return `"${racePrefix}${formattedAmount} to WIN on number ${horses[0]?.horse.programNumber || numbers}"`;
+      return `"${racePrefix}${formattedAmount} to WIN on number ${firstHorseNum}"`;
 
     case 'place':
-      return `"${racePrefix}${formattedAmount} to PLACE on number ${horses[0]?.horse.programNumber || numbers}"`;
+      return `"${racePrefix}${formattedAmount} to PLACE on number ${firstHorseNum}"`;
 
     case 'show':
-      return `"${racePrefix}${formattedAmount} to SHOW on number ${horses[0]?.horse.programNumber || numbers}"`;
+      return `"${racePrefix}${formattedAmount} to SHOW on number ${firstHorseNum}"`;
 
     case 'exacta_box':
       return `"${racePrefix}${formattedAmount} EXACTA BOX ${numbers}"`;
 
     case 'exacta_key_over':
-      if (horses.length < 2) return `"${racePrefix}${formattedAmount} EXACTA ${numbers}"`;
-      return `"${racePrefix}${formattedAmount} EXACTA, number ${horses[0].horse.programNumber} on top with ${horses
+      if (horses.length < 2 || !firstHorse)
+        return `"${racePrefix}${formattedAmount} EXACTA ${numbers}"`;
+      return `"${racePrefix}${formattedAmount} EXACTA, number ${firstHorse.horse.programNumber} on top with ${horses
         .slice(1)
         .map((h) => h.horse.programNumber)
         .join(', ')}"`;
 
     case 'exacta_key_under':
-      if (horses.length < 2) return `"${racePrefix}${formattedAmount} EXACTA ${numbers}"`;
+      if (horses.length < 2 || !firstHorse)
+        return `"${racePrefix}${formattedAmount} EXACTA ${numbers}"`;
       return `"${racePrefix}${formattedAmount} EXACTA, ${horses
         .slice(1)
         .map((h) => h.horse.programNumber)
-        .join(', ')} with number ${horses[0].horse.programNumber} second"`;
+        .join(', ')} with number ${firstHorse.horse.programNumber} second"`;
 
     case 'trifecta_box':
       return `"${racePrefix}${formattedAmount} TRIFECTA BOX ${numbers}"`;
 
     case 'trifecta_key':
-      if (horses.length < 3) return `"${racePrefix}${formattedAmount} TRIFECTA BOX ${numbers}"`;
-      return `"${racePrefix}${formattedAmount} TRIFECTA, number ${horses[0].horse.programNumber} first, with ${horses
+      if (horses.length < 3 || !firstHorse)
+        return `"${racePrefix}${formattedAmount} TRIFECTA BOX ${numbers}"`;
+      return `"${racePrefix}${formattedAmount} TRIFECTA, number ${firstHorse.horse.programNumber} first, with ${horses
         .slice(1)
         .map((h) => h.horse.programNumber)
         .join(', ')} for second and third"`;
 
     case 'trifecta_wheel':
-      if (horses.length < 2) return `"${racePrefix}${formattedAmount} TRIFECTA ${numbers}"`;
-      return `"${racePrefix}${formattedAmount} TRIFECTA WHEEL, number ${horses[0].horse.programNumber} with ALL for second, ${horses
+      if (horses.length < 2 || !firstHorse)
+        return `"${racePrefix}${formattedAmount} TRIFECTA ${numbers}"`;
+      return `"${racePrefix}${formattedAmount} TRIFECTA WHEEL, number ${firstHorse.horse.programNumber} with ALL for second, ${horses
         .slice(1)
         .map((h) => h.horse.programNumber)
         .join(', ')} for third"`;
@@ -193,7 +200,7 @@ export function generateWindowInstruction(
 
     case 'value_bomb':
     case 'hidden_gem':
-      return `"${racePrefix}${formattedAmount} to WIN on number ${horses[0]?.horse.programNumber || numbers}"`;
+      return `"${racePrefix}${formattedAmount} to WIN on number ${firstHorseNum}"`;
 
     default:
       return `"${racePrefix}${formattedAmount} on ${numbers}"`;
@@ -238,20 +245,22 @@ function generateShortInstruction(
 ): string {
   const amt = formatDisplayAmount(amount);
   const nums = horses.map((h) => h.horse.programNumber).join('-');
+  const firstHorse = horses[0];
+  const firstHorseNum = firstHorse?.horse.programNumber ?? '';
 
   switch (betType) {
     case 'win':
-      return `${amt} W #${horses[0]?.horse.programNumber}`;
+      return `${amt} W #${firstHorseNum}`;
     case 'place':
-      return `${amt} P #${horses[0]?.horse.programNumber}`;
+      return `${amt} P #${firstHorseNum}`;
     case 'show':
-      return `${amt} S #${horses[0]?.horse.programNumber}`;
+      return `${amt} S #${firstHorseNum}`;
     case 'exacta_box':
       return `${amt} EX Box ${nums}`;
     case 'exacta_key_over':
-      return `${amt} EX #${horses[0]?.horse.programNumber}/${nums}`;
+      return `${amt} EX #${firstHorseNum}/${nums}`;
     case 'exacta_key_under':
-      return `${amt} EX ${nums}/#${horses[0]?.horse.programNumber}`;
+      return `${amt} EX ${nums}/#${firstHorseNum}`;
     case 'trifecta_box':
       return `${amt} TRI Box ${nums}`;
     case 'trifecta_key':
@@ -280,22 +289,24 @@ function generateVoiceInstruction(
   const amountText = amount < 1 ? `${Math.round(amount * 100)} cents` : `${amount} dollars`;
 
   const horseNumbers = horses.map((h) => h.horse.programNumber).join(' and ');
+  const firstHorse = horses[0];
+  const firstHorseNum = firstHorse?.horse.programNumber ?? '';
 
   switch (betType) {
     case 'win':
-      return `${racePrefix}${amountText} to win on number ${horses[0]?.horse.programNumber}`;
+      return `${racePrefix}${amountText} to win on number ${firstHorseNum}`;
 
     case 'place':
-      return `${racePrefix}${amountText} to place on number ${horses[0]?.horse.programNumber}`;
+      return `${racePrefix}${amountText} to place on number ${firstHorseNum}`;
 
     case 'show':
-      return `${racePrefix}${amountText} to show on number ${horses[0]?.horse.programNumber}`;
+      return `${racePrefix}${amountText} to show on number ${firstHorseNum}`;
 
     case 'exacta_box':
       return `${racePrefix}${amountText} exacta box, numbers ${horseNumbers}`;
 
     case 'exacta_key_over':
-      return `${racePrefix}${amountText} exacta, number ${horses[0]?.horse.programNumber} over ${horses
+      return `${racePrefix}${amountText} exacta, number ${firstHorseNum} over ${horses
         .slice(1)
         .map((h) => h.horse.programNumber)
         .join(' and ')}`;
@@ -429,14 +440,17 @@ export function generateSuperfectaWithAllInstruction(
   const racePrefix = raceNumber ? `Race ${raceNumber}, ` : '';
   const formattedAmount = formatAmount(amount);
 
-  const positions = ['', '', '', ''];
+  const positions: string[] = ['', '', '', ''];
   let keyIndex = 0;
 
   for (let i = 0; i < 4; i++) {
     if (i === allPosition - 1) {
       positions[i] = 'ALL';
     } else if (keyIndex < keyHorses.length) {
-      positions[i] = keyHorses[keyIndex].toString();
+      const keyHorse = keyHorses[keyIndex];
+      if (keyHorse !== undefined) {
+        positions[i] = keyHorse.toString();
+      }
       keyIndex++;
     }
   }

@@ -819,6 +819,7 @@ const ScoreBadge = memo(function ScoreBadge({ score, rank, hasChanged = false }:
       const timer = setTimeout(() => setShouldAnimate(false), 600);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [hasChanged, score.total]);
 
   // Build detailed tooltip
@@ -1190,6 +1191,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
       }, 2000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [changedScoreIndices.size, clearChangeHighlights]);
 
   // Calculate stats for CalculationStatus

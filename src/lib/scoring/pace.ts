@@ -388,7 +388,10 @@ export function calculateRacePaceScores(
   const results = new Map<number, PaceScoreResult>();
 
   for (let i = 0; i < horses.length; i++) {
-    results.set(i, calculatePaceScore(horses[i], raceHeader, horses, fieldAnalysis));
+    const horse = horses[i];
+    if (horse) {
+      results.set(i, calculatePaceScore(horse, raceHeader, horses, fieldAnalysis));
+    }
   }
 
   return results;

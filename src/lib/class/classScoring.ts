@@ -293,7 +293,7 @@ export function calculateClassScore(horse: HorseEntry, raceHeader: RaceHeader): 
   // Get full analysis
   const analysis = analyzeClass(horse, raceHeader);
   const pps = horse.pastPerformances;
-  const lastPP = pps.length > 0 ? pps[0] : null;
+  const lastPP = pps.length > 0 && pps[0] ? pps[0] : null;
   const breakdown: ClassScoreBreakdownItem[] = [];
 
   // Score proven at level

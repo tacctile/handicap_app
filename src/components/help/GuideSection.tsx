@@ -118,7 +118,7 @@ function FormattedContent({ content }: FormattedContentProps) {
 
     // Numbered list item
     const numberedMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
-    if (numberedMatch) {
+    if (numberedMatch && numberedMatch[1] && numberedMatch[2]) {
       elements.push(
         <div key={`oli-${index}`} className="guide-content-list-item numbered">
           <span className="guide-content-number">{numberedMatch[1]}.</span>
@@ -162,7 +162,10 @@ function renderTable(rows: string[], key: number): React.ReactElement {
 
   if (dataRows.length === 0) return <></>;
 
-  const headerCells = parseRow(dataRows[0]);
+  const headerRow = dataRows[0];
+  if (!headerRow) return <></>;
+
+  const headerCells = parseRow(headerRow);
   const bodyRows = dataRows.slice(1);
 
   return (

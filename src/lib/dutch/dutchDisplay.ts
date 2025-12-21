@@ -423,7 +423,8 @@ export function formatLiveCalculation(result: DutchResult | null): {
   if (!result.hasProfitPotential) {
     warning = `No profit possible (book is ${(result.sumOfImpliedProbs * 100).toFixed(1)}%)`;
   } else if (result.warnings.length > 0) {
-    warning = result.warnings[0];
+    const firstWarning = result.warnings[0];
+    warning = firstWarning ?? null;
   }
 
   return {
