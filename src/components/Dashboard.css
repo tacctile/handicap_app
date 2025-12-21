@@ -36,6 +36,7 @@
   overflow: hidden;
   transition: width var(--transition-normal);
   width: 100%;
+  min-width: 0; /* Allow flex item to shrink below content size */
 }
 
 /* ============================================
@@ -455,6 +456,7 @@
 .app-layout .app-main {
   grid-column: 2;
   grid-row: 2;
+  flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -462,6 +464,8 @@
   padding: 0;
   margin: 0;
   width: 100%;
+  max-width: none; /* Override index.css max-width: 1200px */
+  min-width: 0; /* Allow flex item to shrink below content size */
 }
 
 /* Legacy flexbox main content */
@@ -485,6 +489,8 @@
   padding: 0; /* NO padding - content goes to edges */
   margin: 0;
   width: 100%;
+  max-width: none; /* Ensure full width */
+  min-width: 0; /* Allow flex item to shrink below content size */
 }
 
 /* Placeholder states get their own padding */
@@ -1213,6 +1219,7 @@
   top: 0;
   z-index: 10;
   width: 100%;
+  min-width: 0; /* Allow flex item to shrink below content size */
 }
 
 .horse-list-header__cell {
@@ -1277,4 +1284,16 @@
 /* Expand column - empty */
 .horse-list-header__cell--expand {
   /* Empty for expand chevron column */
+}
+
+/* ============================================
+   RESPONSIVE WIDTH TRANSITIONS
+   Smooth width changes when betting panel collapses/expands
+   ============================================ */
+
+.app-main,
+.app-main__content,
+.horse-list,
+.horse-list-header {
+  transition: width var(--transition-normal, 300ms ease);
 }

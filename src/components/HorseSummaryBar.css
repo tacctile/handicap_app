@@ -33,8 +33,10 @@
   transition:
     background var(--transition-fast),
     opacity var(--transition-fast),
-    border-left-color var(--transition-fast);
+    border-left-color var(--transition-fast),
+    width var(--transition-normal);
   width: 100%;
+  min-width: 0; /* Allow flex item to shrink below content size */
   will-change: background, opacity;
 }
 
@@ -250,6 +252,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  min-width: 0; /* Allow flex item to shrink below content size */
   margin: 0;
   padding: 0;
 }
