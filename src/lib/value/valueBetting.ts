@@ -24,14 +24,13 @@ import type { HorseScore } from '../scoring'
 import { parseOddsToDecimal } from '../betting/kellyCriterion'
 import {
   analyzeValue,
-  ValueAnalysis,
-  ValueClassification,
-  EV_THRESHOLDS,
   VALUE_CLASSIFICATION_META,
+  type ValueAnalysis,
+  type ValueClassification,
 } from './valueDetector'
 import {
   analyzeMarketInefficiency,
-  MarketInefficiencyAnalysis,
+  type MarketInefficiencyAnalysis,
 } from './marketInefficiency'
 import type { CalibrationProfile } from './confidenceCalibration'
 

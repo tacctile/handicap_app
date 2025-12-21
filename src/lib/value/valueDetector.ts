@@ -19,7 +19,6 @@ import { logger } from '../../services/logging'
 import type { HorseEntry } from '../../types/drf'
 import type { HorseScore } from '../scoring'
 import { parseOddsToDecimal } from '../betting/kellyCriterion'
-import { scoreToWinProbability as getWinProbFromScore } from '../scoring/overlayAnalysis'
 import {
   getDefaultCalibration,
   scoreToWinProbability as calibratedWinProb,

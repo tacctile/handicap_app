@@ -39,7 +39,7 @@ const localStorageMock = (() => {
   }
 })()
 
-Object.defineProperty(global, 'localStorage', { value: localStorageMock })
+Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock })
 
 describe('getDefaultCalibration', () => {
   it('should return a valid calibration profile', () => {

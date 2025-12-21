@@ -41,8 +41,7 @@
 
 import { logger } from '../../services/logging'
 import type { HorseEntry, PastPerformance, RaceHeader } from '../../types/drf'
-import type { HorseScore, ClassScoreResult, HiddenClassDrop } from '../scoring'
-import { parseOdds } from '../scoring'
+import type { HorseScore } from '../scoring'
 import { parseOddsToDecimal } from '../betting/kellyCriterion'
 import { scoreToWinProbability, oddsToMarketProbability, calculateEdge } from './valueDetector'
 
@@ -232,9 +231,9 @@ function detectPublicOverreaction(
  * Detect legitimate excuse in past performance
  */
 function detectLegitimateExcuse(pp: PastPerformance): string | null {
-  const comments = pp.comment?.toLowerCase() || ''
-  const tripNote = pp.tripNote?.toLowerCase() || ''
-  const notes = `${comments} ${tripNote}`
+  // Check comment field for trip notes and excuses
+  const comments = (pp as { comment?: string }).comment?.toLowerCase() || ''
+  const notes = comments
 
   // Wide trip
   if (notes.includes('wide') || notes.includes('4-5 wide') || notes.includes('parked')) {
@@ -289,7 +288,8 @@ function detectRecencyBias(
 
   // Recent loser being avoided (underbet) - our opportunity
   if (losses >= 2 && edge > 10 && score.total >= 140) {
-    const hasClassDrop = score.classScore?.analysis.movement.direction === 'dropping'
+    // Check if classAnalysis shows dropping (movement string contains "dropping")
+    const hasClassDrop = score.breakdown.classAnalysis?.movement.toLowerCase().includes('drop') ?? false
     const magnitude = Math.min(10, Math.round(edge / 4) + (hasClassDrop ? 2 : 0))
 
     if (magnitude < MIN_MAGNITUDE) return null
@@ -488,7 +488,7 @@ function detectPostPositionPanic(
  * Public doesn't understand hidden class drops
  */
 function detectClassConfusion(
-  horse: HorseEntry,
+  _horse: HorseEntry,
   score: HorseScore,
   edge: number
 ): InefficiencyDetection | null {
@@ -501,7 +501,7 @@ function detectClassConfusion(
   // Significant hidden drops not reflected in odds
   if (hiddenDrops.length > 0 && isValuePlay && edge > 10) {
     const primaryDrop = hiddenDrops[0]
-    const totalDropsValue = hiddenDrops.reduce((sum, d) => sum + d.advantage, 0)
+    const totalDropsValue = hiddenDrops.reduce((sum, d) => sum + d.pointsBonus, 0)
     const magnitude = Math.min(10, Math.round(totalDropsValue / 2) + Math.round(edge / 6))
 
     if (magnitude < MIN_MAGNITUDE) return null
