@@ -262,8 +262,16 @@
 }
 
 .horse-expanded-view__section--performances {
-  background: #f5f5f5; /* Light background for DRF-style PP section */
-  color: #1a1a1a; /* Dark text for contrast */
+  /* Force light theme for this section regardless of app theme */
+  --pp-bg: #f8f8f8;
+  --pp-header-bg: #e8e8e8;
+  --pp-text: #1a1a1a;
+  --pp-text-muted: #666;
+  --pp-border: #ccc;
+
+  padding: 0;
+  background: var(--pp-bg);
+  color: var(--pp-text);
 }
 
 .horse-expanded-view__section--workouts {
@@ -486,4 +494,138 @@
 /* Good win rate highlight */
 .horse-stats__record--hot {
   color: var(--color-tier-good);
+}
+
+/* ============================================
+   PAST PERFORMANCES SECTION
+   ============================================ */
+
+.horse-pp {
+  width: 100%;
+}
+
+/* ============================================
+   PP HEADER ROW
+   ============================================ */
+
+.horse-pp__header {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  background: var(--pp-header-bg, #e8e8e8);
+  border-bottom: 1px solid var(--pp-border, #ccc);
+  gap: 0;
+}
+
+.horse-pp__col {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--pp-text, #333);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Column Widths - Fixed for alignment */
+.horse-pp__col--date {
+  width: 70px;
+  min-width: 70px;
+}
+
+.horse-pp__col--track {
+  width: 36px;
+  min-width: 36px;
+  text-align: center;
+}
+
+.horse-pp__col--dist {
+  width: 50px;
+  min-width: 50px;
+  text-align: center;
+}
+
+.horse-pp__col--cond {
+  width: 36px;
+  min-width: 36px;
+  text-align: center;
+}
+
+.horse-pp__col--class {
+  width: 80px;
+  min-width: 80px;
+}
+
+.horse-pp__col--finish {
+  width: 40px;
+  min-width: 40px;
+  text-align: center;
+}
+
+.horse-pp__col--odds {
+  width: 44px;
+  min-width: 44px;
+  text-align: right;
+}
+
+.horse-pp__col--figure {
+  width: 32px;
+  min-width: 32px;
+  text-align: center;
+}
+
+.horse-pp__col--running {
+  width: 140px;
+  min-width: 140px;
+}
+
+.horse-pp__col--jockey {
+  width: 90px;
+  min-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.horse-pp__col--weight {
+  width: 32px;
+  min-width: 32px;
+  text-align: center;
+}
+
+.horse-pp__col--comment {
+  flex: 1;
+  min-width: 100px;
+}
+
+/* ============================================
+   PP LINES CONTAINER
+   ============================================ */
+
+.horse-pp__lines {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Placeholder while building */
+.horse-pp__placeholder-text {
+  padding: 12px 8px;
+  font-size: 11px;
+  color: var(--pp-text-muted, #666);
+  text-align: center;
+  font-style: italic;
+}
+
+.horse-pp__no-data {
+  padding: 12px 8px;
+  font-size: 11px;
+  color: #999;
+  text-align: center;
+  font-style: italic;
+}
+
+/* Hide old placeholder */
+.horse-expanded-view__section--performances .horse-expanded-view__section-placeholder {
+  display: none;
 }
