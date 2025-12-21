@@ -86,9 +86,9 @@
   /* ============================================
      HORSE LIST GRID COLUMNS
      Single source of truth for header + rows
+     9 columns: icons | PP | name | odds | score | fair | value | rating | expand
      ============================================ */
-  --horse-list-grid: 48px /* scratch checkbox */ 48px /* PP */ minmax(150px, 1fr)
-    /* horse name - flexible to fill space */ minmax(120px, 150px) /* trainer */ 48px /* weight */
-    130px /* live odds */ 100px /* life record */ 80px /* score */ 70px /* fair odds */ 90px
-    /* value % */ 180px /* rating badge - INCREASED from 150px */ 40px; /* expand chevron */
+  --horse-list-grid: 56px /* scratch/compare icons stacked */ 48px /* PP */ minmax(200px, 1fr)
+    /* horse name - flexible, shows full name */ 90px /* live odds */ 80px /* score */ 70px
+    /* fair odds */ 90px /* value % */ 170px /* rating badge */ 40px; /* expand chevron */
 }
