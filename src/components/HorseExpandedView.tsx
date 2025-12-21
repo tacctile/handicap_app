@@ -1,6 +1,7 @@
 import React from 'react';
 import './HorseExpandedView.css';
-import type { HorseEntry } from '../types/drf';
+import { PPLine } from './PPLine';
+import type { HorseEntry, PastPerformance } from '../types/drf';
 import type { HorseScore } from '../lib/scoring';
 
 interface HorseExpandedViewProps {
@@ -474,12 +475,14 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
             <span className="horse-pp__col horse-pp__col--comment">COMMENT</span>
           </div>
 
-          {/* PP Lines will go here - Placeholder for now */}
+          {/* PP Lines */}
           <div className="horse-pp__lines">
             {horse.pastPerformances && horse.pastPerformances.length > 0 ? (
-              <div className="horse-pp__placeholder-text">
-                {horse.pastPerformances.length} past performances — (Prompt 6-7)
-              </div>
+              horse.pastPerformances
+                .slice(0, 10)
+                .map((pp: PastPerformance, index: number) => (
+                  <PPLine key={`${pp.date}-${pp.track}-${index}`} pp={pp} index={index} />
+                ))
             ) : (
               <div className="horse-pp__no-data">
                 No past performances available (First-time starter)
