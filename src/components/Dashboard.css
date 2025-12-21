@@ -69,7 +69,7 @@
 }
 
 /* ============================================
-   APP BODY - Sidebar + Main Container
+   APP BODY - Main + Betting Panel
    ============================================ */
 
 .app-body {
@@ -79,153 +79,32 @@
 }
 
 /* ============================================
-   SIDEBAR - Collapsible Navigation
-   ============================================ */
-
-.app-sidebar {
-  display: flex;
-  flex-direction: column;
-  background: var(--color-card);
-  border-right: 1px solid var(--color-border);
-  transition: width 200ms ease-out;
-  flex-shrink: 0;
-  position: relative;
-  padding: var(--gap-container) 0;
-}
-
-.app-sidebar--expanded {
-  width: 200px;
-}
-
-.app-sidebar--collapsed {
-  width: var(--dimension-bar);
-}
-
-/* Sidebar Toggle Tab - Chrome-tab style */
-.app-sidebar__toggle {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  right: -20px;
-  width: 20px;
-  height: 48px;
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-left: none;
-  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  z-index: 10;
-  transition: background 150ms ease, color 150ms ease;
-}
-
-.app-sidebar__toggle:hover {
-  background: var(--color-elevated);
-  color: var(--color-text-primary);
-}
-
-.app-sidebar__toggle .material-icons {
-  font-size: 16px;
-  transition: transform 200ms ease-out;
-}
-
-/* Sidebar Navigation */
-.app-sidebar__nav {
-  display: flex;
-  flex-direction: column;
-  padding: 0 var(--gap-element);
-  gap: var(--gap-tight);
-}
-
-.app-sidebar__item {
-  display: flex;
-  align-items: center;
-  gap: var(--gap-element);
-  padding: var(--gap-element) var(--gap-container);
-  color: var(--color-text-secondary);
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 150ms ease;
-  text-align: left;
-  width: 100%;
-  font-family: inherit;
-  font-size: 14px;
-}
-
-.app-sidebar__item:hover {
-  background: var(--color-elevated);
-  color: var(--color-text-primary);
-}
-
-.app-sidebar__item--active {
-  background: var(--color-primary-muted);
-  color: var(--color-primary);
-}
-
-.app-sidebar__item--active:hover {
-  background: var(--color-primary-muted);
-  color: var(--color-primary);
-}
-
-.app-sidebar__item .material-icons {
-  font-size: 22px;
-  flex-shrink: 0;
-  width: 24px;
-  text-align: center;
-}
-
-.app-sidebar__label {
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Collapsed state - center icons */
-.app-sidebar--collapsed .app-sidebar__item {
-  justify-content: center;
-  padding: var(--gap-element);
-}
-
-.app-sidebar--collapsed .app-sidebar__nav {
-  padding: 0 var(--gap-element);
-}
-
-/* Sidebar Spacer */
-.app-sidebar__spacer {
-  flex: 1;
-  min-height: var(--gap-container);
-}
-
-
-/* ============================================
-   MAIN CONTENT AREA
+   MAIN CONTENT AREA - 2/3 width
    ============================================ */
 
 .app-main {
-  flex: 1;
+  flex: 2;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   background: var(--color-base);
+  border-right: 1px solid var(--color-border);
 }
 
-/* Placeholder styling for development */
-.app-main__placeholder {
+.app-main__content {
   flex: 1;
+  overflow-y: auto;
+  padding: var(--gap-container);
+}
+
+.app-main__placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: 100%;
   color: var(--color-text-tertiary);
   text-align: center;
-  padding: var(--gap-container);
 }
 
 .app-main__placeholder h2 {
@@ -238,6 +117,70 @@
 .app-main__placeholder p {
   margin: var(--gap-element) 0 0 0;
   font-size: 14px;
+}
+
+/* ============================================
+   BETTING PANEL - 1/3 width, always visible
+   ============================================ */
+
+.app-betting-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-card);
+  overflow: hidden;
+  min-width: 320px;
+  max-width: 450px;
+}
+
+.app-betting-panel__header {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-element);
+  padding: var(--gap-container);
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--color-text-primary);
+  flex-shrink: 0;
+}
+
+.app-betting-panel__header .material-icons {
+  font-size: 20px;
+  color: var(--color-primary);
+}
+
+.app-betting-panel__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--gap-container);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-container);
+}
+
+.app-betting-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-element);
+}
+
+.app-betting-panel__section-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-tertiary);
+}
+
+.app-betting-panel__placeholder {
+  padding: var(--gap-container);
+  background: var(--color-elevated);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  text-align: center;
 }
 
 /* ============================================
@@ -255,6 +198,23 @@
   gap: var(--gap-container);
 }
 
+.app-bottombar__cluster {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-element);
+}
+
+.app-bottombar__separator {
+  width: 1px;
+  height: 24px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+.app-bottombar__spacer {
+  flex: 1;
+}
+
 .app-bottombar__item {
   display: flex;
   align-items: center;
@@ -268,6 +228,7 @@
   font-family: inherit;
   font-size: 14px;
   transition: all 150ms ease;
+  white-space: nowrap;
 }
 
 .app-bottombar__item:hover {
@@ -276,9 +237,13 @@
 }
 
 .app-bottombar__item .material-icons {
-  font-size: 18px;
+  font-size: 20px;
 }
 
-.app-bottombar__spacer {
-  flex: 1;
+.app-bottombar__item--icon-only {
+  padding: var(--gap-element);
+}
+
+.app-bottombar__item--icon-only .material-icons {
+  font-size: 22px;
 }
