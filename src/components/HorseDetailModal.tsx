@@ -29,6 +29,14 @@ import {
   getTierDisplayName,
 } from '../lib/scoring'
 import {
+  analyzeValue,
+  analyzeMarketInefficiency,
+  INEFFICIENCY_META,
+  VALUE_CLASSIFICATION_META,
+  type ValueAnalysis,
+  type MarketInefficiencyAnalysis,
+} from '../lib/value'
+import {
   getBreedingDisplayInfo,
   getExperienceBadge,
   getSireTierColor,
@@ -290,6 +298,18 @@ export function HorseDetailModal({
       trainerProfile,
     }
   }, [horse])
+
+  // Enhanced value analysis with EV calculations
+  const valueAnalysis = useMemo((): ValueAnalysis | null => {
+    if (score.isScratched) return null
+    return analyzeValue(horse, score)
+  }, [horse, score])
+
+  // Market inefficiency detection
+  const inefficiencyAnalysis = useMemo((): MarketInefficiencyAnalysis | null => {
+    if (score.isScratched) return null
+    return analyzeMarketInefficiency(horse, score, raceHeader)
+  }, [horse, score, raceHeader])
 
   // Calculate dynamic connections score with pattern analysis
   const dynamicConnections = useMemo<DynamicConnectionsScoreResult | null>(() => {
@@ -1706,6 +1726,194 @@ export function HorseDetailModal({
                     : 'Negative EV: This bet is not profitable long-term at current odds.'}
                 </span>
               </div>
+
+              {/* Enhanced Value Analysis with EV Classification */}
+              {valueAnalysis && (
+                <div style={{
+                  marginTop: '16px',
+                  backgroundColor: `${VALUE_CLASSIFICATION_META[valueAnalysis.classification].bgColor}`,
+                  border: `2px solid ${VALUE_CLASSIFICATION_META[valueAnalysis.classification].color}`,
+                  borderRadius: '12px',
+                  padding: '16px',
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '12px',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Icon
+                        name={VALUE_CLASSIFICATION_META[valueAnalysis.classification].icon}
+                        className="text-xl"
+                      />
+                      <div>
+                        <div style={{
+                          color: VALUE_CLASSIFICATION_META[valueAnalysis.classification].color,
+                          fontWeight: 700,
+                          fontSize: '1.1rem',
+                        }}>
+                          {VALUE_CLASSIFICATION_META[valueAnalysis.classification].name}
+                        </div>
+                        <div style={{ color: '#888', fontSize: '0.8rem' }}>
+                          {VALUE_CLASSIFICATION_META[valueAnalysis.classification].action}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{
+                      backgroundColor: VALUE_CLASSIFICATION_META[valueAnalysis.classification].color,
+                      color: '#1a1a1a',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      fontWeight: 800,
+                      fontSize: '1.2rem',
+                    }}>
+                      {valueAnalysis.evPercent > 0 ? '+' : ''}{valueAnalysis.evPercent.toFixed(0)}% EV
+                    </div>
+                  </div>
+
+                  {/* EV Calculation Breakdown */}
+                  <div style={{
+                    backgroundColor: '#1a1a1a',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginBottom: '12px',
+                  }}>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, 1fr)',
+                      gap: '10px',
+                      fontSize: '0.85rem',
+                    }}>
+                      <div>
+                        <span style={{ color: '#888' }}>Our probability: </span>
+                        <span style={{ color: '#36d1da', fontWeight: 600 }}>
+                          {valueAnalysis.ourProbability.toFixed(1)}%
+                        </span>
+                        <span style={{ color: '#666', fontSize: '0.75rem' }}> ({valueAnalysis.score} pts)</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#888' }}>Market probability: </span>
+                        <span style={{ color: '#e0e0e0', fontWeight: 600 }}>
+                          {valueAnalysis.marketProbability.toFixed(1)}%
+                        </span>
+                        <span style={{ color: '#666', fontSize: '0.75rem' }}> ({valueAnalysis.oddsDisplay})</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#888' }}>Edge: </span>
+                        <span style={{
+                          color: valueAnalysis.edge > 0 ? '#22c55e' : '#ef4444',
+                          fontWeight: 600,
+                        }}>
+                          {valueAnalysis.edge > 0 ? '+' : ''}{valueAnalysis.edge.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#888' }}>Fair odds: </span>
+                        <span style={{ color: '#e0e0e0', fontWeight: 600 }}>
+                          {valueAnalysis.fairOddsDisplay}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{
+                      marginTop: '12px',
+                      paddingTop: '12px',
+                      borderTop: '1px solid #333',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}>
+                      <span style={{ color: '#888' }}>Expected return per $1:</span>
+                      <span style={{
+                        color: valueAnalysis.evPerDollar >= 0 ? '#22c55e' : '#ef4444',
+                        fontWeight: 700,
+                        fontSize: '1rem',
+                      }}>
+                        {valueAnalysis.evPerDollar >= 0 ? '+' : ''}${valueAnalysis.evPerDollar.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Value Recommendation */}
+                  <div style={{
+                    color: '#e0e0e0',
+                    fontSize: '0.9rem',
+                    fontStyle: 'italic',
+                  }}>
+                    {valueAnalysis.recommendation}
+                  </div>
+                </div>
+              )}
+
+              {/* Market Inefficiency Detection */}
+              {inefficiencyAnalysis && inefficiencyAnalysis.hasExploitableInefficiency && inefficiencyAnalysis.primaryInefficiency && (
+                <div style={{
+                  marginTop: '16px',
+                  backgroundColor: `${INEFFICIENCY_META[inefficiencyAnalysis.primaryInefficiency.type].bgColor}`,
+                  border: `2px solid ${INEFFICIENCY_META[inefficiencyAnalysis.primaryInefficiency.type].color}`,
+                  borderRadius: '12px',
+                  padding: '16px',
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '12px',
+                  }}>
+                    <Icon
+                      name={INEFFICIENCY_META[inefficiencyAnalysis.primaryInefficiency.type].icon}
+                      className="text-xl"
+                    />
+                    <div>
+                      <div style={{
+                        color: INEFFICIENCY_META[inefficiencyAnalysis.primaryInefficiency.type].color,
+                        fontWeight: 700,
+                        fontSize: '1rem',
+                      }}>
+                        Market Inefficiency: {INEFFICIENCY_META[inefficiencyAnalysis.primaryInefficiency.type].name}
+                      </div>
+                      <div style={{ color: '#e0e0e0', fontSize: '0.9rem' }}>
+                        {inefficiencyAnalysis.primaryInefficiency.title}
+                      </div>
+                    </div>
+                    <div style={{
+                      marginLeft: 'auto',
+                      backgroundColor: INEFFICIENCY_META[inefficiencyAnalysis.primaryInefficiency.type].color,
+                      color: '#1a1a1a',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      fontWeight: 700,
+                      fontSize: '0.8rem',
+                    }}>
+                      {inefficiencyAnalysis.primaryInefficiency.magnitude}/10
+                    </div>
+                  </div>
+
+                  <div style={{
+                    backgroundColor: '#1a1a1a',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginBottom: '12px',
+                  }}>
+                    <div style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '8px' }}>
+                      {inefficiencyAnalysis.primaryInefficiency.explanation}
+                    </div>
+                    <div style={{ color: '#888', fontSize: '0.8rem', fontStyle: 'italic' }}>
+                      {inefficiencyAnalysis.primaryInefficiency.valueReason}
+                    </div>
+                  </div>
+
+                  {/* Evidence List */}
+                  {inefficiencyAnalysis.primaryInefficiency.evidence.length > 0 && (
+                    <div style={{ fontSize: '0.8rem', color: '#888' }}>
+                      {inefficiencyAnalysis.primaryInefficiency.evidence.slice(0, 3).map((ev, i) => (
+                        <div key={i} style={{ marginBottom: '4px' }}>• {ev}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </section>
 
