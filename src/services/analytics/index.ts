@@ -199,14 +199,18 @@ class MockAnalyticsService implements IAnalyticsProvider {
  * Throws "not implemented" error until actual integration is added
  */
 class MixpanelAnalyticsService implements IAnalyticsProvider {
-  constructor(_config: Partial<AnalyticsConfig> = {}) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  constructor(config: Partial<AnalyticsConfig> = {}) {
     // Config would be used when implementing actual Mixpanel integration
   }
 
   trackEvent(
-    _eventName: EventName,
-    _properties?: EventProperties,
-    _userId?: string
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    eventName: EventName,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    properties?: EventProperties,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    userId?: string
   ): void {
     throw createAnalyticsError(
       'NOT_IMPLEMENTED',
@@ -215,7 +219,8 @@ class MixpanelAnalyticsService implements IAnalyticsProvider {
     )
   }
 
-  async getActivity(_userId: string): Promise<UserActivity | null> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async getActivity(userId: string): Promise<UserActivity | null> {
     throw createAnalyticsError(
       'NOT_IMPLEMENTED',
       'Mixpanel analytics provider is not yet implemented',
@@ -245,14 +250,18 @@ class MixpanelAnalyticsService implements IAnalyticsProvider {
  * Throws "not implemented" error until actual integration is added
  */
 class AmplitudeAnalyticsService implements IAnalyticsProvider {
-  constructor(_config: Partial<AnalyticsConfig> = {}) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  constructor(config: Partial<AnalyticsConfig> = {}) {
     // Config would be used when implementing actual Amplitude integration
   }
 
   trackEvent(
-    _eventName: EventName,
-    _properties?: EventProperties,
-    _userId?: string
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    eventName: EventName,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    properties?: EventProperties,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    userId?: string
   ): void {
     throw createAnalyticsError(
       'NOT_IMPLEMENTED',
@@ -261,7 +270,8 @@ class AmplitudeAnalyticsService implements IAnalyticsProvider {
     )
   }
 
-  async getActivity(_userId: string): Promise<UserActivity | null> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async getActivity(userId: string): Promise<UserActivity | null> {
     throw createAnalyticsError(
       'NOT_IMPLEMENTED',
       'Amplitude analytics provider is not yet implemented',
