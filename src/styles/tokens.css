@@ -44,4 +44,10 @@
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
+
+  /* Status colors - comfortable, not obnoxious */
+  --color-status-normal: #22c55e; /* Forest green */
+  --color-status-warning: #eab308; /* Goldenrod amber */
+  --color-status-critical: #ef4444; /* Soft red */
+  --color-status-final: var(--color-text-tertiary); /* Dimmed for completed */
 }

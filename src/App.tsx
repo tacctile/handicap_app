@@ -302,6 +302,7 @@ function AppContent() {
       <Dashboard
         parsedData={parsedData}
         selectedRaceIndex={selectedRaceIndex}
+        onRaceSelect={setSelectedRaceIndex}
         trackCondition={raceState.trackCondition}
         onTrackConditionChange={raceState.setTrackCondition}
         raceState={raceState}
