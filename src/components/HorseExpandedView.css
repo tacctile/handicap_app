@@ -68,7 +68,188 @@
 
 /* Section-specific backgrounds for visual distinction */
 .horse-expanded-view__section--scoring {
-  background: var(--color-card);
+  padding: 8px 16px;
+  background: var(--color-elevated);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* ============================================
+   FURLONG SCORING BREAKDOWN (Compact)
+   ============================================ */
+
+.horse-scoring {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.2;
+}
+
+/* Total Score */
+.horse-scoring__total {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.horse-scoring__total-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.horse-scoring__total-value {
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.horse-scoring__total-max {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+}
+
+.horse-scoring__total-percent {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Tier colors for total */
+.horse-scoring__total-value--elite,
+.horse-scoring__total-percent--elite {
+  color: var(--color-tier-elite);
+}
+
+.horse-scoring__total-value--good,
+.horse-scoring__total-percent--good {
+  color: var(--color-tier-good);
+}
+
+.horse-scoring__total-value--fair,
+.horse-scoring__total-percent--fair {
+  color: var(--color-tier-fair);
+}
+
+.horse-scoring__total-value--neutral,
+.horse-scoring__total-percent--neutral {
+  color: var(--color-tier-neutral);
+}
+
+.horse-scoring__total-value--bad,
+.horse-scoring__total-percent--bad {
+  color: var(--color-tier-bad);
+}
+
+/* Divider */
+.horse-scoring__divider {
+  color: var(--color-border);
+  font-size: 14px;
+  font-weight: 300;
+  margin: 0 2px;
+  user-select: none;
+}
+
+/* Category Grid */
+.horse-scoring__categories {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.horse-scoring__category {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.horse-scoring__cat-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  min-width: 32px;
+}
+
+.horse-scoring__cat-bar-wrap {
+  width: 40px;
+  height: 6px;
+  background: var(--color-base);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.horse-scoring__cat-bar {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 3px;
+  transition: width 300ms ease;
+}
+
+.horse-scoring__cat-value {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  min-width: 32px;
+}
+
+/* Confidence */
+.horse-scoring__confidence {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.horse-scoring__conf-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+}
+
+.horse-scoring__conf-value {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.horse-scoring__conf-value--high {
+  background: var(--color-tier-elite);
+  color: #000;
+}
+
+.horse-scoring__conf-value--medium {
+  background: var(--color-tier-fair);
+  color: #000;
+}
+
+.horse-scoring__conf-value--low {
+  background: var(--color-tier-bad);
+  color: #fff;
+}
+
+/* No breakdown fallback */
+.horse-scoring__no-breakdown {
+  display: flex;
+  align-items: center;
+}
+
+.horse-scoring__no-breakdown-text {
+  font-size: 10px;
+  font-style: italic;
+  color: var(--color-text-tertiary);
+}
+
+/* Hide placeholder */
+.horse-expanded-view__section--scoring .horse-expanded-view__section-placeholder {
+  display: none;
 }
 
 .horse-expanded-view__section--identity {

@@ -700,6 +700,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         horse={horse}
                         isVisible={expandedHorseId === horseId && !isScratched}
                         valuePercent={overlay.overlayPercent}
+                        score={scoredHorse.score}
                       />
                     </div>
                   );
