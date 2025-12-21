@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './Dashboard.css';
 
 export const Dashboard: React.FC = () => {
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
-
   return (
     <div className="app-shell">
       {/* TOP BAR - Full width, always visible */}
@@ -19,90 +17,101 @@ export const Dashboard: React.FC = () => {
         </div>
       </header>
 
-      {/* BODY - Sidebar + Main */}
+      {/* BODY - Main + Betting Panel */}
       <div className="app-body">
-        {/* SIDEBAR - Collapsible */}
-        <aside
-          className={`app-sidebar ${sidebarExpanded ? 'app-sidebar--expanded' : 'app-sidebar--collapsed'}`}
-        >
-          {/* Collapse/Expand Toggle Tab */}
-          <button
-            className="app-sidebar__toggle"
-            onClick={() => setSidebarExpanded(!sidebarExpanded)}
-            aria-label={sidebarExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
-          >
-            <span className="material-icons">
-              {sidebarExpanded ? 'chevron_left' : 'chevron_right'}
-            </span>
-          </button>
-
-          {/* Primary Navigation */}
-          <nav className="app-sidebar__nav">
-            <button className="app-sidebar__item app-sidebar__item--active">
-              <span className="material-icons">dashboard</span>
-              {sidebarExpanded && <span className="app-sidebar__label">Dashboard</span>}
-            </button>
-            <button className="app-sidebar__item">
-              <span className="material-icons">person</span>
-              {sidebarExpanded && <span className="app-sidebar__label">Account</span>}
-            </button>
-            <button className="app-sidebar__item">
-              <span className="material-icons">help_outline</span>
-              {sidebarExpanded && <span className="app-sidebar__label">Help Center</span>}
-            </button>
-            <button className="app-sidebar__item">
-              <span className="material-icons">settings</span>
-              {sidebarExpanded && <span className="app-sidebar__label">Settings</span>}
-            </button>
-          </nav>
-
-          {/* Spacer */}
-          <div className="app-sidebar__spacer"></div>
-
-          {/* Secondary Navigation */}
-          <nav className="app-sidebar__nav">
-            <button className="app-sidebar__item">
-              <span className="material-icons">fullscreen</span>
-              {sidebarExpanded && <span className="app-sidebar__label">Fullscreen</span>}
-            </button>
-            <button className="app-sidebar__item">
-              <span className="material-icons">open_in_new</span>
-              {sidebarExpanded && <span className="app-sidebar__label">Multi-window</span>}
-            </button>
-          </nav>
-        </aside>
-
-        {/* MAIN CONTENT AREA */}
+        {/* MAIN CONTENT - 2/3 width */}
         <main className="app-main">
-          {/* Placeholder content */}
-          <div className="app-main__placeholder">
-            <span
-              className="material-icons"
-              style={{ fontSize: '48px', marginBottom: 'var(--gap-container)' }}
-            >
-              construction
-            </span>
-            <h2>New Dashboard</h2>
-            <p>Shell layout complete. Content coming soon.</p>
-            <p style={{ marginTop: 'var(--gap-container)', opacity: 0.5 }}>
-              Visit{' '}
-              <a href="/legacy" style={{ color: 'var(--color-primary)' }}>
-                /legacy
-              </a>{' '}
-              to see the original dashboard
-            </p>
+          <div className="app-main__content">
+            {/* Placeholder for race tabs + horse table */}
+            <div className="app-main__placeholder">
+              <span
+                className="material-icons"
+                style={{ fontSize: '48px', marginBottom: 'var(--gap-container)' }}
+              >
+                analytics
+              </span>
+              <h2>Race Analysis</h2>
+              <p>Race tabs and horse table will appear here</p>
+            </div>
           </div>
         </main>
+
+        {/* BETTING PANEL - 1/3 width, always visible */}
+        <aside className="app-betting-panel">
+          <div className="app-betting-panel__header">
+            <span className="material-icons">payments</span>
+            <span>Betting</span>
+          </div>
+          <div className="app-betting-panel__content">
+            {/* Bankroll summary section */}
+            <div className="app-betting-panel__section">
+              <h3 className="app-betting-panel__section-title">Bankroll</h3>
+              <div className="app-betting-panel__placeholder">
+                Bankroll summary will appear here
+              </div>
+            </div>
+
+            {/* Betting recommendations section */}
+            <div className="app-betting-panel__section">
+              <h3 className="app-betting-panel__section-title">Recommendations</h3>
+              <div className="app-betting-panel__placeholder">
+                Betting recommendations will appear here
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
 
       {/* BOTTOM BAR */}
       <footer className="app-bottombar">
-        <button className="app-bottombar__item">
-          <span className="material-icons">gavel</span>
-          <span>Legal</span>
-        </button>
+        {/* Left cluster - Account & Settings */}
+        <div className="app-bottombar__cluster">
+          <button className="app-bottombar__item">
+            <span className="material-icons">person</span>
+            <span>Guest</span>
+          </button>
+          <button className="app-bottombar__item">
+            <span className="material-icons">settings</span>
+            <span>Settings</span>
+          </button>
+        </div>
+
+        {/* Separator */}
+        <div className="app-bottombar__separator"></div>
+
+        {/* Center spacer */}
         <div className="app-bottombar__spacer"></div>
-        {/* Future items will go here */}
+
+        {/* Separator */}
+        <div className="app-bottombar__separator"></div>
+
+        {/* Right cluster - Help, Legal */}
+        <div className="app-bottombar__cluster">
+          <button className="app-bottombar__item">
+            <span className="material-icons">help_outline</span>
+            <span>Help</span>
+          </button>
+          <button className="app-bottombar__item">
+            <span className="material-icons">gavel</span>
+            <span>Legal</span>
+          </button>
+        </div>
+
+        {/* Separator */}
+        <div className="app-bottombar__separator"></div>
+
+        {/* Icon-only cluster - Fullscreen, Multi-window */}
+        <div className="app-bottombar__cluster">
+          <button className="app-bottombar__item app-bottombar__item--icon-only" title="Fullscreen">
+            <span className="material-icons">fullscreen</span>
+          </button>
+          <button
+            className="app-bottombar__item app-bottombar__item--icon-only"
+            title="Multi-window"
+          >
+            <span className="material-icons">open_in_new</span>
+          </button>
+        </div>
       </footer>
     </div>
   );
