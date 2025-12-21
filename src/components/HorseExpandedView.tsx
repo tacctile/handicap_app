@@ -457,12 +457,35 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
 
       {/* Section 4: Past Performances */}
       <section className="horse-expanded-view__section horse-expanded-view__section--performances">
-        <div className="horse-expanded-view__section-placeholder">
-          PAST PERFORMANCES
-          <span className="horse-expanded-view__placeholder-note">
-            (Up to 10 race lines with full DRF data)
-          </span>
-          <span className="horse-expanded-view__placeholder-note">(Prompts 5-7)</span>
+        <div className="horse-pp">
+          {/* PP Header Row */}
+          <div className="horse-pp__header">
+            <span className="horse-pp__col horse-pp__col--date">DATE</span>
+            <span className="horse-pp__col horse-pp__col--track">TRK</span>
+            <span className="horse-pp__col horse-pp__col--dist">DIST</span>
+            <span className="horse-pp__col horse-pp__col--cond">COND</span>
+            <span className="horse-pp__col horse-pp__col--class">CLASS</span>
+            <span className="horse-pp__col horse-pp__col--finish">FIN</span>
+            <span className="horse-pp__col horse-pp__col--odds">ODDS</span>
+            <span className="horse-pp__col horse-pp__col--figure">FIG</span>
+            <span className="horse-pp__col horse-pp__col--running">RUNNING LINE</span>
+            <span className="horse-pp__col horse-pp__col--jockey">JOCKEY</span>
+            <span className="horse-pp__col horse-pp__col--weight">WT</span>
+            <span className="horse-pp__col horse-pp__col--comment">COMMENT</span>
+          </div>
+
+          {/* PP Lines will go here - Placeholder for now */}
+          <div className="horse-pp__lines">
+            {horse.pastPerformances && horse.pastPerformances.length > 0 ? (
+              <div className="horse-pp__placeholder-text">
+                {horse.pastPerformances.length} past performances — (Prompt 6-7)
+              </div>
+            ) : (
+              <div className="horse-pp__no-data">
+                No past performances available (First-time starter)
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
