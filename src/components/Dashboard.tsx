@@ -39,6 +39,7 @@ interface DashboardProps {
   onDismissWarnings: () => void
   raceState: ReturnType<typeof useRaceState>
   onOpenLegalModal: (type: LegalContentType) => void
+  onNavigateToAccount?: () => void
 }
 
 export function Dashboard({
@@ -50,6 +51,7 @@ export function Dashboard({
   onDismissWarnings,
   raceState,
   onOpenLegalModal,
+  onNavigateToAccount,
 }: DashboardProps) {
   // View management state
   const [currentView, setCurrentView] = useState<ViewMode>('overview')
@@ -249,6 +251,7 @@ export function Dashboard({
         onToggle={toggleSidebar}
         trackDbLoaded={true}
         onOpenLegalModal={onOpenLegalModal}
+        onNavigateToAccount={onNavigateToAccount}
       />
 
       {/* Main container */}
