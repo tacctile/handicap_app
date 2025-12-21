@@ -3,6 +3,7 @@
  *
  * Defines interfaces for the logging abstraction layer.
  * Supports development console logging and production structured logging.
+ * Sentry-ready infrastructure for production error tracking.
  */
 
 /**
@@ -11,9 +12,45 @@
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
 /**
- * Severity levels for error classification
+ * Severity levels for error classification (Sentry-compatible)
+ * - fatal: App crash or critical failure
+ * - error: Error that affects functionality
+ * - warning: Potential issue or degraded experience
+ * - info: Informational, for context
  */
-export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical'
+export type ErrorSeverity = 'fatal' | 'error' | 'warning' | 'info'
+
+/**
+ * Breadcrumb for tracking user actions leading up to an error
+ */
+export interface Breadcrumb {
+  /** The breadcrumb message */
+  message: string
+  /** Category of the breadcrumb (e.g., 'navigation', 'user', 'http') */
+  category?: string
+  /** ISO timestamp when the breadcrumb was recorded */
+  timestamp: string
+  /** Additional data associated with the breadcrumb */
+  data?: Record<string, unknown>
+}
+
+/**
+ * Captured error ready for Sentry transmission
+ */
+export interface CapturedError {
+  /** Error message */
+  message: string
+  /** Stack trace if available */
+  stack?: string
+  /** Error severity level */
+  severity: ErrorSeverity
+  /** Context at the time of error */
+  context: ErrorContext
+  /** ISO timestamp when error was captured */
+  timestamp: string
+  /** Breadcrumbs leading up to the error */
+  breadcrumbs: Breadcrumb[]
+}
 
 /**
  * Context that can be attached to any log entry
@@ -48,7 +85,7 @@ export interface LogContext {
 }
 
 /**
- * Error-specific context for enhanced error logging
+ * Error-specific context for enhanced error logging (Sentry-ready)
  */
 export interface ErrorContext extends LogContext {
   /** Error code if available */
@@ -68,6 +105,15 @@ export interface ErrorContext extends LogContext {
 
   /** Timestamp of error */
   timestamp?: string
+
+  /** The action being performed when the error occurred */
+  action?: string
+
+  /** Race ID if applicable */
+  raceId?: string
+
+  /** Additional arbitrary data for debugging */
+  additionalData?: Record<string, unknown>
 }
 
 /**
@@ -188,6 +234,43 @@ export interface LoggingService {
    * Flush any buffered logs (for production handlers)
    */
   flush(): Promise<void>
+
+  /**
+   * Capture an error for Sentry-style reporting
+   * Returns CapturedError for inspection/testing
+   */
+  captureError(error: Error, context?: ErrorContext, severity?: ErrorSeverity): CapturedError
+
+  /**
+   * Capture a message for Sentry-style reporting
+   * Returns CapturedError for inspection/testing
+   */
+  captureMessage(message: string, context?: ErrorContext, severity?: ErrorSeverity): CapturedError
+
+  /**
+   * Add a breadcrumb to track user actions
+   */
+  breadcrumb(message: string, category?: string, data?: Record<string, unknown>): void
+
+  /**
+   * Get current breadcrumbs (useful for error reports)
+   */
+  getBreadcrumbs(): Breadcrumb[]
+
+  /**
+   * Clear all breadcrumbs
+   */
+  clearBreadcrumbs(): void
+
+  /**
+   * Get the error queue (for batch sending when Sentry is wired)
+   */
+  getErrorQueue(): CapturedError[]
+
+  /**
+   * Clear the error queue
+   */
+  clearErrorQueue(): void
 }
 
 /**

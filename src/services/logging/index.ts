@@ -24,6 +24,9 @@ import type {
   LogEntry,
   LogLevel,
   LogHandler,
+  ErrorSeverity,
+  CapturedError,
+  Breadcrumb,
 } from './types'
 import {
   shouldLog,
@@ -31,6 +34,16 @@ import {
   LOG_LEVEL_ICONS,
 } from './types'
 import { isAppError, normalizeError } from '../../types/errors'
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+/** Maximum number of breadcrumbs to keep in memory */
+const MAX_BREADCRUMBS = 20
+
+/** Maximum number of errors to queue for batch sending */
+const MAX_ERROR_QUEUE = 50
 
 // ============================================================================
 // ENVIRONMENT DETECTION
@@ -149,6 +162,8 @@ class DevelopmentLogger implements LoggingService {
   private config: LoggingConfig
   private globalContext: LogContext = {}
   private sessionId: string
+  private breadcrumbs: Breadcrumb[] = []
+  private errorQueue: CapturedError[] = []
 
   constructor(config: Partial<LoggingConfig> = {}) {
     this.sessionId = generateSessionId()
@@ -292,6 +307,125 @@ class DevelopmentLogger implements LoggingService {
   async flush(): Promise<void> {
     // No-op for development logger
   }
+
+  captureError(error: Error, context?: ErrorContext, severity: ErrorSeverity = 'error'): CapturedError {
+    const mergedContext: ErrorContext = {
+      ...this.globalContext,
+      ...context,
+      sessionId: this.sessionId,
+    }
+
+    const normalizedError = normalizeError(error)
+    const captured: CapturedError = {
+      message: normalizedError.message,
+      stack: normalizedError.stack,
+      severity,
+      context: mergedContext,
+      timestamp: new Date().toISOString(),
+      breadcrumbs: [...this.breadcrumbs],
+    }
+
+    // Log to console in development
+    console.group(`%c[CAPTURED ${severity.toUpperCase()}]`, `color: ${LOG_LEVEL_COLORS.error}; font-weight: bold`)
+    console.log('%cMessage:', 'font-weight: bold', captured.message)
+    console.log('%cSeverity:', 'font-weight: bold', severity)
+    console.log('%cTimestamp:', 'font-weight: bold', captured.timestamp)
+    console.log('%cContext:', 'font-weight: bold', captured.context)
+    if (captured.breadcrumbs.length > 0) {
+      console.log('%cBreadcrumbs:', 'font-weight: bold', captured.breadcrumbs)
+    }
+    if (captured.stack) {
+      console.log('%cStack:', 'font-weight: bold')
+      console.log(captured.stack)
+    }
+    console.groupEnd()
+
+    // Add to error queue
+    this.errorQueue.push(captured)
+    if (this.errorQueue.length > MAX_ERROR_QUEUE) {
+      this.errorQueue.shift()
+    }
+
+    return captured
+  }
+
+  captureMessage(message: string, context?: ErrorContext, severity: ErrorSeverity = 'info'): CapturedError {
+    const mergedContext: ErrorContext = {
+      ...this.globalContext,
+      ...context,
+      sessionId: this.sessionId,
+    }
+
+    const captured: CapturedError = {
+      message,
+      severity,
+      context: mergedContext,
+      timestamp: new Date().toISOString(),
+      breadcrumbs: [...this.breadcrumbs],
+    }
+
+    // Log to console in development
+    const colorMap: Record<ErrorSeverity, string> = {
+      fatal: LOG_LEVEL_COLORS.error,
+      error: LOG_LEVEL_COLORS.error,
+      warning: LOG_LEVEL_COLORS.warn,
+      info: LOG_LEVEL_COLORS.info,
+    }
+    console.group(`%c[CAPTURED MESSAGE: ${severity.toUpperCase()}]`, `color: ${colorMap[severity]}; font-weight: bold`)
+    console.log('%cMessage:', 'font-weight: bold', message)
+    console.log('%cSeverity:', 'font-weight: bold', severity)
+    console.log('%cTimestamp:', 'font-weight: bold', captured.timestamp)
+    console.log('%cContext:', 'font-weight: bold', captured.context)
+    if (captured.breadcrumbs.length > 0) {
+      console.log('%cBreadcrumbs:', 'font-weight: bold', captured.breadcrumbs)
+    }
+    console.groupEnd()
+
+    // Add to error queue
+    this.errorQueue.push(captured)
+    if (this.errorQueue.length > MAX_ERROR_QUEUE) {
+      this.errorQueue.shift()
+    }
+
+    return captured
+  }
+
+  breadcrumb(message: string, category?: string, data?: Record<string, unknown>): void {
+    const crumb: Breadcrumb = {
+      message,
+      category,
+      timestamp: new Date().toISOString(),
+      data,
+    }
+
+    this.breadcrumbs.push(crumb)
+    if (this.breadcrumbs.length > MAX_BREADCRUMBS) {
+      this.breadcrumbs.shift()
+    }
+
+    // Log breadcrumb in development
+    console.log(
+      `%c[BREADCRUMB]%c ${category ? `[${category}] ` : ''}${message}`,
+      'color: #888888; font-weight: bold',
+      'color: #888888'
+    )
+  }
+
+  getBreadcrumbs(): Breadcrumb[] {
+    return [...this.breadcrumbs]
+  }
+
+  clearBreadcrumbs(): void {
+    this.breadcrumbs = []
+  }
+
+  getErrorQueue(): CapturedError[] {
+    return [...this.errorQueue]
+  }
+
+  clearErrorQueue(): void {
+    this.errorQueue = []
+  }
 }
 
 // ============================================================================
@@ -307,6 +441,8 @@ class ProductionLogger implements LoggingService {
   private sessionId: string
   private buffer: LogEntry[] = []
   private maxBufferSize = 100
+  private breadcrumbs: Breadcrumb[] = []
+  private errorQueue: CapturedError[] = []
 
   constructor(config: Partial<LoggingConfig> = {}) {
     this.sessionId = generateSessionId()
@@ -464,6 +600,109 @@ class ProductionLogger implements LoggingService {
       await Promise.all(flushPromises)
     }
   }
+
+  captureError(error: Error, context?: ErrorContext, severity: ErrorSeverity = 'error'): CapturedError {
+    const mergedContext: ErrorContext = {
+      ...this.globalContext,
+      ...context,
+      sessionId: this.sessionId,
+    }
+
+    const normalizedError = normalizeError(error)
+    const captured: CapturedError = {
+      message: normalizedError.message,
+      stack: normalizedError.stack,
+      severity,
+      context: mergedContext,
+      timestamp: new Date().toISOString(),
+      breadcrumbs: [...this.breadcrumbs],
+    }
+
+    // Log to console (structured JSON)
+    console.error(JSON.stringify({
+      type: 'CAPTURED_ERROR',
+      ...captured,
+    }))
+
+    // Add to error queue for batch sending
+    this.errorQueue.push(captured)
+    if (this.errorQueue.length > MAX_ERROR_QUEUE) {
+      this.errorQueue.shift()
+    }
+
+    // Notify handlers
+    this.config.handlers?.forEach((handler) => {
+      try {
+        handler.handleError?.(error, mergedContext)
+      } catch {
+        // Silently fail
+      }
+    })
+
+    return captured
+  }
+
+  captureMessage(message: string, context?: ErrorContext, severity: ErrorSeverity = 'info'): CapturedError {
+    const mergedContext: ErrorContext = {
+      ...this.globalContext,
+      ...context,
+      sessionId: this.sessionId,
+    }
+
+    const captured: CapturedError = {
+      message,
+      severity,
+      context: mergedContext,
+      timestamp: new Date().toISOString(),
+      breadcrumbs: [...this.breadcrumbs],
+    }
+
+    // Log to console (structured JSON)
+    const logFn = severity === 'fatal' || severity === 'error' ? console.error :
+                  severity === 'warning' ? console.warn : console.log
+    logFn(JSON.stringify({
+      type: 'CAPTURED_MESSAGE',
+      ...captured,
+    }))
+
+    // Add to error queue for batch sending
+    this.errorQueue.push(captured)
+    if (this.errorQueue.length > MAX_ERROR_QUEUE) {
+      this.errorQueue.shift()
+    }
+
+    return captured
+  }
+
+  breadcrumb(message: string, category?: string, data?: Record<string, unknown>): void {
+    const crumb: Breadcrumb = {
+      message,
+      category,
+      timestamp: new Date().toISOString(),
+      data,
+    }
+
+    this.breadcrumbs.push(crumb)
+    if (this.breadcrumbs.length > MAX_BREADCRUMBS) {
+      this.breadcrumbs.shift()
+    }
+  }
+
+  getBreadcrumbs(): Breadcrumb[] {
+    return [...this.breadcrumbs]
+  }
+
+  clearBreadcrumbs(): void {
+    this.breadcrumbs = []
+  }
+
+  getErrorQueue(): CapturedError[] {
+    return [...this.errorQueue]
+  }
+
+  clearErrorQueue(): void {
+    this.errorQueue = []
+  }
 }
 
 // ============================================================================
@@ -554,6 +793,9 @@ export type {
   LogEntry,
   LogLevel,
   LogHandler,
+  ErrorSeverity,
+  CapturedError,
+  Breadcrumb,
 } from './types'
 
 export { shouldLog, LOG_LEVEL_VALUES } from './types'
