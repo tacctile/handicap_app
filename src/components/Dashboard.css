@@ -464,6 +464,7 @@
   padding: 0;
   margin: 0;
   width: 100%;
+  max-width: none; /* Override index.css max-width: 1200px */
   min-width: 0; /* Allow flex item to shrink below content size */
 }
 
@@ -488,6 +489,7 @@
   padding: 0; /* NO padding - content goes to edges */
   margin: 0;
   width: 100%;
+  max-width: none; /* Ensure full width */
   min-width: 0; /* Allow flex item to shrink below content size */
 }
 
