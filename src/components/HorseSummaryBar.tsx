@@ -2,6 +2,60 @@ import React from 'react';
 import './HorseSummaryBar.css';
 import type { HorseEntry } from '../types/drf';
 
+interface TierInfo {
+  label: string;
+  className: string;
+  isElite: boolean;
+}
+
+const getValueTier = (valuePercent: number, isScratched: boolean): TierInfo => {
+  if (isScratched) {
+    return {
+      label: 'SCRATCHED',
+      className: 'scratched',
+      isElite: false,
+    };
+  }
+
+  if (valuePercent >= 100) {
+    return {
+      label: 'STRONG OVERLAY',
+      className: 'elite',
+      isElite: true,
+    };
+  }
+
+  if (valuePercent >= 50) {
+    return {
+      label: 'OVERLAY',
+      className: 'good',
+      isElite: false,
+    };
+  }
+
+  if (valuePercent >= 10) {
+    return {
+      label: 'FAIR VALUE',
+      className: 'fair',
+      isElite: false,
+    };
+  }
+
+  if (valuePercent >= -10) {
+    return {
+      label: 'NEUTRAL',
+      className: 'neutral',
+      isElite: false,
+    };
+  }
+
+  return {
+    label: 'UNDERLAY',
+    className: 'bad',
+    isElite: false,
+  };
+};
+
 interface HorseSummaryBarProps {
   horse: HorseEntry;
   rank: number;
@@ -159,14 +213,8 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
     return name;
   };
 
-  // Determine tier label based on value (colors added in Prompt 3A)
-  const getTierLabel = (value: number): string => {
-    if (value >= 100) return 'STRONG OVERLAY';
-    if (value >= 50) return 'OVERLAY';
-    if (value >= 10) return 'FAIR VALUE';
-    if (value >= -10) return 'NEUTRAL';
-    return 'UNDERLAY';
-  };
+  // Get tier info for styling
+  const tier = getValueTier(valuePercent, isScratched);
 
   const handleRowClick = () => {
     if (!isScratched) {
@@ -186,6 +234,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   return (
     <div
       className={`horse-summary-bar
+        horse-summary-bar--tier-${tier.className}
         ${isExpanded ? 'horse-summary-bar--expanded' : ''}
         ${isScratched ? 'horse-summary-bar--scratched' : ''}`}
       onClick={handleRowClick}
@@ -245,10 +294,12 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         </span>
       </div>
 
-      {/* Value percentage */}
+      {/* Value percentage - color matches tier */}
       <div className="horse-summary-bar__value-percent">
         <span className="horse-summary-bar__label">Value:</span>
-        <span className="horse-summary-bar__value">
+        <span
+          className={`horse-summary-bar__data horse-summary-bar__data--value horse-summary-bar__data--${tier.className}`}
+        >
           {valuePercent >= 0 ? '+' : ''}
           {valuePercent.toFixed(0)}%
         </span>
@@ -257,8 +308,11 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         </span>
       </div>
 
-      {/* Tier badge */}
-      <div className="horse-summary-bar__tier">{getTierLabel(valuePercent)}</div>
+      {/* Tier badge with optional diamond */}
+      <div className={`horse-summary-bar__tier horse-summary-bar__tier--${tier.className}`}>
+        {tier.isElite && <span className="horse-summary-bar__diamond">◆</span>}
+        <span className="horse-summary-bar__tier-label">{tier.label}</span>
+      </div>
 
       {/* Expand indicator */}
       <span className="material-icons horse-summary-bar__expand">expand_more</span>

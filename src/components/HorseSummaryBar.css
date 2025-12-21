@@ -2,6 +2,23 @@
    HORSE SUMMARY BAR
    ============================================ */
 
+/* Fallback values if tokens not loaded */
+.horse-summary-bar {
+  --color-tier-elite: #22c55e;
+  --color-tier-elite-bg: rgba(34, 197, 94, 0.15);
+  --color-tier-elite-glow: rgba(34, 197, 94, 0.6);
+  --color-tier-good: #4ade80;
+  --color-tier-good-bg: rgba(74, 222, 128, 0.15);
+  --color-tier-fair: #eab308;
+  --color-tier-fair-bg: rgba(234, 179, 8, 0.15);
+  --color-tier-neutral: #f97316;
+  --color-tier-neutral-bg: rgba(249, 115, 22, 0.15);
+  --color-tier-bad: #ef4444;
+  --color-tier-bad-bg: rgba(239, 68, 68, 0.15);
+  --color-tier-scratched: #6e6e70;
+  --color-tier-scratched-bg: rgba(110, 110, 112, 0.15);
+}
+
 .horse-summary-bar {
   display: flex;
   align-items: center;
@@ -261,20 +278,23 @@
   margin-left: 4px;
 }
 
-/* Tier badge - colors added in Prompt 3A */
+/* Tier badge */
 .horse-summary-bar__tier {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   font-size: 10px;
-  font-weight: 600;
-  padding: 5px 10px;
+  font-weight: 700;
+  padding: 6px 12px;
   border-radius: var(--radius-sm);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   white-space: nowrap;
   flex-shrink: 0;
   background: var(--color-elevated);
   color: var(--color-text-secondary);
-  min-width: 110px;
-  text-align: center;
+  min-width: 120px;
 }
 
 /* Expand indicator */
@@ -315,4 +335,169 @@
   color: var(--color-text-tertiary);
   text-align: center;
   font-size: 14px;
+}
+
+/* ============================================
+   TIER LEFT BORDER COLORS
+   ============================================ */
+
+.horse-summary-bar--tier-elite {
+  border-left-color: var(--color-tier-elite);
+}
+
+.horse-summary-bar--tier-good {
+  border-left-color: var(--color-tier-good);
+}
+
+.horse-summary-bar--tier-fair {
+  border-left-color: var(--color-tier-fair);
+}
+
+.horse-summary-bar--tier-neutral {
+  border-left-color: var(--color-tier-neutral);
+}
+
+.horse-summary-bar--tier-bad {
+  border-left-color: var(--color-tier-bad);
+}
+
+.horse-summary-bar--tier-scratched {
+  border-left-color: var(--color-tier-scratched);
+}
+
+/* ============================================
+   VALUE PERCENTAGE TEXT COLORS
+   ============================================ */
+
+.horse-summary-bar__data--value {
+  font-weight: 700;
+}
+
+.horse-summary-bar__data--elite {
+  color: var(--color-tier-elite);
+}
+
+.horse-summary-bar__data--good {
+  color: var(--color-tier-good);
+}
+
+.horse-summary-bar__data--fair {
+  color: var(--color-tier-fair);
+}
+
+.horse-summary-bar__data--neutral {
+  color: var(--color-tier-neutral);
+}
+
+.horse-summary-bar__data--bad {
+  color: var(--color-tier-bad);
+}
+
+.horse-summary-bar__data--scratched {
+  color: var(--color-tier-scratched);
+}
+
+/* ============================================
+   TIER BADGE STYLING
+   ============================================ */
+
+.horse-summary-bar__tier-label {
+  line-height: 1;
+}
+
+/* Elite tier - bright green */
+.horse-summary-bar__tier--elite {
+  background: var(--color-tier-elite-bg);
+  color: var(--color-tier-elite);
+}
+
+/* Good tier - light green */
+.horse-summary-bar__tier--good {
+  background: var(--color-tier-good-bg);
+  color: var(--color-tier-good);
+}
+
+/* Fair tier - yellow/amber */
+.horse-summary-bar__tier--fair {
+  background: var(--color-tier-fair-bg);
+  color: var(--color-tier-fair);
+}
+
+/* Neutral tier - orange */
+.horse-summary-bar__tier--neutral {
+  background: var(--color-tier-neutral-bg);
+  color: var(--color-tier-neutral);
+}
+
+/* Bad tier - red */
+.horse-summary-bar__tier--bad {
+  background: var(--color-tier-bad-bg);
+  color: var(--color-tier-bad);
+}
+
+/* Scratched tier - gray */
+.horse-summary-bar__tier--scratched {
+  background: var(--color-tier-scratched-bg);
+  color: var(--color-tier-scratched);
+}
+
+/* ============================================
+   ELITE DIAMOND WITH GLOW AND PULSE
+   ============================================ */
+
+.horse-summary-bar__diamond {
+  font-size: 12px;
+  line-height: 1;
+  filter: drop-shadow(0 0 4px var(--color-tier-elite-glow));
+  animation: diamond-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes diamond-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 4px var(--color-tier-elite-glow));
+    opacity: 1;
+  }
+  50% {
+    filter: drop-shadow(0 0 10px var(--color-tier-elite-glow))
+      drop-shadow(0 0 20px var(--color-tier-elite-glow));
+    opacity: 0.9;
+  }
+}
+
+/* ============================================
+   SCRATCHED STATE OVERRIDES
+   ============================================ */
+
+.horse-summary-bar--scratched .horse-summary-bar__data--value {
+  color: var(--color-tier-scratched);
+}
+
+.horse-summary-bar--scratched .horse-summary-bar__tier {
+  background: var(--color-tier-scratched-bg);
+  color: var(--color-tier-scratched);
+}
+
+/* ============================================
+   EXPANDED CONTENT TIER BORDER INHERITANCE
+   ============================================ */
+
+.horse-list__item:has(.horse-summary-bar--tier-elite) .horse-expanded {
+  border-left-color: var(--color-tier-elite);
+}
+
+.horse-list__item:has(.horse-summary-bar--tier-good) .horse-expanded {
+  border-left-color: var(--color-tier-good);
+}
+
+.horse-list__item:has(.horse-summary-bar--tier-fair) .horse-expanded {
+  border-left-color: var(--color-tier-fair);
+}
+
+.horse-list__item:has(.horse-summary-bar--tier-neutral) .horse-expanded {
+  border-left-color: var(--color-tier-neutral);
+}
+
+.horse-list__item:has(.horse-summary-bar--tier-bad) .horse-expanded {
+  border-left-color: var(--color-tier-bad);
 }
