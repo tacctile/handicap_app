@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import type { DragEvent, ChangeEvent } from 'react'
 import type { ParsedDRFFile, DRFWorkerProgressMessage } from '../types/drf'
 import { parseFileWithFallback } from '../lib/drfWorkerClient'
+import { useAnalytics } from '../hooks/useAnalytics'
 
 interface FileUploadProps {
   onParsed?: (data: ParsedDRFFile) => void
@@ -22,6 +23,7 @@ export function FileUpload({ onParsed }: FileUploadProps) {
   const [progress, setProgress] = useState<ParsingProgress | null>(null)
   const [usedFallback, setUsedFallback] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const { trackEvent } = useAnalytics()
 
   const handleProgress = (progressMessage: DRFWorkerProgressMessage) => {
     setProgress({
@@ -70,6 +72,19 @@ export function FileUpload({ onParsed }: FileUploadProps) {
       if (result.success && result.data) {
         setParseStatus('success')
         setErrorMessage(null)
+
+        // Track successful file upload
+        const totalHorseCount = result.data.races.reduce(
+          (sum, race) => sum + race.horses.length,
+          0
+        )
+        trackEvent('file_uploaded', {
+          file_size: file.size,
+          horse_count: totalHorseCount,
+          race_count: result.data.races.length,
+          used_fallback: result.usedFallback,
+        })
+
         onParsed?.(result.data)
       } else {
         setParseStatus('error')

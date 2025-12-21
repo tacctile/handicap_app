@@ -1,4 +1,4 @@
-import { memo, useEffect } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { ParsedRace } from '../types/drf'
 import type { UseRaceStateReturn } from '../hooks/useRaceState'
@@ -11,6 +11,7 @@ import {
   getConfidenceBorderColor,
 } from '../lib/confidence'
 import { getDiamondColor, getDiamondBgColor } from '../lib/diamonds'
+import { useAnalytics } from '../hooks/useAnalytics'
 
 interface RaceDetailProps {
   race: ParsedRace
@@ -122,6 +123,23 @@ export const RaceDetail = memo(function RaceDetail({
   onOpenBankrollSettings,
 }: RaceDetailProps) {
   const { header } = race
+  const { trackEvent } = useAnalytics()
+  const lastTrackedRace = useRef<number | null>(null)
+
+  // Track race_analyzed when user views this race detail
+  useEffect(() => {
+    // Only track if this is a new race (not a re-render of the same race)
+    if (lastTrackedRace.current !== header.raceNumber) {
+      trackEvent('race_analyzed', {
+        race_number: header.raceNumber,
+        horse_count: race.horses.length,
+        surface: header.surface,
+        distance: header.distance,
+        confidence,
+      })
+      lastTrackedRace.current = header.raceNumber
+    }
+  }, [header.raceNumber, race.horses.length, header.surface, header.distance, confidence, trackEvent])
 
   // Handle Escape key to go back
   useEffect(() => {

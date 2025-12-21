@@ -1,8 +1,9 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { HorseEntry, RaceHeader } from '../types/drf'
 import type { HorseScore, ScoredHorse } from '../lib/scoring'
 import type { BettingTier } from '../lib/betting'
+import { useAnalytics } from '../hooks/useAnalytics'
 import {
   formatOverlayPercent,
   formatEV,
@@ -647,6 +648,10 @@ export function BettingRecommendations({
   const [selectedDutchHorses, setSelectedDutchHorses] = useState<number[]>([])
   const [dutchSettings] = useState<DutchSettings>(loadDutchSettings)
 
+  // Analytics tracking
+  const { trackEvent } = useAnalytics()
+  const lastTrackedRace = useRef<number | null>(null)
+
   // Check if Kelly Criterion is enabled
   const kellyEnabled = useMemo(() => isKellyEnabled(bankroll), [bankroll])
 
@@ -757,6 +762,28 @@ export function BettingRecommendations({
     })
     setSelectableBets(newSelectableBets)
   }, [generatorResult, kellyEnabled, bankroll, horses.length])
+
+  // Track bet_viewed when recommendations render
+  useEffect(() => {
+    // Only track if this is a new race and we have recommendations
+    if (lastTrackedRace.current !== raceNumber && generatorResult.allBets.length > 0) {
+      // Count bets by tier
+      const tier1Count = generatorResult.allBets.filter(bet => bet.tier === 'tier1').length
+      const tier2Count = generatorResult.allBets.filter(bet => bet.tier === 'tier2').length
+      const tier3Count = generatorResult.allBets.filter(bet => bet.tier === 'tier3').length
+
+      trackEvent('bet_viewed', {
+        race_number: raceNumber,
+        total_bets: generatorResult.allBets.length,
+        tier1_count: tier1Count,
+        tier2_count: tier2Count,
+        tier3_count: tier3Count,
+        horse_count: horses.length,
+      })
+
+      lastTrackedRace.current = raceNumber
+    }
+  }, [raceNumber, generatorResult.allBets, horses.length, trackEvent])
 
   // Check for mobile
   useEffect(() => {

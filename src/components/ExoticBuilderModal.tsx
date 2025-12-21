@@ -25,6 +25,7 @@ import {
   MIN_HORSES,
 } from '../lib/exotics'
 import { formatCurrency } from '../lib/recommendations'
+import { useAnalytics } from '../hooks/useAnalytics'
 
 // ============================================================================
 // TYPES
@@ -114,6 +115,9 @@ export function ExoticBuilderModal({
   const [baseBet, setBaseBet] = useState(2)
   const [selectedHorses, setSelectedHorses] = useState<HorseForExotic[]>([])
   const [showComparison, setShowComparison] = useState(false)
+
+  // Analytics
+  const { trackEvent } = useAnalytics()
 
   // Convert horses to ExoticBuilderModal format
   const horsesForExotic = useMemo((): HorseForExotic[] => {
@@ -281,9 +285,19 @@ export function ExoticBuilderModal({
       windowInstruction: instruction,
     }
 
+    // Track exotic build completion
+    trackEvent('exotic_built', {
+      exotic_type: betType,
+      structure,
+      horse_count: horseNums.length,
+      total_cost: costResult.total,
+      combinations: costResult.combinations,
+      race_number: raceNumber,
+    })
+
     onAddToBetSlip(result)
     onClose()
-  }, [costResult, selectedHorses, betType, structure, baseBet, raceNumber, payoutEstimate, onAddToBetSlip, onClose])
+  }, [costResult, selectedHorses, betType, structure, baseBet, raceNumber, payoutEstimate, onAddToBetSlip, onClose, trackEvent])
 
   const selectedCount = selectedHorses.filter(h => h.isSelected).length
   const canSubmit = costResult?.isValid && selectedCount >= MIN_HORSES[betType]

@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Dashboard } from './components/Dashboard'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { AuthProvider } from './contexts/AuthContext'
 import { useRaceState } from './hooks/useRaceState'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import { useAnalytics } from './hooks/useAnalytics'
 import { validateParsedData, getValidationSummary, isDataUsable } from './lib/validation'
 import type { ParsedDRFFile } from './types/drf'
 import './styles/responsive.css'
@@ -17,6 +18,31 @@ function AppContent() {
   const [modalOpen] = useState(false)
 
   const raceState = useRaceState()
+  const { trackEvent } = useAnalytics()
+
+  // Session tracking - track start on mount and end on beforeunload
+  useEffect(() => {
+    // Track session start
+    trackEvent('session_start', {
+      user_agent: navigator.userAgent,
+      screen_width: window.innerWidth,
+      screen_height: window.innerHeight,
+      is_pwa: window.matchMedia('(display-mode: standalone)').matches,
+    })
+
+    // Track session end on beforeunload
+    const handleBeforeUnload = () => {
+      trackEvent('session_end', {
+        session_duration_hint: 'calculated_by_analytics_service',
+      })
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [trackEvent])
 
   const handleParsed = useCallback((data: ParsedDRFFile) => {
     setIsLoading(true)
