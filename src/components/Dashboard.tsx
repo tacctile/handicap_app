@@ -160,25 +160,69 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   // Format post time for display (e.g., "1:26 PM")
-  const formatPostTime = (postTime: string | undefined): string => {
+  const formatPostTime = (postTime: string | number | undefined): string => {
     if (!postTime) return '--:--';
 
     try {
-      // DRF post times may be in various formats - adjust parsing as needed
-      // Common formats: "1326" (military), "1:26 PM", etc.
-      if (postTime.length === 4 && !postTime.includes(':')) {
-        // Military time format: "1326" -> "1:26 PM"
-        const hours = parseInt(postTime.substring(0, 2));
-        const minutes = postTime.substring(2);
+      const timeStr = String(postTime).trim();
+
+      // Handle numeric formats (military time like 1326 or 326 or 115)
+      if (/^\d{3,4}$/.test(timeStr)) {
+        const padded = timeStr.padStart(4, '0');
+        const hours = parseInt(padded.substring(0, 2), 10);
+        const minutes = parseInt(padded.substring(2), 10);
+
+        // Validate hours and minutes
+        if (hours > 23 || minutes > 59) {
+          return '--:--';
+        }
+
         const period = hours >= 12 ? 'PM' : 'AM';
         const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-        return `${displayHours}:${minutes} ${period}`;
+        return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
       }
 
-      // If already formatted, return as-is
-      return postTime;
+      // Handle "HH:MM" format (12 or 24 hour)
+      const colonMatch = timeStr.match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/i);
+      if (colonMatch && colonMatch[1] && colonMatch[2]) {
+        let hours = parseInt(colonMatch[1], 10);
+        const minutes = parseInt(colonMatch[2], 10);
+        let period = colonMatch[3]?.toUpperCase();
+
+        // Validate minutes
+        if (minutes > 59) {
+          return '--:--';
+        }
+
+        // If no AM/PM specified, assume PM for typical race times (afternoon)
+        if (!period) {
+          // If hour is 1-11, assume PM (typical race time)
+          // If hour is 12-23, convert from 24h format
+          if (hours >= 13 && hours <= 23) {
+            period = 'PM';
+            hours = hours - 12;
+          } else if (hours === 0) {
+            period = 'AM';
+            hours = 12;
+          } else if (hours === 12) {
+            period = 'PM';
+          } else {
+            // 1-11: assume PM for race times
+            period = 'PM';
+          }
+        }
+
+        return `${hours}:${minutes.toString().padStart(2, '0')} ${period}`;
+      }
+
+      // If already has AM/PM, return as-is
+      if (/\d{1,2}:\d{2}\s*(AM|PM)/i.test(timeStr)) {
+        return timeStr;
+      }
+
+      return '--:--';
     } catch {
-      return postTime || '--:--';
+      return '--:--';
     }
   };
 
@@ -396,6 +440,47 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             ) : (
               <div className="horse-list">
+                {/* Column Headers */}
+                <div className="horse-list-header">
+                  <div className="horse-list-header__cell horse-list-header__cell--scratch">
+                    <span className="horse-list-header__label">SCR</span>
+                  </div>
+                  <div className="horse-list-header__cell horse-list-header__cell--pp">
+                    <span className="horse-list-header__label">PP</span>
+                  </div>
+                  <div className="horse-list-header__cell horse-list-header__cell--name">
+                    <span className="horse-list-header__label">HORSE</span>
+                  </div>
+                  <div className="horse-list-header__cell horse-list-header__cell--trainer">
+                    <span className="horse-list-header__label">TRAINER</span>
+                  </div>
+                  <div className="horse-list-header__cell horse-list-header__cell--weight">
+                    <span className="horse-list-header__label">WT</span>
+                  </div>
+                  <div className="horse-list-header__cell horse-list-header__cell--odds">
+                    <span className="horse-list-header__label">LIVE ODDS</span>
+                  </div>
+                  <div className="horse-list-header__cell horse-list-header__cell--life">
+                    <span className="horse-list-header__label">LIFE</span>
+                    <span className="horse-list-header__sublabel">W-P-S</span>
+                  </div>
+                  <div className="horse-list-header__cell horse-list-header__cell--score">
+                    <span className="horse-list-header__label">SCORE</span>
+                  </div>
+                  <div className="horse-list-header__cell horse-list-header__cell--fair">
+                    <span className="horse-list-header__label">FAIR</span>
+                  </div>
+                  <div className="horse-list-header__cell horse-list-header__cell--value">
+                    <span className="horse-list-header__label">VALUE</span>
+                  </div>
+                  <div className="horse-list-header__cell horse-list-header__cell--tier">
+                    <span className="horse-list-header__label">RATING</span>
+                  </div>
+                  <div className="horse-list-header__cell horse-list-header__cell--expand">
+                    {/* Empty for expand chevron column */}
+                  </div>
+                </div>
+
                 {currentRaceScoredHorses.map((scoredHorse, index) => {
                   const horse = scoredHorse.horse;
                   const horseId = horse.programNumber || index;

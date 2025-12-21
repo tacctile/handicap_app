@@ -1,5 +1,5 @@
 /* ============================================
-   HORSE SUMMARY BAR
+   HORSE SUMMARY BAR - CSS GRID LAYOUT
    ============================================ */
 
 /* Fallback values if tokens not loaded */
@@ -20,15 +20,29 @@
 }
 
 .horse-summary-bar {
-  display: flex;
+  display: grid;
+  grid-template-columns:
+    40px /* scratch */
+    50px /* pp */
+    1fr /* horse name - flexible */
+    120px /* trainer */
+    50px /* weight */
+    120px /* odds */
+    80px /* life */
+    80px /* score */
+    70px /* fair */
+    100px /* value */
+    130px /* tier */
+    40px; /* expand */
   align-items: center;
-  gap: var(--gap-element);
-  padding: 10px var(--gap-container);
+  gap: 8px;
+  padding: 12px 16px;
   background: var(--color-card);
   border-bottom: 1px solid var(--color-border);
   border-left: 4px solid var(--color-border);
   cursor: pointer;
   transition: background 150ms ease;
+  width: 100%;
 }
 
 .horse-summary-bar:hover {
@@ -45,11 +59,9 @@
    ============================================ */
 
 .horse-summary-bar__scratch {
-  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
 }
 
 .horse-summary-bar__scratch-input {
@@ -79,99 +91,163 @@
 }
 
 .horse-summary-bar--scratched:hover {
-  background: var(--color-card); /* Don't highlight on hover when scratched */
+  background: var(--color-card);
 }
 
-/* Program number */
+/* ============================================
+   CELL STYLES
+   ============================================ */
+
+/* Program number - centered */
 .horse-summary-bar__pp {
   font-size: 14px;
   font-weight: 700;
   color: var(--color-text-primary);
-  min-width: 36px;
   text-align: center;
-  flex-shrink: 0;
 }
 
-/* Horse name */
+/* Horse name - left aligned, can grow */
 .horse-summary-bar__name {
   font-size: 15px;
   font-weight: 700;
   color: var(--color-text-primary);
   text-transform: uppercase;
   letter-spacing: 0.01em;
-  min-width: 150px;
-  max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex-shrink: 0;
 }
 
-/* Trainer */
+/* Trainer - left aligned */
 .horse-summary-bar__trainer {
   font-size: 13px;
   color: var(--color-text-secondary);
-  min-width: 80px;
-  max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex-shrink: 0;
 }
 
-/* Weight */
+/* Weight - centered */
 .horse-summary-bar__weight {
   font-size: 13px;
   color: var(--color-text-secondary);
-  min-width: 36px;
   text-align: center;
-  flex-shrink: 0;
+}
+
+/* Lifetime record - right aligned */
+.horse-summary-bar__lifetime {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Score - right aligned */
+.horse-summary-bar__score {
+  font-size: 13px;
+  text-align: right;
+}
+
+.horse-summary-bar__score-value {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* Fair odds - right aligned */
+.horse-summary-bar__fair {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-align: right;
+}
+
+/* Value percentage - right aligned */
+.horse-summary-bar__value-percent {
+  font-size: 13px;
+  text-align: right;
+}
+
+.horse-summary-bar__value-number {
+  font-weight: 700;
+}
+
+/* Tier badge - centered in its cell */
+.horse-summary-bar__tier {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  background: var(--color-elevated);
+  color: var(--color-text-secondary);
+  justify-self: center;
+}
+
+/* Expand chevron - centered */
+.horse-summary-bar__expand {
+  color: var(--color-text-tertiary);
+  transition: transform 200ms ease;
+  text-align: center;
+  justify-self: center;
+}
+
+.horse-summary-bar--expanded .horse-summary-bar__expand {
+  transform: rotate(180deg);
 }
 
 /* ============================================
-   ODDS INPUT
+   ODDS INPUT - Clean, Simple, Uniform
    ============================================ */
 
 .odds-input {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 4px;
-  flex-shrink: 0;
 }
 
+/* Button stacks - identical on both sides */
 .odds-input__control {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .odds-input__btn {
-  width: 22px;
-  height: 16px;
+  width: 20px;
+  height: 14px;
   padding: 0;
+  margin: 0;
   border: 1px solid var(--color-border);
-  background: var(--color-elevated);
-  color: var(--color-text-secondary);
-  font-size: 14px;
+  background: var(--color-card);
+  color: var(--color-text-tertiary);
+  font-size: 12px;
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 3px;
+  border-radius: 2px;
   transition: all 100ms ease;
   font-family: inherit;
 }
 
 .odds-input__btn:hover:not(:disabled) {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: white;
+  background: var(--color-elevated);
+  color: var(--color-text-primary);
+  border-color: var(--color-text-tertiary);
 }
 
 .odds-input__btn:active:not(:disabled) {
-  transform: scale(0.95);
+  background: var(--color-border);
 }
 
 .odds-input__btn:disabled {
@@ -179,19 +255,22 @@
   cursor: not-allowed;
 }
 
+/* Number inputs - identical styling, no special highlighting */
 .odds-input__number {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 30px;
   text-align: center;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   background: var(--color-base);
   border: 1px solid var(--color-border);
   color: var(--color-text-primary);
-  border-radius: var(--radius-sm);
+  border-radius: 4px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   -moz-appearance: textfield;
+  padding: 0;
+  margin: 0;
 }
 
 .odds-input__number::-webkit-outer-spin-button,
@@ -203,110 +282,22 @@
 .odds-input__number:focus {
   outline: none;
   border-color: var(--color-primary);
+  box-shadow: none;
 }
 
 .odds-input__number:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
   background: var(--color-card);
 }
 
+/* Separator dash */
 .odds-input__separator {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-text-tertiary);
   margin: 0 2px;
   user-select: none;
-}
-
-/* Shared label styling */
-.horse-summary-bar__label {
-  font-size: 11px;
-  color: var(--color-text-tertiary);
-  margin-right: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-/* Shared value styling */
-.horse-summary-bar__value {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  font-variant-numeric: tabular-nums;
-}
-
-.horse-summary-bar__value--score {
-  color: var(--color-primary);
-}
-
-/* Lifetime record */
-.horse-summary-bar__lifetime {
-  display: flex;
-  align-items: baseline;
-  min-width: 100px;
-  flex-shrink: 0;
-}
-
-/* Furlong score */
-.horse-summary-bar__score {
-  display: flex;
-  align-items: baseline;
-  min-width: 95px;
-  flex-shrink: 0;
-}
-
-/* Fair odds */
-.horse-summary-bar__fair {
-  display: flex;
-  align-items: baseline;
-  min-width: 70px;
-  flex-shrink: 0;
-}
-
-/* Value percentage */
-.horse-summary-bar__value-percent {
-  display: flex;
-  align-items: baseline;
-  min-width: 130px;
-  flex-shrink: 0;
-}
-
-.horse-summary-bar__suffix {
-  font-size: 11px;
-  color: var(--color-text-tertiary);
-  margin-left: 4px;
-}
-
-/* Tier badge */
-.horse-summary-bar__tier {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  flex-shrink: 0;
-  background: var(--color-elevated);
-  color: var(--color-text-secondary);
-  min-width: 120px;
-}
-
-/* Expand indicator */
-.horse-summary-bar__expand {
-  margin-left: auto;
-  color: var(--color-text-tertiary);
-  transition: transform 200ms ease;
-  flex-shrink: 0;
-}
-
-.horse-summary-bar--expanded .horse-summary-bar__expand {
-  transform: rotate(180deg);
 }
 
 /* ============================================
@@ -316,11 +307,13 @@
 .horse-list {
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .horse-list__item {
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 /* Expanded content area */
@@ -369,31 +362,27 @@
    VALUE PERCENTAGE TEXT COLORS
    ============================================ */
 
-.horse-summary-bar__data--value {
-  font-weight: 700;
-}
-
-.horse-summary-bar__data--elite {
+.horse-summary-bar__value-number--elite {
   color: var(--color-tier-elite);
 }
 
-.horse-summary-bar__data--good {
+.horse-summary-bar__value-number--good {
   color: var(--color-tier-good);
 }
 
-.horse-summary-bar__data--fair {
+.horse-summary-bar__value-number--fair {
   color: var(--color-tier-fair);
 }
 
-.horse-summary-bar__data--neutral {
+.horse-summary-bar__value-number--neutral {
   color: var(--color-tier-neutral);
 }
 
-.horse-summary-bar__data--bad {
+.horse-summary-bar__value-number--bad {
   color: var(--color-tier-bad);
 }
 
-.horse-summary-bar__data--scratched {
+.horse-summary-bar__value-number--scratched {
   color: var(--color-tier-scratched);
 }
 
@@ -469,7 +458,7 @@
    SCRATCHED STATE OVERRIDES
    ============================================ */
 
-.horse-summary-bar--scratched .horse-summary-bar__data--value {
+.horse-summary-bar--scratched .horse-summary-bar__value-number {
   color: var(--color-tier-scratched);
 }
 
