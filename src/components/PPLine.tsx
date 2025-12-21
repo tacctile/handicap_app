@@ -8,18 +8,53 @@ interface PPLineProps {
 }
 
 export const PPLine: React.FC<PPLineProps> = ({ pp, index }) => {
-  // Format date: "01/25/24" or "Jan 25"
-  const formatDate = (dateStr: string): string => {
+  // Format date: "01/25/24" or "Jan25"
+  const formatDate = (dateStr: string | number | undefined): string => {
     if (!dateStr) return '—';
+
+    // Convert to string
+    const str = String(dateStr).trim();
+
+    // If empty or just whitespace
+    if (!str || str === 'undefined' || str === 'null') return '—';
+
+    // Try parsing as ISO date or standard date
     try {
-      const date = new Date(dateStr);
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const year = String(date.getFullYear()).slice(-2);
-      return `${month}/${day}/${year}`;
+      // Handle YYYYMMDD format (e.g., "20240125")
+      if (/^\d{8}$/.test(str)) {
+        const year = str.slice(2, 4);
+        const month = str.slice(4, 6);
+        const day = str.slice(6, 8);
+        return `${month}/${day}/${year}`;
+      }
+
+      // Handle YYYY-MM-DD or MM/DD/YYYY
+      const date = new Date(str);
+      if (!isNaN(date.getTime())) {
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const year = String(date.getFullYear()).slice(-2);
+        return `${month}/${day}/${year}`;
+      }
+
+      // If already formatted like "Nov20", return as-is
+      if (/^[A-Za-z]{3}\d{2}/.test(str)) {
+        return str.slice(0, 5);
+      }
+
+      // Fallback: return first 8 chars
+      return str.slice(0, 8) || '—';
     } catch {
-      return dateStr.slice(0, 8) || '—';
+      return '—';
     }
+  };
+
+  // Safe track display
+  const formatTrack = (track: unknown): string => {
+    if (!track || track === 'undefined' || track === 'null' || track === 'NaN') return '—';
+    const str = String(track).trim();
+    if (!str || str.toLowerCase() === 'nan') return '—';
+    return str.toUpperCase().slice(0, 3);
   };
 
   // Format distance: "6f", "8.5f", "1m", "1 1/16m"
@@ -116,53 +151,99 @@ export const PPLine: React.FC<PPLineProps> = ({ pp, index }) => {
     return prefix + (odds < 10 ? odds.toFixed(1) : Math.round(odds).toString());
   };
 
-  // Format lengths as superscript-style: "½", "1½", "2", "hd", "nk", "ns"
-  const formatLengths = (lengths: string | number): string => {
+  // Format lengths with superscript-style characters
+  const formatLengthsSuper = (lengths: unknown): string => {
     if (!lengths) return '';
-    const l = String(lengths).toLowerCase();
+    const l = String(lengths).toLowerCase().trim();
+    if (!l || l === 'undefined' || l === 'null' || l === 'nan') return '';
+
+    // Common length abbreviations
     if (l === 'head' || l === 'hd') return 'ʰᵈ';
     if (l === 'neck' || l === 'nk') return 'ⁿᵏ';
     if (l === 'nose' || l === 'ns') return 'ⁿˢ';
-    // Numeric lengths - use superscript style
-    return `${l}`.replace('.5', '½').replace('1/2', '½');
+
+    // Handle numeric lengths
+    return l.replace('.5', '½').replace('0.5', '½').replace('1/2', '½');
   };
 
-  // Format running line: "3² 2¹ 2½ 2¹ 2¹½"
-  const formatRunningLine = (rl: RunningLine | null | undefined): string => {
+  // Format running line properly
+  const formatRunningLine = (rl: RunningLine | null | undefined | unknown): string => {
     if (!rl) return '—';
 
-    const positions = [
-      rl.start,
-      rl.quarterMile,
-      rl.halfMile,
-      rl.threeQuarters,
-      rl.stretch,
-      rl.finish,
-    ].filter((p) => p !== null && p !== undefined);
+    // If it's a string, it might already be formatted
+    if (typeof rl === 'string') {
+      // Clean up and return if it looks valid
+      const cleaned = rl.trim();
+      if (cleaned && cleaned !== 'undefined' && cleaned !== 'null') {
+        return cleaned.slice(0, 20);
+      }
+      return '—';
+    }
+
+    // If it's an object with position properties
+    const rlObj = rl as RunningLine;
+    const positions: (string | number)[] = [];
+
+    // Start position (no lengths)
+    if (rlObj.start !== null && rlObj.start !== undefined && !isNaN(Number(rlObj.start))) {
+      positions.push(String(rlObj.start));
+    }
+
+    // Quarter mile
+    if (
+      rlObj.quarterMile !== null &&
+      rlObj.quarterMile !== undefined &&
+      !isNaN(Number(rlObj.quarterMile))
+    ) {
+      if (rlObj.quarterMileLengths !== null && rlObj.quarterMileLengths !== undefined) {
+        positions.push(`${rlObj.quarterMile}${formatLengthsSuper(rlObj.quarterMileLengths)}`);
+      } else {
+        positions.push(String(rlObj.quarterMile));
+      }
+    }
+
+    // Half mile
+    if (rlObj.halfMile !== null && rlObj.halfMile !== undefined && !isNaN(Number(rlObj.halfMile))) {
+      if (rlObj.halfMileLengths !== null && rlObj.halfMileLengths !== undefined) {
+        positions.push(`${rlObj.halfMile}${formatLengthsSuper(rlObj.halfMileLengths)}`);
+      } else {
+        positions.push(String(rlObj.halfMile));
+      }
+    }
+
+    // Three quarters
+    if (
+      rlObj.threeQuarters !== null &&
+      rlObj.threeQuarters !== undefined &&
+      !isNaN(Number(rlObj.threeQuarters))
+    ) {
+      if (rlObj.threeQuartersLengths !== null && rlObj.threeQuartersLengths !== undefined) {
+        positions.push(`${rlObj.threeQuarters}${formatLengthsSuper(rlObj.threeQuartersLengths)}`);
+      } else {
+        positions.push(String(rlObj.threeQuarters));
+      }
+    }
+
+    // Stretch
+    if (rlObj.stretch !== null && rlObj.stretch !== undefined && !isNaN(Number(rlObj.stretch))) {
+      if (rlObj.stretchLengths !== null && rlObj.stretchLengths !== undefined) {
+        positions.push(`${rlObj.stretch}${formatLengthsSuper(rlObj.stretchLengths)}`);
+      } else {
+        positions.push(String(rlObj.stretch));
+      }
+    }
+
+    // Finish
+    if (rlObj.finish !== null && rlObj.finish !== undefined && !isNaN(Number(rlObj.finish))) {
+      if (rlObj.finishLengths !== null && rlObj.finishLengths !== undefined) {
+        positions.push(`${rlObj.finish}${formatLengthsSuper(rlObj.finishLengths)}`);
+      } else {
+        positions.push(String(rlObj.finish));
+      }
+    }
 
     if (positions.length === 0) return '—';
-
-    // For now, just show positions. Lengths can be added with superscript later.
-    // Note: start position has no lengths value
-    const lengthsArray = [
-      null, // start has no lengths
-      rl.quarterMileLengths,
-      rl.halfMileLengths,
-      rl.threeQuartersLengths,
-      rl.stretchLengths,
-      rl.finishLengths,
-    ];
-
-    return positions
-      .map((pos, i) => {
-        const lengths = lengthsArray[i];
-
-        if (lengths !== null && lengths !== undefined) {
-          return `${pos}${formatLengths(lengths)}`;
-        }
-        return String(pos);
-      })
-      .join(' ');
+    return positions.join(' ').slice(0, 20);
   };
 
   // Format jockey name: "Rosario J" or "Prat F"
@@ -177,10 +258,12 @@ export const PPLine: React.FC<PPLineProps> = ({ pp, index }) => {
     return `${lastName} ${firstInitial}`.slice(0, 12);
   };
 
-  // Format comment: truncate if too long
+  // Format comment: show more characters
   const formatComment = (tripComment?: string, comment?: string): string => {
     const text = tripComment || comment || '';
-    return text.slice(0, 30) || '—';
+    if (!text || text === 'undefined' || text === 'null') return '—';
+    const cleaned = String(text).trim();
+    return cleaned.slice(0, 50) || '—'; // Increased from 30
   };
 
   const isEven = index % 2 === 0;
@@ -188,7 +271,7 @@ export const PPLine: React.FC<PPLineProps> = ({ pp, index }) => {
   return (
     <div className={`pp-line ${isEven ? 'pp-line--even' : 'pp-line--odd'}`}>
       <span className="pp-line__col pp-line__col--date">{formatDate(pp.date)}</span>
-      <span className="pp-line__col pp-line__col--track">{pp.track || '—'}</span>
+      <span className="pp-line__col pp-line__col--track">{formatTrack(pp.track)}</span>
       <span className="pp-line__col pp-line__col--dist">
         {formatDistance(pp.distanceFurlongs, pp.distance)}
       </span>

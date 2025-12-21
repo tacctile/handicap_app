@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import './HorseExpandedView.css';
 import { PPLine } from './PPLine';
 import type { HorseEntry, PastPerformance, Workout } from '../types/drf';
@@ -67,57 +67,91 @@ interface WorkoutItemProps {
 }
 
 const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
-  // Format date: "Dec10" or "Jan03"
-  const formatWorkoutDate = (dateStr: string): string => {
-    if (!dateStr) return '—';
+  // Format workout date safely
+  const formatWorkoutDate = (dateStr: unknown): string => {
+    if (!dateStr || dateStr === 'undefined' || dateStr === 'null') return '—';
+
+    const str = String(dateStr).trim();
+    if (!str) return '—';
+
     try {
-      const date = new Date(dateStr);
-      const months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      const month = months[date.getMonth()];
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${month}${day}`;
+      // Handle YYYYMMDD
+      if (/^\d{8}$/.test(str)) {
+        const months = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ];
+        const month = months[parseInt(str.slice(4, 6)) - 1] || '???';
+        const day = str.slice(6, 8);
+        return `${month}${day}`;
+      }
+
+      const date = new Date(str);
+      if (!isNaN(date.getTime())) {
+        const months = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ];
+        const month = months[date.getMonth()];
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${month}${day}`;
+      }
+
+      return str.slice(0, 5) || '—';
     } catch {
-      return dateStr.slice(0, 5) || '—';
+      return '—';
     }
   };
 
-  // Format distance: "4f", "5f", "6f"
-  const formatWorkoutDist = (furlongs: number, distStr?: string): string => {
-    if (distStr) {
-      return distStr.replace('furlongs', 'f').replace('furlong', 'f').replace(' ', '').slice(0, 3);
-    }
-    if (!furlongs) return '—';
-    return `${furlongs}f`;
+  // Format workout track safely
+  const formatWorkoutTrack = (track: unknown): string => {
+    if (!track || track === 'undefined' || track === 'null') return '—';
+    const str = String(track).trim();
+    if (!str || str.toLowerCase() === 'nan' || str.toLowerCase() === 'undefined') return '—';
+    return str.toUpperCase().slice(0, 3);
   };
 
-  // Format time: ":48.20" or "1:00.40"
-  const formatWorkoutTime = (seconds: number, formatted?: string): string => {
-    if (formatted) return formatted;
-    if (!seconds) return '—';
-    if (seconds < 60) {
-      return `:${seconds.toFixed(2)}`;
+  // Format workout distance safely (fix negative numbers)
+  const formatWorkoutDist = (furlongs: unknown, distStr?: unknown): string => {
+    // Try distStr first
+    if (distStr && distStr !== 'undefined' && distStr !== 'null') {
+      const str = String(distStr).trim();
+      if (str && !str.includes('undefined')) {
+        return str.replace('furlongs', 'f').replace('furlong', 'f').replace(' ', '').slice(0, 4);
+      }
     }
-    const mins = Math.floor(seconds / 60);
-    const secs = (seconds % 60).toFixed(2);
-    return `${mins}:${secs.padStart(5, '0')}`;
+
+    // Try furlongs number
+    const num = Number(furlongs);
+    if (isNaN(num) || num <= 0 || num > 20) return '—';
+    return `${num}f`;
   };
 
-  // Format type: "H" for handily, "B" for breezing, "D" for driving, "E" for easy
-  const formatWorkoutType = (type: string): string => {
-    if (!type) return '';
+  // Format workout type safely
+  const formatWorkoutType = (type: unknown): string => {
+    if (!type || type === 'undefined' || type === 'null') return '—';
+    const str = String(type).toLowerCase().trim();
+
     const abbrevs: Record<string, string> = {
       handily: 'H',
       breezing: 'B',
@@ -125,12 +159,16 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
       driving: 'D',
       easy: 'E',
     };
-    return abbrevs[type.toLowerCase()] || type.charAt(0).toUpperCase();
+
+    return abbrevs[str] || str.charAt(0).toUpperCase() || '—';
   };
 
-  // Format surface/condition: "fst", "gd", "sly"
-  const formatWorkoutCond = (condition: string, surface?: string): string => {
+  // Format surface/condition safely
+  const formatWorkoutCond = (condition: unknown, surface?: unknown): string => {
     const cond = condition || surface || '';
+    if (!cond || cond === 'undefined' || cond === 'null') return '—';
+    const str = String(cond).toLowerCase().trim();
+    if (!str || str === 'nan') return '—';
     const abbrevs: Record<string, string> = {
       fast: 'fst',
       good: 'gd',
@@ -140,22 +178,61 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
       dirt: 'd',
       turf: 't',
     };
-    return abbrevs[cond.toLowerCase()] || cond.slice(0, 3).toLowerCase();
+    return abbrevs[str] || str.slice(0, 3).toLowerCase() || '—';
   };
 
-  // Format ranking: "2/35"
-  const formatRanking = (rank: number | null, total: number | null, rankStr?: string): string => {
-    if (rankStr) return rankStr;
-    if (rank && total) return `${rank}/${total}`;
-    return '';
+  // Format workout time safely
+  const formatWorkoutTime = (seconds: unknown, formatted?: unknown): string => {
+    // Try formatted first
+    if (formatted && formatted !== 'undefined' && formatted !== 'null') {
+      const str = String(formatted).trim();
+      if (str && !str.includes('undefined') && !str.includes('NaN')) {
+        return str;
+      }
+    }
+
+    // Try seconds
+    const num = Number(seconds);
+    if (isNaN(num) || num <= 0 || num > 300) return '—';
+
+    if (num < 60) {
+      return `:${num.toFixed(2)}`;
+    }
+    const mins = Math.floor(num / 60);
+    const secs = (num % 60).toFixed(2).padStart(5, '0');
+    return `${mins}:${secs}`;
   };
+
+  // Format workout ranking safely
+  const formatWorkoutRanking = (rank: unknown, total: unknown, rankStr?: unknown): string => {
+    // Try rankStr first
+    if (rankStr && rankStr !== 'undefined' && rankStr !== 'null') {
+      const str = String(rankStr).trim();
+      if (str && !str.includes('undefined')) return str;
+    }
+
+    const r = Number(rank);
+    const t = Number(total);
+
+    if (!isNaN(r) && !isNaN(t) && r > 0 && t > 0) {
+      return `${r}/${t}`;
+    }
+
+    return '—';
+  };
+
+  // Check if workout data is valid
+  const hasValidData =
+    workout && (workout.date || workout.track || workout.timeSeconds || workout.timeFormatted);
+
+  if (!hasValidData) return null;
 
   const isBullet = workout.isBullet || workout.rankNumber === 1;
 
   return (
     <div className={`horse-workouts__item ${isBullet ? 'horse-workouts__item--bullet' : ''}`}>
       <span className="horse-workouts__date">{formatWorkoutDate(workout.date)}</span>
-      <span className="horse-workouts__track">{workout.track || '—'}</span>
+      <span className="horse-workouts__track">{formatWorkoutTrack(workout.track)}</span>
       <span className="horse-workouts__dist">
         {formatWorkoutDist(workout.distanceFurlongs, workout.distance)}
       </span>
@@ -167,7 +244,7 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
       </span>
       <span className="horse-workouts__type">{formatWorkoutType(workout.type)}</span>
       <span className="horse-workouts__rank">
-        {formatRanking(workout.rankNumber, workout.totalWorks, workout.ranking)}
+        {formatWorkoutRanking(workout.rankNumber, workout.totalWorks, workout.ranking)}
       </span>
       {isBullet && <span className="horse-workouts__bullet-icon">●</span>}
       {workout.fromGate && <span className="horse-workouts__gate-icon">g</span>}
@@ -185,6 +262,26 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   valuePercent = 0,
   score,
 }) => {
+  // Debug logging to inspect data structures
+  useEffect(() => {
+    if (!isVisible) return;
+
+    const firstWorkout = horse.workouts?.[0];
+    if (firstWorkout) {
+      console.log('=== WORKOUT DATA STRUCTURE ===');
+      console.log('First workout:', firstWorkout);
+      console.log('Workout keys:', Object.keys(firstWorkout));
+    }
+
+    const firstPP = horse.pastPerformances?.[0];
+    if (firstPP) {
+      console.log('=== PP DATA STRUCTURE ===');
+      console.log('First PP:', firstPP);
+      console.log('PP keys:', Object.keys(firstPP));
+      console.log('Running line:', firstPP.runningLine);
+    }
+  }, [horse, isVisible]);
+
   if (!isVisible) return null;
 
   const tierClass = getTierClass(valuePercent);

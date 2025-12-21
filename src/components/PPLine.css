@@ -128,8 +128,22 @@
 
 .pp-line__col--comment {
   flex: 1;
-  min-width: 100px;
-  font-size: 9px; /* Reduced from 10px */
+  min-width: 150px; /* Increased from 100px */
+  max-width: 250px; /* Add max to prevent too wide */
+  font-size: 9px;
   font-style: italic;
   color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* On hover, show full comment */
+.pp-line:hover .pp-line__col--comment {
+  white-space: normal;
+  overflow: visible;
+  position: relative;
+  z-index: 5;
+  background: #fff;
+  padding-right: 8px;
 }
