@@ -1,11 +1,13 @@
 import React from 'react';
 import './HorseExpandedView.css';
 import type { HorseEntry } from '../types/drf';
+import type { HorseScore } from '../lib/scoring';
 
 interface HorseExpandedViewProps {
   horse: HorseEntry;
   isVisible: boolean;
   valuePercent?: number;
+  score?: HorseScore;
 }
 
 // Determine tier class based on value percentage
@@ -35,22 +37,183 @@ const isGoodWinRate = (starts: number, wins: number): boolean => {
   return wins / starts >= 0.25;
 };
 
+// Score limits by category (from lib/scoring)
+const SCORE_LIMITS_LOCAL = {
+  connections: 55,
+  postPosition: 45,
+  speedClass: 50,
+  form: 30,
+  equipment: 25,
+  pace: 40,
+  total: 240,
+} as const;
+
+// Determine score tier class based on total score
+const getScoreTierClass = (score: number): string => {
+  if (score >= 200) return 'elite';
+  if (score >= 180) return 'good';
+  if (score >= 160) return 'fair';
+  if (score >= 140) return 'neutral';
+  return 'bad';
+};
+
 export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   horse,
   isVisible,
   valuePercent = 0,
+  score,
 }) => {
   if (!isVisible) return null;
 
   const tierClass = getTierClass(valuePercent);
+  const scoreTotal = score?.total || 0;
+  const scoreTierClass = getScoreTierClass(scoreTotal);
+  const scoreBreakdown = score?.breakdown;
 
   return (
     <div className={`horse-expanded-view horse-expanded-view--tier-${tierClass}`}>
-      {/* Section 1: Furlong Scoring Breakdown (your value-add) */}
+      {/* Section 1: Furlong Scoring Breakdown */}
       <section className="horse-expanded-view__section horse-expanded-view__section--scoring">
-        <div className="horse-expanded-view__section-placeholder">
-          FURLONG SCORING BREAKDOWN
-          <span className="horse-expanded-view__placeholder-note">(Prompt 4)</span>
+        <div className="horse-scoring">
+          {/* Total Score - Prominent */}
+          <div className="horse-scoring__total">
+            <span className="horse-scoring__total-label">FURLONG SCORE</span>
+            <span
+              className={`horse-scoring__total-value horse-scoring__total-value--${scoreTierClass}`}
+            >
+              {scoreTotal}
+              <span className="horse-scoring__total-max">/240</span>
+            </span>
+            <span
+              className={`horse-scoring__total-percent horse-scoring__total-percent--${scoreTierClass}`}
+            >
+              ({Math.round((scoreTotal / 240) * 100)}%)
+            </span>
+          </div>
+
+          <span className="horse-scoring__divider">│</span>
+
+          {/* Category Breakdowns */}
+          {scoreBreakdown ? (
+            <div className="horse-scoring__categories">
+              {/* Connections - Max 55 */}
+              <div className="horse-scoring__category">
+                <span className="horse-scoring__cat-label">Conn</span>
+                <div className="horse-scoring__cat-bar-wrap">
+                  <div
+                    className="horse-scoring__cat-bar"
+                    style={{
+                      width: `${((scoreBreakdown.connections?.total || 0) / SCORE_LIMITS_LOCAL.connections) * 100}%`,
+                    }}
+                  />
+                </div>
+                <span className="horse-scoring__cat-value">
+                  {scoreBreakdown.connections?.total || 0}/{SCORE_LIMITS_LOCAL.connections}
+                </span>
+              </div>
+
+              {/* Post Position - Max 45 */}
+              <div className="horse-scoring__category">
+                <span className="horse-scoring__cat-label">Post</span>
+                <div className="horse-scoring__cat-bar-wrap">
+                  <div
+                    className="horse-scoring__cat-bar"
+                    style={{
+                      width: `${((scoreBreakdown.postPosition?.total || 0) / SCORE_LIMITS_LOCAL.postPosition) * 100}%`,
+                    }}
+                  />
+                </div>
+                <span className="horse-scoring__cat-value">
+                  {scoreBreakdown.postPosition?.total || 0}/{SCORE_LIMITS_LOCAL.postPosition}
+                </span>
+              </div>
+
+              {/* Speed/Class - Max 50 */}
+              <div className="horse-scoring__category">
+                <span className="horse-scoring__cat-label">Speed</span>
+                <div className="horse-scoring__cat-bar-wrap">
+                  <div
+                    className="horse-scoring__cat-bar"
+                    style={{
+                      width: `${((scoreBreakdown.speedClass?.total || 0) / SCORE_LIMITS_LOCAL.speedClass) * 100}%`,
+                    }}
+                  />
+                </div>
+                <span className="horse-scoring__cat-value">
+                  {scoreBreakdown.speedClass?.total || 0}/{SCORE_LIMITS_LOCAL.speedClass}
+                </span>
+              </div>
+
+              {/* Form - Max 30 */}
+              <div className="horse-scoring__category">
+                <span className="horse-scoring__cat-label">Form</span>
+                <div className="horse-scoring__cat-bar-wrap">
+                  <div
+                    className="horse-scoring__cat-bar"
+                    style={{
+                      width: `${((scoreBreakdown.form?.total || 0) / SCORE_LIMITS_LOCAL.form) * 100}%`,
+                    }}
+                  />
+                </div>
+                <span className="horse-scoring__cat-value">
+                  {scoreBreakdown.form?.total || 0}/{SCORE_LIMITS_LOCAL.form}
+                </span>
+              </div>
+
+              {/* Equipment - Max 25 */}
+              <div className="horse-scoring__category">
+                <span className="horse-scoring__cat-label">Equip</span>
+                <div className="horse-scoring__cat-bar-wrap">
+                  <div
+                    className="horse-scoring__cat-bar"
+                    style={{
+                      width: `${((scoreBreakdown.equipment?.total || 0) / SCORE_LIMITS_LOCAL.equipment) * 100}%`,
+                    }}
+                  />
+                </div>
+                <span className="horse-scoring__cat-value">
+                  {scoreBreakdown.equipment?.total || 0}/{SCORE_LIMITS_LOCAL.equipment}
+                </span>
+              </div>
+
+              {/* Pace - Max 40 */}
+              <div className="horse-scoring__category">
+                <span className="horse-scoring__cat-label">Pace</span>
+                <div className="horse-scoring__cat-bar-wrap">
+                  <div
+                    className="horse-scoring__cat-bar"
+                    style={{
+                      width: `${((scoreBreakdown.pace?.total || 0) / SCORE_LIMITS_LOCAL.pace) * 100}%`,
+                    }}
+                  />
+                </div>
+                <span className="horse-scoring__cat-value">
+                  {scoreBreakdown.pace?.total || 0}/{SCORE_LIMITS_LOCAL.pace}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="horse-scoring__no-breakdown">
+              <span className="horse-scoring__no-breakdown-text">
+                Score breakdown not available
+              </span>
+            </div>
+          )}
+
+          {/* Confidence Indicator (if available) */}
+          {score?.confidenceLevel && (
+            <>
+              <span className="horse-scoring__divider">│</span>
+              <div className="horse-scoring__confidence">
+                <span className="horse-scoring__conf-label">Conf:</span>
+                <span
+                  className={`horse-scoring__conf-value horse-scoring__conf-value--${score.confidenceLevel}`}
+                >
+                  {score.confidenceLevel}
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
