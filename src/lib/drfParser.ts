@@ -1234,24 +1234,30 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
     const wkDate = getField(fields, WK_DATE + i);
     if (!wkDate) break;
 
-    // Parse workout distance with auto-detection (same logic as PP distances)
-    // DRF data can store distances in different formats:
+    // Parse workout distance with auto-detection
+    // DRF workout distances can be stored in different formats:
     // - Actual furlongs (2-16): e.g., 5 for 5f, 6 for 6f
     // - Eighths of furlongs (17-128): e.g., 40 for 5f (40/8=5), 48 for 6f
-    // - Yards (>128): e.g., 1100 for 5f (1100/220=5), 1320 for 6f
+    // - Yards (129-1000): e.g., 1100 for 5f (1100/220=5), 1320 for 6f
+    // - Feet (>1000): e.g., 3300 for 5f (3300/660=5), 3960 for 6f (per DRF spec)
+    //
+    // Common workout distances in feet: 2640=4f, 3300=5f, 3960=6f, 4620=7f, 5280=8f
     const rawDistanceValue = parseFloatSafe(getField(fields, WK_DISTANCE_YARDS + i));
     let distanceFurlongs = 0;
 
     if (rawDistanceValue > 0) {
       if (rawDistanceValue >= 2 && rawDistanceValue <= 16) {
-        // Value is already in furlongs (standard workout range is 2f to 1.5 miles/12f)
+        // Value is already in furlongs (standard workout range is 2f to 8f)
         distanceFurlongs = rawDistanceValue;
       } else if (rawDistanceValue > 16 && rawDistanceValue <= 128) {
-        // Value is in eighths of furlongs (16*8=128 max reasonable value)
+        // Value is in eighths of furlongs (e.g., 40=5f, 48=6f)
         distanceFurlongs = rawDistanceValue / 8;
-      } else if (rawDistanceValue > 128) {
+      } else if (rawDistanceValue > 128 && rawDistanceValue <= 1000) {
         // Value is in yards (220 yards per furlong)
         distanceFurlongs = rawDistanceValue / 220;
+      } else if (rawDistanceValue > 1000) {
+        // Value is in feet (660 feet per furlong) - per DRF spec
+        distanceFurlongs = rawDistanceValue / 660;
       }
     }
 
@@ -1274,10 +1280,15 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
       console.log('Raw field index:', WK_DISTANCE_YARDS + i, '(should be 315)');
       console.log('Raw field value:', getField(fields, WK_DISTANCE_YARDS + i));
       console.log('Raw value:', rawDistanceValue);
-      console.log(
-        'Detected format:',
-        rawDistanceValue <= 16 ? 'furlongs' : rawDistanceValue <= 128 ? 'eighths' : 'yards'
-      );
+      const detectedFormat =
+        rawDistanceValue <= 16
+          ? 'furlongs'
+          : rawDistanceValue <= 128
+            ? 'eighths'
+            : rawDistanceValue <= 1000
+              ? 'yards'
+              : 'feet';
+      console.log('Detected format:', detectedFormat);
       console.log('Calculated distanceFurlongs:', distanceFurlongs);
       console.log('Distance string:', distanceStr);
       console.log('=================================================');
