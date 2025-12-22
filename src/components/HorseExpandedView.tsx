@@ -403,7 +403,6 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                 {scoreTotal}
               </span>
               <span className="furlong-score__total-max">/{SCORE_LIMITS.total}</span>
-              <span className="furlong-score__total-percent">({scorePercentage}%)</span>
             </div>
             <div className="furlong-score__total-bar">
               <div
