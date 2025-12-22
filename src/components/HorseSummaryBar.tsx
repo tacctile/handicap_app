@@ -51,7 +51,7 @@ const getValueTier = (valuePercent: number, isScratched: boolean): TierInfo => {
   }
 
   return {
-    label: 'UNDERLAY',
+    label: 'POOR VALUE',
     className: 'bad',
     isElite: false,
   };

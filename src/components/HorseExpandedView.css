@@ -357,12 +357,20 @@
 
 .furlong-score__category-label {
   font-family: var(--font-sans);
-  font-size: 9px;
+  font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
+  color: var(--color-text-secondary, #9ca3af);
+  margin-bottom: 4px;
+}
+
+.furlong-score__category-desc {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 400;
   color: var(--color-text-tertiary, #6e6e70);
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 /* Responsive: Stack on smaller screens */

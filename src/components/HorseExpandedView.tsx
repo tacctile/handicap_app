@@ -449,12 +449,32 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
           {/* Category Scores - Supporting (Right Side) */}
           <div className="furlong-score__categories">
             {[
-              { key: 'connections', label: 'CONNECTIONS', max: SCORE_LIMITS.connections },
-              { key: 'postPosition', label: 'POST', max: SCORE_LIMITS.postPosition },
-              { key: 'speedClass', label: 'SPEED/CLASS', max: SCORE_LIMITS.speedClass },
-              { key: 'form', label: 'FORM', max: SCORE_LIMITS.form },
-              { key: 'equipment', label: 'EQUIPMENT', max: SCORE_LIMITS.equipment },
-              { key: 'pace', label: 'PACE', max: SCORE_LIMITS.pace },
+              {
+                key: 'connections',
+                label: 'CONNECTIONS',
+                desc: 'Trainer & Jockey Stats',
+                max: SCORE_LIMITS.connections,
+              },
+              {
+                key: 'postPosition',
+                label: 'POST',
+                desc: 'Starting Gate Advantage',
+                max: SCORE_LIMITS.postPosition,
+              },
+              {
+                key: 'speedClass',
+                label: 'SPEED/CLASS',
+                desc: 'Speed Figures & Class',
+                max: SCORE_LIMITS.speedClass,
+              },
+              { key: 'form', label: 'FORM', desc: 'Recent Performance', max: SCORE_LIMITS.form },
+              {
+                key: 'equipment',
+                label: 'EQUIPMENT',
+                desc: 'Equipment Changes',
+                max: SCORE_LIMITS.equipment,
+              },
+              { key: 'pace', label: 'PACE', desc: 'Running Style & Pace', max: SCORE_LIMITS.pace },
             ].map((cat) => {
               const category =
                 scoreBreakdown?.[
@@ -472,6 +492,7 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
 
               return (
                 <div key={cat.key} className="furlong-score__category">
+                  <span className="furlong-score__category-label">{cat.label}</span>
                   <span className="furlong-score__category-value">
                     {value}/{cat.max}
                   </span>
@@ -481,7 +502,7 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                       style={{ width: `${percent}%` }}
                     />
                   </div>
-                  <span className="furlong-score__category-label">{cat.label}</span>
+                  <span className="furlong-score__category-desc">{cat.desc}</span>
                 </div>
               );
             })}
