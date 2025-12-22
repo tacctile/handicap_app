@@ -698,6 +698,16 @@ function parseRaceClassification(typeCode: string, conditions: string): RaceClas
 
 /**
  * Parse distance to formatted string and furlongs
+ *
+ * Note: DRF files may store distance in different units:
+ * - Actual furlongs (e.g., 6.0 for a 6-furlong race)
+ * - Eighths of furlongs (e.g., 48 for a 6-furlong race, needs division by 8)
+ * - Yards (e.g., 1320 for a 6-furlong race, needs division by 220)
+ *
+ * This function auto-detects the format:
+ * - Values 2-16: Assumed to be actual furlongs (standard race distances)
+ * - Values > 16: Likely eighths of furlongs, divide by 8
+ * - Yards fallback: Divide by 220
  */
 function parseDistance(
   rawYards: string,
@@ -705,6 +715,13 @@ function parseDistance(
 ): { distance: string; furlongs: number; exact: string } {
   // Try furlongs first
   let furlongs = parseFloatSafe(rawFurlongs);
+
+  // Auto-detect format: if value is > 16, it's likely in eighths of furlongs
+  // (Max race distance is ~16 furlongs = 2 miles, so values > 16 are probably encoded differently)
+  if (furlongs > 16) {
+    // Value is in eighths of furlongs - divide by 8 to get actual furlongs
+    furlongs = furlongs / 8;
+  }
 
   // If furlongs not available, convert from yards
   if (!furlongs && rawYards) {
@@ -1099,6 +1116,8 @@ function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance
     if (!ppDate) break;
 
     // Parse distance
+    // Note: PP distance field may be in eighths of furlongs (e.g., 48 = 6f)
+    // parseDistance auto-detects and converts values > 16
     const distFurlongs = getField(fields, PP_DISTANCE_FURLONGS + i);
     const distData = parseDistance('', distFurlongs);
 
