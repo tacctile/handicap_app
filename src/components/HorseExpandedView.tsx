@@ -4,13 +4,6 @@ import { PPLine } from './PPLine';
 import type { HorseEntry, PastPerformance, Workout } from '../types/drf';
 import type { HorseScore } from '../lib/scoring';
 
-interface HorseExpandedViewProps {
-  horse: HorseEntry;
-  isVisible: boolean;
-  valuePercent?: number;
-  score?: HorseScore;
-}
-
 // Determine tier class based on value percentage
 const getTierClass = (value: number): string => {
   if (value >= 100) return 'elite';
@@ -67,8 +60,12 @@ interface WorkoutItemProps {
 }
 
 const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
+  // Type-safe access with Record for flexible field access
+  const w = workout as Workout & Record<string, unknown>;
+
   // Format workout date safely
-  const formatWorkoutDate = (dateStr: unknown): string => {
+  const formatWorkoutDate = (): string => {
+    const dateStr = w.date || w.workDate || w.workoutDate;
     if (!dateStr || dateStr === 'undefined' || dateStr === 'null') return '—';
 
     const str = String(dateStr).trim();
@@ -124,51 +121,153 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
   };
 
   // Format workout track safely
-  const formatWorkoutTrack = (track: unknown): string => {
+  const formatWorkoutTrack = (): string => {
+    const track = w.track || w.workTrack || w.trackCode;
     if (!track || track === 'undefined' || track === 'null') return '—';
     const str = String(track).trim();
     if (!str || str.toLowerCase() === 'nan' || str.toLowerCase() === 'undefined') return '—';
     return str.toUpperCase().slice(0, 3);
   };
 
-  // Format workout distance safely (fix negative numbers)
-  const formatWorkoutDist = (furlongs: unknown, distStr?: unknown): string => {
-    // Try distStr first
-    if (distStr && distStr !== 'undefined' && distStr !== 'null') {
-      const str = String(distStr).trim();
-      if (str && !str.includes('undefined')) {
-        return str.replace('furlongs', 'f').replace('furlong', 'f').replace(' ', '').slice(0, 4);
+  // Get workout distance - check multiple possible field names
+  const getWorkoutDistance = (): string => {
+    // Try furlongs as a number first (most reliable for display)
+    const furlongFields = ['distanceFurlongs', 'furlongs', 'workFurlongs', 'dist', 'distanceValue'];
+    for (const field of furlongFields) {
+      const val = w[field];
+      if (typeof val === 'number' && val >= 2 && val <= 8) {
+        // Valid furlong range for workouts
+        if (val % 1 === 0) {
+          return `${val}f`;
+        } else if (val % 1 === 0.5) {
+          return `${Math.floor(val)}½f`;
+        } else if (val % 1 === 0.25) {
+          return `${Math.floor(val)}¼f`;
+        }
+        return `${val}f`;
       }
     }
 
-    // Try furlongs number
-    const num = Number(furlongs);
-    if (isNaN(num) || num <= 0 || num > 20) return '—';
-    return `${num}f`;
+    // Try distance string
+    const distStrFields = ['distance', 'distanceText', 'workDistance', 'distanceString'];
+    for (const field of distStrFields) {
+      const val = w[field];
+      if (val && typeof val === 'string') {
+        const cleaned = val
+          .replace('furlongs', 'f')
+          .replace('furlong', 'f')
+          .replace(' ', '')
+          .trim();
+        if (cleaned && !cleaned.includes('undefined') && cleaned.length < 6) {
+          return cleaned.slice(0, 4);
+        }
+      }
+    }
+
+    return '—';
   };
 
-  // Format workout type safely
-  const formatWorkoutType = (type: unknown): string => {
-    if (!type || type === 'undefined' || type === 'null') return '—';
-    const str = String(type).toLowerCase().trim();
+  // Get workout time - check multiple possible field names
+  const getWorkoutTime = (): string => {
+    // Try formatted time string first
+    const timeStrFields = [
+      'timeFormatted',
+      'time',
+      'workTime',
+      'finalTime',
+      'clockTime',
+      'formattedTime',
+    ];
+    for (const field of timeStrFields) {
+      const val = w[field];
+      if (val && typeof val === 'string') {
+        const cleaned = val.trim();
+        // Check if it looks like a time (has : or starts with : or has decimal)
+        if (cleaned.includes(':') || cleaned.startsWith('.') || /^\d{2}\.\d/.test(cleaned)) {
+          // Format properly
+          if (!cleaned.startsWith(':') && !cleaned.includes(':') && cleaned.includes('.')) {
+            // Looks like "48.20" - add colon prefix
+            return `:${cleaned}`;
+          }
+          return cleaned;
+        }
+      }
+    }
 
-    const abbrevs: Record<string, string> = {
-      handily: 'H',
-      breezing: 'B',
-      breeze: 'B',
-      driving: 'D',
-      easy: 'E',
-    };
+    // Try seconds as number
+    const secondsFields = ['timeSeconds', 'seconds', 'timeInSeconds', 'workSeconds'];
+    for (const field of secondsFields) {
+      const val = w[field];
+      if (typeof val === 'number' && val > 20 && val < 200) {
+        // Valid workout time range in seconds
+        if (val < 60) {
+          return `:${val.toFixed(2)}`;
+        }
+        const mins = Math.floor(val / 60);
+        const secs = (val % 60).toFixed(2).padStart(5, '0');
+        return `${mins}:${secs}`;
+      }
+    }
 
-    return abbrevs[str] || str.charAt(0).toUpperCase() || '—';
+    return '—';
+  };
+
+  // Get workout type - check multiple possible field names
+  const getWorkoutType = (): string => {
+    // Try various field names
+    const typeFields = ['type', 'workoutType', 'workType', 'manner', 'description'];
+    for (const field of typeFields) {
+      const val = w[field];
+      if (val && typeof val === 'string') {
+        const cleaned = val.toLowerCase().trim();
+
+        // Skip invalid values
+        if (
+          cleaned === 'undefined' ||
+          cleaned === 'null' ||
+          cleaned === 'unknown' ||
+          cleaned === ''
+        ) {
+          continue;
+        }
+
+        // Map to abbreviation
+        const typeMap: Record<string, string> = {
+          handily: 'H',
+          hand: 'H',
+          h: 'H',
+          breezing: 'B',
+          breeze: 'B',
+          b: 'B',
+          driving: 'D',
+          drive: 'D',
+          d: 'D',
+          easy: 'E',
+          e: 'E',
+          gate: 'G',
+          g: 'G',
+        };
+
+        if (typeMap[cleaned]) {
+          return typeMap[cleaned];
+        }
+
+        // Return first char uppercase if we have something valid
+        if (cleaned.length > 0 && cleaned !== 'u') {
+          return cleaned.charAt(0).toUpperCase();
+        }
+      }
+    }
+
+    return '—';
   };
 
   // Format surface/condition safely
-  const formatWorkoutCond = (condition: unknown, surface?: unknown): string => {
-    const cond = condition || surface || '';
-    if (!cond || cond === 'undefined' || cond === 'null') return '—';
+  const formatWorkoutCond = (): string => {
+    const cond = w.trackCondition || w.surface || w.condition;
+    if (!cond) return '—';
     const str = String(cond).toLowerCase().trim();
-    if (!str || str === 'nan') return '—';
+    if (!str || str === 'nan' || str === 'undefined' || str === 'null') return '—';
     const abbrevs: Record<string, string> = {
       fast: 'fst',
       good: 'gd',
@@ -181,38 +280,17 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
     return abbrevs[str] || str.slice(0, 3).toLowerCase() || '—';
   };
 
-  // Format workout time safely
-  const formatWorkoutTime = (seconds: unknown, formatted?: unknown): string => {
-    // Try formatted first
-    if (formatted && formatted !== 'undefined' && formatted !== 'null') {
-      const str = String(formatted).trim();
-      if (str && !str.includes('undefined') && !str.includes('NaN')) {
-        return str;
-      }
-    }
-
-    // Try seconds
-    const num = Number(seconds);
-    if (isNaN(num) || num <= 0 || num > 300) return '—';
-
-    if (num < 60) {
-      return `:${num.toFixed(2)}`;
-    }
-    const mins = Math.floor(num / 60);
-    const secs = (num % 60).toFixed(2).padStart(5, '0');
-    return `${mins}:${secs}`;
-  };
-
-  // Format workout ranking safely
-  const formatWorkoutRanking = (rank: unknown, total: unknown, rankStr?: unknown): string => {
+  // Get workout ranking safely
+  const getWorkoutRanking = (): string => {
     // Try rankStr first
+    const rankStr = w.ranking || w.rankingStr;
     if (rankStr && rankStr !== 'undefined' && rankStr !== 'null') {
       const str = String(rankStr).trim();
       if (str && !str.includes('undefined')) return str;
     }
 
-    const r = Number(rank);
-    const t = Number(total);
+    const r = Number(w.rankNumber || w.rank);
+    const t = Number(w.totalWorks || w.total || w.workTotal);
 
     if (!isNaN(r) && !isNaN(t) && r > 0 && t > 0) {
       return `${r}/${t}`;
@@ -222,32 +300,23 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
   };
 
   // Check if workout data is valid
-  const hasValidData =
-    workout && (workout.date || workout.track || workout.timeSeconds || workout.timeFormatted);
+  const hasValidData = workout && (w.date || w.track || w.timeSeconds || w.timeFormatted || w.time);
 
   if (!hasValidData) return null;
 
-  const isBullet = workout.isBullet || workout.rankNumber === 1;
+  const isBullet = w.isBullet || w.bullet || w.rankNumber === 1 || w.rank === 1;
 
   return (
     <div className={`horse-workouts__item ${isBullet ? 'horse-workouts__item--bullet' : ''}`}>
-      <span className="horse-workouts__date">{formatWorkoutDate(workout.date)}</span>
-      <span className="horse-workouts__track">{formatWorkoutTrack(workout.track)}</span>
-      <span className="horse-workouts__dist">
-        {formatWorkoutDist(workout.distanceFurlongs, workout.distance)}
-      </span>
-      <span className="horse-workouts__cond">
-        {formatWorkoutCond(workout.trackCondition, workout.surface)}
-      </span>
-      <span className="horse-workouts__time">
-        {formatWorkoutTime(workout.timeSeconds, workout.timeFormatted)}
-      </span>
-      <span className="horse-workouts__type">{formatWorkoutType(workout.type)}</span>
-      <span className="horse-workouts__rank">
-        {formatWorkoutRanking(workout.rankNumber, workout.totalWorks, workout.ranking)}
-      </span>
+      <span className="horse-workouts__date">{formatWorkoutDate()}</span>
+      <span className="horse-workouts__track">{formatWorkoutTrack()}</span>
+      <span className="horse-workouts__dist">{getWorkoutDistance()}</span>
+      <span className="horse-workouts__cond">{formatWorkoutCond()}</span>
+      <span className="horse-workouts__time">{getWorkoutTime()}</span>
+      <span className="horse-workouts__type">{getWorkoutType()}</span>
+      <span className="horse-workouts__rank">{getWorkoutRanking()}</span>
       {isBullet && <span className="horse-workouts__bullet-icon">●</span>}
-      {workout.fromGate && <span className="horse-workouts__gate-icon">g</span>}
+      {Boolean(w.fromGate || w.gate) && <span className="horse-workouts__gate-icon">g</span>}
     </div>
   );
 };
@@ -255,6 +324,13 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
+
+interface HorseExpandedViewProps {
+  horse: HorseEntry;
+  isVisible: boolean;
+  valuePercent?: number;
+  score?: HorseScore;
+}
 
 export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   horse,
