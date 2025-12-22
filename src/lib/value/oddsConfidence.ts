@@ -201,14 +201,43 @@ export function getConfidenceColor(confidence: number): string {
 /**
  * Apply confidence-based adjustment to EV calculations
  *
- * Lower confidence odds should result in more conservative EV estimates.
- * This function returns a multiplier to apply to EV.
+ * Only dampens EV for default_fallback (when we're truly guessing).
+ * Morning line and live odds get full EV - we show warnings in UI instead.
+ *
+ * Rationale:
+ * - A 30% edge with morning line odds is still a 30% edge
+ * - Dampening legitimate value bets causes missed opportunities
+ * - UI warnings let user decide whether to verify before betting
+ * - Only fallback (no real data) warrants mathematical adjustment
  *
  * @param confidence - Confidence value (0-100)
- * @returns Multiplier to apply to EV (0.2 to 1.0)
+ * @returns Multiplier to apply to EV (0.5 for fallback, 1.0 otherwise)
  */
 export function getEVConfidenceMultiplier(confidence: number): number {
-  // Linear scale from 20% confidence -> 0.2x to 100% confidence -> 1.0x
-  // This dampens EV for low-confidence odds
-  return Math.max(0.2, Math.min(1.0, confidence / 100));
+  // Only dampen for default_fallback (confidence 20, threshold 30 for safety margin)
+  if (confidence <= 30) {
+    return 0.5;
+  }
+  // Morning line and live odds: no dampening
+  return 1.0;
+}
+
+/**
+ * Get warning message for odds source (for UI display)
+ *
+ * Returns null for live odds (no warning needed), or a warning string
+ * for morning line and fallback sources.
+ *
+ * @param source - The odds source
+ * @returns Warning string or null
+ */
+export function getOddsWarning(source: OddsSource): string | null {
+  switch (source) {
+    case 'live':
+      return null;
+    case 'morning_line':
+      return 'EV based on morning line - verify before post';
+    case 'default_fallback':
+      return 'No odds data - using 5-1 default (low confidence)';
+  }
 }

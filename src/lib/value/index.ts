@@ -121,6 +121,7 @@ export {
   getConfidenceLevel,
   getConfidenceColor,
   getEVConfidenceMultiplier,
+  getOddsWarning,
 
   // Constants
   ODDS_CONFIDENCE,

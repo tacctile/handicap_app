@@ -24,6 +24,12 @@ import {
   scoreToWinProbability as calibratedWinProb,
   type CalibrationProfile,
 } from './confidenceCalibration';
+import {
+  getOddsWithSource,
+  getEVConfidenceMultiplier,
+  getOddsWarning,
+  type OddsSource,
+} from './oddsConfidence';
 
 // ============================================================================
 // TYPES
@@ -80,6 +86,12 @@ export interface ValueAnalysis {
   suggestedMultiplier: number;
   /** Urgency level */
   urgency: 'immediate' | 'high' | 'standard' | 'low' | 'none';
+  /** Source of odds data (live, morning_line, or default_fallback) */
+  oddsSource: OddsSource;
+  /** Confidence in odds data (0-100) */
+  oddsConfidence: number;
+  /** Warning about odds reliability (null if no warning) */
+  oddsWarning: string | null;
 }
 
 /** Batch value analysis result */
@@ -521,7 +533,19 @@ export function analyzeValue(
   const programNumber = horse.programNumber;
   const horseName = horse.horseName;
   const totalScore = score.total;
-  const oddsDisplay = horse.morningLineOdds || '5-1';
+
+  // Get odds with source tracking
+  // In analysis context, we don't have live user overrides - only DRF morning line
+  const oddsInfo = getOddsWithSource(
+    programNumber,
+    horse.morningLineOdds, // Raw ML from DRF (might be '')
+    () => horse.morningLineOdds || '5-1', // The actual odds value we'll use
+    () => false // No user override in analysis context
+  );
+  const oddsDisplay = oddsInfo.value;
+  const oddsSource = oddsInfo.source;
+  const oddsConfidenceValue = oddsInfo.confidence;
+  const oddsWarning = getOddsWarning(oddsSource);
 
   // Calculate probabilities
   const ourProbability = scoreToWinProbability(totalScore, calibration);
@@ -530,7 +554,11 @@ export function analyzeValue(
 
   // Calculate edge and EV
   const edge = calculateEdge(ourProbability, marketProbability);
-  const evPerDollar = calculateEV(ourProbability, decimalOdds);
+  const rawEvPerDollar = calculateEV(ourProbability, decimalOdds);
+
+  // Apply confidence multiplier (only dampens fallback, ML and live get 1.0)
+  const evMultiplier = getEVConfidenceMultiplier(oddsConfidenceValue);
+  const evPerDollar = rawEvPerDollar * evMultiplier;
   const evPercent = evPerDollar * 100;
 
   // Calculate fair odds and overlay
@@ -568,6 +596,9 @@ export function analyzeValue(
     suggestedMultiplier,
     urgency,
     recommendation: '', // Will be filled below
+    oddsSource,
+    oddsConfidence: oddsConfidenceValue,
+    oddsWarning,
   };
 
   // Generate explanation and recommendation
@@ -580,6 +611,8 @@ export function analyzeValue(
     score: totalScore,
     evPercent: evPercent.toFixed(1),
     classification,
+    oddsSource,
+    oddsConfidence: oddsConfidenceValue,
   });
 
   return {
