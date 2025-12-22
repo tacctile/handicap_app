@@ -115,11 +115,11 @@ export const SCORE_THRESHOLDS = {
 
 /** Score colors matching thresholds */
 export const SCORE_COLORS = {
-  elite: '#36d1da',
-  strong: '#19abb5',
-  good: '#1b7583',
-  fair: '#888888',
-  weak: '#555555',
+  elite: '#22c55e', // Green - Elite (200+)
+  strong: '#4ade80', // Light Green - Strong (180+)
+  good: '#eab308', // Yellow - Good (160+)
+  fair: '#f97316', // Orange - Fair (140+)
+  weak: '#ef4444', // Red - Weak (<140)
 } as const;
 
 // ============================================================================
