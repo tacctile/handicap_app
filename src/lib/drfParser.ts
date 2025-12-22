@@ -1242,7 +1242,9 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
     let interpretedFormat = 'none';
 
     // Valid workout distances (in furlongs) - standard industry values
-    const validWorkoutDistances = [2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8];
+    // NOTE: 8f (1 mile) workouts are extremely rare (<1% of all workouts)
+    // Most "1m" results indicate data issues, so we cap at 7f for workouts
+    const validWorkoutDistances = [3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7];
 
     // Check if a value is close to a valid workout distance
     const isValidWorkoutDist = (f: number): boolean => {

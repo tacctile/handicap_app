@@ -147,9 +147,10 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index }) => {
       console.log('====================================================');
     }
 
-    // Validate it's a reasonable workout distance (2f to 8f)
-    // Workouts are almost never longer than 1 mile - values > 8 indicate bad field mapping
-    if (typeof furlongs !== 'number' || furlongs < 2 || furlongs > 8) {
+    // Validate it's a reasonable workout distance (3f to 7f)
+    // Workouts are rarely shorter than 3f or longer than 7f
+    // 1-mile workouts are extremely rare (<1% of all workouts)
+    if (typeof furlongs !== 'number' || furlongs < 3 || furlongs > 7) {
       // Try the distance string as fallback
       if (w.distance && typeof w.distance === 'string') {
         const cleaned = String(w.distance).trim();
