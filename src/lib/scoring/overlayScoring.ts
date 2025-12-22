@@ -160,30 +160,91 @@ export function calculatePaceOverlay(
     breakdown.push({ factor: 'Speed duel likely', points: duelPenalty });
   }
 
-  // 4. Track bias integration
+  // 4. Track bias integration using paceAdvantageRating (1-10 scale)
+  // Rating 1-3: Closer-friendly, 4-6: Fair, 7-10: Speed-favoring
   if (isTrackIntelligenceAvailable(raceHeader.trackCode)) {
     const speedBias = getSpeedBias(raceHeader.trackCode, raceHeader.surface);
     if (speedBias) {
+      const paceAdvantageRating = speedBias.paceAdvantageRating;
       const biasRate = speedBias.earlySpeedWinRate;
-      // Strong speed bias (55%+)
-      if (biasRate >= 55 && (profile.style === 'E' || profile.style === 'P')) {
-        const biasBonus = 5;
-        totalScore += biasBonus;
-        breakdown.push({ factor: 'Speed-favoring track bias', points: biasBonus });
-      } else if (biasRate >= 55 && profile.style === 'C') {
-        const biasPenalty = -5;
-        totalScore += biasPenalty;
-        breakdown.push({ factor: 'Closer on speed track', points: biasPenalty });
+
+      // Use paceAdvantageRating for more granular scoring if available
+      if (paceAdvantageRating !== undefined) {
+        // Extreme speed bias (8-10) - big bonus for speed, big penalty for closers
+        if (paceAdvantageRating >= 8) {
+          if (profile.style === 'E') {
+            const biasBonus = 8;
+            totalScore += biasBonus;
+            breakdown.push({ factor: 'Extreme speed bias track', points: biasBonus });
+          } else if (profile.style === 'P') {
+            const biasBonus = 5;
+            totalScore += biasBonus;
+            breakdown.push({ factor: 'Speed bias benefits pressers', points: biasBonus });
+          } else if (profile.style === 'C') {
+            const biasPenalty = -8;
+            totalScore += biasPenalty;
+            breakdown.push({ factor: 'Closer on extreme speed track', points: biasPenalty });
+          }
+        }
+        // Strong speed bias (7)
+        else if (paceAdvantageRating >= 7) {
+          if (profile.style === 'E' || profile.style === 'P') {
+            const biasBonus = 5;
+            totalScore += biasBonus;
+            breakdown.push({ factor: 'Strong speed bias track', points: biasBonus });
+          } else if (profile.style === 'C') {
+            const biasPenalty = -5;
+            totalScore += biasPenalty;
+            breakdown.push({ factor: 'Closer on speed track', points: biasPenalty });
+          }
+        }
+        // Closer-friendly track (1-3)
+        else if (paceAdvantageRating <= 3) {
+          if (profile.style === 'C') {
+            const biasBonus = 7;
+            totalScore += biasBonus;
+            breakdown.push({ factor: 'Closer-friendly track', points: biasBonus });
+          } else if (profile.style === 'S') {
+            const biasBonus = 4;
+            totalScore += biasBonus;
+            breakdown.push({ factor: 'Stalker on closing track', points: biasBonus });
+          } else if (profile.style === 'E') {
+            const biasPenalty = -6;
+            totalScore += biasPenalty;
+            breakdown.push({ factor: 'Speed on closing track', points: biasPenalty });
+          }
+        }
+        // Fair-to-closing track (4)
+        else if (paceAdvantageRating <= 4) {
+          if (profile.style === 'S') {
+            const biasBonus = 3;
+            totalScore += biasBonus;
+            breakdown.push({ factor: 'Fair track suits stalkers', points: biasBonus });
+          }
+        }
       }
-      // Closing bias (45% or less)
-      if (biasRate <= 45 && profile.style === 'C') {
-        const biasBonus = 5;
-        totalScore += biasBonus;
-        breakdown.push({ factor: 'Closer-friendly track', points: biasBonus });
-      } else if (biasRate <= 45 && profile.style === 'E') {
-        const biasPenalty = -5;
-        totalScore += biasPenalty;
-        breakdown.push({ factor: 'Speed on closing track', points: biasPenalty });
+      // Fallback to earlySpeedWinRate if paceAdvantageRating not available
+      else {
+        // Strong speed bias (55%+)
+        if (biasRate >= 55 && (profile.style === 'E' || profile.style === 'P')) {
+          const biasBonus = 5;
+          totalScore += biasBonus;
+          breakdown.push({ factor: 'Speed-favoring track bias', points: biasBonus });
+        } else if (biasRate >= 55 && profile.style === 'C') {
+          const biasPenalty = -5;
+          totalScore += biasPenalty;
+          breakdown.push({ factor: 'Closer on speed track', points: biasPenalty });
+        }
+        // Closing bias (45% or less)
+        if (biasRate <= 45 && profile.style === 'C') {
+          const biasBonus = 5;
+          totalScore += biasBonus;
+          breakdown.push({ factor: 'Closer-friendly track', points: biasBonus });
+        } else if (biasRate <= 45 && profile.style === 'E') {
+          const biasPenalty = -5;
+          totalScore += biasPenalty;
+          breakdown.push({ factor: 'Speed on closing track', points: biasPenalty });
+        }
       }
     }
   }
