@@ -1234,21 +1234,38 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
     const wkDate = getField(fields, WK_DATE + i);
     if (!wkDate) break;
 
-    // Parse distance (convert from yards to furlongs: 220 yards per furlong)
-    // DRF stores workout distances in yards (e.g., 1320y = 6f, 1760y = 1 mile)
-    // Common workout distances:
-    //   880y = 4f, 1100y = 5f, 1320y = 6f, 1540y = 7f, 1760y = 8f/1m
-    const distanceYards = parseFloatSafe(getField(fields, WK_DISTANCE_YARDS + i));
-    const distanceFurlongs = distanceYards > 0 ? distanceYards / 220 : 0;
-    // Format as standard workout distances
+    // Parse workout distance with auto-detection (same logic as PP distances)
+    // DRF data can store distances in different formats:
+    // - Actual furlongs (2-16): e.g., 5 for 5f, 6 for 6f
+    // - Eighths of furlongs (17-128): e.g., 40 for 5f (40/8=5), 48 for 6f
+    // - Yards (>128): e.g., 1100 for 5f (1100/220=5), 1320 for 6f
+    const rawDistanceValue = parseFloatSafe(getField(fields, WK_DISTANCE_YARDS + i));
+    let distanceFurlongs = 0;
+
+    if (rawDistanceValue > 0) {
+      if (rawDistanceValue >= 2 && rawDistanceValue <= 16) {
+        // Value is already in furlongs (standard workout range is 2f to 1.5 miles/12f)
+        distanceFurlongs = rawDistanceValue;
+      } else if (rawDistanceValue > 16 && rawDistanceValue <= 128) {
+        // Value is in eighths of furlongs (16*8=128 max reasonable value)
+        distanceFurlongs = rawDistanceValue / 8;
+      } else if (rawDistanceValue > 128) {
+        // Value is in yards (220 yards per furlong)
+        distanceFurlongs = rawDistanceValue / 220;
+      }
+    }
+
+    // Use the centralized formatRacingDistance for consistent display
+    // (formatting is handled by the component using formatRacingDistance)
     let distanceStr = '';
-    if (distanceFurlongs >= 7.5) {
-      // 1 mile or longer - display as miles
-      const miles = distanceFurlongs / 8;
-      distanceStr = miles === 1 ? '1m' : `${miles.toFixed(2).replace(/\.?0+$/, '')}m`;
-    } else if (distanceFurlongs > 0) {
-      // Less than 1 mile - display as furlongs
-      distanceStr = `${distanceFurlongs.toFixed(1).replace('.0', '')}f`;
+    if (distanceFurlongs > 0) {
+      // Simple format for parser output - component uses formatRacingDistance
+      if (distanceFurlongs >= 8) {
+        const miles = distanceFurlongs / 8;
+        distanceStr = miles === 1 ? '1m' : `${miles.toFixed(2).replace(/\.?0+$/, '')}m`;
+      } else {
+        distanceStr = `${distanceFurlongs.toFixed(1).replace('.0', '')}f`;
+      }
     }
 
     // DIAGNOSTIC TRACE - First workout only
@@ -1256,7 +1273,11 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
       console.log('===== WORKOUT PARSER TRACE (First Workout) =====');
       console.log('Raw field index:', WK_DISTANCE_YARDS + i, '(should be 315)');
       console.log('Raw field value:', getField(fields, WK_DISTANCE_YARDS + i));
-      console.log('Parsed as distanceYards:', distanceYards);
+      console.log('Raw value:', rawDistanceValue);
+      console.log(
+        'Detected format:',
+        rawDistanceValue <= 16 ? 'furlongs' : rawDistanceValue <= 128 ? 'eighths' : 'yards'
+      );
       console.log('Calculated distanceFurlongs:', distanceFurlongs);
       console.log('Distance string:', distanceStr);
       console.log('=================================================');

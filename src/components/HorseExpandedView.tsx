@@ -229,7 +229,9 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index }) => {
     <div className={`horse-workouts__item ${isBullet ? 'horse-workouts__item--bullet' : ''}`}>
       <span className="horse-workouts__date">{formatWorkoutDate()}</span>
       <span className="horse-workouts__track">{formatWorkoutTrack()}</span>
-      <span className="horse-workouts__dist">{getWorkoutDistance()}</span>
+      <span className="horse-workouts__dist" title={`Raw furlongs: ${w.distanceFurlongs}`}>
+        {getWorkoutDistance()}
+      </span>
       <span className="horse-workouts__surface">{getWorkoutSurface()}</span>
       <span className="horse-workouts__cond">{formatWorkoutCond()}</span>
       <span className="horse-workouts__rank">{getWorkoutRanking()}</span>
