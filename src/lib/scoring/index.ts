@@ -72,6 +72,11 @@ import {
   type HiddenClassDrop,
 } from '../class';
 import { calculateOverlayScore, type OverlayResult } from './overlayScoring';
+import {
+  enforceScoreBoundaries,
+  enforceBaseScoreBoundaries,
+  enforceOverlayBoundaries,
+} from './scoringUtils';
 
 // ============================================================================
 // CONSTANTS
@@ -558,14 +563,17 @@ function calculateHorseScoreWithContext(
     breedingContribution +
     hiddenDropsBonus; // Add hidden class drop bonuses
 
-  const baseScore = Math.min(MAX_BASE_SCORE, rawBaseTotal);
+  // Enforce base score boundaries (0 to MAX_BASE_SCORE)
+  const baseScore = enforceBaseScoreBoundaries(rawBaseTotal);
 
   // Calculate overlay adjustment (±50 points on top of base score)
   const overlayResult = calculateOverlayScore(horse, context.raceHeader, context.horses);
-  const overlayScore = overlayResult.cappedScore;
+  // Enforce overlay boundaries (-50 to +50)
+  const overlayScore = enforceOverlayBoundaries(overlayResult.cappedScore);
 
-  // Final score = Base + Overlay
-  const total = baseScore + overlayScore;
+  // Final score = Base + Overlay (with boundary enforcement)
+  // Ensures score is floored at MIN_SCORE (0) and capped at MAX_FINAL_SCORE (290)
+  const total = enforceScoreBoundaries(baseScore + overlayScore);
 
   // Add overlay to breakdown
   breakdown.overlay = {
@@ -879,3 +887,37 @@ export {
   getClassMovementColor,
   getClassMovementIcon,
 } from '../class';
+
+// Scoring utilities and defensive helpers
+export {
+  // Defensive math helpers
+  safeDivide,
+  safeNumber,
+  clamp,
+  safeRound,
+  // Score validation
+  isValidScore,
+  isValidCategoryScore,
+  // Score boundary enforcement
+  enforceScoreBoundaries,
+  enforceBaseScoreBoundaries,
+  enforceOverlayBoundaries,
+  enforceProtocolBoundaries,
+  enforceCategoryBoundaries,
+  // Display helpers
+  formatDisplayScore,
+  formatOverlay,
+  // Calculation helpers
+  calculateWinRate,
+  calculateSafeAverage,
+  // Safe accessors
+  safeGet,
+  safeFirst,
+  safeLength,
+  // Constants
+  MIN_SCORE,
+  MAX_FINAL_SCORE,
+  MAX_DISPLAY_SCORE,
+  MAX_PROTOCOL_BONUS,
+  SCORE_CATEGORY_LIMITS,
+} from './scoringUtils';
