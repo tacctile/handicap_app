@@ -10,6 +10,7 @@
  */
 
 import type { HorseEntry, RaceHeader, PastPerformance, RaceClassification } from '../../types/drf';
+import { getSeasonalSpeedAdjustment, isTrackIntelligenceAvailable } from '../trackIntelligence';
 
 // ============================================================================
 // TYPES
@@ -19,6 +20,7 @@ export interface SpeedClassScoreResult {
   total: number;
   speedScore: number;
   classScore: number;
+  seasonalAdjustment: number;
   bestRecentFigure: number | null;
   averageFigure: number | null;
   parForClass: number;
@@ -415,15 +417,39 @@ export function calculateSpeedClassScore(
   // Calculate class score
   const classResult = calculateClassScore(currentClass, horse.pastPerformances, classMovement);
 
+  // Apply seasonal speed adjustment if available
+  // Positive adjustment = track playing fast (boost figures), negative = slow (penalize)
+  let seasonalAdjustment = 0;
+  let adjustedSpeedReasoning = speedResult.reasoning;
+
+  if (isTrackIntelligenceAvailable(raceHeader.trackCode)) {
+    const rawSeasonalAdj = getSeasonalSpeedAdjustment(raceHeader.trackCode);
+    if (rawSeasonalAdj !== 0 && bestRecentFigure !== null) {
+      // Convert seasonal adjustment to score points
+      // Track playing +2 faster = slight boost, -2 slower = slight penalty
+      seasonalAdjustment = Math.round(rawSeasonalAdj * 0.5); // ±1-2 points typically
+      seasonalAdjustment = Math.max(-3, Math.min(3, seasonalAdjustment)); // Cap at ±3
+
+      if (seasonalAdjustment > 0) {
+        adjustedSpeedReasoning += ` | Track playing fast (seasonal +${seasonalAdjustment})`;
+      } else if (seasonalAdjustment < 0) {
+        adjustedSpeedReasoning += ` | Track playing slow (seasonal ${seasonalAdjustment})`;
+      }
+    }
+  }
+
+  const adjustedSpeedScore = Math.max(0, Math.min(30, speedResult.score + seasonalAdjustment));
+
   return {
-    total: speedResult.score + classResult.score,
-    speedScore: speedResult.score,
+    total: adjustedSpeedScore + classResult.score,
+    speedScore: adjustedSpeedScore,
     classScore: classResult.score,
+    seasonalAdjustment,
     bestRecentFigure,
     averageFigure,
     parForClass,
     classMovement,
-    speedReasoning: speedResult.reasoning,
+    speedReasoning: adjustedSpeedReasoning,
     classReasoning: classResult.reasoning,
   };
 }

@@ -9,6 +9,9 @@ import type {
   PostPositionBias,
   SpeedBias,
   TrackBiasSummary,
+  TrackMeasurements,
+  SurfaceCharacteristics,
+  SeasonalPattern,
 } from '../data/tracks/trackSchema';
 
 /**
@@ -212,4 +215,214 @@ export function getTrackBiasSummary(
  */
 export function isTrackIntelligenceAvailable(trackCode: string): boolean {
   return hasTrackData(trackCode);
+}
+
+// ============================================================================
+// NEW DATA POINT GETTERS
+// ============================================================================
+
+/**
+ * Get track measurements for pace/distance analysis
+ */
+export function getTrackMeasurements(
+  trackCode: string,
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather'
+): TrackMeasurements | undefined {
+  const track = getTrackData(trackCode);
+  if (!track) return undefined;
+
+  if (surface === 'turf' && track.measurements.turf) {
+    return track.measurements.turf;
+  }
+  return track.measurements.dirt;
+}
+
+/**
+ * Get surface characteristics for a track
+ */
+export function getSurfaceCharacteristics(
+  trackCode: string,
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather'
+): SurfaceCharacteristics | undefined {
+  const track = getTrackData(trackCode);
+  if (!track) return undefined;
+
+  const surfaceType = surface === 'turf' ? 'turf' : 'dirt';
+  return track.surfaces.find((s) => s.baseType === surfaceType);
+}
+
+/**
+ * Get seasonal pattern for current month
+ */
+export function getSeasonalPattern(trackCode: string, month?: number): SeasonalPattern | undefined {
+  const track = getTrackData(trackCode);
+  if (!track) return undefined;
+
+  const currentMonth = month ?? new Date().getMonth() + 1; // 1-12
+  return track.seasonalPatterns.find((p) => p.months.includes(currentMonth));
+}
+
+/**
+ * Get seasonal speed adjustment for current date
+ * Returns adjustment value (positive = faster times expected, negative = slower)
+ */
+export function getSeasonalSpeedAdjustment(trackCode: string, month?: number): number {
+  const pattern = getSeasonalPattern(trackCode, month);
+  return pattern?.speedAdjustment ?? 0;
+}
+
+/**
+ * Get par time for a specific distance, surface, and class level
+ * Returns time in seconds, or undefined if not available
+ */
+export function getParTime(
+  trackCode: string,
+  furlongs: number,
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather',
+  classLevel: 'claiming' | 'allowance' | 'stakes'
+): number | undefined {
+  const track = getTrackData(trackCode);
+  if (!track) return undefined;
+
+  const surfaceType = surface === 'turf' ? 'turf' : 'dirt';
+
+  // Find closest distance match
+  const distanceData = track.winningTimes.find(
+    (wt) => Math.abs(wt.furlongs - furlongs) < 0.5 && wt.surface === surfaceType
+  );
+
+  if (!distanceData) return undefined;
+
+  switch (classLevel) {
+    case 'claiming':
+      return distanceData.claimingAvg;
+    case 'allowance':
+      return distanceData.allowanceAvg;
+    case 'stakes':
+      return distanceData.stakesAvg;
+    default:
+      return distanceData.allowanceAvg;
+  }
+}
+
+/**
+ * Calculate speed figure adjustment based on par time comparison
+ * Returns points to add/subtract from speed score
+ * Positive = faster than par, Negative = slower than par
+ */
+export function calculateParTimeAdjustment(
+  trackCode: string,
+  furlongs: number,
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather',
+  classLevel: 'claiming' | 'allowance' | 'stakes',
+  actualTime: number
+): { adjustment: number; reasoning: string } {
+  const parTime = getParTime(trackCode, furlongs, surface, classLevel);
+
+  if (!parTime || !actualTime || actualTime <= 0) {
+    return { adjustment: 0, reasoning: 'Par time data not available' };
+  }
+
+  // Calculate difference in seconds
+  const diff = parTime - actualTime; // Positive = faster than par
+
+  // Convert to adjustment points (roughly 1 point per 0.2 seconds)
+  // Cap at ±10 points
+  const rawAdjustment = diff * 5;
+  const adjustment = Math.max(-10, Math.min(10, Math.round(rawAdjustment)));
+
+  let reasoning: string;
+  if (adjustment > 0) {
+    reasoning = `${Math.abs(diff).toFixed(2)}s faster than ${trackCode} par`;
+  } else if (adjustment < 0) {
+    reasoning = `${Math.abs(diff).toFixed(2)}s slower than ${trackCode} par`;
+  } else {
+    reasoning = `At ${trackCode} par time`;
+  }
+
+  return { adjustment, reasoning };
+}
+
+/**
+ * Get stretch length factor for closer analysis
+ * Returns multiplier: >1 favors closers, <1 penalizes closers
+ */
+export function getStretchLengthFactor(
+  trackCode: string,
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather'
+): { factor: number; stretchLength: number; reasoning: string } {
+  const measurements = getTrackMeasurements(trackCode, surface);
+
+  if (!measurements) {
+    return { factor: 1.0, stretchLength: 0, reasoning: 'No measurement data' };
+  }
+
+  const stretch = measurements.stretchLength;
+
+  // Industry average stretch is ~1000 feet
+  // Long stretch (1100+): closers benefit
+  // Short stretch (<900): closers penalized
+  let factor: number;
+  let reasoning: string;
+
+  if (stretch >= 1100) {
+    factor = 1.15; // 15% bonus for closers
+    reasoning = `Long stretch (${stretch}ft) favors closers`;
+  } else if (stretch >= 1000) {
+    factor = 1.05;
+    reasoning = `Average stretch (${stretch}ft)`;
+  } else if (stretch >= 900) {
+    factor = 0.95;
+    reasoning = `Short stretch (${stretch}ft) hurts closers`;
+  } else {
+    factor = 0.85; // 15% penalty for very short
+    reasoning = `Very short stretch (${stretch}ft) severely hurts closers`;
+  }
+
+  return { factor, stretchLength: stretch, reasoning };
+}
+
+/**
+ * Get drainage factor for wet track analysis
+ * Returns multiplier for wet track specialist bonus
+ */
+export function getDrainageFactor(
+  trackCode: string,
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather'
+): { factor: number; drainage: string; reasoning: string } {
+  const surfaceData = getSurfaceCharacteristics(trackCode, surface);
+
+  if (!surfaceData) {
+    return { factor: 1.0, drainage: 'unknown', reasoning: 'No surface data' };
+  }
+
+  const drainage = surfaceData.drainage;
+
+  // Poor drainage = wet conditions last longer = wet track history matters more
+  let factor: number;
+  let reasoning: string;
+
+  switch (drainage) {
+    case 'poor':
+      factor = 1.5; // 50% boost to wet track bonus
+      reasoning = 'Poor drainage - wet conditions persist, mudders get extra boost';
+      break;
+    case 'fair':
+      factor = 1.25;
+      reasoning = 'Fair drainage - moderate wet track impact';
+      break;
+    case 'good':
+      factor = 1.0;
+      reasoning = 'Good drainage - standard wet track scoring';
+      break;
+    case 'excellent':
+      factor = 0.75; // Reduced bonus - track dries quickly
+      reasoning = 'Excellent drainage - track dries fast, wet history less relevant';
+      break;
+    default:
+      factor = 1.0;
+      reasoning = 'Standard wet track scoring';
+  }
+
+  return { factor, drainage, reasoning };
 }
