@@ -1200,6 +1200,66 @@ function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance
 function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
   const workouts: Workout[] = [];
 
+  // ===== DEBUG: Dump raw workout field values =====
+  console.log('========== RAW WORKOUT FIELD DUMP ==========');
+  console.log('Total fields in record:', fields.length);
+
+  // Dump fields 255-275 to see dates and days since
+  console.log('\n--- Fields 255-275 (Dates & Days Since) ---');
+  for (let i = 255; i < 276; i++) {
+    const val = fields[i];
+    if (val && val.trim()) console.log(`  Field ${i}: "${val}"`);
+  }
+
+  console.log('\n--- Fields 276-295 (Track Codes - 20 fields for 10 works) ---');
+  for (let i = 276; i < 296; i++) {
+    const val = fields[i];
+    if (val && val.trim()) console.log(`  Field ${i}: "${val}"`);
+  }
+
+  console.log('\n--- Fields 296-315 (Rank & Condition) ---');
+  for (let i = 296; i < 316; i++) {
+    const val = fields[i];
+    if (val && val.trim()) console.log(`  Field ${i}: "${val}"`);
+  }
+
+  console.log('\n--- Fields 316-345 (Distance & Surface & Unknown) ---');
+  for (let i = 316; i < 346; i++) {
+    const val = fields[i];
+    if (val && val.trim()) console.log(`  Field ${i}: "${val}"`);
+  }
+
+  console.log('\n--- Fields 346-370 (TotalWorks area & beyond) ---');
+  for (let i = 346; i < 371; i++) {
+    const val = fields[i];
+    if (val && val.trim()) console.log(`  Field ${i}: "${val}"`);
+  }
+
+  // Also check for any fields with time-like patterns (contains : or is a decimal 40-120)
+  console.log('\n--- Scanning ALL fields for time-like values ---');
+  fields.forEach((val, idx) => {
+    if (!val) return;
+    const trimmed = val.trim();
+    // Look for time patterns: ":47.20", "47.2", "1:00.4", or numbers 40-130
+    if (trimmed.includes(':') ||
+        (trimmed.match(/^\d{2}\.\d+$/) && parseFloat(trimmed) >= 40 && parseFloat(trimmed) <= 130)) {
+      console.log(`  Field ${idx}: "${trimmed}" (possible time)`);
+    }
+  });
+
+  // Look for manner/type codes (single letters H, B, D, E, G)
+  console.log('\n--- Scanning for workout type codes (H/B/D/E/G) ---');
+  fields.forEach((val, idx) => {
+    if (!val) return;
+    const trimmed = val.trim().toUpperCase();
+    if (['H', 'B', 'D', 'E', 'G'].includes(trimmed)) {
+      console.log(`  Field ${idx}: "${trimmed}" (possible workout type)`);
+    }
+  });
+
+  console.log('========== END RAW WORKOUT FIELD DUMP ==========\n');
+  // ===== END DEBUG =====
+
   // Field range starting indices (0-based) - verified against actual DRF data
   const WK_DATE = 255; // Field 256 - Workout dates (YYYYMMDD)
   const WK_DAYS_SINCE = 265; // Field 266 - Days since each work
