@@ -73,15 +73,6 @@ const getTierColor = (score: number): string => {
   return 'var(--color-tier-bad)'; // Red - Weak
 };
 
-// Get tier name for total score
-const getTierName = (score: number): string => {
-  if (score >= 200) return 'ELITE';
-  if (score >= 180) return 'STRONG';
-  if (score >= 160) return 'GOOD';
-  if (score >= 140) return 'FAIR';
-  return 'WEAK';
-};
-
 // Get data quality color
 const getDataQualityColor = (quality: string | undefined): string => {
   switch (quality?.toUpperCase()) {
@@ -94,6 +85,24 @@ const getDataQualityColor = (quality: string | undefined): string => {
     default:
       return 'var(--color-text-secondary)';
   }
+};
+
+// Get value label based on value percentage
+const getValueLabel = (valuePercent: number): string => {
+  if (valuePercent >= 100) return 'Strong Value';
+  if (valuePercent >= 50) return 'Value';
+  if (valuePercent >= 10) return 'Fair Value';
+  if (valuePercent >= -10) return 'Neutral';
+  return 'Poor Value';
+};
+
+// Get value color based on value percentage
+const getValueColor = (valuePercent: number): string => {
+  if (valuePercent >= 100) return 'var(--color-tier-elite)'; // Green
+  if (valuePercent >= 50) return 'var(--color-tier-good)'; // Light green
+  if (valuePercent >= 10) return 'var(--color-tier-fair)'; // Yellow
+  if (valuePercent >= -10) return 'var(--color-text-secondary)'; // Gray/neutral
+  return 'var(--color-tier-bad)'; // Red
 };
 
 // Get category bar fill class based on percentage
@@ -429,17 +438,14 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                 Edge: {overlayScore >= 0 ? '+' : ''}
                 {overlayScore}
               </span>
+              <span
+                className="furlong-score__breakdown-value"
+                style={{ color: getValueColor(valuePercent) }}
+              >
+                {getValueLabel(valuePercent)}
+              </span>
             </div>
             <div className="furlong-score__rating-section">
-              <div className="furlong-score__tier-rating">
-                <span
-                  className="furlong-score__tier-value"
-                  style={{ color: getTierColor(scoreTotal) }}
-                >
-                  {getTierName(scoreTotal)}
-                </span>
-                <span className="furlong-score__tier-label">RATING</span>
-              </div>
               <div className="furlong-score__data-quality">
                 <span
                   className="furlong-score__quality-value"
