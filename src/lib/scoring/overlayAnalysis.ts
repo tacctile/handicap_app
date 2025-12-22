@@ -133,6 +133,9 @@ export const VALUE_LABELS: Record<ValueClassification, string> = {
  * - 100 score = 25% win probability
  */
 export function scoreToWinProbability(score: number): number {
+  // Handle NaN or invalid input
+  if (!Number.isFinite(score)) return 2; // Return minimum probability
+
   // Formula: (Score - 50) / 200 * 100
   // This maps:
   // - Score 50 → 0%
@@ -173,6 +176,8 @@ export function probabilityToDecimalOdds(probability: number): number {
  * E.g., 4.0 → "3-1", 2.5 → "3-2", 1.5 → "1-2"
  */
 export function decimalToFractionalOdds(decimal: number): string {
+  // Handle NaN or invalid input
+  if (!Number.isFinite(decimal) || decimal <= 0) return '—';
   if (decimal <= 1.01) return 'EVEN';
 
   const profit = decimal - 1;

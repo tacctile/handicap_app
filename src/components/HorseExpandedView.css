@@ -227,6 +227,27 @@
   transition: width 0.3s ease;
 }
 
+/* Score Breakdown Line (Base + Overlay) */
+.furlong-score__breakdown {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.furlong-score__breakdown-item {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary, #b4b4b6);
+  font-variant-numeric: tabular-nums;
+}
+
+.furlong-score__breakdown-separator {
+  font-size: 11px;
+  color: var(--color-text-tertiary, #6e6e70);
+}
+
 .furlong-score__total-label {
   font-family: var(--font-sans);
   font-size: 10px;
