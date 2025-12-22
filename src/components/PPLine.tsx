@@ -1,6 +1,7 @@
 import React from 'react';
 import './PPLine.css';
 import type { PastPerformance, RunningLine } from '../types/drf';
+import { formatRacingDistance } from '../utils/formatters';
 
 interface PPLineProps {
   pp: PastPerformance;
@@ -57,77 +58,7 @@ export const PPLine: React.FC<PPLineProps> = ({ pp, index }) => {
     return str.toUpperCase().slice(0, 3);
   };
 
-  // Format distance: "6f", "6½f", "1m", "1⅛m" with proper unicode fractions
-  const formatDistance = (furlongs: number, distStr?: string): string => {
-    // If we have a string, clean it up with unicode fractions
-    if (distStr && typeof distStr === 'string') {
-      let cleaned = distStr.trim();
-
-      // Replace common fraction patterns with unicode fractions
-      cleaned = cleaned
-        .replace('1/2', '½')
-        .replace('1/4', '¼')
-        .replace('3/4', '¾')
-        .replace('1/8', '⅛')
-        .replace('3/8', '⅜')
-        .replace('5/8', '⅝')
-        .replace('7/8', '⅞')
-        .replace('1/16', '¹⁄₁₆')
-        .replace(' furlongs', 'f')
-        .replace(' furlong', 'f')
-        .replace('furlongs', 'f')
-        .replace('furlong', 'f')
-        .replace(' miles', 'm')
-        .replace(' mile', 'm')
-        .replace('miles', 'm')
-        .replace('mile', 'm')
-        .replace(' m', 'm')
-        .replace(' f', 'f');
-
-      // Remove extra spaces
-      cleaned = cleaned.replace(/\s+/g, '');
-
-      return cleaned.slice(0, 8);
-    }
-
-    // Convert furlongs number to string with unicode fractions
-    if (!furlongs || isNaN(furlongs)) return '—';
-
-    // Common furlong values to miles with fractions
-    if (furlongs === 6.125) return '6⅛m';
-    if (furlongs === 6.25) return '6¼m';
-    if (furlongs === 6.5) return '6½f';
-    if (furlongs === 8) return '1m';
-    if (furlongs === 8.5) return '1¹⁄₁₆m';
-    if (furlongs === 9) return '1⅛m';
-    if (furlongs === 10) return '1¼m';
-    if (furlongs === 11) return '1⅜m';
-    if (furlongs === 12) return '1½m';
-    if (furlongs === 13) return '1⅝m';
-    if (furlongs === 14) return '1¾m';
-
-    // Under 8 furlongs - show as furlongs
-    if (furlongs < 8) {
-      if (furlongs % 1 === 0) return `${furlongs}f`;
-      if (furlongs % 1 === 0.5) return `${Math.floor(furlongs)}½f`;
-      if (furlongs % 1 === 0.25) return `${Math.floor(furlongs)}¼f`;
-      if (furlongs % 1 === 0.75) return `${Math.floor(furlongs)}¾f`;
-      return `${furlongs.toFixed(1)}f`;
-    }
-
-    // 8+ furlongs - show as miles
-    const miles = furlongs / 8;
-    if (miles % 1 === 0) return `${miles}m`;
-    if (miles % 1 === 0.125) return `${Math.floor(miles)}⅛m`;
-    if (miles % 1 === 0.25) return `${Math.floor(miles)}¼m`;
-    if (miles % 1 === 0.375) return `${Math.floor(miles)}⅜m`;
-    if (miles % 1 === 0.5) return `${Math.floor(miles)}½m`;
-    if (miles % 1 === 0.625) return `${Math.floor(miles)}⅝m`;
-    if (miles % 1 === 0.75) return `${Math.floor(miles)}¾m`;
-    if (miles % 1 === 0.875) return `${Math.floor(miles)}⅞m`;
-
-    return `${miles.toFixed(2)}m`;
-  };
+  // Distance formatting now uses centralized formatRacingDistance from utils/formatters
 
   // Format track condition: "fst", "gd", "sly", "my"
   const formatCondition = (condition: string): string => {
@@ -358,7 +289,7 @@ export const PPLine: React.FC<PPLineProps> = ({ pp, index }) => {
       <span className="pp-line__col pp-line__col--date">{formatDate(pp.date)}</span>
       <span className="pp-line__col pp-line__col--track">{formatTrack(pp.track)}</span>
       <span className="pp-line__col pp-line__col--dist">
-        {formatDistance(pp.distanceFurlongs, pp.distance)}
+        {formatRacingDistance(pp.distanceFurlongs)}
       </span>
       <span className="pp-line__col pp-line__col--cond">{formatCondition(pp.trackCondition)}</span>
       <span className="pp-line__col pp-line__col--class">{formatClass(pp)}</span>

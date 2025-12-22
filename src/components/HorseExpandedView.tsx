@@ -3,6 +3,7 @@ import './HorseExpandedView.css';
 import { PPLine } from './PPLine';
 import type { HorseEntry, PastPerformance, Workout } from '../types/drf';
 import type { HorseScore } from '../lib/scoring';
+import { formatRacingDistance } from '../utils/formatters';
 
 // Determine tier class based on value percentage
 const getTierClass = (value: number): string => {
@@ -129,7 +130,8 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
     return str.toUpperCase().slice(0, 3);
   };
 
-  // Get workout distance - distanceFurlongs should already be calculated by parser (yards / 220)
+  // Get workout distance using centralized formatter
+  // distanceFurlongs is calculated by parser (yards / 220)
   const getWorkoutDistance = (): string => {
     const furlongs = w.distanceFurlongs;
 
@@ -145,17 +147,8 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
       return '—';
     }
 
-    // Format nicely
-    if (furlongs === 8) return '1m';
-    if (furlongs % 1 === 0) return `${furlongs}f`;
-    if (furlongs === 5.5) return '5½f';
-    if (furlongs === 6.5) return '6½f';
-    if (furlongs === 7.5) return '7½f';
-
-    // For odd values, round to nearest half
-    const rounded = Math.round(furlongs * 2) / 2;
-    if (rounded % 1 === 0) return `${rounded}f`;
-    return `${Math.floor(rounded)}½f`;
+    // Use the standard racing distance formatter
+    return formatRacingDistance(furlongs);
   };
 
   // Format surface/condition safely
