@@ -338,6 +338,22 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   valuePercent = 0,
   score,
 }) => {
+  // DEBUG: Log full workout data structure to diagnose field mapping issues
+  React.useEffect(() => {
+    if (horse.workouts && horse.workouts.length > 0) {
+      console.log('===== FULL WORKOUT DATA DUMP =====');
+      console.log(`Horse: ${horse.horseName}`);
+      horse.workouts.forEach((w: Workout & Record<string, unknown>, i: number) => {
+        console.log(`\nWorkout ${i + 1}:`);
+        console.log('  All keys:', Object.keys(w));
+        Object.entries(w).forEach(([key, value]) => {
+          console.log(`  ${key}: "${value}" (type: ${typeof value})`);
+        });
+      });
+      console.log('===== END WORKOUT DATA DUMP =====');
+    }
+  }, [horse.horseName, horse.workouts]);
+
   if (!isVisible) return null;
 
   const tierClass = getTierClass(valuePercent);
