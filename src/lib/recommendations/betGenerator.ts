@@ -26,6 +26,7 @@ import type { BetRecommendation, TierBetRecommendations } from '../betting/betRe
 import { classifyHorses } from '../betting/tierClassification';
 import { analyzeRaceLongshots } from '../longshots';
 import { analyzeRaceDiamonds, getValidatedDiamonds } from '../diamonds';
+import { analyzeLateBreakingInfo, type LateBreakingResult } from '../lateBreaking';
 import { logger } from '../../services/logging';
 
 import { calculateBetAmount, scaleBetsByBankroll } from './betSizing';
@@ -95,6 +96,8 @@ export interface BetGeneratorResult {
   totalRecommendedCost: number;
   /** Total cost if all bets selected */
   totalMaxCost: number;
+  /** Late-breaking information analysis (Protocol 4) */
+  lateBreakingInfo: LateBreakingResult;
   /** Summary statistics */
   summary: {
     tier1Count: number;
@@ -104,6 +107,8 @@ export interface BetGeneratorResult {
     diamondCount: number;
     positiveEVCount: number;
     overlayCount: number;
+    scratchCount: number;
+    lateBreakingBeneficiaries: number;
   };
 }
 
@@ -971,6 +976,12 @@ export function generateRecommendations(input: GeneratorInput): BetGeneratorResu
     );
     const validatedDiamonds = getValidatedDiamonds(diamondSummary.diamonds);
 
+    // Analyze late-breaking information (Protocol 4)
+    const lateBreakingInfo = analyzeLateBreakingInfo(
+      scoredHorses.map((sh) => sh.horse),
+      raceHeader
+    );
+
     // Get tier groups
     const tier1Group = tierGroups.find((g) => g.tier === 'tier1');
     const tier2Group = tierGroups.find((g) => g.tier === 'tier2');
@@ -1068,6 +1079,8 @@ export function generateRecommendations(input: GeneratorInput): BetGeneratorResu
       diamondCount: specialBets.diamonds.length,
       positiveEVCount: allBets.filter((b) => b.evPerDollar > 0).length,
       overlayCount: allBets.filter((b) => b.overlayPercent >= 25).length,
+      scratchCount: lateBreakingInfo.scratchCount,
+      lateBreakingBeneficiaries: lateBreakingInfo.beneficiaries.length,
     };
 
     logger.logInfo('Bet recommendations generated', {
@@ -1084,6 +1097,7 @@ export function generateRecommendations(input: GeneratorInput): BetGeneratorResu
       allBets,
       totalRecommendedCost: Math.round(totalRecommendedCost * 100) / 100,
       totalMaxCost: Math.round(totalMaxCost * 100) / 100,
+      lateBreakingInfo,
       summary,
     };
   } catch (error) {
@@ -1104,6 +1118,30 @@ export function generateRecommendations(input: GeneratorInput): BetGeneratorResu
       allBets: [],
       totalRecommendedCost: 0,
       totalMaxCost: 0,
+      lateBreakingInfo: {
+        scratchCount: 0,
+        scratchImpacts: [],
+        jockeyChanges: [],
+        updatedPaceScenario: {
+          scenario: 'unknown' as const,
+          label: 'Unknown',
+          color: '#888888',
+          description: 'Analysis error',
+          ppi: 0,
+          fieldSize: 0,
+          expectedPace: 'moderate' as const,
+          styleBreakdown: {
+            earlySpeed: [],
+            pressers: [],
+            sustained: [],
+            closers: [],
+            unknown: [],
+          },
+        },
+        beneficiaries: [],
+        summary: 'Analysis error',
+        hasSignificantChanges: false,
+      },
       summary: {
         tier1Count: 0,
         tier2Count: 0,
@@ -1112,6 +1150,8 @@ export function generateRecommendations(input: GeneratorInput): BetGeneratorResu
         diamondCount: 0,
         positiveEVCount: 0,
         overlayCount: 0,
+        scratchCount: 0,
+        lateBreakingBeneficiaries: 0,
       },
     };
   }
