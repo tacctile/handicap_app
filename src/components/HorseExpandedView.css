@@ -198,8 +198,8 @@
 
 .furlong-score__win-prob {
   font-family: var(--font-sans);
-  font-size: 18px;
-  font-weight: 400;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--color-text-secondary, #b4b4b6);
 }
 
@@ -213,7 +213,7 @@
 
 .furlong-score__total-max {
   font-family: var(--font-sans);
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 400;
   color: var(--color-text-secondary, #b4b4b6);
 }
