@@ -94,10 +94,10 @@
   /* ============================================
      HORSE LIST GRID COLUMNS
      Single source of truth for header + rows
-     9 columns: icons | PP | name | odds | score | fair | value | rating | expand
+     10 columns: icons | PP | name | odds | score | win conf | fair | edge% | odds edge | expand
      Using 1fr on horse name ensures grid expands to fill available width
      ============================================ */
   --horse-list-grid: 80px /* scratch/compare icons */ 48px /* PP */ minmax(150px, 1fr)
-    /* horse name - FLEXIBLE, takes remaining space */ 80px /* odds */ 80px /* score */ 70px
-    /* fair */ 80px /* value */ 160px /* rating */ 40px; /* expand */
+    /* horse name - FLEXIBLE, takes remaining space */ 80px /* odds */ 80px /* score */ 90px
+    /* win confidence */ 70px /* fair */ 80px /* edge% */ 140px /* odds edge badge */ 40px; /* expand */
 }
