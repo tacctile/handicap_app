@@ -273,24 +273,51 @@ export function calculatePaceScore(
   // Get field analysis in legacy format
   const fieldAnalysis = preCalculatedFieldAnalysis ?? analyzeFieldPace(allHorses);
 
-  // Get track speed bias
+  // Get track speed bias and pace advantage rating
   let trackSpeedBias: number | null = null;
+  let paceAdvantageRating: number | null = null;
   if (isTrackIntelligenceAvailable(raceHeader.trackCode)) {
     const speedBiasData = getSpeedBias(raceHeader.trackCode, raceHeader.surface);
     if (speedBiasData) {
       trackSpeedBias = speedBiasData.earlySpeedWinRate;
+      paceAdvantageRating = speedBiasData.paceAdvantageRating; // 1-10 scale
     }
   }
 
-  // Apply track bias adjustments
+  // Apply track bias adjustments using paceAdvantageRating for granular scoring
   let finalScore = paceResult.totalScore;
 
-  // Track bias bonus/penalty
-  if (trackSpeedBias !== null) {
+  // Track bias bonus/penalty based on paceAdvantageRating (1-10 scale)
+  // Rating 1-3: Closer-friendly, 4-6: Fair, 7-10: Speed-favoring
+  if (paceAdvantageRating !== null) {
+    if (paceAdvantageRating >= 8 && detailedProfile.style === 'E') {
+      // Extreme speed track (8-10) - big bonus for early speed
+      finalScore = Math.min(40, finalScore + 5);
+    } else if (paceAdvantageRating >= 7 && detailedProfile.style === 'E') {
+      // Strong speed track (7) - moderate bonus for early speed
+      finalScore = Math.min(40, finalScore + 3);
+    } else if (paceAdvantageRating >= 8 && detailedProfile.style === 'C') {
+      // Extreme speed track penalizes closers
+      finalScore = Math.max(5, finalScore - 3);
+    } else if (paceAdvantageRating <= 3 && detailedProfile.style === 'C') {
+      // Closer-friendly track (1-3) - bonus for closers
+      finalScore = Math.min(40, finalScore + 4);
+    } else if (paceAdvantageRating <= 3 && detailedProfile.style === 'E') {
+      // Closer-friendly track penalizes pure speed
+      finalScore = Math.max(5, finalScore - 2);
+    }
+    // Pressers and stalkers get smaller adjustments
+    if (paceAdvantageRating >= 7 && detailedProfile.style === 'P') {
+      finalScore = Math.min(40, finalScore + 2);
+    } else if (paceAdvantageRating <= 4 && detailedProfile.style === 'S') {
+      finalScore = Math.min(40, finalScore + 2);
+    }
+  } else if (trackSpeedBias !== null) {
+    // Fallback to earlySpeedWinRate if paceAdvantageRating not available
     if (trackSpeedBias >= 55 && detailedProfile.style === 'E') {
-      finalScore = Math.min(40, finalScore + 3); // Speed-favoring track bonus for speed
+      finalScore = Math.min(40, finalScore + 3);
     } else if (trackSpeedBias <= 45 && detailedProfile.style === 'C') {
-      finalScore = Math.min(40, finalScore + 3); // Closer-friendly track bonus
+      finalScore = Math.min(40, finalScore + 3);
     }
   }
 
@@ -299,7 +326,8 @@ export function calculatePaceScore(
     detailedProfile,
     paceResult.scenario,
     tacticalAdvantage,
-    trackSpeedBias
+    trackSpeedBias,
+    paceAdvantageRating
   );
 
   return {
@@ -323,7 +351,8 @@ function buildReasoning(
   profile: RunningStyleProfile,
   scenario: PaceScenarioAnalysis,
   tactical: TacticalAdvantage,
-  trackSpeedBias: number | null
+  trackSpeedBias: number | null,
+  paceAdvantageRating: number | null
 ): string {
   const parts: string[] = [];
 
@@ -340,8 +369,19 @@ function buildReasoning(
     `${tactical.level.charAt(0).toUpperCase() + tactical.level.slice(1)} fit: +${tactical.points}pts`
   );
 
-  // Track bias
-  if (trackSpeedBias !== null) {
+  // Track bias - use paceAdvantageRating for more specific descriptions
+  if (paceAdvantageRating !== null) {
+    if (paceAdvantageRating >= 9) {
+      parts.push('Extreme speed bias');
+    } else if (paceAdvantageRating >= 7) {
+      parts.push('Strong speed bias');
+    } else if (paceAdvantageRating <= 3) {
+      parts.push('Closer-friendly track');
+    } else if (paceAdvantageRating <= 4) {
+      parts.push('Fair-to-closing track');
+    }
+  } else if (trackSpeedBias !== null) {
+    // Fallback to earlySpeedWinRate description
     if (trackSpeedBias >= 55) {
       parts.push('Speed-favoring track');
     } else if (trackSpeedBias <= 45) {
