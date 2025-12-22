@@ -65,7 +65,7 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index }) => {
   // Type-safe access with Record for flexible field access
   const w = workout as Workout & Record<string, unknown>;
 
-  // Format workout date safely
+  // Format workout date safely using industry standard format: "23Jul" (day + 3-letter month)
   const formatWorkoutDate = (): string => {
     const dateStr = w.date || w.workDate || w.workoutDate;
     if (!dateStr || dateStr === 'undefined' || dateStr === 'null') return '—';
@@ -91,8 +91,8 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index }) => {
           'Dec',
         ];
         const month = months[parseInt(str.slice(4, 6)) - 1] || '???';
-        const day = str.slice(6, 8);
-        return `${month}${day}`;
+        const day = parseInt(str.slice(6, 8), 10); // Remove leading zero for single digits
+        return `${day}${month}`;
       }
 
       const date = new Date(str);
@@ -112,8 +112,8 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index }) => {
           'Dec',
         ];
         const month = months[date.getMonth()];
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${month}${day}`;
+        const day = date.getDate(); // No padding - single digit days show as "5Jul" not "05Jul"
+        return `${day}${month}`;
       }
 
       return str.slice(0, 5) || '—';
@@ -163,22 +163,26 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index }) => {
     return formatRacingDistance(furlongs);
   };
 
-  // Format surface/condition safely
+  // Format surface/condition safely using industry standard abbreviations (Equibase/DRF)
+  // ft=fast, gd=good, sy=sloppy, my=muddy, fm=firm, yl=yielding, sf=soft, hy=heavy
   const formatWorkoutCond = (): string => {
     const cond = w.trackCondition || w.surface || w.condition;
     if (!cond) return '—';
     const str = String(cond).toLowerCase().trim();
     if (!str || str === 'nan' || str === 'undefined' || str === 'null') return '—';
     const abbrevs: Record<string, string> = {
-      fast: 'fst',
+      fast: 'ft',
       good: 'gd',
-      sloppy: 'sly',
+      sloppy: 'sy',
       muddy: 'my',
       firm: 'fm',
+      yielding: 'yl',
+      soft: 'sf',
+      heavy: 'hy',
       dirt: 'd',
       turf: 't',
     };
-    return abbrevs[str] || str.slice(0, 3).toLowerCase() || '—';
+    return abbrevs[str] || str.slice(0, 2).toLowerCase() || '—';
   };
 
   // Get workout ranking safely

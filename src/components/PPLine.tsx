@@ -9,7 +9,7 @@ interface PPLineProps {
 }
 
 export const PPLine: React.FC<PPLineProps> = ({ pp, index }) => {
-  // Format date: "01/25/24" or "Jan25"
+  // Format date using industry standard: "9Aug25" (day + 3-letter month + 2-digit year)
   const formatDate = (dateStr: string | number | undefined): string => {
     if (!dateStr) return '—';
 
@@ -19,28 +19,44 @@ export const PPLine: React.FC<PPLineProps> = ({ pp, index }) => {
     // If empty or just whitespace
     if (!str || str === 'undefined' || str === 'null') return '—';
 
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
     // Try parsing as ISO date or standard date
     try {
-      // Handle YYYYMMDD format (e.g., "20240125")
+      // Handle YYYYMMDD format (e.g., "20240809")
       if (/^\d{8}$/.test(str)) {
         const year = str.slice(2, 4);
-        const month = str.slice(4, 6);
-        const day = str.slice(6, 8);
-        return `${month}/${day}/${year}`;
+        const monthIdx = parseInt(str.slice(4, 6), 10) - 1;
+        const day = parseInt(str.slice(6, 8), 10); // No leading zero
+        const month = months[monthIdx] || '???';
+        return `${day}${month}${year}`;
       }
 
       // Handle YYYY-MM-DD or MM/DD/YYYY
       const date = new Date(str);
       if (!isNaN(date.getTime())) {
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
+        const month = months[date.getMonth()];
+        const day = date.getDate(); // No leading zero
         const year = String(date.getFullYear()).slice(-2);
-        return `${month}/${day}/${year}`;
+        return `${day}${month}${year}`;
       }
 
-      // If already formatted like "Nov20", return as-is
-      if (/^[A-Za-z]{3}\d{2}/.test(str)) {
-        return str.slice(0, 5);
+      // If already formatted like "9Aug25", return as-is
+      if (/^\d{1,2}[A-Za-z]{3}\d{2}/.test(str)) {
+        return str.slice(0, 7);
       }
 
       // Fallback: return first 8 chars
@@ -60,21 +76,23 @@ export const PPLine: React.FC<PPLineProps> = ({ pp, index }) => {
 
   // Distance formatting now uses centralized formatRacingDistance from utils/formatters
 
-  // Format track condition: "fst", "gd", "sly", "my"
+  // Format track condition using industry standard abbreviations (Equibase/DRF)
+  // ft=fast, gd=good, sy=sloppy, my=muddy, fm=firm, yl=yielding, sf=soft, hy=heavy, wf=wet fast
   const formatCondition = (condition: string): string => {
     if (!condition) return '—';
     const abbrevs: Record<string, string> = {
-      fast: 'fst',
+      fast: 'ft',
       good: 'gd',
-      sloppy: 'sly',
+      sloppy: 'sy',
       muddy: 'my',
       firm: 'fm',
       yielding: 'yl',
       soft: 'sf',
+      heavy: 'hy',
       'wet fast': 'wf',
       slow: 'sl',
     };
-    return abbrevs[condition.toLowerCase()] || condition.slice(0, 3).toLowerCase();
+    return abbrevs[condition.toLowerCase()] || condition.slice(0, 2).toLowerCase();
   };
 
   // Format class: "ALW65K", "MSW", "CLM25K", "G1"
