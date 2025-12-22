@@ -3,6 +3,7 @@ import './HorseExpandedView.css';
 import { PPLine } from './PPLine';
 import type { HorseEntry, PastPerformance, Workout } from '../types/drf';
 import type { HorseScore } from '../lib/scoring';
+import { scoreToWinProbability } from '../lib/scoring/overlayAnalysis';
 import { formatRacingDistance } from '../utils/formatters';
 
 // ============================================================================
@@ -377,6 +378,7 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   const overlayScore = score?.overlayScore || 0;
   const scoreBreakdown = score?.breakdown;
   const scorePercentage = Math.round((scoreTotal / SCORE_LIMITS.total) * 100);
+  const winProbability = scoreToWinProbability(scoreTotal);
 
   // Format horse identity info
   const colorDisplay = formatColor(horse.color);
@@ -395,15 +397,19 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
         <div className="furlong-score-analysis__content">
           {/* Total Score - Hero (Left Side) */}
           <div className="furlong-score__total">
-            <div className="furlong-score__total-number">
-              <span
-                className="furlong-score__total-value"
-                style={{ color: getTierColor(scoreTotal) }}
-              >
-                {scoreTotal}
+            <div className="furlong-score__total-header">
+              <div className="furlong-score__total-number">
+                <span
+                  className="furlong-score__total-value"
+                  style={{ color: getTierColor(scoreTotal) }}
+                >
+                  {scoreTotal}
+                </span>
+                <span className="furlong-score__total-max">/{SCORE_LIMITS.total}</span>
+              </div>
+              <span className="furlong-score__win-prob">
+                Win Probability: ~{Math.round(winProbability)}%
               </span>
-              <span className="furlong-score__total-max">/{SCORE_LIMITS.total}</span>
-              <span className="furlong-score__total-percent">({scorePercentage}%)</span>
             </div>
             <div className="furlong-score__total-bar">
               <div

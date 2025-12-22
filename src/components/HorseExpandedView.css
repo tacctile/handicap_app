@@ -183,10 +183,24 @@
   min-width: 140px;
 }
 
+.furlong-score__total-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  width: 100%;
+}
+
 .furlong-score__total-number {
   display: flex;
   align-items: baseline;
   gap: 2px;
+}
+
+.furlong-score__win-prob {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--color-text-secondary, #b4b4b6);
 }
 
 .furlong-score__total-value {
