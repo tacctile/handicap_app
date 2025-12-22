@@ -186,7 +186,7 @@ function generateTier1Bets(
     })
   );
 
-  // 3. Exacta box (top 4 horses by SCORE - maximizes coverage)
+  // 3. Exacta box (top 4 horses by ADJUSTED SCORE - combines win probability + value)
   // Analysis showed MEDIUM confidence horses frequently hit 2nd place
   // 4-horse box = 12 combos vs 6 for 3-horse (2x cost, much better coverage)
   const exactaBoxHorses = allClassifiedHorses.slice(0, Math.min(4, allClassifiedHorses.length));
@@ -196,7 +196,7 @@ function generateTier1Bets(
       createGeneratedBet({
         type: 'exacta_box',
         typeName: 'Exacta Box',
-        description: `Exacta box with top ${exactaBoxHorses.length} by score`,
+        description: `Exacta box with top ${exactaBoxHorses.length} contenders`,
         horses: exactaBoxHorses,
         amount: boxAmount,
         tier: 'tier1',
@@ -229,7 +229,7 @@ function generateTier1Bets(
     );
   }
 
-  // 5. Trifecta box (top 4 horses by SCORE - maximizes coverage)
+  // 5. Trifecta box (top 4 horses by ADJUSTED SCORE - combines win probability + value)
   // Analysis showed MEDIUM confidence horses frequently hit 2nd/3rd place
   // 4-horse box = 24 combos vs 6 for 3-horse (4x cost, catches more scenarios)
   const trifectaBoxHorses = allClassifiedHorses.slice(0, Math.min(4, allClassifiedHorses.length));
@@ -238,7 +238,7 @@ function generateTier1Bets(
       createGeneratedBet({
         type: 'trifecta_box',
         typeName: 'Trifecta Box',
-        description: `Trifecta box with top ${trifectaBoxHorses.length} by score`,
+        description: `Trifecta box with top ${trifectaBoxHorses.length} contenders`,
         horses: trifectaBoxHorses,
         amount: 1,
         tier: 'tier1',
@@ -956,12 +956,13 @@ export function generateRecommendations(input: GeneratorInput): BetGeneratorResu
     // Classify horses into tiers
     const tierGroups = classifyHorses(horsesForClassification);
 
-    // CRITICAL: Sort ALL classified horses by pure SCORE descending (not tier-first)
-    // This ensures the highest-scored horses are always first for exacta/trifecta boxes
-    // Based on analysis: 100% of top 3 finishers were MEDIUM+ confidence
+    // CRITICAL: Sort ALL classified horses by ADJUSTED SCORE descending
+    // Adjusted score = base score + overlay bonus (already calculated in tierClassification)
+    // This combines win probability (score) with value identification (overlay)
+    // High overlay horses like 50/1 shots with +3126% overlay get bumped up
     const allClassifiedHorses = tierGroups
       .flatMap((g) => g.horses)
-      .sort((a, b) => b.score.total - a.score.total);
+      .sort((a, b) => b.adjustedScore - a.adjustedScore);
 
     // Build scores map for longshot analysis
     const scoresMap = new Map<number, HorseScore>();
