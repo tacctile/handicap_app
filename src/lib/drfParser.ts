@@ -1206,7 +1206,7 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
   const WK_TRACK = 275; // Field 276 - Track codes (2 fields per work)
   const WK_RANK = 295; // Field 296 - Workout rank position (was previously mislabeled as post)
   const WK_CONDITION = 305; // Field 306 - Track condition (FT, GD, etc.)
-  const WK_DISTANCE_FEET = 315; // Field 316 - Distance in FEET (not furlongs)
+  const WK_DISTANCE_YARDS = 315; // Field 316 - Distance in YARDS (220 yards = 1 furlong)
   const WK_SURFACE = 325; // Field 326 - Surface (D, T)
   const WK_TOTAL_WORKS = 345; // Field 346 - Total works that day at track/distance
 
@@ -1217,7 +1217,7 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
 
     // Parse distance (convert from yards to furlongs: 220 yards per furlong)
     // DRF stores workout distances in yards (e.g., 1320y = 6f, 1760y = 1 mile)
-    const distanceYards = parseFloatSafe(getField(fields, WK_DISTANCE_FEET + i));
+    const distanceYards = parseFloatSafe(getField(fields, WK_DISTANCE_YARDS + i));
     const distanceFurlongs = distanceYards > 0 ? distanceYards / 220 : 0;
     // Format as standard workout distances
     let distanceStr = '';

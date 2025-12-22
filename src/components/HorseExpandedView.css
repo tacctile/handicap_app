@@ -650,10 +650,11 @@
 .horse-workouts__item {
   display: flex;
   align-items: center;
-  gap: 4px; /* Reduced from 6px */
+  gap: 6px;
   font-family: 'SF Mono', 'Monaco', 'Consolas', 'Courier New', monospace;
-  font-size: 9px; /* Reduced from 10px */
+  font-size: 10px;
   color: var(--color-text-secondary);
+  line-height: 1.3;
 }
 
 .horse-workouts__item--bullet {
@@ -662,67 +663,50 @@
 }
 
 .horse-workouts__date {
-  width: 42px;
-  min-width: 42px;
+  width: 40px;
+  min-width: 40px;
   font-weight: 600;
   color: var(--color-text-primary);
 }
 
 .horse-workouts__track {
-  width: 24px;
-  min-width: 24px;
+  width: 30px;
+  min-width: 30px;
   text-align: center;
 }
 
 .horse-workouts__dist {
-  width: 24px;
-  min-width: 24px;
+  width: 32px;
+  min-width: 32px;
   text-align: center;
+  font-weight: 600;
 }
 
-.horse-workouts__cond {
-  width: 24px;
-  min-width: 24px;
+.horse-workouts__surface {
+  width: 16px;
+  min-width: 16px;
   text-align: center;
   font-size: 9px;
   color: var(--color-text-tertiary);
 }
 
-.horse-workouts__time {
-  width: 48px;
-  min-width: 48px;
-  text-align: right;
-  font-weight: 600;
-}
-
-.horse-workouts__item--bullet .horse-workouts__time {
-  color: var(--color-tier-good);
-}
-
-.horse-workouts__type {
-  width: 12px;
-  min-width: 12px;
+.horse-workouts__cond {
+  width: 22px;
+  min-width: 22px;
   text-align: center;
-  font-weight: 600;
+  font-size: 9px;
+  color: var(--color-text-tertiary);
 }
 
 .horse-workouts__rank {
   width: 36px;
   min-width: 36px;
   text-align: right;
-  font-size: 9px;
 }
 
 .horse-workouts__bullet-icon {
   color: var(--color-tier-elite);
   font-size: 8px;
-  margin-left: 2px;
-}
-
-.horse-workouts__gate-icon {
-  font-size: 8px;
-  color: var(--color-text-tertiary);
-  font-style: italic;
 }
 
 /* Hide placeholder */
