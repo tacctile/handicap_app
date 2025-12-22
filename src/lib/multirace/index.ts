@@ -66,6 +66,7 @@ export {
 export {
   classifyRaceStrength,
   findStandoutHorse,
+  analyzeHorseStandout,
   getTopHorsesForRace,
   calculateTicketProbability,
   estimatePayoutRange,
@@ -80,6 +81,7 @@ export {
   optimizePick6,
   getAvailableMultiRaceBets,
   analyzeRaceCard,
+  type StandoutAnalysis,
 } from './multiraceOptimizer';
 
 // Carryover Tracker
