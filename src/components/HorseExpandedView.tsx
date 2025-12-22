@@ -5,35 +5,12 @@ import type { HorseEntry, PastPerformance, Workout } from '../types/drf';
 import type { HorseScore } from '../lib/scoring';
 import { formatRacingDistance } from '../utils/formatters';
 
-// Determine tier class based on value percentage
-const getTierClass = (value: number): string => {
-  if (value >= 100) return 'elite';
-  if (value >= 50) return 'good';
-  if (value >= 10) return 'fair';
-  if (value >= -10) return 'neutral';
-  return 'bad';
-};
-
-// Format earnings with K/M abbreviations
-const formatEarnings = (amount: number): string => {
-  if (!amount || amount === 0) return '0';
-  if (amount >= 1000000) {
-    return (amount / 1000000).toFixed(1) + 'M';
-  }
-  if (amount >= 1000) {
-    return (amount / 1000).toFixed(0) + 'K';
-  }
-  return amount.toLocaleString();
-};
-
-// Helper to determine if win rate is good (25%+)
-const isGoodWinRate = (starts: number, wins: number): boolean => {
-  if (!starts || starts < 2) return false;
-  return wins / starts >= 0.25;
-};
+// ============================================================================
+// CONSTANTS & UTILITIES
+// ============================================================================
 
 // Score limits by category (from lib/scoring)
-const SCORE_LIMITS_LOCAL = {
+const SCORE_LIMITS = {
   connections: 55,
   postPosition: 45,
   speedClass: 50,
@@ -43,6 +20,47 @@ const SCORE_LIMITS_LOCAL = {
   total: 240,
 } as const;
 
+// Equipment code mappings
+const EQUIPMENT_CODES: Record<string, string> = {
+  B: 'Blinkers',
+  L: 'Lasix',
+  BL: 'Blinkers, Lasix',
+  TT: 'Tongue Tie',
+  MT: 'Mud Caulks, Tongue Tie',
+  '1stB': 'First-Time Blinkers',
+  '1stL': 'First-Time Lasix',
+  b: 'Blinkers',
+  l: 'Lasix',
+  bl: 'Blinkers, Lasix',
+  tt: 'Tongue Tie',
+  mt: 'Mud Caulks, Tongue Tie',
+  f: 'Front Wraps',
+  F: 'Front Wraps',
+  c: 'Cheek Pieces',
+  C: 'Cheek Pieces',
+  s: 'Shadow Roll',
+  S: 'Shadow Roll',
+};
+
+// Medication code mappings
+const MEDICATION_CODES: Record<string, string> = {
+  L: 'Lasix',
+  B: 'Bute',
+  L1: 'First-Time Lasix',
+  '1L': 'First-Time Lasix',
+  l: 'Lasix',
+  b: 'Bute',
+};
+
+// Determine tier class based on value percentage
+const getTierClass = (value: number): string => {
+  if (value >= 100) return 'elite';
+  if (value >= 50) return 'good';
+  if (value >= 10) return 'fair';
+  if (value >= -10) return 'neutral';
+  return 'bad';
+};
+
 // Determine score tier class based on total score
 const getScoreTierClass = (score: number): string => {
   if (score >= 200) return 'elite';
@@ -50,6 +68,131 @@ const getScoreTierClass = (score: number): string => {
   if (score >= 160) return 'fair';
   if (score >= 140) return 'neutral';
   return 'bad';
+};
+
+// Format earnings with K/M abbreviations
+const formatEarnings = (amount: number): string => {
+  if (!amount || amount === 0) return '$0';
+  if (amount >= 1000000) {
+    return '$' + (amount / 1000000).toFixed(1) + 'M';
+  }
+  if (amount >= 1000) {
+    return '$' + (amount / 1000).toFixed(0) + 'K';
+  }
+  return '$' + amount.toLocaleString();
+};
+
+// Helper to determine if win rate is good (25%+)
+const isGoodWinRate = (starts: number, wins: number): boolean => {
+  if (!starts || starts < 2) return false;
+  return wins / starts >= 0.25;
+};
+
+// Format equipment code to full text
+const formatEquipment = (code: string | undefined): string => {
+  if (!code) return '';
+  const trimmed = code.trim();
+  if (!trimmed) return '';
+  return EQUIPMENT_CODES[trimmed] || trimmed;
+};
+
+// Format medication code to full text
+const formatMedication = (code: string | undefined): string => {
+  if (!code) return '';
+  const trimmed = code.trim();
+  if (!trimmed) return '';
+  return MEDICATION_CODES[trimmed] || trimmed;
+};
+
+// Format sex code to full word
+const formatSex = (sex: string | undefined): string => {
+  if (!sex) return '';
+  const sexMap: Record<string, string> = {
+    c: 'Colt',
+    f: 'Filly',
+    g: 'Gelding',
+    h: 'Horse',
+    m: 'Mare',
+    r: 'Ridgling',
+    C: 'Colt',
+    F: 'Filly',
+    G: 'Gelding',
+    H: 'Horse',
+    M: 'Mare',
+    R: 'Ridgling',
+  };
+  return sexMap[sex] || sex;
+};
+
+// Format color to proper case
+const formatColor = (color: string | undefined): string => {
+  if (!color) return '';
+  const colorMap: Record<string, string> = {
+    b: 'Bay',
+    br: 'Brown',
+    ch: 'Chestnut',
+    dk: 'Dark Bay',
+    gr: 'Gray',
+    ro: 'Roan',
+    bl: 'Black',
+    B: 'Bay',
+    BR: 'Brown',
+    CH: 'Chestnut',
+    DK: 'Dark Bay',
+    GR: 'Gray',
+    RO: 'Roan',
+    BL: 'Black',
+    Bay: 'Bay',
+    Brown: 'Brown',
+    Chestnut: 'Chestnut',
+    Gray: 'Gray',
+    Black: 'Black',
+  };
+  return colorMap[color.toLowerCase()] || color;
+};
+
+// ============================================================================
+// SECTION HEADER COMPONENT
+// ============================================================================
+
+interface SectionHeaderProps {
+  title: string;
+}
+
+const SectionHeader: React.FC<SectionHeaderProps> = ({ title }) => (
+  <div className="section-header">
+    <span className="section-header__title">{title}</span>
+    <div className="section-header__line" />
+  </div>
+);
+
+// ============================================================================
+// SCORE CATEGORY CARD COMPONENT
+// ============================================================================
+
+interface ScoreCategoryCardProps {
+  label: string;
+  score: number;
+  max: number;
+}
+
+const ScoreCategoryCard: React.FC<ScoreCategoryCardProps> = ({ label, score, max }) => {
+  const percentage = max > 0 ? (score / max) * 100 : 0;
+
+  return (
+    <div className="score-category-card">
+      <span className="score-category-card__label">{label}</span>
+      <span className="score-category-card__value">
+        {score}/{max}
+      </span>
+      <div className="score-category-card__bar-wrap">
+        <div
+          className="score-category-card__bar"
+          style={{ width: `${Math.min(percentage, 100)}%` }}
+        />
+      </div>
+    </div>
+  );
 };
 
 // ============================================================================
@@ -62,10 +205,8 @@ interface WorkoutItemProps {
 }
 
 const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => {
-  // Type-safe access with Record for flexible field access
   const w = workout as Workout & Record<string, unknown>;
 
-  // Format workout date safely using industry standard format: "23Jul" (day + 3-letter month)
   const formatWorkoutDate = (): string => {
     const dateStr = w.date || w.workDate || w.workoutDate;
     if (!dateStr || dateStr === 'undefined' || dateStr === 'null') return '—';
@@ -74,7 +215,6 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => 
     if (!str) return '—';
 
     try {
-      // Handle YYYYMMDD
       if (/^\d{8}$/.test(str)) {
         const months = [
           'Jan',
@@ -91,7 +231,7 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => 
           'Dec',
         ];
         const month = months[parseInt(str.slice(4, 6)) - 1] || '???';
-        const day = parseInt(str.slice(6, 8), 10); // Remove leading zero for single digits
+        const day = parseInt(str.slice(6, 8), 10);
         return `${day}${month}`;
       }
 
@@ -112,7 +252,7 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => 
           'Dec',
         ];
         const month = months[date.getMonth()];
-        const day = date.getDate(); // No padding - single digit days show as "5Jul" not "05Jul"
+        const day = date.getDate();
         return `${day}${month}`;
       }
 
@@ -122,7 +262,6 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => 
     }
   };
 
-  // Format workout track safely
   const formatWorkoutTrack = (): string => {
     const track = w.track || w.workTrack || w.trackCode;
     if (!track || track === 'undefined' || track === 'null') return '—';
@@ -131,16 +270,9 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => 
     return str.toUpperCase().slice(0, 3);
   };
 
-  // Get workout distance using centralized formatter
-  // distanceFurlongs is calculated by parser (yards / 220)
   const getWorkoutDistance = (): string => {
     const furlongs = w.distanceFurlongs;
-
-    // Validate it's a reasonable workout distance (3f to 7f)
-    // Workouts are rarely shorter than 3f or longer than 7f
-    // 1-mile workouts are extremely rare (<1% of all workouts)
     if (typeof furlongs !== 'number' || furlongs < 3 || furlongs > 7) {
-      // Try the distance string as fallback
       if (w.distance && typeof w.distance === 'string') {
         const cleaned = String(w.distance).trim();
         if (cleaned && !cleaned.includes('undefined') && cleaned.length < 6) {
@@ -149,13 +281,19 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => 
       }
       return '—';
     }
-
-    // Use the standard racing distance formatter
     return formatRacingDistance(furlongs);
   };
 
-  // Format surface/condition safely using industry standard abbreviations (Equibase/DRF)
-  // ft=fast, gd=good, sy=sloppy, my=muddy, fm=firm, yl=yielding, sf=soft, hy=heavy
+  const getWorkoutSurface = (): string => {
+    const surface = w.surface;
+    if (!surface) return '—';
+    const str = String(surface).toLowerCase().trim();
+    if (str === 'dirt' || str === 'd') return 'Dirt';
+    if (str === 'turf' || str === 't') return 'Turf';
+    if (str === 'synthetic' || str === 's') return 'Synth';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
+
   const formatWorkoutCond = (): string => {
     const cond = w.trackCondition || w.surface || w.condition;
     if (!cond) return '—';
@@ -170,23 +308,18 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => 
       yielding: 'yl',
       soft: 'sf',
       heavy: 'hy',
-      dirt: 'd',
-      turf: 't',
     };
     return abbrevs[str] || str.slice(0, 2).toLowerCase() || '—';
   };
 
-  // Get workout ranking safely
   const getWorkoutRanking = (): string => {
     const rank = w.rankNumber || w.rank;
     const total = w.totalWorks || w.total;
 
-    // If we have a pre-formatted ranking string
     if (w.ranking && typeof w.ranking === 'string' && w.ranking.includes('/')) {
       return w.ranking;
     }
 
-    // Build from parts
     if (rank && total && !isNaN(Number(rank)) && !isNaN(Number(total))) {
       return `${rank}/${total}`;
     }
@@ -198,38 +331,20 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => 
     return '—';
   };
 
-  // Get workout surface (D for dirt, T for turf)
-  const getWorkoutSurface = (): string => {
-    const surface = w.surface;
-    if (!surface) return '—';
-    const str = String(surface).toLowerCase().trim();
-    if (str === 'dirt' || str === 'd') return 'D';
-    if (str === 'turf' || str === 't') return 'T';
-    if (str === 'synthetic' || str === 's') return 'S';
-    return str.charAt(0).toUpperCase() || '—';
-  };
-
-  // Check if workout data is valid
   const hasValidData = workout && (w.date || w.track || w.distanceFurlongs);
-
   if (!hasValidData) return null;
 
   const isBullet = w.isBullet || w.bullet || w.rankNumber === 1 || w.rank === 1;
 
   return (
-    <div className={`horse-workouts__item ${isBullet ? 'horse-workouts__item--bullet' : ''}`}>
-      <span className="horse-workouts__date">{formatWorkoutDate()}</span>
-      <span className="horse-workouts__track">{formatWorkoutTrack()}</span>
-      <span
-        className="horse-workouts__dist"
-        title={`Raw: ${w._rawDistanceValue} (${w._interpretedFormat || 'unknown'}) → ${w.distanceFurlongs}f`}
-      >
-        {getWorkoutDistance()}
-      </span>
-      <span className="horse-workouts__surface">{getWorkoutSurface()}</span>
-      <span className="horse-workouts__cond">{formatWorkoutCond()}</span>
-      <span className="horse-workouts__rank">{getWorkoutRanking()}</span>
-      {isBullet && <span className="horse-workouts__bullet-icon">●</span>}
+    <div className={`workout-row ${isBullet ? 'workout-row--bullet' : ''}`}>
+      <span className="workout-row__date">{formatWorkoutDate()}</span>
+      <span className="workout-row__track">{formatWorkoutTrack()}</span>
+      <span className="workout-row__dist">{getWorkoutDistance()}</span>
+      <span className="workout-row__surface">{getWorkoutSurface()}</span>
+      <span className="workout-row__cond">{formatWorkoutCond()}</span>
+      <span className="workout-row__rank">{getWorkoutRanking()}</span>
+      {isBullet && <span className="workout-row__bullet">●</span>}
     </div>
   );
 };
@@ -257,416 +372,319 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   const scoreTotal = score?.total || 0;
   const scoreTierClass = getScoreTierClass(scoreTotal);
   const scoreBreakdown = score?.breakdown;
+  const scorePercentage = Math.round((scoreTotal / SCORE_LIMITS.total) * 100);
+
+  // Format horse identity info
+  const colorDisplay = formatColor(horse.color);
+  const sexDisplay = formatSex(horse.sexFull || horse.sex);
+  const equipmentDisplay = formatEquipment(horse.equipment?.raw);
+  const medicationDisplay = formatMedication(horse.medication?.raw);
 
   return (
-    <div className={`horse-expanded-view horse-expanded-view--tier-${tierClass}`}>
-      {/* Section 1: Furlong Scoring Breakdown */}
-      <section className="horse-expanded-view__section horse-expanded-view__section--scoring">
-        <div className="horse-scoring">
-          {/* Total Score - Prominent */}
-          <div className="horse-scoring__total">
-            <span className="horse-scoring__total-label">FURLONG SCORE</span>
-            <span
-              className={`horse-scoring__total-value horse-scoring__total-value--${scoreTierClass}`}
-            >
-              {scoreTotal}
-              <span className="horse-scoring__total-max">/240</span>
-            </span>
-            <span
-              className={`horse-scoring__total-percent horse-scoring__total-percent--${scoreTierClass}`}
-            >
-              ({Math.round((scoreTotal / 240) * 100)}%)
-            </span>
-          </div>
+    <div className={`horse-expanded horse-expanded--tier-${tierClass}`}>
+      {/* ================================================================
+          SECTION 1: FURLONG SCORE ANALYSIS
+          ================================================================ */}
+      <section className="horse-expanded__section horse-expanded__section--scoring">
+        <SectionHeader title="FURLONG SCORE ANALYSIS" />
 
-          <span className="horse-scoring__divider">│</span>
-
-          {/* Category Breakdowns */}
-          {scoreBreakdown ? (
-            <div className="horse-scoring__categories">
-              {/* Connections - Max 55 */}
-              <div className="horse-scoring__category">
-                <span className="horse-scoring__cat-label">Conn</span>
-                <div className="horse-scoring__cat-bar-wrap">
-                  <div
-                    className="horse-scoring__cat-bar"
-                    style={{
-                      width: `${((scoreBreakdown.connections?.total || 0) / SCORE_LIMITS_LOCAL.connections) * 100}%`,
-                    }}
-                  />
-                </div>
-                <span className="horse-scoring__cat-value">
-                  {scoreBreakdown.connections?.total || 0}/{SCORE_LIMITS_LOCAL.connections}
-                </span>
-              </div>
-
-              {/* Post Position - Max 45 */}
-              <div className="horse-scoring__category">
-                <span className="horse-scoring__cat-label">Post</span>
-                <div className="horse-scoring__cat-bar-wrap">
-                  <div
-                    className="horse-scoring__cat-bar"
-                    style={{
-                      width: `${((scoreBreakdown.postPosition?.total || 0) / SCORE_LIMITS_LOCAL.postPosition) * 100}%`,
-                    }}
-                  />
-                </div>
-                <span className="horse-scoring__cat-value">
-                  {scoreBreakdown.postPosition?.total || 0}/{SCORE_LIMITS_LOCAL.postPosition}
-                </span>
-              </div>
-
-              {/* Speed/Class - Max 50 */}
-              <div className="horse-scoring__category">
-                <span className="horse-scoring__cat-label">Speed</span>
-                <div className="horse-scoring__cat-bar-wrap">
-                  <div
-                    className="horse-scoring__cat-bar"
-                    style={{
-                      width: `${((scoreBreakdown.speedClass?.total || 0) / SCORE_LIMITS_LOCAL.speedClass) * 100}%`,
-                    }}
-                  />
-                </div>
-                <span className="horse-scoring__cat-value">
-                  {scoreBreakdown.speedClass?.total || 0}/{SCORE_LIMITS_LOCAL.speedClass}
-                </span>
-              </div>
-
-              {/* Form - Max 30 */}
-              <div className="horse-scoring__category">
-                <span className="horse-scoring__cat-label">Form</span>
-                <div className="horse-scoring__cat-bar-wrap">
-                  <div
-                    className="horse-scoring__cat-bar"
-                    style={{
-                      width: `${((scoreBreakdown.form?.total || 0) / SCORE_LIMITS_LOCAL.form) * 100}%`,
-                    }}
-                  />
-                </div>
-                <span className="horse-scoring__cat-value">
-                  {scoreBreakdown.form?.total || 0}/{SCORE_LIMITS_LOCAL.form}
-                </span>
-              </div>
-
-              {/* Equipment - Max 25 */}
-              <div className="horse-scoring__category">
-                <span className="horse-scoring__cat-label">Equip</span>
-                <div className="horse-scoring__cat-bar-wrap">
-                  <div
-                    className="horse-scoring__cat-bar"
-                    style={{
-                      width: `${((scoreBreakdown.equipment?.total || 0) / SCORE_LIMITS_LOCAL.equipment) * 100}%`,
-                    }}
-                  />
-                </div>
-                <span className="horse-scoring__cat-value">
-                  {scoreBreakdown.equipment?.total || 0}/{SCORE_LIMITS_LOCAL.equipment}
-                </span>
-              </div>
-
-              {/* Pace - Max 40 */}
-              <div className="horse-scoring__category">
-                <span className="horse-scoring__cat-label">Pace</span>
-                <div className="horse-scoring__cat-bar-wrap">
-                  <div
-                    className="horse-scoring__cat-bar"
-                    style={{
-                      width: `${((scoreBreakdown.pace?.total || 0) / SCORE_LIMITS_LOCAL.pace) * 100}%`,
-                    }}
-                  />
-                </div>
-                <span className="horse-scoring__cat-value">
-                  {scoreBreakdown.pace?.total || 0}/{SCORE_LIMITS_LOCAL.pace}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="horse-scoring__no-breakdown">
-              <span className="horse-scoring__no-breakdown-text">
-                Score breakdown not available
+        <div className="scoring-panel">
+          {/* Total Score with Large Progress Bar */}
+          <div className="scoring-panel__total">
+            <div className="scoring-panel__total-header">
+              <span className="scoring-panel__total-label">TOTAL SCORE</span>
+              <span
+                className={`scoring-panel__total-value scoring-panel__total-value--${scoreTierClass}`}
+              >
+                {scoreTotal}
+                <span className="scoring-panel__total-max">/{SCORE_LIMITS.total}</span>
+                <span className="scoring-panel__total-percent">({scorePercentage}%)</span>
               </span>
             </div>
+            <div className="scoring-panel__total-bar-wrap">
+              <div
+                className={`scoring-panel__total-bar scoring-panel__total-bar--${scoreTierClass}`}
+                style={{ width: `${scorePercentage}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Category Cards */}
+          {scoreBreakdown ? (
+            <div className="scoring-panel__categories">
+              <ScoreCategoryCard
+                label="CONNECTIONS"
+                score={scoreBreakdown.connections?.total || 0}
+                max={SCORE_LIMITS.connections}
+              />
+              <ScoreCategoryCard
+                label="POST"
+                score={scoreBreakdown.postPosition?.total || 0}
+                max={SCORE_LIMITS.postPosition}
+              />
+              <ScoreCategoryCard
+                label="SPEED/CLASS"
+                score={scoreBreakdown.speedClass?.total || 0}
+                max={SCORE_LIMITS.speedClass}
+              />
+              <ScoreCategoryCard
+                label="FORM"
+                score={scoreBreakdown.form?.total || 0}
+                max={SCORE_LIMITS.form}
+              />
+              <ScoreCategoryCard
+                label="EQUIPMENT"
+                score={scoreBreakdown.equipment?.total || 0}
+                max={SCORE_LIMITS.equipment}
+              />
+              <ScoreCategoryCard
+                label="PACE"
+                score={scoreBreakdown.pace?.total || 0}
+                max={SCORE_LIMITS.pace}
+              />
+            </div>
+          ) : (
+            <div className="scoring-panel__no-data">Score breakdown not available</div>
           )}
 
-          {/* Confidence Indicator (if available) */}
+          {/* Confidence Indicator */}
           {score?.confidenceLevel && (
-            <>
-              <span className="horse-scoring__divider">│</span>
-              <div className="horse-scoring__confidence">
-                <span className="horse-scoring__conf-label">Conf:</span>
-                <span
-                  className={`horse-scoring__conf-value horse-scoring__conf-value--${score.confidenceLevel}`}
-                >
-                  {score.confidenceLevel}
-                </span>
-              </div>
-            </>
+            <div className="scoring-panel__confidence">
+              <span className="scoring-panel__confidence-label">CONFIDENCE:</span>
+              <span
+                className={`scoring-panel__confidence-value scoring-panel__confidence-value--${score.confidenceLevel}`}
+              >
+                {score.confidenceLevel.toUpperCase()}
+              </span>
+            </div>
           )}
         </div>
       </section>
 
-      {/* Section 2: Horse Identity & Connections */}
-      <section className="horse-expanded-view__section horse-expanded-view__section--identity">
-        <div className="horse-identity">
-          {/* Row 1: Horse info + Breeding */}
-          <div className="horse-identity__row">
-            {/* Color/Sex/Age */}
-            <div className="horse-identity__field horse-identity__field--profile">
-              <span className="horse-identity__value horse-identity__value--highlight">
-                {horse.color || 'B'}. {horse.sexFull || horse.sex || 'c'}. {horse.age || '?'}
-              </span>
-              {horse.breeding?.whereBred && (
-                <span className="horse-identity__bred">({horse.breeding.whereBred})</span>
-              )}
-            </div>
+      {/* ================================================================
+          SECTION 2: HORSE PROFILE
+          ================================================================ */}
+      <section className="horse-expanded__section horse-expanded__section--profile">
+        <SectionHeader title="HORSE PROFILE" />
 
-            <span className="horse-identity__divider">|</span>
-
-            {/* Sire */}
-            <div className="horse-identity__field">
-              <span className="horse-identity__label">Sire:</span>
-              <span className="horse-identity__value">
-                {horse.breeding?.sire || '—'}
-                {horse.breeding?.sireOfSire && (
-                  <span className="horse-identity__sub">({horse.breeding.sireOfSire})</span>
+        <div className="profile-panel">
+          {/* Row 1: Identity and Breeding */}
+          <div className="profile-panel__row">
+            {/* Identity Card */}
+            <div className="profile-card">
+              <div className="profile-card__header">IDENTITY</div>
+              <div className="profile-card__content">
+                <div className="profile-card__field">
+                  <span className="profile-card__value profile-card__value--primary">
+                    {colorDisplay} {sexDisplay}, {horse.age || '?'}
+                    {horse.breeding?.whereBred && (
+                      <span className="profile-card__bred"> ({horse.breeding.whereBred})</span>
+                    )}
+                  </span>
+                </div>
+                <div className="profile-card__field">
+                  <span className="profile-card__label">Weight:</span>
+                  <span className="profile-card__value">{horse.weight || '—'} lbs</span>
+                </div>
+                {equipmentDisplay && (
+                  <div className="profile-card__field">
+                    <span className="profile-card__label">Equipment:</span>
+                    <span className="profile-card__value">{equipmentDisplay}</span>
+                  </div>
                 )}
-              </span>
-            </div>
-
-            <span className="horse-identity__divider">|</span>
-
-            {/* Dam */}
-            <div className="horse-identity__field">
-              <span className="horse-identity__label">Dam:</span>
-              <span className="horse-identity__value">
-                {horse.breeding?.dam || '—'}
-                {horse.breeding?.damSire && (
-                  <span className="horse-identity__sub">({horse.breeding.damSire})</span>
+                {medicationDisplay && (
+                  <div className="profile-card__field">
+                    <span className="profile-card__label">Medication:</span>
+                    <span className="profile-card__value">{medicationDisplay}</span>
+                  </div>
                 )}
-              </span>
+              </div>
             </div>
 
-            <span className="horse-identity__divider">|</span>
-
-            {/* Breeder */}
-            <div className="horse-identity__field">
-              <span className="horse-identity__label">Breeder:</span>
-              <span className="horse-identity__value">{horse.breeding?.breeder || '—'}</span>
+            {/* Breeding Card */}
+            <div className="profile-card">
+              <div className="profile-card__header">BREEDING</div>
+              <div className="profile-card__content">
+                <div className="profile-card__field">
+                  <span className="profile-card__label">Sire:</span>
+                  <span className="profile-card__value">
+                    {horse.breeding?.sire || '—'}
+                    {horse.breeding?.sireOfSire && (
+                      <span className="profile-card__sub"> ({horse.breeding.sireOfSire})</span>
+                    )}
+                  </span>
+                </div>
+                <div className="profile-card__field">
+                  <span className="profile-card__label">Dam:</span>
+                  <span className="profile-card__value">
+                    {horse.breeding?.dam || '—'}
+                    {horse.breeding?.damSire && (
+                      <span className="profile-card__sub"> ({horse.breeding.damSire})</span>
+                    )}
+                  </span>
+                </div>
+                <div className="profile-card__field">
+                  <span className="profile-card__label">Breeder:</span>
+                  <span className="profile-card__value">{horse.breeding?.breeder || '—'}</span>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Row 2: Connections */}
-          <div className="horse-identity__row">
-            {/* Owner */}
-            <div className="horse-identity__field">
-              <span className="horse-identity__label">Owner:</span>
-              <span className="horse-identity__value">{horse.owner || '—'}</span>
-            </div>
-
-            <span className="horse-identity__divider">|</span>
-
-            {/* Trainer */}
-            <div className="horse-identity__field">
-              <span className="horse-identity__label">Trainer:</span>
-              <span className="horse-identity__value">
-                {horse.trainerName || '—'}
-                {horse.trainerStats && (
-                  <span className="horse-identity__stat">({horse.trainerStats})</span>
-                )}
-              </span>
-            </div>
-
-            <span className="horse-identity__divider">|</span>
-
-            {/* Jockey */}
-            <div className="horse-identity__field">
-              <span className="horse-identity__label">Jockey:</span>
-              <span className="horse-identity__value">
-                {horse.jockeyName || '—'}
-                {horse.jockeyStats && (
-                  <span className="horse-identity__stat">({horse.jockeyStats})</span>
-                )}
-              </span>
-            </div>
-
-            <span className="horse-identity__divider">|</span>
-
-            {/* Weight */}
-            <div className="horse-identity__field">
-              <span className="horse-identity__label">Wt:</span>
-              <span className="horse-identity__value">{horse.weight || '—'}</span>
-            </div>
-
-            {/* Equipment if any */}
-            {horse.equipment?.raw && (
-              <>
-                <span className="horse-identity__divider">|</span>
-                <div className="horse-identity__field">
-                  <span className="horse-identity__label">Equip:</span>
-                  <span className="horse-identity__value horse-identity__value--equip">
-                    {horse.equipment.raw}
+          <div className="profile-panel__row">
+            <div className="profile-card profile-card--full">
+              <div className="profile-card__header">CONNECTIONS</div>
+              <div className="profile-card__content profile-card__content--horizontal">
+                <div className="profile-card__field">
+                  <span className="profile-card__label">Owner:</span>
+                  <span className="profile-card__value">{horse.owner || '—'}</span>
+                </div>
+                <div className="profile-card__field">
+                  <span className="profile-card__label">Trainer:</span>
+                  <span className="profile-card__value">
+                    {horse.trainerName || '—'}
+                    {horse.trainerStats && (
+                      <span className="profile-card__stat"> ({horse.trainerStats})</span>
+                    )}
                   </span>
                 </div>
-              </>
-            )}
-
-            {/* Medication if any */}
-            {horse.medication?.raw && (
-              <>
-                <span className="horse-identity__divider">|</span>
-                <div className="horse-identity__field">
-                  <span className="horse-identity__label">Med:</span>
-                  <span className="horse-identity__value horse-identity__value--med">
-                    {horse.medication.raw}
+                <div className="profile-card__field">
+                  <span className="profile-card__label">Jockey:</span>
+                  <span className="profile-card__value">
+                    {horse.jockeyName || '—'}
+                    {horse.jockeyStats && (
+                      <span className="profile-card__stat"> ({horse.jockeyStats})</span>
+                    )}
                   </span>
                 </div>
-              </>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Section 3: Statistics Table */}
-      <section className="horse-expanded-view__section horse-expanded-view__section--stats">
-        <div className="horse-stats">
-          {/* Primary Records */}
-          <div className="horse-stats__group horse-stats__group--primary">
-            {/* Lifetime */}
-            <div className="horse-stats__item">
-              <span className="horse-stats__label">LIFE:</span>
-              <span className="horse-stats__record">
-                {horse.lifetimeStarts || 0}-{horse.lifetimeWins || 0}-{horse.lifetimePlaces || 0}-
-                {horse.lifetimeShows || 0}
-              </span>
-              {(horse.lifetimeEarnings || 0) > 0 && (
-                <span className="horse-stats__earnings">
-                  ${formatEarnings(horse.lifetimeEarnings)}
-                </span>
-              )}
-            </div>
-
-            <span className="horse-stats__divider">|</span>
-
-            {/* Current Year */}
-            <div className="horse-stats__item">
-              <span className="horse-stats__label">{new Date().getFullYear()}:</span>
-              <span className="horse-stats__record">
-                {horse.currentYearStarts || 0}-{horse.currentYearWins || 0}-
-                {horse.currentYearPlaces || 0}-{horse.currentYearShows || 0}
-              </span>
-              {(horse.currentYearEarnings || 0) > 0 && (
-                <span className="horse-stats__earnings">
-                  ${formatEarnings(horse.currentYearEarnings)}
-                </span>
-              )}
-            </div>
-
-            <span className="horse-stats__divider">|</span>
-
-            {/* Previous Year */}
-            <div className="horse-stats__item">
-              <span className="horse-stats__label">{new Date().getFullYear() - 1}:</span>
-              <span className="horse-stats__record">
-                {horse.previousYearStarts || 0}-{horse.previousYearWins || 0}-
-                {horse.previousYearPlaces || 0}-{horse.previousYearShows || 0}
-              </span>
-              {(horse.previousYearEarnings || 0) > 0 && (
-                <span className="horse-stats__earnings">
-                  ${formatEarnings(horse.previousYearEarnings)}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Surface/Distance Splits */}
-          <div className="horse-stats__group horse-stats__group--splits">
-            <span className="horse-stats__divider horse-stats__divider--section">│</span>
-
-            {/* Dirt Fast */}
-            <div className="horse-stats__item horse-stats__item--split">
-              <span className="horse-stats__label">D.Fst:</span>
-              <span
-                className={`horse-stats__record ${isGoodWinRate(horse.surfaceStarts || 0, horse.surfaceWins || 0) ? 'horse-stats__record--hot' : ''}`}
-              >
-                {horse.surfaceStarts || 0}-{horse.surfaceWins || 0}
-              </span>
-            </div>
-
-            <span className="horse-stats__divider">|</span>
-
-            {/* Wet */}
-            <div className="horse-stats__item horse-stats__item--split">
-              <span className="horse-stats__label">Wet:</span>
-              <span
-                className={`horse-stats__record ${isGoodWinRate(horse.wetStarts || 0, horse.wetWins || 0) ? 'horse-stats__record--hot' : ''}`}
-              >
-                {horse.wetStarts || 0}-{horse.wetWins || 0}
-              </span>
-            </div>
-
-            <span className="horse-stats__divider">|</span>
-
-            {/* Turf */}
-            <div className="horse-stats__item horse-stats__item--split">
-              <span className="horse-stats__label">Turf:</span>
-              <span
-                className={`horse-stats__record ${isGoodWinRate(horse.turfStarts || 0, horse.turfWins || 0) ? 'horse-stats__record--hot' : ''}`}
-              >
-                {horse.turfStarts || 0}-{horse.turfWins || 0}
-              </span>
-            </div>
-
-            <span className="horse-stats__divider">|</span>
-
-            {/* Distance */}
-            <div className="horse-stats__item horse-stats__item--split">
-              <span className="horse-stats__label">Dist:</span>
-              <span
-                className={`horse-stats__record ${isGoodWinRate(horse.distanceStarts || 0, horse.distanceWins || 0) ? 'horse-stats__record--hot' : ''}`}
-              >
-                {horse.distanceStarts || 0}-{horse.distanceWins || 0}
-              </span>
-            </div>
-
-            <span className="horse-stats__divider">|</span>
-
-            {/* Track */}
-            <div className="horse-stats__item horse-stats__item--split">
-              <span className="horse-stats__label">Trk:</span>
-              <span
-                className={`horse-stats__record ${isGoodWinRate(horse.trackStarts || 0, horse.trackWins || 0) ? 'horse-stats__record--hot' : ''}`}
-              >
-                {horse.trackStarts || 0}-{horse.trackWins || 0}
-              </span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Section 4: Past Performances */}
-      <section className="horse-expanded-view__section horse-expanded-view__section--performances">
-        <div className="horse-pp">
-          {/* PP Header Row */}
-          <div className="horse-pp__header">
-            <span className="horse-pp__col horse-pp__col--date">DATE</span>
-            <span className="horse-pp__col horse-pp__col--track">TRK</span>
-            <span className="horse-pp__col horse-pp__col--dist">DIST</span>
-            <span className="horse-pp__col horse-pp__col--cond">COND</span>
-            <span className="horse-pp__col horse-pp__col--class">CLASS</span>
-            <span className="horse-pp__col horse-pp__col--finish">FIN</span>
-            <span className="horse-pp__col horse-pp__col--odds">ODDS</span>
-            <span className="horse-pp__col horse-pp__col--figure">FIG</span>
-            <span className="horse-pp__col horse-pp__col--time">TIME</span>
-            <span className="horse-pp__col horse-pp__col--days">DAYS</span>
-            <span className="horse-pp__col horse-pp__col--em">E/M</span>
-            <span className="horse-pp__col horse-pp__col--running">RUNNING LINE</span>
-            <span className="horse-pp__col horse-pp__col--jockey">JOCKEY</span>
-            <span className="horse-pp__col horse-pp__col--weight">WT</span>
-            <span className="horse-pp__col horse-pp__col--comment">COMMENT</span>
+      {/* ================================================================
+          SECTION 3: CAREER STATISTICS
+          ================================================================ */}
+      <section className="horse-expanded__section horse-expanded__section--stats">
+        <SectionHeader title="CAREER STATISTICS" />
+
+        <div className="stats-panel">
+          {/* Overall Record */}
+          <div className="stats-group">
+            <div className="stats-group__header">OVERALL RECORD</div>
+            <div className="stats-group__content">
+              <div className="stat-item">
+                <span className="stat-item__label">LIFETIME</span>
+                <span className="stat-item__record">
+                  {horse.lifetimeStarts || 0}-{horse.lifetimeWins || 0}-{horse.lifetimePlaces || 0}-
+                  {horse.lifetimeShows || 0}
+                </span>
+                <span className="stat-item__earnings">
+                  {formatEarnings(horse.lifetimeEarnings || 0)}
+                </span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-item__label">{new Date().getFullYear()}</span>
+                <span className="stat-item__record">
+                  {horse.currentYearStarts || 0}-{horse.currentYearWins || 0}-
+                  {horse.currentYearPlaces || 0}-{horse.currentYearShows || 0}
+                </span>
+                <span className="stat-item__earnings">
+                  {formatEarnings(horse.currentYearEarnings || 0)}
+                </span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-item__label">{new Date().getFullYear() - 1}</span>
+                <span className="stat-item__record">
+                  {horse.previousYearStarts || 0}-{horse.previousYearWins || 0}-
+                  {horse.previousYearPlaces || 0}-{horse.previousYearShows || 0}
+                </span>
+                <span className="stat-item__earnings">
+                  {formatEarnings(horse.previousYearEarnings || 0)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Surface & Distance Splits */}
+          <div className="stats-group">
+            <div className="stats-group__header">SURFACE & DISTANCE SPLITS</div>
+            <div className="stats-group__content">
+              <div className="stat-item stat-item--split">
+                <span className="stat-item__label">DIRT (FAST)</span>
+                <span
+                  className={`stat-item__record ${isGoodWinRate(horse.surfaceStarts || 0, horse.surfaceWins || 0) ? 'stat-item__record--hot' : ''}`}
+                >
+                  {horse.surfaceStarts || 0}-{horse.surfaceWins || 0}
+                </span>
+              </div>
+              <div className="stat-item stat-item--split">
+                <span className="stat-item__label">WET TRACK</span>
+                <span
+                  className={`stat-item__record ${isGoodWinRate(horse.wetStarts || 0, horse.wetWins || 0) ? 'stat-item__record--hot' : ''}`}
+                >
+                  {horse.wetStarts || 0}-{horse.wetWins || 0}
+                </span>
+              </div>
+              <div className="stat-item stat-item--split">
+                <span className="stat-item__label">TURF</span>
+                <span
+                  className={`stat-item__record ${isGoodWinRate(horse.turfStarts || 0, horse.turfWins || 0) ? 'stat-item__record--hot' : ''}`}
+                >
+                  {horse.turfStarts || 0}-{horse.turfWins || 0}
+                </span>
+              </div>
+              <div className="stat-item stat-item--split">
+                <span className="stat-item__label">DISTANCE</span>
+                <span
+                  className={`stat-item__record ${isGoodWinRate(horse.distanceStarts || 0, horse.distanceWins || 0) ? 'stat-item__record--hot' : ''}`}
+                >
+                  {horse.distanceStarts || 0}-{horse.distanceWins || 0}
+                </span>
+              </div>
+              <div className="stat-item stat-item--split">
+                <span className="stat-item__label">TRACK</span>
+                <span
+                  className={`stat-item__record ${isGoodWinRate(horse.trackStarts || 0, horse.trackWins || 0) ? 'stat-item__record--hot' : ''}`}
+                >
+                  {horse.trackStarts || 0}-{horse.trackWins || 0}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================================
+          SECTION 4: PAST PERFORMANCES
+          ================================================================ */}
+      <section className="horse-expanded__section horse-expanded__section--pp">
+        <SectionHeader title="PAST PERFORMANCES" />
+
+        <div className="pp-panel">
+          {/* PP Header Row with FULL column names */}
+          <div className="pp-header">
+            <span className="pp-header__col pp-header__col--date">DATE</span>
+            <span className="pp-header__col pp-header__col--track">TRACK</span>
+            <span className="pp-header__col pp-header__col--dist">DISTANCE</span>
+            <span className="pp-header__col pp-header__col--cond">COND</span>
+            <span className="pp-header__col pp-header__col--class">CLASS</span>
+            <span className="pp-header__col pp-header__col--finish">FINISH</span>
+            <span className="pp-header__col pp-header__col--odds">ODDS</span>
+            <span className="pp-header__col pp-header__col--figure">FIGURE</span>
+            <span className="pp-header__col pp-header__col--time">TIME</span>
+            <span className="pp-header__col pp-header__col--days">DAYS</span>
+            <span className="pp-header__col pp-header__col--em">EQUIP/MED</span>
+            <span className="pp-header__col pp-header__col--running">RUNNING LINE</span>
+            <span className="pp-header__col pp-header__col--jockey">JOCKEY</span>
+            <span className="pp-header__col pp-header__col--weight">WEIGHT</span>
+            <span className="pp-header__col pp-header__col--comment">COMMENT</span>
           </div>
 
           {/* PP Lines */}
-          <div className="horse-pp__lines">
+          <div className="pp-lines">
             {horse.pastPerformances && horse.pastPerformances.length > 0 ? (
               horse.pastPerformances
                 .slice(0, 10)
@@ -674,7 +692,7 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                   <PPLine key={`${pp.date}-${pp.track}-${index}`} pp={pp} index={index} />
                 ))
             ) : (
-              <div className="horse-pp__no-data">
+              <div className="pp-lines__no-data">
                 No past performances available (First-time starter)
               </div>
             )}
@@ -682,23 +700,46 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
         </div>
       </section>
 
-      {/* Section 5: Workouts */}
-      <section className="horse-expanded-view__section horse-expanded-view__section--workouts">
-        <div className="horse-workouts">
-          <span className="horse-workouts__label">WORKOUTS</span>
+      {/* ================================================================
+          SECTION 5: RECENT WORKOUTS
+          ================================================================ */}
+      <section className="horse-expanded__section horse-expanded__section--workouts">
+        <SectionHeader title="RECENT WORKOUTS" />
 
+        <div className="workouts-panel">
           {horse.workouts && horse.workouts.length > 0 ? (
-            <div className="horse-workouts__list">
-              {horse.workouts.slice(0, 5).map((workout: Workout, index: number) => (
-                <WorkoutItem
-                  key={`${workout.date}-${workout.track}-${index}`}
-                  workout={workout}
-                  index={index}
-                />
-              ))}
-            </div>
+            <>
+              {/* Workout Header Row */}
+              <div className="workout-header">
+                <span className="workout-header__col workout-header__col--date">DATE</span>
+                <span className="workout-header__col workout-header__col--track">TRACK</span>
+                <span className="workout-header__col workout-header__col--dist">DISTANCE</span>
+                <span className="workout-header__col workout-header__col--surface">SURFACE</span>
+                <span className="workout-header__col workout-header__col--cond">COND</span>
+                <span className="workout-header__col workout-header__col--rank">RANKING</span>
+              </div>
+
+              {/* Workout Items */}
+              <div className="workout-list">
+                {horse.workouts.slice(0, 5).map((workout: Workout, index: number) => (
+                  <WorkoutItem
+                    key={`${workout.date}-${workout.track}-${index}`}
+                    workout={workout}
+                    index={index}
+                  />
+                ))}
+              </div>
+
+              {/* Legend */}
+              <div className="workouts-panel__legend">
+                <span className="workouts-panel__legend-item">
+                  <span className="workouts-panel__legend-bullet">●</span> = Bullet (fastest of the
+                  day at distance)
+                </span>
+              </div>
+            </>
           ) : (
-            <span className="horse-workouts__none">No workouts available</span>
+            <div className="workouts-panel__no-data">No workouts available</div>
           )}
         </div>
       </section>

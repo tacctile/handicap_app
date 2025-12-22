@@ -1,15 +1,56 @@
-/* ============================================
-   HORSE EXPANDED VIEW - Container Structure
-   ============================================ */
+/* ============================================================================
+   HORSE EXPANDED VIEW - Enterprise-Grade UI
+   Bloomberg Terminal meets Vercel aesthetic
+   ============================================================================ */
 
-.horse-expanded-view {
+/* ============================================================================
+   DESIGN TOKENS - Typography, Colors, Spacing
+   ============================================================================ */
+
+.horse-expanded {
+  /* Typography Standards */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'SF Mono', 'Monaco', 'Consolas', 'Courier New', monospace;
+
+  /* Section Backgrounds */
+  --section-bg: var(--color-card, #0f0f10);
+  --section-bg-elevated: var(--color-elevated, #1a1a1c);
+  --row-even: rgba(255, 255, 255, 0.02);
+  --row-odd: transparent;
+  --row-hover: rgba(255, 255, 255, 0.05);
+
+  /* Borders */
+  --section-border: var(--color-border, #2a2a2c);
+  --subtle-border: rgba(255, 255, 255, 0.06);
+
+  /* Semantic Data Colors */
+  --color-win: #10b981;
+  --color-speed-figure: #06b6d4;
+  --color-favorite: #f59e0b;
+  --color-bullet: #10b981;
+  --color-layoff-warning: #f59e0b;
+
+  /* Section Spacing */
+  --section-padding: 16px;
+  --section-gap: 12px;
+  --subsection-gap: 8px;
+
+  /* Table Spacing */
+  --table-header-padding: 8px 12px;
+  --table-cell-padding: 6px 12px;
+}
+
+/* ============================================================================
+   MAIN CONTAINER
+   ============================================================================ */
+
+.horse-expanded {
   width: 100%;
-  background: var(--color-base);
-  border-bottom: 2px solid var(--color-border);
-  border-left: 4px solid var(--color-border); /* Will inherit tier color */
+  background: var(--color-base, #0a0a0b);
+  border-bottom: 2px solid var(--section-border);
+  border-left: 4px solid var(--section-border);
   overflow: hidden;
-  animation: expandIn 200ms ease-out; /* Faster, snappier animation */
-  /* NO fixed height, NO min-height, NO max-height - grows dynamically */
+  animation: expandIn 200ms ease-out;
 }
 
 @keyframes expandIn {
@@ -23,711 +64,783 @@
   }
 }
 
-/* ============================================
-   TIER BORDER COLORS
-   ============================================ */
-
-.horse-expanded-view--tier-elite {
-  border-left-color: var(--color-tier-elite);
+/* Tier Border Colors */
+.horse-expanded--tier-elite {
+  border-left-color: var(--color-tier-elite, #22c55e);
+}
+.horse-expanded--tier-good {
+  border-left-color: var(--color-tier-good, #4ade80);
+}
+.horse-expanded--tier-fair {
+  border-left-color: var(--color-tier-fair, #eab308);
+}
+.horse-expanded--tier-neutral {
+  border-left-color: var(--color-tier-neutral, #f97316);
+}
+.horse-expanded--tier-bad {
+  border-left-color: var(--color-tier-bad, #ef4444);
 }
 
-.horse-expanded-view--tier-good {
-  border-left-color: var(--color-tier-good);
+/* ============================================================================
+   SECTION HEADER COMPONENT
+   ============================================================================ */
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
-.horse-expanded-view--tier-fair {
-  border-left-color: var(--color-tier-fair);
+.section-header__title {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--color-text-secondary, #b4b4b6);
+  white-space: nowrap;
 }
 
-.horse-expanded-view--tier-neutral {
-  border-left-color: var(--color-tier-neutral);
+.section-header__line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, var(--section-border), transparent);
 }
 
-.horse-expanded-view--tier-bad {
-  border-left-color: var(--color-tier-bad);
+/* ============================================================================
+   SECTION BASE STYLING
+   ============================================================================ */
+
+.horse-expanded__section {
+  padding: var(--section-padding);
+  border-bottom: 1px solid var(--section-border);
 }
 
-/* ============================================
-   SECTIONS
-   ============================================ */
-
-.horse-expanded-view__section {
-  padding: 6px 12px; /* Reduced from 8px 16px */
-  border-bottom: 1px solid var(--color-border);
-}
-
-.horse-expanded-view__section:last-child {
+.horse-expanded__section:last-child {
   border-bottom: none;
 }
 
-/* Hide placeholder once we have real content */
-.horse-expanded-view__section--identity .horse-expanded-view__section-placeholder {
-  display: none;
+/* Section-specific backgrounds */
+.horse-expanded__section--scoring {
+  background: var(--section-bg-elevated);
 }
 
-/* Section-specific backgrounds for visual distinction */
-.horse-expanded-view__section--scoring {
-  padding: 6px 12px; /* Reduced from 8px 16px */
-  background: var(--color-elevated);
-  border-bottom: 1px solid var(--color-border);
+.horse-expanded__section--profile {
+  background: var(--section-bg);
 }
 
-/* ============================================
-   FURLONG SCORING BREAKDOWN (Compact)
-   ============================================ */
-
-.horse-scoring {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px; /* Reduced from 8px */
-  line-height: 1.1;
+.horse-expanded__section--stats {
+  background: var(--color-base, #0a0a0b);
 }
 
-/* Total Score */
-.horse-scoring__total {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.horse-expanded__section--pp {
+  background: #f5f5f5;
+  padding: var(--section-padding);
 }
 
-.horse-scoring__total-label {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.horse-expanded__section--workouts {
+  background: var(--section-bg);
 }
 
-.horse-scoring__total-value {
-  font-size: 16px; /* Reduced from 18px */
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
+/* ============================================================================
+   SECTION 1: FURLONG SCORE ANALYSIS
+   ============================================================================ */
 
-.horse-scoring__total-max {
-  font-size: 11px; /* Reduced from 12px */
-  font-weight: 500;
-  color: var(--color-text-tertiary);
-}
-
-.horse-scoring__total-percent {
-  font-size: 11px;
-  font-weight: 600;
-}
-
-/* Tier colors for total */
-.horse-scoring__total-value--elite,
-.horse-scoring__total-percent--elite {
-  color: var(--color-tier-elite);
-}
-
-.horse-scoring__total-value--good,
-.horse-scoring__total-percent--good {
-  color: var(--color-tier-good);
-}
-
-.horse-scoring__total-value--fair,
-.horse-scoring__total-percent--fair {
-  color: var(--color-tier-fair);
-}
-
-.horse-scoring__total-value--neutral,
-.horse-scoring__total-percent--neutral {
-  color: var(--color-tier-neutral);
-}
-
-.horse-scoring__total-value--bad,
-.horse-scoring__total-percent--bad {
-  color: var(--color-tier-bad);
-}
-
-/* Divider */
-.horse-scoring__divider {
-  color: var(--color-border);
-  font-size: 14px;
-  font-weight: 300;
-  margin: 0 2px;
-  user-select: none;
-}
-
-/* Category Grid */
-.horse-scoring__categories {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-}
-
-.horse-scoring__category {
-  display: flex;
-  align-items: center;
-  gap: 3px; /* Reduced from 4px */
-}
-
-.horse-scoring__cat-label {
-  font-size: 9px;
-  font-weight: 600;
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  min-width: 32px;
-}
-
-.horse-scoring__cat-bar-wrap {
-  width: 32px; /* Reduced from 40px */
-  height: 5px; /* Reduced from 6px */
-  background: var(--color-base);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.horse-scoring__cat-bar {
-  height: 100%;
-  background: var(--color-primary);
-  border-radius: 3px;
-  transition: width 300ms ease;
-}
-
-.horse-scoring__cat-value {
-  font-size: 9px; /* Reduced from 10px */
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  font-variant-numeric: tabular-nums;
-  min-width: 28px; /* Reduced from 32px */
-}
-
-/* Confidence */
-.horse-scoring__confidence {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.horse-scoring__conf-label {
-  font-size: 9px;
-  font-weight: 600;
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-}
-
-.horse-scoring__conf-value {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
-.horse-scoring__conf-value--high {
-  background: var(--color-tier-elite);
-  color: #000;
-}
-
-.horse-scoring__conf-value--medium {
-  background: var(--color-tier-fair);
-  color: #000;
-}
-
-.horse-scoring__conf-value--low {
-  background: var(--color-tier-bad);
-  color: #fff;
-}
-
-/* No breakdown fallback */
-.horse-scoring__no-breakdown {
-  display: flex;
-  align-items: center;
-}
-
-.horse-scoring__no-breakdown-text {
-  font-size: 10px;
-  font-style: italic;
-  color: var(--color-text-tertiary);
-}
-
-/* Hide placeholder */
-.horse-expanded-view__section--scoring .horse-expanded-view__section-placeholder {
-  display: none;
-}
-
-.horse-expanded-view__section--identity {
-  background: var(--color-card);
-  padding: 5px 12px; /* Reduced from 8px 16px */
-}
-
-.horse-expanded-view__section--stats {
-  background: var(--color-base);
-}
-
-.horse-expanded-view__section--performances {
-  /* Force light theme for this section regardless of app theme */
-  --pp-bg: #f5f5f5;
-  --pp-header-bg: #e8e8e8;
-  --pp-text: #1a1a1a;
-  --pp-text-muted: #666;
-  --pp-border: #ccc;
-
-  padding: 0; /* PP section handles its own padding */
-  background: var(--pp-bg);
-  color: var(--pp-text);
-}
-
-.horse-expanded-view__section--workouts {
-  background: var(--color-card);
-}
-
-/* ============================================
-   PLACEHOLDER STYLING - Hidden (sections are now built)
-   ============================================ */
-
-.horse-expanded-view__section-placeholder,
-.horse-expanded-view__placeholder-note {
-  display: none;
-}
-
-/* ============================================
-   HORSE IDENTITY & CONNECTIONS (Compact)
-   ============================================ */
-
-.horse-identity {
+.scoring-panel {
   display: flex;
   flex-direction: column;
-  gap: 2px; /* Reduced from 4px */
+  gap: 16px;
 }
 
-.horse-identity__row {
+/* Total Score Area */
+.scoring-panel__total {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px; /* Reduced from 6px */
-  line-height: 1.2;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.horse-identity__field {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+.scoring-panel__total-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
 }
 
-.horse-identity__label {
-  font-size: 9px; /* Reduced from 10px */
-  font-weight: 500;
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.horse-identity__value {
-  font-size: 11px; /* Reduced from 12px */
+.scoring-panel__total-label {
+  font-family: var(--font-sans);
+  font-size: 10px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary, #6e6e70);
 }
 
-.horse-identity__value--highlight {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  text-transform: capitalize;
+.scoring-panel__total-value {
+  font-family: var(--font-sans);
+  font-size: 28px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
-.horse-identity__sub {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--color-text-secondary);
-  margin-left: 2px;
-}
-
-.horse-identity__stat {
-  font-size: 10px;
+.scoring-panel__total-max {
+  font-size: 16px;
   font-weight: 500;
-  color: var(--color-primary);
-  margin-left: 3px;
+  color: var(--color-text-tertiary, #6e6e70);
 }
 
-.horse-identity__bred {
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--color-text-secondary);
+.scoring-panel__total-percent {
+  font-size: 14px;
+  font-weight: 600;
   margin-left: 4px;
 }
 
-.horse-identity__divider {
-  color: var(--color-border);
-  font-size: 10px; /* Reduced from 12px */
-  font-weight: 300;
-  margin: 0 1px; /* Reduced from 0 2px */
-  user-select: none;
+/* Total score tier colors */
+.scoring-panel__total-value--elite,
+.scoring-panel__total-percent--elite {
+  color: var(--color-tier-elite, #22c55e);
+}
+.scoring-panel__total-value--good,
+.scoring-panel__total-percent--good {
+  color: var(--color-tier-good, #4ade80);
+}
+.scoring-panel__total-value--fair,
+.scoring-panel__total-percent--fair {
+  color: var(--color-tier-fair, #eab308);
+}
+.scoring-panel__total-value--neutral,
+.scoring-panel__total-percent--neutral {
+  color: var(--color-tier-neutral, #f97316);
+}
+.scoring-panel__total-value--bad,
+.scoring-panel__total-percent--bad {
+  color: var(--color-tier-bad, #ef4444);
 }
 
-.horse-identity__value--equip,
-.horse-identity__value--med {
-  font-family: monospace;
-  font-size: 11px;
-  background: var(--color-base);
-  padding: 1px 4px;
-  border-radius: 2px;
+/* Total Progress Bar */
+.scoring-panel__total-bar-wrap {
+  width: 100%;
+  max-width: 400px;
+  height: 8px;
+  background: var(--color-base, #0a0a0b);
+  border-radius: 4px;
+  overflow: hidden;
 }
 
-/* First-time equipment highlight */
-.horse-identity__value--equip-new {
-  background: var(--color-primary-muted);
-  color: var(--color-primary);
+.scoring-panel__total-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 400ms ease;
 }
 
-/* ============================================
-   STATISTICS TABLE (Compact Single Row)
-   ============================================ */
-
-.horse-expanded-view__section--stats {
-  padding: 4px 12px; /* Reduced from 6px 16px */
-  background: var(--color-base);
+.scoring-panel__total-bar--elite {
+  background: var(--color-tier-elite, #22c55e);
+}
+.scoring-panel__total-bar--good {
+  background: var(--color-tier-good, #4ade80);
+}
+.scoring-panel__total-bar--fair {
+  background: var(--color-tier-fair, #eab308);
+}
+.scoring-panel__total-bar--neutral {
+  background: var(--color-tier-neutral, #f97316);
+}
+.scoring-panel__total-bar--bad {
+  background: var(--color-tier-bad, #ef4444);
 }
 
-.horse-stats {
+/* Category Cards Grid */
+.scoring-panel__categories {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .scoring-panel__categories {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .scoring-panel__categories {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Score Category Card */
+.score-category-card {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px; /* Reduced from 6px */
-  line-height: 1.1;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--color-base, #0a0a0b);
+  border: 1px solid var(--subtle-border);
+  border-radius: 6px;
 }
 
-.horse-stats__group {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
-
-.horse-stats__group--primary {
-  /* Primary records slightly emphasized */
-}
-
-.horse-stats__group--splits {
-  /* Splits are secondary info */
-}
-
-.horse-stats__item {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px; /* Reduced from 4px */
-}
-
-.horse-stats__item--split {
-  /* Splits are slightly smaller */
-}
-
-.horse-stats__label {
-  font-size: 8px; /* Reduced from 9px */
+.score-category-card__label {
+  font-family: var(--font-sans);
+  font-size: 9px;
   font-weight: 600;
-  color: var(--color-text-tertiary);
+  letter-spacing: 0.3px;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  color: var(--color-text-tertiary, #6e6e70);
 }
 
-.horse-stats__record {
-  font-size: 11px; /* Reduced from 12px */
+.score-category-card__value {
+  font-family: var(--font-sans);
+  font-size: 14px;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #eeeff1);
   font-variant-numeric: tabular-nums;
 }
 
-.horse-stats__item--split .horse-stats__record {
-  font-size: 10px; /* Reduced from 11px */
+.score-category-card__bar-wrap {
+  width: 100%;
+  height: 4px;
+  background: var(--color-elevated, #1a1a1c);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.score-category-card__bar {
+  height: 100%;
+  background: var(--color-primary, #19abb5);
+  border-radius: 2px;
+  transition: width 300ms ease;
+}
+
+/* Confidence */
+.scoring-panel__confidence {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scoring-panel__confidence-label {
+  font-family: var(--font-sans);
+  font-size: 10px;
   font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary, #6e6e70);
 }
 
-.horse-stats__earnings {
-  font-size: 10px; /* Reduced from 11px */
-  font-weight: 500;
-  color: var(--color-tier-good);
-  margin-left: 2px;
+.scoring-panel__confidence-value {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
 }
 
-.horse-stats__divider {
-  color: var(--color-border);
-  font-size: 10px; /* Reduced from 11px */
-  font-weight: 300;
-  margin: 0; /* Reduced from 0 1px */
-  user-select: none;
+.scoring-panel__confidence-value--high {
+  background: var(--color-tier-elite, #22c55e);
+  color: #000;
 }
 
-.horse-stats__divider--section {
-  color: var(--color-text-tertiary);
-  font-weight: 400;
-  margin: 0 4px;
+.scoring-panel__confidence-value--medium {
+  background: var(--color-tier-fair, #eab308);
+  color: #000;
 }
 
-/* Hide placeholder */
-.horse-expanded-view__section--stats .horse-expanded-view__section-placeholder {
-  display: none;
+.scoring-panel__confidence-value--low {
+  background: var(--color-tier-bad, #ef4444);
+  color: #fff;
 }
 
-/* Good win rate highlight */
-.horse-stats__record--hot {
-  color: var(--color-tier-good);
+.scoring-panel__no-data {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-style: italic;
+  color: var(--color-text-tertiary, #6e6e70);
+  padding: 12px 0;
 }
 
-/* ============================================
-   PAST PERFORMANCES SECTION
-   ============================================ */
+/* ============================================================================
+   SECTION 2: HORSE PROFILE
+   ============================================================================ */
 
-.horse-pp {
+.profile-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile-panel__row {
+  display: flex;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .profile-panel__row {
+    flex-direction: column;
+  }
+}
+
+/* Profile Card */
+.profile-card {
+  flex: 1;
+  background: var(--color-base, #0a0a0b);
+  border: 1px solid var(--subtle-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.profile-card--full {
+  flex: none;
   width: 100%;
 }
 
-/* ============================================
-   PP HEADER ROW
-   ============================================ */
+.profile-card__header {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary, #6e6e70);
+  padding: 8px 12px;
+  background: var(--section-bg-elevated);
+  border-bottom: 1px solid var(--subtle-border);
+}
 
-.horse-pp__header {
+.profile-card__content {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profile-card__content--horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.profile-card__field {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.profile-card__label {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-tertiary, #6e6e70);
+}
+
+.profile-card__value {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-primary, #eeeff1);
+}
+
+.profile-card__value--primary {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.profile-card__bred {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-secondary, #b4b4b6);
+}
+
+.profile-card__sub {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-secondary, #b4b4b6);
+}
+
+.profile-card__stat {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-primary, #19abb5);
+}
+
+/* ============================================================================
+   SECTION 3: CAREER STATISTICS
+   ============================================================================ */
+
+.stats-panel {
+  display: flex;
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .stats-panel {
+    flex-direction: column;
+  }
+}
+
+/* Stats Group */
+.stats-group {
+  flex: 1;
+  background: var(--section-bg);
+  border: 1px solid var(--subtle-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.stats-group__header {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary, #6e6e70);
+  padding: 8px 12px;
+  background: var(--section-bg-elevated);
+  border-bottom: 1px solid var(--subtle-border);
+}
+
+.stats-group__content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 12px;
+}
+
+/* Stat Item */
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 80px;
+}
+
+.stat-item--split {
+  min-width: 70px;
+}
+
+.stat-item__label {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary, #6e6e70);
+}
+
+.stat-item__record {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary, #eeeff1);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-item__record--hot {
+  color: var(--color-win, #10b981);
+}
+
+.stat-item__earnings {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-tier-good, #4ade80);
+}
+
+/* ============================================================================
+   SECTION 4: PAST PERFORMANCES
+   ============================================================================ */
+
+.pp-panel {
+  background: #fff;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+}
+
+/* PP Header */
+.pp-header {
   display: flex;
   align-items: center;
-  padding: 3px 8px; /* Reduced from 4px 8px */
-  background: var(--pp-header-bg, #e8e8e8);
-  border-bottom: 1px solid var(--pp-border, #ccc);
+  padding: 10px 12px;
+  background: #e8e8e8;
+  border-bottom: 1px solid #ccc;
   gap: 0;
 }
 
-.horse-pp__col {
-  font-size: 8px; /* Reduced from 9px */
+.pp-header__col {
+  font-family: var(--font-sans);
+  font-size: 9px;
   font-weight: 700;
-  color: var(--pp-text, #333);
+  letter-spacing: 0.3px;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  color: #333;
   flex-shrink: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Column Widths - Fixed for alignment */
-.horse-pp__col--date {
-  width: 62px; /* Reduced from 70px */
+/* PP Header Column Widths - Optimized for full headers */
+.pp-header__col--date {
+  width: 62px;
   min-width: 62px;
 }
-
-.horse-pp__col--track {
+.pp-header__col--track {
+  width: 44px;
+  min-width: 44px;
+  text-align: center;
+}
+.pp-header__col--dist {
+  width: 60px;
+  min-width: 60px;
+  text-align: center;
+}
+.pp-header__col--cond {
   width: 36px;
   min-width: 36px;
   text-align: center;
 }
-
-.horse-pp__col--dist {
-  width: 50px;
-  min-width: 50px;
-  text-align: center;
-}
-
-.horse-pp__col--cond {
-  width: 36px;
-  min-width: 36px;
-  text-align: center;
-}
-
-.horse-pp__col--class {
+.pp-header__col--class {
   width: 80px;
   min-width: 80px;
 }
-
-.horse-pp__col--finish {
-  width: 40px;
-  min-width: 40px;
+.pp-header__col--finish {
+  width: 48px;
+  min-width: 48px;
   text-align: center;
 }
-
-.horse-pp__col--odds {
+.pp-header__col--odds {
   width: 44px;
   min-width: 44px;
   text-align: right;
 }
-
-.horse-pp__col--figure {
-  width: 32px;
-  min-width: 32px;
+.pp-header__col--figure {
+  width: 48px;
+  min-width: 48px;
   text-align: center;
 }
-
-.horse-pp__col--time {
-  width: 52px;
-  min-width: 52px;
+.pp-header__col--time {
+  width: 56px;
+  min-width: 56px;
   text-align: right;
 }
-
-.horse-pp__col--days {
+.pp-header__col--days {
   width: 36px;
   min-width: 36px;
   text-align: center;
 }
-
-.horse-pp__col--em {
-  width: 40px;
-  min-width: 40px;
+.pp-header__col--em {
+  width: 60px;
+  min-width: 60px;
   text-align: center;
 }
-
-.horse-pp__col--running {
-  width: 110px; /* Reduced from 120px to fit new columns */
-  min-width: 110px;
+.pp-header__col--running {
+  width: 100px;
+  min-width: 100px;
 }
-
-.horse-pp__col--jockey {
-  width: 75px; /* Reduced from 80px to fit new columns */
+.pp-header__col--jockey {
+  width: 75px;
   min-width: 75px;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-
-.horse-pp__col--weight {
-  width: 32px;
-  min-width: 32px;
+.pp-header__col--weight {
+  width: 48px;
+  min-width: 48px;
   text-align: center;
 }
-
-.horse-pp__col--comment {
+.pp-header__col--comment {
   flex: 1;
-  min-width: 80px; /* Reduced from 100px to fit new columns */
+  min-width: 80px;
 }
 
-/* ============================================
-   PP LINES CONTAINER
-   ============================================ */
-
-.horse-pp__lines {
+/* PP Lines Container */
+.pp-lines {
   display: flex;
   flex-direction: column;
 }
 
-/* Placeholder while building */
-.horse-pp__placeholder-text {
-  padding: 12px 8px;
+.pp-lines__no-data {
+  padding: 16px;
+  font-family: var(--font-sans);
   font-size: 11px;
-  color: var(--pp-text-muted, #666);
+  color: #666;
   text-align: center;
   font-style: italic;
 }
 
-.horse-pp__no-data {
-  padding: 8px; /* Reduced from 12px 8px */
-  font-size: 10px; /* Reduced from 11px */
-  color: var(--color-text-tertiary);
-  text-align: center;
-  font-style: italic;
-}
+/* ============================================================================
+   SECTION 5: RECENT WORKOUTS
+   ============================================================================ */
 
-/* Hide old placeholder */
-.horse-expanded-view__section--performances .horse-expanded-view__section-placeholder {
-  display: none;
-}
-
-/* ============================================
-   WORKOUTS SECTION (Compact)
-   ============================================ */
-
-.horse-expanded-view__section--workouts {
-  padding: 5px 12px; /* Reduced from 6px 16px */
-  background: var(--color-card);
-  border-top: 1px solid var(--color-border);
-}
-
-.horse-workouts {
+.workouts-panel {
   display: flex;
-  align-items: flex-start;
-  gap: 8px; /* Reduced from 12px */
-  line-height: 1.2; /* Reduced from 1.3 */
+  flex-direction: column;
+  gap: 8px;
 }
 
-.horse-workouts__label {
-  font-size: 8px; /* Reduced from 9px */
+/* Workout Header */
+.workout-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  gap: 8px;
+  border-bottom: 1px solid var(--subtle-border);
+}
+
+.workout-header__col {
+  font-family: var(--font-sans);
+  font-size: 9px;
   font-weight: 700;
-  color: var(--color-text-tertiary);
+  letter-spacing: 0.3px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding-top: 1px;
+  color: var(--color-text-tertiary, #6e6e70);
   flex-shrink: 0;
 }
 
-.horse-workouts__list {
-  display: flex;
-  flex-direction: column;
-  gap: 1px; /* Reduced from 2px */
+.workout-header__col--date {
+  width: 50px;
+  min-width: 50px;
 }
-
-.horse-workouts__none {
-  padding: 8px;
-  font-size: 10px;
-  font-style: italic;
-  color: var(--color-text-tertiary);
-  text-align: center;
-}
-
-/* ============================================
-   SINGLE WORKOUT ITEM
-   ============================================ */
-
-.horse-workouts__item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: 'SF Mono', 'Monaco', 'Consolas', 'Courier New', monospace;
-  font-size: 10px;
-  color: var(--color-text-secondary);
-  line-height: 1.3;
-}
-
-.horse-workouts__item--bullet {
-  color: var(--color-text-primary);
-  font-weight: 600;
-}
-
-.horse-workouts__date {
+.workout-header__col--track {
   width: 40px;
   min-width: 40px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.horse-workouts__track {
-  width: 30px;
-  min-width: 30px;
   text-align: center;
 }
-
-.horse-workouts__dist {
-  width: 32px;
-  min-width: 32px;
+.workout-header__col--dist {
+  width: 60px;
+  min-width: 60px;
   text-align: center;
-  font-weight: 600;
 }
-
-.horse-workouts__surface {
-  width: 16px;
-  min-width: 16px;
+.workout-header__col--surface {
+  width: 50px;
+  min-width: 50px;
   text-align: center;
-  font-size: 9px;
-  color: var(--color-text-tertiary);
 }
-
-.horse-workouts__cond {
-  width: 22px;
-  min-width: 22px;
-  text-align: center;
-  font-size: 9px;
-  color: var(--color-text-tertiary);
-}
-
-.horse-workouts__rank {
+.workout-header__col--cond {
   width: 36px;
   min-width: 36px;
-  text-align: right;
+  text-align: center;
+}
+.workout-header__col--rank {
+  width: 60px;
+  min-width: 60px;
+  text-align: center;
 }
 
-.horse-workouts__bullet-icon {
-  color: var(--color-tier-elite);
-  font-size: 8px;
+/* Workout List */
+.workout-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-/* Hide placeholder */
-.horse-expanded-view__section--workouts .horse-expanded-view__section-placeholder {
-  display: none;
+/* Workout Row */
+.workout-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-secondary, #b4b4b6);
+  border-bottom: 1px solid var(--subtle-border);
+}
+
+.workout-row:last-child {
+  border-bottom: none;
+}
+
+.workout-row--bullet {
+  color: var(--color-text-primary, #eeeff1);
+  font-weight: 600;
+}
+
+.workout-row__date {
+  width: 50px;
+  min-width: 50px;
+  font-weight: 600;
+  color: var(--color-text-primary, #eeeff1);
+}
+
+.workout-row__track {
+  width: 40px;
+  min-width: 40px;
+  text-align: center;
+}
+
+.workout-row__dist {
+  width: 60px;
+  min-width: 60px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.workout-row__surface {
+  width: 50px;
+  min-width: 50px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--color-text-tertiary, #6e6e70);
+}
+
+.workout-row__cond {
+  width: 36px;
+  min-width: 36px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--color-text-tertiary, #6e6e70);
+}
+
+.workout-row__rank {
+  width: 60px;
+  min-width: 60px;
+  text-align: center;
+}
+
+.workout-row__bullet {
+  color: var(--color-bullet, #10b981);
+  font-size: 10px;
+  margin-left: 4px;
+}
+
+/* Workout Legend */
+.workouts-panel__legend {
+  display: flex;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--subtle-border);
+}
+
+.workouts-panel__legend-item {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  color: var(--color-text-tertiary, #6e6e70);
+}
+
+.workouts-panel__legend-bullet {
+  color: var(--color-bullet, #10b981);
+  margin-right: 4px;
+}
+
+.workouts-panel__no-data {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-style: italic;
+  color: var(--color-text-tertiary, #6e6e70);
+  padding: 12px 0;
+  text-align: center;
+}
+
+/* ============================================================================
+   RESPONSIVE: Horizontal Scroll for PP Table
+   ============================================================================ */
+
+@media (max-width: 1200px) {
+  .pp-panel {
+    overflow-x: auto;
+  }
+
+  .pp-header,
+  .pp-lines {
+    min-width: 1100px;
+  }
 }
