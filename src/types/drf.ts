@@ -274,6 +274,8 @@ export interface Workout {
   fromGate: boolean;
   /** Notes/comments */
   notes: string;
+  /** Debug: raw field value before conversion (for troubleshooting) */
+  _rawDistanceValue?: number;
 }
 
 // ============================================================================

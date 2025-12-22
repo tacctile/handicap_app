@@ -147,8 +147,9 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index }) => {
       console.log('====================================================');
     }
 
-    // Validate it's a reasonable workout distance (2f to 8f / 1 mile)
-    if (typeof furlongs !== 'number' || furlongs < 1 || furlongs > 10) {
+    // Validate it's a reasonable workout distance (2f to 8f)
+    // Workouts are almost never longer than 1 mile - values > 8 indicate bad field mapping
+    if (typeof furlongs !== 'number' || furlongs < 2 || furlongs > 8) {
       // Try the distance string as fallback
       if (w.distance && typeof w.distance === 'string') {
         const cleaned = String(w.distance).trim();
@@ -229,7 +230,10 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index }) => {
     <div className={`horse-workouts__item ${isBullet ? 'horse-workouts__item--bullet' : ''}`}>
       <span className="horse-workouts__date">{formatWorkoutDate()}</span>
       <span className="horse-workouts__track">{formatWorkoutTrack()}</span>
-      <span className="horse-workouts__dist" title={`Raw furlongs: ${w.distanceFurlongs}`}>
+      <span
+        className="horse-workouts__dist"
+        title={`Raw field: ${w._rawDistanceValue} → ${w.distanceFurlongs}f`}
+      >
         {getWorkoutDistance()}
       </span>
       <span className="horse-workouts__surface">{getWorkoutSurface()}</span>

@@ -1320,6 +1320,8 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
       isBullet: isBullet,
       fromGate: false, // Would need separate gate indicator field
       notes: daysSince !== null ? `${daysSince}d ago` : '',
+      // Debug: store raw field value for troubleshooting field mapping issues
+      _rawDistanceValue: rawDistanceValue,
     };
 
     workouts.push(workout);
