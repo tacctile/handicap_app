@@ -17,7 +17,8 @@ const SCORE_LIMITS = {
   form: 30,
   equipment: 25,
   pace: 40,
-  total: 240,
+  base: 240, // Max base score before overlay
+  total: 290, // Max final score (base + overlay: 240 + 50)
 } as const;
 
 // Equipment code mappings
@@ -62,12 +63,13 @@ const getTierClass = (value: number): string => {
 };
 
 // Get tier color CSS variable for total score
+// Thresholds: Elite (200+), Strong (180+), Good (160+), Fair (140+), Weak (<140)
 const getTierColor = (score: number): string => {
-  if (score >= 180) return 'var(--color-tier-elite)';
-  if (score >= 160) return 'var(--color-tier-good)';
-  if (score >= 140) return 'var(--color-tier-fair)';
-  if (score >= 120) return 'var(--color-tier-neutral)';
-  return 'var(--color-tier-bad)';
+  if (score >= 200) return 'var(--color-tier-elite)'; // Green - Elite
+  if (score >= 180) return 'var(--color-tier-good)'; // Light Green - Strong
+  if (score >= 160) return 'var(--color-tier-fair)'; // Yellow - Good
+  if (score >= 140) return 'var(--color-tier-neutral)'; // Orange - Fair
+  return 'var(--color-tier-bad)'; // Red - Weak
 };
 
 // Get confidence level color
@@ -362,6 +364,8 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
 
   const tierClass = getTierClass(valuePercent);
   const scoreTotal = score?.total || 0;
+  const baseScore = score?.baseScore || 0;
+  const overlayScore = score?.overlayScore || 0;
   const scoreBreakdown = score?.breakdown;
   const scorePercentage = Math.round((scoreTotal / SCORE_LIMITS.total) * 100);
 
@@ -400,6 +404,16 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                   backgroundColor: getTierColor(scoreTotal),
                 }}
               />
+            </div>
+            <div className="furlong-score__breakdown">
+              <span className="furlong-score__breakdown-item">
+                Base: {baseScore}/{SCORE_LIMITS.base}
+              </span>
+              <span className="furlong-score__breakdown-separator">•</span>
+              <span className="furlong-score__breakdown-item">
+                Overlay: {overlayScore >= 0 ? '+' : ''}
+                {overlayScore}
+              </span>
             </div>
             <div className="furlong-score__total-label furlong-score__total-confidence">
               <span
