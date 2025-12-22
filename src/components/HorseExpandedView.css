@@ -248,24 +248,58 @@
   color: var(--color-text-tertiary, #6e6e70);
 }
 
-.furlong-score__total-label {
+/* Rating Section (Tier + Data Quality) */
+.furlong-score__rating-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.furlong-score__tier-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.furlong-score__tier-value {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.furlong-score__tier-label {
   font-family: var(--font-sans);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: var(--color-text-tertiary, #6e6e70);
-  margin-top: 6px;
 }
 
-.furlong-score__total-confidence {
-  display: inline-flex;
+.furlong-score__data-quality {
+  display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  padding-left: 16px;
+  border-left: 1px solid var(--section-border, #2a2a2c);
 }
 
-.furlong-score__total-confidence-value {
-  font-weight: 700;
+.furlong-score__quality-value {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.furlong-score__quality-label {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary, #6e6e70);
 }
 
 /* Category Scores - Supporting (Right Side) */

@@ -72,9 +72,18 @@ const getTierColor = (score: number): string => {
   return 'var(--color-tier-bad)'; // Red - Weak
 };
 
-// Get confidence level color
-const getConfidenceColor = (confidence: string | undefined): string => {
-  switch (confidence?.toUpperCase()) {
+// Get tier name for total score
+const getTierName = (score: number): string => {
+  if (score >= 200) return 'ELITE';
+  if (score >= 180) return 'STRONG';
+  if (score >= 160) return 'GOOD';
+  if (score >= 140) return 'FAIR';
+  return 'WEAK';
+};
+
+// Get data quality color
+const getDataQualityColor = (quality: string | undefined): string => {
+  switch (quality?.toUpperCase()) {
     case 'HIGH':
       return 'var(--color-tier-good)';
     case 'MEDIUM':
@@ -415,14 +424,25 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                 {overlayScore}
               </span>
             </div>
-            <div className="furlong-score__total-label furlong-score__total-confidence">
-              <span
-                className="furlong-score__total-confidence-value"
-                style={{ color: getConfidenceColor(score?.confidenceLevel) }}
-              >
-                {score?.confidenceLevel?.toUpperCase() || 'HIGH'}
-              </span>
-              <span>CONFIDENCE</span>
+            <div className="furlong-score__rating-section">
+              <div className="furlong-score__tier-rating">
+                <span
+                  className="furlong-score__tier-value"
+                  style={{ color: getTierColor(scoreTotal) }}
+                >
+                  {getTierName(scoreTotal)}
+                </span>
+                <span className="furlong-score__tier-label">RATING</span>
+              </div>
+              <div className="furlong-score__data-quality">
+                <span
+                  className="furlong-score__quality-value"
+                  style={{ color: getDataQualityColor(score?.confidenceLevel) }}
+                >
+                  {score?.confidenceLevel?.toUpperCase() || 'HIGH'}
+                </span>
+                <span className="furlong-score__quality-label">DATA QUALITY</span>
+              </div>
             </div>
           </div>
 
