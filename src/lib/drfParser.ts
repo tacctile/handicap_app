@@ -1234,30 +1234,66 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
     const wkDate = getField(fields, WK_DATE + i);
     if (!wkDate) break;
 
-    // Parse workout distance with auto-detection
-    // DRF workout distances can be stored in different formats:
-    // - Actual furlongs (2-16): e.g., 5 for 5f, 6 for 6f
-    // - Eighths of furlongs (17-128): e.g., 40 for 5f (40/8=5), 48 for 6f
-    // - Yards (129-1000): e.g., 1100 for 5f (1100/220=5), 1320 for 6f
-    // - Feet (>1000): e.g., 3300 for 5f (3300/660=5), 3960 for 6f (per DRF spec)
-    //
-    // Common workout distances in feet: 2640=4f, 3300=5f, 3960=6f, 4620=7f, 5280=8f
+    // Parse workout distance - try multiple interpretations and pick the valid one
+    // Standard workout distances: 2f, 3f, 3.5f, 4f, 4.5f, 5f, 5.5f, 6f, 6.5f, 7f, 8f (1m)
+    // Industry standard: workouts are ALWAYS whole or half furlongs, never fractional like 2.5f
     const rawDistanceValue = parseFloatSafe(getField(fields, WK_DISTANCE_YARDS + i));
     let distanceFurlongs = 0;
+    let interpretedFormat = 'none';
+
+    // Valid workout distances (in furlongs) - standard industry values
+    // NOTE: 8f (1 mile) workouts are extremely rare (<1% of all workouts)
+    // Most "1m" results indicate data issues, so we cap at 7f for workouts
+    const validWorkoutDistances = [3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7];
+
+    // Check if a value is close to a valid workout distance
+    const isValidWorkoutDist = (f: number): boolean => {
+      return validWorkoutDistances.some((valid) => Math.abs(f - valid) < 0.1);
+    };
 
     if (rawDistanceValue > 0) {
-      if (rawDistanceValue >= 2 && rawDistanceValue <= 16) {
-        // Value is already in furlongs (standard workout range is 2f to 8f)
-        distanceFurlongs = rawDistanceValue;
-      } else if (rawDistanceValue > 16 && rawDistanceValue <= 128) {
-        // Value is in eighths of furlongs (e.g., 40=5f, 48=6f)
-        distanceFurlongs = rawDistanceValue / 8;
-      } else if (rawDistanceValue > 128 && rawDistanceValue <= 1000) {
-        // Value is in yards (220 yards per furlong)
-        distanceFurlongs = rawDistanceValue / 220;
-      } else if (rawDistanceValue > 1000) {
-        // Value is in feet (660 feet per furlong) - per DRF spec
-        distanceFurlongs = rawDistanceValue / 660;
+      // Try interpretations in order of likelihood
+      const interpretations = [
+        { name: 'furlongs', value: rawDistanceValue },
+        { name: 'eighths', value: rawDistanceValue / 8 },
+        { name: 'yards', value: rawDistanceValue / 220 },
+        { name: 'feet', value: rawDistanceValue / 660 },
+        { name: 'half-furlongs', value: rawDistanceValue / 2 },
+      ];
+
+      // Find first interpretation that gives a valid workout distance
+      for (const interp of interpretations) {
+        if (interp.value >= 2 && interp.value <= 8 && isValidWorkoutDist(interp.value)) {
+          distanceFurlongs = interp.value;
+          interpretedFormat = interp.name;
+          break;
+        }
+      }
+
+      // If no valid interpretation found, fall back to the original logic
+      if (distanceFurlongs === 0) {
+        if (rawDistanceValue >= 2 && rawDistanceValue <= 12) {
+          distanceFurlongs = rawDistanceValue;
+          interpretedFormat = 'furlongs (fallback)';
+        } else if (rawDistanceValue > 12 && rawDistanceValue <= 96) {
+          distanceFurlongs = rawDistanceValue / 8;
+          interpretedFormat = 'eighths (fallback)';
+        } else if (rawDistanceValue > 96 && rawDistanceValue <= 2200) {
+          distanceFurlongs = rawDistanceValue / 220;
+          interpretedFormat = 'yards (fallback)';
+        } else if (rawDistanceValue > 2200) {
+          distanceFurlongs = rawDistanceValue / 660;
+          interpretedFormat = 'feet (fallback)';
+        }
+      }
+
+      // Round to nearest valid workout distance
+      if (distanceFurlongs > 0 && !isValidWorkoutDist(distanceFurlongs)) {
+        const closest = validWorkoutDistances.reduce((prev, curr) =>
+          Math.abs(curr - distanceFurlongs) < Math.abs(prev - distanceFurlongs) ? curr : prev
+        );
+        distanceFurlongs = closest;
+        interpretedFormat += ' (rounded)';
       }
     }
 
@@ -1274,23 +1310,38 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
       }
     }
 
-    // DIAGNOSTIC TRACE - First workout only
+    // DIAGNOSTIC TRACE - First workout only (enhanced field mapping debug)
     if (i === 0) {
-      console.log('===== WORKOUT PARSER TRACE (First Workout) =====');
-      console.log('Raw field index:', WK_DISTANCE_YARDS + i, '(should be 315)');
-      console.log('Raw field value:', getField(fields, WK_DISTANCE_YARDS + i));
-      console.log('Raw value:', rawDistanceValue);
-      const detectedFormat =
-        rawDistanceValue <= 16
-          ? 'furlongs'
-          : rawDistanceValue <= 128
-            ? 'eighths'
-            : rawDistanceValue <= 1000
-              ? 'yards'
-              : 'feet';
-      console.log('Detected format:', detectedFormat);
-      console.log('Calculated distanceFurlongs:', distanceFurlongs);
-      console.log('Distance string:', distanceStr);
+      console.log(
+        '===== WORKOUT PARSER TRACE (Horse: ' + getField(fields, 44, 'UNKNOWN') + ') ====='
+      );
+      console.log('Workout Date (255):', getField(fields, WK_DATE));
+      console.log('Days Since (265):', getField(fields, WK_DAYS_SINCE));
+      console.log('Track (275):', getField(fields, WK_TRACK));
+      console.log('');
+      console.log('--- FIELD SCAN (305-340) for field mapping verification ---');
+      for (let f = 305; f <= 340; f++) {
+        const val = getField(fields, f);
+        if (val) {
+          const label =
+            f >= 306 && f <= 315
+              ? '(condition range)'
+              : f >= 316 && f <= 325
+                ? '(DISTANCE range)'
+                : f >= 326 && f <= 335
+                  ? '(PP Surface)'
+                  : f >= 336 && f <= 345
+                    ? '(Inner/Outer)'
+                    : '';
+          console.log(`Field ${f}: "${val}" ${label}`);
+        }
+      }
+      console.log('');
+      console.log('Smart interpretation result:');
+      console.log('  Field 315 raw value:', rawDistanceValue);
+      console.log('  Chosen format:', interpretedFormat);
+      console.log('  Final furlongs:', distanceFurlongs);
+      console.log('  Distance string:', distanceStr);
       console.log('=================================================');
     }
 
@@ -1331,8 +1382,9 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
       isBullet: isBullet,
       fromGate: false, // Would need separate gate indicator field
       notes: daysSince !== null ? `${daysSince}d ago` : '',
-      // Debug: store raw field value for troubleshooting field mapping issues
+      // Debug: store raw field value and interpretation for troubleshooting
       _rawDistanceValue: rawDistanceValue,
+      _interpretedFormat: interpretedFormat,
     };
 
     workouts.push(workout);
