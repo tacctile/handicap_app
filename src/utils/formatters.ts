@@ -21,7 +21,17 @@
  * @returns Formatted distance string (e.g., "6f", "1⅛m")
  */
 export const formatRacingDistance = (furlongs: number): string => {
-  if (!furlongs || isNaN(furlongs) || furlongs <= 0) return '—';
+  // DIAGNOSTIC TRACE
+  console.log('===== FORMATTER TRACE =====');
+  console.log('Input furlongs:', furlongs);
+  console.log('Type:', typeof furlongs);
+  console.log('Is < 8?:', furlongs < 8);
+
+  if (!furlongs || isNaN(furlongs) || furlongs <= 0) {
+    console.log('Returning (invalid input): —');
+    console.log('===========================');
+    return '—';
+  }
 
   // Standard race distances in furlongs and their display format
   // Using proper Unicode fractions for professional display
@@ -58,6 +68,8 @@ export const formatRacingDistance = (furlongs: number): string => {
   // Round to nearest standard distance (within 0.15 tolerance for parsing variance)
   for (const [standard, display] of Object.entries(standardDistances)) {
     if (Math.abs(furlongs - Number(standard)) < 0.15) {
+      console.log('Returning (standard match):', display);
+      console.log('===========================');
       return display;
     }
   }
@@ -67,38 +79,71 @@ export const formatRacingDistance = (furlongs: number): string => {
     // Show as furlongs for sprint distances
     const whole = Math.floor(furlongs);
     const frac = furlongs - whole;
+    let result: string;
 
-    if (frac < 0.05) return `${whole}f`;
-    if (Math.abs(frac - 0.125) < 0.05) return `${whole}⅛f`; // 1/8
-    if (Math.abs(frac - 0.25) < 0.05) return `${whole}¼f`; // 1/4
-    if (Math.abs(frac - 0.375) < 0.05) return `${whole}⅜f`; // 3/8
-    if (Math.abs(frac - 0.5) < 0.05) return `${whole}½f`; // 1/2
-    if (Math.abs(frac - 0.625) < 0.05) return `${whole}⅝f`; // 5/8
-    if (Math.abs(frac - 0.75) < 0.05) return `${whole}¾f`; // 3/4
-    if (Math.abs(frac - 0.875) < 0.05) return `${whole}⅞f`; // 7/8
+    if (frac < 0.05) result = `${whole}f`;
+    else if (Math.abs(frac - 0.125) < 0.05)
+      result = `${whole}⅛f`; // 1/8
+    else if (Math.abs(frac - 0.25) < 0.05)
+      result = `${whole}¼f`; // 1/4
+    else if (Math.abs(frac - 0.375) < 0.05)
+      result = `${whole}⅜f`; // 3/8
+    else if (Math.abs(frac - 0.5) < 0.05)
+      result = `${whole}½f`; // 1/2
+    else if (Math.abs(frac - 0.625) < 0.05)
+      result = `${whole}⅝f`; // 5/8
+    else if (Math.abs(frac - 0.75) < 0.05)
+      result = `${whole}¾f`; // 3/4
+    else if (Math.abs(frac - 0.875) < 0.05)
+      result = `${whole}⅞f`; // 7/8
+    else result = `${furlongs.toFixed(1)}f`; // For unusual fractions, show decimal
 
-    // For unusual fractions, show decimal
-    return `${furlongs.toFixed(1)}f`;
+    console.log('Returning (manual furlong calc):', result, '(whole:', whole, ', frac:', frac, ')');
+    console.log('===========================');
+    return result;
   } else {
     // Show as miles for route distances (8+ furlongs)
     const miles = furlongs / 8;
     const whole = Math.floor(miles);
     const frac = miles - whole;
+    let result: string;
 
-    if (frac < 0.05) return `${whole}m`;
-    if (Math.abs(frac - 0.0625) < 0.02) return `${whole}¹⁄₁₆m`; // 1/16
-    if (Math.abs(frac - 0.125) < 0.02) return `${whole}⅛m`; // 1/8
-    if (Math.abs(frac - 0.1875) < 0.02) return `${whole}³⁄₁₆m`; // 3/16
-    if (Math.abs(frac - 0.25) < 0.02) return `${whole}¼m`; // 1/4
-    if (Math.abs(frac - 0.3125) < 0.02) return `${whole}⁵⁄₁₆m`; // 5/16
-    if (Math.abs(frac - 0.375) < 0.02) return `${whole}³⁄₈m`; // 3/8
-    if (Math.abs(frac - 0.5) < 0.02) return `${whole}½m`; // 1/2
-    if (Math.abs(frac - 0.625) < 0.02) return `${whole}⅝m`; // 5/8
-    if (Math.abs(frac - 0.75) < 0.02) return `${whole}¾m`; // 3/4
-    if (Math.abs(frac - 0.875) < 0.02) return `${whole}⅞m`; // 7/8
+    if (frac < 0.05) result = `${whole}m`;
+    else if (Math.abs(frac - 0.0625) < 0.02)
+      result = `${whole}¹⁄₁₆m`; // 1/16
+    else if (Math.abs(frac - 0.125) < 0.02)
+      result = `${whole}⅛m`; // 1/8
+    else if (Math.abs(frac - 0.1875) < 0.02)
+      result = `${whole}³⁄₁₆m`; // 3/16
+    else if (Math.abs(frac - 0.25) < 0.02)
+      result = `${whole}¼m`; // 1/4
+    else if (Math.abs(frac - 0.3125) < 0.02)
+      result = `${whole}⁵⁄₁₆m`; // 5/16
+    else if (Math.abs(frac - 0.375) < 0.02)
+      result = `${whole}³⁄₈m`; // 3/8
+    else if (Math.abs(frac - 0.5) < 0.02)
+      result = `${whole}½m`; // 1/2
+    else if (Math.abs(frac - 0.625) < 0.02)
+      result = `${whole}⅝m`; // 5/8
+    else if (Math.abs(frac - 0.75) < 0.02)
+      result = `${whole}¾m`; // 3/4
+    else if (Math.abs(frac - 0.875) < 0.02)
+      result = `${whole}⅞m`; // 7/8
+    else result = `${miles.toFixed(2)}m`; // For unusual fractions, show decimal miles
 
-    // For unusual fractions, show decimal miles
-    return `${miles.toFixed(2)}m`;
+    console.log(
+      'Returning (manual mile calc):',
+      result,
+      '(miles:',
+      miles,
+      ', whole:',
+      whole,
+      ', frac:',
+      frac,
+      ')'
+    );
+    console.log('===========================');
+    return result;
   }
 };
 

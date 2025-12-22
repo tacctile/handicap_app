@@ -58,13 +58,14 @@ const getScoreTierClass = (score: number): string => {
 
 interface WorkoutItemProps {
   workout: Workout;
+  index: number;
 }
 
-const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
+const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index }) => {
   // Type-safe access with Record for flexible field access
   const w = workout as Workout & Record<string, unknown>;
 
-  // Format workout date safely
+  // Format workout date safely using industry standard format: "23Jul" (day + 3-letter month)
   const formatWorkoutDate = (): string => {
     const dateStr = w.date || w.workDate || w.workoutDate;
     if (!dateStr || dateStr === 'undefined' || dateStr === 'null') return '—';
@@ -90,8 +91,8 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
           'Dec',
         ];
         const month = months[parseInt(str.slice(4, 6)) - 1] || '???';
-        const day = str.slice(6, 8);
-        return `${month}${day}`;
+        const day = parseInt(str.slice(6, 8), 10); // Remove leading zero for single digits
+        return `${day}${month}`;
       }
 
       const date = new Date(str);
@@ -111,8 +112,8 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
           'Dec',
         ];
         const month = months[date.getMonth()];
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${month}${day}`;
+        const day = date.getDate(); // No padding - single digit days show as "5Jul" not "05Jul"
+        return `${day}${month}`;
       }
 
       return str.slice(0, 5) || '—';
@@ -135,6 +136,17 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
   const getWorkoutDistance = (): string => {
     const furlongs = w.distanceFurlongs;
 
+    // DIAGNOSTIC TRACE - First workout only
+    if (index === 0) {
+      console.log('===== WORKOUT COMPONENT TRACE (First Workout) =====');
+      console.log('workout object:', workout);
+      console.log('workout.distanceFurlongs:', workout.distanceFurlongs);
+      console.log('workout.distance:', workout.distance);
+      console.log('typeof distanceFurlongs:', typeof workout.distanceFurlongs);
+      console.log('w.distanceFurlongs (from Record):', w.distanceFurlongs);
+      console.log('====================================================');
+    }
+
     // Validate it's a reasonable workout distance (2f to 8f / 1 mile)
     if (typeof furlongs !== 'number' || furlongs < 1 || furlongs > 10) {
       // Try the distance string as fallback
@@ -151,22 +163,26 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
     return formatRacingDistance(furlongs);
   };
 
-  // Format surface/condition safely
+  // Format surface/condition safely using industry standard abbreviations (Equibase/DRF)
+  // ft=fast, gd=good, sy=sloppy, my=muddy, fm=firm, yl=yielding, sf=soft, hy=heavy
   const formatWorkoutCond = (): string => {
     const cond = w.trackCondition || w.surface || w.condition;
     if (!cond) return '—';
     const str = String(cond).toLowerCase().trim();
     if (!str || str === 'nan' || str === 'undefined' || str === 'null') return '—';
     const abbrevs: Record<string, string> = {
-      fast: 'fst',
+      fast: 'ft',
       good: 'gd',
-      sloppy: 'sly',
+      sloppy: 'sy',
       muddy: 'my',
       firm: 'fm',
+      yielding: 'yl',
+      soft: 'sf',
+      heavy: 'hy',
       dirt: 'd',
       turf: 't',
     };
-    return abbrevs[str] || str.slice(0, 3).toLowerCase() || '—';
+    return abbrevs[str] || str.slice(0, 2).toLowerCase() || '—';
   };
 
   // Get workout ranking safely
@@ -213,7 +229,9 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
     <div className={`horse-workouts__item ${isBullet ? 'horse-workouts__item--bullet' : ''}`}>
       <span className="horse-workouts__date">{formatWorkoutDate()}</span>
       <span className="horse-workouts__track">{formatWorkoutTrack()}</span>
-      <span className="horse-workouts__dist">{getWorkoutDistance()}</span>
+      <span className="horse-workouts__dist" title={`Raw furlongs: ${w.distanceFurlongs}`}>
+        {getWorkoutDistance()}
+      </span>
       <span className="horse-workouts__surface">{getWorkoutSurface()}</span>
       <span className="horse-workouts__cond">{formatWorkoutCond()}</span>
       <span className="horse-workouts__rank">{getWorkoutRanking()}</span>
@@ -675,7 +693,11 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
           {horse.workouts && horse.workouts.length > 0 ? (
             <div className="horse-workouts__list">
               {horse.workouts.slice(0, 5).map((workout: Workout, index: number) => (
-                <WorkoutItem key={`${workout.date}-${workout.track}-${index}`} workout={workout} />
+                <WorkoutItem
+                  key={`${workout.date}-${workout.track}-${index}`}
+                  workout={workout}
+                  index={index}
+                />
               ))}
             </div>
           ) : (
