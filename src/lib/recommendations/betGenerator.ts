@@ -186,20 +186,21 @@ function generateTier1Bets(
     })
   );
 
-  // 3. Exacta box (top 2-3 horses in tier)
-  if (horses.length >= 2) {
-    const boxHorses = horses.slice(0, Math.min(3, horses.length));
+  // 3. Exacta box (top 2-3 horses across ALL tiers - includes MEDIUM confidence)
+  // Use allClassifiedHorses to include tier 2/3 horses that statistically hit top 2
+  const exactaBoxHorses = allClassifiedHorses.slice(0, Math.min(3, allClassifiedHorses.length));
+  if (exactaBoxHorses.length >= 2) {
     const boxAmount = Math.round(baseAmount / 2);
     bets.push(
       createGeneratedBet({
         type: 'exacta_box',
         typeName: 'Exacta Box',
-        description: `Exacta box with top ${boxHorses.length} contenders`,
-        horses: boxHorses,
+        description: `Exacta box with top ${exactaBoxHorses.length} contenders`,
+        horses: exactaBoxHorses,
         amount: boxAmount,
         tier: 'tier1',
         raceNumber,
-        confidence: averageConfidence(boxHorses),
+        confidence: averageConfidence(exactaBoxHorses),
         icon: 'swap_vert',
       })
     );
@@ -227,41 +228,23 @@ function generateTier1Bets(
     );
   }
 
-  // 5. Trifecta box (top 3 if applicable)
-  if (horses.length >= 3) {
-    const triHorses = horses.slice(0, 3);
+  // 5. Trifecta box (top 3 across ALL tiers - includes MEDIUM confidence)
+  // Use allClassifiedHorses to include tier 2/3 horses that statistically hit top 3
+  const trifectaBoxHorses = allClassifiedHorses.slice(0, 3);
+  if (trifectaBoxHorses.length >= 3) {
     bets.push(
       createGeneratedBet({
         type: 'trifecta_box',
         typeName: 'Trifecta Box',
-        description: 'Trifecta box with top 3 chalk',
-        horses: triHorses,
+        description: 'Trifecta box with top 3 contenders',
+        horses: trifectaBoxHorses,
         amount: 1,
         tier: 'tier1',
         raceNumber,
-        confidence: averageConfidence(triHorses) - 15,
+        confidence: averageConfidence(trifectaBoxHorses) - 15,
         icon: 'view_list',
       })
     );
-  } else if (horses.length >= 2) {
-    // Use tier 1 + next best horse for trifecta
-    const nextBest = allClassifiedHorses.find((h) => !horses.includes(h));
-    if (nextBest && horses[0] && horses[1]) {
-      const triHorses = [horses[0], horses[1], nextBest];
-      bets.push(
-        createGeneratedBet({
-          type: 'trifecta_box',
-          typeName: 'Trifecta Box',
-          description: 'Trifecta box: chalk with one alternative',
-          horses: triHorses,
-          amount: 1,
-          tier: 'tier1',
-          raceNumber,
-          confidence: 55,
-          icon: 'view_list',
-        })
-      );
-    }
   }
 
   return bets;
