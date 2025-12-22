@@ -61,13 +61,34 @@ const getTierClass = (value: number): string => {
   return 'bad';
 };
 
-// Determine score tier class based on total score
-const getScoreTierClass = (score: number): string => {
-  if (score >= 200) return 'elite';
-  if (score >= 180) return 'good';
-  if (score >= 160) return 'fair';
-  if (score >= 140) return 'neutral';
-  return 'bad';
+// Get tier color CSS variable for total score
+const getTierColor = (score: number): string => {
+  if (score >= 180) return 'var(--color-tier-elite)';
+  if (score >= 160) return 'var(--color-tier-good)';
+  if (score >= 140) return 'var(--color-tier-fair)';
+  if (score >= 120) return 'var(--color-tier-neutral)';
+  return 'var(--color-tier-bad)';
+};
+
+// Get confidence level color
+const getConfidenceColor = (confidence: string | undefined): string => {
+  switch (confidence?.toUpperCase()) {
+    case 'HIGH':
+      return 'var(--color-tier-good)';
+    case 'MEDIUM':
+      return 'var(--color-tier-fair)';
+    case 'LOW':
+      return 'var(--color-tier-bad)';
+    default:
+      return 'var(--color-text-secondary)';
+  }
+};
+
+// Get category bar fill class based on percentage
+const getCategoryFillClass = (percent: number): string => {
+  if (percent >= 70) return 'high';
+  if (percent >= 40) return 'medium';
+  return 'low';
 };
 
 // Format earnings with K/M abbreviations
@@ -165,35 +186,6 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title }) => (
     <div className="section-header__line" />
   </div>
 );
-
-// ============================================================================
-// SCORE CATEGORY CARD COMPONENT
-// ============================================================================
-
-interface ScoreCategoryCardProps {
-  label: string;
-  score: number;
-  max: number;
-}
-
-const ScoreCategoryCard: React.FC<ScoreCategoryCardProps> = ({ label, score, max }) => {
-  const percentage = max > 0 ? (score / max) * 100 : 0;
-
-  return (
-    <div className="score-category-card">
-      <span className="score-category-card__label">{label}</span>
-      <span className="score-category-card__value">
-        {score}/{max}
-      </span>
-      <div className="score-category-card__bar-wrap">
-        <div
-          className="score-category-card__bar"
-          style={{ width: `${Math.min(percentage, 100)}%` }}
-        />
-      </div>
-    </div>
-  );
-};
 
 // ============================================================================
 // WORKOUT ITEM COMPONENT
@@ -370,7 +362,6 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
 
   const tierClass = getTierClass(valuePercent);
   const scoreTotal = score?.total || 0;
-  const scoreTierClass = getScoreTierClass(scoreTotal);
   const scoreBreakdown = score?.breakdown;
   const scorePercentage = Math.round((scoreTotal / SCORE_LIMITS.total) * 100);
 
@@ -385,79 +376,72 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
       {/* ================================================================
           SECTION 1: FURLONG SCORE ANALYSIS
           ================================================================ */}
-      <section className="horse-expanded__section horse-expanded__section--scoring">
-        <SectionHeader title="FURLONG SCORE ANALYSIS" />
+      <section className="furlong-score-analysis">
+        <div className="furlong-score-analysis__header">FURLONG SCORE ANALYSIS</div>
 
-        <div className="scoring-panel">
-          {/* Total Score with Large Progress Bar */}
-          <div className="scoring-panel__total">
-            <div className="scoring-panel__total-header">
-              <span className="scoring-panel__total-label">TOTAL SCORE</span>
+        <div className="furlong-score-analysis__content">
+          {/* Total Score - Hero (Left Side) */}
+          <div className="furlong-score__total">
+            <div className="furlong-score__total-number">
               <span
-                className={`scoring-panel__total-value scoring-panel__total-value--${scoreTierClass}`}
+                className="furlong-score__total-value"
+                style={{ color: getTierColor(scoreTotal) }}
               >
                 {scoreTotal}
-                <span className="scoring-panel__total-max">/{SCORE_LIMITS.total}</span>
-                <span className="scoring-panel__total-percent">({scorePercentage}%)</span>
               </span>
+              <span className="furlong-score__total-max">/{SCORE_LIMITS.total}</span>
+              <span className="furlong-score__total-percent">({scorePercentage}%)</span>
             </div>
-            <div className="scoring-panel__total-bar-wrap">
+            <div className="furlong-score__total-bar">
               <div
-                className={`scoring-panel__total-bar scoring-panel__total-bar--${scoreTierClass}`}
-                style={{ width: `${scorePercentage}%` }}
+                className="furlong-score__total-bar-fill"
+                style={{
+                  width: `${scorePercentage}%`,
+                  backgroundColor: getTierColor(scoreTotal),
+                }}
               />
+            </div>
+            <div className="furlong-score__total-label furlong-score__total-confidence">
+              <span
+                className="furlong-score__total-confidence-value"
+                style={{ color: getConfidenceColor(score?.confidenceLevel) }}
+              >
+                {score?.confidenceLevel?.toUpperCase() || 'HIGH'}
+              </span>
+              <span>CONFIDENCE</span>
             </div>
           </div>
 
-          {/* Category Cards */}
-          {scoreBreakdown ? (
-            <div className="scoring-panel__categories">
-              <ScoreCategoryCard
-                label="CONNECTIONS"
-                score={scoreBreakdown.connections?.total || 0}
-                max={SCORE_LIMITS.connections}
-              />
-              <ScoreCategoryCard
-                label="POST"
-                score={scoreBreakdown.postPosition?.total || 0}
-                max={SCORE_LIMITS.postPosition}
-              />
-              <ScoreCategoryCard
-                label="SPEED/CLASS"
-                score={scoreBreakdown.speedClass?.total || 0}
-                max={SCORE_LIMITS.speedClass}
-              />
-              <ScoreCategoryCard
-                label="FORM"
-                score={scoreBreakdown.form?.total || 0}
-                max={SCORE_LIMITS.form}
-              />
-              <ScoreCategoryCard
-                label="EQUIPMENT"
-                score={scoreBreakdown.equipment?.total || 0}
-                max={SCORE_LIMITS.equipment}
-              />
-              <ScoreCategoryCard
-                label="PACE"
-                score={scoreBreakdown.pace?.total || 0}
-                max={SCORE_LIMITS.pace}
-              />
-            </div>
-          ) : (
-            <div className="scoring-panel__no-data">Score breakdown not available</div>
-          )}
+          {/* Category Scores - Supporting (Right Side) */}
+          <div className="furlong-score__categories">
+            {[
+              { key: 'connections', label: 'CONNECTIONS', max: SCORE_LIMITS.connections },
+              { key: 'postPosition', label: 'POST', max: SCORE_LIMITS.postPosition },
+              { key: 'speedClass', label: 'SPEED/CLASS', max: SCORE_LIMITS.speedClass },
+              { key: 'form', label: 'FORM', max: SCORE_LIMITS.form },
+              { key: 'equipment', label: 'EQUIPMENT', max: SCORE_LIMITS.equipment },
+              { key: 'pace', label: 'PACE', max: SCORE_LIMITS.pace },
+            ].map((cat) => {
+              const value = scoreBreakdown?.[cat.key as keyof typeof scoreBreakdown]?.total || 0;
+              const percent = (value / cat.max) * 100;
+              const fillClass = getCategoryFillClass(percent);
 
-          {/* Confidence Indicator */}
-          {score?.confidenceLevel && (
-            <div className="scoring-panel__confidence">
-              <span className="scoring-panel__confidence-label">CONFIDENCE:</span>
-              <span
-                className={`scoring-panel__confidence-value scoring-panel__confidence-value--${score.confidenceLevel}`}
-              >
-                {score.confidenceLevel.toUpperCase()}
-              </span>
-            </div>
-          )}
+              return (
+                <div key={cat.key} className="furlong-score__category">
+                  <span className="furlong-score__category-value">
+                    {value}/{cat.max}
+                  </span>
+                  <div className="furlong-score__category-bar">
+                    <div
+                      className={`furlong-score__category-bar-fill furlong-score__category-bar-fill--${fillClass}`}
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                  <span className="furlong-score__category-label">{cat.label}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 

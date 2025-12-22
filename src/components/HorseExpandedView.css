@@ -144,220 +144,202 @@
 }
 
 /* ============================================================================
-   SECTION 1: FURLONG SCORE ANALYSIS
+   SECTION 1: FURLONG SCORE ANALYSIS (Redesigned - Compact Horizontal Layout)
    ============================================================================ */
 
-.scoring-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+/* Section Container */
+.furlong-score-analysis {
+  position: relative;
+  padding: 16px 20px;
+  background: var(--color-elevated, #1a1a1c);
+  border-radius: 8px;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--section-border);
 }
 
-/* Total Score Area */
-.scoring-panel__total {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.scoring-panel__total-header {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-}
-
-.scoring-panel__total-label {
+.furlong-score-analysis__header {
   font-family: var(--font-sans);
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: var(--color-text-tertiary, #6e6e70);
+  color: var(--color-text-secondary, #b4b4b6);
+  margin-bottom: 12px;
 }
 
-.scoring-panel__total-value {
+.furlong-score-analysis__content {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+}
+
+/* Total Score - Hero (Left Side) */
+.furlong-score__total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-right: 24px;
+  border-right: 1px solid var(--section-border, #2a2a2c);
+  min-width: 140px;
+}
+
+.furlong-score__total-number {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.furlong-score__total-value {
   font-family: var(--font-sans);
-  font-size: 28px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
+  font-size: 32px;
+  font-weight: 700;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
-.scoring-panel__total-max {
+.furlong-score__total-max {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--color-text-secondary, #b4b4b6);
+}
+
+.furlong-score__total-percent {
+  font-family: var(--font-sans);
   font-size: 16px;
   font-weight: 500;
-  color: var(--color-text-tertiary, #6e6e70);
+  color: var(--color-text-secondary, #b4b4b6);
+  margin-left: 8px;
 }
 
-.scoring-panel__total-percent {
-  font-size: 14px;
-  font-weight: 600;
-  margin-left: 4px;
-}
-
-/* Total score tier colors */
-.scoring-panel__total-value--elite,
-.scoring-panel__total-percent--elite {
-  color: var(--color-tier-elite, #22c55e);
-}
-.scoring-panel__total-value--good,
-.scoring-panel__total-percent--good {
-  color: var(--color-tier-good, #4ade80);
-}
-.scoring-panel__total-value--fair,
-.scoring-panel__total-percent--fair {
-  color: var(--color-tier-fair, #eab308);
-}
-.scoring-panel__total-value--neutral,
-.scoring-panel__total-percent--neutral {
-  color: var(--color-tier-neutral, #f97316);
-}
-.scoring-panel__total-value--bad,
-.scoring-panel__total-percent--bad {
-  color: var(--color-tier-bad, #ef4444);
-}
-
-/* Total Progress Bar */
-.scoring-panel__total-bar-wrap {
+.furlong-score__total-bar {
   width: 100%;
-  max-width: 400px;
   height: 8px;
-  background: var(--color-base, #0a0a0b);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
+  margin-top: 8px;
   overflow: hidden;
 }
 
-.scoring-panel__total-bar {
+.furlong-score__total-bar-fill {
   height: 100%;
   border-radius: 4px;
-  transition: width 400ms ease;
+  transition: width 0.3s ease;
 }
 
-.scoring-panel__total-bar--elite {
-  background: var(--color-tier-elite, #22c55e);
+.furlong-score__total-label {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary, #6e6e70);
+  margin-top: 6px;
 }
-.scoring-panel__total-bar--good {
+
+.furlong-score__total-confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.furlong-score__total-confidence-value {
+  font-weight: 700;
+}
+
+/* Category Scores - Supporting (Right Side) */
+.furlong-score__categories {
+  display: flex;
+  flex: 1;
+  gap: 20px;
+  padding-left: 24px;
+}
+
+.furlong-score__category {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 70px;
+}
+
+.furlong-score__category-value {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary, #eeeff1);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.furlong-score__category-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.furlong-score__category-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Bar colors based on fill percentage */
+.furlong-score__category-bar-fill--high {
   background: var(--color-tier-good, #4ade80);
 }
-.scoring-panel__total-bar--fair {
+
+.furlong-score__category-bar-fill--medium {
   background: var(--color-tier-fair, #eab308);
 }
-.scoring-panel__total-bar--neutral {
-  background: var(--color-tier-neutral, #f97316);
-}
-.scoring-panel__total-bar--bad {
+
+.furlong-score__category-bar-fill--low {
   background: var(--color-tier-bad, #ef4444);
 }
 
-/* Category Cards Grid */
-.scoring-panel__categories {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 12px;
+.furlong-score__category-label {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary, #6e6e70);
+  margin-top: 4px;
 }
 
+/* Responsive: Stack on smaller screens */
 @media (max-width: 900px) {
-  .scoring-panel__categories {
-    grid-template-columns: repeat(3, 1fr);
+  .furlong-score-analysis__content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .furlong-score__total {
+    border-right: none;
+    border-bottom: 1px solid var(--section-border, #2a2a2c);
+    padding-right: 0;
+    padding-bottom: 16px;
+    min-width: auto;
+  }
+
+  .furlong-score__categories {
+    padding-left: 0;
+    flex-wrap: wrap;
+  }
+
+  .furlong-score__category {
+    min-width: calc(33.33% - 14px);
   }
 }
 
 @media (max-width: 600px) {
-  .scoring-panel__categories {
-    grid-template-columns: repeat(2, 1fr);
+  .furlong-score__category {
+    min-width: calc(50% - 10px);
   }
-}
-
-/* Score Category Card */
-.score-category-card {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
-  background: var(--color-base, #0a0a0b);
-  border: 1px solid var(--subtle-border);
-  border-radius: 6px;
-}
-
-.score-category-card__label {
-  font-family: var(--font-sans);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary, #6e6e70);
-}
-
-.score-category-card__value {
-  font-family: var(--font-sans);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-text-primary, #eeeff1);
-  font-variant-numeric: tabular-nums;
-}
-
-.score-category-card__bar-wrap {
-  width: 100%;
-  height: 4px;
-  background: var(--color-elevated, #1a1a1c);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-top: 2px;
-}
-
-.score-category-card__bar {
-  height: 100%;
-  background: var(--color-primary, #19abb5);
-  border-radius: 2px;
-  transition: width 300ms ease;
-}
-
-/* Confidence */
-.scoring-panel__confidence {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.scoring-panel__confidence-label {
-  font-family: var(--font-sans);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary, #6e6e70);
-}
-
-.scoring-panel__confidence-value {
-  font-family: var(--font-sans);
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border-radius: 4px;
-}
-
-.scoring-panel__confidence-value--high {
-  background: var(--color-tier-elite, #22c55e);
-  color: #000;
-}
-
-.scoring-panel__confidence-value--medium {
-  background: var(--color-tier-fair, #eab308);
-  color: #000;
-}
-
-.scoring-panel__confidence-value--low {
-  background: var(--color-tier-bad, #ef4444);
-  color: #fff;
-}
-
-.scoring-panel__no-data {
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-style: italic;
-  color: var(--color-text-tertiary, #6e6e70);
-  padding: 12px 0;
 }
 
 /* ============================================================================
