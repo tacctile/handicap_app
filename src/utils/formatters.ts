@@ -68,10 +68,14 @@ export const formatRacingDistance = (furlongs: number): string => {
     const whole = Math.floor(furlongs);
     const frac = furlongs - whole;
 
-    if (frac < 0.1) return `${whole}f`;
-    if (Math.abs(frac - 0.5) < 0.1) return `${whole}½f`;
-    if (Math.abs(frac - 0.25) < 0.1) return `${whole}¼f`;
-    if (Math.abs(frac - 0.75) < 0.1) return `${whole}¾f`;
+    if (frac < 0.05) return `${whole}f`;
+    if (Math.abs(frac - 0.125) < 0.05) return `${whole}⅛f`; // 1/8
+    if (Math.abs(frac - 0.25) < 0.05) return `${whole}¼f`; // 1/4
+    if (Math.abs(frac - 0.375) < 0.05) return `${whole}⅜f`; // 3/8
+    if (Math.abs(frac - 0.5) < 0.05) return `${whole}½f`; // 1/2
+    if (Math.abs(frac - 0.625) < 0.05) return `${whole}⅝f`; // 5/8
+    if (Math.abs(frac - 0.75) < 0.05) return `${whole}¾f`; // 3/4
+    if (Math.abs(frac - 0.875) < 0.05) return `${whole}⅞f`; // 7/8
 
     // For unusual fractions, show decimal
     return `${furlongs.toFixed(1)}f`;
