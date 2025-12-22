@@ -1251,6 +1251,17 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
       distanceStr = `${distanceFurlongs.toFixed(1).replace('.0', '')}f`;
     }
 
+    // DIAGNOSTIC TRACE - First workout only
+    if (i === 0) {
+      console.log('===== WORKOUT PARSER TRACE (First Workout) =====');
+      console.log('Raw field index:', WK_DISTANCE_YARDS + i, '(should be 315)');
+      console.log('Raw field value:', getField(fields, WK_DISTANCE_YARDS + i));
+      console.log('Parsed as distanceYards:', distanceYards);
+      console.log('Calculated distanceFurlongs:', distanceFurlongs);
+      console.log('Distance string:', distanceStr);
+      console.log('=================================================');
+    }
+
     // Track code (2 fields per work: track + inner/outer indicator)
     const track = getField(fields, WK_TRACK + i * 2, 'UNK');
 

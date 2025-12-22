@@ -58,9 +58,10 @@ const getScoreTierClass = (score: number): string => {
 
 interface WorkoutItemProps {
   workout: Workout;
+  index: number;
 }
 
-const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
+const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index }) => {
   // Type-safe access with Record for flexible field access
   const w = workout as Workout & Record<string, unknown>;
 
@@ -134,6 +135,17 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
   // distanceFurlongs is calculated by parser (yards / 220)
   const getWorkoutDistance = (): string => {
     const furlongs = w.distanceFurlongs;
+
+    // DIAGNOSTIC TRACE - First workout only
+    if (index === 0) {
+      console.log('===== WORKOUT COMPONENT TRACE (First Workout) =====');
+      console.log('workout object:', workout);
+      console.log('workout.distanceFurlongs:', workout.distanceFurlongs);
+      console.log('workout.distance:', workout.distance);
+      console.log('typeof distanceFurlongs:', typeof workout.distanceFurlongs);
+      console.log('w.distanceFurlongs (from Record):', w.distanceFurlongs);
+      console.log('====================================================');
+    }
 
     // Validate it's a reasonable workout distance (2f to 8f / 1 mile)
     if (typeof furlongs !== 'number' || furlongs < 1 || furlongs > 10) {
@@ -675,7 +687,11 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
           {horse.workouts && horse.workouts.length > 0 ? (
             <div className="horse-workouts__list">
               {horse.workouts.slice(0, 5).map((workout: Workout, index: number) => (
-                <WorkoutItem key={`${workout.date}-${workout.track}-${index}`} workout={workout} />
+                <WorkoutItem
+                  key={`${workout.date}-${workout.track}-${index}`}
+                  workout={workout}
+                  index={index}
+                />
               ))}
             </div>
           ) : (
