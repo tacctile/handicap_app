@@ -1217,6 +1217,8 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
 
     // Parse distance (convert from yards to furlongs: 220 yards per furlong)
     // DRF stores workout distances in yards (e.g., 1320y = 6f, 1760y = 1 mile)
+    // Common workout distances:
+    //   880y = 4f, 1100y = 5f, 1320y = 6f, 1540y = 7f, 1760y = 8f/1m
     const distanceYards = parseFloatSafe(getField(fields, WK_DISTANCE_YARDS + i));
     const distanceFurlongs = distanceYards > 0 ? distanceYards / 220 : 0;
     // Format as standard workout distances
