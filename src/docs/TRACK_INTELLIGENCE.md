@@ -32,6 +32,28 @@ src/data/tracks/
 5. If Track Unknown → Fallback Defaults Applied + Confidence Reduced
 ```
 
+### Available Data Getter Functions (v1.1)
+
+The following functions are available in `trackIntelligence.ts` for retrieving track-specific data:
+
+| Function                                               | Parameters                                      | Returns                             | Usage                             |
+| ------------------------------------------------------ | ----------------------------------------------- | ----------------------------------- | --------------------------------- |
+| `getTrackData(trackCode)`                              | string                                          | TrackData \| undefined              | Full track data object            |
+| `getPostPositionBias(trackCode, distance, surface)`    | string, string, surface                         | PostPositionBias \| undefined       | Post position win rates           |
+| `getSpeedBias(trackCode, surface)`                     | string, surface                                 | SpeedBias \| undefined              | Speed/pace bias data              |
+| `getTrackMeasurements(trackCode, surface)`             | string, surface                                 | TrackMeasurements \| undefined      | Stretch length, circumference     |
+| `getSurfaceCharacteristics(trackCode, surface)`        | string, surface                                 | SurfaceCharacteristics \| undefined | Drainage, composition             |
+| `getSeasonalPattern(trackCode, month?)`                | string, number?                                 | SeasonalPattern \| undefined        | Current season data               |
+| `getSeasonalSpeedAdjustment(trackCode, month?)`        | string, number?                                 | number                              | Speed figure adjustment (±points) |
+| `getStretchLengthFactor(trackCode, surface)`           | string, surface                                 | {factor, stretchLength, reasoning}  | Closer analysis factor            |
+| `getDrainageFactor(trackCode, surface)`                | string, surface                                 | {factor, drainage, reasoning}       | Wet track amplifier               |
+| `getParTime(trackCode, furlongs, surface, classLevel)` | string, number, surface, class                  | number \| undefined                 | Par time in seconds               |
+| `calculateParTimeAdjustment(...)`                      | trackCode, furlongs, surface, class, actualTime | {adjustment, reasoning}             | Speed adjustment points           |
+| `isTrackIntelligenceAvailable(trackCode)`              | string                                          | boolean                             | Check if track has data           |
+
+**Surface parameter:** `'dirt' | 'turf' | 'synthetic' | 'all-weather'`
+**Class level parameter:** `'claiming' | 'allowance' | 'stakes'`
+
 ---
 
 ## TRACK DATA SCHEMA
@@ -620,6 +642,8 @@ All other active North American tracks.
 
 ---
 
-_Document Version: 1.0_
+_Document Version: 1.1_
+_Last Updated: December 2025_
 _Status: Complete Track Intelligence Schema Specification_
 _Integration: Provides track-specific data to universal Scoring Engine_
+_Changes in v1.1: Added new getter functions for drainage, stretch length, seasonal patterns, and par times_

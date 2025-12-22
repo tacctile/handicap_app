@@ -528,6 +528,46 @@ Track bias data from Track Intelligence Database determines running style advant
 - Track condition suits horse perfectly: +5 points
 - Seasonal timing optimal: +3 points
 
+### Track Condition Integration (v1.1)
+
+**NEW:** Track condition selection now dynamically affects scoring in real-time. Available conditions are surface-aware:
+
+**Dirt Conditions (best to worst):**
+
+- Fast → Good → Slow → Muddy → Sloppy → Heavy
+
+**Turf Conditions (best to worst):**
+
+- Firm → Good → Yielding → Soft → Heavy
+
+**Track Condition Scoring Impact:**
+
+- Wet track conditions trigger mudder/non-mudder analysis
+- Off-track bonuses/penalties applied based on horse's wet track history
+- Drainage factor amplifies wet track importance at poorly draining tracks
+
+### Seasonal Speed Adjustments (v1.1)
+
+**NEW:** Speed figures are now adjusted based on seasonal patterns from Track Intelligence Database.
+
+```
+Adjusted Speed Score = Base Speed Score + Seasonal Adjustment (±3 points max)
+
+Seasonal Factors:
+- Track playing fast (summer, dry): +1 to +3 points
+- Track playing slow (winter, wet): -1 to -3 points
+- Normal conditions: No adjustment
+```
+
+| Season/Pattern     | Speed Figure Adjustment |
+| ------------------ | ----------------------- |
+| Peak summer (fast) | +2 to +3 points         |
+| Normal conditions  | 0 points                |
+| Winter (slow)      | -1 to -2 points         |
+| Rainy season       | -2 to -3 points         |
+
+The system automatically detects the current month and applies track-specific seasonal patterns.
+
 ### Quality Control Verification
 
 **Mandatory Checks Before Final Score:**
@@ -589,6 +629,8 @@ Track bias data from Track Intelligence Database determines running style advant
 
 ---
 
-_Document Version: 1.0_
+_Document Version: 1.1_
+_Last Updated: December 2025_
 _Status: Track-Agnostic Universal Scoring Engine_
 _Integration: Requires Track Intelligence Database for track-specific values_
+_Changes in v1.1: Added track condition real-time integration, seasonal speed adjustments, surface-aware condition dropdown_

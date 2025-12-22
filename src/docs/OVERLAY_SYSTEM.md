@@ -145,6 +145,30 @@ If 2 horses have similar EP1 figures (within 2 points) and both under 75:
 - Outside speed (posts 6+) in hot pace: -3 points (trapped wide)
 - Middle posts (4-5) perfect for any pace scenario: +3 points
 
+### Stretch Length Factor Integration
+
+**NEW (v1.1):** Closer scoring is now adjusted based on track-specific stretch length from Track Intelligence Database.
+
+```
+Stretch Length Impact:
+- Long stretch (1100+ ft): Closers get +2 to +6 bonus points
+- Average stretch (1000-1099 ft): Standard scoring
+- Short stretch (900-999 ft): Closers get -2 to -4 penalty
+- Very short stretch (<900 ft): Closers get -4 to -6 penalty
+
+Speed Horse Benefit:
+- Short stretch (<900 ft): Speed horses get +1 to +4 bonus
+```
+
+| Stretch Length | Closer Adjustment | Speed Adjustment |
+| -------------- | ----------------- | ---------------- |
+| Long (1100+ft) | +4 to +6 points   | No adjustment    |
+| Average        | +1 to +2 points   | No adjustment    |
+| Short (900ft)  | -2 to -4 points   | +1 to +2 points  |
+| Very Short     | -4 to -6 points   | +2 to +4 points  |
+
+**Example:** A deep closer at Belmont (1097ft stretch) gets approximately +5 points. The same closer at a bullring with 850ft stretch gets -5 points.
+
 ### Track Bias Integration with Current Conditions
 
 **Weekly Bias Calculation:**
@@ -544,19 +568,42 @@ Parameters:
 
 **Wet Track Specialists:**
 
-| Scenario                        | Adjustment |
-| ------------------------------- | ---------- |
-| Sire 20%+ wet track record      | +6 points  |
-| Horse's wet track success       | +5 points  |
-| Proven mudder in wet conditions | +8 points  |
+| Scenario                        | Base Adjustment |
+| ------------------------------- | --------------- |
+| Sire 20%+ wet track record      | +6 points       |
+| Horse's wet track success       | +5 points       |
+| Proven mudder in wet conditions | +8 points       |
 
 **Poor Wet Track Performers:**
 
-| Scenario                                 | Adjustment |
-| ---------------------------------------- | ---------- |
-| Poor wet track breeding                  | -4 points  |
-| Historical wet track failures            | -6 points  |
-| Surface specialist on changed conditions | -5 points  |
+| Scenario                                 | Base Adjustment |
+| ---------------------------------------- | --------------- |
+| Poor wet track breeding                  | -4 points       |
+| Historical wet track failures            | -6 points       |
+| Surface specialist on changed conditions | -5 points       |
+
+### Track Drainage Factor Integration
+
+**NEW (v1.1):** Wet track bonuses/penalties are now amplified or reduced based on track-specific drainage characteristics from the Track Intelligence Database.
+
+```
+Adjusted Wet Score = Base Wet Score × Drainage Factor
+
+Drainage Factors:
+- Poor Drainage: 1.5× (wet conditions persist longer)
+- Fair Drainage: 1.25×
+- Good Drainage: 1.0× (standard)
+- Excellent Drainage: 0.75× (track dries quickly, wet history less relevant)
+```
+
+| Track Drainage | Proven Mudder Bonus | Struggles in Mud Penalty |
+| -------------- | ------------------- | ------------------------ |
+| Poor           | +9 to +12 points    | -6 to -9 points          |
+| Fair           | +7 to +10 points    | -5 to -8 points          |
+| Good           | +5 to +8 points     | -4 to -6 points          |
+| Excellent      | +4 to +6 points     | -3 to -5 points          |
+
+**Example:** A proven mudder (+8 base) at a track with poor drainage (1.5× factor) receives +12 points instead of +8.
 
 ---
 
@@ -793,6 +840,8 @@ For horses with <8 lifetime starts:
 
 ---
 
-_Document Version: 1.0_
+_Document Version: 1.1_
+_Last Updated: December 2025_
 _Status: Complete Overlay System Specification_
 _Integration: Applied after Base Score calculation, before Betting Tier assignment_
+_Changes in v1.1: Added drainage factor for wet track scoring, stretch length factor for closer analysis, track condition real-time integration_

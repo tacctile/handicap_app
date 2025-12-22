@@ -22,14 +22,19 @@
  * Overflow: Recorded as confidence modifier
  */
 
-import type { HorseEntry, RaceHeader, PastPerformance } from '../../types/drf';
+import type { HorseEntry, RaceHeader, PastPerformance, TrackCondition } from '../../types/drf';
 import {
   parseRunningStyle,
   analyzePaceScenario,
   type RunningStyleCode,
   type PaceScenarioType,
 } from './paceAnalysis';
-import { getSpeedBias, isTrackIntelligenceAvailable } from '../trackIntelligence';
+import {
+  getSpeedBias,
+  isTrackIntelligenceAvailable,
+  getDrainageFactor,
+  getStretchLengthFactor,
+} from '../trackIntelligence';
 
 // ============================================================================
 // TYPES
@@ -249,7 +254,31 @@ export function calculatePaceOverlay(
     }
   }
 
-  // 5. Post position advantage by pace scenario
+  // 5. Stretch length factor for closers
+  // Long stretches give closers more room to rally
+  const stretchData = getStretchLengthFactor(raceHeader.trackCode, raceHeader.surface);
+  if (stretchData.stretchLength > 0) {
+    if (profile.style === 'C') {
+      if (stretchData.factor >= 1.1) {
+        // Long stretch benefits closers
+        const stretchBonus = Math.round(4 * (stretchData.factor - 1) * 10); // 2-6 points
+        totalScore += stretchBonus;
+        breakdown.push({ factor: stretchData.reasoning, points: stretchBonus });
+      } else if (stretchData.factor <= 0.9) {
+        // Short stretch hurts closers
+        const stretchPenalty = Math.round(-4 * (1 - stretchData.factor) * 10); // -2 to -6 points
+        totalScore += stretchPenalty;
+        breakdown.push({ factor: stretchData.reasoning, points: stretchPenalty });
+      }
+    } else if (profile.style === 'E' && stretchData.factor <= 0.9) {
+      // Short stretch helps speed horses
+      const stretchBonus = Math.round(3 * (1 - stretchData.factor) * 10); // 1-4 points
+      totalScore += stretchBonus;
+      breakdown.push({ factor: 'Short stretch favors speed', points: stretchBonus });
+    }
+  }
+
+  // 6. Post position advantage by pace scenario
   const post = horse.postPosition;
   if (paceScenario.scenario === 'soft' && profile.style === 'E' && post <= 3) {
     const postBonus = 5;
@@ -858,10 +887,12 @@ function countRecentTrainerWins(horse: HorseEntry, _allHorses: HorseEntry[]): nu
 
 /**
  * Calculate Section F: Distance & Surface Optimization
+ * @param trackConditionOverride - User-selected track condition (overrides raceHeader)
  */
 export function calculateDistanceSurfaceOverlay(
   horse: HorseEntry,
-  raceHeader: RaceHeader
+  raceHeader: RaceHeader,
+  trackConditionOverride?: TrackCondition
 ): OverlaySectionScore {
   const breakdown: Array<{ factor: string; points: number }> = [];
   let totalScore = 0;
@@ -956,9 +987,10 @@ export function calculateDistanceSurfaceOverlay(
     }
   }
 
-  // 3. Wet track specialist (simplified - check track condition)
-  const trackCondition = raceHeader.trackCondition;
-  const isWet = ['muddy', 'sloppy', 'heavy', 'yielding', 'soft'].includes(trackCondition);
+  // 3. Wet track specialist (enhanced with drainage factor)
+  // Use override if provided (user changed track condition), otherwise use race header
+  const trackCondition = trackConditionOverride ?? raceHeader.trackCondition;
+  const isWet = ['muddy', 'sloppy', 'heavy', 'yielding', 'soft', 'slow'].includes(trackCondition);
 
   if (isWet && pps.length > 0) {
     const wetRaces = pps.filter((pp) =>
@@ -966,14 +998,33 @@ export function calculateDistanceSurfaceOverlay(
     );
     const wetWins = wetRaces.filter((pp) => pp.finishPosition === 1).length;
 
+    // Get drainage factor - poor drainage amplifies wet track importance
+    const drainageData = getDrainageFactor(raceHeader.trackCode, raceHeader.surface);
+    const drainageFactor = drainageData.factor;
+
     if (wetWins >= 2) {
-      const bonus = 6;
-      totalScore += bonus;
-      breakdown.push({ factor: 'Proven mudder', points: bonus });
+      // Apply drainage factor to bonus (poor drainage = bigger boost)
+      const baseBonus = 6;
+      const adjustedBonus = Math.round(baseBonus * drainageFactor);
+      totalScore += adjustedBonus;
+      breakdown.push({
+        factor: drainageFactor > 1 ? 'Proven mudder (poor drainage boost)' : 'Proven mudder',
+        points: adjustedBonus,
+      });
     } else if (wetRaces.length > 0 && wetRaces.every((pp) => pp.finishPosition > 5)) {
-      const penalty = -4;
+      // Apply drainage factor to penalty too
+      const basePenalty = -4;
+      const adjustedPenalty = Math.round(basePenalty * drainageFactor);
+      totalScore += adjustedPenalty;
+      breakdown.push({
+        factor: drainageFactor > 1 ? 'Struggles on wet (poor drainage)' : 'Struggles on wet track',
+        points: adjustedPenalty,
+      });
+    } else if (wetRaces.length === 0 && drainageFactor > 1) {
+      // No wet track experience on a poorly draining track = slight concern
+      const penalty = -2;
       totalScore += penalty;
-      breakdown.push({ factor: 'Struggles on wet track', points: penalty });
+      breakdown.push({ factor: 'No wet track experience (poor drainage track)', points: penalty });
     }
   }
 
@@ -1117,12 +1168,14 @@ function getConfidenceLevelFromOverflow(overflow: number): OverlayResult['confid
  * @param horse - The horse to analyze
  * @param raceHeader - Race information
  * @param allHorses - All horses in the race
+ * @param trackConditionOverride - User-selected track condition (overrides raceHeader)
  * @returns Complete overlay result with section breakdowns
  */
 export function calculateOverlayScore(
   horse: HorseEntry,
   raceHeader: RaceHeader,
-  allHorses: HorseEntry[]
+  allHorses: HorseEntry[],
+  trackConditionOverride?: TrackCondition
 ): OverlayResult {
   // Calculate each section
   const paceAndBias = calculatePaceOverlay(horse, allHorses, raceHeader);
@@ -1130,7 +1183,11 @@ export function calculateOverlayScore(
   const tripAnalysis = calculateTripOverlay(horse, raceHeader);
   const classMovement = calculateClassOverlay(horse, raceHeader, allHorses);
   const connectionEdges = calculateConnectionOverlay(horse, raceHeader, allHorses);
-  const distanceSurface = calculateDistanceSurfaceOverlay(horse, raceHeader);
+  const distanceSurface = calculateDistanceSurfaceOverlay(
+    horse,
+    raceHeader,
+    trackConditionOverride
+  );
   const headToHead = calculateHeadToHeadOverlay(horse, raceHeader, allHorses);
 
   // Sum all sections
