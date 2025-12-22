@@ -409,7 +409,7 @@ function calculateHorseScoreWithContext(
   horse: HorseEntry,
   context: RaceScoringContext,
   _currentOdds: string,
-  _trackCondition: TrackCondition,
+  trackCondition: TrackCondition,
   isScratched: boolean
 ): HorseScore {
   // Scratched horses get zero score
@@ -567,7 +567,13 @@ function calculateHorseScoreWithContext(
   const baseScore = enforceBaseScoreBoundaries(rawBaseTotal);
 
   // Calculate overlay adjustment (±50 points on top of base score)
-  const overlayResult = calculateOverlayScore(horse, context.raceHeader, context.horses);
+  // Pass user-selected track condition to affect wet track scoring
+  const overlayResult = calculateOverlayScore(
+    horse,
+    context.raceHeader,
+    context.horses,
+    trackCondition
+  );
   // Enforce overlay boundaries (-50 to +50)
   const overlayScore = enforceOverlayBoundaries(overlayResult.cappedScore);
 

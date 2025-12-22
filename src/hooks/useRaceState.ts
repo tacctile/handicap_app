@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import type { TrackCondition } from '../types/drf';
 
-// Track condition options
-export type TrackCondition = 'fast' | 'good' | 'muddy' | 'sloppy' | 'yielding' | 'firm';
+// Re-export for convenience
+export type { TrackCondition };
 
 export interface TrackConditionOption {
   value: TrackCondition;
@@ -9,13 +10,22 @@ export interface TrackConditionOption {
   surface: 'dirt' | 'turf' | 'both';
 }
 
+// Complete track conditions for dirt and turf surfaces
+// Dirt: fast → good → slow → muddy → sloppy → heavy
+// Turf: firm → good → yielding → soft → heavy
 export const TRACK_CONDITIONS: TrackConditionOption[] = [
+  // Dirt conditions (best to worst)
   { value: 'fast', label: 'Fast', surface: 'dirt' },
   { value: 'good', label: 'Good', surface: 'both' },
+  { value: 'slow', label: 'Slow', surface: 'dirt' },
   { value: 'muddy', label: 'Muddy', surface: 'dirt' },
   { value: 'sloppy', label: 'Sloppy', surface: 'dirt' },
-  { value: 'yielding', label: 'Yielding (Turf)', surface: 'turf' },
-  { value: 'firm', label: 'Firm (Turf)', surface: 'turf' },
+  // Turf conditions (best to worst)
+  { value: 'firm', label: 'Firm', surface: 'turf' },
+  { value: 'yielding', label: 'Yielding', surface: 'turf' },
+  { value: 'soft', label: 'Soft', surface: 'turf' },
+  // Heavy applies to both surfaces
+  { value: 'heavy', label: 'Heavy', surface: 'both' },
 ];
 
 // Updated odds mapping: horse index -> new odds string

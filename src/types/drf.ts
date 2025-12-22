@@ -16,15 +16,18 @@
 
 export type Surface = 'dirt' | 'turf' | 'synthetic' | 'all-weather';
 
+// Dirt conditions: fast (best) → good → slow → muddy → sloppy → heavy (worst)
+// Turf conditions: firm (best) → good → yielding → soft → heavy (worst)
 export type TrackCondition =
-  | 'fast'
-  | 'good'
-  | 'muddy'
-  | 'sloppy'
-  | 'heavy'
-  | 'firm'
-  | 'yielding'
-  | 'soft';
+  | 'fast' // Dirt: optimal, dry
+  | 'good' // Both: slightly off
+  | 'slow' // Dirt: drying out, between good and muddy
+  | 'muddy' // Dirt: wet, holding moisture
+  | 'sloppy' // Dirt: standing water
+  | 'heavy' // Both: deep, very wet
+  | 'firm' // Turf: optimal, dry
+  | 'yielding' // Turf: soft but not soggy
+  | 'soft'; // Turf: wetter than yielding
 
 export type WorkoutType = 'breeze' | 'handily' | 'driving' | 'easy' | 'unknown';
 

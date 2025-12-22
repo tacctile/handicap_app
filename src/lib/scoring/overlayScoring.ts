@@ -22,7 +22,7 @@
  * Overflow: Recorded as confidence modifier
  */
 
-import type { HorseEntry, RaceHeader, PastPerformance } from '../../types/drf';
+import type { HorseEntry, RaceHeader, PastPerformance, TrackCondition } from '../../types/drf';
 import {
   parseRunningStyle,
   analyzePaceScenario,
@@ -858,10 +858,12 @@ function countRecentTrainerWins(horse: HorseEntry, _allHorses: HorseEntry[]): nu
 
 /**
  * Calculate Section F: Distance & Surface Optimization
+ * @param trackConditionOverride - User-selected track condition (overrides raceHeader)
  */
 export function calculateDistanceSurfaceOverlay(
   horse: HorseEntry,
-  raceHeader: RaceHeader
+  raceHeader: RaceHeader,
+  trackConditionOverride?: TrackCondition
 ): OverlaySectionScore {
   const breakdown: Array<{ factor: string; points: number }> = [];
   let totalScore = 0;
@@ -957,8 +959,9 @@ export function calculateDistanceSurfaceOverlay(
   }
 
   // 3. Wet track specialist (simplified - check track condition)
-  const trackCondition = raceHeader.trackCondition;
-  const isWet = ['muddy', 'sloppy', 'heavy', 'yielding', 'soft'].includes(trackCondition);
+  // Use override if provided (user changed track condition), otherwise use race header
+  const trackCondition = trackConditionOverride ?? raceHeader.trackCondition;
+  const isWet = ['muddy', 'sloppy', 'heavy', 'yielding', 'soft', 'slow'].includes(trackCondition);
 
   if (isWet && pps.length > 0) {
     const wetRaces = pps.filter((pp) =>
@@ -1117,12 +1120,14 @@ function getConfidenceLevelFromOverflow(overflow: number): OverlayResult['confid
  * @param horse - The horse to analyze
  * @param raceHeader - Race information
  * @param allHorses - All horses in the race
+ * @param trackConditionOverride - User-selected track condition (overrides raceHeader)
  * @returns Complete overlay result with section breakdowns
  */
 export function calculateOverlayScore(
   horse: HorseEntry,
   raceHeader: RaceHeader,
-  allHorses: HorseEntry[]
+  allHorses: HorseEntry[],
+  trackConditionOverride?: TrackCondition
 ): OverlayResult {
   // Calculate each section
   const paceAndBias = calculatePaceOverlay(horse, allHorses, raceHeader);
@@ -1130,7 +1135,11 @@ export function calculateOverlayScore(
   const tripAnalysis = calculateTripOverlay(horse, raceHeader);
   const classMovement = calculateClassOverlay(horse, raceHeader, allHorses);
   const connectionEdges = calculateConnectionOverlay(horse, raceHeader, allHorses);
-  const distanceSurface = calculateDistanceSurfaceOverlay(horse, raceHeader);
+  const distanceSurface = calculateDistanceSurfaceOverlay(
+    horse,
+    raceHeader,
+    trackConditionOverride
+  );
   const headToHead = calculateHeadToHeadOverlay(horse, raceHeader, allHorses);
 
   // Sum all sections
