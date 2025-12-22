@@ -9,6 +9,18 @@ interface PPLineProps {
 }
 
 export const PPLine: React.FC<PPLineProps> = ({ pp, index }) => {
+  // TEMPORARY DEBUG - Remove after diagnostic
+  if (index === 0) {
+    console.log('PP Object - All Fields:', Object.keys(pp));
+    console.log('PP Object - Full Data:', JSON.stringify(pp, null, 2).slice(0, 2000));
+    console.log('PP Target Fields:', {
+      finalTime: pp.finalTime,
+      finalTimeFormatted: pp.finalTimeFormatted,
+      daysSinceLast: pp.daysSinceLast,
+      equipment: pp.equipment,
+      medication: pp.medication,
+    });
+  }
   // Format date using industry standard: "9Aug25" (day + 3-letter month + 2-digit year)
   const formatDate = (dateStr: string | number | undefined): string => {
     if (!dateStr) return '—';
