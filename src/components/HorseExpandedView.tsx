@@ -422,7 +422,17 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
               { key: 'equipment', label: 'EQUIPMENT', max: SCORE_LIMITS.equipment },
               { key: 'pace', label: 'PACE', max: SCORE_LIMITS.pace },
             ].map((cat) => {
-              const value = scoreBreakdown?.[cat.key as keyof typeof scoreBreakdown]?.total || 0;
+              const category =
+                scoreBreakdown?.[
+                  cat.key as
+                    | 'connections'
+                    | 'postPosition'
+                    | 'speedClass'
+                    | 'form'
+                    | 'equipment'
+                    | 'pace'
+                ];
+              const value = category?.total || 0;
               const percent = (value / cat.max) * 100;
               const fillClass = getCategoryFillClass(percent);
 
