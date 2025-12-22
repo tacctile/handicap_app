@@ -107,6 +107,31 @@ export {
 } from './valueBetting';
 
 // ============================================================================
+// ODDS CONFIDENCE EXPORTS
+// ============================================================================
+
+export {
+  // Main function
+  getOddsWithSource,
+
+  // Helper functions
+  getOddsSourceLabel,
+  getOddsSourceDescription,
+  isConfidenceHighEnough,
+  getConfidenceLevel,
+  getConfidenceColor,
+  getEVConfidenceMultiplier,
+
+  // Constants
+  ODDS_CONFIDENCE,
+  DEFAULT_FALLBACK_ODDS,
+
+  // Types
+  type OddsSource,
+  type OddsInfo,
+} from './oddsConfidence';
+
+// ============================================================================
 // CONFIDENCE CALIBRATION EXPORTS
 // ============================================================================
 

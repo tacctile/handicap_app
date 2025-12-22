@@ -62,6 +62,24 @@ export interface FeatureFlagConfig {
    *   - Set to 999 to effectively disable (include all horses)
    */
   boxSeparationThreshold: number;
+
+  /**
+   * Odds Confidence Tracking
+   *
+   * When enabled, the system tracks the SOURCE of odds data (live, morning line,
+   * or default fallback) and assigns confidence values to each source.
+   *
+   * This allows downstream systems (value detection, bet sizing) to adjust
+   * calculations based on how reliable the odds data is.
+   *
+   * Confidence values:
+   *   - Live (95): User-entered odds, reflects current market
+   *   - Morning Line (60): DRF data, reasonable but can diverge
+   *   - Default Fallback (20): No data available, using 5-1 default
+   *
+   * Set to false to disable confidence tracking and treat all odds equally.
+   */
+  useOddsConfidence: boolean;
 }
 
 // ============================================================================
@@ -77,6 +95,7 @@ export interface FeatureFlagConfig {
 export const FEATURE_FLAGS: FeatureFlagConfig = {
   useBoxSeparation: true,
   boxSeparationThreshold: 20,
+  useOddsConfidence: true,
 };
 
 // ============================================================================
@@ -98,6 +117,13 @@ export function getBoxSeparationThreshold(): number {
 }
 
 /**
+ * Check if odds confidence tracking is enabled
+ */
+export function isOddsConfidenceEnabled(): boolean {
+  return FEATURE_FLAGS.useOddsConfidence;
+}
+
+/**
  * Override feature flags at runtime (useful for testing)
  *
  * @param overrides - Partial config to merge with defaults
@@ -114,6 +140,9 @@ export function overrideFeatureFlags(
   if (overrides.boxSeparationThreshold !== undefined) {
     FEATURE_FLAGS.boxSeparationThreshold = overrides.boxSeparationThreshold;
   }
+  if (overrides.useOddsConfidence !== undefined) {
+    FEATURE_FLAGS.useOddsConfidence = overrides.useOddsConfidence;
+  }
 
   return previous;
 }
@@ -124,4 +153,5 @@ export function overrideFeatureFlags(
 export function resetFeatureFlags(): void {
   FEATURE_FLAGS.useBoxSeparation = true;
   FEATURE_FLAGS.boxSeparationThreshold = 20;
+  FEATURE_FLAGS.useOddsConfidence = true;
 }
