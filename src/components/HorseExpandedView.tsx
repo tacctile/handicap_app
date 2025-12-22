@@ -232,7 +232,7 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index }) => {
       <span className="horse-workouts__track">{formatWorkoutTrack()}</span>
       <span
         className="horse-workouts__dist"
-        title={`Raw field: ${w._rawDistanceValue} → ${w.distanceFurlongs}f`}
+        title={`Raw: ${w._rawDistanceValue} (${w._interpretedFormat || 'unknown'}) → ${w.distanceFurlongs}f`}
       >
         {getWorkoutDistance()}
       </span>

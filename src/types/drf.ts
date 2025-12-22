@@ -276,6 +276,8 @@ export interface Workout {
   notes: string;
   /** Debug: raw field value before conversion (for troubleshooting) */
   _rawDistanceValue?: number;
+  /** Debug: how the raw value was interpreted */
+  _interpretedFormat?: string;
 }
 
 // ============================================================================
