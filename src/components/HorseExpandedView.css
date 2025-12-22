@@ -198,7 +198,7 @@
 
 .furlong-score__win-prob {
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--color-text-secondary, #b4b4b6);
 }
@@ -278,15 +278,15 @@
 
 .furlong-score__tier-value {
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.5px;
 }
 
 .furlong-score__tier-label {
   font-family: var(--font-sans);
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 400;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: var(--color-text-tertiary, #6e6e70);
@@ -302,15 +302,15 @@
 
 .furlong-score__quality-value {
   font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   letter-spacing: 0.3px;
 }
 
 .furlong-score__quality-label {
   font-family: var(--font-sans);
-  font-size: 9px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 400;
   letter-spacing: 0.3px;
   text-transform: uppercase;
   color: var(--color-text-tertiary, #6e6e70);
