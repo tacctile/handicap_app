@@ -106,10 +106,10 @@ export const VALUE_ICONS: Record<ValueClassification, string> = {
 
 /** Labels for value classification */
 export const VALUE_LABELS: Record<ValueClassification, string> = {
-  massive_overlay: 'Massive Overlay',
-  strong_overlay: 'Strong Overlay',
-  moderate_overlay: 'Moderate Overlay',
-  slight_overlay: 'Slight Overlay',
+  massive_overlay: 'Massive Value',
+  strong_overlay: 'Strong Value',
+  moderate_overlay: 'Moderate Value',
+  slight_overlay: 'Slight Value',
   fair_price: 'Fair Price',
   underlay: 'Underlay',
 };

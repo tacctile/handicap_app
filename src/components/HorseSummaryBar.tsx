@@ -1,6 +1,7 @@
 import React from 'react';
 import './HorseSummaryBar.css';
 import type { HorseEntry } from '../types/drf';
+import { getScoreColor } from '../lib/scoring';
 
 interface TierInfo {
   label: string;
@@ -19,7 +20,7 @@ const getValueTier = (valuePercent: number, isScratched: boolean): TierInfo => {
 
   if (valuePercent >= 100) {
     return {
-      label: 'STRONG OVERLAY',
+      label: 'STRONG VALUE',
       className: 'elite',
       isElite: true,
     };
@@ -27,7 +28,7 @@ const getValueTier = (valuePercent: number, isScratched: boolean): TierInfo => {
 
   if (valuePercent >= 50) {
     return {
-      label: 'OVERLAY',
+      label: 'VALUE',
       className: 'good',
       isElite: false,
     };
@@ -50,7 +51,7 @@ const getValueTier = (valuePercent: number, isScratched: boolean): TierInfo => {
   }
 
   return {
-    label: 'UNDERLAY',
+    label: 'POOR VALUE',
     className: 'bad',
     isElite: false,
   };
@@ -178,7 +179,10 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
 
       {/* Column 5: Score */}
       <div className="horse-summary-bar__score">
-        <span className="horse-summary-bar__score-value">
+        <span
+          className="horse-summary-bar__score-value"
+          style={{ color: getScoreColor(score, isScratched) }}
+        >
           {score}/{maxScore}
         </span>
       </div>

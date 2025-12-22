@@ -1256,10 +1256,10 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
               <th className="text-left hide-on-small">Jockey</th>
               <th className="w-20 text-right">Odds</th>
               <th className="w-16 text-center" title="Fair Odds based on score">
-                Fair
+                Fair Odds
               </th>
-              <th className="w-20 text-center" title="Overlay percentage (value)">
-                Overlay
+              <th className="w-20 text-center" title="Value percentage compared to fair odds">
+                Value
               </th>
               <th className="w-16 text-center" title="Expected Value per $1">
                 EV

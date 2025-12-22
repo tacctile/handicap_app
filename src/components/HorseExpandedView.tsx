@@ -72,9 +72,18 @@ const getTierColor = (score: number): string => {
   return 'var(--color-tier-bad)'; // Red - Weak
 };
 
-// Get confidence level color
-const getConfidenceColor = (confidence: string | undefined): string => {
-  switch (confidence?.toUpperCase()) {
+// Get tier name for total score
+const getTierName = (score: number): string => {
+  if (score >= 200) return 'ELITE';
+  if (score >= 180) return 'STRONG';
+  if (score >= 160) return 'GOOD';
+  if (score >= 140) return 'FAIR';
+  return 'WEAK';
+};
+
+// Get data quality color
+const getDataQualityColor = (quality: string | undefined): string => {
+  switch (quality?.toUpperCase()) {
     case 'HIGH':
       return 'var(--color-tier-good)';
     case 'MEDIUM':
@@ -411,30 +420,61 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
               </span>
               <span className="furlong-score__breakdown-separator">•</span>
               <span className="furlong-score__breakdown-item">
-                Overlay: {overlayScore >= 0 ? '+' : ''}
+                Edge: {overlayScore >= 0 ? '+' : ''}
                 {overlayScore}
               </span>
             </div>
-            <div className="furlong-score__total-label furlong-score__total-confidence">
-              <span
-                className="furlong-score__total-confidence-value"
-                style={{ color: getConfidenceColor(score?.confidenceLevel) }}
-              >
-                {score?.confidenceLevel?.toUpperCase() || 'HIGH'}
-              </span>
-              <span>CONFIDENCE</span>
+            <div className="furlong-score__rating-section">
+              <div className="furlong-score__tier-rating">
+                <span
+                  className="furlong-score__tier-value"
+                  style={{ color: getTierColor(scoreTotal) }}
+                >
+                  {getTierName(scoreTotal)}
+                </span>
+                <span className="furlong-score__tier-label">RATING</span>
+              </div>
+              <div className="furlong-score__data-quality">
+                <span
+                  className="furlong-score__quality-value"
+                  style={{ color: getDataQualityColor(score?.confidenceLevel) }}
+                >
+                  {score?.confidenceLevel?.toUpperCase() || 'HIGH'}
+                </span>
+                <span className="furlong-score__quality-label">DATA QUALITY</span>
+              </div>
             </div>
           </div>
 
           {/* Category Scores - Supporting (Right Side) */}
           <div className="furlong-score__categories">
             {[
-              { key: 'connections', label: 'CONNECTIONS', max: SCORE_LIMITS.connections },
-              { key: 'postPosition', label: 'POST', max: SCORE_LIMITS.postPosition },
-              { key: 'speedClass', label: 'SPEED/CLASS', max: SCORE_LIMITS.speedClass },
-              { key: 'form', label: 'FORM', max: SCORE_LIMITS.form },
-              { key: 'equipment', label: 'EQUIPMENT', max: SCORE_LIMITS.equipment },
-              { key: 'pace', label: 'PACE', max: SCORE_LIMITS.pace },
+              {
+                key: 'connections',
+                label: 'CONNECTIONS',
+                desc: 'Trainer & Jockey Stats',
+                max: SCORE_LIMITS.connections,
+              },
+              {
+                key: 'postPosition',
+                label: 'POST',
+                desc: 'Starting Gate Advantage',
+                max: SCORE_LIMITS.postPosition,
+              },
+              {
+                key: 'speedClass',
+                label: 'SPEED/CLASS',
+                desc: 'Speed Figures & Class',
+                max: SCORE_LIMITS.speedClass,
+              },
+              { key: 'form', label: 'FORM', desc: 'Recent Performance', max: SCORE_LIMITS.form },
+              {
+                key: 'equipment',
+                label: 'EQUIPMENT',
+                desc: 'Equipment Changes',
+                max: SCORE_LIMITS.equipment,
+              },
+              { key: 'pace', label: 'PACE', desc: 'Running Style & Pace', max: SCORE_LIMITS.pace },
             ].map((cat) => {
               const category =
                 scoreBreakdown?.[
@@ -452,6 +492,7 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
 
               return (
                 <div key={cat.key} className="furlong-score__category">
+                  <span className="furlong-score__category-label">{cat.label}</span>
                   <span className="furlong-score__category-value">
                     {value}/{cat.max}
                   </span>
@@ -461,7 +502,7 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                       style={{ width: `${percent}%` }}
                     />
                   </div>
-                  <span className="furlong-score__category-label">{cat.label}</span>
+                  <span className="furlong-score__category-desc">{cat.desc}</span>
                 </div>
               );
             })}

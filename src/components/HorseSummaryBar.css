@@ -177,7 +177,7 @@
 
 .horse-summary-bar__score-value {
   font-weight: 600;
-  color: var(--color-primary);
+  /* Color set dynamically via inline style based on score tier */
 }
 
 /* Fair odds - right aligned */
