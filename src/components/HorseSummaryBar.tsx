@@ -2,6 +2,7 @@ import React from 'react';
 import './HorseSummaryBar.css';
 import type { HorseEntry } from '../types/drf';
 import { getScoreColor } from '../lib/scoring';
+import { scoreToWinProbability } from '../lib/scoring/overlayAnalysis';
 
 interface TierInfo {
   label: string;
@@ -9,7 +10,17 @@ interface TierInfo {
   isElite: boolean;
 }
 
-const getValueTier = (valuePercent: number, isScratched: boolean): TierInfo => {
+interface WinConfidenceInfo {
+  label: string;
+  className: string;
+  probability: number;
+}
+
+/**
+ * Get odds edge tier based on overlay percentage
+ * These labels reflect ODDS EDGE, not win probability
+ */
+const getOddsEdgeTier = (valuePercent: number, isScratched: boolean): TierInfo => {
   if (isScratched) {
     return {
       label: 'SCRATCHED',
@@ -20,7 +31,7 @@ const getValueTier = (valuePercent: number, isScratched: boolean): TierInfo => {
 
   if (valuePercent >= 100) {
     return {
-      label: 'STRONG VALUE',
+      label: 'OVERLAY',
       className: 'elite',
       isElite: true,
     };
@@ -28,7 +39,7 @@ const getValueTier = (valuePercent: number, isScratched: boolean): TierInfo => {
 
   if (valuePercent >= 50) {
     return {
-      label: 'VALUE',
+      label: 'OVERLAY',
       className: 'good',
       isElite: false,
     };
@@ -36,7 +47,7 @@ const getValueTier = (valuePercent: number, isScratched: boolean): TierInfo => {
 
   if (valuePercent >= 10) {
     return {
-      label: 'FAIR VALUE',
+      label: 'FAIR ODDS',
       className: 'fair',
       isElite: false,
     };
@@ -44,16 +55,62 @@ const getValueTier = (valuePercent: number, isScratched: boolean): TierInfo => {
 
   if (valuePercent >= -10) {
     return {
-      label: 'NEUTRAL',
+      label: 'FAIR PRICE',
       className: 'neutral',
       isElite: false,
     };
   }
 
   return {
-    label: 'POOR VALUE',
+    label: 'UNDERLAY',
     className: 'bad',
     isElite: false,
+  };
+};
+
+/**
+ * Get WIN CONFIDENCE tier based on score
+ * This reflects actual win probability from the algorithm
+ */
+const getWinConfidence = (score: number, isScratched: boolean): WinConfidenceInfo => {
+  if (isScratched) {
+    return {
+      label: '—',
+      className: 'scratched',
+      probability: 0,
+    };
+  }
+
+  const probability = scoreToWinProbability(score);
+
+  if (probability >= 55) {
+    return {
+      label: 'HIGH',
+      className: 'high',
+      probability,
+    };
+  }
+
+  if (probability >= 40) {
+    return {
+      label: 'MEDIUM',
+      className: 'medium',
+      probability,
+    };
+  }
+
+  if (probability >= 25) {
+    return {
+      label: 'PLAYABLE',
+      className: 'playable',
+      probability,
+    };
+  }
+
+  return {
+    label: 'LOW',
+    className: 'low',
+    probability,
   };
 };
 
@@ -109,8 +166,11 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   // const lifetimePlaces = horse.lifetimePlaces || 0;
   // const lifetimeShows = horse.lifetimeShows || 0;
 
-  // Get tier info for styling
-  const tier = getValueTier(valuePercent, isScratched);
+  // Get odds edge tier for styling (based on overlay %)
+  const tier = getOddsEdgeTier(valuePercent, isScratched);
+
+  // Get WIN CONFIDENCE tier (based on score/win probability)
+  const winConfidence = getWinConfidence(score, isScratched);
 
   const handleRowClick = () => {
     if (!isScratched) {
@@ -187,18 +247,23 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         </span>
       </div>
 
-      {/* Column 6: Fair Odds */}
+      {/* Column 6: Win Confidence (based on score) */}
+      <div className={`horse-summary-bar__confidence horse-summary-bar__confidence--${winConfidence.className}`}>
+        <span className="horse-summary-bar__confidence-label">{winConfidence.label}</span>
+      </div>
+
+      {/* Column 7: Fair Odds */}
       <div className="horse-summary-bar__fair">
         {fairOddsNum}-{fairOddsDen}
       </div>
 
-      {/* Column 7: Value Percentage */}
+      {/* Column 8: Edge Percentage (overlay %) */}
       <div className={`horse-summary-bar__value horse-summary-bar__value--${tier.className}`}>
         {valuePercent >= 0 ? '+' : ''}
         {valuePercent.toFixed(0)}%
       </div>
 
-      {/* Column 8: Rating Badge */}
+      {/* Column 9: Odds Edge Badge */}
       <div className="horse-summary-bar__tier-wrapper">
         <div className={`horse-summary-bar__tier horse-summary-bar__tier--${tier.className}`}>
           {tier.isElite && <span className="horse-summary-bar__diamond">◆</span>}
@@ -206,7 +271,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         </div>
       </div>
 
-      {/* Column 9: Expand Chevron */}
+      {/* Column 10: Expand Chevron */}
       <div className="horse-summary-bar__expand-wrapper">
         <span className="material-icons horse-summary-bar__expand">expand_more</span>
       </div>

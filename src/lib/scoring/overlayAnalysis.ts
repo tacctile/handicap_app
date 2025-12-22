@@ -104,12 +104,12 @@ export const VALUE_ICONS: Record<ValueClassification, string> = {
   underlay: 'do_not_disturb',
 };
 
-/** Labels for value classification */
+/** Labels for value classification (odds edge terminology) */
 export const VALUE_LABELS: Record<ValueClassification, string> = {
-  massive_overlay: 'Massive Value',
-  strong_overlay: 'Strong Value',
-  moderate_overlay: 'Moderate Value',
-  slight_overlay: 'Slight Value',
+  massive_overlay: 'Strong Overlay',
+  strong_overlay: 'Overlay',
+  moderate_overlay: 'Fair Odds',
+  slight_overlay: 'Fair Odds',
   fair_price: 'Fair Price',
   underlay: 'Underlay',
 };

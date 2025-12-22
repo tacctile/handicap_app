@@ -1275,7 +1275,13 @@
   align-items: flex-end;
 }
 
-/* Rating column - center */
+/* Win Confidence column - center */
+.horse-list-header__cell--confidence {
+  text-align: center;
+  align-items: center;
+}
+
+/* Rating/Odds Edge column - center */
 .horse-list-header__cell--rating {
   text-align: center;
   align-items: center;

@@ -587,7 +587,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             ) : (
               <div className="horse-list">
-                {/* Column Headers - 9 columns */}
+                {/* Column Headers - 10 columns */}
                 <div className="horse-list-header">
                   {/* Column 1: Scratch/Compare icons */}
                   <div className="horse-list-header__cell horse-list-header__cell--icons">
@@ -608,20 +608,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     SCORE
                   </div>
 
-                  {/* Column 6: Fair Odds */}
+                  {/* Column 6: Win Confidence */}
+                  <div className="horse-list-header__cell horse-list-header__cell--confidence">
+                    WIN CONF
+                  </div>
+
+                  {/* Column 7: Fair Odds */}
                   <div className="horse-list-header__cell horse-list-header__cell--fair">FAIR</div>
 
-                  {/* Column 7: Value */}
+                  {/* Column 8: Edge % */}
                   <div className="horse-list-header__cell horse-list-header__cell--value">
-                    VALUE
+                    EDGE %
                   </div>
 
-                  {/* Column 8: Rating */}
+                  {/* Column 9: Odds Edge */}
                   <div className="horse-list-header__cell horse-list-header__cell--rating">
-                    RATING
+                    ODDS EDGE
                   </div>
 
-                  {/* Column 9: Expand */}
+                  {/* Column 10: Expand */}
                   <div className="horse-list-header__cell horse-list-header__cell--expand">
                     {/* Empty */}
                   </div>
