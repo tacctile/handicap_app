@@ -32,6 +32,13 @@ import { logger } from '../../services/logging';
 import { calculateBetAmount, scaleBetsByBankroll } from './betSizing';
 import { generateWindowInstruction } from './windowInstructions';
 import { generateBetExplanation, generateBetNarrative } from './betExplanations';
+import {
+  selectBoxHorses,
+  EXACTA_BOX_CONFIG,
+  TRIFECTA_BOX_CONFIG,
+  SUPERFECTA_BOX_CONFIG,
+  type BoxSelectionResult,
+} from './boxSelection';
 
 // ============================================================================
 // TYPES
@@ -186,25 +193,32 @@ function generateTier1Bets(
     })
   );
 
-  // 3. Exacta box (top 4 horses by ADJUSTED SCORE - combines win probability + value)
-  // Analysis showed MEDIUM confidence horses frequently hit 2nd place
-  // 4-horse box = 12 combos vs 6 for 3-horse (2x cost, much better coverage)
-  const exactaBoxHorses = allClassifiedHorses.slice(0, Math.min(4, allClassifiedHorses.length));
-  if (exactaBoxHorses.length >= 2) {
+  // 3. Exacta box (top horses by ADJUSTED SCORE with score separation check)
+  // Uses box separation logic to exclude horses far below leader
+  // Threshold: 20 points (one tier's worth of difference)
+  const exactaSelection = selectBoxHorses(allClassifiedHorses, EXACTA_BOX_CONFIG);
+  if (exactaSelection.isValidBox) {
+    const exactaBoxHorses = exactaSelection.selectedHorses;
     const boxAmount = Math.round(baseAmount / 2);
-    bets.push(
-      createGeneratedBet({
-        type: 'exacta_box',
-        typeName: 'Exacta Box',
-        description: `Exacta box with top ${exactaBoxHorses.length} contenders`,
-        horses: exactaBoxHorses,
-        amount: boxAmount,
-        tier: 'tier1',
-        raceNumber,
-        confidence: averageConfidence(exactaBoxHorses),
-        icon: 'swap_vert',
-      })
-    );
+    const bet = createGeneratedBet({
+      type: 'exacta_box',
+      typeName: 'Exacta Box',
+      description: exactaSelection.summary,
+      horses: exactaBoxHorses,
+      amount: boxAmount,
+      tier: 'tier1',
+      raceNumber,
+      confidence: averageConfidence(exactaBoxHorses),
+      icon: 'swap_vert',
+    });
+    // Add exclusion reasons to explanation if any horses were excluded
+    if (exactaSelection.excludedHorses.length > 0) {
+      bet.explanation = [
+        ...bet.explanation,
+        ...formatExclusionExplanations(exactaSelection),
+      ];
+    }
+    bets.push(bet);
   }
 
   // 4. Exacta key (this horse over field)
@@ -229,24 +243,31 @@ function generateTier1Bets(
     );
   }
 
-  // 5. Trifecta box (top 4 horses by ADJUSTED SCORE - combines win probability + value)
-  // Analysis showed MEDIUM confidence horses frequently hit 2nd/3rd place
-  // 4-horse box = 24 combos vs 6 for 3-horse (4x cost, catches more scenarios)
-  const trifectaBoxHorses = allClassifiedHorses.slice(0, Math.min(4, allClassifiedHorses.length));
-  if (trifectaBoxHorses.length >= 3) {
-    bets.push(
-      createGeneratedBet({
-        type: 'trifecta_box',
-        typeName: 'Trifecta Box',
-        description: `Trifecta box with top ${trifectaBoxHorses.length} contenders`,
-        horses: trifectaBoxHorses,
-        amount: 1,
-        tier: 'tier1',
-        raceNumber,
-        confidence: averageConfidence(trifectaBoxHorses) - 15,
-        icon: 'view_list',
-      })
-    );
+  // 5. Trifecta box (top horses by ADJUSTED SCORE with score separation check)
+  // Uses box separation logic to exclude horses far below leader
+  // Threshold: 20 points (one tier's worth of difference)
+  const trifectaSelection = selectBoxHorses(allClassifiedHorses, TRIFECTA_BOX_CONFIG);
+  if (trifectaSelection.isValidBox) {
+    const trifectaBoxHorses = trifectaSelection.selectedHorses;
+    const bet = createGeneratedBet({
+      type: 'trifecta_box',
+      typeName: 'Trifecta Box',
+      description: trifectaSelection.summary,
+      horses: trifectaBoxHorses,
+      amount: 1,
+      tier: 'tier1',
+      raceNumber,
+      confidence: averageConfidence(trifectaBoxHorses) - 15,
+      icon: 'view_list',
+    });
+    // Add exclusion reasons to explanation if any horses were excluded
+    if (trifectaSelection.excludedHorses.length > 0) {
+      bet.explanation = [
+        ...bet.explanation,
+        ...formatExclusionExplanations(trifectaSelection),
+      ];
+    }
+    bets.push(bet);
   }
 
   // 6. MEDIUM+ Trifecta Key - keys top 2 horses WITH all MEDIUM+ confidence horses
@@ -507,25 +528,37 @@ function generateTier3Bets(
     );
   }
 
-  // 3. Superfecta coverage
-  if (allClassifiedHorses.length >= 4) {
-    const superHorses = [
-      bombHorse,
-      ...allClassifiedHorses.filter((h) => h.horseIndex !== bombHorse.horseIndex).slice(0, 3),
-    ];
-    bets.push(
-      createGeneratedBet({
-        type: 'superfecta',
-        typeName: 'Superfecta',
-        description: 'Superfecta box with bomb included',
-        horses: superHorses,
-        amount: 0.1,
-        tier: 'tier3',
-        raceNumber,
-        confidence: bombHorse.confidence - 25,
-        icon: 'format_list_numbered',
-      })
-    );
+  // 3. Superfecta coverage (with box separation for contenders)
+  // Apply box separation to select contenders, then add bombHorse
+  const superfectaContenders = allClassifiedHorses.filter(
+    (h) => h.horseIndex !== bombHorse.horseIndex
+  );
+  const superfectaSelection = selectBoxHorses(superfectaContenders, {
+    ...SUPERFECTA_BOX_CONFIG,
+    maxHorses: 3, // Need 3 contenders + bombHorse = 4 total
+    minHorses: 3,
+  });
+  if (superfectaSelection.isValidBox) {
+    const superHorses = [bombHorse, ...superfectaSelection.selectedHorses];
+    const bet = createGeneratedBet({
+      type: 'superfecta',
+      typeName: 'Superfecta',
+      description: `Superfecta box: bomb + ${superfectaSelection.summary}`,
+      horses: superHorses,
+      amount: 0.1,
+      tier: 'tier3',
+      raceNumber,
+      confidence: bombHorse.confidence - 25,
+      icon: 'format_list_numbered',
+    });
+    // Add exclusion reasons to explanation if any horses were excluded
+    if (superfectaSelection.excludedHorses.length > 0) {
+      bet.explanation = [
+        ...bet.explanation,
+        ...formatExclusionExplanations(superfectaSelection),
+      ];
+    }
+    bets.push(bet);
   }
 
   // 4. Trifecta wheel
@@ -898,6 +931,46 @@ function identifyScoringSources(horses: ClassifiedHorse[]): string[] {
   }
 
   return Array.from(sources);
+}
+
+/**
+ * Format exclusion reasons from box selection for bet explanation display.
+ *
+ * @param selection - BoxSelectionResult containing excluded horses and reasons
+ * @returns Array of explanation strings for the bet card
+ */
+function formatExclusionExplanations(selection: BoxSelectionResult): string[] {
+  if (selection.excludedHorses.length === 0) {
+    return [];
+  }
+
+  const explanations: string[] = [];
+
+  // Add summary line
+  explanations.push(
+    `Box reduced: ${selection.excludedHorses.length} horse(s) excluded due to score separation`
+  );
+
+  // Add individual exclusion reasons (limit to avoid clutter)
+  const maxReasons = 3;
+  for (let i = 0; i < Math.min(selection.excludedHorses.length, maxReasons); i++) {
+    const horse = selection.excludedHorses[i];
+    if (horse) {
+      const reason = selection.exclusionReasons.get(horse.horseIndex);
+      if (reason) {
+        explanations.push(`• ${reason}`);
+      }
+    }
+  }
+
+  // If more than maxReasons, add a note
+  if (selection.excludedHorses.length > maxReasons) {
+    explanations.push(
+      `• ...and ${selection.excludedHorses.length - maxReasons} more excluded`
+    );
+  }
+
+  return explanations;
 }
 
 function markRecommendedBets(bets: GeneratedBet[], bankroll: UseBankrollReturn): GeneratedBet[] {
