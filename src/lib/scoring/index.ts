@@ -654,21 +654,22 @@ export function calculateRaceScores(
     rank: 0, // Will be set after sorting
   }));
 
-  // Sort by score descending (scratched horses go to bottom)
+  // First, sort by score to determine ranks (best score = rank 1)
+  const sortedByScore = [...scoredHorses]
+    .filter((h) => !h.score.isScratched)
+    .sort((a, b) => b.score.total - a.score.total);
+
+  // Assign ranks based on score
+  sortedByScore.forEach((horse, index) => {
+    horse.rank = index + 1;
+  });
+
+  // Now sort by post position for display (scratched horses go to bottom)
   scoredHorses.sort((a, b) => {
     if (a.score.isScratched && !b.score.isScratched) return 1;
     if (!a.score.isScratched && b.score.isScratched) return -1;
-    return b.score.total - a.score.total;
+    return a.horse.postPosition - b.horse.postPosition;
   });
-
-  // Assign ranks
-  let currentRank = 1;
-  for (let i = 0; i < scoredHorses.length; i++) {
-    const scoredHorse = scoredHorses[i];
-    if (scoredHorse && !scoredHorse.score.isScratched) {
-      scoredHorse.rank = currentRank++;
-    }
-  }
 
   return scoredHorses;
 }

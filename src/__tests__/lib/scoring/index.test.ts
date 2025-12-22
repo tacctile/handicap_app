@@ -42,7 +42,7 @@ describe('Main Scoring Engine', () => {
       });
     });
 
-    it('sorts horses by score descending', () => {
+    it('sorts horses by post position', () => {
       const horses = createTestField(8);
       const header = createRaceHeader({ fieldSize: 8 });
       const getOdds = (_i: number, odds: string) => odds;
@@ -50,8 +50,11 @@ describe('Main Scoring Engine', () => {
 
       const results = calculateRaceScores(horses, header, getOdds, isScratched, 'fast');
 
+      // Horses should be sorted by post position ascending
       for (let i = 1; i < results.length; i++) {
-        expect(results[i - 1].score.total).toBeGreaterThanOrEqual(results[i].score.total);
+        expect(results[i - 1].horse.postPosition).toBeLessThanOrEqual(
+          results[i].horse.postPosition
+        );
       }
     });
 
@@ -83,9 +86,10 @@ describe('Main Scoring Engine', () => {
 
       const results = calculateRaceScores(horses, header, getOdds, isScratched, 'fast');
 
-      // Active horses should have sequential ranks 1-5
+      // Active horses should have ranks 1-5 (assigned based on score, not post position order)
       const ranks = results.filter((r) => !r.score.isScratched).map((r) => r.rank);
-      expect(ranks).toEqual([1, 2, 3, 4, 5]);
+      // Ranks should be 1-5 but may appear in any order since sorted by post position
+      expect(ranks.sort()).toEqual([1, 2, 3, 4, 5]);
 
       // Scratched horse should have rank 0 or no rank
       const scratchedRanks = results.filter((r) => r.score.isScratched).map((r) => r.rank);
@@ -423,15 +427,15 @@ describe('Main Scoring Engine', () => {
 
     describe('getScoreColor', () => {
       it('returns correct colors for score thresholds', () => {
-        expect(getScoreColor(200, false)).toBe('#36d1da'); // Elite
-        expect(getScoreColor(190, false)).toBe('#19abb5'); // Strong
-        expect(getScoreColor(170, false)).toBe('#1b7583'); // Good
-        expect(getScoreColor(150, false)).toBe('#888888'); // Fair
-        expect(getScoreColor(100, false)).toBe('#555555'); // Weak
+        expect(getScoreColor(200, false)).toBe('#22c55e'); // Elite - Green
+        expect(getScoreColor(190, false)).toBe('#4ade80'); // Strong - Light Green
+        expect(getScoreColor(170, false)).toBe('#eab308'); // Good - Yellow
+        expect(getScoreColor(150, false)).toBe('#f97316'); // Fair - Orange
+        expect(getScoreColor(100, false)).toBe('#ef4444'); // Weak - Red
       });
 
       it('returns weak color for scratched horses', () => {
-        expect(getScoreColor(200, true)).toBe('#555555');
+        expect(getScoreColor(200, true)).toBe('#ef4444'); // Red for scratched
       });
     });
 

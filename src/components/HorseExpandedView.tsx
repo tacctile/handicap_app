@@ -420,7 +420,7 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
               </span>
               <span className="furlong-score__breakdown-separator">•</span>
               <span className="furlong-score__breakdown-item">
-                Overlay: {overlayScore >= 0 ? '+' : ''}
+                Edge: {overlayScore >= 0 ? '+' : ''}
                 {overlayScore}
               </span>
             </div>
