@@ -98,6 +98,8 @@ function createMockScoreBreakdown(overrides: Partial<ScoreBreakdown> = {}): Scor
 function createMockHorseScore(total: number, overrides: Partial<HorseScore> = {}): HorseScore {
   return {
     total,
+    baseScore: total,
+    overlayScore: 0,
     breakdown: createMockScoreBreakdown(overrides.breakdown),
     isScratched: false,
     confidenceLevel: total >= 180 ? 'high' : total >= 160 ? 'medium' : 'low',
