@@ -9,18 +9,6 @@ interface PPLineProps {
 }
 
 export const PPLine: React.FC<PPLineProps> = ({ pp, index }) => {
-  // TEMPORARY DEBUG - Remove after diagnostic
-  if (index === 0) {
-    console.log('PP Object - All Fields:', Object.keys(pp));
-    console.log('PP Object - Full Data:', JSON.stringify(pp, null, 2).slice(0, 2000));
-    console.log('PP Target Fields:', {
-      finalTime: pp.finalTime,
-      finalTimeFormatted: pp.finalTimeFormatted,
-      daysSinceLast: pp.daysSinceLast,
-      equipment: pp.equipment,
-      medication: pp.medication,
-    });
-  }
   // Format date using industry standard: "9Aug25" (day + 3-letter month + 2-digit year)
   const formatDate = (dateStr: string | number | undefined): string => {
     if (!dateStr) return '—';
@@ -312,6 +300,36 @@ export const PPLine: React.FC<PPLineProps> = ({ pp, index }) => {
     return cleaned.slice(0, 50) || '—'; // Increased from 30
   };
 
+  // Format final time for display
+  const formatTime = (time: number | null, formatted?: string): string => {
+    if (formatted && formatted.trim()) return formatted;
+    if (!time || time <= 0) return '—';
+
+    const mins = Math.floor(time / 60);
+    const secs = (time % 60).toFixed(2);
+
+    if (mins === 0) {
+      return `:${secs}`;
+    }
+    return `${mins}:${secs.padStart(5, '0')}`;
+  };
+
+  // Format days since last race
+  const formatDays = (days: number | null | undefined): string => {
+    if (days === null || days === undefined || days <= 0) return '—';
+    return `${days}`;
+  };
+
+  // Format equipment/medication combined
+  const formatEM = (equip?: string, med?: string): string => {
+    const e = equip?.trim() || '';
+    const m = med?.trim() || '';
+
+    if (!e && !m) return '—';
+    if (e && m) return `${e}/${m}`;
+    return e || m;
+  };
+
   const isEven = index % 2 === 0;
 
   return (
@@ -334,6 +352,11 @@ export const PPLine: React.FC<PPLineProps> = ({ pp, index }) => {
         {formatOdds(pp.odds, pp.favoriteRank)}
       </span>
       <span className="pp-line__col pp-line__col--figure">{pp.speedFigures?.beyer ?? '—'}</span>
+      <span className="pp-line__col pp-line__col--time">
+        {formatTime(pp.finalTime, pp.finalTimeFormatted)}
+      </span>
+      <span className="pp-line__col pp-line__col--days">{formatDays(pp.daysSinceLast)}</span>
+      <span className="pp-line__col pp-line__col--em">{formatEM(pp.equipment, pp.medication)}</span>
       <span className="pp-line__col pp-line__col--running">
         {formatRunningLine(pp.runningLine)}
       </span>

@@ -1069,6 +1069,33 @@ function createDefaultSpeedFigures(): SpeedFigures {
  * - Fields 1066-1075: PP Jockey Names (index 1065-1074)
  * - Fields 1383-1392: PP Detailed Trip Notes (index 1382-1391)
  */
+
+// Format final time from seconds to MM:SS.XX format
+function formatFinalTime(seconds: number | null): string {
+  if (!seconds || seconds <= 0) return '';
+
+  const mins = Math.floor(seconds / 60);
+  const secs = (seconds % 60).toFixed(2);
+
+  if (mins === 0) {
+    return `:${secs}`;
+  }
+  return `${mins}:${secs.padStart(5, '0')}`;
+}
+
+// Parse date from YYYYMMDD format to Date object
+function parsePPDate(dateStr: string): Date | null {
+  if (!dateStr || dateStr.length !== 8) return null;
+
+  // Format: YYYYMMDD
+  const year = parseInt(dateStr.slice(0, 4));
+  const month = parseInt(dateStr.slice(4, 6)) - 1; // 0-indexed
+  const day = parseInt(dateStr.slice(6, 8));
+
+  const date = new Date(year, month, day);
+  return isNaN(date.getTime()) ? null : date;
+}
+
 function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance[] {
   const performances: PastPerformance[] = [];
 
@@ -1108,6 +1135,7 @@ function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance
   const PP_WEIGHT = 435; // Field 436 - Weight per PP
   // PP_TRAINER = 1055 (Field 1056) - available for future use
   const PP_JOCKEY = 1065; // Field 1066
+  const PP_FINAL_TIME = 1005; // Fields 1006-1015 (0-indexed: 1005-1014) - Final time in seconds
   const PP_TRIP_DETAILED = 1382; // Field 1383
 
   for (let i = 0; i < maxRaces; i++) {
@@ -1141,8 +1169,8 @@ function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance
       finishPosition: parseIntSafe(getField(fields, PP_FINISH_POSITION + i), 99),
       lengthsBehind: parseFloatSafe(getField(fields, PP_FINISH_MARGIN + i)),
       lengthsAhead: null, // Calculated if won
-      finalTime: null, // In extended fractional data
-      finalTimeFormatted: '',
+      finalTime: parseFloatNullable(getField(fields, PP_FINAL_TIME + i)),
+      finalTimeFormatted: formatFinalTime(parseFloatNullable(getField(fields, PP_FINAL_TIME + i))),
       speedFigures: {
         beyer: parseIntNullable(getField(fields, PP_BEYER + i)),
         timeformUS: null,
@@ -1194,6 +1222,32 @@ function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance
     }
 
     performances.push(pp);
+  }
+
+  // Calculate days between races for each PP
+  // The PPs are in chronological order (most recent first)
+  // So daysSinceLast for PP[i] is the days between PP[i] and PP[i+1]
+  for (let i = 0; i < performances.length; i++) {
+    const currentPP = performances[i];
+    if (!currentPP) continue;
+
+    if (i === performances.length - 1) {
+      // Last PP (oldest race) - no prior race to compare
+      currentPP.daysSinceLast = null;
+    } else {
+      // Calculate days between this PP and the next older one
+      const nextPP = performances[i + 1];
+      if (!nextPP) continue;
+
+      const currentDate = parsePPDate(currentPP.date);
+      const olderDate = parsePPDate(nextPP.date);
+
+      if (currentDate && olderDate) {
+        const diffTime = currentDate.getTime() - olderDate.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        currentPP.daysSinceLast = diffDays > 0 ? diffDays : null;
+      }
+    }
   }
 
   return performances;
@@ -1308,41 +1362,6 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
       } else {
         distanceStr = `${distanceFurlongs.toFixed(1).replace('.0', '')}f`;
       }
-    }
-
-    // DIAGNOSTIC TRACE - First workout only (enhanced field mapping debug)
-    if (i === 0) {
-      console.log(
-        '===== WORKOUT PARSER TRACE (Horse: ' + getField(fields, 44, 'UNKNOWN') + ') ====='
-      );
-      console.log('Workout Date (255):', getField(fields, WK_DATE));
-      console.log('Days Since (265):', getField(fields, WK_DAYS_SINCE));
-      console.log('Track (275):', getField(fields, WK_TRACK));
-      console.log('');
-      console.log('--- FIELD SCAN (305-340) for field mapping verification ---');
-      for (let f = 305; f <= 340; f++) {
-        const val = getField(fields, f);
-        if (val) {
-          const label =
-            f >= 306 && f <= 315
-              ? '(condition range)'
-              : f >= 316 && f <= 325
-                ? '(DISTANCE range)'
-                : f >= 326 && f <= 335
-                  ? '(PP Surface)'
-                  : f >= 336 && f <= 345
-                    ? '(Inner/Outer)'
-                    : '';
-          console.log(`Field ${f}: "${val}" ${label}`);
-        }
-      }
-      console.log('');
-      console.log('Smart interpretation result:');
-      console.log('  Field 315 raw value:', rawDistanceValue);
-      console.log('  Chosen format:', interpretedFormat);
-      console.log('  Final furlongs:', distanceFurlongs);
-      console.log('  Distance string:', distanceStr);
-      console.log('=================================================');
     }
 
     // Track code (2 fields per work: track + inner/outer indicator)

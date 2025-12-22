@@ -61,7 +61,7 @@ interface WorkoutItemProps {
   index: number;
 }
 
-const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index }) => {
+const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => {
   // Type-safe access with Record for flexible field access
   const w = workout as Workout & Record<string, unknown>;
 
@@ -135,17 +135,6 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index }) => {
   // distanceFurlongs is calculated by parser (yards / 220)
   const getWorkoutDistance = (): string => {
     const furlongs = w.distanceFurlongs;
-
-    // DIAGNOSTIC TRACE - First workout only
-    if (index === 0) {
-      console.log('===== WORKOUT COMPONENT TRACE (First Workout) =====');
-      console.log('workout object:', workout);
-      console.log('workout.distanceFurlongs:', workout.distanceFurlongs);
-      console.log('workout.distance:', workout.distance);
-      console.log('typeof distanceFurlongs:', typeof workout.distanceFurlongs);
-      console.log('w.distanceFurlongs (from Record):', w.distanceFurlongs);
-      console.log('====================================================');
-    }
 
     // Validate it's a reasonable workout distance (3f to 7f)
     // Workouts are rarely shorter than 3f or longer than 7f
@@ -667,6 +656,9 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
             <span className="horse-pp__col horse-pp__col--finish">FIN</span>
             <span className="horse-pp__col horse-pp__col--odds">ODDS</span>
             <span className="horse-pp__col horse-pp__col--figure">FIG</span>
+            <span className="horse-pp__col horse-pp__col--time">TIME</span>
+            <span className="horse-pp__col horse-pp__col--days">DAYS</span>
+            <span className="horse-pp__col horse-pp__col--em">E/M</span>
             <span className="horse-pp__col horse-pp__col--running">RUNNING LINE</span>
             <span className="horse-pp__col horse-pp__col--jockey">JOCKEY</span>
             <span className="horse-pp__col horse-pp__col--weight">WT</span>
