@@ -129,137 +129,33 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
     return str.toUpperCase().slice(0, 3);
   };
 
-  // Get workout distance - check multiple possible field names
+  // Get workout distance - distanceFurlongs should already be calculated by parser (yards / 220)
   const getWorkoutDistance = (): string => {
-    // Try furlongs as a number first (most reliable for display)
-    const furlongFields = ['distanceFurlongs', 'furlongs', 'workFurlongs', 'dist', 'distanceValue'];
-    for (const field of furlongFields) {
-      const val = w[field];
-      if (typeof val === 'number' && val >= 2 && val <= 8) {
-        // Valid furlong range for workouts
-        if (val % 1 === 0) {
-          return `${val}f`;
-        } else if (val % 1 === 0.5) {
-          return `${Math.floor(val)}½f`;
-        } else if (val % 1 === 0.25) {
-          return `${Math.floor(val)}¼f`;
-        }
-        return `${val}f`;
-      }
-    }
+    const furlongs = w.distanceFurlongs;
 
-    // Try distance string
-    const distStrFields = ['distance', 'distanceText', 'workDistance', 'distanceString'];
-    for (const field of distStrFields) {
-      const val = w[field];
-      if (val && typeof val === 'string') {
-        const cleaned = val
-          .replace('furlongs', 'f')
-          .replace('furlong', 'f')
-          .replace(' ', '')
-          .trim();
+    // Validate it's a reasonable workout distance (2f to 8f / 1 mile)
+    if (typeof furlongs !== 'number' || furlongs < 1 || furlongs > 10) {
+      // Try the distance string as fallback
+      if (w.distance && typeof w.distance === 'string') {
+        const cleaned = String(w.distance).trim();
         if (cleaned && !cleaned.includes('undefined') && cleaned.length < 6) {
-          return cleaned.slice(0, 4);
-        }
-      }
-    }
-
-    return '—';
-  };
-
-  // Get workout time - check multiple possible field names
-  const getWorkoutTime = (): string => {
-    // Try formatted time string first
-    const timeStrFields = [
-      'timeFormatted',
-      'time',
-      'workTime',
-      'finalTime',
-      'clockTime',
-      'formattedTime',
-    ];
-    for (const field of timeStrFields) {
-      const val = w[field];
-      if (val && typeof val === 'string') {
-        const cleaned = val.trim();
-        // Check if it looks like a time (has : or starts with : or has decimal)
-        if (cleaned.includes(':') || cleaned.startsWith('.') || /^\d{2}\.\d/.test(cleaned)) {
-          // Format properly
-          if (!cleaned.startsWith(':') && !cleaned.includes(':') && cleaned.includes('.')) {
-            // Looks like "48.20" - add colon prefix
-            return `:${cleaned}`;
-          }
           return cleaned;
         }
       }
+      return '—';
     }
 
-    // Try seconds as number
-    const secondsFields = ['timeSeconds', 'seconds', 'timeInSeconds', 'workSeconds'];
-    for (const field of secondsFields) {
-      const val = w[field];
-      if (typeof val === 'number' && val > 20 && val < 200) {
-        // Valid workout time range in seconds
-        if (val < 60) {
-          return `:${val.toFixed(2)}`;
-        }
-        const mins = Math.floor(val / 60);
-        const secs = (val % 60).toFixed(2).padStart(5, '0');
-        return `${mins}:${secs}`;
-      }
-    }
+    // Format nicely
+    if (furlongs === 8) return '1m';
+    if (furlongs % 1 === 0) return `${furlongs}f`;
+    if (furlongs === 5.5) return '5½f';
+    if (furlongs === 6.5) return '6½f';
+    if (furlongs === 7.5) return '7½f';
 
-    return '—';
-  };
-
-  // Get workout type - check multiple possible field names
-  const getWorkoutType = (): string => {
-    // Try various field names
-    const typeFields = ['type', 'workoutType', 'workType', 'manner', 'description'];
-    for (const field of typeFields) {
-      const val = w[field];
-      if (val && typeof val === 'string') {
-        const cleaned = val.toLowerCase().trim();
-
-        // Skip invalid values
-        if (
-          cleaned === 'undefined' ||
-          cleaned === 'null' ||
-          cleaned === 'unknown' ||
-          cleaned === ''
-        ) {
-          continue;
-        }
-
-        // Map to abbreviation
-        const typeMap: Record<string, string> = {
-          handily: 'H',
-          hand: 'H',
-          h: 'H',
-          breezing: 'B',
-          breeze: 'B',
-          b: 'B',
-          driving: 'D',
-          drive: 'D',
-          d: 'D',
-          easy: 'E',
-          e: 'E',
-          gate: 'G',
-          g: 'G',
-        };
-
-        if (typeMap[cleaned]) {
-          return typeMap[cleaned];
-        }
-
-        // Return first char uppercase if we have something valid
-        if (cleaned.length > 0 && cleaned !== 'u') {
-          return cleaned.charAt(0).toUpperCase();
-        }
-      }
-    }
-
-    return '—';
+    // For odd values, round to nearest half
+    const rounded = Math.round(furlongs * 2) / 2;
+    if (rounded % 1 === 0) return `${rounded}f`;
+    return `${Math.floor(rounded)}½f`;
   };
 
   // Format surface/condition safely
@@ -282,25 +178,39 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
 
   // Get workout ranking safely
   const getWorkoutRanking = (): string => {
-    // Try rankStr first
-    const rankStr = w.ranking || w.rankingStr;
-    if (rankStr && rankStr !== 'undefined' && rankStr !== 'null') {
-      const str = String(rankStr).trim();
-      if (str && !str.includes('undefined')) return str;
+    const rank = w.rankNumber || w.rank;
+    const total = w.totalWorks || w.total;
+
+    // If we have a pre-formatted ranking string
+    if (w.ranking && typeof w.ranking === 'string' && w.ranking.includes('/')) {
+      return w.ranking;
     }
 
-    const r = Number(w.rankNumber || w.rank);
-    const t = Number(w.totalWorks || w.total || w.workTotal);
+    // Build from parts
+    if (rank && total && !isNaN(Number(rank)) && !isNaN(Number(total))) {
+      return `${rank}/${total}`;
+    }
 
-    if (!isNaN(r) && !isNaN(t) && r > 0 && t > 0) {
-      return `${r}/${t}`;
+    if (rank && !isNaN(Number(rank))) {
+      return `#${rank}`;
     }
 
     return '—';
   };
 
+  // Get workout surface (D for dirt, T for turf)
+  const getWorkoutSurface = (): string => {
+    const surface = w.surface;
+    if (!surface) return '—';
+    const str = String(surface).toLowerCase().trim();
+    if (str === 'dirt' || str === 'd') return 'D';
+    if (str === 'turf' || str === 't') return 'T';
+    if (str === 'synthetic' || str === 's') return 'S';
+    return str.charAt(0).toUpperCase() || '—';
+  };
+
   // Check if workout data is valid
-  const hasValidData = workout && (w.date || w.track || w.timeSeconds || w.timeFormatted || w.time);
+  const hasValidData = workout && (w.date || w.track || w.distanceFurlongs);
 
   if (!hasValidData) return null;
 
@@ -311,12 +221,10 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout }) => {
       <span className="horse-workouts__date">{formatWorkoutDate()}</span>
       <span className="horse-workouts__track">{formatWorkoutTrack()}</span>
       <span className="horse-workouts__dist">{getWorkoutDistance()}</span>
+      <span className="horse-workouts__surface">{getWorkoutSurface()}</span>
       <span className="horse-workouts__cond">{formatWorkoutCond()}</span>
-      <span className="horse-workouts__time">{getWorkoutTime()}</span>
-      <span className="horse-workouts__type">{getWorkoutType()}</span>
       <span className="horse-workouts__rank">{getWorkoutRanking()}</span>
       {isBullet && <span className="horse-workouts__bullet-icon">●</span>}
-      {Boolean(w.fromGate || w.gate) && <span className="horse-workouts__gate-icon">g</span>}
     </div>
   );
 };
