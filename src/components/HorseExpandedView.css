@@ -548,14 +548,32 @@
   text-align: center;
 }
 
+.horse-pp__col--time {
+  width: 52px;
+  min-width: 52px;
+  text-align: right;
+}
+
+.horse-pp__col--days {
+  width: 36px;
+  min-width: 36px;
+  text-align: center;
+}
+
+.horse-pp__col--em {
+  width: 40px;
+  min-width: 40px;
+  text-align: center;
+}
+
 .horse-pp__col--running {
-  width: 120px; /* Reduced from 140px */
-  min-width: 120px;
+  width: 110px; /* Reduced from 120px to fit new columns */
+  min-width: 110px;
 }
 
 .horse-pp__col--jockey {
-  width: 80px; /* Reduced from 90px */
-  min-width: 80px;
+  width: 75px; /* Reduced from 80px to fit new columns */
+  min-width: 75px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -568,7 +586,7 @@
 
 .horse-pp__col--comment {
   flex: 1;
-  min-width: 100px;
+  min-width: 80px; /* Reduced from 100px to fit new columns */
 }
 
 /* ============================================

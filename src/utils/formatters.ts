@@ -21,15 +21,7 @@
  * @returns Formatted distance string (e.g., "6f", "1⅛m")
  */
 export const formatRacingDistance = (furlongs: number): string => {
-  // DIAGNOSTIC TRACE
-  console.log('===== FORMATTER TRACE =====');
-  console.log('Input furlongs:', furlongs);
-  console.log('Type:', typeof furlongs);
-  console.log('Is < 8?:', furlongs < 8);
-
   if (!furlongs || isNaN(furlongs) || furlongs <= 0) {
-    console.log('Returning (invalid input): —');
-    console.log('===========================');
     return '—';
   }
 
@@ -68,8 +60,6 @@ export const formatRacingDistance = (furlongs: number): string => {
   // Round to nearest standard distance (within 0.15 tolerance for parsing variance)
   for (const [standard, display] of Object.entries(standardDistances)) {
     if (Math.abs(furlongs - Number(standard)) < 0.15) {
-      console.log('Returning (standard match):', display);
-      console.log('===========================');
       return display;
     }
   }
@@ -98,8 +88,6 @@ export const formatRacingDistance = (furlongs: number): string => {
       result = `${whole}⅞f`; // 7/8
     else result = `${furlongs.toFixed(1)}f`; // For unusual fractions, show decimal
 
-    console.log('Returning (manual furlong calc):', result, '(whole:', whole, ', frac:', frac, ')');
-    console.log('===========================');
     return result;
   } else {
     // Show as miles for route distances (8+ furlongs)
@@ -131,18 +119,6 @@ export const formatRacingDistance = (furlongs: number): string => {
       result = `${whole}⅞m`; // 7/8
     else result = `${miles.toFixed(2)}m`; // For unusual fractions, show decimal miles
 
-    console.log(
-      'Returning (manual mile calc):',
-      result,
-      '(miles:',
-      miles,
-      ', whole:',
-      whole,
-      ', frac:',
-      frac,
-      ')'
-    );
-    console.log('===========================');
     return result;
   }
 };
