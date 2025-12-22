@@ -186,16 +186,17 @@ function generateTier1Bets(
     })
   );
 
-  // 3. Exacta box (top 2-3 horses across ALL tiers - includes MEDIUM confidence)
-  // Use allClassifiedHorses to include tier 2/3 horses that statistically hit top 2
-  const exactaBoxHorses = allClassifiedHorses.slice(0, Math.min(3, allClassifiedHorses.length));
+  // 3. Exacta box (top 4 horses by SCORE - maximizes coverage)
+  // Analysis showed MEDIUM confidence horses frequently hit 2nd place
+  // 4-horse box = 12 combos vs 6 for 3-horse (2x cost, much better coverage)
+  const exactaBoxHorses = allClassifiedHorses.slice(0, Math.min(4, allClassifiedHorses.length));
   if (exactaBoxHorses.length >= 2) {
     const boxAmount = Math.round(baseAmount / 2);
     bets.push(
       createGeneratedBet({
         type: 'exacta_box',
         typeName: 'Exacta Box',
-        description: `Exacta box with top ${exactaBoxHorses.length} contenders`,
+        description: `Exacta box with top ${exactaBoxHorses.length} by score`,
         horses: exactaBoxHorses,
         amount: boxAmount,
         tier: 'tier1',
@@ -228,15 +229,16 @@ function generateTier1Bets(
     );
   }
 
-  // 5. Trifecta box (top 3 across ALL tiers - includes MEDIUM confidence)
-  // Use allClassifiedHorses to include tier 2/3 horses that statistically hit top 3
-  const trifectaBoxHorses = allClassifiedHorses.slice(0, 3);
+  // 5. Trifecta box (top 4 horses by SCORE - maximizes coverage)
+  // Analysis showed MEDIUM confidence horses frequently hit 2nd/3rd place
+  // 4-horse box = 24 combos vs 6 for 3-horse (4x cost, catches more scenarios)
+  const trifectaBoxHorses = allClassifiedHorses.slice(0, Math.min(4, allClassifiedHorses.length));
   if (trifectaBoxHorses.length >= 3) {
     bets.push(
       createGeneratedBet({
         type: 'trifecta_box',
         typeName: 'Trifecta Box',
-        description: 'Trifecta box with top 3 contenders',
+        description: `Trifecta box with top ${trifectaBoxHorses.length} by score`,
         horses: trifectaBoxHorses,
         amount: 1,
         tier: 'tier1',
@@ -245,6 +247,34 @@ function generateTier1Bets(
         icon: 'view_list',
       })
     );
+  }
+
+  // 6. MEDIUM+ Trifecta Key - keys top 2 horses WITH all MEDIUM+ confidence horses
+  // This catches scenarios where MEDIUM horses hit 2nd/3rd (which happens frequently)
+  const mediumPlusHorses = allClassifiedHorses.filter(
+    (h) => h.confidence >= 60 || h.tier === 'tier1' || h.tier === 'tier2'
+  );
+  if (mediumPlusHorses.length >= 4 && horses.length >= 1) {
+    const keyHorses = allClassifiedHorses.slice(0, 2); // Top 2 by score
+    const withHorses = mediumPlusHorses.filter(
+      (h) => !keyHorses.some((k) => k.horseIndex === h.horseIndex)
+    ).slice(0, 4);
+
+    if (withHorses.length >= 2) {
+      bets.push(
+        createGeneratedBet({
+          type: 'trifecta_key',
+          typeName: 'Trifecta Key',
+          description: 'Top 2 keyed with MEDIUM+ contenders',
+          horses: [...keyHorses, ...withHorses],
+          amount: 1,
+          tier: 'tier1',
+          raceNumber,
+          confidence: averageConfidence([...keyHorses, ...withHorses]) - 10,
+          icon: 'key',
+        })
+      );
+    }
   }
 
   return bets;
@@ -925,7 +955,13 @@ export function generateRecommendations(input: GeneratorInput): BetGeneratorResu
 
     // Classify horses into tiers
     const tierGroups = classifyHorses(horsesForClassification);
-    const allClassifiedHorses = tierGroups.flatMap((g) => g.horses);
+
+    // CRITICAL: Sort ALL classified horses by pure SCORE descending (not tier-first)
+    // This ensures the highest-scored horses are always first for exacta/trifecta boxes
+    // Based on analysis: 100% of top 3 finishers were MEDIUM+ confidence
+    const allClassifiedHorses = tierGroups
+      .flatMap((g) => g.horses)
+      .sort((a, b) => b.score.total - a.score.total);
 
     // Build scores map for longshot analysis
     const scoresMap = new Map<number, HorseScore>();
