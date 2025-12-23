@@ -140,21 +140,23 @@
    CELL STYLES
    ============================================ */
 
-/* Program number - centered */
+/* Program number - centered, large and prominent */
 .horse-summary-bar__pp {
-  font-size: 14px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--color-text-primary);
   text-align: center;
+  line-height: 1;
 }
 
-/* Horse name - left aligned, shows full name */
+/* Horse name - left aligned, large and prominent */
 .horse-summary-bar__name {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--color-text-primary);
   text-transform: uppercase;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
   /* Allow text to use available space */
   overflow: hidden;
   text-overflow: ellipsis;

@@ -97,7 +97,7 @@
      10 columns: icons | PP | name | odds | score | win conf | fair | edge% | odds edge | expand
      Using 1fr on horse name ensures grid expands to fill available width
      ============================================ */
-  --horse-list-grid: 80px /* scratch/compare icons */ 48px /* PP */ minmax(150px, 1fr)
-    /* horse name - FLEXIBLE, takes remaining space */ 80px /* odds */ 80px /* score */ 90px
-    /* win confidence */ 70px /* fair */ 80px /* edge% */ 140px /* odds edge badge */ 40px; /* expand */
+  --horse-list-grid: 48px /* scratch/compare/help icons */ 48px /* PP */ minmax(140px, 1fr)
+    /* horse name - FLEXIBLE, takes remaining space */ 85px /* odds */ 85px /* score */ 85px
+    /* win confidence */ 85px /* fair */ 85px /* edge% */ 85px /* odds edge badge */ 40px; /* expand */
 }

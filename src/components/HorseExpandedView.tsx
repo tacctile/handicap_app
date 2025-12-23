@@ -102,18 +102,6 @@ const getCategoryFillClass = (percent: number): string => {
   return 'low';
 };
 
-// Format earnings with K/M abbreviations
-const formatEarnings = (amount: number): string => {
-  if (!amount || amount === 0) return '$0';
-  if (amount >= 1000000) {
-    return '$' + (amount / 1000000).toFixed(1) + 'M';
-  }
-  if (amount >= 1000) {
-    return '$' + (amount / 1000).toFixed(0) + 'K';
-  }
-  return '$' + amount.toLocaleString();
-};
-
 // Helper to determine if win rate is good (25%+)
 const isGoodWinRate = (starts: number, wins: number): boolean => {
   if (!starts || starts < 2) return false;
@@ -510,192 +498,169 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
       </section>
 
       {/* ================================================================
-          SECTION 2: HORSE PROFILE
+          SECTION 2: HORSE PROFILE (Compact 5-Column Layout)
           ================================================================ */}
       <section className="horse-expanded__section horse-expanded__section--profile">
         <SectionHeader title="HORSE PROFILE" />
 
-        <div className="profile-panel">
-          {/* Row 1: Identity and Breeding */}
-          <div className="profile-panel__row">
-            {/* Identity Card */}
-            <div className="profile-card">
-              <div className="profile-card__header">IDENTITY</div>
-              <div className="profile-card__content">
-                <div className="profile-card__field">
-                  <span className="profile-card__value profile-card__value--primary">
-                    {colorDisplay} {sexDisplay}, {horse.age || '?'}
-                    {horse.breeding?.whereBred && (
-                      <span className="profile-card__bred"> ({horse.breeding.whereBred})</span>
-                    )}
-                  </span>
-                </div>
-                <div className="profile-card__field">
-                  <span className="profile-card__label">Weight:</span>
-                  <span className="profile-card__value">{horse.weight || '—'} lbs</span>
-                </div>
-                {equipmentDisplay && (
-                  <div className="profile-card__field">
-                    <span className="profile-card__label">Equipment:</span>
-                    <span className="profile-card__value">{equipmentDisplay}</span>
-                  </div>
-                )}
-                {medicationDisplay && (
-                  <div className="profile-card__field">
-                    <span className="profile-card__label">Medication:</span>
-                    <span className="profile-card__value">{medicationDisplay}</span>
-                  </div>
+        <div className="profile-row">
+          {/* Column 1: Identity */}
+          <div className="profile-col">
+            <div className="profile-col__header">IDENTITY</div>
+            <div className="profile-col__content">
+              <div className="profile-col__primary">
+                {colorDisplay} {sexDisplay}, {horse.age || '?'}
+                {horse.breeding?.whereBred && (
+                  <span className="profile-col__sub"> ({horse.breeding.whereBred})</span>
                 )}
               </div>
+              <div className="profile-col__line">
+                <span className="profile-col__label">Weight:</span>
+                <span className="profile-col__value">{horse.weight || '—'} lbs</span>
+              </div>
+              {equipmentDisplay && (
+                <div className="profile-col__line">
+                  <span className="profile-col__label">Equipment:</span>
+                  <span className="profile-col__value">{equipmentDisplay}</span>
+                </div>
+              )}
+              {medicationDisplay && (
+                <div className="profile-col__line">
+                  <span className="profile-col__label">Medication:</span>
+                  <span className="profile-col__value">{medicationDisplay}</span>
+                </div>
+              )}
             </div>
+          </div>
 
-            {/* Breeding Card */}
-            <div className="profile-card">
-              <div className="profile-card__header">BREEDING</div>
-              <div className="profile-card__content">
-                <div className="profile-card__field">
-                  <span className="profile-card__label">Sire:</span>
-                  <span className="profile-card__value">
-                    {horse.breeding?.sire || '—'}
-                    {horse.breeding?.sireOfSire && (
-                      <span className="profile-card__sub"> ({horse.breeding.sireOfSire})</span>
-                    )}
-                  </span>
-                </div>
-                <div className="profile-card__field">
-                  <span className="profile-card__label">Dam:</span>
-                  <span className="profile-card__value">
-                    {horse.breeding?.dam || '—'}
-                    {horse.breeding?.damSire && (
-                      <span className="profile-card__sub"> ({horse.breeding.damSire})</span>
-                    )}
-                  </span>
-                </div>
-                <div className="profile-card__field">
-                  <span className="profile-card__label">Breeder:</span>
-                  <span className="profile-card__value">{horse.breeding?.breeder || '—'}</span>
-                </div>
+          {/* Column 2: Breeding */}
+          <div className="profile-col">
+            <div className="profile-col__header">BREEDING</div>
+            <div className="profile-col__content">
+              <div className="profile-col__line">
+                <span className="profile-col__label">Sire:</span>
+                <span className="profile-col__value profile-col__value--wrap">
+                  {horse.breeding?.sire || '—'}
+                  {horse.breeding?.sireOfSire && (
+                    <span className="profile-col__sub"> ({horse.breeding.sireOfSire})</span>
+                  )}
+                </span>
+              </div>
+              <div className="profile-col__line">
+                <span className="profile-col__label">Dam:</span>
+                <span className="profile-col__value profile-col__value--wrap">
+                  {horse.breeding?.dam || '—'}
+                  {horse.breeding?.damSire && (
+                    <span className="profile-col__sub"> ({horse.breeding.damSire})</span>
+                  )}
+                </span>
+              </div>
+              <div className="profile-col__line">
+                <span className="profile-col__label">Breeder:</span>
+                <span className="profile-col__value profile-col__value--wrap">
+                  {horse.breeding?.breeder || '—'}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Row 2: Connections */}
-          <div className="profile-panel__row">
-            <div className="profile-card profile-card--full">
-              <div className="profile-card__header">CONNECTIONS</div>
-              <div className="profile-card__content profile-card__content--horizontal">
-                <div className="profile-card__field">
-                  <span className="profile-card__label">Owner:</span>
-                  <span className="profile-card__value">{horse.owner || '—'}</span>
-                </div>
-                <div className="profile-card__field">
-                  <span className="profile-card__label">Trainer:</span>
-                  <span className="profile-card__value">
-                    {horse.trainerName || '—'}
-                    {horse.trainerStats && (
-                      <span className="profile-card__stat"> ({horse.trainerStats})</span>
-                    )}
-                  </span>
-                </div>
-                <div className="profile-card__field">
-                  <span className="profile-card__label">Jockey:</span>
-                  <span className="profile-card__value">
-                    {horse.jockeyName || '—'}
-                    {horse.jockeyStats && (
-                      <span className="profile-card__stat"> ({horse.jockeyStats})</span>
-                    )}
-                  </span>
-                </div>
+          {/* Column 3: Connections */}
+          <div className="profile-col">
+            <div className="profile-col__header">CONNECTIONS</div>
+            <div className="profile-col__content">
+              <div className="profile-col__line">
+                <span className="profile-col__label">Owner:</span>
+                <span className="profile-col__value profile-col__value--wrap">
+                  {horse.owner || '—'}
+                </span>
+              </div>
+              <div className="profile-col__line">
+                <span className="profile-col__label">Trainer:</span>
+                <span className="profile-col__value profile-col__value--wrap">
+                  {horse.trainerName || '—'}
+                </span>
+              </div>
+              <div className="profile-col__line">
+                <span className="profile-col__label">Jockey:</span>
+                <span className="profile-col__value profile-col__value--wrap">
+                  {horse.jockeyName || '—'}
+                </span>
               </div>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* ================================================================
-          SECTION 3: CAREER STATISTICS
-          ================================================================ */}
-      <section className="horse-expanded__section horse-expanded__section--stats">
-        <SectionHeader title="CAREER STATISTICS" />
-
-        <div className="stats-panel">
-          {/* Overall Record */}
-          <div className="stats-group">
-            <div className="stats-group__header">OVERALL RECORD</div>
-            <div className="stats-group__content">
-              <div className="stat-item">
-                <span className="stat-item__label">LIFETIME</span>
-                <span className="stat-item__record">
-                  {horse.lifetimeStarts || 0}-{horse.lifetimeWins || 0}-{horse.lifetimePlaces || 0}-
-                  {horse.lifetimeShows || 0}
-                </span>
-                <span className="stat-item__earnings">
-                  {formatEarnings(horse.lifetimeEarnings || 0)}
-                </span>
+          {/* Column 4: Overall Record */}
+          <div className="profile-col">
+            <div className="profile-col__header">OVERALL RECORD</div>
+            <div className="profile-col__content">
+              <div className="profile-col__record-header">
+                <span></span>
+                <span className="profile-col__record-label">W-P-S-R</span>
               </div>
-              <div className="stat-item">
-                <span className="stat-item__label">{new Date().getFullYear()}</span>
-                <span className="stat-item__record">
-                  {horse.currentYearStarts || 0}-{horse.currentYearWins || 0}-
-                  {horse.currentYearPlaces || 0}-{horse.currentYearShows || 0}
-                </span>
-                <span className="stat-item__earnings">
-                  {formatEarnings(horse.currentYearEarnings || 0)}
-                </span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-item__label">{new Date().getFullYear() - 1}</span>
-                <span className="stat-item__record">
+              <div className="profile-col__record-row">
+                <span className="profile-col__record-year">{new Date().getFullYear() - 1}</span>
+                <span className="profile-col__record-value">
                   {horse.previousYearStarts || 0}-{horse.previousYearWins || 0}-
                   {horse.previousYearPlaces || 0}-{horse.previousYearShows || 0}
                 </span>
-                <span className="stat-item__earnings">
-                  {formatEarnings(horse.previousYearEarnings || 0)}
+              </div>
+              <div className="profile-col__record-row">
+                <span className="profile-col__record-year">{new Date().getFullYear()}</span>
+                <span className="profile-col__record-value">
+                  {horse.currentYearStarts || 0}-{horse.currentYearWins || 0}-
+                  {horse.currentYearPlaces || 0}-{horse.currentYearShows || 0}
+                </span>
+              </div>
+              <div className="profile-col__record-row profile-col__record-row--highlight">
+                <span className="profile-col__record-year">Lifetime</span>
+                <span className="profile-col__record-value">
+                  {horse.lifetimeStarts || 0}-{horse.lifetimeWins || 0}-{horse.lifetimePlaces || 0}-
+                  {horse.lifetimeShows || 0}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Surface & Distance Splits */}
-          <div className="stats-group">
-            <div className="stats-group__header">SURFACE & DISTANCE SPLITS</div>
-            <div className="stats-group__content">
-              <div className="stat-item stat-item--split">
-                <span className="stat-item__label">DIRT (FAST)</span>
+          {/* Column 5: Surface & Distance Splits */}
+          <div className="profile-col">
+            <div className="profile-col__header">SURFACE & DISTANCE</div>
+            <div className="profile-col__content">
+              <div className="profile-col__split-row">
+                <span className="profile-col__split-label">Dirt (Fast):</span>
                 <span
-                  className={`stat-item__record ${isGoodWinRate(horse.surfaceStarts || 0, horse.surfaceWins || 0) ? 'stat-item__record--hot' : ''}`}
+                  className={`profile-col__split-value ${isGoodWinRate(horse.surfaceStarts || 0, horse.surfaceWins || 0) ? 'profile-col__split-value--hot' : ''}`}
                 >
                   {horse.surfaceStarts || 0}-{horse.surfaceWins || 0}
                 </span>
               </div>
-              <div className="stat-item stat-item--split">
-                <span className="stat-item__label">WET TRACK</span>
+              <div className="profile-col__split-row">
+                <span className="profile-col__split-label">Wet Track:</span>
                 <span
-                  className={`stat-item__record ${isGoodWinRate(horse.wetStarts || 0, horse.wetWins || 0) ? 'stat-item__record--hot' : ''}`}
+                  className={`profile-col__split-value ${isGoodWinRate(horse.wetStarts || 0, horse.wetWins || 0) ? 'profile-col__split-value--hot' : ''}`}
                 >
                   {horse.wetStarts || 0}-{horse.wetWins || 0}
                 </span>
               </div>
-              <div className="stat-item stat-item--split">
-                <span className="stat-item__label">TURF</span>
+              <div className="profile-col__split-row">
+                <span className="profile-col__split-label">Turf:</span>
                 <span
-                  className={`stat-item__record ${isGoodWinRate(horse.turfStarts || 0, horse.turfWins || 0) ? 'stat-item__record--hot' : ''}`}
+                  className={`profile-col__split-value ${isGoodWinRate(horse.turfStarts || 0, horse.turfWins || 0) ? 'profile-col__split-value--hot' : ''}`}
                 >
                   {horse.turfStarts || 0}-{horse.turfWins || 0}
                 </span>
               </div>
-              <div className="stat-item stat-item--split">
-                <span className="stat-item__label">DISTANCE</span>
+              <div className="profile-col__split-row">
+                <span className="profile-col__split-label">Distance:</span>
                 <span
-                  className={`stat-item__record ${isGoodWinRate(horse.distanceStarts || 0, horse.distanceWins || 0) ? 'stat-item__record--hot' : ''}`}
+                  className={`profile-col__split-value ${isGoodWinRate(horse.distanceStarts || 0, horse.distanceWins || 0) ? 'profile-col__split-value--hot' : ''}`}
                 >
                   {horse.distanceStarts || 0}-{horse.distanceWins || 0}
                 </span>
               </div>
-              <div className="stat-item stat-item--split">
-                <span className="stat-item__label">TRACK</span>
+              <div className="profile-col__split-row">
+                <span className="profile-col__split-label">Track:</span>
                 <span
-                  className={`stat-item__record ${isGoodWinRate(horse.trackStarts || 0, horse.trackWins || 0) ? 'stat-item__record--hot' : ''}`}
+                  className={`profile-col__split-value ${isGoodWinRate(horse.trackStarts || 0, horse.trackWins || 0) ? 'profile-col__split-value--hot' : ''}`}
                 >
                   {horse.trackStarts || 0}-{horse.trackWins || 0}
                 </span>
