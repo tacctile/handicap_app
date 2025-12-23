@@ -406,189 +406,232 @@
 }
 
 /* ============================================================================
-   SECTION 2: HORSE PROFILE
+   SECTION 2: HORSE PROFILE (Compact 5-Column Layout)
    ============================================================================ */
 
-.profile-panel {
+/* Main row container - 5 equal columns */
+.profile-row {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.profile-panel__row {
-  display: flex;
-  gap: 12px;
-}
-
-@media (max-width: 768px) {
-  .profile-panel__row {
-    flex-direction: column;
-  }
-}
-
-/* Profile Card */
-.profile-card {
-  flex: 1;
+  gap: 0;
   background: var(--color-base, #0a0a0b);
   border: 1px solid var(--subtle-border);
   border-radius: 6px;
   overflow: hidden;
 }
 
-.profile-card--full {
-  flex: none;
-  width: 100%;
-}
-
-.profile-card__header {
-  font-family: var(--font-sans);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary, #6e6e70);
-  padding: 8px 12px;
-  background: var(--section-bg-elevated);
-  border-bottom: 1px solid var(--subtle-border);
-}
-
-.profile-card__content {
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.profile-card__content--horizontal {
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.profile-card__field {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.profile-card__label {
-  font-family: var(--font-sans);
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--color-text-tertiary, #6e6e70);
-}
-
-.profile-card__value {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-text-primary, #eeeff1);
-}
-
-.profile-card__value--primary {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.profile-card__bred {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--color-text-secondary, #b4b4b6);
-}
-
-.profile-card__sub {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--color-text-secondary, #b4b4b6);
-}
-
-.profile-card__stat {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--color-primary, #19abb5);
-}
-
-/* ============================================================================
-   SECTION 3: CAREER STATISTICS
-   ============================================================================ */
-
-.stats-panel {
-  display: flex;
-  gap: 16px;
-}
-
-@media (max-width: 900px) {
-  .stats-panel {
-    flex-direction: column;
-  }
-}
-
-/* Stats Group */
-.stats-group {
+/* Each column */
+.profile-col {
   flex: 1;
-  background: var(--section-bg);
-  border: 1px solid var(--subtle-border);
-  border-radius: 6px;
-  overflow: hidden;
+  min-width: 0; /* Allow flex item to shrink below content */
+  border-right: 1px solid var(--subtle-border);
 }
 
-.stats-group__header {
-  font-family: var(--font-sans);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary, #6e6e70);
-  padding: 8px 12px;
-  background: var(--section-bg-elevated);
-  border-bottom: 1px solid var(--subtle-border);
+.profile-col:last-child {
+  border-right: none;
 }
 
-.stats-group__content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  padding: 12px;
-}
-
-/* Stat Item */
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 80px;
-}
-
-.stat-item--split {
-  min-width: 70px;
-}
-
-.stat-item__label {
+/* Column Header */
+.profile-col__header {
   font-family: var(--font-sans);
   font-size: 9px;
   font-weight: 600;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.3px;
   text-transform: uppercase;
+  color: var(--color-text-tertiary, #6e6e70);
+  padding: 8px 12px;
+  background: var(--section-bg-elevated);
+  border-bottom: 1px solid var(--subtle-border);
+}
+
+/* Column Content */
+.profile-col__content {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Primary Value (Identity header line) */
+.profile-col__primary {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary, #eeeff1);
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+/* Label/Value Lines */
+.profile-col__line {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.profile-col__label {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 500;
   color: var(--color-text-tertiary, #6e6e70);
 }
 
-.stat-item__record {
+.profile-col__value {
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-primary, #eeeff1);
+  line-height: 1.3;
+}
+
+.profile-col__value--wrap {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.profile-col__sub {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--color-text-secondary, #b4b4b6);
+}
+
+/* Record Table Styling */
+.profile-col__record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.profile-col__record-label {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--color-text-tertiary, #6e6e70);
+  text-align: right;
+}
+
+.profile-col__record-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.profile-col__record-row--highlight {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--subtle-border);
+}
+
+.profile-col__record-year {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-tertiary, #6e6e70);
+}
+
+.profile-col__record-row--highlight .profile-col__record-year {
+  font-weight: 600;
+  color: var(--color-text-secondary, #b4b4b6);
+}
+
+.profile-col__record-value {
+  font-family: var(--font-sans);
+  font-size: 12px;
   font-weight: 700;
   color: var(--color-text-primary, #eeeff1);
   font-variant-numeric: tabular-nums;
 }
 
-.stat-item__record--hot {
+/* Split Stats Styling */
+.profile-col__split-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1px 0;
+}
+
+.profile-col__split-label {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-tertiary, #6e6e70);
+}
+
+.profile-col__split-value {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-primary, #eeeff1);
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-col__split-value--hot {
   color: var(--color-win, #10b981);
 }
 
-.stat-item__earnings {
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--color-tier-good, #4ade80);
+/* Responsive: Stack columns on smaller screens */
+@media (max-width: 1100px) {
+  .profile-row {
+    flex-wrap: wrap;
+  }
+
+  .profile-col {
+    flex: 1 1 calc(33.33% - 1px);
+    min-width: 180px;
+    border-bottom: 1px solid var(--subtle-border);
+  }
+
+  .profile-col:nth-child(3) {
+    border-right: none;
+  }
+
+  .profile-col:nth-child(4),
+  .profile-col:nth-child(5) {
+    flex: 1 1 calc(50% - 1px);
+  }
+
+  .profile-col:last-child {
+    border-bottom: none;
+  }
+
+  .profile-col:nth-child(4) {
+    border-bottom: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-row {
+    flex-direction: column;
+  }
+
+  .profile-col {
+    flex: none;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--subtle-border);
+  }
+
+  .profile-col:last-child {
+    border-bottom: none;
+  }
+
+  .profile-col__content {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .profile-col__line {
+    flex: 1;
+    min-width: 100px;
+  }
+
+  .profile-col__split-row,
+  .profile-col__record-row {
+    flex: 1;
+    min-width: 80px;
+  }
 }
 
 /* ============================================================================
