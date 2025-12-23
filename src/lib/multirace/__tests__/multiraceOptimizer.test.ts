@@ -12,6 +12,7 @@ import { describe, it, expect } from 'vitest';
 import {
   classifyRaceStrength,
   findStandoutHorse,
+  analyzeHorseStandout,
   getTopHorsesForRace,
   calculateTicketProbability,
   calculateExpectedValue,
@@ -59,6 +60,124 @@ function createRace(raceNumber: number, horses: MultiRaceHorse[]): MultiRaceRace
 // ============================================================================
 // RACE STRENGTH CLASSIFICATION
 // ============================================================================
+
+// ============================================================================
+// EDGE CASE TESTS - analyzeHorseStandout
+// ============================================================================
+
+describe('analyzeHorseStandout Edge Cases', () => {
+  describe('Tied scores bug (critical)', () => {
+    it('should handle tied scores [180, 180, 160] - both 180s should NOT be standout', () => {
+      const scores = [180, 180, 160];
+
+      // First 180-point horse analysis
+      const horse1Analysis = analyzeHorseStandout(180, scores);
+      expect(horse1Analysis.isStandout).toBe(false);
+      expect(horse1Analysis.isLeader).toBe(false); // Tied, so not unique leader
+      expect(horse1Analysis.gapFromNextBest).toBe(0); // Tied for first, gap is 0
+      expect(horse1Analysis.topScore).toBe(180);
+
+      // Second 180-point horse would have same analysis (same score)
+      const horse2Analysis = analyzeHorseStandout(180, scores);
+      expect(horse2Analysis.isStandout).toBe(false);
+      expect(horse2Analysis.isLeader).toBe(false);
+      expect(horse2Analysis.gapFromNextBest).toBe(0);
+
+      // The 160-point horse
+      const horse3Analysis = analyzeHorseStandout(160, scores);
+      expect(horse3Analysis.isStandout).toBe(false);
+      expect(horse3Analysis.isLeader).toBe(false); // Not at top
+      expect(horse3Analysis.gapFromNextBest).toBe(0); // No one below them (they're last)
+      expect(horse3Analysis.horsesBelow).toBe(0);
+    });
+
+    it('should find gapFromNextBest as first score LESS THAN current', () => {
+      // [200, 180, 180, 160] - 200 should have gap of 20 (to 180), not 0
+      const scores = [200, 180, 180, 160];
+
+      const topAnalysis = analyzeHorseStandout(200, scores);
+      expect(topAnalysis.isLeader).toBe(true); // Unique at top
+      expect(topAnalysis.gapFromNextBest).toBe(20); // Gap to 180
+
+      // 180 horse should have gap of 20 (to 160), but isLeader false (not at top)
+      const midAnalysis = analyzeHorseStandout(180, scores);
+      expect(midAnalysis.isLeader).toBe(false); // Not at top
+      expect(midAnalysis.gapFromNextBest).toBe(20); // Gap to 160
+    });
+  });
+
+  describe('Single horse with context (division by zero guard)', () => {
+    it('should return fieldPercentile = 100 for single horse', () => {
+      const analysis = analyzeHorseStandout(180, [180]);
+
+      expect(analysis.fieldPercentile).toBe(100);
+      expect(analysis.fieldSize).toBe(1);
+      expect(analysis.isLeader).toBe(true); // Only horse is the leader
+      expect(analysis.gapFromNextBest).toBe(0); // No one below
+    });
+
+    it('should return fieldPercentile = 100 for empty field', () => {
+      const analysis = analyzeHorseStandout(180, []);
+
+      expect(analysis.fieldPercentile).toBe(0); // Special case for empty
+      expect(analysis.fieldSize).toBe(0);
+    });
+  });
+
+  describe('All same score semantics', () => {
+    it('should have no leader when all horses have same score', () => {
+      const scores = [150, 150, 150, 150];
+
+      for (const score of scores) {
+        const analysis = analyzeHorseStandout(score, scores);
+        expect(analysis.isLeader).toBe(false); // All tied, no unique leader
+        expect(analysis.isStandout).toBe(false);
+        expect(analysis.gapFromNextBest).toBe(0); // All tied
+      }
+    });
+
+    it('should correctly calculate fieldPercentile when all same score', () => {
+      const scores = [150, 150, 150, 150];
+      const analysis = analyzeHorseStandout(150, scores);
+
+      // horsesBelow = 0 (all same score)
+      // fieldPercentile = (0 / 3) * 100 = 0
+      expect(analysis.horsesBelow).toBe(0);
+      expect(analysis.fieldPercentile).toBe(0);
+    });
+  });
+
+  describe('Normal cases still work', () => {
+    it('should identify clear standout correctly', () => {
+      const scores = [195, 165, 155, 140];
+      const analysis = analyzeHorseStandout(195, scores);
+
+      expect(analysis.isLeader).toBe(true);
+      expect(analysis.isStandout).toBe(true); // 195 >= 180, gap 30 >= 15
+      expect(analysis.gapFromNextBest).toBe(30); // 195 - 165
+      expect(analysis.horsesBelow).toBe(3);
+      expect(analysis.fieldPercentile).toBe(100); // 3 / 3 * 100 = 100
+    });
+
+    it('should NOT mark as standout if gap is insufficient', () => {
+      const scores = [185, 175, 160]; // Gap is only 10 (< 15)
+      const analysis = analyzeHorseStandout(185, scores);
+
+      expect(analysis.isLeader).toBe(true);
+      expect(analysis.isStandout).toBe(false); // Gap 10 < 15 threshold
+      expect(analysis.gapFromNextBest).toBe(10);
+    });
+
+    it('should NOT mark as standout if score below threshold', () => {
+      const scores = [175, 150, 140]; // 175 < 180 threshold
+      const analysis = analyzeHorseStandout(175, scores);
+
+      expect(analysis.isLeader).toBe(true);
+      expect(analysis.isStandout).toBe(false); // Score 175 < 180
+      expect(analysis.gapFromNextBest).toBe(25);
+    });
+  });
+});
 
 describe('Race Strength Classification', () => {
   describe('classifyRaceStrength', () => {
@@ -129,6 +248,42 @@ describe('Race Strength Classification', () => {
 
     it('should return undefined for empty array', () => {
       expect(findStandoutHorse([])).toBeUndefined();
+    });
+
+    it('should return undefined when top horses are tied [180, 180, 160]', () => {
+      const horses = [
+        createHorse(1, 180), // Tied at top
+        createHorse(2, 180), // Tied at top
+        createHorse(3, 160),
+      ];
+
+      // No standout because tied for first
+      expect(findStandoutHorse(horses)).toBeUndefined();
+    });
+
+    it('should return undefined when all horses have same score', () => {
+      const horses = [createHorse(1, 150), createHorse(2, 150), createHorse(3, 150)];
+
+      expect(findStandoutHorse(horses)).toBeUndefined();
+    });
+  });
+
+  describe('classifyRaceStrength with edge cases', () => {
+    it('should NOT classify as standout when tied at top [180, 180, 160]', () => {
+      const horses = [
+        createHorse(1, 180), // Tied at top
+        createHorse(2, 180), // Tied at top
+        createHorse(3, 160),
+      ];
+
+      // Not standout because tied for first
+      expect(classifyRaceStrength(horses)).not.toBe('standout');
+    });
+
+    it('should classify all-same-score race as weak', () => {
+      const horses = [createHorse(1, 150), createHorse(2, 150), createHorse(3, 150)];
+
+      expect(classifyRaceStrength(horses)).toBe('weak');
     });
   });
 });

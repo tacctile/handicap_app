@@ -44,6 +44,126 @@ const SCORE_THRESHOLDS = {
   competitiveCount: 3, // Min horses for competitive race
 };
 
+// ============================================================================
+// STANDOUT ANALYSIS TYPES & FUNCTIONS
+// ============================================================================
+
+/**
+ * Detailed standout analysis for a horse within its field context
+ */
+export interface StandoutAnalysis {
+  /** Whether this horse is a standout (unique leader with sufficient gap) */
+  isStandout: boolean;
+  /** Whether this horse is the unique leader (highest score with no ties) */
+  isLeader: boolean;
+  /** Gap from this horse's score to the next LOWER score (0 if tied for first) */
+  gapFromNextBest: number;
+  /** Percentile ranking in the field (100 = best, 0 = worst) */
+  fieldPercentile: number;
+  /** The horse's score */
+  score: number;
+  /** Top score in the field */
+  topScore: number;
+  /** Number of horses with lower scores */
+  horsesBelow: number;
+  /** Total field size */
+  fieldSize: number;
+}
+
+/**
+ * Analyze standout metrics for a single horse within its field context.
+ *
+ * Handles edge cases:
+ * 1. Tied scores: If horse is tied for first, gapFromNextBest = 0 and isLeader = false
+ * 2. Single horse: fieldPercentile = 100 (avoids division by zero)
+ * 3. All same score: No horse is leader since there's no differentiation
+ *
+ * @param horseScore - The score of the horse to analyze
+ * @param allScores - All scores in the field (can include the horse's score)
+ * @returns Detailed standout analysis
+ *
+ * @example
+ * // Tied scores case [180, 180, 160]
+ * analyzeHorseStandout(180, [180, 180, 160])
+ * // Returns: { isStandout: false, isLeader: false, gapFromNextBest: 0, ... }
+ */
+export function analyzeHorseStandout(horseScore: number, allScores: number[]): StandoutAnalysis {
+  const fieldSize = allScores.length;
+
+  // Edge case: empty field
+  if (fieldSize === 0) {
+    return {
+      isStandout: false,
+      isLeader: false,
+      gapFromNextBest: 0,
+      fieldPercentile: 0,
+      score: horseScore,
+      topScore: 0,
+      horsesBelow: 0,
+      fieldSize: 0,
+    };
+  }
+
+  // Sort scores descending to find topScore
+  const sortedScores = [...allScores].sort((a, b) => b - a);
+  const topScore = sortedScores[0] ?? 0;
+
+  // Count horses with the SAME score as top score (to detect ties at first)
+  const horsesAtTop = sortedScores.filter((s) => s === topScore).length;
+
+  // Count horses with scores BELOW this horse's score
+  const horsesBelow = allScores.filter((s) => s < horseScore).length;
+
+  // Calculate field percentile (guards against division by zero)
+  // fieldPercentile = 100 if only one horse or fieldSize <= 1
+  const fieldPercentile = fieldSize <= 1 ? 100 : (horsesBelow / (fieldSize - 1)) * 100;
+
+  // Find gapFromNextBest:
+  // - Find the first score that is STRICTLY LESS THAN this horse's score
+  // - If the horse is tied for first, gap = 0 (they're not a true unique leader)
+  let gapFromNextBest = 0;
+  const isAtTopScore = horseScore === topScore;
+
+  if (isAtTopScore && horsesAtTop > 1) {
+    // Horse is tied for first place - gap is 0 since they share the lead
+    gapFromNextBest = 0;
+  } else {
+    // Find the first score that is LESS THAN this horse's score
+    const nextBestScore = sortedScores.find((s) => s < horseScore);
+    if (nextBestScore !== undefined) {
+      gapFromNextBest = horseScore - nextBestScore;
+    } else {
+      // No horse below this one - this horse is last or only horse
+      gapFromNextBest = 0;
+    }
+  }
+
+  // A horse is only isLeader if:
+  // 1. Their score equals topScore, AND
+  // 2. No other horse has the same score (unique leader)
+  const isLeader = horseScore === topScore && horsesAtTop === 1;
+
+  // A horse is a standout if:
+  // 1. They are the unique leader (isLeader = true)
+  // 2. Their score meets the standout threshold
+  // 3. They have sufficient gap from the next best
+  const isStandout =
+    isLeader &&
+    horseScore >= SCORE_THRESHOLDS.standout &&
+    gapFromNextBest >= SCORE_THRESHOLDS.standoutGap;
+
+  return {
+    isStandout,
+    isLeader,
+    gapFromNextBest,
+    fieldPercentile,
+    score: horseScore,
+    topScore,
+    horsesBelow,
+    fieldSize,
+  };
+}
+
 /** Strategy-specific selection limits */
 const STRATEGY_SELECTIONS: Record<
   MultiRaceStrategy,
@@ -78,21 +198,27 @@ const BANKROLL_WARNING_PERCENT = 0.5; // Warn if > 50% of daily bankroll
 // ============================================================================
 
 /**
- * Classify race strength based on horse scores
+ * Classify race strength based on horse scores.
+ *
+ * Uses analyzeHorseStandout to properly handle edge cases:
+ * - Tied scores: Two horses tied for first are NOT a standout race
+ * - All same score: No standout exists
  */
 export function classifyRaceStrength(horses: MultiRaceHorse[]): RaceStrength {
   if (horses.length === 0) return 'weak';
 
   const sorted = [...horses].sort((a, b) => b.score - a.score);
   const topHorse = sorted[0];
-  const secondHorse = sorted[1];
 
-  // Check for standout
-  if (
-    topHorse &&
-    topHorse.score >= SCORE_THRESHOLDS.standout &&
-    (!secondHorse || topHorse.score - secondHorse.score >= SCORE_THRESHOLDS.standoutGap)
-  ) {
+  if (!topHorse) return 'weak';
+
+  // Use the new analysis to check for standout (handles ties correctly)
+  const allScores = horses.map((h) => h.score);
+  const analysis = analyzeHorseStandout(topHorse.score, allScores);
+
+  // Check for standout using the corrected logic:
+  // - isStandout already checks for unique leader, threshold, and gap
+  if (analysis.isStandout) {
     return 'standout';
   }
 
@@ -106,20 +232,28 @@ export function classifyRaceStrength(horses: MultiRaceHorse[]): RaceStrength {
 }
 
 /**
- * Find the standout horse in a race
+ * Find the standout horse in a race.
+ *
+ * Uses analyzeHorseStandout to properly handle edge cases:
+ * - Tied scores: If two horses are tied for first, returns undefined
+ * - All same score: Returns undefined since no unique leader exists
+ *
+ * @returns The standout horse if one exists, undefined otherwise
  */
 export function findStandoutHorse(horses: MultiRaceHorse[]): MultiRaceHorse | undefined {
   if (horses.length === 0) return undefined;
 
   const sorted = [...horses].sort((a, b) => b.score - a.score);
   const topHorse = sorted[0];
-  const secondHorse = sorted[1];
 
-  if (
-    topHorse &&
-    topHorse.score >= SCORE_THRESHOLDS.standout &&
-    (!secondHorse || topHorse.score - secondHorse.score >= SCORE_THRESHOLDS.standoutGap)
-  ) {
+  if (!topHorse) return undefined;
+
+  // Use the new analysis to check for standout (handles ties correctly)
+  const allScores = horses.map((h) => h.score);
+  const analysis = analyzeHorseStandout(topHorse.score, allScores);
+
+  // Only return the horse if they are a true standout (unique leader with gap)
+  if (analysis.isStandout) {
     return topHorse;
   }
 
