@@ -161,68 +161,68 @@
   white-space: nowrap;
 }
 
-/* Live odds with stepper */
+/* Live odds - click to edit */
 .horse-summary-bar__odds {
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
   text-align: center;
-}
-
-/* Inline odds stepper */
-.odds-stepper-inline {
-  display: inline-flex;
-  align-items: center;
-  gap: 0;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 6px;
-  padding: 2px;
-}
-
-.odds-stepper-inline__btn {
   display: flex;
-  align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  align-items: center;
+}
+
+/* Editable odds value button */
+.odds-edit-value {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--color-primary, #19abb5);
   background: transparent;
   border: none;
-  border-radius: 4px;
-  color: rgba(255, 255, 255, 0.6);
+  border-bottom: 1px dashed rgba(25, 171, 181, 0.5);
+  padding: 4px 8px;
   cursor: pointer;
   transition: all 0.15s ease;
-  padding: 0;
+  min-width: 48px;
+  text-align: center;
 }
 
-.odds-stepper-inline__btn .material-icons {
-  font-size: 16px;
+.odds-edit-value:hover:not(:disabled) {
+  border-bottom-color: var(--color-primary, #19abb5);
+  background: rgba(25, 171, 181, 0.1);
 }
 
-.odds-stepper-inline__btn:hover:not(:disabled) {
-  background: rgba(25, 171, 181, 0.25);
-  color: var(--color-primary, #19abb5);
+.odds-edit-value:focus {
+  outline: none;
+  border-bottom-style: solid;
+  border-bottom-color: var(--color-primary, #19abb5);
 }
 
-.odds-stepper-inline__btn:active:not(:disabled) {
-  background: rgba(25, 171, 181, 0.35);
-  transform: scale(0.95);
-}
-
-.odds-stepper-inline__btn:disabled {
-  color: rgba(255, 255, 255, 0.2);
+.odds-edit-value--disabled {
+  color: var(--color-text-tertiary);
+  border-bottom-color: transparent;
   cursor: not-allowed;
 }
 
-.odds-stepper-inline__value {
-  min-width: 40px;
-  padding: 0 6px;
-  font-size: 13px;
+/* Odds edit input */
+.odds-edit-input {
+  font-size: 14px;
   font-weight: 600;
+  font-family: inherit;
   color: var(--color-primary, #19abb5);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--color-primary, #19abb5);
+  border-radius: 4px;
+  padding: 4px 8px;
+  width: 64px;
   text-align: center;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  outline: none;
+}
+
+.odds-edit-input::placeholder {
+  color: var(--color-text-tertiary);
+  font-weight: 400;
 }
 
 /* Score - right aligned */
