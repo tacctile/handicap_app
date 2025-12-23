@@ -1244,9 +1244,43 @@
   letter-spacing: 0.02em;
 }
 
-/* Icons column - empty or minimal */
+/* Icons column - help button */
 .horse-list-header__cell--icons {
-  /* Empty header for icon column */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Help trigger button */
+.help-trigger-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
+  border-radius: 6px;
+  color: var(--color-text-secondary, rgba(238, 239, 241, 0.5));
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.help-trigger-btn:hover {
+  background: var(--color-surface-variant, #242428);
+  border-color: var(--color-primary, #19abb5);
+  color: var(--color-primary, #19abb5);
+}
+
+.help-trigger-btn:focus {
+  outline: none;
+  border-color: var(--color-primary, #19abb5);
+  box-shadow: 0 0 0 2px rgba(25, 171, 181, 0.2);
+}
+
+.help-trigger-btn .material-icons {
+  font-size: 18px;
 }
 
 /* Center align certain columns */

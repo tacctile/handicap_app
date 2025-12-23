@@ -743,6 +743,138 @@ body {
 }
 
 /* ============================================
+   Info Tooltip Component
+   ============================================ */
+
+.info-tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.info-tooltip-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-left: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0.35;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease;
+}
+
+.info-tooltip-trigger:hover,
+.info-tooltip-trigger:focus {
+  opacity: 0.8;
+  outline: none;
+}
+
+.info-tooltip-trigger:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.info-tooltip-icon {
+  font-size: 14px !important;
+  color: var(--color-on-surface);
+}
+
+/* Tooltip popup */
+.info-tooltip {
+  position: absolute;
+  z-index: 100;
+  min-width: 220px;
+  max-width: 300px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-outline);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  animation: tooltip-fade-in 0.15s ease;
+  pointer-events: none;
+}
+
+/* Position variants */
+.info-tooltip--bottom {
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.info-tooltip--top {
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.info-tooltip--left {
+  right: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.info-tooltip--right {
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.info-tooltip__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: var(--color-surface-variant);
+  border-bottom: 1px solid var(--color-outline);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.info-tooltip__header-icon {
+  font-size: 14px !important;
+  color: var(--color-primary);
+}
+
+.info-tooltip__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.info-tooltip__content {
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(238, 239, 241, 0.85);
+}
+
+/* Mobile: wider tooltip, touch-friendly */
+@media (max-width: 640px) {
+  .info-tooltip {
+    min-width: 200px;
+    max-width: 260px;
+  }
+
+  .info-tooltip--bottom,
+  .info-tooltip--top {
+    left: auto;
+    right: -8px;
+    transform: none;
+  }
+
+  .info-tooltip-trigger {
+    padding: 4px;
+    margin-left: 2px;
+  }
+}
+
+/* ============================================
    Betting Recommendations Styles
    ============================================ */
 

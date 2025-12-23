@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { HorseEntry, RaceHeader } from '../types/drf';
 import type { HorseScore, TacticalAdvantage, OverlayAnalysis } from '../lib/scoring';
+import { InfoTooltip } from './InfoTooltip';
 import {
   SCORE_LIMITS,
   getScoreColor,
@@ -127,6 +128,8 @@ interface CategoryCardProps {
   details: React.ReactNode;
   isExpanded: boolean;
   onToggle: () => void;
+  /** Optional tooltip explaining what this category measures */
+  tooltip?: string;
 }
 
 function CategoryCard({
@@ -137,6 +140,7 @@ function CategoryCard({
   details,
   isExpanded,
   onToggle,
+  tooltip,
 }: CategoryCardProps) {
   const scoreColor =
     score >= maxScore * 0.7 ? '#36d1da' : score >= maxScore * 0.5 ? '#19abb5' : '#888888';
@@ -147,6 +151,11 @@ function CategoryCard({
         <div className="category-card-left">
           <Icon name={icon} className="category-icon" />
           <span className="category-title">{title}</span>
+          {tooltip && (
+            <span onClick={(e) => e.stopPropagation()}>
+              <InfoTooltip title={title} content={tooltip} />
+            </span>
+          )}
         </div>
         <div className="category-card-right">
           <div
@@ -834,6 +843,7 @@ export function HorseDetailModal({
                 maxScore={SCORE_LIMITS.connections}
                 isExpanded={expandedCategories.has('connections')}
                 onToggle={() => toggleCategory('connections')}
+                tooltip="How well does the trainer and jockey combination perform? Some trainers excel in certain situations, and some trainer-jockey teams have strong win rates together."
                 details={
                   <div className="breakdown-details">
                     {/* Trainer Pattern */}
@@ -976,6 +986,7 @@ export function HorseDetailModal({
                 maxScore={SCORE_LIMITS.postPosition}
                 isExpanded={expandedCategories.has('postPosition')}
                 onToggle={() => toggleCategory('postPosition')}
+                tooltip="Does this starting gate give the horse an advantage or disadvantage? Different tracks have tendencies where certain post positions win more often."
                 details={
                   <div className="breakdown-details">
                     <div className="breakdown-row">
@@ -1004,6 +1015,7 @@ export function HorseDetailModal({
                 maxScore={SCORE_LIMITS.speedClass}
                 isExpanded={expandedCategories.has('speedClass')}
                 onToggle={() => toggleCategory('speedClass')}
+                tooltip="How fast has this horse run recently, and is it competing against similar-quality horses? Speed figures measure raw ability, while class shows competition level."
                 details={
                   <div className="breakdown-details">
                     <div className="breakdown-row">
@@ -1039,6 +1051,7 @@ export function HorseDetailModal({
                 maxScore={SCORE_LIMITS.form}
                 isExpanded={expandedCategories.has('form')}
                 onToggle={() => toggleCategory('form')}
+                tooltip="Is this horse racing well lately? Recent results, days since last race, and consistency all factor in. Horses in good form tend to repeat strong performances."
                 details={
                   <div className="breakdown-details">
                     <div className="breakdown-row">
@@ -1071,6 +1084,7 @@ export function HorseDetailModal({
                 maxScore={SCORE_LIMITS.equipment}
                 isExpanded={expandedCategories.has('equipment')}
                 onToggle={() => toggleCategory('equipment')}
+                tooltip="Has the trainer made any equipment changes for this race? Adding blinkers (eye covers) or changing shoes can signal a trainer is trying something new to improve performance."
                 details={
                   <div className="breakdown-details">
                     {/* Equipment Changes List */}
@@ -1193,6 +1207,7 @@ export function HorseDetailModal({
                 maxScore={SCORE_LIMITS.pace}
                 isExpanded={expandedCategories.has('pace')}
                 onToggle={() => toggleCategory('pace')}
+                tooltip="How does this horse like to run the race? Some horses lead from the start, others close from behind. This score shows if the horse's style fits well with how this race is likely to unfold."
                 details={
                   <div className="breakdown-details">
                     {/* Running Style */}

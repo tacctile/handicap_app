@@ -7,6 +7,8 @@ import { BettingRecommendations } from './BettingRecommendations';
 import { FileUpload } from './FileUpload';
 import { HorseExpandedView } from './HorseExpandedView';
 import { HorseSummaryBar } from './HorseSummaryBar';
+import { InfoTooltip } from './InfoTooltip';
+import { ScoringHelpModal } from './ScoringHelpModal';
 import { calculateRaceScores, MAX_SCORE, analyzeOverlay } from '../lib/scoring';
 import type { ParsedDRFFile, ParsedRace } from '../types/drf';
 import type { useRaceState } from '../hooks/useRaceState';
@@ -57,6 +59,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // State for horses selected for comparison
   const [compareHorses, setCompareHorses] = useState<Set<number>>(new Set());
+
+  // State for scoring help modal
+  const [helpModalOpen, setHelpModalOpen] = useState(false);
 
   const toggleHorseExpand = (horseId: string | number) => {
     setExpandedHorseId((prev) => (prev === horseId ? null : horseId));
@@ -589,41 +594,89 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="horse-list">
                 {/* Column Headers - 10 columns */}
                 <div className="horse-list-header">
-                  {/* Column 1: Scratch/Compare icons */}
+                  {/* Column 1: Help button */}
                   <div className="horse-list-header__cell horse-list-header__cell--icons">
-                    {/* Empty header for icon column */}
+                    <button
+                      type="button"
+                      className="help-trigger-btn"
+                      onClick={() => setHelpModalOpen(true)}
+                      aria-label="How to read the form"
+                      title="How to Read the Form"
+                    >
+                      <span className="material-icons">help_outline</span>
+                    </button>
                   </div>
 
                   {/* Column 2: PP */}
-                  <div className="horse-list-header__cell horse-list-header__cell--pp">PP</div>
+                  <div className="horse-list-header__cell horse-list-header__cell--pp">
+                    PP
+                    <InfoTooltip
+                      title="Post Position"
+                      content="The starting gate number where the horse begins the race. Lower numbers are closer to the inside rail. Some tracks favor certain post positions."
+                    />
+                  </div>
 
                   {/* Column 3: Horse Name */}
-                  <div className="horse-list-header__cell horse-list-header__cell--name">HORSE</div>
+                  <div className="horse-list-header__cell horse-list-header__cell--name">
+                    HORSE
+                    <InfoTooltip
+                      title="Horse Name"
+                      content="The horse's registered racing name. Click on a horse row to see detailed information about their past races, trainer, jockey, and more."
+                    />
+                  </div>
 
                   {/* Column 4: Live Odds */}
-                  <div className="horse-list-header__cell horse-list-header__cell--odds">ODDS</div>
+                  <div className="horse-list-header__cell horse-list-header__cell--odds">
+                    ODDS
+                    <InfoTooltip
+                      title="Current Odds"
+                      content="The morning line odds set by the track handicapper, showing the expected payout. For example, 5-1 means you'd win $5 for every $1 bet (plus your original bet back). You can click to adjust these based on live tote board changes."
+                    />
+                  </div>
 
                   {/* Column 5: Score */}
                   <div className="horse-list-header__cell horse-list-header__cell--score">
                     SCORE
+                    <InfoTooltip
+                      title="Furlong Score"
+                      content="Our overall rating for this horse in this race, out of 290 points. Higher scores indicate horses with better combinations of speed, connections, form, and tactical advantages. Use this to quickly compare horses."
+                    />
                   </div>
 
                   {/* Column 6: Win Confidence */}
                   <div className="horse-list-header__cell horse-list-header__cell--confidence">
                     WIN CONF
+                    <InfoTooltip
+                      title="Win Confidence"
+                      content="The estimated probability that this horse wins the race, shown as a percentage. This is calculated from the Furlong Score relative to other horses in the field."
+                    />
                   </div>
 
                   {/* Column 7: Fair Odds */}
-                  <div className="horse-list-header__cell horse-list-header__cell--fair">FAIR</div>
+                  <div className="horse-list-header__cell horse-list-header__cell--fair">
+                    FAIR
+                    <InfoTooltip
+                      title="Fair Odds"
+                      content="What the odds should be based on our analysis. If the actual odds are higher than the fair odds, you may be getting good value. If lower, the horse may be overbet by the public."
+                    />
+                  </div>
 
                   {/* Column 8: Edge % */}
                   <div className="horse-list-header__cell horse-list-header__cell--value">
                     EDGE %
+                    <InfoTooltip
+                      title="Edge Percentage"
+                      content="The difference between the actual odds and our fair odds, shown as a percentage. Positive numbers (green) mean the horse offers value. Negative numbers (red) mean the horse is overbet."
+                    />
                   </div>
 
                   {/* Column 9: Odds Edge */}
                   <div className="horse-list-header__cell horse-list-header__cell--rating">
                     ODDS EDGE
+                    <InfoTooltip
+                      title="Odds Edge Rating"
+                      content="A quick label showing the value: OVERLAY means the odds are better than they should be (potential value bet). UNDERLAY means the public is betting this horse down below fair value."
+                    />
                   </div>
 
                   {/* Column 10: Expand */}
@@ -953,6 +1006,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
       )}
+
+      {/* Scoring Help Modal */}
+      <ScoringHelpModal isOpen={helpModalOpen} onClose={() => setHelpModalOpen(false)} />
     </div>
   );
 };
