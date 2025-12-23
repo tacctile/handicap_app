@@ -10,6 +10,7 @@ import { HorseSummaryBar } from './HorseSummaryBar';
 import { InfoTooltip } from './InfoTooltip';
 import { ScoringHelpModal } from './ScoringHelpModal';
 import { calculateRaceScores, MAX_SCORE, analyzeOverlay } from '../lib/scoring';
+import { getTrackData } from '../data/tracks';
 import type { ParsedDRFFile, ParsedRace } from '../types/drf';
 import type { useRaceState } from '../hooks/useRaceState';
 import type { TrackCondition as RaceStateTrackCondition } from '../hooks/useRaceState';
@@ -95,45 +96,63 @@ const expandSex = (sex: string): string => {
   return sexMap[sex.toUpperCase()] || sex;
 };
 
-// Build readable race description sentence
-const buildRaceDescription = (race: ParsedRace | undefined): string => {
-  if (!race?.header) return '';
+// Get full track name with code and size
+const getTrackDisplayName = (trackCode: string | undefined, trackSize: string): string => {
+  if (!trackCode) return 'Unknown Track';
+  const trackData = getTrackData(trackCode);
+  if (trackData) {
+    return `${trackData.name} (${trackCode} ${trackSize})`;
+  }
+  // Fallback to just code if no track data
+  return `${trackCode} (${trackSize})`;
+};
 
-  const parts: string[] = [];
+// Build readable race description as flowing sentences
+const buildRaceDescription = (race: ParsedRace | undefined): { line1: string; line2: string } => {
+  if (!race?.header) return { line1: '', line2: '' };
+
+  // Line 1: Distance + Classification + "for [restrictions]"
+  const line1Parts: string[] = [];
 
   // Distance
   if (race.header.distance) {
-    parts.push(race.header.distance);
+    line1Parts.push(race.header.distance);
   }
 
   // Classification
-  if (race.header.classification) {
-    parts.push(expandClassification(race.header.classification));
+  if (race.header.classification && race.header.classification !== 'unknown') {
+    line1Parts.push(expandClassification(race.header.classification));
   }
 
-  // Purse
-  if (race.header.purse) {
-    parts.push(`Purse ${race.header.purseFormatted || formatCurrency(race.header.purse)}`);
-  }
-
-  // Build "For [sex] [age]" phrase
+  // Build "for [sex] [age]" phrase
   const sexText = expandSex(race.header.sexRestriction);
   const ageText = expandAge(race.header.ageRestriction);
   if (sexText && ageText) {
-    parts.push(`For ${sexText} ${ageText}`);
+    line1Parts.push(`for ${sexText} ${ageText}`);
   } else if (ageText) {
-    parts.push(`For ${ageText}`);
+    line1Parts.push(`for ${ageText}`);
   } else if (sexText) {
-    parts.push(`For ${sexText}`);
+    line1Parts.push(`for ${sexText}`);
+  }
+
+  // Line 2: Purse + Field size
+  const line2Parts: string[] = [];
+
+  // Purse
+  if (race.header.purse) {
+    line2Parts.push(`Purse ${race.header.purseFormatted || formatCurrency(race.header.purse)}`);
   }
 
   // Field size
   const fieldSize = race.horses?.length || race.header.fieldSize || 0;
   if (fieldSize > 0) {
-    parts.push(`${fieldSize} Runners`);
+    line2Parts.push(`${fieldSize} Runners`);
   }
 
-  return parts.join(' • ');
+  return {
+    line1: line1Parts.join(' ') + (line1Parts.length > 0 ? '.' : ''),
+    line2: line2Parts.join('. ') + (line2Parts.length > 0 ? '.' : '')
+  };
 };
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -544,11 +563,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
     >
       {/* LEFT ZONE: Top bar, Race rail + Main content, Bottom bar */}
       <div className="app-left-zone">
-        {/* Top Bar - Two rows when data loaded */}
-        <header className={`app-topbar ${parsedData ? 'app-topbar--two-row' : ''}`}>
+        {/* Top Bar - Single row */}
+        <header className="app-topbar">
           {!parsedData ? (
-            /* EMPTY STATE - No DRF loaded (single row) */
-            <div className="app-topbar__row">
+            /* EMPTY STATE - No DRF loaded */
+            <>
               {/* Logo */}
               <div className="app-topbar__logo">
                 <div className="app-topbar__logo-icon">
@@ -572,82 +591,86 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <span>{isLoading ? 'Parsing...' : 'Upload DRF File'}</span>
                 </button>
               </div>
-            </div>
+            </>
           ) : (
-            /* LOADED STATE - DRF file loaded (two rows) */
+            /* LOADED STATE - DRF file loaded */
             <>
-              {/* Row 1: Identity bar */}
-              <div className="app-topbar__row app-topbar__row--identity">
-                {/* Logo */}
-                <div className="app-topbar__logo">
-                  <div className="app-topbar__logo-icon">
-                    <span className="material-icons">casino</span>
-                  </div>
-                  <span className="app-topbar__logo-text">Furlong</span>
+              {/* Logo */}
+              <div className="app-topbar__logo">
+                <div className="app-topbar__logo-icon">
+                  <span className="material-icons">casino</span>
                 </div>
-
-                {/* Separator after logo */}
-                <div className="app-topbar__separator"></div>
-
-                {/* Track info */}
-                <div className="app-topbar__info">
-                  <span className="app-topbar__track">
-                    {trackCode || 'UNK'} ({getTrackSize(trackCode)})
-                  </span>
-                  <span className="app-topbar__dot">•</span>
-                  <span className="app-topbar__date">{formatRaceDate(raceDate)}</span>
-                  <span className="app-topbar__dot">•</span>
-                  <span className="app-topbar__race-label">
-                    <span className="app-topbar__race-keyword">Race</span>
-                    <span className="app-topbar__race-num">{selectedRaceIndex + 1}</span>
-                    <span className="app-topbar__race-of">of {parsedData.races?.length || 0}</span>
-                  </span>
-                </div>
-
-                {/* Spacer to push items to the right */}
-                <div className="app-topbar__spacer"></div>
-
-                {/* Post time countdown */}
-                <div
-                  className={`app-topbar__countdown ${countdownDisplay.isPosted ? 'app-topbar__countdown--posted' : `app-topbar__countdown--${getCountdownUrgency(countdownSeconds)}`}`}
-                >
-                  {countdownDisplay.isPosted ? (
-                    <span className="app-topbar__countdown-time">{countdownDisplay.text}</span>
-                  ) : (
-                    <>
-                      <span>Post </span>
-                      <span className="app-topbar__countdown-time">{countdownDisplay.text}</span>
-                    </>
-                  )}
-                </div>
-
-                {/* Separator */}
-                <div className="app-topbar__separator"></div>
-
-                {/* Track condition dropdown */}
-                <div className="app-topbar__condition">
-                  <select
-                    className="app-topbar__condition-select"
-                    value={trackCondition}
-                    onChange={(e) =>
-                      onTrackConditionChange(e.target.value as RaceStateTrackCondition)
-                    }
-                  >
-                    <option value="fast">Fast</option>
-                    <option value="good">Good</option>
-                    <option value="muddy">Muddy</option>
-                    <option value="sloppy">Sloppy</option>
-                    <option value="yielding">Yielding</option>
-                    <option value="firm">Firm</option>
-                  </select>
-                </div>
+                <span className="app-topbar__logo-text">Furlong</span>
               </div>
 
-              {/* Row 2: Race description */}
-              <div className="app-topbar__row app-topbar__row--description">
-                <span className="app-topbar__description">
-                  {buildRaceDescription(currentRace)}
+              {/* Separator after logo */}
+              <div className="app-topbar__separator"></div>
+
+              {/* Left section: Track, Date, Race - larger font */}
+              <div className="app-topbar__identity">
+                <span className="app-topbar__track">
+                  {getTrackDisplayName(trackCode, getTrackSize(trackCode))}
                 </span>
+                <span className="app-topbar__dot">•</span>
+                <span className="app-topbar__date">{formatRaceDate(raceDate)}</span>
+                <span className="app-topbar__dot">•</span>
+                <span className="app-topbar__race-label">
+                  Race {selectedRaceIndex + 1} of {parsedData.races?.length || 0}
+                </span>
+              </div>
+
+              {/* Separator */}
+              <div className="app-topbar__separator"></div>
+
+              {/* Center: Race info box - can be 1 or 2 lines */}
+              <div className="app-topbar__race-info-box">
+                {(() => {
+                  const desc = buildRaceDescription(currentRace);
+                  return (
+                    <div className="app-topbar__race-info-text">
+                      <span className="app-topbar__race-info-line">{desc.line1}</span>
+                      {desc.line2 && <span className="app-topbar__race-info-line">{desc.line2}</span>}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Separator */}
+              <div className="app-topbar__separator"></div>
+
+              {/* Post time countdown */}
+              <div
+                className={`app-topbar__countdown ${countdownDisplay.isPosted ? 'app-topbar__countdown--posted' : `app-topbar__countdown--${getCountdownUrgency(countdownSeconds)}`}`}
+              >
+                {countdownDisplay.isPosted ? (
+                  <span className="app-topbar__countdown-time">{countdownDisplay.text}</span>
+                ) : (
+                  <>
+                    <span>Post </span>
+                    <span className="app-topbar__countdown-time">{countdownDisplay.text}</span>
+                  </>
+                )}
+              </div>
+
+              {/* Separator */}
+              <div className="app-topbar__separator"></div>
+
+              {/* Track condition dropdown */}
+              <div className="app-topbar__condition">
+                <select
+                  className="app-topbar__condition-select"
+                  value={trackCondition}
+                  onChange={(e) =>
+                    onTrackConditionChange(e.target.value as RaceStateTrackCondition)
+                  }
+                >
+                  <option value="fast">Fast</option>
+                  <option value="good">Good</option>
+                  <option value="muddy">Muddy</option>
+                  <option value="sloppy">Sloppy</option>
+                  <option value="yielding">Yielding</option>
+                  <option value="firm">Firm</option>
+                </select>
               </div>
             </>
           )}

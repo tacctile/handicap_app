@@ -31,7 +31,7 @@
 /* Left zone: contains top bar, race rail + main content, bottom bar */
 .app-left-zone {
   display: grid;
-  grid-template-rows: auto 1fr var(--dimension-bar);
+  grid-template-rows: var(--dimension-bar) 1fr var(--dimension-bar);
   grid-template-columns: var(--dimension-bar) 1fr;
   overflow: hidden;
   transition: width var(--transition-normal);
@@ -65,40 +65,15 @@
   grid-column: 1 / -1;
   grid-row: 1;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex-direction: row;
+  align-items: center;
   padding: 0 16px;
   background: var(--color-card);
   border-bottom: 1px solid var(--color-border);
   height: var(--dimension-bar);
   z-index: 100;
-  transition: height var(--transition-normal), width var(--transition-normal);
-}
-
-/* Two-row topbar when data is loaded */
-.app-layout .app-topbar--two-row {
-  height: calc(var(--dimension-bar) + 32px);
-}
-
-/* Topbar row container */
-.app-topbar__row {
-  display: flex;
-  align-items: center;
   gap: var(--gap-container);
-  width: 100%;
-}
-
-/* Identity row (top row) */
-.app-topbar__row--identity {
-  height: var(--dimension-bar);
-  flex-shrink: 0;
-}
-
-/* Description row (bottom row) */
-.app-topbar__row--description {
-  height: 32px;
-  padding-left: 4px;
-  border-top: 1px solid var(--color-border);
+  transition: width var(--transition-normal);
 }
 
 /* Legacy flexbox topbar */
@@ -223,66 +198,61 @@
   font-size: 18px;
 }
 
-/* Track info section */
-.app-topbar__info {
+/* Identity section - Track, Date, Race (larger font) */
+.app-topbar__identity {
   display: flex;
   align-items: center;
   gap: var(--gap-element);
-  font-size: 14px;
+  font-size: 16px;
   color: var(--color-text-primary);
   flex-shrink: 0;
 }
 
 .app-topbar__track {
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .app-topbar__dot {
   color: var(--color-text-tertiary);
 }
 
-.app-topbar__date,
-.app-topbar__races {
+.app-topbar__date {
   color: var(--color-text-primary);
 }
 
-/* Race label section - "Race X of Y" */
+/* Race label - "Race X of Y" - all teal */
 .app-topbar__race-label {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* Race info box - centered in the middle space */
+.app-topbar__race-info-box {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 var(--gap-container);
 }
 
-/* "Race" keyword - teal and bold */
-.app-topbar__race-keyword {
-  font-weight: 700;
-  color: var(--color-primary);
+/* Race info text container - left justified paragraph style */
+.app-topbar__race-info-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
 }
 
-/* Race number */
-.app-topbar__race-num {
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-/* "of X" text */
-.app-topbar__race-of {
-  color: var(--color-text-secondary);
-}
-
-/* Race description on second row */
-.app-topbar__description {
+/* Individual lines in race info */
+.app-topbar__race-info-line {
   font-size: 14px;
   color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* Style dots in description */
-.app-topbar__description .app-topbar__dot {
-  color: var(--color-text-tertiary);
-  margin: 0 4px;
+  max-width: 100%;
 }
 
 /* Spacer to push items to the right */
