@@ -19,7 +19,7 @@ function createMockHorse(
       programNumber: String(idx + 1),
       horseName: `Horse${idx + 1}`,
       morningLineOdds: odds,
-    } as HorseEntry,
+    } as unknown as HorseEntry,
     index: idx,
     score: {
       total: score,
