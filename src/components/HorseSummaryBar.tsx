@@ -1,14 +1,9 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import './HorseSummaryBar.css';
 import type { HorseEntry } from '../types/drf';
 import { getScoreColor } from '../lib/scoring';
 import { scoreToWinProbability } from '../lib/scoring/overlayAnalysis';
-import {
-  incrementOdds,
-  decrementOdds,
-  canIncrementOdds,
-  canDecrementOdds,
-} from '../lib/utils/oddsStepper';
+import { normalizeOddsFormat } from '../lib/utils/oddsStepper';
 
 interface TierInfo {
   label: string;
@@ -145,13 +140,15 @@ const oddsToString = (odds: { numerator: number; denominator: number }): string 
   return `${odds.numerator}-${odds.denominator}`;
 };
 
-// Helper to parse odds string to object
-const parseOddsString = (oddsStr: string): { numerator: number; denominator: number } => {
-  const match = oddsStr.match(/^(\d+)-(\d+)$/);
+// Helper to parse odds string to object - accepts flexible formats
+const parseOddsString = (oddsStr: string): { numerator: number; denominator: number } | null => {
+  // Normalize the format first (handles "/", ":", spaces)
+  const normalized = normalizeOddsFormat(oddsStr.trim());
+  const match = normalized.match(/^(\d+)-(\d+)$/);
   if (match && match[1] && match[2]) {
     return { numerator: parseInt(match[1], 10), denominator: parseInt(match[2], 10) };
   }
-  return { numerator: 5, denominator: 1 }; // Default fallback
+  return null; // Return null for invalid input
 };
 
 export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
@@ -195,33 +192,57 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
     }
   };
 
-  // Odds stepper handlers
+  // Click-to-edit odds state
+  const [isEditingOdds, setIsEditingOdds] = useState(false);
+  const [oddsInputValue, setOddsInputValue] = useState('');
+  const oddsInputRef = useRef<HTMLInputElement>(null);
   const currentOddsStr = oddsToString(currentOdds);
 
-  const handleIncrementOdds = useCallback(
+  // Focus input when editing starts
+  useEffect(() => {
+    if (isEditingOdds && oddsInputRef.current) {
+      oddsInputRef.current.focus();
+      oddsInputRef.current.select();
+    }
+  }, [isEditingOdds]);
+
+  const handleOddsClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (!isScratched && canIncrementOdds(currentOddsStr)) {
-        const newOdds = incrementOdds(currentOddsStr);
-        onOddsChange(parseOddsString(newOdds));
+      if (!isScratched) {
+        setOddsInputValue(currentOddsStr);
+        setIsEditingOdds(true);
       }
     },
-    [isScratched, currentOddsStr, onOddsChange]
+    [isScratched, currentOddsStr]
   );
 
-  const handleDecrementOdds = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (!isScratched && canDecrementOdds(currentOddsStr)) {
-        const newOdds = decrementOdds(currentOddsStr);
-        onOddsChange(parseOddsString(newOdds));
+  const handleOddsInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setOddsInputValue(e.target.value);
+  }, []);
+
+  const handleOddsSubmit = useCallback(() => {
+    const parsed = parseOddsString(oddsInputValue);
+    if (parsed) {
+      onOddsChange(parsed);
+    }
+    setIsEditingOdds(false);
+  }, [oddsInputValue, onOddsChange]);
+
+  const handleOddsKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        handleOddsSubmit();
+      } else if (e.key === 'Escape') {
+        setIsEditingOdds(false);
       }
     },
-    [isScratched, currentOddsStr, onOddsChange]
+    [handleOddsSubmit]
   );
 
-  const canIncrement = !isScratched && canIncrementOdds(currentOddsStr);
-  const canDecrement = !isScratched && canDecrementOdds(currentOddsStr);
+  const handleOddsBlur = useCallback(() => {
+    handleOddsSubmit();
+  }, [handleOddsSubmit]);
 
   return (
     <div
@@ -277,33 +298,32 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       {/* Column 3: Horse Name - FULL WIDTH, NO TRUNCATION */}
       <div className="horse-summary-bar__name">{horseName.toUpperCase()}</div>
 
-      {/* Column 4: Live Odds with +/- stepper */}
+      {/* Column 4: Live Odds - Click to edit */}
       <div className="horse-summary-bar__odds" onClick={(e) => e.stopPropagation()}>
-        <div className="odds-stepper-inline">
+        {isEditingOdds ? (
+          <input
+            ref={oddsInputRef}
+            type="text"
+            className="odds-edit-input"
+            value={oddsInputValue}
+            onChange={handleOddsInputChange}
+            onKeyDown={handleOddsKeyDown}
+            onBlur={handleOddsBlur}
+            placeholder="e.g. 7-2"
+            aria-label="Enter odds"
+          />
+        ) : (
           <button
             type="button"
-            className="odds-stepper-inline__btn"
-            onClick={handleDecrementOdds}
-            disabled={!canDecrement}
-            aria-label="Decrease odds"
-            title="Lower odds (more favored)"
+            className={`odds-edit-value ${isScratched ? 'odds-edit-value--disabled' : ''}`}
+            onClick={handleOddsClick}
+            disabled={isScratched}
+            title="Click to edit odds"
+            aria-label={`Current odds ${currentOddsStr}, click to edit`}
           >
-            <span className="material-icons">remove</span>
+            {currentOddsStr}
           </button>
-          <span className="odds-stepper-inline__value">
-            {currentOdds.numerator}-{currentOdds.denominator}
-          </span>
-          <button
-            type="button"
-            className="odds-stepper-inline__btn"
-            onClick={handleIncrementOdds}
-            disabled={!canIncrement}
-            aria-label="Increase odds"
-            title="Higher odds (longer shot)"
-          >
-            <span className="material-icons">add</span>
-          </button>
-        </div>
+        )}
       </div>
 
       {/* Column 5: Score */}
