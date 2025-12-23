@@ -95,10 +95,12 @@
      HORSE LIST GRID COLUMNS
      Single source of truth for header + rows
      10 columns: icons | PP | name | odds | score | win conf | fair | edge% | odds edge | expand
-     Using 1fr on horse name ensures grid expands to fill available width
+
+     Horse name is FIXED WIDTH (340px) - sized for 20 characters at 24px font
+     Empty space to right of shorter names is intentional - columns never stretch left
      All data columns are uniform width (100px) to prevent header text wrapping
      ============================================ */
-  --horse-list-grid: 70px /* scratch/compare/help icons */ 70px /* PP - larger for 32px text */ minmax(180px, 1fr)
-    /* horse name - FLEXIBLE, takes remaining space */ 100px /* odds */ 100px /* score */ 100px
+  --horse-list-grid: 70px /* scratch/compare/help icons */ 50px /* PP - 28px text */ 340px
+    /* horse name - FIXED for 20 chars at 24px */ 100px /* odds */ 100px /* score */ 100px
     /* win confidence */ 100px /* fair */ 100px /* edge% */ 100px /* odds edge badge */ 40px; /* expand */
 }
