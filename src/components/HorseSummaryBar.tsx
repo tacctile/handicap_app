@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import './HorseSummaryBar.css';
 import type { HorseEntry } from '../types/drf';
 import { getScoreColor } from '../lib/scoring';
 import { scoreToWinProbability } from '../lib/scoring/overlayAnalysis';
+import {
+  incrementOdds,
+  decrementOdds,
+  canIncrementOdds,
+  canDecrementOdds,
+} from '../lib/utils/oddsStepper';
 
 interface TierInfo {
   label: string;
@@ -134,8 +140,19 @@ interface HorseSummaryBarProps {
   onCompareToggle: (selected: boolean) => void;
 }
 
-// OddsInput component removed - odds now displayed as simple text
-// Can be re-added later with edit popup functionality
+// Helper to convert odds object to string
+const oddsToString = (odds: { numerator: number; denominator: number }): string => {
+  return `${odds.numerator}-${odds.denominator}`;
+};
+
+// Helper to parse odds string to object
+const parseOddsString = (oddsStr: string): { numerator: number; denominator: number } => {
+  const match = oddsStr.match(/^(\d+)-(\d+)$/);
+  if (match && match[1] && match[2]) {
+    return { numerator: parseInt(match[1], 10), denominator: parseInt(match[2], 10) };
+  }
+  return { numerator: 5, denominator: 1 }; // Default fallback
+};
 
 export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   horse,
@@ -150,7 +167,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   isScratched,
   onScratchToggle,
   currentOdds,
-  onOddsChange: _onOddsChange, // Not used for now - odds displayed as simple text
+  onOddsChange,
   isCompareSelected,
   onCompareToggle,
 }) => {
@@ -177,6 +194,34 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       onToggleExpand();
     }
   };
+
+  // Odds stepper handlers
+  const currentOddsStr = oddsToString(currentOdds);
+
+  const handleIncrementOdds = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!isScratched && canIncrementOdds(currentOddsStr)) {
+        const newOdds = incrementOdds(currentOddsStr);
+        onOddsChange(parseOddsString(newOdds));
+      }
+    },
+    [isScratched, currentOddsStr, onOddsChange]
+  );
+
+  const handleDecrementOdds = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!isScratched && canDecrementOdds(currentOddsStr)) {
+        const newOdds = decrementOdds(currentOddsStr);
+        onOddsChange(parseOddsString(newOdds));
+      }
+    },
+    [isScratched, currentOddsStr, onOddsChange]
+  );
+
+  const canIncrement = !isScratched && canIncrementOdds(currentOddsStr);
+  const canDecrement = !isScratched && canDecrementOdds(currentOddsStr);
 
   return (
     <div
@@ -232,9 +277,33 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       {/* Column 3: Horse Name - FULL WIDTH, NO TRUNCATION */}
       <div className="horse-summary-bar__name">{horseName.toUpperCase()}</div>
 
-      {/* Column 4: Live Odds - simple text display */}
-      <div className="horse-summary-bar__odds">
-        {currentOdds.numerator}-{currentOdds.denominator}
+      {/* Column 4: Live Odds with +/- stepper */}
+      <div className="horse-summary-bar__odds" onClick={(e) => e.stopPropagation()}>
+        <div className="odds-stepper-inline">
+          <button
+            type="button"
+            className="odds-stepper-inline__btn"
+            onClick={handleDecrementOdds}
+            disabled={!canDecrement}
+            aria-label="Decrease odds"
+            title="Lower odds (more favored)"
+          >
+            <span className="material-icons">remove</span>
+          </button>
+          <span className="odds-stepper-inline__value">
+            {currentOdds.numerator}-{currentOdds.denominator}
+          </span>
+          <button
+            type="button"
+            className="odds-stepper-inline__btn"
+            onClick={handleIncrementOdds}
+            disabled={!canIncrement}
+            aria-label="Increase odds"
+            title="Higher odds (longer shot)"
+          >
+            <span className="material-icons">add</span>
+          </button>
+        </div>
       </div>
 
       {/* Column 5: Score */}
@@ -248,7 +317,9 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       </div>
 
       {/* Column 6: Win Confidence (based on score) */}
-      <div className={`horse-summary-bar__confidence horse-summary-bar__confidence--${winConfidence.className}`}>
+      <div
+        className={`horse-summary-bar__confidence horse-summary-bar__confidence--${winConfidence.className}`}
+      >
         <span className="horse-summary-bar__confidence-label">{winConfidence.label}</span>
       </div>
 
