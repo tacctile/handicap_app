@@ -23,8 +23,8 @@
   display: grid;
   grid-template-columns: var(--horse-list-grid);
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px; /* 16px left/right for breathing room */
+  gap: 16px; /* Increased gap for buffer space between columns */
+  padding: 14px 16px; /* Increased vertical padding for larger text */
   margin: 0;
   background: var(--color-card);
   border-bottom: 1px solid var(--color-border);
@@ -140,33 +140,34 @@
    CELL STYLES
    ============================================ */
 
-/* Program number - centered, large and prominent */
+/* Program number - anchor/identifier (Option C hierarchy) */
 .horse-summary-bar__pp {
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 700;
   color: var(--color-text-primary);
   text-align: center;
   line-height: 1;
 }
 
-/* Horse name - left aligned, large and prominent */
+/* Horse name - primary info, FIXED WIDTH column (Option C hierarchy)
+   Column is sized for 20 characters - shorter names will have whitespace on right
+   This is intentional - columns never stretch to fill empty space */
 .horse-summary-bar__name {
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--color-text-primary);
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  line-height: 1.2;
-  /* Allow text to use available space */
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1;
+  /* Name should never truncate or wrap - column is sized for 20 chars */
   white-space: nowrap;
+  overflow: visible;
 }
 
-/* Live odds - click to edit */
+/* Live odds - key interactive element (Option C hierarchy) */
 .horse-summary-bar__odds {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: var(--color-text-primary);
   text-align: center;
   display: flex;
@@ -184,17 +185,17 @@
 
 /* Editable odds value button */
 .odds-edit-value {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   font-family: inherit;
   color: var(--color-primary, #19abb5);
   background: transparent;
   border: none;
   border-bottom: 1px dashed rgba(25, 171, 181, 0.5);
-  padding: 4px 8px;
+  padding: 4px 10px;
   cursor: pointer;
   transition: all 0.15s ease;
-  min-width: 48px;
+  min-width: 56px;
   text-align: center;
 }
 
@@ -217,15 +218,15 @@
 
 /* Odds edit input */
 .odds-edit-input {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   font-family: inherit;
   color: var(--color-primary, #19abb5);
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--color-primary, #19abb5);
   border-radius: 4px;
-  padding: 4px 8px;
-  width: 64px;
+  padding: 4px 10px;
+  width: 72px;
   text-align: center;
   outline: none;
 }
@@ -235,10 +236,13 @@
   font-weight: 400;
 }
 
-/* Score - right aligned */
+/* Score - supporting data (Option C hierarchy) */
 .horse-summary-bar__score {
-  font-size: 13px;
-  text-align: right;
+  font-size: 16px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .horse-summary-bar__score-value {
@@ -258,9 +262,9 @@
 }
 
 .horse-summary-bar__confidence-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  padding: 4px 8px;
+  padding: 6px 12px;
   border-radius: var(--radius-sm);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -302,19 +306,25 @@
   border: none;
 }
 
-/* Fair odds - right aligned */
+/* Fair odds - supporting data (Option C hierarchy) */
 .horse-summary-bar__fair {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--color-text-primary);
-  text-align: right;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* Value percentage - right aligned */
+/* Value percentage - supporting data (Option C hierarchy) */
 .horse-summary-bar__value {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 700;
-  text-align: right;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Tier wrapper - for centering */
@@ -324,15 +334,15 @@
   justify-content: center;
 }
 
-/* Tier badge - centered in its cell */
+/* Tier badge - centered in its cell (Option C hierarchy - larger badges) */
 .horse-summary-bar__tier {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: var(--radius-sm);
   text-transform: uppercase;
   letter-spacing: 0.04em;
