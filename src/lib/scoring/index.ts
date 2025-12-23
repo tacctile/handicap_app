@@ -928,3 +928,21 @@ export {
   MAX_PROTOCOL_BONUS,
   SCORE_CATEGORY_LIMITS,
 } from './scoringUtils';
+
+// Field-relative scoring exports
+export {
+  // Types
+  type FieldStrength,
+  type FieldContext,
+  type FieldRelativeResult,
+  type FieldAnalysis,
+  // Main functions
+  calculateFieldContext,
+  calculateFieldRelativeScore,
+  analyzeEntireField,
+  // Utility functions
+  getFieldStrengthDescription,
+  getFieldStrengthColor,
+  formatZScore,
+  interpretZScore,
+} from './fieldRelative';

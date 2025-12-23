@@ -80,6 +80,40 @@ export interface FeatureFlagConfig {
    * Set to false to disable confidence tracking and treat all odds equally.
    */
   useOddsConfidence: boolean;
+
+  /**
+   * Field-Relative Scoring
+   *
+   * When enabled, the system calculates field-relative metrics for each horse:
+   * - Z-score (how many standard deviations from field average)
+   * - Field percentile (position within this specific field)
+   * - Standout detection (unique leader with significant gap)
+   * - Advisory tier adjustments
+   *
+   * IMPORTANT: This produces ADVISORY adjustments only. Diamond detection
+   * (120-139 raw score) is unaffected - always use raw scores for diamond
+   * classification.
+   *
+   * Set to false to disable field-relative calculations.
+   */
+  useFieldRelativeScoring: boolean;
+
+  /**
+   * Field-Relative Standout Threshold (in points)
+   *
+   * The minimum gap from the leader to the second-place horse required
+   * for the leader to be considered a "standout".
+   *
+   * Requirements for standout status:
+   *   1. Horse must be the UNIQUE leader (no ties at top)
+   *   2. Gap to #2 must meet or exceed this threshold
+   *
+   * Tuning:
+   *   - Lower threshold (15): More horses qualify as standouts
+   *   - Higher threshold (25): Only dominant leaders are standouts
+   *   - Default (20): Balanced - requires meaningful separation
+   */
+  fieldRelativeStandoutThreshold: number;
 }
 
 // ============================================================================
@@ -96,6 +130,8 @@ export const FEATURE_FLAGS: FeatureFlagConfig = {
   useBoxSeparation: true,
   boxSeparationThreshold: 20,
   useOddsConfidence: true,
+  useFieldRelativeScoring: true,
+  fieldRelativeStandoutThreshold: 20,
 };
 
 // ============================================================================
@@ -124,14 +160,26 @@ export function isOddsConfidenceEnabled(): boolean {
 }
 
 /**
+ * Check if field-relative scoring is enabled
+ */
+export function isFieldRelativeScoringEnabled(): boolean {
+  return FEATURE_FLAGS.useFieldRelativeScoring;
+}
+
+/**
+ * Get the current field-relative standout threshold
+ */
+export function getFieldRelativeStandoutThreshold(): number {
+  return FEATURE_FLAGS.fieldRelativeStandoutThreshold;
+}
+
+/**
  * Override feature flags at runtime (useful for testing)
  *
  * @param overrides - Partial config to merge with defaults
  * @returns Previous config for restoration
  */
-export function overrideFeatureFlags(
-  overrides: Partial<FeatureFlagConfig>
-): FeatureFlagConfig {
+export function overrideFeatureFlags(overrides: Partial<FeatureFlagConfig>): FeatureFlagConfig {
   const previous = { ...FEATURE_FLAGS };
 
   if (overrides.useBoxSeparation !== undefined) {
@@ -142,6 +190,12 @@ export function overrideFeatureFlags(
   }
   if (overrides.useOddsConfidence !== undefined) {
     FEATURE_FLAGS.useOddsConfidence = overrides.useOddsConfidence;
+  }
+  if (overrides.useFieldRelativeScoring !== undefined) {
+    FEATURE_FLAGS.useFieldRelativeScoring = overrides.useFieldRelativeScoring;
+  }
+  if (overrides.fieldRelativeStandoutThreshold !== undefined) {
+    FEATURE_FLAGS.fieldRelativeStandoutThreshold = overrides.fieldRelativeStandoutThreshold;
   }
 
   return previous;
@@ -154,4 +208,6 @@ export function resetFeatureFlags(): void {
   FEATURE_FLAGS.useBoxSeparation = true;
   FEATURE_FLAGS.boxSeparationThreshold = 20;
   FEATURE_FLAGS.useOddsConfidence = true;
+  FEATURE_FLAGS.useFieldRelativeScoring = true;
+  FEATURE_FLAGS.fieldRelativeStandoutThreshold = 20;
 }
