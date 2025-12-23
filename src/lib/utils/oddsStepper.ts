@@ -45,13 +45,12 @@ export const ODDS_SEQUENCE = [
 export function oddsToDecimal(odds: string): number {
   const normalized = odds.trim().replace(/\s+/g, '');
   const match = normalized.match(/^(\d+)-(\d+)$/);
-  if (!match) {
+  if (!match || !match[1] || !match[2]) {
     // Try to parse as a number (e.g., "5" means "5-1")
     const num = parseFloat(normalized);
     return isNaN(num) ? 5 : num;
   }
-  const [, num, denom] = match;
-  return parseInt(num, 10) / parseInt(denom, 10);
+  return parseInt(match[1], 10) / parseInt(match[2], 10);
 }
 
 /**
@@ -64,7 +63,9 @@ export function findClosestOddsIndex(odds: string): number {
   let closestDiff = Infinity;
 
   for (let i = 0; i < ODDS_SEQUENCE.length; i++) {
-    const seqDecimal = oddsToDecimal(ODDS_SEQUENCE[i]);
+    const oddsValue = ODDS_SEQUENCE[i];
+    if (!oddsValue) continue;
+    const seqDecimal = oddsToDecimal(oddsValue);
     const diff = Math.abs(seqDecimal - targetDecimal);
     if (diff < closestDiff) {
       closestDiff = diff;
@@ -82,7 +83,7 @@ export function findClosestOddsIndex(odds: string): number {
 export function incrementOdds(currentOdds: string): string {
   const currentIndex = findClosestOddsIndex(currentOdds);
   const nextIndex = Math.min(currentIndex + 1, ODDS_SEQUENCE.length - 1);
-  return ODDS_SEQUENCE[nextIndex];
+  return ODDS_SEQUENCE[nextIndex] ?? currentOdds;
 }
 
 /**
@@ -92,7 +93,7 @@ export function incrementOdds(currentOdds: string): string {
 export function decrementOdds(currentOdds: string): string {
   const currentIndex = findClosestOddsIndex(currentOdds);
   const prevIndex = Math.max(currentIndex - 1, 0);
-  return ODDS_SEQUENCE[prevIndex];
+  return ODDS_SEQUENCE[prevIndex] ?? currentOdds;
 }
 
 /**

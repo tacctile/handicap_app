@@ -100,8 +100,11 @@ describe('oddsStepper', () => {
   describe('ODDS_SEQUENCE ordering', () => {
     it('is ordered from lowest to highest decimal value', () => {
       for (let i = 0; i < ODDS_SEQUENCE.length - 1; i++) {
-        const current = oddsToDecimal(ODDS_SEQUENCE[i]);
-        const next = oddsToDecimal(ODDS_SEQUENCE[i + 1]);
+        const currentOdds = ODDS_SEQUENCE[i];
+        const nextOdds = ODDS_SEQUENCE[i + 1];
+        if (!currentOdds || !nextOdds) continue;
+        const current = oddsToDecimal(currentOdds);
+        const next = oddsToDecimal(nextOdds);
         expect(current).toBeLessThan(next);
       }
     });
