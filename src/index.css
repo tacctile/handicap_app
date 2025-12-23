@@ -347,9 +347,111 @@ body {
 }
 
 /* ============================================
-   Editable Odds Styles
+   Odds Stepper Styles
    ============================================ */
 
+.odds-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: 0.125rem;
+}
+
+.odds-stepper.odds-changed {
+  background-color: rgba(25, 171, 181, 0.1);
+  border-color: rgba(25, 171, 181, 0.4);
+}
+
+.odds-stepper.odds-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.odds-stepper.odds-highlight {
+  animation: odds-pulse 0.6s ease-out;
+}
+
+@keyframes odds-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(25, 171, 181, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(25, 171, 181, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(25, 171, 181, 0);
+  }
+}
+
+.odds-stepper-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.odds-stepper-btn:hover:not(:disabled) {
+  background: rgba(25, 171, 181, 0.2);
+  color: var(--color-primary);
+}
+
+.odds-stepper-btn:active:not(:disabled) {
+  background: rgba(25, 171, 181, 0.3);
+  transform: scale(0.95);
+}
+
+.odds-stepper-btn:disabled {
+  color: rgba(255, 255, 255, 0.2);
+  cursor: not-allowed;
+}
+
+.odds-stepper-icon {
+  font-size: 1rem;
+}
+
+.odds-value-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  height: 28px;
+  padding: 0 0.5rem;
+  background: transparent;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.odds-value-btn:hover:not(:disabled) {
+  background: rgba(25, 171, 181, 0.15);
+}
+
+.odds-value-btn:disabled {
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+}
+
+.odds-stepper.odds-changed .odds-value-btn {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* Legacy odds-display styles (kept for compatibility) */
 .odds-display {
   display: inline-flex;
   align-items: center;
@@ -412,9 +514,9 @@ body {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-on-surface);
-  text-align: right;
-  width: 70px;
-  min-height: 36px;
+  text-align: center;
+  width: 100%;
+  min-height: 28px;
   font-variant-numeric: tabular-nums;
   box-shadow: 0 0 0 2px rgba(25, 171, 181, 0.2);
 }
