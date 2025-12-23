@@ -44,6 +44,12 @@ import {
   getDiamondColor,
   getDiamondBgColor,
 } from '../lib/diamonds';
+import {
+  incrementOdds,
+  decrementOdds,
+  canIncrementOdds,
+  canDecrementOdds,
+} from '../lib/utils/oddsStepper';
 
 interface RaceTableProps {
   race: ParsedRace;
@@ -59,7 +65,7 @@ function Icon({ name, className = '' }: { name: string; className?: string }) {
   );
 }
 
-// Editable odds field component with highlight animation
+// Editable odds field component with +/- stepper buttons
 interface EditableOddsProps {
   value: string;
   onChange: (value: string) => void;
@@ -104,30 +110,79 @@ const EditableOdds = memo(function EditableOdds({
     [value]
   );
 
+  const handleIncrement = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!disabled && canIncrementOdds(value)) {
+        onChange(incrementOdds(value));
+      }
+    },
+    [disabled, value, onChange]
+  );
+
+  const handleDecrement = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!disabled && canDecrementOdds(value)) {
+        onChange(decrementOdds(value));
+      }
+    },
+    [disabled, value, onChange]
+  );
+
   if (isEditing) {
     return (
-      <input
-        type="text"
-        className="odds-input"
-        value={editValue}
-        onChange={(e) => setEditValue(e.target.value)}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        autoFocus
-      />
+      <div className="odds-stepper">
+        <input
+          type="text"
+          className="odds-input"
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          autoFocus
+        />
+      </div>
     );
   }
 
+  const canIncrement = !disabled && canIncrementOdds(value);
+  const canDecrement = !disabled && canDecrementOdds(value);
+
   return (
-    <button
-      type="button"
-      className={`odds-display ${hasChanged ? 'odds-changed' : ''} ${disabled ? 'odds-disabled' : ''} ${isHighlighted ? 'odds-highlight' : ''}`}
-      onClick={handleClick}
-      disabled={disabled}
+    <div
+      className={`odds-stepper ${hasChanged ? 'odds-changed' : ''} ${disabled ? 'odds-disabled' : ''} ${isHighlighted ? 'odds-highlight' : ''}`}
     >
-      <span className="tabular-nums">{value}</span>
-      {!disabled && <Icon name="edit" className="odds-edit-icon" />}
-    </button>
+      <button
+        type="button"
+        className="odds-stepper-btn odds-stepper-minus"
+        onClick={handleDecrement}
+        disabled={!canDecrement}
+        aria-label="Decrease odds"
+        title="Lower odds (more favored)"
+      >
+        <Icon name="remove" className="odds-stepper-icon" />
+      </button>
+      <button
+        type="button"
+        className="odds-value-btn"
+        onClick={handleClick}
+        disabled={disabled}
+        title="Click to edit odds manually"
+      >
+        <span className="tabular-nums">{value}</span>
+      </button>
+      <button
+        type="button"
+        className="odds-stepper-btn odds-stepper-plus"
+        onClick={handleIncrement}
+        disabled={!canIncrement}
+        aria-label="Increase odds"
+        title="Higher odds (longer shot)"
+      >
+        <Icon name="add" className="odds-stepper-icon" />
+      </button>
+    </div>
   );
 });
 
