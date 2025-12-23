@@ -31,7 +31,7 @@
 /* Left zone: contains top bar, race rail + main content, bottom bar */
 .app-left-zone {
   display: grid;
-  grid-template-rows: var(--dimension-bar) 1fr var(--dimension-bar);
+  grid-template-rows: auto 1fr var(--dimension-bar);
   grid-template-columns: var(--dimension-bar) 1fr;
   overflow: hidden;
   transition: width var(--transition-normal);
@@ -65,14 +65,40 @@
   grid-column: 1 / -1;
   grid-row: 1;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
   padding: 0 16px;
   background: var(--color-card);
   border-bottom: 1px solid var(--color-border);
   height: var(--dimension-bar);
   z-index: 100;
+  transition: height var(--transition-normal), width var(--transition-normal);
+}
+
+/* Two-row topbar when data is loaded */
+.app-layout .app-topbar--two-row {
+  height: calc(var(--dimension-bar) + 32px);
+}
+
+/* Topbar row container */
+.app-topbar__row {
+  display: flex;
+  align-items: center;
   gap: var(--gap-container);
-  transition: width var(--transition-normal);
+  width: 100%;
+}
+
+/* Identity row (top row) */
+.app-topbar__row--identity {
+  height: var(--dimension-bar);
+  flex-shrink: 0;
+}
+
+/* Description row (bottom row) */
+.app-topbar__row--description {
+  height: 32px;
+  padding-left: 4px;
+  border-top: 1px solid var(--color-border);
 }
 
 /* Legacy flexbox topbar */
@@ -220,42 +246,43 @@
   color: var(--color-text-primary);
 }
 
-/* Current race number - teal highlight */
-.app-topbar__race-number {
-  font-weight: 700;
-  color: var(--color-primary);
-  background: var(--color-primary-muted);
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-}
-
-/* Race details section */
-.app-topbar__race-details {
+/* Race label section - "Race X of Y" */
+.app-topbar__race-label {
   display: flex;
   align-items: center;
-  gap: var(--gap-element);
+  gap: 6px;
+}
+
+/* "Race" keyword - teal and bold */
+.app-topbar__race-keyword {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* Race number */
+.app-topbar__race-num {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* "of X" text */
+.app-topbar__race-of {
+  color: var(--color-text-secondary);
+}
+
+/* Race description on second row */
+.app-topbar__description {
   font-size: 14px;
   color: var(--color-text-primary);
-  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.app-topbar__purse {
-  font-weight: 600;
-  color: var(--color-success);
-}
-
-.app-topbar__classification {
-  font-weight: 600;
-  color: var(--color-text-primary);
-  text-transform: uppercase;
-}
-
-.app-topbar__age {
-  color: var(--color-text-secondary);
-}
-
-.app-topbar__field-size {
-  color: var(--color-text-secondary);
+/* Style dots in description */
+.app-topbar__description .app-topbar__dot {
+  color: var(--color-text-tertiary);
+  margin: 0 4px;
 }
 
 /* Spacer to push items to the right */
