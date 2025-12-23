@@ -10,6 +10,7 @@ import { HorseSummaryBar } from './HorseSummaryBar';
 import { InfoTooltip } from './InfoTooltip';
 import { ScoringHelpModal } from './ScoringHelpModal';
 import { calculateRaceScores, MAX_SCORE, analyzeOverlay } from '../lib/scoring';
+import { getTrackData } from '../data/tracks';
 import type { ParsedDRFFile, ParsedRace } from '../types/drf';
 import type { useRaceState } from '../hooks/useRaceState';
 import type { TrackCondition as RaceStateTrackCondition } from '../hooks/useRaceState';
@@ -33,6 +34,125 @@ const formatCurrency = (amount: number): string => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
+};
+
+// Expand race classification abbreviations to readable text
+const expandClassification = (classification: string): string => {
+  const expansions: Record<string, string> = {
+    'maiden': 'MAIDEN',
+    'maiden_claiming': 'MAIDEN CLAIMING',
+    'maiden_special_weight': 'MAIDEN SPECIAL WEIGHT',
+    'claiming': 'CLAIMING',
+    'allowance': 'ALLOWANCE',
+    'allowance_optional_claiming': 'ALLOWANCE OPTIONAL CLAIMING',
+    'stakes': 'STAKES',
+    'graded_stakes': 'GRADED STAKES',
+    'listed': 'LISTED STAKES',
+    'handicap': 'HANDICAP',
+    'starter_allowance': 'STARTER ALLOWANCE',
+    'unknown': 'UNKNOWN',
+    // Also handle abbreviated codes
+    'MSW': 'MAIDEN SPECIAL WEIGHT',
+    'MCL': 'MAIDEN CLAIMING',
+    'CLM': 'CLAIMING',
+    'ALW': 'ALLOWANCE',
+    'AOC': 'ALLOWANCE OPTIONAL CLAIMING',
+    'STK': 'STAKES',
+    'HCP': 'HANDICAP',
+  };
+  return expansions[classification] || expansions[classification.toUpperCase()] || classification.toUpperCase();
+};
+
+// Expand age restriction to readable text
+const expandAge = (age: string): string => {
+  if (!age) return '';
+  const ageMap: Record<string, string> = {
+    '2YO': '2-Year-Olds',
+    '3YO': '3-Year-Olds',
+    '4YO': '4-Year-Olds',
+    '5YO': '5-Year-Olds',
+    '3&UP': '3-Year-Olds & Up',
+    '3+': '3-Year-Olds & Up',
+    '4&UP': '4-Year-Olds & Up',
+    '4+': '4-Year-Olds & Up',
+    '5&UP': '5-Year-Olds & Up',
+    '5+': '5-Year-Olds & Up',
+  };
+  return ageMap[age.toUpperCase()] || age;
+};
+
+// Expand sex restriction to readable text
+const expandSex = (sex: string): string => {
+  if (!sex) return '';
+  const sexMap: Record<string, string> = {
+    'F': 'Fillies',
+    'M': 'Mares',
+    'F&M': 'Fillies & Mares',
+    'C': 'Colts',
+    'G': 'Geldings',
+    'C&G': 'Colts & Geldings',
+    'H': 'Horses',
+  };
+  return sexMap[sex.toUpperCase()] || sex;
+};
+
+// Get full track name with code and size
+const getTrackDisplayName = (trackCode: string | undefined, trackSize: string): string => {
+  if (!trackCode) return 'Unknown Track';
+  const trackData = getTrackData(trackCode);
+  if (trackData) {
+    return `${trackData.name} (${trackCode} ${trackSize})`;
+  }
+  // Fallback to just code if no track data
+  return `${trackCode} (${trackSize})`;
+};
+
+// Build readable race description as flowing sentences
+const buildRaceDescription = (race: ParsedRace | undefined): { line1: string; line2: string } => {
+  if (!race?.header) return { line1: '', line2: '' };
+
+  // Line 1: Distance + Classification + "for [restrictions]"
+  const line1Parts: string[] = [];
+
+  // Distance
+  if (race.header.distance) {
+    line1Parts.push(race.header.distance);
+  }
+
+  // Classification
+  if (race.header.classification && race.header.classification !== 'unknown') {
+    line1Parts.push(expandClassification(race.header.classification));
+  }
+
+  // Build "for [sex] [age]" phrase
+  const sexText = expandSex(race.header.sexRestriction);
+  const ageText = expandAge(race.header.ageRestriction);
+  if (sexText && ageText) {
+    line1Parts.push(`for ${sexText} ${ageText}`);
+  } else if (ageText) {
+    line1Parts.push(`for ${ageText}`);
+  } else if (sexText) {
+    line1Parts.push(`for ${sexText}`);
+  }
+
+  // Line 2: Purse + Field size
+  const line2Parts: string[] = [];
+
+  // Purse
+  if (race.header.purse) {
+    line2Parts.push(`Purse ${race.header.purseFormatted || formatCurrency(race.header.purse)}`);
+  }
+
+  // Field size
+  const fieldSize = race.horses?.length || race.header.fieldSize || 0;
+  if (fieldSize > 0) {
+    line2Parts.push(`${fieldSize} Runners`);
+  }
+
+  return {
+    line1: line1Parts.join(' ') + (line1Parts.length > 0 ? '.' : ''),
+    line2: line2Parts.join('. ') + (line2Parts.length > 0 ? '.' : '')
+  };
 };
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -443,45 +563,76 @@ export const Dashboard: React.FC<DashboardProps> = ({
     >
       {/* LEFT ZONE: Top bar, Race rail + Main content, Bottom bar */}
       <div className="app-left-zone">
-        {/* Top Bar */}
+        {/* Top Bar - Single row */}
         <header className="app-topbar">
-          {/* Logo - always visible */}
-          <div className="app-topbar__logo">
-            <div className="app-topbar__logo-icon">
-              <span className="material-icons">casino</span>
-            </div>
-            <span className="app-topbar__logo-text">Furlong</span>
-          </div>
-
-          {/* Separator after logo */}
-          <div className="app-topbar__separator"></div>
-
           {!parsedData ? (
             /* EMPTY STATE - No DRF loaded */
-            <div className="app-topbar__empty">
-              <button
-                className="app-topbar__upload-btn app-topbar__upload-btn--large"
-                onClick={handleFileUpload}
-                disabled={isLoading}
-              >
-                <span className="material-icons">
-                  {isLoading ? 'hourglass_empty' : 'upload_file'}
-                </span>
-                <span>{isLoading ? 'Parsing...' : 'Upload DRF File'}</span>
-              </button>
-            </div>
+            <>
+              {/* Logo */}
+              <div className="app-topbar__logo">
+                <div className="app-topbar__logo-icon">
+                  <span className="material-icons">casino</span>
+                </div>
+                <span className="app-topbar__logo-text">Furlong</span>
+              </div>
+
+              {/* Separator after logo */}
+              <div className="app-topbar__separator"></div>
+
+              <div className="app-topbar__empty">
+                <button
+                  className="app-topbar__upload-btn app-topbar__upload-btn--large"
+                  onClick={handleFileUpload}
+                  disabled={isLoading}
+                >
+                  <span className="material-icons">
+                    {isLoading ? 'hourglass_empty' : 'upload_file'}
+                  </span>
+                  <span>{isLoading ? 'Parsing...' : 'Upload DRF File'}</span>
+                </button>
+              </div>
+            </>
           ) : (
             /* LOADED STATE - DRF file loaded */
             <>
-              {/* Track info */}
-              <div className="app-topbar__info">
+              {/* Logo */}
+              <div className="app-topbar__logo">
+                <div className="app-topbar__logo-icon">
+                  <span className="material-icons">casino</span>
+                </div>
+                <span className="app-topbar__logo-text">Furlong</span>
+              </div>
+
+              {/* Separator after logo */}
+              <div className="app-topbar__separator"></div>
+
+              {/* Left section: Track, Date, Race - larger font */}
+              <div className="app-topbar__identity">
                 <span className="app-topbar__track">
-                  {trackCode || 'UNK'} ({getTrackSize(trackCode)})
+                  {getTrackDisplayName(trackCode, getTrackSize(trackCode))}
                 </span>
                 <span className="app-topbar__dot">•</span>
                 <span className="app-topbar__date">{formatRaceDate(raceDate)}</span>
                 <span className="app-topbar__dot">•</span>
-                <span className="app-topbar__races">{parsedData.races?.length || 0} races</span>
+                <span className="app-topbar__race-label">
+                  Race {selectedRaceIndex + 1} of {parsedData.races?.length || 0}
+                </span>
+              </div>
+
+              {/* Separator */}
+              <div className="app-topbar__separator"></div>
+
+              {/* Center: Race info box - can be 1 or 2 lines */}
+              <div className="app-topbar__race-info-box">
+                {(() => {
+                  const desc = buildRaceDescription(currentRace);
+                  return (
+                    <div className="app-topbar__race-info-text">
+                      <span className="app-topbar__race-info-line">{desc.line1}</span>
+                      {desc.line2 && <span className="app-topbar__race-info-line">{desc.line2}</span>}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Separator */}
@@ -495,7 +646,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <span className="app-topbar__countdown-time">{countdownDisplay.text}</span>
                 ) : (
                   <>
-                    <span>R{selectedRaceIndex + 1} posts in </span>
+                    <span>Post </span>
                     <span className="app-topbar__countdown-time">{countdownDisplay.text}</span>
                   </>
                 )}
@@ -521,21 +672,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <option value="firm">Firm</option>
                 </select>
               </div>
-
-              {/* Separator */}
-              <div className="app-topbar__separator"></div>
-
-              {/* Small upload button */}
-              <button
-                className="app-topbar__upload-btn app-topbar__upload-btn--small"
-                onClick={handleFileUpload}
-                disabled={isLoading}
-              >
-                <span className="material-icons">
-                  {isLoading ? 'hourglass_empty' : 'upload_file'}
-                </span>
-                <span>{isLoading ? 'Parsing...' : 'Upload'}</span>
-              </button>
             </>
           )}
         </header>
@@ -794,6 +930,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           {/* Center spacer */}
           <div className="app-bottombar__spacer"></div>
+
+          {/* Separator */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* Upload button */}
+          <div className="app-bottombar__cluster">
+            <button
+              className="app-bottombar__item app-bottombar__item--upload"
+              onClick={handleFileUpload}
+              disabled={isLoading}
+            >
+              <span className="material-icons">
+                {isLoading ? 'hourglass_empty' : 'upload_file'}
+              </span>
+              <span>{isLoading ? 'Parsing...' : 'Upload'}</span>
+            </button>
+          </div>
 
           {/* Separator */}
           <div className="app-bottombar__separator"></div>

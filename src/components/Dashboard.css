@@ -65,6 +65,7 @@
   grid-column: 1 / -1;
   grid-row: 1;
   display: flex;
+  flex-direction: row;
   align-items: center;
   padding: 0 16px;
   background: var(--color-card);
@@ -197,27 +198,67 @@
   font-size: 18px;
 }
 
-/* Track info section */
-.app-topbar__info {
+/* Identity section - Track, Date, Race (larger font) */
+.app-topbar__identity {
   display: flex;
   align-items: center;
   gap: var(--gap-element);
-  font-size: 14px;
+  font-size: 16px;
   color: var(--color-text-primary);
   flex-shrink: 0;
 }
 
 .app-topbar__track {
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .app-topbar__dot {
   color: var(--color-text-tertiary);
 }
 
-.app-topbar__date,
-.app-topbar__races {
+.app-topbar__date {
   color: var(--color-text-primary);
+}
+
+/* Race label - "Race X of Y" - all teal */
+.app-topbar__race-label {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* Race info box - centered in the middle space */
+.app-topbar__race-info-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 var(--gap-container);
+}
+
+/* Race info text container - left justified paragraph style */
+.app-topbar__race-info-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+}
+
+/* Individual lines in race info */
+.app-topbar__race-info-line {
+  font-size: 14px;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Spacer to push items to the right */
+.app-topbar__spacer {
+  flex: 1;
+  min-width: var(--gap-container);
 }
 
 /* Countdown section */
@@ -680,6 +721,26 @@
 
 .app-bottombar__item--icon-only .material-icons {
   font-size: 22px;
+}
+
+/* Upload button in bottom bar */
+.app-bottombar__item--upload {
+  background: var(--color-primary);
+  color: white;
+}
+
+.app-bottombar__item--upload:hover {
+  background: var(--color-primary-hover);
+  color: white;
+}
+
+.app-bottombar__item--upload:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.app-bottombar__item--upload:disabled:hover {
+  background: var(--color-primary);
 }
 
 /* ============================================
