@@ -301,28 +301,33 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       {/* Column 4: Live Odds - Click to edit */}
       <div className="horse-summary-bar__odds" onClick={(e) => e.stopPropagation()}>
         {isEditingOdds ? (
-          <input
-            ref={oddsInputRef}
-            type="text"
-            className="odds-edit-input"
-            value={oddsInputValue}
-            onChange={handleOddsInputChange}
-            onKeyDown={handleOddsKeyDown}
-            onBlur={handleOddsBlur}
-            placeholder="e.g. 7-2"
-            aria-label="Enter odds"
-          />
+          <div className="odds-edit-wrapper">
+            <input
+              ref={oddsInputRef}
+              type="text"
+              className="odds-edit-input"
+              value={oddsInputValue}
+              onChange={handleOddsInputChange}
+              onKeyDown={handleOddsKeyDown}
+              onBlur={handleOddsBlur}
+              placeholder="e.g. 7-2"
+              aria-label="Enter odds"
+            />
+          </div>
         ) : (
-          <button
-            type="button"
-            className={`odds-edit-value ${isScratched ? 'odds-edit-value--disabled' : ''}`}
-            onClick={handleOddsClick}
-            disabled={isScratched}
-            title="Click to edit odds"
-            aria-label={`Current odds ${currentOddsStr}, click to edit`}
-          >
-            {currentOddsStr}
-          </button>
+          <div className="odds-edit-wrapper">
+            <button
+              type="button"
+              className={`odds-edit-value ${isScratched ? 'odds-edit-value--disabled' : ''}`}
+              onClick={handleOddsClick}
+              disabled={isScratched}
+              title="Click to edit odds"
+              aria-label={`Current odds ${currentOddsStr}, click to edit`}
+            >
+              {currentOddsStr}
+            </button>
+            {!isScratched && <span className="horse-summary-bar__icon-label">Click to Edit</span>}
+          </div>
         )}
       </div>
 
