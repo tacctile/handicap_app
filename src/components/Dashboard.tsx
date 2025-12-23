@@ -482,6 +482,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <span className="app-topbar__date">{formatRaceDate(raceDate)}</span>
                 <span className="app-topbar__dot">•</span>
                 <span className="app-topbar__races">{parsedData.races?.length || 0} races</span>
+                <span className="app-topbar__dot">•</span>
+                <span className="app-topbar__race-number">R{selectedRaceIndex + 1}</span>
+              </div>
+
+              {/* Separator */}
+              <div className="app-topbar__separator"></div>
+
+              {/* Race details - Purse, Classification, Age, Field Size */}
+              <div className="app-topbar__race-details">
+                <span className="app-topbar__purse">
+                  {currentRace?.header?.purseFormatted || `$${(currentRace?.header?.purse || 0).toLocaleString()}`}
+                </span>
+                <span className="app-topbar__dot">•</span>
+                <span className="app-topbar__classification">
+                  {currentRace?.header?.classification || currentRace?.header?.raceType || 'UNK'}
+                </span>
+                <span className="app-topbar__dot">•</span>
+                <span className="app-topbar__age">
+                  {currentRace?.header?.ageRestriction || '3YO+'}
+                </span>
+                <span className="app-topbar__dot">•</span>
+                <span className="app-topbar__field-size">
+                  {currentRace?.horses?.length || currentRace?.header?.fieldSize || 0} runners
+                </span>
               </div>
 
               {/* Separator */}
@@ -495,16 +519,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <span className="app-topbar__countdown-time">{countdownDisplay.text}</span>
                 ) : (
                   <>
-                    <span>R{selectedRaceIndex + 1} posts in </span>
+                    <span>Post </span>
                     <span className="app-topbar__countdown-time">{countdownDisplay.text}</span>
                   </>
                 )}
               </div>
 
-              {/* Separator */}
-              <div className="app-topbar__separator"></div>
+              {/* Spacer to push track condition to far right */}
+              <div className="app-topbar__spacer"></div>
 
-              {/* Track condition dropdown */}
+              {/* Track condition dropdown - far right */}
               <div className="app-topbar__condition">
                 <select
                   className="app-topbar__condition-select"
@@ -521,21 +545,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <option value="firm">Firm</option>
                 </select>
               </div>
-
-              {/* Separator */}
-              <div className="app-topbar__separator"></div>
-
-              {/* Small upload button */}
-              <button
-                className="app-topbar__upload-btn app-topbar__upload-btn--small"
-                onClick={handleFileUpload}
-                disabled={isLoading}
-              >
-                <span className="material-icons">
-                  {isLoading ? 'hourglass_empty' : 'upload_file'}
-                </span>
-                <span>{isLoading ? 'Parsing...' : 'Upload'}</span>
-              </button>
             </>
           )}
         </header>
@@ -794,6 +803,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           {/* Center spacer */}
           <div className="app-bottombar__spacer"></div>
+
+          {/* Separator */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* Upload button */}
+          <div className="app-bottombar__cluster">
+            <button
+              className="app-bottombar__item app-bottombar__item--upload"
+              onClick={handleFileUpload}
+              disabled={isLoading}
+            >
+              <span className="material-icons">
+                {isLoading ? 'hourglass_empty' : 'upload_file'}
+              </span>
+              <span>{isLoading ? 'Parsing...' : 'Upload'}</span>
+            </button>
+          </div>
 
           {/* Separator */}
           <div className="app-bottombar__separator"></div>

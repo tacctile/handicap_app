@@ -220,6 +220,50 @@
   color: var(--color-text-primary);
 }
 
+/* Current race number - teal highlight */
+.app-topbar__race-number {
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-muted);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+/* Race details section */
+.app-topbar__race-details {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-element);
+  font-size: 14px;
+  color: var(--color-text-primary);
+  flex-shrink: 0;
+}
+
+.app-topbar__purse {
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+.app-topbar__classification {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+}
+
+.app-topbar__age {
+  color: var(--color-text-secondary);
+}
+
+.app-topbar__field-size {
+  color: var(--color-text-secondary);
+}
+
+/* Spacer to push items to the right */
+.app-topbar__spacer {
+  flex: 1;
+  min-width: var(--gap-container);
+}
+
 /* Countdown section */
 .app-topbar__countdown {
   display: flex;
@@ -680,6 +724,26 @@
 
 .app-bottombar__item--icon-only .material-icons {
   font-size: 22px;
+}
+
+/* Upload button in bottom bar */
+.app-bottombar__item--upload {
+  background: var(--color-primary);
+  color: white;
+}
+
+.app-bottombar__item--upload:hover {
+  background: var(--color-primary-hover);
+  color: white;
+}
+
+.app-bottombar__item--upload:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.app-bottombar__item--upload:disabled:hover {
+  background: var(--color-primary);
 }
 
 /* ============================================
