@@ -5,7 +5,13 @@ import {
   analyzeOverlay,
   calculateTierAdjustment,
   type OverlayAnalysis,
+  // Field-relative scoring imports
+  calculateFieldContext,
+  calculateFieldRelativeScore,
+  type FieldContext,
+  type FieldRelativeResult,
 } from '../scoring';
+import { isFieldRelativeScoringEnabled } from '../config/featureFlags';
 
 // Tier definitions
 export type BettingTier = 'tier1' | 'tier2' | 'tier3';
@@ -63,6 +69,8 @@ export interface ClassifiedHorse {
   specialCaseType: 'diamond_in_rough' | 'fool_gold' | null;
   /** Tier adjustment reasoning */
   tierAdjustmentReasoning: string;
+  /** Field-relative analysis (advisory only, does not affect tier) */
+  fieldRelative?: FieldRelativeResult;
 }
 
 export interface TierGroup {
@@ -71,6 +79,8 @@ export interface TierGroup {
   description: string;
   horses: ClassifiedHorse[];
   expectedHitRate: { win: number; place: number; show: number };
+  /** Field context for this race (advisory, shared across all horses) */
+  fieldContext?: FieldContext;
 }
 
 /**
@@ -168,6 +178,16 @@ export function classifyHorses(
 ): TierGroup[] {
   const classifiedHorses: ClassifiedHorse[] = [];
 
+  // Collect all non-scratched scores for field-relative calculations
+  const activeHorses = horses.filter((h) => !h.score.isScratched);
+  const allScores = activeHorses.map((h) => h.score.total);
+
+  // Calculate field context if enabled and we have enough horses
+  let fieldContext: FieldContext | undefined;
+  if (isFieldRelativeScoringEnabled() && allScores.length >= 2) {
+    fieldContext = calculateFieldContext(allScores);
+  }
+
   for (const { horse, index, score } of horses) {
     // Skip scratched horses
     if (score.isScratched) continue;
@@ -196,6 +216,12 @@ export function classifyHorses(
     }
 
     if (tier) {
+      // Calculate field-relative metrics (advisory only, does not affect tier)
+      let fieldRelative: FieldRelativeResult | undefined;
+      if (fieldContext) {
+        fieldRelative = calculateFieldRelativeScore(score.total, allScores, fieldContext);
+      }
+
       classifiedHorses.push({
         horse,
         horseIndex: index,
@@ -210,6 +236,7 @@ export function classifyHorses(
         isSpecialCase: tierAdjustment.isSpecialCase,
         specialCaseType: tierAdjustment.specialCaseType,
         tierAdjustmentReasoning: tierAdjustment.reasoning,
+        fieldRelative,
       });
     }
   }
@@ -253,6 +280,7 @@ export function classifyHorses(
       description: TIER_DESCRIPTIONS.tier1,
       horses: tier1Horses,
       expectedHitRate: TIER_EXPECTED_HIT_RATE.tier1,
+      fieldContext,
     });
   }
 
@@ -263,6 +291,7 @@ export function classifyHorses(
       description: TIER_DESCRIPTIONS.tier2,
       horses: tier2Horses,
       expectedHitRate: TIER_EXPECTED_HIT_RATE.tier2,
+      fieldContext,
     });
   }
 
@@ -273,6 +302,7 @@ export function classifyHorses(
       description: TIER_DESCRIPTIONS.tier3,
       horses: tier3Horses,
       expectedHitRate: TIER_EXPECTED_HIT_RATE.tier3,
+      fieldContext,
     });
   }
 
