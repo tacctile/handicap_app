@@ -58,7 +58,7 @@ describe('Main Scoring Engine', () => {
       }
     });
 
-    it('places scratched horses at bottom of rankings', () => {
+    it('keeps scratched horses in their post position order', () => {
       const horses = createTestField(6);
       const header = createRaceHeader({ fieldSize: 6 });
       const getOdds = (_i: number, odds: string) => odds;
@@ -66,16 +66,16 @@ describe('Main Scoring Engine', () => {
 
       const results = calculateRaceScores(horses, header, getOdds, isScratched, 'fast');
 
-      // Scratched horses should be at the end
+      // Scratched horses should still be in their original positions
       const scratchedHorses = results.filter((r) => r.score.isScratched);
       const activeHorses = results.filter((r) => !r.score.isScratched);
 
       expect(scratchedHorses.length).toBe(2);
       expect(activeHorses.length).toBe(4);
 
-      // All active horses should come before scratched ones
-      const lastActiveIndex = results.findIndex((r) => r.score.isScratched);
-      expect(lastActiveIndex).toBe(4);
+      // Horses should stay in post position order (scratched included)
+      expect(results[0].index).toBe(0); // Scratched horse at position 1
+      expect(results[2].index).toBe(2); // Scratched horse at position 3
     });
 
     it('assigns correct ranks (scratched = no rank)', () => {

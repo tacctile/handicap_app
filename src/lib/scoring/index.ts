@@ -670,10 +670,8 @@ export function calculateRaceScores(
     horse.rank = index + 1;
   });
 
-  // Now sort by post position for display (scratched horses go to bottom)
+  // Now sort by post position for display (scratched horses stay in place)
   scoredHorses.sort((a, b) => {
-    if (a.score.isScratched && !b.score.isScratched) return 1;
-    if (!a.score.isScratched && b.score.isScratched) return -1;
     return a.horse.postPosition - b.horse.postPosition;
   });
 
