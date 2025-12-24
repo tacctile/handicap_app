@@ -5,6 +5,7 @@ import { RaceControls } from './RaceControls';
 import { HorseDetailModal } from './HorseDetailModal';
 import { CalculationStatus } from './CalculationStatus';
 import { ToastContainer, useToasts } from './Toast';
+import { InfoTooltip } from './InfoTooltip';
 import {
   calculateRaceScores,
   calculateRaceConfidence,
@@ -321,6 +322,34 @@ const EVDisplay = memo(function EVDisplay({ overlay }: EVDisplayProps) {
       title={`Expected Value per $1 wagered\n${overlay.isPositiveEV ? 'Profitable long-term bet' : 'Not profitable long-term'}`}
     >
       {formatEV(overlay.evPerDollar)}
+    </span>
+  );
+});
+
+// Win Confidence display component
+interface WinConfidenceDisplayProps {
+  overlay: OverlayAnalysis;
+}
+
+const WinConfidenceDisplay = memo(function WinConfidenceDisplay({
+  overlay,
+}: WinConfidenceDisplayProps) {
+  const winProb = overlay.winProbability;
+  // Handle invalid win probability
+  if (!Number.isFinite(winProb) || winProb <= 0) {
+    return <span className="text-white/30">—</span>;
+  }
+
+  // Color based on win probability
+  const color = winProb >= 25 ? '#22c55e' : winProb >= 15 ? '#eab308' : '#9ca3af';
+
+  return (
+    <span
+      className="win-conf-display tabular-nums"
+      style={{ color, fontWeight: 600 }}
+      title={`Model's estimated win probability based on score analysis`}
+    >
+      {winProb.toFixed(1)}%
     </span>
   );
 });
@@ -1302,9 +1331,92 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
               <th className="w-12 text-center">
                 <Icon name="cancel" className="text-base text-white/40" />
               </th>
-              <th className="w-20 text-center">Score</th>
-              <th className="w-16 text-center">PP</th>
-              <th className="text-left">Horse</th>
+              <th className="w-16 text-center">POST</th>
+              <th className="text-left">HORSE</th>
+              <th className="w-20 text-center">
+                <div className="th-header-cell">
+                  <div className="th-label-row">
+                    <span>ODDS</span>
+                    <InfoTooltip
+                      content="Current market odds from the tote board or morning line"
+                      title="Market Odds"
+                      position="bottom"
+                      className="th-help-icon"
+                    />
+                  </div>
+                  <span className="th-subtext">Market Price</span>
+                </div>
+              </th>
+              <th className="w-20 text-center">
+                <div className="th-header-cell">
+                  <div className="th-label-row">
+                    <span>SCORE</span>
+                    <InfoTooltip
+                      content="Composite score (0-240) based on 6 handicapping categories: Connections, Post Position, Speed/Class, Form, Equipment, and Pace"
+                      title="Model Score"
+                      position="bottom"
+                      className="th-help-icon"
+                    />
+                  </div>
+                  <span className="th-subtext">Model Score</span>
+                </div>
+              </th>
+              <th className="w-20 text-center">
+                <div className="th-header-cell">
+                  <div className="th-label-row">
+                    <span>WIN CONF</span>
+                    <InfoTooltip
+                      content="Estimated win probability based on the model's score analysis"
+                      title="Win Confidence"
+                      position="bottom"
+                      className="th-help-icon"
+                    />
+                  </div>
+                  <span className="th-subtext">Model Confidence</span>
+                </div>
+              </th>
+              <th className="w-20 text-center">
+                <div className="th-header-cell">
+                  <div className="th-label-row">
+                    <span>FAIR</span>
+                    <InfoTooltip
+                      content="What the odds should be based on the model's win probability calculation"
+                      title="Fair Odds"
+                      position="bottom"
+                      className="th-help-icon"
+                    />
+                  </div>
+                  <span className="th-subtext">Model's True Price</span>
+                </div>
+              </th>
+              <th className="w-20 text-center">
+                <div className="th-header-cell">
+                  <div className="th-label-row">
+                    <span>EDGE %</span>
+                    <InfoTooltip
+                      content="Percentage difference between market odds and fair odds. Positive means undervalued (good bet), negative means overvalued"
+                      title="Edge Percentage"
+                      position="bottom"
+                      className="th-help-icon"
+                    />
+                  </div>
+                  <span className="th-subtext">Above / Below Value</span>
+                </div>
+              </th>
+              <th className="w-20 text-center">
+                <div className="th-header-cell">
+                  <div className="th-label-row">
+                    <span>ODDS EDGE</span>
+                    <InfoTooltip
+                      content="Expected value per $1 wagered. Positive EV indicates a profitable long-term bet"
+                      title="Odds Edge"
+                      position="bottom"
+                      className="th-help-icon"
+                    />
+                  </div>
+                  <span className="th-subtext">Value vs Market</span>
+                </div>
+              </th>
               <th
                 className="w-24 text-center hide-on-small"
                 title="Class movement (↓drop ↑rise →lateral)"
@@ -1316,16 +1428,6 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
               </th>
               <th className="text-left hide-on-small">Trainer</th>
               <th className="text-left hide-on-small">Jockey</th>
-              <th className="w-20 text-right">Odds</th>
-              <th className="w-16 text-center" title="Fair Odds based on score">
-                Fair Odds
-              </th>
-              <th className="w-20 text-center" title="Value percentage compared to fair odds">
-                Value
-              </th>
-              <th className="w-16 text-center" title="Expected Value per $1">
-                EV
-              </th>
               <th className="w-10"></th>
             </tr>
           </thead>
@@ -1369,6 +1471,7 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
                   role="button"
                   aria-label={`View details for ${horse.horseName}`}
                 >
+                  {/* Scratch checkbox */}
                   <td className="text-center" onClick={(e) => e.stopPropagation()}>
                     <ScratchCheckbox
                       checked={scratched}
@@ -1376,10 +1479,9 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
                       horseName={horse.horseName}
                     />
                   </td>
-                  <td className="text-center">
-                    <ScoreBadge score={score} rank={rank} hasChanged={scoreChanged} />
-                  </td>
+                  {/* POST */}
                   <td className="text-center tabular-nums font-medium">{horse.postPosition}</td>
+                  {/* HORSE */}
                   <td
                     className={`font-medium ${scratched ? 'horse-name-scratched' : 'text-foreground'}`}
                   >
@@ -1439,6 +1541,53 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
                       )}
                     </div>
                   </td>
+                  {/* ODDS */}
+                  <td className="text-center" onClick={(e) => e.stopPropagation()}>
+                    <EditableOdds
+                      value={currentOdds}
+                      onChange={(newOdds) => updateOdds(index, newOdds)}
+                      hasChanged={oddsChanged}
+                      disabled={scratched}
+                      isHighlighted={oddsHighlighted}
+                    />
+                  </td>
+                  {/* SCORE */}
+                  <td className="text-center">
+                    <ScoreBadge score={score} rank={rank} hasChanged={scoreChanged} />
+                  </td>
+                  {/* WIN CONF */}
+                  <td className="text-center">
+                    {!scratched && overlay ? (
+                      <WinConfidenceDisplay overlay={overlay} />
+                    ) : (
+                      <span className="text-white/30">—</span>
+                    )}
+                  </td>
+                  {/* FAIR */}
+                  <td className="text-center">
+                    {!scratched && overlay ? (
+                      <FairOddsDisplay overlay={overlay} />
+                    ) : (
+                      <span className="text-white/30">—</span>
+                    )}
+                  </td>
+                  {/* EDGE % */}
+                  <td className="text-center">
+                    {!scratched && overlay ? (
+                      <OverlayBadge overlay={overlay} compact />
+                    ) : (
+                      <span className="text-white/30">—</span>
+                    )}
+                  </td>
+                  {/* ODDS EDGE */}
+                  <td className="text-center">
+                    {!scratched && overlay ? (
+                      <EVDisplay overlay={overlay} />
+                    ) : (
+                      <span className="text-white/30">—</span>
+                    )}
+                  </td>
+                  {/* Hidden columns */}
                   <td className="text-center hide-on-small">
                     {!scratched ? (
                       <ClassBadge score={score} />
@@ -1455,36 +1604,7 @@ export function RaceTable({ race, raceState }: RaceTableProps) {
                   </td>
                   <td className="text-white/70 hide-on-small">{horse.trainerName}</td>
                   <td className="text-white/70 hide-on-small">{horse.jockeyName}</td>
-                  <td className="text-right" onClick={(e) => e.stopPropagation()}>
-                    <EditableOdds
-                      value={currentOdds}
-                      onChange={(newOdds) => updateOdds(index, newOdds)}
-                      hasChanged={oddsChanged}
-                      disabled={scratched}
-                      isHighlighted={oddsHighlighted}
-                    />
-                  </td>
-                  <td className="text-center">
-                    {!scratched && overlay ? (
-                      <FairOddsDisplay overlay={overlay} />
-                    ) : (
-                      <span className="text-white/30">—</span>
-                    )}
-                  </td>
-                  <td className="text-center">
-                    {!scratched && overlay ? (
-                      <OverlayBadge overlay={overlay} compact />
-                    ) : (
-                      <span className="text-white/30">—</span>
-                    )}
-                  </td>
-                  <td className="text-center">
-                    {!scratched && overlay ? (
-                      <EVDisplay overlay={overlay} />
-                    ) : (
-                      <span className="text-white/30">—</span>
-                    )}
-                  </td>
+                  {/* Expand chevron */}
                   <td className="row-chevron-cell">
                     <Icon name="chevron_right" className="row-chevron" />
                   </td>
