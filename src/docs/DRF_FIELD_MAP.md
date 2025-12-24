@@ -1073,50 +1073,77 @@ PPI = Sum of Quirin Pace Points for top 4 speed horses
 
 ---
 
-## SECTION 21: TRAINER STATISTICS (Fields 1146-1221)
+## SECTION 21: TRAINER CATEGORY STATISTICS (Fields 1146-1221)
 
-### Trainer Category Statistics
+This section contains 19 trainer specialty categories, each with 4 fields:
 
-| Field Range | Content             | Scoring Integration |
-| ----------- | ------------------- | ------------------- |
-| 1147-1151   | Trainer Stats Set 1 | Specialty win rates |
-| 1152-1156   | Trainer Stats Set 2 | Specialty win rates |
-| 1157-1161   | Trainer Stats Set 3 | Specialty win rates |
-| 1162-1166   | Trainer Stats Set 4 | Specialty win rates |
+- Starts: Number of starts in this category
+- Wins: Number of wins in this category
+- Win%: Win percentage (0-100)
+- ROI: Return on investment (percentage, typically -100 to +500)
 
-### Trainer Speed Figures
+### Complete Trainer Category Field Mapping
 
-| Field Range | Content              | Scoring Integration |
-| ----------- | -------------------- | ------------------- |
-| 1167-1176   | Trainer Best Figures | Trainer class level |
+| Fields    | Category                | Description                                     |
+| --------- | ----------------------- | ----------------------------------------------- |
+| 1146-1149 | First Time Lasix        | Trainer stats with horse on Lasix first time    |
+| 1150-1153 | 2nd Off Layoff          | Trainer stats in horse's 2nd start after layoff |
+| 1154-1157 | 31-60 Days Off          | Trainer stats after 31-60 day layoff            |
+| 1158-1161 | Turf Sprint             | Trainer stats in turf sprints                   |
+| 1162-1165 | Turf Route              | Trainer stats in turf routes                    |
+| 1166-1169 | First Time Blinkers     | Trainer stats with horse on blinkers first time |
+| 1170-1173 | Blinkers Off            | Trainer stats with blinkers removed             |
+| 1174-1177 | Sprint to Route         | Trainer stats stretching out to route           |
+| 1178-1181 | Route to Sprint         | Trainer stats cutting back to sprint            |
+| 1182-1185 | Maiden Claiming         | Trainer stats in maiden claiming races          |
+| 1186-1189 | First Start for Trainer | Trainer stats with horses new to barn           |
+| 1190-1193 | After Claim             | Trainer stats immediately after claiming        |
+| 1194-1197 | 61-90 Days Off          | Trainer stats after 61-90 day layoff            |
+| 1198-1201 | 91-180 Days Off         | Trainer stats after 91-180 day layoff           |
+| 1202-1205 | 181+ Days Off           | Trainer stats after 181+ day layoff             |
+| 1206-1209 | Dirt Sprints            | Trainer stats in dirt sprints                   |
+| 1210-1213 | Dirt Routes             | Trainer stats in dirt routes                    |
+| 1214-1217 | Wet Tracks              | Trainer stats on wet/off tracks                 |
+| 1218-1221 | Stakes Races            | Trainer stats in stakes races                   |
 
-### Trainer Claiming Stats
+### Field Structure Per Category
 
-| Field Range | Content               | Scoring Integration |
-| ----------- | --------------------- | ------------------- |
-| 1177-1186   | Trainer Claiming Data | Claiming analysis   |
+Each 4-field group follows this structure:
 
-### Equipment/Medication Patterns
-
-| Field Range | Content                  | Scoring Integration |
-| ----------- | ------------------------ | ------------------- |
-| 1192-1201   | Equipment Codes Extended | Equipment pattern   |
-
-### Claiming Activity
-
-| Field Range | Content                | Scoring Integration |
-| ----------- | ---------------------- | ------------------- |
-| 1202-1221   | Claiming Price History | Claim analysis      |
+| Offset | Content | Type    | Example |
+| ------ | ------- | ------- | ------- |
+| +0     | Starts  | Integer | 45      |
+| +1     | Wins    | Integer | 9       |
+| +2     | Win %   | Float   | 20.0    |
+| +3     | ROI     | Float   | 125.5   |
 
 ### Scoring Application
 
-**Trainer Specialty Patterns:**
+**High-Value Situational Patterns:**
 
-- Layoff success rate
-- Distance change success
-- Surface change success
-- Equipment change success
-- First-time starter success
+These trainer specialty statistics are critical for identifying situational edges:
+
+- **First Time Lasix** (Fields 1146-1149): Trainers with high win% on first-time Lasix are valuable angles
+- **2nd Off Layoff** (Fields 1150-1153): Second-start-off-layoff specialists
+- **First Time Blinkers** (Fields 1166-1169): Equipment change specialists
+- **Sprint to Route / Route to Sprint** (Fields 1174-1181): Distance change patterns
+- **First Start for Trainer** (Fields 1186-1189): Claim/transfer specialists
+- **After Claim** (Fields 1190-1193): Immediate post-claim improvement
+
+**Layoff Specialists:**
+
+- 31-60 Days Off (Fields 1154-1157)
+- 61-90 Days Off (Fields 1194-1197)
+- 91-180 Days Off (Fields 1198-1201)
+- 181+ Days Off (Fields 1202-1205)
+
+**Surface/Distance Specialists:**
+
+- Turf Sprint (Fields 1158-1161)
+- Turf Route (Fields 1162-1165)
+- Dirt Sprints (Fields 1206-1209)
+- Dirt Routes (Fields 1210-1213)
+- Wet Tracks (Fields 1214-1217)
 
 **These patterns directly apply to Category 1 situational modifiers.**
 

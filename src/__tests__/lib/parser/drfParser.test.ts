@@ -593,4 +593,362 @@ describe('DRF Parser', () => {
       expect(defaultHorse.distanceShows).toBe(0);
     });
   });
+
+  describe('Trainer Category Statistics Parsing (Fields 1146-1221)', () => {
+    // Helper to create DRF content with trainer category stats
+    // Fields 1146-1221 = indices 1145-1220 (0-based)
+    // Each category has 4 fields: starts, wins, win%, ROI
+    function createDRFWithTrainerStats(categories: {
+      firstTimeLasix?: [number, number, number, number];
+      secondOffLayoff?: [number, number, number, number];
+      turfSprint?: [number, number, number, number];
+      firstTimeBlinkers?: [number, number, number, number];
+      firstStartForTrainer?: [number, number, number, number];
+    }): string {
+      // Build array with 1222 fields (enough to cover indices 0-1221)
+      const fields = new Array(1222).fill('');
+
+      // Race header fields
+      fields[0] = 'CD'; // Track code
+      fields[1] = '20240215'; // Race date
+      fields[2] = '5'; // Race number
+      fields[3] = '1'; // Post position
+      fields[5] = '14:30'; // Post time
+      fields[6] = 'D'; // Surface
+      fields[11] = '75000'; // Purse
+      fields[14] = '6'; // Distance furlongs
+      fields[23] = '8'; // Field size
+
+      // Horse identification
+      fields[27] = 'Bob Baffert'; // Trainer name
+      fields[32] = 'Irad Ortiz Jr'; // Jockey name
+      fields[43] = '5-1'; // Morning line
+      fields[44] = 'Champion Horse'; // Horse name
+      fields[45] = '4'; // Age
+      fields[48] = 'c'; // Sex
+
+      // Set trainer category stats if provided
+      // First Time Lasix - Fields 1146-1149 (indices 1145-1148)
+      if (categories.firstTimeLasix) {
+        fields[1145] = String(categories.firstTimeLasix[0]); // Starts
+        fields[1146] = String(categories.firstTimeLasix[1]); // Wins
+        fields[1147] = String(categories.firstTimeLasix[2]); // Win%
+        fields[1148] = String(categories.firstTimeLasix[3]); // ROI
+      }
+
+      // 2nd Off Layoff - Fields 1150-1153 (indices 1149-1152)
+      if (categories.secondOffLayoff) {
+        fields[1149] = String(categories.secondOffLayoff[0]);
+        fields[1150] = String(categories.secondOffLayoff[1]);
+        fields[1151] = String(categories.secondOffLayoff[2]);
+        fields[1152] = String(categories.secondOffLayoff[3]);
+      }
+
+      // Turf Sprint - Fields 1158-1161 (indices 1157-1160)
+      if (categories.turfSprint) {
+        fields[1157] = String(categories.turfSprint[0]);
+        fields[1158] = String(categories.turfSprint[1]);
+        fields[1159] = String(categories.turfSprint[2]);
+        fields[1160] = String(categories.turfSprint[3]);
+      }
+
+      // First Time Blinkers - Fields 1166-1169 (indices 1165-1168)
+      if (categories.firstTimeBlinkers) {
+        fields[1165] = String(categories.firstTimeBlinkers[0]);
+        fields[1166] = String(categories.firstTimeBlinkers[1]);
+        fields[1167] = String(categories.firstTimeBlinkers[2]);
+        fields[1168] = String(categories.firstTimeBlinkers[3]);
+      }
+
+      // First Start for Trainer - Fields 1186-1189 (indices 1185-1188)
+      if (categories.firstStartForTrainer) {
+        fields[1185] = String(categories.firstStartForTrainer[0]);
+        fields[1186] = String(categories.firstStartForTrainer[1]);
+        fields[1187] = String(categories.firstStartForTrainer[2]);
+        fields[1188] = String(categories.firstStartForTrainer[3]);
+      }
+
+      return fields.join(',');
+    }
+
+    it('parses first time Lasix trainer stats correctly', () => {
+      const content = createDRFWithTrainerStats({
+        firstTimeLasix: [25, 7, 28.0, 145.5],
+      });
+
+      const result = parseDRFFile(content, 'trainer-lasix.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      expect(horse.trainerCategoryStats.firstTimeLasix.starts).toBe(25);
+      expect(horse.trainerCategoryStats.firstTimeLasix.wins).toBe(7);
+      expect(horse.trainerCategoryStats.firstTimeLasix.winPercent).toBe(28.0);
+      expect(horse.trainerCategoryStats.firstTimeLasix.roi).toBe(145.5);
+    });
+
+    it('parses 2nd off layoff trainer stats correctly', () => {
+      const content = createDRFWithTrainerStats({
+        secondOffLayoff: [40, 10, 25.0, 112.0],
+      });
+
+      const result = parseDRFFile(content, 'trainer-layoff.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      expect(horse.trainerCategoryStats.secondOffLayoff.starts).toBe(40);
+      expect(horse.trainerCategoryStats.secondOffLayoff.wins).toBe(10);
+      expect(horse.trainerCategoryStats.secondOffLayoff.winPercent).toBe(25.0);
+      expect(horse.trainerCategoryStats.secondOffLayoff.roi).toBe(112.0);
+    });
+
+    it('parses turf sprint trainer stats correctly', () => {
+      const content = createDRFWithTrainerStats({
+        turfSprint: [18, 5, 27.8, 188.2],
+      });
+
+      const result = parseDRFFile(content, 'trainer-turf-sprint.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      expect(horse.trainerCategoryStats.turfSprint.starts).toBe(18);
+      expect(horse.trainerCategoryStats.turfSprint.wins).toBe(5);
+      expect(horse.trainerCategoryStats.turfSprint.winPercent).toBeCloseTo(27.8, 1);
+      expect(horse.trainerCategoryStats.turfSprint.roi).toBeCloseTo(188.2, 1);
+    });
+
+    it('parses first time blinkers trainer stats correctly', () => {
+      const content = createDRFWithTrainerStats({
+        firstTimeBlinkers: [32, 8, 25.0, 95.5],
+      });
+
+      const result = parseDRFFile(content, 'trainer-blinkers.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      expect(horse.trainerCategoryStats.firstTimeBlinkers.starts).toBe(32);
+      expect(horse.trainerCategoryStats.firstTimeBlinkers.wins).toBe(8);
+      expect(horse.trainerCategoryStats.firstTimeBlinkers.winPercent).toBe(25.0);
+      expect(horse.trainerCategoryStats.firstTimeBlinkers.roi).toBe(95.5);
+    });
+
+    it('parses first start for trainer stats correctly', () => {
+      const content = createDRFWithTrainerStats({
+        firstStartForTrainer: [55, 12, 21.8, 125.0],
+      });
+
+      const result = parseDRFFile(content, 'trainer-new-barn.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      expect(horse.trainerCategoryStats.firstStartForTrainer.starts).toBe(55);
+      expect(horse.trainerCategoryStats.firstStartForTrainer.wins).toBe(12);
+      expect(horse.trainerCategoryStats.firstStartForTrainer.winPercent).toBeCloseTo(21.8, 1);
+      expect(horse.trainerCategoryStats.firstStartForTrainer.roi).toBe(125.0);
+    });
+
+    it('parses multiple trainer categories together correctly', () => {
+      const content = createDRFWithTrainerStats({
+        firstTimeLasix: [20, 5, 25.0, 110.0],
+        secondOffLayoff: [30, 8, 26.7, 130.0],
+        turfSprint: [15, 4, 26.7, 150.0],
+        firstTimeBlinkers: [25, 6, 24.0, 100.0],
+        firstStartForTrainer: [45, 10, 22.2, 115.0],
+      });
+
+      const result = parseDRFFile(content, 'trainer-multi.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      // First Time Lasix
+      expect(horse.trainerCategoryStats.firstTimeLasix.starts).toBe(20);
+      expect(horse.trainerCategoryStats.firstTimeLasix.wins).toBe(5);
+
+      // 2nd Off Layoff
+      expect(horse.trainerCategoryStats.secondOffLayoff.starts).toBe(30);
+      expect(horse.trainerCategoryStats.secondOffLayoff.wins).toBe(8);
+
+      // Turf Sprint
+      expect(horse.trainerCategoryStats.turfSprint.starts).toBe(15);
+      expect(horse.trainerCategoryStats.turfSprint.wins).toBe(4);
+
+      // First Time Blinkers
+      expect(horse.trainerCategoryStats.firstTimeBlinkers.starts).toBe(25);
+      expect(horse.trainerCategoryStats.firstTimeBlinkers.wins).toBe(6);
+
+      // First Start for Trainer
+      expect(horse.trainerCategoryStats.firstStartForTrainer.starts).toBe(45);
+      expect(horse.trainerCategoryStats.firstStartForTrainer.wins).toBe(10);
+    });
+
+    it('defaults missing trainer category fields to zeros', () => {
+      // Create content with fewer fields (not reaching indices 1145+)
+      const shortContent = 'CD,20240215,5,1,,"Test Horse",Trainer,Jockey,120';
+
+      const result = parseDRFFile(shortContent, 'short-trainer.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      // All trainer category stats should default to 0
+      expect(horse.trainerCategoryStats.firstTimeLasix.starts).toBe(0);
+      expect(horse.trainerCategoryStats.firstTimeLasix.wins).toBe(0);
+      expect(horse.trainerCategoryStats.firstTimeLasix.winPercent).toBe(0);
+      expect(horse.trainerCategoryStats.firstTimeLasix.roi).toBe(0);
+
+      expect(horse.trainerCategoryStats.secondOffLayoff.starts).toBe(0);
+      expect(horse.trainerCategoryStats.turfSprint.starts).toBe(0);
+      expect(horse.trainerCategoryStats.firstTimeBlinkers.starts).toBe(0);
+      expect(horse.trainerCategoryStats.firstStartForTrainer.starts).toBe(0);
+    });
+
+    it('handles invalid (non-numeric) trainer stat values gracefully', () => {
+      const fields = new Array(1222).fill('');
+      fields[0] = 'CD';
+      fields[1] = '20240215';
+      fields[2] = '5';
+      fields[3] = '1';
+      fields[44] = 'Test Horse';
+      fields[27] = 'Trainer';
+      fields[32] = 'Jockey';
+
+      // Invalid values for first time Lasix (indices 1145-1148)
+      fields[1145] = 'abc'; // Invalid starts
+      fields[1146] = 'xyz'; // Invalid wins
+      fields[1147] = 'bad'; // Invalid win%
+      fields[1148] = 'NaN'; // Invalid ROI
+
+      const content = fields.join(',');
+      const result = parseDRFFile(content, 'invalid-trainer.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      // All should default to 0 since values are invalid
+      expect(horse.trainerCategoryStats.firstTimeLasix.starts).toBe(0);
+      expect(horse.trainerCategoryStats.firstTimeLasix.wins).toBe(0);
+      expect(horse.trainerCategoryStats.firstTimeLasix.winPercent).toBe(0);
+      expect(horse.trainerCategoryStats.firstTimeLasix.roi).toBe(0);
+    });
+
+    it('handles win percentage > 100 gracefully (caps at 100)', () => {
+      const fields = new Array(1222).fill('');
+      fields[0] = 'CD';
+      fields[1] = '20240215';
+      fields[2] = '5';
+      fields[3] = '1';
+      fields[44] = 'Test Horse';
+      fields[27] = 'Trainer';
+      fields[32] = 'Jockey';
+
+      // Win percentage > 100 (invalid)
+      fields[1145] = '10'; // Starts
+      fields[1146] = '5'; // Wins
+      fields[1147] = '150'; // Invalid win% > 100
+      fields[1148] = '100'; // ROI
+
+      const content = fields.join(',');
+      const result = parseDRFFile(content, 'high-winpct.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      // Win percent should be capped at 100
+      expect(horse.trainerCategoryStats.firstTimeLasix.winPercent).toBe(100);
+    });
+
+    it('handles negative win percentage gracefully (returns 0)', () => {
+      const fields = new Array(1222).fill('');
+      fields[0] = 'CD';
+      fields[1] = '20240215';
+      fields[2] = '5';
+      fields[3] = '1';
+      fields[44] = 'Test Horse';
+      fields[27] = 'Trainer';
+      fields[32] = 'Jockey';
+
+      // Negative win percentage (invalid)
+      fields[1145] = '10'; // Starts
+      fields[1146] = '5'; // Wins
+      fields[1147] = '-10'; // Invalid negative win%
+      fields[1148] = '100'; // ROI
+
+      const content = fields.join(',');
+      const result = parseDRFFile(content, 'negative-winpct.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      // Negative win percent should default to 0
+      expect(horse.trainerCategoryStats.firstTimeLasix.winPercent).toBe(0);
+    });
+
+    it('accepts extreme ROI values (positive and negative)', () => {
+      const fields = new Array(1222).fill('');
+      fields[0] = 'CD';
+      fields[1] = '20240215';
+      fields[2] = '5';
+      fields[3] = '1';
+      fields[44] = 'Test Horse';
+      fields[27] = 'Trainer';
+      fields[32] = 'Jockey';
+
+      // Extreme ROI values (valid but unusual)
+      fields[1145] = '5'; // Starts
+      fields[1146] = '3'; // Wins
+      fields[1147] = '60'; // Win%
+      fields[1148] = '750'; // Very high ROI (small sample)
+
+      // Negative ROI
+      fields[1149] = '20'; // 2nd layoff starts
+      fields[1150] = '0'; // 2nd layoff wins
+      fields[1151] = '0'; // 2nd layoff win%
+      fields[1152] = '-100'; // Worst possible ROI
+
+      const content = fields.join(',');
+      const result = parseDRFFile(content, 'extreme-roi.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      // Should accept extreme values
+      expect(horse.trainerCategoryStats.firstTimeLasix.roi).toBe(750);
+      expect(horse.trainerCategoryStats.secondOffLayoff.roi).toBe(-100);
+    });
+
+    it('createDefaultHorseEntry includes trainerCategoryStats with all zeros', () => {
+      const defaultHorse = createDefaultHorseEntry(0);
+
+      // Verify trainerCategoryStats exists and all categories default to zeros
+      expect(defaultHorse.trainerCategoryStats).toBeDefined();
+      expect(defaultHorse.trainerCategoryStats.firstTimeLasix.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.firstTimeLasix.wins).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.firstTimeLasix.winPercent).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.firstTimeLasix.roi).toBe(0);
+
+      expect(defaultHorse.trainerCategoryStats.secondOffLayoff.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.days31to60.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.turfSprint.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.turfRoute.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.firstTimeBlinkers.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.blinkersOff.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.sprintToRoute.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.routeToSprint.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.maidenClaiming.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.firstStartForTrainer.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.afterClaim.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.days61to90.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.days91to180.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.days181plus.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.dirtSprints.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.dirtRoutes.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.wetTracks.starts).toBe(0);
+      expect(defaultHorse.trainerCategoryStats.stakesRaces.starts).toBe(0);
+    });
+  });
 });
