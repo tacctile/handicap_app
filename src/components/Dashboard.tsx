@@ -749,24 +749,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </button>
                   </div>
 
-                  {/* Column 2: POST */}
-                  <div className="horse-list-header__cell horse-list-header__cell--pp">
-                    <span className="horse-list-header__label">POST</span>
-                    <InfoTooltip
-                      title="Post Position"
-                      content="The starting gate number where the horse begins the race. Lower numbers are closer to the inside rail. Some tracks favor certain post positions."
-                      className="header-tooltip-inline"
-                    />
+                  {/* Column 2: POST - No subtext, vertically centered */}
+                  <div className="horse-list-header__cell horse-list-header__cell--pp horse-list-header__cell--no-subtext">
+                    <div className="horse-list-header__label-row">
+                      <span className="horse-list-header__label">POST</span>
+                      <InfoTooltip
+                        title="Post Position"
+                        content="The starting gate number where the horse begins the race. Lower numbers are closer to the inside rail. Some tracks favor certain post positions."
+                        className="header-tooltip-inline"
+                      />
+                    </div>
                   </div>
 
-                  {/* Column 3: Horse Name */}
-                  <div className="horse-list-header__cell horse-list-header__cell--name">
-                    <span className="horse-list-header__label">HORSE</span>
-                    <InfoTooltip
-                      title="Horse Name"
-                      content="The horse's registered racing name. Click on a horse row to see detailed information about their past races, trainer, jockey, and more."
-                      className="header-tooltip-inline"
-                    />
+                  {/* Column 3: Horse Name - No subtext, vertically centered */}
+                  <div className="horse-list-header__cell horse-list-header__cell--name horse-list-header__cell--no-subtext">
+                    <div className="horse-list-header__label-row">
+                      <span className="horse-list-header__label">HORSE</span>
+                      <InfoTooltip
+                        title="Horse Name"
+                        content="The horse's registered racing name. Click on a horse row to see detailed information about their past races, trainer, jockey, and more."
+                        className="header-tooltip-inline"
+                      />
+                    </div>
                   </div>
 
                   {/* Column 4: Live Odds */}
