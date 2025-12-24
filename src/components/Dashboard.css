@@ -40,23 +40,6 @@
 }
 
 /* ============================================
-   APP SHELL - Legacy (kept for compatibility)
-   ============================================ */
-
-.app-shell {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
-  background: var(--color-base);
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
-}
-
-/* ============================================
    TOP BAR
    ============================================ */
 
@@ -74,19 +57,6 @@
   z-index: 100;
   gap: var(--gap-container);
   transition: width var(--transition-normal);
-}
-
-/* Legacy flexbox topbar */
-.app-shell .app-topbar {
-  display: flex;
-  align-items: center;
-  height: var(--dimension-bar);
-  padding: 0 var(--gap-container);
-  background: var(--color-card);
-  border-bottom: 1px solid var(--color-border);
-  flex-shrink: 0;
-  z-index: 100;
-  gap: var(--gap-container);
 }
 
 /* Logo */
@@ -365,16 +335,6 @@
   flex-direction: column;
 }
 
-/* Legacy flexbox race rail */
-.app-shell .app-race-rail {
-  width: var(--dimension-bar);
-  display: flex;
-  flex-direction: column;
-  background: var(--color-card);
-  border-right: 1px solid var(--color-border);
-  flex-shrink: 0;
-}
-
 .app-race-rail__item {
   flex: 1;
   display: flex;
@@ -509,18 +469,6 @@
   min-width: 0; /* Allow flex item to shrink below content size */
 }
 
-/* Legacy flexbox main content */
-.app-shell .app-main {
-  flex: 2;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--color-base);
-  /* NO padding or margin - content fills to edges */
-  padding: 0;
-  margin: 0;
-}
-
 .app-main__content {
   flex: 1;
   display: flex;
@@ -580,18 +528,6 @@
   will-change: width;
 }
 
-/* Legacy flexbox betting panel */
-.app-shell .app-betting-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-card);
-  overflow: hidden;
-  min-width: 380px;
-  max-width: 500px;
-  border-left: 1px solid var(--color-border);
-}
-
 .app-betting-panel__content {
   flex: 1;
   overflow-y: auto;
@@ -642,18 +578,6 @@
   height: var(--dimension-bar);
   gap: 8px;
   transition: width var(--transition-normal);
-}
-
-/* Legacy flexbox bottombar */
-.app-shell .app-bottombar {
-  display: flex;
-  align-items: center;
-  height: var(--dimension-bar);
-  padding: 0 var(--gap-container);
-  background: var(--color-card);
-  border-top: 1px solid var(--color-border);
-  flex-shrink: 0;
-  gap: var(--gap-container);
 }
 
 .app-bottombar__cluster {
@@ -1299,7 +1223,7 @@
 }
 
 .horse-list-header__label {
-  font-size: 14px; /* Match row data font sizes (Score: 16px, Fair: 16px, etc.) */
+  font-size: 16px; /* Match row data font sizes (Score: 16px, Fair: 16px, Edge: 16px) */
   font-weight: 700;
   color: var(--color-text-primary);
   text-transform: uppercase;
@@ -1317,7 +1241,15 @@
   text-align: center; /* Center under label only */
 }
 
-/* Label row with inline help icon */
+/* Text group: label + sublabel vertically stacked and centered together */
+.horse-list-header__text-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Label row with inline help icon - icon is separate from centering calculation */
 .horse-list-header__label-row {
   display: inline-flex;
   align-items: baseline; /* Align icon to text baseline */
@@ -1325,18 +1257,26 @@
   gap: 4px;
 }
 
-/* Smaller inline help icon in headers - sized proportionally to 14px labels */
+/* Alternative: Label + icon displayed inline, then sublabel centers under just the label portion */
+.horse-list-header__label-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Smaller inline help icon in headers - sized proportionally to 16px labels */
 .header-tooltip-inline .info-tooltip-trigger {
   margin-left: 0;
   padding: 0;
   display: inline-flex;
-  align-items: baseline;
+  align-items: flex-start; /* Align to top with label text */
+  align-self: flex-start; /* Position icon at top of label-with-icon container */
+  margin-top: 2px; /* Fine-tune vertical alignment with label */
 }
 
 .header-tooltip-inline .info-tooltip-icon {
-  font-size: 12px !important; /* Proportional to 14px label */
+  font-size: 14px !important; /* Proportional to 16px label */
   opacity: 0.5;
-  vertical-align: baseline;
 }
 
 .header-tooltip-inline .info-tooltip-trigger:hover .info-tooltip-icon,
@@ -1383,8 +1323,7 @@
   font-size: 18px;
 }
 
-/* Center align all columns by default */
-.horse-list-header__cell--pp,
+/* Center align data columns by default */
 .horse-list-header__cell--odds,
 .horse-list-header__cell--score,
 .horse-list-header__cell--confidence,
@@ -1396,7 +1335,14 @@
   justify-content: center;
 }
 
-/* Name column - left aligned (exception) */
+/* POST column - left aligned with padding to match data alignment */
+.horse-list-header__cell--pp {
+  text-align: left;
+  align-items: flex-start;
+  padding-left: 4px; /* Small padding for breathing room */
+}
+
+/* Name column - left aligned to match horse name data */
 .horse-list-header__cell--name {
   text-align: left;
   align-items: flex-start;

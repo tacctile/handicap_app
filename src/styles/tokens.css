@@ -99,8 +99,9 @@
      Horse name is FIXED WIDTH (340px) - sized for 20 characters at 24px font
      Empty space to right of shorter names is intentional - columns never stretch left
      Data columns use 1fr to fill remaining space and stay flush with betting panel
+     POST column increased to 64px to accommodate header label + icon
      ============================================ */
-  --horse-list-grid: 70px /* icons */ 50px /* PP */ 340px /* horse name - FIXED */
+  --horse-list-grid: 70px /* icons */ 64px /* PP - increased for header label + icon */ 340px /* horse name - FIXED */
     repeat(6, 1fr) /* odds, score, win conf, fair, edge%, odds edge - flexible */
     40px; /* expand chevron */
 }
