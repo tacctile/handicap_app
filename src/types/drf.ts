@@ -240,6 +240,10 @@ export interface PastPerformance {
   claimedFrom: string | null;
   /** Days since previous race */
   daysSinceLast: number | null;
+  /** Early Pace 1 (EP1) figure - rating at first call (DRF Fields 816-825) */
+  earlyPace1: number | null;
+  /** Late Pace figure - closing ability rating (DRF Fields 846-855) */
+  latePace: number | null;
 }
 
 // ============================================================================

@@ -634,6 +634,57 @@ function parseFloatNullable(value: string): number | null {
   return isNaN(parsed) ? null : parsed;
 }
 
+/**
+ * Parse and validate a pace figure (EP1 or Late Pace).
+ * Pace figures are typically 0-120, with outliers possible up to 150.
+ * Returns null for missing/empty values or 0 for invalid values.
+ * Logs warnings in dev mode for outliers.
+ *
+ * @param value - Raw string value to parse
+ * @param fieldName - Name of the field for logging ('earlyPace1' or 'latePace')
+ * @returns Validated pace figure, or null if empty, or 0 if invalid
+ */
+function parsePaceFigure(value: string, fieldName: string): number | null {
+  // Empty/missing values return null (valid - no data available)
+  if (!value || value.trim() === '') {
+    return null;
+  }
+
+  const parsed = parseInt(value, 10);
+
+  // Non-numeric values return 0 (invalid)
+  if (isNaN(parsed)) {
+    return 0;
+  }
+
+  // Negative values are invalid
+  if (parsed < 0) {
+    if (import.meta.env.DEV) {
+      logger.logWarning(`Unexpected negative pace figure for ${fieldName}: ${parsed}`, {
+        fieldName,
+        value: parsed,
+        component: 'DRFParser',
+      });
+    }
+    return 0;
+  }
+
+  // Warn for outliers above typical range (>150) but still use the value
+  // Normal pace figures are 0-120, with rare outliers up to 150
+  if (parsed > 150) {
+    if (import.meta.env.DEV) {
+      logger.logWarning(`Unusually high pace figure for ${fieldName}: ${parsed}`, {
+        fieldName,
+        value: parsed,
+        maxExpected: 150,
+        component: 'DRFParser',
+      });
+    }
+  }
+
+  return parsed;
+}
+
 // ============================================================================
 // SURFACE & CONDITION PARSING
 // ============================================================================
@@ -1277,18 +1328,13 @@ function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance
       wasClaimed: false, // Would need to parse from claiming activity fields
       claimedFrom: null,
       daysSinceLast: null, // Calculated from dates
+      earlyPace1: parsePaceFigure(getField(fields, PP_EARLY_PACE + i), 'earlyPace1'),
+      latePace: parsePaceFigure(getField(fields, PP_LATE_PACE + i), 'latePace'),
     };
 
     // Calculate lengths ahead if this horse won
     if (pp.finishPosition === 1 && pp.lengthsBehind === 0) {
       pp.lengthsAhead = 0; // Won, so ahead by the margin (would need winner's margin)
-    }
-
-    // Add early/late pace figures to speed figures
-    const earlyPace = parseIntNullable(getField(fields, PP_EARLY_PACE + i));
-    const latePace = parseIntNullable(getField(fields, PP_LATE_PACE + i));
-    if (earlyPace !== null || latePace !== null) {
-      // Store in extended data - could add to speedFigures type if needed
     }
 
     performances.push(pp);
