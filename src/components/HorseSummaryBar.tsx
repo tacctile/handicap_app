@@ -350,13 +350,16 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
 
       {/* Column 7: Fair Odds */}
       <div className="horse-summary-bar__fair">
-        {fairOddsNum}-{fairOddsDen}
+        {Number.isFinite(fairOddsNum) && Number.isFinite(fairOddsDen)
+          ? `${fairOddsNum}-${fairOddsDen}`
+          : '—'}
       </div>
 
       {/* Column 8: Edge Percentage (overlay %) */}
       <div className={`horse-summary-bar__value horse-summary-bar__value--${tier.className}`}>
-        {valuePercent >= 0 ? '+' : ''}
-        {valuePercent.toFixed(0)}%
+        {Number.isFinite(valuePercent)
+          ? `${valuePercent >= 0 ? '+' : ''}${valuePercent.toFixed(0)}%`
+          : '—'}
       </div>
 
       {/* Column 9: Odds Edge Badge */}

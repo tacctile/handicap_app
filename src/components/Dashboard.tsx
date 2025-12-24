@@ -39,28 +39,32 @@ const formatCurrency = (amount: number): string => {
 // Expand race classification abbreviations to readable text
 const expandClassification = (classification: string): string => {
   const expansions: Record<string, string> = {
-    'maiden': 'MAIDEN',
-    'maiden_claiming': 'MAIDEN CLAIMING',
-    'maiden_special_weight': 'MAIDEN SPECIAL WEIGHT',
-    'claiming': 'CLAIMING',
-    'allowance': 'ALLOWANCE',
-    'allowance_optional_claiming': 'ALLOWANCE OPTIONAL CLAIMING',
-    'stakes': 'STAKES',
-    'graded_stakes': 'GRADED STAKES',
-    'listed': 'LISTED STAKES',
-    'handicap': 'HANDICAP',
-    'starter_allowance': 'STARTER ALLOWANCE',
-    'unknown': 'UNKNOWN',
+    maiden: 'MAIDEN',
+    maiden_claiming: 'MAIDEN CLAIMING',
+    maiden_special_weight: 'MAIDEN SPECIAL WEIGHT',
+    claiming: 'CLAIMING',
+    allowance: 'ALLOWANCE',
+    allowance_optional_claiming: 'ALLOWANCE OPTIONAL CLAIMING',
+    stakes: 'STAKES',
+    graded_stakes: 'GRADED STAKES',
+    listed: 'LISTED STAKES',
+    handicap: 'HANDICAP',
+    starter_allowance: 'STARTER ALLOWANCE',
+    unknown: 'UNKNOWN',
     // Also handle abbreviated codes
-    'MSW': 'MAIDEN SPECIAL WEIGHT',
-    'MCL': 'MAIDEN CLAIMING',
-    'CLM': 'CLAIMING',
-    'ALW': 'ALLOWANCE',
-    'AOC': 'ALLOWANCE OPTIONAL CLAIMING',
-    'STK': 'STAKES',
-    'HCP': 'HANDICAP',
+    MSW: 'MAIDEN SPECIAL WEIGHT',
+    MCL: 'MAIDEN CLAIMING',
+    CLM: 'CLAIMING',
+    ALW: 'ALLOWANCE',
+    AOC: 'ALLOWANCE OPTIONAL CLAIMING',
+    STK: 'STAKES',
+    HCP: 'HANDICAP',
   };
-  return expansions[classification] || expansions[classification.toUpperCase()] || classification.toUpperCase();
+  return (
+    expansions[classification] ||
+    expansions[classification.toUpperCase()] ||
+    classification.toUpperCase()
+  );
 };
 
 // Expand age restriction to readable text
@@ -85,13 +89,13 @@ const expandAge = (age: string): string => {
 const expandSex = (sex: string): string => {
   if (!sex) return '';
   const sexMap: Record<string, string> = {
-    'F': 'Fillies',
-    'M': 'Mares',
+    F: 'Fillies',
+    M: 'Mares',
     'F&M': 'Fillies & Mares',
-    'C': 'Colts',
-    'G': 'Geldings',
+    C: 'Colts',
+    G: 'Geldings',
     'C&G': 'Colts & Geldings',
-    'H': 'Horses',
+    H: 'Horses',
   };
   return sexMap[sex.toUpperCase()] || sex;
 };
@@ -151,7 +155,7 @@ const buildRaceDescription = (race: ParsedRace | undefined): { line1: string; li
 
   return {
     line1: line1Parts.join(' ') + (line1Parts.length > 0 ? '.' : ''),
-    line2: line2Parts.join('. ') + (line2Parts.length > 0 ? '.' : '')
+    line2: line2Parts.join('. ') + (line2Parts.length > 0 ? '.' : ''),
   };
 };
 
@@ -629,7 +633,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   return (
                     <div className="app-topbar__race-info-text">
                       <span className="app-topbar__race-info-line">{desc.line1}</span>
-                      {desc.line2 && <span className="app-topbar__race-info-line">{desc.line2}</span>}
+                      {desc.line2 && (
+                        <span className="app-topbar__race-info-line">{desc.line2}</span>
+                      )}
                     </div>
                   );
                 })()}
@@ -831,9 +837,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   const overlay = analyzeOverlay(scoredHorse.score.total, currentOddsString);
 
                   // Parse fair odds display (e.g., "3-1" to numerator/denominator)
-                  const fairOddsParts = overlay.fairOddsDisplay.split('-');
-                  const fairOddsNum = parseInt(fairOddsParts[0] || '2', 10);
-                  const fairOddsDen = parseInt(fairOddsParts[1] || '1', 10);
+                  // Handle special cases: "EVEN", "N/A", or em-dash fallback
+                  let fairOddsNum = 2;
+                  let fairOddsDen = 1;
+
+                  if (overlay.fairOddsDisplay === 'EVEN') {
+                    fairOddsNum = 1;
+                    fairOddsDen = 1;
+                  } else if (
+                    overlay.fairOddsDisplay !== 'N/A' &&
+                    overlay.fairOddsDisplay !== '—' &&
+                    overlay.fairOddsDisplay.includes('-')
+                  ) {
+                    const fairOddsParts = overlay.fairOddsDisplay.split('-');
+                    const parsedNum = parseInt(fairOddsParts[0] || '2', 10);
+                    const parsedDen = parseInt(fairOddsParts[1] || '1', 10);
+                    // Validate parsed values are not NaN
+                    fairOddsNum = Number.isFinite(parsedNum) ? parsedNum : 2;
+                    fairOddsDen = Number.isFinite(parsedDen) ? parsedDen : 1;
+                  }
 
                   // Parse current odds to { numerator, denominator } format
                   const parseOdds = (

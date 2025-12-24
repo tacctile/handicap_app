@@ -161,6 +161,9 @@ export function scoreToWinProbability(score: number): number {
  * - 10% probability → 10.0 (9-1)
  */
 export function probabilityToDecimalOdds(probability: number): number {
+  // Handle NaN or invalid input - return high odds (longshot default)
+  if (!Number.isFinite(probability)) return 50; // Default to 49-1
+
   // Probability as decimal (e.g., 25% → 0.25)
   const probDecimal = probability / 100;
 
@@ -168,16 +171,24 @@ export function probabilityToDecimalOdds(probability: number): number {
   if (probDecimal <= 0) return 100; // Cap at 99-1
   if (probDecimal >= 1) return 1.01; // Near even money
 
-  return Math.round((1 / probDecimal) * 100) / 100;
+  const result = Math.round((1 / probDecimal) * 100) / 100;
+
+  // Final NaN check on result
+  if (!Number.isFinite(result)) return 50; // Default to 49-1
+
+  return result;
 }
 
 /**
  * Convert decimal odds to traditional fractional display
  * E.g., 4.0 → "3-1", 2.5 → "3-2", 1.5 → "1-2"
+ *
+ * Note: Returns "N/A" for invalid input (not em-dash) to ensure
+ * consistent parsing in components that split on hyphen.
  */
 export function decimalToFractionalOdds(decimal: number): string {
-  // Handle NaN or invalid input
-  if (!Number.isFinite(decimal) || decimal <= 0) return '—';
+  // Handle NaN or invalid input - return "N/A" (not em-dash for parsing safety)
+  if (!Number.isFinite(decimal) || decimal <= 0) return 'N/A';
   if (decimal <= 1.01) return 'EVEN';
 
   const profit = decimal - 1;
@@ -671,6 +682,9 @@ export function calculateTierAdjustment(
  * Format overlay percentage for display
  */
 export function formatOverlayPercent(overlayPercent: number): string {
+  // Handle NaN or invalid input
+  if (!Number.isFinite(overlayPercent)) return '—';
+
   const sign = overlayPercent >= 0 ? '+' : '';
   return `${sign}${overlayPercent.toFixed(0)}%`;
 }
@@ -679,6 +693,9 @@ export function formatOverlayPercent(overlayPercent: number): string {
  * Format EV for display
  */
 export function formatEV(evPerDollar: number): string {
+  // Handle NaN or invalid input
+  if (!Number.isFinite(evPerDollar)) return '—';
+
   const sign = evPerDollar >= 0 ? '+' : '';
   return `${sign}$${evPerDollar.toFixed(2)}`;
 }
@@ -687,6 +704,9 @@ export function formatEV(evPerDollar: number): string {
  * Format EV as percentage
  */
 export function formatEVPercent(evPercent: number): string {
+  // Handle NaN or invalid input
+  if (!Number.isFinite(evPercent)) return '—';
+
   const sign = evPercent >= 0 ? '+' : '';
   return `${sign}${evPercent.toFixed(1)}%`;
 }
@@ -695,6 +715,9 @@ export function formatEVPercent(evPercent: number): string {
  * Get color for overlay display
  */
 export function getOverlayColor(overlayPercent: number): string {
+  // Handle NaN - return neutral/gray color
+  if (!Number.isFinite(overlayPercent)) return VALUE_COLORS.fair_price;
+
   const valueClass = classifyValue(overlayPercent);
   return VALUE_COLORS[valueClass];
 }
