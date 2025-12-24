@@ -11,13 +11,30 @@
  *
  * NOTE: Form increased from 30 to 40 points to better capture
  * recent performance patterns and their predictive value.
+ *
+ * FIX v2.1: Added class-context adjustment for Recent Form.
+ * Losses at higher class levels are now treated as neutral when
+ * the horse is dropping in class. This prevents class droppers
+ * (one of the strongest betting angles) from being penalized.
  */
 
-import type { HorseEntry, PastPerformance } from '../../types/drf';
+import type { HorseEntry, PastPerformance, RaceClassification } from '../../types/drf';
 
 // ============================================================================
 // TYPES
 // ============================================================================
+
+/**
+ * Class context for comparing past race class to today's race
+ */
+export interface ClassContext {
+  /** Today's race classification */
+  classification: RaceClassification;
+  /** Today's race claiming price (if applicable) */
+  claimingPrice: number | null;
+  /** Today's race purse */
+  purse: number;
+}
 
 export interface FormScoreResult {
   total: number;
@@ -29,6 +46,132 @@ export interface FormScoreResult {
   itmStreak: number;
   formTrend: 'improving' | 'declining' | 'steady' | 'unknown';
   reasoning: string;
+  /** Whether class context adjustment was applied to any race */
+  classAdjustmentApplied: boolean;
+  /** Details of class adjustments made */
+  classAdjustments: string[];
+}
+
+// ============================================================================
+// CLASS HIERARCHY
+// ============================================================================
+
+/**
+ * Class hierarchy levels (higher number = higher class)
+ * Used to compare past race class to today's race class
+ */
+const CLASS_HIERARCHY: Record<RaceClassification, number> = {
+  'maiden-claiming': 1,
+  maiden: 2,
+  claiming: 3, // Base claiming, adjusted by price
+  'starter-allowance': 4,
+  allowance: 5,
+  'allowance-optional-claiming': 6,
+  handicap: 7,
+  stakes: 8,
+  'stakes-listed': 9,
+  'stakes-graded-3': 10,
+  'stakes-graded-2': 11,
+  'stakes-graded-1': 12,
+  unknown: 3, // Default to claiming level
+};
+
+/**
+ * Get numeric class level for comparison
+ * Incorporates claiming price and purse for finer granularity
+ */
+function getClassLevel(
+  classification: RaceClassification,
+  claimingPrice: number | null,
+  purse: number
+): number {
+  let baseLevel = CLASS_HIERARCHY[classification] ?? 3;
+
+  // For claiming races, adjust by price tier
+  if (classification === 'claiming' && claimingPrice !== null) {
+    if (claimingPrice >= 50000) {
+      baseLevel = 3.8; // High claiming
+    } else if (claimingPrice >= 25000) {
+      baseLevel = 3.5; // Mid claiming
+    } else if (claimingPrice >= 10000) {
+      baseLevel = 3.2; // Low-mid claiming
+    } else {
+      baseLevel = 3.0; // Bottom claiming
+    }
+  }
+
+  // For maiden claiming, adjust by price
+  if (classification === 'maiden-claiming' && claimingPrice !== null) {
+    if (claimingPrice >= 30000) {
+      baseLevel = 1.8;
+    } else if (claimingPrice >= 15000) {
+      baseLevel = 1.5;
+    } else {
+      baseLevel = 1.0;
+    }
+  }
+
+  // Use purse as secondary indicator for allowance/stakes
+  // Higher purse within same classification = slightly higher class
+  if (classification === 'allowance' || classification === 'allowance-optional-claiming') {
+    if (purse >= 100000) {
+      baseLevel += 0.5;
+    } else if (purse >= 75000) {
+      baseLevel += 0.3;
+    }
+  }
+
+  return baseLevel;
+}
+
+/**
+ * Compare two class levels and return the relationship
+ * @returns 'higher' if pastClass > todayClass, 'lower' if pastClass < todayClass, 'same' otherwise
+ */
+function compareClassLevels(
+  pastClassLevel: number,
+  todayClassLevel: number
+): 'higher' | 'lower' | 'same' {
+  const diff = pastClassLevel - todayClassLevel;
+
+  // Consider classes within 0.5 as "same"
+  if (Math.abs(diff) <= 0.5) {
+    return 'same';
+  }
+
+  return diff > 0 ? 'higher' : 'lower';
+}
+
+/**
+ * Get a human-readable description of the class comparison
+ */
+function getClassComparisonLabel(
+  pastClassification: RaceClassification,
+  _todayClassification: RaceClassification,
+  comparison: 'higher' | 'lower' | 'same'
+): string {
+  if (comparison === 'same') {
+    return 'same class';
+  }
+
+  const classNames: Record<RaceClassification, string> = {
+    'maiden-claiming': 'MCL',
+    maiden: 'MSW',
+    claiming: 'CLM',
+    'starter-allowance': 'STR ALW',
+    allowance: 'ALW',
+    'allowance-optional-claiming': 'AOC',
+    handicap: 'HCP',
+    stakes: 'STK',
+    'stakes-listed': 'Listed',
+    'stakes-graded-3': 'G3',
+    'stakes-graded-2': 'G2',
+    'stakes-graded-1': 'G1',
+    unknown: 'UNK',
+  };
+
+  const pastName = classNames[pastClassification] ?? pastClassification;
+  return comparison === 'higher' ? `vs ${pastName}` : `vs ${pastName} (lower)`;
 }
 
 // ============================================================================
@@ -81,6 +224,149 @@ function analyzeRaceFinish(pp: PastPerformance): number {
 }
 
 /**
+ * Result from analyzing a race finish with class context
+ */
+interface ClassContextFinishResult {
+  score: number;
+  classAdjusted: boolean;
+  adjustmentNote: string | null;
+}
+
+/**
+ * Analyze a single race finish for form score WITH class context
+ * Applies class-context adjustment when past race was at higher class
+ *
+ * Per requirements:
+ * - WIN at any class level still scores maximum points (20)
+ * - If past race was HIGHER class than today → treat loss as NEUTRAL:
+ *   - 4th-6th place at higher class = 12-14 pts (not 8-10)
+ *   - 7th+ at higher class = 10-12 pts (not 4-5)
+ * - If past race was SAME class as today → score normally
+ */
+function analyzeRaceFinishWithClassContext(
+  pp: PastPerformance,
+  todayContext: ClassContext | null
+): ClassContextFinishResult {
+  // If no class context provided, use regular scoring
+  if (!todayContext) {
+    return {
+      score: analyzeRaceFinish(pp),
+      classAdjusted: false,
+      adjustmentNote: null,
+    };
+  }
+
+  // Get class levels for comparison
+  const pastClassLevel = getClassLevel(pp.classification, pp.claimingPrice, pp.purse);
+  const todayClassLevel = getClassLevel(
+    todayContext.classification,
+    todayContext.claimingPrice,
+    todayContext.purse
+  );
+
+  const classComparison = compareClassLevels(pastClassLevel, todayClassLevel);
+
+  // Wins always score maximum regardless of class
+  if (pp.finishPosition === 1) {
+    const label = getClassComparisonLabel(
+      pp.classification,
+      todayContext.classification,
+      classComparison
+    );
+    return {
+      score: 20,
+      classAdjusted: false,
+      adjustmentNote: classComparison === 'higher' ? `Won ${label}` : null,
+    };
+  }
+
+  // 2nd or 3rd - award bonus points if at higher class
+  if (pp.finishPosition === 2 || pp.finishPosition === 3) {
+    const baseScore = analyzeRaceFinish(pp);
+
+    if (classComparison === 'higher') {
+      // 2nd/3rd at higher class is excellent - boost to near-win level
+      const adjustedScore = Math.min(18, baseScore + 3);
+      const label = getClassComparisonLabel(
+        pp.classification,
+        todayContext.classification,
+        classComparison
+      );
+      return {
+        score: adjustedScore,
+        classAdjusted: true,
+        adjustmentNote: `${ordinal(pp.finishPosition)} ${label} (+${adjustedScore - baseScore})`,
+      };
+    }
+
+    return {
+      score: baseScore,
+      classAdjusted: false,
+      adjustmentNote: null,
+    };
+  }
+
+  // 4th-6th at higher class → treat as neutral (12-14 pts instead of 8-11)
+  if (pp.finishPosition >= 4 && pp.finishPosition <= 6) {
+    const baseScore = analyzeRaceFinish(pp);
+
+    if (classComparison === 'higher') {
+      // Upgrade to neutral: 12-14 pts
+      const adjustedScore = Math.max(12, Math.min(14, baseScore + 4));
+      const label = getClassComparisonLabel(
+        pp.classification,
+        todayContext.classification,
+        classComparison
+      );
+      return {
+        score: adjustedScore,
+        classAdjusted: true,
+        adjustmentNote: `${ordinal(pp.finishPosition)} ${label} (+${adjustedScore - baseScore})`,
+      };
+    }
+
+    return {
+      score: baseScore,
+      classAdjusted: false,
+      adjustmentNote: null,
+    };
+  }
+
+  // 7th+ at higher class → treat as neutral (10-12 pts instead of 4-5)
+  if (pp.finishPosition >= 7) {
+    const baseScore = analyzeRaceFinish(pp);
+
+    if (classComparison === 'higher') {
+      // Upgrade to neutral: 10-12 pts
+      const adjustedScore = Math.max(10, Math.min(12, baseScore + 6));
+      const label = getClassComparisonLabel(
+        pp.classification,
+        todayContext.classification,
+        classComparison
+      );
+      return {
+        score: adjustedScore,
+        classAdjusted: true,
+        adjustmentNote: `${ordinal(pp.finishPosition)} ${label} (+${adjustedScore - baseScore})`,
+      };
+    }
+
+    return {
+      score: baseScore,
+      classAdjusted: false,
+      adjustmentNote: null,
+    };
+  }
+
+  // Fallback
+  return {
+    score: analyzeRaceFinish(pp),
+    classAdjusted: false,
+    adjustmentNote: null,
+  };
+}
+
+/**
  * Determine form trend from last 3 races
  */
 function analyzeFormTrend(
@@ -114,15 +400,33 @@ function analyzeFormTrend(
 }
 
 /**
- * Calculate recent form score from last 3 races
- * Rescaled from 15 max to 20 max (scale factor: 40/30 = 1.3333)
+ * Result from calculating recent form with class context
  */
-function calculateRecentFormScore(pastPerformances: PastPerformance[]): {
+interface RecentFormResult {
   score: number;
   lastResult: string;
-} {
+  classAdjustmentApplied: boolean;
+  classAdjustments: string[];
+}
+
+/**
+ * Calculate recent form score from last 3 races
+ * Rescaled from 15 max to 20 max (scale factor: 40/30 = 1.3333)
+ *
+ * @param pastPerformances - Array of past performance records
+ * @param todayContext - Optional class context for today's race
+ */
+function calculateRecentFormScore(
+  pastPerformances: PastPerformance[],
+  todayContext: ClassContext | null = null
+): RecentFormResult {
   if (pastPerformances.length === 0) {
-    return { score: 11, lastResult: 'First starter' }; // Neutral for debut (was 8)
+    return {
+      score: 11,
+      lastResult: 'First starter',
+      classAdjustmentApplied: false,
+      classAdjustments: [],
+    }; // Neutral for debut (was 8)
   }
 
   const recentPPs = pastPerformances.slice(0, 3);
@@ -133,11 +437,24 @@ function calculateRecentFormScore(pastPerformances: PastPerformance[]): {
 
   let weightedScore = 0;
   let totalWeight = 0;
+  let anyClassAdjusted = false;
+  const classAdjustments: string[] = [];
 
   for (let i = 0; i < recentPPs.length; i++) {
     const pp = recentPPs[i];
     if (!pp) continue;
-    const raceScore = analyzeRaceFinish(pp);
+
+    // Use class-context scoring if context provided
+    const result = analyzeRaceFinishWithClassContext(pp, todayContext);
+    const raceScore = result.score;
+
+    if (result.classAdjusted) {
+      anyClassAdjusted = true;
+    }
+    if (result.adjustmentNote) {
+      classAdjustments.push(result.adjustmentNote);
+    }
+
     const weight = weights[i] ?? 0.1;
     weightedScore += raceScore * weight;
     totalWeight += weight;
@@ -149,14 +466,24 @@ function calculateRecentFormScore(pastPerformances: PastPerformance[]): {
   // Build last result string
   const lastPP = pastPerformances[0];
   if (!lastPP) {
-    return { score: 11, lastResult: 'No race history' }; // was 8
+    return {
+      score: 11,
+      lastResult: 'No race history',
+      classAdjustmentApplied: false,
+      classAdjustments: [],
+    }; // was 8
   }
   let lastResult = `${ordinal(lastPP.finishPosition)} of ${lastPP.fieldSize}`;
   if (lastPP.lengthsBehind > 0) {
     lastResult += ` (${lastPP.lengthsBehind.toFixed(1)}L behind)`;
   }
 
-  return { score: Math.min(20, score), lastResult }; // was 15
+  return {
+    score: Math.min(20, score),
+    lastResult,
+    classAdjustmentApplied: anyClassAdjusted,
+    classAdjustments,
+  }; // was 15
 }
 
 // ============================================================================
@@ -346,13 +673,17 @@ function buildReasoning(
  * Calculate form score for a horse
  *
  * @param horse - The horse entry to score
+ * @param todayContext - Optional class context for today's race (enables class-aware scoring)
  * @returns Detailed score breakdown
  */
-export function calculateFormScore(horse: HorseEntry): FormScoreResult {
+export function calculateFormScore(
+  horse: HorseEntry,
+  todayContext?: ClassContext
+): FormScoreResult {
   const pastPerformances = horse.pastPerformances;
 
-  // Calculate recent form
-  const formResult = calculateRecentFormScore(pastPerformances);
+  // Calculate recent form with class context
+  const formResult = calculateRecentFormScore(pastPerformances, todayContext ?? null);
 
   // Calculate layoff score
   const layoffResult = calculateLayoffScore(horse.daysSinceLastRace, pastPerformances);
@@ -366,13 +697,18 @@ export function calculateFormScore(horse: HorseEntry): FormScoreResult {
   // Calculate total
   const total = formResult.score + layoffResult.score + consistencyResult.bonus;
 
-  // Build reasoning
-  const reasoning = buildReasoning(
+  // Build reasoning with class context info
+  let reasoning = buildReasoning(
     formResult.lastResult,
     formTrend,
     layoffResult.reasoning,
     consistencyResult.reasoning
   );
+
+  // Add class adjustment info to reasoning if applied
+  if (formResult.classAdjustmentApplied && formResult.classAdjustments.length > 0) {
+    reasoning += ` | Class drop: ${formResult.classAdjustments.join(', ')}`;
+  }
 
   return {
     total: Math.min(40, total), // was 30
@@ -384,6 +720,8 @@ export function calculateFormScore(horse: HorseEntry): FormScoreResult {
     itmStreak: consistencyResult.streak,
     formTrend,
     reasoning,
+    classAdjustmentApplied: formResult.classAdjustmentApplied,
+    classAdjustments: formResult.classAdjustments,
   };
 }
 

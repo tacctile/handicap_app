@@ -192,8 +192,16 @@ export function createHorseEntry(overrides: Partial<HorseEntry> = {}): HorseEntr
     silks: 'Red, white stripes',
     trainerName: 'John Trainer',
     trainerStats: '15% Win',
+    trainerMeetStarts: 0, // Default to 0 for backward compatibility with existing tests
+    trainerMeetWins: 0,
+    trainerMeetPlaces: 0,
+    trainerMeetShows: 0,
     jockeyName: 'Jose Jockey',
     jockeyStats: '18% Win',
+    jockeyMeetStarts: 0, // Default to 0 for backward compatibility with existing tests
+    jockeyMeetWins: 0,
+    jockeyMeetPlaces: 0,
+    jockeyMeetShows: 0,
     weight: 120,
     apprenticeAllowance: 0,
     equipment: createEquipment(),

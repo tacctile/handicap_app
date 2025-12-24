@@ -312,12 +312,28 @@ export interface HorseEntry {
   silks: string;
   /** Trainer name */
   trainerName: string;
-  /** Trainer stats (wins/starts at meet, etc.) */
+  /** Trainer stats string (legacy, for display) */
   trainerStats: string;
+  /** Trainer starts at current meet (DRF Field 29) */
+  trainerMeetStarts: number;
+  /** Trainer wins at current meet (DRF Field 30) */
+  trainerMeetWins: number;
+  /** Trainer places at current meet (DRF Field 31) */
+  trainerMeetPlaces: number;
+  /** Trainer shows at current meet (DRF Field 32) */
+  trainerMeetShows: number;
   /** Jockey name */
   jockeyName: string;
-  /** Jockey stats */
+  /** Jockey stats string (legacy, for display) */
   jockeyStats: string;
+  /** Jockey starts at current meet (DRF Field 35) */
+  jockeyMeetStarts: number;
+  /** Jockey wins at current meet (DRF Field 36) */
+  jockeyMeetWins: number;
+  /** Jockey places at current meet (DRF Field 37) */
+  jockeyMeetPlaces: number;
+  /** Jockey shows at current meet (DRF Field 38) */
+  jockeyMeetShows: number;
   /** Weight carried */
   weight: number;
   /** Apprentice allowance claimed */

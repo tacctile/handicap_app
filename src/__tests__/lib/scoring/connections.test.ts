@@ -1,6 +1,9 @@
 /**
  * Connections Scoring Tests
  * Tests trainer, jockey, and partnership scoring logic
+ *
+ * FIX: v2.1 - Now uses actual DRF trainer/jockey stats (Fields 29-32, 35-38)
+ * instead of building stats from the horse's own past performances.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -11,6 +14,7 @@ import {
 import { createHorseEntry, createPastPerformance } from '../../fixtures/testHelpers';
 
 // NOTE: v2.0 rescaled from 55 max to 25 max (scale factor: 25/55 ≈ 0.455)
+// NOTE: v2.1 uses DRF stats (trainerMeetStarts, etc.) as primary source
 describe('Connections Scoring', () => {
   describe('Trainer Scoring', () => {
     it('returns neutral score (7) for trainer with insufficient data (<3 starts)', () => {
@@ -329,6 +333,161 @@ describe('Connections Scoring', () => {
 
       // Both should map to same trainer
       expect(database.trainers.size).toBe(1);
+    });
+  });
+
+  // ============================================================================
+  // DRF STATS INTEGRATION TESTS (v2.1)
+  // These tests verify the fix: using actual DRF trainer/jockey statistics
+  // instead of building stats from the horse's own past performances.
+  // ============================================================================
+  describe('DRF Stats Integration', () => {
+    it('uses DRF trainer stats instead of PP-based stats', () => {
+      // Horse with poor PP record (0 wins in 5 starts)
+      // but elite DRF trainer stats (22% win rate at meet)
+      const horse = createHorseEntry({
+        trainerName: 'Elite Trainer',
+        // DRF stats: 22% win rate (11 wins / 50 starts)
+        trainerMeetStarts: 50,
+        trainerMeetWins: 11,
+        trainerMeetPlaces: 10,
+        trainerMeetShows: 8,
+        // Poor PP record for the horse itself
+        pastPerformances: Array.from(
+          { length: 5 },
+          () => createPastPerformance({ finishPosition: 5 }) // No wins
+        ),
+      });
+
+      const result = calculateConnectionsScore(horse);
+
+      // Should score 16 points (20%+ win rate) based on DRF stats
+      // NOT 2 points (0% win rate) based on PP record
+      expect(result.trainer).toBe(16);
+      expect(result.trainerStats?.source).toBe('drf');
+      expect(result.trainerStats?.winRate).toBeCloseTo(22, 0);
+    });
+
+    it('uses DRF jockey stats instead of PP-based stats', () => {
+      // Horse with poor PP record with this jockey
+      // but elite DRF jockey stats (25% win rate at meet)
+      const horse = createHorseEntry({
+        jockeyName: 'Elite Jockey',
+        // DRF stats: 25% win rate (25 wins / 100 starts)
+        jockeyMeetStarts: 100,
+        jockeyMeetWins: 25,
+        jockeyMeetPlaces: 20,
+        jockeyMeetShows: 15,
+        // Poor PP record
+        pastPerformances: Array.from(
+          { length: 5 },
+          () => createPastPerformance({ jockey: 'Elite Jockey', finishPosition: 6 }) // No wins
+        ),
+      });
+
+      const result = calculateConnectionsScore(horse);
+
+      // Should score 7 points (20%+ win rate) based on DRF stats
+      // NOT 1 point (0% win rate) based on PP record
+      expect(result.jockey).toBe(7);
+      expect(result.jockeyStats?.source).toBe('drf');
+      expect(result.jockeyStats?.winRate).toBe(25);
+    });
+
+    it('falls back to PP-based calculation when DRF stats are missing', () => {
+      // Horse with no DRF stats (0 starts) but good PP record
+      const horse = createHorseEntry({
+        trainerName: 'PP Only Trainer',
+        trainerMeetStarts: 0, // No DRF stats
+        trainerMeetWins: 0,
+        trainerMeetPlaces: 0,
+        trainerMeetShows: 0,
+        // Good PP record (3 wins in 10 starts = 30%)
+        pastPerformances: Array.from({ length: 10 }, (_, i) =>
+          createPastPerformance({ finishPosition: i < 3 ? 1 : 5 })
+        ),
+      });
+
+      const result = calculateConnectionsScore(horse);
+
+      // Should use PP-based stats and score based on 30% win rate
+      expect(result.trainer).toBe(16); // 20%+ = 16 pts
+      expect(result.trainerStats?.source).toBe('pp');
+    });
+
+    it('poor PP record with elite trainer DRF stats scores high', () => {
+      // CRITICAL TEST: This is the exact bug case from the audit
+      // A horse with only 2 PP wins should still score high if trainer has 22% meet win rate
+      const horse = createHorseEntry({
+        trainerName: 'Todd Pletcher',
+        // Elite trainer stats: 22% win rate
+        trainerMeetStarts: 100,
+        trainerMeetWins: 22,
+        trainerMeetPlaces: 18,
+        trainerMeetShows: 15,
+        jockeyName: 'John Velazquez',
+        // Elite jockey stats: 20% win rate
+        jockeyMeetStarts: 150,
+        jockeyMeetWins: 30,
+        jockeyMeetPlaces: 25,
+        jockeyMeetShows: 20,
+        // Horse's own PP record: poor (2 wins in 10 starts)
+        pastPerformances: Array.from({ length: 10 }, (_, i) =>
+          createPastPerformance({
+            jockey: 'John Velazquez',
+            finishPosition: i < 2 ? 1 : 4 + i, // 2 wins, rest worse
+          })
+        ),
+      });
+
+      const result = calculateConnectionsScore(horse);
+
+      // Should score based on DRF stats, not PP record
+      expect(result.trainer).toBe(16); // 22% = 20%+ tier = 16 pts
+      expect(result.jockey).toBe(7); // 20% = 20%+ tier = 7 pts
+      expect(result.trainerStats?.source).toBe('drf');
+      expect(result.jockeyStats?.source).toBe('drf');
+
+      // Total should be at least 23 (16 + 7) without partnership bonus
+      expect(result.total).toBeGreaterThanOrEqual(23);
+    });
+
+    it('marks stats source correctly in reasoning', () => {
+      const horseWithDRF = createHorseEntry({
+        trainerMeetStarts: 50,
+        trainerMeetWins: 10,
+        trainerMeetPlaces: 8,
+        trainerMeetShows: 7,
+        jockeyMeetStarts: 0, // No jockey DRF stats
+        pastPerformances: [createPastPerformance({ finishPosition: 1 })],
+      });
+
+      const result = calculateConnectionsScore(horseWithDRF);
+
+      // Trainer should NOT have [PP] tag (using DRF)
+      expect(result.reasoning).toContain('T: 20%');
+      expect(result.reasoning).not.toMatch(/T:.*\[PP\]/);
+
+      // Jockey should have [PP] tag (fallback)
+      // Note: With only 1 PP, it shows as "Limited data"
+    });
+
+    it('handles edge case of 0 trainer wins with positive starts', () => {
+      const horse = createHorseEntry({
+        trainerName: 'Winless Trainer',
+        trainerMeetStarts: 20,
+        trainerMeetWins: 0,
+        trainerMeetPlaces: 3,
+        trainerMeetShows: 5,
+        pastPerformances: [],
+      });
+
+      const result = calculateConnectionsScore(horse);
+
+      // Should score 2 points (0% = <5% tier)
+      expect(result.trainer).toBe(2);
+      expect(result.trainerStats?.winRate).toBe(0);
+      expect(result.trainerStats?.source).toBe('drf');
     });
   });
 });

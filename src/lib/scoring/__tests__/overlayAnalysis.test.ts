@@ -410,10 +410,10 @@ describe('Overlay Analysis', () => {
     });
 
     it('bumps down tier for underlay', () => {
-      // Score 175 + -35% overlay = adjusted score 160 (avoid Fool's Gold trigger at 180+)
-      const adjustment = calculateTierAdjustment(175, -35);
+      // Score 150 + -35% overlay = adjusted score 125 (score < 160 threshold, penalty applies)
+      const adjustment = calculateTierAdjustment(150, -35);
 
-      expect(adjustment.adjustedScore).toBe(150);
+      expect(adjustment.adjustedScore).toBe(125);
       expect(adjustment.tierShift).toBe(-2);
       expect(adjustment.reasoning).toContain('underlay');
     });
@@ -427,13 +427,15 @@ describe('Overlay Analysis', () => {
       expect(adjustment.reasoning).toContain('DIAMOND');
     });
 
-    it("identifies Fool's Gold (high score + severe underlay)", () => {
-      // Score 190 + -30% overlay = overbet public choice
+    it("does NOT identify Fool's Gold for scores >= 160 (v2.1 threshold waiver)", () => {
+      // Score 190 >= 160 threshold, so underlay penalty is waived and Fool's Gold disabled
+      // High-scoring horses with underlays are correctly identified by market, not "fool's gold"
       const adjustment = calculateTierAdjustment(190, -30);
 
-      expect(adjustment.isSpecialCase).toBe(true);
-      expect(adjustment.specialCaseType).toBe('fool_gold');
-      expect(adjustment.reasoning).toContain("FOOL'S GOLD");
+      expect(adjustment.isSpecialCase).toBe(false);
+      expect(adjustment.specialCaseType).not.toBe('fool_gold');
+      expect(adjustment.adjustedScore).toBe(190); // No penalty applied
+      expect(adjustment.reasoning).toContain('penalty waived');
     });
 
     it('handles slight overlay (+15%)', () => {
