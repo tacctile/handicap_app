@@ -434,7 +434,9 @@ function logConnectionsDebug(
   jockeyScore: number
 ): void {
   // Only log in development mode
-  if (process.env.NODE_ENV !== 'development') return;
+  // Use import.meta.env.DEV for Vite compatibility (works in both browser and test)
+  if (typeof import.meta !== 'undefined' && !import.meta.env?.DEV) return;
+  if (typeof import.meta === 'undefined') return; // Skip in non-Vite environments
 
   // Calculate what the old PP-based calculation would have produced
   const ppWins = horse.pastPerformances.filter((pp) => pp.finishPosition === 1).length;
