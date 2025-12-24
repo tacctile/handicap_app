@@ -199,7 +199,12 @@ export function classifyHorses(
     const overlay = analyzeOverlay(score.total, horse.morningLineOdds);
 
     // Calculate tier adjustment based on overlay
-    const tierAdjustment = calculateTierAdjustment(score.total, overlay.overlayPercent);
+    // Pass both total score (for adjustment calculations) and base score (for threshold checks)
+    const tierAdjustment = calculateTierAdjustment(
+      score.total,
+      score.baseScore,
+      overlay.overlayPercent
+    );
 
     // Determine tier using adjusted score and special case info
     const tier = determineTier(

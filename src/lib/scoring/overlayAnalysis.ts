@@ -611,16 +611,21 @@ export function getValuePlaysSummary(valuePlays: ValuePlay[]): {
  * Returns points to add/subtract from tier threshold consideration
  *
  * High score + overlay = bump up tier
- * High score + underlay = bump down tier (ONLY if score < UNDERLAY_PENALTY_THRESHOLD)
+ * High score + underlay = bump down tier (ONLY if baseScore < UNDERLAY_PENALTY_THRESHOLD)
  *
  * Examples:
  * - 175 score + 80% overlay = effectively 195 (Tier 1 territory)
- * - 185 score + -30% underlay = effectively 185 (NO penalty - exceeds threshold)
- * - 150 score + -30% underlay = effectively 125 (penalty applies - below threshold)
+ * - 185 base + -30% underlay = effectively 185 (NO penalty - exceeds threshold)
+ * - 150 base + -30% underlay = effectively 125 (penalty applies - below threshold)
  * - 155 score + 200% overlay = "Diamond in Rough" special classification
+ *
+ * @param score - Total score (base + overlay) used as starting point for adjustments
+ * @param baseScore - Base score (before overlay) used for threshold checks
+ * @param overlayPercent - Market overlay percentage
  */
 export function calculateTierAdjustment(
   score: number,
+  baseScore: number,
   overlayPercent: number
 ): {
   adjustedScore: number;
@@ -653,13 +658,13 @@ export function calculateTierAdjustment(
     adjustedScore = score + 5;
     reasoning = `Slight ${overlayPercent.toFixed(0)}% overlay adds +5 effective points`;
   }
-  // UNDERLAY PENALTIES - only apply if score is BELOW the threshold
+  // UNDERLAY PENALTIES - only apply if BASE score is BELOW the threshold
   // Horses with 160+ base score have demonstrated ability. The market recognizing
   // this (low odds) should not penalize proven performers.
   else if (overlayPercent <= -30) {
-    if (score >= UNDERLAY_PENALTY_THRESHOLD) {
-      // Skip penalty for high-scoring horses
-      reasoning = `Underlay of ${Math.abs(overlayPercent).toFixed(0)}% — penalty waived (base score ${score} exceeds threshold)`;
+    if (baseScore >= UNDERLAY_PENALTY_THRESHOLD) {
+      // Skip penalty for high-scoring horses - use baseScore for threshold check
+      reasoning = `Underlay of ${Math.abs(overlayPercent).toFixed(0)}% — penalty waived (base score ${baseScore} exceeds threshold)`;
       // adjustedScore unchanged, tierShift stays 0
     } else {
       tierShift = -2; // Major bump down
@@ -667,9 +672,9 @@ export function calculateTierAdjustment(
       reasoning = `Significant ${Math.abs(overlayPercent).toFixed(0)}% underlay subtracts -25 effective points`;
     }
   } else if (overlayPercent <= -15) {
-    if (score >= UNDERLAY_PENALTY_THRESHOLD) {
-      // Skip penalty for high-scoring horses
-      reasoning = `Underlay of ${Math.abs(overlayPercent).toFixed(0)}% — penalty waived (base score ${score} exceeds threshold)`;
+    if (baseScore >= UNDERLAY_PENALTY_THRESHOLD) {
+      // Skip penalty for high-scoring horses - use baseScore for threshold check
+      reasoning = `Underlay of ${Math.abs(overlayPercent).toFixed(0)}% — penalty waived (base score ${baseScore} exceeds threshold)`;
       // adjustedScore unchanged, tierShift stays 0
     } else {
       tierShift = -1; // Bump down one tier
@@ -679,20 +684,20 @@ export function calculateTierAdjustment(
   }
 
   // Check for special cases
-  // Diamond in Rough: Low score but massive overlay
-  if (score >= 140 && score < 170 && overlayPercent >= 150) {
+  // Diamond in Rough: Low BASE score but massive overlay
+  if (baseScore >= 140 && baseScore < 170 && overlayPercent >= 150) {
     isSpecialCase = true;
     specialCaseType = 'diamond_in_rough';
-    reasoning = `DIAMOND IN ROUGH: Score ${score} with ${overlayPercent.toFixed(0)}% overlay - hidden gem!`;
+    reasoning = `DIAMOND IN ROUGH: Base score ${baseScore} with ${overlayPercent.toFixed(0)}% overlay - hidden gem!`;
   }
 
   // Fool's Gold: High score but severe underlay
-  // NOTE: Only flag this for scores BELOW the underlay threshold
-  // Horses at 160+ with underlays are correctly identified by the market, not "fool's gold"
-  if (score >= 180 && score < UNDERLAY_PENALTY_THRESHOLD && overlayPercent <= -25) {
+  // NOTE: Only flag this for BASE scores BELOW the underlay threshold
+  // Horses at 160+ base with underlays are correctly identified by the market, not "fool's gold"
+  if (baseScore >= 180 && baseScore < UNDERLAY_PENALTY_THRESHOLD && overlayPercent <= -25) {
     isSpecialCase = true;
     specialCaseType = 'fool_gold';
-    reasoning = `FOOL'S GOLD: Score ${score} looks good but ${Math.abs(overlayPercent).toFixed(0)}% underlay - overbet public choice`;
+    reasoning = `FOOL'S GOLD: Base score ${baseScore} looks good but ${Math.abs(overlayPercent).toFixed(0)}% underlay - overbet public choice`;
   }
 
   // Clamp adjusted score
