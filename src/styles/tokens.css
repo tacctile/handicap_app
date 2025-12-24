@@ -94,14 +94,15 @@
   /* ============================================
      HORSE LIST GRID COLUMNS
      Single source of truth for header + rows
-     10 columns: icons | PP | name | odds | score | win conf | fair | edge% | odds edge | expand
+     11 columns: icons | PP | name | rank | odds | score | win conf | fair | edge% | odds edge | expand
 
      Horse name is FIXED WIDTH (340px) - sized for 20 characters at 24px font
      Empty space to right of shorter names is intentional - columns never stretch left
+     RANK column is fixed 72px for ordinal display (1st, 10th, etc.)
      Data columns use 1fr to fill remaining space and stay flush with betting panel
      POST column increased to 64px to accommodate header label + icon
      ============================================ */
-  --horse-list-grid: 70px /* icons */ 64px /* PP - increased for header label + icon */ 340px /* horse name - FIXED */
-    repeat(6, 1fr) /* odds, score, win conf, fair, edge%, odds edge - flexible */
-    40px; /* expand chevron */
+  --horse-list-grid: 70px /* icons */ 64px /* PP - increased for header label + icon */ 340px
+    /* horse name - FIXED */ 72px /* rank - projected finish order */ repeat(6, 1fr)
+    /* odds, score, win conf, fair, edge%, odds edge - flexible */ 40px; /* expand chevron */
 }

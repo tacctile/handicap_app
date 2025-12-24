@@ -9,7 +9,12 @@ import { HorseExpandedView } from './HorseExpandedView';
 import { HorseSummaryBar } from './HorseSummaryBar';
 import { HeaderTooltip } from './InfoTooltip';
 import { ScoringHelpModal } from './ScoringHelpModal';
-import { calculateRaceScores, MAX_SCORE, analyzeOverlay } from '../lib/scoring';
+import {
+  calculateRaceScores,
+  MAX_SCORE,
+  analyzeOverlay,
+  calculateBaseScoreRanks,
+} from '../lib/scoring';
 import { getTrackData } from '../data/tracks';
 import type { ParsedDRFFile, ParsedRace } from '../types/drf';
 import type { useRaceState } from '../hooks/useRaceState';
@@ -256,6 +261,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
       raceState.trackCondition
     );
   }, [parsedData, selectedRaceIndex, raceState]);
+
+  // Calculate ranks based on BASE SCORE (not total score with overlay)
+  const baseScoreRankMap = useMemo(() => {
+    return calculateBaseScoreRanks(currentRaceScoredHorses);
+  }, [currentRaceScoredHorses]);
 
   // Get current race data
   const currentRace = parsedData?.races?.[selectedRaceIndex];
@@ -734,7 +744,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             ) : (
               <div className="horse-list">
-                {/* Column Headers - 10 columns */}
+                {/* Column Headers - 11 columns */}
                 <div className="horse-list-header">
                   {/* Column 1: Help button */}
                   <div className="horse-list-header__cell horse-list-header__cell--icons">
@@ -769,7 +779,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 4: Live Odds */}
+                  {/* Column 4: Rank - Projected finish order */}
+                  <div className="horse-list-header__cell horse-list-header__cell--rank">
+                    <HeaderTooltip
+                      title="Projected Finish"
+                      content="The model's projected finish order based on the base score (X/240). 1st is the horse expected to win, 2nd is expected to place, etc. Colors fade from teal (1st) to gray (last)."
+                    >
+                      <span className="horse-list-header__label">RANK</span>
+                      <span className="horse-list-header__sublabel">Projected Finish</span>
+                    </HeaderTooltip>
+                  </div>
+
+                  {/* Column 5: Live Odds */}
                   <div className="horse-list-header__cell horse-list-header__cell--odds">
                     <HeaderTooltip
                       title="Current Odds"
@@ -780,7 +801,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 5: Score */}
+                  {/* Column 6: Score */}
                   <div className="horse-list-header__cell horse-list-header__cell--score">
                     <HeaderTooltip
                       title="Furlong Score"
@@ -791,7 +812,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 6: Win Confidence */}
+                  {/* Column 7: Win Confidence */}
                   <div className="horse-list-header__cell horse-list-header__cell--confidence">
                     <HeaderTooltip
                       title="Win Confidence"
@@ -802,7 +823,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 7: Fair Odds */}
+                  {/* Column 8: Fair Odds */}
                   <div className="horse-list-header__cell horse-list-header__cell--fair">
                     <HeaderTooltip
                       title="Fair Odds"
@@ -813,7 +834,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 8: Edge % */}
+                  {/* Column 9: Edge % */}
                   <div className="horse-list-header__cell horse-list-header__cell--value">
                     <HeaderTooltip
                       title="Edge Percentage"
@@ -824,7 +845,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 9: Odds Edge */}
+                  {/* Column 10: Odds Edge */}
                   <div className="horse-list-header__cell horse-list-header__cell--rating">
                     <HeaderTooltip
                       title="Odds Edge Rating"
@@ -835,7 +856,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 10: Expand */}
+                  {/* Column 11: Expand */}
                   <div className="horse-list-header__cell horse-list-header__cell--expand">
                     {/* Empty */}
                   </div>
@@ -907,6 +928,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     }
                   };
 
+                  // Get base score rank info for this horse
+                  const rankInfo = baseScoreRankMap.get(horseIndex);
+
                   return (
                     <div key={horseId} className="horse-list__item">
                       <HorseSummaryBar
@@ -925,6 +949,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         onOddsChange={handleOddsChange}
                         isCompareSelected={compareHorses.has(pp)}
                         onCompareToggle={(selected) => handleCompareToggle(pp, selected)}
+                        // Base score rank info (projected finish order)
+                        baseScoreRank={rankInfo?.rank}
+                        baseScoreRankOrdinal={rankInfo?.ordinal}
+                        baseScoreRankColor={rankInfo?.color}
                       />
                       <HorseExpandedView
                         horse={horse}
