@@ -40,6 +40,18 @@ function createMockScore(total: number, isScratched = false, baseScore?: number)
     },
     equipment: { total: 10, hasChanges: false, reasoning: '' },
     pace: { total: 20, runningStyle: 'P', paceFit: 'neutral', reasoning: '' },
+    distanceSurface: {
+      total: 0,
+      turfScore: 0,
+      wetScore: 0,
+      distanceScore: 0,
+      turfWinRate: 0,
+      wetWinRate: 0,
+      distanceWinRate: 0,
+      reasoning: [],
+    },
+    trainerPatterns: { total: 0, matchedPatterns: [], reasoning: [] },
+    comboPatterns: { total: 0, detectedCombos: [], intentScore: 0, reasoning: [] },
   };
 
   // If baseScore not provided, use total (simulating no overlay adjustment)

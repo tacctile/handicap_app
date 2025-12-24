@@ -183,6 +183,18 @@ function createMockScore(total: number, overrides: Partial<HorseScore> = {}): Ho
       form: { total: 15, reasoning: 'Test form' },
       equipment: { total: 15, reasoning: 'First-time Lasix added' },
       pace: { total: 20, paceFit: 'good', reasoning: 'Good pace fit' },
+      distanceSurface: {
+        total: 0,
+        turfScore: 0,
+        wetScore: 0,
+        distanceScore: 0,
+        turfWinRate: 0,
+        wetWinRate: 0,
+        distanceWinRate: 0,
+        reasoning: [],
+      },
+      trainerPatterns: { total: 0, matchedPatterns: [], reasoning: [] },
+      comboPatterns: { total: 0, detectedCombos: [], intentScore: 0, reasoning: [] },
     } as ScoreBreakdown,
     classScore: {
       total: 15,
