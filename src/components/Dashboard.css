@@ -333,6 +333,7 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  padding-top: 60px; /* Offset race items below the header row height */
 }
 
 .app-race-rail__item {
@@ -1197,13 +1198,17 @@
   align-items: center;
   gap: 16px; /* Match row gap for uniform spacing */
   padding: 12px 16px; /* Internal padding only */
+  padding-left: calc(
+    var(--dimension-bar) + 16px
+  ); /* Extend into race rail column + original padding */
   margin: 0; /* NO margin - flush with top */
+  margin-left: calc(-1 * var(--dimension-bar)); /* Extend left into race rail column */
   background: var(--color-elevated);
   border-bottom: 2px solid var(--color-border);
   position: sticky;
   top: 0;
   z-index: 10;
-  width: 100%;
+  width: calc(100% + var(--dimension-bar)); /* Compensate for negative margin */
   min-width: 0; /* Allow flex item to shrink below content size */
 }
 
@@ -1314,16 +1319,27 @@
   justify-content: center;
 }
 
-/* POST column - left aligned with padding to match data alignment */
+/* POST column - centered like other data columns */
 .horse-list-header__cell--pp {
-  text-align: left;
-  align-items: flex-start;
-  padding-left: 4px; /* Small padding for breathing room */
+  text-align: center;
+  align-items: center;
+}
+
+/* POST column tooltip wrapper also centered */
+.horse-list-header__cell--pp .header-tooltip-wrapper,
+.horse-list-header__cell--pp .header-tooltip-trigger {
+  align-items: center;
 }
 
 /* Name column - left aligned to match horse name data */
 .horse-list-header__cell--name {
   text-align: left;
+  align-items: flex-start;
+}
+
+/* Name column tooltip wrapper also left-aligned */
+.horse-list-header__cell--name .header-tooltip-wrapper,
+.horse-list-header__cell--name .header-tooltip-trigger {
   align-items: flex-start;
 }
 
