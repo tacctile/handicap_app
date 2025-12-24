@@ -1241,47 +1241,26 @@
   text-align: center; /* Center under label only */
 }
 
-/* Text group: label + sublabel vertically stacked and centered together */
-.horse-list-header__text-group {
+/* HeaderTooltip integration - ensures proper centering */
+.horse-list-header__cell .header-tooltip-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.horse-list-header__cell .header-tooltip-trigger {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  cursor: help;
 }
 
-/* Label row with inline help icon - icon is separate from centering calculation */
-.horse-list-header__label-row {
-  display: inline-flex;
-  align-items: baseline; /* Align icon to text baseline */
+/* Ensure headers without subtext are properly centered */
+.horse-list-header__cell--no-subtext .header-tooltip-wrapper,
+.horse-list-header__cell--no-subtext .header-tooltip-trigger {
   justify-content: center;
-  gap: 4px;
-}
-
-/* Alternative: Label + icon displayed inline, then sublabel centers under just the label portion */
-.horse-list-header__label-with-icon {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-/* Smaller inline help icon in headers - sized proportionally to 16px labels */
-.header-tooltip-inline .info-tooltip-trigger {
-  margin-left: 0;
-  padding: 0;
-  display: inline-flex;
-  align-items: flex-start; /* Align to top with label text */
-  align-self: flex-start; /* Position icon at top of label-with-icon container */
-  margin-top: 2px; /* Fine-tune vertical alignment with label */
-}
-
-.header-tooltip-inline .info-tooltip-icon {
-  font-size: 14px !important; /* Proportional to 16px label */
-  opacity: 0.5;
-}
-
-.header-tooltip-inline .info-tooltip-trigger:hover .info-tooltip-icon,
-.header-tooltip-inline .info-tooltip-trigger:focus .info-tooltip-icon {
-  opacity: 0.85;
 }
 
 /* Icons column - help button */
