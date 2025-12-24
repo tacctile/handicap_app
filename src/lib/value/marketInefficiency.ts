@@ -400,7 +400,7 @@ function detectNameRecognitionBias(
       evidence: [
         `Trainer: ${horse.trainerName} - strong stats but not famous`,
         `Jockey: ${horse.jockeyName} - capable but under radar`,
-        `Connections score: ${connectionScore}/55`,
+        `Connections score: ${connectionScore}/25`,
         `Edge: +${edge.toFixed(0)}%`,
       ],
       confidence: Math.min(75, 55 + magnitude * 2),
@@ -425,7 +425,7 @@ function detectNameRecognitionBias(
       valueReason: `Name recognition creating underlay - avoid`,
       evidence: [
         `Famous connection: ${famous}`,
-        `Connections score: ${connectionScore}/55 (weak in this spot)`,
+        `Connections score: ${connectionScore}/25 (weak in this spot)`,
         `Edge: ${edge.toFixed(0)}% (negative)`,
       ],
       confidence: Math.min(70, 50 + magnitude * 2),

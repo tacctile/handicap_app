@@ -173,7 +173,7 @@ describe('Main Scoring Engine', () => {
       expect(result.total).toBeLessThanOrEqual(SCORE_LIMITS.total);
     });
 
-    it('connections score does not exceed 55', () => {
+    it('connections score does not exceed 25', () => {
       const horse = createHorseEntry({
         pastPerformances: Array.from({ length: 20 }, () =>
           createPastPerformance({ finishPosition: 1 })
@@ -186,7 +186,7 @@ describe('Main Scoring Engine', () => {
       expect(result.breakdown.connections.total).toBeLessThanOrEqual(SCORE_LIMITS.connections);
     });
 
-    it('post position score does not exceed 45', () => {
+    it('post position score does not exceed 30', () => {
       const horse = createHorseEntry({ postPosition: 4 }); // Optimal position
       const header = createRaceHeader({ fieldSize: 10 });
 
@@ -195,7 +195,7 @@ describe('Main Scoring Engine', () => {
       expect(result.breakdown.postPosition.total).toBeLessThanOrEqual(SCORE_LIMITS.postPosition);
     });
 
-    it('speed/class score does not exceed 50', () => {
+    it('speed/class score does not exceed 80', () => {
       const horse = createHorseEntry({
         pastPerformances: [
           createPastPerformance({
@@ -212,7 +212,7 @@ describe('Main Scoring Engine', () => {
       expect(result.breakdown.speedClass.total).toBeLessThanOrEqual(SCORE_LIMITS.speedClass);
     });
 
-    it('form score does not exceed 30', () => {
+    it('form score does not exceed 40', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 21,
         pastPerformances: Array.from({ length: 5 }, () =>
@@ -226,7 +226,7 @@ describe('Main Scoring Engine', () => {
       expect(result.breakdown.form.total).toBeLessThanOrEqual(SCORE_LIMITS.form);
     });
 
-    it('equipment score does not exceed 25', () => {
+    it('equipment score does not exceed 20', () => {
       const horse = createHorseEntry();
       const header = createRaceHeader();
 
@@ -235,7 +235,7 @@ describe('Main Scoring Engine', () => {
       expect(result.breakdown.equipment.total).toBeLessThanOrEqual(SCORE_LIMITS.equipment);
     });
 
-    it('pace score does not exceed 40', () => {
+    it('pace score does not exceed 45', () => {
       const horse = createHorseEntry();
       const header = createRaceHeader();
 

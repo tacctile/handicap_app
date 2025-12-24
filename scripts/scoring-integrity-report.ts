@@ -119,13 +119,14 @@ console.log('│ PART 4: INDIVIDUAL SCORING CATEGORIES                          
 console.log('└──────────────────────────────────────────────────────────────────┘');
 console.log('');
 
+// v2.0 - Industry-Aligned Weights (total: 240)
 const categories = [
-  { name: 'Connections', max: 55, files: ['connections', 'trainer', 'jockey'] },
-  { name: 'Post Position', max: 45, files: ['post', 'postPosition', 'trackBias'] },
-  { name: 'Speed/Class', max: 50, files: ['speed', 'class', 'speedClass'] },
-  { name: 'Form', max: 30, files: ['form', 'recentForm'] },
-  { name: 'Equipment', max: 25, files: ['equipment'] },
-  { name: 'Pace', max: 40, files: ['pace', 'paceFit'] },
+  { name: 'Speed/Class', max: 80, files: ['speed', 'class', 'speedClass'] },  // 33.3% - Most predictive
+  { name: 'Pace', max: 45, files: ['pace', 'paceFit'] },                       // 18.8% - Race shape
+  { name: 'Form', max: 40, files: ['form', 'recentForm'] },                    // 16.7% - Recent performance
+  { name: 'Post Position', max: 30, files: ['post', 'postPosition', 'trackBias'] }, // 12.5% - Situational
+  { name: 'Connections', max: 25, files: ['connections', 'trainer', 'jockey'] }, // 10.4% - Modifier
+  { name: 'Equipment', max: 20, files: ['equipment'] },                        // 8.3% - Fine-tuning
 ];
 
 categories.forEach(cat => {
@@ -160,10 +161,10 @@ categories.forEach(cat => {
 console.log('');
 
 // ============================================================
-// PART 5: CONNECTIONS SCORING LOGIC (55 points)
+// PART 5: CONNECTIONS SCORING LOGIC (25 points - v2.0)
 // ============================================================
 console.log('┌──────────────────────────────────────────────────────────────────┐');
-console.log('│ PART 5: CONNECTIONS SCORING LOGIC (55 points)                    │');
+console.log('│ PART 5: CONNECTIONS SCORING LOGIC (25 points - v2.0)             │');
 console.log('└──────────────────────────────────────────────────────────────────┘');
 console.log('');
 
@@ -349,38 +350,38 @@ console.log('');
 
 console.log('Checklist - Does the scoring system receive these inputs?');
 console.log('');
-console.log('CONNECTIONS (55 pts):');
-console.log('  [ ] Trainer name and stats (trainerName, trainerStats)');
-console.log('  [ ] Jockey name and stats (jockeyName, jockeyStats)');
-console.log('  [ ] Trainer/Jockey combo history');
+console.log('SPEED/CLASS (80 pts - 33.3%):');
+console.log('  [ ] Speed figures (bestBeyer, averageBeyer, lastBeyer)');
+console.log('  [ ] Class level (classification, purse, claimingPrice)');
+console.log('  [ ] Class movement (up/down in class)');
 console.log('');
-console.log('POST POSITION (45 pts):');
+console.log('PACE (45 pts - 18.8%):');
+console.log('  [ ] Running style (runningStyle, earlySpeedRating)');
+console.log('  [ ] Race pace scenario');
+console.log('  [ ] Track pace bias');
+console.log('');
+console.log('FORM (40 pts - 16.7%):');
+console.log('  [ ] Recent finishes (pastPerformances)');
+console.log('  [ ] Days since last race (daysSinceLastRace)');
+console.log('  [ ] Consistency (lifetimeWins/lifetimeStarts)');
+console.log('  [ ] Current form trend');
+console.log('');
+console.log('POST POSITION (30 pts - 12.5%):');
 console.log('  [ ] Post position number (postPosition)');
 console.log('  [ ] Track code (trackCode)');
 console.log('  [ ] Distance (distanceFurlongs)');
 console.log('  [ ] Surface (surface)');
 console.log('  [ ] Track bias data');
 console.log('');
-console.log('SPEED/CLASS (50 pts):');
-console.log('  [ ] Speed figures (bestBeyer, averageBeyer, lastBeyer)');
-console.log('  [ ] Class level (classification, purse, claimingPrice)');
-console.log('  [ ] Class movement (up/down in class)');
+console.log('CONNECTIONS (25 pts - 10.4%):');
+console.log('  [ ] Trainer name and stats (trainerName, trainerStats)');
+console.log('  [ ] Jockey name and stats (jockeyName, jockeyStats)');
+console.log('  [ ] Trainer/Jockey combo history');
 console.log('');
-console.log('FORM (30 pts):');
-console.log('  [ ] Recent finishes (pastPerformances)');
-console.log('  [ ] Days since last race (daysSinceLastRace)');
-console.log('  [ ] Consistency (lifetimeWins/lifetimeStarts)');
-console.log('  [ ] Current form trend');
-console.log('');
-console.log('EQUIPMENT (25 pts):');
+console.log('EQUIPMENT (20 pts - 8.3%):');
 console.log('  [ ] Current equipment (equipment object)');
 console.log('  [ ] Equipment changes (firstTimeEquipment)');
 console.log('  [ ] Medication (medication object)');
-console.log('');
-console.log('PACE (40 pts):');
-console.log('  [ ] Running style (runningStyle, earlySpeedRating)');
-console.log('  [ ] Race pace scenario');
-console.log('  [ ] Track pace bias');
 console.log('');
 
 // ============================================================

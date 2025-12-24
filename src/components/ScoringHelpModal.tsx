@@ -293,7 +293,7 @@ function ScoreBreakdownSection() {
           <div className="help-category-header">
             <Icon name="people" className="help-category-icon" />
             <span className="help-category-name">Connections</span>
-            <span className="help-category-max">55 pts max</span>
+            <span className="help-category-max">25 pts max</span>
           </div>
           <p className="help-category-desc">
             Rates the trainer and jockey. Some trainers excel in specific situations (first-time
@@ -306,7 +306,7 @@ function ScoreBreakdownSection() {
           <div className="help-category-header">
             <Icon name="grid_view" className="help-category-icon" />
             <span className="help-category-name">Post Position</span>
-            <span className="help-category-max">45 pts max</span>
+            <span className="help-category-max">30 pts max</span>
           </div>
           <p className="help-category-desc">
             Evaluates whether the starting gate helps or hurts. Different tracks have different
@@ -319,7 +319,7 @@ function ScoreBreakdownSection() {
           <div className="help-category-header">
             <Icon name="speed" className="help-category-icon" />
             <span className="help-category-name">Speed / Class</span>
-            <span className="help-category-max">50 pts max</span>
+            <span className="help-category-max">80 pts max</span>
           </div>
           <p className="help-category-desc">
             Measures raw ability through speed figures (how fast the horse has run) and class level
@@ -332,7 +332,7 @@ function ScoreBreakdownSection() {
           <div className="help-category-header">
             <Icon name="fitness_center" className="help-category-icon" />
             <span className="help-category-name">Form</span>
-            <span className="help-category-max">30 pts max</span>
+            <span className="help-category-max">40 pts max</span>
           </div>
           <p className="help-category-desc">
             Assesses current condition. Recent race results, days since last race, and consistency
@@ -345,7 +345,7 @@ function ScoreBreakdownSection() {
           <div className="help-category-header">
             <Icon name="build" className="help-category-icon" />
             <span className="help-category-name">Equipment</span>
-            <span className="help-category-max">25 pts max</span>
+            <span className="help-category-max">20 pts max</span>
           </div>
           <p className="help-category-desc">
             Tracks equipment changes like blinkers (eye covers to improve focus) or different shoes.
@@ -358,7 +358,7 @@ function ScoreBreakdownSection() {
           <div className="help-category-header">
             <Icon name="timeline" className="help-category-icon" />
             <span className="help-category-name">Pace</span>
-            <span className="help-category-max">40 pts max</span>
+            <span className="help-category-max">45 pts max</span>
           </div>
           <p className="help-category-desc">
             Analyzes running style and race shape. Some horses like to lead (early speed), others

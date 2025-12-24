@@ -248,13 +248,13 @@ console.log(`\nTest started at: ${new Date().toISOString()}`);
 
 section('TEST 1: SCORE BOUNDARY ANALYSIS');
 
-// Theoretical maximums
-const maxConnectionsScore = 55;
-const maxPostPositionScore = 45;
-const maxSpeedClassScore = 50;
-const maxFormScore = 30;
-const maxEquipmentScore = 25;
-const maxPaceScore = 40;
+// Theoretical maximums (v2.0 - Industry-Aligned Weights)
+const maxConnectionsScore = 25;    // 10.4% - Modifier, not primary driver
+const maxPostPositionScore = 30;   // 12.5% - Track-dependent situational factor
+const maxSpeedClassScore = 80;     // 33.3% - Most predictive factor per industry research
+const maxFormScore = 40;           // 16.7% - Recent performance patterns
+const maxEquipmentScore = 20;      // 8.3% - Speculative, fine-tuning only
+const maxPaceScore = 45;           // 18.8% - High predictive value for race shape
 const maxBaseScore = 240;
 const maxOverlayScore = 50;
 const maxProtocolBonus = 60; // From edge case protocols
@@ -270,14 +270,14 @@ const theoreticalMaxWithOverlay = theoreticalMaxBase + maxOverlayScore;
 const theoreticalMaxWithProtocols = theoreticalMaxWithOverlay + maxProtocolBonus;
 
 console.log('\n  Theoretical Score Analysis:');
-console.log(`    Max Base Score Components: ${theoreticalMaxBase} (expected: 245)`);
+console.log(`    Max Base Score Components: ${theoreticalMaxBase} (expected: 240)`);
 console.log(`    Max Base Score (capped): ${maxBaseScore}`);
 console.log(`    Max with Overlay: ${maxBaseScore + maxOverlayScore} = 290`);
 console.log(`    Max with Protocols: ${theoreticalMaxWithProtocols} (if protocols add to final)`);
 
 test(
-  'Base category sum equals 245',
-  theoreticalMaxBase === 245,
+  'Base category sum equals 240',
+  theoreticalMaxBase === 240,
   `Got ${theoreticalMaxBase}`,
   theoreticalMaxBase
 );

@@ -103,7 +103,7 @@ function parseDistance(distance: string): {
 }
 
 /**
- * B. Calculate Post Position Score (max 45 points)
+ * B. Calculate Post Position Score (max 30 points - v2.0)
  * Now uses track-specific bias data when available
  * Falls back to generic scoring when track not in database
  */
@@ -193,7 +193,7 @@ export function calculatePostPositionScore(
 
     // Apply multiplier and cap at max score
     finalScore = Math.round(baseScore * biasResult.multiplier);
-    finalScore = Math.max(5, Math.min(45, finalScore)); // Cap between 5-45
+    finalScore = Math.max(5, Math.min(30, finalScore)); // Cap between 5-30 (v2.0)
 
     reasoning = biasResult.reasoning;
     trackBiasApplied = true;
