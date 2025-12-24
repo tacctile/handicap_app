@@ -1308,6 +1308,30 @@
   letter-spacing: 0.02em;
 }
 
+/* Label row with inline help icon */
+.horse-list-header__label-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Smaller inline help icon in headers */
+.header-tooltip-inline .info-tooltip-trigger {
+  margin-left: 0;
+  padding: 0;
+}
+
+.header-tooltip-inline .info-tooltip-icon {
+  font-size: 10px !important;
+  opacity: 0.5;
+}
+
+.header-tooltip-inline .info-tooltip-trigger:hover .info-tooltip-icon,
+.header-tooltip-inline .info-tooltip-trigger:focus .info-tooltip-icon {
+  opacity: 0.85;
+}
+
 /* Icons column - help button */
 .horse-list-header__cell--icons {
   display: flex;

@@ -749,76 +749,102 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </button>
                   </div>
 
-                  {/* Column 2: PP */}
+                  {/* Column 2: POST */}
                   <div className="horse-list-header__cell horse-list-header__cell--pp">
-                    PP
+                    <span className="horse-list-header__label">POST</span>
                     <InfoTooltip
                       title="Post Position"
                       content="The starting gate number where the horse begins the race. Lower numbers are closer to the inside rail. Some tracks favor certain post positions."
+                      className="header-tooltip-inline"
                     />
                   </div>
 
                   {/* Column 3: Horse Name */}
                   <div className="horse-list-header__cell horse-list-header__cell--name">
-                    HORSE
+                    <span className="horse-list-header__label">HORSE</span>
                     <InfoTooltip
                       title="Horse Name"
                       content="The horse's registered racing name. Click on a horse row to see detailed information about their past races, trainer, jockey, and more."
+                      className="header-tooltip-inline"
                     />
                   </div>
 
                   {/* Column 4: Live Odds */}
                   <div className="horse-list-header__cell horse-list-header__cell--odds">
-                    ODDS
-                    <InfoTooltip
-                      title="Current Odds"
-                      content="The morning line odds set by the track handicapper, showing the expected payout. For example, 5-1 means you'd win $5 for every $1 bet (plus your original bet back). You can click to adjust these based on live tote board changes."
-                    />
+                    <div className="horse-list-header__label-row">
+                      <span className="horse-list-header__label">ODDS</span>
+                      <InfoTooltip
+                        title="Current Odds"
+                        content="The morning line odds set by the track handicapper, showing the expected payout. For example, 5-1 means you'd win $5 for every $1 bet (plus your original bet back). You can click to adjust these based on live tote board changes."
+                        className="header-tooltip-inline"
+                      />
+                    </div>
+                    <span className="horse-list-header__sublabel">Market Price</span>
                   </div>
 
                   {/* Column 5: Score */}
                   <div className="horse-list-header__cell horse-list-header__cell--score">
-                    SCORE
-                    <InfoTooltip
-                      title="Furlong Score"
-                      content="Our overall rating for this horse in this race, out of 290 points. Higher scores indicate horses with better combinations of speed, connections, form, and tactical advantages. Use this to quickly compare horses."
-                    />
+                    <div className="horse-list-header__label-row">
+                      <span className="horse-list-header__label">SCORE</span>
+                      <InfoTooltip
+                        title="Furlong Score"
+                        content="Our overall rating for this horse in this race, out of 290 points. Higher scores indicate horses with better combinations of speed, connections, form, and tactical advantages. Use this to quickly compare horses."
+                        className="header-tooltip-inline"
+                      />
+                    </div>
+                    <span className="horse-list-header__sublabel">Model Score</span>
                   </div>
 
                   {/* Column 6: Win Confidence */}
                   <div className="horse-list-header__cell horse-list-header__cell--confidence">
-                    WIN CONF
-                    <InfoTooltip
-                      title="Win Confidence"
-                      content="The estimated probability that this horse wins the race, shown as a percentage. This is calculated from the Furlong Score relative to other horses in the field."
-                    />
+                    <div className="horse-list-header__label-row">
+                      <span className="horse-list-header__label">WIN CONF</span>
+                      <InfoTooltip
+                        title="Win Confidence"
+                        content="The estimated probability that this horse wins the race, shown as a percentage. This is calculated from the Furlong Score relative to other horses in the field."
+                        className="header-tooltip-inline"
+                      />
+                    </div>
+                    <span className="horse-list-header__sublabel">Model Confidence</span>
                   </div>
 
                   {/* Column 7: Fair Odds */}
                   <div className="horse-list-header__cell horse-list-header__cell--fair">
-                    FAIR
-                    <InfoTooltip
-                      title="Fair Odds"
-                      content="What the odds should be based on our analysis. If the actual odds are higher than the fair odds, you may be getting good value. If lower, the horse may be overbet by the public."
-                    />
+                    <div className="horse-list-header__label-row">
+                      <span className="horse-list-header__label">FAIR</span>
+                      <InfoTooltip
+                        title="Fair Odds"
+                        content="What the odds should be based on our analysis. If the actual odds are higher than the fair odds, you may be getting good value. If lower, the horse may be overbet by the public."
+                        className="header-tooltip-inline"
+                      />
+                    </div>
+                    <span className="horse-list-header__sublabel">Model's True Price</span>
                   </div>
 
                   {/* Column 8: Edge % */}
                   <div className="horse-list-header__cell horse-list-header__cell--value">
-                    EDGE %
-                    <InfoTooltip
-                      title="Edge Percentage"
-                      content="The difference between the actual odds and our fair odds, shown as a percentage. Positive numbers (green) mean the horse offers value. Negative numbers (red) mean the horse is overbet."
-                    />
+                    <div className="horse-list-header__label-row">
+                      <span className="horse-list-header__label">EDGE %</span>
+                      <InfoTooltip
+                        title="Edge Percentage"
+                        content="The difference between the actual odds and our fair odds, shown as a percentage. Positive numbers (green) mean the horse offers value. Negative numbers (red) mean the horse is overbet."
+                        className="header-tooltip-inline"
+                      />
+                    </div>
+                    <span className="horse-list-header__sublabel">Above / Below Value</span>
                   </div>
 
                   {/* Column 9: Odds Edge */}
                   <div className="horse-list-header__cell horse-list-header__cell--rating">
-                    ODDS EDGE
-                    <InfoTooltip
-                      title="Odds Edge Rating"
-                      content="A quick label showing the value: OVERLAY means the odds are better than they should be (potential value bet). UNDERLAY means the public is betting this horse down below fair value."
-                    />
+                    <div className="horse-list-header__label-row">
+                      <span className="horse-list-header__label">ODDS EDGE</span>
+                      <InfoTooltip
+                        title="Odds Edge Rating"
+                        content="A quick label showing the value: OVERLAY means the odds are better than they should be (potential value bet). UNDERLAY means the public is betting this horse down below fair value."
+                        className="header-tooltip-inline"
+                      />
+                    </div>
+                    <span className="horse-list-header__sublabel">Value vs Market</span>
                   </div>
 
                   {/* Column 10: Expand */}
