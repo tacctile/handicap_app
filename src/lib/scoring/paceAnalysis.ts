@@ -19,8 +19,97 @@
 import type { HorseEntry, PastPerformance } from '../../types/drf';
 
 // ============================================================================
+// PACE FIGURE THRESHOLDS
+// ============================================================================
+
+/**
+ * Thresholds for EP1 (Early Pace) figure classification
+ * EP1 ranges typically from 0-120, with higher = faster early speed
+ */
+export const EP1_THRESHOLDS = {
+  /** High early pace = confirmed early speed */
+  HIGH: 85,
+  /** Moderate early pace */
+  MODERATE: 75,
+  /** Low early pace = confirmed closer */
+  LOW: 70,
+} as const;
+
+/**
+ * Thresholds for Late Pace figure classification
+ * LP ranges typically from 0-120, with higher = stronger closing kick
+ */
+export const LP_THRESHOLDS = {
+  /** Strong closing kick (90+) */
+  STRONG: 90,
+  /** Good closing ability (80+) */
+  GOOD: 80,
+  /** Moderate closing ability */
+  MODERATE: 75,
+} as const;
+
+/**
+ * Thresholds for field pace pressure based on EP1 sum
+ * Based on field size multiplied by expected average EP1
+ */
+export const FIELD_PACE_THRESHOLDS = {
+  /** Per-horse EP1 average indicating soft pace (75 or less) */
+  SOFT_AVG: 75,
+  /** Per-horse EP1 average indicating moderate pace */
+  MODERATE_AVG: 80,
+  /** Per-horse EP1 average indicating contested pace */
+  CONTESTED_AVG: 85,
+  /** Per-horse EP1 average indicating speed duel (90+) */
+  DUEL_AVG: 90,
+} as const;
+
+// ============================================================================
 // TYPES
 // ============================================================================
+
+/** Pace figure analysis result for a single horse */
+export interface PaceFigureAnalysis {
+  /** Average EP1 from last 3-5 races, null if insufficient data */
+  avgEarlyPace: number | null;
+  /** Average LP from last 3-5 races, null if insufficient data */
+  avgLatePace: number | null;
+  /** Number of races with valid EP1 data */
+  ep1RaceCount: number;
+  /** Number of races with valid LP data */
+  lpRaceCount: number;
+  /** EP1 trend (improving/declining/stable) */
+  ep1Trend: 'improving' | 'declining' | 'stable' | 'unknown';
+  /** LP trend (improving/declining/stable) */
+  lpTrend: 'improving' | 'declining' | 'stable' | 'unknown';
+  /** Is this horse a confirmed early speed based on EP1? */
+  isConfirmedSpeed: boolean;
+  /** Is this horse a confirmed closer based on EP1/LP? */
+  isConfirmedCloser: boolean;
+  /** LP significantly higher than EP1 = closer with kick */
+  hasClosingKick: boolean;
+  /** Closing kick differential (LP - EP1) */
+  closingKickDifferential: number | null;
+}
+
+/** Field-level pace pressure analysis using EP1 figures */
+export interface FieldPacePressureAnalysis {
+  /** Pace pressure classification */
+  pressure: 'soft' | 'moderate' | 'contested' | 'duel';
+  /** Average EP1 across all horses with data */
+  avgFieldEP1: number | null;
+  /** Sum of all valid EP1 figures in the field */
+  totalFieldEP1: number;
+  /** Number of horses with high EP1 (85+) */
+  highEP1Count: number;
+  /** Number of horses with valid EP1 data */
+  validHorsesCount: number;
+  /** Horses identified as confirmed speed via EP1 (program numbers) */
+  confirmedSpeedHorses: number[];
+  /** Confidence level based on data availability (0-100) */
+  dataConfidence: number;
+  /** Description of the pace pressure projection */
+  description: string;
+}
 
 /** Core running style classification */
 export type RunningStyleCode = 'E' | 'P' | 'C' | 'S' | 'U';
@@ -87,6 +176,8 @@ export interface RunningStyleProfile {
   };
   /** Description for display */
   description: string;
+  /** Pace figure analysis (EP1 and LP) - if available */
+  paceFigures?: PaceFigureAnalysis;
 }
 
 /** Pace scenario analysis for the entire field */
@@ -113,6 +204,8 @@ export interface PaceScenarioAnalysis {
   expectedPace: string;
   /** Detailed scenario description */
   description: string;
+  /** Field pace pressure analysis using EP1 figures (if available) */
+  pacePressure?: FieldPacePressureAnalysis;
 }
 
 /** Tactical advantage result */
@@ -137,6 +230,338 @@ export interface PaceAnalysisResult {
   tactical: TacticalAdvantage;
   /** Total pace score (used by scoring system) */
   totalScore: number;
+}
+
+// ============================================================================
+// PACE FIGURE ANALYSIS FUNCTIONS
+// ============================================================================
+
+/**
+ * Calculate the average early pace (EP1) from a horse's past performances
+ * Uses the last 3-5 races with valid EP1 data
+ *
+ * @param horse - The horse entry to analyze
+ * @returns Average EP1 figure, or null if insufficient data
+ */
+export function getAverageEarlyPace(horse: HorseEntry): number | null {
+  const recentPPs = horse.pastPerformances.slice(0, 5);
+  const validEP1s = recentPPs
+    .map((pp) => pp.earlyPace1)
+    .filter((ep1): ep1 is number => ep1 !== null && ep1 > 0);
+
+  // Require at least 2 races for reliable average
+  if (validEP1s.length < 2) {
+    return null;
+  }
+
+  const sum = validEP1s.reduce((acc, val) => acc + val, 0);
+  return Math.round((sum / validEP1s.length) * 10) / 10;
+}
+
+/**
+ * Calculate the average late pace (LP) from a horse's past performances
+ * Uses the last 3-5 races with valid LP data
+ *
+ * @param horse - The horse entry to analyze
+ * @returns Average LP figure, or null if insufficient data
+ */
+export function getAverageLatePace(horse: HorseEntry): number | null {
+  const recentPPs = horse.pastPerformances.slice(0, 5);
+  const validLPs = recentPPs
+    .map((pp) => pp.latePace)
+    .filter((lp): lp is number => lp !== null && lp > 0);
+
+  // Require at least 2 races for reliable average
+  if (validLPs.length < 2) {
+    return null;
+  }
+
+  const sum = validLPs.reduce((acc, val) => acc + val, 0);
+  return Math.round((sum / validLPs.length) * 10) / 10;
+}
+
+/**
+ * Calculate a trend (improving, declining, stable) from pace figures
+ *
+ * @param figures - Array of pace figures (most recent first)
+ * @returns Trend classification
+ */
+function calculatePaceTrend(figures: number[]): 'improving' | 'declining' | 'stable' | 'unknown' {
+  if (figures.length < 2) {
+    return 'unknown';
+  }
+
+  // Compare most recent to average of previous
+  const recent = figures[0];
+  const previous = figures.slice(1);
+  const prevAvg = previous.reduce((a, b) => a + b, 0) / previous.length;
+
+  if (recent === undefined) {
+    return 'unknown';
+  }
+
+  const diff = recent - prevAvg;
+  const threshold = 3; // 3 points is significant
+
+  if (diff >= threshold) {
+    return 'improving';
+  } else if (diff <= -threshold) {
+    return 'declining';
+  }
+  return 'stable';
+}
+
+/**
+ * Analyze a horse's pace figures (EP1 and LP) to determine their running profile
+ *
+ * @param horse - The horse entry to analyze
+ * @returns Detailed pace figure analysis
+ */
+export function analyzePaceFigures(horse: HorseEntry): PaceFigureAnalysis {
+  const recentPPs = horse.pastPerformances.slice(0, 5);
+
+  // Extract valid EP1 figures
+  const ep1Data = recentPPs
+    .map((pp) => pp.earlyPace1)
+    .filter((ep1): ep1 is number => ep1 !== null && ep1 > 0);
+
+  // Extract valid LP figures
+  const lpData = recentPPs
+    .map((pp) => pp.latePace)
+    .filter((lp): lp is number => lp !== null && lp > 0);
+
+  // Calculate averages
+  const avgEarlyPace =
+    ep1Data.length >= 2
+      ? Math.round((ep1Data.reduce((a, b) => a + b, 0) / ep1Data.length) * 10) / 10
+      : null;
+
+  const avgLatePace =
+    lpData.length >= 2
+      ? Math.round((lpData.reduce((a, b) => a + b, 0) / lpData.length) * 10) / 10
+      : null;
+
+  // Calculate trends
+  const ep1Trend = calculatePaceTrend(ep1Data);
+  const lpTrend = calculatePaceTrend(lpData);
+
+  // Determine if confirmed speed (high EP1)
+  const isConfirmedSpeed = avgEarlyPace !== null && avgEarlyPace >= EP1_THRESHOLDS.HIGH;
+
+  // Determine if confirmed closer (low EP1 OR high LP with LP > EP1)
+  const isConfirmedCloser =
+    (avgEarlyPace !== null && avgEarlyPace < EP1_THRESHOLDS.LOW) ||
+    (avgLatePace !== null && avgLatePace >= LP_THRESHOLDS.STRONG);
+
+  // Calculate closing kick differential (LP - EP1)
+  let closingKickDifferential: number | null = null;
+  let hasClosingKick = false;
+
+  if (avgLatePace !== null && avgEarlyPace !== null) {
+    closingKickDifferential = Math.round((avgLatePace - avgEarlyPace) * 10) / 10;
+    // LP significantly higher than EP1 (5+ points) indicates closing kick
+    hasClosingKick = closingKickDifferential >= 5;
+  }
+
+  return {
+    avgEarlyPace,
+    avgLatePace,
+    ep1RaceCount: ep1Data.length,
+    lpRaceCount: lpData.length,
+    ep1Trend,
+    lpTrend,
+    isConfirmedSpeed,
+    isConfirmedCloser,
+    hasClosingKick,
+    closingKickDifferential,
+  };
+}
+
+/**
+ * Analyze the field's pace pressure based on EP1 figures
+ * Higher average EP1 across the field = more contested pace
+ *
+ * @param horses - All horses in the race
+ * @returns Field pace pressure analysis
+ */
+export function getFieldPacePressure(horses: HorseEntry[]): FieldPacePressureAnalysis {
+  const activeHorses = horses.filter((h) => !h.isScratched);
+
+  // Gather EP1 data for all horses
+  const horsesWithEP1: Array<{ progNum: number; avgEP1: number; isHighEP1: boolean }> = [];
+
+  for (const horse of activeHorses) {
+    const avgEP1 = getAverageEarlyPace(horse);
+    if (avgEP1 !== null) {
+      horsesWithEP1.push({
+        progNum: horse.programNumber,
+        avgEP1,
+        isHighEP1: avgEP1 >= EP1_THRESHOLDS.HIGH,
+      });
+    }
+  }
+
+  // Calculate data confidence based on how many horses have EP1 data
+  const dataConfidence =
+    activeHorses.length > 0 ? Math.round((horsesWithEP1.length / activeHorses.length) * 100) : 0;
+
+  // If less than 50% of horses have EP1 data, return unknown with low confidence
+  if (dataConfidence < 50) {
+    return {
+      pressure: 'moderate', // Default fallback
+      avgFieldEP1: null,
+      totalFieldEP1: 0,
+      highEP1Count: 0,
+      validHorsesCount: horsesWithEP1.length,
+      confirmedSpeedHorses: [],
+      dataConfidence,
+      description: 'Insufficient EP1 data for reliable pace projection',
+    };
+  }
+
+  // Calculate field statistics
+  const totalFieldEP1 = horsesWithEP1.reduce((sum, h) => sum + h.avgEP1, 0);
+  const avgFieldEP1 = Math.round((totalFieldEP1 / horsesWithEP1.length) * 10) / 10;
+  const highEP1Count = horsesWithEP1.filter((h) => h.isHighEP1).length;
+  const confirmedSpeedHorses = horsesWithEP1.filter((h) => h.isHighEP1).map((h) => h.progNum);
+
+  // Determine pace pressure from field average EP1
+  let pressure: 'soft' | 'moderate' | 'contested' | 'duel';
+  let description: string;
+
+  if (avgFieldEP1 >= FIELD_PACE_THRESHOLDS.DUEL_AVG || highEP1Count >= 4) {
+    pressure = 'duel';
+    description = `Speed duel likely: ${highEP1Count} horses with high EP1 (85+). Field avg EP1: ${avgFieldEP1}`;
+  } else if (avgFieldEP1 >= FIELD_PACE_THRESHOLDS.CONTESTED_AVG || highEP1Count >= 3) {
+    pressure = 'contested';
+    description = `Contested pace expected: ${highEP1Count} speed horses. Field avg EP1: ${avgFieldEP1}`;
+  } else if (avgFieldEP1 >= FIELD_PACE_THRESHOLDS.MODERATE_AVG || highEP1Count >= 2) {
+    pressure = 'moderate';
+    description = `Moderate pace projected. Field avg EP1: ${avgFieldEP1}`;
+  } else {
+    pressure = 'soft';
+    description =
+      highEP1Count === 1
+        ? `Soft pace - lone speed. Field avg EP1: ${avgFieldEP1}`
+        : `Very soft pace - no confirmed speed. Field avg EP1: ${avgFieldEP1}`;
+  }
+
+  return {
+    pressure,
+    avgFieldEP1,
+    totalFieldEP1,
+    highEP1Count,
+    validHorsesCount: horsesWithEP1.length,
+    confirmedSpeedHorses,
+    dataConfidence,
+    description,
+  };
+}
+
+/**
+ * Calculate pace figure bonus/penalty points for a horse
+ * Used to adjust tactical scoring based on actual pace figures
+ *
+ * @param paceFigures - Horse's pace figure analysis
+ * @param fieldPressure - Field pace pressure analysis
+ * @param runningStyle - Horse's running style
+ * @returns Adjustment points (-5 to +5)
+ */
+export function calculatePaceFigureAdjustment(
+  paceFigures: PaceFigureAnalysis,
+  fieldPressure: FieldPacePressureAnalysis,
+  runningStyle: RunningStyleCode
+): { points: number; reasoning: string } {
+  let points = 0;
+  const reasons: string[] = [];
+
+  // If no pace figure data, return neutral
+  if (paceFigures.avgEarlyPace === null && paceFigures.avgLatePace === null) {
+    return { points: 0, reasoning: 'No pace figures available' };
+  }
+
+  // Speed horse bonuses/penalties
+  if (runningStyle === 'E' || paceFigures.isConfirmedSpeed) {
+    if (fieldPressure.pressure === 'soft') {
+      // Strong early pace in soft pace scenario: big bonus
+      if (paceFigures.avgEarlyPace !== null && paceFigures.avgEarlyPace >= EP1_THRESHOLDS.HIGH) {
+        points += 5;
+        reasons.push(
+          `Strong EP1 (${paceFigures.avgEarlyPace}) in soft pace = wire-to-wire opportunity`
+        );
+      } else if (
+        paceFigures.avgEarlyPace !== null &&
+        paceFigures.avgEarlyPace >= EP1_THRESHOLDS.MODERATE
+      ) {
+        points += 3;
+        reasons.push(`Good EP1 (${paceFigures.avgEarlyPace}) in soft pace`);
+      }
+    } else if (fieldPressure.pressure === 'duel') {
+      // Speed in a duel: penalty (unless they have the best EP1)
+      if (paceFigures.avgEarlyPace !== null && fieldPressure.avgFieldEP1 !== null) {
+        if (paceFigures.avgEarlyPace < fieldPressure.avgFieldEP1 - 3) {
+          points -= 3;
+          reasons.push(`EP1 (${paceFigures.avgEarlyPace}) below field avg in speed duel`);
+        }
+      }
+    }
+  }
+
+  // Closer bonuses/penalties
+  if (runningStyle === 'C' || paceFigures.isConfirmedCloser) {
+    if (fieldPressure.pressure === 'duel' || fieldPressure.pressure === 'contested') {
+      // Strong closing kick in contested/duel pace: big bonus
+      if (paceFigures.avgLatePace !== null && paceFigures.avgLatePace >= LP_THRESHOLDS.STRONG) {
+        points += 5;
+        reasons.push(`Strong LP (${paceFigures.avgLatePace}) in ${fieldPressure.pressure} pace`);
+      } else if (
+        paceFigures.avgLatePace !== null &&
+        paceFigures.avgLatePace >= LP_THRESHOLDS.GOOD
+      ) {
+        points += 3;
+        reasons.push(`Good LP (${paceFigures.avgLatePace}) in ${fieldPressure.pressure} pace`);
+      }
+
+      // Extra bonus for closing kick differential
+      if (paceFigures.hasClosingKick && paceFigures.closingKickDifferential !== null) {
+        points += 1;
+        reasons.push(`Closing kick (+${paceFigures.closingKickDifferential} LP over EP1)`);
+      }
+    } else if (fieldPressure.pressure === 'soft') {
+      // Closer in soft pace: penalty
+      if (paceFigures.avgLatePace !== null && paceFigures.avgLatePace < LP_THRESHOLDS.GOOD) {
+        points -= 2;
+        reasons.push(
+          `Moderate LP (${paceFigures.avgLatePace}) in soft pace - needs pace to close into`
+        );
+      }
+    }
+  }
+
+  // LP trending up bonus for closers
+  if (paceFigures.lpTrend === 'improving' && runningStyle === 'C') {
+    points += 1;
+    reasons.push('LP trending up');
+  }
+
+  // Pace mismatch penalty: slow closer in speed-favoring race
+  if (
+    paceFigures.avgLatePace !== null &&
+    paceFigures.avgLatePace < LP_THRESHOLDS.MODERATE &&
+    fieldPressure.pressure === 'soft' &&
+    runningStyle === 'C'
+  ) {
+    points -= 2;
+    reasons.push('Pace mismatch: slow closer in speed-favoring setup');
+  }
+
+  // Clamp to range
+  points = Math.max(-5, Math.min(5, points));
+
+  return {
+    points,
+    reasoning: reasons.length > 0 ? reasons.join(' | ') : 'No pace figure adjustments',
+  };
 }
 
 // ============================================================================
@@ -200,6 +625,7 @@ function analyzeRaceRunningStyle(pp: PastPerformance): RunningStyleEvidence {
 /**
  * Parse running style from past performances
  * Analyzes last 3 races to determine dominant running style
+ * Enhanced with EP1/LP pace figure analysis when available
  */
 export function parseRunningStyle(horse: HorseEntry): RunningStyleProfile {
   const pastPerfs = horse.pastPerformances.slice(0, 10); // Up to last 10 for evidence
@@ -220,6 +646,9 @@ export function parseRunningStyle(horse: HorseEntry): RunningStyleProfile {
       description: 'First-time starter or no past performances available',
     };
   }
+
+  // Analyze pace figures first (EP1 and LP)
+  const paceFigures = analyzePaceFigures(horse);
 
   // Analyze each race
   const evidence = pastPerfs.map((pp) => analyzeRaceRunningStyle(pp));
@@ -259,6 +688,22 @@ export function parseRunningStyle(horse: HorseEntry): RunningStyleProfile {
     }
   }
 
+  // Use EP1 figures to validate/adjust running style classification
+  // EP1 provides more accurate classification than just position analysis
+  if (paceFigures.avgEarlyPace !== null) {
+    if (paceFigures.isConfirmedSpeed && dominantStyle !== 'E') {
+      // High EP1 (85+) overrides to Early Speed if not already classified
+      if (dominantStyle === 'P' || dominantStyle === 'U') {
+        dominantStyle = 'E';
+      }
+    } else if (paceFigures.isConfirmedCloser && dominantStyle !== 'C') {
+      // Low EP1 (<70) or high LP (90+) indicates closer
+      if (paceFigures.hasClosingKick && dominantStyle !== 'E') {
+        dominantStyle = 'C';
+      }
+    }
+  }
+
   // Calculate stats
   const timesOnLead = evidence.filter((e) => e.wasOnLead).length;
   const timesInTop3Early = evidence.filter((e) => e.firstCallPosition <= 3).length;
@@ -271,8 +716,8 @@ export function parseRunningStyle(horse: HorseEntry): RunningStyleProfile {
         lengthsData.length
       : 0;
 
-  // Calculate confidence
-  const confidence = Math.min(
+  // Calculate confidence - boost if pace figures confirm the style
+  let confidence = Math.min(
     100,
     Math.round(
       (recentEvidence.length / 3) * 50 + // More races = more confidence
@@ -280,13 +725,35 @@ export function parseRunningStyle(horse: HorseEntry): RunningStyleProfile {
     )
   );
 
-  // Generate description
-  const description = generateStyleDescription(
+  // Boost confidence if pace figures confirm the running style
+  if (paceFigures.avgEarlyPace !== null || paceFigures.avgLatePace !== null) {
+    const styleConfirmedByPaceFigures =
+      (dominantStyle === 'E' && paceFigures.isConfirmedSpeed) ||
+      (dominantStyle === 'C' && (paceFigures.isConfirmedCloser || paceFigures.hasClosingKick));
+
+    if (styleConfirmedByPaceFigures) {
+      confidence = Math.min(100, confidence + 15);
+    }
+  }
+
+  // Generate description with pace figure info
+  let description = generateStyleDescription(
     dominantStyle,
     timesOnLead,
     timesInTop3Early,
     evidence.length
   );
+
+  // Add pace figure context to description
+  if (paceFigures.avgEarlyPace !== null) {
+    description += ` | Avg EP1: ${paceFigures.avgEarlyPace}`;
+  }
+  if (paceFigures.avgLatePace !== null) {
+    description += ` | Avg LP: ${paceFigures.avgLatePace}`;
+  }
+  if (paceFigures.hasClosingKick) {
+    description += ` (closing kick +${paceFigures.closingKickDifferential})`;
+  }
 
   return {
     style: dominantStyle,
@@ -301,6 +768,7 @@ export function parseRunningStyle(horse: HorseEntry): RunningStyleProfile {
       avgLengthsBehindEarly: Math.round(avgLengthsBehindEarly * 10) / 10,
     },
     description,
+    paceFigures, // Include pace figure analysis
   };
 }
 
@@ -417,10 +885,8 @@ export function analyzePaceScenario(horses: HorseEntry[]): PaceScenarioAnalysis 
   const earlySpeedCount = styleBreakdown.earlySpeed.length;
   const ppi = calculatePPI(earlySpeedCount, fieldSize);
 
-  // Determine scenario
+  // Determine scenario (may be adjusted based on EP1 data below)
   const scenario = getPaceScenarioFromPPI(ppi);
-  const label = PACE_SCENARIO_LABELS[scenario];
-  const color = PACE_SCENARIO_COLORS[scenario];
 
   // Generate expected pace and description
   const { expectedPace, description } = generatePaceDescription(
@@ -431,15 +897,36 @@ export function analyzePaceScenario(horses: HorseEntry[]): PaceScenarioAnalysis 
     fieldSize
   );
 
+  // Calculate field pace pressure using EP1 figures for more accurate projection
+  const pacePressure = getFieldPacePressure(activeHorses);
+
+  // If pace pressure analysis has high confidence, it may override the PPI-based scenario
+  // This provides more accurate pace projection when EP1 data is available
+  let adjustedScenario = scenario;
+  let adjustedDescription = description;
+
+  if (pacePressure.dataConfidence >= 70) {
+    // High confidence EP1 data available - use it to refine scenario
+    const pressureToScenario: Record<typeof pacePressure.pressure, PaceScenarioType> = {
+      soft: 'soft',
+      moderate: 'moderate',
+      contested: 'contested',
+      duel: 'speed_duel',
+    };
+    adjustedScenario = pressureToScenario[pacePressure.pressure];
+    adjustedDescription = `${description} | EP1 Analysis: ${pacePressure.description}`;
+  }
+
   return {
-    scenario,
-    label,
-    color,
+    scenario: adjustedScenario,
+    label: PACE_SCENARIO_LABELS[adjustedScenario],
+    color: PACE_SCENARIO_COLORS[adjustedScenario],
     ppi,
     styleBreakdown,
     fieldSize,
     expectedPace,
-    description,
+    description: adjustedDescription,
+    pacePressure, // Include field pace pressure analysis
   };
 }
 
@@ -637,7 +1124,7 @@ export function analyzePaceForHorse(
   allHorses: HorseEntry[],
   preCalculatedScenario?: PaceScenarioAnalysis
 ): PaceAnalysisResult {
-  // Get horse's running style profile
+  // Get horse's running style profile (includes pace figure analysis)
   const profile = parseRunningStyle(horse);
 
   // Get field pace scenario (use pre-calculated if available)
@@ -653,7 +1140,24 @@ export function analyzePaceForHorse(
   const confidenceBonus = Math.round((profile.confidence / 100) * 5);
   const evidenceBonus = Math.min(10, Math.round((profile.stats.totalRaces / 5) * 10));
 
-  const totalScore = Math.min(40, tactical.points + confidenceBonus + evidenceBonus);
+  let totalScore = Math.min(40, tactical.points + confidenceBonus + evidenceBonus);
+
+  // Apply pace figure adjustments if available (±5 pts)
+  // This integrates EP1/LP figures into tactical scoring
+  if (profile.paceFigures && scenario.pacePressure) {
+    const paceFigureAdj = calculatePaceFigureAdjustment(
+      profile.paceFigures,
+      scenario.pacePressure,
+      profile.style
+    );
+
+    totalScore = Math.min(40, Math.max(0, totalScore + paceFigureAdj.points));
+
+    // Add pace figure reasoning to tactical advantage
+    if (paceFigureAdj.points !== 0) {
+      tactical.reasoning = `${tactical.reasoning} | ${paceFigureAdj.reasoning}`;
+    }
+  }
 
   return {
     profile,

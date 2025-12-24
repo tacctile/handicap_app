@@ -31,15 +31,28 @@ import {
   formatStyleBreakdown,
   getPaceScenarioSummary,
   getRunningStyleBadge,
+  // Pace figure analysis functions
+  getAverageEarlyPace,
+  getAverageLatePace,
+  getFieldPacePressure,
+  analyzePaceFigures,
+  calculatePaceFigureAdjustment,
+  // Types
   type RunningStyleCode,
   type RunningStyleProfile,
   type PaceScenarioType,
   type PaceScenarioAnalysis,
   type TacticalAdvantage,
   type PaceAnalysisResult,
+  type PaceFigureAnalysis,
+  type FieldPacePressureAnalysis,
+  // Constants
   RUNNING_STYLE_NAMES,
   PACE_SCENARIO_LABELS,
   PACE_SCENARIO_COLORS,
+  EP1_THRESHOLDS,
+  LP_THRESHOLDS,
+  FIELD_PACE_THRESHOLDS,
 } from './paceAnalysis';
 
 // Re-export all types and utilities from paceAnalysis
@@ -51,15 +64,28 @@ export {
   formatStyleBreakdown,
   getPaceScenarioSummary,
   getRunningStyleBadge,
+  // Pace figure analysis functions
+  getAverageEarlyPace,
+  getAverageLatePace,
+  getFieldPacePressure,
+  analyzePaceFigures,
+  calculatePaceFigureAdjustment,
+  // Types
   type RunningStyleCode,
   type RunningStyleProfile,
   type PaceScenarioType,
   type PaceScenarioAnalysis,
   type TacticalAdvantage,
   type PaceAnalysisResult,
+  type PaceFigureAnalysis,
+  type FieldPacePressureAnalysis,
+  // Constants
   RUNNING_STYLE_NAMES,
   PACE_SCENARIO_LABELS,
   PACE_SCENARIO_COLORS,
+  EP1_THRESHOLDS,
+  LP_THRESHOLDS,
+  FIELD_PACE_THRESHOLDS,
 };
 
 // ============================================================================
@@ -89,6 +115,8 @@ export interface FieldPaceAnalysis {
   // New fields from enhanced analysis
   paceScenarioType?: PaceScenarioType;
   styleBreakdown?: PaceScenarioAnalysis['styleBreakdown'];
+  // EP1-based pace pressure analysis (when available)
+  pacePressure?: FieldPacePressureAnalysis;
 }
 
 export interface PaceScoreResult {
@@ -102,6 +130,9 @@ export interface PaceScoreResult {
   detailedProfile?: RunningStyleProfile;
   tacticalAdvantage?: TacticalAdvantage;
   paceScenarioAnalysis?: PaceScenarioAnalysis;
+  // Pace figure analysis (EP1/LP)
+  paceFigures?: PaceFigureAnalysis;
+  paceFigureAdjustment?: { points: number; reasoning: string };
 }
 
 // ============================================================================
@@ -227,6 +258,8 @@ export function analyzeFieldPace(horses: HorseEntry[]): FieldPaceAnalysis {
     // Include new detailed data
     paceScenarioType: analysis.scenario,
     styleBreakdown: analysis.styleBreakdown,
+    // EP1-based pace pressure analysis (when available)
+    pacePressure: analysis.pacePressure,
   };
 }
 
@@ -335,6 +368,16 @@ export function calculatePaceScore(
     paceAdvantageRating
   );
 
+  // Calculate pace figure adjustment for the result
+  let paceFigureAdjustment: { points: number; reasoning: string } | undefined;
+  if (detailedProfile.paceFigures && paceResult.scenario.pacePressure) {
+    paceFigureAdjustment = calculatePaceFigureAdjustment(
+      detailedProfile.paceFigures,
+      paceResult.scenario.pacePressure,
+      detailedProfile.style
+    );
+  }
+
   return {
     total: Math.max(5, Math.min(45, finalScore)), // was 40
     profile,
@@ -346,6 +389,9 @@ export function calculatePaceScore(
     detailedProfile,
     tacticalAdvantage,
     paceScenarioAnalysis: paceResult.scenario,
+    // Pace figure analysis (EP1/LP)
+    paceFigures: detailedProfile.paceFigures,
+    paceFigureAdjustment,
   };
 }
 
@@ -365,6 +411,24 @@ function buildReasoning(
   parts.push(
     `${profile.styleName} (${profile.stats.timesOnLead}/${profile.stats.totalRaces} led early)`
   );
+
+  // Pace figures if available
+  if (profile.paceFigures) {
+    const pf = profile.paceFigures;
+    if (pf.avgEarlyPace !== null || pf.avgLatePace !== null) {
+      const figParts: string[] = [];
+      if (pf.avgEarlyPace !== null) {
+        figParts.push(`EP1: ${pf.avgEarlyPace}`);
+      }
+      if (pf.avgLatePace !== null) {
+        figParts.push(`LP: ${pf.avgLatePace}`);
+      }
+      if (pf.hasClosingKick) {
+        figParts.push(`kick: +${pf.closingKickDifferential}`);
+      }
+      parts.push(figParts.join(', '));
+    }
+  }
 
   // Pace scenario
   parts.push(scenario.label);
