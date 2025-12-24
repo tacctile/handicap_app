@@ -241,19 +241,25 @@
 | 83    | Track Shows    | Track ITM rate      |
 | 84    | Track Earnings | Track class level   |
 
-### Yearly Breakdown
+### Turf/Wet/Distance Records (P0 Critical)
 
-| Field  | Content         | Scoring Integration  |
-| ------ | --------------- | -------------------- |
-| 85     | Year 1 Label    | Year identification  |
-| 86     | Year 1 Starts   | Historical pattern   |
-| 87     | Year 1 Wins     | Historical pattern   |
-| 88     | Year 1 Places   | Historical pattern   |
-| 89     | Year 1 Shows    | Historical pattern   |
-| 90     | Year 1 Earnings | Historical pattern   |
-| 91     | Year 2 Label    | Year identification  |
-| 92-96  | Year 2 Stats    | Historical pattern   |
-| 97-101 | Lifetime Totals | Summary verification |
+These fields contain the horse's record on specific surfaces and at specific distances. This is fundamental "does this horse win at this distance/surface?" data.
+
+| Field  | Content          | Scoring Integration                          |
+| ------ | ---------------- | -------------------------------------------- |
+| 85     | Turf Starts      | Surface preference analysis                  |
+| 86     | Turf Wins        | Turf win rate calculation                    |
+| 87     | Turf Places      | Turf ITM analysis                            |
+| 88     | Turf Shows       | Turf ITM analysis                            |
+| 89     | Wet Track Starts | Wet track competency                         |
+| 90     | Wet Track Wins   | Wet track win rate                           |
+| 91     | Wet Track Places | Wet track ITM analysis                       |
+| 92     | Wet Track Shows  | Wet track ITM analysis                       |
+| 93     | Distance Starts  | Distance preference at today's race distance |
+| 94     | Distance Wins    | Distance win rate                            |
+| 95     | Distance Places  | Distance ITM analysis                        |
+| 96     | Distance Shows   | Distance ITM analysis                        |
+| 97-101 | Lifetime Totals  | Summary verification                         |
 
 ### Scoring Application
 

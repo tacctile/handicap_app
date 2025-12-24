@@ -378,15 +378,21 @@ export interface HorseEntry {
   /** Stats on this surface */
   surfaceStarts: number;
   surfaceWins: number;
-  /** Stats at this distance */
+  /** Stats at this distance (current race distance) - Fields 93-96 */
   distanceStarts: number;
   distanceWins: number;
-  /** Turf stats */
+  distancePlaces: number;
+  distanceShows: number;
+  /** Turf stats - Fields 85-88 */
   turfStarts: number;
   turfWins: number;
-  /** Wet track stats */
+  turfPlaces: number;
+  turfShows: number;
+  /** Wet track stats - Fields 89-92 */
   wetStarts: number;
   wetWins: number;
+  wetPlaces: number;
+  wetShows: number;
   /** Days since last race */
   daysSinceLastRace: number | null;
   /** Last race date */

@@ -164,6 +164,32 @@ const DRF_COLUMNS = {
   TRACK_EARNINGS: { index: 83, name: 'Track Earnings' }, // Field 84
 
   // =========================================================================
+  // TURF/WET/DISTANCE RECORDS (Fields 85-96, indices 84-95)
+  // Per DRF specification: Horse's record on turf, wet tracks, and at
+  // today's distance. These are P0 critical handicapping signals.
+  // =========================================================================
+  // Turf Record (Fields 85-88)
+  TURF_STARTS: { index: 84, name: 'Turf Starts' }, // Field 85
+  TURF_WINS: { index: 85, name: 'Turf Wins' }, // Field 86
+  TURF_PLACES: { index: 86, name: 'Turf Places' }, // Field 87
+  TURF_SHOWS: { index: 87, name: 'Turf Shows' }, // Field 88
+
+  // Wet Track Record (Fields 89-92)
+  WET_STARTS: { index: 88, name: 'Wet Track Starts' }, // Field 89
+  WET_WINS: { index: 89, name: 'Wet Track Wins' }, // Field 90
+  WET_PLACES: { index: 90, name: 'Wet Track Places' }, // Field 91
+  WET_SHOWS: { index: 91, name: 'Wet Track Shows' }, // Field 92
+
+  // Current Distance Record (Fields 93-96)
+  DISTANCE_STARTS: { index: 92, name: 'Distance Starts' }, // Field 93
+  DISTANCE_WINS: { index: 93, name: 'Distance Wins' }, // Field 94
+  DISTANCE_PLACES: { index: 94, name: 'Distance Places' }, // Field 95
+  DISTANCE_SHOWS: { index: 95, name: 'Distance Shows' }, // Field 96
+
+  // Remaining fields 97-101 contain lifetime/yearly summary verification data
+  // (not parsed here as they duplicate earlier lifetime stats)
+
+  // =========================================================================
   // PAST PERFORMANCE DATES (Fields 102-113, indices 101-112)
   // =========================================================================
   PP_DATE_START: 101, // Field 102 - First PP date (most recent race)
@@ -536,6 +562,50 @@ function getField(fields: string[], index: number, defaultValue = ''): string {
 function parseIntSafe(value: string, defaultValue = 0): number {
   const parsed = parseInt(value, 10);
   return isNaN(parsed) ? defaultValue : parsed;
+}
+
+/**
+ * Parse and validate a non-negative stat integer (starts, wins, places, shows).
+ * Returns 0 for invalid values and logs a warning in dev mode for unexpected values.
+ *
+ * @param value - Raw string value to parse
+ * @param fieldName - Name of the field for logging
+ * @param maxExpected - Maximum reasonable value (default 500 for lifetime stats)
+ * @returns Non-negative integer, or 0 if invalid
+ */
+function parseStatField(value: string, fieldName: string, maxExpected = 500): number {
+  const parsed = parseInt(value, 10);
+
+  // Handle invalid input
+  if (isNaN(parsed)) {
+    return 0;
+  }
+
+  // Validate non-negative
+  if (parsed < 0) {
+    if (process.env.NODE_ENV === 'development') {
+      logger.logWarning(`Unexpected negative value for ${fieldName}: ${parsed}`, {
+        fieldName,
+        value: parsed,
+        component: 'DRFParser',
+      });
+    }
+    return 0;
+  }
+
+  // Validate reasonable range (warn but still use the value)
+  if (parsed > maxExpected) {
+    if (process.env.NODE_ENV === 'development') {
+      logger.logWarning(`Unusually high value for ${fieldName}: ${parsed}`, {
+        fieldName,
+        value: parsed,
+        maxExpected,
+        component: 'DRFParser',
+      });
+    }
+  }
+
+  return parsed;
 }
 
 /**
@@ -1482,10 +1552,16 @@ function createDefaultHorseEntry(index: number): HorseEntry {
     surfaceWins: 0,
     distanceStarts: 0,
     distanceWins: 0,
+    distancePlaces: 0,
+    distanceShows: 0,
     turfStarts: 0,
     turfWins: 0,
+    turfPlaces: 0,
+    turfShows: 0,
     wetStarts: 0,
     wetWins: 0,
+    wetPlaces: 0,
+    wetShows: 0,
     daysSinceLastRace: null,
     lastRaceDate: null,
     averageBeyer: null,
@@ -1597,6 +1673,36 @@ function parseHorseEntry(fields: string[], lineIndex: number): HorseEntry {
   horse.trackWins = parseIntSafe(getField(fields, DRF_COLUMNS.TRACK_WINS.index));
   horse.trackPlaces = parseIntSafe(getField(fields, DRF_COLUMNS.TRACK_PLACES.index));
   horse.trackShows = parseIntSafe(getField(fields, DRF_COLUMNS.TRACK_SHOWS.index));
+
+  // Turf Record (Fields 85-88) - P0 critical handicapping data
+  horse.turfStarts = parseStatField(getField(fields, DRF_COLUMNS.TURF_STARTS.index), 'turfStarts');
+  horse.turfWins = parseStatField(getField(fields, DRF_COLUMNS.TURF_WINS.index), 'turfWins');
+  horse.turfPlaces = parseStatField(getField(fields, DRF_COLUMNS.TURF_PLACES.index), 'turfPlaces');
+  horse.turfShows = parseStatField(getField(fields, DRF_COLUMNS.TURF_SHOWS.index), 'turfShows');
+
+  // Wet Track Record (Fields 89-92) - P0 critical handicapping data
+  horse.wetStarts = parseStatField(getField(fields, DRF_COLUMNS.WET_STARTS.index), 'wetStarts');
+  horse.wetWins = parseStatField(getField(fields, DRF_COLUMNS.WET_WINS.index), 'wetWins');
+  horse.wetPlaces = parseStatField(getField(fields, DRF_COLUMNS.WET_PLACES.index), 'wetPlaces');
+  horse.wetShows = parseStatField(getField(fields, DRF_COLUMNS.WET_SHOWS.index), 'wetShows');
+
+  // Current Distance Record (Fields 93-96) - P0 critical handicapping data
+  horse.distanceStarts = parseStatField(
+    getField(fields, DRF_COLUMNS.DISTANCE_STARTS.index),
+    'distanceStarts'
+  );
+  horse.distanceWins = parseStatField(
+    getField(fields, DRF_COLUMNS.DISTANCE_WINS.index),
+    'distanceWins'
+  );
+  horse.distancePlaces = parseStatField(
+    getField(fields, DRF_COLUMNS.DISTANCE_PLACES.index),
+    'distancePlaces'
+  );
+  horse.distanceShows = parseStatField(
+    getField(fields, DRF_COLUMNS.DISTANCE_SHOWS.index),
+    'distanceShows'
+  );
 
   // Running style (Field 210)
   horse.runningStyle = getField(fields, DRF_COLUMNS.RUNNING_STYLE.index);

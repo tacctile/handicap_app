@@ -356,4 +356,241 @@ describe('DRF Parser', () => {
       expect(result.errors.some((e) => e.toLowerCase().includes('binary'))).toBe(true);
     });
   });
+
+  describe('Distance/Surface/Turf Records Parsing (Fields 85-96)', () => {
+    // Helper to create DRF content with enough fields for turf/wet/distance records
+    // Fields are 0-indexed in the array but 1-indexed in DRF spec
+    // Fields 85-88: Turf (starts, wins, places, shows) -> indices 84-87
+    // Fields 89-92: Wet (starts, wins, places, shows) -> indices 88-91
+    // Fields 93-96: Distance (starts, wins, places, shows) -> indices 92-95
+    function createDRFWithSurfaceRecords(
+      turf: [number, number, number, number],
+      wet: [number, number, number, number],
+      distance: [number, number, number, number]
+    ): string {
+      // Build array with 100 fields (enough to cover indices 0-95)
+      const fields = new Array(100).fill('');
+
+      // Race header fields
+      fields[0] = 'CD'; // Track code
+      fields[1] = '20240215'; // Race date
+      fields[2] = '5'; // Race number
+      fields[3] = '1'; // Post position
+      fields[5] = '14:30'; // Post time
+      fields[6] = 'D'; // Surface
+      fields[11] = '75000'; // Purse
+      fields[14] = '6'; // Distance furlongs
+      fields[23] = '8'; // Field size
+
+      // Horse identification
+      fields[27] = 'Test Trainer'; // Trainer name
+      fields[32] = 'Test Jockey'; // Jockey name
+      fields[43] = '5-1'; // Morning line
+      fields[44] = 'Test Horse'; // Horse name
+      fields[45] = '4'; // Age
+      fields[48] = 'c'; // Sex
+
+      // Lifetime stats (fields 62-65)
+      fields[61] = '20'; // Lifetime starts
+      fields[62] = '5'; // Lifetime wins
+      fields[63] = '4'; // Lifetime places
+      fields[64] = '3'; // Lifetime shows
+
+      // Track-specific stats (fields 80-83)
+      fields[79] = '8'; // Track starts
+      fields[80] = '2'; // Track wins
+      fields[81] = '1'; // Track places
+      fields[82] = '2'; // Track shows
+
+      // Turf record (fields 85-88, indices 84-87)
+      fields[84] = String(turf[0]); // Turf starts
+      fields[85] = String(turf[1]); // Turf wins
+      fields[86] = String(turf[2]); // Turf places
+      fields[87] = String(turf[3]); // Turf shows
+
+      // Wet track record (fields 89-92, indices 88-91)
+      fields[88] = String(wet[0]); // Wet starts
+      fields[89] = String(wet[1]); // Wet wins
+      fields[90] = String(wet[2]); // Wet places
+      fields[91] = String(wet[3]); // Wet shows
+
+      // Distance record (fields 93-96, indices 92-95)
+      fields[92] = String(distance[0]); // Distance starts
+      fields[93] = String(distance[1]); // Distance wins
+      fields[94] = String(distance[2]); // Distance places
+      fields[95] = String(distance[3]); // Distance shows
+
+      return fields.join(',');
+    }
+
+    it('parses turf record correctly from valid DRF data', () => {
+      const content = createDRFWithSurfaceRecords([12, 4, 3, 2], [0, 0, 0, 0], [0, 0, 0, 0]);
+
+      const result = parseDRFFile(content, 'turf-test.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      expect(horse.turfStarts).toBe(12);
+      expect(horse.turfWins).toBe(4);
+      expect(horse.turfPlaces).toBe(3);
+      expect(horse.turfShows).toBe(2);
+    });
+
+    it('parses wet track record correctly from valid DRF data', () => {
+      const content = createDRFWithSurfaceRecords([0, 0, 0, 0], [8, 2, 3, 1], [0, 0, 0, 0]);
+
+      const result = parseDRFFile(content, 'wet-test.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      expect(horse.wetStarts).toBe(8);
+      expect(horse.wetWins).toBe(2);
+      expect(horse.wetPlaces).toBe(3);
+      expect(horse.wetShows).toBe(1);
+    });
+
+    it('parses distance record correctly from valid DRF data', () => {
+      const content = createDRFWithSurfaceRecords([0, 0, 0, 0], [0, 0, 0, 0], [15, 5, 4, 3]);
+
+      const result = parseDRFFile(content, 'distance-test.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      expect(horse.distanceStarts).toBe(15);
+      expect(horse.distanceWins).toBe(5);
+      expect(horse.distancePlaces).toBe(4);
+      expect(horse.distanceShows).toBe(3);
+    });
+
+    it('parses all surface records together correctly', () => {
+      const content = createDRFWithSurfaceRecords([10, 3, 2, 1], [6, 2, 1, 1], [8, 3, 2, 2]);
+
+      const result = parseDRFFile(content, 'all-surfaces.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      // Turf
+      expect(horse.turfStarts).toBe(10);
+      expect(horse.turfWins).toBe(3);
+      expect(horse.turfPlaces).toBe(2);
+      expect(horse.turfShows).toBe(1);
+
+      // Wet
+      expect(horse.wetStarts).toBe(6);
+      expect(horse.wetWins).toBe(2);
+      expect(horse.wetPlaces).toBe(1);
+      expect(horse.wetShows).toBe(1);
+
+      // Distance
+      expect(horse.distanceStarts).toBe(8);
+      expect(horse.distanceWins).toBe(3);
+      expect(horse.distancePlaces).toBe(2);
+      expect(horse.distanceShows).toBe(2);
+    });
+
+    it('defaults missing turf/wet/distance fields to 0', () => {
+      // Create content with fewer fields (not reaching indices 84-95)
+      const shortContent = 'CD,20240215,5,1,,"Test Horse",Trainer,Jockey,120';
+
+      const result = parseDRFFile(shortContent, 'short.drf');
+
+      // Even with short content, we should get defaults
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      // All should default to 0
+      expect(horse.turfStarts).toBe(0);
+      expect(horse.turfWins).toBe(0);
+      expect(horse.turfPlaces).toBe(0);
+      expect(horse.turfShows).toBe(0);
+
+      expect(horse.wetStarts).toBe(0);
+      expect(horse.wetWins).toBe(0);
+      expect(horse.wetPlaces).toBe(0);
+      expect(horse.wetShows).toBe(0);
+
+      expect(horse.distanceStarts).toBe(0);
+      expect(horse.distanceWins).toBe(0);
+      expect(horse.distancePlaces).toBe(0);
+      expect(horse.distanceShows).toBe(0);
+    });
+
+    it('handles invalid (non-numeric) values gracefully by defaulting to 0', () => {
+      // Create content with invalid values at the turf/wet/distance positions
+      const fields = new Array(100).fill('');
+      fields[0] = 'CD';
+      fields[1] = '20240215';
+      fields[2] = '5';
+      fields[3] = '1';
+      fields[44] = 'Test Horse';
+      fields[27] = 'Trainer';
+      fields[32] = 'Jockey';
+
+      // Invalid values for turf (indices 84-87)
+      fields[84] = 'abc'; // Invalid
+      fields[85] = 'xyz'; // Invalid
+      fields[86] = ''; // Empty
+      fields[87] = 'NaN'; // Invalid
+
+      const content = fields.join(',');
+      const result = parseDRFFile(content, 'invalid-values.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      // All should default to 0 since values are invalid
+      expect(horse.turfStarts).toBe(0);
+      expect(horse.turfWins).toBe(0);
+      expect(horse.turfPlaces).toBe(0);
+      expect(horse.turfShows).toBe(0);
+    });
+
+    it('handles empty string fields by defaulting to 0', () => {
+      // Create content where turf/wet/distance fields are empty strings
+      const fields = new Array(100).fill('');
+      fields[0] = 'CD';
+      fields[1] = '20240215';
+      fields[2] = '5';
+      fields[3] = '1';
+      fields[44] = 'Empty Stats Horse';
+      fields[27] = 'Trainer';
+      fields[32] = 'Jockey';
+
+      // Fields 84-95 are already empty strings (from fill(''))
+
+      const content = fields.join(',');
+      const result = parseDRFFile(content, 'empty-fields.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+
+      expect(horse.turfStarts).toBe(0);
+      expect(horse.wetStarts).toBe(0);
+      expect(horse.distanceStarts).toBe(0);
+    });
+
+    it('createDefaultHorseEntry includes turf/wet/distance fields with defaults', () => {
+      const defaultHorse = createDefaultHorseEntry(0);
+
+      // Verify all new fields exist and are 0
+      expect(defaultHorse.turfStarts).toBe(0);
+      expect(defaultHorse.turfWins).toBe(0);
+      expect(defaultHorse.turfPlaces).toBe(0);
+      expect(defaultHorse.turfShows).toBe(0);
+
+      expect(defaultHorse.wetStarts).toBe(0);
+      expect(defaultHorse.wetWins).toBe(0);
+      expect(defaultHorse.wetPlaces).toBe(0);
+      expect(defaultHorse.wetShows).toBe(0);
+
+      expect(defaultHorse.distanceStarts).toBe(0);
+      expect(defaultHorse.distanceWins).toBe(0);
+      expect(defaultHorse.distancePlaces).toBe(0);
+      expect(defaultHorse.distanceShows).toBe(0);
+    });
+  });
 });
