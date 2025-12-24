@@ -9,14 +9,15 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type {
-  HorseEntry,
-  PastPerformance,
-  SpeedFigures,
-  RunningLine,
-  Equipment,
-  Medication,
-  Breeding,
+import {
+  createDefaultTrainerCategoryStats,
+  type HorseEntry,
+  type PastPerformance,
+  type SpeedFigures,
+  type RunningLine,
+  type Equipment,
+  type Medication,
+  type Breeding,
 } from '../../../types/drf';
 import {
   buildPartnershipDatabase,
@@ -166,6 +167,7 @@ function createMockHorse(overrides: Partial<HorseEntry> = {}): HorseEntry {
     trainerMeetWins: 0,
     trainerMeetPlaces: 0,
     trainerMeetShows: 0,
+    trainerCategoryStats: createDefaultTrainerCategoryStats(),
     jockeyStats: '',
     jockeyMeetStarts: 0,
     jockeyMeetWins: 0,

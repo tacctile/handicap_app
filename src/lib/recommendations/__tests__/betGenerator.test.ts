@@ -101,6 +101,11 @@ function createMockScoreBreakdown(overrides: Partial<ScoreBreakdown> = {}): Scor
       distanceWinRate: 0,
       reasoning: ['No distance/surface bonus'],
     },
+    trainerPatterns: {
+      total: 0,
+      matchedPatterns: [],
+      reasoning: ['No trainer pattern bonus'],
+    },
     ...overrides,
   };
 }
