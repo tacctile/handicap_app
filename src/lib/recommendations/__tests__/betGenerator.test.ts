@@ -106,6 +106,12 @@ function createMockScoreBreakdown(overrides: Partial<ScoreBreakdown> = {}): Scor
       matchedPatterns: [],
       reasoning: ['No trainer pattern bonus'],
     },
+    comboPatterns: {
+      total: 0,
+      detectedCombos: [],
+      intentScore: 0,
+      reasoning: [],
+    },
     ...overrides,
   };
 }
