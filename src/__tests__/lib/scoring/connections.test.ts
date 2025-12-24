@@ -10,9 +10,10 @@ import {
 } from '../../../lib/scoring/connections';
 import { createHorseEntry, createPastPerformance } from '../../fixtures/testHelpers';
 
+// NOTE: v2.0 rescaled from 55 max to 25 max (scale factor: 25/55 ≈ 0.455)
 describe('Connections Scoring', () => {
   describe('Trainer Scoring', () => {
-    it('returns neutral score (15) for trainer with insufficient data (<3 starts)', () => {
+    it('returns neutral score (7) for trainer with insufficient data (<3 starts)', () => {
       const horse = createHorseEntry({
         trainerName: 'New Trainer',
         pastPerformances: [
@@ -23,11 +24,11 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.trainer).toBe(15);
+      expect(result.trainer).toBe(7);
       expect(result.reasoning).toContain('Limited data');
     });
 
-    it('returns 5 points for trainer with <5% win rate', () => {
+    it('returns 2 points for trainer with <5% win rate', () => {
       // Create horse with 0 wins in 10 starts
       const horse = createHorseEntry({
         trainerName: 'Low Win Trainer',
@@ -39,10 +40,10 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.trainer).toBe(5);
+      expect(result.trainer).toBe(2);
     });
 
-    it('returns 12 points for trainer with 5-9% win rate', () => {
+    it('returns 5 points for trainer with 5-9% win rate', () => {
       // 1 win in 15 starts = ~6.7% win rate
       const pastPerformances = Array.from({ length: 15 }, (_, i) =>
         createPastPerformance({ finishPosition: i === 0 ? 1 : 5 })
@@ -55,10 +56,10 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.trainer).toBe(12);
+      expect(result.trainer).toBe(5);
     });
 
-    it('returns 20 points for trainer with 10-14% win rate', () => {
+    it('returns 9 points for trainer with 10-14% win rate', () => {
       // 2 wins in 15 starts = ~13.3% win rate
       const pastPerformances = Array.from({ length: 15 }, (_, i) =>
         createPastPerformance({ finishPosition: i < 2 ? 1 : 5 })
@@ -71,10 +72,10 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.trainer).toBe(20);
+      expect(result.trainer).toBe(9);
     });
 
-    it('returns 28 points for trainer with 15-19% win rate', () => {
+    it('returns 13 points for trainer with 15-19% win rate', () => {
       // 3 wins in 18 starts = ~16.7% win rate
       const pastPerformances = Array.from({ length: 18 }, (_, i) =>
         createPastPerformance({ finishPosition: i < 3 ? 1 : 5 })
@@ -87,10 +88,10 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.trainer).toBe(28);
+      expect(result.trainer).toBe(13);
     });
 
-    it('returns 35 points (max) for trainer with 20%+ win rate', () => {
+    it('returns 16 points (max) for trainer with 20%+ win rate', () => {
       // 5 wins in 20 starts = 25% win rate
       const pastPerformances = Array.from({ length: 20 }, (_, i) =>
         createPastPerformance({ finishPosition: i < 5 ? 1 : 5 })
@@ -103,7 +104,7 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.trainer).toBe(35);
+      expect(result.trainer).toBe(16);
     });
 
     it('handles null/undefined trainer name gracefully', () => {
@@ -120,7 +121,7 @@ describe('Connections Scoring', () => {
   });
 
   describe('Jockey Scoring', () => {
-    it('returns neutral score (7) for jockey with insufficient data', () => {
+    it('returns neutral score (3) for jockey with insufficient data', () => {
       const horse = createHorseEntry({
         jockeyName: 'New Jockey',
         pastPerformances: [createPastPerformance({ jockey: 'New Jockey', finishPosition: 1 })],
@@ -128,10 +129,10 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.jockey).toBe(7);
+      expect(result.jockey).toBe(3);
     });
 
-    it('returns 15 points (max) for elite jockey with 20%+ win rate', () => {
+    it('returns 7 points (max) for elite jockey with 20%+ win rate', () => {
       const pastPerformances = Array.from({ length: 10 }, (_, i) =>
         createPastPerformance({
           jockey: 'Elite Jockey',
@@ -146,10 +147,10 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.jockey).toBe(15);
+      expect(result.jockey).toBe(7);
     });
 
-    it('returns 3 points for jockey with <5% win rate', () => {
+    it('returns 1 point for jockey with <5% win rate', () => {
       const pastPerformances = Array.from({ length: 10 }, (_, i) =>
         createPastPerformance({
           jockey: 'Poor Jockey',
@@ -164,12 +165,12 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.jockey).toBe(3);
+      expect(result.jockey).toBe(1);
     });
   });
 
   describe('Partnership Bonus', () => {
-    it('returns 5 point bonus for elite partnership (25%+ win rate with 5+ starts)', () => {
+    it('returns 2 point bonus for elite partnership (25%+ win rate with 5+ starts)', () => {
       const trainerName = 'Bob Baffert';
       const jockeyName = 'Mike Smith';
 
@@ -190,7 +191,7 @@ describe('Connections Scoring', () => {
       const database = buildConnectionsDatabase(horses);
       const result = calculateConnectionsScore(horses[0], database);
 
-      expect(result.partnershipBonus).toBe(5);
+      expect(result.partnershipBonus).toBe(2);
       expect(result.reasoning).toContain('Elite combo');
     });
 
@@ -259,7 +260,7 @@ describe('Connections Scoring', () => {
       expect(result.total).toBe(result.trainer + result.jockey + result.partnershipBonus);
     });
 
-    it('total score stays within limit of 55 points', () => {
+    it('total score stays within limit of 25 points', () => {
       const horse = createHorseEntry({
         trainerName: 'Elite Trainer',
         jockeyName: 'Elite Jockey',
@@ -273,7 +274,7 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.total).toBeLessThanOrEqual(55);
+      expect(result.total).toBeLessThanOrEqual(25);
     });
 
     it('handles missing past performances gracefully', () => {
@@ -286,8 +287,8 @@ describe('Connections Scoring', () => {
       const result = calculateConnectionsScore(horse);
 
       expect(result.total).toBeGreaterThan(0); // Returns neutral scores
-      expect(result.trainer).toBe(15); // Neutral trainer
-      expect(result.jockey).toBe(7); // Neutral jockey
+      expect(result.trainer).toBe(7); // Neutral trainer
+      expect(result.jockey).toBe(3); // Neutral jockey
     });
   });
 

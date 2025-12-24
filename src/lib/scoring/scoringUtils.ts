@@ -36,14 +36,14 @@ export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 290
 /** Maximum display score (for UI) */
 export const MAX_DISPLAY_SCORE = 240;
 
-// Category maximums
+// Category maximums (v2.0 - Industry-Aligned Weights)
 export const SCORE_CATEGORY_LIMITS = {
-  connections: 55,
-  postPosition: 45,
-  speedClass: 50,
-  form: 30,
-  equipment: 25,
-  pace: 40,
+  connections: 25, // 10.4% - Modifier, not primary driver
+  postPosition: 30, // 12.5% - Track-dependent situational factor
+  speedClass: 80, // 33.3% - Most predictive factor per industry research
+  form: 40, // 16.7% - Recent performance patterns
+  equipment: 20, // 8.3% - Speculative, fine-tuning only
+  pace: 45, // 18.8% - High predictive value for race shape
   breeding: 15,
   classHiddenDrops: 10,
 } as const;

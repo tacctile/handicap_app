@@ -1,6 +1,7 @@
 /**
  * Equipment Scoring Tests
  * Tests equipment change bonuses and Lasix scenarios
+ * NOTE: v2.0 rescaled from 25 max to 20 max (scale factor: 20/25 = 0.8)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -20,7 +21,7 @@ import {
 
 describe('Equipment Scoring', () => {
   describe('Base Score', () => {
-    it('returns base score of 10 for no equipment changes', () => {
+    it('returns base score of 8 for no equipment changes', () => {
       const horse = createHorseEntry({
         equipment: createEquipment({ raw: '' }),
         medication: createMedication({ raw: '' }),
@@ -29,8 +30,8 @@ describe('Equipment Scoring', () => {
 
       const result = calculateEquipmentScore(horse);
 
-      // Base score should be around 10 (may vary based on implementation)
-      expect(result.baseScore).toBe(10);
+      // Base score should be around 8 (may vary based on implementation)
+      expect(result.baseScore).toBe(8);
     });
   });
 
@@ -181,7 +182,7 @@ describe('Equipment Scoring', () => {
   });
 
   describe('Score Limits', () => {
-    it('total score does not exceed 25 points', () => {
+    it('total score does not exceed 20 points', () => {
       // Horse with multiple equipment changes
       const horse = createHorseEntry({
         equipment: createEquipment({
@@ -200,7 +201,7 @@ describe('Equipment Scoring', () => {
 
       const result = calculateEquipmentScore(horse);
 
-      expect(result.total).toBeLessThanOrEqual(25);
+      expect(result.total).toBeLessThanOrEqual(20);
     });
 
     it('minimum score is at least base score', () => {

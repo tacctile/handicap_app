@@ -2,12 +2,15 @@
  * Connections Scoring Module
  * Calculates trainer, jockey, and partnership scores based on DRF data
  *
- * Score Breakdown (Dynamic Pattern Matching):
- * - Trainer Score: 0-35 points (based on track/surface/class-specific win rates)
- * - Jockey Score: 0-15 points (based on track/style-specific win rates)
- * - Synergy Bonus: 0-10 points (trainer-jockey partnership performance)
+ * Score Breakdown (v2.0 - Industry-Aligned Weights):
+ * - Trainer Score: 0-16 points (based on track/surface/class-specific win rates)
+ * - Jockey Score: 0-7 points (based on track/style-specific win rates)
+ * - Partnership Bonus: 0-2 points (trainer-jockey partnership performance)
  *
- * Total: 0-50 points (capped)
+ * Total: 0-25 points (10.4% of 240 base)
+ *
+ * NOTE: Connections reduced from 55 to 25 points to reflect industry research
+ * showing this is a modifier rather than primary predictive factor.
  *
  * Dynamic Pattern Features:
  * - Track-specific: "Trainer X at Churchill Downs: 18% win (45 starts)"
@@ -261,29 +264,11 @@ function extractJockeyStatsFromHorse(horse: HorseEntry): ConnectionStats | null 
 // ============================================================================
 
 /**
- * Calculate trainer score (0-35 points)
+ * Calculate trainer score (0-16 points)
  * Based on win rate thresholds
+ * Rescaled from 35 max to 16 max (scale factor: 25/55 = 0.4545)
  */
 function calculateTrainerScore(stats: ConnectionStats | null): number {
-  if (!stats || stats.starts < 3) {
-    // Insufficient data - return neutral score
-    return 15;
-  }
-
-  const winRate = stats.winRate;
-
-  if (winRate >= 20) return 35; // Elite trainer (20%+ win rate)
-  if (winRate >= 15) return 28; // Very good trainer (15-19%)
-  if (winRate >= 10) return 20; // Good trainer (10-14%)
-  if (winRate >= 5) return 12; // Average trainer (5-9%)
-  return 5; // Below average (<5%)
-}
-
-/**
- * Calculate jockey score (0-15 points)
- * Same methodology as trainer but scaled
- */
-function calculateJockeyScore(stats: ConnectionStats | null): number {
   if (!stats || stats.starts < 3) {
     // Insufficient data - return neutral score
     return 7;
@@ -291,11 +276,31 @@ function calculateJockeyScore(stats: ConnectionStats | null): number {
 
   const winRate = stats.winRate;
 
-  if (winRate >= 20) return 15; // Elite jockey
-  if (winRate >= 15) return 12; // Very good jockey
-  if (winRate >= 10) return 9; // Good jockey
-  if (winRate >= 5) return 6; // Average jockey
-  return 3; // Below average
+  if (winRate >= 20) return 16; // Elite trainer (20%+ win rate)
+  if (winRate >= 15) return 13; // Very good trainer (15-19%)
+  if (winRate >= 10) return 9; // Good trainer (10-14%)
+  if (winRate >= 5) return 5; // Average trainer (5-9%)
+  return 2; // Below average (<5%)
+}
+
+/**
+ * Calculate jockey score (0-7 points)
+ * Same methodology as trainer but scaled
+ * Rescaled from 15 max to 7 max (scale factor: 25/55 = 0.4545)
+ */
+function calculateJockeyScore(stats: ConnectionStats | null): number {
+  if (!stats || stats.starts < 3) {
+    // Insufficient data - return neutral score
+    return 3;
+  }
+
+  const winRate = stats.winRate;
+
+  if (winRate >= 20) return 7; // Elite jockey
+  if (winRate >= 15) return 6; // Very good jockey
+  if (winRate >= 10) return 4; // Good jockey
+  if (winRate >= 5) return 3; // Average jockey
+  return 1; // Below average
 }
 
 /**
@@ -322,8 +327,9 @@ function calculatePartnershipBonus(
   }
 
   // Elite partnership: 25%+ win rate with at least 5 starts
+  // Rescaled from 5 max to 2 max (scale factor: 25/55 = 0.4545)
   if (stats.winRate >= 25) {
-    return { bonus: 5, stats };
+    return { bonus: 2, stats };
   }
 
   return { bonus: 0, stats };
@@ -449,8 +455,8 @@ export function calculateRaceConnectionsScores(
 // DYNAMIC PATTERN SCORING (ENHANCED)
 // ============================================================================
 
-/** Maximum combined score for connections */
-const MAX_CONNECTIONS_SCORE = 50;
+/** Maximum combined score for connections (v2.0 - reduced from 55 to 25) */
+const MAX_CONNECTIONS_SCORE = 25;
 
 /**
  * Extended connections score result with pattern analysis

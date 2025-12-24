@@ -1,6 +1,7 @@
 /**
  * Pace Scoring Tests
  * Tests pace scenario fit calculations and running style classifications
+ * NOTE: v2.0 rescaled from 40 max to 45 max (scale factor: 45/40 = 1.125)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -204,7 +205,7 @@ describe('Pace Scoring', () => {
   });
 
   describe('calculatePaceScore', () => {
-    it('returns score between 5 and 40', () => {
+    it('returns score between 5 and 45', () => {
       const horse = createPresser();
       const header = createRaceHeader();
       const field = createTestField(8);
@@ -212,7 +213,7 @@ describe('Pace Scoring', () => {
       const result = calculatePaceScore(horse, header, field);
 
       expect(result.total).toBeGreaterThanOrEqual(5);
-      expect(result.total).toBeLessThanOrEqual(40);
+      expect(result.total).toBeLessThanOrEqual(45);
     });
 
     it('includes profile in result', () => {
