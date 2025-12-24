@@ -1,11 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Dashboard } from './components/Dashboard';
-import { DashboardLegacy } from './components/DashboardLegacy';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuthContext } from './contexts/AuthContext';
 import { ToastProvider, useToastContext } from './contexts/ToastContext';
-import { DisclaimerBanner, LegalModal } from './components/legal';
-import type { LegalContentType } from './components/legal';
 import { AuthPage, AccountSettings } from './components/auth';
 import { HelpCenter } from './components/help';
 import { useRaceState } from './hooks/useRaceState';
@@ -23,21 +20,18 @@ import './styles/help.css';
 // ROUTE TYPES
 // ============================================================================
 
-type AppRoute = 'dashboard' | 'legacy' | 'account' | 'help';
+type AppRoute = 'dashboard' | 'account' | 'help';
 
 function AppContent() {
   const [parsedData, setParsedData] = useState<ParsedDRFFile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
-  const [showWarnings, setShowWarnings] = useState(true);
+  const [, setValidationWarnings] = useState<string[]>([]);
+  const [, setShowWarnings] = useState(true);
   const [modalOpen] = useState(false);
   const [selectedRaceIndex, setSelectedRaceIndex] = useState(0);
 
   // Routing state - check URL on initial load
   const getInitialRoute = (): AppRoute => {
-    if (window.location.pathname === '/legacy') {
-      return 'legacy';
-    }
     return 'dashboard';
   };
   const [currentRoute, setCurrentRoute] = useState<AppRoute>(getInitialRoute);
@@ -46,36 +40,13 @@ function AppContent() {
   const { isAuthenticated, isLoading: authLoading } = useAuthContext();
   const authEnabled = useFeatureFlag('AUTH_ENABLED');
 
-  // Legal modal state
-  const [legalModalOpen, setLegalModalOpen] = useState(false);
-  const [legalModalType, setLegalModalType] = useState<LegalContentType>('disclaimer');
-
-  // Handle opening legal modal from disclaimer banner
-  const handleViewFullDisclaimer = useCallback(() => {
-    setLegalModalType('disclaimer');
-    setLegalModalOpen(true);
-  }, []);
-
-  // Handle closing legal modal
-  const handleCloseLegalModal = useCallback(() => {
-    setLegalModalOpen(false);
-  }, []);
-
   const raceState = useRaceState();
   const { trackEvent } = useAnalytics();
   const { addToast } = useToastContext();
 
   // Navigation handlers
-  const navigateToAccount = useCallback(() => {
-    setCurrentRoute('account');
-  }, []);
-
   const navigateToDashboard = useCallback(() => {
     setCurrentRoute('dashboard');
-  }, []);
-
-  const navigateToHelp = useCallback(() => {
-    setCurrentRoute('help');
   }, []);
 
   // Handle successful auth (login/signup)
@@ -192,10 +163,6 @@ function AppContent() {
     setSelectedRaceIndex(0);
   }, [raceState]);
 
-  const handleDismissWarnings = useCallback(() => {
-    setShowWarnings(false);
-  }, []);
-
   // Keyboard shortcuts for global actions
   useKeyboardShortcuts({
     isModalOpen: modalOpen,
@@ -267,36 +234,7 @@ function AppContent() {
     );
   }
 
-  // Show legacy dashboard at /legacy route
-  if (currentRoute === 'legacy') {
-    return (
-      <ErrorBoundary onReset={handleFullReset}>
-        {/* Disclaimer Banner - shows on first visit */}
-        <DisclaimerBanner onViewFull={handleViewFullDisclaimer} />
-
-        <DashboardLegacy
-          parsedData={parsedData}
-          isLoading={isLoading}
-          validationWarnings={validationWarnings}
-          showWarnings={showWarnings}
-          onParsed={handleParsed}
-          onDismissWarnings={handleDismissWarnings}
-          raceState={raceState}
-          onOpenLegalModal={(type: LegalContentType) => {
-            setLegalModalType(type);
-            setLegalModalOpen(true);
-          }}
-          onNavigateToAccount={navigateToAccount}
-          onNavigateToHelp={navigateToHelp}
-        />
-
-        {/* Legal Modal - shared across app */}
-        <LegalModal type={legalModalType} isOpen={legalModalOpen} onClose={handleCloseLegalModal} />
-      </ErrorBoundary>
-    );
-  }
-
-  // Show new dashboard shell at root route
+  // Show dashboard
   return (
     <ErrorBoundary onReset={handleFullReset}>
       <Dashboard
