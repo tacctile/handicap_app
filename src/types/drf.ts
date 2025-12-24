@@ -284,6 +284,130 @@ export interface Workout {
 }
 
 // ============================================================================
+// TRAINER CATEGORY STATISTICS (Fields 1146-1221)
+// ============================================================================
+
+/**
+ * Single trainer category statistic
+ * Each category tracks starts, wins, win percentage, and ROI
+ */
+export interface TrainerCategoryStat {
+  /** Number of starts in this category */
+  starts: number;
+  /** Number of wins in this category */
+  wins: number;
+  /** Win percentage (0-100) */
+  winPercent: number;
+  /** Return on investment (typically -100 to +500, as percentage) */
+  roi: number;
+}
+
+/**
+ * Trainer category statistics from DRF Fields 1146-1221
+ * These are specialty win rates for specific situations
+ *
+ * Field mapping (4 fields per category: starts, wins, win%, ROI):
+ * - Fields 1146-1149: First time Lasix
+ * - Fields 1150-1153: 2nd off layoff
+ * - Fields 1154-1157: 31-60 days off
+ * - Fields 1158-1161: Turf sprint
+ * - Fields 1162-1165: Turf route
+ * - Fields 1166-1169: First time blinkers
+ * - Fields 1170-1173: Blinkers off
+ * - Fields 1174-1177: Sprint to route
+ * - Fields 1178-1181: Route to sprint
+ * - Fields 1182-1185: Maiden claiming
+ * - Fields 1186-1189: First start for trainer
+ * - Fields 1190-1193: After claim
+ * - Fields 1194-1197: 61-90 days off
+ * - Fields 1198-1201: 91-180 days off
+ * - Fields 1202-1205: 181+ days off
+ * - Fields 1206-1209: Dirt sprints
+ * - Fields 1210-1213: Dirt routes
+ * - Fields 1214-1217: Wet tracks
+ * - Fields 1218-1221: Stakes races
+ */
+export interface TrainerCategoryStats {
+  /** First time Lasix - Fields 1146-1149 */
+  firstTimeLasix: TrainerCategoryStat;
+  /** 2nd off layoff - Fields 1150-1153 */
+  secondOffLayoff: TrainerCategoryStat;
+  /** 31-60 days off - Fields 1154-1157 */
+  days31to60: TrainerCategoryStat;
+  /** Turf sprint - Fields 1158-1161 */
+  turfSprint: TrainerCategoryStat;
+  /** Turf route - Fields 1162-1165 */
+  turfRoute: TrainerCategoryStat;
+  /** First time blinkers - Fields 1166-1169 */
+  firstTimeBlinkers: TrainerCategoryStat;
+  /** Blinkers off - Fields 1170-1173 */
+  blinkersOff: TrainerCategoryStat;
+  /** Sprint to route - Fields 1174-1177 */
+  sprintToRoute: TrainerCategoryStat;
+  /** Route to sprint - Fields 1178-1181 */
+  routeToSprint: TrainerCategoryStat;
+  /** Maiden claiming - Fields 1182-1185 */
+  maidenClaiming: TrainerCategoryStat;
+  /** First start for trainer - Fields 1186-1189 */
+  firstStartForTrainer: TrainerCategoryStat;
+  /** After claim - Fields 1190-1193 */
+  afterClaim: TrainerCategoryStat;
+  /** 61-90 days off - Fields 1194-1197 */
+  days61to90: TrainerCategoryStat;
+  /** 91-180 days off - Fields 1198-1201 */
+  days91to180: TrainerCategoryStat;
+  /** 181+ days off - Fields 1202-1205 */
+  days181plus: TrainerCategoryStat;
+  /** Dirt sprints - Fields 1206-1209 */
+  dirtSprints: TrainerCategoryStat;
+  /** Dirt routes - Fields 1210-1213 */
+  dirtRoutes: TrainerCategoryStat;
+  /** Wet tracks - Fields 1214-1217 */
+  wetTracks: TrainerCategoryStat;
+  /** Stakes races - Fields 1218-1221 */
+  stakesRaces: TrainerCategoryStat;
+}
+
+/**
+ * Create default trainer category stat with zeros
+ */
+export function createDefaultTrainerCategoryStat(): TrainerCategoryStat {
+  return {
+    starts: 0,
+    wins: 0,
+    winPercent: 0,
+    roi: 0,
+  };
+}
+
+/**
+ * Create default trainer category stats with all zeros
+ */
+export function createDefaultTrainerCategoryStats(): TrainerCategoryStats {
+  return {
+    firstTimeLasix: createDefaultTrainerCategoryStat(),
+    secondOffLayoff: createDefaultTrainerCategoryStat(),
+    days31to60: createDefaultTrainerCategoryStat(),
+    turfSprint: createDefaultTrainerCategoryStat(),
+    turfRoute: createDefaultTrainerCategoryStat(),
+    firstTimeBlinkers: createDefaultTrainerCategoryStat(),
+    blinkersOff: createDefaultTrainerCategoryStat(),
+    sprintToRoute: createDefaultTrainerCategoryStat(),
+    routeToSprint: createDefaultTrainerCategoryStat(),
+    maidenClaiming: createDefaultTrainerCategoryStat(),
+    firstStartForTrainer: createDefaultTrainerCategoryStat(),
+    afterClaim: createDefaultTrainerCategoryStat(),
+    days61to90: createDefaultTrainerCategoryStat(),
+    days91to180: createDefaultTrainerCategoryStat(),
+    days181plus: createDefaultTrainerCategoryStat(),
+    dirtSprints: createDefaultTrainerCategoryStat(),
+    dirtRoutes: createDefaultTrainerCategoryStat(),
+    wetTracks: createDefaultTrainerCategoryStat(),
+    stakesRaces: createDefaultTrainerCategoryStat(),
+  };
+}
+
+// ============================================================================
 // HORSE ENTRY (Current Race)
 // ============================================================================
 
@@ -322,6 +446,8 @@ export interface HorseEntry {
   trainerMeetPlaces: number;
   /** Trainer shows at current meet (DRF Field 32) */
   trainerMeetShows: number;
+  /** Trainer category statistics (Fields 1146-1221) */
+  trainerCategoryStats: TrainerCategoryStats;
   /** Jockey name */
   jockeyName: string;
   /** Jockey stats string (legacy, for display) */

@@ -39,7 +39,11 @@ import type {
   SpeedFigures,
   ParsingStep,
   DRFWorkerProgressMessage,
+  TrainerCategoryStats,
+  TrainerCategoryStat,
 } from '../types/drf';
+
+import { createDefaultTrainerCategoryStats } from '../types/drf';
 
 // ============================================================================
 // DRF COLUMN SPECIFICATIONS
@@ -263,9 +267,53 @@ const DRF_COLUMNS = {
   PP_JOCKEY_START: 1065, // Field 1066 - Jockey names per PP
 
   // =========================================================================
-  // TRAINER STATISTICS (Fields 1146-1221, indices 1145-1220)
+  // TRAINER CATEGORY STATISTICS (Fields 1146-1221, indices 1145-1220)
+  // 19 categories × 4 fields each (starts, wins, win%, ROI) = 76 fields
   // =========================================================================
   TRAINER_STATS_START: 1145, // Field 1146 - Trainer category statistics
+
+  // Trainer category field indices (0-based)
+  // Each category has 4 fields: starts, wins, win%, ROI
+  TRAINER_CATEGORY: {
+    // First time Lasix - Fields 1146-1149
+    FIRST_TIME_LASIX: { startIndex: 1145, name: 'First Time Lasix' },
+    // 2nd off layoff - Fields 1150-1153
+    SECOND_OFF_LAYOFF: { startIndex: 1149, name: '2nd Off Layoff' },
+    // 31-60 days off - Fields 1154-1157
+    DAYS_31_TO_60: { startIndex: 1153, name: '31-60 Days Off' },
+    // Turf sprint - Fields 1158-1161
+    TURF_SPRINT: { startIndex: 1157, name: 'Turf Sprint' },
+    // Turf route - Fields 1162-1165
+    TURF_ROUTE: { startIndex: 1161, name: 'Turf Route' },
+    // First time blinkers - Fields 1166-1169
+    FIRST_TIME_BLINKERS: { startIndex: 1165, name: 'First Time Blinkers' },
+    // Blinkers off - Fields 1170-1173
+    BLINKERS_OFF: { startIndex: 1169, name: 'Blinkers Off' },
+    // Sprint to route - Fields 1174-1177
+    SPRINT_TO_ROUTE: { startIndex: 1173, name: 'Sprint to Route' },
+    // Route to sprint - Fields 1178-1181
+    ROUTE_TO_SPRINT: { startIndex: 1177, name: 'Route to Sprint' },
+    // Maiden claiming - Fields 1182-1185
+    MAIDEN_CLAIMING: { startIndex: 1181, name: 'Maiden Claiming' },
+    // First start for trainer - Fields 1186-1189
+    FIRST_START_FOR_TRAINER: { startIndex: 1185, name: 'First Start for Trainer' },
+    // After claim - Fields 1190-1193
+    AFTER_CLAIM: { startIndex: 1189, name: 'After Claim' },
+    // 61-90 days off - Fields 1194-1197
+    DAYS_61_TO_90: { startIndex: 1193, name: '61-90 Days Off' },
+    // 91-180 days off - Fields 1198-1201
+    DAYS_91_TO_180: { startIndex: 1197, name: '91-180 Days Off' },
+    // 181+ days off - Fields 1202-1205
+    DAYS_181_PLUS: { startIndex: 1201, name: '181+ Days Off' },
+    // Dirt sprints - Fields 1206-1209
+    DIRT_SPRINTS: { startIndex: 1205, name: 'Dirt Sprints' },
+    // Dirt routes - Fields 1210-1213
+    DIRT_ROUTES: { startIndex: 1209, name: 'Dirt Routes' },
+    // Wet tracks - Fields 1214-1217
+    WET_TRACKS: { startIndex: 1213, name: 'Wet Tracks' },
+    // Stakes races - Fields 1218-1221
+    STAKES_RACES: { startIndex: 1217, name: 'Stakes Races' },
+  },
 
   // =========================================================================
   // DETAILED TRIP NOTES (Fields 1383-1392, indices 1382-1391)
@@ -1008,6 +1056,216 @@ function parseMedication(raw: string): Medication {
 }
 
 // ============================================================================
+// TRAINER CATEGORY STATISTICS PARSING (Fields 1146-1221)
+// ============================================================================
+
+/**
+ * Validate and parse a win percentage (0-100)
+ * Returns 0 for invalid values, logs warning in dev mode
+ */
+function parseWinPercent(value: string, categoryName: string): number {
+  const parsed = parseFloatSafe(value);
+
+  // Handle invalid/empty
+  if (isNaN(parsed)) {
+    return 0;
+  }
+
+  // Validate range 0-100
+  if (parsed < 0) {
+    if (import.meta.env.DEV) {
+      logger.logWarning(`Negative win percentage for trainer ${categoryName}: ${parsed}`, {
+        component: 'DRFParser',
+        fieldName: categoryName,
+        value: parsed,
+      });
+    }
+    return 0;
+  }
+
+  if (parsed > 100) {
+    if (import.meta.env.DEV) {
+      logger.logWarning(`Win percentage > 100 for trainer ${categoryName}: ${parsed}`, {
+        component: 'DRFParser',
+        fieldName: categoryName,
+        value: parsed,
+      });
+    }
+    // Still use it but cap at 100
+    return 100;
+  }
+
+  return parsed;
+}
+
+/**
+ * Validate and parse ROI value
+ * Typical range is -100 to +500 (as percentage)
+ * Returns 0 for invalid values, logs warning in dev mode for outliers
+ */
+function parseROI(value: string, categoryName: string): number {
+  const parsed = parseFloatSafe(value);
+
+  // Handle invalid/empty
+  if (isNaN(parsed)) {
+    return 0;
+  }
+
+  // Validate reasonable range
+  if (parsed < -100) {
+    if (import.meta.env.DEV) {
+      logger.logWarning(`ROI below -100 for trainer ${categoryName}: ${parsed}`, {
+        component: 'DRFParser',
+        fieldName: categoryName,
+        value: parsed,
+      });
+    }
+    // Still use it - extreme negative ROI is possible
+  }
+
+  if (parsed > 500) {
+    if (import.meta.env.DEV) {
+      logger.logWarning(`Unusually high ROI for trainer ${categoryName}: ${parsed}`, {
+        component: 'DRFParser',
+        fieldName: categoryName,
+        value: parsed,
+      });
+    }
+    // Still use it - very small sample sizes can produce high ROI
+  }
+
+  return parsed;
+}
+
+/**
+ * Parse a single trainer category stat (4 fields: starts, wins, win%, ROI)
+ *
+ * @param fields - Full CSV fields array
+ * @param startIndex - 0-based index of first field (starts)
+ * @param categoryName - Name for logging/debugging
+ * @returns Parsed TrainerCategoryStat
+ */
+function parseTrainerCategoryStat(
+  fields: string[],
+  startIndex: number,
+  categoryName: string
+): TrainerCategoryStat {
+  const starts = parseStatField(getField(fields, startIndex), `${categoryName} Starts`, 1000);
+  const wins = parseStatField(getField(fields, startIndex + 1), `${categoryName} Wins`, 500);
+  const winPercent = parseWinPercent(getField(fields, startIndex + 2), categoryName);
+  const roi = parseROI(getField(fields, startIndex + 3), categoryName);
+
+  return {
+    starts,
+    wins,
+    winPercent,
+    roi,
+  };
+}
+
+/**
+ * Parse all trainer category statistics from DRF fields 1146-1221
+ *
+ * Structure: 19 categories × 4 fields each (starts, wins, win%, ROI)
+ *
+ * @param fields - Full CSV fields array
+ * @returns Parsed TrainerCategoryStats
+ */
+function parseTrainerCategoryStats(fields: string[]): TrainerCategoryStats {
+  const cats = DRF_COLUMNS.TRAINER_CATEGORY;
+
+  return {
+    firstTimeLasix: parseTrainerCategoryStat(
+      fields,
+      cats.FIRST_TIME_LASIX.startIndex,
+      cats.FIRST_TIME_LASIX.name
+    ),
+    secondOffLayoff: parseTrainerCategoryStat(
+      fields,
+      cats.SECOND_OFF_LAYOFF.startIndex,
+      cats.SECOND_OFF_LAYOFF.name
+    ),
+    days31to60: parseTrainerCategoryStat(
+      fields,
+      cats.DAYS_31_TO_60.startIndex,
+      cats.DAYS_31_TO_60.name
+    ),
+    turfSprint: parseTrainerCategoryStat(
+      fields,
+      cats.TURF_SPRINT.startIndex,
+      cats.TURF_SPRINT.name
+    ),
+    turfRoute: parseTrainerCategoryStat(fields, cats.TURF_ROUTE.startIndex, cats.TURF_ROUTE.name),
+    firstTimeBlinkers: parseTrainerCategoryStat(
+      fields,
+      cats.FIRST_TIME_BLINKERS.startIndex,
+      cats.FIRST_TIME_BLINKERS.name
+    ),
+    blinkersOff: parseTrainerCategoryStat(
+      fields,
+      cats.BLINKERS_OFF.startIndex,
+      cats.BLINKERS_OFF.name
+    ),
+    sprintToRoute: parseTrainerCategoryStat(
+      fields,
+      cats.SPRINT_TO_ROUTE.startIndex,
+      cats.SPRINT_TO_ROUTE.name
+    ),
+    routeToSprint: parseTrainerCategoryStat(
+      fields,
+      cats.ROUTE_TO_SPRINT.startIndex,
+      cats.ROUTE_TO_SPRINT.name
+    ),
+    maidenClaiming: parseTrainerCategoryStat(
+      fields,
+      cats.MAIDEN_CLAIMING.startIndex,
+      cats.MAIDEN_CLAIMING.name
+    ),
+    firstStartForTrainer: parseTrainerCategoryStat(
+      fields,
+      cats.FIRST_START_FOR_TRAINER.startIndex,
+      cats.FIRST_START_FOR_TRAINER.name
+    ),
+    afterClaim: parseTrainerCategoryStat(
+      fields,
+      cats.AFTER_CLAIM.startIndex,
+      cats.AFTER_CLAIM.name
+    ),
+    days61to90: parseTrainerCategoryStat(
+      fields,
+      cats.DAYS_61_TO_90.startIndex,
+      cats.DAYS_61_TO_90.name
+    ),
+    days91to180: parseTrainerCategoryStat(
+      fields,
+      cats.DAYS_91_TO_180.startIndex,
+      cats.DAYS_91_TO_180.name
+    ),
+    days181plus: parseTrainerCategoryStat(
+      fields,
+      cats.DAYS_181_PLUS.startIndex,
+      cats.DAYS_181_PLUS.name
+    ),
+    dirtSprints: parseTrainerCategoryStat(
+      fields,
+      cats.DIRT_SPRINTS.startIndex,
+      cats.DIRT_SPRINTS.name
+    ),
+    dirtRoutes: parseTrainerCategoryStat(
+      fields,
+      cats.DIRT_ROUTES.startIndex,
+      cats.DIRT_ROUTES.name
+    ),
+    wetTracks: parseTrainerCategoryStat(fields, cats.WET_TRACKS.startIndex, cats.WET_TRACKS.name),
+    stakesRaces: parseTrainerCategoryStat(
+      fields,
+      cats.STAKES_RACES.startIndex,
+      cats.STAKES_RACES.name
+    ),
+  };
+}
+
+// ============================================================================
 // BREEDING PARSING
 // ============================================================================
 
@@ -1516,6 +1774,7 @@ function createDefaultHorseEntry(index: number): HorseEntry {
     trainerMeetWins: 0,
     trainerMeetPlaces: 0,
     trainerMeetShows: 0,
+    trainerCategoryStats: createDefaultTrainerCategoryStats(),
     jockeyName: 'Unknown',
     jockeyStats: '',
     jockeyMeetStarts: 0,
@@ -1615,6 +1874,9 @@ function parseHorseEntry(fields: string[], lineIndex: number): HorseEntry {
   horse.trainerMeetWins = parseIntSafe(getField(fields, DRF_COLUMNS.TRAINER_WINS.index));
   horse.trainerMeetPlaces = parseIntSafe(getField(fields, DRF_COLUMNS.TRAINER_PLACES.index));
   horse.trainerMeetShows = parseIntSafe(getField(fields, DRF_COLUMNS.TRAINER_SHOWS.index));
+
+  // Trainer category statistics (Fields 1146-1221)
+  horse.trainerCategoryStats = parseTrainerCategoryStats(fields);
 
   // Jockey stats at current meet (Fields 35-38)
   horse.jockeyMeetStarts = parseIntSafe(getField(fields, DRF_COLUMNS.JOCKEY_STARTS.index));
@@ -2345,4 +2607,5 @@ export {
   createDefaultRunningLine,
   createDefaultSpeedFigures,
   parseOdds,
+  parseTrainerCategoryStats,
 };

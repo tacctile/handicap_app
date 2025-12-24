@@ -14,6 +14,7 @@ import type {
   SpeedFigures,
   RunningLine,
 } from '../../types/drf';
+import { createDefaultTrainerCategoryStats } from '../../types/drf';
 
 // ============================================================================
 // DEFAULT FACTORIES
@@ -196,6 +197,7 @@ export function createHorseEntry(overrides: Partial<HorseEntry> = {}): HorseEntr
     trainerMeetWins: 0,
     trainerMeetPlaces: 0,
     trainerMeetShows: 0,
+    trainerCategoryStats: createDefaultTrainerCategoryStats(),
     jockeyName: 'Jose Jockey',
     jockeyStats: '18% Win',
     jockeyMeetStarts: 0, // Default to 0 for backward compatibility with existing tests

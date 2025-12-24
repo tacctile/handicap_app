@@ -21,6 +21,7 @@ import type {
   Medication,
   Breeding,
 } from '../../../types/drf';
+import { createDefaultTrainerCategoryStats } from '../../../types/drf';
 import {
   normalizeJockeyName,
   determineRunningStyle,
@@ -169,6 +170,7 @@ function createMockHorse(overrides: Partial<HorseEntry> = {}): HorseEntry {
     trainerMeetWins: 0,
     trainerMeetPlaces: 0,
     trainerMeetShows: 0,
+    trainerCategoryStats: createDefaultTrainerCategoryStats(),
     jockeyStats: '',
     jockeyMeetStarts: 0,
     jockeyMeetWins: 0,
