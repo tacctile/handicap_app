@@ -334,6 +334,20 @@
   display: flex;
   flex-direction: column;
   padding-top: 60px; /* Offset race items below the header row height */
+  position: relative; /* For pseudo-element positioning */
+}
+
+/* Header bar extension into race rail area - creates continuous header background */
+.app-layout .app-race-rail::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: -1px; /* Extend past the border-right to eliminate seam */
+  height: 60px; /* Match race rail padding-top which creates header space */
+  background: var(--color-elevated);
+  border-bottom: 2px solid var(--color-border);
+  z-index: 11; /* Above sticky header z-index (10) to cover the edge */
 }
 
 .app-race-rail__item {
@@ -1197,18 +1211,16 @@
   grid-template-columns: var(--horse-list-grid);
   align-items: center;
   gap: 16px; /* Match row gap for uniform spacing */
-  padding: 12px 16px; /* Internal padding only */
-  padding-left: calc(
-    var(--dimension-bar) + 16px
-  ); /* Extend into race rail column + original padding */
-  margin: 0; /* NO margin - flush with top */
-  margin-left: calc(-1 * var(--dimension-bar)); /* Extend left into race rail column */
+  padding: 12px 16px; /* Consistent padding on all sides */
+  margin: 0; /* NO margin - flush with edges */
+  margin-left: -1px; /* Overlap race rail border for seamless header bar */
+  padding-left: 17px; /* Compensate for negative margin to maintain column alignment */
   background: var(--color-elevated);
   border-bottom: 2px solid var(--color-border);
   position: sticky;
   top: 0;
   z-index: 10;
-  width: calc(100% + var(--dimension-bar)); /* Compensate for negative margin */
+  width: calc(100% + 1px); /* Compensate for negative margin */
   min-width: 0; /* Allow flex item to shrink below content size */
 }
 
@@ -1235,6 +1247,7 @@
   letter-spacing: 0.05em;
   white-space: nowrap; /* NEVER wrap header text to multiple lines */
   line-height: 1.2;
+  text-align: center; /* Ensure text is perfectly centered */
 }
 
 .horse-list-header__sublabel {
@@ -1323,12 +1336,14 @@
 .horse-list-header__cell--pp {
   text-align: center;
   align-items: center;
+  justify-content: center;
 }
 
 /* POST column tooltip wrapper also centered */
 .horse-list-header__cell--pp .header-tooltip-wrapper,
 .horse-list-header__cell--pp .header-tooltip-trigger {
   align-items: center;
+  justify-content: center;
 }
 
 /* Name column - left aligned to match horse name data */
