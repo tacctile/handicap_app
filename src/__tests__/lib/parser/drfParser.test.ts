@@ -593,4 +593,217 @@ describe('DRF Parser', () => {
       expect(defaultHorse.distanceShows).toBe(0);
     });
   });
+
+  describe('Pace Figures Parsing (Fields 816-825 EP1, Fields 846-855 LP)', () => {
+    // Helper to create DRF content with pace figures
+    // Fields 816-825: Early Pace 1 (EP1) figures for last 10 PPs -> indices 815-824
+    // Fields 846-855: Late Pace figures for last 10 PPs -> indices 845-854
+    // Also need PP dates (Fields 102-113) to trigger PP parsing
+    function createDRFWithPaceFigures(
+      earlyPace: (number | string)[],
+      latePace: (number | string)[]
+    ): string {
+      // Build array with enough fields to cover pace figure indices
+      const fields = new Array(900).fill('');
+
+      // Race header fields
+      fields[0] = 'CD'; // Track code
+      fields[1] = '20240215'; // Race date
+      fields[2] = '5'; // Race number
+      fields[3] = '1'; // Post position
+      fields[5] = '14:30'; // Post time
+      fields[6] = 'D'; // Surface
+      fields[11] = '75000'; // Purse
+      fields[14] = '6'; // Distance furlongs
+      fields[23] = '8'; // Field size
+
+      // Horse identification
+      fields[27] = 'Test Trainer'; // Trainer name
+      fields[32] = 'Test Jockey'; // Jockey name
+      fields[43] = '5-1'; // Morning line
+      fields[44] = 'Pace Test Horse'; // Horse name
+      fields[45] = '4'; // Age
+      fields[48] = 'c'; // Sex
+
+      // PP dates - need at least one to trigger PP parsing (Field 102 = index 101)
+      for (let i = 0; i < Math.max(earlyPace.length, latePace.length); i++) {
+        // PP dates: YYYYMMDD format, going backwards from race date
+        const raceDate = new Date(2024, 1, 15); // Feb 15, 2024
+        const ppDate = new Date(raceDate);
+        ppDate.setDate(ppDate.getDate() - 21 * (i + 1)); // Each PP 21 days apart
+        const ppDateStr =
+          ppDate.getFullYear() +
+          String(ppDate.getMonth() + 1).padStart(2, '0') +
+          String(ppDate.getDate()).padStart(2, '0');
+        fields[101 + i] = ppDateStr;
+      }
+
+      // Early Pace figures (Fields 816-825, indices 815-824)
+      for (let i = 0; i < earlyPace.length; i++) {
+        fields[815 + i] = String(earlyPace[i]);
+      }
+
+      // Late Pace figures (Fields 846-855, indices 845-854)
+      for (let i = 0; i < latePace.length; i++) {
+        fields[845 + i] = String(latePace[i]);
+      }
+
+      return fields.join(',');
+    }
+
+    it('parses early pace (EP1) figures correctly for multiple PPs', () => {
+      const earlyPaceFigures = [85, 78, 92, 80, 75];
+      const content = createDRFWithPaceFigures(earlyPaceFigures, []);
+
+      const result = parseDRFFile(content, 'early-pace-test.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+      expect(horse.pastPerformances.length).toBe(5);
+
+      for (let i = 0; i < earlyPaceFigures.length; i++) {
+        expect(horse.pastPerformances[i].earlyPace1).toBe(earlyPaceFigures[i]);
+      }
+    });
+
+    it('parses late pace figures correctly for multiple PPs', () => {
+      const latePaceFigures = [90, 82, 88, 95, 78];
+      const content = createDRFWithPaceFigures([], latePaceFigures);
+
+      const result = parseDRFFile(content, 'late-pace-test.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+      expect(horse.pastPerformances.length).toBe(5);
+
+      for (let i = 0; i < latePaceFigures.length; i++) {
+        expect(horse.pastPerformances[i].latePace).toBe(latePaceFigures[i]);
+      }
+    });
+
+    it('parses both early and late pace figures together', () => {
+      const earlyPaceFigures = [85, 78, 92];
+      const latePaceFigures = [90, 82, 88];
+      const content = createDRFWithPaceFigures(earlyPaceFigures, latePaceFigures);
+
+      const result = parseDRFFile(content, 'both-pace-test.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+      expect(horse.pastPerformances.length).toBe(3);
+
+      for (let i = 0; i < 3; i++) {
+        expect(horse.pastPerformances[i].earlyPace1).toBe(earlyPaceFigures[i]);
+        expect(horse.pastPerformances[i].latePace).toBe(latePaceFigures[i]);
+      }
+    });
+
+    it('handles missing/empty pace figures by returning null', () => {
+      // Create content with PP dates but no pace figures
+      const content = createDRFWithPaceFigures([], []);
+
+      // Manually add a PP date without pace figures
+      const fields = content.split(',');
+      fields[101] = '20240125'; // PP date to trigger parsing
+      const modifiedContent = fields.join(',');
+
+      const result = parseDRFFile(modifiedContent, 'missing-pace-test.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+      expect(horse.pastPerformances.length).toBeGreaterThan(0);
+      expect(horse.pastPerformances[0].earlyPace1).toBeNull();
+      expect(horse.pastPerformances[0].latePace).toBeNull();
+    });
+
+    it('handles invalid (non-numeric) pace figures by returning 0', () => {
+      const content = createDRFWithPaceFigures(['abc', 'xyz'], ['invalid', 'NaN']);
+
+      const result = parseDRFFile(content, 'invalid-pace-test.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+      expect(horse.pastPerformances.length).toBe(2);
+
+      // Invalid values should return 0
+      expect(horse.pastPerformances[0].earlyPace1).toBe(0);
+      expect(horse.pastPerformances[1].earlyPace1).toBe(0);
+      expect(horse.pastPerformances[0].latePace).toBe(0);
+      expect(horse.pastPerformances[1].latePace).toBe(0);
+    });
+
+    it('validates pace figures are within reasonable range (0-150)', () => {
+      // Test with valid range values
+      const earlyPaceFigures = [0, 50, 85, 120, 150];
+      const latePaceFigures = [0, 45, 92, 110, 140];
+      const content = createDRFWithPaceFigures(earlyPaceFigures, latePaceFigures);
+
+      const result = parseDRFFile(content, 'valid-range-test.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+      expect(horse.pastPerformances.length).toBe(5);
+
+      // All values should be parsed correctly
+      for (let i = 0; i < 5; i++) {
+        expect(horse.pastPerformances[i].earlyPace1).toBe(earlyPaceFigures[i]);
+        expect(horse.pastPerformances[i].latePace).toBe(latePaceFigures[i]);
+      }
+    });
+
+    it('handles high pace figures above typical range (still valid)', () => {
+      // Values above 150 are unusual but should still be parsed
+      const earlyPaceFigures = [155, 160];
+      const latePaceFigures = [155, 165];
+      const content = createDRFWithPaceFigures(earlyPaceFigures, latePaceFigures);
+
+      const result = parseDRFFile(content, 'high-pace-test.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+      expect(horse.pastPerformances.length).toBe(2);
+
+      // High values should still be returned (with dev-mode warning)
+      expect(horse.pastPerformances[0].earlyPace1).toBe(155);
+      expect(horse.pastPerformances[1].earlyPace1).toBe(160);
+      expect(horse.pastPerformances[0].latePace).toBe(155);
+      expect(horse.pastPerformances[1].latePace).toBe(165);
+    });
+
+    it('handles negative pace figures by returning 0', () => {
+      const earlyPaceFigures = [-5, -10];
+      const latePaceFigures = [-1, -20];
+      const content = createDRFWithPaceFigures(earlyPaceFigures, latePaceFigures);
+
+      const result = parseDRFFile(content, 'negative-pace-test.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+      expect(horse.pastPerformances.length).toBe(2);
+
+      // Negative values should return 0
+      expect(horse.pastPerformances[0].earlyPace1).toBe(0);
+      expect(horse.pastPerformances[1].earlyPace1).toBe(0);
+      expect(horse.pastPerformances[0].latePace).toBe(0);
+      expect(horse.pastPerformances[1].latePace).toBe(0);
+    });
+
+    it('handles zero pace figures correctly', () => {
+      const earlyPaceFigures = [0, 85];
+      const latePaceFigures = [0, 90];
+      const content = createDRFWithPaceFigures(earlyPaceFigures, latePaceFigures);
+
+      const result = parseDRFFile(content, 'zero-pace-test.drf');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0].horses[0];
+      expect(horse.pastPerformances.length).toBe(2);
+
+      // Zero is a valid pace figure
+      expect(horse.pastPerformances[0].earlyPace1).toBe(0);
+      expect(horse.pastPerformances[1].earlyPace1).toBe(85);
+      expect(horse.pastPerformances[0].latePace).toBe(0);
+      expect(horse.pastPerformances[1].latePace).toBe(90);
+    });
+  });
 });
