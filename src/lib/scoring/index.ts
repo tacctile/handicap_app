@@ -910,6 +910,30 @@ export {
 export { getOptimalPostPositions } from './postPosition';
 export { getParFigures, getClassHierarchy } from './speedClass';
 
+// Track speed normalization exports
+export {
+  // Core functions
+  getSpeedTier,
+  getTrackTierAdjustment,
+  getTrackSpeedInfo,
+  getTrackSpeedPar,
+  normalizeSpeedFigure,
+  analyzeShipper,
+  // Utility functions
+  isTier1Track,
+  isTier4Track,
+  getTracksInTier,
+  getTierDisplayInfo,
+  // Constants
+  TIER_NAMES,
+  TIER_ADJUSTMENTS,
+  // Types
+  type SpeedTier,
+  type TrackSpeedInfo,
+  type SpeedNormalizationResult,
+  type ShipperAnalysis,
+} from './trackSpeedNormalization';
+
 // Combo pattern detection exports
 export {
   detectComboPatterns,
