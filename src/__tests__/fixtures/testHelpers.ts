@@ -93,6 +93,8 @@ export function createPastPerformance(overrides: Partial<PastPerformance> = {}):
     wasClaimed: false,
     claimedFrom: null,
     daysSinceLast: 21,
+    earlyPace1: null,
+    latePace: null,
     ...overrides,
   };
 }
