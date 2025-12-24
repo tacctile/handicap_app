@@ -655,6 +655,8 @@ export function parseRunningStyle(horse: HorseEntry): RunningStyleProfile {
         avgLengthsBehindEarly: 0,
       },
       description: 'First-time starter or no past performances available',
+      styleValidated: true, // No data to invalidate
+      actualPattern: 'U',
     };
   }
 
