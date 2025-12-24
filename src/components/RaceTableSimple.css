@@ -19,7 +19,7 @@
 
 .simple-table-header {
   display: grid;
-  grid-template-columns: 60px 60px 1fr 100px 80px 120px 40px;
+  grid-template-columns: 60px 60px 1fr 100px 60px 70px 100px 40px;
   align-items: center;
   padding: 12px 16px;
   background: var(--surface-darker, #141428);
@@ -101,7 +101,7 @@
 /* Row Main (always visible) */
 .row-main {
   display: grid;
-  grid-template-columns: 60px 60px 1fr 100px 80px 120px 40px;
+  grid-template-columns: 60px 60px 1fr 100px 60px 70px 100px 40px;
   align-items: center;
   padding: 12px 16px;
   cursor: pointer;
@@ -233,20 +233,34 @@
   outline: none;
 }
 
-/* Rank */
-.row-rank {
+/* WIN (ability rank) */
+.row-win {
   display: flex;
   justify-content: center;
 }
 
-.rank-badge {
-  padding: 4px 12px;
+.win-badge {
+  padding: 4px 10px;
   border-radius: 12px;
   font-size: 13px;
   font-weight: 700;
 }
 
-/* Tier */
+/* BET (value assessment) */
+.row-bet {
+  display: flex;
+  justify-content: center;
+}
+
+.bet-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* TIER (overall recommendation) */
 .row-tier {
   display: flex;
   justify-content: center;
@@ -647,13 +661,13 @@
 
 @media (max-width: 768px) {
   .simple-table-header {
-    grid-template-columns: 50px 50px 1fr 80px 60px 90px 30px;
+    grid-template-columns: 50px 50px 1fr 70px 50px 55px 80px 30px;
     padding: 10px 12px;
     font-size: 10px;
   }
 
   .row-main {
-    grid-template-columns: 50px 50px 1fr 80px 60px 90px 30px;
+    grid-template-columns: 50px 50px 1fr 70px 50px 55px 80px 30px;
     padding: 10px 12px;
   }
 
@@ -662,13 +676,18 @@
   }
 
   .tier-badge {
-    padding: 4px 8px;
-    font-size: 10px;
+    padding: 4px 6px;
+    font-size: 9px;
   }
 
-  .rank-badge {
-    padding: 3px 8px;
-    font-size: 12px;
+  .win-badge {
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+
+  .bet-badge {
+    padding: 3px 5px;
+    font-size: 9px;
   }
 
   .why-this-horse {
@@ -678,15 +697,16 @@
 
 @media (max-width: 480px) {
   .simple-table-header {
-    grid-template-columns: 40px 40px 1fr 60px 100px 30px;
+    grid-template-columns: 40px 40px 1fr 55px 45px 80px 30px;
   }
 
   .row-main {
-    grid-template-columns: 40px 40px 1fr 60px 100px 30px;
+    grid-template-columns: 40px 40px 1fr 55px 45px 80px 30px;
   }
 
-  .header-rank,
-  .row-rank {
+  /* Hide BET column on very small screens, keep WIN and TIER */
+  .header-bet,
+  .row-bet {
     display: none;
   }
 }

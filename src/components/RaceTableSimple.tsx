@@ -22,11 +22,13 @@ import {
 import {
   getTierInfo,
   getRankColor,
+  getBetValueInfo,
   sortHorses,
   getNextSortDirection,
   type SortConfig,
   type SortField,
   type TierInfo,
+  type BetValueInfo,
 } from '../lib/scoring/tierUtils';
 import {
   incrementOdds,
@@ -48,9 +50,10 @@ interface ScoredHorseData {
   horse: HorseEntry;
   index: number;
   score: HorseScore;
-  rank: number;
+  rank: number; // WIN rank - pure ability ranking
   overlay: OverlayAnalysis;
   tier: TierInfo;
+  betValue: BetValueInfo; // BET value - overlay assessment
   rankColor: { color: string; bgColor: string };
 }
 
@@ -512,11 +515,11 @@ const HorseRow = memo(function HorseRow({
           <EditableOdds value={currentOdds} onChange={onOddsChange} disabled={isScratched} />
         </div>
 
-        {/* Rank */}
-        <div className="row-rank">
+        {/* WIN (ability rank) */}
+        <div className="row-win">
           {!isScratched && (
             <span
-              className="rank-badge"
+              className="win-badge"
               style={{ backgroundColor: rankColor.bgColor, color: rankColor.color }}
             >
               #{rank}
@@ -524,7 +527,19 @@ const HorseRow = memo(function HorseRow({
           )}
         </div>
 
-        {/* Tier */}
+        {/* BET (value assessment) */}
+        <div className="row-bet">
+          {!isScratched && (
+            <span
+              className="bet-badge"
+              style={{ backgroundColor: data.betValue.bgColor, color: data.betValue.color }}
+            >
+              {data.betValue.value}
+            </span>
+          )}
+        </div>
+
+        {/* TIER (overall recommendation) */}
         <div className="row-tier">
           {!isScratched && (
             <span
@@ -587,16 +602,18 @@ export function RaceTableSimple({ race, raceState }: RaceTableSimpleProps) {
     // Get active horse count for tier calculation
     const activeCount = scored.filter((h) => !h.score.isScratched).length;
 
-    // Add overlay, tier, and color info
+    // Add overlay, tier, betValue, and color info
     return scored.map((item) => {
       const currentOdds = getOdds(item.index, item.horse.morningLineOdds);
       const overlay = analyzeOverlay(item.score.total, currentOdds);
+      const betValue = getBetValueInfo(overlay.overlayPercent);
       const tier = getTierInfo(item.rank, activeCount, overlay.overlayPercent);
       const rankColor = getRankColor(item.rank, activeCount);
 
       return {
         ...item,
         overlay,
+        betValue,
         tier,
         rankColor,
       } as ScoredHorseData;
@@ -653,20 +670,50 @@ export function RaceTableSimple({ race, raceState }: RaceTableSimpleProps) {
         <div className="header-name">Horse</div>
         <div className="header-odds">Odds</div>
         <div
-          className={`header-rank sortable ${sortConfig.field === 'rank' ? 'active' : ''}`}
-          onClick={() => handleSortClick('rank')}
+          className={`header-win sortable ${sortConfig.field === 'win' ? 'active' : ''}`}
+          onClick={() => handleSortClick('win')}
+          title="Who will win (ability ranking)"
         >
-          Rank
+          WIN
           <Icon
             name={
-              sortConfig.field === 'rank' && sortConfig.direction === 'desc'
+              sortConfig.field === 'win' && sortConfig.direction === 'desc'
                 ? 'arrow_drop_down'
                 : 'arrow_drop_up'
             }
             className="sort-icon"
           />
         </div>
-        <div className="header-tier">Tier</div>
+        <div
+          className={`header-bet sortable ${sortConfig.field === 'bet' ? 'active' : ''}`}
+          onClick={() => handleSortClick('bet')}
+          title="Betting value (OVER/FAIR/UNDER)"
+        >
+          BET
+          <Icon
+            name={
+              sortConfig.field === 'bet' && sortConfig.direction === 'desc'
+                ? 'arrow_drop_down'
+                : 'arrow_drop_up'
+            }
+            className="sort-icon"
+          />
+        </div>
+        <div
+          className={`header-tier sortable ${sortConfig.field === 'tier' ? 'active' : ''}`}
+          onClick={() => handleSortClick('tier')}
+          title="Overall recommendation"
+        >
+          TIER
+          <Icon
+            name={
+              sortConfig.field === 'tier' && sortConfig.direction === 'desc'
+                ? 'arrow_drop_down'
+                : 'arrow_drop_up'
+            }
+            className="sort-icon"
+          />
+        </div>
         <div className="header-expand"></div>
       </div>
 
@@ -746,7 +793,7 @@ function ComparePanel({ horses, onClose }: ComparePanelProps) {
           <span className="compare-vs">vs</span>
           <span className="compare-horse-name">{horse2.horse.horseName}</span>
         </div>
-        {compareRow('Rank', `#${horse1.rank}`, `#${horse2.rank}`, false)}
+        {compareRow('WIN Rank', `#${horse1.rank}`, `#${horse2.rank}`, false)}
         {compareRow(
           'Speed/Class',
           horse1.score.breakdown.speedClass.total,
