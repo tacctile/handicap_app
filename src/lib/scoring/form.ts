@@ -19,6 +19,11 @@
  */
 
 import type { HorseEntry, PastPerformance, RaceClassification } from '../../types/drf';
+import {
+  buildBeatenLengthsProfile,
+  calculateBeatenLengthsAdjustments,
+  type BeatenLengthsProfile,
+} from './beatenLengths';
 
 // ============================================================================
 // TYPES
@@ -50,6 +55,12 @@ export interface FormScoreResult {
   classAdjustmentApplied: boolean;
   /** Details of class adjustments made */
   classAdjustments: string[];
+  /** Beaten lengths bonus/penalty (from closing patterns) */
+  beatenLengthsBonus: number;
+  /** Beaten lengths profile analysis */
+  beatenLengthsProfile: BeatenLengthsProfile | null;
+  /** Beaten lengths reasoning */
+  beatenLengthsReasoning: string;
 }
 
 // ============================================================================
@@ -694,8 +705,13 @@ export function calculateFormScore(
   // Determine form trend
   const formTrend = analyzeFormTrend(pastPerformances);
 
-  // Calculate total
-  const total = formResult.score + layoffResult.score + consistencyResult.bonus;
+  // Calculate beaten lengths adjustments (closing patterns, etc.)
+  const beatenLengthsAdjustments = calculateBeatenLengthsAdjustments(horse);
+  const beatenLengthsProfile = buildBeatenLengthsProfile(pastPerformances);
+
+  // Calculate total with beaten lengths bonus/penalty
+  const baseTotal = formResult.score + layoffResult.score + consistencyResult.bonus;
+  const total = baseTotal + beatenLengthsAdjustments.formPoints;
 
   // Build reasoning with class context info
   let reasoning = buildReasoning(
@@ -710,8 +726,13 @@ export function calculateFormScore(
     reasoning += ` | Class drop: ${formResult.classAdjustments.join(', ')}`;
   }
 
+  // Add beaten lengths info to reasoning if applicable
+  if (beatenLengthsAdjustments.formPoints !== 0) {
+    reasoning += ` | ${beatenLengthsAdjustments.formReasoning}`;
+  }
+
   return {
-    total: Math.min(40, total), // was 30
+    total: Math.min(40, Math.max(0, total)), // Cap at 0-40
     recentFormScore: formResult.score,
     layoffScore: layoffResult.score,
     consistencyBonus: consistencyResult.bonus,
@@ -722,6 +743,9 @@ export function calculateFormScore(
     reasoning,
     classAdjustmentApplied: formResult.classAdjustmentApplied,
     classAdjustments: formResult.classAdjustments,
+    beatenLengthsBonus: beatenLengthsAdjustments.formPoints,
+    beatenLengthsProfile,
+    beatenLengthsReasoning: beatenLengthsAdjustments.formReasoning,
   };
 }
 

@@ -17,6 +17,11 @@
  */
 
 import type { HorseEntry, PastPerformance } from '../../types/drf';
+import {
+  buildBeatenLengthsProfile,
+  validateRunningStyleWithLengths,
+  type BeatenLengthsProfile,
+} from './beatenLengths';
 
 // ============================================================================
 // PACE FIGURE THRESHOLDS
@@ -178,6 +183,12 @@ export interface RunningStyleProfile {
   description: string;
   /** Pace figure analysis (EP1 and LP) - if available */
   paceFigures?: PaceFigureAnalysis;
+  /** Beaten lengths profile - closing patterns, etc. */
+  beatenLengthsProfile?: BeatenLengthsProfile;
+  /** Whether the declared style is validated by beaten lengths data */
+  styleValidated: boolean;
+  /** Actual running pattern derived from beaten lengths */
+  actualPattern?: 'E' | 'P' | 'S' | 'C' | 'U';
 }
 
 /** Pace scenario analysis for the entire field */
@@ -755,6 +766,28 @@ export function parseRunningStyle(horse: HorseEntry): RunningStyleProfile {
     description += ` (closing kick +${paceFigures.closingKickDifferential})`;
   }
 
+  // Validate running style using beaten lengths data
+  const beatenLengthsProfile = buildBeatenLengthsProfile(pastPerfs);
+  const styleValidation = validateRunningStyleWithLengths(horse);
+
+  // Add beaten lengths info to description if relevant
+  if (beatenLengthsProfile.racesWithData > 0 && beatenLengthsProfile.avgClosingVelocity !== null) {
+    const vel = beatenLengthsProfile.avgClosingVelocity;
+    if (vel >= 3) {
+      description += ` | Strong closer (avg +${vel.toFixed(1)}L)`;
+    } else if (vel <= -2) {
+      description += ` | Fades late (avg ${vel.toFixed(1)}L)`;
+    }
+  }
+
+  // Adjust confidence if style is validated by beaten lengths
+  if (styleValidation.isValid && styleValidation.confidence > 50) {
+    confidence = Math.min(100, confidence + 5);
+  } else if (!styleValidation.isValid && styleValidation.confidence > 50) {
+    // Style doesn't match lengths data - slight confidence reduction
+    confidence = Math.max(30, confidence - 10);
+  }
+
   return {
     style: dominantStyle,
     styleName: RUNNING_STYLE_NAMES[dominantStyle],
@@ -769,6 +802,9 @@ export function parseRunningStyle(horse: HorseEntry): RunningStyleProfile {
     },
     description,
     paceFigures, // Include pace figure analysis
+    beatenLengthsProfile, // Include beaten lengths profile
+    styleValidated: styleValidation.isValid,
+    actualPattern: styleValidation.actualPattern,
   };
 }
 

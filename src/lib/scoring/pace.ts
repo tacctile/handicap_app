@@ -23,6 +23,7 @@
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
 import { getSpeedBias, isTrackIntelligenceAvailable } from '../trackIntelligence';
+import { calculateBeatenLengthsAdjustments } from './beatenLengths';
 import {
   parseRunningStyle,
   analyzePaceScenario,
@@ -133,6 +134,9 @@ export interface PaceScoreResult {
   // Pace figure analysis (EP1/LP)
   paceFigures?: PaceFigureAnalysis;
   paceFigureAdjustment?: { points: number; reasoning: string };
+  // Beaten lengths analysis
+  beatenLengthsPaceAdjustment: number;
+  beatenLengthsReasoning: string;
 }
 
 // ============================================================================
@@ -359,14 +363,23 @@ export function calculatePaceScore(
     }
   }
 
+  // Calculate beaten lengths pace adjustments
+  const beatenLengthsAdjustments = calculateBeatenLengthsAdjustments(horse);
+  finalScore += beatenLengthsAdjustments.pacePoints;
+
   // Build reasoning
-  const reasoning = buildReasoning(
+  let reasoning = buildReasoning(
     detailedProfile,
     paceResult.scenario,
     tacticalAdvantage,
     trackSpeedBias,
     paceAdvantageRating
   );
+
+  // Add beaten lengths reasoning if applicable
+  if (beatenLengthsAdjustments.pacePoints !== 0) {
+    reasoning += ` | ${beatenLengthsAdjustments.paceReasoning}`;
+  }
 
   // Calculate pace figure adjustment for the result
   let paceFigureAdjustment: { points: number; reasoning: string } | undefined;
@@ -392,6 +405,9 @@ export function calculatePaceScore(
     // Pace figure analysis (EP1/LP)
     paceFigures: detailedProfile.paceFigures,
     paceFigureAdjustment,
+    // Beaten lengths analysis
+    beatenLengthsPaceAdjustment: beatenLengthsAdjustments.pacePoints,
+    beatenLengthsReasoning: beatenLengthsAdjustments.paceReasoning,
   };
 }
 
