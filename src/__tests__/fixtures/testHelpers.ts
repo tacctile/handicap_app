@@ -3,16 +3,18 @@
  * Provides utilities for creating mock horse entries and race data
  */
 
-import type {
-  HorseEntry,
-  RaceHeader,
-  PastPerformance,
-  Equipment,
-  Medication,
-  Breeding,
-  Workout,
-  SpeedFigures,
-  RunningLine,
+import {
+  createDefaultTrainerCategoryStats,
+  type HorseEntry,
+  type RaceHeader,
+  type PastPerformance,
+  type Equipment,
+  type Medication,
+  type Breeding,
+  type Workout,
+  type SpeedFigures,
+  type RunningLine,
+  type TrainerCategoryStats,
 } from '../../types/drf';
 
 // ============================================================================
@@ -198,6 +200,7 @@ export function createHorseEntry(overrides: Partial<HorseEntry> = {}): HorseEntr
     trainerMeetWins: 0,
     trainerMeetPlaces: 0,
     trainerMeetShows: 0,
+    trainerCategoryStats: createDefaultTrainerCategoryStats(),
     jockeyName: 'Jose Jockey',
     jockeyStats: '18% Win',
     jockeyMeetStarts: 0, // Default to 0 for backward compatibility with existing tests
@@ -538,4 +541,29 @@ export function createTestField(count: number = 10): HorseEntry[] {
       ],
     })
   );
+}
+
+/**
+ * Create trainer category stats with custom overrides
+ */
+export function createTrainerCategoryStats(
+  overrides: Partial<TrainerCategoryStats> = {}
+): TrainerCategoryStats {
+  return {
+    ...createDefaultTrainerCategoryStats(),
+    ...overrides,
+  };
+}
+
+/**
+ * Create a trainer category stat with specific win percentage
+ */
+export function createTrainerStat(winPercent: number, starts: number = 20, roi: number = 0) {
+  const wins = Math.round((winPercent / 100) * starts);
+  return {
+    starts,
+    wins,
+    winPercent,
+    roi,
+  };
 }

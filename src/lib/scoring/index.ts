@@ -5,18 +5,20 @@
  * All calculations are deterministic - same inputs always produce same scores.
  * Optimized for performance: scoring 12 horses completes in under 100ms.
  *
- * BASE SCORE (0-260 points max):
+ * BASE SCORE (0-275 points max):
  * Core Categories (240 pts):
- * - Speed & Class: 0-80 points (30.8% - Most predictive)
- * - Pace: 0-45 points (17.3% - Race shape analysis)
- * - Form: 0-40 points (15.4% - Recent performance)
- * - Post Position: 0-30 points (11.5% - Situational factor)
- * - Connections (Trainer + Jockey): 0-25 points (9.6% - Modifier)
- * - Equipment: 0-20 points (7.7% - Fine-tuning)
+ * - Speed & Class: 0-80 points (29.1% - Most predictive)
+ * - Pace: 0-45 points (16.4% - Race shape analysis)
+ * - Form: 0-40 points (14.5% - Recent performance)
+ * - Post Position: 0-30 points (10.9% - Situational factor)
+ * - Connections (Trainer + Jockey): 0-25 points (9.1% - Modifier)
+ * - Equipment: 0-20 points (7.3% - Fine-tuning)
  *
- * Bonus Category (20 pts):
- * - Distance/Surface Affinity: 0-20 points (7.7% - Turf/Wet/Distance)
+ * Bonus Categories (35 pts):
+ * - Distance/Surface Affinity: 0-20 points (7.3% - Turf/Wet/Distance)
  *   Based on lifetime records (DRF Fields 85-96)
+ * - Trainer Patterns: 0-15 points (5.5% - Situational trainer bonuses)
+ *   Based on trainer category stats (DRF Fields 1146-1221)
  *
  * OVERLAY SYSTEM (±50 points on top of base):
  * - Section A: Pace Dynamics & Bias: ±20 points
@@ -28,7 +30,7 @@
  * - Section G: Head-to-Head & Tactical Matchups: ±8 points
  *
  * Final Score = Base Score + Overlay Adjustment
- * Practical Range: 50 to 310 points
+ * Practical Range: 50 to 325 points
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
@@ -65,6 +67,10 @@ import {
 } from './pace';
 import { calculateDistanceSurfaceScore as calcDistanceSurface } from './distanceSurface';
 import {
+  calculateTrainerPatternScore as calcTrainerPatterns,
+  type MatchedPattern,
+} from './trainerPatterns';
+import {
   calculateDetailedBreedingScore,
   calculateBreedingContribution,
   shouldShowBreedingAnalysis,
@@ -89,7 +95,7 @@ import {
 // ============================================================================
 
 /** Maximum base score (before overlay) */
-export const MAX_BASE_SCORE = 260;
+export const MAX_BASE_SCORE = 275;
 
 /** Maximum overlay adjustment */
 export const MAX_OVERLAY = 50;
@@ -100,25 +106,27 @@ export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 310
 /**
  * Score limits by category
  *
- * WEIGHT RATIONALE (v2.1 - Industry-Aligned Weights + Distance/Surface):
+ * WEIGHT RATIONALE (v2.2 - Industry-Aligned Weights + Trainer Patterns):
  * -----------------------------------------------------------------------
  * These weights are aligned with industry handicapping research showing
  * that "hard" predictive factors (Speed/Class, Pace) should outweigh
  * "soft" speculative factors (Connections, Equipment).
  *
  * Core Categories (240 pts):
- * - Speed/Class: 80 pts (30.8%) — Most predictive factor per industry research
- * - Pace: 45 pts (17.3%) — High predictive value for race shape
- * - Form: 40 pts (15.4%) — Recent performance patterns
- * - Post Position: 30 pts (11.5%) — Track-dependent situational factor
- * - Connections: 25 pts (9.6%) — Modifier, not primary driver
- * - Equipment: 20 pts (7.7%) — Speculative, fine-tuning only
+ * - Speed/Class: 80 pts (29.1%) — Most predictive factor per industry research
+ * - Pace: 45 pts (16.4%) — High predictive value for race shape
+ * - Form: 40 pts (14.5%) — Recent performance patterns
+ * - Post Position: 30 pts (10.9%) — Track-dependent situational factor
+ * - Connections: 25 pts (9.1%) — Modifier, not primary driver
+ * - Equipment: 20 pts (7.3%) — Speculative, fine-tuning only
  *
- * Bonus Category (20 pts):
- * - Distance/Surface: 20 pts (7.7%) — Turf (8) + Wet (6) + Distance (6)
+ * Bonus Categories (35 pts):
+ * - Distance/Surface: 20 pts (7.3%) — Turf (8) + Wet (6) + Distance (6)
  *   Fundamental handicapping data: horses with proven affinity for conditions
+ * - Trainer Patterns: 15 pts (5.5%) — Situational trainer pattern bonuses
+ *   Based on DRF Fields 1146-1221 (trainer category statistics)
  *
- * Total: 260 points base score
+ * Total: 275 points base score
  */
 export const SCORE_LIMITS = {
   connections: 25,
@@ -128,6 +136,7 @@ export const SCORE_LIMITS = {
   equipment: 20,
   pace: 45,
   distanceSurface: 20, // Turf (8) + Wet (6) + Distance (6) = 20
+  trainerPatterns: 15, // Situational trainer pattern bonuses
   baseTotal: MAX_BASE_SCORE,
   overlayMax: MAX_OVERLAY,
   total: MAX_SCORE,
@@ -206,6 +215,12 @@ export interface ScoreBreakdown {
     turfWinRate: number;
     wetWinRate: number;
     distanceWinRate: number;
+    reasoning: string[];
+  };
+  /** Trainer pattern bonuses (situational stats from DRF Fields 1146-1221) */
+  trainerPatterns: {
+    total: number;
+    matchedPatterns: MatchedPattern[];
     reasoning: string[];
   };
   /** Breeding score for lightly raced horses (0 if 8+ starts) */
@@ -500,6 +515,11 @@ function calculateHorseScoreWithContext(
           distanceWinRate: 0,
           reasoning: ['Scratched'],
         },
+        trainerPatterns: {
+          total: 0,
+          matchedPatterns: [],
+          reasoning: ['Scratched'],
+        },
       },
       isScratched: true,
       confidenceLevel: 'low',
@@ -517,6 +537,9 @@ function calculateHorseScoreWithContext(
 
   // Calculate distance/surface affinity score (0-20 points)
   const distanceSurface = calcDistanceSurface(horse, context.raceHeader, trackCondition);
+
+  // Calculate trainer pattern bonuses (0-15 points)
+  const trainerPatterns = calcTrainerPatterns(horse, context.raceHeader);
 
   // Calculate breeding score for lightly raced horses
   let breedingScore: DetailedBreedingScore | undefined;
@@ -607,6 +630,11 @@ function calculateHorseScoreWithContext(
       distanceWinRate: distanceSurface.distanceWinRate,
       reasoning: distanceSurface.reasoning,
     },
+    trainerPatterns: {
+      total: trainerPatterns.total,
+      matchedPatterns: trainerPatterns.matchedPatterns,
+      reasoning: trainerPatterns.reasoning,
+    },
     breeding: breedingBreakdown,
     classAnalysis: classAnalysisBreakdown,
   };
@@ -624,6 +652,7 @@ function calculateHorseScoreWithContext(
     breakdown.equipment.total +
     breakdown.pace.total +
     breakdown.distanceSurface.total + // Distance/surface affinity bonus (0-20)
+    breakdown.trainerPatterns.total + // Trainer pattern bonuses (0-15)
     breedingContribution +
     hiddenDropsBonus; // Add hidden class drop bonuses
 
