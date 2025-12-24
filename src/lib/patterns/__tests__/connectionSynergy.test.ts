@@ -135,6 +135,8 @@ function createMockPastPerformance(overrides: Partial<PastPerformance> = {}): Pa
     daysSinceLast: null,
     equipment: '',
     medication: '',
+    earlyPace1: null,
+    latePace: null,
     ...overrides,
   };
 }
