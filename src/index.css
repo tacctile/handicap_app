@@ -133,6 +133,46 @@ body {
   border-bottom: 1px solid var(--color-outline);
 }
 
+/* Table header cell with subtext and inline help icon */
+.th-header-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.th-label-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.th-subtext {
+  font-size: 0.625rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+/* Smaller help icon in table headers */
+.th-help-icon .info-tooltip-trigger {
+  margin-left: 0;
+  padding: 0;
+}
+
+.th-help-icon .info-tooltip-icon {
+  font-size: 9px !important;
+  opacity: 0.6;
+}
+
+.th-help-icon .info-tooltip-trigger:hover .info-tooltip-icon,
+.th-help-icon .info-tooltip-trigger:focus .info-tooltip-icon {
+  opacity: 0.9;
+}
+
 .race-table td {
   padding: 0.875rem 1rem;
   font-size: 0.875rem;
