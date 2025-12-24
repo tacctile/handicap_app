@@ -961,3 +961,14 @@ export {
   formatZScore,
   interpretZScore,
 } from './fieldRelative';
+
+// Rank utilities (projected finish order based on base score)
+export {
+  // Types
+  type RankInfo,
+  // Main functions
+  calculateBaseScoreRanks,
+  toOrdinal,
+  calculateRankGradientColor,
+  getRankColor,
+} from './rankUtils';

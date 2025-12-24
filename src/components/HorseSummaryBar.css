@@ -164,6 +164,28 @@
   overflow: visible;
 }
 
+/* Rank - projected finish order based on base score (X/240)
+   Color is set dynamically via inline style using gradient from teal to gray */
+.horse-summary-bar__rank {
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.horse-summary-bar__rank-value {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  /* Color set dynamically via inline style based on rank gradient */
+}
+
+/* Scratched state for rank */
+.horse-summary-bar--scratched .horse-summary-bar__rank-value {
+  color: var(--color-tier-scratched);
+}
+
 /* Live odds - key interactive element (Option C hierarchy) */
 .horse-summary-bar__odds {
   font-size: 18px;

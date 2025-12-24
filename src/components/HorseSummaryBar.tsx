@@ -133,6 +133,10 @@ interface HorseSummaryBarProps {
   // Props for compare functionality
   isCompareSelected: boolean;
   onCompareToggle: (selected: boolean) => void;
+  // Props for base score rank (projected finish order)
+  baseScoreRank?: number;
+  baseScoreRankOrdinal?: string;
+  baseScoreRankColor?: string;
 }
 
 // Helper to convert odds object to string
@@ -153,7 +157,7 @@ const parseOddsString = (oddsStr: string): { numerator: number; denominator: num
 
 export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   horse,
-  rank: _rank, // Not displayed currently, will be used for rank badge in future
+  rank: _rank, // Legacy rank based on total score, kept for compatibility
   isExpanded,
   onToggleExpand,
   maxScore,
@@ -167,6 +171,10 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   onOddsChange,
   isCompareSelected,
   onCompareToggle,
+  // Base score rank (projected finish order)
+  baseScoreRank: _baseScoreRank, // Available for future use (e.g., sorting indicators)
+  baseScoreRankOrdinal,
+  baseScoreRankColor,
 }) => {
   // Extract horse data from HorseEntry type
   const programNumber = horse.programNumber;
@@ -298,7 +306,17 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       {/* Column 3: Horse Name - FULL WIDTH, NO TRUNCATION */}
       <div className="horse-summary-bar__name">{horseName.toUpperCase()}</div>
 
-      {/* Column 4: Live Odds - Click to edit */}
+      {/* Column 4: Rank - Projected Finish Order (based on base score) */}
+      <div className="horse-summary-bar__rank">
+        <span
+          className="horse-summary-bar__rank-value"
+          style={{ color: isScratched ? undefined : baseScoreRankColor }}
+        >
+          {isScratched ? '—' : baseScoreRankOrdinal || '—'}
+        </span>
+      </div>
+
+      {/* Column 5: Live Odds - Click to edit */}
       <div className="horse-summary-bar__odds" onClick={(e) => e.stopPropagation()}>
         {isEditingOdds ? (
           <div className="odds-edit-wrapper">

@@ -1321,6 +1321,7 @@
 }
 
 /* Center align data columns by default */
+.horse-list-header__cell--rank,
 .horse-list-header__cell--odds,
 .horse-list-header__cell--score,
 .horse-list-header__cell--confidence,
@@ -1328,6 +1329,13 @@
 .horse-list-header__cell--value,
 .horse-list-header__cell--rating {
   text-align: center;
+  align-items: center;
+  justify-content: center;
+}
+
+/* RANK column - centered with gradient color */
+.horse-list-header__cell--rank .header-tooltip-wrapper,
+.horse-list-header__cell--rank .header-tooltip-trigger {
   align-items: center;
   justify-content: center;
 }
