@@ -5,13 +5,18 @@
  * All calculations are deterministic - same inputs always produce same scores.
  * Optimized for performance: scoring 12 horses completes in under 100ms.
  *
- * BASE SCORE (0-240 points max):
- * - Speed & Class: 0-80 points (33.3% - Most predictive)
- * - Pace: 0-45 points (18.8% - Race shape analysis)
- * - Form: 0-40 points (16.7% - Recent performance)
- * - Post Position: 0-30 points (12.5% - Situational factor)
- * - Connections (Trainer + Jockey): 0-25 points (10.4% - Modifier)
- * - Equipment: 0-20 points (8.3% - Fine-tuning)
+ * BASE SCORE (0-260 points max):
+ * Core Categories (240 pts):
+ * - Speed & Class: 0-80 points (30.8% - Most predictive)
+ * - Pace: 0-45 points (17.3% - Race shape analysis)
+ * - Form: 0-40 points (15.4% - Recent performance)
+ * - Post Position: 0-30 points (11.5% - Situational factor)
+ * - Connections (Trainer + Jockey): 0-25 points (9.6% - Modifier)
+ * - Equipment: 0-20 points (7.7% - Fine-tuning)
+ *
+ * Bonus Category (20 pts):
+ * - Distance/Surface Affinity: 0-20 points (7.7% - Turf/Wet/Distance)
+ *   Based on lifetime records (DRF Fields 85-96)
  *
  * OVERLAY SYSTEM (±50 points on top of base):
  * - Section A: Pace Dynamics & Bias: ±20 points
@@ -23,7 +28,7 @@
  * - Section G: Head-to-Head & Tactical Matchups: ±8 points
  *
  * Final Score = Base Score + Overlay Adjustment
- * Practical Range: 50 to 290 points
+ * Practical Range: 50 to 310 points
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
@@ -58,6 +63,7 @@ import {
   type TacticalAdvantage,
   type PaceAnalysisResult,
 } from './pace';
+import { calculateDistanceSurfaceScore as calcDistanceSurface } from './distanceSurface';
 import {
   calculateDetailedBreedingScore,
   calculateBreedingContribution,
@@ -83,31 +89,36 @@ import {
 // ============================================================================
 
 /** Maximum base score (before overlay) */
-export const MAX_BASE_SCORE = 240;
+export const MAX_BASE_SCORE = 260;
 
 /** Maximum overlay adjustment */
 export const MAX_OVERLAY = 50;
 
 /** Maximum total score (base + overlay) */
-export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 290
+export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 310
 
 /**
  * Score limits by category
  *
- * WEIGHT RATIONALE (v2.0 - Industry-Aligned Weights):
- * ----------------------------------------------------
+ * WEIGHT RATIONALE (v2.1 - Industry-Aligned Weights + Distance/Surface):
+ * -----------------------------------------------------------------------
  * These weights are aligned with industry handicapping research showing
  * that "hard" predictive factors (Speed/Class, Pace) should outweigh
  * "soft" speculative factors (Connections, Equipment).
  *
- * - Speed/Class: 80 pts (33.3%) — Most predictive factor per industry research
- * - Pace: 45 pts (18.8%) — High predictive value for race shape
- * - Form: 40 pts (16.7%) — Recent performance patterns
- * - Post Position: 30 pts (12.5%) — Track-dependent situational factor
- * - Connections: 25 pts (10.4%) — Modifier, not primary driver
- * - Equipment: 20 pts (8.3%) — Speculative, fine-tuning only
+ * Core Categories (240 pts):
+ * - Speed/Class: 80 pts (30.8%) — Most predictive factor per industry research
+ * - Pace: 45 pts (17.3%) — High predictive value for race shape
+ * - Form: 40 pts (15.4%) — Recent performance patterns
+ * - Post Position: 30 pts (11.5%) — Track-dependent situational factor
+ * - Connections: 25 pts (9.6%) — Modifier, not primary driver
+ * - Equipment: 20 pts (7.7%) — Speculative, fine-tuning only
  *
- * Total: 240 points base score
+ * Bonus Category (20 pts):
+ * - Distance/Surface: 20 pts (7.7%) — Turf (8) + Wet (6) + Distance (6)
+ *   Fundamental handicapping data: horses with proven affinity for conditions
+ *
+ * Total: 260 points base score
  */
 export const SCORE_LIMITS = {
   connections: 25,
@@ -116,6 +127,7 @@ export const SCORE_LIMITS = {
   form: 40,
   equipment: 20,
   pace: 45,
+  distanceSurface: 20, // Turf (8) + Wet (6) + Distance (6) = 20
   baseTotal: MAX_BASE_SCORE,
   overlayMax: MAX_OVERLAY,
   total: MAX_SCORE,
@@ -184,6 +196,17 @@ export interface ScoreBreakdown {
     runningStyle: string;
     paceFit: string;
     reasoning: string;
+  };
+  /** Distance and surface affinity score (turf/wet/distance) */
+  distanceSurface: {
+    total: number;
+    turfScore: number;
+    wetScore: number;
+    distanceScore: number;
+    turfWinRate: number;
+    wetWinRate: number;
+    distanceWinRate: number;
+    reasoning: string[];
   };
   /** Breeding score for lightly raced horses (0 if 8+ starts) */
   breeding?: {
@@ -467,6 +490,16 @@ function calculateHorseScoreWithContext(
         },
         equipment: { total: 0, hasChanges: false, reasoning: 'Scratched' },
         pace: { total: 0, runningStyle: 'Unknown', paceFit: 'neutral', reasoning: 'Scratched' },
+        distanceSurface: {
+          total: 0,
+          turfScore: 0,
+          wetScore: 0,
+          distanceScore: 0,
+          turfWinRate: 0,
+          wetWinRate: 0,
+          distanceWinRate: 0,
+          reasoning: ['Scratched'],
+        },
       },
       isScratched: true,
       confidenceLevel: 'low',
@@ -481,6 +514,9 @@ function calculateHorseScoreWithContext(
   const form = calcForm(horse);
   const equipment = calcEquipment(horse);
   const pace = calcPace(horse, context.raceHeader, context.activeHorses, context.fieldPaceAnalysis);
+
+  // Calculate distance/surface affinity score (0-20 points)
+  const distanceSurface = calcDistanceSurface(horse, context.raceHeader, trackCondition);
 
   // Calculate breeding score for lightly raced horses
   let breedingScore: DetailedBreedingScore | undefined;
@@ -561,6 +597,16 @@ function calculateHorseScoreWithContext(
       paceFit: pace.paceFit,
       reasoning: pace.reasoning,
     },
+    distanceSurface: {
+      total: distanceSurface.total,
+      turfScore: distanceSurface.turfScore,
+      wetScore: distanceSurface.wetScore,
+      distanceScore: distanceSurface.distanceScore,
+      turfWinRate: distanceSurface.turfWinRate,
+      wetWinRate: distanceSurface.wetWinRate,
+      distanceWinRate: distanceSurface.distanceWinRate,
+      reasoning: distanceSurface.reasoning,
+    },
     breeding: breedingBreakdown,
     classAnalysis: classAnalysisBreakdown,
   };
@@ -577,6 +623,7 @@ function calculateHorseScoreWithContext(
     breakdown.form.total +
     breakdown.equipment.total +
     breakdown.pace.total +
+    breakdown.distanceSurface.total + // Distance/surface affinity bonus (0-20)
     breedingContribution +
     hiddenDropsBonus; // Add hidden class drop bonuses
 
@@ -763,6 +810,13 @@ export {
   PACE_SCENARIO_LABELS,
   PACE_SCENARIO_COLORS,
 } from './pace';
+export {
+  calculateDistanceSurfaceScore,
+  hasDistanceSurfaceAdvantage,
+  getDistanceSurfaceSummary,
+  DISTANCE_SURFACE_LIMITS,
+  type DistanceSurfaceResult,
+} from './distanceSurface';
 export { getFormSummary, isOnHotStreak } from './form';
 export {
   getEquipmentSummary,

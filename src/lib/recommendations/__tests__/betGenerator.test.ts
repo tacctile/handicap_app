@@ -91,6 +91,16 @@ function createMockScoreBreakdown(overrides: Partial<ScoreBreakdown> = {}): Scor
     },
     equipment: { total: 10, hasChanges: false, reasoning: 'Standard equipment' },
     pace: { total: 30, runningStyle: 'Stalker', paceFit: 'favorable', reasoning: 'Good pace fit' },
+    distanceSurface: {
+      total: 0,
+      turfScore: 0,
+      wetScore: 0,
+      distanceScore: 0,
+      turfWinRate: 0,
+      wetWinRate: 0,
+      distanceWinRate: 0,
+      reasoning: ['No distance/surface bonus'],
+    },
     ...overrides,
   };
 }
