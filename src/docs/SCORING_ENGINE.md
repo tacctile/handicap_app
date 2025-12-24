@@ -12,27 +12,40 @@
 
 **The 240-point base system provides granular precision while maintaining track specificity:**
 
-**Core Philosophy:**
+**Core Philosophy (v2.0 - Industry-Aligned Weights):**
 
-- Context-over-talent approach magnified
-- Track bias patterns drive weighting
-- Environmental factors quantified
-- Human connections prioritized over raw ability
-- Situational advantages capture 65% of scoring potential
+- Speed figures as primary predictive factor
+- Pace scenario analysis for race shape prediction
+- Form cycle patterns for recent performance
+- Track bias and post position as situational modifiers
+- Connections and equipment as fine-tuning factors
 
-**Scoring Distribution:**
+**Weight Distribution Rationale:**
+
+| Category      | Points | % of 240 | Rationale                                    |
+| ------------- | ------ | -------- | -------------------------------------------- |
+| Speed/Class   | 80     | 33.3%    | Most predictive factor per industry research |
+| Pace          | 45     | 18.8%    | High predictive value for race shape         |
+| Form          | 40     | 16.7%    | Recent performance patterns                  |
+| Post Position | 30     | 12.5%    | Track-dependent situational factor           |
+| Connections   | 25     | 10.4%    | Modifier, not primary driver                 |
+| Equipment     | 20     | 8.3%     | Speculative, fine-tuning only                |
+
+**Scoring Limits:**
 
 - Base Score Maximum: 240 points
 - Overlay Adjustment Range: ±50 points
-- Final Score Cap: 250 points (with overflow noted as confidence)
+- Final Score Cap: 290 points
 - Minimum Betting Threshold: 140 points
 - Elite Betting Threshold: 180+ points
 
 ---
 
-## CATEGORY 1: ELITE CONNECTIONS ANALYSIS (50 POINTS MAXIMUM)
+## CATEGORY 1: CONNECTIONS ANALYSIS (25 POINTS MAXIMUM)
 
-### Trainer Evaluation Matrix (35 points maximum)
+> **v2.0 Note:** Connections reduced from 55 to 25 points (10.4% of base) to reflect industry research showing this is a modifier rather than primary predictive factor.
+
+### Trainer Evaluation Matrix (16 points maximum)
 
 **Tier 1 Elite Trainers (20 points base):**
 
@@ -44,13 +57,13 @@ Elite trainers are identified through the Track Intelligence Database based on:
 - Equipment change success rates
 - Layoff performance patterns
 
-**Elite Trainer Scoring:**
+**Elite Trainer Scoring (rescaled for 16-point max):**
 
-- Base Points: +20 (career 20%+ win rate)
-- Track-Specific Bonus: +3 (23%+ at current track)
-- Specialty Bonus: +2 to +5 (based on race type match)
-- Pattern Match Bonus: +2 to +5 (situational advantages)
-- Maximum Possible: 35 points
+- Base Points: +10 (career 20%+ win rate)
+- Track-Specific Bonus: +2 (23%+ at current track)
+- Specialty Bonus: +1 to +2 (based on race type match)
+- Pattern Match Bonus: +1 to +2 (situational advantages)
+- Maximum Possible: 16 points
 
 **Elite Trainer Situational Modifiers:**
 
@@ -89,15 +102,14 @@ Claiming specialists override standard trainer scoring when:
 - Unknown trainers: 0 points
 - Poor trainers (under 8%): -3 points
 
-### Jockey Evaluation Matrix (15 points maximum)
+### Jockey Evaluation Matrix (7 points maximum)
 
-**Premium Jockey (Track's Leading Rider):**
+**Premium Jockey (Track's Leading Rider, rescaled for 7-point max):**
 
-- Base Points: +10 (20%+ current meet win rate)
-- Track Mastery: +2 (22%+ career rate at track)
-- Tactical Speed Preference: +2 (28%+ with early pressers)
-- Post Position Expertise: +1 (25%+ from optimal posts)
-- Maximum Possible: 15 points
+- Base Points: +5 (20%+ current meet win rate)
+- Track Mastery: +1 (22%+ career rate at track)
+- Tactical Speed Preference: +1 (28%+ with early pressers)
+- Maximum Possible: 7 points
 
 **Premium Jockey Situational Bonuses:**
 
@@ -133,33 +145,33 @@ Claiming specialists override standard trainer scoring when:
 
 ---
 
-## CATEGORY 2: POST POSITION & TRACK BIAS MASTERY (45 POINTS MAXIMUM)
+## CATEGORY 2: POST POSITION & TRACK BIAS (30 POINTS MAXIMUM)
 
-### Post Position Bias Matrix (30 points maximum)
+> **v2.0 Note:** Post Position reduced from 45 to 30 points (12.5% of base) as a track-dependent situational factor.
+
+### Post Position Bias Matrix (27 points maximum)
 
 > **Post position values are supplied by the Track Intelligence Database for each specific track. The scoring structure below applies universally.**
 
 **Sprint Races (5.5F-7F) Scoring:**
 
-**Golden Posts (Typically Posts 4-5 at most tracks):**
+**Golden Posts (Typically Posts 4-5 at most tracks, rescaled for 27-point max):**
 
-- Golden Post 1: +20 points (highest win rate post)
-- Golden Post 2: +18 points (second highest win rate)
+- Golden Post 1: +27 points (highest win rate post)
+- Golden Post 2: +21 points (second highest win rate)
 - Tactical advantage: Perfect stalking position
 - Ground saved: Optimal path to first turn
 - Traffic avoidance: Clear run with maneuvering room
 
 **Strong Posts (Typically Posts 2-3, 6-7):**
 
-- Strong Post High: +14 points
-- Strong Post Mid-High: +12 points
-- Strong Post Mid: +10 points
-- Strong Post Low: +8 points
+- Good Post: +21 points
+- Neutral Post: +16 points
+- Poor Post: +11 points
 
 **Neutral/Weak Posts:**
 
-- Rail Post: +6 points (save ground but traffic concerns)
-- Outside Posts (8+): +2 points (wide disadvantage)
+- Terrible Post: +5 points (severe disadvantage)
 
 **Route Races (1M-1 1/16M) Scoring:**
 
@@ -224,37 +236,27 @@ Track bias data from Track Intelligence Database determines running style advant
 
 ---
 
-## CATEGORY 3: SPEED FIGURES & CLASS MASTERY (50 POINTS MAXIMUM)
+## CATEGORY 3: SPEED FIGURES & CLASS MASTERY (80 POINTS MAXIMUM)
 
-### Speed Figure Evaluation Matrix (30 points maximum)
+> **v2.0 Note:** Speed/Class increased from 50 to 80 points (33.3% of base) as the most predictive factor per industry research.
 
-**Elite Speed Figure Category (85+ for class level):**
+### Speed Figure Evaluation Matrix (48 points maximum)
 
-- Consistently 85+: +20 points
-- Recent 85+ with consistent 80+: +18 points
-- Career best 85+ with current 80+: +15 points
+**Elite Speed Figure Category (10+ above par, rescaled for 48-point max):**
 
-**Strong Speed Figure Category (80-84 for class level):**
+- Elite figures 10+ above par: +48 points
+- Strong figures 5-9 above par: +40 points
+- Good figures at par: +32 points
 
-- Consistently 80-84: +15 points
-- Recent improvement to 80+: +12 points
-- Maintaining 80+ level: +10 points
+**Acceptable Speed Figure Category:**
 
-**Acceptable Speed Figure Category (75-79 for class level):**
+- Slightly below par (1-5 below): +24 points
+- Below par (6-10 below): +16 points
 
-- Consistently 75-79: +10 points
-- Recent figures in range: +8 points
-- Improving toward range: +6 points
+**Poor Speed Figure Category:**
 
-**Marginal Speed Figure Category (70-74 for class level):**
-
-- Consistently 70-74: +5 points
-- Recent figures in range: +3 points
-
-**Poor Speed Figure Category (Under 70 for class level):**
-
-- Under 70 consistently: 0 points
-- Declining to under 70: -5 points
+- Significantly below par (11+ below): +8 points
+- No figures available: +24 points (neutral)
 
 **Speed Figure Modifiers:**
 
@@ -289,30 +291,26 @@ Track bias data from Track Intelligence Database determines running style advant
 - Achieved in similar class: +2 points
 - Achieved in similar conditions: +1 point
 
-### Class Level Appropriateness (10 points maximum)
+### Class Level Appropriateness (32 points maximum)
 
-**Perfect Class Fit:**
+**Perfect Class Fit (rescaled for 32-point max):**
 
-- Proven winner at current level: +10 points
-- Multiple wins at current level: +8 points
-- Consistent placings at current level: +6 points
-
-**Favorable Class Position:**
-
-- Logical drop with figure support: +8 points
-- Slight drop maintaining figures: +6 points
-- Class relief with excuse last race: +5 points
+- Proven winner at current level: +32 points
+- Competitive at level (multiple ITM): +24 points
+- Class drop with valid excuse: +29 points
+- Simple class drop: +26 points
 
 **Neutral Class Position:**
 
-- Appropriate level for figures: +4 points
-- Maintaining competitive level: +3 points
+- Rising in class, competitive last: +19 points
+- Rising in class, testing: +16 points
+- Placed at level, seeking first win: +19 points
+- First-time starter (unknown): +16 points
 
 **Unfavorable Class Position:**
 
-- Significant class rise without figure support: 0 points
-- Overmatched at current level: -3 points
-- Chronic underachiever at level: -5 points
+- Struggling at current level: +8 points
+- Competitive but unproven: +16 points
 
 **Class Movement Bonuses:**
 
@@ -322,103 +320,93 @@ Track bias data from Track Intelligence Database determines running style advant
 
 ---
 
-## CATEGORY 4: FORM CYCLE & CONDITIONING MASTERY (30 POINTS MAXIMUM)
+## CATEGORY 4: FORM CYCLE & CONDITIONING (40 POINTS MAXIMUM)
 
-### Recent Performance Analysis (15 points maximum)
+> **v2.0 Note:** Form increased from 30 to 40 points (16.7% of base) to better capture recent performance patterns.
 
-**Excellent Recent Form:**
+### Recent Performance Analysis (20 points maximum)
 
-- Won last start with good figure: +12 points
-- Won last start maintaining class: +10 points
-- Won last start in easier spot: +8 points
+**Excellent Recent Form (rescaled for 20-point max):**
+
+- Won last race: +20 points
+- 2nd within 2 lengths: +16 points
+- 3rd within 2 lengths: +15 points
 
 **Strong Recent Form:**
 
-- 2nd/3rd within 1 length last start: +10 points
-- 2nd/3rd within 2 lengths last start: +8 points
-- 2nd/3rd within 3 lengths last start: +6 points
+- 2nd (more than 2 lengths): +13 points
+- 3rd (more than 2 lengths): +12 points
+- 4th-5th competitive effort: +11 points
 
 **Acceptable Recent Form:**
 
-- 4th/5th within 3 lengths last start: +5 points
-- Competitive effort without excuse: +3 points
-- Troubled trip excuse available: +4 points
+- 4th-5th less competitive: +8 points
+- 6th-8th: +5 points
+- First starter (neutral): +11 points
 
 **Poor Recent Form:**
 
-- 6th or worse without excuse: 0 points
-- Declining effort pattern: -3 points
-- Non-competitive recent efforts: -5 points
+- Poor effort (9th+): +4 points
 
-### Layoff Analysis Matrix (10 points maximum)
+### Layoff Analysis Matrix (13 points maximum)
 
-**Optimal Layoff Ranges:**
+**Optimal Layoff Ranges (rescaled for 13-point max):**
 
-- 7-21 days (maintaining sharpness): +8 points
-- 22-35 days (freshening break): +6 points
-- 36-56 days (standard freshening): +4 points
+- 7-35 days (optimal freshness): +13 points
+- 36-60 days (short freshening): +9 points
+- Quick turnback (<7 days): +8 points
 
 **Acceptable Layoff Ranges:**
 
-- 57-90 days (extended rest): +2 points
-- 4-6 days (quick turnaround): +3 points
+- 61-90 days (moderate layoff): +5 points
+- First-time starter: +7 points
 
 **Concerning Layoff Ranges:**
 
-- 91-120 days (lengthy absence): 0 points
-- Over 120 days (extended layoff): -3 points
+- 90+ days with layoff win history: +7 points
+- 90+ days without layoff wins: 0 points
 
-**Layoff Modifiers:**
+### Consistency & Reliability Factors (7 points maximum)
 
-- Trainer's success with similar layoffs: +3 points
-- Horse's historical layoff performance: +2 points
-- Quality workout pattern during layoff: +2 points
-- Injuries or issues during layoff: -5 points
+**Consistency Bonuses (rescaled for 7-point max):**
 
-### Consistency & Reliability Factors (5 points maximum)
+- 3+ straight ITM finishes (hot streak): +7 points
+- 2 consecutive ITM finishes: +4 points
+- ITM last out: +1 point
+- 4/5 ITM in recent races: +4 points
 
-**Consistency Bonuses:**
+**No Consistency Pattern:**
 
-- 3+ straight in-the-money finishes: +5 points
-- 5+ straight competitive efforts: +3 points
-- Consistent pace figures: +2 points
-- Reliable gate break: +1 point
-
-**Reliability Concerns:**
-
-- Inconsistent effort patterns: -2 points
-- Gate issues or slow starts: -2 points
-- Racing manners concerns: -3 points
+- No streak or consistency: 0 points
 
 ---
 
-## CATEGORY 5: EQUIPMENT & MEDICATION MASTERY (25 POINTS MAXIMUM)
+## CATEGORY 5: EQUIPMENT & MEDICATION (20 POINTS MAXIMUM)
 
-### Equipment Change Analysis (15 points maximum)
+> **v2.0 Note:** Equipment reduced from 25 to 20 points (8.3% of base) as speculative fine-tuning factor.
 
-**High-Impact Equipment Changes:**
+### Equipment Change Analysis (12 points maximum)
 
-- First-time Lasix with elite trainer success pattern: +12 points
-- Blinkers ON for first time with quitting history: +10 points
-- Blinkers OFF after duel/pace issues: +8 points
-- Shadow roll for first time with head issues: +6 points
+**High-Impact Equipment Changes (rescaled for 20-point max):**
+
+- First-time Lasix with trainer success pattern: +10 to +16 points
+- Blinkers ON for first time: +8 to +13 points
+- Blinkers OFF after duel/pace issues: +6 to +12 points
 
 **Moderate Equipment Changes:**
 
-- Tongue tie for breathing issues: +5 points
-- Equipment previously successful: +4 points
-- Trainer's positive equipment pattern: +3 points
+- Tongue tie for breathing issues: +4 to +6 points
+- Equipment previously successful: +3 points
+- Trainer's positive equipment pattern: +2 points
 
 **Minor Equipment Changes:**
 
-- Bandage changes: +2 points
+- Bandage changes: +1 to +2 points
 - Bit changes: +1 point
 
-**Equipment Change Timing Analysis:**
+**Base Score (no changes):**
 
-- After poor effort (corrective): +3 bonus points
-- After good effort (maintenance): +1 bonus point
-- Trainer's equipment timing success: +2 bonus points
+- No equipment changes: +8 points (base)
 
 ### Medication Patterns (5 points maximum)
 
@@ -444,51 +432,53 @@ Track bias data from Track Intelligence Database determines running style advant
 
 ---
 
-## CATEGORY 6: PACE & TACTICAL ANALYSIS MASTERY (40 POINTS MAXIMUM)
+## CATEGORY 6: PACE & TACTICAL ANALYSIS (45 POINTS MAXIMUM)
 
-### Pace Scenario Evaluation (25 points maximum)
+> **v2.0 Note:** Pace increased from 40 to 45 points (18.8% of base) to reflect high predictive value of race shape analysis.
+
+### Pace Scenario Evaluation (28 points maximum, rescaled)
 
 **Lone Speed Scenarios (1 clear speed horse):**
 
-- The lone speed horse: +25 points
-- Early pressers positioned behind: +15 points
-- Mid-pack horses: +8 points
-- Closers: +5 points
+- The lone speed horse: +28 points
+- Early pressers positioned behind: +17 points
+- Mid-pack horses: +9 points
+- Closers: +6 points
 
 **Soft Pace Scenarios (No true speed in field):**
 
-- Any horse with tactical speed: +20 points
-- Early types with average figures: +15 points
-- Pressers who can inherit lead: +12 points
+- Any horse with tactical speed: +23 points
+- Early types with average figures: +17 points
+- Pressers who can inherit lead: +14 points
 - Closers face significant disadvantage: +3 points
 
 **Honest Pace Scenarios (2-3 speed horses):**
 
-- Early pressers: +20 points
-- Quality speed horses: +15 points
-- Mid-pack stalkers: +12 points
-- Closers with class edge: +8 points
+- Early pressers: +23 points
+- Quality speed horses: +17 points
+- Mid-pack stalkers: +14 points
+- Closers with class edge: +9 points
 
 **Hot Pace Scenarios (4+ speed horses):**
 
-- Deep closers with class: +25 points
-- Stalkers with late kick: +20 points
-- Mid-pack runners: +15 points
-- Pure speed horses: +5 points
+- Deep closers with class: +28 points
+- Stalkers with late kick: +23 points
+- Mid-pack runners: +17 points
+- Pure speed horses: +6 points
 
-### Tactical Advantages Analysis (15 points maximum)
+### Tactical Advantages Analysis (17 points maximum, rescaled)
 
 **Perfect Tactical Setup:**
 
-- Pace scenario perfectly suits running style: +15 points
-- Post position enhances tactical approach: +12 points
-- Field size optimal for tactics: +10 points
+- Pace scenario perfectly suits running style: +17 points
+- Post position enhances tactical approach: +14 points
+- Field size optimal for tactics: +11 points
 
 **Tactical Flexibility Bonuses:**
 
-- Horse can adapt to multiple scenarios: +8 points
-- Proven tactical speed when needed: +6 points
-- Ability to rate or go forward: +5 points
+- Horse can adapt to multiple scenarios: +9 points
+- Proven tactical speed when needed: +7 points
+- Ability to rate or go forward: +6 points
 
 **Tactical Concerns:**
 
@@ -502,14 +492,14 @@ Track bias data from Track Intelligence Database determines running style advant
 
 ### Scoring Calculation Protocol
 
-**Base Score Computation:**
+**Base Score Computation (v2.0 Industry-Aligned Weights):**
 
-1. Category 1 (Connections): 0-50 points
-2. Category 2 (Post/Bias): 0-45 points
-3. Category 3 (Speed/Class): 0-50 points
-4. Category 4 (Form/Condition): 0-30 points
-5. Category 5 (Equipment/Medication): 0-25 points
-6. Category 6 (Pace/Tactical): 0-40 points
+1. Category 3 (Speed/Class): 0-80 points (33.3%)
+2. Category 6 (Pace/Tactical): 0-45 points (18.8%)
+3. Category 4 (Form/Condition): 0-40 points (16.7%)
+4. Category 2 (Post/Bias): 0-30 points (12.5%)
+5. Category 1 (Connections): 0-25 points (10.4%)
+6. Category 5 (Equipment/Medication): 0-20 points (8.3%)
 
 **Total Base Score Range: 0-240 points**
 
@@ -629,8 +619,9 @@ The system automatically detects the current month and applies track-specific se
 
 ---
 
-_Document Version: 1.1_
+_Document Version: 2.0_
 _Last Updated: December 2025_
 _Status: Track-Agnostic Universal Scoring Engine_
 _Integration: Requires Track Intelligence Database for track-specific values_
+_Changes in v2.0: Rebalanced category weights to align with industry handicapping research. Speed/Class increased to 33.3% as primary predictive factor. Connections and Equipment reduced as modifier categories. Total still sums to 240 points._
 _Changes in v1.1: Added track condition real-time integration, seasonal speed adjustments, surface-aware condition dropdown_

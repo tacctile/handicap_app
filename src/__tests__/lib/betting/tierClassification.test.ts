@@ -368,7 +368,7 @@ describe('Tier Classification', () => {
         {
           horse: createHorseEntry({ morningLineOdds: '10-1' }),
           index: 0,
-          score: createMockScore(100),
+          score: createMockScore(80), // Score below tier3 minScore of 130
         },
       ];
 
@@ -396,7 +396,7 @@ describe('Tier Classification', () => {
         {
           horse: createHorseEntry({ morningLineOdds: '10-1' }),
           index: 0,
-          score: createMockScore(100),
+          score: createMockScore(80), // Score below tier3 minScore of 130
         },
       ];
 
@@ -418,7 +418,7 @@ describe('Tier Classification', () => {
     });
 
     it('defines correct thresholds for Tier 3', () => {
-      expect(TIER_CONFIG.tier3.minScore).toBe(140);
+      expect(TIER_CONFIG.tier3.minScore).toBe(130);
       expect(TIER_CONFIG.tier3.maxScore).toBe(159);
       expect(TIER_CONFIG.tier3.minConfidence).toBe(40);
     });

@@ -1,6 +1,7 @@
 /**
  * Post Position Scoring Tests
  * Tests post position advantage calculations with track bias
+ * NOTE: v2.0 rescaled from 45 max to 30 max (scale factor: 30/45 = 0.667)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -136,7 +137,7 @@ describe('Post Position Scoring', () => {
 
       // Should still return valid score
       expect(result.total).toBeGreaterThan(0);
-      expect(result.total).toBeLessThanOrEqual(45);
+      expect(result.total).toBeLessThanOrEqual(30);
     });
   });
 
@@ -198,7 +199,8 @@ describe('Post Position Scoring', () => {
   });
 
   describe('Score Limits', () => {
-    it('never returns score below 5', () => {
+    // NOTE: Minimum score was rescaled from 5 to 3 (5 × 30/45 = 3.33)
+    it('never returns score below 3', () => {
       const header = createRaceHeader({
         distance: '6f',
         distanceFurlongs: 6,
@@ -208,10 +210,10 @@ describe('Post Position Scoring', () => {
       const worstCase = createHorseEntry({ postPosition: 14 });
       const result = calculatePostPositionScore(worstCase, header);
 
-      expect(result.total).toBeGreaterThanOrEqual(5);
+      expect(result.total).toBeGreaterThanOrEqual(3);
     });
 
-    it('never returns score above 45', () => {
+    it('never returns score above 30', () => {
       const header = createRaceHeader({
         distance: '6f',
         distanceFurlongs: 6,
@@ -221,7 +223,7 @@ describe('Post Position Scoring', () => {
       const bestCase = createHorseEntry({ postPosition: 4 });
       const result = calculatePostPositionScore(bestCase, header);
 
-      expect(result.total).toBeLessThanOrEqual(45);
+      expect(result.total).toBeLessThanOrEqual(30);
     });
   });
 

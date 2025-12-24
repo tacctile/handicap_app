@@ -2,11 +2,14 @@
  * Speed & Class Scoring Module
  * Calculates scores based on speed figures and class level analysis
  *
- * Score Breakdown:
- * - Speed Figure Score: 0-30 points (based on Beyer/TimeformUS figures)
- * - Class Level Score: 0-20 points (based on class movement and success)
+ * Score Breakdown (v2.0 - Industry-Aligned Weights):
+ * - Speed Figure Score: 0-48 points (based on Beyer/TimeformUS figures)
+ * - Class Level Score: 0-32 points (based on class movement and success)
  *
- * Total: 0-50 points
+ * Total: 0-80 points (33.3% of 240 base)
+ *
+ * NOTE: Speed/Class increased from 50 to 80 points to reflect industry research
+ * showing this is the most predictive factor in handicapping.
  */
 
 import type { HorseEntry, RaceHeader, PastPerformance, RaceClassification } from '../../types/drf';
@@ -146,8 +149,9 @@ function getLastBeyerFromEntry(horse: HorseEntry): number | null {
 // ============================================================================
 
 /**
- * Calculate speed figure score (0-30 points)
+ * Calculate speed figure score (0-48 points)
  * Based on comparison to par for today's class
+ * Rescaled from 30 max to 48 max (scale factor: 80/50 = 1.6)
  */
 function calculateSpeedFigureScore(
   bestRecent: number | null,
@@ -159,7 +163,7 @@ function calculateSpeedFigureScore(
 
   if (figure === null) {
     return {
-      score: 15, // Neutral score for no data
+      score: 24, // Neutral score for no data (was 15)
       reasoning: 'No speed figures available',
     };
   }
@@ -170,22 +174,22 @@ function calculateSpeedFigureScore(
   let reasoning: string;
 
   if (differential >= 10) {
-    score = 30;
+    score = 48; // was 30
     reasoning = `${figure} Beyer (${differential}+ above par ${parForClass})`;
   } else if (differential >= 5) {
-    score = 25;
+    score = 40; // was 25
     reasoning = `${figure} Beyer (${differential} above par ${parForClass})`;
   } else if (differential >= 0) {
-    score = 20;
+    score = 32; // was 20
     reasoning = `${figure} Beyer (at par ${parForClass})`;
   } else if (differential >= -5) {
-    score = 15;
+    score = 24; // was 15
     reasoning = `${figure} Beyer (${Math.abs(differential)} below par ${parForClass})`;
   } else if (differential >= -10) {
-    score = 10;
+    score = 16; // was 10
     reasoning = `${figure} Beyer (${Math.abs(differential)} below par ${parForClass})`;
   } else {
-    score = 5;
+    score = 8; // was 5
     reasoning = `${figure} Beyer (significantly below par ${parForClass})`;
   }
 
@@ -286,7 +290,8 @@ function hasValidExcuse(pp: PastPerformance): boolean {
 }
 
 /**
- * Calculate class level score (0-20 points)
+ * Calculate class level score (0-32 points)
+ * Rescaled from 20 max to 32 max (scale factor: 80/50 = 1.6)
  */
 function calculateClassScore(
   currentClass: RaceClassification,
@@ -295,7 +300,7 @@ function calculateClassScore(
 ): { score: number; reasoning: string } {
   if (pastPerformances.length === 0) {
     return {
-      score: 10, // Neutral for first-time starters
+      score: 16, // Neutral for first-time starters (was 10)
       reasoning: 'First-time starter - class unknown',
     };
   }
@@ -304,7 +309,7 @@ function calculateClassScore(
   const lastRace = pastPerformances[0];
   if (!lastRace) {
     return {
-      score: 10,
+      score: 16, // was 10
       reasoning: 'No recent race data',
     };
   }
@@ -313,7 +318,7 @@ function calculateClassScore(
   // Proven winner at this level
   if (provenData.proven) {
     return {
-      score: 20,
+      score: 32, // was 20
       reasoning: `Proven winner at level (${provenData.wins}W, ${provenData.itmCount} ITM at class)`,
     };
   }
@@ -321,7 +326,7 @@ function calculateClassScore(
   // Competitive at level (placed but not won)
   if (provenData.itmCount >= 2) {
     return {
-      score: 15,
+      score: 24, // was 15
       reasoning: `Competitive at level (${provenData.itmCount} ITM at class)`,
     };
   }
@@ -329,7 +334,7 @@ function calculateClassScore(
   // Class drop with valid excuse
   if (classMovement === 'drop' && hasExcuse) {
     return {
-      score: 18,
+      score: 29, // was 18
       reasoning: `Class drop with excuse: "${lastRace.tripComment.substring(0, 30)}..."`,
     };
   }
@@ -337,7 +342,7 @@ function calculateClassScore(
   // Simple class drop
   if (classMovement === 'drop') {
     return {
-      score: 16,
+      score: 26, // was 16
       reasoning: 'Dropping in class',
     };
   }
@@ -350,13 +355,13 @@ function calculateClassScore(
 
     if (wasCompetitive) {
       return {
-        score: 12,
+        score: 19, // was 12
         reasoning: 'Rising in class, competitive last out',
       };
     }
 
     return {
-      score: 10,
+      score: 16, // was 10
       reasoning: 'Rising in class - testing',
     };
   }
@@ -364,7 +369,7 @@ function calculateClassScore(
   // Level class, not proven
   if (provenData.itmCount >= 1) {
     return {
-      score: 12,
+      score: 19, // was 12
       reasoning: 'Placed at level, seeking first win',
     };
   }
@@ -374,13 +379,13 @@ function calculateClassScore(
 
   if (recentPlacings === 0) {
     return {
-      score: 5,
+      score: 8, // was 5
       reasoning: 'Struggling at current level',
     };
   }
 
   return {
-    score: 10,
+    score: 16, // was 10
     reasoning: 'Competitive but unproven at level',
   };
 }
@@ -427,8 +432,9 @@ export function calculateSpeedClassScore(
     if (rawSeasonalAdj !== 0 && bestRecentFigure !== null) {
       // Convert seasonal adjustment to score points
       // Track playing +2 faster = slight boost, -2 slower = slight penalty
-      seasonalAdjustment = Math.round(rawSeasonalAdj * 0.5); // ±1-2 points typically
-      seasonalAdjustment = Math.max(-3, Math.min(3, seasonalAdjustment)); // Cap at ±3
+      // Rescaled from ±3 to ±5 (scale factor: 80/50 = 1.6)
+      seasonalAdjustment = Math.round(rawSeasonalAdj * 0.8); // ±2-3 points typically
+      seasonalAdjustment = Math.max(-5, Math.min(5, seasonalAdjustment)); // Cap at ±5
 
       if (seasonalAdjustment > 0) {
         adjustedSpeedReasoning += ` | Track playing fast (seasonal +${seasonalAdjustment})`;
@@ -438,7 +444,7 @@ export function calculateSpeedClassScore(
     }
   }
 
-  const adjustedSpeedScore = Math.max(0, Math.min(30, speedResult.score + seasonalAdjustment));
+  const adjustedSpeedScore = Math.max(0, Math.min(48, speedResult.score + seasonalAdjustment));
 
   return {
     total: adjustedSpeedScore + classResult.score,

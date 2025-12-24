@@ -6,12 +6,12 @@
  * Optimized for performance: scoring 12 horses completes in under 100ms.
  *
  * BASE SCORE (0-240 points max):
- * - Connections (Trainer + Jockey + Partnership): 0-55 points
- * - Post Position: 0-45 points
- * - Speed & Class: 0-50 points
- * - Form: 0-30 points
- * - Equipment: 0-25 points
- * - Pace: 0-40 points
+ * - Speed & Class: 0-80 points (33.3% - Most predictive)
+ * - Pace: 0-45 points (18.8% - Race shape analysis)
+ * - Form: 0-40 points (16.7% - Recent performance)
+ * - Post Position: 0-30 points (12.5% - Situational factor)
+ * - Connections (Trainer + Jockey): 0-25 points (10.4% - Modifier)
+ * - Equipment: 0-20 points (8.3% - Fine-tuning)
  *
  * OVERLAY SYSTEM (±50 points on top of base):
  * - Section A: Pace Dynamics & Bias: ±20 points
@@ -91,14 +91,31 @@ export const MAX_OVERLAY = 50;
 /** Maximum total score (base + overlay) */
 export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 290
 
-/** Score limits by category */
+/**
+ * Score limits by category
+ *
+ * WEIGHT RATIONALE (v2.0 - Industry-Aligned Weights):
+ * ----------------------------------------------------
+ * These weights are aligned with industry handicapping research showing
+ * that "hard" predictive factors (Speed/Class, Pace) should outweigh
+ * "soft" speculative factors (Connections, Equipment).
+ *
+ * - Speed/Class: 80 pts (33.3%) — Most predictive factor per industry research
+ * - Pace: 45 pts (18.8%) — High predictive value for race shape
+ * - Form: 40 pts (16.7%) — Recent performance patterns
+ * - Post Position: 30 pts (12.5%) — Track-dependent situational factor
+ * - Connections: 25 pts (10.4%) — Modifier, not primary driver
+ * - Equipment: 20 pts (8.3%) — Speculative, fine-tuning only
+ *
+ * Total: 240 points base score
+ */
 export const SCORE_LIMITS = {
-  connections: 55,
-  postPosition: 45,
-  speedClass: 50,
-  form: 30,
-  equipment: 25,
-  pace: 40,
+  connections: 25,
+  postPosition: 30,
+  speedClass: 80,
+  form: 40,
+  equipment: 20,
+  pace: 45,
   baseTotal: MAX_BASE_SCORE,
   overlayMax: MAX_OVERLAY,
   total: MAX_SCORE,

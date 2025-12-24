@@ -4,16 +4,20 @@
  * Calculates equipment impact scores based on detected changes
  * and trainer-specific success patterns.
  *
- * Score Range: 0-25 points (from Equipment & Medication category)
- * Base Score: 10 points (no changes)
+ * Score Range: 0-20 points (v2.0 - reduced from 25)
+ * 8.3% of 240 base score - Speculative, fine-tuning only
+ * Base Score: 8 points (no changes)
  *
- * Key Impacts:
- * - First-time Lasix: +12-20 pts (trainer-dependent)
- * - Lasix removal: -8 pts
- * - Blinkers ON (first-time): +10-16 pts (trainer-dependent)
- * - Blinkers OFF: +8-15 pts (trainer-dependent)
- * - Tongue tie added: +5-8 pts
- * - Other equipment: +2-5 pts
+ * Key Impacts (rescaled by factor 20/25 = 0.8):
+ * - First-time Lasix: +10-16 pts (trainer-dependent)
+ * - Lasix removal: -6 pts
+ * - Blinkers ON (first-time): +8-13 pts (trainer-dependent)
+ * - Blinkers OFF: +6-12 pts (trainer-dependent)
+ * - Tongue tie added: +4-6 pts
+ * - Other equipment: +2-4 pts
+ *
+ * NOTE: Equipment reduced from 25 to 20 points to reflect industry
+ * research showing this is speculative and fine-tuning only.
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
@@ -27,13 +31,14 @@ import { calculateTrainerAdjustedPoints } from './trainerPatterns';
 
 /**
  * Base equipment score when no changes
+ * Rescaled from 10 to 8 (scale factor: 20/25 = 0.8)
  */
-export const BASE_EQUIPMENT_SCORE = 10;
+export const BASE_EQUIPMENT_SCORE = 8;
 
 /**
- * Maximum equipment score
+ * Maximum equipment score (v2.0 - reduced from 25 to 20)
  */
-export const MAX_EQUIPMENT_SCORE = 25;
+export const MAX_EQUIPMENT_SCORE = 20;
 
 /**
  * Minimum equipment score

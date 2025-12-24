@@ -2,19 +2,23 @@
  * Pace Scoring Module
  * Analyzes pace scenarios and running style matchups
  *
- * Score Range: 0-40 points
+ * Score Range: 0-45 points (v2.0 - increased from 40)
+ * 18.8% of 240 base score - High predictive value for race shape
  *
  * Integrates with paceAnalysis.ts for comprehensive pace detection:
  * - Running Style Classification (E, P, C, S)
  * - Pace Pressure Index (PPI) calculation
  * - Tactical advantage scoring based on pace scenario
  *
- * Pace Scenario Scoring (from tactical advantage):
- * - Perfect pace fit (e.g., lone speed in soft pace): 25+ pts base + bonuses
- * - Good pace fit (e.g., presser in hot pace): 18-24 pts
- * - Neutral fit: 12-17 pts
- * - Poor fit (e.g., closer in soft pace): 5-11 pts
- * - Terrible fit: 0-4 pts
+ * Pace Scenario Scoring (from tactical advantage, rescaled by 45/40 = 1.125):
+ * - Perfect pace fit (e.g., lone speed in soft pace): 28+ pts base + bonuses
+ * - Good pace fit (e.g., presser in hot pace): 20-27 pts
+ * - Neutral fit: 14-19 pts
+ * - Poor fit (e.g., closer in soft pace): 6-13 pts
+ * - Terrible fit: 0-5 pts
+ *
+ * NOTE: Pace increased from 40 to 45 points to reflect industry research
+ * showing high predictive value of pace scenario analysis.
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
@@ -285,39 +289,40 @@ export function calculatePaceScore(
   }
 
   // Apply track bias adjustments using paceAdvantageRating for granular scoring
-  let finalScore = paceResult.totalScore;
+  // Rescaled from 40 max to 45 max (scale factor: 45/40 = 1.125)
+  let finalScore = Math.round(paceResult.totalScore * 1.125); // Scale base tactical score
 
   // Track bias bonus/penalty based on paceAdvantageRating (1-10 scale)
   // Rating 1-3: Closer-friendly, 4-6: Fair, 7-10: Speed-favoring
   if (paceAdvantageRating !== null) {
     if (paceAdvantageRating >= 8 && detailedProfile.style === 'E') {
       // Extreme speed track (8-10) - big bonus for early speed
-      finalScore = Math.min(40, finalScore + 5);
+      finalScore = Math.min(45, finalScore + 6); // was +5, cap at 45
     } else if (paceAdvantageRating >= 7 && detailedProfile.style === 'E') {
       // Strong speed track (7) - moderate bonus for early speed
-      finalScore = Math.min(40, finalScore + 3);
+      finalScore = Math.min(45, finalScore + 3);
     } else if (paceAdvantageRating >= 8 && detailedProfile.style === 'C') {
       // Extreme speed track penalizes closers
       finalScore = Math.max(5, finalScore - 3);
     } else if (paceAdvantageRating <= 3 && detailedProfile.style === 'C') {
       // Closer-friendly track (1-3) - bonus for closers
-      finalScore = Math.min(40, finalScore + 4);
+      finalScore = Math.min(45, finalScore + 5); // was +4, cap at 45
     } else if (paceAdvantageRating <= 3 && detailedProfile.style === 'E') {
       // Closer-friendly track penalizes pure speed
       finalScore = Math.max(5, finalScore - 2);
     }
     // Pressers and stalkers get smaller adjustments
     if (paceAdvantageRating >= 7 && detailedProfile.style === 'P') {
-      finalScore = Math.min(40, finalScore + 2);
+      finalScore = Math.min(45, finalScore + 2);
     } else if (paceAdvantageRating <= 4 && detailedProfile.style === 'S') {
-      finalScore = Math.min(40, finalScore + 2);
+      finalScore = Math.min(45, finalScore + 2);
     }
   } else if (trackSpeedBias !== null) {
     // Fallback to earlySpeedWinRate if paceAdvantageRating not available
     if (trackSpeedBias >= 55 && detailedProfile.style === 'E') {
-      finalScore = Math.min(40, finalScore + 3);
+      finalScore = Math.min(45, finalScore + 3);
     } else if (trackSpeedBias <= 45 && detailedProfile.style === 'C') {
-      finalScore = Math.min(40, finalScore + 3);
+      finalScore = Math.min(45, finalScore + 3);
     }
   }
 
@@ -331,7 +336,7 @@ export function calculatePaceScore(
   );
 
   return {
-    total: Math.max(5, Math.min(40, finalScore)),
+    total: Math.max(5, Math.min(45, finalScore)), // was 40
     profile,
     fieldAnalysis,
     paceFit: toLegacyPaceFit(tacticalAdvantage.level),

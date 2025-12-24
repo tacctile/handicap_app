@@ -19,61 +19,62 @@ import {
 
 describe('Speed & Class Scoring', () => {
   describe('Speed Figure Scoring', () => {
-    it('returns 30 points (max) for speed figure 10+ above par', () => {
+    // NOTE: v2.0 rescaled from 30 max to 48 max (scale factor: 80/50 = 1.6)
+    it('returns 48 points (max) for speed figure 10+ above par', () => {
       const header = createRaceHeader({ classification: 'allowance' }); // Par = 82
       const horse = createSpeedFigureHorse([95, 92, 90]); // Best = 95, 13 above par
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.speedScore).toBe(30);
+      expect(result.speedScore).toBe(48);
     });
 
-    it('returns 25 points for speed figure 5-9 above par', () => {
+    it('returns 40 points for speed figure 5-9 above par', () => {
       const header = createRaceHeader({ classification: 'allowance' }); // Par = 82
       const horse = createSpeedFigureHorse([88, 86, 85]); // Best = 88, 6 above par
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.speedScore).toBe(25);
+      expect(result.speedScore).toBe(40);
     });
 
-    it('returns 20 points for speed figure at par (0-4 above)', () => {
+    it('returns 32 points for speed figure at par (0-4 above)', () => {
       const header = createRaceHeader({ classification: 'allowance' }); // Par = 82
       const horse = createSpeedFigureHorse([84, 82, 80]); // Best = 84, 2 above par
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.speedScore).toBe(20);
+      expect(result.speedScore).toBe(32);
     });
 
-    it('returns 15 points for speed figure 1-5 below par', () => {
+    it('returns 24 points for speed figure 1-5 below par', () => {
       const header = createRaceHeader({ classification: 'allowance' }); // Par = 82
       const horse = createSpeedFigureHorse([80, 78, 77]); // Best = 80, 2 below par
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.speedScore).toBe(15);
+      expect(result.speedScore).toBe(24);
     });
 
-    it('returns 10 points for speed figure 6-10 below par', () => {
+    it('returns 16 points for speed figure 6-10 below par', () => {
       const header = createRaceHeader({ classification: 'allowance' }); // Par = 82
       const horse = createSpeedFigureHorse([75, 73, 72]); // Best = 75, 7 below par
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.speedScore).toBe(10);
+      expect(result.speedScore).toBe(16);
     });
 
-    it('returns 5 points for speed figure significantly below par', () => {
+    it('returns 8 points for speed figure significantly below par', () => {
       const header = createRaceHeader({ classification: 'allowance' }); // Par = 82
       const horse = createSpeedFigureHorse([65, 63, 60]); // Best = 65, 17 below par
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.speedScore).toBe(5);
+      expect(result.speedScore).toBe(8);
     });
 
-    it('returns neutral 15 for missing speed figures', () => {
+    it('returns neutral 24 for missing speed figures', () => {
       const header = createRaceHeader({ classification: 'allowance' });
       const horse = createHorseEntry({
         bestBeyer: null,
@@ -88,7 +89,7 @@ describe('Speed & Class Scoring', () => {
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.speedScore).toBe(15);
+      expect(result.speedScore).toBe(24);
       expect(result.speedReasoning).toContain('No speed figures');
     });
 
@@ -109,7 +110,8 @@ describe('Speed & Class Scoring', () => {
   });
 
   describe('Class Level Scoring', () => {
-    it('returns 20 points (max) for proven winner at level', () => {
+    // NOTE: v2.0 rescaled from 20 max to 32 max (scale factor: 80/50 = 1.6)
+    it('returns 32 points (max) for proven winner at level', () => {
       const header = createRaceHeader({ classification: 'allowance' });
       const horse = createHorseEntry({
         pastPerformances: [
@@ -120,11 +122,11 @@ describe('Speed & Class Scoring', () => {
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.classScore).toBe(20);
+      expect(result.classScore).toBe(32);
       expect(result.classReasoning).toContain('Proven winner');
     });
 
-    it('returns 15 points for competitive at level (placed)', () => {
+    it('returns 24 points for competitive at level (placed)', () => {
       const header = createRaceHeader({ classification: 'allowance' });
       const horse = createHorseEntry({
         pastPerformances: [
@@ -135,11 +137,11 @@ describe('Speed & Class Scoring', () => {
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.classScore).toBe(15);
+      expect(result.classScore).toBe(24);
       expect(result.classReasoning).toContain('Competitive');
     });
 
-    it('returns 10 points for first-time starter (unknown class)', () => {
+    it('returns 16 points for first-time starter (unknown class)', () => {
       const header = createRaceHeader({ classification: 'maiden' });
       const horse = createHorseEntry({
         lifetimeStarts: 0,
@@ -148,11 +150,11 @@ describe('Speed & Class Scoring', () => {
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.classScore).toBe(10);
+      expect(result.classScore).toBe(16);
       expect(result.classReasoning).toContain('First-time starter');
     });
 
-    it('detects class drop and returns 16+ points', () => {
+    it('detects class drop and returns 26+ points', () => {
       const header = createRaceHeader({ classification: 'claiming' }); // Lower class
       const horse = createHorseEntry({
         pastPerformances: [
@@ -163,7 +165,7 @@ describe('Speed & Class Scoring', () => {
       const result = calculateSpeedClassScore(horse, header);
 
       expect(result.classMovement).toBe('drop');
-      expect(result.classScore).toBeGreaterThanOrEqual(16);
+      expect(result.classScore).toBeGreaterThanOrEqual(26);
     });
 
     it('detects class rise', () => {
@@ -193,7 +195,7 @@ describe('Speed & Class Scoring', () => {
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.classScore).toBe(18);
+      expect(result.classScore).toBe(29);
       expect(result.classReasoning).toContain('excuse');
     });
   });
@@ -215,7 +217,8 @@ describe('Speed & Class Scoring', () => {
       expect(result.total).toBe(result.speedScore + result.classScore);
     });
 
-    it('total score is capped at 50 points', () => {
+    // NOTE: v2.0 rescaled from 50 max to 80 max
+    it('total score is capped at 80 points', () => {
       const header = createRaceHeader({ classification: 'maiden' });
       const horse = createHorseEntry({
         pastPerformances: [
@@ -234,7 +237,7 @@ describe('Speed & Class Scoring', () => {
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.total).toBeLessThanOrEqual(50);
+      expect(result.total).toBeLessThanOrEqual(80);
     });
   });
 

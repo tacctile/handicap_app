@@ -13,47 +13,48 @@ import {
 } from '../../fixtures/testHelpers';
 
 describe('Form Scoring', () => {
+  // NOTE: v2.0 rescaled from 30 max to 40 max (scale factor: 40/30 = 1.333)
   describe('Layoff Calculations', () => {
-    it('returns 10 points (max) for optimal layoff (7-35 days)', () => {
+    it('returns 13 points (max) for optimal layoff (7-35 days)', () => {
       const horse = createLayoffHorse(21);
 
       const result = calculateFormScore(horse);
 
-      expect(result.layoffScore).toBe(10);
+      expect(result.layoffScore).toBe(13);
       expect(result.reasoning).toContain('Optimal layoff');
     });
 
-    it('returns 10 points for 7-day layoff', () => {
+    it('returns 13 points for 7-day layoff', () => {
       const horse = createLayoffHorse(7);
 
       const result = calculateFormScore(horse);
 
-      expect(result.layoffScore).toBe(10);
+      expect(result.layoffScore).toBe(13);
     });
 
-    it('returns 10 points for 35-day layoff', () => {
+    it('returns 13 points for 35-day layoff', () => {
       const horse = createLayoffHorse(35);
 
       const result = calculateFormScore(horse);
 
-      expect(result.layoffScore).toBe(10);
+      expect(result.layoffScore).toBe(13);
     });
 
-    it('returns 7 points for 30-60 day layoff (short freshening)', () => {
+    it('returns 9 points for 30-60 day layoff (short freshening)', () => {
       const horse = createLayoffHorse(45);
 
       const result = calculateFormScore(horse);
 
-      expect(result.layoffScore).toBe(7);
+      expect(result.layoffScore).toBe(9);
       expect(result.reasoning).toContain('freshening');
     });
 
-    it('returns 4 points for 60-90 day layoff', () => {
+    it('returns 5 points for 60-90 day layoff', () => {
       const horse = createLayoffHorse(75);
 
       const result = calculateFormScore(horse);
 
-      expect(result.layoffScore).toBe(4);
+      expect(result.layoffScore).toBe(5);
       expect(result.reasoning).toContain('Moderate layoff');
     });
 
@@ -71,21 +72,21 @@ describe('Form Scoring', () => {
       expect(result.layoffScore).toBeLessThanOrEqual(5);
     });
 
-    it('returns 6 points for quick turnback (<7 days)', () => {
+    it('returns 8 points for quick turnback (<7 days)', () => {
       const horse = createLayoffHorse(5);
 
       const result = calculateFormScore(horse);
 
-      expect(result.layoffScore).toBe(6);
+      expect(result.layoffScore).toBe(8);
       expect(result.reasoning).toContain('Quick turnback');
     });
 
-    it('returns 5 points for first-time starter', () => {
+    it('returns 7 points for first-time starter', () => {
       const horse = createFirstTimeStarter();
 
       const result = calculateFormScore(horse);
 
-      expect(result.layoffScore).toBe(5);
+      expect(result.layoffScore).toBe(7);
       expect(result.reasoning).toContain('First');
     });
 
@@ -107,22 +108,22 @@ describe('Form Scoring', () => {
   });
 
   describe('Recent Form Patterns', () => {
-    it('returns 15 points (max) for recent win', () => {
+    it('returns 20 points (max) for recent win', () => {
       const horse = createHorseEntry({
         pastPerformances: [createPastPerformance({ finishPosition: 1, lengthsBehind: 0 })],
       });
 
       const result = calculateFormScore(horse);
 
-      expect(result.recentFormScore).toBe(15);
+      expect(result.recentFormScore).toBe(20);
     });
 
-    it('returns 8 points for first-time starter (neutral)', () => {
+    it('returns 11 points for first-time starter (neutral)', () => {
       const horse = createFirstTimeStarter();
 
       const result = calculateFormScore(horse);
 
-      expect(result.recentFormScore).toBe(8);
+      expect(result.recentFormScore).toBe(11);
     });
 
     it('weights most recent race higher (50%)', () => {
@@ -158,7 +159,7 @@ describe('Form Scoring', () => {
   });
 
   describe('Consistency Bonus', () => {
-    it('returns 5 point bonus for 3+ consecutive ITM finishes (hot streak)', () => {
+    it('returns 7 point bonus for 3+ consecutive ITM finishes (hot streak)', () => {
       const horse = createHorseEntry({
         pastPerformances: [
           createPastPerformance({ finishPosition: 1 }),
@@ -170,12 +171,12 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      expect(result.consistencyBonus).toBe(5);
+      expect(result.consistencyBonus).toBe(7);
       expect(result.itmStreak).toBe(4);
       expect(result.reasoning).toContain('Hot streak');
     });
 
-    it('returns 3 point bonus for 2 consecutive ITM finishes', () => {
+    it('returns 4 point bonus for 2 consecutive ITM finishes', () => {
       const horse = createHorseEntry({
         pastPerformances: [
           createPastPerformance({ finishPosition: 2 }),
@@ -186,7 +187,7 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      expect(result.consistencyBonus).toBe(3);
+      expect(result.consistencyBonus).toBe(4);
       expect(result.itmStreak).toBe(2);
     });
 
@@ -219,7 +220,7 @@ describe('Form Scoring', () => {
       expect(result.itmStreak).toBe(0);
     });
 
-    it('returns 3 bonus for high ITM rate (4/5) even without streak', () => {
+    it('returns 4 bonus for high ITM rate (4/5) even without streak', () => {
       const horse = createHorseEntry({
         pastPerformances: [
           createPastPerformance({ finishPosition: 4 }), // Not ITM - breaks streak
@@ -232,7 +233,7 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      expect(result.consistencyBonus).toBe(3); // 4/5 ITM = consistent
+      expect(result.consistencyBonus).toBe(4); // 4/5 ITM = consistent
     });
   });
 
@@ -291,19 +292,19 @@ describe('Form Scoring', () => {
   });
 
   describe('Total Score', () => {
-    it('is capped at 30 points maximum', () => {
+    it('is capped at 40 points maximum', () => {
       const horse = createHorseEntry({
-        daysSinceLastRace: 21, // Optimal layoff = 10
+        daysSinceLastRace: 21, // Optimal layoff = 13
         pastPerformances: [
-          createPastPerformance({ finishPosition: 1 }), // Recent form = 15
+          createPastPerformance({ finishPosition: 1 }), // Recent form = 20
           createPastPerformance({ finishPosition: 1 }),
-          createPastPerformance({ finishPosition: 1 }), // Hot streak = 5
+          createPastPerformance({ finishPosition: 1 }), // Hot streak = 7
         ],
       });
 
       const result = calculateFormScore(horse);
 
-      expect(result.total).toBeLessThanOrEqual(30);
+      expect(result.total).toBeLessThanOrEqual(40);
     });
 
     it('combines all components correctly', () => {
