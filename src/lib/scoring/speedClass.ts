@@ -14,6 +14,15 @@
 
 import type { HorseEntry, RaceHeader, PastPerformance, RaceClassification } from '../../types/drf';
 import { getSeasonalSpeedAdjustment, isTrackIntelligenceAvailable } from '../trackIntelligence';
+import {
+  getSpeedTier,
+  getTrackTierAdjustment,
+  analyzeShipper,
+  getTrackSpeedPar,
+  TIER_NAMES,
+  type SpeedTier,
+  type ShipperAnalysis,
+} from './trackSpeedNormalization';
 
 // ============================================================================
 // TYPES
@@ -30,6 +39,21 @@ export interface SpeedClassScoreResult {
   classMovement: 'drop' | 'rise' | 'level' | 'unknown';
   speedReasoning: string;
   classReasoning: string;
+  /** Track normalization info */
+  trackNormalization?: {
+    /** Current track speed tier (1-4) */
+    currentTrackTier: SpeedTier;
+    /** Current track tier name */
+    currentTrackTierName: string;
+    /** Track tier adjustment applied to figure evaluation */
+    tierAdjustment: number;
+    /** Shipper analysis if horse is shipping between tiers */
+    shipperAnalysis?: ShipperAnalysis;
+    /** Track-specific par figure for this distance/class */
+    trackParFigure: number | null;
+    /** How much above/below track par the best figure is */
+    parDifferential: number | null;
+  };
 }
 
 // ============================================================================
@@ -397,9 +421,14 @@ function calculateClassScore(
 /**
  * Calculate speed and class score for a horse
  *
+ * Includes track-relative normalization:
+ * - Track tier adjustments (Tier 1 elite vs Tier 4 weak)
+ * - Track-specific par figures when available
+ * - Shipper analysis for horses changing track tiers
+ *
  * @param horse - The horse entry to score
  * @param raceHeader - Race information
- * @returns Detailed score breakdown
+ * @returns Detailed score breakdown with track normalization
  */
 export function calculateSpeedClassScore(
   horse: HorseEntry,
@@ -416,8 +445,60 @@ export function calculateSpeedClassScore(
   // Analyze class movement
   const classMovement = analyzeClassMovement(currentClass, horse.pastPerformances);
 
-  // Calculate speed score
-  const speedResult = calculateSpeedFigureScore(bestRecentFigure, averageFigure, parForClass);
+  // =========================================================================
+  // TRACK NORMALIZATION
+  // =========================================================================
+
+  // Get current track tier info
+  const currentTrackTier = getSpeedTier(raceHeader.trackCode);
+  const currentTrackTierName = TIER_NAMES[currentTrackTier];
+  const tierAdjustment = getTrackTierAdjustment(raceHeader.trackCode);
+
+  // Get track-specific par figure if available
+  const trackParFigure = getTrackSpeedPar(
+    raceHeader.trackCode,
+    raceHeader.distanceFurlongs,
+    currentClass
+  );
+
+  // Calculate par differential
+  let parDifferential: number | null = null;
+  if (trackParFigure !== null && bestRecentFigure !== null) {
+    parDifferential = bestRecentFigure - trackParFigure;
+  }
+
+  // Analyze shipper status (detect if moving between track tiers)
+  let shipperAnalysis: ShipperAnalysis | undefined;
+  let shipperAdjustment = 0;
+  const lastPP = horse.pastPerformances[0];
+  if (lastPP) {
+    shipperAnalysis = analyzeShipper(lastPP.track, raceHeader.trackCode);
+    if (shipperAnalysis.isShipping) {
+      shipperAdjustment = shipperAnalysis.adjustment;
+    }
+  }
+
+  // Calculate effective figure for scoring
+  // Apply tier normalization: figures from elite tracks worth more
+  let effectiveFigure = bestRecentFigure;
+  if (effectiveFigure !== null) {
+    // Get the tier of the track where the best figure was earned
+    const figureTracks = horse.pastPerformances.slice(0, 3).map((pp) => pp.track);
+    if (figureTracks.length > 0) {
+      // Find the track where the best recent figure was earned
+      const bestPP = horse.pastPerformances
+        .slice(0, 3)
+        .find((pp) => extractSpeedFigure(pp) === effectiveFigure);
+      if (bestPP) {
+        const figureTierAdj = getTrackTierAdjustment(bestPP.track);
+        // Apply tier adjustment to the figure for comparison purposes
+        effectiveFigure = effectiveFigure + figureTierAdj;
+      }
+    }
+  }
+
+  // Calculate speed score using effective (normalized) figure
+  const speedResult = calculateSpeedFigureScore(effectiveFigure, averageFigure, parForClass);
 
   // Calculate class score
   const classResult = calculateClassScore(currentClass, horse.pastPerformances, classMovement);
@@ -444,7 +525,43 @@ export function calculateSpeedClassScore(
     }
   }
 
-  const adjustedSpeedScore = Math.max(0, Math.min(48, speedResult.score + seasonalAdjustment));
+  // Apply shipper adjustment to reasoning
+  if (shipperAnalysis?.isShipping && shipperAdjustment !== 0) {
+    if (shipperAdjustment > 0) {
+      adjustedSpeedReasoning += ` | Shipping down (+${shipperAdjustment})`;
+    } else {
+      adjustedSpeedReasoning += ` | Shipping up (${shipperAdjustment})`;
+    }
+  }
+
+  // Add track tier info to reasoning
+  if (bestRecentFigure !== null) {
+    const lastPPForReasoning = horse.pastPerformances[0];
+    if (lastPPForReasoning) {
+      const figureTier = getSpeedTier(lastPPForReasoning.track);
+      if (figureTier !== currentTrackTier) {
+        adjustedSpeedReasoning += ` | Figures from Tier ${figureTier} track`;
+      }
+    }
+  }
+
+  // Add track par info to reasoning if available
+  if (trackParFigure !== null && bestRecentFigure !== null) {
+    const parDiff = bestRecentFigure - trackParFigure;
+    if (Math.abs(parDiff) >= 5) {
+      if (parDiff > 0) {
+        adjustedSpeedReasoning += ` | ${parDiff}+ above ${raceHeader.trackCode} par`;
+      } else {
+        adjustedSpeedReasoning += ` | ${Math.abs(parDiff)} below ${raceHeader.trackCode} par`;
+      }
+    }
+  }
+
+  // Apply shipper adjustment to speed score (±2-5 points max)
+  const adjustedSpeedScore = Math.max(
+    0,
+    Math.min(48, speedResult.score + seasonalAdjustment + Math.round(shipperAdjustment * 0.5))
+  );
 
   return {
     total: adjustedSpeedScore + classResult.score,
@@ -457,6 +574,14 @@ export function calculateSpeedClassScore(
     classMovement,
     speedReasoning: adjustedSpeedReasoning,
     classReasoning: classResult.reasoning,
+    trackNormalization: {
+      currentTrackTier,
+      currentTrackTierName,
+      tierAdjustment,
+      shipperAnalysis: shipperAnalysis?.isShipping ? shipperAnalysis : undefined,
+      trackParFigure,
+      parDifferential,
+    },
   };
 }
 

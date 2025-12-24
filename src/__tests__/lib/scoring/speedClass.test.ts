@@ -1,6 +1,7 @@
 /**
  * Speed & Class Scoring Tests
  * Tests speed figure and class level evaluation
+ * Includes track speed normalization tests
  */
 
 import { describe, it, expect } from 'vitest';
@@ -9,6 +10,17 @@ import {
   getParFigures,
   getClassHierarchy,
 } from '../../../lib/scoring/speedClass';
+import {
+  getSpeedTier,
+  getTrackTierAdjustment,
+  getTrackSpeedPar,
+  normalizeSpeedFigure,
+  analyzeShipper,
+  isTier1Track,
+  isTier4Track,
+  getTracksInTier,
+  getTrackSpeedInfo,
+} from '../../../lib/scoring/trackSpeedNormalization';
 import {
   createHorseEntry,
   createRaceHeader,
@@ -20,8 +32,9 @@ import {
 describe('Speed & Class Scoring', () => {
   describe('Speed Figure Scoring', () => {
     // NOTE: v2.0 rescaled from 30 max to 48 max (scale factor: 80/50 = 1.6)
+    // All tests use LRL (Tier 3, neutral) for consistent tier-neutral scoring
     it('returns 48 points (max) for speed figure 10+ above par', () => {
-      const header = createRaceHeader({ classification: 'allowance' }); // Par = 82
+      const header = createRaceHeader({ classification: 'allowance', trackCode: 'LRL' }); // Par = 82
       const horse = createSpeedFigureHorse([95, 92, 90]); // Best = 95, 13 above par
 
       const result = calculateSpeedClassScore(horse, header);
@@ -30,7 +43,7 @@ describe('Speed & Class Scoring', () => {
     });
 
     it('returns 40 points for speed figure 5-9 above par', () => {
-      const header = createRaceHeader({ classification: 'allowance' }); // Par = 82
+      const header = createRaceHeader({ classification: 'allowance', trackCode: 'LRL' }); // Par = 82
       const horse = createSpeedFigureHorse([88, 86, 85]); // Best = 88, 6 above par
 
       const result = calculateSpeedClassScore(horse, header);
@@ -39,7 +52,7 @@ describe('Speed & Class Scoring', () => {
     });
 
     it('returns 32 points for speed figure at par (0-4 above)', () => {
-      const header = createRaceHeader({ classification: 'allowance' }); // Par = 82
+      const header = createRaceHeader({ classification: 'allowance', trackCode: 'LRL' }); // Par = 82
       const horse = createSpeedFigureHorse([84, 82, 80]); // Best = 84, 2 above par
 
       const result = calculateSpeedClassScore(horse, header);
@@ -48,7 +61,8 @@ describe('Speed & Class Scoring', () => {
     });
 
     it('returns 24 points for speed figure 1-5 below par', () => {
-      const header = createRaceHeader({ classification: 'allowance' }); // Par = 82
+      // Use LRL (Tier 3, neutral) for both race and past performances
+      const header = createRaceHeader({ classification: 'allowance', trackCode: 'LRL' }); // Par = 82
       const horse = createSpeedFigureHorse([80, 78, 77]); // Best = 80, 2 below par
 
       const result = calculateSpeedClassScore(horse, header);
@@ -57,7 +71,8 @@ describe('Speed & Class Scoring', () => {
     });
 
     it('returns 16 points for speed figure 6-10 below par', () => {
-      const header = createRaceHeader({ classification: 'allowance' }); // Par = 82
+      // Use LRL (Tier 3, neutral) for both race and past performances
+      const header = createRaceHeader({ classification: 'allowance', trackCode: 'LRL' }); // Par = 82
       const horse = createSpeedFigureHorse([75, 73, 72]); // Best = 75, 7 below par
 
       const result = calculateSpeedClassScore(horse, header);
@@ -66,7 +81,8 @@ describe('Speed & Class Scoring', () => {
     });
 
     it('returns 8 points for speed figure significantly below par', () => {
-      const header = createRaceHeader({ classification: 'allowance' }); // Par = 82
+      // Use LRL (Tier 3, neutral) for both race and past performances
+      const header = createRaceHeader({ classification: 'allowance', trackCode: 'LRL' }); // Par = 82
       const horse = createSpeedFigureHorse([65, 63, 60]); // Best = 65, 17 below par
 
       const result = calculateSpeedClassScore(horse, header);
@@ -306,6 +322,311 @@ describe('Speed & Class Scoring', () => {
       const result = calculateSpeedClassScore(horse, header);
 
       expect(result.bestRecentFigure).toBe(90);
+    });
+  });
+
+  // =========================================================================
+  // TRACK SPEED NORMALIZATION TESTS
+  // =========================================================================
+
+  describe('Track Speed Normalization', () => {
+    describe('Track Tier Classification', () => {
+      it('correctly classifies Tier 1 (elite) tracks', () => {
+        expect(getSpeedTier('SAR')).toBe(1); // Saratoga
+        expect(getSpeedTier('DMR')).toBe(1); // Del Mar
+        expect(getSpeedTier('KEE')).toBe(1); // Keeneland
+        expect(getSpeedTier('SA')).toBe(1); // Santa Anita
+        expect(getSpeedTier('BEL')).toBe(1); // Belmont
+
+        expect(isTier1Track('SAR')).toBe(true);
+        expect(isTier1Track('FL')).toBe(false);
+      });
+
+      it('correctly classifies Tier 2 (strong) tracks', () => {
+        expect(getSpeedTier('GP')).toBe(2); // Gulfstream
+        expect(getSpeedTier('CD')).toBe(2); // Churchill
+        expect(getSpeedTier('OP')).toBe(2); // Oaklawn
+        expect(getSpeedTier('AQU')).toBe(2); // Aqueduct
+      });
+
+      it('correctly classifies Tier 3 (average) tracks', () => {
+        expect(getSpeedTier('LRL')).toBe(3); // Laurel
+        expect(getSpeedTier('FG')).toBe(3); // Fair Grounds
+        expect(getSpeedTier('TAM')).toBe(3); // Tampa Bay Downs
+        expect(getSpeedTier('PRX')).toBe(3); // Parx
+      });
+
+      it('correctly classifies Tier 4 (weak) tracks', () => {
+        expect(getSpeedTier('FL')).toBe(4); // Finger Lakes
+        expect(getSpeedTier('FON')).toBe(4); // Fonner Park
+        expect(getSpeedTier('BTP')).toBe(4); // Belterra Park
+        expect(getSpeedTier('SUN')).toBe(4); // Sunland
+
+        expect(isTier4Track('FL')).toBe(true);
+        expect(isTier4Track('SAR')).toBe(false);
+      });
+
+      it('defaults unknown tracks to Tier 3', () => {
+        expect(getSpeedTier('UNKNOWN')).toBe(3);
+        expect(getSpeedTier('XYZ')).toBe(3);
+      });
+    });
+
+    describe('Tier Adjustments', () => {
+      it('returns positive adjustment for Tier 1 tracks', () => {
+        expect(getTrackTierAdjustment('SAR')).toBe(5);
+        expect(getTrackTierAdjustment('BEL')).toBe(5);
+      });
+
+      it('returns positive adjustment for Tier 2 tracks', () => {
+        expect(getTrackTierAdjustment('GP')).toBe(2);
+        expect(getTrackTierAdjustment('CD')).toBe(2);
+      });
+
+      it('returns zero adjustment for Tier 3 tracks (baseline)', () => {
+        expect(getTrackTierAdjustment('LRL')).toBe(0);
+        expect(getTrackTierAdjustment('TAM')).toBe(0);
+      });
+
+      it('returns negative adjustment for Tier 4 tracks', () => {
+        expect(getTrackTierAdjustment('FL')).toBe(-3);
+        expect(getTrackTierAdjustment('FON')).toBe(-3);
+      });
+    });
+
+    describe('Speed Figure Normalization', () => {
+      it('normalizes figure based on track tier', () => {
+        // 88 Beyer at Saratoga (Tier 1) should be boosted
+        const sarResult = normalizeSpeedFigure(88, 'SAR', 6, 'allowance');
+        expect(sarResult.rawFigure).toBe(88);
+        expect(sarResult.tierAdjustment).toBe(5);
+        expect(sarResult.normalizedFigure).toBe(93); // 88 + 5
+
+        // 88 Beyer at Finger Lakes (Tier 4) should be penalized
+        const flResult = normalizeSpeedFigure(88, 'FL', 6, 'allowance');
+        expect(flResult.rawFigure).toBe(88);
+        expect(flResult.tierAdjustment).toBe(-3);
+        expect(flResult.normalizedFigure).toBe(85); // 88 - 3
+      });
+
+      it('includes reasoning about track tier', () => {
+        const result = normalizeSpeedFigure(88, 'SAR', 6, 'allowance');
+        expect(result.reasoning).toContain('SAR');
+        expect(result.reasoning).toContain('Tier 1');
+        expect(result.reasoning).toContain('Elite');
+      });
+    });
+
+    describe('Shipper Analysis', () => {
+      it('detects shipping from Tier 1 to Tier 4 (shipping down)', () => {
+        const result = analyzeShipper('SAR', 'FL');
+
+        expect(result.isShipping).toBe(true);
+        expect(result.fromTier).toBe(1);
+        expect(result.toTier).toBe(4);
+        expect(result.tierChange).toBe(3); // 1 - 4 = -3, but we store as positive for down
+        expect(result.adjustment).toBeGreaterThan(0); // Boost for shipping down
+      });
+
+      it('detects shipping from Tier 4 to Tier 1 (shipping up)', () => {
+        const result = analyzeShipper('FL', 'SAR');
+
+        expect(result.isShipping).toBe(true);
+        expect(result.fromTier).toBe(4);
+        expect(result.toTier).toBe(1);
+        expect(result.tierChange).toBe(-3); // 4 - 1 = 3, negative for up
+        expect(result.adjustment).toBeLessThan(0); // Penalty for shipping up
+      });
+
+      it('returns no shipping for same tier', () => {
+        // Both Tier 1
+        const result = analyzeShipper('SAR', 'BEL');
+        expect(result.isShipping).toBe(false);
+        expect(result.tierChange).toBe(0);
+        expect(result.adjustment).toBe(0);
+      });
+
+      it('handles null previous track', () => {
+        const result = analyzeShipper(null, 'SAR');
+        expect(result.isShipping).toBe(false);
+        expect(result.fromTrack).toBeNull();
+      });
+    });
+
+    describe('Track Speed Pars', () => {
+      it('returns par figure for track with data', () => {
+        // Saratoga has winning time data
+        const par = getTrackSpeedPar('SAR', 6, 'allowance');
+        expect(par).not.toBeNull();
+        expect(par).toBeGreaterThan(70);
+        expect(par).toBeLessThan(100);
+      });
+
+      it('returns null for track without data', () => {
+        const par = getTrackSpeedPar('UNKNOWN', 6, 'allowance');
+        expect(par).toBeNull();
+      });
+
+      it('returns different pars for different class levels', () => {
+        const claimingPar = getTrackSpeedPar('SAR', 6, 'claiming');
+        const stakesPar = getTrackSpeedPar('SAR', 6, 'stakes');
+
+        if (claimingPar !== null && stakesPar !== null) {
+          expect(stakesPar).toBeGreaterThan(claimingPar);
+        }
+      });
+    });
+
+    describe('Track Info', () => {
+      it('returns comprehensive track info', () => {
+        const info = getTrackSpeedInfo('SAR');
+        expect(info.trackCode).toBe('SAR');
+        expect(info.tier).toBe(1);
+        expect(info.tierName).toBe('Elite');
+        expect(info.tierAdjustment).toBe(5);
+      });
+
+      it('returns tracks by tier', () => {
+        const tier1 = getTracksInTier(1);
+        expect(tier1).toContain('SAR');
+        expect(tier1).toContain('BEL');
+        expect(tier1).not.toContain('FL');
+
+        const tier4 = getTracksInTier(4);
+        expect(tier4).toContain('FL');
+        expect(tier4).not.toContain('SAR');
+      });
+    });
+  });
+
+  describe('Speed/Class Score with Track Normalization', () => {
+    it('includes track normalization info in result', () => {
+      const header = createRaceHeader({
+        trackCode: 'SAR',
+        classification: 'allowance',
+        distanceFurlongs: 6,
+      });
+      const horse = createSpeedFigureHorse([88, 86, 85]);
+
+      const result = calculateSpeedClassScore(horse, header);
+
+      expect(result.trackNormalization).toBeDefined();
+      expect(result.trackNormalization?.currentTrackTier).toBe(1);
+      expect(result.trackNormalization?.currentTrackTierName).toBe('Elite');
+    });
+
+    it('applies tier adjustment when comparing 88 Beyer at Saratoga vs Finger Lakes', () => {
+      // Scenario: 88 Beyer at Saratoga (Tier 1)
+      const sarHeader = createRaceHeader({
+        trackCode: 'SAR',
+        classification: 'allowance',
+        distanceFurlongs: 6,
+      });
+      const sarHorse = createHorseEntry({
+        pastPerformances: [
+          createPastPerformance({
+            track: 'SAR',
+            speedFigures: createSpeedFigures({ beyer: 88 }),
+            classification: 'allowance',
+            finishPosition: 2,
+          }),
+        ],
+      });
+
+      const sarResult = calculateSpeedClassScore(sarHorse, sarHeader);
+
+      // Scenario: 88 Beyer at Finger Lakes (Tier 4)
+      const flHeader = createRaceHeader({
+        trackCode: 'FL',
+        classification: 'allowance',
+        distanceFurlongs: 6,
+      });
+      const flHorse = createHorseEntry({
+        pastPerformances: [
+          createPastPerformance({
+            track: 'FL',
+            speedFigures: createSpeedFigures({ beyer: 88 }),
+            classification: 'allowance',
+            finishPosition: 2,
+          }),
+        ],
+      });
+
+      const flResult = calculateSpeedClassScore(flHorse, flHeader);
+
+      // Saratoga 88 should score higher than Finger Lakes 88
+      // Due to tier adjustment: SAR (+5) vs FL (-3) = 8 point difference in effective figure
+      expect(sarResult.speedScore).toBeGreaterThan(flResult.speedScore);
+    });
+
+    it('detects and adjusts for shipping from Tier 3 to Tier 1', () => {
+      // Horse running at SAR (Tier 1) with recent races at LRL (Tier 3)
+      const header = createRaceHeader({
+        trackCode: 'SAR', // Tier 1
+        classification: 'allowance',
+        distanceFurlongs: 6,
+      });
+      const horse = createHorseEntry({
+        pastPerformances: [
+          createPastPerformance({
+            track: 'LRL', // Tier 3 - shipping up to Tier 1
+            speedFigures: createSpeedFigures({ beyer: 85 }),
+            classification: 'allowance',
+            finishPosition: 1,
+          }),
+        ],
+      });
+
+      const result = calculateSpeedClassScore(horse, header);
+
+      // Should detect shipping up (penalty expected)
+      expect(result.trackNormalization?.shipperAnalysis).toBeDefined();
+      expect(result.trackNormalization?.shipperAnalysis?.isShipping).toBe(true);
+      expect(result.trackNormalization?.shipperAnalysis?.adjustment).toBeLessThan(0);
+      expect(result.speedReasoning).toContain('Shipping up');
+    });
+
+    it('falls back to raw figure when no par data available', () => {
+      const header = createRaceHeader({
+        trackCode: 'UNKNOWN', // Unknown track - no par data
+        classification: 'allowance',
+        distanceFurlongs: 6,
+      });
+      const horse = createSpeedFigureHorse([85, 83, 80]);
+
+      const result = calculateSpeedClassScore(horse, header);
+
+      // Should still calculate a score using raw figure
+      expect(result.total).toBeGreaterThan(0);
+      expect(result.speedScore).toBeGreaterThan(0);
+      expect(result.trackNormalization?.trackParFigure).toBeNull();
+    });
+
+    it('calculates par differential correctly', () => {
+      const header = createRaceHeader({
+        trackCode: 'SAR',
+        classification: 'allowance',
+        distanceFurlongs: 6,
+      });
+      const horse = createHorseEntry({
+        pastPerformances: [
+          createPastPerformance({
+            track: 'SAR',
+            speedFigures: createSpeedFigures({ beyer: 92 }),
+            classification: 'allowance',
+            finishPosition: 1,
+          }),
+        ],
+      });
+
+      const result = calculateSpeedClassScore(horse, header);
+
+      // Should have par data and calculate differential
+      if (result.trackNormalization?.trackParFigure !== null) {
+        expect(result.trackNormalization?.parDifferential).toBeDefined();
+        // 92 Beyer should be above typical allowance par
+        expect(result.trackNormalization?.parDifferential).toBeGreaterThan(0);
+      }
     });
   });
 });

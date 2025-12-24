@@ -506,12 +506,15 @@ export function createEquipmentChangeHorse(
 
 /**
  * Create a horse with specific speed figures
+ * Uses LRL (Laurel Park, Tier 3) as the default track for neutral tier adjustment
  */
-export function createSpeedFigureHorse(figures: number[]): HorseEntry {
+export function createSpeedFigureHorse(figures: number[], track: string = 'LRL'): HorseEntry {
   const pastPerformances = figures.map((beyer, i) =>
     createPastPerformance({
       speedFigures: createSpeedFigures({ beyer }),
       date: `2024-0${Math.max(1, 10 - i)}-15`,
+      track,
+      trackName: track === 'LRL' ? 'Laurel Park' : track,
     })
   );
 
