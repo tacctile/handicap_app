@@ -4,7 +4,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { calculateFormScore, isOnHotStreak, getFormSummary } from '../../../lib/scoring/form';
+import {
+  calculateFormScore,
+  isOnHotStreak,
+  getFormSummary,
+  type ClassContext,
+} from '../../../lib/scoring/form';
 import {
   createHorseEntry,
   createPastPerformance,
@@ -420,6 +425,403 @@ describe('Form Scoring', () => {
       const summary = getFormSummary(horse);
 
       expect(summary.label).toBe('Steady');
+    });
+  });
+
+  // FIX v2.1: Class-Context Scoring Tests
+  describe('Class Context Scoring', () => {
+    // Today's race context: Allowance race with $75k purse
+    const todayAllowanceContext: ClassContext = {
+      classification: 'allowance',
+      claimingPrice: null,
+      purse: 75000,
+    };
+
+    // Today's race context: Claiming race $25k
+    const todayClaimingContext: ClassContext = {
+      classification: 'claiming',
+      claimingPrice: 25000,
+      purse: 40000,
+    };
+
+    describe('wins at higher class', () => {
+      it('scores maximum (20) for win at G1 stakes when dropping to allowance', () => {
+        const horse = createHorseEntry({
+          daysSinceLastRace: 21,
+          pastPerformances: [
+            createPastPerformance({
+              finishPosition: 1,
+              classification: 'stakes-graded-1',
+              claimingPrice: null,
+              purse: 1000000,
+            }),
+          ],
+        });
+
+        const result = calculateFormScore(horse, todayAllowanceContext);
+
+        expect(result.recentFormScore).toBe(20);
+        expect(result.classAdjustmentApplied).toBe(false); // Wins don't get "adjusted", they're already max
+      });
+
+      it('scores maximum (20) for win at allowance when dropping to claiming', () => {
+        const horse = createHorseEntry({
+          daysSinceLastRace: 21,
+          pastPerformances: [
+            createPastPerformance({
+              finishPosition: 1,
+              classification: 'allowance',
+              claimingPrice: null,
+              purse: 75000,
+            }),
+          ],
+        });
+
+        const result = calculateFormScore(horse, todayClaimingContext);
+
+        expect(result.recentFormScore).toBe(20);
+      });
+    });
+
+    describe('4th-6th place at higher class gets neutral boost', () => {
+      it('boosts 5th place at G1 to neutral (12-14 pts) when dropping to allowance', () => {
+        const horse = createHorseEntry({
+          daysSinceLastRace: 21,
+          pastPerformances: [
+            createPastPerformance({
+              finishPosition: 5,
+              lengthsBehind: 10,
+              classification: 'stakes-graded-1',
+              claimingPrice: null,
+              purse: 1000000,
+            }),
+          ],
+        });
+
+        // Without class context
+        const noContextResult = calculateFormScore(horse);
+        // With class context (dropping from G1 to allowance)
+        const withContextResult = calculateFormScore(horse, todayAllowanceContext);
+
+        // Without context: 5th with 10L behind = 8 points
+        expect(noContextResult.recentFormScore).toBe(8);
+
+        // With context: should be boosted to neutral (12-14)
+        expect(withContextResult.recentFormScore).toBeGreaterThanOrEqual(12);
+        expect(withContextResult.recentFormScore).toBeLessThanOrEqual(14);
+        expect(withContextResult.classAdjustmentApplied).toBe(true);
+        expect(withContextResult.reasoning).toContain('Class drop');
+      });
+
+      it('boosts 4th place at stakes to neutral when dropping to claiming', () => {
+        const horse = createHorseEntry({
+          daysSinceLastRace: 21,
+          pastPerformances: [
+            createPastPerformance({
+              finishPosition: 4,
+              lengthsBehind: 8,
+              classification: 'stakes',
+              claimingPrice: null,
+              purse: 200000,
+            }),
+          ],
+        });
+
+        const withContextResult = calculateFormScore(horse, todayClaimingContext);
+
+        expect(withContextResult.recentFormScore).toBeGreaterThanOrEqual(12);
+        expect(withContextResult.classAdjustmentApplied).toBe(true);
+      });
+    });
+
+    describe('7th+ at higher class gets neutral boost', () => {
+      it('boosts 8th place at G2 to neutral (10-12 pts) when dropping to allowance', () => {
+        const horse = createHorseEntry({
+          daysSinceLastRace: 21,
+          pastPerformances: [
+            createPastPerformance({
+              finishPosition: 8,
+              lengthsBehind: 15,
+              classification: 'stakes-graded-2',
+              claimingPrice: null,
+              purse: 500000,
+            }),
+          ],
+        });
+
+        // Without class context
+        const noContextResult = calculateFormScore(horse);
+        // With class context (dropping from G2 to allowance)
+        const withContextResult = calculateFormScore(horse, todayAllowanceContext);
+
+        // Without context: 8th place = 5 points
+        expect(noContextResult.recentFormScore).toBe(5);
+
+        // With context: should be boosted to neutral (10-12)
+        expect(withContextResult.recentFormScore).toBeGreaterThanOrEqual(10);
+        expect(withContextResult.recentFormScore).toBeLessThanOrEqual(12);
+        expect(withContextResult.classAdjustmentApplied).toBe(true);
+      });
+
+      it('boosts 10th place at G1 to neutral when dropping to claiming', () => {
+        const horse = createHorseEntry({
+          daysSinceLastRace: 21,
+          pastPerformances: [
+            createPastPerformance({
+              finishPosition: 10,
+              lengthsBehind: 20,
+              classification: 'stakes-graded-1',
+              claimingPrice: null,
+              purse: 1000000,
+            }),
+          ],
+        });
+
+        const withContextResult = calculateFormScore(horse, todayClaimingContext);
+
+        expect(withContextResult.recentFormScore).toBeGreaterThanOrEqual(10);
+        expect(withContextResult.classAdjustmentApplied).toBe(true);
+      });
+    });
+
+    describe('2nd/3rd place at higher class gets bonus', () => {
+      it('boosts 2nd place at G1 to near-win level when dropping', () => {
+        const horse = createHorseEntry({
+          daysSinceLastRace: 21,
+          pastPerformances: [
+            createPastPerformance({
+              finishPosition: 2,
+              lengthsBehind: 3.0,
+              classification: 'stakes-graded-1',
+              claimingPrice: null,
+              purse: 1000000,
+            }),
+          ],
+        });
+
+        // Without context: 2nd more than 2L behind = 13 points
+        const noContextResult = calculateFormScore(horse);
+        // With context: should get bonus
+        const withContextResult = calculateFormScore(horse, todayAllowanceContext);
+
+        expect(noContextResult.recentFormScore).toBe(13);
+        expect(withContextResult.recentFormScore).toBeGreaterThan(13);
+        expect(withContextResult.recentFormScore).toBeLessThanOrEqual(18);
+        expect(withContextResult.classAdjustmentApplied).toBe(true);
+      });
+
+      it('boosts 3rd place at stakes to near-win level when dropping', () => {
+        const horse = createHorseEntry({
+          daysSinceLastRace: 21,
+          pastPerformances: [
+            createPastPerformance({
+              finishPosition: 3,
+              lengthsBehind: 4.0,
+              classification: 'stakes',
+              claimingPrice: null,
+              purse: 200000,
+            }),
+          ],
+        });
+
+        const withContextResult = calculateFormScore(horse, todayClaimingContext);
+
+        expect(withContextResult.recentFormScore).toBeGreaterThan(12); // Base is 12
+        expect(withContextResult.classAdjustmentApplied).toBe(true);
+      });
+    });
+
+    describe('same class scoring unchanged', () => {
+      it('does not adjust 5th place at allowance when racing at allowance', () => {
+        const horse = createHorseEntry({
+          daysSinceLastRace: 21,
+          pastPerformances: [
+            createPastPerformance({
+              finishPosition: 5,
+              lengthsBehind: 10,
+              classification: 'allowance',
+              claimingPrice: null,
+              purse: 75000,
+            }),
+          ],
+        });
+
+        const withContextResult = calculateFormScore(horse, todayAllowanceContext);
+
+        // Same class = no adjustment
+        expect(withContextResult.recentFormScore).toBe(8);
+        expect(withContextResult.classAdjustmentApplied).toBe(false);
+      });
+
+      it('does not adjust 8th place at claiming when racing at claiming', () => {
+        const horse = createHorseEntry({
+          daysSinceLastRace: 21,
+          pastPerformances: [
+            createPastPerformance({
+              finishPosition: 8,
+              lengthsBehind: 15,
+              classification: 'claiming',
+              claimingPrice: 25000,
+              purse: 40000,
+            }),
+          ],
+        });
+
+        const withContextResult = calculateFormScore(horse, todayClaimingContext);
+
+        expect(withContextResult.recentFormScore).toBe(5);
+        expect(withContextResult.classAdjustmentApplied).toBe(false);
+      });
+    });
+
+    describe('lower class past race', () => {
+      it('does not adjust or penalize losses at lower class', () => {
+        // Horse raced at claiming, now stepping up to allowance
+        const horse = createHorseEntry({
+          daysSinceLastRace: 21,
+          pastPerformances: [
+            createPastPerformance({
+              finishPosition: 5,
+              lengthsBehind: 10,
+              classification: 'claiming',
+              claimingPrice: 25000,
+              purse: 40000,
+            }),
+          ],
+        });
+
+        const withContextResult = calculateFormScore(horse, todayAllowanceContext);
+
+        // Racing up in class, no bonus for loss at lower level
+        expect(withContextResult.recentFormScore).toBe(8);
+        expect(withContextResult.classAdjustmentApplied).toBe(false);
+      });
+    });
+
+    describe('multiple races with class context', () => {
+      it('applies class context to all 3 recent races', () => {
+        const horse = createHorseEntry({
+          daysSinceLastRace: 21,
+          pastPerformances: [
+            // Race 1: 5th at G1 (50% weight)
+            createPastPerformance({
+              finishPosition: 5,
+              lengthsBehind: 10,
+              classification: 'stakes-graded-1',
+              claimingPrice: null,
+              purse: 1000000,
+              daysSinceLast: 21,
+            }),
+            // Race 2: 4th at G2 (30% weight)
+            createPastPerformance({
+              finishPosition: 4,
+              lengthsBehind: 8,
+              classification: 'stakes-graded-2',
+              claimingPrice: null,
+              purse: 500000,
+              daysSinceLast: 28,
+            }),
+            // Race 3: 7th at G3 (20% weight)
+            createPastPerformance({
+              finishPosition: 7,
+              lengthsBehind: 12,
+              classification: 'stakes-graded-3',
+              claimingPrice: null,
+              purse: 300000,
+              daysSinceLast: 35,
+            }),
+          ],
+        });
+
+        // Without context: would score poorly
+        const noContextResult = calculateFormScore(horse);
+        // With context: dropping to allowance, all higher class losses boosted
+        const withContextResult = calculateFormScore(horse, todayAllowanceContext);
+
+        expect(withContextResult.recentFormScore).toBeGreaterThan(noContextResult.recentFormScore);
+        expect(withContextResult.classAdjustmentApplied).toBe(true);
+        expect(withContextResult.classAdjustments.length).toBeGreaterThanOrEqual(1);
+      });
+    });
+
+    describe('reasoning includes class adjustments', () => {
+      it('shows class drop info in reasoning', () => {
+        const horse = createHorseEntry({
+          daysSinceLastRace: 21,
+          pastPerformances: [
+            createPastPerformance({
+              finishPosition: 6,
+              lengthsBehind: 12,
+              classification: 'stakes-graded-1',
+              claimingPrice: null,
+              purse: 1000000,
+            }),
+          ],
+        });
+
+        const result = calculateFormScore(horse, todayAllowanceContext);
+
+        expect(result.reasoning).toContain('Class drop');
+        expect(result.classAdjustments.length).toBeGreaterThan(0);
+      });
+    });
+
+    describe('claiming price tier comparison', () => {
+      it('boosts losses when dropping from high claiming to low claiming', () => {
+        // Horse raced at $75k claiming (level 3.8), now dropping to $10k claiming (level 3.0)
+        // Difference of 0.8 exceeds the 0.5 "same class" threshold
+        const horse = createHorseEntry({
+          daysSinceLastRace: 21,
+          pastPerformances: [
+            createPastPerformance({
+              finishPosition: 5,
+              lengthsBehind: 8,
+              classification: 'claiming',
+              claimingPrice: 75000, // High claiming tier (level 3.8)
+              purse: 80000,
+            }),
+          ],
+        });
+
+        const lowerClaimingContext: ClassContext = {
+          classification: 'claiming',
+          claimingPrice: 10000, // Low claiming tier (level 3.0)
+          purse: 25000,
+        };
+
+        const result = calculateFormScore(horse, lowerClaimingContext);
+
+        // Should get boost for dropping within claiming - significant tier drop
+        expect(result.recentFormScore).toBeGreaterThanOrEqual(12);
+        expect(result.classAdjustmentApplied).toBe(true);
+      });
+
+      it('does not boost when claiming tiers are similar ($50k to $25k)', () => {
+        // $50k claiming (3.8) vs $25k claiming (3.5) = 0.3 difference, within 0.5 threshold
+        const horse = createHorseEntry({
+          daysSinceLastRace: 21,
+          pastPerformances: [
+            createPastPerformance({
+              finishPosition: 5,
+              lengthsBehind: 8,
+              classification: 'claiming',
+              claimingPrice: 50000,
+              purse: 60000,
+            }),
+          ],
+        });
+
+        const similarClaimingContext: ClassContext = {
+          classification: 'claiming',
+          claimingPrice: 25000,
+          purse: 40000,
+        };
+
+        const result = calculateFormScore(horse, similarClaimingContext);
+
+        // Similar claiming tiers = no adjustment (difference within threshold)
+        expect(result.classAdjustmentApplied).toBe(false);
+      });
     });
   });
 });
