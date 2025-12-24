@@ -915,6 +915,114 @@ body {
 }
 
 /* ============================================
+   Header Tooltip Component (for column headers)
+   ============================================ */
+
+.header-tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header-tooltip-trigger {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: help;
+  transition: opacity 0.15s ease;
+}
+
+.header-tooltip-trigger:hover,
+.header-tooltip-trigger:focus {
+  opacity: 0.85;
+}
+
+.header-tooltip-trigger:focus {
+  outline: none;
+}
+
+.header-tooltip-trigger:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Tooltip popup - centered below trigger */
+.header-tooltip {
+  position: absolute;
+  z-index: 1000;
+  min-width: 240px;
+  max-width: 320px;
+  background: var(--color-surface-variant, #242428);
+  border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  /* Position centered below the trigger */
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  animation: headerTooltipFadeIn 0.15s ease;
+}
+
+@keyframes headerTooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.header-tooltip__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: rgba(25, 171, 181, 0.1);
+  border-bottom: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-lg, 12px) var(--radius-lg, 12px) 0 0;
+}
+
+.header-tooltip__header-icon {
+  font-size: 14px !important;
+  color: var(--color-primary, #19abb5);
+}
+
+.header-tooltip__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary, #19abb5);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.header-tooltip__content {
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(238, 239, 241, 0.9);
+}
+
+/* Mobile: ensure tooltip stays in view */
+@media (max-width: 640px) {
+  .header-tooltip {
+    min-width: 200px;
+    max-width: 280px;
+    /* Allow tooltip to shift if near edge */
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .header-tooltip-trigger {
+    padding: 4px 0;
+  }
+}
+
+/* ============================================
    Betting Recommendations Styles
    ============================================ */
 

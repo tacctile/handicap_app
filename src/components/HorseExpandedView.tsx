@@ -9,16 +9,19 @@ import { formatRacingDistance } from '../utils/formatters';
 // CONSTANTS & UTILITIES
 // ============================================================================
 
-// Score limits by category (from lib/scoring)
+// Import score limits from the authoritative scoring engine (single source of truth)
+import { SCORE_LIMITS as SCORING_LIMITS, MAX_BASE_SCORE, MAX_SCORE } from '../lib/scoring';
+
+// Score limits by category - derived from lib/scoring for display
 const SCORE_LIMITS = {
-  connections: 55,
-  postPosition: 45,
-  speedClass: 50,
-  form: 30,
-  equipment: 25,
-  pace: 40,
-  base: 240, // Max base score before overlay
-  total: 290, // Max final score (base + overlay: 240 + 50)
+  connections: SCORING_LIMITS.connections, // 25 (10.4% - Modifier)
+  postPosition: SCORING_LIMITS.postPosition, // 30 (12.5% - Track-dependent)
+  speedClass: SCORING_LIMITS.speedClass, // 80 (33.3% - Most predictive)
+  form: SCORING_LIMITS.form, // 40 (16.7% - Recent performance)
+  equipment: SCORING_LIMITS.equipment, // 20 (8.3% - Fine-tuning)
+  pace: SCORING_LIMITS.pace, // 45 (18.8% - Race shape)
+  base: MAX_BASE_SCORE, // 240 - Max base score before overlay
+  total: MAX_SCORE, // 290 - Max final score (base + overlay: 240 + 50)
 } as const;
 
 // Equipment code mappings
