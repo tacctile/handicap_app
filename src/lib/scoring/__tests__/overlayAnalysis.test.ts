@@ -402,7 +402,8 @@ describe('Overlay Analysis', () => {
   describe('Tier Adjustment Logic', () => {
     it('bumps up tier for high overlay', () => {
       // Score 165 + 80% overlay = adjusted score 185
-      const adjustment = calculateTierAdjustment(165, 80);
+      // Pass (totalScore, baseScore, overlayPercent)
+      const adjustment = calculateTierAdjustment(165, 165, 80);
 
       expect(adjustment.adjustedScore).toBe(185);
       expect(adjustment.tierShift).toBe(1);
@@ -410,27 +411,27 @@ describe('Overlay Analysis', () => {
     });
 
     it('bumps down tier for underlay', () => {
-      // Score 150 + -35% overlay = adjusted score 125 (score < 160 threshold, penalty applies)
-      const adjustment = calculateTierAdjustment(150, -35);
+      // BaseScore 150 + -35% overlay = adjusted score 125 (baseScore < 160 threshold, penalty applies)
+      const adjustment = calculateTierAdjustment(150, 150, -35);
 
       expect(adjustment.adjustedScore).toBe(125);
       expect(adjustment.tierShift).toBe(-2);
       expect(adjustment.reasoning).toContain('underlay');
     });
 
-    it('identifies Diamond in Rough (low score + massive overlay)', () => {
-      // Score 155 + 175% overlay = special case
-      const adjustment = calculateTierAdjustment(155, 175);
+    it('identifies Diamond in Rough (low baseScore + massive overlay)', () => {
+      // BaseScore 155 + 175% overlay = special case
+      const adjustment = calculateTierAdjustment(155, 155, 175);
 
       expect(adjustment.isSpecialCase).toBe(true);
       expect(adjustment.specialCaseType).toBe('diamond_in_rough');
       expect(adjustment.reasoning).toContain('DIAMOND');
     });
 
-    it("does NOT identify Fool's Gold for scores >= 160 (v2.1 threshold waiver)", () => {
-      // Score 190 >= 160 threshold, so underlay penalty is waived and Fool's Gold disabled
+    it("does NOT identify Fool's Gold for baseScores >= 160 (v2.1 threshold waiver)", () => {
+      // BaseScore 190 >= 160 threshold, so underlay penalty is waived and Fool's Gold disabled
       // High-scoring horses with underlays are correctly identified by market, not "fool's gold"
-      const adjustment = calculateTierAdjustment(190, -30);
+      const adjustment = calculateTierAdjustment(190, 190, -30);
 
       expect(adjustment.isSpecialCase).toBe(false);
       expect(adjustment.specialCaseType).not.toBe('fool_gold');
@@ -439,17 +440,29 @@ describe('Overlay Analysis', () => {
     });
 
     it('handles slight overlay (+15%)', () => {
-      const adjustment = calculateTierAdjustment(150, 15);
+      const adjustment = calculateTierAdjustment(150, 150, 15);
 
       expect(adjustment.adjustedScore).toBe(155);
       expect(adjustment.tierShift).toBe(0);
     });
 
     it('handles massive overlay (+150%)', () => {
-      const adjustment = calculateTierAdjustment(140, 150);
+      const adjustment = calculateTierAdjustment(140, 140, 150);
 
       expect(adjustment.adjustedScore).toBe(170);
       expect(adjustment.tierShift).toBe(2);
+    });
+
+    it('waives penalty when baseScore >= 160 but totalScore < 160 (overlay already applied)', () => {
+      // KEY FIX: Base score 169 should waive penalty even when total is 156 (base + overlay = -13)
+      // This tests the scenario where overlay scoring already applied negative adjustments
+      const adjustment = calculateTierAdjustment(156, 169, -20);
+
+      // Penalty should be waived because BASE score (169) >= 160
+      expect(adjustment.adjustedScore).toBe(156); // No additional penalty
+      expect(adjustment.tierShift).toBe(0);
+      expect(adjustment.reasoning).toContain('penalty waived');
+      expect(adjustment.reasoning).toContain('169');
     });
   });
 

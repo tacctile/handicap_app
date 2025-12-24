@@ -17,7 +17,8 @@ import { createHorseEntry } from '../../fixtures/testHelpers';
 import type { HorseScore, ScoreBreakdown } from '../../../lib/scoring';
 
 // Helper to create a mock score
-function createMockScore(total: number, isScratched = false): HorseScore {
+// baseScore defaults to total (no overlay adjustment) unless explicitly provided
+function createMockScore(total: number, isScratched = false, baseScore?: number): HorseScore {
   const breakdown: ScoreBreakdown = {
     connections: { total: 22, trainer: 15, jockey: 7, partnershipBonus: 0, reasoning: '' },
     postPosition: { total: 24, trackBiasApplied: false, isGoldenPost: false, reasoning: '' },
@@ -41,8 +42,13 @@ function createMockScore(total: number, isScratched = false): HorseScore {
     pace: { total: 20, runningStyle: 'P', paceFit: 'neutral', reasoning: '' },
   };
 
+  // If baseScore not provided, use total (simulating no overlay adjustment)
+  const effectiveBaseScore = baseScore ?? total;
+
   return {
     total,
+    baseScore: effectiveBaseScore,
+    overlayScore: total - effectiveBaseScore,
     breakdown,
     isScratched,
     confidenceLevel: total >= 180 ? 'high' : total >= 160 ? 'medium' : 'low',
