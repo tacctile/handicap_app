@@ -288,12 +288,19 @@ interface FairOddsDisplayProps {
 }
 
 const FairOddsDisplay = memo(function FairOddsDisplay({ overlay }: FairOddsDisplayProps) {
+  // Handle invalid fair odds display
+  const displayValue =
+    overlay.fairOddsDisplay && overlay.fairOddsDisplay !== 'N/A' ? overlay.fairOddsDisplay : '—';
+  const winProbDisplay = Number.isFinite(overlay.winProbability)
+    ? overlay.winProbability.toFixed(1)
+    : '—';
+
   return (
     <span
       className="fair-odds-display"
-      title={`Fair odds based on score\nWin probability: ${overlay.winProbability.toFixed(1)}%`}
+      title={`Fair odds based on score\nWin probability: ${winProbDisplay}%`}
     >
-      {overlay.fairOddsDisplay}
+      {displayValue}
     </span>
   );
 });
