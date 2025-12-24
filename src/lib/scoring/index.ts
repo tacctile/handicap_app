@@ -71,6 +71,11 @@ import {
   type MatchedPattern,
 } from './trainerPatterns';
 import {
+  detectComboPatterns as calcComboPatterns,
+  type ComboPatternResult,
+  type DetectedCombo,
+} from './comboPatterns';
+import {
   calculateDetailedBreedingScore,
   calculateBreedingContribution,
   shouldShowBreedingAnalysis,
@@ -95,13 +100,13 @@ import {
 // ============================================================================
 
 /** Maximum base score (before overlay) */
-export const MAX_BASE_SCORE = 275;
+export const MAX_BASE_SCORE = 287;
 
 /** Maximum overlay adjustment */
 export const MAX_OVERLAY = 50;
 
 /** Maximum total score (base + overlay) */
-export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 310
+export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 337
 
 /**
  * Score limits by category
@@ -126,7 +131,7 @@ export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 310
  * - Trainer Patterns: 15 pts (5.5%) — Situational trainer pattern bonuses
  *   Based on DRF Fields 1146-1221 (trainer category statistics)
  *
- * Total: 275 points base score
+ * Total: 287 points base score (with combo patterns)
  */
 export const SCORE_LIMITS = {
   connections: 25,
@@ -137,6 +142,7 @@ export const SCORE_LIMITS = {
   pace: 45,
   distanceSurface: 20, // Turf (8) + Wet (6) + Distance (6) = 20
   trainerPatterns: 15, // Situational trainer pattern bonuses
+  comboPatterns: 12, // High-intent combo bonuses
   baseTotal: MAX_BASE_SCORE,
   overlayMax: MAX_OVERLAY,
   total: MAX_SCORE,
@@ -221,6 +227,13 @@ export interface ScoreBreakdown {
   trainerPatterns: {
     total: number;
     matchedPatterns: MatchedPattern[];
+    reasoning: string[];
+  };
+  /** Combo pattern bonuses (multiple positive signals aligned) */
+  comboPatterns: {
+    total: number;
+    detectedCombos: DetectedCombo[];
+    intentScore: number;
     reasoning: string[];
   };
   /** Breeding score for lightly raced horses (0 if 8+ starts) */
@@ -520,6 +533,12 @@ function calculateHorseScoreWithContext(
           matchedPatterns: [],
           reasoning: ['Scratched'],
         },
+        comboPatterns: {
+          total: 0,
+          detectedCombos: [],
+          intentScore: 0,
+          reasoning: ['Scratched'],
+        },
       },
       isScratched: true,
       confidenceLevel: 'low',
@@ -540,6 +559,9 @@ function calculateHorseScoreWithContext(
 
   // Calculate trainer pattern bonuses (0-15 points)
   const trainerPatterns = calcTrainerPatterns(horse, context.raceHeader);
+
+  // Calculate combo pattern bonuses (0-12 points)
+  const comboPatterns = calcComboPatterns(horse, context.raceHeader, context.horses);
 
   // Calculate breeding score for lightly raced horses
   let breedingScore: DetailedBreedingScore | undefined;
@@ -635,6 +657,12 @@ function calculateHorseScoreWithContext(
       matchedPatterns: trainerPatterns.matchedPatterns,
       reasoning: trainerPatterns.reasoning,
     },
+    comboPatterns: {
+      total: comboPatterns.total,
+      detectedCombos: comboPatterns.detectedCombos,
+      intentScore: comboPatterns.intentScore,
+      reasoning: comboPatterns.reasoning,
+    },
     breeding: breedingBreakdown,
     classAnalysis: classAnalysisBreakdown,
   };
@@ -653,6 +681,7 @@ function calculateHorseScoreWithContext(
     breakdown.pace.total +
     breakdown.distanceSurface.total + // Distance/surface affinity bonus (0-20)
     breakdown.trainerPatterns.total + // Trainer pattern bonuses (0-15)
+    breakdown.comboPatterns.total + // Combo pattern bonuses (0-12)
     breedingContribution +
     hiddenDropsBonus; // Add hidden class drop bonuses
 
@@ -825,6 +854,9 @@ export type {
   PaceScenarioAnalysis,
   TacticalAdvantage,
   PaceAnalysisResult,
+  // Combo pattern types
+  ComboPatternResult,
+  DetectedCombo,
 };
 
 // Re-export utility functions from sub-modules
@@ -877,6 +909,29 @@ export {
 } from './equipment';
 export { getOptimalPostPositions } from './postPosition';
 export { getParFigures, getClassHierarchy } from './speedClass';
+
+// Combo pattern detection exports
+export {
+  detectComboPatterns,
+  hasComboPatterns,
+  getComboPatternSummary,
+  getIntentLevel,
+  // Signal detection helpers
+  isClassDrop,
+  isFirstTimeLasix,
+  isFirstTimeBlinkers,
+  hasFirstTimeEquipment,
+  isJockeyUpgrade,
+  isSecondOffLayoff,
+  isReturningFromLayoff,
+  hasBulletWork,
+  isTrainerHot,
+  isFirstTimeTurf,
+  hasTurfBreeding,
+  isDistanceChange,
+  hasTrainerDistancePattern,
+  MAX_COMBO_PATTERN_POINTS,
+} from './comboPatterns';
 
 // Breeding analysis exports
 export {
