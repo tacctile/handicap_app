@@ -22,23 +22,24 @@
 import { DRFParseError, FileFormatError } from '../types/errors';
 import { logger } from '../services/logging';
 
-import type {
-  HorseEntry,
-  ParsedRace,
-  ParsedDRFFile,
-  RaceHeader,
-  Surface,
-  TrackCondition,
-  RaceClassification,
-  PastPerformance,
-  Workout,
-  Breeding,
-  Equipment,
-  Medication,
-  RunningLine,
-  SpeedFigures,
-  ParsingStep,
-  DRFWorkerProgressMessage,
+import {
+  createDefaultTrainerCategoryStats,
+  type HorseEntry,
+  type ParsedRace,
+  type ParsedDRFFile,
+  type RaceHeader,
+  type Surface,
+  type TrackCondition,
+  type RaceClassification,
+  type PastPerformance,
+  type Workout,
+  type Breeding,
+  type Equipment,
+  type Medication,
+  type RunningLine,
+  type SpeedFigures,
+  type ParsingStep,
+  type DRFWorkerProgressMessage,
 } from '../types/drf';
 
 // ============================================================================
@@ -1562,6 +1563,7 @@ function createDefaultHorseEntry(index: number): HorseEntry {
     trainerMeetWins: 0,
     trainerMeetPlaces: 0,
     trainerMeetShows: 0,
+    trainerCategoryStats: createDefaultTrainerCategoryStats(),
     jockeyName: 'Unknown',
     jockeyStats: '',
     jockeyMeetStarts: 0,

@@ -99,6 +99,108 @@ export interface Medication {
 }
 
 // ============================================================================
+// TRAINER CATEGORY STATISTICS (DRF Fields 1146-1221)
+// ============================================================================
+
+/**
+ * Single trainer statistic category with wins, starts, and ROI
+ */
+export interface TrainerCategoryStat {
+  /** Number of starts in this category */
+  starts: number;
+  /** Number of wins in this category */
+  wins: number;
+  /** Win percentage in this category */
+  winPercent: number;
+  /** Return on investment (ROI) as percentage */
+  roi: number;
+}
+
+/**
+ * Trainer Category Statistics parsed from DRF Fields 1146-1221
+ * These represent the trainer's situational performance in specific scenarios
+ */
+export interface TrainerCategoryStats {
+  // Equipment Patterns
+  /** First-time Lasix application */
+  firstTimeLasix: TrainerCategoryStat;
+  /** First-time Blinkers application */
+  firstTimeBlinkers: TrainerCategoryStat;
+  /** Blinkers removed (previously had blinkers) */
+  blinkersOff: TrainerCategoryStat;
+
+  // Layoff Patterns
+  /** Second start off a layoff (45+ days) */
+  secondOffLayoff: TrainerCategoryStat;
+  /** Returning after 31-60 days layoff */
+  days31to60: TrainerCategoryStat;
+  /** Returning after 61-90 days layoff */
+  days61to90: TrainerCategoryStat;
+  /** Returning after 91-180 days layoff */
+  days91to180: TrainerCategoryStat;
+  /** Returning after 181+ days layoff */
+  days181plus: TrainerCategoryStat;
+
+  // Distance Patterns
+  /** Sprint to Route switch (stretching out) */
+  sprintToRoute: TrainerCategoryStat;
+  /** Route to Sprint switch (cutting back) */
+  routeToSprint: TrainerCategoryStat;
+
+  // Surface Patterns
+  /** Turf Sprint races */
+  turfSprint: TrainerCategoryStat;
+  /** Turf Route races */
+  turfRoute: TrainerCategoryStat;
+  /** Wet/Off track races */
+  wetTrack: TrainerCategoryStat;
+  /** Dirt Sprint races */
+  dirtSprint: TrainerCategoryStat;
+  /** Dirt Route races */
+  dirtRoute: TrainerCategoryStat;
+
+  // Class Patterns
+  /** Maiden Claiming races */
+  maidenClaiming: TrainerCategoryStat;
+  /** Stakes races */
+  stakes: TrainerCategoryStat;
+
+  // Acquisition Patterns
+  /** First start for this trainer (new barn) */
+  firstStartTrainer: TrainerCategoryStat;
+  /** First start after horse was claimed */
+  afterClaim: TrainerCategoryStat;
+}
+
+/**
+ * Create default empty trainer category stats
+ */
+export function createDefaultTrainerCategoryStats(): TrainerCategoryStats {
+  const defaultStat: TrainerCategoryStat = { starts: 0, wins: 0, winPercent: 0, roi: 0 };
+  return {
+    firstTimeLasix: { ...defaultStat },
+    firstTimeBlinkers: { ...defaultStat },
+    blinkersOff: { ...defaultStat },
+    secondOffLayoff: { ...defaultStat },
+    days31to60: { ...defaultStat },
+    days61to90: { ...defaultStat },
+    days91to180: { ...defaultStat },
+    days181plus: { ...defaultStat },
+    sprintToRoute: { ...defaultStat },
+    routeToSprint: { ...defaultStat },
+    turfSprint: { ...defaultStat },
+    turfRoute: { ...defaultStat },
+    wetTrack: { ...defaultStat },
+    dirtSprint: { ...defaultStat },
+    dirtRoute: { ...defaultStat },
+    maidenClaiming: { ...defaultStat },
+    stakes: { ...defaultStat },
+    firstStartTrainer: { ...defaultStat },
+    afterClaim: { ...defaultStat },
+  };
+}
+
+// ============================================================================
 // BREEDING / PEDIGREE
 // ============================================================================
 
@@ -326,6 +428,8 @@ export interface HorseEntry {
   trainerMeetPlaces: number;
   /** Trainer shows at current meet (DRF Field 32) */
   trainerMeetShows: number;
+  /** Trainer category statistics (DRF Fields 1146-1221) */
+  trainerCategoryStats: TrainerCategoryStats;
   /** Jockey name */
   jockeyName: string;
   /** Jockey stats string (legacy, for display) */
