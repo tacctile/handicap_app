@@ -1595,6 +1595,14 @@ function parseHorseEntry(fields: string[], lineIndex: number): HorseEntry {
   // Past performances
   horse.pastPerformances = parsePastPerformances(fields);
 
+  // Calculate average Beyer from past performances (fixes bug where it read same field as bestBeyer)
+  const ppBeyers = horse.pastPerformances
+    .map((pp) => pp.speedFigures.beyer)
+    .filter((b): b is number => b !== null && b > 0);
+  if (ppBeyers.length > 0) {
+    horse.averageBeyer = Math.round(ppBeyers.reduce((sum, b) => sum + b, 0) / ppBeyers.length);
+  }
+
   // Workouts
   horse.workouts = parseWorkouts(fields);
 

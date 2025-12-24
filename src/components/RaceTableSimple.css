@@ -1,0 +1,692 @@
+/**
+ * RaceTableSimple Styles
+ * Clean, progressive disclosure table design
+ */
+
+/* ============================================================================
+   CONTAINER
+   ============================================================================ */
+
+.race-table-simple {
+  background: var(--surface-dark, #1a1a2e);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* ============================================================================
+   TABLE HEADER
+   ============================================================================ */
+
+.simple-table-header {
+  display: grid;
+  grid-template-columns: 60px 60px 1fr 100px 80px 120px 40px;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--surface-darker, #141428);
+  border-bottom: 1px solid var(--border-color, #2a2a4a);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted, #888);
+}
+
+.simple-table-header > div {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-checkboxes {
+  justify-content: center;
+}
+
+.header-icon {
+  font-size: 16px;
+  opacity: 0.5;
+}
+
+.sortable {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.sortable:hover {
+  color: var(--text-primary, #fff);
+}
+
+.sortable.active {
+  color: var(--accent-color, #36d1da);
+}
+
+.sort-icon {
+  font-size: 18px;
+  opacity: 0.6;
+}
+
+.sortable.active .sort-icon {
+  opacity: 1;
+}
+
+/* ============================================================================
+   HORSE ROW
+   ============================================================================ */
+
+.simple-horse-row {
+  border-bottom: 1px solid var(--border-color, #2a2a4a);
+  transition: background 0.2s;
+}
+
+.simple-horse-row:last-child {
+  border-bottom: none;
+}
+
+.simple-horse-row:hover:not(.scratched) {
+  background: var(--surface-hover, #22223a);
+}
+
+.simple-horse-row.expanded {
+  background: var(--surface-hover, #22223a);
+}
+
+.simple-horse-row.scratched {
+  opacity: 0.5;
+}
+
+.simple-horse-row.scratched .row-main {
+  text-decoration: line-through;
+  text-decoration-color: var(--text-muted, #888);
+}
+
+/* Row Main (always visible) */
+.row-main {
+  display: grid;
+  grid-template-columns: 60px 60px 1fr 100px 80px 120px 40px;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  min-height: 56px;
+}
+
+/* Checkboxes */
+.row-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+}
+
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.checkbox-wrapper input {
+  display: none;
+}
+
+.checkbox-icon {
+  font-size: 18px;
+  color: var(--text-muted, #666);
+  transition: color 0.2s;
+}
+
+.checkbox-wrapper:hover .checkbox-icon {
+  color: var(--text-secondary, #aaa);
+}
+
+.checkbox-wrapper input:checked + .scratch-icon {
+  color: #ef4444;
+}
+
+.checkbox-wrapper input:checked + .compare-icon {
+  color: #36d1da;
+}
+
+/* Post Position */
+.row-pp {
+  display: flex;
+  justify-content: center;
+}
+
+.pp-badge {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+/* Horse Name */
+.row-name {
+  padding-right: 16px;
+}
+
+.horse-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Odds */
+.row-odds {
+  display: flex;
+  justify-content: center;
+}
+
+.simple-odds-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface-dark, #1a1a2e);
+  border: 1px solid var(--border-color, #2a2a4a);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.odds-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #888);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: color 0.2s;
+}
+
+.odds-btn:hover:not(:disabled) {
+  color: var(--accent-color, #36d1da);
+}
+
+.odds-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.odds-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-color, #36d1da);
+  min-width: 36px;
+  text-align: center;
+}
+
+.simple-odds-input {
+  width: 60px;
+  padding: 4px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  background: var(--surface-darker, #141428);
+  border: 1px solid var(--accent-color, #36d1da);
+  border-radius: 4px;
+  color: var(--text-primary, #fff);
+  outline: none;
+}
+
+/* Rank */
+.row-rank {
+  display: flex;
+  justify-content: center;
+}
+
+.rank-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Tier */
+.row-tier {
+  display: flex;
+  justify-content: center;
+}
+
+.tier-badge {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.scratched-badge {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+/* Expand */
+.row-expand {
+  display: flex;
+  justify-content: center;
+}
+
+.expand-icon {
+  font-size: 24px;
+  color: var(--text-muted, #888);
+  transition:
+    transform 0.2s,
+    color 0.2s;
+}
+
+.simple-horse-row.expanded .expand-icon {
+  transform: rotate(180deg);
+  color: var(--accent-color, #36d1da);
+}
+
+/* ============================================================================
+   EXPAND CONTENT - LEVEL 1 (Why This Horse)
+   ============================================================================ */
+
+.expand-content {
+  padding: 0 16px 16px 16px;
+  border-top: 1px solid var(--border-color, #2a2a4a);
+  background: var(--surface-dark, #1a1a2e);
+}
+
+.expand-content.level-1 {
+  padding-top: 16px;
+}
+
+.why-this-horse {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.why-header h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+.why-factors {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.factor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--surface-darker, #141428);
+}
+
+.factor-icon {
+  font-size: 18px;
+}
+
+.factor-strength {
+  color: #22c55e;
+}
+
+.factor-strength .factor-icon {
+  color: #22c55e;
+}
+
+.factor-weakness {
+  color: #ef4444;
+}
+
+.factor-weakness .factor-icon {
+  color: #ef4444;
+}
+
+.factor-neutral {
+  color: var(--text-secondary, #aaa);
+}
+
+.value-assessment {
+  background: var(--surface-darker, #141428);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.value-assessment h5 {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted, #888);
+}
+
+.value-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color, #2a2a4a);
+}
+
+.value-row:last-child {
+  border-bottom: none;
+}
+
+.value-label {
+  color: var(--text-muted, #888);
+  font-size: 13px;
+}
+
+.value-data {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.expand-more-btn {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  margin-top: 16px;
+  background: var(--surface-darker, #141428);
+  border: 1px solid var(--border-color, #2a2a4a);
+  border-radius: 6px;
+  color: var(--accent-color, #36d1da);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.expand-more-btn:hover {
+  background: var(--surface-hover, #22223a);
+  border-color: var(--accent-color, #36d1da);
+}
+
+/* ============================================================================
+   EXPAND CONTENT - LEVEL 2 (Full Breakdown)
+   ============================================================================ */
+
+.expand-content.level-2 {
+  padding-top: 0;
+}
+
+.full-breakdown {
+  margin-top: 16px;
+}
+
+.breakdown-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-color, #2a2a4a);
+  padding-bottom: 8px;
+}
+
+.breakdown-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 6px 6px 0 0;
+  color: var(--text-muted, #888);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.breakdown-tab:hover {
+  background: var(--surface-hover, #22223a);
+  color: var(--text-secondary, #aaa);
+}
+
+.breakdown-tab.active {
+  background: var(--accent-color, #36d1da);
+  color: var(--surface-dark, #1a1a2e);
+}
+
+.breakdown-tab .material-icons {
+  font-size: 16px;
+}
+
+.tab-content {
+  background: var(--surface-darker, #141428);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color, #2a2a4a);
+}
+
+.stat-row:last-of-type {
+  border-bottom: none;
+}
+
+.stat-label {
+  color: var(--text-muted, #888);
+  font-size: 13px;
+}
+
+.stat-value {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary, #fff);
+}
+
+.stat-detail {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color, #2a2a4a);
+  font-size: 12px;
+  color: var(--text-secondary, #aaa);
+  line-height: 1.5;
+}
+
+.collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  padding: 12px;
+  margin-top: 16px;
+  background: transparent;
+  border: 1px solid var(--border-color, #2a2a4a);
+  border-radius: 6px;
+  color: var(--text-muted, #888);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.collapse-btn:hover {
+  border-color: var(--text-secondary, #aaa);
+  color: var(--text-secondary, #aaa);
+}
+
+/* ============================================================================
+   COMPARE PANEL
+   ============================================================================ */
+
+.compare-panel {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 500px;
+  background: var(--surface-dark, #1a1a2e);
+  border: 1px solid var(--accent-color, #36d1da);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.compare-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--surface-darker, #141428);
+  border-bottom: 1px solid var(--border-color, #2a2a4a);
+}
+
+.compare-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-color, #36d1da);
+}
+
+.compare-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #888);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+
+.compare-close:hover {
+  color: var(--text-primary, #fff);
+  background: var(--surface-hover, #22223a);
+}
+
+.compare-body {
+  padding: 16px;
+}
+
+.compare-horses {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color, #2a2a4a);
+}
+
+.compare-horse-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary, #fff);
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compare-vs {
+  font-size: 12px;
+  color: var(--text-muted, #888);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.compare-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color, #2a2a4a);
+}
+
+.compare-row:last-child {
+  border-bottom: none;
+}
+
+.compare-label {
+  font-size: 12px;
+  color: var(--text-muted, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.compare-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary, #aaa);
+  min-width: 60px;
+  text-align: center;
+}
+
+.compare-val.winner {
+  color: #22c55e;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .simple-table-header {
+    grid-template-columns: 50px 50px 1fr 80px 60px 90px 30px;
+    padding: 10px 12px;
+    font-size: 10px;
+  }
+
+  .row-main {
+    grid-template-columns: 50px 50px 1fr 80px 60px 90px 30px;
+    padding: 10px 12px;
+  }
+
+  .horse-name {
+    font-size: 13px;
+  }
+
+  .tier-badge {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  .rank-badge {
+    padding: 3px 8px;
+    font-size: 12px;
+  }
+
+  .why-this-horse {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .simple-table-header {
+    grid-template-columns: 40px 40px 1fr 60px 100px 30px;
+  }
+
+  .row-main {
+    grid-template-columns: 40px 40px 1fr 60px 100px 30px;
+  }
+
+  .header-rank,
+  .row-rank {
+    display: none;
+  }
+}

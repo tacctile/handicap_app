@@ -2,7 +2,7 @@ import { memo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ParsedRace } from '../types/drf';
 import type { UseRaceStateReturn } from '../hooks/useRaceState';
-import { RaceTable } from './RaceTable';
+import { RaceTableSimple } from './RaceTableSimple';
 import {
   getConfidenceColor,
   getConfidenceLabel,
@@ -193,10 +193,7 @@ export const RaceDetail = memo(function RaceDetail({
 
       {/* Race content */}
       <div className="race-detail-content">
-        <RaceTable
-          race={race}
-          raceState={raceState}
-        />
+        <RaceTableSimple race={race} raceState={raceState} />
       </div>
     </motion.div>
   );

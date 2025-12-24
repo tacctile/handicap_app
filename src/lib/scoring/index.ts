@@ -91,17 +91,38 @@ export const MAX_OVERLAY = 50;
 /** Maximum total score (base + overlay) */
 export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 290
 
-/** Score limits by category */
+/**
+ * Score limits by category (REBALANCED)
+ *
+ * Previous weights over-valued Connections (23%) and under-valued Speed (21%)
+ * New weights prioritize Speed/Class (33%) as the most predictive factor
+ *
+ * OLD: Connections 55, Post 45, Speed 50, Form 30, Equipment 25, Pace 40 = 245
+ * NEW: Speed 80, Pace 40, Form 35, Connections 30, Post 30, Equipment 25 = 240
+ */
 export const SCORE_LIMITS = {
-  connections: 55,
-  postPosition: 45,
-  speedClass: 50,
-  form: 30,
-  equipment: 25,
-  pace: 40,
+  speedClass: 80, // UP from 50 (33% - most predictive factor)
+  pace: 40, // Same (17%)
+  form: 35, // UP from 30 (15%)
+  connections: 30, // DOWN from 55 (12.5%)
+  postPosition: 30, // DOWN from 45 (12.5%)
+  equipment: 25, // Same (10%)
   baseTotal: MAX_BASE_SCORE,
   overlayMax: MAX_OVERLAY,
   total: MAX_SCORE,
+} as const;
+
+/**
+ * Scale factors to convert raw category scores to new weighted scores
+ * Applied during score calculation to rebalance without rewriting each module
+ */
+export const CATEGORY_SCALE_FACTORS = {
+  speedClass: 1.6, // 50 * 1.6 = 80
+  pace: 1.0, // 40 * 1.0 = 40
+  form: 1.17, // 30 * 1.17 = 35
+  connections: 0.6, // 50 * 0.6 = 30
+  postPosition: 0.67, // 45 * 0.67 = 30
+  equipment: 1.0, // 25 * 1.0 = 25
 } as const;
 
 /** Score thresholds for color coding and tier classification */
@@ -549,17 +570,40 @@ function calculateHorseScoreWithContext(
   };
 
   // Calculate base score (capped at MAX_BASE_SCORE)
+  // Apply scale factors to rebalance category weights
+  // Speed/Class is now 33% of total (was 21%), Connections is now 12.5% (was 23%)
+  const scaledConnections = Math.round(
+    breakdown.connections.total * CATEGORY_SCALE_FACTORS.connections
+  );
+  const scaledPostPosition = Math.round(
+    breakdown.postPosition.total * CATEGORY_SCALE_FACTORS.postPosition
+  );
+  const scaledSpeedClass = Math.round(
+    breakdown.speedClass.total * CATEGORY_SCALE_FACTORS.speedClass
+  );
+  const scaledForm = Math.round(breakdown.form.total * CATEGORY_SCALE_FACTORS.form);
+  const scaledEquipment = Math.round(breakdown.equipment.total * CATEGORY_SCALE_FACTORS.equipment);
+  const scaledPace = Math.round(breakdown.pace.total * CATEGORY_SCALE_FACTORS.pace);
+
+  // Update breakdown totals to reflect scaled values
+  breakdown.connections.total = scaledConnections;
+  breakdown.postPosition.total = scaledPostPosition;
+  breakdown.speedClass.total = scaledSpeedClass;
+  breakdown.form.total = scaledForm;
+  breakdown.equipment.total = scaledEquipment;
+  breakdown.pace.total = scaledPace;
+
   // Add breeding contribution for lightly raced horses
   // Note: Class score is already included in speedClass.classScore, but enhanced analysis
   // provides additional hidden drop bonuses that we add separately
   const hiddenDropsBonus = classScoreResult.hiddenDropsScore;
   const rawBaseTotal =
-    breakdown.connections.total +
-    breakdown.postPosition.total +
-    breakdown.speedClass.total +
-    breakdown.form.total +
-    breakdown.equipment.total +
-    breakdown.pace.total +
+    scaledConnections +
+    scaledPostPosition +
+    scaledSpeedClass +
+    scaledForm +
+    scaledEquipment +
+    scaledPace +
     breedingContribution +
     hiddenDropsBonus; // Add hidden class drop bonuses
 
@@ -944,3 +988,25 @@ export {
   formatZScore,
   interpretZScore,
 } from './fieldRelative';
+
+// Tier utilities for display
+export {
+  // Types
+  type TierLevel,
+  type TierInfo,
+  type RankColorInfo,
+  type SortConfig,
+  type SortField,
+  type SortDirection,
+  // Constants
+  TIER_META,
+  // Tier calculation
+  calculateTier,
+  getTierInfo,
+  // Dynamic color gradient
+  getRankColor,
+  formatRank,
+  // Sort utilities
+  sortHorses,
+  getNextSortDirection,
+} from './tierUtils';
