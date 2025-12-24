@@ -46,6 +46,8 @@ export interface ConnectionStats {
   places: number;
   shows: number;
   itmRate: number; // In the money rate
+  /** Source of stats: 'drf' (actual DRF data) or 'pp' (built from past performances) */
+  source: 'drf' | 'pp';
 }
 
 export interface PartnershipStats {
@@ -109,6 +111,7 @@ export function buildConnectionsDatabase(horses: HorseEntry[]): ConnectionsDatab
         places: 0,
         shows: 0,
         itmRate: 0,
+        source: 'pp', // Database stats are built from PPs
       });
     }
 
@@ -121,6 +124,7 @@ export function buildConnectionsDatabase(horses: HorseEntry[]): ConnectionsDatab
         places: 0,
         shows: 0,
         itmRate: 0,
+        source: 'pp', // Database stats are built from PPs
       });
     }
 
@@ -138,6 +142,7 @@ export function buildConnectionsDatabase(horses: HorseEntry[]): ConnectionsDatab
           places: 0,
           shows: 0,
           itmRate: 0,
+          source: 'pp', // Database stats are built from PPs
         });
       }
 
@@ -191,11 +196,31 @@ export function buildConnectionsDatabase(horses: HorseEntry[]): ConnectionsDatab
 
 /**
  * Extract trainer stats from horse entry data
- * Uses lifetime stats from the DRF when available
+ * PRIORITY: Use actual DRF trainer stats (Fields 29-32) first
+ * FALLBACK: Only use PP-based stats if DRF stats are missing/zero
  */
 function extractTrainerStatsFromHorse(horse: HorseEntry): ConnectionStats | null {
-  // Parse trainer stats string if available (format varies)
-  // For now, build from past performances
+  // PRIORITY: Use actual DRF trainer stats from current meet (Fields 29-32)
+  if (horse.trainerMeetStarts > 0) {
+    const starts = horse.trainerMeetStarts;
+    const wins = horse.trainerMeetWins;
+    const places = horse.trainerMeetPlaces;
+    const shows = horse.trainerMeetShows;
+
+    return {
+      name: horse.trainerName,
+      wins,
+      starts,
+      winRate: (wins / starts) * 100,
+      places,
+      shows,
+      itmRate: ((wins + places + shows) / starts) * 100,
+      source: 'drf',
+    };
+  }
+
+  // FALLBACK: Build from past performances (low confidence)
+  // This should only happen if DRF data is missing
   const wins = horse.pastPerformances.filter((pp) => pp.finishPosition === 1).length;
   const starts = horse.pastPerformances.length;
   const places = horse.pastPerformances.filter((pp) => pp.finishPosition === 2).length;
@@ -211,13 +236,36 @@ function extractTrainerStatsFromHorse(horse: HorseEntry): ConnectionStats | null
     places,
     shows,
     itmRate: ((wins + places + shows) / starts) * 100,
+    source: 'pp',
   };
 }
 
 /**
  * Extract jockey stats from horse entry data
+ * PRIORITY: Use actual DRF jockey stats (Fields 35-38) first
+ * FALLBACK: Only use PP-based stats if DRF stats are missing/zero
  */
 function extractJockeyStatsFromHorse(horse: HorseEntry): ConnectionStats | null {
+  // PRIORITY: Use actual DRF jockey stats from current meet (Fields 35-38)
+  if (horse.jockeyMeetStarts > 0) {
+    const starts = horse.jockeyMeetStarts;
+    const wins = horse.jockeyMeetWins;
+    const places = horse.jockeyMeetPlaces;
+    const shows = horse.jockeyMeetShows;
+
+    return {
+      name: horse.jockeyName,
+      wins,
+      starts,
+      winRate: (wins / starts) * 100,
+      places,
+      shows,
+      itmRate: ((wins + places + shows) / starts) * 100,
+      source: 'drf',
+    };
+  }
+
+  // FALLBACK: Build from past performances (low confidence)
   // Get stats for jockeys from past performances where same jockey rode
   const jockeyNorm = normalizeName(horse.jockeyName);
 
@@ -240,6 +288,7 @@ function extractJockeyStatsFromHorse(horse: HorseEntry): ConnectionStats | null 
       places,
       shows,
       itmRate: ((wins + places + shows) / starts) * 100,
+      source: 'pp',
     };
   }
 
@@ -256,6 +305,7 @@ function extractJockeyStatsFromHorse(horse: HorseEntry): ConnectionStats | null 
     places,
     shows,
     itmRate: ((wins + places + shows) / starts) * 100,
+    source: 'pp',
   };
 }
 
@@ -337,6 +387,7 @@ function calculatePartnershipBonus(
 
 /**
  * Build reasoning string for connections score
+ * Includes source indicator (DRF=actual stats, PP=fallback from past performances)
  */
 function buildReasoning(
   trainerStats: ConnectionStats | null,
@@ -347,15 +398,19 @@ function buildReasoning(
   const parts: string[] = [];
 
   if (trainerStats && trainerStats.starts >= 3) {
+    const sourceTag = trainerStats.source === 'drf' ? '' : ' [PP]';
     parts.push(
-      `T: ${trainerStats.winRate.toFixed(0)}% (${trainerStats.wins}/${trainerStats.starts})`
+      `T: ${trainerStats.winRate.toFixed(0)}% (${trainerStats.wins}/${trainerStats.starts})${sourceTag}`
     );
   } else {
     parts.push('T: Limited data');
   }
 
   if (jockeyStats && jockeyStats.starts >= 3) {
-    parts.push(`J: ${jockeyStats.winRate.toFixed(0)}% (${jockeyStats.wins}/${jockeyStats.starts})`);
+    const sourceTag = jockeyStats.source === 'drf' ? '' : ' [PP]';
+    parts.push(
+      `J: ${jockeyStats.winRate.toFixed(0)}% (${jockeyStats.wins}/${jockeyStats.starts})${sourceTag}`
+    );
   } else {
     parts.push('J: Limited data');
   }
@@ -365,6 +420,49 @@ function buildReasoning(
   }
 
   return parts.join(' | ');
+}
+
+/**
+ * Dev-only logging for connections scoring comparison
+ * Logs old (PP-based) vs new (DRF-based) calculation results
+ */
+function logConnectionsDebug(
+  horse: HorseEntry,
+  trainerStats: ConnectionStats | null,
+  jockeyStats: ConnectionStats | null,
+  trainerScore: number,
+  jockeyScore: number
+): void {
+  // Only log in development mode
+  if (process.env.NODE_ENV !== 'development') return;
+
+  // Calculate what the old PP-based calculation would have produced
+  const ppWins = horse.pastPerformances.filter((pp) => pp.finishPosition === 1).length;
+  const ppStarts = horse.pastPerformances.length;
+  const ppWinRate = ppStarts > 0 ? (ppWins / ppStarts) * 100 : 0;
+
+  // Determine old trainer score (PP-based)
+  let oldTrainerScore = 7; // neutral default
+  if (ppStarts >= 3) {
+    if (ppWinRate >= 20) oldTrainerScore = 16;
+    else if (ppWinRate >= 15) oldTrainerScore = 13;
+    else if (ppWinRate >= 10) oldTrainerScore = 9;
+    else if (ppWinRate >= 5) oldTrainerScore = 5;
+    else oldTrainerScore = 2;
+  }
+
+  // Only log if there's a significant difference
+  const trainerDiff = Math.abs(trainerScore - oldTrainerScore);
+  const usedDRF = trainerStats?.source === 'drf' || jockeyStats?.source === 'drf';
+
+  if (usedDRF && trainerDiff >= 3) {
+    console.log(
+      `[Connections Debug] ${horse.horseName}: ` +
+        `Trainer OLD (PP): ${ppWinRate.toFixed(0)}% → ${oldTrainerScore}pts | ` +
+        `NEW (${trainerStats?.source?.toUpperCase() || 'null'}): ${trainerStats?.winRate.toFixed(0) || 0}% → ${trainerScore}pts | ` +
+        `Jockey (${jockeyStats?.source?.toUpperCase() || 'null'}): ${jockeyStats?.winRate.toFixed(0) || 0}% → ${jockeyScore}pts`
+    );
+  }
 }
 
 // ============================================================================
@@ -382,29 +480,32 @@ export function calculateConnectionsScore(
   horse: HorseEntry,
   database: ConnectionsDatabase | null = null
 ): ConnectionsScoreResult {
-  // Get trainer stats
-  let trainerStats: ConnectionStats | null = null;
-  if (database) {
+  // Get trainer stats - PRIORITY: DRF stats > database PP stats
+  // First try to get actual DRF trainer stats from the horse entry
+  let trainerStats: ConnectionStats | null = extractTrainerStatsFromHorse(horse);
+
+  // Only use database PP stats if DRF stats aren't available
+  if (!trainerStats && database) {
     const dbTrainerStats = database.trainers.get(normalizeName(horse.trainerName));
     trainerStats = dbTrainerStats ?? null;
   }
-  if (!trainerStats) {
-    trainerStats = extractTrainerStatsFromHorse(horse);
-  }
 
-  // Get jockey stats
-  let jockeyStats: ConnectionStats | null = null;
-  if (database) {
+  // Get jockey stats - PRIORITY: DRF stats > database PP stats
+  // First try to get actual DRF jockey stats from the horse entry
+  let jockeyStats: ConnectionStats | null = extractJockeyStatsFromHorse(horse);
+
+  // Only use database PP stats if DRF stats aren't available
+  if (!jockeyStats && database) {
     const dbJockeyStats = database.jockeys.get(normalizeName(horse.jockeyName));
     jockeyStats = dbJockeyStats ?? null;
-  }
-  if (!jockeyStats) {
-    jockeyStats = extractJockeyStatsFromHorse(horse);
   }
 
   // Calculate individual scores
   const trainerScore = calculateTrainerScore(trainerStats);
   const jockeyScore = calculateJockeyScore(jockeyStats);
+
+  // Dev-only: Log comparison between old (PP-based) and new (DRF-based) calculations
+  logConnectionsDebug(horse, trainerStats, jockeyStats, trainerScore, jockeyScore);
 
   // Check for elite partnership bonus
   const { bonus: partnershipBonus, stats: partnershipStats } = calculatePartnershipBonus(

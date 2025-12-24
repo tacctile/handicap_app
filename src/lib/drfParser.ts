@@ -1442,8 +1442,16 @@ function createDefaultHorseEntry(index: number): HorseEntry {
     silks: '',
     trainerName: 'Unknown',
     trainerStats: '',
+    trainerMeetStarts: 0,
+    trainerMeetWins: 0,
+    trainerMeetPlaces: 0,
+    trainerMeetShows: 0,
     jockeyName: 'Unknown',
     jockeyStats: '',
+    jockeyMeetStarts: 0,
+    jockeyMeetWins: 0,
+    jockeyMeetPlaces: 0,
+    jockeyMeetShows: 0,
     weight: 120,
     apprenticeAllowance: 0,
     equipment: parseEquipment(''),
@@ -1525,6 +1533,18 @@ function parseHorseEntry(fields: string[], lineIndex: number): HorseEntry {
   horse.jockeyName = getField(fields, DRF_COLUMNS.JOCKEY_NAME.index, 'Unknown');
   horse.trainerName = getField(fields, DRF_COLUMNS.TRAINER_NAME.index, 'Unknown');
   horse.owner = getField(fields, DRF_COLUMNS.OWNER_NAME.index);
+
+  // Trainer stats at current meet (Fields 29-32)
+  horse.trainerMeetStarts = parseIntSafe(getField(fields, DRF_COLUMNS.TRAINER_STARTS.index));
+  horse.trainerMeetWins = parseIntSafe(getField(fields, DRF_COLUMNS.TRAINER_WINS.index));
+  horse.trainerMeetPlaces = parseIntSafe(getField(fields, DRF_COLUMNS.TRAINER_PLACES.index));
+  horse.trainerMeetShows = parseIntSafe(getField(fields, DRF_COLUMNS.TRAINER_SHOWS.index));
+
+  // Jockey stats at current meet (Fields 35-38)
+  horse.jockeyMeetStarts = parseIntSafe(getField(fields, DRF_COLUMNS.JOCKEY_STARTS.index));
+  horse.jockeyMeetWins = parseIntSafe(getField(fields, DRF_COLUMNS.JOCKEY_WINS.index));
+  horse.jockeyMeetPlaces = parseIntSafe(getField(fields, DRF_COLUMNS.JOCKEY_PLACES.index));
+  horse.jockeyMeetShows = parseIntSafe(getField(fields, DRF_COLUMNS.JOCKEY_SHOWS.index));
 
   // Program number (Field 43)
   const programNum = parseIntNullable(getField(fields, DRF_COLUMNS.PROGRAM_NUMBER.index));
