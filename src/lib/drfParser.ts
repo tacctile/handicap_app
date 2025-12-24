@@ -583,7 +583,7 @@ function parseStatField(value: string, fieldName: string, maxExpected = 500): nu
 
   // Validate non-negative
   if (parsed < 0) {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       logger.logWarning(`Unexpected negative value for ${fieldName}: ${parsed}`, {
         fieldName,
         value: parsed,
@@ -595,7 +595,7 @@ function parseStatField(value: string, fieldName: string, maxExpected = 500): nu
 
   // Validate reasonable range (warn but still use the value)
   if (parsed > maxExpected) {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       logger.logWarning(`Unusually high value for ${fieldName}: ${parsed}`, {
         fieldName,
         value: parsed,
