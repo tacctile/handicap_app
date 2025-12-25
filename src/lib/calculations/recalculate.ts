@@ -6,6 +6,13 @@ import {
   generateBetRecommendations,
   type TierBetRecommendations,
 } from '../betting/betRecommendations';
+import {
+  assessFieldQuality,
+  detectFieldQualityChange,
+  type FieldQualityAssessment,
+  type FieldQualityChange,
+  type ScoredHorseData,
+} from './fieldQuality';
 
 /**
  * Represents the complete calculated state for a race
@@ -29,6 +36,10 @@ export interface RaceCalculationResult {
   horsesAnalyzed: number;
   activeHorses: number;
   confidenceLevel: number; // 0-100
+  // Field quality assessment
+  fieldQuality: FieldQualityAssessment;
+  // Field quality change (populated when comparing to previous state)
+  fieldQualityChange?: FieldQualityChange;
 }
 
 /**
@@ -232,6 +243,14 @@ export function recalculateRace(
   const horsesAnalyzed = horses.length;
   const activeHorses = horses.length - scratchedHorses.size;
 
+  // Step 6: Assess field quality
+  const scoredHorseData: ScoredHorseData[] = sortedHorses.map(({ index, score, horse }) => ({
+    index,
+    score,
+    horseName: horse.horseName,
+  }));
+  const fieldQuality = assessFieldQuality(scoredHorseData, scratchedHorses);
+
   return {
     scoredHorses: sortedHorses,
     tierGroups,
@@ -241,6 +260,7 @@ export function recalculateRace(
     horsesAnalyzed,
     activeHorses,
     confidenceLevel,
+    fieldQuality,
   };
 }
 
@@ -315,6 +335,28 @@ export function recalculateAffectedHorses(
 
   const confidenceLevel = calculateConfidenceLevel(activeScores);
 
+  // Assess field quality
+  const scoredHorseData: ScoredHorseData[] = sortedHorses.map(({ index, score, horse }) => ({
+    index,
+    score,
+    horseName: horse.horseName,
+  }));
+  const fieldQuality = assessFieldQuality(scoredHorseData, scratchedHorses);
+
+  // Detect field quality changes if there was a previous result
+  const previousScoredHorseData: ScoredHorseData[] = previousResult.scoredHorses.map(
+    ({ index, score, horse }) => ({
+      index,
+      score,
+      horseName: horse.horseName,
+    })
+  );
+  const fieldQualityChange = detectFieldQualityChange(
+    previousScoredHorseData,
+    scoredHorseData,
+    scratchedHorses
+  );
+
   return {
     scoredHorses: sortedHorses,
     tierGroups,
@@ -324,6 +366,8 @@ export function recalculateAffectedHorses(
     horsesAnalyzed: horses.length,
     activeHorses: horses.length - scratchedHorses.size,
     confidenceLevel,
+    fieldQuality,
+    fieldQualityChange,
   };
 }
 
@@ -343,3 +387,101 @@ export function createCalculationKey(
 
   return `${trackCondition}|${scratched}|${odds}`;
 }
+
+/**
+ * Recalculate race with explicit field quality change detection.
+ * Use this when a horse is scratched to get detailed analysis of how
+ * the field quality changed.
+ *
+ * @param horses - Array of horse entries
+ * @param raceHeader - Race header information
+ * @param trackCondition - Current track condition
+ * @param previousScratchedHorses - Previously scratched horses (before this scratch)
+ * @param newScratchedHorses - Currently scratched horses (after this scratch)
+ * @param updatedOdds - Map of updated odds by horse index
+ * @param previousResult - Previous calculation result for comparison
+ * @returns Complete race calculation result with field quality change analysis
+ */
+export function recalculateWithScratchAnalysis(
+  horses: HorseEntry[],
+  raceHeader: RaceHeader,
+  trackCondition: TrackCondition,
+  previousScratchedHorses: Set<number>,
+  newScratchedHorses: Set<number>,
+  updatedOdds: OddsUpdate,
+  previousResult?: RaceCalculationResult
+): RaceCalculationResult {
+  // Calculate the new result
+  const newResult = recalculateRace(
+    horses,
+    raceHeader,
+    trackCondition,
+    newScratchedHorses,
+    updatedOdds
+  );
+
+  // If no previous result, just return the new result
+  if (!previousResult) {
+    return newResult;
+  }
+
+  // Determine newly scratched indices
+  const newlyScratched = new Set<number>();
+  for (const index of newScratchedHorses) {
+    if (!previousScratchedHorses.has(index)) {
+      newlyScratched.add(index);
+    }
+  }
+
+  // If no new scratches, no field quality change to detect
+  if (newlyScratched.size === 0) {
+    return newResult;
+  }
+
+  // Build scored horse data for comparison
+  const previousScoredHorseData: ScoredHorseData[] = previousResult.scoredHorses.map(
+    ({ index, score, horse }) => ({
+      index,
+      score,
+      horseName: horse.horseName,
+    })
+  );
+
+  const currentScoredHorseData: ScoredHorseData[] = newResult.scoredHorses.map(
+    ({ index, score, horse }) => ({
+      index,
+      score,
+      horseName: horse.horseName,
+    })
+  );
+
+  // Detect field quality changes
+  const fieldQualityChange = detectFieldQualityChange(
+    previousScoredHorseData,
+    currentScoredHorseData,
+    newlyScratched
+  );
+
+  return {
+    ...newResult,
+    fieldQualityChange,
+  };
+}
+
+// Re-export field quality types and utilities
+export {
+  assessFieldQuality,
+  detectFieldQualityChange,
+  getFieldStrengthDescription,
+  getFieldStrengthColor,
+  getQualityChangeColor,
+  isSignificantScratch,
+  getFieldQualitySummary,
+  FIELD_STRENGTH_THRESHOLDS,
+  TOP_CONTENDER_THRESHOLD,
+  type FieldQualityAssessment,
+  type FieldQualityChange,
+  type FieldStrength,
+  type QualityChangeType,
+  type ScoredHorseData,
+} from './fieldQuality';
