@@ -5,7 +5,7 @@
  * All calculations are deterministic - same inputs always produce same scores.
  * Optimized for performance: scoring 12 horses completes in under 100ms.
  *
- * BASE SCORE (0-301 points max):
+ * BASE SCORE (0-302 points max):
  * Core Categories (242 pts):
  * - Speed & Class: 0-80 points (26.5% - Most predictive)
  * - Pace: 0-45 points (14.9% - Race shape analysis)
@@ -14,7 +14,7 @@
  * - Connections (Trainer + Jockey + Partnership): 0-27 points (8.9% - Enhanced partnership)
  * - Equipment: 0-20 points (6.6% - Fine-tuning)
  *
- * Bonus Categories (59 pts):
+ * Bonus Categories (60 pts):
  * - Distance/Surface Affinity: 0-20 points (6.6% - Turf/Wet/Distance)
  *   Based on lifetime records (DRF Fields 85-96)
  * - Trainer Patterns: 0-15 points (5.0% - Situational trainer bonuses)
@@ -22,6 +22,8 @@
  * - Combo Patterns: 0-12 points (4.0% - High-intent combo bonuses)
  * - Track Specialist: 0-6 points (2.0% - Proven success at today's track)
  *   Based on track record (DRF Fields 80-83)
+ * - Weight Change: 0-1 point (0.3% - P2 subtle refinement for weight drops)
+ *   Based on weight carried (DRF Field 51) vs last race weight (DRF Field 436+)
  *
  * OVERLAY SYSTEM (±50 points on top of base):
  * - Section A: Pace Dynamics & Bias: ±20 points
@@ -33,7 +35,7 @@
  * - Section G: Head-to-Head & Tactical Matchups: ±8 points
  *
  * Final Score = Base Score + Overlay Adjustment
- * Practical Range: 50 to 351 points
+ * Practical Range: 50 to 352 points
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
@@ -82,6 +84,7 @@ import {
   type ComboPatternResult,
   type DetectedCombo,
 } from './comboPatterns';
+import { calculateWeightScore as calcWeight } from './weight';
 import {
   calculateDetailedBreedingScore,
   calculateBreedingContribution,
@@ -106,8 +109,8 @@ import {
 // CONSTANTS
 // ============================================================================
 
-/** Maximum base score (before overlay) - v2.1: enhanced partnership scoring (+2 pts) */
-export const MAX_BASE_SCORE = 301;
+/** Maximum base score (before overlay) - v2.2: weight scoring (+1 pt) */
+export const MAX_BASE_SCORE = 302;
 
 /** Maximum overlay adjustment */
 export const MAX_OVERLAY = 50;
@@ -143,7 +146,10 @@ export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 351
  * - Trainer Surface/Distance: 6 pts (2.0%) — Trainer specialization bonus
  *   Based on trainer category stats (turfSprint, turfRoute, dirtSprint, dirtRoute, wetTrack)
  *
- * Total: 301 points base score
+ * Weight Change (1 pt):
+ * - Weight: 1 pt (P2 subtle refinement for weight drops)
+ *
+ * Total: 302 points base score
  */
 export const SCORE_LIMITS = {
   connections: 27,
@@ -157,6 +163,7 @@ export const SCORE_LIMITS = {
   comboPatterns: 12, // High-intent combo bonuses
   trackSpecialist: 6, // Track specialist bonus (30%+ win rate at track)
   trainerSurfaceDistance: 6, // Trainer surface/distance specialization (can stack with wet)
+  weight: 1, // Weight change scoring (P2 subtle refinement)
   baseTotal: MAX_BASE_SCORE,
   overlayMax: MAX_OVERLAY,
   total: MAX_SCORE,
@@ -265,6 +272,17 @@ export interface ScoreBreakdown {
     trainerWinPercent: number;
     wetTrackWinPercent: number;
     wetBonusApplied: boolean;
+    reasoning: string;
+  };
+  /** Weight change analysis (P2 subtle refinement, max +1 pt for significant drop) */
+  weightAnalysis: {
+    total: number;
+    currentWeight: number;
+    lastRaceWeight: number | null;
+    weightChange: number | null;
+    significantDrop: boolean;
+    significantGain: boolean;
+    showWeightGainFlag: boolean;
     reasoning: string;
   };
   /** Breeding score for lightly raced horses (0 if 8+ starts) */
@@ -585,6 +603,16 @@ function calculateHorseScoreWithContext(
           wetBonusApplied: false,
           reasoning: 'Scratched',
         },
+        weightAnalysis: {
+          total: 0,
+          currentWeight: 0,
+          lastRaceWeight: null,
+          weightChange: null,
+          significantDrop: false,
+          significantGain: false,
+          showWeightGainFlag: false,
+          reasoning: 'Scratched',
+        },
       },
       isScratched: true,
       confidenceLevel: 'low',
@@ -618,6 +646,9 @@ function calculateHorseScoreWithContext(
     context.raceHeader,
     trackCondition
   );
+
+  // Calculate weight change score (0-1 points, P2 subtle refinement)
+  const weightScore = calcWeight(horse, context.raceHeader);
 
   // Calculate breeding score for lightly raced horses
   let breedingScore: DetailedBreedingScore | undefined;
@@ -734,6 +765,16 @@ function calculateHorseScoreWithContext(
       wetBonusApplied: trainerSurfaceDistance.wetBonusApplied,
       reasoning: trainerSurfaceDistance.reasoning,
     },
+    weightAnalysis: {
+      total: weightScore.total,
+      currentWeight: weightScore.analysis.currentWeight,
+      lastRaceWeight: weightScore.analysis.lastRaceWeight,
+      weightChange: weightScore.analysis.weightChange,
+      significantDrop: weightScore.analysis.significantDrop,
+      significantGain: weightScore.analysis.significantGain,
+      showWeightGainFlag: weightScore.showWeightGainFlag,
+      reasoning: weightScore.reasoning,
+    },
     breeding: breedingBreakdown,
     classAnalysis: classAnalysisBreakdown,
   };
@@ -755,6 +796,7 @@ function calculateHorseScoreWithContext(
     breakdown.comboPatterns.total + // Combo pattern bonuses (0-12)
     breakdown.trackSpecialist.total + // Track specialist bonus (0-6)
     breakdown.trainerSurfaceDistance.total + // Trainer surface/distance specialization (0-6)
+    breakdown.weightAnalysis.total + // Weight change bonus (0-1, P2 subtle refinement)
     breedingContribution +
     hiddenDropsBonus; // Add hidden class drop bonuses
 
@@ -1226,3 +1268,15 @@ export {
   MAX_ENHANCED_PARTNERSHIP_POINTS,
   type TrainerJockeyPartnershipAnalysis,
 } from './connections';
+
+// Weight analysis exports
+export {
+  analyzeWeightChange,
+  calculateWeightScore,
+  getWeightChangeSummary,
+  hasWeightAdvantage,
+  hasWeightDisadvantage,
+  MAX_WEIGHT_POINTS,
+  type WeightAnalysisResult,
+  type WeightScoreResult,
+} from './weight';
