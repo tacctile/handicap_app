@@ -43,6 +43,7 @@ import type { TrackCondition } from '../../hooks/useRaceState';
 import {
   calculateConnectionsScore as calcConnections,
   buildConnectionsDatabase,
+  calculateTrainerSurfaceDistanceBonus as calcTrainerSurfaceDistance,
   type ConnectionsScoreResult,
   type ConnectionsDatabase,
 } from './connections';
@@ -106,7 +107,7 @@ import {
 // ============================================================================
 
 /** Maximum base score (before overlay) */
-export const MAX_BASE_SCORE = 293;
+export const MAX_BASE_SCORE = 299;
 
 /** Maximum overlay adjustment */
 export const MAX_OVERLAY = 50;
@@ -131,16 +132,18 @@ export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 337
  * - Connections: 25 pts (8.5%) — Modifier, not primary driver
  * - Equipment: 20 pts (6.8%) — Speculative, fine-tuning only
  *
- * Bonus Categories (53 pts):
- * - Distance/Surface: 20 pts (6.8%) — Turf (8) + Wet (6) + Distance (6)
+ * Bonus Categories (59 pts):
+ * - Distance/Surface: 20 pts (6.7%) — Turf (8) + Wet (6) + Distance (6)
  *   Fundamental handicapping data: horses with proven affinity for conditions
- * - Trainer Patterns: 15 pts (5.1%) — Situational trainer pattern bonuses
+ * - Trainer Patterns: 15 pts (5.0%) — Situational trainer pattern bonuses
  *   Based on DRF Fields 1146-1221 (trainer category statistics)
- * - Combo Patterns: 12 pts (4.1%) — High-intent combo bonuses
+ * - Combo Patterns: 12 pts (4.0%) — High-intent combo bonuses
  * - Track Specialist: 6 pts (2.0%) — Proven success at today's specific track
  *   Based on DRF Fields 80-83 (track record: starts/wins/places/shows)
+ * - Trainer Surface/Distance: 6 pts (2.0%) — Trainer specialization bonus
+ *   Based on trainer category stats (turfSprint, turfRoute, dirtSprint, dirtRoute, wetTrack)
  *
- * Total: 293 points base score
+ * Total: 299 points base score
  */
 export const SCORE_LIMITS = {
   connections: 25,
@@ -153,6 +156,7 @@ export const SCORE_LIMITS = {
   trainerPatterns: 15, // Situational trainer pattern bonuses
   comboPatterns: 12, // High-intent combo bonuses
   trackSpecialist: 6, // Track specialist bonus (30%+ win rate at track)
+  trainerSurfaceDistance: 6, // Trainer surface/distance specialization (can stack with wet)
   baseTotal: MAX_BASE_SCORE,
   overlayMax: MAX_OVERLAY,
   total: MAX_SCORE,
@@ -252,6 +256,15 @@ export interface ScoreBreakdown {
     trackWinRate: number;
     trackITMRate: number;
     isSpecialist: boolean;
+    reasoning: string;
+  };
+  /** Trainer surface/distance specialization bonus (turf sprint, turf route, dirt sprint, dirt route, wet) */
+  trainerSurfaceDistance: {
+    total: number;
+    matchedCategory: string | null;
+    trainerWinPercent: number;
+    wetTrackWinPercent: number;
+    wetBonusApplied: boolean;
     reasoning: string;
   };
   /** Breeding score for lightly raced horses (0 if 8+ starts) */
@@ -564,6 +577,14 @@ function calculateHorseScoreWithContext(
           isSpecialist: false,
           reasoning: 'Scratched',
         },
+        trainerSurfaceDistance: {
+          total: 0,
+          matchedCategory: null,
+          trainerWinPercent: 0,
+          wetTrackWinPercent: 0,
+          wetBonusApplied: false,
+          reasoning: 'Scratched',
+        },
       },
       isScratched: true,
       confidenceLevel: 'low',
@@ -590,6 +611,13 @@ function calculateHorseScoreWithContext(
 
   // Calculate track specialist score (0-6 points)
   const trackSpecialist = calcTrackSpecialist(horse, context.raceHeader.trackCode);
+
+  // Calculate trainer surface/distance specialization bonus (0-6 points)
+  const trainerSurfaceDistance = calcTrainerSurfaceDistance(
+    horse,
+    context.raceHeader,
+    trackCondition
+  );
 
   // Calculate breeding score for lightly raced horses
   let breedingScore: DetailedBreedingScore | undefined;
@@ -698,6 +726,14 @@ function calculateHorseScoreWithContext(
       isSpecialist: trackSpecialist.isSpecialist,
       reasoning: trackSpecialist.reasoning,
     },
+    trainerSurfaceDistance: {
+      total: trainerSurfaceDistance.bonus,
+      matchedCategory: trainerSurfaceDistance.matchedCategory,
+      trainerWinPercent: trainerSurfaceDistance.trainerWinPercent,
+      wetTrackWinPercent: trainerSurfaceDistance.wetTrackWinPercent,
+      wetBonusApplied: trainerSurfaceDistance.wetBonusApplied,
+      reasoning: trainerSurfaceDistance.reasoning,
+    },
     breeding: breedingBreakdown,
     classAnalysis: classAnalysisBreakdown,
   };
@@ -718,6 +754,7 @@ function calculateHorseScoreWithContext(
     breakdown.trainerPatterns.total + // Trainer pattern bonuses (0-15)
     breakdown.comboPatterns.total + // Combo pattern bonuses (0-12)
     breakdown.trackSpecialist.total + // Track specialist bonus (0-6)
+    breakdown.trainerSurfaceDistance.total + // Trainer surface/distance specialization (0-6)
     breedingContribution +
     hiddenDropsBonus; // Add hidden class drop bonuses
 
@@ -1175,3 +1212,10 @@ export {
   calculateRankGradientColor,
   getRankColor,
 } from './rankUtils';
+
+// Trainer surface/distance specialization exports
+export {
+  calculateTrainerSurfaceDistanceBonus,
+  MAX_TRAINER_SURFACE_DISTANCE_POINTS,
+  type TrainerSurfaceDistanceBonusResult,
+} from './connections';
