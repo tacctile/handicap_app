@@ -5,25 +5,31 @@
  * All calculations are deterministic - same inputs always produce same scores.
  * Optimized for performance: scoring 12 horses completes in under 100ms.
  *
- * BASE SCORE (0-302 points max):
+ * BASE SCORE (0-304 points max):
  * Core Categories (242 pts):
- * - Speed & Class: 0-80 points (26.5% - Most predictive)
- * - Pace: 0-45 points (14.9% - Race shape analysis)
+ * - Speed & Class: 0-80 points (26.3% - Most predictive)
+ * - Pace: 0-45 points (14.8% - Race shape analysis)
  * - Form: 0-40 points (13.2% - Recent performance)
  * - Post Position: 0-30 points (9.9% - Situational factor)
  * - Connections (Trainer + Jockey + Partnership): 0-27 points (8.9% - Enhanced partnership)
  * - Equipment: 0-20 points (6.6% - Fine-tuning)
  *
- * Bonus Categories (60 pts):
+ * Bonus Categories (62 pts):
  * - Distance/Surface Affinity: 0-20 points (6.6% - Turf/Wet/Distance)
  *   Based on lifetime records (DRF Fields 85-96)
- * - Trainer Patterns: 0-15 points (5.0% - Situational trainer bonuses)
+ * - Trainer Patterns: 0-15 points (4.9% - Situational trainer bonuses)
  *   Based on trainer category stats (DRF Fields 1146-1221)
- * - Combo Patterns: 0-12 points (4.0% - High-intent combo bonuses)
+ * - Combo Patterns: 0-12 points (3.9% - High-intent combo bonuses)
  * - Track Specialist: 0-6 points (2.0% - Proven success at today's track)
  *   Based on track record (DRF Fields 80-83)
  * - Weight Change: 0-1 point (0.3% - P2 subtle refinement for weight drops)
  *   Based on weight carried (DRF Field 51) vs last race weight (DRF Field 436+)
+ *
+ * P3 Refinements (2 pts):
+ * - Age Factor: ±1 point (0.3% - Peak performance at 4-5yo, declining at 8+)
+ *   Based on age (DRF Field 46)
+ * - Sire's Sire: ±1 point (0.3% - Paternal grandsire influence on breeding)
+ *   Based on sire's sire (DRF Field 53)
  *
  * OVERLAY SYSTEM (±50 points on top of base):
  * - Section A: Pace Dynamics & Bias: ±20 points
@@ -86,6 +92,7 @@ import {
 } from './comboPatterns';
 import { calculateWeightScore as calcWeight } from './weight';
 import { calculateSexRestrictionScore as calcSexRestriction } from './sexRestriction';
+import { calculateP3Refinements } from './p3Refinements';
 import {
   calculateDetailedBreedingScore,
   calculateBreedingContribution,
@@ -110,8 +117,8 @@ import {
 // CONSTANTS
 // ============================================================================
 
-/** Maximum base score (before overlay) - v2.2: weight scoring (+1 pt) */
-export const MAX_BASE_SCORE = 302;
+/** Maximum base score (before overlay) - v2.3: P3 refinements (+2 pts: age factor, sire's sire) */
+export const MAX_BASE_SCORE = 304;
 
 /** Maximum overlay adjustment */
 export const MAX_OVERLAY = 50;
@@ -149,8 +156,10 @@ export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 351
  *
  * Weight Change (1 pt):
  * - Weight: 1 pt (P2 subtle refinement for weight drops)
+ * - Age Factor: ±1 pt (P3 peak performance at 4-5yo, declining at 8+)
+ * - Sire's Sire: ±1 pt (P3 integrated into breeding for known influential sires)
  *
- * Total: 302 points base score
+ * Total: 304 points base score
  */
 export const SCORE_LIMITS = {
   connections: 27,
@@ -165,6 +174,9 @@ export const SCORE_LIMITS = {
   trackSpecialist: 6, // Track specialist bonus (30%+ win rate at track)
   trainerSurfaceDistance: 6, // Trainer surface/distance specialization (can stack with wet)
   weight: 1, // Weight change scoring (P2 subtle refinement)
+  // P3 refinements (subtle, ±1 pt each)
+  ageFactor: 1, // Age-based peak performance (P3: +1 for 4-5yo, -1 for 8+)
+  siresSire: 1, // Sire's sire breeding influence (P3: ±1 integrated into breeding)
   baseTotal: MAX_BASE_SCORE,
   overlayMax: MAX_OVERLAY,
   total: MAX_SCORE,
@@ -295,6 +307,30 @@ export interface ScoreBreakdown {
     isMixedRace: boolean;
     isFirstTimeFacingMales: boolean;
     flags: string[];
+    reasoning: string;
+  };
+  /** P3: Earnings-based class indicator (informational only, no new points) */
+  earningsAnalysis?: {
+    lifetimeEarnings: number;
+    avgEarningsPerStart: number;
+    currentYearEarnings: number;
+    earningsClass: 'elite' | 'strong' | 'average' | 'low';
+    reasoning: string;
+  };
+  /** P3: Sire's sire breeding influence (±1 pt integrated into breeding) */
+  siresSireAnalysis?: {
+    known: boolean;
+    siresSireName: string;
+    surfaceAffinity: number;
+    distanceAffinity: number;
+    adjustment: number;
+    reasoning: string;
+  };
+  /** P3: Age-based peak performance analysis (±1 pt) */
+  ageAnalysis?: {
+    age: number;
+    peakStatus: 'developing' | 'peak' | 'mature' | 'declining';
+    adjustment: number;
     reasoning: string;
   };
   /** Breeding score for lightly raced horses (0 if 8+ starts) */
@@ -635,6 +671,28 @@ function calculateHorseScoreWithContext(
           flags: [],
           reasoning: 'Scratched',
         },
+        // P3 refinements (scratched defaults)
+        earningsAnalysis: {
+          lifetimeEarnings: 0,
+          avgEarningsPerStart: 0,
+          currentYearEarnings: 0,
+          earningsClass: 'low' as const,
+          reasoning: 'Scratched',
+        },
+        siresSireAnalysis: {
+          known: false,
+          siresSireName: '',
+          surfaceAffinity: 0,
+          distanceAffinity: 0,
+          adjustment: 0,
+          reasoning: 'Scratched',
+        },
+        ageAnalysis: {
+          age: 0,
+          peakStatus: 'developing' as const,
+          adjustment: 0,
+          reasoning: 'Scratched',
+        },
       },
       isScratched: true,
       confidenceLevel: 'low',
@@ -676,6 +734,9 @@ function calculateHorseScoreWithContext(
   // Fillies/mares facing males in open races get -1 pt penalty
   const sexRestriction = calcSexRestriction(horse, context.raceHeader, context.activeHorses);
 
+  // Calculate P3 refinements (earnings indicator, sire's sire, age factor)
+  const p3Refinements = calculateP3Refinements(horse, context.raceHeader);
+
   // Calculate breeding score for lightly raced horses
   let breedingScore: DetailedBreedingScore | undefined;
   let breedingBreakdown: ScoreBreakdown['breeding'] | undefined;
@@ -686,6 +747,10 @@ function calculateHorseScoreWithContext(
     if (breedingScore.wasApplied) {
       const starts = horse.lifetimeStarts ?? 0;
       breedingContribution = calculateBreedingContribution(breedingScore, starts);
+      // P3: Add sire's sire adjustment to breeding contribution (±1 pt max)
+      if (p3Refinements.siresSire.known && p3Refinements.siresSire.adjustment !== 0) {
+        breedingContribution += p3Refinements.siresSire.adjustment;
+      }
       breedingBreakdown = {
         total: breedingScore.total,
         contribution: breedingContribution,
@@ -811,6 +876,28 @@ function calculateHorseScoreWithContext(
       flags: sexRestriction.analysis.flags,
       reasoning: sexRestriction.reasoning,
     },
+    // P3 refinements
+    earningsAnalysis: {
+      lifetimeEarnings: p3Refinements.earnings.lifetimeEarnings,
+      avgEarningsPerStart: p3Refinements.earnings.avgEarningsPerStart,
+      currentYearEarnings: p3Refinements.earnings.currentYearEarnings,
+      earningsClass: p3Refinements.earnings.earningsClass,
+      reasoning: p3Refinements.earnings.reasoning,
+    },
+    siresSireAnalysis: {
+      known: p3Refinements.siresSire.known,
+      siresSireName: p3Refinements.siresSire.siresSireName,
+      surfaceAffinity: p3Refinements.siresSire.surfaceAffinity,
+      distanceAffinity: p3Refinements.siresSire.distanceAffinity,
+      adjustment: p3Refinements.siresSire.adjustment,
+      reasoning: p3Refinements.siresSire.reasoning,
+    },
+    ageAnalysis: {
+      age: p3Refinements.ageFactor.age,
+      peakStatus: p3Refinements.ageFactor.peakStatus,
+      adjustment: p3Refinements.ageFactor.adjustment,
+      reasoning: p3Refinements.ageFactor.reasoning,
+    },
     breeding: breedingBreakdown,
     classAnalysis: classAnalysisBreakdown,
   };
@@ -834,7 +921,8 @@ function calculateHorseScoreWithContext(
     breakdown.trainerSurfaceDistance.total + // Trainer surface/distance specialization (0-6)
     breakdown.weightAnalysis.total + // Weight change bonus (0-1, P2 subtle refinement)
     breakdown.sexAnalysis.total + // Sex restriction adjustment (0 to -1, filly/mare vs males)
-    breedingContribution +
+    p3Refinements.ageFactor.adjustment + // P3: Age factor adjustment (±1, 4-5yo peak, 8+ declining)
+    breedingContribution + // Includes P3 sire's sire adjustment if applicable
     hiddenDropsBonus; // Add hidden class drop bonuses
 
   // Enforce base score boundaries (0 to MAX_BASE_SCORE)
@@ -1331,3 +1419,26 @@ export {
   type SexRestrictionAnalysis,
   type SexRestrictionScoreResult,
 } from './sexRestriction';
+
+// P3 refinements exports (earnings indicator, sire's sire, age factor)
+export {
+  // Earnings class indicator (informational only)
+  getEarningsClassIndicator,
+  getEarningsClassColor,
+  // Sire's sire analysis (±1 pt to breeding)
+  analyzeSiresSire,
+  // Age factor analysis (±1 pt)
+  analyzeAgeFactor,
+  getPeakStatusColor,
+  getPeakStatusLabel,
+  // Combined P3 analysis
+  calculateP3Refinements,
+  P3_MAX_ADJUSTMENT,
+  // Types
+  type EarningsClass,
+  type EarningsClassIndicator,
+  type SiresSireAnalysis,
+  type AgeFactorAnalysis,
+  type PeakStatus,
+  type P3RefinementsResult,
+} from './p3Refinements';
