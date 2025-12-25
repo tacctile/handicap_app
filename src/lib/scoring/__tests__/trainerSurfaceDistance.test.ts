@@ -387,12 +387,13 @@ describe('calculateTrainerSurfaceDistanceBonus', () => {
 
       const result = calculateTrainerSurfaceDistanceBonus(horse, raceHeader);
 
-      expect(result.bonus).toBe(0);
+      // v2.5: Returns neutral baseline (3 pts) for missing data
+      expect(result.bonus).toBe(3);
       expect(result.matchedCategory).toBeNull();
-      expect(result.reasoning).toBe('No trainer surface/distance data');
+      expect(result.reasoning).toContain('neutral baseline');
     });
 
-    it('should return 0 for insufficient starts (less than 5)', () => {
+    it('should return neutral baseline for insufficient starts (less than 5) (v2.5)', () => {
       const horse = createTestHorse({
         turfSprint: { starts: 3, wins: 1, winPercent: 33, roi: 2.0 }, // Great rate but too few starts
       });
@@ -403,8 +404,9 @@ describe('calculateTrainerSurfaceDistanceBonus', () => {
 
       const result = calculateTrainerSurfaceDistanceBonus(horse, raceHeader);
 
-      expect(result.bonus).toBe(0);
-      expect(result.reasoning).toContain('need 5+');
+      // v2.5: Returns neutral baseline (3 pts) for insufficient data
+      expect(result.bonus).toBe(3);
+      expect(result.reasoning).toContain('neutral baseline');
     });
 
     it('should handle exactly 5 starts (minimum threshold)', () => {

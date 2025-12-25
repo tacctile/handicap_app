@@ -29,11 +29,12 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.trainer).toBe(7);
+      // v2.5: Minimum baseline is 8 for any licensed trainer
+      expect(result.trainer).toBe(8);
       expect(result.reasoning).toContain('Limited data');
     });
 
-    it('returns 2 points for trainer with <5% win rate', () => {
+    it('returns 8 points (minimum baseline) for trainer with <5% win rate (v2.5)', () => {
       // Create horse with 0 wins in 10 starts
       const horse = createHorseEntry({
         trainerName: 'Low Win Trainer',
@@ -45,10 +46,11 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.trainer).toBe(2);
+      // v2.5: Minimum baseline is 8 for any trainer
+      expect(result.trainer).toBe(8);
     });
 
-    it('returns 5 points for trainer with 5-9% win rate', () => {
+    it('returns 8 points (minimum baseline) for trainer with 5-9% win rate (v2.5)', () => {
       // 1 win in 15 starts = ~6.7% win rate
       const pastPerformances = Array.from({ length: 15 }, (_, i) =>
         createPastPerformance({ finishPosition: i === 0 ? 1 : 5 })
@@ -61,7 +63,8 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.trainer).toBe(5);
+      // v2.5: All trainers get minimum baseline of 8
+      expect(result.trainer).toBe(8);
     });
 
     it('returns 9 points for trainer with 10-14% win rate', () => {
@@ -126,7 +129,7 @@ describe('Connections Scoring', () => {
   });
 
   describe('Jockey Scoring', () => {
-    it('returns neutral score (3) for jockey with insufficient data', () => {
+    it('returns minimum baseline (4) for jockey with insufficient data (v2.5)', () => {
       const horse = createHorseEntry({
         jockeyName: 'New Jockey',
         pastPerformances: [createPastPerformance({ jockey: 'New Jockey', finishPosition: 1 })],
@@ -134,7 +137,8 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.jockey).toBe(3);
+      // v2.5: Minimum baseline is 4 for any jockey
+      expect(result.jockey).toBe(4);
     });
 
     it('returns 7 points (max) for elite jockey with 20%+ win rate', () => {
@@ -155,7 +159,7 @@ describe('Connections Scoring', () => {
       expect(result.jockey).toBe(7);
     });
 
-    it('returns 1 point for jockey with <5% win rate', () => {
+    it('returns 4 points (minimum baseline) for jockey with <5% win rate (v2.5)', () => {
       const pastPerformances = Array.from({ length: 10 }, (_, i) =>
         createPastPerformance({
           jockey: 'Poor Jockey',
@@ -170,7 +174,8 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.jockey).toBe(1);
+      // v2.5: Minimum baseline is 4 for any jockey
+      expect(result.jockey).toBe(4);
     });
   });
 
@@ -401,9 +406,10 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.total).toBeGreaterThan(0); // Returns neutral scores
-      expect(result.trainer).toBe(7); // Neutral trainer
-      expect(result.jockey).toBe(3); // Neutral jockey
+      expect(result.total).toBeGreaterThan(0); // Returns baseline scores
+      // v2.5: Minimum baselines are 8 for trainer, 4 for jockey
+      expect(result.trainer).toBe(8);
+      expect(result.jockey).toBe(4);
     });
   });
 
@@ -583,7 +589,7 @@ describe('Connections Scoring', () => {
       // Note: With only 1 PP, it shows as "Limited data"
     });
 
-    it('handles edge case of 0 trainer wins with positive starts', () => {
+    it('handles edge case of 0 trainer wins with positive starts (v2.5)', () => {
       const horse = createHorseEntry({
         trainerName: 'Winless Trainer',
         trainerMeetStarts: 20,
@@ -595,8 +601,8 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      // Should score 2 points (0% = <5% tier)
-      expect(result.trainer).toBe(2);
+      // v2.5: All trainers get minimum baseline of 8
+      expect(result.trainer).toBe(8);
       expect(result.trainerStats?.winRate).toBe(0);
       expect(result.trainerStats?.source).toBe('drf');
     });

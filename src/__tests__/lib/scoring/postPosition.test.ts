@@ -210,10 +210,11 @@ describe('Post Position Scoring', () => {
       const worstCase = createHorseEntry({ postPosition: 14 });
       const result = calculatePostPositionScore(worstCase, header);
 
-      expect(result.total).toBeGreaterThanOrEqual(3);
+      expect(result.total).toBeGreaterThanOrEqual(2); // v2.5: floor reduced from 3 to 2
     });
 
-    it('never returns score above 30', () => {
+    it('never returns score above 20', () => {
+      // v2.5: max reduced from 30 to 20
       const header = createRaceHeader({
         distance: '6f',
         distanceFurlongs: 6,
@@ -223,7 +224,7 @@ describe('Post Position Scoring', () => {
       const bestCase = createHorseEntry({ postPosition: 4 });
       const result = calculatePostPositionScore(bestCase, header);
 
-      expect(result.total).toBeLessThanOrEqual(30);
+      expect(result.total).toBeLessThanOrEqual(20); // v2.5: reduced from 30
     });
   });
 

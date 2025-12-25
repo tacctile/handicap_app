@@ -114,18 +114,19 @@ export interface EquipmentTypeDefinition {
  */
 export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
   // Medication
+  // v2.5: All impact values scaled by 0.6 (12/20) to match new MAX_EQUIPMENT_SCORE
   lasix: {
     id: 'lasix',
     codes: ['L', 'L1'],
     name: 'Lasix',
     description: 'Diuretic medication to prevent exercise-induced pulmonary hemorrhage (EIPH)',
     category: 'medication',
-    impactAdded: 12,
-    impactRemoved: -8,
+    impactAdded: 7, // was 12
+    impactRemoved: -5, // was -8
     impactDescription:
       'First-time Lasix is one of the most significant equipment changes. Proven statistical advantage.',
     significantFirstTime: true,
-    firstTimeBonus: 5,
+    firstTimeBonus: 3, // was 5
   },
 
   // Vision Equipment
@@ -135,12 +136,12 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
     name: 'Blinkers',
     description: 'Hood with eye cups to limit peripheral vision and improve focus',
     category: 'vision',
-    impactAdded: 10,
-    impactRemoved: 8,
+    impactAdded: 6, // was 10
+    impactRemoved: 5, // was 8
     impactDescription:
       'Blinkers on can improve focus. Blinkers off may help if horse was too keen.',
     significantFirstTime: true,
-    firstTimeBonus: 3,
+    firstTimeBonus: 2, // was 3
   },
 
   shadowRoll: {
@@ -149,7 +150,7 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
     name: 'Shadow Roll',
     description: "Sheepskin noseband to block horse's view of shadows on track",
     category: 'vision',
-    impactAdded: 4,
+    impactAdded: 2, // was 4
     impactRemoved: 0,
     impactDescription: 'Helps horses that spook at shadows or dark spots on track.',
     significantFirstTime: false,
@@ -162,7 +163,7 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
     name: 'Cheek Pieces',
     description: 'Strips attached to bridle to limit sideways vision',
     category: 'vision',
-    impactAdded: 5,
+    impactAdded: 3, // was 5
     impactRemoved: 0,
     impactDescription: 'Similar to blinkers but less restrictive. Helps with focus.',
     significantFirstTime: false,
@@ -176,7 +177,7 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
     name: 'Front Bandages',
     description: 'Protective bandages on front legs',
     category: 'bandages',
-    impactAdded: 2,
+    impactAdded: 1, // was 2
     impactRemoved: 0,
     impactDescription: 'Usually precautionary. May indicate minor concerns but also protection.',
     significantFirstTime: false,
@@ -189,7 +190,7 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
     name: 'Hind Bandages',
     description: 'Protective bandages on hind legs',
     category: 'bandages',
-    impactAdded: 2,
+    impactAdded: 1, // was 2
     impactRemoved: 0,
     impactDescription: 'Usually precautionary. May indicate minor concerns.',
     significantFirstTime: false,
@@ -202,7 +203,7 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
     name: 'All Bandages',
     description: 'Bandages on all four legs',
     category: 'bandages',
-    impactAdded: 3,
+    impactAdded: 2, // was 3
     impactRemoved: 0,
     impactDescription: 'Four bandages may indicate more concern but also full protection.',
     significantFirstTime: false,
@@ -216,11 +217,11 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
     name: 'Tongue Tie',
     description: 'Strap to hold tongue in place and prevent breathing obstruction',
     category: 'breathing',
-    impactAdded: 5,
-    impactRemoved: -2,
+    impactAdded: 3, // was 5
+    impactRemoved: -1, // was -2
     impactDescription: 'Helps horses that have breathing issues related to tongue displacement.',
     significantFirstTime: true,
-    firstTimeBonus: 2,
+    firstTimeBonus: 1, // was 2
   },
 
   nasalStrip: {
@@ -229,7 +230,7 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
     name: 'Nasal Strip',
     description: 'Adhesive strip on nose to open nasal passages',
     category: 'breathing',
-    impactAdded: 4,
+    impactAdded: 2, // was 4
     impactRemoved: 0,
     impactDescription: 'Can improve airflow. Often used for first time in stakes races.',
     significantFirstTime: false,
@@ -243,7 +244,7 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
     name: 'Bar Shoes',
     description: 'Specialty horseshoe with bar connecting heels for hoof support',
     category: 'shoes',
-    impactAdded: 2,
+    impactAdded: 1, // was 2
     impactRemoved: 1,
     impactDescription:
       'Used for hoof issues. +2 on turf (better grip), -1 on dirt (may indicate concern).',
@@ -257,7 +258,7 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeDefinition> = {
     name: 'Mud Caulks',
     description: 'Cleats or grabs on horseshoes for wet track traction',
     category: 'shoes',
-    impactAdded: 3,
+    impactAdded: 2, // was 3
     impactRemoved: 0,
     impactDescription: 'Only relevant on wet tracks. Shows trainer is prepared for conditions.',
     significantFirstTime: false,

@@ -73,6 +73,26 @@ export const DISTANCE_SURFACE_LIMITS = {
   total: 20,
 } as const;
 
+/**
+ * NEUTRAL BASELINES for missing data (v2.5 - Favorite Fix)
+ *
+ * Per diagnostic findings: "Unproven" should be neutral, not a penalty.
+ * Horses with 0 starts on a surface/distance were being penalized with 0 pts,
+ * causing favorites to rank low despite having no negative evidence.
+ *
+ * Neutral baseline = 50% of max for each category:
+ * - Turf (0 starts in turf race): 4 pts (50% of 8)
+ * - Wet (0 starts in wet race): 3 pts (50% of 6)
+ * - Distance (0 starts at distance): 3 pts (50% of 6)
+ * - Track specialist (0 starts at track): 3 pts (50% of 6)
+ */
+export const NEUTRAL_BASELINES = {
+  turf: 4, // 50% of 8 max
+  wet: 3, // 50% of 6 max
+  distance: 3, // 50% of 6 max
+  trackSpecialist: 3, // 50% of 6 max
+} as const;
+
 /** Minimum starts required for track specialist scoring */
 const MIN_TRACK_STARTS = 4;
 
@@ -143,10 +163,11 @@ function calculateTurfScore(
   const wins = horse.turfWins ?? 0;
 
   if (starts <= 0) {
+    // v2.5: Neutral baseline instead of 0 (unproven ≠ bad)
     return {
-      score: 0,
+      score: NEUTRAL_BASELINES.turf,
       winRate: 0,
-      reasoning: 'No turf starts (unproven)',
+      reasoning: `No turf starts (neutral baseline: ${NEUTRAL_BASELINES.turf} pts)`,
     };
   }
 
@@ -208,10 +229,11 @@ function calculateWetScore(
   const wins = horse.wetWins ?? 0;
 
   if (starts <= 0) {
+    // v2.5: Neutral baseline instead of 0 (unproven ≠ bad)
     return {
-      score: 0,
+      score: NEUTRAL_BASELINES.wet,
       winRate: 0,
-      reasoning: 'No wet track starts (unproven)',
+      reasoning: `No wet track starts (neutral baseline: ${NEUTRAL_BASELINES.wet} pts)`,
     };
   }
 
@@ -263,10 +285,11 @@ function calculateDistanceScore(horse: HorseEntry): {
   const wins = horse.distanceWins ?? 0;
 
   if (starts <= 0) {
+    // v2.5: Neutral baseline instead of 0 (unproven ≠ bad)
     return {
-      score: 0,
+      score: NEUTRAL_BASELINES.distance,
       winRate: 0,
-      reasoning: 'No starts at distance (unproven)',
+      reasoning: `No starts at distance (neutral baseline: ${NEUTRAL_BASELINES.distance} pts)`,
     };
   }
 
@@ -327,17 +350,17 @@ export function calculateTrackSpecialistScore(
   const places = horse.trackPlaces ?? 0;
   const shows = horse.trackShows ?? 0;
 
-  // Insufficient data - no penalty, no bonus
+  // Insufficient data - v2.5: give neutral baseline instead of 0
   if (starts < MIN_TRACK_STARTS) {
     return {
-      score: 0,
+      score: NEUTRAL_BASELINES.trackSpecialist, // v2.5: neutral instead of 0
       trackWinRate: starts > 0 ? wins / starts : 0,
       trackITMRate: starts > 0 ? (wins + places + shows) / starts : 0,
       isSpecialist: false,
       reasoning:
         starts === 0
-          ? 'First time at track'
-          : `Only ${starts} start${starts === 1 ? '' : 's'} at track (need ${MIN_TRACK_STARTS}+)`,
+          ? `First time at track (neutral baseline: ${NEUTRAL_BASELINES.trackSpecialist} pts)`
+          : `Only ${starts} start${starts === 1 ? '' : 's'} at track (neutral: ${NEUTRAL_BASELINES.trackSpecialist} pts)`,
     };
   }
 
