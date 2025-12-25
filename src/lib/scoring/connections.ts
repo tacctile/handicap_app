@@ -750,3 +750,229 @@ export function getConnectionsTierColor(score: number): string {
   if (score >= 15) return '#f59e0b'; // Amber - average
   return '#6b7280'; // Gray - weak
 }
+
+// ============================================================================
+// TRAINER SURFACE/DISTANCE SPECIALIZATION SCORING
+// ============================================================================
+
+/** Sprint distance threshold in furlongs */
+const SPRINT_THRESHOLD_FURLONGS = 8;
+
+/** Minimum starts required for credible trainer category data */
+const MIN_TRAINER_CATEGORY_STARTS = 5;
+
+/** Maximum points for trainer surface/distance bonus (4 surface + 4 wet = 6 max combined) */
+export const MAX_TRAINER_SURFACE_DISTANCE_POINTS = 6;
+
+/**
+ * Trainer Surface/Distance Bonus Result
+ */
+export interface TrainerSurfaceDistanceBonusResult {
+  /** Total bonus points (0-6 max when stacked with wet) */
+  bonus: number;
+  /** Surface/distance category matched (if any) */
+  matchedCategory: string | null;
+  /** Surface/distance trainer win percentage */
+  trainerWinPercent: number;
+  /** Wet track trainer win percentage (if applicable) */
+  wetTrackWinPercent: number;
+  /** Whether wet track bonus was applied */
+  wetBonusApplied: boolean;
+  /** Reasoning for the bonus */
+  reasoning: string;
+}
+
+/**
+ * Check if track condition is considered "wet" or "off"
+ */
+function isWetCondition(condition: string | undefined | null): boolean {
+  if (!condition || typeof condition !== 'string') return false;
+  const c = condition.toLowerCase();
+  return (
+    c === 'muddy' ||
+    c === 'sloppy' ||
+    c === 'heavy' ||
+    c === 'yielding' ||
+    c === 'soft' ||
+    c === 'slow'
+  );
+}
+
+/**
+ * Calculate points from trainer win percentage
+ *
+ * Scoring tiers:
+ * - 25%+ win rate: 4 pts
+ * - 20-24% win rate: 3 pts
+ * - 15-19% win rate: 2 pts
+ * - 10-14% win rate: 1 pt
+ * - <10% win rate: 0 pts
+ */
+function getTrainerSpecializationPoints(winPercent: number): number {
+  if (winPercent >= 25) return 4;
+  if (winPercent >= 20) return 3;
+  if (winPercent >= 15) return 2;
+  if (winPercent >= 10) return 1;
+  return 0;
+}
+
+/**
+ * Determine today's race category based on surface and distance
+ */
+function getRaceCategory(
+  surface: string,
+  distanceFurlongs: number
+): 'turfSprint' | 'turfRoute' | 'dirtSprint' | 'dirtRoute' {
+  const isTurf = surface === 'turf';
+  const isSprint = distanceFurlongs < SPRINT_THRESHOLD_FURLONGS;
+
+  if (isTurf) {
+    return isSprint ? 'turfSprint' : 'turfRoute';
+  } else {
+    return isSprint ? 'dirtSprint' : 'dirtRoute';
+  }
+}
+
+/**
+ * Get readable category name
+ */
+function getCategoryDisplayName(
+  category: 'turfSprint' | 'turfRoute' | 'dirtSprint' | 'dirtRoute'
+): string {
+  const names: Record<typeof category, string> = {
+    turfSprint: 'turf sprints',
+    turfRoute: 'turf routes',
+    dirtSprint: 'dirt sprints',
+    dirtRoute: 'dirt routes',
+  };
+  return names[category];
+}
+
+/**
+ * Calculate trainer surface/distance specialization bonus
+ *
+ * Uses parsed trainer category stats (DRF Fields 1146-1221) to apply
+ * bonuses when today's race matches trainer's proven strengths.
+ *
+ * Scoring:
+ * - 25%+ win rate in category: 4 pts
+ * - 20-24% win rate: 3 pts
+ * - 15-19% win rate: 2 pts
+ * - 10-14% win rate: 1 pt
+ * - <10% win rate: 0 pts
+ *
+ * Wet track bonus stacks with surface/distance bonus (max combined: 6 pts)
+ * Requires minimum 5 starts in category for credibility
+ *
+ * @param horse - The horse entry (contains trainer category stats)
+ * @param raceHeader - Race information (surface, distance)
+ * @param trackCondition - Optional track condition override for wet detection
+ * @returns Trainer surface/distance bonus result
+ */
+export function calculateTrainerSurfaceDistanceBonus(
+  horse: HorseEntry,
+  raceHeader: RaceHeader,
+  trackCondition?: string | null
+): TrainerSurfaceDistanceBonusResult {
+  const stats = horse.trainerCategoryStats;
+  const effectiveCondition = trackCondition ?? raceHeader.trackCondition ?? '';
+  const isWet = isWetCondition(effectiveCondition);
+
+  // Default result for no bonus
+  const noBonus: TrainerSurfaceDistanceBonusResult = {
+    bonus: 0,
+    matchedCategory: null,
+    trainerWinPercent: 0,
+    wetTrackWinPercent: 0,
+    wetBonusApplied: false,
+    reasoning: 'No trainer surface/distance data',
+  };
+
+  // Guard against missing stats
+  if (!stats) {
+    return noBonus;
+  }
+
+  // Determine today's category
+  const category = getRaceCategory(raceHeader.surface, raceHeader.distanceFurlongs);
+  const categoryStat = stats[category];
+
+  // Check for credible data in the matched category
+  let surfaceDistancePoints = 0;
+  let surfaceDistanceWinPercent = 0;
+  const categoryName = getCategoryDisplayName(category);
+  let hasCredibleSurfaceData = false;
+
+  if (categoryStat && categoryStat.starts >= MIN_TRAINER_CATEGORY_STARTS) {
+    hasCredibleSurfaceData = true;
+    surfaceDistanceWinPercent = categoryStat.winPercent;
+    surfaceDistancePoints = getTrainerSpecializationPoints(surfaceDistanceWinPercent);
+  }
+
+  // Check for wet track bonus (stacks with surface/distance)
+  let wetPoints = 0;
+  let wetWinPercent = 0;
+  let wetApplied = false;
+
+  if (isWet && stats.wetTrack && stats.wetTrack.starts >= MIN_TRAINER_CATEGORY_STARTS) {
+    wetWinPercent = stats.wetTrack.winPercent;
+    wetPoints = getTrainerSpecializationPoints(wetWinPercent);
+    wetApplied = wetPoints > 0;
+  }
+
+  // Calculate total (capped at 6 points max)
+  const rawTotal = surfaceDistancePoints + wetPoints;
+  const cappedTotal = Math.min(rawTotal, MAX_TRAINER_SURFACE_DISTANCE_POINTS);
+
+  // Build reasoning
+  const reasoningParts: string[] = [];
+
+  if (hasCredibleSurfaceData && surfaceDistancePoints > 0) {
+    reasoningParts.push(
+      `Trainer ${surfaceDistanceWinPercent.toFixed(0)}% with ${categoryName} → +${surfaceDistancePoints}pts`
+    );
+  } else if (hasCredibleSurfaceData && surfaceDistancePoints === 0) {
+    reasoningParts.push(
+      `Trainer ${surfaceDistanceWinPercent.toFixed(0)}% with ${categoryName} (below threshold)`
+    );
+  } else if (!hasCredibleSurfaceData && categoryStat) {
+    reasoningParts.push(
+      `Trainer ${categoryStat.starts} starts with ${categoryName} (need ${MIN_TRAINER_CATEGORY_STARTS}+)`
+    );
+  }
+
+  if (isWet) {
+    if (wetApplied) {
+      reasoningParts.push(`Wet track: ${wetWinPercent.toFixed(0)}% → +${wetPoints}pts`);
+    } else if (stats.wetTrack && stats.wetTrack.starts >= MIN_TRAINER_CATEGORY_STARTS) {
+      reasoningParts.push(`Wet track: ${wetWinPercent.toFixed(0)}% (below threshold)`);
+    }
+  }
+
+  if (rawTotal > cappedTotal) {
+    reasoningParts.push(`(capped at ${MAX_TRAINER_SURFACE_DISTANCE_POINTS}pts)`);
+  }
+
+  // Return result
+  if (cappedTotal === 0) {
+    if (reasoningParts.length > 0) {
+      return {
+        ...noBonus,
+        matchedCategory: categoryName,
+        trainerWinPercent: surfaceDistanceWinPercent,
+        wetTrackWinPercent: wetWinPercent,
+        reasoning: reasoningParts.join('; '),
+      };
+    }
+    return noBonus;
+  }
+
+  return {
+    bonus: cappedTotal,
+    matchedCategory: categoryName,
+    trainerWinPercent: surfaceDistanceWinPercent,
+    wetTrackWinPercent: wetWinPercent,
+    wetBonusApplied: wetApplied,
+    reasoning: reasoningParts.join('; '),
+  };
+}
