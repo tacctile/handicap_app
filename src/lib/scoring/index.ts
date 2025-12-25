@@ -5,21 +5,21 @@
  * All calculations are deterministic - same inputs always produce same scores.
  * Optimized for performance: scoring 12 horses completes in under 100ms.
  *
- * BASE SCORE (0-293 points max):
- * Core Categories (240 pts):
- * - Speed & Class: 0-80 points (27.3% - Most predictive)
- * - Pace: 0-45 points (15.4% - Race shape analysis)
- * - Form: 0-40 points (13.7% - Recent performance)
- * - Post Position: 0-30 points (10.2% - Situational factor)
- * - Connections (Trainer + Jockey): 0-25 points (8.5% - Modifier)
- * - Equipment: 0-20 points (6.8% - Fine-tuning)
+ * BASE SCORE (0-301 points max):
+ * Core Categories (242 pts):
+ * - Speed & Class: 0-80 points (26.5% - Most predictive)
+ * - Pace: 0-45 points (14.9% - Race shape analysis)
+ * - Form: 0-40 points (13.2% - Recent performance)
+ * - Post Position: 0-30 points (9.9% - Situational factor)
+ * - Connections (Trainer + Jockey + Partnership): 0-27 points (8.9% - Enhanced partnership)
+ * - Equipment: 0-20 points (6.6% - Fine-tuning)
  *
- * Bonus Categories (53 pts):
- * - Distance/Surface Affinity: 0-20 points (6.8% - Turf/Wet/Distance)
+ * Bonus Categories (59 pts):
+ * - Distance/Surface Affinity: 0-20 points (6.6% - Turf/Wet/Distance)
  *   Based on lifetime records (DRF Fields 85-96)
- * - Trainer Patterns: 0-15 points (5.1% - Situational trainer bonuses)
+ * - Trainer Patterns: 0-15 points (5.0% - Situational trainer bonuses)
  *   Based on trainer category stats (DRF Fields 1146-1221)
- * - Combo Patterns: 0-12 points (4.1% - High-intent combo bonuses)
+ * - Combo Patterns: 0-12 points (4.0% - High-intent combo bonuses)
  * - Track Specialist: 0-6 points (2.0% - Proven success at today's track)
  *   Based on track record (DRF Fields 80-83)
  *
@@ -33,7 +33,7 @@
  * - Section G: Head-to-Head & Tactical Matchups: ±8 points
  *
  * Final Score = Base Score + Overlay Adjustment
- * Practical Range: 50 to 343 points
+ * Practical Range: 50 to 351 points
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
@@ -106,34 +106,34 @@ import {
 // CONSTANTS
 // ============================================================================
 
-/** Maximum base score (before overlay) */
-export const MAX_BASE_SCORE = 299;
+/** Maximum base score (before overlay) - v2.1: enhanced partnership scoring (+2 pts) */
+export const MAX_BASE_SCORE = 301;
 
 /** Maximum overlay adjustment */
 export const MAX_OVERLAY = 50;
 
 /** Maximum total score (base + overlay) */
-export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 337
+export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 351
 
 /**
  * Score limits by category
  *
- * WEIGHT RATIONALE (v2.3 - Industry-Aligned Weights + Track Specialist):
+ * WEIGHT RATIONALE (v2.4 - Enhanced Partnership Scoring):
  * -----------------------------------------------------------------------
  * These weights are aligned with industry handicapping research showing
  * that "hard" predictive factors (Speed/Class, Pace) should outweigh
  * "soft" speculative factors (Connections, Equipment).
  *
- * Core Categories (240 pts):
- * - Speed/Class: 80 pts (27.3%) — Most predictive factor per industry research
- * - Pace: 45 pts (15.4%) — High predictive value for race shape
- * - Form: 40 pts (13.7%) — Recent performance patterns
- * - Post Position: 30 pts (10.2%) — Track-dependent situational factor
- * - Connections: 25 pts (8.5%) — Modifier, not primary driver
- * - Equipment: 20 pts (6.8%) — Speculative, fine-tuning only
+ * Core Categories (242 pts):
+ * - Speed/Class: 80 pts (26.5%) — Most predictive factor per industry research
+ * - Pace: 45 pts (14.9%) — High predictive value for race shape
+ * - Form: 40 pts (13.2%) — Recent performance patterns
+ * - Post Position: 30 pts (9.9%) — Track-dependent situational factor
+ * - Connections: 27 pts (8.9%) — Enhanced partnership scoring (16 trainer + 7 jockey + 4 partnership)
+ * - Equipment: 20 pts (6.6%) — Speculative, fine-tuning only
  *
  * Bonus Categories (59 pts):
- * - Distance/Surface: 20 pts (6.7%) — Turf (8) + Wet (6) + Distance (6)
+ * - Distance/Surface: 20 pts (6.6%) — Turf (8) + Wet (6) + Distance (6)
  *   Fundamental handicapping data: horses with proven affinity for conditions
  * - Trainer Patterns: 15 pts (5.0%) — Situational trainer pattern bonuses
  *   Based on DRF Fields 1146-1221 (trainer category statistics)
@@ -143,10 +143,10 @@ export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 337
  * - Trainer Surface/Distance: 6 pts (2.0%) — Trainer specialization bonus
  *   Based on trainer category stats (turfSprint, turfRoute, dirtSprint, dirtRoute, wetTrack)
  *
- * Total: 299 points base score
+ * Total: 301 points base score
  */
 export const SCORE_LIMITS = {
-  connections: 25,
+  connections: 27,
   postPosition: 30,
   speedClass: 80,
   form: 40,
@@ -1218,4 +1218,11 @@ export {
   calculateTrainerSurfaceDistanceBonus,
   MAX_TRAINER_SURFACE_DISTANCE_POINTS,
   type TrainerSurfaceDistanceBonusResult,
+} from './connections';
+
+// Enhanced partnership scoring exports
+export {
+  analyzeTrainerJockeyPartnership,
+  MAX_ENHANCED_PARTNERSHIP_POINTS,
+  type TrainerJockeyPartnershipAnalysis,
 } from './connections';

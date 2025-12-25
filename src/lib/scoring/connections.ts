@@ -2,14 +2,21 @@
  * Connections Scoring Module
  * Calculates trainer, jockey, and partnership scores based on DRF data
  *
- * Score Breakdown (v2.0 - Industry-Aligned Weights):
+ * Score Breakdown (v2.1 - Enhanced Partnership Scoring):
  * - Trainer Score: 0-16 points (based on track/surface/class-specific win rates)
  * - Jockey Score: 0-7 points (based on track/style-specific win rates)
- * - Partnership Bonus: 0-2 points (trainer-jockey partnership performance)
+ * - Partnership Bonus: 0-4 points (enhanced tiered trainer-jockey partnership)
  *
- * Total: 0-25 points (10.4% of 240 base)
+ * Partnership Bonus Tiers:
+ * - Elite partnership (30%+ combo win rate, 8+ starts): 4 pts
+ * - Strong partnership (25-29% combo win rate, 5+ starts): 3 pts
+ * - Good partnership (20-24% combo win rate, 5+ starts): 2 pts
+ * - Regular partnership (15-19% combo win rate, 5+ starts): 1 pt
+ * - New or weak partnership: 0 pts
  *
- * NOTE: Connections reduced from 55 to 25 points to reflect industry research
+ * Total: 0-27 points (11.3% of 240 base)
+ *
+ * NOTE: Connections reduced from 55 to 27 points to reflect industry research
  * showing this is a modifier rather than primary predictive factor.
  *
  * Dynamic Pattern Features:
@@ -56,6 +63,30 @@ export interface PartnershipStats {
   wins: number;
   starts: number;
   winRate: number;
+}
+
+/**
+ * Enhanced trainer/jockey partnership analysis result
+ */
+export interface TrainerJockeyPartnershipAnalysis {
+  /** Current jockey name */
+  currentJockey: string;
+  /** Current trainer name */
+  currentTrainer: string;
+  /** Number of starts this trainer/jockey have had together */
+  startsWithCombo: number;
+  /** Number of wins when they team up */
+  winsWithCombo: number;
+  /** Win rate when they team up (as percentage 0-100) */
+  comboWinRate: number;
+  /** Is this a regular partnership (5+ starts together)? */
+  isRegularPartnership: boolean;
+  /** Is this a winning partnership (25%+ win rate together)? */
+  isWinningPartnership: boolean;
+  /** Is this the first time this trainer is using this jockey for this horse? */
+  isFirstTimeWithJockey: boolean;
+  /** Partnership tier for scoring */
+  partnershipTier: 'elite' | 'strong' | 'good' | 'regular' | 'new';
 }
 
 export interface ConnectionsDatabase {
@@ -192,6 +223,165 @@ export function buildConnectionsDatabase(horses: HorseEntry[]): ConnectionsDatab
   }
 
   return { trainers, jockeys, partnerships };
+}
+
+// ============================================================================
+// ENHANCED PARTNERSHIP ANALYSIS
+// ============================================================================
+
+/** Minimum starts for a regular partnership */
+const REGULAR_PARTNERSHIP_MIN_STARTS = 5;
+
+/** Partnership tier thresholds (win rate percentages) */
+const PARTNERSHIP_TIERS = {
+  elite: { minWinRate: 30, minStarts: 8 }, // 30%+ win rate, 8+ starts
+  strong: { minWinRate: 25, minStarts: 5 }, // 25-29% win rate, 5+ starts
+  good: { minWinRate: 20, minStarts: 5 }, // 20-24% win rate, 5+ starts
+  regular: { minWinRate: 15, minStarts: 5 }, // 15-19% win rate, 5+ starts
+} as const;
+
+/** Partnership bonus points by tier (max 4 points) */
+const ENHANCED_PARTNERSHIP_POINTS = {
+  elite: 4,
+  strong: 3,
+  good: 2,
+  regular: 1,
+  new: 0,
+} as const;
+
+/** Maximum enhanced partnership bonus points */
+export const MAX_ENHANCED_PARTNERSHIP_POINTS = 4;
+
+/**
+ * Analyze the trainer/jockey partnership by examining past performances
+ *
+ * Looks through a horse's past performances to find how many times
+ * the current trainer/jockey combination has worked together and
+ * their combined win rate.
+ *
+ * @param horse - The horse entry to analyze
+ * @returns Detailed partnership analysis
+ */
+export function analyzeTrainerJockeyPartnership(
+  horse: HorseEntry
+): TrainerJockeyPartnershipAnalysis {
+  const currentTrainer = horse.trainerName;
+  const currentJockey = horse.jockeyName;
+  const currentJockeyNorm = normalizeName(currentJockey);
+
+  // Count starts and wins where trainer used this jockey
+  let startsWithCombo = 0;
+  let winsWithCombo = 0;
+
+  // Track if we've ever seen this jockey with this horse before
+  let hasUsedThisJockeyBefore = false;
+
+  for (const pp of horse.pastPerformances) {
+    if (!pp.jockey) continue;
+
+    const ppJockeyNorm = normalizeName(pp.jockey);
+
+    // Check if this PP has the same jockey as current race
+    if (ppJockeyNorm === currentJockeyNorm) {
+      hasUsedThisJockeyBefore = true;
+      startsWithCombo++;
+
+      if (pp.finishPosition === 1) {
+        winsWithCombo++;
+      }
+    }
+  }
+
+  // Calculate combo win rate
+  const comboWinRate = startsWithCombo > 0 ? (winsWithCombo / startsWithCombo) * 100 : 0;
+
+  // Determine if this is a regular partnership (5+ starts together)
+  const isRegularPartnership = startsWithCombo >= REGULAR_PARTNERSHIP_MIN_STARTS;
+
+  // Determine if this is a winning partnership (25%+ win rate together)
+  const isWinningPartnership =
+    comboWinRate >= 25 && startsWithCombo >= REGULAR_PARTNERSHIP_MIN_STARTS;
+
+  // Determine if this is the first time with this jockey
+  const isFirstTimeWithJockey = !hasUsedThisJockeyBefore;
+
+  // Determine partnership tier
+  let partnershipTier: TrainerJockeyPartnershipAnalysis['partnershipTier'] = 'new';
+
+  if (
+    startsWithCombo >= PARTNERSHIP_TIERS.elite.minStarts &&
+    comboWinRate >= PARTNERSHIP_TIERS.elite.minWinRate
+  ) {
+    partnershipTier = 'elite';
+  } else if (
+    startsWithCombo >= PARTNERSHIP_TIERS.strong.minStarts &&
+    comboWinRate >= PARTNERSHIP_TIERS.strong.minWinRate
+  ) {
+    partnershipTier = 'strong';
+  } else if (
+    startsWithCombo >= PARTNERSHIP_TIERS.good.minStarts &&
+    comboWinRate >= PARTNERSHIP_TIERS.good.minWinRate
+  ) {
+    partnershipTier = 'good';
+  } else if (
+    startsWithCombo >= PARTNERSHIP_TIERS.regular.minStarts &&
+    comboWinRate >= PARTNERSHIP_TIERS.regular.minWinRate
+  ) {
+    partnershipTier = 'regular';
+  }
+
+  return {
+    currentJockey,
+    currentTrainer,
+    startsWithCombo,
+    winsWithCombo,
+    comboWinRate,
+    isRegularPartnership,
+    isWinningPartnership,
+    isFirstTimeWithJockey,
+    partnershipTier,
+  };
+}
+
+/**
+ * Calculate enhanced partnership bonus based on tier (0-4 points)
+ *
+ * Scoring:
+ * - Elite partnership (30%+ combo win rate, 8+ starts): 4 pts
+ * - Strong partnership (25-29% combo win rate, 5+ starts): 3 pts
+ * - Good partnership (20-24% combo win rate, 5+ starts): 2 pts
+ * - Regular partnership (15-19% combo win rate, 5+ starts): 1 pt
+ * - New or weak partnership: 0 pts
+ */
+function calculateEnhancedPartnershipBonus(analysis: TrainerJockeyPartnershipAnalysis): {
+  bonus: number;
+  reasoning: string;
+} {
+  const { partnershipTier, comboWinRate, startsWithCombo, winsWithCombo, isFirstTimeWithJockey } =
+    analysis;
+
+  const bonus = ENHANCED_PARTNERSHIP_POINTS[partnershipTier];
+
+  // Build reasoning string
+  let reasoning: string;
+
+  if (isFirstTimeWithJockey) {
+    reasoning = 'First time with this jockey';
+  } else if (partnershipTier === 'elite') {
+    reasoning = `Elite combo: ${comboWinRate.toFixed(0)}% win (${winsWithCombo}/${startsWithCombo}) → +${bonus}pts`;
+  } else if (partnershipTier === 'strong') {
+    reasoning = `Strong combo: ${comboWinRate.toFixed(0)}% win (${winsWithCombo}/${startsWithCombo}) → +${bonus}pts`;
+  } else if (partnershipTier === 'good') {
+    reasoning = `Good combo: ${comboWinRate.toFixed(0)}% win (${winsWithCombo}/${startsWithCombo}) → +${bonus}pts`;
+  } else if (partnershipTier === 'regular') {
+    reasoning = `Regular combo: ${comboWinRate.toFixed(0)}% win (${winsWithCombo}/${startsWithCombo}) → +${bonus}pt`;
+  } else if (startsWithCombo > 0) {
+    reasoning = `Limited combo: ${startsWithCombo} start${startsWithCombo === 1 ? '' : 's'} together`;
+  } else {
+    reasoning = 'New pairing';
+  }
+
+  return { bonus, reasoning };
 }
 
 /**
@@ -354,46 +544,54 @@ function calculateJockeyScore(stats: ConnectionStats | null): number {
 }
 
 /**
- * Detect elite partnerships and calculate bonus
- * Same trainer/jockey combo with 25%+ win rate = +5 bonus
+ * Calculate enhanced partnership bonus using tiered scoring (0-4 points)
+ *
+ * ENHANCED SCORING (v2.1):
+ * - Elite partnership (30%+ combo win rate, 8+ starts): 4 pts
+ * - Strong partnership (25-29% combo win rate, 5+ starts): 3 pts
+ * - Good partnership (20-24% combo win rate, 5+ starts): 2 pts
+ * - Regular partnership (15-19% combo win rate, 5+ starts): 1 pt
+ * - New or weak partnership: 0 pts
+ *
+ * This uses the horse's past performances to directly analyze the trainer/jockey
+ * combination, giving more accurate partnership data than database lookup.
  */
-function calculatePartnershipBonus(
-  trainerName: string,
-  jockeyName: string,
-  database: ConnectionsDatabase | null
-): { bonus: number; stats: PartnershipStats | null } {
-  if (!database) {
-    return { bonus: 0, stats: null };
-  }
+function calculatePartnershipBonus(horse: HorseEntry): {
+  bonus: number;
+  stats: PartnershipStats | null;
+  analysis: TrainerJockeyPartnershipAnalysis;
+  reasoning: string;
+} {
+  // Analyze the trainer/jockey partnership from past performances
+  const analysis = analyzeTrainerJockeyPartnership(horse);
 
-  const trainerNorm = normalizeName(trainerName);
-  const jockeyNorm = normalizeName(jockeyName);
-  const partnerKey = `${trainerNorm}|${jockeyNorm}`;
+  // Calculate enhanced bonus based on tier
+  const { bonus, reasoning } = calculateEnhancedPartnershipBonus(analysis);
 
-  const stats = database.partnerships.get(partnerKey);
+  // Create partnership stats for compatibility
+  const stats: PartnershipStats | null =
+    analysis.startsWithCombo > 0
+      ? {
+          trainer: analysis.currentTrainer,
+          jockey: analysis.currentJockey,
+          wins: analysis.winsWithCombo,
+          starts: analysis.startsWithCombo,
+          winRate: analysis.comboWinRate,
+        }
+      : null;
 
-  if (!stats || stats.starts < 5) {
-    return { bonus: 0, stats: null };
-  }
-
-  // Elite partnership: 25%+ win rate with at least 5 starts
-  // Rescaled from 5 max to 2 max (scale factor: 25/55 = 0.4545)
-  if (stats.winRate >= 25) {
-    return { bonus: 2, stats };
-  }
-
-  return { bonus: 0, stats };
+  return { bonus, stats, analysis, reasoning };
 }
 
 /**
  * Build reasoning string for connections score
  * Includes source indicator (DRF=actual stats, PP=fallback from past performances)
+ * and enhanced partnership analysis
  */
 function buildReasoning(
   trainerStats: ConnectionStats | null,
   jockeyStats: ConnectionStats | null,
-  partnershipStats: PartnershipStats | null,
-  partnershipBonus: number
+  partnershipReasoning: string
 ): string {
   const parts: string[] = [];
 
@@ -415,8 +613,9 @@ function buildReasoning(
     parts.push('J: Limited data');
   }
 
-  if (partnershipBonus > 0 && partnershipStats) {
-    parts.push(`Elite combo: ${partnershipStats.winRate.toFixed(0)}% together`);
+  // Add partnership reasoning if not just "New pairing"
+  if (partnershipReasoning && partnershipReasoning !== 'New pairing') {
+    parts.push(partnershipReasoning);
   }
 
   return parts.join(' | ');
@@ -509,15 +708,15 @@ export function calculateConnectionsScore(
   // Dev-only: Log comparison between old (PP-based) and new (DRF-based) calculations
   logConnectionsDebug(horse, trainerStats, jockeyStats, trainerScore, jockeyScore);
 
-  // Check for elite partnership bonus
-  const { bonus: partnershipBonus, stats: partnershipStats } = calculatePartnershipBonus(
-    horse.trainerName,
-    horse.jockeyName,
-    database
-  );
+  // Check for enhanced partnership bonus (0-4 points based on tier)
+  const {
+    bonus: partnershipBonus,
+    stats: partnershipStats,
+    reasoning: partnershipReasoning,
+  } = calculatePartnershipBonus(horse);
 
-  // Build reasoning
-  const reasoning = buildReasoning(trainerStats, jockeyStats, partnershipStats, partnershipBonus);
+  // Build reasoning with enhanced partnership info
+  const reasoning = buildReasoning(trainerStats, jockeyStats, partnershipReasoning);
 
   return {
     total: trainerScore + jockeyScore + partnershipBonus,
@@ -558,8 +757,8 @@ export function calculateRaceConnectionsScores(
 // DYNAMIC PATTERN SCORING (ENHANCED)
 // ============================================================================
 
-/** Maximum combined score for connections (v2.0 - reduced from 55 to 25) */
-const MAX_CONNECTIONS_SCORE = 25;
+/** Maximum combined score for connections (v2.1 - enhanced partnership scoring: 16+7+4=27) */
+const MAX_CONNECTIONS_SCORE = 27;
 
 /**
  * Extended connections score result with pattern analysis
