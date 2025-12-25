@@ -578,7 +578,7 @@ export function getSeasonalPatternSummary(
   return {
     hasData: true,
     season: pattern.season.charAt(0).toUpperCase() + pattern.season.slice(1),
-    favoredStyle: pattern.favoredStyle ? styleNames[pattern.favoredStyle] : null,
+    favoredStyle: pattern.favoredStyle ? (styleNames[pattern.favoredStyle] ?? null) : null,
     notes: pattern.notes,
   };
 }
