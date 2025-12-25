@@ -85,6 +85,7 @@ import {
   type DetectedCombo,
 } from './comboPatterns';
 import { calculateWeightScore as calcWeight } from './weight';
+import { calculateSexRestrictionScore as calcSexRestriction } from './sexRestriction';
 import {
   calculateDetailedBreedingScore,
   calculateBreedingContribution,
@@ -283,6 +284,17 @@ export interface ScoreBreakdown {
     significantDrop: boolean;
     significantGain: boolean;
     showWeightGainFlag: boolean;
+    reasoning: string;
+  };
+  /** Sex-based race restriction analysis (subtle adjustment, max -1 pt) */
+  sexAnalysis: {
+    total: number;
+    horseSex: string;
+    isFemale: boolean;
+    isRestrictedRace: boolean;
+    isMixedRace: boolean;
+    isFirstTimeFacingMales: boolean;
+    flags: string[];
     reasoning: string;
   };
   /** Breeding score for lightly raced horses (0 if 8+ starts) */
@@ -613,6 +625,16 @@ function calculateHorseScoreWithContext(
           showWeightGainFlag: false,
           reasoning: 'Scratched',
         },
+        sexAnalysis: {
+          total: 0,
+          horseSex: '',
+          isFemale: false,
+          isRestrictedRace: false,
+          isMixedRace: false,
+          isFirstTimeFacingMales: false,
+          flags: [],
+          reasoning: 'Scratched',
+        },
       },
       isScratched: true,
       confidenceLevel: 'low',
@@ -649,6 +671,10 @@ function calculateHorseScoreWithContext(
 
   // Calculate weight change score (0-1 points, P2 subtle refinement)
   const weightScore = calcWeight(horse, context.raceHeader);
+
+  // Calculate sex restriction adjustment (0 to -1 points, subtle refinement)
+  // Fillies/mares facing males in open races get -1 pt penalty
+  const sexRestriction = calcSexRestriction(horse, context.raceHeader, context.activeHorses);
 
   // Calculate breeding score for lightly raced horses
   let breedingScore: DetailedBreedingScore | undefined;
@@ -775,6 +801,16 @@ function calculateHorseScoreWithContext(
       showWeightGainFlag: weightScore.showWeightGainFlag,
       reasoning: weightScore.reasoning,
     },
+    sexAnalysis: {
+      total: sexRestriction.total,
+      horseSex: sexRestriction.analysis.horseSex,
+      isFemale: sexRestriction.analysis.isFemale,
+      isRestrictedRace: sexRestriction.analysis.isRestrictedRace,
+      isMixedRace: sexRestriction.analysis.isMixedRace,
+      isFirstTimeFacingMales: sexRestriction.analysis.isFirstTimeFacingMales,
+      flags: sexRestriction.analysis.flags,
+      reasoning: sexRestriction.reasoning,
+    },
     breeding: breedingBreakdown,
     classAnalysis: classAnalysisBreakdown,
   };
@@ -797,6 +833,7 @@ function calculateHorseScoreWithContext(
     breakdown.trackSpecialist.total + // Track specialist bonus (0-6)
     breakdown.trainerSurfaceDistance.total + // Trainer surface/distance specialization (0-6)
     breakdown.weightAnalysis.total + // Weight change bonus (0-1, P2 subtle refinement)
+    breakdown.sexAnalysis.total + // Sex restriction adjustment (0 to -1, filly/mare vs males)
     breedingContribution +
     hiddenDropsBonus; // Add hidden class drop bonuses
 
@@ -1280,3 +1317,17 @@ export {
   type WeightAnalysisResult,
   type WeightScoreResult,
 } from './weight';
+
+// Sex restriction analysis exports
+export {
+  analyzeSexRestriction,
+  calculateSexRestrictionScore,
+  isHorseFemale,
+  isHorseMale,
+  getSexRestrictionSummary,
+  hasSexFlags,
+  hasAdjustment as hasSexAdjustment,
+  MAX_SEX_ADJUSTMENT,
+  type SexRestrictionAnalysis,
+  type SexRestrictionScoreResult,
+} from './sexRestriction';

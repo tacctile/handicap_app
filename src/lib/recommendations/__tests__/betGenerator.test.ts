@@ -137,6 +137,16 @@ function createMockScoreBreakdown(overrides: Partial<ScoreBreakdown> = {}): Scor
       showWeightGainFlag: false,
       reasoning: 'No weight history available',
     },
+    sexAnalysis: {
+      total: 0,
+      horseSex: 'c',
+      isFemale: false,
+      isRestrictedRace: false,
+      isMixedRace: false,
+      isFirstTimeFacingMales: false,
+      flags: [],
+      reasoning: 'Colt in open race - baseline',
+    },
     ...overrides,
   };
 }
