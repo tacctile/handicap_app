@@ -4,20 +4,20 @@
  * Calculates equipment impact scores based on detected changes
  * and trainer-specific success patterns.
  *
- * Score Range: 0-20 points (v2.0 - reduced from 25)
- * 8.3% of 240 base score - Speculative, fine-tuning only
- * Base Score: 8 points (no changes)
+ * Score Range: 0-12 points (v2.5 - reduced from 20)
+ * ~4% of base score - Speculative, fine-tuning only
+ * Base Score: 5 points (no changes)
  *
- * Key Impacts (rescaled by factor 20/25 = 0.8):
- * - First-time Lasix: +10-16 pts (trainer-dependent)
- * - Lasix removal: -6 pts
- * - Blinkers ON (first-time): +8-13 pts (trainer-dependent)
- * - Blinkers OFF: +6-12 pts (trainer-dependent)
- * - Tongue tie added: +4-6 pts
- * - Other equipment: +2-4 pts
+ * Key Impacts (v2.5: rescaled by factor 12/20 = 0.6):
+ * - First-time Lasix: +6-10 pts (trainer-dependent)
+ * - Lasix removal: -4 pts
+ * - Blinkers ON (first-time): +5-8 pts (trainer-dependent)
+ * - Blinkers OFF: +4-7 pts (trainer-dependent)
+ * - Tongue tie added: +2-4 pts
+ * - Other equipment: +1-2 pts
  *
- * NOTE: Equipment reduced from 25 to 20 points to reflect industry
- * research showing this is speculative and fine-tuning only.
+ * NOTE: Equipment reduced from 20 to 12 points per diagnostic findings.
+ * Industry research shows equipment impact is 2-5%, not 8%.
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
@@ -31,14 +31,16 @@ import { calculateTrainerAdjustedPoints } from './trainerPatterns';
 
 /**
  * Base equipment score when no changes
- * Rescaled from 10 to 8 (scale factor: 20/25 = 0.8)
+ * v2.5: Rescaled from 8 to 5 (scale factor: 12/20 = 0.6)
  */
-export const BASE_EQUIPMENT_SCORE = 8;
+export const BASE_EQUIPMENT_SCORE = 5;
 
 /**
- * Maximum equipment score (v2.0 - reduced from 25 to 20)
+ * Maximum equipment score
+ * v2.5: Reduced from 20 to 12 pts per diagnostic findings.
+ * Industry research shows equipment impact is 2-5%, not 8%.
  */
-export const MAX_EQUIPMENT_SCORE = 20;
+export const MAX_EQUIPMENT_SCORE = 12;
 
 /**
  * Minimum equipment score
@@ -328,12 +330,13 @@ export function hasSignificantEquipmentImpact(horse: HorseEntry): boolean {
 
 /**
  * Get equipment score color for UI
+ * v2.5: Adjusted thresholds for 0-12 range
  */
 export function getEquipmentScoreColor(score: number): string {
-  if (score >= 20) return '#22c55e'; // Excellent - green
-  if (score >= 15) return '#36d1da'; // Good - cyan
-  if (score >= 10) return '#888888'; // Neutral - gray
-  if (score >= 5) return '#f97316'; // Concern - orange
+  if (score >= 12) return '#22c55e'; // Excellent - green
+  if (score >= 9) return '#36d1da'; // Good - cyan
+  if (score >= 6) return '#888888'; // Neutral - gray
+  if (score >= 3) return '#f97316'; // Concern - orange
   return '#ef4444'; // Poor - red
 }
 

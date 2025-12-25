@@ -41,17 +41,23 @@ export interface PostPositionScoreResult {
 // CONSTANTS
 // ============================================================================
 
-// Maximum score for post position (v2.0 - reduced from 45 to 30)
-const MAX_POST_SCORE = 30;
+/**
+ * Maximum score for post position
+ * v2.5: Reduced from 30 to 20 pts per diagnostic findings.
+ * Industry research shows post position impact is 3-8%, not 10%.
+ */
+const MAX_POST_SCORE = 20;
 
-// Base scores for different post quality tiers
-// Rescaled from 45 max to 30 max (scale factor: 30/45 = 0.6667)
+/**
+ * Base scores for different post quality tiers
+ * v2.5: Rescaled from 30 max to 20 max (scale factor: 20/30 = 0.6667)
+ */
 const POST_TIERS = {
-  golden: 27, // Optimal post positions (was 40)
-  good: 21, // Favorable posts (was 32)
-  neutral: 16, // Average posts (was 24)
-  poor: 11, // Disadvantaged posts (was 16)
-  terrible: 5, // Severely disadvantaged (was 8)
+  golden: 18, // Optimal post positions (was 27)
+  good: 14, // Favorable posts (was 21)
+  neutral: 11, // Average posts (was 16)
+  poor: 7, // Disadvantaged posts (was 11)
+  terrible: 3, // Severely disadvantaged (was 5)
 } as const;
 
 // Generic post position preferences when no track data
@@ -100,17 +106,17 @@ function calculateFieldSizeAdjustment(
   const outsideRank = postPosition - 5;
 
   // Large field penalty for outside posts
-  // Rescaled penalties from max -10 to -7, -5 to -3
+  // v2.5: Rescaled penalties for 20 max (from -7/-3 to -5/-2)
   if (fieldSize >= FIELD_SIZE.large) {
     // Sprints hurt outside posts more
-    const penalty = category === 'sprint' ? outsideRank * -1.4 : outsideRank * -1;
-    return Math.max(-7, penalty);
+    const penalty = category === 'sprint' ? outsideRank * -1 : outsideRank * -0.7;
+    return Math.max(-5, penalty);
   }
 
   // Medium field - moderate penalty
   if (fieldSize >= FIELD_SIZE.medium) {
-    const penalty = category === 'sprint' ? outsideRank * -0.7 : outsideRank * -0.3;
-    return Math.max(-3, penalty);
+    const penalty = category === 'sprint' ? outsideRank * -0.5 : outsideRank * -0.25;
+    return Math.max(-2, penalty);
   }
 
   // Small field - minimal penalty
@@ -242,7 +248,7 @@ function buildReasoning(
 /**
  * Apply turf-specific adjustments
  * Inside posts have more value on turf due to ground saved
- * Rescaled from 45 max to 30 max (scale factor: 30/45 = 0.6667)
+ * v2.5: Rescaled from 30 max to 20 max (scale factor: 20/30 = 0.6667)
  */
 function applyTurfAdjustment(
   baseScore: number,
@@ -255,9 +261,9 @@ function applyTurfAdjustment(
     return baseScore;
   }
 
-  // Inside posts get bonus on turf (rescaled from +4 to +3)
+  // Inside posts get bonus on turf (v2.5: rescaled from +3 to +2)
   if (postPosition <= 3) {
-    return Math.min(MAX_POST_SCORE, baseScore + 3);
+    return Math.min(MAX_POST_SCORE, baseScore + 2);
   }
 
   // Middle posts are neutral
@@ -265,9 +271,9 @@ function applyTurfAdjustment(
     return baseScore;
   }
 
-  // Outside posts penalized more on turf (ground loss) (rescaled from -3/-2 to -2/-1)
-  const outsidePenalty = category === 'route' ? 2 : 1;
-  return Math.max(3, baseScore - outsidePenalty);
+  // Outside posts penalized more on turf (ground loss) (v2.5: rescaled from -2/-1 to -1/-1)
+  const outsidePenalty = category === 'route' ? 1 : 1;
+  return Math.max(2, baseScore - outsidePenalty);
 }
 
 // ============================================================================
@@ -342,9 +348,9 @@ export function calculatePostPositionScore(
   // Calculate field size adjustment
   const fieldSizeAdjustment = calculateFieldSizeAdjustment(postPosition, fieldSize, category);
 
-  // Calculate final score
+  // Calculate final score (v2.5: floor at 2 instead of 3)
   let total = baseScore + fieldSizeAdjustment;
-  total = Math.max(3, Math.min(MAX_POST_SCORE, total));
+  total = Math.max(2, Math.min(MAX_POST_SCORE, total));
 
   // Build reasoning
   const reasoning = buildReasoning(

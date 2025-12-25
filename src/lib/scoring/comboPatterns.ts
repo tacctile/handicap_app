@@ -55,8 +55,13 @@ export interface ComboPatternResult {
 // CONSTANTS
 // ============================================================================
 
-/** Maximum total points from combo patterns */
-export const MAX_COMBO_PATTERN_POINTS = 12;
+/**
+ * Maximum total points from combo patterns
+ * v2.5: Reduced from 12 to 6 pts per diagnostic findings.
+ * Combos are informational signals but shouldn't swing rankings heavily.
+ * Longshots were getting +12 from combos while favorites got 0.
+ */
+export const MAX_COMBO_PATTERN_POINTS = 6;
 
 /** Threshold for "hot" trainer at current meet (win percentage) */
 const HOT_TRAINER_THRESHOLD = 25;
@@ -399,42 +404,42 @@ export function detectComboPatterns(
   // HIGH-INTENT COMBOS (trainer is trying to win)
   // =========================================================================
 
-  // Class Drop + First Time Lasix: 4 pts
+  // Class Drop + First Time Lasix: 2 pts (v2.5: halved from 4)
   if (classDrop && firstLasix) {
     detectedCombos.push({
       combo: 'classDropLasix',
       components: ['classDrop', 'firstTimeLasix'],
-      points: 4,
+      points: 2,
       reasoning: 'Dropping in class AND adding Lasix = going for the win',
     });
   }
 
-  // Class Drop + First Time Blinkers: 3 pts
+  // Class Drop + First Time Blinkers: 1 pt (v2.5: halved from 3, rounded down)
   if (classDrop && firstBlinkers) {
     detectedCombos.push({
       combo: 'classDropBlinkers',
       components: ['classDrop', 'firstTimeBlinkers'],
-      points: 3,
+      points: 1,
       reasoning: 'Dropping in class AND adding blinkers = equipment experiment at easier level',
     });
   }
 
-  // Class Drop + Jockey Upgrade: 4 pts
+  // Class Drop + Jockey Upgrade: 2 pts (v2.5: halved from 4)
   if (classDrop && jockeyUpgrade) {
     detectedCombos.push({
       combo: 'classDropJockeyUpgrade',
       components: ['classDrop', 'jockeyUpgrade'],
-      points: 4,
+      points: 2,
       reasoning: 'Dropping in class AND upgrading jockey = serious intent',
     });
   }
 
-  // Class Drop + Trainer Hot: 3 pts
+  // Class Drop + Trainer Hot: 1 pt (v2.5: halved from 3, rounded down)
   if (classDrop && trainerHot) {
     detectedCombos.push({
       combo: 'classDropHotTrainer',
       components: ['classDrop', 'trainerHot'],
-      points: 3,
+      points: 1,
       reasoning: 'Dropping in class with hot trainer = confidence play',
     });
   }
@@ -443,22 +448,22 @@ export function detectComboPatterns(
   // FRESHENING COMBOS (horse is ready)
   // =========================================================================
 
-  // 2nd Off Layoff + Bullet Work: 3 pts
+  // 2nd Off Layoff + Bullet Work: 2 pts (v2.5: halved from 3, rounded up)
   if (secondLayoff && bulletWork) {
     detectedCombos.push({
       combo: 'secondLayoffBullet',
       components: ['secondOffLayoff', 'bulletWork'],
-      points: 3,
+      points: 2,
       reasoning: 'Second start after layoff AND sharp workout = fit and ready',
     });
   }
 
-  // Layoff + Class Drop: 3 pts
+  // Layoff + Class Drop: 2 pts (v2.5: halved from 3, rounded up)
   if (returningLayoff && classDrop) {
     detectedCombos.push({
       combo: 'layoffClassDrop',
       components: ['layoff', 'classDrop'],
-      points: 3,
+      points: 2,
       reasoning: 'Returning from layoff at easier level = trainer wants a confidence builder',
     });
   }
@@ -467,22 +472,22 @@ export function detectComboPatterns(
   // SURFACE/DISTANCE COMBOS
   // =========================================================================
 
-  // First Time Turf + Turf Breeding: 2 pts
+  // First Time Turf + Turf Breeding: 1 pt (v2.5: halved from 2)
   if (firstTurf && turfBreeding) {
     detectedCombos.push({
       combo: 'firstTurfWithBreeding',
       components: ['firstTimeTurf', 'turfBreeding'],
-      points: 2,
+      points: 1,
       reasoning: 'First turf start with turf pedigree = bred for it',
     });
   }
 
-  // Distance Change + Trainer Pattern: 2 pts
+  // Distance Change + Trainer Pattern: 1 pt (v2.5: halved from 2)
   if (distanceChange && hasTrainerDistancePattern(horse, distanceChange)) {
     detectedCombos.push({
       combo: 'distanceChangeTrainerPattern',
       components: ['distanceChange', 'trainerPattern'],
-      points: 2,
+      points: 1,
       reasoning: `Trainer knows how to ${distanceChange === 'sprint_to_route' ? 'stretch out' : 'cut back'} horses`,
     });
   }
@@ -491,7 +496,7 @@ export function detectComboPatterns(
   // TRIPLE COMBOS (rare but powerful)
   // =========================================================================
 
-  // Class Drop + Equipment + Jockey Upgrade: 6 pts
+  // Class Drop + Equipment + Jockey Upgrade: 3 pts (v2.5: halved from 6)
   // This overrides the individual combos if all three are present
   if (classDrop && hasEquipment && jockeyUpgrade) {
     // Remove any double combos that would overlap
@@ -503,12 +508,12 @@ export function detectComboPatterns(
     detectedCombos.push({
       combo: 'tripleClassEquipmentJockey',
       components: ['classDrop', 'equipment', 'jockeyUpgrade'],
-      points: 6,
+      points: 3,
       reasoning: 'All-in move — trainer pulling every lever',
     });
   }
 
-  // Layoff + Class Drop + Equipment: 5 pts
+  // Layoff + Class Drop + Equipment: 3 pts (v2.5: halved from 5, rounded up)
   // This overrides the individual combos if all three are present
   if (returningLayoff && classDrop && hasEquipment) {
     // Don't duplicate if we already have the triple combo above
@@ -524,7 +529,7 @@ export function detectComboPatterns(
       detectedCombos.push({
         combo: 'tripleLayoffClassEquipment',
         components: ['layoff', 'classDrop', 'equipment'],
-        points: 5,
+        points: 3,
         reasoning: 'Freshened, dropped, and equipped = ready to fire',
       });
     }

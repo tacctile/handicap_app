@@ -78,7 +78,7 @@ describe('Distance & Surface Affinity Scoring', () => {
       expect(result.turfScore).toBe(0);
     });
 
-    it('returns 0 points for horse with no turf starts on turf race (not penalized)', () => {
+    it('returns neutral baseline for horse with no turf starts on turf race (v2.5)', () => {
       const horse = createHorseEntry({
         turfStarts: 0,
         turfWins: 0,
@@ -87,8 +87,10 @@ describe('Distance & Surface Affinity Scoring', () => {
 
       const result = calculateDistanceSurfaceScore(horse, header);
 
-      expect(result.turfScore).toBe(0);
-      expect(result.reasoning).toContain('No turf starts (unproven)');
+      // v2.5: Neutral baseline (50% of max 8 = 4) instead of 0
+      expect(result.turfScore).toBe(4);
+      // Check that reasoning array contains a string with "neutral"
+      expect(result.reasoning.some((r) => r.toLowerCase().includes('neutral'))).toBe(true);
     });
 
     it('returns 0 points on dirt race regardless of turf record', () => {
@@ -234,7 +236,7 @@ describe('Distance & Surface Affinity Scoring', () => {
       expect(result.distanceScore).toBe(2);
     });
 
-    it('returns 0 points for no distance starts (unproven, not penalized)', () => {
+    it('returns neutral baseline for no distance starts (v2.5)', () => {
       const horse = createHorseEntry({
         distanceStarts: 0,
         distanceWins: 0,
@@ -243,8 +245,10 @@ describe('Distance & Surface Affinity Scoring', () => {
 
       const result = calculateDistanceSurfaceScore(horse, header);
 
-      expect(result.distanceScore).toBe(0);
-      expect(result.reasoning).toContain('No starts at distance (unproven)');
+      // v2.5: Neutral baseline (50% of max 6 = 3) instead of 0
+      expect(result.distanceScore).toBe(3);
+      // Check that reasoning array contains a string with "neutral"
+      expect(result.reasoning.some((r) => r.toLowerCase().includes('neutral'))).toBe(true);
     });
 
     it('applies half credit for small sample size (1-2 starts)', () => {
@@ -408,7 +412,7 @@ describe('Distance & Surface Affinity Scoring', () => {
       expect(summary).toContain('Total: +12');
     });
 
-    it('getDistanceSurfaceSummary handles zero score', () => {
+    it('getDistanceSurfaceSummary handles unproven horse (v2.5 neutral baselines)', () => {
       const horse = createHorseEntry({
         turfStarts: 0,
         turfWins: 0,
@@ -421,7 +425,9 @@ describe('Distance & Surface Affinity Scoring', () => {
 
       const summary = getDistanceSurfaceSummary(horse, header);
 
-      expect(summary).toBe('No distance/surface bonus');
+      // v2.5: Neutral baselines instead of 0 - distance gets 3 pts
+      expect(summary).toContain('Distance:');
+      expect(summary).toContain('Total:');
     });
   });
 
@@ -435,7 +441,7 @@ describe('Distance & Surface Affinity Scoring', () => {
   });
 
   describe('Edge Cases', () => {
-    it('handles null/undefined stats gracefully', () => {
+    it('handles null/undefined stats gracefully (v2.5 neutral baselines)', () => {
       const horse = createHorseEntry({});
       // Use type assertion to set null values for testing edge case
       (horse as Record<string, unknown>).turfStarts = null;
@@ -446,10 +452,11 @@ describe('Distance & Surface Affinity Scoring', () => {
 
       const result = calculateDistanceSurfaceScore(horse, header);
 
-      expect(result.turfScore).toBe(0);
-      expect(result.wetScore).toBe(0);
-      expect(result.distanceScore).toBe(0);
-      expect(result.total).toBe(0);
+      // v2.5: Neutral baselines for unproven/missing data
+      expect(result.turfScore).toBe(4); // turf neutral baseline
+      expect(result.wetScore).toBe(3); // wet neutral baseline
+      expect(result.distanceScore).toBe(3); // distance neutral baseline
+      expect(result.total).toBe(10); // 4 + 3 + 3 = 10
     });
 
     it('handles negative wins gracefully', () => {
@@ -573,7 +580,7 @@ describe('Track Specialist Scoring', () => {
       expect(result.reasoning).toContain('Struggles here');
     });
 
-    it('returns 0 points for insufficient data (<4 starts)', () => {
+    it('returns neutral baseline for insufficient data (<4 starts) (v2.5)', () => {
       const horse = createHorseEntry({
         trackStarts: 2,
         trackWins: 1, // 50% but only 2 starts
@@ -583,12 +590,13 @@ describe('Track Specialist Scoring', () => {
 
       const result = calculateTrackSpecialistScore(horse, 'CD');
 
-      expect(result.score).toBe(0);
+      // v2.5: Neutral baseline instead of 0
+      expect(result.score).toBe(3);
       expect(result.isSpecialist).toBe(false);
-      expect(result.reasoning).toContain('need 4+');
+      expect(result.reasoning).toContain('neutral');
     });
 
-    it('returns 0 points for first time at track (no penalty)', () => {
+    it('returns neutral baseline for first time at track (v2.5)', () => {
       const horse = createHorseEntry({
         trackStarts: 0,
         trackWins: 0,
@@ -598,9 +606,10 @@ describe('Track Specialist Scoring', () => {
 
       const result = calculateTrackSpecialistScore(horse, 'CD');
 
-      expect(result.score).toBe(0);
+      // v2.5: Neutral baseline (50% of max 6 = 3) instead of 0
+      expect(result.score).toBe(3);
       expect(result.isSpecialist).toBe(false);
-      expect(result.reasoning).toContain('First time at track');
+      expect(result.reasoning).toContain('neutral baseline');
     });
 
     it('adds ITM bonus (2 pts) for 50%+ ITM rate when win rate is 10-19%', () => {
@@ -686,7 +695,7 @@ describe('Track Specialist Scoring', () => {
       expect(result.score).toBe(6);
     });
 
-    it('handles null/undefined track stats gracefully', () => {
+    it('handles null/undefined track stats gracefully (v2.5)', () => {
       const horse = createHorseEntry({});
       (horse as Record<string, unknown>).trackStarts = null;
       (horse as Record<string, unknown>).trackWins = null;
@@ -695,8 +704,9 @@ describe('Track Specialist Scoring', () => {
 
       const result = calculateTrackSpecialistScore(horse, 'CD');
 
-      expect(result.score).toBe(0);
-      expect(result.reasoning).toContain('First time at track');
+      // v2.5: Neutral baseline instead of 0
+      expect(result.score).toBe(3);
+      expect(result.reasoning).toContain('neutral');
     });
   });
 

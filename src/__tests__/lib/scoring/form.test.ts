@@ -309,7 +309,7 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      expect(result.total).toBeLessThanOrEqual(40);
+      expect(result.total).toBeLessThanOrEqual(50); // v2.5: increased from 40
     });
 
     it('combines all components correctly', () => {

@@ -2,15 +2,19 @@
  * Form Scoring Module
  * Analyzes recent race form, layoff patterns, and consistency
  *
- * Score Breakdown (v2.0 - Industry-Aligned Weights):
+ * Score Breakdown (v2.5 - Favorite Fix):
  * - Recent Form Score: 0-20 points (last 3 races)
  * - Layoff Analysis: 0-13 points
  * - Consistency Bonus: 0-7 points
+ * - Recent Winner Bonuses: 0-10 points (NEW in v2.5)
+ *   - Won Last Out: +8 pts
+ *   - Won 2 of Last 3: +4 pts (if didn't win last out)
  *
- * Total: 0-40 points (16.7% of 240 base)
+ * Total: 0-50 points (increased from 40)
  *
- * NOTE: Form increased from 30 to 40 points to better capture
- * recent performance patterns and their predictive value.
+ * NOTE: Form increased from 40 to 50 points per diagnostic findings.
+ * Recent winners (favorites) were being systematically undervalued.
+ * A horse that won its last race should score high in form.
  *
  * FIX v2.1: Added class-context adjustment for Recent Form.
  * Losses at higher class levels are now treated as neutral when
@@ -61,6 +65,12 @@ export interface FormScoreResult {
   beatenLengthsProfile: BeatenLengthsProfile | null;
   /** Beaten lengths reasoning */
   beatenLengthsReasoning: string;
+  /** v2.5: Recent winner bonus (0-10 pts) */
+  recentWinnerBonus: number;
+  /** v2.5: Won last race */
+  wonLastOut: boolean;
+  /** v2.5: Won 2 of last 3 races */
+  won2OfLast3: boolean;
 }
 
 // ============================================================================
@@ -677,6 +687,79 @@ function buildReasoning(
 }
 
 // ============================================================================
+// RECENT WINNER BONUS (v2.5 - Favorite Fix)
+// ============================================================================
+
+/**
+ * Maximum recent winner bonus points
+ * Won Last Out = 8 pts, Won 2 of Last 3 = 4 pts (not cumulative)
+ */
+const MAX_RECENT_WINNER_BONUS = 10;
+
+/**
+ * Calculate recent winner bonus (v2.5)
+ *
+ * Per diagnostic findings, recent winners (often favorites) were being
+ * undervalued. This bonus ensures horses that recently won score high.
+ *
+ * Scoring:
+ * - Won Last Out: +8 pts (strong signal of current form)
+ * - Won 2 of Last 3: +4 pts (consistent winner, if didn't win last out)
+ *
+ * @param pastPerformances - Horse's past performances
+ * @returns Bonus points and analysis
+ */
+function calculateRecentWinnerBonus(pastPerformances: PastPerformance[]): {
+  bonus: number;
+  wonLastOut: boolean;
+  won2OfLast3: boolean;
+  reasoning: string;
+} {
+  if (pastPerformances.length === 0) {
+    return {
+      bonus: 0,
+      wonLastOut: false,
+      won2OfLast3: false,
+      reasoning: 'No race history',
+    };
+  }
+
+  const lastPP = pastPerformances[0];
+  const wonLastOut = lastPP?.finishPosition === 1;
+
+  // Count wins in last 3 races
+  const last3 = pastPerformances.slice(0, 3);
+  const winsInLast3 = last3.filter((pp) => pp.finishPosition === 1).length;
+  const won2OfLast3 = winsInLast3 >= 2;
+
+  let bonus = 0;
+  let reasoning = '';
+
+  if (wonLastOut) {
+    // Won last out gets the big bonus
+    bonus = 8;
+    reasoning = 'Won Last Out (+8 pts)';
+
+    // If also won 2 of 3, add extra
+    if (winsInLast3 >= 2 && pastPerformances.length >= 2) {
+      bonus = 10; // 8 + 2 extra for multiple recent wins
+      reasoning = `Won Last Out + ${winsInLast3}/3 wins (+10 pts)`;
+    }
+  } else if (won2OfLast3) {
+    // Didn't win last out but won 2 of 3 still gets credit
+    bonus = 4;
+    reasoning = `Won ${winsInLast3} of last 3 (+4 pts)`;
+  }
+
+  return {
+    bonus: Math.min(bonus, MAX_RECENT_WINNER_BONUS),
+    wonLastOut,
+    won2OfLast3,
+    reasoning,
+  };
+}
+
+// ============================================================================
 // MAIN EXPORT
 // ============================================================================
 
@@ -709,9 +792,12 @@ export function calculateFormScore(
   const beatenLengthsAdjustments = calculateBeatenLengthsAdjustments(horse);
   const beatenLengthsProfile = buildBeatenLengthsProfile(pastPerformances);
 
-  // Calculate total with beaten lengths bonus/penalty
+  // v2.5: Calculate recent winner bonus
+  const recentWinnerResult = calculateRecentWinnerBonus(pastPerformances);
+
+  // Calculate total with beaten lengths bonus/penalty AND recent winner bonus
   const baseTotal = formResult.score + layoffResult.score + consistencyResult.bonus;
-  const total = baseTotal + beatenLengthsAdjustments.formPoints;
+  const total = baseTotal + beatenLengthsAdjustments.formPoints + recentWinnerResult.bonus;
 
   // Build reasoning with class context info
   let reasoning = buildReasoning(
@@ -731,8 +817,13 @@ export function calculateFormScore(
     reasoning += ` | ${beatenLengthsAdjustments.formReasoning}`;
   }
 
+  // v2.5: Add recent winner bonus to reasoning
+  if (recentWinnerResult.bonus > 0) {
+    reasoning += ` | ${recentWinnerResult.reasoning}`;
+  }
+
   return {
-    total: Math.min(40, Math.max(0, total)), // Cap at 0-40
+    total: Math.min(50, Math.max(0, total)), // Cap at 0-50 (v2.5: increased from 40)
     recentFormScore: formResult.score,
     layoffScore: layoffResult.score,
     consistencyBonus: consistencyResult.bonus,
@@ -746,6 +837,9 @@ export function calculateFormScore(
     beatenLengthsBonus: beatenLengthsAdjustments.formPoints,
     beatenLengthsProfile,
     beatenLengthsReasoning: beatenLengthsAdjustments.formReasoning,
+    recentWinnerBonus: recentWinnerResult.bonus,
+    wonLastOut: recentWinnerResult.wonLastOut,
+    won2OfLast3: recentWinnerResult.won2OfLast3,
   };
 }
 

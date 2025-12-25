@@ -386,8 +386,12 @@ function calculateEnhancedPartnershipBonus(analysis: TrainerJockeyPartnershipAna
 
 /**
  * Extract trainer stats from horse entry data
+ *
+ * v2.5 (Shipper Fix): When trainer has 0 meet starts (shipping in),
+ * use past performance stats as career proxy instead of penalizing.
+ *
  * PRIORITY: Use actual DRF trainer stats (Fields 29-32) first
- * FALLBACK: Only use PP-based stats if DRF stats are missing/zero
+ * FALLBACK: Use PP-based stats for shippers (career approximation)
  */
 function extractTrainerStatsFromHorse(horse: HorseEntry): ConnectionStats | null {
   // PRIORITY: Use actual DRF trainer stats from current meet (Fields 29-32)
@@ -409,8 +413,8 @@ function extractTrainerStatsFromHorse(horse: HorseEntry): ConnectionStats | null
     };
   }
 
-  // FALLBACK: Build from past performances (low confidence)
-  // This should only happen if DRF data is missing
+  // v2.5 SHIPPER FIX: Build from past performances as career proxy
+  // This prevents penalizing top trainers who are shipping in
   const wins = horse.pastPerformances.filter((pp) => pp.finishPosition === 1).length;
   const starts = horse.pastPerformances.length;
   const places = horse.pastPerformances.filter((pp) => pp.finishPosition === 2).length;
@@ -426,14 +430,18 @@ function extractTrainerStatsFromHorse(horse: HorseEntry): ConnectionStats | null
     places,
     shows,
     itmRate: ((wins + places + shows) / starts) * 100,
-    source: 'pp',
+    source: 'pp', // Marked as PP-based (shipper/career stats)
   };
 }
 
 /**
  * Extract jockey stats from horse entry data
+ *
+ * v2.5 (Shipper Fix): When jockey has 0 meet starts (shipping in),
+ * use past performance stats as career proxy instead of penalizing.
+ *
  * PRIORITY: Use actual DRF jockey stats (Fields 35-38) first
- * FALLBACK: Only use PP-based stats if DRF stats are missing/zero
+ * FALLBACK: Use PP-based stats for shippers (career approximation)
  */
 function extractJockeyStatsFromHorse(horse: HorseEntry): ConnectionStats | null {
   // PRIORITY: Use actual DRF jockey stats from current meet (Fields 35-38)
@@ -455,7 +463,7 @@ function extractJockeyStatsFromHorse(horse: HorseEntry): ConnectionStats | null 
     };
   }
 
-  // FALLBACK: Build from past performances (low confidence)
+  // v2.5 SHIPPER FIX: Build from past performances as career proxy
   // Get stats for jockeys from past performances where same jockey rode
   const jockeyNorm = normalizeName(horse.jockeyName);
 
@@ -504,14 +512,24 @@ function extractJockeyStatsFromHorse(horse: HorseEntry): ConnectionStats | null 
 // ============================================================================
 
 /**
+ * Minimum baseline score for licensed trainers/jockeys (v2.5)
+ * Ensures shippers are not penalized below this floor
+ */
+const MIN_TRAINER_SCORE = 8;
+const MIN_JOCKEY_SCORE = 4;
+
+/**
  * Calculate trainer score (0-16 points)
  * Based on win rate thresholds
- * Rescaled from 35 max to 16 max (scale factor: 25/55 = 0.4545)
+ *
+ * v2.5 (Shipper Fix): Minimum baseline of 8 pts for any licensed trainer.
+ * Shipping a top national trainer shouldn't be a penalty.
  */
 function calculateTrainerScore(stats: ConnectionStats | null): number {
   if (!stats || stats.starts < 3) {
-    // Insufficient data - return neutral score
-    return 7;
+    // v2.5: Return minimum baseline instead of neutral
+    // Any licensed trainer deserves baseline credit
+    return MIN_TRAINER_SCORE;
   }
 
   const winRate = stats.winRate;
@@ -519,28 +537,29 @@ function calculateTrainerScore(stats: ConnectionStats | null): number {
   if (winRate >= 20) return 16; // Elite trainer (20%+ win rate)
   if (winRate >= 15) return 13; // Very good trainer (15-19%)
   if (winRate >= 10) return 9; // Good trainer (10-14%)
-  if (winRate >= 5) return 5; // Average trainer (5-9%)
-  return 2; // Below average (<5%)
+  if (winRate >= 5) return MIN_TRAINER_SCORE; // Average trainer (5-9%) - use minimum
+  return MIN_TRAINER_SCORE; // Below average also gets minimum (v2.5 floor)
 }
 
 /**
  * Calculate jockey score (0-7 points)
  * Same methodology as trainer but scaled
- * Rescaled from 15 max to 7 max (scale factor: 25/55 = 0.4545)
+ *
+ * v2.5 (Shipper Fix): Minimum baseline of 4 pts for any licensed jockey.
  */
 function calculateJockeyScore(stats: ConnectionStats | null): number {
   if (!stats || stats.starts < 3) {
-    // Insufficient data - return neutral score
-    return 3;
+    // v2.5: Return minimum baseline instead of neutral
+    return MIN_JOCKEY_SCORE;
   }
 
   const winRate = stats.winRate;
 
   if (winRate >= 20) return 7; // Elite jockey
   if (winRate >= 15) return 6; // Very good jockey
-  if (winRate >= 10) return 4; // Good jockey
-  if (winRate >= 5) return 3; // Average jockey
-  return 1; // Below average
+  if (winRate >= 10) return MIN_JOCKEY_SCORE; // Good jockey - use minimum
+  if (winRate >= 5) return MIN_JOCKEY_SCORE; // Average jockey - use minimum
+  return MIN_JOCKEY_SCORE; // Below average also gets minimum (v2.5 floor)
 }
 
 /**
@@ -964,6 +983,12 @@ const MIN_TRAINER_CATEGORY_STARTS = 5;
 export const MAX_TRAINER_SURFACE_DISTANCE_POINTS = 6;
 
 /**
+ * Neutral baseline for trainer surface/distance when data is missing (v2.5)
+ * 50% of max (6) = 3 pts
+ */
+export const TRAINER_SURFACE_DISTANCE_NEUTRAL = 3;
+
+/**
  * Trainer Surface/Distance Bonus Result
  */
 export interface TrainerSurfaceDistanceBonusResult {
@@ -1077,14 +1102,14 @@ export function calculateTrainerSurfaceDistanceBonus(
   const effectiveCondition = trackCondition ?? raceHeader.trackCondition ?? '';
   const isWet = isWetCondition(effectiveCondition);
 
-  // Default result for no bonus
+  // Default result for no data - v2.5: use neutral baseline instead of 0
   const noBonus: TrainerSurfaceDistanceBonusResult = {
-    bonus: 0,
+    bonus: TRAINER_SURFACE_DISTANCE_NEUTRAL, // v2.5: neutral baseline
     matchedCategory: null,
     trainerWinPercent: 0,
     wetTrackWinPercent: 0,
     wetBonusApplied: false,
-    reasoning: 'No trainer surface/distance data',
+    reasoning: `No trainer surface/distance data (neutral baseline: ${TRAINER_SURFACE_DISTANCE_NEUTRAL} pts)`,
   };
 
   // Guard against missing stats
@@ -1152,18 +1177,37 @@ export function calculateTrainerSurfaceDistanceBonus(
     reasoningParts.push(`(capped at ${MAX_TRAINER_SURFACE_DISTANCE_POINTS}pts)`);
   }
 
-  // Return result
+  // Return result - v2.5: only apply neutral baseline when NO credible data at all
   if (cappedTotal === 0) {
-    if (reasoningParts.length > 0) {
-      return {
-        ...noBonus,
+    // Only apply neutral baseline if we don't have credible surface data
+    // If we have credible data but low performance, return 0 (evidence-based penalty)
+    if (!hasCredibleSurfaceData) {
+      // No credible data = neutral baseline
+      const neutralResult: TrainerSurfaceDistanceBonusResult = {
+        bonus: TRAINER_SURFACE_DISTANCE_NEUTRAL, // v2.5: neutral baseline
         matchedCategory: categoryName,
         trainerWinPercent: surfaceDistanceWinPercent,
         wetTrackWinPercent: wetWinPercent,
-        reasoning: reasoningParts.join('; '),
+        wetBonusApplied: false,
+        reasoning:
+          reasoningParts.length > 0
+            ? `${reasoningParts.join('; ')} (neutral baseline: ${TRAINER_SURFACE_DISTANCE_NEUTRAL} pts)`
+            : `No specific trainer bonus (neutral baseline: ${TRAINER_SURFACE_DISTANCE_NEUTRAL} pts)`,
       };
+      return neutralResult;
     }
-    return noBonus;
+    // Has credible data but low performance = return 0 (evidence-based)
+    return {
+      bonus: 0,
+      matchedCategory: categoryName,
+      trainerWinPercent: surfaceDistanceWinPercent,
+      wetTrackWinPercent: wetWinPercent,
+      wetBonusApplied: false,
+      reasoning:
+        reasoningParts.length > 0
+          ? reasoningParts.join('; ')
+          : `Trainer below threshold in ${categoryName}`,
+    };
   }
 
   return {
