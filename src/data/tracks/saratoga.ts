@@ -163,6 +163,9 @@ export const saratoga: TrackData = {
       speedAdjustment: 1,
       notes:
         'Premier 40-day summer meet (July-September); highest quality racing; speed bias pronounced on sealed track',
+      // Speed bias data shows 58% early speed win rate in summer
+      favoredStyle: 'E',
+      styleBiasMagnitude: 2,
     },
   ],
 

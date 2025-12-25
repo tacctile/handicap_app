@@ -382,6 +382,207 @@ export function getStretchLengthFactor(
   return { factor, stretchLength: stretch, reasoning };
 }
 
+// ============================================================================
+// SEASONAL ADJUSTMENT FOR PACE SCORING
+// ============================================================================
+
+/**
+ * Running style codes used for seasonal adjustment matching
+ */
+export type SeasonalRunningStyle = 'E' | 'P' | 'C' | 'S' | 'U';
+
+/**
+ * Seasonal adjustment result for pace scoring
+ */
+export interface SeasonalAdjustmentResult {
+  /** Points adjustment (-2 to +2) */
+  adjustment: number;
+  /** Running style favored this season at this track, or null if no preference */
+  favoredStyle: 'E' | 'P' | 'C' | null;
+  /** Explanation of the adjustment */
+  reasoning: string;
+}
+
+/**
+ * Get seasonal adjustment for a horse's running style at a specific track and month.
+ * This is a refinement adjustment (±2 pts max) applied to pace scoring.
+ *
+ * @param trackCode - Standard track code (e.g., "SAR", "GP", "CD")
+ * @param month - Month number (1-12)
+ * @param runningStyle - Horse's running style ('E' = Early, 'P' = Presser, 'C' = Closer, 'S' = Stalker, 'U' = Unknown)
+ * @returns Adjustment points, favored style, and reasoning
+ *
+ * Examples:
+ * - SAR in July with E runner: +2 pts (summer speed bias)
+ * - GP in January with C runner: -1 pt (winter favors speed)
+ * - Unknown track: 0 pts (no data)
+ */
+export function getSeasonalAdjustment(
+  trackCode: string,
+  month: number,
+  runningStyle: SeasonalRunningStyle
+): SeasonalAdjustmentResult {
+  // Default result for unknown tracks or no data
+  const noDataResult: SeasonalAdjustmentResult = {
+    adjustment: 0,
+    favoredStyle: null,
+    reasoning: 'No seasonal data available',
+  };
+
+  // Validate month
+  if (month < 1 || month > 12) {
+    return noDataResult;
+  }
+
+  // Get track data
+  const track = getTrackData(trackCode);
+  if (!track) {
+    return {
+      adjustment: 0,
+      favoredStyle: null,
+      reasoning: `Unknown track (${trackCode.toUpperCase()}) - no seasonal data`,
+    };
+  }
+
+  // Find seasonal pattern for this month
+  const pattern = track.seasonalPatterns.find((p) => p.months.includes(month));
+  if (!pattern) {
+    return {
+      adjustment: 0,
+      favoredStyle: null,
+      reasoning: `${track.name}: No seasonal pattern for month ${month}`,
+    };
+  }
+
+  // Get favored style from pattern or derive from speedAdjustment
+  let favoredStyle: 'E' | 'P' | 'C' | null = pattern.favoredStyle ?? null;
+  let styleBiasMagnitude = pattern.styleBiasMagnitude ?? 0;
+
+  // If no explicit favoredStyle, derive from speedAdjustment
+  if (favoredStyle === null && pattern.speedAdjustment !== 0) {
+    if (pattern.speedAdjustment > 0) {
+      favoredStyle = 'E'; // Positive adjustment suggests faster track = speed favoring
+      styleBiasMagnitude = Math.min(pattern.speedAdjustment, 2);
+    } else if (pattern.speedAdjustment < 0) {
+      favoredStyle = 'C'; // Negative adjustment suggests slower/off track = closers have chance
+      styleBiasMagnitude = Math.min(Math.abs(pattern.speedAdjustment), 2);
+    }
+  }
+
+  // If still no preference, return neutral
+  if (favoredStyle === null || styleBiasMagnitude === 0) {
+    return {
+      adjustment: 0,
+      favoredStyle: null,
+      reasoning: `${track.name} ${pattern.season}: No strong style preference`,
+    };
+  }
+
+  // Calculate adjustment based on style match
+  let adjustment = 0;
+  const seasonName = pattern.season.charAt(0).toUpperCase() + pattern.season.slice(1);
+
+  // Map 'S' (stalker) to 'P' (presser) for matching purposes - they both benefit from tactical races
+  const effectiveStyle = runningStyle === 'S' ? 'P' : runningStyle;
+
+  if (effectiveStyle === favoredStyle) {
+    // Style matches the seasonal preference
+    adjustment = Math.min(2, styleBiasMagnitude);
+  } else if (effectiveStyle === 'U') {
+    // Unknown style gets no adjustment
+    adjustment = 0;
+  } else {
+    // Style doesn't match - check if it's the opposite
+    const isOpposite =
+      (favoredStyle === 'E' && effectiveStyle === 'C') ||
+      (favoredStyle === 'C' && effectiveStyle === 'E');
+
+    if (isOpposite) {
+      // Opposite of favored style gets penalty
+      adjustment = -Math.min(2, styleBiasMagnitude);
+    } else {
+      // Neutral style (pressers when E or C favored) - slight adjustment
+      adjustment = styleBiasMagnitude >= 2 ? -1 : 0;
+    }
+  }
+
+  // Build reasoning
+  const styleNames: Record<string, string> = {
+    E: 'early speed',
+    P: 'pressers/stalkers',
+    C: 'closers',
+  };
+
+  let reasoning: string;
+  if (adjustment > 0) {
+    reasoning = `${track.name} ${seasonName}: ${styleNames[favoredStyle]} favored (+${adjustment}pts)`;
+  } else if (adjustment < 0) {
+    reasoning = `${track.name} ${seasonName}: ${styleNames[favoredStyle]} favored, ${runningStyle} disadvantaged (${adjustment}pts)`;
+  } else {
+    reasoning = `${track.name} ${seasonName}: Neutral for ${runningStyle} style`;
+  }
+
+  return {
+    adjustment,
+    favoredStyle,
+    reasoning,
+  };
+}
+
+/**
+ * Check if a track has seasonal pattern data for a given month
+ */
+export function hasSeasonalData(trackCode: string, month?: number): boolean {
+  const track = getTrackData(trackCode);
+  if (!track || track.seasonalPatterns.length === 0) {
+    return false;
+  }
+
+  if (month !== undefined) {
+    return track.seasonalPatterns.some((p) => p.months.includes(month));
+  }
+
+  return true;
+}
+
+/**
+ * Get a summary of seasonal pattern for display
+ */
+export function getSeasonalPatternSummary(
+  trackCode: string,
+  month?: number
+): {
+  hasData: boolean;
+  season: string | null;
+  favoredStyle: string | null;
+  notes: string;
+} {
+  const currentMonth = month ?? new Date().getMonth() + 1;
+  const pattern = getSeasonalPattern(trackCode, currentMonth);
+
+  if (!pattern) {
+    return {
+      hasData: false,
+      season: null,
+      favoredStyle: null,
+      notes: 'No seasonal data available',
+    };
+  }
+
+  const styleNames: Record<string, string> = {
+    E: 'Early Speed',
+    P: 'Pressers/Stalkers',
+    C: 'Closers',
+  };
+
+  return {
+    hasData: true,
+    season: pattern.season.charAt(0).toUpperCase() + pattern.season.slice(1),
+    favoredStyle: pattern.favoredStyle ? styleNames[pattern.favoredStyle] : null,
+    notes: pattern.notes,
+  };
+}
+
 /**
  * Get drainage factor for wet track analysis
  * Returns multiplier for wet track specialist bonus

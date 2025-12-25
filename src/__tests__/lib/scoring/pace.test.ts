@@ -331,6 +331,76 @@ describe('Pace Scoring', () => {
     });
   });
 
+  describe('Seasonal Adjustment Integration', () => {
+    it('includes seasonalAdjustment in result', () => {
+      const horse = createSpeedHorse();
+      const header = createRaceHeader({ trackCode: 'SAR', raceDate: '20240715' }); // July = summer
+      const field = createTestField(6);
+
+      const result = calculatePaceScore(horse, header, field);
+
+      expect(result.seasonalAdjustment).toBeDefined();
+      expect(result.seasonalAdjustment.adjustment).toBeDefined();
+      expect(result.seasonalAdjustment.favoredStyle).toBeDefined();
+      expect(result.seasonalAdjustment.reasoning).toBeDefined();
+    });
+
+    it('gives bonus to E runner at SAR in July (summer speed bias)', () => {
+      const horse = createSpeedHorse();
+      const header = createRaceHeader({ trackCode: 'SAR', raceDate: '20240715' }); // July
+      const field = [horse, createCloser(), createPresser()];
+
+      const result = calculatePaceScore(horse, header, field);
+
+      // Saratoga summer favors early speed
+      expect(result.seasonalAdjustment.adjustment).toBeGreaterThan(0);
+      expect(result.seasonalAdjustment.favoredStyle).toBe('E');
+    });
+
+    it('penalizes C runner at SAR in July (opposite of favored)', () => {
+      const horse = createCloser();
+      const header = createRaceHeader({ trackCode: 'SAR', raceDate: '20240715' }); // July
+      const field = [createSpeedHorse(), horse, createPresser()];
+
+      const result = calculatePaceScore(horse, header, field);
+
+      expect(result.seasonalAdjustment.adjustment).toBeLessThan(0);
+    });
+
+    it('returns 0 adjustment for unknown track', () => {
+      const horse = createPresser();
+      const header = createRaceHeader({ trackCode: 'UNKNOWN', raceDate: '20240715' });
+      const field = createTestField(6);
+
+      const result = calculatePaceScore(horse, header, field);
+
+      expect(result.seasonalAdjustment.adjustment).toBe(0);
+    });
+
+    it('returns 0 adjustment for track with no seasonal data for that month', () => {
+      const horse = createSpeedHorse();
+      // SAR only has summer (Jul-Sep), December has no pattern
+      const header = createRaceHeader({ trackCode: 'SAR', raceDate: '20241215' });
+      const field = createTestField(6);
+
+      const result = calculatePaceScore(horse, header, field);
+
+      expect(result.seasonalAdjustment.adjustment).toBe(0);
+    });
+
+    it('includes seasonal reasoning in overall reasoning when adjustment is non-zero', () => {
+      const horse = createSpeedHorse();
+      const header = createRaceHeader({ trackCode: 'SAR', raceDate: '20240715' }); // July
+      const field = [horse, createCloser(), createPresser()];
+
+      const result = calculatePaceScore(horse, header, field);
+
+      if (result.seasonalAdjustment.adjustment !== 0) {
+        expect(result.reasoning).toContain(result.seasonalAdjustment.reasoning);
+      }
+    });
+  });
+
   describe('Edge Cases', () => {
     it('handles empty field', () => {
       const horse = createHorseEntry();

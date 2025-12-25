@@ -79,6 +79,20 @@ export interface SeasonalPattern {
   speedAdjustment: number;
   /** Notes about seasonal impact */
   notes: string;
+  /**
+   * Optional: Running style favored during this season
+   * 'E' = Early speed favored
+   * 'C' = Closers favored
+   * 'P' = Pressers/stalkers favored
+   * null = No specific style advantage
+   */
+  favoredStyle?: 'E' | 'P' | 'C' | null;
+  /**
+   * Optional: Magnitude of style advantage (0-3)
+   * 0 = No advantage, 1 = Slight, 2 = Moderate, 3 = Strong
+   * Defaults to deriving from speedAdjustment if not specified
+   */
+  styleBiasMagnitude?: number;
 }
 
 /**

@@ -153,6 +153,9 @@ export const churchillDowns: TrackData = {
       typicalCondition: 'Fast to Good; occasional rain affects track',
       speedAdjustment: 0,
       notes: 'Kentucky Derby/Oaks meet (late April-June); premium competition; weather variable',
+      // Long stretch plays fair - stalkers often best
+      favoredStyle: 'P',
+      styleBiasMagnitude: 1,
     },
     {
       season: 'summer',
@@ -162,6 +165,9 @@ export const churchillDowns: TrackData = {
       typicalCondition: 'Fast',
       speedAdjustment: 1,
       notes: 'Hot/dry conditions produce fast track; lighter competition than spring',
+      // Slightly more speed-favoring in dry conditions
+      favoredStyle: 'E',
+      styleBiasMagnitude: 1,
     },
     {
       season: 'fall',
@@ -172,6 +178,9 @@ export const churchillDowns: TrackData = {
       speedAdjustment: 1,
       notes:
         'Fall Stars meet; stakes-heavy card; excellent conditions; Breeders Cup preparation races',
+      // Track plays fair in fall - no strong bias
+      favoredStyle: null,
+      styleBiasMagnitude: 0,
     },
   ],
 
