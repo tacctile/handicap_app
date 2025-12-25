@@ -173,6 +173,9 @@ export const gulfstreamPark: TrackData = {
       speedAdjustment: 1,
       notes:
         'Championship Meet (Dec-April); Pegasus World Cup; highest quality racing; speed bias most pronounced',
+      // Speed bias most pronounced in winter - 62% early speed win rate
+      favoredStyle: 'E',
+      styleBiasMagnitude: 2,
     },
     {
       season: 'spring',
@@ -182,6 +185,8 @@ export const gulfstreamPark: TrackData = {
       typicalCondition: 'Fast to Good',
       speedAdjustment: 0,
       notes: 'End of main meet; FL Derby; quality remains high before summer',
+      favoredStyle: 'E',
+      styleBiasMagnitude: 1,
     },
     {
       season: 'summer',
@@ -193,6 +198,9 @@ export const gulfstreamPark: TrackData = {
       speedAdjustment: -1,
       notes:
         'Summer meet; afternoon thunderstorms frequent; track conditions variable; reduced quality',
+      // Off-track conditions from storms can favor closers
+      favoredStyle: null,
+      styleBiasMagnitude: 0,
     },
     {
       season: 'fall',
@@ -202,6 +210,8 @@ export const gulfstreamPark: TrackData = {
       typicalCondition: 'Fast',
       speedAdjustment: 0,
       notes: 'Fall meet; building toward championship season; hurricane risk Sept-Oct',
+      favoredStyle: 'E',
+      styleBiasMagnitude: 1,
     },
   ],
 

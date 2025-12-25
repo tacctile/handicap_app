@@ -22,7 +22,12 @@
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
-import { getSpeedBias, isTrackIntelligenceAvailable } from '../trackIntelligence';
+import {
+  getSpeedBias,
+  isTrackIntelligenceAvailable,
+  getSeasonalAdjustment,
+  type SeasonalAdjustmentResult,
+} from '../trackIntelligence';
 import { calculateBeatenLengthsAdjustments } from './beatenLengths';
 import {
   parseRunningStyle,
@@ -89,6 +94,9 @@ export {
   FIELD_PACE_THRESHOLDS,
 };
 
+// Re-export seasonal adjustment types from trackIntelligence
+export { type SeasonalAdjustmentResult } from '../trackIntelligence';
+
 // ============================================================================
 // LEGACY TYPES (for backwards compatibility)
 // ============================================================================
@@ -137,6 +145,8 @@ export interface PaceScoreResult {
   // Beaten lengths analysis
   beatenLengthsPaceAdjustment: number;
   beatenLengthsReasoning: string;
+  // Seasonal track patterns (±2 pts refinement)
+  seasonalAdjustment: SeasonalAdjustmentResult;
 }
 
 // ============================================================================
@@ -367,6 +377,28 @@ export function calculatePaceScore(
   const beatenLengthsAdjustments = calculateBeatenLengthsAdjustments(horse);
   finalScore += beatenLengthsAdjustments.pacePoints;
 
+  // Calculate seasonal adjustment (±2 pts refinement based on track patterns)
+  // Extract month from race date (format: "YYYYMMDD" or "YYYY-MM-DD" or similar)
+  let raceMonth = new Date().getMonth() + 1; // Default to current month
+  if (raceHeader.raceDate) {
+    const dateStr = raceHeader.raceDate.replace(/[^\d]/g, ''); // Remove non-digits
+    if (dateStr.length >= 6) {
+      const month = parseInt(dateStr.substring(4, 6), 10);
+      if (month >= 1 && month <= 12) {
+        raceMonth = month;
+      }
+    }
+  }
+
+  const seasonalAdjustment = getSeasonalAdjustment(
+    raceHeader.trackCode,
+    raceMonth,
+    detailedProfile.style
+  );
+
+  // Apply seasonal adjustment (±2 pts max, doesn't change category limits)
+  finalScore += seasonalAdjustment.adjustment;
+
   // Build reasoning
   let reasoning = buildReasoning(
     detailedProfile,
@@ -379,6 +411,11 @@ export function calculatePaceScore(
   // Add beaten lengths reasoning if applicable
   if (beatenLengthsAdjustments.pacePoints !== 0) {
     reasoning += ` | ${beatenLengthsAdjustments.paceReasoning}`;
+  }
+
+  // Add seasonal adjustment reasoning if applicable
+  if (seasonalAdjustment.adjustment !== 0) {
+    reasoning += ` | ${seasonalAdjustment.reasoning}`;
   }
 
   // Calculate pace figure adjustment for the result
@@ -408,6 +445,8 @@ export function calculatePaceScore(
     // Beaten lengths analysis
     beatenLengthsPaceAdjustment: beatenLengthsAdjustments.pacePoints,
     beatenLengthsReasoning: beatenLengthsAdjustments.paceReasoning,
+    // Seasonal track patterns
+    seasonalAdjustment,
   };
 }
 
