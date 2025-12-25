@@ -40,6 +40,23 @@ export interface DistanceSurfaceResult {
   reasoning: string[];
 }
 
+/**
+ * Track Specialist Scoring Result
+ * Identifies horses with proven success at today's specific track
+ */
+export interface TrackSpecialistResult {
+  /** Total score 0-6 points */
+  score: number;
+  /** Track win rate (wins/starts) */
+  trackWinRate: number;
+  /** Track ITM rate ((wins+places+shows)/starts) */
+  trackITMRate: number;
+  /** Whether horse qualifies as track specialist (30%+ win rate, 4+ starts) */
+  isSpecialist: boolean;
+  /** Reasoning for the score */
+  reasoning: string;
+}
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -52,8 +69,12 @@ export const DISTANCE_SURFACE_LIMITS = {
   turf: 8,
   wet: 6,
   distance: 6,
+  trackSpecialist: 6,
   total: 20,
 } as const;
+
+/** Minimum starts required for track specialist scoring */
+const MIN_TRACK_STARTS = 4;
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -275,6 +296,130 @@ function calculateDistanceScore(horse: HorseEntry): {
     winRate,
     reasoning: `Distance: ${wins}/${starts} (${(winRate * 100).toFixed(0)}%) - ${tier}${sampleNote}`,
   };
+}
+
+// ============================================================================
+// TRACK SPECIALIST SCORING
+// ============================================================================
+
+/**
+ * Calculate track specialist score (0-6 points)
+ * Identifies horses with proven success at today's specific track
+ *
+ * Scoring:
+ * - 30%+ win rate at track (min 4 starts): 6 pts "Track specialist"
+ * - 20-29% win rate at track (min 4 starts): 4 pts "Track positive"
+ * - 50%+ ITM rate at track (min 4 starts): 2 pts bonus "Consistent at track"
+ * - 10-19% win rate (min 4 starts): 2 pts "Track experience"
+ * - <10% win rate or 0 wins (4+ starts): 0 pts "Struggles here"
+ * - <4 starts: 0 pts (insufficient data, not penalized)
+ *
+ * @param horse - The horse entry to score
+ * @param _trackCode - The track code for today's race (unused but available for future enhancements)
+ * @returns Track specialist scoring result
+ */
+export function calculateTrackSpecialistScore(
+  horse: HorseEntry,
+  _trackCode: string
+): TrackSpecialistResult {
+  const starts = horse.trackStarts ?? 0;
+  const wins = horse.trackWins ?? 0;
+  const places = horse.trackPlaces ?? 0;
+  const shows = horse.trackShows ?? 0;
+
+  // Insufficient data - no penalty, no bonus
+  if (starts < MIN_TRACK_STARTS) {
+    return {
+      score: 0,
+      trackWinRate: starts > 0 ? wins / starts : 0,
+      trackITMRate: starts > 0 ? (wins + places + shows) / starts : 0,
+      isSpecialist: false,
+      reasoning:
+        starts === 0
+          ? 'First time at track'
+          : `Only ${starts} start${starts === 1 ? '' : 's'} at track (need ${MIN_TRACK_STARTS}+)`,
+    };
+  }
+
+  // Calculate rates
+  const winRate = wins / starts;
+  const itmRate = (wins + places + shows) / starts;
+
+  let baseScore = 0;
+  let tier = '';
+
+  // Win rate-based scoring
+  if (winRate >= 0.3) {
+    baseScore = 6;
+    tier = 'Track specialist';
+  } else if (winRate >= 0.2) {
+    baseScore = 4;
+    tier = 'Track positive';
+  } else if (winRate >= 0.1) {
+    baseScore = 2;
+    tier = 'Track experience';
+  } else {
+    baseScore = 0;
+    tier = 'Struggles here';
+  }
+
+  // ITM bonus (only if win rate is at least 10% and not already at max)
+  let itmBonus = 0;
+  if (itmRate >= 0.5 && winRate >= 0.1 && baseScore < 6) {
+    // Cap so total doesn't exceed 6
+    itmBonus = Math.min(2, 6 - baseScore);
+    tier = tier + ' + Consistent';
+  }
+
+  const finalScore = baseScore + itmBonus;
+  const isSpecialist = winRate >= 0.3 && starts >= MIN_TRACK_STARTS;
+
+  // Build reasoning string
+  const winRatePercent = (winRate * 100).toFixed(0);
+  const itmRatePercent = (itmRate * 100).toFixed(0);
+  const record = `${wins}-${places}-${shows} from ${starts} starts`;
+
+  let reasoning = `Track: ${record} (${winRatePercent}% win`;
+  if (itmBonus > 0) {
+    reasoning += `, ${itmRatePercent}% ITM`;
+  }
+  reasoning += `) - ${tier}`;
+
+  return {
+    score: finalScore,
+    trackWinRate: winRate,
+    trackITMRate: itmRate,
+    isSpecialist,
+    reasoning,
+  };
+}
+
+/**
+ * Check if horse is a track specialist (30%+ win rate, 4+ starts)
+ */
+export function isTrackSpecialist(horse: HorseEntry): boolean {
+  const starts = horse.trackStarts ?? 0;
+  const wins = horse.trackWins ?? 0;
+
+  if (starts < MIN_TRACK_STARTS) return false;
+  return wins / starts >= 0.3;
+}
+
+/**
+ * Get a summary of track record for display
+ */
+export function getTrackRecordSummary(horse: HorseEntry): string {
+  const starts = horse.trackStarts ?? 0;
+  const wins = horse.trackWins ?? 0;
+  const places = horse.trackPlaces ?? 0;
+  const shows = horse.trackShows ?? 0;
+
+  if (starts === 0) {
+    return 'First time at track';
+  }
+
+  const winRate = ((wins / starts) * 100).toFixed(0);
+  return `${wins}-${places}-${shows} (${winRate}%) from ${starts} starts`;
 }
 
 // ============================================================================

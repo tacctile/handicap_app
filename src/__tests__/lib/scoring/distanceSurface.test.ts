@@ -9,6 +9,9 @@ import {
   hasDistanceSurfaceAdvantage,
   getDistanceSurfaceSummary,
   DISTANCE_SURFACE_LIMITS,
+  calculateTrackSpecialistScore,
+  isTrackSpecialist,
+  getTrackRecordSummary,
 } from '../../../lib/scoring/distanceSurface';
 import { createHorseEntry, createRaceHeader } from '../../fixtures/testHelpers';
 
@@ -473,6 +476,312 @@ describe('Distance & Surface Affinity Scoring', () => {
       // Should calculate based on the rate, even if data is invalid
       // 10/5 = 200% which is > 25% so should get max points
       expect(result.distanceScore).toBe(6);
+    });
+  });
+});
+
+// ============================================================================
+// TRACK SPECIALIST SCORING TESTS
+// ============================================================================
+
+describe('Track Specialist Scoring', () => {
+  describe('calculateTrackSpecialistScore', () => {
+    it('returns 6 points (max) for 30%+ win rate with 4+ starts (track specialist)', () => {
+      const horse = createHorseEntry({
+        trackStarts: 8,
+        trackWins: 4, // 50% win rate
+        trackPlaces: 1,
+        trackShows: 1,
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(6);
+      expect(result.isSpecialist).toBe(true);
+      expect(result.trackWinRate).toBeCloseTo(0.5, 2);
+      expect(result.reasoning).toContain('Track specialist');
+    });
+
+    it('returns 6 points for exactly 30% win rate (threshold)', () => {
+      const horse = createHorseEntry({
+        trackStarts: 10,
+        trackWins: 3, // Exactly 30%
+        trackPlaces: 2,
+        trackShows: 2,
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(6);
+      expect(result.isSpecialist).toBe(true);
+    });
+
+    it('returns 4 points for 20-29% win rate (track positive)', () => {
+      const horse = createHorseEntry({
+        trackStarts: 10,
+        trackWins: 2, // 20% win rate
+        trackPlaces: 1,
+        trackShows: 1, // 40% ITM - below 50% threshold for bonus
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(4);
+      expect(result.isSpecialist).toBe(false);
+      expect(result.reasoning).toContain('Track positive');
+    });
+
+    it('returns 2 points for 10-19% win rate (track experience)', () => {
+      const horse = createHorseEntry({
+        trackStarts: 10,
+        trackWins: 1, // 10% win rate
+        trackPlaces: 1,
+        trackShows: 1, // 30% ITM - below 50% threshold for bonus
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(2);
+      expect(result.reasoning).toContain('Track experience');
+    });
+
+    it('returns 0 points for <10% win rate (struggles here)', () => {
+      const horse = createHorseEntry({
+        trackStarts: 10,
+        trackWins: 0, // 0% win rate
+        trackPlaces: 1,
+        trackShows: 2,
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(0);
+      expect(result.reasoning).toContain('Struggles here');
+    });
+
+    it('returns 0 points for 0-for-6 at track (struggles)', () => {
+      const horse = createHorseEntry({
+        trackStarts: 6,
+        trackWins: 0,
+        trackPlaces: 1,
+        trackShows: 1,
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(0);
+      expect(result.reasoning).toContain('Struggles here');
+    });
+
+    it('returns 0 points for insufficient data (<4 starts)', () => {
+      const horse = createHorseEntry({
+        trackStarts: 2,
+        trackWins: 1, // 50% but only 2 starts
+        trackPlaces: 1,
+        trackShows: 0,
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(0);
+      expect(result.isSpecialist).toBe(false);
+      expect(result.reasoning).toContain('need 4+');
+    });
+
+    it('returns 0 points for first time at track (no penalty)', () => {
+      const horse = createHorseEntry({
+        trackStarts: 0,
+        trackWins: 0,
+        trackPlaces: 0,
+        trackShows: 0,
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(0);
+      expect(result.isSpecialist).toBe(false);
+      expect(result.reasoning).toContain('First time at track');
+    });
+
+    it('adds ITM bonus (2 pts) for 50%+ ITM rate when win rate is 10-19%', () => {
+      const horse = createHorseEntry({
+        trackStarts: 8,
+        trackWins: 1, // 12.5% win rate = 2 pts base
+        trackPlaces: 2,
+        trackShows: 2, // 62.5% ITM rate = +2 bonus
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(4); // 2 base + 2 ITM bonus
+      expect(result.trackITMRate).toBeCloseTo(0.625, 2);
+      expect(result.reasoning).toContain('Consistent');
+    });
+
+    it('adds ITM bonus (2 pts) for 50%+ ITM rate when win rate is 20-29%', () => {
+      const horse = createHorseEntry({
+        trackStarts: 8,
+        trackWins: 2, // 25% win rate = 4 pts base
+        trackPlaces: 2,
+        trackShows: 1, // 62.5% ITM rate = +2 bonus (capped to 6)
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(6); // 4 base + 2 ITM bonus = 6 (max)
+      expect(result.reasoning).toContain('Consistent');
+    });
+
+    it('does not add ITM bonus when already at max (30%+ win rate)', () => {
+      const horse = createHorseEntry({
+        trackStarts: 8,
+        trackWins: 4, // 50% win rate = 6 pts (already max)
+        trackPlaces: 2,
+        trackShows: 2, // 100% ITM rate
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(6); // Already at max, no bonus needed
+    });
+
+    it('does not add ITM bonus when win rate <10% (struggles)', () => {
+      const horse = createHorseEntry({
+        trackStarts: 8,
+        trackWins: 0, // 0% win rate
+        trackPlaces: 3,
+        trackShows: 2, // 62.5% ITM rate
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(0); // No ITM bonus when struggling
+    });
+
+    it('handles 4-for-7 at track = 6 pts (specialist)', () => {
+      const horse = createHorseEntry({
+        trackStarts: 7,
+        trackWins: 4, // ~57% win rate
+        trackPlaces: 1,
+        trackShows: 1,
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(6);
+      expect(result.isSpecialist).toBe(true);
+    });
+
+    it('handles 2-for-10 at track = 2 pts (experience only)', () => {
+      const horse = createHorseEntry({
+        trackStarts: 10,
+        trackWins: 2, // 20% win rate
+        trackPlaces: 2,
+        trackShows: 1, // 50% ITM
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      // 4 pts for 20% win rate + 2 pts ITM bonus = 6
+      expect(result.score).toBe(6);
+    });
+
+    it('handles null/undefined track stats gracefully', () => {
+      const horse = createHorseEntry({});
+      (horse as Record<string, unknown>).trackStarts = null;
+      (horse as Record<string, unknown>).trackWins = null;
+      (horse as Record<string, unknown>).trackPlaces = null;
+      (horse as Record<string, unknown>).trackShows = null;
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(0);
+      expect(result.reasoning).toContain('First time at track');
+    });
+  });
+
+  describe('isTrackSpecialist', () => {
+    it('returns true for 30%+ win rate with 4+ starts', () => {
+      const horse = createHorseEntry({
+        trackStarts: 8,
+        trackWins: 4, // 50% win rate
+      });
+
+      expect(isTrackSpecialist(horse)).toBe(true);
+    });
+
+    it('returns false for <30% win rate', () => {
+      const horse = createHorseEntry({
+        trackStarts: 10,
+        trackWins: 2, // 20% win rate
+      });
+
+      expect(isTrackSpecialist(horse)).toBe(false);
+    });
+
+    it('returns false for <4 starts', () => {
+      const horse = createHorseEntry({
+        trackStarts: 2,
+        trackWins: 1, // 50% but insufficient sample
+      });
+
+      expect(isTrackSpecialist(horse)).toBe(false);
+    });
+
+    it('returns false for first time at track', () => {
+      const horse = createHorseEntry({
+        trackStarts: 0,
+        trackWins: 0,
+      });
+
+      expect(isTrackSpecialist(horse)).toBe(false);
+    });
+  });
+
+  describe('getTrackRecordSummary', () => {
+    it('formats track record correctly', () => {
+      const horse = createHorseEntry({
+        trackStarts: 8,
+        trackWins: 4,
+        trackPlaces: 2,
+        trackShows: 1,
+      });
+
+      const summary = getTrackRecordSummary(horse);
+
+      expect(summary).toBe('4-2-1 (50%) from 8 starts');
+    });
+
+    it('handles first time at track', () => {
+      const horse = createHorseEntry({
+        trackStarts: 0,
+        trackWins: 0,
+        trackPlaces: 0,
+        trackShows: 0,
+      });
+
+      const summary = getTrackRecordSummary(horse);
+
+      expect(summary).toBe('First time at track');
+    });
+
+    it('handles winless record', () => {
+      const horse = createHorseEntry({
+        trackStarts: 5,
+        trackWins: 0,
+        trackPlaces: 1,
+        trackShows: 2,
+      });
+
+      const summary = getTrackRecordSummary(horse);
+
+      expect(summary).toBe('0-1-2 (0%) from 5 starts');
+    });
+  });
+
+  describe('Constants', () => {
+    it('exports trackSpecialist limit', () => {
+      expect(DISTANCE_SURFACE_LIMITS.trackSpecialist).toBe(6);
     });
   });
 });

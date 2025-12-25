@@ -112,6 +112,13 @@ function createMockScoreBreakdown(overrides: Partial<ScoreBreakdown> = {}): Scor
       intentScore: 0,
       reasoning: [],
     },
+    trackSpecialist: {
+      total: 0,
+      trackWinRate: 0,
+      trackITMRate: 0,
+      isSpecialist: false,
+      reasoning: 'First time at track',
+    },
     ...overrides,
   };
 }

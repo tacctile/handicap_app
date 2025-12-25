@@ -220,6 +220,13 @@ function createMockScore(total: number, overrides: Partial<HorseScore> = {}): Ho
       },
       trainerPatterns: { total: 0, matchedPatterns: [], reasoning: [] },
       comboPatterns: { total: 0, detectedCombos: [], intentScore: 0, reasoning: [] },
+      trackSpecialist: {
+        total: 0,
+        trackWinRate: 0,
+        trackITMRate: 0,
+        isSpecialist: false,
+        reasoning: 'First time at track',
+      },
     } as ScoreBreakdown,
     classScore: {
       total: 15,
