@@ -245,6 +245,16 @@ function createMockScore(total: number, overrides: Partial<HorseScore> = {}): Ho
         showWeightGainFlag: false,
         reasoning: 'No weight history available',
       },
+      sexAnalysis: {
+        total: 0,
+        horseSex: 'c',
+        isFemale: false,
+        isRestrictedRace: false,
+        isMixedRace: false,
+        isFirstTimeFacingMales: false,
+        flags: [],
+        reasoning: 'Colt in open race - baseline',
+      },
     } as ScoreBreakdown,
     classScore: {
       total: 15,

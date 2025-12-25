@@ -301,8 +301,11 @@ export function analyzeSexRestriction(
       reasoning,
       flags,
     };
-  } catch (error) {
-    logger.error('Error in analyzeSexRestriction', { error, horseName: horse.horseName });
+  } catch (err) {
+    logger.logError(err instanceof Error ? err : new Error(String(err)), {
+      operation: 'analyzeSexRestriction',
+      horseName: horse.horseName,
+    });
     return {
       horseSex: horse.sex || 'u',
       horseSexFull: horse.sexFull || 'Unknown',
