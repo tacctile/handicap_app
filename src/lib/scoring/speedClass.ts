@@ -39,6 +39,19 @@ export interface SpeedClassScoreResult {
   classMovement: 'drop' | 'rise' | 'level' | 'unknown';
   speedReasoning: string;
   classReasoning: string;
+  /** Track variant adjustment info */
+  variantAdjustment?: {
+    /** Raw (unadjusted) best figure */
+    rawFigure: number;
+    /** Adjusted best figure */
+    adjustedFigure: number;
+    /** Points adjusted (+/-) */
+    adjustment: number;
+    /** Track variant value used */
+    variant: number | null;
+    /** Human-readable reasoning */
+    reasoning: string;
+  };
   /** Track normalization info */
   trackNormalization?: {
     /** Current track speed tier (1-4) */
@@ -95,48 +108,208 @@ const CLASS_PAR_FIGURES: Record<RaceClassification, number> = {
 };
 
 // ============================================================================
+// TRACK VARIANT ADJUSTMENT
+// ============================================================================
+
+/**
+ * Result of adjusting a speed figure for track variant
+ */
+export interface VariantAdjustmentResult {
+  /** Adjusted speed figure */
+  adjustedFigure: number;
+  /** Points adjusted (+/-) */
+  adjustment: number;
+  /** Human-readable reasoning for the adjustment */
+  reasoning: string;
+}
+
+/**
+ * Adjust a speed figure based on track variant
+ *
+ * Track variants measure how fast or slow a track was playing on a given day.
+ * - Positive variant = track was fast (figures were aided/inflated)
+ * - Negative variant = track was slow (figures were hindered/deflated)
+ *
+ * Adjustment logic:
+ * - Variant > +3: Subtract 1-2 pts (track was fast, figure inflated)
+ * - Variant -3 to +3: No adjustment (normal conditions)
+ * - Variant < -3: Add 1-2 pts (track was slow, figure deflated)
+ *
+ * @param rawFigure - The raw Beyer/speed figure
+ * @param variant - The track variant for that day (can be null)
+ * @returns Adjusted figure with reasoning
+ */
+export function adjustFigureForVariant(
+  rawFigure: number,
+  variant: number | null
+): VariantAdjustmentResult {
+  // No variant data - return figure unchanged
+  if (variant === null) {
+    return {
+      adjustedFigure: rawFigure,
+      adjustment: 0,
+      reasoning: 'No variant data available',
+    };
+  }
+
+  let adjustment = 0;
+  let reasoning = '';
+
+  if (variant > 5) {
+    // Very fast track - subtract 2 points
+    adjustment = -2;
+    reasoning = `Variant +${variant} (very fast track) - subtracting 2 pts`;
+  } else if (variant > 3) {
+    // Fast track - subtract 1 point
+    adjustment = -1;
+    reasoning = `Variant +${variant} (fast track) - subtracting 1 pt`;
+  } else if (variant < -5) {
+    // Very slow track - add 2 points
+    adjustment = 2;
+    reasoning = `Variant ${variant} (very slow track) - adding 2 pts`;
+  } else if (variant < -3) {
+    // Slow track - add 1 point
+    adjustment = 1;
+    reasoning = `Variant ${variant} (slow track) - adding 1 pt`;
+  } else {
+    // Normal conditions (-3 to +3)
+    reasoning = `Variant ${variant >= 0 ? '+' : ''}${variant} (normal conditions)`;
+  }
+
+  return {
+    adjustedFigure: rawFigure + adjustment,
+    adjustment,
+    reasoning,
+  };
+}
+
+// ============================================================================
 // SPEED FIGURE EXTRACTION
 // ============================================================================
+
+/**
+ * Result of extracting speed figure with variant data
+ */
+interface ExtractedSpeedFigure {
+  figure: number | null;
+  variant: number | null;
+}
+
+/**
+ * Extract the best available speed figure and variant from a past performance
+ * Prefers Beyer, falls back to TimeformUS, then Equibase
+ */
+function extractSpeedFigureWithVariant(pp: PastPerformance): ExtractedSpeedFigure {
+  const figures = pp.speedFigures;
+  let figure: number | null = null;
+
+  // Prefer Beyer as primary
+  if (figures.beyer !== null && figures.beyer > 0) {
+    figure = figures.beyer;
+  }
+  // TimeformUS as secondary
+  else if (figures.timeformUS !== null && figures.timeformUS > 0) {
+    figure = figures.timeformUS;
+  }
+  // Equibase as fallback
+  else if (figures.equibase !== null && figures.equibase > 0) {
+    figure = figures.equibase;
+  }
+
+  return {
+    figure,
+    variant: figures.trackVariant,
+  };
+}
 
 /**
  * Extract the best available speed figure from a past performance
  * Prefers Beyer, falls back to TimeformUS, then Equibase
  */
 function extractSpeedFigure(pp: PastPerformance): number | null {
-  const figures = pp.speedFigures;
-
-  // Prefer Beyer as primary
-  if (figures.beyer !== null && figures.beyer > 0) {
-    return figures.beyer;
-  }
-
-  // TimeformUS as secondary
-  if (figures.timeformUS !== null && figures.timeformUS > 0) {
-    return figures.timeformUS;
-  }
-
-  // Equibase as fallback
-  if (figures.equibase !== null && figures.equibase > 0) {
-    return figures.equibase;
-  }
-
-  return null;
+  return extractSpeedFigureWithVariant(pp).figure;
 }
 
 /**
- * Get best speed figure from last N races
+ * Result of getting best recent figure with variant adjustment
  */
-function getBestRecentFigure(
+interface BestRecentFigureResult {
+  /** Raw (unadjusted) best figure */
+  rawFigure: number | null;
+  /** Variant-adjusted best figure */
+  adjustedFigure: number | null;
+  /** Variant adjustment details */
+  variantResult: VariantAdjustmentResult | null;
+  /** Which past performance had the best adjusted figure */
+  bestPP: PastPerformance | null;
+}
+
+/**
+ * Get best speed figure from last N races with variant adjustment
+ * Returns both raw and variant-adjusted figures
+ */
+function getBestRecentFigureWithVariant(
   pastPerformances: PastPerformance[],
   count: number = 3
-): number | null {
+): BestRecentFigureResult {
   const recentPPs = pastPerformances.slice(0, count);
 
-  const figures = recentPPs.map(extractSpeedFigure).filter((f): f is number => f !== null);
+  if (recentPPs.length === 0) {
+    return {
+      rawFigure: null,
+      adjustedFigure: null,
+      variantResult: null,
+      bestPP: null,
+    };
+  }
 
-  if (figures.length === 0) return null;
+  // Extract figures with variants and calculate adjusted figures
+  const figuresWithAdjustments = recentPPs.map((pp) => {
+    const extracted = extractSpeedFigureWithVariant(pp);
+    if (extracted.figure === null) {
+      return { pp, rawFigure: null, adjustedFigure: null, variantResult: null };
+    }
+    const variantResult = adjustFigureForVariant(extracted.figure, extracted.variant);
+    return {
+      pp,
+      rawFigure: extracted.figure,
+      adjustedFigure: variantResult.adjustedFigure,
+      variantResult,
+    };
+  });
 
-  return Math.max(...figures);
+  // Filter out nulls and find the best adjusted figure
+  const validFigures = figuresWithAdjustments.filter(
+    (
+      f
+    ): f is {
+      pp: PastPerformance;
+      rawFigure: number;
+      adjustedFigure: number;
+      variantResult: VariantAdjustmentResult;
+    } => f.adjustedFigure !== null
+  );
+
+  if (validFigures.length === 0) {
+    return {
+      rawFigure: null,
+      adjustedFigure: null,
+      variantResult: null,
+      bestPP: null,
+    };
+  }
+
+  // Find the PP with the best adjusted figure
+  const best = validFigures.reduce((best, current) =>
+    current.adjustedFigure > best.adjustedFigure ? current : best
+  );
+
+  return {
+    rawFigure: best.rawFigure,
+    adjustedFigure: best.adjustedFigure,
+    variantResult: best.variantResult,
+    bestPP: best.pp,
+  };
 }
 
 /**
@@ -150,22 +323,6 @@ function getAverageFigure(pastPerformances: PastPerformance[], count: number = 5
   if (figures.length === 0) return null;
 
   return Math.round(figures.reduce((a, b) => a + b, 0) / figures.length);
-}
-
-/**
- * Get last Beyer from horse entry
- */
-function getLastBeyerFromEntry(horse: HorseEntry): number | null {
-  if (horse.lastBeyer !== null && horse.lastBeyer > 0) {
-    return horse.lastBeyer;
-  }
-
-  const firstPP = horse.pastPerformances[0];
-  if (horse.pastPerformances.length > 0 && firstPP) {
-    return extractSpeedFigure(firstPP);
-  }
-
-  return null;
 }
 
 // ============================================================================
@@ -437,9 +594,27 @@ export function calculateSpeedClassScore(
   const currentClass = raceHeader.classification;
   const parForClass = CLASS_PAR_FIGURES[currentClass];
 
-  // Get speed figures
-  const bestRecentFigure =
-    getBestRecentFigure(horse.pastPerformances, 3) ?? getLastBeyerFromEntry(horse);
+  // =========================================================================
+  // GET SPEED FIGURES WITH TRACK VARIANT ADJUSTMENT
+  // =========================================================================
+
+  // Get best recent figure with variant adjustment applied
+  const bestFigureResult = getBestRecentFigureWithVariant(horse.pastPerformances, 3);
+
+  // Fallback to horse entry's lastBeyer if no PPs (first-time starter)
+  let bestRecentFigure = bestFigureResult.adjustedFigure;
+  let rawBestFigure = bestFigureResult.rawFigure;
+  let variantAdjustmentInfo = bestFigureResult.variantResult;
+  let bestPP = bestFigureResult.bestPP;
+
+  // Fallback to lastBeyer from horse entry if no PPs
+  if (bestRecentFigure === null && horse.lastBeyer !== null && horse.lastBeyer > 0) {
+    bestRecentFigure = horse.lastBeyer;
+    rawBestFigure = horse.lastBeyer;
+    variantAdjustmentInfo = null;
+    bestPP = null;
+  }
+
   const averageFigure = getAverageFigure(horse.pastPerformances, 5) ?? horse.averageBeyer ?? null;
 
   // Analyze class movement
@@ -461,7 +636,7 @@ export function calculateSpeedClassScore(
     currentClass
   );
 
-  // Calculate par differential
+  // Calculate par differential (using adjusted figure)
   let parDifferential: number | null = null;
   if (trackParFigure !== null && bestRecentFigure !== null) {
     parDifferential = bestRecentFigure - trackParFigure;
@@ -479,25 +654,28 @@ export function calculateSpeedClassScore(
   }
 
   // Calculate effective figure for scoring
-  // Apply tier normalization: figures from elite tracks worth more
+  // Start with variant-adjusted figure, then apply tier normalization
   let effectiveFigure = bestRecentFigure;
-  if (effectiveFigure !== null) {
-    // Get the tier of the track where the best figure was earned
+  if (effectiveFigure !== null && bestPP) {
+    const figureTierAdj = getTrackTierAdjustment(bestPP.track);
+    // Apply tier adjustment to the figure for comparison purposes
+    effectiveFigure = effectiveFigure + figureTierAdj;
+  } else if (effectiveFigure !== null) {
+    // Fallback: check horse's past performances for tier adjustment
     const figureTracks = horse.pastPerformances.slice(0, 3).map((pp) => pp.track);
-    if (figureTracks.length > 0) {
-      // Find the track where the best recent figure was earned
-      const bestPP = horse.pastPerformances
+    if (figureTracks.length > 0 && rawBestFigure !== null) {
+      // Find the track where the best raw figure was earned
+      const bestPPByRaw = horse.pastPerformances
         .slice(0, 3)
-        .find((pp) => extractSpeedFigure(pp) === effectiveFigure);
-      if (bestPP) {
-        const figureTierAdj = getTrackTierAdjustment(bestPP.track);
-        // Apply tier adjustment to the figure for comparison purposes
+        .find((pp) => extractSpeedFigure(pp) === rawBestFigure);
+      if (bestPPByRaw) {
+        const figureTierAdj = getTrackTierAdjustment(bestPPByRaw.track);
         effectiveFigure = effectiveFigure + figureTierAdj;
       }
     }
   }
 
-  // Calculate speed score using effective (normalized) figure
+  // Calculate speed score using effective (normalized + variant-adjusted) figure
   const speedResult = calculateSpeedFigureScore(effectiveFigure, averageFigure, parForClass);
 
   // Calculate class score
@@ -507,6 +685,11 @@ export function calculateSpeedClassScore(
   // Positive adjustment = track playing fast (boost figures), negative = slow (penalize)
   let seasonalAdjustment = 0;
   let adjustedSpeedReasoning = speedResult.reasoning;
+
+  // Add variant adjustment info to reasoning if applicable
+  if (variantAdjustmentInfo !== null && variantAdjustmentInfo.adjustment !== 0) {
+    adjustedSpeedReasoning += ` | ${variantAdjustmentInfo.reasoning}`;
+  }
 
   if (isTrackIntelligenceAvailable(raceHeader.trackCode)) {
     const rawSeasonalAdj = getSeasonalSpeedAdjustment(raceHeader.trackCode);
@@ -563,6 +746,18 @@ export function calculateSpeedClassScore(
     Math.min(48, speedResult.score + seasonalAdjustment + Math.round(shipperAdjustment * 0.5))
   );
 
+  // Build variant adjustment info for result
+  const variantAdjustmentResult =
+    rawBestFigure !== null && variantAdjustmentInfo !== null
+      ? {
+          rawFigure: rawBestFigure,
+          adjustedFigure: bestRecentFigure!,
+          adjustment: variantAdjustmentInfo.adjustment,
+          variant: bestPP?.speedFigures.trackVariant ?? null,
+          reasoning: variantAdjustmentInfo.reasoning,
+        }
+      : undefined;
+
   return {
     total: adjustedSpeedScore + classResult.score,
     speedScore: adjustedSpeedScore,
@@ -574,6 +769,7 @@ export function calculateSpeedClassScore(
     classMovement,
     speedReasoning: adjustedSpeedReasoning,
     classReasoning: classResult.reasoning,
+    variantAdjustment: variantAdjustmentResult,
     trackNormalization: {
       currentTrackTier,
       currentTrackTierName,

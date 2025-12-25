@@ -9,6 +9,7 @@ import {
   calculateSpeedClassScore,
   getParFigures,
   getClassHierarchy,
+  adjustFigureForVariant,
 } from '../../../lib/scoring/speedClass';
 import {
   getSpeedTier,
@@ -627,6 +628,255 @@ describe('Speed & Class Scoring', () => {
         // 92 Beyer should be above typical allowance par
         expect(result.trackNormalization?.parDifferential).toBeGreaterThan(0);
       }
+    });
+  });
+
+  // =========================================================================
+  // TRACK VARIANT ADJUSTMENT TESTS
+  // =========================================================================
+
+  describe('Track Variant Speed Adjustment', () => {
+    describe('adjustFigureForVariant helper function', () => {
+      it('90 Beyer with +5 variant → adjusted to 88 (fast track, subtract 1)', () => {
+        const result = adjustFigureForVariant(90, 5);
+        expect(result.adjustedFigure).toBe(89); // +5 is >3 but <=5, so -1 point
+        expect(result.adjustment).toBe(-1);
+        expect(result.reasoning).toContain('fast track');
+      });
+
+      it('90 Beyer with +6 variant → adjusted to 88 (very fast track, subtract 2)', () => {
+        const result = adjustFigureForVariant(90, 6);
+        expect(result.adjustedFigure).toBe(88); // +6 is >5, so -2 points
+        expect(result.adjustment).toBe(-2);
+        expect(result.reasoning).toContain('very fast track');
+      });
+
+      it('90 Beyer with -5 variant → adjusted to 91 (slow track, add 1)', () => {
+        const result = adjustFigureForVariant(90, -5);
+        expect(result.adjustedFigure).toBe(91); // -5 is <-3 but >=-5, so +1 point
+        expect(result.adjustment).toBe(1);
+        expect(result.reasoning).toContain('slow track');
+      });
+
+      it('90 Beyer with -6 variant → adjusted to 92 (very slow track, add 2)', () => {
+        const result = adjustFigureForVariant(90, -6);
+        expect(result.adjustedFigure).toBe(92); // -6 is <-5, so +2 points
+        expect(result.adjustment).toBe(2);
+        expect(result.reasoning).toContain('very slow track');
+      });
+
+      it('90 Beyer with 0 variant → stays 90 (normal conditions)', () => {
+        const result = adjustFigureForVariant(90, 0);
+        expect(result.adjustedFigure).toBe(90);
+        expect(result.adjustment).toBe(0);
+        expect(result.reasoning).toContain('normal conditions');
+      });
+
+      it('90 Beyer with +3 variant → stays 90 (within normal range)', () => {
+        const result = adjustFigureForVariant(90, 3);
+        expect(result.adjustedFigure).toBe(90);
+        expect(result.adjustment).toBe(0);
+        expect(result.reasoning).toContain('normal conditions');
+      });
+
+      it('90 Beyer with -3 variant → stays 90 (within normal range)', () => {
+        const result = adjustFigureForVariant(90, -3);
+        expect(result.adjustedFigure).toBe(90);
+        expect(result.adjustment).toBe(0);
+        expect(result.reasoning).toContain('normal conditions');
+      });
+
+      it('returns unchanged figure when variant is null (missing data)', () => {
+        const result = adjustFigureForVariant(90, null);
+        expect(result.adjustedFigure).toBe(90);
+        expect(result.adjustment).toBe(0);
+        expect(result.reasoning).toContain('No variant data');
+      });
+
+      it('85 Beyer with -6 variant → adjusted to 87 (very slow track)', () => {
+        const result = adjustFigureForVariant(85, -6);
+        expect(result.adjustedFigure).toBe(87);
+        expect(result.adjustment).toBe(2);
+      });
+
+      it('handles extreme positive variant (+10)', () => {
+        const result = adjustFigureForVariant(90, 10);
+        expect(result.adjustedFigure).toBe(88); // -2 points max
+        expect(result.adjustment).toBe(-2);
+      });
+
+      it('handles extreme negative variant (-10)', () => {
+        const result = adjustFigureForVariant(90, -10);
+        expect(result.adjustedFigure).toBe(92); // +2 points max
+        expect(result.adjustment).toBe(2);
+      });
+    });
+
+    describe('Variant adjustment in scoring', () => {
+      it('uses variant-adjusted figures for speed scoring', () => {
+        const header = createRaceHeader({
+          trackCode: 'LRL', // Tier 3, neutral
+          classification: 'allowance',
+          distanceFurlongs: 6,
+        });
+
+        // Create horse with 90 Beyer on a +6 variant (very fast) track day
+        const horse = createHorseEntry({
+          pastPerformances: [
+            createPastPerformance({
+              track: 'LRL',
+              speedFigures: createSpeedFigures({ beyer: 90, trackVariant: 6 }),
+              classification: 'allowance',
+              finishPosition: 2,
+            }),
+          ],
+        });
+
+        const result = calculateSpeedClassScore(horse, header);
+
+        // Should have variant adjustment info
+        expect(result.variantAdjustment).toBeDefined();
+        expect(result.variantAdjustment?.rawFigure).toBe(90);
+        expect(result.variantAdjustment?.adjustedFigure).toBe(88); // 90 - 2 for very fast track
+        expect(result.variantAdjustment?.adjustment).toBe(-2);
+        expect(result.variantAdjustment?.variant).toBe(6);
+      });
+
+      it('applies positive adjustment for slow track variant', () => {
+        const header = createRaceHeader({
+          trackCode: 'LRL',
+          classification: 'allowance',
+          distanceFurlongs: 6,
+        });
+
+        // Create horse with 85 Beyer on a -7 variant (very slow) track day
+        const horse = createHorseEntry({
+          pastPerformances: [
+            createPastPerformance({
+              track: 'LRL',
+              speedFigures: createSpeedFigures({ beyer: 85, trackVariant: -7 }),
+              classification: 'allowance',
+              finishPosition: 2,
+            }),
+          ],
+        });
+
+        const result = calculateSpeedClassScore(horse, header);
+
+        // Should boost the figure
+        expect(result.variantAdjustment).toBeDefined();
+        expect(result.variantAdjustment?.rawFigure).toBe(85);
+        expect(result.variantAdjustment?.adjustedFigure).toBe(87); // 85 + 2 for very slow track
+        expect(result.variantAdjustment?.adjustment).toBe(2);
+      });
+
+      it('includes variant adjustment in reasoning when adjustment applied', () => {
+        const header = createRaceHeader({
+          trackCode: 'LRL',
+          classification: 'allowance',
+        });
+
+        const horse = createHorseEntry({
+          pastPerformances: [
+            createPastPerformance({
+              track: 'LRL',
+              speedFigures: createSpeedFigures({ beyer: 90, trackVariant: 8 }),
+              finishPosition: 2,
+            }),
+          ],
+        });
+
+        const result = calculateSpeedClassScore(horse, header);
+
+        // Reasoning should mention the variant adjustment
+        expect(result.speedReasoning).toContain('very fast track');
+      });
+
+      it('does not include variant adjustment in reasoning when variant is normal', () => {
+        const header = createRaceHeader({
+          trackCode: 'LRL',
+          classification: 'allowance',
+        });
+
+        const horse = createHorseEntry({
+          pastPerformances: [
+            createPastPerformance({
+              track: 'LRL',
+              speedFigures: createSpeedFigures({ beyer: 90, trackVariant: 2 }),
+              finishPosition: 2,
+            }),
+          ],
+        });
+
+        const result = calculateSpeedClassScore(horse, header);
+
+        // Variant adjustment info should exist but show no adjustment
+        // Reasoning should not mention slow/fast track for variant
+        expect(result.speedReasoning).not.toContain('subtracting');
+        expect(result.speedReasoning).not.toContain('adding');
+      });
+
+      it('handles null variant gracefully in scoring', () => {
+        const header = createRaceHeader({
+          trackCode: 'LRL',
+          classification: 'allowance',
+        });
+
+        const horse = createHorseEntry({
+          pastPerformances: [
+            createPastPerformance({
+              track: 'LRL',
+              speedFigures: createSpeedFigures({ beyer: 90, trackVariant: null }),
+              finishPosition: 2,
+            }),
+          ],
+        });
+
+        const result = calculateSpeedClassScore(horse, header);
+
+        // Should still calculate score without variant adjustment
+        expect(result.total).toBeGreaterThan(0);
+        // Variant adjustment should show no adjustment made
+        expect(result.variantAdjustment?.adjustment).toBe(0);
+      });
+
+      it('selects best adjusted figure when multiple PPs have different variants', () => {
+        const header = createRaceHeader({
+          trackCode: 'LRL',
+          classification: 'allowance',
+        });
+
+        // PP1: 88 raw, +6 variant = 86 adjusted
+        // PP2: 85 raw, -6 variant = 87 adjusted (best adjusted)
+        // PP3: 90 raw, +8 variant = 88 adjusted
+        const horse = createHorseEntry({
+          pastPerformances: [
+            createPastPerformance({
+              track: 'LRL',
+              speedFigures: createSpeedFigures({ beyer: 88, trackVariant: 6 }),
+              finishPosition: 3,
+              date: '2024-03-15',
+            }),
+            createPastPerformance({
+              track: 'LRL',
+              speedFigures: createSpeedFigures({ beyer: 85, trackVariant: -6 }),
+              finishPosition: 2,
+              date: '2024-02-15',
+            }),
+            createPastPerformance({
+              track: 'LRL',
+              speedFigures: createSpeedFigures({ beyer: 90, trackVariant: 8 }),
+              finishPosition: 4,
+              date: '2024-01-15',
+            }),
+          ],
+        });
+
+        const result = calculateSpeedClassScore(horse, header);
+
+        // Should use the best adjusted figure (88, from 90 raw with +8 variant)
+        expect(result.variantAdjustment?.adjustedFigure).toBe(88);
+      });
     });
   });
 });
