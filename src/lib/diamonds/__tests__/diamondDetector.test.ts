@@ -227,6 +227,14 @@ function createMockScore(total: number, overrides: Partial<HorseScore> = {}): Ho
         isSpecialist: false,
         reasoning: 'First time at track',
       },
+      trainerSurfaceDistance: {
+        total: 0,
+        matchedCategory: null,
+        trainerWinPercent: 0,
+        wetTrackWinPercent: 0,
+        wetBonusApplied: false,
+        reasoning: 'No trainer surface/distance data',
+      },
     } as ScoreBreakdown,
     classScore: {
       total: 15,
