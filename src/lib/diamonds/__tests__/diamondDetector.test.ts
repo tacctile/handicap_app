@@ -235,6 +235,16 @@ function createMockScore(total: number, overrides: Partial<HorseScore> = {}): Ho
         wetBonusApplied: false,
         reasoning: 'No trainer surface/distance data',
       },
+      weightAnalysis: {
+        total: 0,
+        currentWeight: 120,
+        lastRaceWeight: null,
+        weightChange: null,
+        significantDrop: false,
+        significantGain: false,
+        showWeightGainFlag: false,
+        reasoning: 'No weight history available',
+      },
     } as ScoreBreakdown,
     classScore: {
       total: 15,
