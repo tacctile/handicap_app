@@ -15,6 +15,7 @@ import { createHorseEntry, createPastPerformance } from '../../fixtures/testHelp
 
 // NOTE: v2.0 rescaled from 55 max to 25 max (scale factor: 25/55 ≈ 0.455)
 // NOTE: v2.1 uses DRF stats (trainerMeetStarts, etc.) as primary source
+// NOTE: v2.2 enhanced partnership scoring (0-4 pts based on tiers)
 describe('Connections Scoring', () => {
   describe('Trainer Scoring', () => {
     it('returns neutral score (7) for trainer with insufficient data (<3 starts)', () => {
@@ -173,20 +174,27 @@ describe('Connections Scoring', () => {
     });
   });
 
-  describe('Partnership Bonus', () => {
-    it('returns 2 point bonus for elite partnership (25%+ win rate with 5+ starts)', () => {
+  describe('Partnership Bonus (Enhanced v2.2)', () => {
+    // Enhanced partnership scoring tiers:
+    // - Elite: 30%+ win rate, 8+ starts = 4 pts
+    // - Strong: 25-29% win rate, 5+ starts = 3 pts
+    // - Good: 20-24% win rate, 5+ starts = 2 pts
+    // - Regular: 15-19% win rate, 5+ starts = 1 pt
+    // - New/weak: 0 pts
+
+    it('returns 4 point bonus for elite partnership (30%+ win rate with 8+ starts)', () => {
       const trainerName = 'Bob Baffert';
       const jockeyName = 'Mike Smith';
 
-      // Create multiple horses to build database with partnership data
+      // 4 wins in 10 starts = 40% win rate (elite tier, 8+ starts)
       const horses = [
         createHorseEntry({
           trainerName,
           jockeyName,
-          pastPerformances: Array.from({ length: 5 }, (_, i) =>
+          pastPerformances: Array.from({ length: 10 }, (_, i) =>
             createPastPerformance({
               jockey: jockeyName,
-              finishPosition: i < 2 ? 1 : 3, // 40% win rate
+              finishPosition: i < 4 ? 1 : 3, // 40% win rate
             })
           ),
         }),
@@ -195,14 +203,40 @@ describe('Connections Scoring', () => {
       const database = buildConnectionsDatabase(horses);
       const result = calculateConnectionsScore(horses[0], database);
 
-      expect(result.partnershipBonus).toBe(2);
+      expect(result.partnershipBonus).toBe(4);
       expect(result.reasoning).toContain('Elite combo');
     });
 
-    it('returns 0 bonus for partnership with <25% win rate', () => {
+    it('returns 3 point bonus for strong partnership (25-29% win rate with 5+ starts)', () => {
+      const trainerName = 'Chad Brown';
+      const jockeyName = 'Irad Ortiz Jr';
+
+      // 2 wins in 8 starts = 25% win rate (strong tier)
+      const horses = [
+        createHorseEntry({
+          trainerName,
+          jockeyName,
+          pastPerformances: Array.from({ length: 8 }, (_, i) =>
+            createPastPerformance({
+              jockey: jockeyName,
+              finishPosition: i < 2 ? 1 : 4, // 25% win rate
+            })
+          ),
+        }),
+      ];
+
+      const database = buildConnectionsDatabase(horses);
+      const result = calculateConnectionsScore(horses[0], database);
+
+      expect(result.partnershipBonus).toBe(3);
+      expect(result.reasoning).toContain('Strong combo');
+    });
+
+    it('returns 2 point bonus for good partnership (20-24% win rate with 5+ starts)', () => {
       const trainerName = 'Average Trainer';
       const jockeyName = 'Average Jockey';
 
+      // 2 wins in 10 starts = 20% win rate (good tier)
       const horses = [
         createHorseEntry({
           trainerName,
@@ -219,7 +253,58 @@ describe('Connections Scoring', () => {
       const database = buildConnectionsDatabase(horses);
       const result = calculateConnectionsScore(horses[0], database);
 
+      expect(result.partnershipBonus).toBe(2);
+      expect(result.reasoning).toContain('Good combo');
+    });
+
+    it('returns 1 point bonus for regular partnership (15-19% win rate with 5+ starts)', () => {
+      const trainerName = 'Decent Trainer';
+      const jockeyName = 'Decent Jockey';
+
+      // 1 win in 6 starts = ~16.7% win rate (regular tier)
+      const horses = [
+        createHorseEntry({
+          trainerName,
+          jockeyName,
+          pastPerformances: Array.from({ length: 6 }, (_, i) =>
+            createPastPerformance({
+              jockey: jockeyName,
+              finishPosition: i === 0 ? 1 : 5, // ~16.7% win rate
+            })
+          ),
+        }),
+      ];
+
+      const database = buildConnectionsDatabase(horses);
+      const result = calculateConnectionsScore(horses[0], database);
+
+      expect(result.partnershipBonus).toBe(1);
+      expect(result.reasoning).toContain('Regular combo');
+    });
+
+    it('returns 0 bonus for weak partnership (<15% win rate)', () => {
+      const trainerName = 'Poor Trainer';
+      const jockeyName = 'Poor Jockey';
+
+      // 1 win in 8 starts = 12.5% win rate (below threshold)
+      const horses = [
+        createHorseEntry({
+          trainerName,
+          jockeyName,
+          pastPerformances: Array.from({ length: 8 }, (_, i) =>
+            createPastPerformance({
+              jockey: jockeyName,
+              finishPosition: i === 0 ? 1 : 5, // 12.5% win rate
+            })
+          ),
+        }),
+      ];
+
+      const database = buildConnectionsDatabase(horses);
+      const result = calculateConnectionsScore(horses[0], database);
+
       expect(result.partnershipBonus).toBe(0);
+      expect(result.reasoning).toContain('Limited combo');
     });
 
     it('returns 0 bonus for partnership with insufficient starts (<5)', () => {
@@ -244,6 +329,31 @@ describe('Connections Scoring', () => {
 
       expect(result.partnershipBonus).toBe(0);
     });
+
+    it('detects first time with jockey', () => {
+      const trainerName = 'Test Trainer';
+      const jockeyName = 'New Jockey';
+
+      // Past performances have different jockey
+      const horses = [
+        createHorseEntry({
+          trainerName,
+          jockeyName, // Current jockey is different
+          pastPerformances: Array.from({ length: 5 }, () =>
+            createPastPerformance({
+              jockey: 'Different Jockey',
+              finishPosition: 1,
+            })
+          ),
+        }),
+      ];
+
+      const database = buildConnectionsDatabase(horses);
+      const result = calculateConnectionsScore(horses[0], database);
+
+      expect(result.partnershipBonus).toBe(0);
+      expect(result.reasoning).toContain('First time with this jockey');
+    });
   });
 
   describe('Combined Scoring', () => {
@@ -264,7 +374,7 @@ describe('Connections Scoring', () => {
       expect(result.total).toBe(result.trainer + result.jockey + result.partnershipBonus);
     });
 
-    it('total score stays within limit of 25 points', () => {
+    it('total score stays within limit of 27 points (v2.2 enhanced partnership)', () => {
       const horse = createHorseEntry({
         trainerName: 'Elite Trainer',
         jockeyName: 'Elite Jockey',
@@ -278,7 +388,8 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.total).toBeLessThanOrEqual(25);
+      // Max: 16 (trainer) + 7 (jockey) + 4 (elite partnership) = 27
+      expect(result.total).toBeLessThanOrEqual(27);
     });
 
     it('handles missing past performances gracefully', () => {
