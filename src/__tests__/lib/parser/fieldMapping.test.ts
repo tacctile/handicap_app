@@ -295,21 +295,24 @@ describe('DRF Field Mapping - Race Header Data', () => {
     });
   });
 
-  describe('Distance (Field 15, Index 14)', () => {
-    it('extracts distance from correct index', () => {
+  describe('Distance (Field 6, Index 5) - CORRECTED for 12-PP format', () => {
+    it('extracts distance from correct index (yards)', () => {
+      // Per corrected 12-PP format: Field 6 is Distance in YARDS, not Field 15
+      // 1870 yards ≈ 8.5 furlongs
       const row = createDRFRow({
         0: 'CD',
         1: '20240815',
         2: '5',
         3: '1',
-        14: '8.5', // Distance in furlongs (Field 15)
+        5: '1870', // Distance in yards (Field 6) = 8.5 furlongs
         44: 'Test Horse',
       });
 
       const result = parseDRFFile(row, 'test.drf');
 
       expect(result.races.length).toBeGreaterThan(0);
-      expect(result.races[0].header.distanceFurlongs).toBe(8.5);
+      // 1870 yards / 220 = 8.5 furlongs
+      expect(result.races[0].header.distanceFurlongs).toBeCloseTo(8.5, 1);
     });
   });
 
@@ -332,8 +335,16 @@ describe('DRF Field Mapping - Race Header Data', () => {
   });
 });
 
-describe('DRF Field Mapping - Lifetime Statistics', () => {
-  describe('Lifetime Starts (Field 62, Index 61)', () => {
+describe('DRF Field Mapping - Lifetime Statistics (CORRECTED for 12-PP format)', () => {
+  // Per corrected 12-PP format:
+  // - Fields 62-64: Medication flags
+  // - Field 65 (Index 64): Lifetime Starts
+  // - Field 66 (Index 65): Lifetime Wins
+  // - Field 67 (Index 66): Lifetime Places
+  // - Field 68 (Index 67): Lifetime Shows
+  // - Field 69 (Index 68): Lifetime Earnings
+
+  describe('Lifetime Starts (Field 65, Index 64) - SHIFTED BY 3', () => {
     it('extracts lifetime starts from correct index', () => {
       const row = createDRFRow({
         0: 'CD',
@@ -341,7 +352,7 @@ describe('DRF Field Mapping - Lifetime Statistics', () => {
         2: '5',
         3: '1',
         44: 'Test Horse',
-        61: '25', // Lifetime Starts (Field 62)
+        64: '25', // Lifetime Starts (Field 65) - WAS at index 61!
       });
 
       const result = parseDRFFile(row, 'test.drf');
@@ -352,7 +363,7 @@ describe('DRF Field Mapping - Lifetime Statistics', () => {
     });
   });
 
-  describe('Lifetime Wins (Field 63, Index 62)', () => {
+  describe('Lifetime Wins (Field 66, Index 65) - SHIFTED BY 3', () => {
     it('extracts lifetime wins from correct index', () => {
       const row = createDRFRow({
         0: 'CD',
@@ -360,7 +371,7 @@ describe('DRF Field Mapping - Lifetime Statistics', () => {
         2: '5',
         3: '1',
         44: 'Test Horse',
-        62: '10', // Lifetime Wins (Field 63)
+        65: '10', // Lifetime Wins (Field 66) - WAS at index 62!
       });
 
       const result = parseDRFFile(row, 'test.drf');

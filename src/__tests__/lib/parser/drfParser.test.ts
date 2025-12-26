@@ -368,57 +368,57 @@ describe('DRF Parser', () => {
       wet: [number, number, number, number],
       distance: [number, number, number, number]
     ): string {
-      // Build array with 100 fields (enough to cover indices 0-95)
-      const fields = new Array(100).fill('');
+      // Build array with 102 fields (enough to cover indices 0-101 for track record)
+      // CORRECTED for 12-PP format per DRF_FIELD_MAP.md v2.0
+      const fields = new Array(102).fill('');
 
-      // Race header fields
-      fields[0] = 'CD'; // Track code
-      fields[1] = '20240215'; // Race date
-      fields[2] = '5'; // Race number
-      fields[3] = '1'; // Post position
-      fields[5] = '14:30'; // Post time
-      fields[6] = 'D'; // Surface
-      fields[11] = '75000'; // Purse
-      fields[14] = '6'; // Distance furlongs
-      fields[23] = '8'; // Field size
+      // Race header fields (corrected)
+      fields[0] = 'CD'; // Track code (Field 1)
+      fields[1] = '20240215'; // Race date (Field 2)
+      fields[2] = '5'; // Race number (Field 3)
+      fields[3] = '1'; // Post position (Field 4)
+      fields[5] = '1320'; // Distance in yards (Field 6) = 6f - WAS POST TIME!
+      fields[6] = 'D'; // Surface (Field 7)
+      fields[11] = '75000'; // Purse (Field 12)
+      fields[23] = '8'; // Field size (Field 24)
 
       // Horse identification
-      fields[27] = 'Test Trainer'; // Trainer name
-      fields[32] = 'Test Jockey'; // Jockey name
-      fields[43] = '5-1'; // Morning line
-      fields[44] = 'Test Horse'; // Horse name
-      fields[45] = '4'; // Age
-      fields[48] = 'c'; // Sex
+      fields[27] = 'Test Trainer'; // Trainer name (Field 28)
+      fields[32] = 'Test Jockey'; // Jockey name (Field 33)
+      fields[43] = '5-1'; // Morning line (Field 44)
+      fields[44] = 'Test Horse'; // Horse name (Field 45)
+      fields[45] = '4'; // Age (Field 46)
+      fields[48] = 'c'; // Sex (Field 49)
 
-      // Lifetime stats (fields 62-65)
-      fields[61] = '20'; // Lifetime starts
-      fields[62] = '5'; // Lifetime wins
-      fields[63] = '4'; // Lifetime places
-      fields[64] = '3'; // Lifetime shows
+      // Lifetime stats - CORRECTED: Fields 65-68 (indices 64-67)
+      fields[64] = '20'; // Lifetime starts (Field 65) - WAS index 61!
+      fields[65] = '5'; // Lifetime wins (Field 66) - WAS index 62!
+      fields[66] = '4'; // Lifetime places (Field 67) - WAS index 63!
+      fields[67] = '3'; // Lifetime shows (Field 68) - WAS index 64!
 
-      // Track-specific stats (fields 80-83)
-      fields[79] = '8'; // Track starts
-      fields[80] = '2'; // Track wins
-      fields[81] = '1'; // Track places
-      fields[82] = '2'; // Track shows
+      // Turf record - CORRECTED: Fields 80-83 (indices 79-82)
+      fields[79] = String(turf[0]); // Turf starts (Field 80) - WAS index 84!
+      fields[80] = String(turf[1]); // Turf wins (Field 81) - WAS index 85!
+      fields[81] = String(turf[2]); // Turf places (Field 82) - WAS index 86!
+      fields[82] = String(turf[3]); // Turf shows (Field 83) - WAS index 87!
 
-      // Turf record (fields 85-88, indices 84-87)
-      fields[84] = String(turf[0]); // Turf starts
-      fields[85] = String(turf[1]); // Turf wins
-      fields[86] = String(turf[2]); // Turf places
-      fields[87] = String(turf[3]); // Turf shows
+      // Wet track record - CORRECTED: Fields 86-89 (indices 85-88)
+      fields[85] = String(wet[0]); // Wet starts (Field 86) - WAS index 88!
+      fields[86] = String(wet[1]); // Wet wins (Field 87) - WAS index 89!
+      fields[87] = String(wet[2]); // Wet places (Field 88) - WAS index 90!
+      fields[88] = String(wet[3]); // Wet shows (Field 89) - WAS index 91!
 
-      // Wet track record (fields 89-92, indices 88-91)
-      fields[88] = String(wet[0]); // Wet starts
-      fields[89] = String(wet[1]); // Wet wins
-      fields[90] = String(wet[2]); // Wet places
-      fields[91] = String(wet[3]); // Wet shows
+      // Distance record - CORRECTED: Fields 92-95 (indices 91-94)
+      fields[91] = String(distance[0]); // Distance starts (Field 92)
+      fields[92] = String(distance[1]); // Distance wins (Field 93)
+      fields[93] = String(distance[2]); // Distance places (Field 94)
+      fields[94] = String(distance[3]); // Distance shows (Field 95)
 
-      // Distance record (fields 93-96, indices 92-95)
-      fields[92] = String(distance[0]); // Distance starts
-      fields[93] = String(distance[1]); // Distance wins
-      fields[94] = String(distance[2]); // Distance places
-      fields[95] = String(distance[3]); // Distance shows
+      // Track-specific stats - CORRECTED: Fields 97-100 (indices 96-99)
+      fields[96] = '8'; // Track starts (Field 97) - WAS index 79!
+      fields[97] = '2'; // Track wins (Field 98) - WAS index 80!
+      fields[98] = '1'; // Track places (Field 99) - WAS index 81!
+      fields[99] = '2'; // Track shows (Field 100) - WAS index 82!
 
       return fields.join(',');
     }

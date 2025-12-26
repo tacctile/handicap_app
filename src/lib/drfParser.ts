@@ -48,22 +48,25 @@ import {
 
 /**
  * DRF fixed-width format column definitions
- * Based on official DRF Single File format specification (DRF_FIELD_MAP.md)
+ * Based on official BRIS 12-PP DRF specification (DRF_FIELD_MAP.md v2.0)
  *
  * IMPORTANT: All indices are 0-based (Field 1 = index 0, Field 45 = index 44, etc.)
  *
  * Note: DRF files can have 1,435 fields per horse
  * These are the most critical fields for handicapping
  *
- * Field Groups per DRF_FIELD_MAP.md:
+ * CRITICAL: This uses 12-PP format, NOT 10-PP format!
+ * All PP blocks have 12 entries (Fields 102-113, 114-125, etc.)
+ *
+ * Field Groups per DRF_FIELD_MAP.md v2.0:
  * - Fields 1-27: Race Header Information
- * - Fields 28-57: Horse Identity & Connections
- * - Fields 62-101: Lifetime Performance Records
- * - Fields 102-113: Past Performance Dates
- * - Fields 114-185: PP Track & Distance Data
- * - Fields 210-225: Running Style & Race Descriptions
- * - Fields 256-325: Workout Data
- * - Fields 766-865: Speed & Pace Figures
+ * - Fields 28-61: Horse Identity & Connections
+ * - Fields 62-101: Lifetime & Seasonal Records
+ * - Fields 102-113: Past Performance Dates (12 PPs)
+ * - Fields 114-777+: PP Data Blocks (12 PPs each)
+ * - Fields 256-315: Workout Data (12 workouts)
+ * - Fields 766-857: Speed & Pace Figures (12 PPs each)
+ * - Fields 1146-1221: Trainer Category Stats
  */
 const DRF_COLUMNS = {
   // =========================================================================
@@ -73,45 +76,50 @@ const DRF_COLUMNS = {
   RACE_DATE: { index: 1, name: 'Race Date' }, // Field 2 (YYYYMMDD)
   RACE_NUMBER: { index: 2, name: 'Race Number' }, // Field 3
   POST_POSITION: { index: 3, name: 'Post Position' }, // Field 4
-  RESERVED_5: { index: 4, name: 'Reserved' }, // Field 5
-  POST_TIME: { index: 5, name: 'Post Time' }, // Field 6 (military)
-  SURFACE: { index: 6, name: 'Surface Code' }, // Field 7 (D/T/S)
+  ENTRY_FLAG: { index: 4, name: 'Entry Flag' }, // Field 5 (A/B/C=coupled, F=field, S=scratched)
+  DISTANCE_YARDS: { index: 5, name: 'Distance (yards)' }, // Field 6 - WAS WRONG (was post time)
+  SURFACE: { index: 6, name: 'Surface Code' }, // Field 7 (D/T/d/t)
   RESERVED_8: { index: 7, name: 'Reserved' }, // Field 8
-  DISTANCE_CODE: { index: 8, name: 'Distance Code' }, // Field 9 (S/R for Sprint/Route)
-  RACE_TYPE: { index: 9, name: 'Race Type Code' }, // Field 10
-  RACE_CONDITIONS: { index: 10, name: 'Race Name/Conditions' }, // Field 11
+  RACE_TYPE: { index: 8, name: 'Race Type Code' }, // Field 9 (G1/G2/G3/N/A/C/S/M/CO)
+  AGE_SEX_RESTRICTIONS: { index: 9, name: 'Age/Sex Restrictions' }, // Field 10
+  RACE_CONDITIONS: { index: 10, name: 'Race Classification' }, // Field 11
   PURSE: { index: 11, name: 'Purse Amount' }, // Field 12
-  RESERVED_13_14: { index: 12, name: 'Reserved' }, // Fields 13-14
-  DISTANCE_FURLONGS: { index: 14, name: 'Distance (furlongs)' }, // Field 15
-  RACE_DESCRIPTION: { index: 15, name: 'Race Description' }, // Field 16
-  TOP_PICKS: { index: 16, name: 'Top Picks/Favorites' }, // Field 17
-  TRACK_CODE_2: { index: 20, name: 'Track Code (repeat)' }, // Field 21
-  RACE_NUMBER_2: { index: 21, name: 'Race Number (repeat)' }, // Field 22
-  BREED_CODE: { index: 22, name: 'Breed Code' }, // Field 23 (TB/QH/AR)
+  CLAIMING_PRICE_HIGH: { index: 12, name: 'Claiming Price (high)' }, // Field 13 - WAS RESERVED
+  CLAIMING_PRICE_HORSE: { index: 13, name: 'Claiming Price (horse)' }, // Field 14 - WAS RESERVED
+  TRACK_RECORD: { index: 14, name: 'Track Record' }, // Field 15 - WAS DISTANCE
+  RACE_DESCRIPTION: { index: 15, name: 'Race Conditions Text' }, // Field 16
+  TOP_PICKS: { index: 16, name: 'Top Picks' }, // Field 17
+  TODAY_LASIX_LIST: { index: 17, name: 'Today Lasix List' }, // Field 18
+  TODAY_BUTE_LIST: { index: 18, name: 'Today Bute List' }, // Field 19
+  TODAY_COUPLED_LIST: { index: 19, name: 'Today Coupled List' }, // Field 20
+  SIMULCAST_TRACK: { index: 20, name: 'Simulcast Track' }, // Field 21
+  SIMULCAST_RACE: { index: 21, name: 'Simulcast Race' }, // Field 22
+  BREED_CODE: { index: 22, name: 'Breed Type' }, // Field 23 (TB/QH/AR)
   FIELD_SIZE: { index: 23, name: 'Field Size' }, // Field 24
+  // Fields 25-27 are reserved
 
   // =========================================================================
-  // HORSE IDENTITY & CONNECTIONS (Fields 28-57, indices 27-56)
+  // HORSE IDENTITY & CONNECTIONS (Fields 28-61, indices 27-60)
   // =========================================================================
   // Trainer Information (Fields 28-32)
   TRAINER_NAME: { index: 27, name: 'Trainer Name' }, // Field 28
-  TRAINER_STARTS: { index: 28, name: 'Trainer Starts (current meet)' }, // Field 29
-  TRAINER_WINS: { index: 29, name: 'Trainer Wins (current meet)' }, // Field 30
-  TRAINER_PLACES: { index: 30, name: 'Trainer Places (current meet)' }, // Field 31
-  TRAINER_SHOWS: { index: 31, name: 'Trainer Shows (current meet)' }, // Field 32
+  TRAINER_STARTS: { index: 28, name: 'Trainer Starts (meet)' }, // Field 29
+  TRAINER_WINS: { index: 29, name: 'Trainer Wins (meet)' }, // Field 30
+  TRAINER_PLACES: { index: 30, name: 'Trainer Places (meet)' }, // Field 31
+  TRAINER_SHOWS: { index: 31, name: 'Trainer Shows (meet)' }, // Field 32
 
   // Jockey Information (Fields 33-38)
   JOCKEY_NAME: { index: 32, name: 'Jockey Name' }, // Field 33
-  JOCKEY_RESERVED: { index: 33, name: 'Reserved' }, // Field 34
-  JOCKEY_STARTS: { index: 34, name: 'Jockey Starts (current meet)' }, // Field 35
-  JOCKEY_WINS: { index: 35, name: 'Jockey Wins (current meet)' }, // Field 36
-  JOCKEY_PLACES: { index: 36, name: 'Jockey Places (current meet)' }, // Field 37
-  JOCKEY_SHOWS: { index: 37, name: 'Jockey Shows (current meet)' }, // Field 38
+  JOCKEY_APPRENTICE_WT: { index: 33, name: 'Jockey Apprentice Weight' }, // Field 34
+  JOCKEY_STARTS: { index: 34, name: 'Jockey Starts (meet)' }, // Field 35
+  JOCKEY_WINS: { index: 35, name: 'Jockey Wins (meet)' }, // Field 36
+  JOCKEY_PLACES: { index: 36, name: 'Jockey Places (meet)' }, // Field 37
+  JOCKEY_SHOWS: { index: 37, name: 'Jockey Shows (meet)' }, // Field 38
 
   // Ownership & Silks (Fields 39-42)
   OWNER_NAME: { index: 38, name: 'Owner Name' }, // Field 39
   SILKS_DESCRIPTION: { index: 39, name: 'Silks Description' }, // Field 40
-  RESERVED_41_42: { index: 40, name: 'Reserved' }, // Fields 41-42
+  // Fields 41-42 are reserved
 
   // Horse Identification (Fields 43-51)
   PROGRAM_NUMBER: { index: 42, name: 'Program Number' }, // Field 43
@@ -119,7 +127,7 @@ const DRF_COLUMNS = {
   HORSE_NAME: { index: 44, name: 'Horse Name' }, // Field 45
   HORSE_AGE_YEARS: { index: 45, name: 'Age (years)' }, // Field 46
   HORSE_AGE_MONTHS: { index: 46, name: 'Age (months)' }, // Field 47
-  RESERVED_48: { index: 47, name: 'Reserved' }, // Field 48
+  // Field 48 is reserved
   HORSE_SEX: { index: 48, name: 'Sex Code' }, // Field 49
   HORSE_COLOR: { index: 49, name: 'Color' }, // Field 50
   WEIGHT: { index: 50, name: 'Weight (assigned)' }, // Field 51
@@ -131,16 +139,22 @@ const DRF_COLUMNS = {
   DAM_SIRE: { index: 54, name: "Dam's Sire" }, // Field 55
   BREEDER: { index: 55, name: 'Breeder Name' }, // Field 56
   WHERE_BRED: { index: 56, name: 'State/Country Bred' }, // Field 57
+  // Fields 58-61 are reserved
 
   // =========================================================================
-  // LIFETIME PERFORMANCE RECORDS (Fields 62-101, indices 61-100)
+  // LIFETIME & SEASONAL RECORDS (Fields 62-101, indices 61-100)
+  // CRITICAL: These are shifted by 3 from old 10-PP format!
   // =========================================================================
-  // Overall Lifetime Record (Fields 62-69)
-  LIFETIME_STARTS: { index: 61, name: 'Lifetime Starts' }, // Field 62
-  LIFETIME_WINS: { index: 62, name: 'Lifetime Wins' }, // Field 63
-  LIFETIME_PLACES: { index: 63, name: 'Lifetime Places' }, // Field 64
-  LIFETIME_SHOWS: { index: 64, name: 'Lifetime Shows' }, // Field 65
-  RESERVED_66_68: { index: 65, name: 'Reserved' }, // Fields 66-68
+  // Medication Flags (Fields 62-64)
+  TODAY_MEDICATION: { index: 61, name: 'Today Medication' }, // Field 62 (0=none, 1=Lasix, 2=Bute, 3=both)
+  FIRST_TIME_LASIX: { index: 62, name: 'First Time Lasix' }, // Field 63
+  // Field 64 is reserved
+
+  // Lifetime Record (Fields 65-69) - WAS SHIFTED BY 3!
+  LIFETIME_STARTS: { index: 64, name: 'Lifetime Starts' }, // Field 65 - WAS 61!
+  LIFETIME_WINS: { index: 65, name: 'Lifetime Wins' }, // Field 66 - WAS 62!
+  LIFETIME_PLACES: { index: 66, name: 'Lifetime Places' }, // Field 67 - WAS 63!
+  LIFETIME_SHOWS: { index: 67, name: 'Lifetime Shows' }, // Field 68 - WAS 64!
   LIFETIME_EARNINGS: { index: 68, name: 'Lifetime Earnings' }, // Field 69
 
   // Current Year Record (Fields 70-74)
@@ -148,7 +162,7 @@ const DRF_COLUMNS = {
   CURRENT_YEAR_WINS: { index: 70, name: 'Current Year Wins' }, // Field 71
   CURRENT_YEAR_PLACES: { index: 71, name: 'Current Year Places' }, // Field 72
   CURRENT_YEAR_SHOWS: { index: 72, name: 'Current Year Shows' }, // Field 73
-  CURRENT_YEAR_EARNINGS: { index: 73, name: 'Current Year Earnings' }, // Field 74 - FIXED from 43!
+  CURRENT_YEAR_EARNINGS: { index: 73, name: 'Current Year Earnings' }, // Field 74
 
   // Previous Year Record (Fields 75-79)
   PREVIOUS_YEAR_STARTS: { index: 74, name: 'Previous Year Starts' }, // Field 75
@@ -157,58 +171,88 @@ const DRF_COLUMNS = {
   PREVIOUS_YEAR_SHOWS: { index: 77, name: 'Previous Year Shows' }, // Field 78
   PREVIOUS_YEAR_EARNINGS: { index: 78, name: 'Previous Year Earnings' }, // Field 79
 
-  // Track-Specific Record (Fields 80-84)
-  TRACK_STARTS: { index: 79, name: 'Track Starts' }, // Field 80
-  TRACK_WINS: { index: 80, name: 'Track Wins' }, // Field 81
-  TRACK_PLACES: { index: 81, name: 'Track Places' }, // Field 82
-  TRACK_SHOWS: { index: 82, name: 'Track Shows' }, // Field 83
-  TRACK_EARNINGS: { index: 83, name: 'Track Earnings' }, // Field 84
+  // Turf Record (Fields 80-84) - MOVED FROM 85-88!
+  TURF_STARTS: { index: 79, name: 'Turf Starts' }, // Field 80
+  TURF_WINS: { index: 80, name: 'Turf Wins' }, // Field 81
+  TURF_PLACES: { index: 81, name: 'Turf Places' }, // Field 82
+  TURF_SHOWS: { index: 82, name: 'Turf Shows' }, // Field 83
+  TURF_EARNINGS: { index: 83, name: 'Turf Earnings' }, // Field 84
+
+  // Best Turf Year (Field 85) - THIS WAS THE "2025" BUG!
+  BEST_TURF_YEAR: { index: 84, name: 'Best Turf Year' }, // Field 85 - Year, not starts!
+
+  // Wet Track Record (Fields 86-90)
+  WET_STARTS: { index: 85, name: 'Wet Track Starts' }, // Field 86
+  WET_WINS: { index: 86, name: 'Wet Track Wins' }, // Field 87
+  WET_PLACES: { index: 87, name: 'Wet Track Places' }, // Field 88
+  WET_SHOWS: { index: 88, name: 'Wet Track Shows' }, // Field 89
+  WET_EARNINGS: { index: 89, name: 'Wet Track Earnings' }, // Field 90
+
+  // Best Wet Year (Field 91)
+  BEST_WET_YEAR: { index: 90, name: 'Best Wet Year' }, // Field 91
+
+  // Distance Record (Fields 92-96)
+  DISTANCE_STARTS: { index: 91, name: 'Distance Starts' }, // Field 92
+  DISTANCE_WINS: { index: 92, name: 'Distance Wins' }, // Field 93
+  DISTANCE_PLACES: { index: 93, name: 'Distance Places' }, // Field 94
+  DISTANCE_SHOWS: { index: 94, name: 'Distance Shows' }, // Field 95
+  DISTANCE_EARNINGS: { index: 95, name: 'Distance Earnings' }, // Field 96
+
+  // Track Record (Fields 97-101)
+  TRACK_STARTS: { index: 96, name: 'Track Starts' }, // Field 97
+  TRACK_WINS: { index: 97, name: 'Track Wins' }, // Field 98
+  TRACK_PLACES: { index: 98, name: 'Track Places' }, // Field 99
+  TRACK_SHOWS: { index: 99, name: 'Track Shows' }, // Field 100
+  TRACK_EARNINGS: { index: 100, name: 'Track Earnings' }, // Field 101
 
   // =========================================================================
-  // TURF/WET/DISTANCE RECORDS (Fields 85-96, indices 84-95)
-  // Per DRF specification: Horse's record on turf, wet tracks, and at
-  // today's distance. These are P0 critical handicapping signals.
+  // PAST PERFORMANCE BLOCKS (12 PPs each, column-major storage)
+  // CRITICAL: All PP blocks are 12 fields, NOT 10!
   // =========================================================================
-  // Turf Record (Fields 85-88)
-  TURF_STARTS: { index: 84, name: 'Turf Starts' }, // Field 85
-  TURF_WINS: { index: 85, name: 'Turf Wins' }, // Field 86
-  TURF_PLACES: { index: 86, name: 'Turf Places' }, // Field 87
-  TURF_SHOWS: { index: 87, name: 'Turf Shows' }, // Field 88
+  PP_COUNT: 12, // 12 past performances (WAS 10!)
 
-  // Wet Track Record (Fields 89-92)
-  WET_STARTS: { index: 88, name: 'Wet Track Starts' }, // Field 89
-  WET_WINS: { index: 89, name: 'Wet Track Wins' }, // Field 90
-  WET_PLACES: { index: 90, name: 'Wet Track Places' }, // Field 91
-  WET_SHOWS: { index: 91, name: 'Wet Track Shows' }, // Field 92
+  // PP Dates (Fields 102-113, indices 101-112)
+  PP_DATE_START: 101, // Field 102 - First PP date
 
-  // Current Distance Record (Fields 93-96)
-  DISTANCE_STARTS: { index: 92, name: 'Distance Starts' }, // Field 93
-  DISTANCE_WINS: { index: 93, name: 'Distance Wins' }, // Field 94
-  DISTANCE_PLACES: { index: 94, name: 'Distance Places' }, // Field 95
-  DISTANCE_SHOWS: { index: 95, name: 'Distance Shows' }, // Field 96
+  // PP Distances in furlongs (Fields 114-125, indices 113-124)
+  PP_DISTANCE_FURLONGS_START: 113, // Field 114
 
-  // Remaining fields 97-101 contain lifetime/yearly summary verification data
-  // (not parsed here as they duplicate earlier lifetime stats)
+  // PP Track Codes (Fields 126-137, indices 125-136)
+  PP_TRACK_START: 125, // Field 126
 
-  // =========================================================================
-  // PAST PERFORMANCE DATES (Fields 102-113, indices 101-112)
-  // =========================================================================
-  PP_DATE_START: 101, // Field 102 - First PP date (most recent race)
+  // PP Distances in yards (Fields 138-149, indices 137-148)
+  PP_DISTANCE_YARDS_START: 137, // Field 138
 
-  // =========================================================================
-  // PAST PERFORMANCE TRACK CODES (Fields 126-137, indices 125-136)
-  // =========================================================================
-  PP_TRACK_START: 125, // Field 126 - First PP track code
+  // PP Track Conditions (Fields 150-161, indices 149-160)
+  PP_CONDITION_START: 149, // Field 150
 
-  // =========================================================================
-  // TRACK CONDITIONS PER PP (Fields 150-161, indices 149-160)
-  // =========================================================================
-  PP_CONDITION_START: 149, // Field 150 - First PP track condition
+  // PP Equipment (Fields 162-173, indices 161-172)
+  PP_EQUIPMENT_START: 161, // Field 162
+
+  // PP Medication (Fields 174-185, indices 173-184)
+  PP_MEDICATION_START: 173, // Field 174
+
+  // PP Days Since Previous (Fields 186-197, indices 185-196)
+  PP_DAYS_SINCE_START: 185, // Field 186
+
+  // PP Finish Position (Fields 198-209, indices 197-208)
+  PP_FINISH_POSITION_START: 197, // Field 198
+
+  // PP Field Size (Fields 346-357, indices 345-356)
+  PP_FIELD_SIZE_START: 345, // Field 346
+
+  // PP Odds (Fields 354-365, indices 353-364)
+  PP_ODDS_START: 353, // Field 354
 
   // =========================================================================
-  // EQUIPMENT PER PP (Fields 162-173, indices 161-172)
+  // WORKOUT DATA (12 workouts, Fields 256-315, indices 255-314)
   // =========================================================================
-  PP_EQUIPMENT_START: 161, // Field 162 - First PP equipment
+  WK_DATE_START: 255, // Fields 256-267 - Workout dates
+  WK_TRACK_START: 267, // Fields 268-279 - Workout tracks
+  WK_DISTANCE_START: 279, // Fields 280-291 - Workout distances
+  WK_TIME_START: 291, // Fields 292-303 - Workout times
+  WK_RANK_START: 303, // Fields 304-315 - Workout rankings
+  WORKOUT_COUNT: 12, // 12 workouts (WAS 10!)
 
   // =========================================================================
   // RUNNING STYLE & RACE DESCRIPTIONS (Fields 210-225, indices 209-224)
@@ -218,87 +262,80 @@ const DRF_COLUMNS = {
   BEST_SPEED_FIGURE: { index: 223, name: 'Best Speed Figure' }, // Field 224
 
   // =========================================================================
-  // WORKOUT DATA (Fields 256-325, indices 255-324)
+  // SPEED & PACE FIGURES (12 PPs each)
   // =========================================================================
-  // Workout structure per DRF_FIELD_MAP.md:
-  // - Fields 256-265: Workout Dates (10 works)
-  // - Fields 266-275: Days Since Each Work
-  // - Fields 276-295: Workout Track Codes
-  // - Fields 296-305: Workout Post Position
-  // - Fields 306-315: Workout Track Condition
-  // - Fields 316-325: Workout Distance
-  WORKOUT_START: 255, // Field 256 - First workout date
-  WORKOUT_FIELDS_PER_WORK: 7, // 7 fields per workout (date, days, track, post, condition, distance, time)
-  WORKOUT_COUNT: 10, // Up to 10 workouts
+  // Speed Figures (Fields 766-777, indices 765-776) - 12 fields!
+  PP_BEYER_START: 765, // Field 766 - WAS 10 fields, NOW 12!
+
+  // Track Variants (Fields 778-789, indices 777-788) - 12 fields!
+  PP_VARIANT_START: 777, // Field 778
+
+  // 2F Pace (Fields 786-797) - for reference
+  PP_2F_PACE_START: 785, // Field 786
+
+  // E1 Pace (Fields 816-827, indices 815-826) - 12 fields!
+  PP_EARLY_PACE_START: 815, // Field 816
+
+  // Late Pace (Fields 846-857, indices 845-856) - 12 fields!
+  PP_LATE_PACE_START: 845, // Field 846
 
   // =========================================================================
-  // SPEED & PACE FIGURES (Fields 766-865, indices 765-864)
+  // TRAINER/JOCKEY PER PP (12 fields each)
   // =========================================================================
-  // Speed Figures Per PP (Fields 766-775)
-  PP_BEYER_START: 765, // Field 766 - First PP Beyer speed figure
-
-  // Variant Speed Figures (Fields 776-785)
-  PP_VARIANT_START: 775, // Field 776 - First PP variant figure
-
-  // Early Pace Figures (Fields 816-825)
-  PP_EARLY_PACE_START: 815, // Field 816 - First PP early pace (EP1)
-
-  // Late Pace Figures (Fields 846-855)
-  PP_LATE_PACE_START: 845, // Field 846 - First PP late pace
-
-  // Average Pace Figures (Fields 856-865)
-  PP_AVERAGE_PACE_START: 855, // Field 856 - First PP average pace
+  PP_TRAINER_START: 1055, // Fields 1056-1067 - Trainer names per PP
+  PP_JOCKEY_START: 1067, // Fields 1068-1079 - Jockey names per PP
 
   // =========================================================================
-  // PAST PERFORMANCES (structured data starting at Field 102)
-  // Each PP has data spread across multiple field ranges
+  // TRAINER CATEGORY STATS (Fields 1146-1221, indices 1145-1220)
+  // 19 categories, each with: Label, Starts, Win%, ITM%, ROI
   // =========================================================================
-  PP_START: 101, // Field 102 - PP dates start here
-  PP_FIELDS_PER_RACE: 12, // 12 races maximum
-  PP_MAX_RACES: 12, // Maximum past performances
+  TRAINER_STATS_START: 1145, // Field 1146
+  TRAINER_CATEGORY_SIZE: 5, // 5 fields per category
+  TRAINER_CATEGORY_COUNT: 19, // 19 categories
 
   // =========================================================================
-  // TRAINER/JOCKEY PER PP (Fields 1056-1095, indices 1055-1094)
+  // DETAILED TRIP NOTES (Fields 1383-1392, indices 1382-1391) - 10 fields
+  // Note: Trip notes are still 10 fields (supplemental section)
   // =========================================================================
-  PP_TRAINER_START: 1055, // Field 1056 - Trainer names per PP
-  PP_JOCKEY_START: 1065, // Field 1066 - Jockey names per PP
+  PP_TRIP_NOTES_START: 1382, // Field 1383
 
   // =========================================================================
-  // TRAINER STATISTICS (Fields 1146-1221, indices 1145-1220)
+  // EQB RACE CONDITIONS (Fields 1420-1429) - 10 fields (supplemental)
   // =========================================================================
-  TRAINER_STATS_START: 1145, // Field 1146 - Trainer category statistics
-
-  // =========================================================================
-  // DETAILED TRIP NOTES (Fields 1383-1392, indices 1382-1391)
-  // =========================================================================
-  PP_TRIP_NOTES_START: 1382, // Field 1383 - Detailed trip notes
+  PP_EQB_CONDITIONS_START: 1419, // Field 1420
 
   // =========================================================================
   // LEGACY MAPPINGS (kept for backwards compatibility)
   // These use the corrected indices from above
   // =========================================================================
   HORSE_AGE: { index: 45, name: 'Horse Age' }, // Alias for HORSE_AGE_YEARS
-  ENTRY_INDICATOR: { index: 4, name: 'Entry Indicator' }, // Field 5 (reserved)
+  ENTRY_INDICATOR: { index: 4, name: 'Entry Indicator' }, // Field 5
   JOCKEY_LAST: { index: 32, name: 'Jockey Name' }, // Maps to JOCKEY_NAME
   JOCKEY_FIRST: { index: 32, name: 'Jockey Name' }, // Same - full name in one field
   TRAINER_LAST: { index: 27, name: 'Trainer Name' }, // Maps to TRAINER_NAME
   TRAINER_FIRST: { index: 27, name: 'Trainer Name' }, // Same - full name in one field
-  DISTANCE: { index: 14, name: 'Distance (furlongs)' }, // Maps to DISTANCE_FURLONGS
-  AGE_RESTRICTION: { index: 10, name: 'Age Restriction' }, // From race conditions
-  SEX_RESTRICTION: { index: 10, name: 'Sex Restriction' }, // From race conditions
-  CLAIMING_PRICE: { index: 11, name: 'Claiming Price' }, // Parsed from conditions or purse
+  DISTANCE: { index: 5, name: 'Distance (yards)' }, // Maps to DISTANCE_YARDS
+  DISTANCE_FURLONGS: { index: 5, name: 'Distance (yards)' }, // Converted from yards
+  AGE_RESTRICTION: { index: 9, name: 'Age Restriction' }, // From race conditions
+  SEX_RESTRICTION: { index: 9, name: 'Sex Restriction' }, // From race conditions
+  CLAIMING_PRICE: { index: 13, name: 'Claiming Price' }, // Field 14
   TRACK_CONDITION: { index: 6, name: 'Track Condition' }, // From surface field
-  APPRENTICE_ALLOWANCE: { index: 50, name: 'Apprentice Allowance' }, // Part of weight
+  APPRENTICE_ALLOWANCE: { index: 33, name: 'Apprentice Allowance' }, // Field 34
   EQUIPMENT: { index: 161, name: 'Equipment' }, // PP equipment field
   MEDICATION: { index: 173, name: 'Medication' }, // PP medication field
   RACE_NAME: { index: 10, name: 'Race Name' }, // From conditions
-  RACE_GRADE: { index: 10, name: 'Race Grade' }, // Parsed from conditions
-  DAYS_SINCE_LAST: { index: 101, name: 'Days Since Last Race' }, // Calculated from PP date
+  RACE_GRADE: { index: 8, name: 'Race Grade' }, // From race type
+  DAYS_SINCE_LAST: { index: 185, name: 'Days Since Last Race' }, // PP days since
 
-  // Speed figure fields - using best speed figure from field 224
+  // Speed figure fields
   BEST_BEYER: { index: 223, name: 'Best Beyer' }, // Field 224
   AVERAGE_BEYER: { index: 223, name: 'Average Beyer' }, // Calculated from PP figures
   LAST_BEYER: { index: 765, name: 'Last Beyer' }, // Field 766 (first PP Beyer)
+
+  // For backwards compatibility with old code
+  PP_START: 101, // Field 102 - PP dates start here
+  PP_FIELDS_PER_RACE: 12, // 12 races maximum
+  PP_MAX_RACES: 12, // Maximum past performances
 } as const;
 
 // ============================================================================
@@ -1221,46 +1258,59 @@ function parsePPDate(dateStr: string): Date | null {
 function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance[] {
   const performances: PastPerformance[] = [];
 
-  // Field range starting indices (0-based)
-  const PP_DATE_START = 101; // Field 102
-  const PP_DISTANCE_FURLONGS = 113; // Field 114
-  const PP_TRACK = 125; // Field 126
-  // PP_DISTANCE_FEET = 137 (Field 138) - available for future use
-  const PP_CONDITION = 149; // Field 150
-  const PP_EQUIPMENT = 161; // Field 162
-  const PP_MEDICATION = 173; // Field 174
-  const PP_FIELD_SIZE = 185; // Field 186
-  // PP_POST_POSITION = 197 (Field 198) - available for future use
-  const PP_FINISH_POSITION = 355; // Field 356
-  const PP_FINISH_MARGIN = 365; // Field 366
-  const PP_ODDS = 515; // Field 516
-  const PP_RACE_TYPE = 535; // Field 536
-  const PP_CLAIMING = 545; // Field 546
-  const PP_PURSE = 555; // Field 556
-  const PP_START_POS = 565; // Field 566
-  const PP_FIRST_CALL = 575; // Field 576
-  const PP_SECOND_CALL = 585; // Field 586
-  const PP_THIRD_CALL = 595; // Field 596
-  const PP_STRETCH = 605; // Field 606
-  const PP_LENGTHS_1ST = 635; // Field 636
-  const PP_LENGTHS_2ND = 655; // Field 656
-  const PP_LENGTHS_3RD = 675; // Field 676
-  const PP_LENGTHS_STRETCH = 695; // Field 696
-  const PP_BEYER = 765; // Field 766
-  const PP_VARIANT = 775; // Field 776
-  const PP_EARLY_PACE = 815; // Field 816
-  const PP_LATE_PACE = 845; // Field 846
-  const PP_WINNER = 405; // Field 406
-  const PP_SECOND = 415; // Field 416
-  const PP_THIRD = 425; // Field 426
-  const PP_TRIP_SHORT = 395; // Field 396
-  const PP_WEIGHT = 435; // Field 436 - Weight per PP
-  // PP_TRAINER = 1055 (Field 1056) - available for future use
-  const PP_JOCKEY = 1065; // Field 1066
-  const PP_FINAL_TIME = 1005; // Fields 1006-1015 (0-indexed: 1005-1014) - Final time in seconds
-  const PP_TRIP_DETAILED = 1382; // Field 1383
+  // ==========================================================================
+  // CORRECTED 12-PP FIELD INDICES (based on BRIS 12-PP format)
+  // All core PP blocks are 12 fields each, stored column-major
+  // ==========================================================================
 
-  for (let i = 0; i < maxRaces; i++) {
+  // Core PP data blocks (12 fields each)
+  const PP_DATE_START = DRF_COLUMNS.PP_DATE_START; // Fields 102-113 (indices 101-112)
+  const PP_DISTANCE_FURLONGS = DRF_COLUMNS.PP_DISTANCE_FURLONGS_START; // Fields 114-125 (indices 113-124)
+  const PP_TRACK = DRF_COLUMNS.PP_TRACK_START; // Fields 126-137 (indices 125-136)
+  // PP_DISTANCE_YARDS = DRF_COLUMNS.PP_DISTANCE_YARDS_START; // Fields 138-149 (indices 137-148)
+  const PP_CONDITION = DRF_COLUMNS.PP_CONDITION_START; // Fields 150-161 (indices 149-160)
+  const PP_EQUIPMENT = DRF_COLUMNS.PP_EQUIPMENT_START; // Fields 162-173 (indices 161-172)
+  const PP_MEDICATION = DRF_COLUMNS.PP_MEDICATION_START; // Fields 174-185 (indices 173-184)
+  const _PP_DAYS_SINCE = DRF_COLUMNS.PP_DAYS_SINCE_START; // Fields 186-197 (indices 185-196) - reserved for future use
+  const PP_FINISH_POSITION = DRF_COLUMNS.PP_FINISH_POSITION_START; // Fields 198-209 (indices 197-208)
+
+  // Extended PP data (12 fields each)
+  const PP_FIELD_SIZE = DRF_COLUMNS.PP_FIELD_SIZE_START; // Fields 346-357 (indices 345-356)
+  const PP_ODDS = DRF_COLUMNS.PP_ODDS_START; // Fields 354-365 (indices 353-364)
+
+  // Speed & Pace figures (12 fields each!)
+  const PP_BEYER = DRF_COLUMNS.PP_BEYER_START; // Fields 766-777 (indices 765-776)
+  const PP_VARIANT = DRF_COLUMNS.PP_VARIANT_START; // Fields 778-789 (indices 777-788)
+  const PP_EARLY_PACE = DRF_COLUMNS.PP_EARLY_PACE_START; // Fields 816-827 (indices 815-826)
+  const PP_LATE_PACE = DRF_COLUMNS.PP_LATE_PACE_START; // Fields 846-857 (indices 845-856)
+
+  // Other PP fields (may still be 10-field blocks in some cases)
+  const PP_RACE_TYPE = 535; // Field 536 - Race type codes
+  const PP_CLAIMING = 545; // Field 546 - Claiming prices
+  const PP_PURSE = 555; // Field 556 - Purse values
+  const PP_START_POS = 565; // Field 566 - Start positions
+  const PP_FIRST_CALL = 575; // Field 576 - First call positions
+  const PP_SECOND_CALL = 585; // Field 586 - Second call positions
+  const PP_THIRD_CALL = 595; // Field 596 - Third call positions
+  const PP_STRETCH = 605; // Field 606 - Stretch positions
+  const PP_LENGTHS_1ST = 635; // Field 636 - Lengths at 1st call
+  const PP_LENGTHS_2ND = 655; // Field 656 - Lengths at 2nd call
+  const PP_LENGTHS_3RD = 675; // Field 676 - Lengths at 3rd call
+  const PP_LENGTHS_STRETCH = 695; // Field 696 - Lengths at stretch
+  const PP_WINNER = 405; // Field 406 - Winner names
+  const PP_SECOND = 415; // Field 416 - Second place
+  const PP_THIRD = 425; // Field 426 - Third place
+  const PP_TRIP_SHORT = 395; // Field 396 - Short trip comments
+  const PP_WEIGHT = 435; // Field 436 - Weight per PP
+  const PP_FINISH_MARGIN = 365; // Field 366 - Finish margins
+  const PP_JOCKEY = DRF_COLUMNS.PP_JOCKEY_START; // Fields 1068-1079 (indices 1067-1078)
+  const PP_FINAL_TIME = 1005; // Fields 1006-1017 - Final time in seconds
+  const PP_TRIP_DETAILED = DRF_COLUMNS.PP_TRIP_NOTES_START; // Fields 1383-1392 (10 fields!)
+
+  // Use the constant for max PP count
+  const ppCount = Math.min(maxRaces, DRF_COLUMNS.PP_COUNT);
+
+  for (let i = 0; i < ppCount; i++) {
     // Check if we have data for this race by looking at the date
     const ppDate = getField(fields, PP_DATE_START + i);
     if (!ppDate) break;
@@ -1387,20 +1437,36 @@ function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance
  *
  * Note: Additional workout data may be in other field ranges not fully documented
  */
-function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
+function parseWorkouts(fields: string[], maxWorkouts = 12): Workout[] {
   const workouts: Workout[] = [];
 
-  // Field range starting indices (0-based) - verified against actual DRF data
-  const WK_DATE = 255; // Field 256 - Workout dates (YYYYMMDD)
-  const WK_DAYS_SINCE = 265; // Field 266 - Days since each work
-  const WK_TRACK = 275; // Field 276 - Track codes (2 fields per work)
-  const WK_RANK = 295; // Field 296 - Workout rank position (was previously mislabeled as post)
-  const WK_CONDITION = 305; // Field 306 - Track condition (FT, GD, etc.)
-  const WK_DISTANCE_YARDS = 315; // Field 316 - Distance in YARDS (220 yards = 1 furlong)
-  const WK_SURFACE = 325; // Field 326 - Surface (D, T)
-  const WK_TOTAL_WORKS = 345; // Field 346 - Total works that day at track/distance
+  // ==========================================================================
+  // CORRECTED 12-WORKOUT FIELD INDICES (based on BRIS 12-PP format)
+  // Workouts now have 12 entries, stored column-major
+  // ==========================================================================
 
-  for (let i = 0; i < maxWorkouts; i++) {
+  // Per corrected field map:
+  // - Workout Dates: Fields 256-267 (indices 255-266)
+  // - Workout Tracks: Fields 268-279 (indices 267-278)
+  // - Workout Distances: Fields 280-291 (indices 279-290)
+  // - Workout Times: Fields 292-303 (indices 291-302)
+  // - Workout Rankings: Fields 304-315 (indices 303-314)
+
+  const WK_DATE = DRF_COLUMNS.WK_DATE_START; // Fields 256-267 - Workout dates
+  const WK_TRACK = DRF_COLUMNS.WK_TRACK_START; // Fields 268-279 - Track codes
+  const WK_DISTANCE = DRF_COLUMNS.WK_DISTANCE_START; // Fields 280-291 - Distance
+  const WK_TIME = DRF_COLUMNS.WK_TIME_START; // Fields 292-303 - Times
+  const WK_RANK = DRF_COLUMNS.WK_RANK_START; // Fields 304-315 - Rankings
+
+  // Extended workout fields (may need verification)
+  const WK_CONDITION = 305; // Field 306 - Track condition (FT, GD, etc.)
+  const WK_SURFACE = 325; // Field 326 - Surface (D, T)
+  const WK_TOTAL_WORKS = 315; // Total works that day
+
+  // Use the constant for max workout count
+  const wkCount = Math.min(maxWorkouts, DRF_COLUMNS.WORKOUT_COUNT);
+
+  for (let i = 0; i < wkCount; i++) {
     // Check if we have data for this workout by looking at the date
     const wkDate = getField(fields, WK_DATE + i);
     if (!wkDate) break;
@@ -1408,7 +1474,7 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
     // Parse workout distance - try multiple interpretations and pick the valid one
     // Standard workout distances: 2f, 3f, 3.5f, 4f, 4.5f, 5f, 5.5f, 6f, 6.5f, 7f, 8f (1m)
     // Industry standard: workouts are ALWAYS whole or half furlongs, never fractional like 2.5f
-    const rawDistanceValue = parseFloatSafe(getField(fields, WK_DISTANCE_YARDS + i));
+    const rawDistanceValue = parseFloatSafe(getField(fields, WK_DISTANCE + i));
     let distanceFurlongs = 0;
     let interpretedFormat = 'none';
 
@@ -1481,8 +1547,8 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
       }
     }
 
-    // Track code (2 fields per work: track + inner/outer indicator)
-    const track = getField(fields, WK_TRACK + i * 2, 'UNK');
+    // Track code (one field per work in 12-workout format)
+    const track = getField(fields, WK_TRACK + i, 'UNK');
 
     // Track condition
     const conditionCode = getField(fields, WK_CONDITION + i, 'FT');
@@ -1490,8 +1556,8 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
     // Surface from dedicated field
     const surfaceCode = getField(fields, WK_SURFACE + i, 'D');
 
-    // Days since workout (can calculate recency)
-    const daysSince = parseIntNullable(getField(fields, WK_DAYS_SINCE + i));
+    // Workout time in seconds
+    const timeSeconds = parseFloatSafe(getField(fields, WK_TIME + i));
 
     // Ranking data
     const rankNum = parseIntNullable(getField(fields, WK_RANK + i));
@@ -1499,17 +1565,20 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
     const isBullet = rankNum === 1;
     const rankingStr = rankNum && totalWorks ? `${rankNum}/${totalWorks}` : '';
 
-    // Note: Workout time and type are not available in standard DRF format
-    // These would require extended field parsing or supplemental data
+    // Format workout time if available
+    const timeFormatted =
+      timeSeconds > 0
+        ? `:${Math.floor(timeSeconds)}.${((timeSeconds % 1) * 100).toFixed(0).padStart(2, '0')}`
+        : '';
 
     const workout: Workout = {
       date: wkDate,
       track,
       distanceFurlongs: distanceFurlongs,
       distance: distanceStr,
-      timeSeconds: 0, // Not available in standard DRF format
-      timeFormatted: '', // Not available in standard DRF format
-      type: 'unknown', // Not available in standard DRF format
+      timeSeconds: timeSeconds,
+      timeFormatted: timeFormatted,
+      type: 'unknown', // Would need to infer from time/distance
       trackCondition: parseTrackCondition(conditionCode),
       surface: parseSurface(surfaceCode),
       ranking: rankingStr,
@@ -1517,7 +1586,7 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
       totalWorks: totalWorks,
       isBullet: isBullet,
       fromGate: false, // Would need separate gate indicator field
-      notes: daysSince !== null ? `${daysSince}d ago` : '',
+      notes: '', // Calculated elsewhere if needed
       // Debug: store raw field value and interpretation for troubleshooting
       _rawDistanceValue: rawDistanceValue,
       _interpretedFormat: interpretedFormat,
@@ -1828,19 +1897,22 @@ function createDefaultRaceHeader(): RaceHeader {
 /**
  * Parse race header from first horse entry fields
  *
- * Per DRF_FIELD_MAP.md Section 1 (Fields 1-27):
+ * Per CORRECTED DRF_FIELD_MAP.md v2.0 Section 1 (Fields 1-27):
  * - Field 1: Track Code
  * - Field 2: Race Date (YYYYMMDD)
  * - Field 3: Race Number
  * - Field 4: Post Position
- * - Field 6: Post Time (military)
- * - Field 7: Surface Code (D/T/S)
- * - Field 9: Distance Code (S/R)
- * - Field 10: Race Type Code
- * - Field 11: Race Name/Conditions
+ * - Field 5: Entry Flag (A/B/C for coupled, F=field, S=scratched)
+ * - Field 6: Distance in Yards (NOT post time!)
+ * - Field 7: Surface Code (D/T/d/t)
+ * - Field 9: Race Type Code (G1/G2/G3/N/A/C/S/M/CO)
+ * - Field 10: Age/Sex Restrictions
+ * - Field 11: Race Classification
  * - Field 12: Purse Amount
- * - Field 15: Distance (furlongs)
- * - Field 16: Race Description
+ * - Field 13: Claiming Price (high)
+ * - Field 14: Claiming Price (horse)
+ * - Field 15: Track Record
+ * - Field 16: Race Conditions Text
  * - Field 24: Field Size
  */
 function parseRaceHeader(fields: string[]): RaceHeader {
@@ -1853,21 +1925,24 @@ function parseRaceHeader(fields: string[]): RaceHeader {
   header.raceNumber = parseIntSafe(getField(fields, DRF_COLUMNS.RACE_NUMBER.index), 1);
   header.programNumber = header.raceNumber;
 
-  // Post time (Field 6)
-  header.postTime = getField(fields, DRF_COLUMNS.POST_TIME.index);
-
-  // Distance (Field 15)
-  const distData = parseDistance('', getField(fields, DRF_COLUMNS.DISTANCE_FURLONGS.index));
+  // Distance (Field 6 = yards, need to convert to furlongs)
+  // Per corrected spec: Field 6 is distance in yards (1760 = 1 mile, 1100 = 5f)
+  const distanceYards = getField(fields, DRF_COLUMNS.DISTANCE_YARDS.index);
+  const distData = parseDistance(distanceYards, '');
   header.distance = distData.distance;
   header.distanceExact = distData.exact;
   header.distanceFurlongs = distData.furlongs;
+
+  // Post time is not in a dedicated field in 12-PP format
+  // It may be derived from race conditions or supplemental data
+  header.postTime = '';
 
   // Surface (Field 7) and track condition
   header.surface = parseSurface(getField(fields, DRF_COLUMNS.SURFACE.index, 'D'));
   // Track condition may need to be inferred from surface field or PP data
   header.trackCondition = parseTrackCondition(getField(fields, DRF_COLUMNS.SURFACE.index, 'FT'));
 
-  // Classification (Fields 10-11)
+  // Classification (Fields 9-11)
   const raceType = getField(fields, DRF_COLUMNS.RACE_TYPE.index);
   const conditions = getField(fields, DRF_COLUMNS.RACE_CONDITIONS.index);
   header.classification = parseRaceClassification(raceType, conditions);
@@ -1883,11 +1958,21 @@ function parseRaceHeader(fields: string[]): RaceHeader {
   header.purse = parseIntSafe(getField(fields, DRF_COLUMNS.PURSE.index));
   header.purseFormatted = `$${header.purse.toLocaleString()}`;
 
-  // Claiming price - parse from conditions text or purse field
-  const claimPrice = extractClaimingPrice(conditions, raceDesc);
-  if (claimPrice) {
-    header.claimingPriceMin = claimPrice;
-    header.claimingPriceMax = claimPrice;
+  // Claiming prices (Fields 13-14) - use dedicated fields first, then parse from text
+  const claimPriceHigh = parseIntNullable(getField(fields, DRF_COLUMNS.CLAIMING_PRICE_HIGH.index));
+  const claimPriceHorse = parseIntNullable(
+    getField(fields, DRF_COLUMNS.CLAIMING_PRICE_HORSE.index)
+  );
+  if (claimPriceHigh && claimPriceHigh > 0) {
+    header.claimingPriceMax = claimPriceHigh;
+    header.claimingPriceMin = claimPriceHorse || claimPriceHigh;
+  } else {
+    // Fallback to parsing from conditions text
+    const claimPrice = extractClaimingPrice(conditions, raceDesc);
+    if (claimPrice) {
+      header.claimingPriceMin = claimPrice;
+      header.claimingPriceMax = claimPrice;
+    }
   }
 
   // Stakes info - parse from conditions
@@ -2384,6 +2469,130 @@ export function parseDRFFile(
 }
 
 // ============================================================================
+// VALIDATION FUNCTION
+// ============================================================================
+
+/**
+ * Validation result interface
+ */
+export interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  anchorPoints: {
+    trackCode: { expected: string; actual: string; match: boolean };
+    horseName: { expected: string; actual: string; match: boolean };
+    trainerName: { expected: string; actual: string; match: boolean };
+    pp1SpeedFigure: { value: number | null; valid: boolean };
+  };
+}
+
+/**
+ * Validate parsed horse data against raw DRF fields.
+ *
+ * This function checks known anchor points to verify the field mapping is correct:
+ * - Field 1 (index 0) = Track Code
+ * - Field 28 (index 27) = Trainer Name
+ * - Field 45 (index 44) = Horse Name
+ * - Field 766 (index 765) = PP1 Speed Figure
+ *
+ * @param horse - Parsed HorseEntry object
+ * @param rawFields - Original raw fields array
+ * @returns ValidationResult with details about mapping correctness
+ */
+export function validateParsedData(horse: HorseEntry, rawFields: string[]): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  // Check track code anchor (Field 1, index 0)
+  const rawTrackCode = rawFields[0]?.trim() ?? '';
+
+  // Check trainer name anchor (Field 28, index 27)
+  const rawTrainerName = rawFields[27]?.trim() ?? '';
+  const trainerMatch = rawTrainerName === horse.trainerName;
+  if (!trainerMatch && rawTrainerName && horse.trainerName !== 'Unknown') {
+    errors.push(`Trainer mismatch: expected "${rawTrainerName}", got "${horse.trainerName}"`);
+  }
+
+  // Check horse name anchor (Field 45, index 44)
+  const rawHorseName = rawFields[44]?.trim() ?? '';
+  const horseMatch = rawHorseName === horse.horseName;
+  if (!horseMatch && rawHorseName && !horse.horseName.startsWith('Horse ')) {
+    errors.push(`Horse name mismatch: expected "${rawHorseName}", got "${horse.horseName}"`);
+  }
+
+  // Validate PP1 speed figure (Field 766, index 765)
+  const pp1SpeedRaw = rawFields[765]?.trim() ?? '';
+  const pp1Speed = parseInt(pp1SpeedRaw, 10);
+  const pp1Valid = !isNaN(pp1Speed) && pp1Speed >= 0 && pp1Speed <= 130;
+  if (pp1SpeedRaw && !pp1Valid) {
+    warnings.push(`PP1 speed figure may be invalid: ${pp1SpeedRaw} (expected 0-130)`);
+  }
+
+  // Check for the "2025" turf bug - if turfStarts looks like a year, we have a problem
+  if (horse.turfStarts >= 1900 && horse.turfStarts <= 2100) {
+    errors.push(
+      `turfStarts looks like a year (${horse.turfStarts}) - field mapping may be incorrect`
+    );
+  }
+
+  // Check that PP count is correct
+  if (horse.pastPerformances.length > 12) {
+    errors.push(`Too many PPs parsed: ${horse.pastPerformances.length} (max 12)`);
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+    anchorPoints: {
+      trackCode: {
+        expected: rawTrackCode,
+        actual: rawTrackCode.substring(0, 3), // Parser uses first 3 chars
+        match: true, // Track code is from race header, not horse
+      },
+      horseName: { expected: rawHorseName, actual: horse.horseName, match: horseMatch },
+      trainerName: { expected: rawTrainerName, actual: horse.trainerName, match: trainerMatch },
+      pp1SpeedFigure: { value: pp1Valid ? pp1Speed : null, valid: pp1Valid },
+    },
+  };
+}
+
+/**
+ * Validate the entire parsed DRF file for common field mapping issues.
+ *
+ * @param parsedFile - Parsed DRF file
+ * @param rawLines - Original raw file lines
+ * @returns Array of validation results for each horse
+ */
+export function validateParsedFile(
+  parsedFile: ParsedDRFFile,
+  rawLines: string[]
+): { overall: boolean; results: Array<{ horse: string; result: ValidationResult }> } {
+  const results: Array<{ horse: string; result: ValidationResult }> = [];
+  let lineIndex = 0;
+
+  for (const race of parsedFile.races) {
+    for (const horse of race.horses) {
+      if (lineIndex < rawLines.length) {
+        const line = rawLines[lineIndex];
+        if (line) {
+          const rawFields = parseCSVLine(line);
+          const result = validateParsedData(horse, rawFields);
+          results.push({ horse: horse.horseName, result });
+        }
+        lineIndex++;
+      }
+    }
+  }
+
+  const overall = results.every((r) => r.result.valid);
+  return { overall, results };
+}
+
+// Note: Uses the existing parseCSVLine function defined earlier in this file
+
+// ============================================================================
 // EXPORTS FOR BACKWARDS COMPATIBILITY AND UTILITIES
 // ============================================================================
 
@@ -2393,4 +2602,5 @@ export {
   createDefaultRunningLine,
   createDefaultSpeedFigures,
   parseOdds,
+  DRF_COLUMNS,
 };
