@@ -2,14 +2,16 @@
  * Speed & Class Scoring Module
  * Calculates scores based on speed figures and class level analysis
  *
- * Score Breakdown (v2.0 - Industry-Aligned Weights):
- * - Speed Figure Score: 0-48 points (based on Beyer/TimeformUS figures)
+ * Score Breakdown (v3.0 - Speed Weight Rebalance):
+ * - Speed Figure Score: 0-90 points (based on Beyer/TimeformUS figures)
  * - Class Level Score: 0-32 points (based on class movement and success)
  *
- * Total: 0-80 points (33.3% of 240 base)
+ * Total: 0-122 points (39% of 313 base)
  *
- * NOTE: Speed/Class increased from 50 to 80 points to reflect industry research
- * showing this is the most predictive factor in handicapping.
+ * v3.0 CHANGES (Phase 3 - Speed Weight Increase):
+ * - Speed figures increased from 48 to 90 pts (was 16.5%, now ~29%)
+ * - Industry standard weights speed at 30-40%, this is most predictive factor
+ * - New granular tiers based on par differential
  */
 
 import type { HorseEntry, RaceHeader, PastPerformance, RaceClassification } from '../../types/drf';
@@ -353,10 +355,10 @@ function getAverageFigure(pastPerformances: PastPerformance[], count: number = 5
  * not given neutral scores that reward unknowns.
  */
 export function getSpeedConfidenceMultiplier(figureCount: number): number {
-  if (figureCount >= 3) return 1.0;    // Full confidence
-  if (figureCount === 2) return 0.75;  // 75% confidence
+  if (figureCount >= 3) return 1.0; // Full confidence
+  if (figureCount === 2) return 0.75; // 75% confidence
   if (figureCount === 1) return 0.375; // 37.5% confidence
-  return 0.25;                          // 25% baseline for no figures
+  return 0.25; // 25% baseline for no figures
 }
 
 /**
@@ -380,9 +382,23 @@ function countSpeedFigures(pastPerformances: PastPerformance[], count: number = 
 // SPEED FIGURE SCORING
 // ============================================================================
 
+/** Maximum speed figure score (v3.0: increased from 48 to 90) */
+export const MAX_SPEED_SCORE = 90;
+
 /**
- * Calculate RAW speed figure score (0-48 points) before confidence adjustment
+ * Calculate RAW speed figure score (0-90 points) before confidence adjustment
  * Based on comparison to par for today's class
+ *
+ * v3.0 NEW TIERS (90 max):
+ * ≥ +10 differential to par → 90 pts
+ * +7 to +9 → 80 pts
+ * +4 to +6 → 70 pts
+ * +1 to +3 (slightly above par) → 60 pts
+ * 0 (at par) → 50 pts
+ * -1 to -3 → 40 pts
+ * -4 to -6 → 30 pts
+ * -7 to -9 → 20 pts
+ * ≤ -10 → 10 pts
  */
 function calculateRawSpeedScore(
   figure: number,
@@ -394,40 +410,48 @@ function calculateRawSpeedScore(
   let reasoning: string;
 
   if (differential >= 10) {
-    score = 48;
-    reasoning = `${figure} Beyer (${differential}+ above par ${parForClass})`;
-  } else if (differential >= 5) {
-    score = 40;
-    reasoning = `${figure} Beyer (${differential} above par ${parForClass})`;
-  } else if (differential >= 0) {
-    score = 32;
+    score = 90;
+    reasoning = `${figure} Beyer (+${differential} above par ${parForClass}) - Elite`;
+  } else if (differential >= 7) {
+    score = 80;
+    reasoning = `${figure} Beyer (+${differential} above par ${parForClass}) - Strong`;
+  } else if (differential >= 4) {
+    score = 70;
+    reasoning = `${figure} Beyer (+${differential} above par ${parForClass}) - Good`;
+  } else if (differential >= 1) {
+    score = 60;
+    reasoning = `${figure} Beyer (+${differential} above par ${parForClass}) - Above par`;
+  } else if (differential === 0) {
+    score = 50;
     reasoning = `${figure} Beyer (at par ${parForClass})`;
-  } else if (differential >= -5) {
-    score = 24;
+  } else if (differential >= -3) {
+    score = 40;
     reasoning = `${figure} Beyer (${Math.abs(differential)} below par ${parForClass})`;
-  } else if (differential >= -10) {
-    score = 16;
+  } else if (differential >= -6) {
+    score = 30;
+    reasoning = `${figure} Beyer (${Math.abs(differential)} below par ${parForClass})`;
+  } else if (differential >= -9) {
+    score = 20;
     reasoning = `${figure} Beyer (${Math.abs(differential)} below par ${parForClass})`;
   } else {
-    score = 8;
-    reasoning = `${figure} Beyer (significantly below par ${parForClass})`;
+    score = 10;
+    reasoning = `${figure} Beyer (${Math.abs(differential)} below par ${parForClass}) - Below par`;
   }
 
   return { score, reasoning };
 }
 
 /**
- * Calculate speed figure score (0-48 points)
+ * Calculate speed figure score (0-90 points)
  * Based on comparison to par for today's class
  *
- * PHASE 2: Applies confidence multiplier based on figure availability.
- * Rescaled from 30 max to 48 max (scale factor: 80/50 = 1.6)
+ * v3.0: Increased from 48 to 90 max to weight speed at ~29% (industry standard 30-40%)
  *
- * SCORING WITH CONFIDENCE:
- * - No Beyer figures → 12 pts (25% of max 48, penalized for unknown)
- * - Only 1 figure in last 3 → score capped at 18 pts max
- * - 2 figures in last 3 → score capped at 36 pts max
- * - 3+ figures in last 3 → full 48 pts max
+ * SCORING WITH CONFIDENCE (Phase 2 still applies):
+ * - No Beyer figures → 22.5 pts (25% of max 90, penalized for unknown)
+ * - Only 1 figure in last 3 → score capped at 33.75 pts max
+ * - 2 figures in last 3 → score capped at 67.5 pts max
+ * - 3+ figures in last 3 → full 90 pts max
  */
 function calculateSpeedFigureScore(
   bestRecent: number | null,
@@ -442,17 +466,18 @@ function calculateSpeedFigureScore(
   const multiplier = getSpeedConfidenceMultiplier(figureCount);
 
   if (figure === null) {
-    // PHASE 2: Penalized score for no data (12 pts = 25% of 48, not neutral 24)
+    // PHASE 2: Penalized score for no data (22.5 pts = 25% of 90, not neutral)
+    const penalizedScore = Math.round(MAX_SPEED_SCORE * 0.25);
     return {
-      score: 12,
-      reasoning: `No speed figures available (penalized: 12/${48} pts)`,
+      score: penalizedScore,
+      reasoning: `No speed figures available (penalized: ${penalizedScore}/${MAX_SPEED_SCORE} pts)`,
       confidenceMultiplier: multiplier,
     };
   }
 
   // Calculate raw score based on figure quality
   const rawResult = calculateRawSpeedScore(figure, parForClass);
-  let rawScore = rawResult.score;
+  const rawScore = rawResult.score;
   let reasoning = rawResult.reasoning;
 
   // PHASE 2: Apply confidence multiplier to cap score based on data availability
@@ -465,7 +490,7 @@ function calculateSpeedFigureScore(
 
   // Add confidence info to reasoning if less than full confidence
   if (multiplier < 1.0) {
-    const maxPossible = Math.round(48 * multiplier);
+    const maxPossible = Math.round(MAX_SPEED_SCORE * multiplier);
     reasoning += ` | Confidence: ${Math.round(multiplier * 100)}% (${figureCount} fig${figureCount === 1 ? '' : 's'}, max ${maxPossible} pts)`;
   }
 
@@ -771,7 +796,12 @@ export function calculateSpeedClassScore(
 
   // Calculate speed score using effective (normalized + variant-adjusted) figure
   // PHASE 2: Pass figure count for confidence-based scoring
-  const speedResult = calculateSpeedFigureScore(effectiveFigure, averageFigure, parForClass, figureCount);
+  const speedResult = calculateSpeedFigureScore(
+    effectiveFigure,
+    averageFigure,
+    parForClass,
+    figureCount
+  );
 
   // Calculate class score
   const classResult = calculateClassScore(currentClass, horse.pastPerformances, classMovement);
@@ -836,9 +866,13 @@ export function calculateSpeedClassScore(
   }
 
   // Apply shipper adjustment to speed score (±2-5 points max)
+  // v3.0: Updated max from 48 to 90
   const adjustedSpeedScore = Math.max(
     0,
-    Math.min(48, speedResult.score + seasonalAdjustment + Math.round(shipperAdjustment * 0.5))
+    Math.min(
+      MAX_SPEED_SCORE,
+      speedResult.score + seasonalAdjustment + Math.round(shipperAdjustment * 0.5)
+    )
   );
 
   // Build variant adjustment info for result
@@ -858,7 +892,7 @@ export function calculateSpeedClassScore(
   const speedConfidence = {
     figureCount,
     multiplier: speedConfidenceMultiplier,
-    maxPossibleScore: Math.round(48 * speedConfidenceMultiplier),
+    maxPossibleScore: Math.round(MAX_SPEED_SCORE * speedConfidenceMultiplier),
     penaltyApplied: speedConfidenceMultiplier < 1.0,
   };
 

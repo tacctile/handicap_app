@@ -2,8 +2,13 @@
  * Post Position Scoring Module
  * Calculates post position advantage based on track-specific bias data
  *
- * Score Range: 0-30 points (v2.0 - reduced from 45)
- * 12.5% of 240 base score - Track-dependent situational factor
+ * Score Range: 0-12 points (v3.0 - reduced from 20)
+ * 3.8% of 313 base score - Track-dependent situational factor
+ *
+ * v3.0 CHANGES (Phase 3 - Speed Weight Rebalance):
+ * - Reduced from 20 to 12 pts to compensate for speed increase
+ * - Scale factor: 0.6 (12/20)
+ * - Industry research shows post position impact is 3-8%, not 10%
  *
  * Sprint (6F-7F) Scoring:
  * - Uses track's actual post position win percentages
@@ -43,21 +48,21 @@ export interface PostPositionScoreResult {
 
 /**
  * Maximum score for post position
- * v2.5: Reduced from 30 to 20 pts per diagnostic findings.
- * Industry research shows post position impact is 3-8%, not 10%.
+ * v3.0: Reduced from 20 to 12 pts per Phase 3 speed rebalance.
+ * Scale factor: 0.6 (12/20)
  */
-const MAX_POST_SCORE = 20;
+const MAX_POST_SCORE = 12;
 
 /**
  * Base scores for different post quality tiers
- * v2.5: Rescaled from 30 max to 20 max (scale factor: 20/30 = 0.6667)
+ * v3.0: Rescaled from 20 max to 12 max (scale factor: 12/20 = 0.6)
  */
 const POST_TIERS = {
-  golden: 18, // Optimal post positions (was 27)
-  good: 14, // Favorable posts (was 21)
-  neutral: 11, // Average posts (was 16)
-  poor: 7, // Disadvantaged posts (was 11)
-  terrible: 3, // Severely disadvantaged (was 5)
+  golden: 11, // Optimal post positions (was 18 * 0.6 = 10.8, rounded up)
+  good: 8, // Favorable posts (was 14 * 0.6 = 8.4, rounded down)
+  neutral: 7, // Average posts (was 11 * 0.6 = 6.6, rounded up)
+  poor: 4, // Disadvantaged posts (was 7 * 0.6 = 4.2, rounded down)
+  terrible: 2, // Severely disadvantaged (was 3 * 0.6 = 1.8, rounded up)
 } as const;
 
 // Generic post position preferences when no track data
@@ -106,17 +111,17 @@ function calculateFieldSizeAdjustment(
   const outsideRank = postPosition - 5;
 
   // Large field penalty for outside posts
-  // v2.5: Rescaled penalties for 20 max (from -7/-3 to -5/-2)
+  // v3.0: Rescaled penalties for 12 max (from -5/-2 to -3/-1)
   if (fieldSize >= FIELD_SIZE.large) {
     // Sprints hurt outside posts more
-    const penalty = category === 'sprint' ? outsideRank * -1 : outsideRank * -0.7;
-    return Math.max(-5, penalty);
+    const penalty = category === 'sprint' ? outsideRank * -0.6 : outsideRank * -0.4;
+    return Math.max(-3, penalty);
   }
 
   // Medium field - moderate penalty
   if (fieldSize >= FIELD_SIZE.medium) {
-    const penalty = category === 'sprint' ? outsideRank * -0.5 : outsideRank * -0.25;
-    return Math.max(-2, penalty);
+    const penalty = category === 'sprint' ? outsideRank * -0.3 : outsideRank * -0.15;
+    return Math.max(-1, penalty);
   }
 
   // Small field - minimal penalty
@@ -190,8 +195,9 @@ function calculateTrackSpecificScore(
   }
 
   // Apply multiplier to refine score
+  // v3.0: Floor updated from 5 to 2 to match new terrible tier
   score = Math.round(score * multiplier);
-  score = Math.max(5, Math.min(MAX_POST_SCORE, score));
+  score = Math.max(2, Math.min(MAX_POST_SCORE, score));
 
   return { score, multiplier, isGolden };
 }
@@ -248,12 +254,12 @@ function buildReasoning(
 /**
  * Apply turf-specific adjustments
  * Inside posts have more value on turf due to ground saved
- * v2.5: Rescaled from 30 max to 20 max (scale factor: 20/30 = 0.6667)
+ * v3.0: Rescaled from 20 max to 12 max (scale factor: 12/20 = 0.6)
  */
 function applyTurfAdjustment(
   baseScore: number,
   postPosition: number,
-  category: 'sprint' | 'route',
+  _category: 'sprint' | 'route',
   trackBiasApplied: boolean
 ): number {
   // If track-specific bias is already applied, don't double-adjust
@@ -261,9 +267,9 @@ function applyTurfAdjustment(
     return baseScore;
   }
 
-  // Inside posts get bonus on turf (v2.5: rescaled from +3 to +2)
+  // Inside posts get bonus on turf (v3.0: rescaled from +2 to +1)
   if (postPosition <= 3) {
-    return Math.min(MAX_POST_SCORE, baseScore + 2);
+    return Math.min(MAX_POST_SCORE, baseScore + 1);
   }
 
   // Middle posts are neutral
@@ -271,9 +277,9 @@ function applyTurfAdjustment(
     return baseScore;
   }
 
-  // Outside posts penalized more on turf (ground loss) (v2.5: rescaled from -2/-1 to -1/-1)
-  const outsidePenalty = category === 'route' ? 1 : 1;
-  return Math.max(2, baseScore - outsidePenalty);
+  // Outside posts penalized more on turf (ground loss) (v3.0: rescaled -1)
+  const outsidePenalty = 1;
+  return Math.max(1, baseScore - outsidePenalty);
 }
 
 // ============================================================================

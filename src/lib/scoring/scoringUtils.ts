@@ -20,9 +20,9 @@ export const MIN_SCORE = 0;
 
 /**
  * Maximum base score before overlay
- * v2.5: Updated from 240 to 290 per Favorite Fix rebalancing
+ * v3.0: Updated from 290 to 313 per Phase 3 Speed Weight Rebalance
  */
-export const MAX_BASE_SCORE = 290;
+export const MAX_BASE_SCORE = 313;
 
 /** Maximum overlay adjustment */
 export const MAX_OVERLAY_POSITIVE = 50;
@@ -34,21 +34,23 @@ export const MIN_OVERLAY_NEGATIVE = -50;
 export const MAX_PROTOCOL_BONUS = 60;
 
 /** Maximum final score (base + overlay) */
-export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 340
+export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 363
 
 /** Maximum display score (for UI - uses base score) */
-export const MAX_DISPLAY_SCORE = 290;
+export const MAX_DISPLAY_SCORE = 313;
 
-// Category maximums (v2.0 - Industry-Aligned Weights)
+// Category maximums (v3.0 - Speed Weight Rebalance)
 export const SCORE_CATEGORY_LIMITS = {
-  connections: 25, // 10.4% - Modifier, not primary driver
-  postPosition: 30, // 12.5% - Track-dependent situational factor
-  speedClass: 80, // 33.3% - Most predictive factor per industry research
-  form: 40, // 16.7% - Recent performance patterns
-  equipment: 20, // 8.3% - Speculative, fine-tuning only
-  pace: 45, // 18.8% - High predictive value for race shape
+  connections: 27, // 8.6% - Modifier, not primary driver
+  postPosition: 12, // 3.8% - v3.0: reduced from 20
+  speedClass: 122, // 39% - v3.0: Speed 90 + Class 32
+  form: 50, // 16.0% - Recent performance patterns
+  equipment: 8, // 2.6% - v3.0: reduced from 12
+  pace: 45, // 14.4% - High predictive value for race shape
   breeding: 15,
   classHiddenDrops: 10,
+  trainerPatterns: 10, // v3.0: reduced from 15
+  comboPatterns: 4, // v3.0: reduced from 6
 } as const;
 
 // ============================================================================
@@ -280,7 +282,7 @@ export function enforceCategoryBoundaries(score: number, categoryMax: number): n
 
 /**
  * Format score for display
- * Shows "240+" for scores exceeding display max
+ * Shows "313+" for scores exceeding display max
  *
  * @param score - The score to format
  * @returns Formatted score string
