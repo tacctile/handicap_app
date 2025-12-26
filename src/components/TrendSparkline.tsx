@@ -137,11 +137,8 @@ export function TrendSparkline({
         <LineChart data={chartData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
           <YAxis
             hide
-            domain={
-              invertYAxis
-                ? [maxValue + padding, Math.max(0, minValue - padding)] // Inverted for finish positions
-                : [Math.max(0, minValue - padding), maxValue + padding]
-            }
+            domain={[Math.max(0, minValue - padding), maxValue + padding]}
+            reversed={invertYAxis}
           />
           <Line
             type="monotone"
