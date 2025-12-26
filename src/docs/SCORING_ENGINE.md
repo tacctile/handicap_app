@@ -6,6 +6,16 @@
 
 ---
 
+> ⚠️ **IMPORTANT: Algorithm Version Notice**
+>
+> The current implementation uses **Algorithm v3.1** with a **328-point base score** and **±40 overlay adjustment**.
+>
+> The detailed category sections below (Categories 1-6) document **v2.0 legacy scoring logic** for historical reference. For current implementation details, see **[ALGORITHM_V3_SUMMARY.md](./ALGORITHM_V3_SUMMARY.md)**.
+>
+> The summary table immediately below reflects the current v3.1 weights.
+
+---
+
 ## SCORING SYSTEM ARCHITECTURE
 
 ### Mathematical Foundation Principles

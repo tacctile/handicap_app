@@ -292,52 +292,46 @@ Small:  12px / 16px
 
 ## The Algorithm
 
+> **Current Version: v3.1 (Phase 6)** — See `src/docs/ALGORITHM_V3_SUMMARY.md` for complete specification.
+
 ### Scoring Structure
 
 | Component | Points |
 |-----------|--------|
-| Base Score | 0-240 (6 categories) |
-| DRF Overlay | ±50 (race-day adjustments) |
-| **Final Score** | **0-250** (overflow = confidence boost) |
+| Base Score | 0-328 (15 categories) |
+| Overlay Adjustment | ±40 (race-day adjustments) |
+| **Final Score** | **0-368** |
 
-### Base Score Categories
+### Base Score Categories (328 pts total)
 
-**Category 1: Elite Connections (50 pts max)**
-- Trainer: 0-35 pts
-- Jockey: 0-15 pts
+**Core Categories (271 pts):**
+- Speed & Class: 0-122 pts (Speed 90 + Class 32)
+- Form: 0-50 pts (Recent form, layoff, consistency)
+- Pace: 0-45 pts (Pace scenario fit, tactical advantages)
+- Connections: 0-27 pts (Trainer + Jockey + Partnership)
+- Distance/Surface: 0-20 pts (Turf/Wet/Distance affinities)
+- Odds Factor: 0-15 pts (Market wisdom for favorites)
+- Post Position: 0-12 pts (Track-dependent bias)
+- Trainer Patterns: 0-10 pts (Situational trainer bonuses)
+- Equipment: 0-8 pts (Equipment changes)
 
-**Category 2: Post Position & Track Bias (45 pts max)**
-- Post Position: 0-30 pts
-- Bias Alignment: 0-15 pts
+**Bonus Categories (57 pts):**
+- Track Specialist: 0-6 pts (Proven success at today's track)
+- Trainer Surface/Distance: 0-6 pts (Trainer specialization)
+- Combo Patterns: 0-4 pts (Multiple positive signals aligned)
+- Weight Change: 0-1 pt (Significant weight drops)
+- P3 Refinements: ±2 pts (Age factor, Sire's Sire)
 
-**Category 3: Speed Figures & Class (50 pts max)**
-- Speed Figures: 0-30 pts
-- Class Level: 0-20 pts
+### Overlay Adjustments (±40 pts)
 
-**Category 4: Form Cycle & Conditioning (30 pts max)**
-- Recent Form: 0-15 pts
-- Layoff Impact: 0-10 pts
-- Consistency: 0-5 pts
-
-**Category 5: Equipment & Medication (25 pts max)**
-- Equipment Changes: 0-15 pts
-- Medication: 0-5 pts
-- Shoeing: 0-5 pts
-
-**Category 6: Pace & Tactical (40 pts max)**
-- Pace Scenario Fit: 0-25 pts
-- Tactical Advantages: 0-15 pts
-
-### DRF Overlay Adjustments
-
-Applied after base scoring:
-- Pace Dynamics: ±20 pts
-- Form Cycle Specifics: ±15 pts
-- Trip Analysis: ±12 pts
-- Class Movement: ±15 pts
-- Connection Edges: ±10 pts
-- Distance/Surface: ±8 pts
-- Head-to-Head: ±8 pts
+Applied after base scoring (Phase 5: reduced from ±50):
+- Pace Dynamics & Bias: ±10 pts
+- Form Cycle & Conditioning: ±15 pts
+- Trip Analysis & Trouble: ±10 pts
+- Class Movement: ±12 pts
+- Connection Edges: ±8 pts
+- Distance/Surface Optimization: ±6 pts
+- Head-to-Head Matchups: ±6 pts
 
 ### Betting Tiers
 
@@ -978,13 +972,17 @@ The methodology documentation in `src/docs/` represents tens of hours of handica
 MASTER_CONTEXT.md              # Root — project definition
 src/docs/
 ├── METHODOLOGY_INDEX.md       # Entry point for all methodology
-├── SCORING_ENGINE.md          # 6-category base scoring (0-240)
+├── ALGORITHM_V3_SUMMARY.md    # Current v3.1 algorithm (328-pt base, 15 categories)
+├── SCORING_ENGINE.md          # Detailed scoring reference (v2.0 legacy + v3.1 notes)
 ├── DRF_FIELD_MAP.md           # All 1,435 DRF fields mapped
-├── OVERLAY_SYSTEM.md          # ±50 race-day adjustments
+├── OVERLAY_SYSTEM.md          # ±40 race-day adjustments
 ├── EDGE_CASE_PROTOCOLS.md     # Diamond, Nuclear, Lightly Raced, Late-Breaking
 ├── BETTING_TIERS.md           # Three-tier structure, bet construction
 └── TRACK_INTELLIGENCE.md      # Track schema, integration
 
+src/lib/
+├── drfParser.ts               # DRF parsing implementation
+└── scoring/index.ts           # Scoring calculations (main entry point)
 ```
 
 ## Enterprise Quality Standards

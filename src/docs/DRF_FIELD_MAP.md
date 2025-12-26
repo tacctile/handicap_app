@@ -198,18 +198,19 @@
 
 ---
 
-## SECTION 3: LIFETIME PERFORMANCE RECORDS (Fields 62-101)
+## SECTION 3: LIFETIME PERFORMANCE RECORDS (Fields 70-101)
 
 ### Overall Lifetime Record
 
+> **Note:** Lifetime stats are located at Fields 97-101, not Fields 62-69 as older specifications may indicate. This has been verified against actual DRF file data.
+
 | Field | Content           | Scoring Integration   |
 | ----- | ----------------- | --------------------- |
-| 62    | Lifetime Starts   | Experience level      |
-| 63    | Lifetime Wins     | Win consistency       |
-| 64    | Lifetime Places   | ITM consistency       |
-| 65    | Lifetime Shows    | ITM consistency       |
-| 66-68 | Reserved          | —                     |
-| 69    | Lifetime Earnings | Class level indicator |
+| 97    | Lifetime Starts   | Experience level      |
+| 98    | Lifetime Wins     | Win consistency       |
+| 99    | Lifetime Places   | ITM consistency       |
+| 100   | Lifetime Shows    | ITM consistency       |
+| 101   | Lifetime Earnings | Class level indicator |
 
 ### Current Year Record
 
@@ -245,25 +246,31 @@
 
 These fields contain the horse's record on specific surfaces and at specific distances. This is fundamental "does this horse win at this distance/surface?" data.
 
+> **Implementation Note:** Fields 85-96 use a YEAR-prefixed format. Field 85 contains the year (e.g., 2025), so actual turf data starts at Field 86. The parser skips the year field.
+
 | Field  | Content          | Scoring Integration                          |
 | ------ | ---------------- | -------------------------------------------- |
-| 85     | Turf Starts      | Surface preference analysis                  |
-| 86     | Turf Wins        | Turf win rate calculation                    |
-| 87     | Turf Places      | Turf ITM analysis                            |
-| 88     | Turf Shows       | Turf ITM analysis                            |
-| 89     | Wet Track Starts | Wet track competency                         |
-| 90     | Wet Track Wins   | Wet track win rate                           |
-| 91     | Wet Track Places | Wet track ITM analysis                       |
-| 92     | Wet Track Shows  | Wet track ITM analysis                       |
-| 93     | Distance Starts  | Distance preference at today's race distance |
-| 94     | Distance Wins    | Distance win rate                            |
-| 95     | Distance Places  | Distance ITM analysis                        |
-| 96     | Distance Shows   | Distance ITM analysis                        |
-| 97-101 | Lifetime Totals  | Summary verification                         |
+| 85     | Year Prefix      | Skip this field (contains year like 2025)    |
+| 86     | Turf Starts      | Surface preference analysis                  |
+| 87     | Turf Wins        | Turf win rate calculation                    |
+| 88     | Turf Places      | Turf ITM analysis                            |
+| 89     | Turf Shows       | Turf ITM analysis                            |
+
+> **⚠️ UNRESOLVED: Wet Track & Distance Records**
+>
+> The wet track (Fields 89-92 per original spec) and distance record field locations have **not been definitively verified** in actual DRF file data. The parser currently uses placeholder indices that return 0. This is a known limitation.
+>
+> Wet track record and distance record analysis relies on past performance data rather than these summary fields.
+
+| Field  | Content          | Status                                       |
+| ------ | ---------------- | -------------------------------------------- |
+| 89-92  | Wet Track Record | UNRESOLVED - placeholder returns 0           |
+| 93-96  | Distance Record  | UNRESOLVED - placeholder returns 0           |
+| 97-101 | Lifetime Totals  | Verified - see Overall Lifetime Record above |
 
 ### Scoring Application
 
-**Lifetime Starts (Field 62):**
+**Lifetime Starts (Field 97):**
 
 - Under 8 starts: Triggers Lightly Raced Protocol
 - Experience adjustments for maiden analysis
@@ -275,7 +282,7 @@ These fields contain the horse's record on specific surfaces and at specific dis
 - Track ITM rate assessment
 - Course specialist identification
 
-**Earnings (Fields 69, 74, 79, 84):**
+**Earnings (Fields 74, 79, 84, 101):**
 
 - Class level baseline
 - Class movement analysis

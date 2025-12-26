@@ -43,12 +43,12 @@ src/docs/
          │
          ▼
 ┌─────────────────┐
-│ SCORING ENGINE  │ ← Calculates 0-240 base per SCORING_ENGINE.md
+│ SCORING ENGINE  │ ← Calculates 0-328 base per ALGORITHM_V3_SUMMARY.md
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│ OVERLAY SYSTEM  │ ← Applies ±50 adjustments per OVERLAY_SYSTEM.md
+│ OVERLAY SYSTEM  │ ← Applies ±40 adjustments per OVERLAY_SYSTEM.md
 └────────┬────────┘
          │
          ▼
@@ -127,19 +127,19 @@ src/docs/
 
 ### 3. OVERLAY_SYSTEM.md
 
-**Purpose:** Defines the ±50 point race-day adjustment system
+**Purpose:** Defines the ±40 point race-day adjustment system (Phase 5: reduced from ±50)
 
 **Key Contents:**
 
-- Section A: Pace Dynamics & Bias (±20 pts)
+- Section A: Pace Dynamics & Bias (±10 pts, reduced from ±20)
 - Section B: Form Cycle & Conditioning (±15 pts)
-- Section C: Trip Analysis & Trouble (±12 pts)
-- Section D: Class Movement & Competition (±15 pts)
-- Section E: Connection Micro-Edges (±10 pts)
-- Section F: Distance & Surface Optimization (±8 pts)
-- Section G: Head-to-Head & Tactical Matchups (±8 pts)
+- Section C: Trip Analysis & Trouble (±10 pts, reduced from ±12)
+- Section D: Class Movement & Competition (±12 pts, reduced from ±15)
+- Section E: Connection Micro-Edges (±8 pts, reduced from ±10)
+- Section F: Distance & Surface Optimization (±6 pts, reduced from ±8)
+- Section G: Head-to-Head & Tactical Matchups (±6 pts, reduced from ±8)
 - Section H: Market Intelligence (confidence modifier)
-- Overlay cap and overflow handling
+- Overlay cap (±40) and overflow handling
 - Pace Pressure Index (PPI) calculation
 
 **When to Reference:** Race-specific adjustments, pace analysis, trip note interpretation
@@ -223,6 +223,18 @@ Final Score = Base Score (0-328) + Overlay Adjustment (±40)
 Theoretical Range: 0 to 368
 Practical Range: 50 to 320
 Betting Threshold: 140+ minimum
+
+Base Score Categories (328 pts total):
+- Speed/Class: 122 pts (37.2%)
+- Form: 50 pts (15.2%)
+- Pace: 45 pts (13.7%)
+- Connections: 27 pts (8.2%)
+- Distance/Surface: 20 pts (6.1%)
+- Odds Factor: 15 pts (4.6%)
+- Post Position: 12 pts (3.7%)
+- Trainer Patterns: 10 pts (3.0%)
+- Equipment: 8 pts (2.4%)
+- Other bonuses: 19 pts (Track Specialist, Trainer S/D, Combos, Weight, P3)
 
 See ALGORITHM_V3_SUMMARY.md for complete category breakdown.
 ```
@@ -332,7 +344,8 @@ Recommended update frequency:
 **Related Files:**
 
 - `src/lib/drfParser.ts` - DRF parsing implementation
-- `src/lib/scoringEngine.ts` - Scoring calculations
+- `src/lib/scoring/index.ts` - Scoring calculations (main entry point)
+- `src/lib/scoring/` - Scoring module directory (all category modules)
 - `src/data/tracks/` - Track database files
 - `MASTER_CONTEXT.md` - Project specification
 
