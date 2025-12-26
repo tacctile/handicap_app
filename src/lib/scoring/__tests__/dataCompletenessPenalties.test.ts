@@ -13,7 +13,7 @@ import { describe, it, expect } from 'vitest';
 import { getSpeedConfidenceMultiplier } from '../speedClass';
 import { getFormConfidenceMultiplier } from '../form';
 import { getPaceConfidenceMultiplier } from '../pace';
-import type { HorseEntry } from '../../../types/drf';
+import type { HorseEntry, PastPerformance } from '../../../types/drf';
 import { createDefaultTrainerCategoryStats } from '../../../types/drf';
 
 // ============================================================================
