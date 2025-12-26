@@ -157,38 +157,69 @@ const DRF_COLUMNS = {
   PREVIOUS_YEAR_SHOWS: { index: 77, name: 'Previous Year Shows' }, // Field 78
   PREVIOUS_YEAR_EARNINGS: { index: 78, name: 'Previous Year Earnings' }, // Field 79
 
-  // Track-Specific Record (Fields 80-84)
-  TRACK_STARTS: { index: 79, name: 'Track Starts' }, // Field 80
-  TRACK_WINS: { index: 80, name: 'Track Wins' }, // Field 81
-  TRACK_PLACES: { index: 81, name: 'Track Places' }, // Field 82
-  TRACK_SHOWS: { index: 82, name: 'Track Shows' }, // Field 83
-  TRACK_EARNINGS: { index: 83, name: 'Track Earnings' }, // Field 84
+  // =========================================================================
+  // TURF LIFETIME RECORD (Fields 80-84, indices 79-83)
+  // CORRECTED via forensic analysis of PEN0821.DRF - verified against raw data
+  // Previous mapping was WRONG: fields 84-87 contain YEAR data, not turf stats!
+  // =========================================================================
+  TURF_STARTS: { index: 79, name: 'Turf Lifetime Starts' }, // Field 80
+  TURF_WINS: { index: 80, name: 'Turf Lifetime Wins' }, // Field 81
+  TURF_PLACES: { index: 81, name: 'Turf Lifetime Places' }, // Field 82
+  TURF_SHOWS: { index: 82, name: 'Turf Lifetime Shows' }, // Field 83
+  TURF_EARNINGS: { index: 83, name: 'Turf Lifetime Earnings' }, // Field 84
 
   // =========================================================================
-  // TURF/WET/DISTANCE RECORDS (Fields 85-96, indices 84-95)
-  // Per DRF specification: Horse's record on turf, wet tracks, and at
-  // today's distance. These are P0 critical handicapping signals.
+  // YEARLY RECORDS (Fields 85-96, indices 84-95)
+  // These contain year-by-year performance breakdowns, NOT turf/wet/distance
+  // Field structure: [Year, Starts, Wins, Places, Shows, Earnings]
   // =========================================================================
-  // Turf Record (Fields 85-88)
-  TURF_STARTS: { index: 84, name: 'Turf Starts' }, // Field 85
-  TURF_WINS: { index: 85, name: 'Turf Wins' }, // Field 86
-  TURF_PLACES: { index: 86, name: 'Turf Places' }, // Field 87
-  TURF_SHOWS: { index: 87, name: 'Turf Shows' }, // Field 88
+  // Current Year Record (e.g., 2025)
+  CURRENT_YEAR_FIELD: { index: 84, name: 'Current Year (e.g., 2025)' }, // Field 85
+  CURRENT_YEAR_STARTS_ALT: { index: 85, name: 'Current Year Starts (alt)' }, // Field 86
+  CURRENT_YEAR_WINS_ALT: { index: 86, name: 'Current Year Wins (alt)' }, // Field 87
+  CURRENT_YEAR_PLACES_ALT: { index: 87, name: 'Current Year Places (alt)' }, // Field 88
+  CURRENT_YEAR_SHOWS_ALT: { index: 88, name: 'Current Year Shows (alt)' }, // Field 89
+  CURRENT_YEAR_EARNINGS_ALT: { index: 89, name: 'Current Year Earnings (alt)' }, // Field 90
 
-  // Wet Track Record (Fields 89-92)
-  WET_STARTS: { index: 88, name: 'Wet Track Starts' }, // Field 89
-  WET_WINS: { index: 89, name: 'Wet Track Wins' }, // Field 90
-  WET_PLACES: { index: 90, name: 'Wet Track Places' }, // Field 91
-  WET_SHOWS: { index: 91, name: 'Wet Track Shows' }, // Field 92
+  // Previous Year Record (e.g., 2024)
+  PREVIOUS_YEAR_FIELD: { index: 90, name: 'Previous Year (e.g., 2024)' }, // Field 91
+  PREV_YEAR_STARTS_ALT: { index: 91, name: 'Prev Year Starts (alt)' }, // Field 92
+  PREV_YEAR_WINS_ALT: { index: 92, name: 'Prev Year Wins (alt)' }, // Field 93
+  PREV_YEAR_PLACES_ALT: { index: 93, name: 'Prev Year Places (alt)' }, // Field 94
+  PREV_YEAR_SHOWS_ALT: { index: 94, name: 'Prev Year Shows (alt)' }, // Field 95
+  PREV_YEAR_EARNINGS_ALT: { index: 95, name: 'Prev Year Earnings (alt)' }, // Field 96
 
-  // Current Distance Record (Fields 93-96)
-  DISTANCE_STARTS: { index: 92, name: 'Distance Starts' }, // Field 93
-  DISTANCE_WINS: { index: 93, name: 'Distance Wins' }, // Field 94
-  DISTANCE_PLACES: { index: 94, name: 'Distance Places' }, // Field 95
-  DISTANCE_SHOWS: { index: 95, name: 'Distance Shows' }, // Field 96
+  // =========================================================================
+  // LIFETIME OVERALL RECORD (Fields 97-101, indices 96-100)
+  // This is the complete career record
+  // =========================================================================
+  LIFETIME_STARTS_TOTAL: { index: 96, name: 'Lifetime Total Starts' }, // Field 97
+  LIFETIME_WINS_TOTAL: { index: 97, name: 'Lifetime Total Wins' }, // Field 98
+  LIFETIME_PLACES_TOTAL: { index: 98, name: 'Lifetime Total Places' }, // Field 99
+  LIFETIME_SHOWS_TOTAL: { index: 99, name: 'Lifetime Total Shows' }, // Field 100
+  LIFETIME_EARNINGS_TOTAL: { index: 100, name: 'Lifetime Total Earnings' }, // Field 101
 
-  // Remaining fields 97-101 contain lifetime/yearly summary verification data
-  // (not parsed here as they duplicate earlier lifetime stats)
+  // =========================================================================
+  // BACKWARDS COMPATIBILITY ALIASES
+  // These aliases maintain backwards compatibility with code that uses old names
+  // =========================================================================
+  // "Track" stats at 79-83 are actually TURF stats - alias for compatibility
+  TRACK_STARTS: { index: 79, name: 'Track Starts (alias for Turf)' },
+  TRACK_WINS: { index: 80, name: 'Track Wins (alias for Turf)' },
+  TRACK_PLACES: { index: 81, name: 'Track Places (alias for Turf)' },
+  TRACK_SHOWS: { index: 82, name: 'Track Shows (alias for Turf)' },
+
+  // WET and DISTANCE stats are NOT stored at fixed locations in DRF files.
+  // These must be computed from past performance data. Setting to index -1
+  // to indicate they need special handling.
+  WET_STARTS: { index: -1, name: 'Wet Starts (computed from PP)' },
+  WET_WINS: { index: -1, name: 'Wet Wins (computed from PP)' },
+  WET_PLACES: { index: -1, name: 'Wet Places (computed from PP)' },
+  WET_SHOWS: { index: -1, name: 'Wet Shows (computed from PP)' },
+  DISTANCE_STARTS: { index: -1, name: 'Distance Starts (computed from PP)' },
+  DISTANCE_WINS: { index: -1, name: 'Distance Wins (computed from PP)' },
+  DISTANCE_PLACES: { index: -1, name: 'Distance Places (computed from PP)' },
+  DISTANCE_SHOWS: { index: -1, name: 'Distance Shows (computed from PP)' },
 
   // =========================================================================
   // PAST PERFORMANCE DATES (Fields 102-113, indices 101-112)
@@ -1716,41 +1747,38 @@ function parseHorseEntry(fields: string[], lineIndex: number): HorseEntry {
     getField(fields, DRF_COLUMNS.PREVIOUS_YEAR_EARNINGS.index)
   );
 
-  // Track-specific statistics (Fields 80-84)
-  horse.trackStarts = parseIntSafe(getField(fields, DRF_COLUMNS.TRACK_STARTS.index));
-  horse.trackWins = parseIntSafe(getField(fields, DRF_COLUMNS.TRACK_WINS.index));
-  horse.trackPlaces = parseIntSafe(getField(fields, DRF_COLUMNS.TRACK_PLACES.index));
-  horse.trackShows = parseIntSafe(getField(fields, DRF_COLUMNS.TRACK_SHOWS.index));
-
-  // Turf Record (Fields 85-88) - P0 critical handicapping data
+  // =========================================================================
+  // TURF LIFETIME RECORD (Fields 80-84, indices 79-83)
+  // CORRECTED: Fields 79-83 contain TURF lifetime stats, not "track" stats
+  // The old mapping was wrong - it read from fields 84-87 which are YEAR data
+  // =========================================================================
   horse.turfStarts = parseStatField(getField(fields, DRF_COLUMNS.TURF_STARTS.index), 'turfStarts');
   horse.turfWins = parseStatField(getField(fields, DRF_COLUMNS.TURF_WINS.index), 'turfWins');
   horse.turfPlaces = parseStatField(getField(fields, DRF_COLUMNS.TURF_PLACES.index), 'turfPlaces');
   horse.turfShows = parseStatField(getField(fields, DRF_COLUMNS.TURF_SHOWS.index), 'turfShows');
 
-  // Wet Track Record (Fields 89-92) - P0 critical handicapping data
-  horse.wetStarts = parseStatField(getField(fields, DRF_COLUMNS.WET_STARTS.index), 'wetStarts');
-  horse.wetWins = parseStatField(getField(fields, DRF_COLUMNS.WET_WINS.index), 'wetWins');
-  horse.wetPlaces = parseStatField(getField(fields, DRF_COLUMNS.WET_PLACES.index), 'wetPlaces');
-  horse.wetShows = parseStatField(getField(fields, DRF_COLUMNS.WET_SHOWS.index), 'wetShows');
+  // Track-specific stats now mirror turf (they were reading from wrong location)
+  // In DRF files, "track" = current track record, but the field doesn't exist separately
+  // from turf in modern DRF format. Mapping to turf for backwards compatibility.
+  horse.trackStarts = horse.turfStarts;
+  horse.trackWins = horse.turfWins;
+  horse.trackPlaces = horse.turfPlaces;
+  horse.trackShows = horse.turfShows;
 
-  // Current Distance Record (Fields 93-96) - P0 critical handicapping data
-  horse.distanceStarts = parseStatField(
-    getField(fields, DRF_COLUMNS.DISTANCE_STARTS.index),
-    'distanceStarts'
-  );
-  horse.distanceWins = parseStatField(
-    getField(fields, DRF_COLUMNS.DISTANCE_WINS.index),
-    'distanceWins'
-  );
-  horse.distancePlaces = parseStatField(
-    getField(fields, DRF_COLUMNS.DISTANCE_PLACES.index),
-    'distancePlaces'
-  );
-  horse.distanceShows = parseStatField(
-    getField(fields, DRF_COLUMNS.DISTANCE_SHOWS.index),
-    'distanceShows'
-  );
+  // =========================================================================
+  // WET/DISTANCE RECORDS - NOT IN FIXED DRF LOCATIONS
+  // These stats are NOT stored at predictable locations in DRF files.
+  // They must be computed from past performance data analysis.
+  // Setting to 0 for now - future: compute from PP wet/distance races
+  // =========================================================================
+  horse.wetStarts = 0;
+  horse.wetWins = 0;
+  horse.wetPlaces = 0;
+  horse.wetShows = 0;
+  horse.distanceStarts = 0;
+  horse.distanceWins = 0;
+  horse.distancePlaces = 0;
+  horse.distanceShows = 0;
 
   // Running style (Field 210)
   horse.runningStyle = getField(fields, DRF_COLUMNS.RUNNING_STYLE.index);
