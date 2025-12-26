@@ -35,17 +35,17 @@
  * - Combo: 6 → 4 pts (-2) - Proportional reduction
  * Net change: +42 - 8 - 4 - 5 - 2 = +23 pts (290 → 313)
  *
- * OVERLAY SYSTEM (±50 points on top of base):
- * - Section A: Pace Dynamics & Bias: ±20 points
- * - Section B: Form Cycle & Conditioning: ±15 points
- * - Section C: Trip Analysis & Trouble: ±12 points
- * - Section D: Class Movement & Competition: ±15 points
- * - Section E: Connection Micro-Edges: ±10 points
- * - Section F: Distance & Surface Optimization: ±8 points
- * - Section G: Head-to-Head & Tactical Matchups: ±8 points
+ * OVERLAY SYSTEM (±40 points on top of base - PHASE 5: reduced from ±50):
+ * - Section A: Pace Dynamics & Bias: ±10 points (reduced from ±20)
+ * - Section B: Form Cycle & Conditioning: ±15 points (unchanged)
+ * - Section C: Trip Analysis & Trouble: ±10 points (reduced from ±12)
+ * - Section D: Class Movement & Competition: ±12 points (reduced from ±15)
+ * - Section E: Connection Micro-Edges: ±8 points (reduced from ±10)
+ * - Section F: Distance & Surface Optimization: ±6 points (reduced from ±8)
+ * - Section G: Head-to-Head & Tactical Matchups: ±6 points (reduced from ±8)
  *
  * Final Score = Base Score + Overlay Adjustment
- * Practical Range: 50 to 363 points
+ * Practical Range: 50 to 353 points
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
@@ -136,11 +136,14 @@ import { calculateDataCompleteness, type DataCompletenessResult } from './dataCo
  */
 export const MAX_BASE_SCORE = 313;
 
-/** Maximum overlay adjustment */
-export const MAX_OVERLAY = 50;
+/**
+ * Maximum overlay adjustment
+ * PHASE 5: Reduced from 50 to 40 to prevent pace overlay from destroying favorites
+ */
+export const MAX_OVERLAY = 40;
 
 /** Maximum total score (base + overlay) */
-export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 363
+export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 353 (was 363)
 
 /**
  * Score limits by category
@@ -196,8 +199,8 @@ export const SCORE_LIMITS = {
   ageFactor: 1, // Age-based peak performance (P3: +1 for 4-5yo, -1 for 8+)
   siresSire: 1, // Sire's sire breeding influence (P3: ±1 integrated into breeding)
   baseTotal: MAX_BASE_SCORE,
-  overlayMax: MAX_OVERLAY,
-  total: MAX_SCORE,
+  overlayMax: MAX_OVERLAY, // PHASE 5: 40 (was 50)
+  total: MAX_SCORE, // PHASE 5: 353 (was 363)
 } as const;
 
 /** Score thresholds for color coding and tier classification */
