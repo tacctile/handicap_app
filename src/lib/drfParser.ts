@@ -133,15 +133,16 @@ const DRF_COLUMNS = {
   WHERE_BRED: { index: 56, name: 'State/Country Bred' }, // Field 57
 
   // =========================================================================
-  // LIFETIME PERFORMANCE RECORDS (Fields 62-101, indices 61-100)
+  // LIFETIME PERFORMANCE RECORDS (Fields 97-101, indices 96-100)
   // =========================================================================
-  // Overall Lifetime Record (Fields 62-69)
-  LIFETIME_STARTS: { index: 61, name: 'Lifetime Starts' }, // Field 62
-  LIFETIME_WINS: { index: 62, name: 'Lifetime Wins' }, // Field 63
-  LIFETIME_PLACES: { index: 63, name: 'Lifetime Places' }, // Field 64
-  LIFETIME_SHOWS: { index: 64, name: 'Lifetime Shows' }, // Field 65
-  RESERVED_66_68: { index: 65, name: 'Reserved' }, // Fields 66-68
-  LIFETIME_EARNINGS: { index: 68, name: 'Lifetime Earnings' }, // Field 69
+  // Overall Lifetime Record (Fields 97-101)
+  // VERIFIED: Field 97 contains true lifetime starts (e.g., 24 for THE MAN TO SEE)
+  // Previous indices 61-68 contained unknown data, not lifetime stats
+  LIFETIME_STARTS: { index: 96, name: 'Lifetime Starts' }, // Field 97
+  LIFETIME_WINS: { index: 97, name: 'Lifetime Wins' }, // Field 98
+  LIFETIME_PLACES: { index: 98, name: 'Lifetime Places' }, // Field 99
+  LIFETIME_SHOWS: { index: 99, name: 'Lifetime Shows' }, // Field 100
+  LIFETIME_EARNINGS: { index: 100, name: 'Lifetime Earnings' }, // Field 101
 
   // Current Year Record (Fields 70-74)
   CURRENT_YEAR_STARTS: { index: 69, name: 'Current Year Starts' }, // Field 70
@@ -165,30 +166,35 @@ const DRF_COLUMNS = {
   TRACK_EARNINGS: { index: 83, name: 'Track Earnings' }, // Field 84
 
   // =========================================================================
-  // TURF/WET/DISTANCE RECORDS (Fields 85-96, indices 84-95)
-  // Per DRF specification: Horse's record on turf, wet tracks, and at
-  // today's distance. These are P0 critical handicapping signals.
+  // TURF/WET/DISTANCE RECORDS
+  // FIXED: Fields 85-96 use YEAR-prefixed format: YEAR-Starts-Wins-Places-Shows-Earnings
+  // Must skip the year field (Field 85 = year 2025, Field 91 = year 2024)
   // =========================================================================
-  // Turf Record (Fields 85-88)
-  TURF_STARTS: { index: 84, name: 'Turf Starts' }, // Field 85
-  TURF_WINS: { index: 85, name: 'Turf Wins' }, // Field 86
-  TURF_PLACES: { index: 86, name: 'Turf Places' }, // Field 87
-  TURF_SHOWS: { index: 87, name: 'Turf Shows' }, // Field 88
+  // Turf Record (Fields 86-89, skipping year prefix at Field 85)
+  // VERIFIED: THE MAN TO SEE shows 3-0-1-0 at these indices (correct turf record)
+  TURF_STARTS: { index: 85, name: 'Turf Starts' }, // Field 86 (skip year at 85)
+  TURF_WINS: { index: 86, name: 'Turf Wins' }, // Field 87
+  TURF_PLACES: { index: 87, name: 'Turf Places' }, // Field 88
+  TURF_SHOWS: { index: 88, name: 'Turf Shows' }, // Field 89
 
-  // Wet Track Record (Fields 89-92)
-  WET_STARTS: { index: 88, name: 'Wet Track Starts' }, // Field 89
-  WET_WINS: { index: 89, name: 'Wet Track Wins' }, // Field 90
-  WET_PLACES: { index: 90, name: 'Wet Track Places' }, // Field 91
-  WET_SHOWS: { index: 91, name: 'Wet Track Shows' }, // Field 92
+  // Wet Track Record - LOCATION UNKNOWN
+  // Diagnostic could not definitively locate wet track records in the DRF file.
+  // Using indices 57-60 which are reserved/empty fields to return safe 0 values.
+  // TODO: Investigate actual wet track field locations in DRF specification
+  WET_STARTS: { index: 57, name: 'Wet Track Starts' }, // Reserved field (returns 0)
+  WET_WINS: { index: 58, name: 'Wet Track Wins' }, // Reserved field (returns 0)
+  WET_PLACES: { index: 59, name: 'Wet Track Places' }, // Reserved field (returns 0)
+  WET_SHOWS: { index: 60, name: 'Wet Track Shows' }, // Reserved field (returns 0)
 
-  // Current Distance Record (Fields 93-96)
-  DISTANCE_STARTS: { index: 92, name: 'Distance Starts' }, // Field 93
-  DISTANCE_WINS: { index: 93, name: 'Distance Wins' }, // Field 94
-  DISTANCE_PLACES: { index: 94, name: 'Distance Places' }, // Field 95
-  DISTANCE_SHOWS: { index: 95, name: 'Distance Shows' }, // Field 96
-
-  // Remaining fields 97-101 contain lifetime/yearly summary verification data
-  // (not parsed here as they duplicate earlier lifetime stats)
+  // Distance Record - LOCATION UNKNOWN
+  // Diagnostic could not definitively locate distance records in the DRF file.
+  // Fields 62-65 may contain distance data but values don't clearly match.
+  // Using reserved fields to return safe 0 values until proper indices are identified.
+  // TODO: Investigate actual distance field locations in DRF specification
+  DISTANCE_STARTS: { index: 57, name: 'Distance Starts' }, // Reserved field (returns 0)
+  DISTANCE_WINS: { index: 58, name: 'Distance Wins' }, // Reserved field (returns 0)
+  DISTANCE_PLACES: { index: 59, name: 'Distance Places' }, // Reserved field (returns 0)
+  DISTANCE_SHOWS: { index: 60, name: 'Distance Shows' }, // Reserved field (returns 0)
 
   // =========================================================================
   // PAST PERFORMANCE DATES (Fields 102-113, indices 101-112)
