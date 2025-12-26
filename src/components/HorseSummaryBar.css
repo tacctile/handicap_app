@@ -164,7 +164,7 @@
   overflow: visible;
 }
 
-/* Rank - projected finish order based on base score (X/240)
+/* Rank - projected finish order based on base score (X/328)
    Color is set dynamically via inline style using gradient from teal to gray */
 .horse-summary-bar__rank {
   font-size: 18px;
@@ -184,6 +184,60 @@
 /* Scratched state for rank */
 .horse-summary-bar--scratched .horse-summary-bar__rank-value {
   color: var(--color-tier-scratched);
+}
+
+/* ============================================
+   TREND RANK COLUMN
+   ============================================ */
+
+.horse-summary-bar__trend-rank {
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.horse-summary-bar__trend-rank-value {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.horse-summary-bar--scratched .horse-summary-bar__trend-rank-value {
+  color: var(--color-tier-scratched);
+}
+
+/* ============================================
+   BLENDED RANK COLUMN
+   ============================================ */
+
+.horse-summary-bar__blended-rank {
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.horse-summary-bar__blended-rank-value {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.horse-summary-bar--scratched .horse-summary-bar__blended-rank-value {
+  color: var(--color-tier-scratched);
+}
+
+/* ============================================
+   TREND GRAPH (SPARKLINE) COLUMN
+   ============================================ */
+
+.horse-summary-bar__trend-graph {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Live odds - key interactive element (Option C hierarchy) */

@@ -1,7 +1,10 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import './HorseSummaryBar.css';
 import type { HorseEntry } from '../types/drf';
+import type { TrendScore } from '../lib/scoring/trendAnalysis';
+import type { BlendedRankResult } from '../lib/scoring/blendedRank';
 import { normalizeOddsFormat } from '../lib/utils/oddsStepper';
+import { TrendSparkline } from './TrendSparkline';
 
 /**
  * Get VALUE badge based on edge percentage
@@ -78,6 +81,17 @@ interface HorseSummaryBarProps {
   baseScoreRank?: number;
   baseScoreRankOrdinal?: string;
   baseScoreRankColor?: string;
+  // Props for trend rank
+  trendRank?: number;
+  trendRankOrdinal?: string;
+  trendRankColor?: string;
+  trendScore?: TrendScore;
+  onTrendClick?: () => void;
+  // Props for blended rank
+  blendedRank?: number;
+  blendedRankOrdinal?: string;
+  blendedRankColor?: string;
+  blendedResult?: BlendedRankResult;
 }
 
 // Helper to convert odds object to string
@@ -116,6 +130,17 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   baseScoreRank: _baseScoreRank, // Available for future use (e.g., sorting indicators)
   baseScoreRankOrdinal,
   baseScoreRankColor,
+  // Trend rank (form trajectory)
+  trendRank: _trendRank,
+  trendRankOrdinal,
+  trendRankColor,
+  trendScore,
+  onTrendClick,
+  // Blended rank (combined base + trend)
+  blendedRank: _blendedRank,
+  blendedRankOrdinal,
+  blendedRankColor,
+  blendedResult: _blendedResult,
 }) => {
   // Extract horse data from HorseEntry type
   const programNumber = horse.programNumber;
@@ -239,7 +264,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       {/* Column 3: HORSE Name - FULL WIDTH, NO TRUNCATION */}
       <div className="horse-summary-bar__name">{horseName.toUpperCase()}</div>
 
-      {/* Column 4: OUR RANK - Projected Finish Order (based on base score) */}
+      {/* Column 4: BASE RANK - Projected Finish Order (based on base score) */}
       <div className="horse-summary-bar__rank">
         <span
           className="horse-summary-bar__rank-value"
@@ -249,7 +274,52 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         </span>
       </div>
 
-      {/* Column 5: ODDS - Click to edit */}
+      {/* Column 5: TREND RANK - Form Trajectory */}
+      <div className="horse-summary-bar__trend-rank">
+        <span
+          className="horse-summary-bar__trend-rank-value"
+          style={{ color: isScratched ? undefined : trendRankColor }}
+        >
+          {isScratched ? '—' : trendRankOrdinal || '—'}
+        </span>
+      </div>
+
+      {/* Column 6: BLENDED RANK - Combined Base + Trend */}
+      <div className="horse-summary-bar__blended-rank">
+        <span
+          className="horse-summary-bar__blended-rank-value"
+          style={{ color: isScratched ? undefined : blendedRankColor }}
+        >
+          {isScratched ? '—' : blendedRankOrdinal || '—'}
+        </span>
+      </div>
+
+      {/* Column 7: TREND GRAPH - Sparkline */}
+      <div
+        className="horse-summary-bar__trend-graph"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!isScratched && onTrendClick) {
+            onTrendClick();
+          }
+        }}
+      >
+        {!isScratched && trendScore && trendScore.finishHistory.length > 0 ? (
+          <TrendSparkline
+            data={trendScore.finishHistory}
+            direction={trendScore.direction}
+            onClick={onTrendClick}
+            width={60}
+            height={20}
+            invertYAxis={true}
+            ariaLabel={`Trend: ${trendScore.direction.toLowerCase()}, ${trendScore.strengthCategory.toLowerCase()} strength`}
+          />
+        ) : (
+          <span style={{ color: '#555', fontSize: '11px' }}>—</span>
+        )}
+      </div>
+
+      {/* Column 8: ODDS - Click to edit */}
       <div className="horse-summary-bar__odds" onClick={(e) => e.stopPropagation()}>
         {isEditingOdds ? (
           <div className="odds-edit-wrapper">
@@ -282,7 +352,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         )}
       </div>
 
-      {/* Column 6: VALUE Badge (Overlay/Fair/Underlay) */}
+      {/* Column 9: VALUE Badge (Overlay/Fair/Underlay) */}
       <div className="horse-summary-bar__value-wrapper">
         <div
           className={`horse-summary-bar__value-badge horse-summary-bar__value-badge--${valueBadge.className}`}
@@ -296,7 +366,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         </div>
       </div>
 
-      {/* Column 7: Expand Chevron */}
+      {/* Column 10: Expand Chevron */}
       <div className="horse-summary-bar__expand-wrapper">
         <span className="material-icons horse-summary-bar__expand">expand_more</span>
       </div>

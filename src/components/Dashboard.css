@@ -1322,6 +1322,9 @@
 
 /* Center align data columns by default */
 .horse-list-header__cell--rank,
+.horse-list-header__cell--trend-rank,
+.horse-list-header__cell--blended-rank,
+.horse-list-header__cell--trend-graph,
 .horse-list-header__cell--odds,
 .horse-list-header__cell--score,
 .horse-list-header__cell--confidence,
@@ -1333,9 +1336,15 @@
   justify-content: center;
 }
 
-/* RANK column - centered with gradient color */
+/* RANK columns - centered with gradient color */
 .horse-list-header__cell--rank .header-tooltip-wrapper,
-.horse-list-header__cell--rank .header-tooltip-trigger {
+.horse-list-header__cell--rank .header-tooltip-trigger,
+.horse-list-header__cell--trend-rank .header-tooltip-wrapper,
+.horse-list-header__cell--trend-rank .header-tooltip-trigger,
+.horse-list-header__cell--blended-rank .header-tooltip-wrapper,
+.horse-list-header__cell--blended-rank .header-tooltip-trigger,
+.horse-list-header__cell--trend-graph .header-tooltip-wrapper,
+.horse-list-header__cell--trend-graph .header-tooltip-trigger {
   align-items: center;
   justify-content: center;
 }

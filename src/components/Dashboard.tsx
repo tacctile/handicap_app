@@ -15,8 +15,12 @@ import {
   analyzeOverlay,
   calculateBaseScoreRanks,
 } from '../lib/scoring';
+import { rankHorsesByBlended, type BlendedRankedHorse } from '../lib/scoring/blendedRank';
+import { toOrdinal, calculateRankGradientColor } from '../lib/scoring/rankUtils';
+import type { TrendScore } from '../lib/scoring/trendAnalysis';
+import { TrendDetailModal } from './TrendDetailModal';
 import { getTrackData } from '../data/tracks';
-import type { ParsedDRFFile, ParsedRace } from '../types/drf';
+import type { ParsedDRFFile, ParsedRace, HorseEntry } from '../types/drf';
 import type { useRaceState } from '../hooks/useRaceState';
 import type { TrackCondition as RaceStateTrackCondition } from '../hooks/useRaceState';
 
@@ -189,6 +193,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // State for horses selected for comparison
   const [compareHorses, setCompareHorses] = useState<Set<number>>(new Set());
 
+  // State for trend detail modal
+  const [trendModalHorse, setTrendModalHorse] = useState<{
+    horse: HorseEntry;
+    trendScore: TrendScore;
+  } | null>(null);
+
   // State for scoring help modal
   const [helpModalOpen, setHelpModalOpen] = useState(false);
 
@@ -269,6 +279,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // Get current race data
   const currentRace = parsedData?.races?.[selectedRaceIndex];
+
+  // Calculate blended rankings (includes trend analysis)
+  const blendedRankedHorses = useMemo(() => {
+    if (!currentRace) return [];
+    return rankHorsesByBlended(currentRaceScoredHorses, currentRace.header);
+  }, [currentRaceScoredHorses, currentRace]);
+
+  // Create a map for quick lookup of blended rank info by horse index
+  const blendedRankMap = useMemo(() => {
+    const map = new Map<number, BlendedRankedHorse>();
+    for (const brh of blendedRankedHorses) {
+      map.set(brh.index, brh);
+    }
+    return map;
+  }, [blendedRankedHorses]);
+
+  // Get field size for color calculations (active horses only)
+  const activeFieldSize = useMemo(() => {
+    return blendedRankedHorses.filter(h => !h.horse.isScratched).length;
+  }, [blendedRankedHorses]);
   const postTimeString = currentRace?.header?.postTime;
   const raceDateString = currentRace?.header?.raceDateRaw;
 
@@ -744,7 +774,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             ) : (
               <div className="horse-list">
-                {/* Column Headers - 7 columns: icons | POST | HORSE | OUR RANK | ODDS | VALUE | expand */}
+                {/* Column Headers - 10 columns: icons | POST | HORSE | BASE RANK | TREND RANK | BLENDED RANK | TREND GRAPH | ODDS | VALUE | expand */}
                 <div className="horse-list-header">
                   {/* Column 1: Help button */}
                   <div className="horse-list-header__cell horse-list-header__cell--icons">
@@ -779,18 +809,50 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 4: OUR RANK - Projected finish order */}
+                  {/* Column 4: BASE RANK - Projected finish order based on base score */}
                   <div className="horse-list-header__cell horse-list-header__cell--rank">
                     <HeaderTooltip
-                      title="Our Predicted Finish"
-                      content="Our model's predicted finish order based on the algorithm. 1st is the horse we expect to win, 2nd is expected to place, etc. A horse in POST #4 might show OUR RANK of '1st' if we predict they'll win."
+                      title="Base Rank (Ability)"
+                      content="Predicted finish order based on the 328-point algorithm. Measures fundamental ability, class, speed, and connections. 1st = highest base score."
                     >
-                      <span className="horse-list-header__label">OUR RANK</span>
-                      <span className="horse-list-header__sublabel">Predicted Finish</span>
+                      <span className="horse-list-header__label">BASE</span>
+                      <span className="horse-list-header__sublabel">Ability</span>
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 5: ODDS - Market price */}
+                  {/* Column 5: TREND RANK - Form trajectory */}
+                  <div className="horse-list-header__cell horse-list-header__cell--trend-rank">
+                    <HeaderTooltip
+                      title="Trend Rank (Momentum)"
+                      content="Ranking based on recent form trajectory. Compares recent races to older races to detect if a horse is improving, declining, or flat. 1st = most improving trend."
+                    >
+                      <span className="horse-list-header__label">TREND</span>
+                      <span className="horse-list-header__sublabel">Momentum</span>
+                    </HeaderTooltip>
+                  </div>
+
+                  {/* Column 6: BLENDED RANK - Combined base + trend */}
+                  <div className="horse-list-header__cell horse-list-header__cell--blended-rank">
+                    <HeaderTooltip
+                      title="Blended Rank (Combined)"
+                      content="Combined ranking: 60% Base Rank (ability) + 40% Trend Rank (momentum). Balances who SHOULD win with who is PEAKING now. 1st = best overall pick."
+                    >
+                      <span className="horse-list-header__label">BLENDED</span>
+                      <span className="horse-list-header__sublabel">Combined</span>
+                    </HeaderTooltip>
+                  </div>
+
+                  {/* Column 7: TREND GRAPH - Sparkline visualization */}
+                  <div className="horse-list-header__cell horse-list-header__cell--trend-graph horse-list-header__cell--no-subtext">
+                    <HeaderTooltip
+                      title="Trend Graph"
+                      content="Visual representation of recent finish positions. Green = improving, Red = declining, Yellow = flat. Click to see detailed trend analysis."
+                    >
+                      <span className="horse-list-header__label">TREND</span>
+                    </HeaderTooltip>
+                  </div>
+
+                  {/* Column 8: ODDS - Market price */}
                   <div className="horse-list-header__cell horse-list-header__cell--odds">
                     <HeaderTooltip
                       title="Current Odds"
@@ -801,7 +863,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 6: VALUE - Overlay/Fair/Underlay badge */}
+                  {/* Column 9: VALUE - Overlay/Fair/Underlay badge */}
                   <div className="horse-list-header__cell horse-list-header__cell--value">
                     <HeaderTooltip
                       title="Value Assessment"
@@ -812,7 +874,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 7: Expand */}
+                  {/* Column 10: Expand */}
                   <div className="horse-list-header__cell horse-list-header__cell--expand">
                     {/* Empty */}
                   </div>
@@ -887,6 +949,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   // Get base score rank info for this horse
                   const rankInfo = baseScoreRankMap.get(horseIndex);
 
+                  // Get blended rank info for this horse
+                  const blendedInfo = blendedRankMap.get(horseIndex);
+                  const trendRank = blendedInfo?.trendRank ?? 0;
+                  const blendedRank = blendedInfo?.blendedResult?.blendedRank ?? 0;
+
+                  // Calculate colors for trend and blended ranks
+                  const trendRankColor = trendRank > 0 && activeFieldSize > 0
+                    ? calculateRankGradientColor(trendRank - 1, activeFieldSize)
+                    : '#555555';
+                  const blendedRankColor = blendedRank > 0 && activeFieldSize > 0
+                    ? calculateRankGradientColor(blendedRank - 1, activeFieldSize)
+                    : '#555555';
+
                   return (
                     <div key={horseId} className="horse-list__item">
                       <HorseSummaryBar
@@ -909,6 +984,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         baseScoreRank={rankInfo?.rank}
                         baseScoreRankOrdinal={rankInfo?.ordinal}
                         baseScoreRankColor={rankInfo?.color}
+                        // Trend rank info (form trajectory)
+                        trendRank={trendRank}
+                        trendRankOrdinal={trendRank > 0 ? toOrdinal(trendRank) : '—'}
+                        trendRankColor={trendRankColor}
+                        trendScore={blendedInfo?.trendScore}
+                        onTrendClick={blendedInfo?.trendScore ? () => setTrendModalHorse({
+                          horse,
+                          trendScore: blendedInfo.trendScore,
+                        }) : undefined}
+                        // Blended rank info (combined base + trend)
+                        blendedRank={blendedRank}
+                        blendedRankOrdinal={blendedRank > 0 ? toOrdinal(blendedRank) : '—'}
+                        blendedRankColor={blendedRankColor}
+                        blendedResult={blendedInfo?.blendedResult}
                       />
                       <HorseExpandedView
                         horse={horse}
@@ -1182,6 +1271,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Scoring Help Modal */}
       <ScoringHelpModal isOpen={helpModalOpen} onClose={() => setHelpModalOpen(false)} />
+
+      {/* Trend Detail Modal */}
+      {trendModalHorse && (
+        <TrendDetailModal
+          isOpen={true}
+          onClose={() => setTrendModalHorse(null)}
+          horse={trendModalHorse.horse}
+          trendData={trendModalHorse.trendScore}
+        />
+      )}
     </div>
   );
 };
