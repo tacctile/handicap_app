@@ -1145,12 +1145,8 @@ export function calculateHorseScore(
  * Uses the same logic as the speed/class scoring module
  */
 function getBestBeyerForHorse(horse: HorseEntry): number | null {
-  // First check horse-level Beyer fields
-  if (horse.bestBeyer !== null && horse.bestBeyer !== undefined && horse.bestBeyer > 0) {
-    return horse.bestBeyer;
-  }
-
-  // Fall back to searching past performances (last 3 races)
+  // Calculate max Beyer from past performances (last 3 races)
+  // NOTE: Do NOT use horse.bestBeyer (field 224) - it contains incorrect data
   const recentPPs = horse.pastPerformances?.slice(0, 3) || [];
   const beyers = recentPPs
     .map((pp) => pp.speedFigures?.beyer)
