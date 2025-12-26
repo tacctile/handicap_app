@@ -259,7 +259,7 @@ function buildReasoning(
 function applyTurfAdjustment(
   baseScore: number,
   postPosition: number,
-  category: 'sprint' | 'route',
+  _category: 'sprint' | 'route',
   trackBiasApplied: boolean
 ): number {
   // If track-specific bias is already applied, don't double-adjust
