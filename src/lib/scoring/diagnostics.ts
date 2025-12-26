@@ -9,6 +9,7 @@
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
+import type { TrackCondition } from '../../hooks/useRaceState';
 import { calculateRaceScores, type HorseScore } from './index';
 import { MAX_BASE_SCORE, MAX_SCORE, SCORE_LIMITS } from './index';
 
@@ -274,14 +275,31 @@ function hasNoNaNValues(diagnostic: ScoringDiagnostic): boolean {
  *
  * @param horses - All horses in the race
  * @param raceHeader - Race header information
+ * @param getOdds - Optional function to get odds for a horse (defaults to using morning line)
+ * @param isScratched - Optional function to check if a horse is scratched (defaults to false)
+ * @param trackCondition - Optional track condition (defaults to 'fast')
  * @returns Complete race diagnostic with validation
  */
 export function generateRaceDiagnostic(
   horses: HorseEntry[],
-  raceHeader: RaceHeader
+  raceHeader: RaceHeader,
+  getOdds?: (index: number, originalOdds: string) => string,
+  isScratched?: (index: number) => boolean,
+  trackCondition?: TrackCondition
 ): RaceDiagnosticResult {
+  // Default functions if not provided
+  const oddsGetter = getOdds ?? ((_i: number, odds: string) => odds);
+  const scratchedChecker = isScratched ?? (() => false);
+  const condition = trackCondition ?? 'fast';
+
   // Score all horses
-  const scoredHorses = calculateRaceScores(horses, raceHeader);
+  const scoredHorses = calculateRaceScores(
+    horses,
+    raceHeader,
+    oddsGetter,
+    scratchedChecker,
+    condition
+  );
 
   // Filter out scratched horses
   const activeHorses = scoredHorses.filter((h) => !h.score.isScratched);
