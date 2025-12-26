@@ -1,118 +1,59 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import './HorseSummaryBar.css';
 import type { HorseEntry } from '../types/drf';
-import { getScoreColor } from '../lib/scoring';
-import { scoreToWinProbability } from '../lib/scoring/overlayAnalysis';
 import { normalizeOddsFormat } from '../lib/utils/oddsStepper';
 
-interface TierInfo {
-  label: string;
-  className: string;
-  isElite: boolean;
-}
-
-interface WinConfidenceInfo {
-  label: string;
-  className: string;
-  probability: number;
-}
-
 /**
- * Get odds edge tier based on overlay percentage
- * These labels reflect ODDS EDGE, not win probability
+ * Get VALUE badge based on edge percentage
+ * Simplified 3-tier system: Overlay, Fair, Underlay
+ * Uses thresholds: >20% = Overlay, -20% to +20% = Fair, <-20% = Underlay
  */
-const getOddsEdgeTier = (valuePercent: number, isScratched: boolean): TierInfo => {
+interface ValueBadgeInfo {
+  label: string;
+  className: string;
+  color: string;
+}
+
+const getValueBadge = (valuePercent: number, isScratched: boolean): ValueBadgeInfo => {
   if (isScratched) {
     return {
       label: 'SCRATCHED',
       className: 'scratched',
-      isElite: false,
+      color: '#6E6E70',
     };
   }
 
-  if (valuePercent >= 100) {
+  if (valuePercent > 20) {
     return {
-      label: 'OVERLAY',
-      className: 'elite',
-      isElite: true,
+      label: 'Overlay',
+      className: 'overlay',
+      color: '#10b981', // Green
     };
   }
 
-  if (valuePercent >= 50) {
+  if (valuePercent >= -20) {
     return {
-      label: 'OVERLAY',
-      className: 'good',
-      isElite: false,
-    };
-  }
-
-  if (valuePercent >= 10) {
-    return {
-      label: 'FAIR ODDS',
+      label: 'Fair',
       className: 'fair',
-      isElite: false,
-    };
-  }
-
-  if (valuePercent >= -10) {
-    return {
-      label: 'FAIR PRICE',
-      className: 'neutral',
-      isElite: false,
+      color: '#6E6E70', // Gray
     };
   }
 
   return {
-    label: 'UNDERLAY',
-    className: 'bad',
-    isElite: false,
+    label: 'Underlay',
+    className: 'underlay',
+    color: '#ef4444', // Red
   };
 };
 
 /**
- * Get WIN CONFIDENCE tier based on score
- * This reflects actual win probability from the algorithm
+ * Get tier info for left border color (kept for visual indicator)
  */
-const getWinConfidence = (score: number, isScratched: boolean): WinConfidenceInfo => {
-  if (isScratched) {
-    return {
-      label: '—',
-      className: 'scratched',
-      probability: 0,
-    };
-  }
-
-  const probability = scoreToWinProbability(score);
-
-  if (probability >= 55) {
-    return {
-      label: 'HIGH',
-      className: 'high',
-      probability,
-    };
-  }
-
-  if (probability >= 40) {
-    return {
-      label: 'MEDIUM',
-      className: 'medium',
-      probability,
-    };
-  }
-
-  if (probability >= 25) {
-    return {
-      label: 'PLAYABLE',
-      className: 'playable',
-      probability,
-    };
-  }
-
-  return {
-    label: 'LOW',
-    className: 'low',
-    probability,
-  };
+const getTierClass = (valuePercent: number, isScratched: boolean): string => {
+  if (isScratched) return 'scratched';
+  if (valuePercent > 20) return 'overlay';
+  if (valuePercent >= -20) return 'fair';
+  return 'underlay';
 };
 
 interface HorseSummaryBarProps {
@@ -160,10 +101,10 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   rank: _rank, // Legacy rank based on total score, kept for compatibility
   isExpanded,
   onToggleExpand,
-  maxScore,
-  score,
-  fairOddsNum = 2,
-  fairOddsDen = 1,
+  maxScore: _maxScore, // Used in expanded view
+  score: _score, // Used in expanded view
+  fairOddsNum: _fairOddsNum, // Used in expanded view
+  fairOddsDen: _fairOddsDen, // Used in expanded view
   valuePercent = 0,
   isScratched,
   onScratchToggle,
@@ -180,19 +121,11 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   const programNumber = horse.programNumber;
   const horseName = horse.horseName || 'UNKNOWN';
 
-  // Note: These will be shown in expanded view, not summary bar
-  // const trainer = horse.trainerName || '—';
-  // const weight = horse.weight || '—';
-  // const lifetimeStarts = horse.lifetimeStarts || 0;
-  // const lifetimeWins = horse.lifetimeWins || 0;
-  // const lifetimePlaces = horse.lifetimePlaces || 0;
-  // const lifetimeShows = horse.lifetimeShows || 0;
+  // Get tier class for left border styling
+  const tierClass = getTierClass(valuePercent, isScratched);
 
-  // Get odds edge tier for styling (based on overlay %)
-  const tier = getOddsEdgeTier(valuePercent, isScratched);
-
-  // Get WIN CONFIDENCE tier (based on score/win probability)
-  const winConfidence = getWinConfidence(score, isScratched);
+  // Get VALUE badge info (Overlay/Fair/Underlay)
+  const valueBadge = getValueBadge(valuePercent, isScratched);
 
   const handleRowClick = () => {
     if (!isScratched) {
@@ -255,7 +188,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   return (
     <div
       className={`horse-summary-bar
-        horse-summary-bar--tier-${tier.className}
+        horse-summary-bar--tier-${tierClass}
         ${isExpanded ? 'horse-summary-bar--expanded' : ''}
         ${isScratched ? 'horse-summary-bar--scratched' : ''}`}
       onClick={handleRowClick}
@@ -300,13 +233,13 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         </div>
       </div>
 
-      {/* Column 2: Program Position */}
+      {/* Column 2: POST (Program Position) */}
       <div className="horse-summary-bar__pp">#{programNumber}</div>
 
-      {/* Column 3: Horse Name - FULL WIDTH, NO TRUNCATION */}
+      {/* Column 3: HORSE Name - FULL WIDTH, NO TRUNCATION */}
       <div className="horse-summary-bar__name">{horseName.toUpperCase()}</div>
 
-      {/* Column 4: Rank - Projected Finish Order (based on base score) */}
+      {/* Column 4: OUR RANK - Projected Finish Order (based on base score) */}
       <div className="horse-summary-bar__rank">
         <span
           className="horse-summary-bar__rank-value"
@@ -316,7 +249,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         </span>
       </div>
 
-      {/* Column 5: Live Odds - Click to edit */}
+      {/* Column 5: ODDS - Click to edit */}
       <div className="horse-summary-bar__odds" onClick={(e) => e.stopPropagation()}>
         {isEditingOdds ? (
           <div className="odds-edit-wrapper">
@@ -349,46 +282,21 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         )}
       </div>
 
-      {/* Column 5: Score */}
-      <div className="horse-summary-bar__score">
-        <span
-          className="horse-summary-bar__score-value"
-          style={{ color: getScoreColor(score, isScratched) }}
+      {/* Column 6: VALUE Badge (Overlay/Fair/Underlay) */}
+      <div className="horse-summary-bar__value-wrapper">
+        <div
+          className={`horse-summary-bar__value-badge horse-summary-bar__value-badge--${valueBadge.className}`}
+          style={{
+            backgroundColor: `${valueBadge.color}20`,
+            borderColor: valueBadge.color,
+            color: valueBadge.color,
+          }}
         >
-          {score}/{maxScore}
-        </span>
-      </div>
-
-      {/* Column 6: Win Confidence (based on score) */}
-      <div
-        className={`horse-summary-bar__confidence horse-summary-bar__confidence--${winConfidence.className}`}
-      >
-        <span className="horse-summary-bar__confidence-label">{winConfidence.label}</span>
-      </div>
-
-      {/* Column 7: Fair Odds */}
-      <div className="horse-summary-bar__fair">
-        {Number.isFinite(fairOddsNum) && Number.isFinite(fairOddsDen)
-          ? `${fairOddsNum}-${fairOddsDen}`
-          : '—'}
-      </div>
-
-      {/* Column 8: Edge Percentage (overlay %) */}
-      <div className={`horse-summary-bar__value horse-summary-bar__value--${tier.className}`}>
-        {Number.isFinite(valuePercent)
-          ? `${valuePercent >= 0 ? '+' : ''}${valuePercent.toFixed(0)}%`
-          : '—'}
-      </div>
-
-      {/* Column 9: Odds Edge Badge */}
-      <div className="horse-summary-bar__tier-wrapper">
-        <div className={`horse-summary-bar__tier horse-summary-bar__tier--${tier.className}`}>
-          {tier.isElite && <span className="horse-summary-bar__diamond">◆</span>}
-          {tier.label}
+          {valueBadge.label}
         </div>
       </div>
 
-      {/* Column 10: Expand Chevron */}
+      {/* Column 7: Expand Chevron */}
       <div className="horse-summary-bar__expand-wrapper">
         <span className="material-icons horse-summary-bar__expand">expand_more</span>
       </div>
