@@ -14,14 +14,14 @@ import { SCORE_LIMITS as SCORING_LIMITS, MAX_BASE_SCORE, MAX_SCORE } from '../li
 
 // Score limits by category - derived from lib/scoring for display
 const SCORE_LIMITS = {
-  connections: SCORING_LIMITS.connections, // 25 (10.4% - Modifier)
-  postPosition: SCORING_LIMITS.postPosition, // 30 (12.5% - Track-dependent)
-  speedClass: SCORING_LIMITS.speedClass, // 80 (33.3% - Most predictive)
-  form: SCORING_LIMITS.form, // 40 (16.7% - Recent performance)
-  equipment: SCORING_LIMITS.equipment, // 20 (8.3% - Fine-tuning)
-  pace: SCORING_LIMITS.pace, // 45 (18.8% - Race shape)
-  base: MAX_BASE_SCORE, // 240 - Max base score before overlay
-  total: MAX_SCORE, // 290 - Max final score (base + overlay: 240 + 50)
+  connections: SCORING_LIMITS.connections, // 27 (9.3% - Enhanced partnership)
+  postPosition: SCORING_LIMITS.postPosition, // 20 (6.9% - Reduced from 30)
+  speedClass: SCORING_LIMITS.speedClass, // 80 (27.6% - Most predictive)
+  form: SCORING_LIMITS.form, // 50 (17.2% - Increased from 40)
+  equipment: SCORING_LIMITS.equipment, // 12 (4.1% - Reduced from 20)
+  pace: SCORING_LIMITS.pace, // 45 (15.5% - Race shape)
+  base: MAX_BASE_SCORE, // 290 - Max base score before overlay (v2.5)
+  total: MAX_SCORE, // 340 - Max final score (base + overlay: 290 + 50)
 } as const;
 
 // Equipment code mappings
