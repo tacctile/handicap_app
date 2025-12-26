@@ -26,7 +26,8 @@
     "@testing-library/dom": "^10.4.1",
     "framer-motion": "^12.23.26",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "recharts": "^3.6.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.2.0",
