@@ -80,10 +80,6 @@ interface HorseSummaryBarProps {
   baseScoreRankColor?: string;
 }
 
-// Suppress unused variable warnings for props kept for interface compatibility
-
-const _unusedPropsNote = 'maxScore, score, fairOddsNum, fairOddsDen are passed to expanded view';
-
 // Helper to convert odds object to string
 const oddsToString = (odds: { numerator: number; denominator: number }): string => {
   return `${odds.numerator}-${odds.denominator}`;
