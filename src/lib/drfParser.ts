@@ -1271,7 +1271,7 @@ function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance
   const PP_CONDITION = DRF_COLUMNS.PP_CONDITION_START; // Fields 150-161 (indices 149-160)
   const PP_EQUIPMENT = DRF_COLUMNS.PP_EQUIPMENT_START; // Fields 162-173 (indices 161-172)
   const PP_MEDICATION = DRF_COLUMNS.PP_MEDICATION_START; // Fields 174-185 (indices 173-184)
-  const _PP_DAYS_SINCE = DRF_COLUMNS.PP_DAYS_SINCE_START; // Fields 186-197 (indices 185-196) - reserved for future use
+  // PP_DAYS_SINCE = DRF_COLUMNS.PP_DAYS_SINCE_START; // Fields 186-197 (indices 185-196) - reserved for future use
   const PP_FINISH_POSITION = DRF_COLUMNS.PP_FINISH_POSITION_START; // Fields 198-209 (indices 197-208)
 
   // Extended PP data (12 fields each)
