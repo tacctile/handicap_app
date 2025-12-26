@@ -78,42 +78,95 @@ export interface OverlayResult {
 }
 
 // ============================================================================
-// SECTION A: PACE DYNAMICS & BIAS (±20 POINTS)
+// PROVEN HORSE PROTECTION (PHASE 5)
+// ============================================================================
+
+/**
+ * Count recent wins for a horse (last N races)
+ */
+function countRecentWinsForHorse(horse: HorseEntry, lastNRaces: number): number {
+  return horse.pastPerformances.slice(0, lastNRaces).filter((pp) => pp.finishPosition === 1).length;
+}
+
+/**
+ * Check if a horse is "proven" and deserves protection from pace penalties
+ *
+ * A horse is "proven" if:
+ * - Base score >= 180 (top tier before overlay)
+ * - OR has won 2+ of last 5 races
+ * - OR has 3+ wins lifetime with ITM% > 40%
+ *
+ * Proven horses get 50% reduction on negative pace adjustments.
+ * This prevents favorites with early speed from being systematically destroyed.
+ *
+ * @param horse - The horse entry to evaluate
+ * @param baseScore - The horse's base score (before overlay)
+ * @returns True if the horse is proven
+ */
+function isProvenHorse(horse: HorseEntry, baseScore: number): boolean {
+  // High base score = proven quality
+  const hasHighBaseScore = baseScore >= 180;
+
+  // Recent winner = proven ability
+  const recentWins = countRecentWinsForHorse(horse, 5);
+  const hasRecentWins = recentWins >= 2;
+
+  // Strong lifetime record = proven ability
+  const lifetimeWins = horse.lifetimeWins ?? 0;
+  const lifetimeStarts = horse.lifetimeStarts ?? 0;
+  const itmRate =
+    lifetimeStarts > 0
+      ? (((horse.lifetimeWins ?? 0) + (horse.lifetimePlaces ?? 0) + (horse.lifetimeShows ?? 0)) /
+          lifetimeStarts) *
+        100
+      : 0;
+  const hasStrongRecord = lifetimeWins >= 3 && itmRate > 40;
+
+  return hasHighBaseScore || hasRecentWins || hasStrongRecord;
+}
+
+// ============================================================================
+// SECTION A: PACE DYNAMICS & BIAS (±10 POINTS)
+// PHASE 5: Reduced from ±20 to prevent systematic favorite destruction
 // ============================================================================
 
 /**
  * Pace scenario adjustments based on running style
+ *
+ * PHASE 5 NERF: Halved all values to reduce pace overlay impact.
+ * Max pace penalty for E horses: -4 pts (was -8)
+ * This prevents favorites with early speed from being systematically destroyed.
  */
 const PACE_SCENARIO_MATRIX: Record<PaceScenarioType, Record<RunningStyleCode, number>> = {
   // Hot Pace (PPI >= 28) - contested or speed_duel scenarios
   speed_duel: {
-    E: -8, // Pure speed penalized
-    P: +12, // Mid-pack pressers benefit
-    C: +20, // Deep closers excel
-    S: +5, // Stalkers benefit
+    E: -4, // Pure speed penalized (halved from -8)
+    P: +6, // Mid-pack pressers benefit (halved from +12)
+    C: +10, // Deep closers excel (halved from +20)
+    S: +3, // Stalkers benefit (halved from +5)
     U: 0,
   },
   contested: {
-    E: -3, // Speed still penalized
-    P: +10, // Pressers benefit
-    C: +12, // Closers benefit
-    S: +8, // Stalkers in good position
+    E: -2, // Speed still penalized (halved from -3)
+    P: +5, // Pressers benefit (halved from +10)
+    C: +6, // Closers benefit (halved from +12)
+    S: +4, // Stalkers in good position (halved from +8)
     U: 0,
   },
   // Honest Pace (moderate)
   moderate: {
-    E: +5, // Speed can win
-    P: +10, // Pressers ideal
-    C: +3, // Closers need more pace
-    S: +5, // Stalkers fine
+    E: +3, // Speed can win (halved from +5)
+    P: +5, // Pressers ideal (halved from +10)
+    C: +2, // Closers need more pace (halved from +3)
+    S: +3, // Stalkers fine (halved from +5)
     U: 0,
   },
   // Soft Pace
   soft: {
-    E: +15, // Lone speed huge advantage
-    P: +12, // Early pressers benefit
-    C: -5, // Closers struggle
-    S: +2, // Stalkers okay
+    E: +8, // Lone speed huge advantage (halved from +15)
+    P: +6, // Early pressers benefit (halved from +12)
+    C: -3, // Closers struggle (halved from -5)
+    S: +1, // Stalkers okay (halved from +2)
     U: 0,
   },
   unknown: {
@@ -127,11 +180,20 @@ const PACE_SCENARIO_MATRIX: Record<PaceScenarioType, Record<RunningStyleCode, nu
 
 /**
  * Calculate Section A: Pace Dynamics & Bias
+ *
+ * PHASE 5: Added baseScore parameter for proven horse protection
+ * Proven horses (baseScore >= 180 or recent winners) get 50% reduction on negative adjustments
+ *
+ * @param horse - The horse to analyze
+ * @param allHorses - All horses in the race
+ * @param raceHeader - Race information
+ * @param baseScore - Horse's base score (for proven horse detection). Defaults to 0 if not provided.
  */
 export function calculatePaceOverlay(
   horse: HorseEntry,
   allHorses: HorseEntry[],
-  raceHeader: RaceHeader
+  raceHeader: RaceHeader,
+  baseScore: number = 0
 ): OverlaySectionScore {
   const breakdown: Array<{ factor: string; points: number }> = [];
   let totalScore = 0;
@@ -140,33 +202,39 @@ export function calculatePaceOverlay(
   const profile = parseRunningStyle(horse);
   const paceScenario = analyzePaceScenario(allHorses.filter((h) => !h.isScratched));
 
-  // 1. Base pace scenario adjustment
-  const paceAdjustment = PACE_SCENARIO_MATRIX[paceScenario.scenario][profile.style] || 0;
+  // 1. Base pace scenario adjustment with proven horse protection
+  let paceAdjustment = PACE_SCENARIO_MATRIX[paceScenario.scenario][profile.style] || 0;
+
+  // PHASE 5: Proven horse protection - reduce negative adjustments by 50%
+  const proven = isProvenHorse(horse, baseScore);
+  if (proven && paceAdjustment < 0) {
+    paceAdjustment = Math.round(paceAdjustment * 0.5);
+  }
+
   if (paceAdjustment !== 0) {
     totalScore += paceAdjustment;
+    const provenNote = proven && paceAdjustment < 0 ? ' (proven horse)' : '';
     breakdown.push({
-      factor: `${profile.styleName} in ${paceScenario.label}`,
+      factor: `${profile.styleName} in ${paceScenario.label}${provenNote}`,
       points: paceAdjustment,
     });
   }
 
-  // 2. Lone speed detection
+  // 2. Lone speed detection (halved bonus from 15 to 8)
   const speedHorses = paceScenario.styleBreakdown.earlySpeed;
   if (speedHorses.length === 1 && speedHorses.includes(horse.programNumber)) {
-    const loneSpeedBonus = 15;
+    const loneSpeedBonus = 8; // PHASE 5: Halved from 15
     totalScore += loneSpeedBonus;
     breakdown.push({ factor: 'Lone speed advantage', points: loneSpeedBonus });
   }
 
-  // 3. Speed duel detection - penalize dueling speed horses
-  if (paceScenario.scenario === 'speed_duel' && profile.style === 'E') {
-    const duelPenalty = -5;
-    totalScore += duelPenalty;
-    breakdown.push({ factor: 'Speed duel likely', points: duelPenalty });
-  }
+  // 3. Speed duel detection - REMOVED in Phase 5
+  // The additional -5 duel penalty was stacking with PACE_SCENARIO_MATRIX
+  // and systematically destroying favorites. Now only PACE_SCENARIO_MATRIX applies.
 
   // 4. Track bias integration using paceAdvantageRating (1-10 scale)
   // Rating 1-3: Closer-friendly, 4-6: Fair, 7-10: Speed-favoring
+  // PHASE 5: All values halved to reduce pace overlay impact
   if (isTrackIntelligenceAvailable(raceHeader.trackCode)) {
     const speedBias = getSpeedBias(raceHeader.trackCode, raceHeader.surface);
     if (speedBias) {
@@ -175,18 +243,18 @@ export function calculatePaceOverlay(
 
       // Use paceAdvantageRating for more granular scoring if available
       if (paceAdvantageRating !== undefined) {
-        // Extreme speed bias (8-10) - big bonus for speed, big penalty for closers
+        // Extreme speed bias (8-10) - bonus for speed, penalty for closers
         if (paceAdvantageRating >= 8) {
           if (profile.style === 'E') {
-            const biasBonus = 8;
+            const biasBonus = 4; // PHASE 5: Halved from 8
             totalScore += biasBonus;
             breakdown.push({ factor: 'Extreme speed bias track', points: biasBonus });
           } else if (profile.style === 'P') {
-            const biasBonus = 5;
+            const biasBonus = 3; // PHASE 5: Halved from 5
             totalScore += biasBonus;
             breakdown.push({ factor: 'Speed bias benefits pressers', points: biasBonus });
           } else if (profile.style === 'C') {
-            const biasPenalty = -8;
+            const biasPenalty = -4; // PHASE 5: Halved from -8
             totalScore += biasPenalty;
             breakdown.push({ factor: 'Closer on extreme speed track', points: biasPenalty });
           }
@@ -194,11 +262,11 @@ export function calculatePaceOverlay(
         // Strong speed bias (7)
         else if (paceAdvantageRating >= 7) {
           if (profile.style === 'E' || profile.style === 'P') {
-            const biasBonus = 5;
+            const biasBonus = 3; // PHASE 5: Halved from 5
             totalScore += biasBonus;
             breakdown.push({ factor: 'Strong speed bias track', points: biasBonus });
           } else if (profile.style === 'C') {
-            const biasPenalty = -5;
+            const biasPenalty = -3; // PHASE 5: Halved from -5
             totalScore += biasPenalty;
             breakdown.push({ factor: 'Closer on speed track', points: biasPenalty });
           }
@@ -206,15 +274,15 @@ export function calculatePaceOverlay(
         // Closer-friendly track (1-3)
         else if (paceAdvantageRating <= 3) {
           if (profile.style === 'C') {
-            const biasBonus = 7;
+            const biasBonus = 4; // PHASE 5: Halved from 7
             totalScore += biasBonus;
             breakdown.push({ factor: 'Closer-friendly track', points: biasBonus });
           } else if (profile.style === 'S') {
-            const biasBonus = 4;
+            const biasBonus = 2; // PHASE 5: Halved from 4
             totalScore += biasBonus;
             breakdown.push({ factor: 'Stalker on closing track', points: biasBonus });
           } else if (profile.style === 'E') {
-            const biasPenalty = -6;
+            const biasPenalty = -4; // PHASE 5: Halved from -6
             totalScore += biasPenalty;
             breakdown.push({ factor: 'Speed on closing track', points: biasPenalty });
           }
@@ -222,7 +290,7 @@ export function calculatePaceOverlay(
         // Fair-to-closing track (4)
         else if (paceAdvantageRating <= 4) {
           if (profile.style === 'S') {
-            const biasBonus = 3;
+            const biasBonus = 2; // PHASE 5: Halved from 3
             totalScore += biasBonus;
             breakdown.push({ factor: 'Fair track suits stalkers', points: biasBonus });
           }
@@ -232,21 +300,21 @@ export function calculatePaceOverlay(
       else {
         // Strong speed bias (55%+)
         if (biasRate >= 55 && (profile.style === 'E' || profile.style === 'P')) {
-          const biasBonus = 5;
+          const biasBonus = 3; // PHASE 5: Halved from 5
           totalScore += biasBonus;
           breakdown.push({ factor: 'Speed-favoring track bias', points: biasBonus });
         } else if (biasRate >= 55 && profile.style === 'C') {
-          const biasPenalty = -5;
+          const biasPenalty = -3; // PHASE 5: Halved from -5
           totalScore += biasPenalty;
           breakdown.push({ factor: 'Closer on speed track', points: biasPenalty });
         }
         // Closing bias (45% or less)
         if (biasRate <= 45 && profile.style === 'C') {
-          const biasBonus = 5;
+          const biasBonus = 3; // PHASE 5: Halved from 5
           totalScore += biasBonus;
           breakdown.push({ factor: 'Closer-friendly track', points: biasBonus });
         } else if (biasRate <= 45 && profile.style === 'E') {
-          const biasPenalty = -5;
+          const biasPenalty = -3; // PHASE 5: Halved from -5
           totalScore += biasPenalty;
           breakdown.push({ factor: 'Speed on closing track', points: biasPenalty });
         }
@@ -256,43 +324,44 @@ export function calculatePaceOverlay(
 
   // 5. Stretch length factor for closers
   // Long stretches give closers more room to rally
+  // PHASE 5: Halved all stretch length adjustments
   const stretchData = getStretchLengthFactor(raceHeader.trackCode, raceHeader.surface);
   if (stretchData.stretchLength > 0) {
     if (profile.style === 'C') {
       if (stretchData.factor >= 1.1) {
-        // Long stretch benefits closers
-        const stretchBonus = Math.round(4 * (stretchData.factor - 1) * 10); // 2-6 points
+        // Long stretch benefits closers (halved)
+        const stretchBonus = Math.round(2 * (stretchData.factor - 1) * 10); // 1-3 points (halved from 2-6)
         totalScore += stretchBonus;
         breakdown.push({ factor: stretchData.reasoning, points: stretchBonus });
       } else if (stretchData.factor <= 0.9) {
-        // Short stretch hurts closers
-        const stretchPenalty = Math.round(-4 * (1 - stretchData.factor) * 10); // -2 to -6 points
+        // Short stretch hurts closers (halved)
+        const stretchPenalty = Math.round(-2 * (1 - stretchData.factor) * 10); // -1 to -3 points (halved from -2 to -6)
         totalScore += stretchPenalty;
         breakdown.push({ factor: stretchData.reasoning, points: stretchPenalty });
       }
     } else if (profile.style === 'E' && stretchData.factor <= 0.9) {
-      // Short stretch helps speed horses
-      const stretchBonus = Math.round(3 * (1 - stretchData.factor) * 10); // 1-4 points
+      // Short stretch helps speed horses (halved)
+      const stretchBonus = Math.round(2 * (1 - stretchData.factor) * 10); // 0-2 points (halved from 1-4)
       totalScore += stretchBonus;
       breakdown.push({ factor: 'Short stretch favors speed', points: stretchBonus });
     }
   }
 
-  // 6. Post position advantage by pace scenario
+  // 6. Post position advantage by pace scenario (halved)
   const post = horse.postPosition;
   if (paceScenario.scenario === 'soft' && profile.style === 'E' && post <= 3) {
-    const postBonus = 5;
+    const postBonus = 3; // PHASE 5: Halved from 5
     totalScore += postBonus;
     breakdown.push({ factor: 'Inside speed in soft pace', points: postBonus });
   }
   if (paceScenario.scenario === 'speed_duel' && profile.style === 'E' && post >= 6) {
-    const postPenalty = -3;
+    const postPenalty = -2; // PHASE 5: Halved from -3
     totalScore += postPenalty;
     breakdown.push({ factor: 'Outside speed in hot pace', points: postPenalty });
   }
 
-  // Cap at ±20
-  const cappedScore = Math.max(-20, Math.min(20, totalScore));
+  // Cap at ±10 (PHASE 5: Reduced from ±20)
+  const cappedScore = Math.max(-10, Math.min(10, totalScore));
 
   const reasoning =
     breakdown.length > 0
@@ -301,7 +370,7 @@ export function calculatePaceOverlay(
 
   return {
     score: cappedScore,
-    maxPossible: 20,
+    maxPossible: 10, // PHASE 5: Reduced from 20
     reasoning,
     breakdown,
   };
@@ -497,7 +566,8 @@ function isRecentWorkout(dateStr: string, days: number): boolean {
 }
 
 // ============================================================================
-// SECTION C: TRIP ANALYSIS & TROUBLE (±12 POINTS)
+// SECTION C: TRIP ANALYSIS & TROUBLE (±10 POINTS)
+// PHASE 5: Reduced from ±12
 // ============================================================================
 
 /** Trip trouble keywords and their adjustments */
@@ -595,8 +665,8 @@ export function calculateTripOverlay(
     breakdown.push({ factor: 'Repeated trouble pattern', points: patternBonus });
   }
 
-  // Cap at ±12
-  const cappedScore = Math.max(-12, Math.min(12, totalScore));
+  // PHASE 5: Reduced cap from ±12 to ±10
+  const cappedScore = Math.max(-10, Math.min(10, totalScore));
 
   const reasoning =
     breakdown.length > 0
@@ -605,14 +675,15 @@ export function calculateTripOverlay(
 
   return {
     score: cappedScore,
-    maxPossible: 12,
+    maxPossible: 10, // PHASE 5: Reduced from 12
     reasoning,
     breakdown,
   };
 }
 
 // ============================================================================
-// SECTION D: CLASS MOVEMENT & COMPETITION (±15 POINTS)
+// SECTION D: CLASS MOVEMENT & COMPETITION (±12 POINTS)
+// PHASE 5: Reduced from ±15
 // ============================================================================
 
 const CLASS_HIERARCHY: Record<string, number> = {
@@ -728,7 +799,8 @@ export function calculateClassOverlay(
   }
 
   // Cap at ±15
-  const cappedScore = Math.max(-15, Math.min(15, totalScore));
+  // PHASE 5: Reduced cap from ±15 to ±12
+  const cappedScore = Math.max(-12, Math.min(12, totalScore));
 
   const reasoning =
     breakdown.length > 0
@@ -737,7 +809,7 @@ export function calculateClassOverlay(
 
   return {
     score: cappedScore,
-    maxPossible: 15,
+    maxPossible: 12, // PHASE 5: Reduced from 15
     reasoning,
     breakdown,
   };
@@ -765,7 +837,8 @@ function getHorseBestFigure(horse: HorseEntry): number | null {
 }
 
 // ============================================================================
-// SECTION E: CONNECTION MICRO-EDGES (±10 POINTS)
+// SECTION E: CONNECTION MICRO-EDGES (±8 POINTS)
+// PHASE 5: Reduced from ±10
 // ============================================================================
 
 /**
@@ -843,8 +916,8 @@ export function calculateConnectionOverlay(
     }
   }
 
-  // Cap at ±10
-  const cappedScore = Math.max(-10, Math.min(10, totalScore));
+  // PHASE 5: Reduced cap from ±10 to ±8
+  const cappedScore = Math.max(-8, Math.min(8, totalScore));
 
   const reasoning =
     breakdown.length > 0
@@ -853,7 +926,7 @@ export function calculateConnectionOverlay(
 
   return {
     score: cappedScore,
-    maxPossible: 10,
+    maxPossible: 8, // PHASE 5: Reduced from 10
     reasoning,
     breakdown,
   };
@@ -882,7 +955,8 @@ function countRecentTrainerWins(horse: HorseEntry, _allHorses: HorseEntry[]): nu
 }
 
 // ============================================================================
-// SECTION F: DISTANCE & SURFACE OPTIMIZATION (±8 POINTS)
+// SECTION F: DISTANCE & SURFACE OPTIMIZATION (±6 POINTS)
+// PHASE 5: Reduced from ±8
 // ============================================================================
 
 /**
@@ -1028,8 +1102,8 @@ export function calculateDistanceSurfaceOverlay(
     }
   }
 
-  // Cap at ±8
-  const cappedScore = Math.max(-8, Math.min(8, totalScore));
+  // PHASE 5: Reduced cap from ±8 to ±6
+  const cappedScore = Math.max(-6, Math.min(6, totalScore));
 
   const reasoning =
     breakdown.length > 0
@@ -1038,14 +1112,15 @@ export function calculateDistanceSurfaceOverlay(
 
   return {
     score: cappedScore,
-    maxPossible: 8,
+    maxPossible: 6, // PHASE 5: Reduced from 8
     reasoning,
     breakdown,
   };
 }
 
 // ============================================================================
-// SECTION G: HEAD-TO-HEAD & TACTICAL MATCHUPS (±8 POINTS)
+// SECTION G: HEAD-TO-HEAD & TACTICAL MATCHUPS (±6 POINTS)
+// PHASE 5: Reduced from ±8
 // ============================================================================
 
 /**
@@ -1129,8 +1204,8 @@ export function calculateHeadToHeadOverlay(
     }
   }
 
-  // Cap at ±8
-  const cappedScore = Math.max(-8, Math.min(8, totalScore));
+  // PHASE 5: Reduced cap from ±8 to ±6
+  const cappedScore = Math.max(-6, Math.min(6, totalScore));
 
   const reasoning =
     breakdown.length > 0
@@ -1139,7 +1214,7 @@ export function calculateHeadToHeadOverlay(
 
   return {
     score: cappedScore,
-    maxPossible: 8,
+    maxPossible: 6, // PHASE 5: Reduced from 8
     reasoning,
     breakdown,
   };
@@ -1162,23 +1237,33 @@ function getConfidenceLevelFromOverflow(overflow: number): OverlayResult['confid
   return 'extreme_caution';
 }
 
+// PHASE 5: Hard cap constants for total overlay
+const MAX_OVERLAY_BONUS = 40;
+const MAX_OVERLAY_PENALTY = -40;
+
 /**
  * Calculate complete overlay score for a horse
+ *
+ * PHASE 5 CHANGES:
+ * - Reduced total overlay cap from ±50 to ±40
+ * - Added baseScore parameter for proven horse protection in pace overlay
  *
  * @param horse - The horse to analyze
  * @param raceHeader - Race information
  * @param allHorses - All horses in the race
  * @param trackConditionOverride - User-selected track condition (overrides raceHeader)
+ * @param baseScore - Horse's base score (for proven horse detection). Defaults to 0.
  * @returns Complete overlay result with section breakdowns
  */
 export function calculateOverlayScore(
   horse: HorseEntry,
   raceHeader: RaceHeader,
   allHorses: HorseEntry[],
-  trackConditionOverride?: TrackCondition
+  trackConditionOverride?: TrackCondition,
+  baseScore: number = 0
 ): OverlayResult {
-  // Calculate each section
-  const paceAndBias = calculatePaceOverlay(horse, allHorses, raceHeader);
+  // Calculate each section (pass baseScore to paceAndBias for proven horse protection)
+  const paceAndBias = calculatePaceOverlay(horse, allHorses, raceHeader, baseScore);
   const formCycle = calculateFormOverlay(horse, raceHeader);
   const tripAnalysis = calculateTripOverlay(horse, raceHeader);
   const classMovement = calculateClassOverlay(horse, raceHeader, allHorses);
@@ -1200,16 +1285,16 @@ export function calculateOverlayScore(
     distanceSurface.score +
     headToHead.score;
 
-  // Apply ±50 cap
+  // PHASE 5: Apply ±40 cap (reduced from ±50)
   let cappedScore: number;
   let overflow: number;
 
-  if (rawScore > 50) {
-    cappedScore = 50;
-    overflow = rawScore - 50;
-  } else if (rawScore < -50) {
-    cappedScore = -50;
-    overflow = rawScore + 50;
+  if (rawScore > MAX_OVERLAY_BONUS) {
+    cappedScore = MAX_OVERLAY_BONUS;
+    overflow = rawScore - MAX_OVERLAY_BONUS;
+  } else if (rawScore < MAX_OVERLAY_PENALTY) {
+    cappedScore = MAX_OVERLAY_PENALTY;
+    overflow = rawScore - MAX_OVERLAY_PENALTY;
   } else {
     cappedScore = rawScore;
     overflow = 0;

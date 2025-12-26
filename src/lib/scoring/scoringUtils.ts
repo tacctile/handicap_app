@@ -24,17 +24,23 @@ export const MIN_SCORE = 0;
  */
 export const MAX_BASE_SCORE = 313;
 
-/** Maximum overlay adjustment */
-export const MAX_OVERLAY_POSITIVE = 50;
+/**
+ * Maximum overlay adjustment
+ * PHASE 5: Reduced from 50 to 40 to prevent pace overlay from destroying favorites
+ */
+export const MAX_OVERLAY_POSITIVE = 40;
 
-/** Minimum overlay adjustment */
-export const MIN_OVERLAY_NEGATIVE = -50;
+/**
+ * Minimum overlay adjustment
+ * PHASE 5: Reduced from -50 to -40
+ */
+export const MIN_OVERLAY_NEGATIVE = -40;
 
 /** Maximum protocol bonus */
 export const MAX_PROTOCOL_BONUS = 60;
 
 /** Maximum final score (base + overlay) */
-export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 363
+export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 353 (was 363)
 
 /** Maximum display score (for UI - uses base score) */
 export const MAX_DISPLAY_SCORE = 313;

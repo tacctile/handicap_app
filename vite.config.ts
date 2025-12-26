@@ -1,8 +1,8 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-import { VitePWA } from 'vite-plugin-pwa'
-import { visualizer } from 'rollup-plugin-visualizer'
+import { defineConfig, type PluginOption } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -10,14 +10,19 @@ export default defineConfig({
     react(),
     tailwindcss(),
     // Bundle analyzer - only runs when ANALYZE=true
-    process.env.ANALYZE === 'true' &&
-      visualizer({
-        filename: 'stats.html',
-        template: 'treemap',
-        open: false,
-        gzipSize: true,
-        brotliSize: true,
-      }),
+    // Cast to PluginOption due to vite 7.x type incompatibility with rollup-plugin-visualizer
+    ...(process.env.ANALYZE === 'true'
+      ? [
+          visualizer({
+            filename: 'stats.html',
+            template: 'treemap',
+            open: false,
+            gzipSize: true,
+            brotliSize: true,
+          }) as PluginOption,
+        ]
+      : []),
+    // Cast to PluginOption due to vite 7.x type incompatibility with vite-plugin-pwa
     VitePWA({
       registerType: 'prompt', // Prompt user for updates
       includeAssets: [
@@ -31,9 +36,7 @@ export default defineConfig({
       manifest: false, // Use existing manifest.json
       workbox: {
         // Precache all static assets at install time
-        globPatterns: [
-          '**/*.{js,css,html,ico,png,svg,woff,woff2}',
-        ],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         // Don't precache source maps
         globIgnores: ['**/*.map'],
         // Maximum file size to precache (5MB for track database)
@@ -145,6 +148,6 @@ export default defineConfig({
       devOptions: {
         enabled: false, // Disable in dev to avoid caching issues
       },
-    }),
+    }) as PluginOption,
   ],
-})
+});
