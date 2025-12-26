@@ -95,6 +95,7 @@ import {
   type DetectedCombo,
 } from './comboPatterns';
 import { calculateWeightScore as calcWeight } from './weight';
+import { calculateOddsScore as calcOddsScore, type OddsScoreResult } from './oddsScore';
 import { calculateSexRestrictionScore as calcSexRestriction } from './sexRestriction';
 import { calculateP3Refinements } from './p3Refinements';
 import {
@@ -124,17 +125,21 @@ import { calculateDataCompleteness, type DataCompletenessResult } from './dataCo
 
 /**
  * Maximum base score (before overlay)
- * v3.0: Updated from 290 to 313 pts per Phase 3 Speed Weight Rebalance
+ * v3.1: Updated from 313 to 328 pts per Phase 6 Odds Factor
  *
- * Changes:
+ * Previous v3.0 Changes:
  * - Speed: 48 → 90 pts (+42)
  * - Post: 20 → 12 pts (-8)
  * - Equipment: 12 → 8 pts (-4)
  * - Trainer Patterns: 15 → 10 pts (-5)
  * - Combo: 6 → 4 pts (-2)
- * Net change: +42 - 8 - 4 - 5 - 2 = +23
+ * v3.0 net change: +42 - 8 - 4 - 5 - 2 = +23 (290 → 313)
+ *
+ * Phase 6 Addition:
+ * - Odds Factor: +15 pts (market wisdom for favorites)
+ * v3.1 net change: +15 (313 → 328)
  */
-export const MAX_BASE_SCORE = 313;
+export const MAX_BASE_SCORE = 328;
 
 /**
  * Maximum overlay adjustment
@@ -143,44 +148,48 @@ export const MAX_BASE_SCORE = 313;
 export const MAX_OVERLAY = 40;
 
 /** Maximum total score (base + overlay) */
-export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 353 (was 363)
+export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 368 (was 353, originally 363)
 
 /**
  * Score limits by category
  *
- * WEIGHT RATIONALE (v3.0 - Phase 3 Speed Weight Rebalance):
+ * WEIGHT RATIONALE (v3.1 - Phase 6 Odds Factor):
  * -----------------------------------------------------------------------
  * These weights are aligned with industry handicapping research showing
  * that speed figures are the most predictive factor (30-40% weight).
  *
  * v3.0 Changes:
- * - Speed: 48 → 90 pts (now ~29%, industry standard 30-40%)
+ * - Speed: 48 → 90 pts (now ~27%, industry standard 30-40%)
  * - Post: 20 → 12 pts (-8 pts)
  * - Equipment: 12 → 8 pts (-4 pts)
  * - Trainer Patterns: 15 → 10 pts (-5 pts)
  * - Combo: 6 → 4 pts (-2 pts)
  *
- * Core Categories (256 pts):
- * - Speed/Class: 122 pts (39%) — Speed 90 pts (~29%) + Class 32 pts (~10%)
- * - Pace: 45 pts (14.4%) — High predictive value for race shape
- * - Form: 50 pts (16.0%) — Recent performance patterns
- * - Post Position: 12 pts (3.8%) — Track-dependent situational factor (reduced)
- * - Connections: 27 pts (8.6%) — Enhanced partnership scoring
- * - Equipment: 8 pts (2.6%) — Speculative, fine-tuning only (reduced)
+ * Phase 6 Addition:
+ * - Odds Factor: 15 pts (4.6%) — Market wisdom for favorites
+ *
+ * Core Categories (271 pts):
+ * - Speed/Class: 122 pts (37.2%) — Speed 90 pts (~27%) + Class 32 pts (~10%)
+ * - Pace: 45 pts (13.7%) — High predictive value for race shape
+ * - Form: 50 pts (15.2%) — Recent performance patterns
+ * - Post Position: 12 pts (3.7%) — Track-dependent situational factor
+ * - Connections: 27 pts (8.2%) — Enhanced partnership scoring
+ * - Odds Factor: 15 pts (4.6%) — Market wisdom for favorites (NEW)
+ * - Equipment: 8 pts (2.4%) — Speculative, fine-tuning only
  *
  * Bonus Categories (36 pts):
- * - Distance/Surface: 20 pts (6.4%) — Turf (8) + Wet (6) + Distance (6)
- * - Trainer Patterns: 10 pts (3.2%) — Situational trainer pattern bonuses (reduced)
- * - Combo Patterns: 4 pts (1.3%) — Informational combo bonuses (reduced)
- * - Track Specialist: 6 pts (1.9%) — Proven success at today's specific track
- * - Trainer Surface/Distance: 6 pts (1.9%) — Trainer specialization bonus
+ * - Distance/Surface: 20 pts (6.1%) — Turf (8) + Wet (6) + Distance (6)
+ * - Trainer Patterns: 10 pts (3.0%) — Situational trainer pattern bonuses
+ * - Combo Patterns: 4 pts (1.2%) — Informational combo bonuses
+ * - Track Specialist: 6 pts (1.8%) — Proven success at today's specific track
+ * - Trainer Surface/Distance: 6 pts (1.8%) — Trainer specialization bonus
  *
  * Weight Change (3 pts):
  * - Weight: 1 pt (P2 subtle refinement for weight drops)
  * - Age Factor: ±1 pt (P3 peak performance at 4-5yo, declining at 8+)
  * - Sire's Sire: ±1 pt (P3 integrated into breeding for known influential sires)
  *
- * Total: 313 points base score
+ * Total: 328 points base score
  */
 export const SCORE_LIMITS = {
   connections: 27,
@@ -189,6 +198,7 @@ export const SCORE_LIMITS = {
   form: 50,
   equipment: 8, // v3.0: reduced from 12
   pace: 45,
+  odds: 15, // Phase 6: Market wisdom for favorites (0-15 pts)
   distanceSurface: 20, // Turf (8) + Wet (6) + Distance (6) = 20
   trainerPatterns: 10, // v3.0: reduced from 15
   comboPatterns: 4, // v3.0: reduced from 6
@@ -198,9 +208,9 @@ export const SCORE_LIMITS = {
   // P3 refinements (subtle, ±1 pt each)
   ageFactor: 1, // Age-based peak performance (P3: +1 for 4-5yo, -1 for 8+)
   siresSire: 1, // Sire's sire breeding influence (P3: ±1 integrated into breeding)
-  baseTotal: MAX_BASE_SCORE,
+  baseTotal: MAX_BASE_SCORE, // 328 (was 313)
   overlayMax: MAX_OVERLAY, // PHASE 5: 40 (was 50)
-  total: MAX_SCORE, // PHASE 5: 353 (was 363)
+  total: MAX_SCORE, // Phase 6: 368 (was 353)
 } as const;
 
 /** Score thresholds for color coding and tier classification */
@@ -265,6 +275,14 @@ export interface ScoreBreakdown {
     total: number;
     runningStyle: string;
     paceFit: string;
+    reasoning: string;
+  };
+  /** Odds-based score (market wisdom for favorites) */
+  odds: {
+    total: number;
+    oddsValue: number | null;
+    oddsSource: 'live' | 'morning_line' | 'none';
+    tier: string;
     reasoning: string;
   };
   /** Distance and surface affinity score (turf/wet/distance) */
@@ -398,10 +416,12 @@ export interface ScoreBreakdown {
 export interface HorseScore {
   /** Final total score (base + overlay) */
   total: number;
-  /** Base score (0-240) before overlay */
+  /** Base score (0-328) before overlay */
   baseScore: number;
-  /** Overlay adjustment (±50) */
+  /** Overlay adjustment (±40) */
   overlayScore: number;
+  /** Odds-based score (0-15 pts for market wisdom) */
+  oddsScore: number;
   breakdown: ScoreBreakdown;
   isScratched: boolean;
   confidenceLevel: 'high' | 'medium' | 'low';
@@ -412,6 +432,8 @@ export interface HorseScore {
   classScore?: ClassScoreResult;
   /** Full overlay analysis result */
   overlayResult?: OverlayResult;
+  /** Full odds analysis result */
+  oddsResult?: OddsScoreResult;
   /** Data completeness analysis (infrastructure for scoring accuracy) */
   dataCompleteness: DataCompletenessResult;
   /** Phase 2: Whether low confidence penalty was applied (15% reduction) */
@@ -610,6 +632,7 @@ function calculateHorseScoreWithContext(
       total: 0,
       baseScore: 0,
       overlayScore: 0,
+      oddsScore: 0,
       breakdown: {
         connections: {
           total: 0,
@@ -642,6 +665,13 @@ function calculateHorseScoreWithContext(
         },
         equipment: { total: 0, hasChanges: false, reasoning: 'Scratched' },
         pace: { total: 0, runningStyle: 'Unknown', paceFit: 'neutral', reasoning: 'Scratched' },
+        odds: {
+          total: 0,
+          oddsValue: null,
+          oddsSource: 'none',
+          tier: 'Unknown',
+          reasoning: 'Scratched',
+        },
         distanceSurface: {
           total: 0,
           turfScore: 0,
@@ -755,6 +785,13 @@ function calculateHorseScoreWithContext(
   const equipment = calcEquipment(horse);
   const pace = calcPace(horse, context.raceHeader, context.activeHorses, context.fieldPaceAnalysis);
 
+  // Calculate odds-based score (0-15 points, Phase 6)
+  // Note: _currentOdds parameter can be used for live odds override
+  const oddsScore = calcOddsScore(
+    horse,
+    _currentOdds !== horse.morningLineOdds ? _currentOdds : undefined
+  );
+
   // Calculate distance/surface affinity score (0-20 points)
   const distanceSurface = calcDistanceSurface(horse, context.raceHeader, trackCondition);
 
@@ -867,6 +904,13 @@ function calculateHorseScoreWithContext(
       paceFit: pace.paceFit,
       reasoning: pace.reasoning,
     },
+    odds: {
+      total: oddsScore.total,
+      oddsValue: oddsScore.oddsValue,
+      oddsSource: oddsScore.oddsSource,
+      tier: oddsScore.tier,
+      reasoning: oddsScore.reasoning,
+    },
     distanceSurface: {
       total: distanceSurface.total,
       turfScore: distanceSurface.turfScore,
@@ -961,6 +1005,7 @@ function calculateHorseScoreWithContext(
     breakdown.form.total +
     breakdown.equipment.total +
     breakdown.pace.total +
+    breakdown.odds.total + // Phase 6: Odds factor (0-15, market wisdom for favorites)
     breakdown.distanceSurface.total + // Distance/surface affinity bonus (0-20)
     breakdown.trainerPatterns.total + // Trainer pattern bonuses (0-15)
     breakdown.comboPatterns.total + // Combo pattern bonuses (0-12)
@@ -1031,6 +1076,7 @@ function calculateHorseScoreWithContext(
     total,
     baseScore,
     overlayScore,
+    oddsScore: oddsScore.total,
     breakdown,
     isScratched: false,
     confidenceLevel,
@@ -1038,6 +1084,7 @@ function calculateHorseScoreWithContext(
     breedingScore,
     classScore: classScoreResult,
     overlayResult,
+    oddsResult: oddsScore,
     dataCompleteness,
     lowConfidencePenaltyApplied,
     lowConfidencePenaltyAmount,
@@ -1563,3 +1610,25 @@ export type {
 } from '../../types/scoring';
 
 export { DATA_TIER_WEIGHTS, DATA_COMPLETENESS_GRADES } from '../../types/scoring';
+
+// Odds scoring exports (Phase 6: market wisdom for favorites)
+export {
+  // Main functions
+  calculateOddsScore,
+  calculateOddsPoints,
+  getOddsForScoring,
+  parseOddsToDecimal,
+  // Utility functions
+  formatOdds,
+  getOddsTier,
+  getOddsScoreColor,
+  isFavorite,
+  isLongshot,
+  calculateOddsPointDifference,
+  // Constants
+  MAX_ODDS_SCORE,
+  NEUTRAL_ODDS_SCORE,
+  ODDS_TIERS,
+  // Types
+  type OddsScoreResult,
+} from './oddsScore';
