@@ -116,7 +116,7 @@ function isProvenHorse(horse: HorseEntry, baseScore: number): boolean {
   const lifetimeStarts = horse.lifetimeStarts ?? 0;
   const itmRate =
     lifetimeStarts > 0
-      ? (((horse.lifetimeWins ?? 0) + (horse.lifetimeSeconds ?? 0) + (horse.lifetimeThirds ?? 0)) /
+      ? (((horse.lifetimeWins ?? 0) + (horse.lifetimePlaces ?? 0) + (horse.lifetimeShows ?? 0)) /
           lifetimeStarts) *
         100
       : 0;
