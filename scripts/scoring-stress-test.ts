@@ -248,43 +248,71 @@ console.log(`\nTest started at: ${new Date().toISOString()}`);
 
 section('TEST 1: SCORE BOUNDARY ANALYSIS');
 
-// Theoretical maximums
-const maxConnectionsScore = 55;
-const maxPostPositionScore = 45;
-const maxSpeedClassScore = 50;
-const maxFormScore = 30;
-const maxEquipmentScore = 25;
-const maxPaceScore = 40;
-const maxBaseScore = 240;
+// Theoretical maximums (v2.5 Favorite Fix weights)
+// Core Categories (234 pts):
+const maxConnectionsScore = 27; // 9.3% - Enhanced partnership
+const maxPostPositionScore = 20; // 6.9% - Reduced from 30
+const maxSpeedClassScore = 80; // 27.6% - Most predictive
+const maxFormScore = 50; // 17.2% - Increased from 40
+const maxEquipmentScore = 12; // 4.1% - Reduced from 20
+const maxPaceScore = 45; // 15.5% - Race shape
+// Bonus Categories (56 pts):
+const maxDistanceSurfaceScore = 20; // 6.9% - Turf/Wet/Distance
+const maxTrainerPatternsScore = 15; // 5.2% - Situational trainer bonuses
+const maxComboPatternsScore = 6; // 2.1% - Reduced from 12
+const maxTrackSpecialistScore = 6; // 2.1% - Track record bonus
+const maxTrainerSurfaceDistanceScore = 6; // 2.1% - Trainer specialization
+const maxWeightScore = 1; // 0.3% - P2 subtle refinement
+const maxAgeFactorScore = 1; // 0.3% - P3 peak performance
+const maxSiresSireScore = 1; // 0.3% - P3 breeding influence
+const maxBaseScore = 290; // v2.5: Updated from 240
 const maxOverlayScore = 50;
 const maxProtocolBonus = 60; // From edge case protocols
 
-const theoreticalMaxBase =
+const theoreticalMaxCoreCategories =
   maxConnectionsScore +
   maxPostPositionScore +
   maxSpeedClassScore +
   maxFormScore +
   maxEquipmentScore +
   maxPaceScore;
-const theoreticalMaxWithOverlay = theoreticalMaxBase + maxOverlayScore;
+const theoreticalMaxBonusCategories =
+  maxDistanceSurfaceScore +
+  maxTrainerPatternsScore +
+  maxComboPatternsScore +
+  maxTrackSpecialistScore +
+  maxTrainerSurfaceDistanceScore +
+  maxWeightScore +
+  maxAgeFactorScore +
+  maxSiresSireScore;
+const theoreticalMaxBase = theoreticalMaxCoreCategories + theoreticalMaxBonusCategories;
+const theoreticalMaxWithOverlay = maxBaseScore + maxOverlayScore;
 const theoreticalMaxWithProtocols = theoreticalMaxWithOverlay + maxProtocolBonus;
 
-console.log('\n  Theoretical Score Analysis:');
-console.log(`    Max Base Score Components: ${theoreticalMaxBase} (expected: 245)`);
+console.log('\n  Theoretical Score Analysis (v2.5 Favorite Fix):');
+console.log(`    Max Core Categories: ${theoreticalMaxCoreCategories} (expected: 234)`);
+console.log(`    Max Bonus Categories: ${theoreticalMaxBonusCategories} (expected: 56)`);
+console.log(`    Max Base Score Components: ${theoreticalMaxBase} (expected: 290)`);
 console.log(`    Max Base Score (capped): ${maxBaseScore}`);
-console.log(`    Max with Overlay: ${maxBaseScore + maxOverlayScore} = 290`);
+console.log(`    Max with Overlay: ${maxBaseScore + maxOverlayScore} = 340`);
 console.log(`    Max with Protocols: ${theoreticalMaxWithProtocols} (if protocols add to final)`);
 
 test(
-  'Base category sum equals 245',
-  theoreticalMaxBase === 245,
-  `Got ${theoreticalMaxBase}`,
-  theoreticalMaxBase
+  'Core category sum equals 234',
+  theoreticalMaxCoreCategories === 234,
+  `Got ${theoreticalMaxCoreCategories}`,
+  theoreticalMaxCoreCategories
 );
-test('Base capped at 240', maxBaseScore === 240, `Got ${maxBaseScore}`, maxBaseScore);
 test(
-  'Max displayable score is 290',
-  maxBaseScore + maxOverlayScore === 290,
+  'Bonus category sum equals 56',
+  theoreticalMaxBonusCategories === 56,
+  `Got ${theoreticalMaxBonusCategories}`,
+  theoreticalMaxBonusCategories
+);
+test('Base capped at 290', maxBaseScore === 290, `Got ${maxBaseScore}`, maxBaseScore);
+test(
+  'Max displayable score is 340',
+  maxBaseScore + maxOverlayScore === 340,
   'Incorrect max',
   maxBaseScore + maxOverlayScore
 );

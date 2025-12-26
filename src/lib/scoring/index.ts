@@ -142,7 +142,7 @@ export const MAX_BASE_SCORE = 290;
 export const MAX_OVERLAY = 50;
 
 /** Maximum total score (base + overlay) */
-export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 351
+export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 340
 
 /**
  * Score limits by category
@@ -966,7 +966,7 @@ function calculateHorseScoreWithContext(
   const overlayScore = enforceOverlayBoundaries(overlayResult.cappedScore);
 
   // Final score = Base + Overlay (with boundary enforcement)
-  // Ensures score is floored at MIN_SCORE (0) and capped at MAX_FINAL_SCORE (290)
+  // Ensures score is floored at MIN_SCORE (0) and capped at MAX_FINAL_SCORE (340)
   const total = enforceScoreBoundaries(baseScore + overlayScore);
 
   // Add overlay to breakdown
@@ -1048,10 +1048,11 @@ export function calculateRaceScores(
     rank: 0, // Will be set after sorting
   }));
 
-  // First, sort by score to determine ranks (best score = rank 1)
+  // First, sort by BASE SCORE to determine ranks (best base score = rank 1)
+  // Uses baseScore (who we think wins) not totalScore (which includes overlay adjustments)
   const sortedByScore = [...scoredHorses]
     .filter((h) => !h.score.isScratched)
-    .sort((a, b) => b.score.total - a.score.total);
+    .sort((a, b) => b.score.baseScore - a.score.baseScore);
 
   // Assign ranks based on score
   sortedByScore.forEach((horse, index) => {

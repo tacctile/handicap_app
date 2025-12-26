@@ -1,7 +1,7 @@
 /**
  * Rank Utility Functions
  *
- * Calculates projected finish order based on base score (X/240)
+ * Calculates projected finish order based on base score (X/290)
  * and provides dynamic gradient coloring based on field size.
  *
  * @module scoring/rankUtils
@@ -76,7 +76,7 @@ export interface RankInfo {
 }
 
 /**
- * Calculate ranks based on BASE SCORE (X/240), not total score with overlay
+ * Calculate ranks based on BASE SCORE (X/290), not total score with overlay
  *
  * This function:
  * 1. Filters to non-scratched horses only

@@ -18,8 +18,11 @@
 /** Minimum possible final score (floor) */
 export const MIN_SCORE = 0;
 
-/** Maximum base score before overlay */
-export const MAX_BASE_SCORE = 240;
+/**
+ * Maximum base score before overlay
+ * v2.5: Updated from 240 to 290 per Favorite Fix rebalancing
+ */
+export const MAX_BASE_SCORE = 290;
 
 /** Maximum overlay adjustment */
 export const MAX_OVERLAY_POSITIVE = 50;
@@ -31,10 +34,10 @@ export const MIN_OVERLAY_NEGATIVE = -50;
 export const MAX_PROTOCOL_BONUS = 60;
 
 /** Maximum final score (base + overlay) */
-export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 290
+export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 340
 
-/** Maximum display score (for UI) */
-export const MAX_DISPLAY_SCORE = 240;
+/** Maximum display score (for UI - uses base score) */
+export const MAX_DISPLAY_SCORE = 290;
 
 // Category maximums (v2.0 - Industry-Aligned Weights)
 export const SCORE_CATEGORY_LIMITS = {
@@ -198,7 +201,7 @@ export function isValidCategoryScore(score: unknown, maxValue: number): score is
  * Ensures:
  * - Score is a valid finite number
  * - Score is floored at MIN_SCORE (0)
- * - Score is capped at MAX_FINAL_SCORE (290)
+ * - Score is capped at MAX_FINAL_SCORE (340)
  * - Score is rounded to integer
  *
  * @param score - The raw score to enforce bounds on
