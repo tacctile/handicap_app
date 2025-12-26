@@ -147,6 +147,19 @@ export interface PaceScoreResult {
   beatenLengthsReasoning: string;
   // Seasonal track patterns (±2 pts refinement)
   seasonalAdjustment: SeasonalAdjustmentResult;
+  /** Phase 2: Pace confidence info for data completeness */
+  paceConfidence?: {
+    /** Whether EP1/LP pace figures are available */
+    hasEP1LP: boolean;
+    /** Whether running style is confirmed (not unknown) */
+    hasRunningStyle: boolean;
+    /** Confidence multiplier applied (0.35-1.0) */
+    multiplier: number;
+    /** Maximum possible pace score given data availability */
+    maxPossibleScore: number;
+    /** Whether confidence penalty was applied */
+    penaltyApplied: boolean;
+  };
 }
 
 // ============================================================================
@@ -238,6 +251,48 @@ function toExpectedPace(scenario: PaceScenarioType): 'fast' | 'moderate' | 'slow
     case 'unknown':
       return 'moderate';
   }
+}
+
+// ============================================================================
+// PACE CONFIDENCE (DATA COMPLETENESS PENALTIES - Phase 2)
+// ============================================================================
+
+/**
+ * Get pace confidence multiplier based on data availability
+ *
+ * PENALTY LOGIC (Phase 2 - Missing Data Penalties):
+ * - Has EP1/LP AND confirmed running style → 100% confidence (full scoring)
+ * - Has EP1/LP BUT unknown running style → 75% confidence
+ * - No EP1/LP BUT has running style → 50% confidence
+ * - Neither EP1/LP nor running style → 35% confidence (penalized for unknown)
+ *
+ * This ensures horses with incomplete pace data are penalized,
+ * not given neutral scores that reward unknowns.
+ */
+export function getPaceConfidenceMultiplier(hasEP1LP: boolean, hasRunningStyle: boolean): number {
+  if (hasEP1LP && hasRunningStyle) return 1.0;    // Full confidence
+  if (hasEP1LP && !hasRunningStyle) return 0.75;  // 75% - have figures but no style
+  if (!hasEP1LP && hasRunningStyle) return 0.5;   // 50% - have style but no figures
+  return 0.35;                                     // 35% - neither present
+}
+
+/**
+ * Check if horse has valid EP1/LP pace figures
+ */
+function hasPaceFigures(profile: RunningStyleProfile | undefined): boolean {
+  if (!profile?.paceFigures) return false;
+  const pf = profile.paceFigures;
+  // Consider having pace figures if either early or late pace is available
+  return pf.avgEarlyPace !== null || pf.avgLatePace !== null;
+}
+
+/**
+ * Check if horse has confirmed (non-unknown) running style
+ */
+function hasConfirmedRunningStyle(profile: RunningStyleProfile | undefined): boolean {
+  if (!profile) return false;
+  // Style is confirmed if it's not unknown and has reasonable confidence
+  return profile.style !== 'U' && profile.confidence >= 40;
 }
 
 // ============================================================================
@@ -399,6 +454,17 @@ export function calculatePaceScore(
   // Apply seasonal adjustment (±2 pts max, doesn't change category limits)
   finalScore += seasonalAdjustment.adjustment;
 
+  // PHASE 2: Apply pace confidence multiplier for data completeness
+  // Penalize horses with missing EP1/LP figures or unknown running style
+  const hasEP1LP = hasPaceFigures(detailedProfile);
+  const hasRunningStyle = hasConfirmedRunningStyle(detailedProfile);
+  const paceConfidenceMultiplier = getPaceConfidenceMultiplier(hasEP1LP, hasRunningStyle);
+
+  // Apply multiplier to penalize incomplete data
+  if (paceConfidenceMultiplier < 1.0) {
+    finalScore = Math.round(finalScore * paceConfidenceMultiplier);
+  }
+
   // Build reasoning
   let reasoning = buildReasoning(
     detailedProfile,
@@ -418,6 +484,17 @@ export function calculatePaceScore(
     reasoning += ` | ${seasonalAdjustment.reasoning}`;
   }
 
+  // PHASE 2: Add confidence info to reasoning if penalized
+  if (paceConfidenceMultiplier < 1.0) {
+    const maxPossible = Math.round(45 * paceConfidenceMultiplier);
+    const dataStatus = !hasEP1LP && !hasRunningStyle
+      ? 'no EP1/LP or style'
+      : !hasEP1LP
+        ? 'no EP1/LP figures'
+        : 'unknown style';
+    reasoning += ` | Confidence: ${Math.round(paceConfidenceMultiplier * 100)}% (${dataStatus}, max ${maxPossible} pts)`;
+  }
+
   // Calculate pace figure adjustment for the result
   let paceFigureAdjustment: { points: number; reasoning: string } | undefined;
   if (detailedProfile.paceFigures && paceResult.scenario.pacePressure) {
@@ -427,6 +504,15 @@ export function calculatePaceScore(
       detailedProfile.style
     );
   }
+
+  // PHASE 2: Build pace confidence info for data completeness tracking
+  const paceConfidence = {
+    hasEP1LP,
+    hasRunningStyle,
+    multiplier: paceConfidenceMultiplier,
+    maxPossibleScore: Math.round(45 * paceConfidenceMultiplier),
+    penaltyApplied: paceConfidenceMultiplier < 1.0,
+  };
 
   return {
     total: Math.max(5, Math.min(45, finalScore)), // was 40
@@ -447,6 +533,8 @@ export function calculatePaceScore(
     beatenLengthsReasoning: beatenLengthsAdjustments.paceReasoning,
     // Seasonal track patterns
     seasonalAdjustment,
+    // Phase 2: Pace confidence info
+    paceConfidence,
   };
 }
 
