@@ -10,34 +10,44 @@
 
 ### Mathematical Foundation Principles
 
-**The 240-point base system provides granular precision while maintaining track specificity:**
+**The 328-point base system provides granular precision while maintaining track specificity:**
 
-**Core Philosophy (v2.0 - Industry-Aligned Weights):**
+**Core Philosophy (v3.1 - Phase 6 Algorithm):**
 
-- Speed figures as primary predictive factor
+- Speed figures as primary predictive factor (27.4% of base)
 - Pace scenario analysis for race shape prediction
-- Form cycle patterns for recent performance
+- Form cycle patterns with enhanced winner bonuses
 - Track bias and post position as situational modifiers
+- Odds factor incorporates market wisdom
 - Connections and equipment as fine-tuning factors
 
-**Weight Distribution Rationale:**
+**Weight Distribution Rationale (v3.1):**
 
-| Category      | Points | % of 240 | Rationale                                    |
-| ------------- | ------ | -------- | -------------------------------------------- |
-| Speed/Class   | 80     | 33.3%    | Most predictive factor per industry research |
-| Pace          | 45     | 18.8%    | High predictive value for race shape         |
-| Form          | 40     | 16.7%    | Recent performance patterns                  |
-| Post Position | 30     | 12.5%    | Track-dependent situational factor           |
-| Connections   | 25     | 10.4%    | Modifier, not primary driver                 |
-| Equipment     | 20     | 8.3%     | Speculative, fine-tuning only                |
+| Category         | Points | % of 328 | Rationale                                    |
+| ---------------- | ------ | -------- | -------------------------------------------- |
+| Speed Figures    | 90     | 27.4%    | Most predictive factor per industry research |
+| Form             | 50     | 15.2%    | Enhanced winner bonuses (+20 for WLO)        |
+| Pace             | 45     | 13.7%    | High predictive value for race shape         |
+| Class            | 32     | 9.8%     | Class movement and competition level         |
+| Connections      | 27     | 8.2%     | Modifier, not primary driver                 |
+| Distance/Surface | 20     | 6.1%     | Turf/Wet/Distance affinities                 |
+| Odds Factor      | 15     | 4.6%     | Phase 6: Market wisdom for favorites         |
+| Post Position    | 12     | 3.7%     | Track-dependent situational factor           |
+| Trainer Patterns | 10     | 3.0%     | Situational trainer bonuses                  |
+| Equipment        | 8      | 2.4%     | Speculative, fine-tuning only                |
+| Track Specialist | 6      | 1.8%     | Proven success at today's track              |
+| Trainer S/D      | 6      | 1.8%     | Trainer surface/distance specialization      |
+| Combo Patterns   | 4      | 1.2%     | Jockey/trainer combinations                  |
+| P3 Refinements   | 2      | 0.6%     | Age factor + Sire's Sire                     |
+| Weight           | 1      | 0.3%     | Subtle weight change refinement              |
 
 **Scoring Limits:**
 
-- Base Score Maximum: 240 points
-- Overlay Adjustment Range: ±50 points
-- Final Score Cap: 290 points
+- Base Score Maximum: 328 points
+- Overlay Adjustment Range: ±40 points (Phase 5: reduced from ±50)
+- Final Score Cap: 368 points
 - Minimum Betting Threshold: 140 points
-- Elite Betting Threshold: 180+ points
+- Elite Betting Threshold: 200+ points
 
 ---
 
@@ -619,9 +629,16 @@ The system automatically detects the current month and applies track-specific se
 
 ---
 
-_Document Version: 2.0_
+> **NOTE:** The detailed category sections above document the v2.0 scoring logic for reference. The actual implementation uses Algorithm v3.1 (Phases 1-6) as documented in **[ALGORITHM_V3_SUMMARY.md](./ALGORITHM_V3_SUMMARY.md)**, which has a 328-point base with 15 refined categories, odds factor integration, and data completeness penalties.
+
+---
+
+_Document Version: 3.1_
 _Last Updated: December 2025_
 _Status: Track-Agnostic Universal Scoring Engine_
 _Integration: Requires Track Intelligence Database for track-specific values_
-_Changes in v2.0: Rebalanced category weights to align with industry handicapping research. Speed/Class increased to 33.3% as primary predictive factor. Connections and Equipment reduced as modifier categories. Total still sums to 240 points._
-_Changes in v1.1: Added track condition real-time integration, seasonal speed adjustments, surface-aware condition dropdown_
+_Changes in v3.1: Algorithm rebuild with 328-point base. See ALGORITHM_V3_SUMMARY.md for complete category breakdown._
+_Changes in v3.0: Phase 3 speed rebalance (90 pts), base increased to 313._
+_Changes in v2.5: Overlay system added with ±50 cap._
+_Changes in v2.0: Rebalanced category weights to align with industry handicapping research._
+_Changes in v1.1: Added track condition real-time integration, seasonal speed adjustments._

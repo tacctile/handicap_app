@@ -106,7 +106,8 @@ describe('Speed & Class Scoring', () => {
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.speedScore).toBe(24);
+      // v3.0: neutral score adjusted for 90-point scale
+      expect(result.speedScore).toBe(23);
       expect(result.speedReasoning).toContain('No speed figures');
     });
 
@@ -254,7 +255,8 @@ describe('Speed & Class Scoring', () => {
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.total).toBeLessThanOrEqual(80);
+      // v3.0: max speedClass is now 122 (speed 90 + class 32)
+      expect(result.total).toBeLessThanOrEqual(122);
     });
   });
 

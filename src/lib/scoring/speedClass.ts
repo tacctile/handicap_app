@@ -6,7 +6,7 @@
  * - Speed Figure Score: 0-90 points (based on Beyer/TimeformUS figures)
  * - Class Level Score: 0-32 points (based on class movement and success)
  *
- * Total: 0-122 points (39% of 313 base)
+ * Total: 0-122 points (37% of 328 base)
  *
  * v3.0 CHANGES (Phase 3 - Speed Weight Increase):
  * - Speed figures increased from 48 to 90 pts (was 16.5%, now ~29%)

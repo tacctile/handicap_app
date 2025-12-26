@@ -154,7 +154,7 @@ describe('Main Scoring Engine', () => {
   });
 
   describe('SCORE_LIMITS Enforcement', () => {
-    it('total score is capped at MAX_SCORE (340)', () => {
+    it('total score is capped at MAX_SCORE (368)', () => {
       // Create a horse that would score very high in all categories
       const horse = createHorseEntry({
         postPosition: 4,
