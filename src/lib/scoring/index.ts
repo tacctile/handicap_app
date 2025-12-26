@@ -5,7 +5,7 @@
  * All calculations are deterministic - same inputs always produce same scores.
  * Optimized for performance: scoring 12 horses completes in under 100ms.
  *
- * BASE SCORE (0-313 points max) - v3.0 Speed Weight Rebalance:
+ * BASE SCORE (0-328 points max) - v3.1 with Phase 6 Odds Factor:
  * Core Categories (256 pts):
  * - Speed & Class: 0-122 points (39% - Speed 90 + Class 32)
  *   v3.0: Speed increased from 48 to 90 pts (~29% of base, industry standard 30-40%)
@@ -45,7 +45,7 @@
  * - Section G: Head-to-Head & Tactical Matchups: ±6 points (reduced from ±8)
  *
  * Final Score = Base Score + Overlay Adjustment
- * Practical Range: 50 to 353 points
+ * Practical Range: 50 to 368 points
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
@@ -1037,7 +1037,7 @@ function calculateHorseScoreWithContext(
     lowConfidencePenaltyAmount = originalBaseScore - baseScore;
   }
 
-  // Calculate overlay adjustment (±50 points on top of base score)
+  // Calculate overlay adjustment (±40 points on top of base score - PHASE 5)
   // Pass user-selected track condition to affect wet track scoring
   const overlayResult = calculateOverlayScore(
     horse,
@@ -1045,11 +1045,11 @@ function calculateHorseScoreWithContext(
     context.horses,
     trackCondition
   );
-  // Enforce overlay boundaries (-50 to +50)
+  // Enforce overlay boundaries (-40 to +40)
   const overlayScore = enforceOverlayBoundaries(overlayResult.cappedScore);
 
   // Final score = Base + Overlay (with boundary enforcement)
-  // Ensures score is floored at MIN_SCORE (0) and capped at MAX_FINAL_SCORE (340)
+  // Ensures score is floored at MIN_SCORE (0) and capped at MAX_FINAL_SCORE (368)
   const total = enforceScoreBoundaries(baseScore + overlayScore);
 
   // Add overlay to breakdown

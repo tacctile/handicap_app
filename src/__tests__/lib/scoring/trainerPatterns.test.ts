@@ -36,13 +36,15 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(4);
+      // v3.0: scaled down from 4 to 3 pts (Phase 3 speed rebalance)
+      expect(result.total).toBe(3);
       expect(result.matchedPatterns.length).toBe(1);
       expect(result.matchedPatterns[0]?.pattern).toBe('firstTimeLasix');
-      expect(result.matchedPatterns[0]?.points).toBe(4);
+      expect(result.matchedPatterns[0]?.points).toBe(3);
     });
 
     it('awards 2 points for first-time Lasix with 20% trainer (good tier)', () => {
+      // v3.0: good tier gets half of max (3 * 0.5 = 1.5, rounded to 2)
       const horse = createHorseEntry({
         medication: createMedication({
           lasixFirstTime: true,
@@ -58,7 +60,7 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(2);
+      expect(result.total).toBe(2); // 3 * 0.5 = 1.5, rounded to 2
       expect(result.matchedPatterns.length).toBe(1);
       expect(result.matchedPatterns[0]?.points).toBe(2);
     });
@@ -85,7 +87,8 @@ describe('Trainer Patterns Scoring', () => {
   });
 
   describe('Second Off Layoff Pattern', () => {
-    it('awards 4 points for 2nd off layoff with 26% trainer', () => {
+    it('awards 3 points for 2nd off layoff with 26% trainer', () => {
+      // v3.0: scaled down from 4 to 3 pts (Phase 3 speed rebalance)
       const horse = createHorseEntry({
         trainerCategoryStats: createTrainerCategoryStats({
           secondOffLayoff: createTrainerStat(26, 25),
@@ -103,13 +106,14 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(4);
+      expect(result.total).toBe(3); // v3.0: scaled from 4 to 3
       expect(result.matchedPatterns.length).toBe(1);
       expect(result.matchedPatterns[0]?.pattern).toBe('secondOffLayoff');
-      expect(result.matchedPatterns[0]?.points).toBe(4);
+      expect(result.matchedPatterns[0]?.points).toBe(3);
     });
 
     it('awards 2 points for 2nd off layoff with 20% trainer', () => {
+      // v3.0: good tier gets half of max (3 * 0.5 = 1.5, rounded to 2)
       const horse = createHorseEntry({
         trainerCategoryStats: createTrainerCategoryStats({
           secondOffLayoff: createTrainerStat(20, 15),
@@ -127,13 +131,14 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(2);
+      expect(result.total).toBe(2); // 3 * 0.5 = 1.5, rounded to 2
       expect(result.matchedPatterns[0]?.points).toBe(2);
     });
   });
 
   describe('Sprint to Route Pattern', () => {
-    it('awards 3 points for sprint to route with 22% trainer', () => {
+    it('awards 2 points for sprint to route with 22% trainer', () => {
+      // v3.0: scaled down from 3 to 2 pts (Phase 3 speed rebalance)
       const horse = createHorseEntry({
         trainerCategoryStats: createTrainerCategoryStats({
           sprintToRoute: createTrainerStat(22, 30),
@@ -150,10 +155,10 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(3);
+      expect(result.total).toBe(2); // v3.0: scaled from 3 to 2
       expect(result.matchedPatterns.length).toBe(1);
       expect(result.matchedPatterns[0]?.pattern).toBe('sprintToRoute');
-      expect(result.matchedPatterns[0]?.points).toBe(3);
+      expect(result.matchedPatterns[0]?.points).toBe(2);
     });
 
     it('awards 1.5 points for sprint to route with 17% trainer', () => {
@@ -201,7 +206,8 @@ describe('Trainer Patterns Scoring', () => {
   });
 
   describe('First Start for Trainer Pattern', () => {
-    it('awards 4 points for first start with 30% trainer', () => {
+    it('awards 3 points for first start with 30% trainer', () => {
+      // v3.0: scaled down from 4 to 3 pts (Phase 3 speed rebalance)
       const horse = createHorseEntry({
         lifetimeStarts: 0, // First time starter
         trainerCategoryStats: createTrainerCategoryStats({
@@ -213,12 +219,13 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(4);
+      expect(result.total).toBe(3); // v3.0: scaled from 4 to 3
       expect(result.matchedPatterns.length).toBe(1);
       expect(result.matchedPatterns[0]?.pattern).toBe('firstStartTrainer');
     });
 
     it('awards 2 points for first start with 20% trainer', () => {
+      // v3.0: good tier gets half of max (3 * 0.5 = 1.5, rounded to 2)
       const horse = createHorseEntry({
         lifetimeStarts: 0,
         trainerCategoryStats: createTrainerCategoryStats({
@@ -230,12 +237,13 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(2);
+      expect(result.total).toBe(2); // 3 * 0.5 = 1.5, rounded to 2
     });
   });
 
   describe('After Claim Pattern', () => {
-    it('awards 4 points for after claim with 28% trainer', () => {
+    it('awards 3 points for after claim with 28% trainer', () => {
+      // v3.0: scaled down from 4 to 3 pts (Phase 3 speed rebalance)
       const horse = createHorseEntry({
         trainerCategoryStats: createTrainerCategoryStats({
           afterClaim: createTrainerStat(28, 25),
@@ -250,13 +258,14 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(4);
+      expect(result.total).toBe(3); // v3.0: scaled from 4 to 3
       expect(result.matchedPatterns[0]?.pattern).toBe('afterClaim');
     });
   });
 
   describe('Multiple Patterns Stacking', () => {
-    it('stacks multiple patterns: first start + first Lasix = 8 pts', () => {
+    it('stacks multiple patterns: first start + first Lasix = 6 pts', () => {
+      // v3.0: 3 + 3 = 6 (scaled from 4 + 4 = 8)
       const horse = createHorseEntry({
         lifetimeStarts: 0,
         medication: createMedication({
@@ -274,7 +283,7 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(8);
+      expect(result.total).toBe(6); // v3.0: scaled from 8 to 6
       expect(result.matchedPatterns.length).toBe(2);
     });
 
@@ -292,11 +301,11 @@ describe('Trainer Patterns Scoring', () => {
         }),
         daysSinceLastRace: 90,
         trainerCategoryStats: createTrainerCategoryStats({
-          firstTimeLasix: createTrainerStat(30, 25), // 4 pts
-          firstTimeBlinkers: createTrainerStat(28, 20), // 3 pts
-          firstStartTrainer: createTrainerStat(30, 40), // 4 pts
-          days61to90: createTrainerStat(28, 20), // 3 pts
-          wetTrack: createTrainerStat(30, 15), // 2 pts
+          firstTimeLasix: createTrainerStat(30, 25), // 3 pts (v3.0: scaled from 4)
+          firstTimeBlinkers: createTrainerStat(28, 20), // 2 pts (v3.0: scaled from 3)
+          firstStartTrainer: createTrainerStat(30, 40), // 3 pts (v3.0: scaled from 4)
+          days61to90: createTrainerStat(28, 20), // 2 pts (v3.0: scaled from 3)
+          wetTrack: createTrainerStat(30, 15), // 1 pt (v3.0: scaled from 2)
         }),
         pastPerformances: [],
       });
@@ -306,8 +315,8 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      // Multiple patterns but capped at 15
-      expect(result.total).toBe(15);
+      // Multiple patterns but capped at 10 (v3.0: reduced from 15)
+      expect(result.total).toBe(10);
       expect(result.matchedPatterns.length).toBeGreaterThan(3);
     });
   });
@@ -387,6 +396,7 @@ describe('Trainer Patterns Scoring', () => {
 
   describe('Surface Patterns', () => {
     it('applies turf sprint bonus for turf sprint race', () => {
+      // v3.0: scaled down from 2 to 1 pt (Phase 3 speed rebalance)
       const horse = createHorseEntry({
         trainerCategoryStats: createTrainerCategoryStats({
           turfSprint: createTrainerStat(28, 25),
@@ -399,11 +409,12 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(2);
+      expect(result.total).toBe(1); // v3.0: scaled from 2 to 1
       expect(result.matchedPatterns[0]?.pattern).toBe('turfSprint');
     });
 
     it('applies turf route bonus for turf route race', () => {
+      // v3.0: scaled down from 2 to 1 pt (Phase 3 speed rebalance)
       const horse = createHorseEntry({
         trainerCategoryStats: createTrainerCategoryStats({
           turfRoute: createTrainerStat(26, 20),
@@ -416,11 +427,12 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(2);
+      expect(result.total).toBe(1); // v3.0: scaled from 2 to 1
       expect(result.matchedPatterns[0]?.pattern).toBe('turfRoute');
     });
 
     it('applies wet track bonus for sloppy track', () => {
+      // v3.0: scaled down from 2 to 1 pt (Phase 3 speed rebalance)
       const horse = createHorseEntry({
         trainerCategoryStats: createTrainerCategoryStats({
           wetTrack: createTrainerStat(30, 18),
@@ -432,13 +444,14 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(2);
+      expect(result.total).toBe(1); // v3.0: scaled from 2 to 1
       expect(result.matchedPatterns[0]?.pattern).toBe('wetTrack');
     });
   });
 
   describe('Class Patterns', () => {
     it('applies maiden claiming bonus', () => {
+      // v3.0: scaled down from 2 to 1 pt (Phase 3 speed rebalance)
       const horse = createHorseEntry({
         trainerCategoryStats: createTrainerCategoryStats({
           maidenClaiming: createTrainerStat(28, 30),
@@ -450,11 +463,12 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(2);
+      expect(result.total).toBe(1); // v3.0: scaled from 2 to 1
       expect(result.matchedPatterns[0]?.pattern).toBe('maidenClaiming');
     });
 
     it('applies stakes bonus for graded stakes', () => {
+      // v3.0: scaled down from 2 to 1 pt (Phase 3 speed rebalance)
       const horse = createHorseEntry({
         trainerCategoryStats: createTrainerCategoryStats({
           stakes: createTrainerStat(25, 15),
@@ -466,7 +480,7 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(2);
+      expect(result.total).toBe(1); // v3.0: scaled from 2 to 1
       expect(result.matchedPatterns[0]?.pattern).toBe('stakes');
     });
   });
@@ -483,7 +497,7 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(3);
+      expect(result.total).toBe(2); // v3.0: scaled down from 3 to 2
       expect(result.matchedPatterns[0]?.pattern).toBe('days31to60');
     });
 
@@ -498,7 +512,7 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(3);
+      expect(result.total).toBe(2); // v3.0: scaled down from 3 to 2
       expect(result.matchedPatterns[0]?.pattern).toBe('days181plus');
     });
   });
@@ -532,7 +546,8 @@ describe('Trainer Patterns Scoring', () => {
   });
 
   describe('First Time Blinkers Pattern', () => {
-    it('awards 3 points for first-time blinkers with 26% trainer', () => {
+    it('awards 2 points for first-time blinkers with 26% trainer', () => {
+      // v3.0: scaled down from 3 to 2 pts (Phase 3 speed rebalance)
       const horse = createHorseEntry({
         equipment: createEquipment({
           blinkers: true,
@@ -548,13 +563,14 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(3);
+      expect(result.total).toBe(2); // v3.0: scaled from 3 to 2
       expect(result.matchedPatterns[0]?.pattern).toBe('firstTimeBlinkers');
     });
   });
 
   describe('Blinkers Off Pattern', () => {
-    it('awards 2 points for blinkers off with 28% trainer', () => {
+    it('awards 1 point for blinkers off with 28% trainer', () => {
+      // v3.0: scaled down from 2 to 1 pt (Phase 3 speed rebalance)
       const horse = createHorseEntry({
         equipment: createEquipment({
           blinkers: false,
@@ -570,13 +586,14 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(2);
+      expect(result.total).toBe(1); // v3.0: scaled from 2 to 1
       expect(result.matchedPatterns[0]?.pattern).toBe('blinkersOff');
     });
   });
 
   describe('Route to Sprint Pattern', () => {
-    it('awards 3 points for route to sprint with 24% trainer', () => {
+    it('awards 2 points for route to sprint with 24% trainer', () => {
+      // v3.0: scaled down from 3 to 2 pts (Phase 3 speed rebalance)
       const horse = createHorseEntry({
         trainerCategoryStats: createTrainerCategoryStats({
           routeToSprint: createTrainerStat(24, 22),
@@ -593,7 +610,7 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(3);
+      expect(result.total).toBe(2); // v3.0: scaled from 3 to 2
       expect(result.matchedPatterns[0]?.pattern).toBe('routeToSprint');
     });
   });

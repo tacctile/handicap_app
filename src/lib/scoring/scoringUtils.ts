@@ -214,7 +214,7 @@ export function isValidCategoryScore(score: unknown, maxValue: number): score is
  * Ensures:
  * - Score is a valid finite number
  * - Score is floored at MIN_SCORE (0)
- * - Score is capped at MAX_FINAL_SCORE (340)
+ * - Score is capped at MAX_FINAL_SCORE (368)
  * - Score is rounded to integer
  *
  * @param score - The raw score to enforce bounds on
@@ -248,7 +248,7 @@ export function enforceBaseScoreBoundaries(score: number): number {
  * Enforce overlay adjustment boundaries
  *
  * @param overlay - The raw overlay adjustment
- * @returns Bounded overlay (-50 to +50)
+ * @returns Bounded overlay (-40 to +40)
  */
 export function enforceOverlayBoundaries(overlay: number): number {
   if (!Number.isFinite(overlay)) {
@@ -293,7 +293,7 @@ export function enforceCategoryBoundaries(score: number, categoryMax: number): n
 
 /**
  * Format score for display
- * Shows "313+" for scores exceeding display max
+ * Shows "328+" for scores exceeding display max
  *
  * @param score - The score to format
  * @returns Formatted score string

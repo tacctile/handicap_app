@@ -735,12 +735,12 @@ If -50 ≤ Raw Score ≤ +50: Capped Score = Raw Score, Overflow = 0
 ### Final Score Calculation
 
 ```
-Final Score = Base Score (0-240) + Overlay Adjustment (±50)
+Final Score = Base Score (0-328) + Overlay Adjustment (±40)
 
-Theoretical Range: -50 to 290 points
-Practical Range: 50 to 250 points
+Theoretical Range: 0 to 368 points
+Practical Range: 50 to 320 points
 Betting Threshold: 140+ points minimum
-Elite Threshold: 180+ points
+Elite Threshold: 200+ points
 ```
 
 ### Quality Control Verification

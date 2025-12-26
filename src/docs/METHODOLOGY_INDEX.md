@@ -11,9 +11,10 @@
 ```
 src/docs/
 ├── METHODOLOGY_INDEX.md      ← You are here
-├── SCORING_ENGINE.md         ← Core 6-category scoring (0-240 base)
+├── ALGORITHM_V3_SUMMARY.md   ← Current v3.1 algorithm (328-pt base, 15 categories)
+├── SCORING_ENGINE.md         ← Detailed scoring reference (v2.0 legacy + v3.1 notes)
 ├── DRF_FIELD_MAP.md          ← All 1,435 DRF fields mapped
-├── OVERLAY_SYSTEM.md         ← ±50 point adjustment logic
+├── OVERLAY_SYSTEM.md         ← ±40 point adjustment logic
 ├── EDGE_CASE_PROTOCOLS.md    ← Diamond, Nuclear, Lightly Raced, Late-Breaking
 ├── BETTING_TIERS.md          ← Three-tier structure and bet construction
 └── TRACK_INTELLIGENCE.md     ← Schema definition + integration
@@ -70,9 +71,28 @@ src/docs/
 
 ## DOCUMENT SUMMARIES
 
+### 0. ALGORITHM_V3_SUMMARY.md (PRIMARY REFERENCE)
+
+**Purpose:** Current algorithm implementation (v3.1, Phases 1-6)
+
+**Key Contents:**
+
+- 328-point base score with 15 categories
+- Category weights: Speed (90), Form (50), Pace (45), Class (32), Connections (27), etc.
+- Phase 1-6 changes documented
+- Overlay system (±40 pts)
+- Data completeness and low confidence penalties
+- Proven horse protection
+- Odds factor integration (0-15 pts)
+- Score interpretation guide
+
+**When to Reference:** Understanding current algorithm, validating scores, debugging
+
+---
+
 ### 1. SCORING_ENGINE.md
 
-**Purpose:** Defines the universal 6-category scoring system (0-240 base points)
+**Purpose:** Detailed scoring reference with v2.0 legacy documentation and v3.1 notes
 
 **Key Contents:**
 
@@ -195,14 +215,16 @@ src/docs/
 
 ## FORMULA QUICK REFERENCE
 
-### Final Score Calculation
+### Final Score Calculation (Algorithm v3.1)
 
 ```
-Final Score = Base Score (0-240) + Overlay Adjustment (±50)
+Final Score = Base Score (0-328) + Overlay Adjustment (±40)
 
-Theoretical Range: -50 to 290
-Practical Range: 50 to 250
+Theoretical Range: 0 to 368
+Practical Range: 50 to 320
 Betting Threshold: 140+ minimum
+
+See ALGORITHM_V3_SUMMARY.md for complete category breakdown.
 ```
 
 ### Pace Pressure Index (PPI)
@@ -293,9 +315,11 @@ Recommended update frequency:
 
 ### Version History
 
-| Version | Date    | Changes                           |
-| ------- | ------- | --------------------------------- |
-| 1.0     | 2024-12 | Initial methodology documentation |
+| Version | Date    | Changes                                                    |
+| ------- | ------- | ---------------------------------------------------------- |
+| 3.1     | 2025-12 | Algorithm v3.1 (Phase 6): Added ALGORITHM_V3_SUMMARY.md    |
+| 3.0     | 2025-12 | Algorithm rebuild Phases 1-5: 328-pt base, overlay cap ±40 |
+| 1.0     | 2024-12 | Initial methodology documentation                          |
 
 ---
 
@@ -314,6 +338,6 @@ Recommended update frequency:
 
 ---
 
-_Document Version: 1.0_
+_Document Version: 3.1_
 _Status: Complete Methodology Index_
 _Purpose: Entry point and navigation for all methodology documentation_
