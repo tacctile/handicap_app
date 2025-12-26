@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -10,6 +10,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     // Bundle analyzer - only runs when ANALYZE=true
+    // Cast to PluginOption due to vite 7.x type incompatibility with rollup-plugin-visualizer
     ...(process.env.ANALYZE === 'true'
       ? [
           visualizer({
@@ -18,9 +19,10 @@ export default defineConfig({
             open: false,
             gzipSize: true,
             brotliSize: true,
-          }),
+          }) as PluginOption,
         ]
       : []),
+    // Cast to PluginOption due to vite 7.x type incompatibility with vite-plugin-pwa
     VitePWA({
       registerType: 'prompt', // Prompt user for updates
       includeAssets: [
@@ -146,6 +148,6 @@ export default defineConfig({
       devOptions: {
         enabled: false, // Disable in dev to avoid caching issues
       },
-    }),
+    }) as PluginOption,
   ],
 });
