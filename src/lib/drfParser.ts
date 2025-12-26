@@ -245,14 +245,17 @@ const DRF_COLUMNS = {
   PP_ODDS_START: 353, // Field 354
 
   // =========================================================================
-  // WORKOUT DATA (12 workouts, Fields 256-315, indices 255-314)
+  // WORKOUT DATA (10 workouts, column-major storage)
+  // Layout: Dates(10) | Times(10) | Tracks(10) | Tracks2(10) | Ranks(10) | Cond(10) | Dist(10) | Surf(10)
   // =========================================================================
-  WK_DATE_START: 255, // Fields 256-267 - Workout dates
-  WK_TRACK_START: 267, // Fields 268-279 - Workout tracks
-  WK_DISTANCE_START: 279, // Fields 280-291 - Workout distances
-  WK_TIME_START: 291, // Fields 292-303 - Workout times
-  WK_RANK_START: 303, // Fields 304-315 - Workout rankings
-  WORKOUT_COUNT: 12, // 12 workouts (WAS 10!)
+  WK_DATE_START: 255, // Fields 256-265 (indices 255-264) - Workout dates
+  WK_TIME_START: 265, // Fields 266-275 (indices 265-274) - Workout times (in hundredths)
+  WK_TRACK_START: 275, // Fields 276-285 (indices 275-284) - Workout track codes
+  WK_RANK_START: 295, // Fields 296-305 (indices 295-304) - Workout rankings
+  WK_CONDITION_START: 305, // Fields 306-315 (indices 305-314) - Track conditions
+  WK_DISTANCE_START: 315, // Fields 316-325 (indices 315-324) - Distances in yards
+  WK_SURFACE_START: 325, // Fields 326-335 (indices 325-334) - Surfaces (T/D)
+  WORKOUT_COUNT: 10, // 10 workouts (column-major storage)
 
   // =========================================================================
   // RUNNING STYLE & RACE DESCRIPTIONS (Fields 210-225, indices 209-224)
@@ -1441,27 +1444,26 @@ function parseWorkouts(fields: string[], maxWorkouts = 12): Workout[] {
   const workouts: Workout[] = [];
 
   // ==========================================================================
-  // CORRECTED 12-WORKOUT FIELD INDICES (based on BRIS 12-PP format)
-  // Workouts now have 12 entries, stored column-major
+  // CORRECTED 10-WORKOUT FIELD INDICES
+  // Workouts have 10 entries, stored column-major
   // ==========================================================================
 
-  // Per corrected field map:
-  // - Workout Dates: Fields 256-267 (indices 255-266)
-  // - Workout Tracks: Fields 268-279 (indices 267-278)
-  // - Workout Distances: Fields 280-291 (indices 279-290)
-  // - Workout Times: Fields 292-303 (indices 291-302)
-  // - Workout Rankings: Fields 304-315 (indices 303-314)
+  // CORRECTED Workout field indices (10 workouts, column-major storage):
+  // - Workout Dates: Fields 256-265 (indices 255-264)
+  // - Workout Times: Fields 266-275 (indices 265-274) - in hundredths of seconds
+  // - Workout Tracks: Fields 276-285 (indices 275-284)
+  // - Workout Rankings: Fields 296-305 (indices 295-304)
+  // - Workout Conditions: Fields 306-315 (indices 305-314)
+  // - Workout Distances: Fields 316-325 (indices 315-324) - in yards
+  // - Workout Surfaces: Fields 326-335 (indices 325-334)
 
-  const WK_DATE = DRF_COLUMNS.WK_DATE_START; // Fields 256-267 - Workout dates
-  const WK_TRACK = DRF_COLUMNS.WK_TRACK_START; // Fields 268-279 - Track codes
-  const WK_DISTANCE = DRF_COLUMNS.WK_DISTANCE_START; // Fields 280-291 - Distance
-  const WK_TIME = DRF_COLUMNS.WK_TIME_START; // Fields 292-303 - Times
-  const WK_RANK = DRF_COLUMNS.WK_RANK_START; // Fields 304-315 - Rankings
-
-  // Extended workout fields (may need verification)
-  const WK_CONDITION = 305; // Field 306 - Track condition (FT, GD, etc.)
-  const WK_SURFACE = 325; // Field 326 - Surface (D, T)
-  const WK_TOTAL_WORKS = 315; // Total works that day
+  const WK_DATE = DRF_COLUMNS.WK_DATE_START; // Fields 256-265 - Workout dates
+  const WK_TIME = DRF_COLUMNS.WK_TIME_START; // Fields 266-275 - Times (hundredths)
+  const WK_TRACK = DRF_COLUMNS.WK_TRACK_START; // Fields 276-285 - Track codes
+  const WK_RANK = DRF_COLUMNS.WK_RANK_START; // Fields 296-305 - Rankings
+  const WK_CONDITION = DRF_COLUMNS.WK_CONDITION_START; // Fields 306-315 - Track conditions
+  const WK_DISTANCE = DRF_COLUMNS.WK_DISTANCE_START; // Fields 316-325 - Distance in yards
+  const WK_SURFACE = DRF_COLUMNS.WK_SURFACE_START; // Fields 326-335 - Surfaces
 
   // Use the constant for max workout count
   const wkCount = Math.min(maxWorkouts, DRF_COLUMNS.WORKOUT_COUNT);
@@ -1556,14 +1558,28 @@ function parseWorkouts(fields: string[], maxWorkouts = 12): Workout[] {
     // Surface from dedicated field
     const surfaceCode = getField(fields, WK_SURFACE + i, 'D');
 
-    // Workout time in seconds
-    const timeSeconds = parseFloatSafe(getField(fields, WK_TIME + i));
+    // Workout time - stored as seconds or packed format like "112" = 1:12
+    const rawTime = parseFloatSafe(getField(fields, WK_TIME + i));
+    // If time > 60, it's likely in packed format (e.g., 112 = 1:12 = 72 seconds)
+    let timeSeconds = 0;
+    if (rawTime > 0) {
+      if (rawTime >= 100) {
+        // Packed format: 112 = 1 minute 12 seconds = 72 seconds
+        const minutes = Math.floor(rawTime / 100);
+        const seconds = rawTime % 100;
+        timeSeconds = minutes * 60 + seconds;
+      } else {
+        // Raw seconds for short works (e.g., 21 = 21 seconds for 2f work)
+        timeSeconds = rawTime;
+      }
+    }
 
     // Ranking data
     const rankNum = parseIntNullable(getField(fields, WK_RANK + i));
-    const totalWorks = parseIntNullable(getField(fields, WK_TOTAL_WORKS + i));
+    // Total works field is not directly available in current format
+    const totalWorks: number | null = null;
     const isBullet = rankNum === 1;
-    const rankingStr = rankNum && totalWorks ? `${rankNum}/${totalWorks}` : '';
+    const rankingStr = rankNum ? `${rankNum}` : '';
 
     // Format workout time if available
     const timeFormatted =

@@ -96,17 +96,23 @@ describe('DRF Parser Field Mapping Validation', () => {
       expect(DRF_COLUMNS.PP_LATE_PACE_START).toBe(845);
     });
 
-    it('should have 12 workouts', () => {
-      expect(DRF_COLUMNS.WORKOUT_COUNT).toBe(12); // NOT 10!
+    it('should have 10 workouts (column-major storage)', () => {
+      expect(DRF_COLUMNS.WORKOUT_COUNT).toBe(10); // Workouts use 10-field blocks
 
-      // Workout dates: Fields 256-267 (indices 255-266)
+      // Workout dates: Fields 256-265 (indices 255-264)
       expect(DRF_COLUMNS.WK_DATE_START).toBe(255);
 
-      // Workout tracks: Fields 268-279 (indices 267-278)
-      expect(DRF_COLUMNS.WK_TRACK_START).toBe(267);
+      // Workout times: Fields 266-275 (indices 265-274)
+      expect(DRF_COLUMNS.WK_TIME_START).toBe(265);
 
-      // Workout distances: Fields 280-291 (indices 279-290)
-      expect(DRF_COLUMNS.WK_DISTANCE_START).toBe(279);
+      // Workout tracks: Fields 276-285 (indices 275-284)
+      expect(DRF_COLUMNS.WK_TRACK_START).toBe(275);
+
+      // Workout rankings: Fields 296-305 (indices 295-304)
+      expect(DRF_COLUMNS.WK_RANK_START).toBe(295);
+
+      // Workout distances: Fields 316-325 (indices 315-324)
+      expect(DRF_COLUMNS.WK_DISTANCE_START).toBe(315);
     });
   });
 
@@ -319,7 +325,7 @@ describe('DRF Parser Field Mapping Validation', () => {
       expect(DRF_COLUMNS.TURF_STARTS.index).toBe(79);
       expect(DRF_COLUMNS.TRACK_STARTS.index).toBe(96);
       expect(DRF_COLUMNS.PP_COUNT).toBe(12);
-      expect(DRF_COLUMNS.WORKOUT_COUNT).toBe(12);
+      expect(DRF_COLUMNS.WORKOUT_COUNT).toBe(10);
 
       // This test serves as documentation
       expect(changes.length).toBe(9);
