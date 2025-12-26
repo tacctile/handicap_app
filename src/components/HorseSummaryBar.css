@@ -339,43 +339,60 @@
   align-items: center;
 }
 
-/* Value percentage - supporting data (Option C hierarchy) */
-.horse-summary-bar__value {
-  font-size: 16px;
-  font-weight: 700;
-  text-align: center;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+/* ============================================
+   VALUE BADGE (Simplified Overlay/Fair/Underlay)
+   ============================================ */
 
-/* Tier wrapper - for centering */
-.horse-summary-bar__tier-wrapper {
+/* Value wrapper - for centering */
+.horse-summary-bar__value-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Tier badge - centered in its cell (Option C hierarchy - larger badges) */
-.horse-summary-bar__tier {
+/* VALUE badge - centered in its cell */
+.horse-summary-bar__value-badge {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
-  padding: 6px 12px;
+  padding: 8px 16px;
   border-radius: var(--radius-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   white-space: nowrap;
-  overflow: visible; /* Don't truncate badge text */
-  background: var(--color-elevated);
-  color: var(--color-text-secondary);
-  justify-self: center;
+  border: 1px solid;
   transition:
     background var(--transition-fast),
     color var(--transition-fast);
+}
+
+/* Overlay badge - Green */
+.horse-summary-bar__value-badge--overlay {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  color: #10b981;
+}
+
+/* Fair badge - Gray */
+.horse-summary-bar__value-badge--fair {
+  background: rgba(110, 110, 112, 0.15);
+  border-color: #6e6e70;
+  color: #6e6e70;
+}
+
+/* Underlay badge - Red */
+.horse-summary-bar__value-badge--underlay {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* Scratched badge */
+.horse-summary-bar__value-badge--scratched {
+  background: rgba(110, 110, 112, 0.1);
+  border-color: #6e6e70;
+  color: #6e6e70;
 }
 
 /* Expand wrapper - centered */
@@ -447,27 +464,19 @@
 }
 
 /* ============================================
-   TIER LEFT BORDER COLORS
+   TIER LEFT BORDER COLORS (Simplified 3-tier system)
    ============================================ */
 
-.horse-summary-bar--tier-elite {
-  border-left-color: var(--color-tier-elite);
-}
-
-.horse-summary-bar--tier-good {
-  border-left-color: var(--color-tier-good);
+.horse-summary-bar--tier-overlay {
+  border-left-color: #10b981; /* Green - Overlay */
 }
 
 .horse-summary-bar--tier-fair {
-  border-left-color: var(--color-tier-fair);
+  border-left-color: #6e6e70; /* Gray - Fair */
 }
 
-.horse-summary-bar--tier-neutral {
-  border-left-color: var(--color-tier-neutral);
-}
-
-.horse-summary-bar--tier-bad {
-  border-left-color: var(--color-tier-bad);
+.horse-summary-bar--tier-underlay {
+  border-left-color: #ef4444; /* Red - Underlay */
 }
 
 .horse-summary-bar--tier-scratched {
