@@ -420,6 +420,10 @@ export interface HorseScore {
   overlayResult?: OverlayResult;
   /** Data completeness analysis (infrastructure for scoring accuracy) */
   dataCompleteness: DataCompletenessResult;
+  /** Phase 2: Whether low confidence penalty was applied (15% reduction) */
+  lowConfidencePenaltyApplied: boolean;
+  /** Phase 2: Amount deducted due to low confidence (in points) */
+  lowConfidencePenaltyAmount: number;
 }
 
 /** Scored horse with index for sorting */
@@ -744,6 +748,8 @@ function calculateHorseScoreWithContext(
         isLowConfidence: true,
         confidenceReason: 'Scratched',
       },
+      lowConfidencePenaltyApplied: false,
+      lowConfidencePenaltyAmount: 0,
     };
   }
 
@@ -972,8 +978,25 @@ function calculateHorseScoreWithContext(
     breedingContribution + // Includes P3 sire's sire adjustment if applicable
     hiddenDropsBonus; // Add hidden class drop bonuses
 
+  // Calculate data completeness BEFORE applying low confidence penalty
+  // This way we can check isLowConfidence to decide on penalty
+  const dataCompleteness = calculateDataCompleteness(horse, context.raceHeader);
+
   // Enforce base score boundaries (0 to MAX_BASE_SCORE)
-  const baseScore = enforceBaseScoreBoundaries(rawBaseTotal);
+  let baseScore = enforceBaseScoreBoundaries(rawBaseTotal);
+
+  // PHASE 2: Apply 15% penalty to base score for low confidence horses
+  // Low confidence = criticalComplete < 75% (missing key data like speed figures, PPs)
+  let lowConfidencePenaltyApplied = false;
+  let lowConfidencePenaltyAmount = 0;
+
+  if (dataCompleteness.isLowConfidence) {
+    const penaltyMultiplier = 0.85; // 15% penalty
+    const originalBaseScore = baseScore;
+    baseScore = Math.round(baseScore * penaltyMultiplier);
+    lowConfidencePenaltyApplied = true;
+    lowConfidencePenaltyAmount = originalBaseScore - baseScore;
+  }
 
   // Calculate overlay adjustment (±50 points on top of base score)
   // Pass user-selected track condition to affect wet track scoring
@@ -1010,9 +1033,6 @@ function calculateHorseScoreWithContext(
   const dataQuality = calculateDataQuality(horse);
   const confidenceLevel = calculateConfidenceLevel(dataQuality, breakdown);
 
-  // Calculate data completeness (infrastructure for scoring accuracy)
-  const dataCompleteness = calculateDataCompleteness(horse, context.raceHeader);
-
   return {
     total,
     baseScore,
@@ -1025,6 +1045,8 @@ function calculateHorseScoreWithContext(
     classScore: classScoreResult,
     overlayResult,
     dataCompleteness,
+    lowConfidencePenaltyApplied,
+    lowConfidencePenaltyAmount,
   };
 }
 

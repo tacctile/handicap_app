@@ -67,6 +67,17 @@ export interface SpeedClassScoreResult {
     /** How much above/below track par the best figure is */
     parDifferential: number | null;
   };
+  /** Phase 2: Speed confidence info for data completeness */
+  speedConfidence?: {
+    /** Number of valid speed figures in last 3 races */
+    figureCount: number;
+    /** Confidence multiplier applied (0.25-1.0) */
+    multiplier: number;
+    /** Maximum possible speed score given data availability */
+    maxPossibleScore: number;
+    /** Whether confidence penalty was applied */
+    penaltyApplied: boolean;
+  };
 }
 
 // ============================================================================
@@ -326,59 +337,139 @@ function getAverageFigure(pastPerformances: PastPerformance[], count: number = 5
 }
 
 // ============================================================================
+// SPEED FIGURE CONFIDENCE (DATA COMPLETENESS PENALTIES)
+// ============================================================================
+
+/**
+ * Get speed confidence multiplier based on figure count in last 3 races
+ *
+ * PENALTY LOGIC (Phase 2 - Missing Data Penalties):
+ * - 3+ figures in last 3 races → 100% confidence (full scoring)
+ * - 2 figures in last 3 races → 75% confidence (36 pts max)
+ * - 1 figure in last 3 races → 37.5% confidence (18 pts max)
+ * - 0 figures → 25% baseline (12 pts max, penalized for unknown)
+ *
+ * This ensures horses with incomplete speed data are penalized,
+ * not given neutral scores that reward unknowns.
+ */
+export function getSpeedConfidenceMultiplier(figureCount: number): number {
+  if (figureCount >= 3) return 1.0;    // Full confidence
+  if (figureCount === 2) return 0.75;  // 75% confidence
+  if (figureCount === 1) return 0.375; // 37.5% confidence
+  return 0.25;                          // 25% baseline for no figures
+}
+
+/**
+ * Count valid Beyer figures in last N races
+ */
+function countSpeedFigures(pastPerformances: PastPerformance[], count: number = 3): number {
+  const recentPPs = pastPerformances.slice(0, count);
+  let figureCount = 0;
+
+  for (const pp of recentPPs) {
+    const figure = extractSpeedFigure(pp);
+    if (figure !== null) {
+      figureCount++;
+    }
+  }
+
+  return figureCount;
+}
+
+// ============================================================================
 // SPEED FIGURE SCORING
 // ============================================================================
 
 /**
- * Calculate speed figure score (0-48 points)
+ * Calculate RAW speed figure score (0-48 points) before confidence adjustment
  * Based on comparison to par for today's class
- * Rescaled from 30 max to 48 max (scale factor: 80/50 = 1.6)
  */
-function calculateSpeedFigureScore(
-  bestRecent: number | null,
-  average: number | null,
+function calculateRawSpeedScore(
+  figure: number,
   parForClass: number
 ): { score: number; reasoning: string } {
-  // Use best recent figure primarily, average as fallback
-  const figure = bestRecent ?? average;
-
-  if (figure === null) {
-    return {
-      score: 24, // Neutral score for no data (was 15)
-      reasoning: 'No speed figures available',
-    };
-  }
-
   const differential = figure - parForClass;
 
   let score: number;
   let reasoning: string;
 
   if (differential >= 10) {
-    score = 48; // was 30
+    score = 48;
     reasoning = `${figure} Beyer (${differential}+ above par ${parForClass})`;
   } else if (differential >= 5) {
-    score = 40; // was 25
+    score = 40;
     reasoning = `${figure} Beyer (${differential} above par ${parForClass})`;
   } else if (differential >= 0) {
-    score = 32; // was 20
+    score = 32;
     reasoning = `${figure} Beyer (at par ${parForClass})`;
   } else if (differential >= -5) {
-    score = 24; // was 15
+    score = 24;
     reasoning = `${figure} Beyer (${Math.abs(differential)} below par ${parForClass})`;
   } else if (differential >= -10) {
-    score = 16; // was 10
+    score = 16;
     reasoning = `${figure} Beyer (${Math.abs(differential)} below par ${parForClass})`;
   } else {
-    score = 8; // was 5
+    score = 8;
     reasoning = `${figure} Beyer (significantly below par ${parForClass})`;
   }
+
+  return { score, reasoning };
+}
+
+/**
+ * Calculate speed figure score (0-48 points)
+ * Based on comparison to par for today's class
+ *
+ * PHASE 2: Applies confidence multiplier based on figure availability.
+ * Rescaled from 30 max to 48 max (scale factor: 80/50 = 1.6)
+ *
+ * SCORING WITH CONFIDENCE:
+ * - No Beyer figures → 12 pts (25% of max 48, penalized for unknown)
+ * - Only 1 figure in last 3 → score capped at 18 pts max
+ * - 2 figures in last 3 → score capped at 36 pts max
+ * - 3+ figures in last 3 → full 48 pts max
+ */
+function calculateSpeedFigureScore(
+  bestRecent: number | null,
+  average: number | null,
+  parForClass: number,
+  figureCount: number = 0
+): { score: number; reasoning: string; confidenceMultiplier: number } {
+  // Use best recent figure primarily, average as fallback
+  const figure = bestRecent ?? average;
+
+  // Get confidence multiplier based on data completeness
+  const multiplier = getSpeedConfidenceMultiplier(figureCount);
+
+  if (figure === null) {
+    // PHASE 2: Penalized score for no data (12 pts = 25% of 48, not neutral 24)
+    return {
+      score: 12,
+      reasoning: `No speed figures available (penalized: 12/${48} pts)`,
+      confidenceMultiplier: multiplier,
+    };
+  }
+
+  // Calculate raw score based on figure quality
+  const rawResult = calculateRawSpeedScore(figure, parForClass);
+  let rawScore = rawResult.score;
+  let reasoning = rawResult.reasoning;
+
+  // PHASE 2: Apply confidence multiplier to cap score based on data availability
+  // This penalizes horses with fewer speed figures in recent races
+  const adjustedScore = Math.round(rawScore * multiplier);
 
   if (bestRecent !== null && average !== null) {
     reasoning += ` | Best: ${bestRecent}, Avg: ${average}`;
   }
 
-  return { score, reasoning };
+  // Add confidence info to reasoning if less than full confidence
+  if (multiplier < 1.0) {
+    const maxPossible = Math.round(48 * multiplier);
+    reasoning += ` | Confidence: ${Math.round(multiplier * 100)}% (${figureCount} fig${figureCount === 1 ? '' : 's'}, max ${maxPossible} pts)`;
+  }
+
+  return { score: adjustedScore, reasoning, confidenceMultiplier: multiplier };
 }
 
 // ============================================================================
@@ -617,6 +708,9 @@ export function calculateSpeedClassScore(
 
   const averageFigure = getAverageFigure(horse.pastPerformances, 5) ?? horse.averageBeyer ?? null;
 
+  // PHASE 2: Count speed figures for confidence multiplier
+  const figureCount = countSpeedFigures(horse.pastPerformances, 3);
+
   // Analyze class movement
   const classMovement = analyzeClassMovement(currentClass, horse.pastPerformances);
 
@@ -676,7 +770,8 @@ export function calculateSpeedClassScore(
   }
 
   // Calculate speed score using effective (normalized + variant-adjusted) figure
-  const speedResult = calculateSpeedFigureScore(effectiveFigure, averageFigure, parForClass);
+  // PHASE 2: Pass figure count for confidence-based scoring
+  const speedResult = calculateSpeedFigureScore(effectiveFigure, averageFigure, parForClass, figureCount);
 
   // Calculate class score
   const classResult = calculateClassScore(currentClass, horse.pastPerformances, classMovement);
@@ -758,6 +853,15 @@ export function calculateSpeedClassScore(
         }
       : undefined;
 
+  // PHASE 2: Build speed confidence info for data completeness tracking
+  const speedConfidenceMultiplier = speedResult.confidenceMultiplier;
+  const speedConfidence = {
+    figureCount,
+    multiplier: speedConfidenceMultiplier,
+    maxPossibleScore: Math.round(48 * speedConfidenceMultiplier),
+    penaltyApplied: speedConfidenceMultiplier < 1.0,
+  };
+
   return {
     total: adjustedSpeedScore + classResult.score,
     speedScore: adjustedSpeedScore,
@@ -778,6 +882,7 @@ export function calculateSpeedClassScore(
       trackParFigure,
       parDifferential,
     },
+    speedConfidence,
   };
 }
 

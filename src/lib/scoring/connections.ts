@@ -512,54 +512,111 @@ function extractJockeyStatsFromHorse(horse: HorseEntry): ConnectionStats | null 
 // ============================================================================
 
 /**
- * Minimum baseline score for licensed trainers/jockeys (v2.5)
- * Ensures shippers are not penalized below this floor
+ * Phase 2: Connection scoring constants with data completeness penalties
+ *
+ * SCORING LOGIC:
+ * - Trainer with meet stats → full scoring (0-16 pts)
+ * - Trainer 0 meet starts BUT has career stats → use career, cap at 12 pts
+ * - Trainer 0 meet starts AND no career stats → 4 pts (half baseline, penalized)
+ *
+ * - Jockey with meet stats → full scoring (0-7 pts)
+ * - Jockey 0 meet starts BUT has career stats → use career, cap at 5 pts
+ * - Jockey 0 meet starts AND no career stats → 2 pts (half baseline, penalized)
  */
-const MIN_TRAINER_SCORE = 8;
-const MIN_JOCKEY_SCORE = 4;
+const MIN_TRAINER_SCORE_WITH_CAREER = 8;   // Baseline when career stats exist
+const MIN_TRAINER_SCORE_NO_CAREER = 4;     // Phase 2: Half baseline for unknowns
+const MAX_TRAINER_SCORE_SHIPPER = 12;      // Phase 2: Cap for career-only stats
+
+const MIN_JOCKEY_SCORE_WITH_CAREER = 4;    // Baseline when career stats exist
+const MIN_JOCKEY_SCORE_NO_CAREER = 2;      // Phase 2: Half baseline for unknowns
+const MAX_JOCKEY_SCORE_SHIPPER = 5;        // Phase 2: Cap for career-only stats
+
+// Keep old constants for backwards compatibility (exported for external use)
+export const MIN_TRAINER_SCORE = MIN_TRAINER_SCORE_WITH_CAREER;
+export const MIN_JOCKEY_SCORE = MIN_JOCKEY_SCORE_WITH_CAREER;
 
 /**
  * Calculate trainer score (0-16 points)
  * Based on win rate thresholds
  *
- * v2.5 (Shipper Fix): Minimum baseline of 8 pts for any licensed trainer.
- * Shipping a top national trainer shouldn't be a penalty.
+ * PHASE 2 - DATA COMPLETENESS PENALTIES:
+ * - 0 meet starts AND no career stats → 4 pts (half baseline, penalized for unknown)
+ * - 0 meet starts BUT has career stats → use career stats, cap at 12 pts
+ * - Has meet stats → full scoring (0-16 pts)
+ *
+ * This ensures trainers with incomplete data are penalized,
+ * not given neutral scores that reward unknowns.
  */
 function calculateTrainerScore(stats: ConnectionStats | null): number {
-  if (!stats || stats.starts < 3) {
-    // v2.5: Return minimum baseline instead of neutral
-    // Any licensed trainer deserves baseline credit
-    return MIN_TRAINER_SCORE;
+  // No stats at all = penalized baseline (unknown trainer)
+  if (!stats) {
+    return MIN_TRAINER_SCORE_NO_CAREER; // Phase 2: 4 pts, not 8
+  }
+
+  // Insufficient data = penalized baseline
+  if (stats.starts < 3) {
+    // Phase 2: If source is PP (career stats), give half baseline
+    // because we have some evidence but not enough
+    return MIN_TRAINER_SCORE_NO_CAREER; // 4 pts
   }
 
   const winRate = stats.winRate;
+  const isShipperStats = stats.source === 'pp'; // Career stats, not meet stats
 
-  if (winRate >= 20) return 16; // Elite trainer (20%+ win rate)
-  if (winRate >= 15) return 13; // Very good trainer (15-19%)
-  if (winRate >= 10) return 9; // Good trainer (10-14%)
-  if (winRate >= 5) return MIN_TRAINER_SCORE; // Average trainer (5-9%) - use minimum
-  return MIN_TRAINER_SCORE; // Below average also gets minimum (v2.5 floor)
+  // Calculate raw score based on win rate
+  let score: number;
+  if (winRate >= 20) score = 16; // Elite trainer (20%+ win rate)
+  else if (winRate >= 15) score = 13; // Very good trainer (15-19%)
+  else if (winRate >= 10) score = 9; // Good trainer (10-14%)
+  else if (winRate >= 5) score = MIN_TRAINER_SCORE_WITH_CAREER; // Average trainer (5-9%)
+  else score = MIN_TRAINER_SCORE_WITH_CAREER; // Below average gets baseline
+
+  // Phase 2: Apply shipper cap when using career stats instead of meet stats
+  // We trust meet stats more than career approximations
+  if (isShipperStats) {
+    score = Math.min(score, MAX_TRAINER_SCORE_SHIPPER); // Cap at 12 pts
+  }
+
+  return score;
 }
 
 /**
  * Calculate jockey score (0-7 points)
  * Same methodology as trainer but scaled
  *
- * v2.5 (Shipper Fix): Minimum baseline of 4 pts for any licensed jockey.
+ * PHASE 2 - DATA COMPLETENESS PENALTIES:
+ * - 0 meet starts AND no career stats → 2 pts (half baseline, penalized for unknown)
+ * - 0 meet starts BUT has career stats → use career stats, cap at 5 pts
+ * - Has meet stats → full scoring (0-7 pts)
  */
 function calculateJockeyScore(stats: ConnectionStats | null): number {
-  if (!stats || stats.starts < 3) {
-    // v2.5: Return minimum baseline instead of neutral
-    return MIN_JOCKEY_SCORE;
+  // No stats at all = penalized baseline (unknown jockey)
+  if (!stats) {
+    return MIN_JOCKEY_SCORE_NO_CAREER; // Phase 2: 2 pts, not 4
+  }
+
+  // Insufficient data = penalized baseline
+  if (stats.starts < 3) {
+    return MIN_JOCKEY_SCORE_NO_CAREER; // 2 pts
   }
 
   const winRate = stats.winRate;
+  const isShipperStats = stats.source === 'pp'; // Career stats, not meet stats
 
-  if (winRate >= 20) return 7; // Elite jockey
-  if (winRate >= 15) return 6; // Very good jockey
-  if (winRate >= 10) return MIN_JOCKEY_SCORE; // Good jockey - use minimum
-  if (winRate >= 5) return MIN_JOCKEY_SCORE; // Average jockey - use minimum
-  return MIN_JOCKEY_SCORE; // Below average also gets minimum (v2.5 floor)
+  // Calculate raw score based on win rate
+  let score: number;
+  if (winRate >= 20) score = 7; // Elite jockey
+  else if (winRate >= 15) score = 6; // Very good jockey
+  else if (winRate >= 10) score = MIN_JOCKEY_SCORE_WITH_CAREER; // Good jockey
+  else if (winRate >= 5) score = MIN_JOCKEY_SCORE_WITH_CAREER; // Average jockey
+  else score = MIN_JOCKEY_SCORE_WITH_CAREER; // Below average gets baseline
+
+  // Phase 2: Apply shipper cap when using career stats instead of meet stats
+  if (isShipperStats) {
+    score = Math.min(score, MAX_JOCKEY_SCORE_SHIPPER); // Cap at 5 pts
+  }
+
+  return score;
 }
 
 /**

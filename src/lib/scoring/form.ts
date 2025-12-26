@@ -71,6 +71,17 @@ export interface FormScoreResult {
   wonLastOut: boolean;
   /** v2.5: Won 2 of last 3 races */
   won2OfLast3: boolean;
+  /** Phase 2: Form confidence info for data completeness */
+  formConfidence?: {
+    /** Number of valid past performances */
+    ppCount: number;
+    /** Confidence multiplier applied (0.2-1.0) */
+    multiplier: number;
+    /** Maximum possible form score given data availability */
+    maxPossibleScore: number;
+    /** Whether confidence penalty was applied */
+    penaltyApplied: boolean;
+  };
 }
 
 // ============================================================================
@@ -687,6 +698,29 @@ function buildReasoning(
 }
 
 // ============================================================================
+// FORM CONFIDENCE (DATA COMPLETENESS PENALTIES - Phase 2)
+// ============================================================================
+
+/**
+ * Get form confidence multiplier based on PP count
+ *
+ * PENALTY LOGIC (Phase 2 - Missing Data Penalties):
+ * - 3+ PPs → 100% confidence (full scoring, 50 pts max)
+ * - 2 PPs → 60% confidence (30 pts max)
+ * - 1 PP → 40% confidence (20 pts max)
+ * - 0 PPs (first-time starter) → 20% confidence (10 pts max, penalized for unknown)
+ *
+ * This ensures horses with incomplete form data are penalized,
+ * not given neutral scores that reward unknowns.
+ */
+export function getFormConfidenceMultiplier(ppCount: number): number {
+  if (ppCount >= 3) return 1.0;   // Full confidence
+  if (ppCount === 2) return 0.6;  // 60% confidence
+  if (ppCount === 1) return 0.4;  // 40% confidence
+  return 0.2;                      // 20% baseline for first-time starters
+}
+
+// ============================================================================
 // RECENT WINNER BONUS (v2.5 - Favorite Fix)
 // ============================================================================
 
@@ -776,6 +810,10 @@ export function calculateFormScore(
 ): FormScoreResult {
   const pastPerformances = horse.pastPerformances;
 
+  // PHASE 2: Get PP count for confidence multiplier
+  const ppCount = pastPerformances.length;
+  const confidenceMultiplier = getFormConfidenceMultiplier(ppCount);
+
   // Calculate recent form with class context
   const formResult = calculateRecentFormScore(pastPerformances, todayContext ?? null);
 
@@ -797,7 +835,15 @@ export function calculateFormScore(
 
   // Calculate total with beaten lengths bonus/penalty AND recent winner bonus
   const baseTotal = formResult.score + layoffResult.score + consistencyResult.bonus;
-  const total = baseTotal + beatenLengthsAdjustments.formPoints + recentWinnerResult.bonus;
+  const rawTotal = baseTotal + beatenLengthsAdjustments.formPoints + recentWinnerResult.bonus;
+
+  // PHASE 2: Apply confidence multiplier to penalize incomplete form data
+  // First-time starters (0 PPs) → 10 pts max (20% of 50)
+  // 1 PP → 20 pts max (40% of 50)
+  // 2 PPs → 30 pts max (60% of 50)
+  // 3+ PPs → 50 pts max (full scoring)
+  const adjustedTotal = Math.round(rawTotal * confidenceMultiplier);
+  const total = Math.min(50, Math.max(0, adjustedTotal));
 
   // Build reasoning with class context info
   let reasoning = buildReasoning(
@@ -822,8 +868,22 @@ export function calculateFormScore(
     reasoning += ` | ${recentWinnerResult.reasoning}`;
   }
 
+  // PHASE 2: Add confidence info to reasoning if penalized
+  if (confidenceMultiplier < 1.0) {
+    const maxPossible = Math.round(50 * confidenceMultiplier);
+    reasoning += ` | Confidence: ${Math.round(confidenceMultiplier * 100)}% (${ppCount} PP${ppCount === 1 ? '' : 's'}, max ${maxPossible} pts)`;
+  }
+
+  // PHASE 2: Build form confidence info
+  const formConfidence = {
+    ppCount,
+    multiplier: confidenceMultiplier,
+    maxPossibleScore: Math.round(50 * confidenceMultiplier),
+    penaltyApplied: confidenceMultiplier < 1.0,
+  };
+
   return {
-    total: Math.min(50, Math.max(0, total)), // Cap at 0-50 (v2.5: increased from 40)
+    total,
     recentFormScore: formResult.score,
     layoffScore: layoffResult.score,
     consistencyBonus: consistencyResult.bonus,
@@ -840,6 +900,7 @@ export function calculateFormScore(
     recentWinnerBonus: recentWinnerResult.bonus,
     wonLastOut: recentWinnerResult.wonLastOut,
     won2OfLast3: recentWinnerResult.won2OfLast3,
+    formConfidence,
   };
 }
 
