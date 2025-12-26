@@ -13,81 +13,12 @@ import { describe, it, expect } from 'vitest';
 import { getSpeedConfidenceMultiplier } from '../speedClass';
 import { getFormConfidenceMultiplier } from '../form';
 import { getPaceConfidenceMultiplier } from '../pace';
-import type { HorseEntry, PastPerformance } from '../../../types/drf';
+import type { HorseEntry } from '../../../types/drf';
 import { createDefaultTrainerCategoryStats } from '../../../types/drf';
 
 // ============================================================================
 // TEST HELPERS
 // ============================================================================
-
-/**
- * Create a minimal mock past performance
- */
-function createMockPP(options: {
-  beyer?: number | null;
-  position?: number;
-  weight?: number;
-  earlyPace1?: number | null;
-  latePace?: number | null;
-}): PastPerformance {
-  return {
-    date: '20240101',
-    track: 'SAR',
-    trackName: 'Saratoga',
-    raceNumber: 1,
-    distanceFurlongs: 6,
-    distance: '6f',
-    surface: 'dirt',
-    trackCondition: 'fast',
-    classification: 'allowance',
-    claimingPrice: null,
-    purse: 50000,
-    fieldSize: 10,
-    finishPosition: options.position ?? 3,
-    lengthsBehind: 2,
-    lengthsAhead: null,
-    finalTime: 70.5,
-    finalTimeFormatted: '1:10.50',
-    speedFigures: {
-      beyer: options.beyer ?? null,
-      timeformUS: null,
-      equibase: null,
-      trackVariant: null,
-      dirtVariant: null,
-      turfVariant: null,
-    },
-    runningLine: {
-      start: 3,
-      quarterMile: 3,
-      quarterMileLengths: 2,
-      halfMile: 2,
-      halfMileLengths: 1,
-      threeQuarters: null,
-      threeQuartersLengths: null,
-      stretch: 2,
-      stretchLengths: 1,
-      finish: 3,
-      finishLengths: 2,
-    },
-    jockey: 'Smith J',
-    weight: options.weight ?? 122,
-    apprenticeAllowance: 0,
-    equipment: '',
-    medication: '',
-    winner: 'Winner Horse',
-    secondPlace: 'Second Horse',
-    thirdPlace: 'This Horse',
-    tripComment: '',
-    comment: '',
-    odds: 5.0,
-    favoriteRank: 3,
-    wasClaimed: false,
-    claimedFrom: null,
-    daysSinceLast: 21,
-    earlyPace1: options.earlyPace1 ?? null,
-    latePace: options.latePace ?? null,
-  };
-}
 
 /**
  * Create a minimal mock horse entry
@@ -200,15 +131,16 @@ function createMockHorse(options: {
     earlySpeedRating: 85,
     runningStyle: options.runningStyle ?? 'E/P',
     pedigreeRating: null,
+    claimingPrice: null,
+    lastClaimPrice: null,
+    trainerAngle: null,
     workouts: [],
     pastPerformances: options.pastPerformances ?? [],
     isScratched: false,
-    maidenIndicator: null,
-    claimingPrice: null,
-    claimingEligible: false,
-    classRating: null,
-    powerRating: null,
-    quirin: null,
+    scratchReason: null,
+    isCoupledMain: false,
+    coupledWith: [],
+    rawLine: '',
   };
 }
 

@@ -531,9 +531,9 @@ const MIN_JOCKEY_SCORE_WITH_CAREER = 4;    // Baseline when career stats exist
 const MIN_JOCKEY_SCORE_NO_CAREER = 2;      // Phase 2: Half baseline for unknowns
 const MAX_JOCKEY_SCORE_SHIPPER = 5;        // Phase 2: Cap for career-only stats
 
-// Keep old constants for backwards compatibility
-const MIN_TRAINER_SCORE = MIN_TRAINER_SCORE_WITH_CAREER;
-const MIN_JOCKEY_SCORE = MIN_JOCKEY_SCORE_WITH_CAREER;
+// Keep old constants for backwards compatibility (exported for external use)
+export const MIN_TRAINER_SCORE = MIN_TRAINER_SCORE_WITH_CAREER;
+export const MIN_JOCKEY_SCORE = MIN_JOCKEY_SCORE_WITH_CAREER;
 
 /**
  * Calculate trainer score (0-16 points)

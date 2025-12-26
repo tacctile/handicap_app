@@ -178,6 +178,8 @@ function createMockHorseScore(total: number, overrides: Partial<HorseScore> = {}
       isLowConfidence: false,
       confidenceReason: null,
     },
+    lowConfidencePenaltyApplied: false,
+    lowConfidencePenaltyAmount: 0,
     ...overrides,
   };
 }
