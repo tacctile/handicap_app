@@ -118,6 +118,11 @@ import {
   enforceOverlayBoundaries,
 } from './scoringUtils';
 import { calculateDataCompleteness, type DataCompletenessResult } from './dataCompleteness';
+import {
+  isTopBeyerBonusEnabled,
+  getTopBeyerBonusPoints,
+  getTopBeyerBonusRankThreshold,
+} from '../config/featureFlags';
 
 // ============================================================================
 // CONSTANTS
@@ -410,6 +415,21 @@ export interface ScoreBreakdown {
     headToHead: number;
     reasoning: string;
   };
+  /** Top Beyer Bonus (EXPERIMENTAL) */
+  topBeyerBonus?: {
+    /** Points added from the bonus */
+    points: number;
+    /** Whether this horse has the highest Beyer in the field */
+    isTopBeyer: boolean;
+    /** The horse's best Beyer figure */
+    beyerFigure: number | null;
+    /** The horse's original rank before bonus */
+    originalRank: number;
+    /** Whether the bonus was applied (only if ranked 5th or worse) */
+    bonusApplied: boolean;
+    /** Explanation of the bonus status */
+    reasoning: string;
+  };
 }
 
 /** Complete score result for a horse */
@@ -440,6 +460,12 @@ export interface HorseScore {
   lowConfidencePenaltyApplied: boolean;
   /** Phase 2: Amount deducted due to low confidence (in points) */
   lowConfidencePenaltyAmount: number;
+  /** EXPERIMENTAL: Whether the Top Beyer Bonus was applied */
+  topBeyerBonusApplied: boolean;
+  /** EXPERIMENTAL: Points added from Top Beyer Bonus */
+  topBeyerBonusAmount: number;
+  /** EXPERIMENTAL: Whether this horse is the Top Beyer in the field */
+  isTopBeyer: boolean;
 }
 
 /** Scored horse with index for sorting */
@@ -774,6 +800,9 @@ function calculateHorseScoreWithContext(
       },
       lowConfidencePenaltyApplied: false,
       lowConfidencePenaltyAmount: 0,
+      topBeyerBonusApplied: false,
+      topBeyerBonusAmount: 0,
+      isTopBeyer: false,
     };
   }
 
@@ -1088,6 +1117,9 @@ function calculateHorseScoreWithContext(
     dataCompleteness,
     lowConfidencePenaltyApplied,
     lowConfidencePenaltyAmount,
+    topBeyerBonusApplied: false,
+    topBeyerBonusAmount: 0,
+    isTopBeyer: false,
   };
 }
 
@@ -1106,6 +1138,46 @@ export function calculateHorseScore(
   const context = buildScoringContext([horse], raceHeader, () => isScratched);
 
   return calculateHorseScoreWithContext(horse, context, currentOdds, trackCondition, isScratched);
+}
+
+/**
+ * Get the best Beyer figure for a horse from recent past performances
+ * Uses the same logic as the speed/class scoring module
+ */
+function getBestBeyerForHorse(horse: HorseEntry): number | null {
+  // First check horse-level Beyer fields
+  if (horse.bestBeyer !== null && horse.bestBeyer !== undefined && horse.bestBeyer > 0) {
+    return horse.bestBeyer;
+  }
+
+  // Fall back to searching past performances (last 3 races)
+  const recentPPs = horse.pastPerformances?.slice(0, 3) || [];
+  const beyers = recentPPs
+    .map((pp) => pp.speedFigures?.beyer)
+    .filter((b): b is number => b !== null && b !== undefined && b > 0);
+
+  if (beyers.length === 0) return null;
+
+  return Math.max(...beyers);
+}
+
+/**
+ * Find the horse with the highest Beyer figure in the field
+ * Returns null if no horses have valid Beyer figures
+ */
+function findTopBeyerHorse(scoredHorses: ScoredHorse[]): { horse: ScoredHorse; beyer: number } | null {
+  let topBeyer: { horse: ScoredHorse; beyer: number } | null = null;
+
+  for (const sh of scoredHorses) {
+    if (sh.score.isScratched) continue;
+
+    const beyer = getBestBeyerForHorse(sh.horse);
+    if (beyer !== null && (topBeyer === null || beyer > topBeyer.beyer)) {
+      topBeyer = { horse: sh, beyer };
+    }
+  }
+
+  return topBeyer;
 }
 
 /**
@@ -1146,6 +1218,67 @@ export function calculateRaceScores(
   sortedByScore.forEach((horse, index) => {
     horse.rank = index + 1;
   });
+
+  // =========================================================================
+  // EXPERIMENTAL: Apply Top Beyer Bonus
+  // If enabled, find the horse with highest Beyer and boost if ranks 5th+
+  // =========================================================================
+  if (isTopBeyerBonusEnabled()) {
+    const bonusPoints = getTopBeyerBonusPoints();
+    const rankThreshold = getTopBeyerBonusRankThreshold();
+
+    // Find the top Beyer horse
+    const topBeyerResult = findTopBeyerHorse(scoredHorses);
+
+    if (topBeyerResult) {
+      const { horse: topBeyerHorse, beyer: topBeyerFigure } = topBeyerResult;
+
+      // Mark all horses with their top beyer status
+      for (const sh of scoredHorses) {
+        if (sh.score.isScratched) continue;
+
+        const isTopBeyer = sh === topBeyerHorse;
+        const horseBeyer = getBestBeyerForHorse(sh.horse);
+        const originalRank = sh.rank;
+        const bonusApplied = isTopBeyer && originalRank >= rankThreshold;
+
+        // Update the score object
+        sh.score.isTopBeyer = isTopBeyer;
+
+        if (bonusApplied) {
+          // Apply the bonus
+          sh.score.topBeyerBonusApplied = true;
+          sh.score.topBeyerBonusAmount = bonusPoints;
+          sh.score.total = enforceScoreBoundaries(sh.score.total + bonusPoints);
+        }
+
+        // Add the breakdown info
+        sh.score.breakdown.topBeyerBonus = {
+          points: bonusApplied ? bonusPoints : 0,
+          isTopBeyer,
+          beyerFigure: horseBeyer,
+          originalRank,
+          bonusApplied,
+          reasoning: isTopBeyer
+            ? bonusApplied
+              ? `Top Beyer (${topBeyerFigure}) ranked ${originalRank}th → +${bonusPoints} bonus applied`
+              : `Top Beyer (${topBeyerFigure}) ranked ${originalRank}${originalRank === 1 ? 'st' : originalRank === 2 ? 'nd' : originalRank === 3 ? 'rd' : 'th'} → No bonus needed (ranks above ${rankThreshold}th)`
+            : horseBeyer !== null
+              ? `Beyer ${horseBeyer} (not top in field)`
+              : 'No Beyer figure available',
+        };
+      }
+
+      // Re-rank all horses after applying bonus
+      const reSortedByScore = [...scoredHorses]
+        .filter((h) => !h.score.isScratched)
+        .sort((a, b) => b.score.total - a.score.total);
+
+      reSortedByScore.forEach((horse, index) => {
+        horse.rank = index + 1;
+      });
+    }
+  }
 
   // Now sort by post position for display (scratched horses stay in place)
   scoredHorses.sort((a, b) => {

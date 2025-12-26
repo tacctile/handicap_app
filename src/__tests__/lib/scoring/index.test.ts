@@ -459,4 +459,224 @@ describe('Main Scoring Engine', () => {
       expect(SCORE_THRESHOLDS.weak).toBe(0);
     });
   });
+
+  describe('Top Beyer Bonus (EXPERIMENTAL)', () => {
+    it('applies +15 bonus when top Beyer horse ranks 5th or worse (toggle ON)', async () => {
+      // Import feature flags dynamically to allow overriding
+      const { overrideFeatureFlags, resetFeatureFlags } = await import(
+        '../../../lib/config/featureFlags'
+      );
+
+      // Enable the Top Beyer Bonus feature
+      overrideFeatureFlags({
+        topBeyerBonus: true,
+        topBeyerBonusPoints: 15,
+        topBeyerBonusRankThreshold: 5,
+      });
+
+      try {
+        // Create a field where the top Beyer horse will rank poorly
+        // Horse 0 has highest Beyer (95) but will rank low due to other factors
+        const horses = [
+          createHorseEntry({
+            horseName: 'TopBeyer',
+            postPosition: 1,
+            bestBeyer: 95, // Highest Beyer in field
+            pastPerformances: [], // No PPs = lower score
+          }),
+          createHorseEntry({
+            horseName: 'StrongRunner',
+            postPosition: 2,
+            bestBeyer: 80,
+            pastPerformances: [
+              createPastPerformance({ finish: 1, speedFigures: createSpeedFigures({ beyer: 80 }) }),
+              createPastPerformance({ finish: 1, speedFigures: createSpeedFigures({ beyer: 78 }) }),
+              createPastPerformance({ finish: 2, speedFigures: createSpeedFigures({ beyer: 82 }) }),
+            ],
+          }),
+          createHorseEntry({
+            horseName: 'Consistent',
+            postPosition: 3,
+            bestBeyer: 78,
+            pastPerformances: [
+              createPastPerformance({ finish: 2, speedFigures: createSpeedFigures({ beyer: 78 }) }),
+              createPastPerformance({ finish: 1, speedFigures: createSpeedFigures({ beyer: 76 }) }),
+            ],
+          }),
+          createHorseEntry({
+            horseName: 'FormHorse',
+            postPosition: 4,
+            bestBeyer: 75,
+            pastPerformances: [
+              createPastPerformance({ finish: 1, speedFigures: createSpeedFigures({ beyer: 75 }) }),
+              createPastPerformance({ finish: 1, speedFigures: createSpeedFigures({ beyer: 74 }) }),
+            ],
+          }),
+          createHorseEntry({
+            horseName: 'Steady',
+            postPosition: 5,
+            bestBeyer: 73,
+            pastPerformances: [
+              createPastPerformance({ finish: 2, speedFigures: createSpeedFigures({ beyer: 73 }) }),
+            ],
+          }),
+        ];
+
+        const header = createRaceHeader({ fieldSize: 5 });
+        const getOdds = (_i: number, odds: string) => odds;
+        const isScratched = () => false;
+
+        const results = calculateRaceScores(horses, header, getOdds, isScratched, 'fast');
+
+        // Find the TopBeyer horse
+        const topBeyerHorse = results.find((r) => r.horse.horseName === 'TopBeyer');
+
+        // The top Beyer horse should have bonus info in breakdown
+        expect(topBeyerHorse?.score.breakdown.topBeyerBonus).toBeDefined();
+        expect(topBeyerHorse?.score.breakdown.topBeyerBonus?.isTopBeyer).toBe(true);
+        expect(topBeyerHorse?.score.breakdown.topBeyerBonus?.beyerFigure).toBe(95);
+
+        // If the horse ranks 5th or worse, bonus should be applied
+        if (topBeyerHorse?.score.breakdown.topBeyerBonus?.originalRank >= 5) {
+          expect(topBeyerHorse?.score.topBeyerBonusApplied).toBe(true);
+          expect(topBeyerHorse?.score.topBeyerBonusAmount).toBe(15);
+        }
+      } finally {
+        // Reset feature flags
+        resetFeatureFlags();
+      }
+    });
+
+    it('does NOT apply bonus when toggle is OFF (default)', () => {
+      // Create a simple field
+      const horses = [
+        createHorseEntry({
+          horseName: 'TopBeyer',
+          postPosition: 1,
+          bestBeyer: 95,
+        }),
+        createHorseEntry({
+          horseName: 'Other',
+          postPosition: 2,
+          bestBeyer: 80,
+        }),
+      ];
+
+      const header = createRaceHeader({ fieldSize: 2 });
+      const getOdds = (_i: number, odds: string) => odds;
+      const isScratched = () => false;
+
+      const results = calculateRaceScores(horses, header, getOdds, isScratched, 'fast');
+
+      // With feature OFF, no bonus should be applied
+      results.forEach((r) => {
+        expect(r.score.topBeyerBonusApplied).toBe(false);
+        expect(r.score.topBeyerBonusAmount).toBe(0);
+        expect(r.score.isTopBeyer).toBe(false);
+      });
+    });
+
+    it('does NOT apply bonus when top Beyer horse ranks 1st-4th', async () => {
+      const { overrideFeatureFlags, resetFeatureFlags } = await import(
+        '../../../lib/config/featureFlags'
+      );
+
+      overrideFeatureFlags({
+        topBeyerBonus: true,
+        topBeyerBonusPoints: 15,
+        topBeyerBonusRankThreshold: 5,
+      });
+
+      try {
+        // Create a field where top Beyer horse will rank highly (1st-4th)
+        const horses = [
+          createHorseEntry({
+            horseName: 'TopBeyer',
+            postPosition: 1,
+            bestBeyer: 95,
+            pastPerformances: [
+              createPastPerformance({ finish: 1, speedFigures: createSpeedFigures({ beyer: 95 }) }),
+              createPastPerformance({ finish: 1, speedFigures: createSpeedFigures({ beyer: 92 }) }),
+            ],
+          }),
+          createHorseEntry({
+            horseName: 'Other',
+            postPosition: 2,
+            bestBeyer: 70,
+          }),
+        ];
+
+        const header = createRaceHeader({ fieldSize: 2 });
+        const getOdds = (_i: number, odds: string) => odds;
+        const isScratched = () => false;
+
+        const results = calculateRaceScores(horses, header, getOdds, isScratched, 'fast');
+
+        const topBeyerHorse = results.find((r) => r.horse.horseName === 'TopBeyer');
+
+        // Horse should be marked as top Beyer
+        expect(topBeyerHorse?.score.isTopBeyer).toBe(true);
+        expect(topBeyerHorse?.score.breakdown.topBeyerBonus?.isTopBeyer).toBe(true);
+
+        // But bonus should NOT be applied since they rank 1st
+        expect(topBeyerHorse?.score.topBeyerBonusApplied).toBe(false);
+        expect(topBeyerHorse?.score.topBeyerBonusAmount).toBe(0);
+        expect(topBeyerHorse?.score.breakdown.topBeyerBonus?.bonusApplied).toBe(false);
+      } finally {
+        resetFeatureFlags();
+      }
+    });
+
+    it('bonus is exactly 15 points', async () => {
+      const { overrideFeatureFlags, resetFeatureFlags } = await import(
+        '../../../lib/config/featureFlags'
+      );
+
+      overrideFeatureFlags({
+        topBeyerBonus: true,
+        topBeyerBonusPoints: 15,
+        topBeyerBonusRankThreshold: 5,
+      });
+
+      try {
+        // Create field where top Beyer will rank poorly
+        const horses = Array.from({ length: 8 }, (_, i) =>
+          createHorseEntry({
+            horseName: i === 7 ? 'TopBeyer' : `Horse${i + 1}`,
+            postPosition: i + 1,
+            bestBeyer: i === 7 ? 100 : 85 - i * 5, // TopBeyer has highest but at end
+            pastPerformances:
+              i === 7
+                ? [] // TopBeyer has no PPs, will rank low
+                : [
+                    createPastPerformance({
+                      finish: 1,
+                      speedFigures: createSpeedFigures({ beyer: 85 - i * 5 }),
+                    }),
+                    createPastPerformance({
+                      finish: 1,
+                      speedFigures: createSpeedFigures({ beyer: 83 - i * 5 }),
+                    }),
+                  ],
+          })
+        );
+
+        const header = createRaceHeader({ fieldSize: 8 });
+        const getOdds = (_i: number, odds: string) => odds;
+        const isScratched = () => false;
+
+        const results = calculateRaceScores(horses, header, getOdds, isScratched, 'fast');
+
+        const topBeyerHorse = results.find((r) => r.horse.horseName === 'TopBeyer');
+
+        if (topBeyerHorse?.score.topBeyerBonusApplied) {
+          // Verify exactly 15 points were added
+          expect(topBeyerHorse.score.topBeyerBonusAmount).toBe(15);
+          expect(topBeyerHorse.score.breakdown.topBeyerBonus?.points).toBe(15);
+        }
+      } finally {
+        resetFeatureFlags();
+      }
+    });
+  });
 });

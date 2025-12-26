@@ -413,6 +413,14 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                 Edge: {overlayScore >= 0 ? '+' : ''}
                 {overlayScore}
               </span>
+              {score?.topBeyerBonusApplied && (
+                <>
+                  <span className="furlong-score__breakdown-separator">•</span>
+                  <span className="furlong-score__breakdown-item furlong-score__breakdown-item--bonus">
+                    ⚡ Top Beyer Bonus: +{score.topBeyerBonusAmount}
+                  </span>
+                </>
+              )}
             </div>
             <div className="furlong-score__rating-section">
               <div className="furlong-score__tier-rating">

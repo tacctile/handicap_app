@@ -114,6 +114,44 @@ export interface FeatureFlagConfig {
    *   - Default (20): Balanced - requires meaningful separation
    */
   fieldRelativeStandoutThreshold: number;
+
+  /**
+   * Top Beyer Bonus (EXPERIMENTAL)
+   *
+   * When enabled, the horse with the highest Beyer figure in the field
+   * receives a +15 point bonus IF they would otherwise rank 5th or worse.
+   *
+   * Rationale:
+   *   In testing, horses with the highest Beyer sometimes rank poorly
+   *   but still win. This bonus helps surface these "Top Beyer Threats"
+   *   while not affecting horses that already rank well.
+   *
+   * When enabled:
+   *   - Identifies the single horse with the highest Beyer in the field
+   *   - If that horse ranks 5th or worse after normal scoring
+   *   - Adds +15 points to their final score
+   *   - Flags them as "Top Beyer Threat" in the UI
+   *
+   * Set to false (default) to disable this experimental feature.
+   */
+  topBeyerBonus: boolean;
+
+  /**
+   * Top Beyer Bonus Points
+   *
+   * The number of points to add when the top Beyer bonus is triggered.
+   * Default: 15 points
+   */
+  topBeyerBonusPoints: number;
+
+  /**
+   * Top Beyer Bonus Rank Threshold
+   *
+   * The minimum rank (5th or worse) required for the bonus to apply.
+   * A horse must rank at or below this position to receive the bonus.
+   * Default: 5 (meaning 5th place or worse)
+   */
+  topBeyerBonusRankThreshold: number;
 }
 
 // ============================================================================
@@ -132,6 +170,10 @@ export const FEATURE_FLAGS: FeatureFlagConfig = {
   useOddsConfidence: true,
   useFieldRelativeScoring: true,
   fieldRelativeStandoutThreshold: 20,
+  // EXPERIMENTAL: Top Beyer Bonus (default OFF)
+  topBeyerBonus: false,
+  topBeyerBonusPoints: 15,
+  topBeyerBonusRankThreshold: 5,
 };
 
 // ============================================================================
@@ -174,6 +216,27 @@ export function getFieldRelativeStandoutThreshold(): number {
 }
 
 /**
+ * Check if Top Beyer Bonus is enabled (EXPERIMENTAL)
+ */
+export function isTopBeyerBonusEnabled(): boolean {
+  return FEATURE_FLAGS.topBeyerBonus;
+}
+
+/**
+ * Get the Top Beyer Bonus points value
+ */
+export function getTopBeyerBonusPoints(): number {
+  return FEATURE_FLAGS.topBeyerBonusPoints;
+}
+
+/**
+ * Get the Top Beyer Bonus rank threshold
+ */
+export function getTopBeyerBonusRankThreshold(): number {
+  return FEATURE_FLAGS.topBeyerBonusRankThreshold;
+}
+
+/**
  * Override feature flags at runtime (useful for testing)
  *
  * @param overrides - Partial config to merge with defaults
@@ -197,6 +260,15 @@ export function overrideFeatureFlags(overrides: Partial<FeatureFlagConfig>): Fea
   if (overrides.fieldRelativeStandoutThreshold !== undefined) {
     FEATURE_FLAGS.fieldRelativeStandoutThreshold = overrides.fieldRelativeStandoutThreshold;
   }
+  if (overrides.topBeyerBonus !== undefined) {
+    FEATURE_FLAGS.topBeyerBonus = overrides.topBeyerBonus;
+  }
+  if (overrides.topBeyerBonusPoints !== undefined) {
+    FEATURE_FLAGS.topBeyerBonusPoints = overrides.topBeyerBonusPoints;
+  }
+  if (overrides.topBeyerBonusRankThreshold !== undefined) {
+    FEATURE_FLAGS.topBeyerBonusRankThreshold = overrides.topBeyerBonusRankThreshold;
+  }
 
   return previous;
 }
@@ -210,4 +282,7 @@ export function resetFeatureFlags(): void {
   FEATURE_FLAGS.useOddsConfidence = true;
   FEATURE_FLAGS.useFieldRelativeScoring = true;
   FEATURE_FLAGS.fieldRelativeStandoutThreshold = 20;
+  FEATURE_FLAGS.topBeyerBonus = false;
+  FEATURE_FLAGS.topBeyerBonusPoints = 15;
+  FEATURE_FLAGS.topBeyerBonusRankThreshold = 5;
 }

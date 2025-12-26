@@ -909,6 +909,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         baseScoreRank={rankInfo?.rank}
                         baseScoreRankOrdinal={rankInfo?.ordinal}
                         baseScoreRankColor={rankInfo?.color}
+                        // EXPERIMENTAL: Top Beyer bonus indicators
+                        isTopBeyer={scoredHorse.score.isTopBeyer}
+                        topBeyerBonusApplied={scoredHorse.score.topBeyerBonusApplied}
                       />
                       <HorseExpandedView
                         horse={horse}

@@ -78,6 +78,9 @@ interface HorseSummaryBarProps {
   baseScoreRank?: number;
   baseScoreRankOrdinal?: string;
   baseScoreRankColor?: string;
+  // EXPERIMENTAL: Top Beyer bonus indicators
+  isTopBeyer?: boolean;
+  topBeyerBonusApplied?: boolean;
 }
 
 // Helper to convert odds object to string
@@ -116,6 +119,9 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   baseScoreRank: _baseScoreRank, // Available for future use (e.g., sorting indicators)
   baseScoreRankOrdinal,
   baseScoreRankColor,
+  // EXPERIMENTAL: Top Beyer bonus indicators
+  isTopBeyer = false,
+  topBeyerBonusApplied = false,
 }) => {
   // Extract horse data from HorseEntry type
   const programNumber = horse.programNumber;
@@ -237,7 +243,19 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       <div className="horse-summary-bar__pp">#{programNumber}</div>
 
       {/* Column 3: HORSE Name - FULL WIDTH, NO TRUNCATION */}
-      <div className="horse-summary-bar__name">{horseName.toUpperCase()}</div>
+      <div className="horse-summary-bar__name">
+        {horseName.toUpperCase()}
+        {topBeyerBonusApplied && (
+          <span className="horse-summary-bar__top-beyer-badge horse-summary-bar__top-beyer-badge--boosted">
+            ⚡ TOP BEYER THREAT
+          </span>
+        )}
+        {isTopBeyer && !topBeyerBonusApplied && (
+          <span className="horse-summary-bar__top-beyer-badge">
+            ⚡ TOP BEYER
+          </span>
+        )}
+      </div>
 
       {/* Column 4: OUR RANK - Projected Finish Order (based on base score) */}
       <div className="horse-summary-bar__rank">
