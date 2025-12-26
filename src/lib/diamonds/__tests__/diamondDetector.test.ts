@@ -173,6 +173,9 @@ function createMockHorse(overrides: Partial<HorseEntry> = {}): HorseEntry {
 function createMockScore(total: number, overrides: Partial<HorseScore> = {}): HorseScore {
   return {
     total,
+    baseScore: total - 5,
+    overlayScore: 5,
+    oddsScore: 7,
     isScratched: false,
     confidenceLevel: 'medium',
     dataQuality: 75,
@@ -208,6 +211,13 @@ function createMockScore(total: number, overrides: Partial<HorseScore> = {}): Ho
       },
       equipment: { total: 15, hasChanges: true, reasoning: 'First-time Lasix added' },
       pace: { total: 20, runningStyle: 'P', paceFit: 'good', reasoning: 'Good pace fit' },
+      odds: {
+        total: 7,
+        oddsValue: 5.0,
+        oddsSource: 'morning_line' as const,
+        tier: 'Live Price',
+        reasoning: '5-1 morning line',
+      },
       distanceSurface: {
         total: 0,
         turfScore: 0,

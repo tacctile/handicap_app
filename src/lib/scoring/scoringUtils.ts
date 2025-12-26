@@ -20,9 +20,13 @@ export const MIN_SCORE = 0;
 
 /**
  * Maximum base score before overlay
- * v3.0: Updated from 290 to 313 per Phase 3 Speed Weight Rebalance
+ * v3.1: Updated from 313 to 328 per Phase 6 Odds Factor
+ *
+ * Changes:
+ * - v3.0: 290 → 313 (Speed Weight Rebalance)
+ * - Phase 6: 313 → 328 (Odds Factor +15 pts)
  */
-export const MAX_BASE_SCORE = 313;
+export const MAX_BASE_SCORE = 328;
 
 /**
  * Maximum overlay adjustment
@@ -40,23 +44,24 @@ export const MIN_OVERLAY_NEGATIVE = -40;
 export const MAX_PROTOCOL_BONUS = 60;
 
 /** Maximum final score (base + overlay) */
-export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 353 (was 363)
+export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 368 (was 353)
 
 /** Maximum display score (for UI - uses base score) */
-export const MAX_DISPLAY_SCORE = 313;
+export const MAX_DISPLAY_SCORE = 328;
 
-// Category maximums (v3.0 - Speed Weight Rebalance)
+// Category maximums (v3.1 - Phase 6 Odds Factor)
 export const SCORE_CATEGORY_LIMITS = {
-  connections: 27, // 8.6% - Modifier, not primary driver
-  postPosition: 12, // 3.8% - v3.0: reduced from 20
-  speedClass: 122, // 39% - v3.0: Speed 90 + Class 32
-  form: 50, // 16.0% - Recent performance patterns
-  equipment: 8, // 2.6% - v3.0: reduced from 12
-  pace: 45, // 14.4% - High predictive value for race shape
+  connections: 27, // 8.2% - Modifier, not primary driver
+  postPosition: 12, // 3.7% - v3.0: reduced from 20
+  speedClass: 122, // 37.2% - v3.0: Speed 90 + Class 32
+  form: 50, // 15.2% - Recent performance patterns
+  equipment: 8, // 2.4% - v3.0: reduced from 12
+  pace: 45, // 13.7% - High predictive value for race shape
+  odds: 15, // 4.6% - Phase 6: Market wisdom for favorites
   breeding: 15,
   classHiddenDrops: 10,
-  trainerPatterns: 10, // v3.0: reduced from 15
-  comboPatterns: 4, // v3.0: reduced from 6
+  trainerPatterns: 10, // 3.0% - v3.0: reduced from 15
+  comboPatterns: 4, // 1.2% - v3.0: reduced from 6
 } as const;
 
 // ============================================================================
