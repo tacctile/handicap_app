@@ -806,4 +806,82 @@ describe('DRF Parser', () => {
       expect(horse.pastPerformances[1].latePace).toBe(90);
     });
   });
+
+  describe('Real DRF File Integration', () => {
+    // Load the real PEN0821.DRF file for integration testing
+    function loadRealDRF(): string {
+      const realPath = join(__dirname, '../../../data/PEN0821.DRF');
+      return readFileSync(realPath, 'utf-8');
+    }
+
+    it('should extract PP speed figures from real DRF file', () => {
+      const content = loadRealDRF();
+      const result = parseDRFFile(content, 'PEN0821.DRF');
+
+      expect(result.races.length).toBeGreaterThan(0);
+      const horse = result.races[0]?.horses[0];
+
+      expect(horse).toBeDefined();
+      expect(horse.horseName).toBe('THE MAN TO SEE');
+
+      // Should have PPs extracted
+      expect(horse.pastPerformances.length).toBeGreaterThan(0);
+
+      // First PP should have speed figure of 81 (verified from raw data)
+      const pp1 = horse.pastPerformances[0];
+      expect(pp1.date).toBe('20250624');
+      expect(pp1.speedFigures.beyer).toBe(81);
+    });
+
+    it('should extract PP odds from real DRF file', () => {
+      const content = loadRealDRF();
+      const result = parseDRFFile(content, 'PEN0821.DRF');
+
+      const horse = result.races[0]?.horses[0];
+      const pp1 = horse?.pastPerformances[0];
+
+      // First PP should have odds of 8 (verified from raw data at index 353)
+      expect(pp1?.odds).toBe(8);
+    });
+
+    it('should extract PP jockey from real DRF file', () => {
+      const content = loadRealDRF();
+      const result = parseDRFFile(content, 'PEN0821.DRF');
+
+      const horse = result.races[0]?.horses[0];
+      const pp1 = horse?.pastPerformances[0];
+
+      // First PP should have jockey (verified from raw data at index 1067)
+      expect(pp1?.jockey).toBe('CONNER TYLER');
+    });
+
+    it('should extract workouts from real DRF file', () => {
+      const content = loadRealDRF();
+      const result = parseDRFFile(content, 'PEN0821.DRF');
+
+      const horse = result.races[0]?.horses[0];
+
+      // Should have workouts extracted
+      expect(horse.workouts.length).toBeGreaterThan(0);
+
+      // First workout should have date 20250801 (verified from raw data at index 255)
+      expect(horse.workouts[0].date).toBe('20250801');
+    });
+
+    it('should extract turf/distance records from real DRF file', () => {
+      const content = loadRealDRF();
+      const result = parseDRFFile(content, 'PEN0821.DRF');
+
+      const horse = result.races[0]?.horses[0];
+
+      // Turf starts should be 1 (verified from raw data at index 79)
+      expect(horse.turfStarts).toBe(1);
+
+      // Distance starts should be 4 (verified from raw data at index 91)
+      expect(horse.distanceStarts).toBe(4);
+
+      // Track starts should be 24 (verified from raw data at index 96)
+      expect(horse.trackStarts).toBe(24);
+    });
+  });
 });
