@@ -122,6 +122,7 @@ import {
   enforceBaseScoreBoundaries,
   enforceOverlayBoundaries,
 } from './scoringUtils';
+import { calculateDataCompleteness, type DataCompletenessResult } from './dataCompleteness';
 
 // ============================================================================
 // CONSTANTS
@@ -417,6 +418,8 @@ export interface HorseScore {
   classScore?: ClassScoreResult;
   /** Full overlay analysis result */
   overlayResult?: OverlayResult;
+  /** Data completeness analysis (infrastructure for scoring accuracy) */
+  dataCompleteness: DataCompletenessResult;
 }
 
 /** Scored horse with index for sorting */
@@ -723,6 +726,24 @@ function calculateHorseScoreWithContext(
       isScratched: true,
       confidenceLevel: 'low',
       dataQuality: 0,
+      dataCompleteness: {
+        overallScore: 0,
+        overallGrade: 'F',
+        criticalComplete: 0,
+        highComplete: 0,
+        mediumComplete: 0,
+        lowComplete: 0,
+        hasSpeedFigures: false,
+        hasPastPerformances: false,
+        hasTrainerStats: false,
+        hasJockeyStats: false,
+        hasRunningStyle: false,
+        hasPaceFigures: false,
+        missingCritical: [],
+        missingHigh: [],
+        isLowConfidence: true,
+        confidenceReason: 'Scratched',
+      },
     };
   }
 
@@ -989,6 +1010,9 @@ function calculateHorseScoreWithContext(
   const dataQuality = calculateDataQuality(horse);
   const confidenceLevel = calculateConfidenceLevel(dataQuality, breakdown);
 
+  // Calculate data completeness (infrastructure for scoring accuracy)
+  const dataCompleteness = calculateDataCompleteness(horse, context.raceHeader);
+
   return {
     total,
     baseScore,
@@ -1000,6 +1024,7 @@ function calculateHorseScoreWithContext(
     breedingScore,
     classScore: classScoreResult,
     overlayResult,
+    dataCompleteness,
   };
 }
 
@@ -1469,3 +1494,56 @@ export {
   type PeakStatus,
   type P3RefinementsResult,
 } from './p3Refinements';
+
+// Data completeness exports (infrastructure for scoring accuracy)
+export {
+  // Main function
+  calculateDataCompleteness,
+  // Field presence checks
+  hasValidSpeedFigures,
+  hasValidPastPerformances,
+  hasValidFinishPositions,
+  hasValidClassLevel,
+  hasValidTrainerStats,
+  hasValidJockeyStats,
+  hasValidRunningStyle,
+  hasValidDaysSinceLastRace,
+  hasValidWorkouts,
+  hasValidPaceFigures,
+  hasValidTrackRecord,
+  hasValidDistanceRecord,
+  hasValidSurfaceRecord,
+  hasValidWetTrackRecord,
+  hasValidTrainerCategoryStats,
+  hasValidEquipment,
+  hasValidBreeding,
+  hasValidWeightChanges,
+  hasValidClaimingPriceHistory,
+  hasValidLifetimeEarnings,
+  // Utility functions
+  getDataCompletenessSummary,
+  getDataCompletenessColor,
+  shouldFlagLowConfidence,
+  getTierLabel,
+  LOW_CONFIDENCE_THRESHOLD,
+  // Types re-exported from types/scoring
+  type DataCompletenessResult,
+} from './dataCompleteness';
+
+// Re-export data completeness types from types/scoring
+export type {
+  DataCompletenessGrade,
+  DataFieldTier,
+  FieldPresenceResult,
+  SpeedFiguresPresence,
+  PastPerformancesPresence,
+  TrainerStatsPresence,
+  JockeyStatsPresence,
+  PaceFiguresPresence,
+  RunningStylePresence,
+  TrackRecordPresence,
+  DistanceRecordPresence,
+  SurfaceRecordPresence,
+} from '../../types/scoring';
+
+export { DATA_TIER_WEIGHTS, DATA_COMPLETENESS_GRADES } from '../../types/scoring';
