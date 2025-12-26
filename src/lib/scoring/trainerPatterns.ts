@@ -4,7 +4,12 @@
  * Uses parsed trainer category statistics (DRF Fields 1146-1221) to apply
  * situational bonuses when current race conditions match trainer's proven patterns.
  *
- * Score: 0-15 points (stacking multiple patterns, capped)
+ * Score: 0-10 points (v3.0 - reduced from 15, stacking multiple patterns, capped)
+ *
+ * v3.0 CHANGES (Phase 3 - Speed Weight Rebalance):
+ * - Reduced from 15 to 10 pts to compensate for speed increase
+ * - Scale factor: 0.67 (10/15)
+ * - Individual pattern points proportionally reduced
  *
  * Pattern Categories:
  * - Equipment Patterns: First-time Lasix, First-time Blinkers, Blinkers Off
@@ -53,8 +58,12 @@ export interface TrainerPatternResult {
 // CONSTANTS
 // ============================================================================
 
-/** Maximum total points from trainer patterns */
-const MAX_TRAINER_PATTERN_POINTS = 15;
+/**
+ * Maximum total points from trainer patterns
+ * v3.0: Reduced from 15 to 10 pts per Phase 3 speed rebalance.
+ * Scale factor: 0.67 (10/15)
+ */
+const MAX_TRAINER_PATTERN_POINTS = 10;
 
 /** Minimum sample size to consider a pattern valid */
 const MIN_SAMPLE_SIZE = 5;
@@ -495,7 +504,9 @@ function scoreAcquisitionPattern(
  *
  * @param horse - The horse entry to score
  * @param raceHeader - Current race header for context
- * @returns Trainer pattern score result (0-15 points max)
+ * @returns Trainer pattern score result (0-10 points max)
+ *
+ * v3.0: All pattern points scaled by 0.67 (10/15)
  */
 export function calculateTrainerPatternScore(
   horse: HorseEntry,
@@ -506,30 +517,30 @@ export function calculateTrainerPatternScore(
   const reasoning: string[] = [];
 
   // -------------------------------------------------------------------------
-  // EQUIPMENT PATTERNS
+  // EQUIPMENT PATTERNS (v3.0: scaled by 0.67)
   // -------------------------------------------------------------------------
 
-  // First Time Lasix: 4 pts elite, 2 pts good
+  // First Time Lasix: 3 pts elite, 1.5 pts good (was 4/2)
   if (isFirstTimeLasix(horse)) {
-    const pattern = scoreEquipmentPattern(stats.firstTimeLasix, 'firstTimeLasix', 4);
+    const pattern = scoreEquipmentPattern(stats.firstTimeLasix, 'firstTimeLasix', 3);
     if (pattern) {
       matchedPatterns.push(pattern);
       reasoning.push(pattern.reasoning);
     }
   }
 
-  // First Time Blinkers: 3 pts elite, 1.5 pts good
+  // First Time Blinkers: 2 pts elite, 1 pt good (was 3/1.5)
   if (isFirstTimeBlinkers(horse)) {
-    const pattern = scoreEquipmentPattern(stats.firstTimeBlinkers, 'firstTimeBlinkers', 3);
+    const pattern = scoreEquipmentPattern(stats.firstTimeBlinkers, 'firstTimeBlinkers', 2);
     if (pattern) {
       matchedPatterns.push(pattern);
       reasoning.push(pattern.reasoning);
     }
   }
 
-  // Blinkers Off: 2 pts elite only
+  // Blinkers Off: 1 pt elite only (was 2)
   if (isBlinkersOff(horse)) {
-    const pattern = scoreEquipmentPattern(stats.blinkersOff, 'blinkersOff', 2);
+    const pattern = scoreEquipmentPattern(stats.blinkersOff, 'blinkersOff', 1);
     if (pattern) {
       matchedPatterns.push(pattern);
       reasoning.push(pattern.reasoning);
@@ -537,29 +548,29 @@ export function calculateTrainerPatternScore(
   }
 
   // -------------------------------------------------------------------------
-  // LAYOFF PATTERNS
+  // LAYOFF PATTERNS (v3.0: scaled by 0.67)
   // -------------------------------------------------------------------------
 
-  // 2nd Off Layoff: 4 pts elite, 2 pts good
+  // 2nd Off Layoff: 3 pts elite, 1.5 pts good (was 4/2)
   if (isSecondOffLayoff(horse)) {
-    const pattern = scoreLayoffPattern(stats.secondOffLayoff, 'secondOffLayoff', 4);
+    const pattern = scoreLayoffPattern(stats.secondOffLayoff, 'secondOffLayoff', 3);
     if (pattern) {
       matchedPatterns.push(pattern);
       reasoning.push(pattern.reasoning);
     }
   }
 
-  // Layoff duration patterns
+  // Layoff duration patterns: 2 pts each (was 3)
   const layoffCategory = getLayoffCategory(horse.daysSinceLastRace);
   if (layoffCategory) {
     const layoffStat = stats[layoffCategory];
     const layoffPointsMap: Record<string, number> = {
-      days31to60: 3,
-      days61to90: 3,
-      days91to180: 3,
-      days181plus: 3,
+      days31to60: 2,
+      days61to90: 2,
+      days91to180: 2,
+      days181plus: 2,
     };
-    const maxPoints = layoffPointsMap[layoffCategory] ?? 3;
+    const maxPoints = layoffPointsMap[layoffCategory] ?? 2;
     const pattern = scoreLayoffPattern(layoffStat, layoffCategory, maxPoints);
     if (pattern) {
       matchedPatterns.push(pattern);
@@ -568,21 +579,21 @@ export function calculateTrainerPatternScore(
   }
 
   // -------------------------------------------------------------------------
-  // DISTANCE PATTERNS
+  // DISTANCE PATTERNS (v3.0: scaled by 0.67)
   // -------------------------------------------------------------------------
 
-  // Sprint to Route: 3 pts elite, 1.5 pts good
+  // Sprint to Route: 2 pts elite, 1 pt good (was 3/1.5)
   if (isSprintToRoute(horse, raceHeader)) {
-    const pattern = scoreDistancePattern(stats.sprintToRoute, 'sprintToRoute', 3);
+    const pattern = scoreDistancePattern(stats.sprintToRoute, 'sprintToRoute', 2);
     if (pattern) {
       matchedPatterns.push(pattern);
       reasoning.push(pattern.reasoning);
     }
   }
 
-  // Route to Sprint: 3 pts elite, 1.5 pts good
+  // Route to Sprint: 2 pts elite, 1 pt good (was 3/1.5)
   if (isRouteToSprint(horse, raceHeader)) {
-    const pattern = scoreDistancePattern(stats.routeToSprint, 'routeToSprint', 3);
+    const pattern = scoreDistancePattern(stats.routeToSprint, 'routeToSprint', 2);
     if (pattern) {
       matchedPatterns.push(pattern);
       reasoning.push(pattern.reasoning);
@@ -590,24 +601,24 @@ export function calculateTrainerPatternScore(
   }
 
   // -------------------------------------------------------------------------
-  // SURFACE PATTERNS
+  // SURFACE PATTERNS (v3.0: scaled by 0.67)
   // -------------------------------------------------------------------------
 
-  // Turf races: Check if today is on turf
+  // Turf races: Check if today is on turf - 1 pt elite (was 2)
   if (raceHeader.surface === 'turf') {
     const isSprint = raceHeader.distanceFurlongs < SPRINT_THRESHOLD;
     const surfaceStat = isSprint ? stats.turfSprint : stats.turfRoute;
     const patternName = isSprint ? 'turfSprint' : 'turfRoute';
-    const pattern = scoreSurfacePattern(surfaceStat, patternName, 2);
+    const pattern = scoreSurfacePattern(surfaceStat, patternName, 1);
     if (pattern) {
       matchedPatterns.push(pattern);
       reasoning.push(pattern.reasoning);
     }
   }
 
-  // Wet track: 2 pts elite
+  // Wet track: 1 pt elite (was 2)
   if (isWetTrack(raceHeader)) {
-    const pattern = scoreSurfacePattern(stats.wetTrack, 'wetTrack', 2);
+    const pattern = scoreSurfacePattern(stats.wetTrack, 'wetTrack', 1);
     if (pattern) {
       matchedPatterns.push(pattern);
       reasoning.push(pattern.reasoning);
@@ -615,21 +626,21 @@ export function calculateTrainerPatternScore(
   }
 
   // -------------------------------------------------------------------------
-  // CLASS PATTERNS
+  // CLASS PATTERNS (v3.0: scaled by 0.67)
   // -------------------------------------------------------------------------
 
-  // Maiden Claiming: 2 pts elite
+  // Maiden Claiming: 1 pt elite (was 2)
   if (isMaidenClaiming(raceHeader)) {
-    const pattern = scoreClassPattern(stats.maidenClaiming, 'maidenClaiming', 2);
+    const pattern = scoreClassPattern(stats.maidenClaiming, 'maidenClaiming', 1);
     if (pattern) {
       matchedPatterns.push(pattern);
       reasoning.push(pattern.reasoning);
     }
   }
 
-  // Stakes: 2 pts elite
+  // Stakes: 1 pt elite (was 2)
   if (isStakesRace(raceHeader)) {
-    const pattern = scoreClassPattern(stats.stakes, 'stakes', 2);
+    const pattern = scoreClassPattern(stats.stakes, 'stakes', 1);
     if (pattern) {
       matchedPatterns.push(pattern);
       reasoning.push(pattern.reasoning);
@@ -637,21 +648,21 @@ export function calculateTrainerPatternScore(
   }
 
   // -------------------------------------------------------------------------
-  // ACQUISITION PATTERNS
+  // ACQUISITION PATTERNS (v3.0: scaled by 0.67)
   // -------------------------------------------------------------------------
 
-  // First Start for Trainer: 4 pts elite, 2 pts good
+  // First Start for Trainer: 3 pts elite, 1.5 pts good (was 4/2)
   if (isFirstStartForTrainer(horse)) {
-    const pattern = scoreAcquisitionPattern(stats.firstStartTrainer, 'firstStartTrainer', 4);
+    const pattern = scoreAcquisitionPattern(stats.firstStartTrainer, 'firstStartTrainer', 3);
     if (pattern) {
       matchedPatterns.push(pattern);
       reasoning.push(pattern.reasoning);
     }
   }
 
-  // After Claim: 4 pts elite, 2 pts good
+  // After Claim: 3 pts elite, 1.5 pts good (was 4/2)
   if (isAfterClaim(horse)) {
-    const pattern = scoreAcquisitionPattern(stats.afterClaim, 'afterClaim', 4);
+    const pattern = scoreAcquisitionPattern(stats.afterClaim, 'afterClaim', 3);
     if (pattern) {
       matchedPatterns.push(pattern);
       reasoning.push(pattern.reasoning);

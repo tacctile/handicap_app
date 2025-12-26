@@ -5,41 +5,35 @@
  * All calculations are deterministic - same inputs always produce same scores.
  * Optimized for performance: scoring 12 horses completes in under 100ms.
  *
- * BASE SCORE (0-290 points max) - v2.5 Favorite Fix:
- * Core Categories (234 pts):
- * - Speed & Class: 0-80 points (27.6% - Most predictive)
- * - Pace: 0-45 points (15.5% - Race shape analysis)
- * - Form: 0-50 points (17.2% - Recent performance, increased from 40)
- * - Post Position: 0-20 points (6.9% - Reduced from 30, industry standard 3-8%)
- * - Connections (Trainer + Jockey + Partnership): 0-27 points (9.3% - Enhanced partnership)
- * - Equipment: 0-12 points (4.1% - Reduced from 20, industry standard 2-5%)
+ * BASE SCORE (0-313 points max) - v3.0 Speed Weight Rebalance:
+ * Core Categories (256 pts):
+ * - Speed & Class: 0-122 points (39% - Speed 90 + Class 32)
+ *   v3.0: Speed increased from 48 to 90 pts (~29% of base, industry standard 30-40%)
+ * - Pace: 0-45 points (14.4% - Race shape analysis)
+ * - Form: 0-50 points (16.0% - Recent performance patterns)
+ * - Post Position: 0-12 points (3.8% - v3.0: reduced from 20)
+ * - Connections (Trainer + Jockey + Partnership): 0-27 points (8.6%)
+ * - Equipment: 0-8 points (2.6% - v3.0: reduced from 12)
  *
- * Bonus Categories (56 pts):
- * - Distance/Surface Affinity: 0-20 points (6.9% - Turf/Wet/Distance)
- *   Based on lifetime records (DRF Fields 85-96)
- *   v2.5: Neutral baseline for unproven (50% of max)
- * - Trainer Patterns: 0-15 points (5.2% - Situational trainer bonuses)
- *   Based on trainer category stats (DRF Fields 1146-1221)
- * - Combo Patterns: 0-6 points (2.1% - Reduced from 12, informational only)
- * - Track Specialist: 0-6 points (2.1% - Proven success at today's track)
- *   Based on track record (DRF Fields 80-83)
- *   v2.5: Neutral baseline for first-timers
+ * Bonus Categories (36 pts):
+ * - Distance/Surface Affinity: 0-20 points (6.4% - Turf/Wet/Distance)
+ * - Trainer Patterns: 0-10 points (3.2% - v3.0: reduced from 15)
+ * - Combo Patterns: 0-4 points (1.3% - v3.0: reduced from 6)
+ * - Track Specialist: 0-6 points (1.9% - Proven success at today's track)
+ * - Trainer Surface/Distance: 0-6 points (1.9% - Trainer specialization)
  * - Weight Change: 0-1 point (0.3% - P2 subtle refinement for weight drops)
- *   Based on weight carried (DRF Field 51) vs last race weight (DRF Field 436+)
  *
  * P3 Refinements (2 pts):
  * - Age Factor: ±1 point (0.3% - Peak performance at 4-5yo, declining at 8+)
- *   Based on age (DRF Field 46)
  * - Sire's Sire: ±1 point (0.3% - Paternal grandsire influence on breeding)
- *   Based on sire's sire (DRF Field 53)
  *
- * v2.5 KEY CHANGES (Favorite Fix):
- * - Form: 40 → 50 pts (+10) - Won Last Out +8pts, Won 2 of 3 +4pts
- * - Post: 30 → 20 pts (-10) - Industry standard is 3-8%
- * - Equipment: 20 → 12 pts (-8) - Industry standard is 2-5%
- * - Combo: 12 → 6 pts (-6) - Informational, shouldn't swing rankings
- * - Neutral baselines for missing data (unproven ≠ bad)
- * - Shipper fix: Use career stats when 0 meet starts
+ * v3.0 KEY CHANGES (Phase 3 - Speed Weight Rebalance):
+ * - Speed: 48 → 90 pts (+42) - Industry standard weights speed at 30-40%
+ * - Post: 20 → 12 pts (-8) - Industry standard is 3-8%
+ * - Equipment: 12 → 8 pts (-4) - Industry standard is 2-5%
+ * - Trainer Patterns: 15 → 10 pts (-5) - Proportional reduction
+ * - Combo: 6 → 4 pts (-2) - Proportional reduction
+ * Net change: +42 - 8 - 4 - 5 - 2 = +23 pts (290 → 313)
  *
  * OVERLAY SYSTEM (±50 points on top of base):
  * - Section A: Pace Dynamics & Bias: ±20 points
@@ -51,7 +45,7 @@
  * - Section G: Head-to-Head & Tactical Matchups: ±8 points
  *
  * Final Score = Base Score + Overlay Adjustment
- * Practical Range: 50 to 340 points
+ * Practical Range: 50 to 363 points
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
@@ -130,74 +124,71 @@ import { calculateDataCompleteness, type DataCompletenessResult } from './dataCo
 
 /**
  * Maximum base score (before overlay)
- * v2.5: Reduced from 304 to 290 pts per diagnostic findings (Favorite Fix)
- * - Form: 40 → 50 pts (+10)
- * - Post: 30 → 20 pts (-10)
- * - Equipment: 20 → 12 pts (-8)
- * - Combo: 12 → 6 pts (-6)
- * Net change: +10 - 10 - 8 - 6 = -14
+ * v3.0: Updated from 290 to 313 pts per Phase 3 Speed Weight Rebalance
+ *
+ * Changes:
+ * - Speed: 48 → 90 pts (+42)
+ * - Post: 20 → 12 pts (-8)
+ * - Equipment: 12 → 8 pts (-4)
+ * - Trainer Patterns: 15 → 10 pts (-5)
+ * - Combo: 6 → 4 pts (-2)
+ * Net change: +42 - 8 - 4 - 5 - 2 = +23
  */
-export const MAX_BASE_SCORE = 290;
+export const MAX_BASE_SCORE = 313;
 
 /** Maximum overlay adjustment */
 export const MAX_OVERLAY = 50;
 
 /** Maximum total score (base + overlay) */
-export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 340
+export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 363
 
 /**
  * Score limits by category
  *
- * WEIGHT RATIONALE (v2.5 - Favorite Fix):
+ * WEIGHT RATIONALE (v3.0 - Phase 3 Speed Weight Rebalance):
  * -----------------------------------------------------------------------
  * These weights are aligned with industry handicapping research showing
- * that "hard" predictive factors (Speed/Class, Pace, Form) should outweigh
- * "soft" speculative factors (Connections, Equipment, Post).
+ * that speed figures are the most predictive factor (30-40% weight).
  *
- * v2.5 Changes:
- * - Form: 40 → 50 pts (recent winners boosted)
- * - Post: 30 → 20 pts (industry standard is 3-8%)
- * - Equipment: 20 → 12 pts (industry standard is 2-5%)
- * - Combo: 12 → 6 pts (informational, shouldn't swing rankings)
- * - Neutral baselines for missing data
- * - Shipper fix for connections
+ * v3.0 Changes:
+ * - Speed: 48 → 90 pts (now ~29%, industry standard 30-40%)
+ * - Post: 20 → 12 pts (-8 pts)
+ * - Equipment: 12 → 8 pts (-4 pts)
+ * - Trainer Patterns: 15 → 10 pts (-5 pts)
+ * - Combo: 6 → 4 pts (-2 pts)
  *
- * Core Categories (234 pts):
- * - Speed/Class: 80 pts (27.6%) — Most predictive factor per industry research
- * - Pace: 45 pts (15.5%) — High predictive value for race shape
- * - Form: 50 pts (17.2%) — Recent performance patterns (increased from 40)
- * - Post Position: 20 pts (6.9%) — Track-dependent situational factor (reduced from 30)
- * - Connections: 27 pts (9.3%) — Enhanced partnership scoring (16 trainer + 7 jockey + 4 partnership)
- * - Equipment: 12 pts (4.1%) — Speculative, fine-tuning only (reduced from 20)
+ * Core Categories (256 pts):
+ * - Speed/Class: 122 pts (39%) — Speed 90 pts (~29%) + Class 32 pts (~10%)
+ * - Pace: 45 pts (14.4%) — High predictive value for race shape
+ * - Form: 50 pts (16.0%) — Recent performance patterns
+ * - Post Position: 12 pts (3.8%) — Track-dependent situational factor (reduced)
+ * - Connections: 27 pts (8.6%) — Enhanced partnership scoring
+ * - Equipment: 8 pts (2.6%) — Speculative, fine-tuning only (reduced)
  *
- * Bonus Categories (53 pts):
- * - Distance/Surface: 20 pts (6.9%) — Turf (8) + Wet (6) + Distance (6)
- *   Fundamental handicapping data: horses with proven affinity for conditions
- * - Trainer Patterns: 15 pts (5.2%) — Situational trainer pattern bonuses
- *   Based on DRF Fields 1146-1221 (trainer category statistics)
- * - Combo Patterns: 6 pts (2.1%) — Informational combo bonuses (reduced from 12)
- * - Track Specialist: 6 pts (2.1%) — Proven success at today's specific track
- *   Based on DRF Fields 80-83 (track record: starts/wins/places/shows)
- * - Trainer Surface/Distance: 6 pts (2.1%) — Trainer specialization bonus
- *   Based on trainer category stats (turfSprint, turfRoute, dirtSprint, dirtRoute, wetTrack)
+ * Bonus Categories (36 pts):
+ * - Distance/Surface: 20 pts (6.4%) — Turf (8) + Wet (6) + Distance (6)
+ * - Trainer Patterns: 10 pts (3.2%) — Situational trainer pattern bonuses (reduced)
+ * - Combo Patterns: 4 pts (1.3%) — Informational combo bonuses (reduced)
+ * - Track Specialist: 6 pts (1.9%) — Proven success at today's specific track
+ * - Trainer Surface/Distance: 6 pts (1.9%) — Trainer specialization bonus
  *
- * Weight Change (1 pt):
+ * Weight Change (3 pts):
  * - Weight: 1 pt (P2 subtle refinement for weight drops)
  * - Age Factor: ±1 pt (P3 peak performance at 4-5yo, declining at 8+)
  * - Sire's Sire: ±1 pt (P3 integrated into breeding for known influential sires)
  *
- * Total: 290 points base score (reduced from 304)
+ * Total: 313 points base score
  */
 export const SCORE_LIMITS = {
   connections: 27,
-  postPosition: 20, // v2.5: reduced from 30
-  speedClass: 80,
-  form: 50, // v2.5: increased from 40
-  equipment: 12, // v2.5: reduced from 20
+  postPosition: 12, // v3.0: reduced from 20
+  speedClass: 122, // v3.0: increased from 80 (speed 90 + class 32)
+  form: 50,
+  equipment: 8, // v3.0: reduced from 12
   pace: 45,
   distanceSurface: 20, // Turf (8) + Wet (6) + Distance (6) = 20
-  trainerPatterns: 15, // Situational trainer pattern bonuses
-  comboPatterns: 6, // v2.5: reduced from 12
+  trainerPatterns: 10, // v3.0: reduced from 15
+  comboPatterns: 4, // v3.0: reduced from 6
   trackSpecialist: 6, // Track specialist bonus (30%+ win rate at track)
   trainerSurfaceDistance: 6, // Trainer surface/distance specialization (can stack with wet)
   weight: 1, // Weight change scoring (P2 subtle refinement)

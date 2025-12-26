@@ -4,20 +4,20 @@
  * Calculates equipment impact scores based on detected changes
  * and trainer-specific success patterns.
  *
- * Score Range: 0-12 points (v2.5 - reduced from 20)
- * ~4% of base score - Speculative, fine-tuning only
- * Base Score: 5 points (no changes)
+ * Score Range: 0-8 points (v3.0 - reduced from 12)
+ * ~2.6% of 313 base score - Speculative, fine-tuning only
+ * Base Score: 3 points (no changes)
  *
- * Key Impacts (v2.5: rescaled by factor 12/20 = 0.6):
- * - First-time Lasix: +6-10 pts (trainer-dependent)
- * - Lasix removal: -4 pts
- * - Blinkers ON (first-time): +5-8 pts (trainer-dependent)
- * - Blinkers OFF: +4-7 pts (trainer-dependent)
- * - Tongue tie added: +2-4 pts
- * - Other equipment: +1-2 pts
- *
- * NOTE: Equipment reduced from 20 to 12 points per diagnostic findings.
- * Industry research shows equipment impact is 2-5%, not 8%.
+ * v3.0 CHANGES (Phase 3 - Speed Weight Rebalance):
+ * - Reduced from 12 to 8 pts to compensate for speed increase
+ * - Scale factor: 0.67 (8/12)
+ * - Key Impacts (v3.0: rescaled by factor 8/12 = 0.67):
+ *   - First-time Lasix: +4-7 pts (trainer-dependent)
+ *   - Lasix removal: -3 pts
+ *   - Blinkers ON (first-time): +3-5 pts (trainer-dependent)
+ *   - Blinkers OFF: +3-5 pts (trainer-dependent)
+ *   - Tongue tie added: +1-3 pts
+ *   - Other equipment: +1 pt
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
@@ -31,16 +31,16 @@ import { calculateTrainerAdjustedPoints } from './trainerPatterns';
 
 /**
  * Base equipment score when no changes
- * v2.5: Rescaled from 8 to 5 (scale factor: 12/20 = 0.6)
+ * v3.0: Rescaled from 5 to 3 (scale factor: 8/12 = 0.67)
  */
-export const BASE_EQUIPMENT_SCORE = 5;
+export const BASE_EQUIPMENT_SCORE = 3;
 
 /**
  * Maximum equipment score
- * v2.5: Reduced from 20 to 12 pts per diagnostic findings.
- * Industry research shows equipment impact is 2-5%, not 8%.
+ * v3.0: Reduced from 12 to 8 pts per Phase 3 speed rebalance.
+ * Scale factor: 0.67 (8/12)
  */
-export const MAX_EQUIPMENT_SCORE = 12;
+export const MAX_EQUIPMENT_SCORE = 8;
 
 /**
  * Minimum equipment score
@@ -330,13 +330,13 @@ export function hasSignificantEquipmentImpact(horse: HorseEntry): boolean {
 
 /**
  * Get equipment score color for UI
- * v2.5: Adjusted thresholds for 0-12 range
+ * v3.0: Adjusted thresholds for 0-8 range
  */
 export function getEquipmentScoreColor(score: number): string {
-  if (score >= 12) return '#22c55e'; // Excellent - green
-  if (score >= 9) return '#36d1da'; // Good - cyan
-  if (score >= 6) return '#888888'; // Neutral - gray
-  if (score >= 3) return '#f97316'; // Concern - orange
+  if (score >= 8) return '#22c55e'; // Excellent - green
+  if (score >= 6) return '#36d1da'; // Good - cyan
+  if (score >= 4) return '#888888'; // Neutral - gray
+  if (score >= 2) return '#f97316'; // Concern - orange
   return '#ef4444'; // Poor - red
 }
 

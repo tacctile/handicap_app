@@ -1,12 +1,14 @@
 /**
- * Data Completeness Penalties Tests (Phase 2)
+ * Data Completeness Penalties Tests (Phase 2/3)
  *
  * Tests the penalty system for horses with incomplete data:
- * - Speed figure penalties (no figures → 12 pts, 1 fig → 18 max, etc.)
+ * - Speed figure penalties (no figures → 22.5 pts, 1 fig → 33.75 max, etc.) [v3.0: 90 max]
  * - Form penalties (0 PPs → 10 max, 1 PP → 20 max, etc.)
  * - Connection penalties (shipper with no career → half baseline)
  * - Pace penalties (no EP1/LP or running style → reduced score)
  * - Low confidence penalty (criticalComplete < 75% → 15% base score reduction)
+ *
+ * v3.0: Speed max increased from 48 to 90
  */
 
 import { describe, it, expect } from 'vitest';
@@ -168,15 +170,15 @@ describe('Speed Confidence Multiplier (Phase 2)', () => {
   });
 
   it('should cap max speed score based on figure count', () => {
-    // Max speed score is 48 pts
-    // 3+ figures → 48 max
-    expect(48 * getSpeedConfidenceMultiplier(3)).toBe(48);
-    // 2 figures → 36 max
-    expect(48 * getSpeedConfidenceMultiplier(2)).toBe(36);
-    // 1 figure → 18 max
-    expect(48 * getSpeedConfidenceMultiplier(1)).toBe(18);
-    // 0 figures → 12 max
-    expect(48 * getSpeedConfidenceMultiplier(0)).toBe(12);
+    // v3.0: Max speed score is 90 pts
+    // 3+ figures → 90 max
+    expect(90 * getSpeedConfidenceMultiplier(3)).toBe(90);
+    // 2 figures → 67.5 max
+    expect(90 * getSpeedConfidenceMultiplier(2)).toBe(67.5);
+    // 1 figure → 33.75 max
+    expect(90 * getSpeedConfidenceMultiplier(1)).toBe(33.75);
+    // 0 figures → 22.5 max
+    expect(90 * getSpeedConfidenceMultiplier(0)).toBe(22.5);
   });
 });
 
@@ -258,13 +260,13 @@ describe('Combined Missing Data Penalty Scenarios', () => {
   describe('First-Time Starter (FTS) Penalties', () => {
     it('should heavily penalize FTS with no data', () => {
       // FTS gets:
-      // - Speed: 12 pts (25% of 48, no figures)
+      // - Speed: 22.5 pts (25% of 90, no figures) [v3.0: was 12 pts]
       // - Form: 10 pts max (20% of 50, no PPs)
       // - Pace: ~16 pts max (35% of 45, no EP1/LP or style)
-      // Total max from these categories: ~38 pts vs ~143 for proven horse
+      // Total max from these categories: ~48.5 pts vs ~185 for proven horse [v3.0: increased spread]
 
       const speedMultiplier = getSpeedConfidenceMultiplier(0); // 0.25
-      const formMultiplier = getFormConfidenceMultiplier(0);   // 0.2
+      const formMultiplier = getFormConfidenceMultiplier(0); // 0.2
       const paceMultiplier = getPaceConfidenceMultiplier(false, false); // 0.35
 
       // Verify significant penalties
@@ -273,8 +275,9 @@ describe('Combined Missing Data Penalty Scenarios', () => {
       expect(paceMultiplier).toBeLessThan(0.4);
 
       // Combined impact should be severe
-      const combinedMaxPenalty = (48 * speedMultiplier) + (50 * formMultiplier) + (45 * paceMultiplier);
-      const fullScoreMax = 48 + 50 + 45;
+      // v3.0: Speed max is now 90
+      const combinedMaxPenalty = 90 * speedMultiplier + 50 * formMultiplier + 45 * paceMultiplier;
+      const fullScoreMax = 90 + 50 + 45;
       expect(combinedMaxPenalty).toBeLessThan(fullScoreMax * 0.3); // Less than 30% of max
     });
   });
@@ -296,20 +299,21 @@ describe('Combined Missing Data Penalty Scenarios', () => {
   describe('Proven Horse vs FTS Score Spread', () => {
     it('should show significant score spread between proven and FTS', () => {
       // Proven horse with full data:
-      // Speed: 3 figures → 1.0 multiplier, can get up to 48 pts
+      // v3.0: Speed: 3 figures → 1.0 multiplier, can get up to 90 pts
       // Form: 5 PPs → 1.0 multiplier, can get up to 50 pts
       // Pace: EP1/LP + style → 1.0 multiplier, can get up to 45 pts
-      const provenMaxFromCategories = 48 + 50 + 45;
+      const provenMaxFromCategories = 90 + 50 + 45;
 
       // FTS with no data:
-      const ftsSpeedMax = Math.round(48 * getSpeedConfidenceMultiplier(0));
+      const ftsSpeedMax = Math.round(90 * getSpeedConfidenceMultiplier(0));
       const ftsFormMax = Math.round(50 * getFormConfidenceMultiplier(0));
       const ftsPaceMax = Math.round(45 * getPaceConfidenceMultiplier(false, false));
       const ftsMaxFromCategories = ftsSpeedMax + ftsFormMax + ftsPaceMax;
 
-      // Score gap should be 60+ points just from these three categories
+      // v3.0: Score gap should be 100+ points just from these three categories
+      // (was 60+ with old 48 max, now 185 - ~49 = ~136)
       const scoreGap = provenMaxFromCategories - ftsMaxFromCategories;
-      expect(scoreGap).toBeGreaterThan(60);
+      expect(scoreGap).toBeGreaterThan(100);
     });
   });
 });
@@ -320,16 +324,17 @@ describe('Combined Missing Data Penalty Scenarios', () => {
 
 describe('Penalty Amount Verification', () => {
   it('should apply correct speed figure penalty for no figures', () => {
-    const noFigureScore = Math.round(48 * getSpeedConfidenceMultiplier(0));
-    expect(noFigureScore).toBe(12); // 25% of 48
+    // v3.0: 25% of 90 = 22.5, rounded to 23
+    const noFigureScore = Math.round(90 * getSpeedConfidenceMultiplier(0));
+    expect(noFigureScore).toBe(23); // 25% of 90
   });
 
   it('should apply correct speed figure penalty for 1 figure', () => {
     const oneFigureMultiplier = getSpeedConfidenceMultiplier(1);
-    // A horse with 95 Beyer (which would normally score ~45-48 pts)
-    // should be capped at 18 pts with only 1 figure
-    const cappedScore = Math.round(48 * oneFigureMultiplier);
-    expect(cappedScore).toBe(18);
+    // v3.0: A horse with 95 Beyer (which would normally score ~90 pts)
+    // should be capped at ~34 pts with only 1 figure (37.5% of 90)
+    const cappedScore = Math.round(90 * oneFigureMultiplier);
+    expect(cappedScore).toBe(34);
   });
 
   it('should apply correct form penalty for first-time starter', () => {
