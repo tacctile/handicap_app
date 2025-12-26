@@ -171,7 +171,7 @@ export const FEATURE_FLAGS: FeatureFlagConfig = {
   useFieldRelativeScoring: true,
   fieldRelativeStandoutThreshold: 20,
   // EXPERIMENTAL: Top Beyer Bonus (default OFF)
-  topBeyerBonus: false,
+  topBeyerBonus: true,
   topBeyerBonusPoints: 15,
   topBeyerBonusRankThreshold: 5,
 };
