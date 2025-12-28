@@ -3,6 +3,13 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 // Complexity mode levels
 export type ComplexityMode = 'simple' | 'moderate' | 'advanced';
 
+// Experience levels for simplified UI
+export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
+
+// Budget presets
+export const BUDGET_PRESETS = [10, 20, 50, 100] as const;
+export type BudgetPreset = (typeof BUDGET_PRESETS)[number];
+
 // Betting styles for Simple mode
 export type BettingStyle = 'safe' | 'balanced' | 'aggressive';
 
@@ -35,6 +42,9 @@ export interface ModerateModeSettings {
 export interface BankrollSettings {
   // Mode selection
   complexityMode: ComplexityMode;
+
+  // Experience level (for simplified UI filtering)
+  experienceLevel: ExperienceLevel;
 
   // Simple mode fields
   simpleRaceBudget: number;
@@ -124,6 +134,9 @@ const DEFAULT_SETTINGS: BankrollSettings = {
   // Mode - defaults to simple for new users
   complexityMode: 'simple',
 
+  // Experience level - defaults to beginner for new users
+  experienceLevel: 'beginner',
+
   // Simple mode defaults
   simpleRaceBudget: 20,
   simpleBettingStyle: 'balanced',
@@ -165,6 +178,7 @@ export interface UseBankrollReturn {
 
   // Mode-aware getters
   getComplexityMode: () => ComplexityMode;
+  getExperienceLevel: () => ExperienceLevel;
   getSimpleSettings: () => SimpleModeSettings;
   getModerateSettings: () => ModerateModeSettings;
   getBettingStyleLabel: () => string;
@@ -303,6 +317,11 @@ export function useBankroll(): UseBankrollReturn {
   const getComplexityMode = useCallback((): ComplexityMode => {
     return settings.complexityMode;
   }, [settings.complexityMode]);
+
+  // Get experience level
+  const getExperienceLevel = useCallback((): ExperienceLevel => {
+    return settings.experienceLevel;
+  }, [settings.experienceLevel]);
 
   // Get simple mode settings
   const getSimpleSettings = useCallback((): SimpleModeSettings => {
@@ -500,6 +519,7 @@ export function useBankroll(): UseBankrollReturn {
       updateSettings,
       resetToDefaults,
       getComplexityMode,
+      getExperienceLevel,
       getSimpleSettings,
       getModerateSettings,
       getBettingStyleLabel,
@@ -530,6 +550,7 @@ export function useBankroll(): UseBankrollReturn {
       updateSettings,
       resetToDefaults,
       getComplexityMode,
+      getExperienceLevel,
       getSimpleSettings,
       getModerateSettings,
       getBettingStyleLabel,

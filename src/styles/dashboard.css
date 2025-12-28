@@ -5596,6 +5596,355 @@ input:-webkit-autofill:focus {
 }
 
 /* ============================================
+   Simplified Betting UI (Experience-based)
+   ============================================ */
+
+/* Experience Level Header */
+.experience-header {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.experience-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: flex-end;
+}
+
+.experience-budget-group,
+.experience-level-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.experience-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.experience-budget-select {
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-primary);
+  cursor: pointer;
+  min-width: 90px;
+}
+
+.experience-budget-select:hover {
+  border-color: var(--accent-primary);
+}
+
+.experience-level-buttons {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-base);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  border: 1px solid var(--border-subtle);
+}
+
+.experience-level-btn {
+  padding: var(--space-2) var(--space-3);
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.experience-level-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.experience-level-btn.active {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.experience-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.experience-summary-spent {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.experience-summary-warning {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 13px;
+  color: var(--color-warning);
+}
+
+.experience-summary-warning .material-icons {
+  font-size: 16px;
+}
+
+/* Simplified Bet Card */
+.simplified-bet-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.simplified-bet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.simplified-bet-type {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent-primary);
+  background: rgba(25, 171, 181, 0.15);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.simplified-bet-amount {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.simplified-bet-main {
+  margin-bottom: var(--space-2);
+}
+
+.simplified-bet-horse,
+.simplified-bet-horses {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.simplified-bet-explanation {
+  font-size: 14px;
+  font-style: italic;
+  color: var(--text-muted);
+  margin: var(--space-2) 0;
+  line-height: 1.4;
+}
+
+.simplified-bet-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.simplified-bet-return {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.simplified-bet-copy {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.simplified-bet-copy:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.simplified-bet-copy .material-icons {
+  font-size: 16px;
+}
+
+/* Simplified Bet List */
+.simplified-bet-list {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.simplified-bet-list-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.simplified-bet-list-header .material-icons {
+  font-size: 20px;
+  color: var(--accent-primary);
+}
+
+.simplified-bet-list-header span:not(.material-icons) {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.simplified-bet-count {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.simplified-bet-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.simplified-no-bets {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+.simplified-no-bets .material-icons {
+  font-size: 32px;
+  color: var(--text-muted);
+}
+
+.simplified-no-bets p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.simplified-no-bets-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.simplified-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 2px solid var(--border-subtle);
+}
+
+.simplified-total-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.simplified-total-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+/* Simplified Sticky Footer */
+.simplified-sticky-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--space-4);
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border-subtle);
+  z-index: 100;
+}
+
+.simplified-copy-all-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-4);
+  background: var(--accent-primary);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.simplified-copy-all-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.simplified-copy-all-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.simplified-copy-all-btn .material-icons {
+  font-size: 20px;
+}
+
+/* Mobile adjustments for experience header */
+@media (max-width: 640px) {
+  .experience-header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .experience-level-buttons {
+    justify-content: center;
+  }
+
+  .experience-level-btn {
+    flex: 1;
+    text-align: center;
+  }
+
+  .simplified-sticky-footer {
+    padding: var(--space-3);
+  }
+}
+
+/* ============================================
    Post Time Countdown Styles
    ============================================ */
 

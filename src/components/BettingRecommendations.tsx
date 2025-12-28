@@ -33,8 +33,8 @@ import {
   type DutchCandidateHorse,
   type DutchSettings,
 } from '../lib/dutch';
-import type { UseBankrollReturn } from '../hooks/useBankroll';
-import { BankrollSummaryCard } from './BankrollSummaryCard';
+import type { UseBankrollReturn, ExperienceLevel } from '../hooks/useBankroll';
+import { BUDGET_PRESETS } from '../hooks/useBankroll';
 import { ExoticBuilderModal, type ExoticBetResult } from './ExoticBuilderModal';
 import { MultiRaceExoticsPanel } from './MultiRaceExoticsPanel';
 import type { MultiRaceTicketResult } from './MultiRaceBuilderModal';
@@ -120,6 +120,178 @@ const PRESETS: PresetConfig[] = [
   { id: 'maxCoverage', label: 'All', icon: 'grid_view', description: 'Maximum bet coverage' },
   { id: 'clearAll', label: 'Clear', icon: 'clear_all', description: 'Deselect all bets' },
 ];
+
+// Experience level labels
+const EXPERIENCE_LABELS: Record<ExperienceLevel, { label: string; description: string }> = {
+  beginner: { label: 'Beginner', description: 'Simple win/place bets' },
+  intermediate: { label: 'Intermediate', description: 'Adds exacta & trifecta' },
+  advanced: { label: 'Advanced', description: 'All bet types & strategies' },
+};
+
+// Generate plain English explanation for a bet
+function getPlainEnglishExplanation(bet: SelectableBet, rank: number): string {
+  const isOverlay = bet.overlayPercent > 15;
+  const isTopPick = rank <= 2;
+
+  switch (bet.type) {
+    case 'win':
+      if (isOverlay) return `Good horse at a great price`;
+      if (isTopPick) return `Our top pick to win`;
+      return `Solid contender`;
+    case 'place':
+      return `Likely to finish in top 2`;
+    case 'show':
+      return `Should hit the board (top 3)`;
+    case 'exacta_box':
+      return `If these finish 1-2 in either order, you win`;
+    case 'trifecta_box':
+      return `If these finish 1-2-3 in any order, you win`;
+    case 'superfecta':
+      return `First 4 finishers in any order`;
+    default:
+      if (bet.typeName?.toLowerCase().includes('exacta')) {
+        return `Pick the top 2 finishers`;
+      }
+      if (bet.typeName?.toLowerCase().includes('trifecta')) {
+        return `Pick the top 3 finishers`;
+      }
+      return bet.narrative || 'Recommended bet';
+  }
+}
+
+// Filter bets based on experience level
+function filterBetsByExperience(
+  bets: SelectableBet[],
+  experienceLevel: ExperienceLevel,
+  blendedRanks: Map<number, number>
+): SelectableBet[] {
+  if (experienceLevel === 'advanced') {
+    return bets; // Show everything
+  }
+
+  return bets.filter((bet) => {
+    // Get the primary horse's blended rank
+    const primaryHorseNum = bet.horseNumbers[0];
+    const rank = primaryHorseNum ? (blendedRanks.get(primaryHorseNum) ?? 99) : 99;
+    const isOverlayOrFair = bet.overlayPercent >= 0; // Fair value or better
+
+    if (experienceLevel === 'beginner') {
+      // Beginner: Win on #1 (if overlay/fair), Place on #1/#2, Show on #1/#2/#3
+      if (bet.type === 'win') {
+        return rank === 1 && isOverlayOrFair;
+      }
+      if (bet.type === 'place') {
+        return rank <= 2;
+      }
+      if (bet.type === 'show') {
+        return rank <= 3;
+      }
+      // No exotics for beginners
+      return false;
+    }
+
+    if (experienceLevel === 'intermediate') {
+      // Intermediate: Beginner bets + Exacta Box (top 2-3), Trifecta Box (top 3-4)
+      if (bet.type === 'win') {
+        return rank <= 2 && isOverlayOrFair;
+      }
+      if (bet.type === 'place') {
+        return rank <= 2;
+      }
+      if (bet.type === 'show') {
+        return rank <= 3;
+      }
+      if (bet.type === 'exacta_box' || bet.typeName?.toLowerCase().includes('exacta')) {
+        // Only show exacta if it uses top 3 horses
+        const allTopHorses = bet.horseNumbers.every((n) => (blendedRanks.get(n) ?? 99) <= 3);
+        return allTopHorses;
+      }
+      if (bet.type === 'trifecta_box' || bet.typeName?.toLowerCase().includes('trifecta')) {
+        // Only show trifecta if it uses top 4 horses
+        const allTopHorses = bet.horseNumbers.every((n) => (blendedRanks.get(n) ?? 99) <= 4);
+        return allTopHorses;
+      }
+      // No superfectas, keys, wheels, etc for intermediate
+      return false;
+    }
+
+    return true;
+  });
+}
+
+// Limit number of bets shown based on experience
+function limitBetsByExperience(
+  bets: SelectableBet[],
+  experienceLevel: ExperienceLevel
+): SelectableBet[] {
+  if (experienceLevel === 'advanced') return bets;
+  if (experienceLevel === 'intermediate') return bets.slice(0, 5);
+  return bets.slice(0, 3); // Beginner: max 3 bets
+}
+
+// Auto-allocate budget based on experience level
+function allocateBudget(
+  budget: number,
+  experienceLevel: ExperienceLevel,
+  filteredBets: SelectableBet[]
+): Map<string, number> {
+  const allocations = new Map<string, number>();
+
+  if (filteredBets.length === 0) return allocations;
+
+  if (experienceLevel === 'beginner') {
+    // Simple split: Win gets 50%, Place gets 50%
+    const winBet = filteredBets.find((b) => b.type === 'win');
+    const placeBet = filteredBets.find((b) => b.type === 'place');
+    const showBet = filteredBets.find((b) => b.type === 'show');
+
+    if (winBet && placeBet) {
+      allocations.set(winBet.id, Math.floor(budget * 0.5));
+      allocations.set(placeBet.id, Math.floor(budget * 0.5));
+    } else if (winBet && showBet) {
+      allocations.set(winBet.id, Math.floor(budget * 0.5));
+      allocations.set(showBet.id, Math.floor(budget * 0.5));
+    } else if (winBet) {
+      allocations.set(winBet.id, budget);
+    } else if (filteredBets[0]) {
+      allocations.set(filteredBets[0].id, budget);
+    }
+  } else if (experienceLevel === 'intermediate') {
+    // Win 25%, Exacta Box 60%, Place 15%
+    const winBet = filteredBets.find((b) => b.type === 'win');
+    const exactaBet = filteredBets.find(
+      (b) => b.type === 'exacta_box' || b.typeName?.toLowerCase().includes('exacta')
+    );
+    const placeBet = filteredBets.find((b) => b.type === 'place');
+
+    if (winBet) allocations.set(winBet.id, Math.floor(budget * 0.25));
+    if (exactaBet) allocations.set(exactaBet.id, Math.floor(budget * 0.6));
+    if (placeBet) allocations.set(placeBet.id, Math.floor(budget * 0.15));
+
+    // If we didn't use all bets, distribute evenly
+    if (allocations.size === 0 && filteredBets.length > 0) {
+      const perBet = Math.floor(budget / filteredBets.length);
+      filteredBets.forEach((bet) => allocations.set(bet.id, perBet));
+    }
+  } else {
+    // Advanced: Win 20%, Exacta Box 30%, Trifecta Key 40%, Show 10%
+    const winBet = filteredBets.find((b) => b.type === 'win');
+    const exactaBet = filteredBets.find(
+      (b) => b.type === 'exacta_box' || b.typeName?.toLowerCase().includes('exacta')
+    );
+    const trifectaBet = filteredBets.find(
+      (b) => b.type === 'trifecta_box' || b.typeName?.toLowerCase().includes('trifecta')
+    );
+    const showBet = filteredBets.find((b) => b.type === 'show');
+
+    if (winBet) allocations.set(winBet.id, Math.floor(budget * 0.2));
+    if (exactaBet) allocations.set(exactaBet.id, Math.floor(budget * 0.3));
+    if (trifectaBet) allocations.set(trifectaBet.id, Math.floor(budget * 0.4));
+    if (showBet) allocations.set(showBet.id, Math.floor(budget * 0.1));
+  }
+
+  return allocations;
+}
 
 // Bet Slip Modal Component
 interface BetSlipModalProps {
@@ -499,6 +671,142 @@ function InteractiveBetCard({
   );
 }
 
+// Simplified Bet Card for Beginner/Intermediate mode
+interface SimplifiedBetCardProps {
+  bet: SelectableBet;
+  raceNumber: number;
+  rank: number;
+  onCopy: (instruction: string) => void;
+}
+
+function SimplifiedBetCard({ bet, raceNumber, rank, onCopy }: SimplifiedBetCardProps) {
+  const plainExplanation = getPlainEnglishExplanation(bet, rank);
+  const horseName = bet.horses?.[0]?.horse?.horseName || '';
+  const horseNumber = bet.horseNumbers[0] || '';
+
+  // Generate window instruction with race number
+  const windowInstruction = bet.windowInstruction
+    .replace(/^"/, `"Race ${raceNumber}, `)
+    .replace(/Race \d+, Race \d+/, `Race ${raceNumber}`)
+    .replace(/^"|"$/g, '');
+
+  // Determine bet type display name
+  const getBetTypeDisplay = () => {
+    switch (bet.type) {
+      case 'win':
+        return 'WIN BET';
+      case 'place':
+        return 'PLACE BET';
+      case 'show':
+        return 'SHOW BET';
+      case 'exacta_box':
+        return 'EXACTA BOX';
+      case 'trifecta_box':
+        return 'TRIFECTA BOX';
+      default:
+        return bet.typeName?.toUpperCase() || 'BET';
+    }
+  };
+
+  return (
+    <div className="simplified-bet-card">
+      <div className="simplified-bet-header">
+        <span className="simplified-bet-type">{getBetTypeDisplay()}</span>
+        <span className="simplified-bet-amount">{formatCurrency(bet.customAmount)}</span>
+      </div>
+      <div className="simplified-bet-main">
+        {bet.horseNumbers.length === 1 ? (
+          <span className="simplified-bet-horse">
+            {horseName ? `${horseName} (#${horseNumber})` : `#${horseNumber}`}
+          </span>
+        ) : (
+          <span className="simplified-bet-horses">
+            {bet.horseNumbers.map((n) => `#${n}`).join(', ')}
+          </span>
+        )}
+      </div>
+      <p className="simplified-bet-explanation">"{plainExplanation}"</p>
+      <div className="simplified-bet-footer">
+        <span className="simplified-bet-return">
+          Potential: {formatCurrency(bet.potentialReturn.min)}-
+          {formatCurrency(bet.potentialReturn.max)}
+        </span>
+        <button
+          className="simplified-bet-copy"
+          onClick={() => onCopy(windowInstruction)}
+          title="Copy to clipboard"
+        >
+          <span className="material-icons">content_copy</span>
+          Copy
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Experience Level Header Component
+interface ExperienceLevelHeaderProps {
+  budget: number;
+  experienceLevel: ExperienceLevel;
+  onBudgetChange: (budget: number) => void;
+  onExperienceChange: (level: ExperienceLevel) => void;
+  totalCost: number;
+}
+
+function ExperienceLevelHeader({
+  budget,
+  experienceLevel,
+  onBudgetChange,
+  onExperienceChange,
+  totalCost,
+}: ExperienceLevelHeaderProps) {
+  return (
+    <div className="experience-header">
+      <div className="experience-header-row">
+        <div className="experience-budget-group">
+          <label className="experience-label">BUDGET THIS RACE</label>
+          <select
+            className="experience-budget-select"
+            value={budget}
+            onChange={(e) => onBudgetChange(Number(e.target.value))}
+          >
+            {BUDGET_PRESETS.map((preset) => (
+              <option key={preset} value={preset}>
+                ${preset}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="experience-level-group">
+          <label className="experience-label">EXPERIENCE</label>
+          <div className="experience-level-buttons">
+            {(['beginner', 'intermediate', 'advanced'] as ExperienceLevel[]).map((level) => (
+              <button
+                key={level}
+                className={`experience-level-btn ${experienceLevel === level ? 'active' : ''}`}
+                onClick={() => onExperienceChange(level)}
+              >
+                {EXPERIENCE_LABELS[level].label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="experience-summary">
+        <span className="experience-summary-spent">
+          Total: {formatCurrency(totalCost)} / {formatCurrency(budget)}
+        </span>
+        {totalCost > budget && (
+          <span className="experience-summary-warning">
+            <span className="material-icons">warning</span>
+            Over budget
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Quick Preset Buttons Component
 interface QuickPresetButtonsProps {
   onPresetClick: (preset: PresetType) => void;
@@ -666,7 +974,7 @@ export function BettingRecommendations({
   raceNumber,
   raceHeader,
   bankroll,
-  onOpenBankrollSettings,
+  onOpenBankrollSettings: _onOpenBankrollSettings,
   allRaces,
   trackCode,
 }: BettingRecommendationsProps) {
@@ -688,6 +996,24 @@ export function BettingRecommendations({
   // Analytics tracking
   const { trackEvent } = useAnalytics();
   const lastTrackedRace = useRef<number | null>(null);
+
+  // Experience level from bankroll settings
+  const experienceLevel = bankroll.getExperienceLevel();
+  const raceBudget = bankroll.getRaceBudget();
+
+  // Create blended ranks map (horse program number -> rank)
+  const blendedRanks = useMemo(() => {
+    const ranks = new Map<number, number>();
+    horses.forEach((h, idx) => {
+      const programNumStr = h.horse.programNumber;
+      const programNum =
+        typeof programNumStr === 'string' ? parseInt(programNumStr, 10) : programNumStr;
+      if (!isNaN(programNum)) {
+        ranks.set(programNum, idx + 1);
+      }
+    });
+    return ranks;
+  }, [horses]);
 
   // Check if Kelly Criterion is enabled
   const kellyEnabled = useMemo(() => isKellyEnabled(bankroll), [bankroll]);
@@ -847,6 +1173,77 @@ export function BettingRecommendations({
     const max = selectedBets.reduce((sum, bet) => sum + bet.potentialReturn.max, 0);
     return { min, max };
   }, [selectedBets]);
+
+  // Filter bets based on experience level
+  const filteredBetsForDisplay = useMemo(() => {
+    const filtered = filterBetsByExperience(selectableBets, experienceLevel, blendedRanks);
+    return limitBetsByExperience(filtered, experienceLevel);
+  }, [selectableBets, experienceLevel, blendedRanks]);
+
+  // Handle budget change
+  const handleBudgetChange = useCallback(
+    (newBudget: number) => {
+      bankroll.updateSettings({ simpleRaceBudget: newBudget });
+      // Auto-allocate budget to filtered bets
+      const allocations = allocateBudget(newBudget, experienceLevel, filteredBetsForDisplay);
+      setSelectableBets((prev) =>
+        prev.map((bet) => {
+          const allocatedAmount = allocations.get(bet.id);
+          if (allocatedAmount !== undefined) {
+            return {
+              ...bet,
+              isSelected: true,
+              customAmount: allocatedAmount,
+              potentialReturn: {
+                min: Math.round((bet.potentialReturn.min / bet.totalCost) * allocatedAmount),
+                max: Math.round((bet.potentialReturn.max / bet.totalCost) * allocatedAmount),
+              },
+            };
+          }
+          return { ...bet, isSelected: false };
+        })
+      );
+    },
+    [bankroll, experienceLevel, filteredBetsForDisplay]
+  );
+
+  // Handle experience level change
+  const handleExperienceChange = useCallback(
+    (newLevel: ExperienceLevel) => {
+      bankroll.updateSettings({ experienceLevel: newLevel });
+      // Re-filter and allocate budget when experience changes
+      setTimeout(() => {
+        const newFiltered = filterBetsByExperience(selectableBets, newLevel, blendedRanks);
+        const limited = limitBetsByExperience(newFiltered, newLevel);
+        const allocations = allocateBudget(raceBudget, newLevel, limited);
+        setSelectableBets((prev) =>
+          prev.map((bet) => {
+            const allocatedAmount = allocations.get(bet.id);
+            if (allocatedAmount !== undefined) {
+              return {
+                ...bet,
+                isSelected: true,
+                customAmount: allocatedAmount,
+                potentialReturn: {
+                  min: Math.round((bet.potentialReturn.min / bet.totalCost) * allocatedAmount),
+                  max: Math.round((bet.potentialReturn.max / bet.totalCost) * allocatedAmount),
+                },
+              };
+            }
+            return { ...bet, isSelected: allocations.size === 0 ? bet.isSelected : false };
+          })
+        );
+      }, 0);
+    },
+    [bankroll, selectableBets, blendedRanks, raceBudget]
+  );
+
+  // Copy single instruction handler
+  const handleCopySingleInstruction = useCallback((instruction: string) => {
+    navigator.clipboard.writeText(instruction);
+    setCopiedMessage('Copied!');
+    setTimeout(() => setCopiedMessage(null), 2000);
+  }, []);
 
   // Convert horses to HorseTier format for exotic optimizer
   const horseTiers = useMemo((): HorseTier[] => {
@@ -1242,21 +1639,22 @@ export function BettingRecommendations({
 
   return (
     <div className="interactive-betting-container">
-      {/* Bankroll Summary at Top */}
-      <div className="betting-bankroll-section">
-        <BankrollSummaryCard
-          bankroll={bankroll}
-          onOpenSettings={onOpenBankrollSettings}
-          variant={isMobile ? 'mobile' : 'compact'}
-          className="betting-bankroll-card"
-        />
-      </div>
+      {/* Simplified Experience Level Header */}
+      <ExperienceLevelHeader
+        budget={raceBudget}
+        experienceLevel={experienceLevel}
+        onBudgetChange={handleBudgetChange}
+        onExperienceChange={handleExperienceChange}
+        totalCost={totalCost}
+      />
 
-      {/* Quick Preset Buttons */}
-      <QuickPresetButtons onPresetClick={handlePresetClick} isMobile={isMobile} />
+      {/* Show Quick Preset Buttons only for Advanced users */}
+      {experienceLevel === 'advanced' && (
+        <QuickPresetButtons onPresetClick={handlePresetClick} isMobile={isMobile} />
+      )}
 
-      {/* Exotic Optimizer Section */}
-      {horseTiers.length >= 2 && (
+      {/* Exotic Optimizer Section - Advanced only */}
+      {experienceLevel === 'advanced' && horseTiers.length >= 2 && (
         <div className="exotic-optimizer-section">
           <button
             className="exotic-optimizer-toggle"
@@ -1427,8 +1825,8 @@ export function BettingRecommendations({
         </div>
       )}
 
-      {/* Multi-Race Exotics Section */}
-      {allRaces && allRaces.length >= 2 && (
+      {/* Multi-Race Exotics Section - Advanced only */}
+      {experienceLevel === 'advanced' && allRaces && allRaces.length >= 2 && (
         <MultiRaceExoticsPanel
           races={allRaces}
           currentRaceNumber={raceNumber}
@@ -1438,8 +1836,8 @@ export function BettingRecommendations({
         />
       )}
 
-      {/* Dutch Book Opportunities Section */}
-      {dutchSettings.enabled && dutchCandidates.length >= 2 && (
+      {/* Dutch Book Opportunities Section - Advanced only */}
+      {experienceLevel === 'advanced' && dutchSettings.enabled && dutchCandidates.length >= 2 && (
         <div className="dutch-optimizer-section">
           <button
             className="dutch-optimizer-toggle"
@@ -1719,8 +2117,8 @@ export function BettingRecommendations({
         </div>
       )}
 
-      {/* Special Category Bets */}
-      {specialBets.length > 0 && (
+      {/* Special Category Bets - Advanced only */}
+      {experienceLevel === 'advanced' && specialBets.length > 0 && (
         <div className="special-bets-section">
           <div className="special-bets-header">
             <span className="material-icons">auto_awesome</span>
@@ -1744,61 +2142,114 @@ export function BettingRecommendations({
         </div>
       )}
 
-      {/* Interactive Bet List */}
-      <div className="interactive-bet-list">
-        {betsByTier.map((tierGroup) => {
-          if (tierGroup.selectableBets.length === 0) return null;
-
-          const tierColor = TIER_COLORS[tierGroup.tier];
-          const tierIcon = TIER_ICONS[tierGroup.tier];
-
-          return (
-            <div key={tierGroup.tier} className="tier-bet-group">
-              <div className="tier-bet-header">
-                <div
-                  className="tier-header-badge"
-                  style={{
-                    backgroundColor: tierColor.bg,
-                    borderColor: tierColor.border,
-                    color: tierColor.text,
-                  }}
-                >
-                  <span className="material-icons">{tierIcon}</span>
-                  <span>{tierGroup.tierName}</span>
-                </div>
-                <span className="tier-bet-count">{tierGroup.selectableBets.length} bets</span>
-              </div>
-
-              <div className="tier-bets-list">
-                {tierGroup.selectableBets.map((bet) => (
-                  <InteractiveBetCard
-                    key={bet.id}
-                    bet={bet}
-                    tierColor={tierColor}
-                    raceNumber={raceNumber}
-                    onToggleSelect={handleToggleSelect}
-                    onAmountChange={handleAmountChange}
-                    remainingBudget={remainingBudget + (bet.isSelected ? bet.customAmount : 0)}
-                    kellyEnabled={kellyEnabled}
-                  />
-                ))}
-              </div>
+      {/* Simplified Bet List for Beginner/Intermediate */}
+      {experienceLevel !== 'advanced' && (
+        <div className="simplified-bet-list">
+          <div className="simplified-bet-list-header">
+            <span className="material-icons">receipt_long</span>
+            <span>Your Bets</span>
+            <span className="simplified-bet-count">
+              {filteredBetsForDisplay.length} recommendations
+            </span>
+          </div>
+          {filteredBetsForDisplay.length === 0 ? (
+            <div className="simplified-no-bets">
+              <span className="material-icons">info</span>
+              <p>No recommended bets for this race at your experience level.</p>
+              <p className="simplified-no-bets-hint">
+                Try switching to Intermediate or Advanced mode for more options.
+              </p>
             </div>
-          );
-        })}
-      </div>
+          ) : (
+            <div className="simplified-bet-cards">
+              {filteredBetsForDisplay.map((bet, idx) => (
+                <SimplifiedBetCard
+                  key={bet.id}
+                  bet={bet}
+                  raceNumber={raceNumber}
+                  rank={blendedRanks.get(bet.horseNumbers[0] || 0) ?? idx + 1}
+                  onCopy={handleCopySingleInstruction}
+                />
+              ))}
+            </div>
+          )}
+          <div className="simplified-total">
+            <span className="simplified-total-label">Total Bet</span>
+            <span className="simplified-total-value">{formatCurrency(totalCost)}</span>
+          </div>
+        </div>
+      )}
 
-      {/* Sticky Footer */}
-      <StickyFooter
-        selectedCount={selectedBets.length}
-        totalCost={totalCost}
-        remainingBudget={remainingBudget + totalCost}
-        dailyBudget={dailyBudget}
-        potentialReturn={potentialReturn}
-        onViewBetSlip={() => setIsSlipModalOpen(true)}
-        onCopyToClipboard={handleCopyToClipboard}
-        isOverBudget={isOverBudget}
-      />
+      {/* Interactive Bet List - Advanced mode only */}
+      {experienceLevel === 'advanced' && (
+        <div className="interactive-bet-list">
+          {betsByTier.map((tierGroup) => {
+            if (tierGroup.selectableBets.length === 0) return null;
+
+            const tierColor = TIER_COLORS[tierGroup.tier];
+            const tierIcon = TIER_ICONS[tierGroup.tier];
+
+            return (
+              <div key={tierGroup.tier} className="tier-bet-group">
+                <div className="tier-bet-header">
+                  <div
+                    className="tier-header-badge"
+                    style={{
+                      backgroundColor: tierColor.bg,
+                      borderColor: tierColor.border,
+                      color: tierColor.text,
+                    }}
+                  >
+                    <span className="material-icons">{tierIcon}</span>
+                    <span>{tierGroup.tierName}</span>
+                  </div>
+                  <span className="tier-bet-count">{tierGroup.selectableBets.length} bets</span>
+                </div>
+
+                <div className="tier-bets-list">
+                  {tierGroup.selectableBets.map((bet) => (
+                    <InteractiveBetCard
+                      key={bet.id}
+                      bet={bet}
+                      tierColor={tierColor}
+                      raceNumber={raceNumber}
+                      onToggleSelect={handleToggleSelect}
+                      onAmountChange={handleAmountChange}
+                      remainingBudget={remainingBudget + (bet.isSelected ? bet.customAmount : 0)}
+                      kellyEnabled={kellyEnabled}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Sticky Footer - Only for advanced users, simplified for others */}
+      {experienceLevel === 'advanced' ? (
+        <StickyFooter
+          selectedCount={selectedBets.length}
+          totalCost={totalCost}
+          remainingBudget={remainingBudget + totalCost}
+          dailyBudget={dailyBudget}
+          potentialReturn={potentialReturn}
+          onViewBetSlip={() => setIsSlipModalOpen(true)}
+          onCopyToClipboard={handleCopyToClipboard}
+          isOverBudget={isOverBudget}
+        />
+      ) : (
+        <div className="simplified-sticky-footer">
+          <button
+            className="simplified-copy-all-btn"
+            onClick={handleCopyToClipboard}
+            disabled={filteredBetsForDisplay.length === 0}
+          >
+            <span className="material-icons">content_copy</span>
+            Copy All Bets
+          </button>
+        </div>
+      )}
 
       {/* Bet Slip Modal */}
       <AnimatePresence>
