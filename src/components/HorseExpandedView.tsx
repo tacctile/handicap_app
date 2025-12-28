@@ -111,6 +111,23 @@ const getDataQualityColor = (quality: string | undefined): string => {
   }
 };
 
+/**
+ * Get value label and color based on overlay percentage
+ * Uses the same thresholds as overlayAnalysis.ts:
+ * - Overlay (>= 20%): Bargain (green)
+ * - Fair (-20% to +19%): Fair Price (secondary text)
+ * - Underlay (< -20%): Overpriced (red)
+ */
+const getValueIndicator = (overlayPercent: number): { label: string; color: string } => {
+  if (overlayPercent >= 20) {
+    return { label: 'Bargain', color: 'var(--color-tier-elite)' };
+  }
+  if (overlayPercent >= -20) {
+    return { label: 'Fair Price', color: 'var(--color-text-secondary)' };
+  }
+  return { label: 'Overpriced', color: 'var(--color-tier-bad)' };
+};
+
 // Get category bar fill class based on percentage
 const getCategoryFillClass = (percent: number): string => {
   if (percent >= 70) return 'high';
@@ -430,11 +447,20 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
             </div>
             <div className="furlong-score__rating-section">
               <div className="furlong-score__tier-rating">
-                <span
-                  className="furlong-score__tier-value"
-                  style={{ color: getTierColor(baseScore) }}
-                >
-                  {getTierName(baseScore)}
+                <span className="furlong-score__tier-value-row">
+                  <span
+                    className="furlong-score__tier-value"
+                    style={{ color: getTierColor(baseScore) }}
+                  >
+                    {getTierName(baseScore)}
+                  </span>
+                  <span className="furlong-score__value-separator"> · </span>
+                  <span
+                    className="furlong-score__value-indicator"
+                    style={{ color: getValueIndicator(valuePercent).color }}
+                  >
+                    {getValueIndicator(valuePercent).label}
+                  </span>
                 </span>
                 <span className="furlong-score__tier-label">RATING</span>
               </div>

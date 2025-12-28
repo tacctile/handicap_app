@@ -262,11 +262,31 @@
   gap: 6px;
 }
 
+.furlong-score__tier-value-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
 .furlong-score__tier-value {
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.5px;
+}
+
+.furlong-score__value-separator {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.furlong-score__value-indicator {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 .furlong-score__tier-label {
