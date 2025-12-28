@@ -26,9 +26,11 @@ describe('Real DRF File Integration Test', () => {
 
   it('should parse the DRF file successfully', () => {
     expect(parseResult).toBeDefined();
-    expect(parseResult.trackCode).toBeTruthy();
     expect(parseResult.races.length).toBeGreaterThan(0);
-    console.log(`\n📁 Parsed ${parseResult.races.length} races from ${parseResult.trackCode}`);
+    // Track code is on the race header, not on the ParsedDRFFile directly
+    const trackCode = parseResult.races[0]?.header?.trackCode;
+    expect(trackCode).toBeTruthy();
+    console.log(`\n📁 Parsed ${parseResult.races.length} races from ${trackCode}`);
   });
 
   it('should score all horses without NaN or Infinity values', () => {

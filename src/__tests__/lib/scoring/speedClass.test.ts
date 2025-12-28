@@ -32,63 +32,64 @@ import {
 
 describe('Speed & Class Scoring', () => {
   describe('Speed Figure Scoring', () => {
-    // NOTE: v2.0 rescaled from 30 max to 48 max (scale factor: 80/50 = 1.6)
+    // NOTE: v3.0 rescaled from 48 max to 90 max (Speed Weight Rebalance)
     // All tests use LRL (Tier 3, neutral) for consistent tier-neutral scoring
-    it('returns 48 points (max) for speed figure 10+ above par', () => {
+    // v3.0 TIERS: ≥+10→90, +7-9→80, +4-6→70, +1-3→60, 0→50, -1-3→40, -4-6→30, -7-10→20, <-10→10
+    it('returns 90 points (max) for speed figure 10+ above par', () => {
       const header = createRaceHeader({ classification: 'allowance', trackCode: 'LRL' }); // Par = 82
       const horse = createSpeedFigureHorse([95, 92, 90]); // Best = 95, 13 above par
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.speedScore).toBe(48);
+      expect(result.speedScore).toBe(90);
     });
 
-    it('returns 40 points for speed figure 5-9 above par', () => {
+    it('returns 70 points for speed figure 5-9 above par', () => {
       const header = createRaceHeader({ classification: 'allowance', trackCode: 'LRL' }); // Par = 82
-      const horse = createSpeedFigureHorse([88, 86, 85]); // Best = 88, 6 above par
+      const horse = createSpeedFigureHorse([88, 86, 85]); // Best = 88, 6 above par (+4 to +6 tier)
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.speedScore).toBe(40);
+      expect(result.speedScore).toBe(70);
     });
 
-    it('returns 32 points for speed figure at par (0-4 above)', () => {
+    it('returns 60 points for speed figure slightly above par (+1 to +3)', () => {
       const header = createRaceHeader({ classification: 'allowance', trackCode: 'LRL' }); // Par = 82
       const horse = createSpeedFigureHorse([84, 82, 80]); // Best = 84, 2 above par
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.speedScore).toBe(32);
+      expect(result.speedScore).toBe(60);
     });
 
-    it('returns 24 points for speed figure 1-5 below par', () => {
+    it('returns 40 points for speed figure 1-3 below par', () => {
       // Use LRL (Tier 3, neutral) for both race and past performances
       const header = createRaceHeader({ classification: 'allowance', trackCode: 'LRL' }); // Par = 82
       const horse = createSpeedFigureHorse([80, 78, 77]); // Best = 80, 2 below par
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.speedScore).toBe(24);
+      expect(result.speedScore).toBe(40);
     });
 
-    it('returns 16 points for speed figure 6-10 below par', () => {
+    it('returns 20 points for speed figure 6-10 below par', () => {
       // Use LRL (Tier 3, neutral) for both race and past performances
       const header = createRaceHeader({ classification: 'allowance', trackCode: 'LRL' }); // Par = 82
       const horse = createSpeedFigureHorse([75, 73, 72]); // Best = 75, 7 below par
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.speedScore).toBe(16);
+      expect(result.speedScore).toBe(20);
     });
 
-    it('returns 8 points for speed figure significantly below par', () => {
+    it('returns 10 points for speed figure significantly below par (>10)', () => {
       // Use LRL (Tier 3, neutral) for both race and past performances
       const header = createRaceHeader({ classification: 'allowance', trackCode: 'LRL' }); // Par = 82
       const horse = createSpeedFigureHorse([65, 63, 60]); // Best = 65, 17 below par
 
       const result = calculateSpeedClassScore(horse, header);
 
-      expect(result.speedScore).toBe(8);
+      expect(result.speedScore).toBe(10);
     });
 
     it('returns neutral 24 for missing speed figures', () => {

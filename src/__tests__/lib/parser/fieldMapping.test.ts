@@ -333,7 +333,10 @@ describe('DRF Field Mapping - Race Header Data', () => {
 });
 
 describe('DRF Field Mapping - Lifetime Statistics', () => {
-  describe('Lifetime Starts (Field 62, Index 61)', () => {
+  // NOTE: Lifetime stats are in Fields 97-101 (indices 96-100), NOT Fields 62-69
+  // Verified with real DRF data - previous indices 61-68 contained unknown data
+
+  describe('Lifetime Starts (Field 97, Index 96)', () => {
     it('extracts lifetime starts from correct index', () => {
       const row = createDRFRow({
         0: 'CD',
@@ -341,7 +344,7 @@ describe('DRF Field Mapping - Lifetime Statistics', () => {
         2: '5',
         3: '1',
         44: 'Test Horse',
-        61: '25', // Lifetime Starts (Field 62)
+        96: '25', // Lifetime Starts (Field 97)
       });
 
       const result = parseDRFFile(row, 'test.drf');
@@ -352,7 +355,7 @@ describe('DRF Field Mapping - Lifetime Statistics', () => {
     });
   });
 
-  describe('Lifetime Wins (Field 63, Index 62)', () => {
+  describe('Lifetime Wins (Field 98, Index 97)', () => {
     it('extracts lifetime wins from correct index', () => {
       const row = createDRFRow({
         0: 'CD',
@@ -360,7 +363,7 @@ describe('DRF Field Mapping - Lifetime Statistics', () => {
         2: '5',
         3: '1',
         44: 'Test Horse',
-        62: '10', // Lifetime Wins (Field 63)
+        97: '10', // Lifetime Wins (Field 98)
       });
 
       const result = parseDRFFile(row, 'test.drf');
@@ -371,7 +374,7 @@ describe('DRF Field Mapping - Lifetime Statistics', () => {
     });
   });
 
-  describe('Lifetime Earnings (Field 69, Index 68)', () => {
+  describe('Lifetime Earnings (Field 101, Index 100)', () => {
     it('extracts lifetime earnings from correct index', () => {
       const row = createDRFRow({
         0: 'CD',
@@ -379,7 +382,7 @@ describe('DRF Field Mapping - Lifetime Statistics', () => {
         2: '5',
         3: '1',
         44: 'Test Horse',
-        68: '2500000', // Lifetime Earnings (Field 69)
+        100: '2500000', // Lifetime Earnings (Field 101)
       });
 
       const result = parseDRFFile(row, 'test.drf');

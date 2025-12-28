@@ -30,7 +30,7 @@ import {
 } from '../../fixtures/testHelpers';
 
 describe('Combo Patterns Detection', () => {
-  describe('Class Drop + First Time Lasix = 2 pts (v2.5)', () => {
+  describe('Class Drop + First Time Lasix = 1 pt (v3.0)', () => {
     it('detects class drop + first time Lasix combo', () => {
       const horse = createHorseEntry({
         medication: createMedication({
@@ -51,11 +51,11 @@ describe('Combo Patterns Detection', () => {
 
       const result = detectComboPatterns(horse, header, [horse]);
 
-      // v2.5: Halved from 4 to 2
-      expect(result.total).toBe(2);
+      // v3.0: Combo patterns reduced to 1 pt
+      expect(result.total).toBe(1);
       expect(result.detectedCombos.length).toBe(1);
       expect(result.detectedCombos[0]?.combo).toBe('classDropLasix');
-      expect(result.detectedCombos[0]?.points).toBe(2);
+      expect(result.detectedCombos[0]?.points).toBe(1);
       expect(result.detectedCombos[0]?.components).toContain('classDrop');
       expect(result.detectedCombos[0]?.components).toContain('firstTimeLasix');
     });
@@ -130,11 +130,11 @@ describe('Combo Patterns Detection', () => {
 
       const result = detectComboPatterns(horse, header, [horse]);
 
-      // v2.5: Halved from 4 to 2
-      expect(result.total).toBe(2);
+      // v3.0: Further reduced to 1 pt
+      expect(result.total).toBe(1);
       expect(result.detectedCombos.length).toBe(1);
       expect(result.detectedCombos[0]?.combo).toBe('classDropJockeyUpgrade');
-      expect(result.detectedCombos[0]?.points).toBe(2);
+      expect(result.detectedCombos[0]?.points).toBe(1);
     });
   });
 
@@ -163,8 +163,8 @@ describe('Combo Patterns Detection', () => {
     });
   });
 
-  describe('Triple Combo: Class + Equipment + Jockey = 3 pts (v2.5)', () => {
-    it('detects triple combo and awards 3 pts (not individual combos)', () => {
+  describe('Triple Combo: Class + Equipment + Jockey = 2 pts (v3.0)', () => {
+    it('detects triple combo and awards 2 pts (not individual combos)', () => {
       const horse = createHorseEntry({
         medication: createMedication({
           lasixFirstTime: true,
@@ -197,18 +197,18 @@ describe('Combo Patterns Detection', () => {
 
       const result = detectComboPatterns(horse, header, [horse]);
 
-      // v2.5: Halved from 6 to 3. Should be the triple combo, not individual combos stacking
-      expect(result.total).toBe(3);
+      // v3.0: Further reduced to 2 pts
+      expect(result.total).toBe(2);
       expect(result.detectedCombos.length).toBe(1);
       expect(result.detectedCombos[0]?.combo).toBe('tripleClassEquipmentJockey');
-      expect(result.detectedCombos[0]?.points).toBe(3);
+      expect(result.detectedCombos[0]?.points).toBe(2);
       expect(result.detectedCombos[0]?.components).toContain('classDrop');
       expect(result.detectedCombos[0]?.components).toContain('equipment');
       expect(result.detectedCombos[0]?.components).toContain('jockeyUpgrade');
     });
   });
 
-  describe('2nd Off Layoff + Bullet Work = 3 pts', () => {
+  describe('2nd Off Layoff + Bullet Work = 1 pt (v3.0)', () => {
     it('detects second off layoff + bullet work combo', () => {
       const today = new Date();
       const recentDate = new Date(today);
@@ -234,15 +234,15 @@ describe('Combo Patterns Detection', () => {
 
       const result = detectComboPatterns(horse, header, [horse]);
 
-      // v2.5: Halved from 3 to 2
-      expect(result.total).toBe(2);
+      // v3.0: Further reduced to 1 pt
+      expect(result.total).toBe(1);
       expect(result.detectedCombos.length).toBe(1);
       expect(result.detectedCombos[0]?.combo).toBe('secondLayoffBullet');
-      expect(result.detectedCombos[0]?.points).toBe(2);
+      expect(result.detectedCombos[0]?.points).toBe(1);
     });
   });
 
-  describe('Layoff + Class Drop = 3 pts', () => {
+  describe('Layoff + Class Drop = 1 pt (v3.0)', () => {
     it('detects layoff + class drop combo', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 60, // Returning from layoff
@@ -258,11 +258,11 @@ describe('Combo Patterns Detection', () => {
 
       const result = detectComboPatterns(horse, header, [horse]);
 
-      // v2.5: Halved from 3 to 2
-      expect(result.total).toBe(2);
+      // v3.0: Further reduced to 1 pt
+      expect(result.total).toBe(1);
       expect(result.detectedCombos.length).toBe(1);
       expect(result.detectedCombos[0]?.combo).toBe('layoffClassDrop');
-      expect(result.detectedCombos[0]?.points).toBe(2);
+      expect(result.detectedCombos[0]?.points).toBe(1);
     });
   });
 

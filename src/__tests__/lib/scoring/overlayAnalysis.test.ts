@@ -20,14 +20,17 @@ import {
 
 describe('Overlay Analysis', () => {
   describe('scoreToWinProbability', () => {
-    it('converts score 160 to approximately 55% win probability', () => {
+    // v3.1: Formula updated to (score/328) * 50, clamped 2-50%
+    it('converts score 160 to approximately 24% win probability', () => {
       const prob = scoreToWinProbability(160);
-      expect(prob).toBeCloseTo(55, 0);
+      // (160/328) * 50 = 24.4%
+      expect(prob).toBeCloseTo(24, 0);
     });
 
-    it('converts score 200 to approximately 75% win probability', () => {
+    it('converts score 200 to approximately 30% win probability', () => {
       const prob = scoreToWinProbability(200);
-      expect(prob).toBe(75);
+      // (200/328) * 50 = 30.5%
+      expect(prob).toBeCloseTo(30, 0);
     });
 
     it('clamps probability to minimum 2%', () => {
@@ -35,9 +38,10 @@ describe('Overlay Analysis', () => {
       expect(prob).toBe(2);
     });
 
-    it('clamps probability to maximum 80%', () => {
-      const prob = scoreToWinProbability(300);
-      expect(prob).toBe(80);
+    it('clamps probability to maximum 50% for standalone calculations', () => {
+      const prob = scoreToWinProbability(400);
+      // v3.1: Without field context, cap at 50% to avoid unrealistic probabilities
+      expect(prob).toBe(50);
     });
   });
 
@@ -68,18 +72,27 @@ describe('Overlay Analysis', () => {
   });
 
   describe('classifyValue', () => {
-    it('classifies 150%+ as massive overlay', () => {
+    // v3.1: Thresholds: massive>=100, strong>=40, moderate>=20, slight>=10, fair>=-20, underlay<-20
+    it('classifies 100%+ as massive overlay', () => {
+      expect(classifyValue(100)).toBe('massive_overlay');
       expect(classifyValue(150)).toBe('massive_overlay');
       expect(classifyValue(200)).toBe('massive_overlay');
     });
 
-    it('classifies 50-149% as strong overlay', () => {
+    it('classifies 40-99% as strong overlay', () => {
+      expect(classifyValue(40)).toBe('strong_overlay');
       expect(classifyValue(50)).toBe('strong_overlay');
-      expect(classifyValue(100)).toBe('strong_overlay');
+      expect(classifyValue(99)).toBe('strong_overlay');
     });
 
-    it('classifies negative percentages as underlay', () => {
-      expect(classifyValue(-20)).toBe('underlay');
+    it('classifies -20 to +19 as fair price', () => {
+      expect(classifyValue(-20)).toBe('fair_price'); // -20 is fair_price threshold
+      expect(classifyValue(0)).toBe('fair_price');
+      expect(classifyValue(9)).toBe('fair_price');
+    });
+
+    it('classifies below -20 as underlay', () => {
+      expect(classifyValue(-21)).toBe('underlay');
       expect(classifyValue(-50)).toBe('underlay');
     });
   });
