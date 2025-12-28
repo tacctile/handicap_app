@@ -425,38 +425,57 @@ describe('Main Scoring Engine', () => {
       });
     });
 
+    /**
+     * getScoreColor tests - based on BASE SCORE (0-328 range)
+     *
+     * Updated thresholds match getScoreTier:
+     * 270+ = Elite (Green), 220-269 = Strong (Light Green),
+     * 170-219 = Contender (Yellow), 120-169 = Fair (Orange), <120 = Weak (Red)
+     */
     describe('getScoreColor', () => {
       it('returns correct colors for score thresholds', () => {
-        expect(getScoreColor(200, false)).toBe('#22c55e'); // Elite - Green
-        expect(getScoreColor(190, false)).toBe('#4ade80'); // Strong - Light Green
-        expect(getScoreColor(170, false)).toBe('#eab308'); // Good - Yellow
-        expect(getScoreColor(150, false)).toBe('#f97316'); // Fair - Orange
-        expect(getScoreColor(100, false)).toBe('#ef4444'); // Weak - Red
+        expect(getScoreColor(280, false)).toBe('#22c55e'); // Elite - Green (270+)
+        expect(getScoreColor(250, false)).toBe('#4ade80'); // Strong - Light Green (220-269)
+        expect(getScoreColor(190, false)).toBe('#eab308'); // Contender - Yellow (170-219)
+        expect(getScoreColor(145, false)).toBe('#f97316'); // Fair - Orange (120-169)
+        expect(getScoreColor(100, false)).toBe('#ef4444'); // Weak - Red (<120)
       });
 
       it('returns weak color for scratched horses', () => {
-        expect(getScoreColor(200, true)).toBe('#ef4444'); // Red for scratched
+        expect(getScoreColor(280, true)).toBe('#ef4444'); // Red for scratched
       });
     });
 
+    /**
+     * getScoreTier tests - based on BASE SCORE (0-328 range)
+     *
+     * Updated thresholds:
+     * | Base Score | Percentage | Rating     |
+     * |------------|------------|------------|
+     * | 270+       | 82%+       | Elite      |
+     * | 220-269    | 67-81%     | Strong     |
+     * | 170-219    | 52-66%     | Contender  |
+     * | 120-169    | 37-51%     | Fair       |
+     * | Below 120  | <37%       | Weak       |
+     */
     describe('getScoreTier', () => {
-      it('returns correct tier names', () => {
-        expect(getScoreTier(200)).toBe('Elite');
-        expect(getScoreTier(185)).toBe('Strong');
-        expect(getScoreTier(165)).toBe('Good');
-        expect(getScoreTier(145)).toBe('Fair');
-        expect(getScoreTier(100)).toBe('Weak');
+      it('returns correct tier names based on base score', () => {
+        expect(getScoreTier(280)).toBe('Elite'); // 85% of 328
+        expect(getScoreTier(250)).toBe('Strong'); // 76% of 328
+        expect(getScoreTier(190)).toBe('Contender'); // 58% of 328
+        expect(getScoreTier(145)).toBe('Fair'); // 44% of 328
+        expect(getScoreTier(100)).toBe('Weak'); // 30% of 328
       });
     });
   });
 
   describe('Score Thresholds', () => {
-    it('thresholds are correctly defined', () => {
-      expect(SCORE_THRESHOLDS.elite).toBe(200);
-      expect(SCORE_THRESHOLDS.strong).toBe(180);
-      expect(SCORE_THRESHOLDS.good).toBe(160);
-      expect(SCORE_THRESHOLDS.fair).toBe(140);
-      expect(SCORE_THRESHOLDS.weak).toBe(0);
+    it('thresholds are correctly defined for base score (328 max)', () => {
+      expect(SCORE_THRESHOLDS.elite).toBe(270); // 82%+
+      expect(SCORE_THRESHOLDS.strong).toBe(220); // 67-81%
+      expect(SCORE_THRESHOLDS.contender).toBe(170); // 52-66%
+      expect(SCORE_THRESHOLDS.fair).toBe(120); // 37-51%
+      expect(SCORE_THRESHOLDS.weak).toBe(0); // <37%
     });
   });
 });

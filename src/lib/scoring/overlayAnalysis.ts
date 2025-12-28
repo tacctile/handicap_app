@@ -74,14 +74,21 @@ export interface ValuePlay {
 // CONSTANTS
 // ============================================================================
 
-/** Value classification thresholds */
+/**
+ * Value classification thresholds
+ *
+ * Updated for clearer overlay/underlay/fair classification:
+ * - Overlay: Actual odds > Fair odds by 20%+ (value bet)
+ * - Fair: Within ±20% of fair odds (neutral)
+ * - Underlay: Actual odds < Fair odds by 20%+ (bad bet)
+ */
 export const VALUE_THRESHOLDS = {
-  massiveOverlay: 150,
-  strongOverlay: 50,
-  moderateOverlay: 25,
-  slightOverlay: 10,
-  fairPrice: -10,
-  // Below -10% is underlay
+  massiveOverlay: 100, // 100%+ overlay - exceptional value
+  strongOverlay: 40, // 40-99% overlay - good value
+  moderateOverlay: 20, // 20-39% overlay - slight value (OVERLAY threshold)
+  slightOverlay: 10, // 10-19% overlay - marginal edge
+  fairPrice: -20, // -20% to +19% is FAIR (within tolerance)
+  // Below -20% is UNDERLAY (bad value)
 } as const;
 
 /**
@@ -117,14 +124,19 @@ export const VALUE_ICONS: Record<ValueClassification, string> = {
   underlay: 'do_not_disturb',
 };
 
-/** Labels for value classification (odds edge terminology) */
+/**
+ * Labels for value classification
+ * - Overlay: Actual odds > Fair odds by 20%+ (value bet)
+ * - Fair: Within ±20% (neutral)
+ * - Underlay: Actual odds < Fair odds by 20%+ (bad bet)
+ */
 export const VALUE_LABELS: Record<ValueClassification, string> = {
-  massive_overlay: 'Strong Overlay',
-  strong_overlay: 'Overlay',
-  moderate_overlay: 'Fair Odds',
-  slight_overlay: 'Fair Odds',
-  fair_price: 'Fair Price',
-  underlay: 'Underlay',
+  massive_overlay: 'Strong Overlay', // 100%+ overlay
+  strong_overlay: 'Overlay', // 40-99% overlay
+  moderate_overlay: 'Overlay', // 20-39% overlay (meets threshold)
+  slight_overlay: 'Fair', // 10-19% (within tolerance)
+  fair_price: 'Fair', // -20% to +9% (within tolerance)
+  underlay: 'Underlay', // < -20% (bad value)
 };
 
 // ============================================================================
@@ -132,35 +144,75 @@ export const VALUE_LABELS: Record<ValueClassification, string> = {
 // ============================================================================
 
 /**
- * Convert a score (0-240 range) to win probability
+ * Calculate field-relative win probability
  *
- * Formula: Win% = (Score - 50) / 200 × 100
- * Clamped between 2% and 80% for realistic bounds
+ * This is the CORRECT way to calculate win probability:
+ * Win% = Horse's Base Score / Sum of All Field Base Scores
  *
- * Benchmarks:
- * - 200+ score = 75%+ win probability
- * - 180 score = 65% win probability
- * - 160 score = 55% win probability
- * - 140 score = 45% win probability
- * - 120 score = 35% win probability
- * - 100 score = 25% win probability
+ * This ensures:
+ * - Probabilities are relative to the actual field
+ * - All horses' probabilities sum to ~100%
+ * - A strong horse in a weak field has higher probability
+ * - A strong horse in an elite field has lower probability
+ *
+ * Example (6-horse field):
+ * - Horse A: 250 pts → 250/1200 = 20.8%
+ * - Horse B: 230 pts → 230/1200 = 19.2%
+ * - Horse C: 200 pts → 200/1200 = 16.7%
+ * - Horse D: 190 pts → 190/1200 = 15.8%
+ * - Horse E: 170 pts → 170/1200 = 14.2%
+ * - Horse F: 160 pts → 160/1200 = 13.3%
+ * Total: 1200 pts → 100%
+ *
+ * @param horseBaseScore - This horse's base score (0-328)
+ * @param allFieldBaseScores - Array of all non-scratched horses' base scores
+ * @returns Win probability as percentage (0-100)
+ */
+export function calculateFieldRelativeWinProbability(
+  horseBaseScore: number,
+  allFieldBaseScores: number[]
+): number {
+  // Handle invalid inputs
+  if (!Number.isFinite(horseBaseScore) || horseBaseScore <= 0) return 2;
+  if (!allFieldBaseScores || allFieldBaseScores.length === 0) return 2;
+
+  // Sum all field scores
+  const totalFieldScore = allFieldBaseScores.reduce((sum, score) => sum + (score || 0), 0);
+
+  // Avoid division by zero
+  if (totalFieldScore <= 0) return 2;
+
+  // Calculate win probability
+  const winProbability = (horseBaseScore / totalFieldScore) * 100;
+
+  // Clamp to realistic bounds (2% to 85%)
+  // Even worst horse has some chance, best horse rarely over 85%
+  return Math.max(2, Math.min(85, winProbability));
+}
+
+/**
+ * Convert a score (0-328 range) to win probability
+ * LEGACY FUNCTION - use calculateFieldRelativeWinProbability for accurate results
+ *
+ * This standalone formula is only used when field context is not available.
+ * It's less accurate because it doesn't account for field strength.
+ *
+ * Updated formula for 328-point scale:
+ * Win% = (Score / 328) × 50% (normalized to reasonable range)
+ * Clamped between 2% and 50% for standalone calculations
  */
 export function scoreToWinProbability(score: number): number {
   // Handle NaN or invalid input
   if (!Number.isFinite(score)) return 2; // Return minimum probability
 
-  // Formula: (Score - 50) / 200 * 100
-  // This maps:
-  // - Score 50 → 0%
-  // - Score 100 → 25%
-  // - Score 150 → 50%
-  // - Score 200 → 75%
-  // - Score 250 → 100% (capped at 80%)
-  const rawProbability = ((score - 50) / 200) * 100;
+  // For standalone calculations without field context,
+  // use a conservative formula that doesn't over-inflate probabilities
+  // Score of 328 → 50%, Score of 164 → 25%, Score of 82 → 12.5%
+  const rawProbability = (score / 328) * 50;
 
-  // Clamp to realistic bounds (2% to 80%)
-  // Even a longshot has some chance, elite horses rarely over 80%
-  return Math.max(2, Math.min(80, rawProbability));
+  // Clamp to realistic bounds (2% to 50%)
+  // Without field context, cap at 50% to avoid unrealistic probabilities
+  return Math.max(2, Math.min(50, rawProbability));
 }
 
 /**
@@ -471,13 +523,83 @@ export function generateOverlayDescription(
 }
 
 // ============================================================================
-// MAIN ANALYSIS FUNCTION
+// MAIN ANALYSIS FUNCTIONS
 // ============================================================================
 
 /**
- * Perform complete overlay analysis for a horse
+ * Perform complete overlay analysis for a horse WITH FIELD CONTEXT
  *
- * @param score - Horse's total score (0-240)
+ * This is the CORRECT way to calculate overlay/underlay:
+ * 1. Calculate win probability relative to field (score / sum of all scores)
+ * 2. Convert win probability to fair odds
+ * 3. Compare fair odds to actual odds
+ * 4. Classify: Overlay (>20%), Fair (±20%), Underlay (<-20%)
+ *
+ * @param horseBaseScore - Horse's base score (0-328)
+ * @param allFieldBaseScores - Array of all non-scratched horses' base scores
+ * @param actualOdds - Current odds string (e.g., "5-1", "8-1")
+ * @returns Complete overlay analysis
+ */
+export function analyzeOverlayWithField(
+  horseBaseScore: number,
+  allFieldBaseScores: number[],
+  actualOdds: string
+): OverlayAnalysis {
+  // Step 1: Calculate field-relative win probability
+  const winProbability = calculateFieldRelativeWinProbability(horseBaseScore, allFieldBaseScores);
+
+  // Step 2: Calculate fair odds from probability
+  const fairOddsDecimal = probabilityToDecimalOdds(winProbability);
+  const fairOddsDisplay = decimalToFractionalOdds(fairOddsDecimal);
+  const fairOddsMoneyline = decimalToMoneyline(fairOddsDecimal);
+
+  // Step 3: Parse actual odds
+  const actualOddsDecimal = parseOddsToDecimal(actualOdds);
+
+  // Step 4: Calculate overlay percentage
+  const overlayPercent = calculateOverlayPercent(fairOddsDecimal, actualOddsDecimal);
+
+  // Step 5: Classify value
+  const valueClass = classifyValue(overlayPercent);
+
+  // Step 6: Calculate expected value
+  const evPerDollar = calculateEV(winProbability, actualOddsDecimal);
+  const evPercent = evPerDollar * 100;
+
+  // Step 7: Generate recommendation
+  const recommendation = generateRecommendation(valueClass, overlayPercent, evPerDollar);
+
+  // Step 8: Generate description
+  const overlayDescription = generateOverlayDescription(
+    overlayPercent,
+    valueClass,
+    fairOddsDisplay,
+    actualOdds
+  );
+
+  return {
+    fairOddsDecimal,
+    fairOddsDisplay,
+    fairOddsMoneyline,
+    winProbability,
+    actualOddsDecimal,
+    overlayPercent,
+    valueClass,
+    evPerDollar,
+    evPercent,
+    isPositiveEV: evPerDollar > 0,
+    overlayDescription,
+    recommendation,
+  };
+}
+
+/**
+ * Perform complete overlay analysis for a horse (LEGACY - without field context)
+ *
+ * NOTE: This function is less accurate because it doesn't consider field strength.
+ * Use analyzeOverlayWithField when field context is available.
+ *
+ * @param score - Horse's total score (0-328)
  * @param actualOdds - Current odds string (e.g., "5-1", "8-1")
  * @returns Complete overlay analysis
  */

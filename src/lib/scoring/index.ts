@@ -213,22 +213,33 @@ export const SCORE_LIMITS = {
   total: MAX_SCORE, // Phase 6: 368 (was 353)
 } as const;
 
-/** Score thresholds for color coding and tier classification */
+/**
+ * Score thresholds for color coding and tier classification
+ * Based on BASE SCORE ONLY (328 max), not total score with overlay
+ *
+ * | Base Score | Percentage | Rating     |
+ * |------------|------------|------------|
+ * | 270+       | 82%+       | Elite      |
+ * | 220-269    | 67-81%     | Strong     |
+ * | 170-219    | 52-66%     | Contender  |
+ * | 120-169    | 37-51%     | Fair       |
+ * | Below 120  | <37%       | Weak       |
+ */
 export const SCORE_THRESHOLDS = {
-  elite: 200, // Bright accent (#36d1da)
-  strong: 180, // Accent (#19abb5)
-  good: 160, // Medium (#1b7583)
-  fair: 140, // Low (#888)
-  weak: 0, // Grey (#555)
+  elite: 270, // 82%+ of 328 base score
+  strong: 220, // 67-81% of 328 base score
+  contender: 170, // 52-66% of 328 base score (renamed from 'good')
+  fair: 120, // 37-51% of 328 base score
+  weak: 0, // Below 37%
 } as const;
 
-/** Score colors matching thresholds */
+/** Score colors matching thresholds (based on base score) */
 export const SCORE_COLORS = {
-  elite: '#22c55e', // Green - Elite (200+)
-  strong: '#4ade80', // Light Green - Strong (180+)
-  good: '#eab308', // Yellow - Good (160+)
-  fair: '#f97316', // Orange - Fair (140+)
-  weak: '#ef4444', // Red - Weak (<140)
+  elite: '#22c55e', // Green - Elite (270+, 82%+)
+  strong: '#4ade80', // Light Green - Strong (220-269, 67-81%)
+  contender: '#eab308', // Yellow - Contender (170-219, 52-66%)
+  fair: '#f97316', // Orange - Fair (120-169, 37-51%)
+  weak: '#ef4444', // Red - Weak (<120, <37%)
 } as const;
 
 // ============================================================================
@@ -497,25 +508,40 @@ export function parseOdds(oddsStr: string): number {
 }
 
 /**
- * Get the color for a score based on thresholds
+ * Get the color for a BASE score based on thresholds
+ * IMPORTANT: This should be called with baseScore (0-328), NOT total score
+ *
+ * @param baseScore - The horse's base score (0-328 range)
+ * @param isScratched - Whether the horse is scratched
  */
-export function getScoreColor(score: number, isScratched: boolean): string {
+export function getScoreColor(baseScore: number, isScratched: boolean): string {
   if (isScratched) return SCORE_COLORS.weak;
-  if (score >= SCORE_THRESHOLDS.elite) return SCORE_COLORS.elite;
-  if (score >= SCORE_THRESHOLDS.strong) return SCORE_COLORS.strong;
-  if (score >= SCORE_THRESHOLDS.good) return SCORE_COLORS.good;
-  if (score >= SCORE_THRESHOLDS.fair) return SCORE_COLORS.fair;
+  if (baseScore >= SCORE_THRESHOLDS.elite) return SCORE_COLORS.elite;
+  if (baseScore >= SCORE_THRESHOLDS.strong) return SCORE_COLORS.strong;
+  if (baseScore >= SCORE_THRESHOLDS.contender) return SCORE_COLORS.contender;
+  if (baseScore >= SCORE_THRESHOLDS.fair) return SCORE_COLORS.fair;
   return SCORE_COLORS.weak;
 }
 
 /**
- * Get score tier name
+ * Get score tier name based on BASE score
+ * IMPORTANT: This should be called with baseScore (0-328), NOT total score
+ *
+ * | Base Score | Percentage | Rating     |
+ * |------------|------------|------------|
+ * | 270+       | 82%+       | Elite      |
+ * | 220-269    | 67-81%     | Strong     |
+ * | 170-219    | 52-66%     | Contender  |
+ * | 120-169    | 37-51%     | Fair       |
+ * | Below 120  | <37%       | Weak       |
+ *
+ * @param baseScore - The horse's base score (0-328 range)
  */
-export function getScoreTier(score: number): string {
-  if (score >= SCORE_THRESHOLDS.elite) return 'Elite';
-  if (score >= SCORE_THRESHOLDS.strong) return 'Strong';
-  if (score >= SCORE_THRESHOLDS.good) return 'Good';
-  if (score >= SCORE_THRESHOLDS.fair) return 'Fair';
+export function getScoreTier(baseScore: number): string {
+  if (baseScore >= SCORE_THRESHOLDS.elite) return 'Elite';
+  if (baseScore >= SCORE_THRESHOLDS.strong) return 'Strong';
+  if (baseScore >= SCORE_THRESHOLDS.contender) return 'Contender';
+  if (baseScore >= SCORE_THRESHOLDS.fair) return 'Fair';
   return 'Weak';
 }
 
@@ -1332,6 +1358,8 @@ export {
 // Overlay value analysis exports (betting overlay detection)
 export {
   analyzeOverlay,
+  analyzeOverlayWithField,
+  calculateFieldRelativeWinProbability,
   detectValuePlays,
   getValuePlaysSummary,
   calculateTierAdjustment,
