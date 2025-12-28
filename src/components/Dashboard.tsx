@@ -297,7 +297,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // Get field size for color calculations (active horses only)
   const activeFieldSize = useMemo(() => {
-    return blendedRankedHorses.filter(h => !h.horse.isScratched).length;
+    return blendedRankedHorses.filter((h) => !h.horse.isScratched).length;
   }, [blendedRankedHorses]);
   const postTimeString = currentRace?.header?.postTime;
   const raceDateString = currentRace?.header?.raceDateRaw;
@@ -774,7 +774,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             ) : (
               <div className="horse-list">
-                {/* Column Headers - 10 columns: icons | POST | HORSE | BASE RANK | TREND RANK | BLENDED RANK | TREND GRAPH | ODDS | VALUE | expand */}
+                {/* Column Headers - 9 columns: icons | POST | HORSE | BASE RANK | TREND RANK | BLENDED RANK | ODDS | VALUE | expand */}
                 <div className="horse-list-header">
                   {/* Column 1: Help button */}
                   <div className="horse-list-header__cell horse-list-header__cell--icons">
@@ -842,17 +842,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 7: TREND GRAPH - Sparkline visualization */}
-                  <div className="horse-list-header__cell horse-list-header__cell--trend-graph horse-list-header__cell--no-subtext">
-                    <HeaderTooltip
-                      title="Trend Graph"
-                      content="Visual representation of recent finish positions. Green = improving, Red = declining, Yellow = flat. Click to see detailed trend analysis."
-                    >
-                      <span className="horse-list-header__label">TREND</span>
-                    </HeaderTooltip>
-                  </div>
-
-                  {/* Column 8: ODDS - Market price */}
+                  {/* Column 7: ODDS - Market price */}
                   <div className="horse-list-header__cell horse-list-header__cell--odds">
                     <HeaderTooltip
                       title="Current Odds"
@@ -863,7 +853,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 9: VALUE - Overlay/Fair/Underlay badge */}
+                  {/* Column 8: VALUE - Overlay/Fair/Underlay badge */}
                   <div className="horse-list-header__cell horse-list-header__cell--value">
                     <HeaderTooltip
                       title="Value Assessment"
@@ -874,7 +864,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 10: Expand */}
+                  {/* Column 9: Expand */}
                   <div className="horse-list-header__cell horse-list-header__cell--expand">
                     {/* Empty */}
                   </div>
@@ -955,12 +945,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   const blendedRank = blendedInfo?.blendedResult?.blendedRank ?? 0;
 
                   // Calculate colors for trend and blended ranks
-                  const trendRankColor = trendRank > 0 && activeFieldSize > 0
-                    ? calculateRankGradientColor(trendRank - 1, activeFieldSize)
-                    : '#555555';
-                  const blendedRankColor = blendedRank > 0 && activeFieldSize > 0
-                    ? calculateRankGradientColor(blendedRank - 1, activeFieldSize)
-                    : '#555555';
+                  const trendRankColor =
+                    trendRank > 0 && activeFieldSize > 0
+                      ? calculateRankGradientColor(trendRank - 1, activeFieldSize)
+                      : '#555555';
+                  const blendedRankColor =
+                    blendedRank > 0 && activeFieldSize > 0
+                      ? calculateRankGradientColor(blendedRank - 1, activeFieldSize)
+                      : '#555555';
 
                   return (
                     <div key={horseId} className="horse-list__item">
@@ -989,10 +981,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         trendRankOrdinal={trendRank > 0 ? toOrdinal(trendRank) : '—'}
                         trendRankColor={trendRankColor}
                         trendScore={blendedInfo?.trendScore}
-                        onTrendClick={blendedInfo?.trendScore ? () => setTrendModalHorse({
-                          horse,
-                          trendScore: blendedInfo.trendScore,
-                        }) : undefined}
+                        onTrendClick={
+                          blendedInfo?.trendScore
+                            ? () =>
+                                setTrendModalHorse({
+                                  horse,
+                                  trendScore: blendedInfo.trendScore,
+                                })
+                            : undefined
+                        }
                         // Blended rank info (combined base + trend)
                         blendedRank={blendedRank}
                         blendedRankOrdinal={blendedRank > 0 ? toOrdinal(blendedRank) : '—'}
