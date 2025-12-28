@@ -15,7 +15,7 @@ try {
   }
 }
 
-const lines = drf.split('\n').filter(line => line.trim());
+const lines = drf.split('\n').filter((line) => line.trim());
 const fields = lines[0].split(',');
 
 console.log('');
@@ -67,7 +67,7 @@ try {
   const ppConstants = parserFile.match(/PP_\w+\s*=\s*\d+/g);
   if (ppConstants) {
     console.log('PP field constants found in parser:');
-    ppConstants.forEach(c => console.log('  ' + c));
+    ppConstants.forEach((c) => console.log('  ' + c));
   }
 } catch (e) {
   console.log('Could not read parser file:', e);
@@ -109,19 +109,19 @@ console.log('│ PART 4: ACTUAL FIELD VALUES FOR TARGET PP FIELDS               
 console.log('└──────────────────────────────────────────────────────────────────┘');
 console.log('');
 
-// Field indices (0-based)
-const PP_DATE_START = 101;
-const PP_EQUIPMENT_START = 161;
-const PP_MEDICATION_START = 173;
-const PP_FINAL_TIME_START = 1005;  // Per doc: Fields 1006-1015
+// Field indices (0-based) - documented for reference
+const _PP_DATE_START = 101;
+const _PP_EQUIPMENT_START = 161;
+const _PP_MEDICATION_START = 173;
+const _PP_FINAL_TIME_START = 1005; // Per doc: Fields 1006-1015
 
-// Also check other potential final time locations
-const PP_QUARTER_TIME = 865;
-const PP_HALF_TIME = 895;
-const PP_6F_TIME = 905;
-const PP_MILE_TIME = 915;
+// Also check other potential final time locations - documented for reference
+const _PP_QUARTER_TIME = 865;
+const _PP_HALF_TIME = 895;
+const _PP_6F_TIME = 905;
+const _PP_MILE_TIME = 915;
 
-console.log('Examining first horse\'s PP data:');
+console.log("Examining first horse's PP data:");
 console.log('');
 
 // PP1 Values
@@ -162,7 +162,7 @@ console.log('└─────────────────────�
 console.log('');
 
 console.log('Looking for time values (60-150 seconds range with decimals):');
-const timeFields: {index: number, value: string, formatted: string}[] = [];
+const timeFields: { index: number; value: string; formatted: string }[] = [];
 fields.forEach((val, idx) => {
   const num = parseFloat(val);
   // Race times are typically 60-180 seconds (1:00 to 3:00)
@@ -172,14 +172,14 @@ fields.forEach((val, idx) => {
     timeFields.push({
       index: idx,
       value: val,
-      formatted: `${mins}:${secs.padStart(5, '0')}`
+      formatted: `${mins}:${secs.padStart(5, '0')}`,
     });
   }
 });
 
 if (timeFields.length > 0) {
   console.log('Potential final time fields found:');
-  timeFields.slice(0, 30).forEach(t => {
+  timeFields.slice(0, 30).forEach((t) => {
     console.log(`  Field ${t.index + 1} (idx ${t.index}): "${t.value}" → ${t.formatted}`);
   });
 } else {
@@ -212,7 +212,7 @@ try {
   if (ppRefs) {
     const uniqueRefs = [...new Set(ppRefs)].sort();
     console.log('Fields currently accessed in PPLine.tsx:');
-    uniqueRefs.forEach(ref => console.log('  ' + ref));
+    uniqueRefs.forEach((ref) => console.log('  ' + ref));
   }
 } catch (e) {
   console.log('Could not read PPLine.tsx:', e);
