@@ -252,6 +252,7 @@ function createMockRaceHeader(): RaceHeader {
 function createMockBankroll(overrides: Partial<UseBankrollReturn> = {}): UseBankrollReturn {
   const defaultSettings: BankrollSettings = {
     complexityMode: 'simple',
+    experienceLevel: 'beginner',
     simpleRaceBudget: 50,
     simpleBettingStyle: 'balanced',
     moderateRaceBudget: 100,
@@ -270,6 +271,7 @@ function createMockBankroll(overrides: Partial<UseBankrollReturn> = {}): UseBank
     settings: defaultSettings,
     updateSettings: vi.fn(),
     resetToDefaults: vi.fn(),
+    getExperienceLevel: () => 'beginner',
     getComplexityMode: () => 'simple',
     getSimpleSettings: () => ({ raceBudget: 50, bettingStyle: 'balanced' as const }),
     getModerateSettings: () => ({

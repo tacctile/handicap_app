@@ -7257,3 +7257,458 @@ input:-webkit-autofill:focus {
     font-size: var(--font-xs);
   }
 }
+
+/* ============================================
+   Simplified Betting UI - Experience Level System
+   ============================================ */
+
+/* Experience Level Selector */
+.experience-level-selector {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg, 8px);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.experience-budget-section {
+  margin-bottom: var(--space-4);
+}
+
+.experience-budget-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  margin-bottom: var(--space-2);
+}
+
+.experience-budget-label .material-icons {
+  font-size: 18px;
+  color: var(--accent-primary);
+}
+
+.experience-budget-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 6px);
+  padding: var(--space-2) var(--space-3);
+  max-width: 150px;
+}
+
+.experience-budget-prefix {
+  color: var(--text-secondary);
+  font-size: var(--font-lg);
+  font-weight: 600;
+  margin-right: var(--space-1);
+}
+
+.experience-budget-input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: var(--font-xl);
+  font-weight: 700;
+  width: 100%;
+  outline: none;
+}
+
+.experience-budget-input::-webkit-inner-spin-button,
+.experience-budget-input::-webkit-outer-spin-button {
+  opacity: 1;
+}
+
+.experience-level-buttons {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.experience-level-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--bg-elevated);
+  border: 2px solid var(--border-subtle);
+  border-radius: var(--radius-md, 6px);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.experience-level-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-prominent);
+}
+
+.experience-level-btn.selected {
+  background: rgba(25, 171, 181, 0.15);
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.experience-level-icon {
+  font-size: 24px;
+}
+
+.experience-level-btn.selected .experience-level-icon {
+  color: var(--accent-primary);
+}
+
+.experience-level-name {
+  font-size: var(--font-sm);
+  font-weight: 500;
+}
+
+.experience-level-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-tertiary);
+  font-size: var(--font-xs);
+}
+
+.experience-level-hint .material-icons {
+  font-size: 16px;
+}
+
+/* Simplified Bets Section */
+.simplified-bets-section {
+  margin-bottom: var(--space-4);
+}
+
+.simplified-bets-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-primary);
+  font-size: var(--font-md);
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+}
+
+.simplified-bets-title .material-icons {
+  color: var(--accent-primary);
+}
+
+.simplified-bets-count {
+  background: var(--accent-primary);
+  color: white;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: auto;
+}
+
+.simplified-bets-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.simplified-no-bets {
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  color: var(--text-tertiary);
+}
+
+.simplified-no-bets .material-icons {
+  font-size: 48px;
+  margin-bottom: var(--space-3);
+  opacity: 0.5;
+}
+
+.simplified-no-bets-hint {
+  font-size: var(--font-xs);
+  margin-top: var(--space-2);
+}
+
+/* Simplified Bet Card */
+.simplified-bet-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-subtle);
+  border-radius: var(--radius-lg, 8px);
+  padding: var(--space-4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.simplified-bet-card:hover {
+  border-color: var(--border-prominent);
+  background: var(--bg-elevated);
+}
+
+.simplified-bet-card.selected {
+  border-color: var(--accent-primary);
+  background: rgba(25, 171, 181, 0.08);
+}
+
+.simplified-bet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.simplified-bet-type {
+  font-size: var(--font-md);
+  font-weight: 700;
+  color: var(--accent-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.simplified-bet-amount {
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.simplified-bet-horse {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.simplified-bet-horse-number {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: var(--font-lg);
+  font-weight: 700;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm, 4px);
+}
+
+.simplified-bet-horse-name {
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.simplified-bet-explanation {
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  margin-bottom: var(--space-3);
+}
+
+.simplified-bet-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.simplified-bet-tip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-success);
+  font-size: var(--font-xs);
+}
+
+.simplified-bet-tip .material-icons {
+  font-size: 16px;
+}
+
+.simplified-bet-checkbox {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border-subtle);
+  border-radius: var(--radius-sm, 4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.simplified-bet-checkbox.checked {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.simplified-bet-checkbox .material-icons {
+  font-size: 18px;
+  color: white;
+}
+
+.simplified-bet-instruction {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md, 6px);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  font-style: italic;
+}
+
+.simplified-bet-instruction .material-icons {
+  color: var(--accent-primary);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* Simplified Footer */
+.simplified-footer {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg, 8px);
+  padding: var(--space-4);
+  position: sticky;
+  bottom: var(--space-4);
+}
+
+.simplified-footer.over-budget {
+  border-color: var(--color-error);
+}
+
+.simplified-footer-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.simplified-footer-count {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+}
+
+.simplified-footer-count .material-icons {
+  font-size: 18px;
+  color: var(--accent-primary);
+}
+
+.simplified-footer-total {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+}
+
+.simplified-footer-amount {
+  color: var(--text-primary);
+  font-size: var(--font-lg);
+  font-weight: 700;
+}
+
+.simplified-footer-budget {
+  color: var(--text-tertiary);
+  font-size: var(--font-xs);
+}
+
+.simplified-footer-warning {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-error);
+  font-size: var(--font-sm);
+  margin-bottom: var(--space-3);
+}
+
+.simplified-footer-warning .material-icons {
+  font-size: 18px;
+}
+
+.simplified-footer-copy-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--accent-primary);
+  border: none;
+  border-radius: var(--radius-md, 6px);
+  color: white;
+  font-size: var(--font-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.simplified-footer-copy-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.simplified-footer-copy-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.simplified-footer-instructions {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.simplified-footer-instructions-title {
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-2);
+}
+
+.simplified-footer-instruction-line {
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  font-family: 'Courier New', monospace;
+  background: var(--bg-elevated);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm, 4px);
+  margin-bottom: var(--space-1);
+}
+
+/* Simplified mode container adjustments */
+.interactive-betting-container.simplified-mode {
+  padding: var(--space-4);
+}
+
+.interactive-betting-container.advanced-mode .experience-level-selector {
+  margin-bottom: var(--space-4);
+}
+
+/* Hide advanced features for non-advanced modes */
+.interactive-betting-container.simplified-mode .betting-bankroll-section,
+.interactive-betting-container.simplified-mode .exotic-optimizer-section,
+.interactive-betting-container.simplified-mode .dutch-optimizer-section,
+.interactive-betting-container.simplified-mode .preset-buttons-bar,
+.interactive-betting-container.simplified-mode .preset-dropdown-container,
+.interactive-betting-container.simplified-mode .multi-race-exotics-panel,
+.interactive-betting-container.simplified-mode .special-bets-section,
+.interactive-betting-container.simplified-mode .betting-sticky-footer {
+  display: none !important;
+}
+
+/* Mobile responsiveness for experience level */
+@media (max-width: 480px) {
+  .experience-level-buttons {
+    flex-direction: column;
+  }
+
+  .experience-level-btn {
+    flex-direction: row;
+    padding: var(--space-3);
+  }
+
+  .simplified-footer-summary {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+}

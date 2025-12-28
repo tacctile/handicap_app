@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { UseBankrollReturn } from '../hooks/useBankroll';
-import { BETTING_STYLE_INFO } from '../hooks/useBankroll';
+import { EXPERIENCE_LEVEL_INFO } from '../hooks/useBankroll';
 
 interface BankrollSummaryCardProps {
   bankroll: UseBankrollReturn;
@@ -31,11 +31,12 @@ export function BankrollSummaryCard({
     getWarningMessage,
     dailyPL,
     getComplexityMode,
-    getBettingStyleLabel,
-    getSelectedBetTypesLabel,
+    getExperienceLevel,
   } = bankroll;
 
   const mode = getComplexityMode();
+  const experienceLevel = getExperienceLevel();
+  const isSimplifiedMode = experienceLevel !== 'advanced';
   const dailyBudget = getDailyBudget();
   const remaining = getRemainingDaily();
   const spent = getSpentToday();
@@ -54,22 +55,17 @@ export function BankrollSummaryCard({
       >
         <div className="bankroll-indicator-content">
           <div className="bankroll-indicator-item">
-            <span className="bankroll-indicator-label">Race</span>
+            <span className="bankroll-indicator-label">Budget</span>
             <span className="bankroll-indicator-value">{formatCurrency(raceBudget)}</span>
           </div>
           <div className="bankroll-indicator-divider" />
           <div className="bankroll-indicator-item">
-            <span className="bankroll-indicator-label">
-              {mode === 'simple' ? 'Style' : mode === 'moderate' ? 'Risk' : 'Daily'}
-            </span>
-            <span
-              className={`bankroll-indicator-value ${isOverBudget() ? 'over' : isApproachingLimit() ? 'warning' : ''}`}
-            >
-              {mode === 'simple'
-                ? BETTING_STYLE_INFO[settings.simpleBettingStyle].emoji
-                : mode === 'moderate'
-                  ? settings.moderateRiskLevel.charAt(0).toUpperCase()
-                  : `${formatCurrency(spent)}/${formatCurrency(dailyBudget)}`}
+            <span className="bankroll-indicator-label">Level</span>
+            <span className="bankroll-indicator-value">
+              <span className="material-icons" style={{ fontSize: 14, marginRight: 4 }}>
+                {EXPERIENCE_LEVEL_INFO[experienceLevel].icon}
+              </span>
+              {EXPERIENCE_LEVEL_INFO[experienceLevel].label}
             </span>
           </div>
         </div>
@@ -95,9 +91,9 @@ export function BankrollSummaryCard({
         >
           <div className="bankroll-summary-collapse-left">
             <span className="material-icons bankroll-summary-icon">account_balance_wallet</span>
-            <span className="bankroll-summary-collapse-title">Bankroll</span>
-            <span className={`bankroll-summary-collapse-badge mode-${mode}`}>
-              {mode.charAt(0).toUpperCase() + mode.slice(1)}
+            <span className="bankroll-summary-collapse-title">Budget</span>
+            <span className={`bankroll-summary-collapse-badge experience-${experienceLevel}`}>
+              {EXPERIENCE_LEVEL_INFO[experienceLevel].label}
             </span>
           </div>
           <div className="bankroll-summary-collapse-right">
@@ -120,53 +116,45 @@ export function BankrollSummaryCard({
               exit={{ height: 0, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             >
-              {/* Warning banner */}
-              {warningMessage && mode === 'advanced' && (
+              {/* Warning banner - only for advanced mode */}
+              {warningMessage && !isSimplifiedMode && (
                 <div className={`bankroll-warning-banner ${isOverBudget() ? 'error' : 'warning'}`}>
                   <span className="material-icons">{isOverBudget() ? 'error' : 'warning'}</span>
                   <span>{warningMessage}</span>
                 </div>
               )}
 
-              {/* Mode-specific content */}
-              {mode === 'simple' && (
+              {/* Simplified content for beginner/intermediate */}
+              {isSimplifiedMode && (
                 <div className="bankroll-simple-summary">
                   <div className="bankroll-simple-row">
                     <span className="bankroll-simple-label">Race Budget</span>
                     <span className="bankroll-simple-value">{formatCurrency(raceBudget)}</span>
                   </div>
                   <div className="bankroll-simple-row">
-                    <span className="bankroll-simple-label">Style</span>
-                    <span className="bankroll-simple-value">{getBettingStyleLabel()}</span>
-                  </div>
-                </div>
-              )}
-
-              {mode === 'moderate' && (
-                <div className="bankroll-moderate-summary">
-                  <div className="bankroll-moderate-row">
-                    <span className="bankroll-moderate-label">Race Budget</span>
-                    <span className="bankroll-moderate-value">{formatCurrency(raceBudget)}</span>
-                  </div>
-                  <div className="bankroll-moderate-row">
-                    <span className="bankroll-moderate-label">Risk</span>
-                    <span className={`bankroll-moderate-value risk-${settings.moderateRiskLevel}`}>
-                      {settings.moderateRiskLevel.charAt(0).toUpperCase() +
-                        settings.moderateRiskLevel.slice(1)}
+                    <span className="bankroll-simple-label">Experience</span>
+                    <span className="bankroll-simple-value">
+                      <span
+                        className="material-icons"
+                        style={{ fontSize: 16, marginRight: 4, verticalAlign: 'middle' }}
+                      >
+                        {EXPERIENCE_LEVEL_INFO[experienceLevel].icon}
+                      </span>
+                      {EXPERIENCE_LEVEL_INFO[experienceLevel].label}
                     </span>
                   </div>
-                  <div className="bankroll-moderate-row">
-                    <span className="bankroll-moderate-label">Bet Types</span>
-                    <span className="bankroll-moderate-value types">
-                      {getSelectedBetTypesLabel()}
+                  <div className="bankroll-simple-row">
+                    <span className="bankroll-simple-label">What you'll see</span>
+                    <span className="bankroll-simple-value" style={{ fontSize: '0.8rem' }}>
+                      {EXPERIENCE_LEVEL_INFO[experienceLevel].description}
                     </span>
                   </div>
                 </div>
               )}
 
-              {mode === 'advanced' && (
+              {!isSimplifiedMode && (
                 <>
-                  {/* Stats grid */}
+                  {/* Stats grid - only for advanced mode */}
                   <div className="bankroll-summary-stats-grid">
                     <div className="bankroll-stat-item">
                       <span className="material-icons bankroll-stat-icon">sports_score</span>
@@ -249,71 +237,45 @@ export function BankrollSummaryCard({
         <div className="bankroll-summary-title-group">
           <span className="material-icons bankroll-summary-icon">account_balance_wallet</span>
           <h3 className="bankroll-summary-title">
-            {mode === 'simple'
-              ? 'Race Budget'
-              : mode === 'moderate'
-                ? 'Betting Setup'
-                : 'Bankroll Summary'}
+            {isSimplifiedMode ? 'Race Budget' : 'Bankroll Summary'}
           </h3>
         </div>
-        <span className={`bankroll-summary-mode-badge mode-${mode}`}>
-          {mode.charAt(0).toUpperCase() + mode.slice(1)}
+        <span className={`bankroll-summary-mode-badge experience-${experienceLevel}`}>
+          <span className="material-icons" style={{ fontSize: 14, marginRight: 4 }}>
+            {EXPERIENCE_LEVEL_INFO[experienceLevel].icon}
+          </span>
+          {EXPERIENCE_LEVEL_INFO[experienceLevel].label}
         </span>
       </div>
 
       {/* Warning banner - only for advanced mode */}
-      {warningMessage && mode === 'advanced' && (
+      {warningMessage && !isSimplifiedMode && (
         <div className={`bankroll-warning-banner ${isOverBudget() ? 'error' : 'warning'}`}>
           <span className="material-icons">{isOverBudget() ? 'error' : 'warning'}</span>
           <span>{warningMessage}</span>
         </div>
       )}
 
-      {/* SIMPLE MODE */}
-      {mode === 'simple' && (
+      {/* SIMPLIFIED MODE - for Beginner/Intermediate */}
+      {isSimplifiedMode && (
         <div className="bankroll-simple-content">
           <div className="bankroll-simple-main">
             <span className="bankroll-simple-amount">{formatCurrency(raceBudget)}</span>
-            <span className="bankroll-simple-per-race">per race</span>
+            <span className="bankroll-simple-per-race">for this race</span>
           </div>
           <div className="bankroll-simple-style">
-            <span className="bankroll-simple-style-emoji">
-              {BETTING_STYLE_INFO[settings.simpleBettingStyle].emoji}
+            <span className="material-icons bankroll-simple-style-emoji">
+              {EXPERIENCE_LEVEL_INFO[experienceLevel].icon}
             </span>
             <span className="bankroll-simple-style-name">
-              {BETTING_STYLE_INFO[settings.simpleBettingStyle].label}
+              {EXPERIENCE_LEVEL_INFO[experienceLevel].description}
             </span>
           </div>
         </div>
       )}
 
-      {/* MODERATE MODE */}
-      {mode === 'moderate' && (
-        <div className="bankroll-moderate-content">
-          <div className="bankroll-moderate-main">
-            <span className="bankroll-moderate-amount">{formatCurrency(raceBudget)}</span>
-            <span className="bankroll-moderate-per-race">per race</span>
-          </div>
-          <div className="bankroll-moderate-details">
-            <div className="bankroll-moderate-detail">
-              <span className="material-icons">speed</span>
-              <span className="bankroll-moderate-detail-label">Risk:</span>
-              <span className={`bankroll-moderate-detail-value risk-${settings.moderateRiskLevel}`}>
-                {settings.moderateRiskLevel.charAt(0).toUpperCase() +
-                  settings.moderateRiskLevel.slice(1)}
-              </span>
-            </div>
-            <div className="bankroll-moderate-detail">
-              <span className="material-icons">style</span>
-              <span className="bankroll-moderate-detail-label">Bets:</span>
-              <span className="bankroll-moderate-detail-value">{getSelectedBetTypesLabel()}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ADVANCED MODE (existing) */}
-      {mode === 'advanced' && (
+      {/* ADVANCED MODE - full bankroll tracking */}
+      {!isSimplifiedMode && (
         <>
           {/* Total bankroll */}
           <div className="bankroll-summary-total">

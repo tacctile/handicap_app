@@ -6,10 +6,14 @@ import type {
   DailyBudgetType,
   BankrollSettings as BankrollSettingsType,
   ComplexityMode,
-  BettingStyle,
   BetType,
+  ExperienceLevel,
 } from '../hooks/useBankroll';
-import { BETTING_STYLE_INFO, BET_TYPE_LABELS, getExpectedReturnRange } from '../hooks/useBankroll';
+import {
+  BET_TYPE_LABELS,
+  getExpectedReturnRange,
+  EXPERIENCE_LEVEL_INFO,
+} from '../hooks/useBankroll';
 import type { NotificationSettings } from '../hooks/usePostTime';
 import {
   type KellySettings,
@@ -85,8 +89,6 @@ const MODE_OPTIONS: { value: ComplexityMode; label: string; description: string 
   },
   { value: 'advanced', label: 'Advanced', description: 'Full control over bankroll and strategy' },
 ];
-
-const BETTING_STYLES: BettingStyle[] = ['safe', 'balanced', 'aggressive'];
 
 const BET_TYPES: BetType[] = ['win_place', 'exacta', 'trifecta', 'superfecta', 'multi_race'];
 
@@ -329,25 +331,25 @@ export function BankrollSettings({
         </div>
       </div>
 
-      {/* Betting Style Presets */}
+      {/* Experience Level Selection */}
       <div className="simple-style-section">
-        <label className="simple-style-label">Pick your style:</label>
+        <label className="simple-style-label">Your experience level:</label>
         <div className="simple-style-options">
-          {BETTING_STYLES.map((style) => {
-            const info = BETTING_STYLE_INFO[style];
+          {(['beginner', 'intermediate', 'advanced'] as ExperienceLevel[]).map((level) => {
+            const info = EXPERIENCE_LEVEL_INFO[level];
             return (
               <label
-                key={style}
-                className={`simple-style-option ${formState.simpleBettingStyle === style ? 'selected' : ''}`}
+                key={level}
+                className={`simple-style-option ${formState.experienceLevel === level ? 'selected' : ''}`}
               >
                 <input
                   type="radio"
-                  name="bettingStyle"
-                  value={style}
-                  checked={formState.simpleBettingStyle === style}
-                  onChange={() => updateField('simpleBettingStyle', style)}
+                  name="experienceLevel"
+                  value={level}
+                  checked={formState.experienceLevel === level}
+                  onChange={() => updateField('experienceLevel', level)}
                 />
-                <span className="simple-style-emoji">{info.emoji}</span>
+                <span className="material-icons simple-style-emoji">{info.icon}</span>
                 <div className="simple-style-content">
                   <span className="simple-style-name">{info.label}</span>
                   <span className="simple-style-description">{info.description}</span>
@@ -363,7 +365,11 @@ export function BankrollSettings({
 
       <p className="simple-mode-hint">
         <span className="material-icons">auto_awesome</span>
-        We'll suggest bets based on your choice
+        {formState.experienceLevel === 'beginner'
+          ? "We'll show simple win/place/show bets only"
+          : formState.experienceLevel === 'intermediate'
+            ? "We'll include exacta and trifecta boxes"
+            : "We'll show all bet types with full data"}
       </p>
     </motion.div>
   );

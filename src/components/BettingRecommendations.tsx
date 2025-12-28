@@ -34,10 +34,81 @@ import {
   type DutchSettings,
 } from '../lib/dutch';
 import type { UseBankrollReturn } from '../hooks/useBankroll';
+import { EXPERIENCE_LEVEL_INFO, type ExperienceLevel } from '../hooks/useBankroll';
 import { BankrollSummaryCard } from './BankrollSummaryCard';
 import { ExoticBuilderModal, type ExoticBetResult } from './ExoticBuilderModal';
 import { MultiRaceExoticsPanel } from './MultiRaceExoticsPanel';
 import type { MultiRaceTicketResult } from './MultiRaceBuilderModal';
+
+// Beginner-friendly bet explanations
+const BEGINNER_BET_EXPLANATIONS: Record<string, { short: string; tip: string }> = {
+  win: {
+    short: 'Your horse must finish first',
+    tip: 'Our top pick at a good price',
+  },
+  place: {
+    short: 'Your horse must finish 1st or 2nd',
+    tip: 'Safer bet with good odds',
+  },
+  show: {
+    short: 'Your horse must finish 1st, 2nd, or 3rd',
+    tip: 'Best chance to cash',
+  },
+  exacta_box: {
+    short: 'Pick 2 horses to finish 1st and 2nd (any order)',
+    tip: 'Box our top 2 picks',
+  },
+  trifecta_box: {
+    short: 'Pick 3 horses to finish 1st, 2nd, and 3rd (any order)',
+    tip: 'Box our top 3 picks',
+  },
+};
+
+// Budget allocation by experience level
+interface BudgetAllocation {
+  type: string;
+  amount: number;
+  description: string;
+}
+
+function allocateBudgetByExperience(
+  budget: number,
+  experienceLevel: ExperienceLevel
+): BudgetAllocation[] {
+  if (experienceLevel === 'beginner') {
+    // Simple 50/50 split for beginners
+    const winAmount = Math.ceil(budget * 0.5);
+    const placeAmount = budget - winAmount;
+    return [
+      { type: 'win', amount: winAmount, description: 'Win bet on top pick' },
+      { type: 'place', amount: placeAmount, description: 'Place bet for safety' },
+    ];
+  }
+
+  if (experienceLevel === 'intermediate') {
+    // Win + Exacta Box + Place saver
+    const winAmount = Math.ceil(budget * 0.25);
+    const exactaAmount = Math.ceil(budget * 0.6);
+    const placeAmount = budget - winAmount - exactaAmount;
+    return [
+      { type: 'win', amount: winAmount, description: 'Win bet' },
+      { type: 'exacta_box', amount: exactaAmount, description: 'Exacta Box' },
+      { type: 'place', amount: Math.max(2, placeAmount), description: 'Place saver' },
+    ];
+  }
+
+  // Advanced - more complex split
+  const winAmount = Math.ceil(budget * 0.2);
+  const exactaAmount = Math.ceil(budget * 0.3);
+  const trifectaAmount = Math.ceil(budget * 0.4);
+  const showAmount = budget - winAmount - exactaAmount - trifectaAmount;
+  return [
+    { type: 'win', amount: winAmount, description: 'Win bet' },
+    { type: 'exacta_box', amount: exactaAmount, description: 'Exacta Box' },
+    { type: 'trifecta_key', amount: trifectaAmount, description: 'Trifecta Key' },
+    { type: 'show', amount: Math.max(2, showAmount), description: 'Show saver' },
+  ];
+}
 
 interface BettingRecommendationsProps {
   horses: Array<{ horse: HorseEntry; index: number; score: HorseScore }>;
@@ -567,6 +638,206 @@ function QuickPresetButtons({ onPresetClick, isMobile }: QuickPresetButtonsProps
   );
 }
 
+// Experience Level Selector Component
+interface ExperienceLevelSelectorProps {
+  experienceLevel: ExperienceLevel;
+  onLevelChange: (level: ExperienceLevel) => void;
+  budget: number;
+  onBudgetChange: (budget: number) => void;
+}
+
+function ExperienceLevelSelector({
+  experienceLevel,
+  onLevelChange,
+  budget,
+  onBudgetChange,
+}: ExperienceLevelSelectorProps) {
+  return (
+    <div className="experience-level-selector">
+      <div className="experience-budget-section">
+        <label className="experience-budget-label">
+          <span className="material-icons">account_balance_wallet</span>
+          Budget for this race
+        </label>
+        <div className="experience-budget-input-wrapper">
+          <span className="experience-budget-prefix">$</span>
+          <input
+            type="number"
+            className="experience-budget-input"
+            value={budget}
+            onChange={(e) => onBudgetChange(Math.max(2, Number(e.target.value)))}
+            min="2"
+            step="5"
+          />
+        </div>
+      </div>
+
+      <div className="experience-level-buttons">
+        {(['beginner', 'intermediate', 'advanced'] as ExperienceLevel[]).map((level) => {
+          const info = EXPERIENCE_LEVEL_INFO[level];
+          return (
+            <button
+              key={level}
+              className={`experience-level-btn ${experienceLevel === level ? 'selected' : ''}`}
+              onClick={() => onLevelChange(level)}
+            >
+              <span className="material-icons experience-level-icon">{info.icon}</span>
+              <span className="experience-level-name">{info.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="experience-level-hint">
+        <span className="material-icons">info</span>
+        {EXPERIENCE_LEVEL_INFO[experienceLevel].description}
+      </p>
+    </div>
+  );
+}
+
+// Simplified Bet Card for Beginners
+interface SimplifiedBetCardProps {
+  bet: SelectableBet;
+  raceNumber: number;
+  horseName: string;
+  horseNumber: number;
+  onSelect: () => void;
+}
+
+function SimplifiedBetCard({
+  bet,
+  raceNumber,
+  horseName,
+  horseNumber,
+  onSelect,
+}: SimplifiedBetCardProps) {
+  const betExplanation = BEGINNER_BET_EXPLANATIONS[bet.type] || {
+    short: 'Special bet',
+    tip: 'Good value opportunity',
+  };
+
+  // Determine bet type display name
+  const getBetTypeDisplay = (type: string): string => {
+    if (type === 'win') return 'WIN';
+    if (type === 'place') return 'PLACE';
+    if (type === 'show') return 'SHOW';
+    if (type.includes('exacta')) return 'EXACTA BOX';
+    if (type.includes('trifecta')) return 'TRIFECTA BOX';
+    return type.toUpperCase().replace('_', ' ');
+  };
+
+  return (
+    <motion.div
+      className={`simplified-bet-card ${bet.isSelected ? 'selected' : ''}`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.01 }}
+      onClick={onSelect}
+    >
+      <div className="simplified-bet-header">
+        <span className="simplified-bet-type">{getBetTypeDisplay(bet.type)}</span>
+        <span className="simplified-bet-amount">{formatCurrency(bet.customAmount)}</span>
+      </div>
+
+      <div className="simplified-bet-horse">
+        <span className="simplified-bet-horse-number">#{horseNumber}</span>
+        <span className="simplified-bet-horse-name">{horseName}</span>
+      </div>
+
+      <p className="simplified-bet-explanation">{betExplanation.short}</p>
+
+      <div className="simplified-bet-footer">
+        <span className="simplified-bet-tip">
+          <span className="material-icons">lightbulb</span>
+          {betExplanation.tip}
+        </span>
+        <div className={`simplified-bet-checkbox ${bet.isSelected ? 'checked' : ''}`}>
+          {bet.isSelected && <span className="material-icons">check</span>}
+        </div>
+      </div>
+
+      {bet.isSelected && (
+        <div className="simplified-bet-instruction">
+          <span className="material-icons">record_voice_over</span>
+          <span>
+            "Race {raceNumber}, ${bet.customAmount} to {bet.type.replace('_', ' ')} on the{' '}
+            {horseNumber}"
+          </span>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// Simplified Footer for Beginners
+interface SimplifiedFooterProps {
+  selectedBets: SelectableBet[];
+  totalCost: number;
+  budget: number;
+  raceNumber: number;
+  onCopyAll: () => void;
+}
+
+function SimplifiedFooter({
+  selectedBets,
+  totalCost,
+  budget,
+  raceNumber,
+  onCopyAll,
+}: SimplifiedFooterProps) {
+  const isWithinBudget = totalCost <= budget;
+
+  return (
+    <div className={`simplified-footer ${!isWithinBudget ? 'over-budget' : ''}`}>
+      <div className="simplified-footer-summary">
+        <div className="simplified-footer-count">
+          <span className="material-icons">confirmation_number</span>
+          <span>
+            {selectedBets.length} bet{selectedBets.length !== 1 ? 's' : ''} selected
+          </span>
+        </div>
+        <div className="simplified-footer-total">
+          <span>Total:</span>
+          <span className="simplified-footer-amount">{formatCurrency(totalCost)}</span>
+          <span className="simplified-footer-budget">of {formatCurrency(budget)}</span>
+        </div>
+      </div>
+
+      {!isWithinBudget && (
+        <p className="simplified-footer-warning">
+          <span className="material-icons">warning</span>
+          Over budget by {formatCurrency(totalCost - budget)}
+        </p>
+      )}
+
+      <button
+        className="simplified-footer-copy-btn"
+        onClick={onCopyAll}
+        disabled={selectedBets.length === 0}
+      >
+        <span className="material-icons">content_copy</span>
+        Copy Betting Instructions
+      </button>
+
+      {selectedBets.length > 0 && (
+        <div className="simplified-footer-instructions">
+          <p className="simplified-footer-instructions-title">What to say at the window:</p>
+          {selectedBets.map((bet) => (
+            <p key={bet.id} className="simplified-footer-instruction-line">
+              "
+              {bet.windowInstruction
+                .replace(/^"|"$/g, '')
+                .replace(/Race \d+, /, `Race ${raceNumber}, `)}
+              "
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Sticky Footer Component
 interface StickyFooterProps {
   selectedCount: number;
@@ -670,6 +941,14 @@ export function BettingRecommendations({
   allRaces,
   trackCode,
 }: BettingRecommendationsProps) {
+  // Experience level and simplified UI state
+  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>(() => {
+    return bankroll.getExperienceLevel();
+  });
+  const [raceBudget, setRaceBudget] = useState(() => {
+    return bankroll.getRaceBudget();
+  });
+
   const [selectableBets, setSelectableBets] = useState<SelectableBet[]>([]);
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -994,6 +1273,95 @@ export function BettingRecommendations({
     );
   }, []);
 
+  // Handle experience level change
+  const handleExperienceLevelChange = useCallback(
+    (newLevel: ExperienceLevel) => {
+      setExperienceLevel(newLevel);
+      // Save to bankroll settings
+      bankroll.updateSettings({ experienceLevel: newLevel });
+    },
+    [bankroll]
+  );
+
+  // Handle race budget change
+  const handleRaceBudgetChange = useCallback(
+    (newBudget: number) => {
+      setRaceBudget(newBudget);
+      // Update bet amounts based on new budget
+      const allocations = allocateBudgetByExperience(newBudget, experienceLevel);
+      setSelectableBets((prev) =>
+        prev.map((bet) => {
+          const allocation = allocations.find((a) => bet.type.includes(a.type));
+          if (allocation) {
+            return {
+              ...bet,
+              customAmount: allocation.amount,
+              potentialReturn: {
+                min: Math.round((bet.potentialReturn.min / bet.totalCost) * allocation.amount),
+                max: Math.round((bet.potentialReturn.max / bet.totalCost) * allocation.amount),
+              },
+            };
+          }
+          return bet;
+        })
+      );
+    },
+    [experienceLevel]
+  );
+
+  // Filter bets based on experience level
+  const filteredBets = useMemo(() => {
+    const maxBets = EXPERIENCE_LEVEL_INFO[experienceLevel].maxBets;
+
+    if (experienceLevel === 'beginner') {
+      // Beginner: Only show simple win/place/show bets on top horses
+      return selectableBets
+        .filter((bet) => {
+          const isSimpleBet = ['win', 'place', 'show'].includes(bet.type);
+          const isTopHorse =
+            bet.horseNumbers.length === 1 &&
+            horses.findIndex((h) => h.horse.programNumber === bet.horseNumbers[0]) < 3;
+          // Also check for overlay or fair value
+          const hasValue = bet.overlayPercent >= 0 || bet.evPerDollar >= 0;
+          return isSimpleBet && isTopHorse && hasValue;
+        })
+        .slice(0, maxBets);
+    }
+
+    if (experienceLevel === 'intermediate') {
+      // Intermediate: Add exacta/trifecta boxes
+      return selectableBets
+        .filter((bet) => {
+          const isSimpleBet = ['win', 'place', 'show'].includes(bet.type);
+          const isExactaBox = bet.type === 'exacta_box';
+          const isTrifectaBox = bet.type === 'trifecta_box';
+          const isTopHorse =
+            bet.horseNumbers.length === 1
+              ? horses.findIndex((h) => h.horse.programNumber === bet.horseNumbers[0]) < 4
+              : bet.horseNumbers.every(
+                  (num) => horses.findIndex((h) => h.horse.programNumber === num) < 4
+                );
+          return (isSimpleBet || isExactaBox || isTrifectaBox) && isTopHorse;
+        })
+        .slice(0, maxBets);
+    }
+
+    // Advanced: Show all bets
+    return selectableBets;
+  }, [selectableBets, experienceLevel, horses]);
+
+  // Get horse name for simplified bet cards
+  const getHorseInfo = useCallback(
+    (horseNumber: number): { name: string; number: number } => {
+      const found = horses.find((h) => h.horse.programNumber === horseNumber);
+      return {
+        name: found?.horse.horseName || `Horse ${horseNumber}`,
+        number: horseNumber,
+      };
+    },
+    [horses]
+  );
+
   const handlePresetClick = useCallback((preset: PresetType) => {
     setSelectableBets((prev) => {
       switch (preset) {
@@ -1240,9 +1608,97 @@ export function BettingRecommendations({
   // Get special category bets
   const specialBets = selectableBets.filter((bet) => bet.specialCategory !== null);
 
+  // Compute selected filtered bets for simplified footer
+  const selectedFilteredBets = filteredBets.filter((bet) => bet.isSelected);
+  const filteredTotalCost = selectedFilteredBets.reduce((sum, bet) => sum + bet.customAmount, 0);
+
+  // For beginner/intermediate modes, show simplified UI
+  if (experienceLevel !== 'advanced') {
+    return (
+      <div className="interactive-betting-container simplified-mode">
+        {/* Experience Level Selector - replaces bankroll summary for simplified modes */}
+        <ExperienceLevelSelector
+          experienceLevel={experienceLevel}
+          onLevelChange={handleExperienceLevelChange}
+          budget={raceBudget}
+          onBudgetChange={handleRaceBudgetChange}
+        />
+
+        {/* Simplified Bet Cards */}
+        <div className="simplified-bets-section">
+          <h3 className="simplified-bets-title">
+            <span className="material-icons">recommend</span>
+            Your Bets
+            <span className="simplified-bets-count">{filteredBets.length}</span>
+          </h3>
+
+          {filteredBets.length === 0 ? (
+            <div className="simplified-no-bets">
+              <span className="material-icons">search_off</span>
+              <p>No matching bets found for this race.</p>
+              <p className="simplified-no-bets-hint">
+                Try switching to a higher experience level for more options.
+              </p>
+            </div>
+          ) : (
+            <div className="simplified-bets-list">
+              {filteredBets.map((bet) => {
+                const primaryHorse = bet.horseNumbers[0] || 1;
+                const horseInfo = getHorseInfo(primaryHorse);
+                return (
+                  <SimplifiedBetCard
+                    key={bet.id}
+                    bet={bet}
+                    raceNumber={raceNumber}
+                    horseName={horseInfo.name}
+                    horseNumber={horseInfo.number}
+                    onSelect={() => handleToggleSelect(bet.id)}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Simplified Footer */}
+        <SimplifiedFooter
+          selectedBets={selectedFilteredBets}
+          totalCost={filteredTotalCost}
+          budget={raceBudget}
+          raceNumber={raceNumber}
+          onCopyAll={handleCopyToClipboard}
+        />
+
+        {/* Copy notification toast */}
+        <AnimatePresence>
+          {copiedMessage && (
+            <motion.div
+              className="copy-toast"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+            >
+              <span className="material-icons">check_circle</span>
+              <span>{copiedMessage}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
+  // Advanced mode - full UI with all features
   return (
-    <div className="interactive-betting-container">
-      {/* Bankroll Summary at Top */}
+    <div className="interactive-betting-container advanced-mode">
+      {/* Experience Level Selector at top */}
+      <ExperienceLevelSelector
+        experienceLevel={experienceLevel}
+        onLevelChange={handleExperienceLevelChange}
+        budget={raceBudget}
+        onBudgetChange={handleRaceBudgetChange}
+      />
+
+      {/* Bankroll Summary - only in advanced mode */}
       <div className="betting-bankroll-section">
         <BankrollSummaryCard
           bankroll={bankroll}
@@ -1252,7 +1708,7 @@ export function BettingRecommendations({
         />
       </div>
 
-      {/* Quick Preset Buttons */}
+      {/* Quick Preset Buttons - only in advanced mode */}
       <QuickPresetButtons onPresetClick={handlePresetClick} isMobile={isMobile} />
 
       {/* Exotic Optimizer Section */}

@@ -1,6 +1,9 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 
-// Complexity mode levels
+// Experience levels for simplified UI
+export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
+
+// Complexity mode levels (legacy, maps to experience levels)
 export type ComplexityMode = 'simple' | 'moderate' | 'advanced';
 
 // Betting styles for Simple mode
@@ -8,6 +11,31 @@ export type BettingStyle = 'safe' | 'balanced' | 'aggressive';
 
 // Bet types for Moderate mode
 export type BetType = 'win_place' | 'exacta' | 'trifecta' | 'superfecta' | 'multi_race';
+
+// Experience level info for UI display
+export const EXPERIENCE_LEVEL_INFO: Record<
+  ExperienceLevel,
+  { label: string; icon: string; description: string; maxBets: number }
+> = {
+  beginner: {
+    label: 'Beginner',
+    icon: 'school',
+    description: 'Simple bets with clear guidance',
+    maxBets: 3,
+  },
+  intermediate: {
+    label: 'Intermediate',
+    icon: 'trending_up',
+    description: 'Win bets plus exacta/trifecta boxes',
+    maxBets: 5,
+  },
+  advanced: {
+    label: 'Advanced',
+    icon: 'psychology',
+    description: 'All bet types with full EV data',
+    maxBets: 999, // No limit
+  },
+};
 
 // Risk tolerance levels
 export type RiskTolerance = 'conservative' | 'moderate' | 'aggressive';
@@ -35,6 +63,9 @@ export interface ModerateModeSettings {
 export interface BankrollSettings {
   // Mode selection
   complexityMode: ComplexityMode;
+
+  // Experience level for simplified UI
+  experienceLevel: ExperienceLevel;
 
   // Simple mode fields
   simpleRaceBudget: number;
@@ -124,6 +155,9 @@ const DEFAULT_SETTINGS: BankrollSettings = {
   // Mode - defaults to simple for new users
   complexityMode: 'simple',
 
+  // Experience level - defaults to beginner for new users
+  experienceLevel: 'beginner',
+
   // Simple mode defaults
   simpleRaceBudget: 20,
   simpleBettingStyle: 'balanced',
@@ -162,6 +196,9 @@ export interface UseBankrollReturn {
   settings: BankrollSettings;
   updateSettings: (newSettings: Partial<BankrollSettings>) => void;
   resetToDefaults: () => void;
+
+  // Experience level
+  getExperienceLevel: () => ExperienceLevel;
 
   // Mode-aware getters
   getComplexityMode: () => ComplexityMode;
@@ -303,6 +340,11 @@ export function useBankroll(): UseBankrollReturn {
   const getComplexityMode = useCallback((): ComplexityMode => {
     return settings.complexityMode;
   }, [settings.complexityMode]);
+
+  // Get experience level
+  const getExperienceLevel = useCallback((): ExperienceLevel => {
+    return settings.experienceLevel;
+  }, [settings.experienceLevel]);
 
   // Get simple mode settings
   const getSimpleSettings = useCallback((): SimpleModeSettings => {
@@ -499,6 +541,7 @@ export function useBankroll(): UseBankrollReturn {
       settings,
       updateSettings,
       resetToDefaults,
+      getExperienceLevel,
       getComplexityMode,
       getSimpleSettings,
       getModerateSettings,
@@ -529,6 +572,7 @@ export function useBankroll(): UseBankrollReturn {
       settings,
       updateSettings,
       resetToDefaults,
+      getExperienceLevel,
       getComplexityMode,
       getSimpleSettings,
       getModerateSettings,
