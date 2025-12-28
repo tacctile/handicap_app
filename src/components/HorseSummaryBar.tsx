@@ -67,6 +67,7 @@ interface HorseSummaryBarProps {
   score: number;
   fairOddsNum?: number;
   fairOddsDen?: number;
+  fairOddsDisplay?: string;
   valuePercent?: number;
   // Props for interactive controls
   isScratched: boolean;
@@ -118,6 +119,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   score: _score, // Used in expanded view
   fairOddsNum: _fairOddsNum, // Used in expanded view
   fairOddsDen: _fairOddsDen, // Used in expanded view
+  fairOddsDisplay = '—',
   valuePercent = 0,
   isScratched,
   onScratchToggle,
@@ -326,7 +328,14 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         )}
       </div>
 
-      {/* Column 8: VALUE Badge (Overlay/Fair/Underlay) */}
+      {/* Column 8: FAIR - Calculated fair odds */}
+      <div className="horse-summary-bar__fair-odds">
+        <span className="horse-summary-bar__fair-odds-value">
+          {isScratched ? '—' : fairOddsDisplay}
+        </span>
+      </div>
+
+      {/* Column 9: VALUE Badge (Overlay/Fair/Underlay) */}
       <div className="horse-summary-bar__value-wrapper">
         <div
           className={`horse-summary-bar__value-badge horse-summary-bar__value-badge--${valueBadge.className}`}

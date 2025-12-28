@@ -393,6 +393,23 @@
   align-items: center;
 }
 
+/* Fair odds display column (calculated fair odds based on base score) */
+.horse-summary-bar__fair-odds {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.horse-summary-bar__fair-odds-value {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 /* ============================================
    VALUE BADGE (Simplified Overlay/Fair/Underlay)
    ============================================ */

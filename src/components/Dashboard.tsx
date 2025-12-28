@@ -12,7 +12,7 @@ import { ScoringHelpModal } from './ScoringHelpModal';
 import {
   calculateRaceScores,
   MAX_SCORE,
-  analyzeOverlay,
+  analyzeOverlayWithField,
   calculateBaseScoreRanks,
 } from '../lib/scoring';
 import { rankHorsesByBlended, type BlendedRankedHorse } from '../lib/scoring/blendedRank';
@@ -774,7 +774,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             ) : (
               <div className="horse-list">
-                {/* Column Headers - 9 columns: icons | POST | HORSE | BASE RANK | TREND RANK | BLENDED RANK | ODDS | VALUE | expand */}
+                {/* Column Headers - 10 columns: icons | POST | HORSE | BASE RANK | TREND RANK | BLENDED RANK | ODDS | FAIR | VALUE | expand */}
                 <div className="horse-list-header">
                   {/* Column 1: Help button */}
                   <div className="horse-list-header__cell horse-list-header__cell--icons">
@@ -853,7 +853,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 8: VALUE - Overlay/Fair/Underlay badge */}
+                  {/* Column 8: FAIR - Calculated fair odds based on base score */}
+                  <div className="horse-list-header__cell horse-list-header__cell--fair-odds">
+                    <HeaderTooltip
+                      title="Fair Odds"
+                      content="Calculated fair odds based on the horse's base score relative to the field. This is what the odds SHOULD be according to our algorithm."
+                    >
+                      <span className="horse-list-header__label">FAIR</span>
+                      <span className="horse-list-header__sublabel">Algorithm Odds</span>
+                    </HeaderTooltip>
+                  </div>
+
+                  {/* Column 9: VALUE - Overlay/Fair/Underlay badge */}
                   <div className="horse-list-header__cell horse-list-header__cell--value">
                     <HeaderTooltip
                       title="Value Assessment"
@@ -870,141 +881,154 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   </div>
                 </div>
 
-                {currentRaceScoredHorses.map((scoredHorse, index) => {
-                  const horse = scoredHorse.horse;
-                  const horseId = horse.programNumber || index;
-                  const horseIndex = scoredHorse.index;
-                  const currentOddsString = raceState.getOdds(horseIndex, horse.morningLineOdds);
+                {/* Collect all field base scores for proper overlay calculation */}
+                {(() => {
+                  const allFieldBaseScores = currentRaceScoredHorses
+                    .filter((h) => !h.score.isScratched)
+                    .map((h) => h.score.baseScore);
 
-                  // Calculate overlay analysis for fair odds and value percent
-                  const overlay = analyzeOverlay(scoredHorse.score.total, currentOddsString);
+                  return currentRaceScoredHorses.map((scoredHorse, index) => {
+                    const horse = scoredHorse.horse;
+                    const horseId = horse.programNumber || index;
+                    const horseIndex = scoredHorse.index;
+                    const currentOddsString = raceState.getOdds(horseIndex, horse.morningLineOdds);
 
-                  // Parse fair odds display (e.g., "3-1" to numerator/denominator)
-                  // Handle special cases: "EVEN", "N/A", or em-dash fallback
-                  let fairOddsNum = 2;
-                  let fairOddsDen = 1;
+                    // Calculate overlay analysis using field-relative base scores
+                    // Uses BASE score (not total) for proper fair odds calculation
+                    const overlay = analyzeOverlayWithField(
+                      scoredHorse.score.baseScore,
+                      allFieldBaseScores,
+                      currentOddsString
+                    );
 
-                  if (overlay.fairOddsDisplay === 'EVEN') {
-                    fairOddsNum = 1;
-                    fairOddsDen = 1;
-                  } else if (
-                    overlay.fairOddsDisplay !== 'N/A' &&
-                    overlay.fairOddsDisplay !== '—' &&
-                    overlay.fairOddsDisplay.includes('-')
-                  ) {
-                    const fairOddsParts = overlay.fairOddsDisplay.split('-');
-                    const parsedNum = parseInt(fairOddsParts[0] || '2', 10);
-                    const parsedDen = parseInt(fairOddsParts[1] || '1', 10);
-                    // Validate parsed values are not NaN
-                    fairOddsNum = Number.isFinite(parsedNum) ? parsedNum : 2;
-                    fairOddsDen = Number.isFinite(parsedDen) ? parsedDen : 1;
-                  }
+                    // Parse fair odds display (e.g., "3-1" to numerator/denominator)
+                    // Handle special cases: "EVEN", "N/A", or em-dash fallback
+                    let fairOddsNum = 2;
+                    let fairOddsDen = 1;
 
-                  // Parse current odds to { numerator, denominator } format
-                  const parseOdds = (
-                    oddsStr: string
-                  ): { numerator: number; denominator: number } => {
-                    if (typeof oddsStr === 'string') {
-                      const parts = oddsStr.split('-');
-                      return {
-                        numerator: parseInt(parts[0] || '2', 10) || 2,
-                        denominator: parseInt(parts[1] || '1', 10) || 1,
-                      };
+                    if (overlay.fairOddsDisplay === 'EVEN') {
+                      fairOddsNum = 1;
+                      fairOddsDen = 1;
+                    } else if (
+                      overlay.fairOddsDisplay !== 'N/A' &&
+                      overlay.fairOddsDisplay !== '—' &&
+                      overlay.fairOddsDisplay.includes('-')
+                    ) {
+                      const fairOddsParts = overlay.fairOddsDisplay.split('-');
+                      const parsedNum = parseInt(fairOddsParts[0] || '2', 10);
+                      const parsedDen = parseInt(fairOddsParts[1] || '1', 10);
+                      // Validate parsed values are not NaN
+                      fairOddsNum = Number.isFinite(parsedNum) ? parsedNum : 2;
+                      fairOddsDen = Number.isFinite(parsedDen) ? parsedDen : 1;
                     }
-                    return { numerator: 2, denominator: 1 };
-                  };
 
-                  const currentOdds = parseOdds(currentOddsString);
-                  const isScratched = raceState.isScratched(horseIndex);
-                  const pp = horse.programNumber || horseIndex + 1;
+                    // Parse current odds to { numerator, denominator } format
+                    const parseOdds = (
+                      oddsStr: string
+                    ): { numerator: number; denominator: number } => {
+                      if (typeof oddsStr === 'string') {
+                        const parts = oddsStr.split('-');
+                        return {
+                          numerator: parseInt(parts[0] || '2', 10) || 2,
+                          denominator: parseInt(parts[1] || '1', 10) || 1,
+                        };
+                      }
+                      return { numerator: 2, denominator: 1 };
+                    };
 
-                  // Handle odds change - convert back to string format for raceState
-                  const handleOddsChange = (odds: { numerator: number; denominator: number }) => {
-                    raceState.updateOdds(horseIndex, `${odds.numerator}-${odds.denominator}`);
-                  };
+                    const currentOdds = parseOdds(currentOddsString);
+                    const isScratched = raceState.isScratched(horseIndex);
+                    const pp = horse.programNumber || horseIndex + 1;
 
-                  // Handle scratch toggle - also removes from compare if scratched
-                  const handleScratchToggle = (scratched: boolean) => {
-                    raceState.setScratch(horseIndex, scratched);
-                    // Also remove from compare if scratched
-                    if (scratched) {
-                      setCompareHorses((prev) => {
-                        const next = new Set(prev);
-                        next.delete(pp);
-                        return next;
-                      });
-                    }
-                  };
+                    // Handle odds change - convert back to string format for raceState
+                    const handleOddsChange = (odds: { numerator: number; denominator: number }) => {
+                      raceState.updateOdds(horseIndex, `${odds.numerator}-${odds.denominator}`);
+                    };
 
-                  // Get base score rank info for this horse
-                  const rankInfo = baseScoreRankMap.get(horseIndex);
+                    // Handle scratch toggle - also removes from compare if scratched
+                    const handleScratchToggle = (scratched: boolean) => {
+                      raceState.setScratch(horseIndex, scratched);
+                      // Also remove from compare if scratched
+                      if (scratched) {
+                        setCompareHorses((prev) => {
+                          const next = new Set(prev);
+                          next.delete(pp);
+                          return next;
+                        });
+                      }
+                    };
 
-                  // Get blended rank info for this horse
-                  const blendedInfo = blendedRankMap.get(horseIndex);
-                  const trendRank = blendedInfo?.trendRank ?? 0;
-                  const blendedRank = blendedInfo?.blendedResult?.blendedRank ?? 0;
+                    // Get base score rank info for this horse
+                    const rankInfo = baseScoreRankMap.get(horseIndex);
 
-                  // Calculate colors for trend and blended ranks
-                  const trendRankColor =
-                    trendRank > 0 && activeFieldSize > 0
-                      ? calculateRankGradientColor(trendRank - 1, activeFieldSize)
-                      : '#555555';
-                  const blendedRankColor =
-                    blendedRank > 0 && activeFieldSize > 0
-                      ? calculateRankGradientColor(blendedRank - 1, activeFieldSize)
-                      : '#555555';
+                    // Get blended rank info for this horse
+                    const blendedInfo = blendedRankMap.get(horseIndex);
+                    const trendRank = blendedInfo?.trendRank ?? 0;
+                    const blendedRank = blendedInfo?.blendedResult?.blendedRank ?? 0;
 
-                  return (
-                    <div key={horseId} className="horse-list__item">
-                      <HorseSummaryBar
-                        horse={horse}
-                        rank={scoredHorse.rank}
-                        isExpanded={expandedHorseId === horseId}
-                        onToggleExpand={() => toggleHorseExpand(horseId)}
-                        maxScore={MAX_SCORE}
-                        score={scoredHorse.score.total}
-                        fairOddsNum={fairOddsNum}
-                        fairOddsDen={fairOddsDen}
-                        valuePercent={overlay.overlayPercent}
-                        isScratched={isScratched}
-                        onScratchToggle={handleScratchToggle}
-                        currentOdds={currentOdds}
-                        onOddsChange={handleOddsChange}
-                        isCompareSelected={compareHorses.has(pp)}
-                        onCompareToggle={(selected) => handleCompareToggle(pp, selected)}
-                        // Base score rank info (projected finish order)
-                        baseScoreRank={rankInfo?.rank}
-                        baseScoreRankOrdinal={rankInfo?.ordinal}
-                        baseScoreRankColor={rankInfo?.color}
-                        // Trend rank info (form trajectory)
-                        trendRank={trendRank}
-                        trendRankOrdinal={trendRank > 0 ? toOrdinal(trendRank) : '—'}
-                        trendRankColor={trendRankColor}
-                        trendScore={blendedInfo?.trendScore}
-                        onTrendClick={
-                          blendedInfo?.trendScore
-                            ? () =>
-                                setTrendModalHorse({
-                                  horse,
-                                  trendScore: blendedInfo.trendScore,
-                                })
-                            : undefined
-                        }
-                        // Blended rank info (combined base + trend)
-                        blendedRank={blendedRank}
-                        blendedRankOrdinal={blendedRank > 0 ? toOrdinal(blendedRank) : '—'}
-                        blendedRankColor={blendedRankColor}
-                        blendedResult={blendedInfo?.blendedResult}
-                      />
-                      <HorseExpandedView
-                        horse={horse}
-                        isVisible={expandedHorseId === horseId && !isScratched}
-                        valuePercent={overlay.overlayPercent}
-                        score={scoredHorse.score}
-                      />
-                    </div>
-                  );
-                })}
+                    // Calculate colors for trend and blended ranks
+                    const trendRankColor =
+                      trendRank > 0 && activeFieldSize > 0
+                        ? calculateRankGradientColor(trendRank - 1, activeFieldSize)
+                        : '#555555';
+                    const blendedRankColor =
+                      blendedRank > 0 && activeFieldSize > 0
+                        ? calculateRankGradientColor(blendedRank - 1, activeFieldSize)
+                        : '#555555';
+
+                    return (
+                      <div key={horseId} className="horse-list__item">
+                        <HorseSummaryBar
+                          horse={horse}
+                          rank={scoredHorse.rank}
+                          isExpanded={expandedHorseId === horseId}
+                          onToggleExpand={() => toggleHorseExpand(horseId)}
+                          maxScore={MAX_SCORE}
+                          score={scoredHorse.score.total}
+                          fairOddsNum={fairOddsNum}
+                          fairOddsDen={fairOddsDen}
+                          fairOddsDisplay={overlay.fairOddsDisplay}
+                          valuePercent={overlay.overlayPercent}
+                          isScratched={isScratched}
+                          onScratchToggle={handleScratchToggle}
+                          currentOdds={currentOdds}
+                          onOddsChange={handleOddsChange}
+                          isCompareSelected={compareHorses.has(pp)}
+                          onCompareToggle={(selected) => handleCompareToggle(pp, selected)}
+                          // Base score rank info (projected finish order)
+                          baseScoreRank={rankInfo?.rank}
+                          baseScoreRankOrdinal={rankInfo?.ordinal}
+                          baseScoreRankColor={rankInfo?.color}
+                          // Trend rank info (form trajectory)
+                          trendRank={trendRank}
+                          trendRankOrdinal={trendRank > 0 ? toOrdinal(trendRank) : '—'}
+                          trendRankColor={trendRankColor}
+                          trendScore={blendedInfo?.trendScore}
+                          onTrendClick={
+                            blendedInfo?.trendScore
+                              ? () =>
+                                  setTrendModalHorse({
+                                    horse,
+                                    trendScore: blendedInfo.trendScore,
+                                  })
+                              : undefined
+                          }
+                          // Blended rank info (combined base + trend)
+                          blendedRank={blendedRank}
+                          blendedRankOrdinal={blendedRank > 0 ? toOrdinal(blendedRank) : '—'}
+                          blendedRankColor={blendedRankColor}
+                          blendedResult={blendedInfo?.blendedResult}
+                        />
+                        <HorseExpandedView
+                          horse={horse}
+                          isVisible={expandedHorseId === horseId && !isScratched}
+                          valuePercent={overlay.overlayPercent}
+                          score={scoredHorse.score}
+                        />
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             )}
           </div>

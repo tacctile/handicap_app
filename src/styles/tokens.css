@@ -103,7 +103,7 @@
      ODDS and VALUE columns use 1fr to fill remaining space
      POST column increased to 64px to accommodate header label + icon
      ============================================ */
-  --horse-list-grid: 70px /* icons */ 64px /* PP */ 280px /* horse name - FIXED, reduced for space */
-    72px /* BASE RANK */ 72px /* TREND RANK */ 72px /* BLENDED RANK */ 70px /* TREND GRAPH - sparkline */
-    1fr /* odds */ minmax(90px, 1fr) /* VALUE badge */ 40px; /* expand chevron */
+  --horse-list-grid: 70px /* icons */ 64px /* PP */ 280px
+    /* horse name - FIXED, reduced for space */ 72px /* BASE RANK */ 72px /* TREND RANK */ 72px
+    /* BLENDED RANK */ 80px /* ODDS */ 80px /* FAIR odds */ minmax(90px, 1fr) /* VALUE badge */ 40px; /* expand chevron */
 }
