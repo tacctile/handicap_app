@@ -9,8 +9,14 @@ import { formatRacingDistance } from '../utils/formatters';
 // CONSTANTS & UTILITIES
 // ============================================================================
 
-// Import score limits from the authoritative scoring engine (single source of truth)
-import { SCORE_LIMITS as SCORING_LIMITS, MAX_BASE_SCORE, MAX_SCORE } from '../lib/scoring';
+// Import score limits and tier functions from the authoritative scoring engine (single source of truth)
+import {
+  SCORE_LIMITS as SCORING_LIMITS,
+  MAX_BASE_SCORE,
+  MAX_SCORE,
+  getScoreColor,
+  getScoreTier,
+} from '../lib/scoring';
 
 // Score limits by category - derived from lib/scoring for display
 const SCORE_LIMITS = {
@@ -65,23 +71,30 @@ const getTierClass = (value: number): string => {
   return 'bad';
 };
 
-// Get tier color CSS variable for total score
-// Thresholds: Elite (200+), Strong (180+), Good (160+), Fair (140+), Weak (<140)
-const getTierColor = (score: number): string => {
-  if (score >= 200) return 'var(--color-tier-elite)'; // Green - Elite
-  if (score >= 180) return 'var(--color-tier-good)'; // Light Green - Strong
-  if (score >= 160) return 'var(--color-tier-fair)'; // Yellow - Good
-  if (score >= 140) return 'var(--color-tier-neutral)'; // Orange - Fair
-  return 'var(--color-tier-bad)'; // Red - Weak
+/**
+ * Get tier color for BASE score using authoritative scoring thresholds
+ * IMPORTANT: This uses BASE SCORE (0-328), not total score
+ *
+ * | Base Score | Percentage | Rating     | Color       |
+ * |------------|------------|------------|-------------|
+ * | 270+       | 82%+       | Elite      | Green       |
+ * | 220-269    | 67-81%     | Strong     | Light Green |
+ * | 170-219    | 52-66%     | Contender  | Yellow      |
+ * | 120-169    | 37-51%     | Fair       | Orange      |
+ * | Below 120  | <37%       | Weak       | Red         |
+ */
+const getTierColor = (baseScore: number): string => {
+  // Use the authoritative getScoreColor from the scoring engine
+  return getScoreColor(baseScore, false);
 };
 
-// Get tier name for total score
-const getTierName = (score: number): string => {
-  if (score >= 200) return 'ELITE';
-  if (score >= 180) return 'STRONG';
-  if (score >= 160) return 'GOOD';
-  if (score >= 140) return 'FAIR';
-  return 'WEAK';
+/**
+ * Get tier name for BASE score using authoritative scoring thresholds
+ * IMPORTANT: This uses BASE SCORE (0-328), not total score
+ */
+const getTierName = (baseScore: number): string => {
+  // Use the authoritative getScoreTier from the scoring engine
+  return getScoreTier(baseScore).toUpperCase();
 };
 
 // Get data quality color
@@ -385,11 +398,12 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
 
         <div className="furlong-score-analysis__content">
           {/* Total Score - Hero (Left Side) */}
+          {/* NOTE: Color is based on BASE score tier, not total score */}
           <div className="furlong-score__total">
             <div className="furlong-score__total-number">
               <span
                 className="furlong-score__total-value"
-                style={{ color: getTierColor(scoreTotal) }}
+                style={{ color: getTierColor(baseScore) }}
               >
                 {scoreTotal}
               </span>
@@ -400,7 +414,7 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                 className="furlong-score__total-bar-fill"
                 style={{
                   width: `${scorePercentage}%`,
-                  backgroundColor: getTierColor(scoreTotal),
+                  backgroundColor: getTierColor(baseScore),
                 }}
               />
             </div>
@@ -418,9 +432,9 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
               <div className="furlong-score__tier-rating">
                 <span
                   className="furlong-score__tier-value"
-                  style={{ color: getTierColor(scoreTotal) }}
+                  style={{ color: getTierColor(baseScore) }}
                 >
-                  {getTierName(scoreTotal)}
+                  {getTierName(baseScore)}
                 </span>
                 <span className="furlong-score__tier-label">RATING</span>
               </div>
