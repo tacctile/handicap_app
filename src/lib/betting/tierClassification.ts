@@ -24,7 +24,10 @@ export interface TierThresholds {
 }
 
 export const TIER_CONFIG: Record<BettingTier, TierThresholds> = {
-  tier1: { minScore: 180, maxScore: 240, minConfidence: 80, maxConfidence: 100 },
+  // v3.1: Adjusted minConfidence to be achievable with MAX_BASE_SCORE=328
+  // Confidence formula: 40 + (baseScore/328) * 60
+  // Score 180 → confidence ~73%, Score 220 → confidence ~80%
+  tier1: { minScore: 180, maxScore: 240, minConfidence: 70, maxConfidence: 100 },
   tier2: { minScore: 160, maxScore: 179, minConfidence: 60, maxConfidence: 79 },
   tier3: { minScore: 130, maxScore: 159, minConfidence: 40, maxConfidence: 59 },
 };

@@ -50,7 +50,7 @@ try {
   if (fs.existsSync(scoringDir)) {
     const files = fs.readdirSync(scoringDir);
     console.log('Files in src/lib/scoring/:');
-    files.forEach(f => console.log('  - ' + f));
+    files.forEach((f) => console.log('  - ' + f));
   } else {
     console.log('Scoring directory not found at:', scoringDir);
 
@@ -59,7 +59,7 @@ try {
     const libDir = './src/lib';
     if (fs.existsSync(libDir)) {
       const libFiles = fs.readdirSync(libDir);
-      libFiles.forEach(f => {
+      libFiles.forEach((f) => {
         if (f.toLowerCase().includes('scor')) {
           console.log('  Found: src/lib/' + f);
         }
@@ -88,17 +88,17 @@ const scoringPaths = [
 ];
 
 let scoringFileContent = '';
-let scoringFilePath = '';
 
 for (const path of scoringPaths) {
   try {
     if (fs.existsSync(path)) {
       scoringFileContent = fs.readFileSync(path, 'utf-8');
-      scoringFilePath = path;
       console.log('Found scoring file at:', path);
       break;
     }
-  } catch (e) {}
+  } catch {
+    // Ignore file access errors
+  }
 }
 
 if (scoringFileContent) {
@@ -128,11 +128,11 @@ const categories = [
   { name: 'Pace', max: 40, files: ['pace', 'paceFit'] },
 ];
 
-categories.forEach(cat => {
+categories.forEach((cat) => {
   console.log(`\n--- ${cat.name} (Max: ${cat.max} points) ---`);
 
   // Look for relevant files
-  cat.files.forEach(filename => {
+  cat.files.forEach((filename) => {
     const paths = [
       `./src/lib/scoring/${filename}.ts`,
       `./src/lib/${filename}.ts`,
@@ -149,11 +149,13 @@ categories.forEach(cat => {
           const funcMatches = content.match(/(?:export\s+)?(?:async\s+)?function\s+\w+\([^)]*\)/g);
           if (funcMatches) {
             console.log('  Functions:');
-            funcMatches.slice(0, 5).forEach(f => console.log('    - ' + f));
+            funcMatches.slice(0, 5).forEach((f) => console.log('    - ' + f));
           }
           break;
         }
-      } catch (e) {}
+      } catch {
+        // Ignore file access errors
+      }
     }
   });
 });
@@ -174,7 +176,7 @@ const connectionsPaths = [
   './src/lib/scoring/jockey.ts',
 ];
 
-connectionsPaths.forEach(path => {
+connectionsPaths.forEach((path) => {
   try {
     if (fs.existsSync(path)) {
       const content = fs.readFileSync(path, 'utf-8');
@@ -182,7 +184,9 @@ connectionsPaths.forEach(path => {
       console.log(content.slice(0, 2000));
       if (content.length > 2000) console.log('...[truncated]');
     }
-  } catch (e) {}
+  } catch {
+    // Ignore file access errors
+  }
 });
 console.log('');
 
@@ -200,7 +204,7 @@ const speedPaths = [
   './src/lib/class/classAnalysis.ts',
 ];
 
-speedPaths.forEach(path => {
+speedPaths.forEach((path) => {
   try {
     if (fs.existsSync(path)) {
       const content = fs.readFileSync(path, 'utf-8');
@@ -208,7 +212,9 @@ speedPaths.forEach(path => {
       console.log(content.slice(0, 2000));
       if (content.length > 2000) console.log('...[truncated]');
     }
-  } catch (e) {}
+  } catch {
+    // Ignore file access errors
+  }
 });
 console.log('');
 
@@ -220,12 +226,9 @@ console.log('│ PART 7: FORM SCORING LOGIC (30 points)                         
 console.log('└──────────────────────────────────────────────────────────────────┘');
 console.log('');
 
-const formPaths = [
-  './src/lib/scoring/form.ts',
-  './src/lib/scoring/recentForm.ts',
-];
+const formPaths = ['./src/lib/scoring/form.ts', './src/lib/scoring/recentForm.ts'];
 
-formPaths.forEach(path => {
+formPaths.forEach((path) => {
   try {
     if (fs.existsSync(path)) {
       const content = fs.readFileSync(path, 'utf-8');
@@ -233,7 +236,9 @@ formPaths.forEach(path => {
       console.log(content.slice(0, 2000));
       if (content.length > 2000) console.log('...[truncated]');
     }
-  } catch (e) {}
+  } catch {
+    // Ignore file access errors
+  }
 });
 console.log('');
 
@@ -251,7 +256,7 @@ const postPaths = [
   './src/data/tracks/trackBias.ts',
 ];
 
-postPaths.forEach(path => {
+postPaths.forEach((path) => {
   try {
     if (fs.existsSync(path)) {
       const content = fs.readFileSync(path, 'utf-8');
@@ -259,7 +264,9 @@ postPaths.forEach(path => {
       console.log(content.slice(0, 2000));
       if (content.length > 2000) console.log('...[truncated]');
     }
-  } catch (e) {}
+  } catch {
+    // Ignore file access errors
+  }
 });
 console.log('');
 
@@ -271,11 +278,9 @@ console.log('│ PART 9: EQUIPMENT SCORING LOGIC (25 points)                    
 console.log('└──────────────────────────────────────────────────────────────────┘');
 console.log('');
 
-const equipPaths = [
-  './src/lib/scoring/equipment.ts',
-];
+const equipPaths = ['./src/lib/scoring/equipment.ts'];
 
-equipPaths.forEach(path => {
+equipPaths.forEach((path) => {
   try {
     if (fs.existsSync(path)) {
       const content = fs.readFileSync(path, 'utf-8');
@@ -283,7 +288,9 @@ equipPaths.forEach(path => {
       console.log(content.slice(0, 2000));
       if (content.length > 2000) console.log('...[truncated]');
     }
-  } catch (e) {}
+  } catch {
+    // Ignore file access errors
+  }
 });
 console.log('');
 
@@ -295,12 +302,9 @@ console.log('│ PART 10: PACE SCORING LOGIC (40 points)                        
 console.log('└──────────────────────────────────────────────────────────────────┘');
 console.log('');
 
-const pacePaths = [
-  './src/lib/scoring/pace.ts',
-  './src/lib/scoring/paceFit.ts',
-];
+const pacePaths = ['./src/lib/scoring/pace.ts', './src/lib/scoring/paceFit.ts'];
 
-pacePaths.forEach(path => {
+pacePaths.forEach((path) => {
   try {
     if (fs.existsSync(path)) {
       const content = fs.readFileSync(path, 'utf-8');
@@ -308,7 +312,9 @@ pacePaths.forEach(path => {
       console.log(content.slice(0, 2000));
       if (content.length > 2000) console.log('...[truncated]');
     }
-  } catch (e) {}
+  } catch {
+    // Ignore file access errors
+  }
 });
 console.log('');
 
@@ -327,7 +333,7 @@ const valuePaths = [
   './src/lib/betting/odds.ts',
 ];
 
-valuePaths.forEach(path => {
+valuePaths.forEach((path) => {
   try {
     if (fs.existsSync(path)) {
       const content = fs.readFileSync(path, 'utf-8');
@@ -335,7 +341,9 @@ valuePaths.forEach(path => {
       console.log(content.slice(0, 2000));
       if (content.length > 2000) console.log('...[truncated]');
     }
-  } catch (e) {}
+  } catch {
+    // Ignore file access errors
+  }
 });
 console.log('');
 

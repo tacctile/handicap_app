@@ -295,14 +295,15 @@ describe('Tier Classification', () => {
 
   describe('Sorting Within Tiers', () => {
     it('sorts Tier 1 by adjusted score descending', () => {
+      // Use same odds so overlay adjustment is similar for all horses
       const horses = [
         {
-          horse: createHorseEntry({ morningLineOdds: '5-1' }),
+          horse: createHorseEntry({ morningLineOdds: '4-1' }),
           index: 0,
           score: createMockScore(185),
         },
         {
-          horse: createHorseEntry({ morningLineOdds: '3-1' }),
+          horse: createHorseEntry({ morningLineOdds: '4-1' }),
           index: 1,
           score: createMockScore(195),
         },
@@ -316,6 +317,7 @@ describe('Tier Classification', () => {
       const tierGroups = classifyHorses(horses);
       const tier1 = tierGroups.find((g) => g.tier === 'tier1');
 
+      // With same odds, sorting should be by base score (highest first)
       expect(tier1?.horses[0].score.total).toBe(195);
       expect(tier1?.horses[1].score.total).toBe(190);
       expect(tier1?.horses[2].score.total).toBe(185);
@@ -426,7 +428,7 @@ describe('Tier Classification', () => {
     it('defines correct thresholds for Tier 1', () => {
       expect(TIER_CONFIG.tier1.minScore).toBe(180);
       expect(TIER_CONFIG.tier1.maxScore).toBe(240);
-      expect(TIER_CONFIG.tier1.minConfidence).toBe(80);
+      expect(TIER_CONFIG.tier1.minConfidence).toBe(70); // v3.1: lowered to be achievable
     });
 
     it('defines correct thresholds for Tier 2', () => {

@@ -23,8 +23,12 @@ function createMockHorse(
     index: idx,
     score: {
       total: score,
+      baseScore: score, // Required for overlay calculations
+      overlayScore: 0,
       isScratched: false,
       breakdown: {} as HorseScore['breakdown'],
+      confidenceLevel: score >= 180 ? 'high' : score >= 160 ? 'medium' : 'low',
+      dataQuality: 75,
     } as HorseScore,
   };
 }

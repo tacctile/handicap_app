@@ -21,7 +21,7 @@ import {
 
 describe('Equipment Scoring', () => {
   describe('Base Score', () => {
-    it('returns base score of 8 for no equipment changes', () => {
+    it('returns base score of 3 for no equipment changes', () => {
       const horse = createHorseEntry({
         equipment: createEquipment({ raw: '' }),
         medication: createMedication({ raw: '' }),
@@ -30,8 +30,8 @@ describe('Equipment Scoring', () => {
 
       const result = calculateEquipmentScore(horse);
 
-      // v2.5: Base score is 5 (reduced from 8)
-      expect(result.baseScore).toBe(5);
+      // v3.0: Base score is 3 (reduced from 5)
+      expect(result.baseScore).toBe(3);
     });
   });
 

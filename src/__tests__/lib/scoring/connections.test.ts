@@ -18,7 +18,7 @@ import { createHorseEntry, createPastPerformance } from '../../fixtures/testHelp
 // NOTE: v2.2 enhanced partnership scoring (0-4 pts based on tiers)
 describe('Connections Scoring', () => {
   describe('Trainer Scoring', () => {
-    it('returns neutral score (7) for trainer with insufficient data (<3 starts)', () => {
+    it('returns penalized baseline (4) for trainer with insufficient data (<3 starts)', () => {
       const horse = createHorseEntry({
         trainerName: 'New Trainer',
         pastPerformances: [
@@ -29,8 +29,8 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      // v2.5: Minimum baseline is 8 for any licensed trainer
-      expect(result.trainer).toBe(8);
+      // Phase 2: Penalized baseline is 4 for trainers with insufficient data
+      expect(result.trainer).toBe(4);
       expect(result.reasoning).toContain('Limited data');
     });
 
@@ -83,8 +83,9 @@ describe('Connections Scoring', () => {
       expect(result.trainer).toBe(9);
     });
 
-    it('returns 13 points for trainer with 15-19% win rate', () => {
+    it('returns 12 points (shipper cap) for trainer with 15-19% win rate from PP stats', () => {
       // 3 wins in 18 starts = ~16.7% win rate
+      // Phase 2: PP-based stats (shipper) capped at 12 points
       const pastPerformances = Array.from({ length: 18 }, (_, i) =>
         createPastPerformance({ finishPosition: i < 3 ? 1 : 5 })
       );
@@ -96,11 +97,13 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.trainer).toBe(13);
+      // Phase 2: Shipper stats capped at 12 (was 13)
+      expect(result.trainer).toBe(12);
     });
 
-    it('returns 16 points (max) for trainer with 20%+ win rate', () => {
+    it('returns 12 points (shipper cap) for trainer with 20%+ win rate from PP stats', () => {
       // 5 wins in 20 starts = 25% win rate
+      // Phase 2: PP-based stats (shipper) capped at 12 points
       const pastPerformances = Array.from({ length: 20 }, (_, i) =>
         createPastPerformance({ finishPosition: i < 5 ? 1 : 5 })
       );
@@ -112,7 +115,8 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.trainer).toBe(16);
+      // Phase 2: Shipper stats capped at 12 (was 16)
+      expect(result.trainer).toBe(12);
     });
 
     it('handles null/undefined trainer name gracefully', () => {
@@ -129,7 +133,7 @@ describe('Connections Scoring', () => {
   });
 
   describe('Jockey Scoring', () => {
-    it('returns minimum baseline (4) for jockey with insufficient data (v2.5)', () => {
+    it('returns penalized baseline (2) for jockey with insufficient data', () => {
       const horse = createHorseEntry({
         jockeyName: 'New Jockey',
         pastPerformances: [createPastPerformance({ jockey: 'New Jockey', finishPosition: 1 })],
@@ -137,11 +141,11 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      // v2.5: Minimum baseline is 4 for any jockey
-      expect(result.jockey).toBe(4);
+      // Phase 2: Penalized baseline is 2 for jockeys with insufficient data
+      expect(result.jockey).toBe(2);
     });
 
-    it('returns 7 points (max) for elite jockey with 20%+ win rate', () => {
+    it('returns 5 points (shipper cap) for elite jockey with 20%+ win rate from PP stats', () => {
       const pastPerformances = Array.from({ length: 10 }, (_, i) =>
         createPastPerformance({
           jockey: 'Elite Jockey',
@@ -156,7 +160,8 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      expect(result.jockey).toBe(7);
+      // Phase 2: Shipper stats capped at 5 (was 7)
+      expect(result.jockey).toBe(5);
     });
 
     it('returns 4 points (minimum baseline) for jockey with <5% win rate (v2.5)', () => {
@@ -407,9 +412,9 @@ describe('Connections Scoring', () => {
       const result = calculateConnectionsScore(horse);
 
       expect(result.total).toBeGreaterThan(0); // Returns baseline scores
-      // v2.5: Minimum baselines are 8 for trainer, 4 for jockey
-      expect(result.trainer).toBe(8);
-      expect(result.jockey).toBe(4);
+      // Phase 2: Penalized baselines are 4 for trainer, 2 for jockey (no career data)
+      expect(result.trainer).toBe(4);
+      expect(result.jockey).toBe(2);
     });
   });
 
@@ -527,8 +532,8 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      // Should use PP-based stats and score based on 30% win rate
-      expect(result.trainer).toBe(16); // 20%+ = 16 pts
+      // Should use PP-based stats (shipper) - capped at 12 pts
+      expect(result.trainer).toBe(12); // Phase 2: Shipper cap (was 16)
       expect(result.trainerStats?.source).toBe('pp');
     });
 
