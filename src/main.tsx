@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import 'material-icons/iconfont/material-icons.css';
 import './index.css';
 import App from './App.tsx';
 import { logger } from './services/logging';
