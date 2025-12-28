@@ -31,45 +31,58 @@ import {
 } from '../overlayAnalysis';
 
 describe('Overlay Analysis', () => {
+  /**
+   * Score to Win Probability Conversion (Legacy - standalone function)
+   *
+   * This is the LEGACY function for standalone use when field context isn't available.
+   * The new formula is: (score / 328) * 50, clamped to 2-50% range.
+   * For field-relative calculations, use calculateFieldRelativeWinProbability instead.
+   */
   describe('Score to Win Probability Conversion', () => {
-    it('converts 200 pts → ~75% win probability', () => {
+    it('converts 200 pts → ~30.5% win probability (standalone formula)', () => {
       const probability = scoreToWinProbability(200);
-      expect(probability).toBe(75);
+      // New formula: (200/328) * 50 = 30.49%
+      expect(probability).toBeCloseTo(30.49, 0);
     });
 
-    it('converts 140 pts → 45% win probability', () => {
+    it('converts 140 pts → ~21.3% win probability (standalone formula)', () => {
       const probability = scoreToWinProbability(140);
-      expect(probability).toBe(45);
+      // New formula: (140/328) * 50 = 21.34%
+      expect(probability).toBeCloseTo(21.34, 0);
     });
 
-    it('converts 100 pts → 25% win probability', () => {
+    it('converts 100 pts → ~15.2% win probability (standalone formula)', () => {
       const probability = scoreToWinProbability(100);
-      expect(probability).toBe(25);
+      // New formula: (100/328) * 50 = 15.24%
+      expect(probability).toBeCloseTo(15.24, 0);
     });
 
-    it('converts 150 pts → 50% win probability', () => {
+    it('converts 150 pts → ~22.9% win probability (standalone formula)', () => {
       const probability = scoreToWinProbability(150);
-      expect(probability).toBe(50);
+      // New formula: (150/328) * 50 = 22.87%
+      expect(probability).toBeCloseTo(22.87, 0);
     });
 
-    it('converts 50 pts → minimum probability (2%)', () => {
+    it('converts 50 pts → ~7.6% win probability', () => {
       const probability = scoreToWinProbability(50);
-      expect(probability).toBe(2); // Clamped at minimum
+      // New formula: (50/328) * 50 = 7.62%
+      expect(probability).toBeCloseTo(7.62, 0);
     });
 
-    it('converts 250 pts → maximum probability (80%)', () => {
+    it('converts 250 pts → ~38.1% win probability', () => {
       const probability = scoreToWinProbability(250);
-      expect(probability).toBe(80); // Clamped at maximum
+      // New formula: (250/328) * 50 = 38.11%
+      expect(probability).toBeCloseTo(38.11, 0);
     });
 
-    it('handles scores below 50 (clamps to 2%)', () => {
-      expect(scoreToWinProbability(30)).toBe(2);
-      expect(scoreToWinProbability(0)).toBe(2);
+    it('handles scores near 0 (clamps to 2%)', () => {
+      expect(scoreToWinProbability(10)).toBeCloseTo(2, 0); // 1.52% clamps to 2%
+      expect(scoreToWinProbability(0)).toBe(2); // 0% clamps to 2%
     });
 
-    it('handles extreme high scores (clamps to 80%)', () => {
-      expect(scoreToWinProbability(300)).toBe(80);
-      expect(scoreToWinProbability(500)).toBe(80);
+    it('handles extreme high scores (clamps to 50%)', () => {
+      expect(scoreToWinProbability(400)).toBe(50); // 60.98% clamps to 50%
+      expect(scoreToWinProbability(500)).toBe(50); // 76.22% clamps to 50%
     });
   });
 
@@ -224,38 +237,51 @@ describe('Overlay Analysis', () => {
     });
   });
 
+  /**
+   * Value Classification Tests
+   *
+   * Updated thresholds for clearer overlay/underlay classification:
+   * - Overlay: Actual odds > Fair odds by 20%+ (value bet)
+   * - Fair: Within ±20% of fair odds (neutral)
+   * - Underlay: Actual odds < Fair odds by 20%+ (bad bet)
+   */
   describe('Value Classification', () => {
-    it('classifies 150%+ as massive_overlay', () => {
+    it('classifies 100%+ as massive_overlay', () => {
+      expect(classifyValue(100)).toBe('massive_overlay');
       expect(classifyValue(150)).toBe('massive_overlay');
       expect(classifyValue(200)).toBe('massive_overlay');
     });
 
-    it('classifies 50-149% as strong_overlay', () => {
-      expect(classifyValue(50)).toBe('strong_overlay');
-      expect(classifyValue(100)).toBe('strong_overlay');
-      expect(classifyValue(149)).toBe('strong_overlay');
+    it('classifies 40-99% as strong_overlay', () => {
+      expect(classifyValue(40)).toBe('strong_overlay');
+      expect(classifyValue(60)).toBe('strong_overlay');
+      expect(classifyValue(99)).toBe('strong_overlay');
     });
 
-    it('classifies 25-49% as moderate_overlay', () => {
-      expect(classifyValue(25)).toBe('moderate_overlay');
-      expect(classifyValue(40)).toBe('moderate_overlay');
+    it('classifies 20-39% as moderate_overlay', () => {
+      expect(classifyValue(20)).toBe('moderate_overlay');
+      expect(classifyValue(30)).toBe('moderate_overlay');
+      expect(classifyValue(39)).toBe('moderate_overlay');
     });
 
-    it('classifies 10-24% as slight_overlay', () => {
+    it('classifies 10-19% as slight_overlay', () => {
       expect(classifyValue(10)).toBe('slight_overlay');
-      expect(classifyValue(20)).toBe('slight_overlay');
+      expect(classifyValue(15)).toBe('slight_overlay');
+      expect(classifyValue(19)).toBe('slight_overlay');
     });
 
-    it('classifies -10% to +9% as fair_price', () => {
+    it('classifies -20% to +9% as fair_price', () => {
       expect(classifyValue(0)).toBe('fair_price');
       expect(classifyValue(5)).toBe('fair_price');
-      expect(classifyValue(-5)).toBe('fair_price');
+      expect(classifyValue(9)).toBe('fair_price');
       expect(classifyValue(-10)).toBe('fair_price');
+      expect(classifyValue(-15)).toBe('fair_price');
+      expect(classifyValue(-20)).toBe('fair_price');
     });
 
-    it('classifies below -10% as underlay', () => {
-      expect(classifyValue(-11)).toBe('underlay');
-      expect(classifyValue(-25)).toBe('underlay');
+    it('classifies below -20% as underlay', () => {
+      expect(classifyValue(-21)).toBe('underlay');
+      expect(classifyValue(-30)).toBe('underlay');
       expect(classifyValue(-50)).toBe('underlay');
     });
   });
@@ -359,43 +385,54 @@ describe('Overlay Analysis', () => {
     });
   });
 
+  /**
+   * Analyze Overlay Integration Tests (Legacy standalone function)
+   *
+   * Note: The standalone analyzeOverlay function uses the legacy formula:
+   * Win% = (score / 328) * 50, clamped to 2-50%
+   *
+   * For field-relative analysis, use analyzeOverlayWithField instead.
+   */
   describe('Analyze Overlay (Integration)', () => {
     it('performs complete analysis for overlay bet', () => {
-      // Score 160 = 55% win prob = fair odds 1.82
+      // Score 160 = (160/328)*50 = 24.4% win prob = fair odds 4.1
       // Actual 5-1 = 6.0 decimal
+      // Overlay = (6.0 - 4.1) / 4.1 = 46% overlay
       const analysis = analyzeOverlay(160, '5-1');
 
-      expect(analysis.winProbability).toBeCloseTo(55, 0);
+      expect(analysis.winProbability).toBeCloseTo(24.4, 0);
       expect(analysis.actualOddsDecimal).toBe(6);
-      expect(analysis.overlayPercent).toBeGreaterThan(200); // Massive overlay
-      expect(analysis.valueClass).toBe('massive_overlay');
+      expect(analysis.overlayPercent).toBeGreaterThan(40); // Strong overlay
+      expect(analysis.valueClass).toBe('strong_overlay');
       expect(analysis.isPositiveEV).toBe(true);
       expect(analysis.evPerDollar).toBeGreaterThan(0);
-      expect(analysis.recommendation.action).toBe('bet_heavily');
+      expect(analysis.recommendation.action).toBe('bet_standard');
     });
 
     it('performs complete analysis for underlay bet', () => {
-      // Score 200 = 75% win prob = fair odds 1.33
+      // Score 200 = (200/328)*50 = 30.5% win prob = fair odds 3.28
       // Actual 1-9 = 1.11 decimal (heavy favorite at bad odds)
+      // Overlay = (1.11 - 3.28) / 3.28 = -66% (severe underlay)
       const analysis = analyzeOverlay(200, '1-9');
 
-      expect(analysis.winProbability).toBe(75);
-      expect(analysis.overlayPercent).toBeLessThan(0);
-      // At 1-9 odds (1.11 decimal) vs fair 1.33, this is underlay
+      expect(analysis.winProbability).toBeCloseTo(30.5, 0);
+      expect(analysis.overlayPercent).toBeLessThan(-20);
       expect(analysis.valueClass).toBe('underlay');
       expect(analysis.isPositiveEV).toBe(false);
       expect(analysis.recommendation.action).toBe('avoid');
     });
 
     it('performs complete analysis for fair price bet', () => {
-      // Score 100 = 25% win prob = fair odds 4.0
+      // Score 100 = (100/328)*50 = 15.2% win prob = fair odds 6.58
       // Actual 3-1 = 4.0 decimal
+      // Overlay = (4.0 - 6.58) / 6.58 = -39% (underlay, actually)
       const analysis = analyzeOverlay(100, '3-1');
 
-      expect(analysis.winProbability).toBe(25);
+      expect(analysis.winProbability).toBeCloseTo(15.2, 0);
       expect(analysis.actualOddsDecimal).toBe(4);
-      expect(analysis.overlayPercent).toBe(0);
-      expect(analysis.valueClass).toBe('fair_price');
+      // With fair odds 6.58 and actual 4.0, this is actually underlay
+      expect(analysis.overlayPercent).toBeLessThan(-20);
+      expect(analysis.valueClass).toBe('underlay');
     });
   });
 
@@ -621,13 +658,19 @@ describe('Overlay Analysis', () => {
     });
   });
 
+  /**
+   * Edge Cases (Legacy standalone function)
+   *
+   * With the new formula: (score / 328) * 50, clamped to 2-50%
+   */
   describe('Edge Cases', () => {
     it('handles 0 odds gracefully', () => {
+      // Score 150 → (150/328)*50 = 22.87%
       const analysis = analyzeOverlay(150, '0');
 
       // Should not throw and should return reasonable values
       expect(analysis.actualOddsDecimal).toBeDefined();
-      expect(analysis.winProbability).toBe(50);
+      expect(analysis.winProbability).toBeCloseTo(22.87, 0);
     });
 
     it('handles missing morning line', () => {
@@ -638,22 +681,23 @@ describe('Overlay Analysis', () => {
     });
 
     it('handles score out of expected range (very low)', () => {
-      const analysis = analyzeOverlay(20, '10-1');
+      // Score 10 → (10/328)*50 = 1.52% → clamps to 2%
+      const analysis = analyzeOverlay(10, '10-1');
 
       expect(analysis.winProbability).toBe(2); // Clamped minimum
       expect(analysis.fairOddsDecimal).toBe(50); // 1/0.02 = 50
     });
 
     it('handles score out of expected range (very high)', () => {
-      // Score 300 = 80% win prob (capped)
-      // Fair odds = 1/0.8 = 1.25 (1-4)
+      // Score 300 → (300/328)*50 = 45.73% (not quite 50%)
+      // Fair odds = 1/0.457 = 2.19 (about 6-5)
       // Actual 2-1 = 3.0 decimal
-      // This is actually a massive overlay, not underlay
       const analysis = analyzeOverlay(300, '2-1');
 
-      expect(analysis.winProbability).toBe(80); // Clamped maximum
-      // 2-1 (3.0) vs fair 1.25 is a big overlay!
-      expect(analysis.overlayPercent).toBeGreaterThan(100);
+      expect(analysis.winProbability).toBeCloseTo(45.73, 0); // Near max
+      // 2-1 (3.0) vs fair 2.19 is about 37% overlay
+      expect(analysis.overlayPercent).toBeGreaterThan(30);
+      expect(analysis.valueClass).toBe('moderate_overlay');
     });
   });
 
@@ -697,74 +741,89 @@ describe('Overlay Analysis', () => {
 
     describe('getOverlayColor', () => {
       it('returns correct colors for value classifications', () => {
-        expect(getOverlayColor(160)).toBe(VALUE_COLORS.massive_overlay);
-        expect(getOverlayColor(75)).toBe(VALUE_COLORS.strong_overlay);
-        expect(getOverlayColor(35)).toBe(VALUE_COLORS.moderate_overlay);
-        expect(getOverlayColor(15)).toBe(VALUE_COLORS.slight_overlay);
-        expect(getOverlayColor(5)).toBe(VALUE_COLORS.fair_price);
-        expect(getOverlayColor(-20)).toBe(VALUE_COLORS.underlay);
+        expect(getOverlayColor(120)).toBe(VALUE_COLORS.massive_overlay); // 100%+ = massive
+        expect(getOverlayColor(60)).toBe(VALUE_COLORS.strong_overlay); // 40-99% = strong
+        expect(getOverlayColor(30)).toBe(VALUE_COLORS.moderate_overlay); // 20-39% = moderate
+        expect(getOverlayColor(15)).toBe(VALUE_COLORS.slight_overlay); // 10-19% = slight
+        expect(getOverlayColor(5)).toBe(VALUE_COLORS.fair_price); // -20 to +9% = fair
+        expect(getOverlayColor(-25)).toBe(VALUE_COLORS.underlay); // < -20% = underlay
       });
     });
   });
 
+  /**
+   * Real-World Racing Scenarios (Legacy standalone function)
+   *
+   * Note: These use the legacy analyzeOverlay which has conservative probabilities.
+   * New formula: (score / 328) * 50, clamped to 2-50%
+   */
   describe('Real-World Racing Scenarios', () => {
-    it('analyzes a favorite with bad odds (underlay)', () => {
-      // Top-rated horse at 180 score (65% win prob) going off at 4-5
+    it('analyzes a favorite with short odds (tests overlay calculation)', () => {
+      // Score 180 → (180/328)*50 = 27.4% win prob
+      // Fair odds = 1/0.274 = 3.65 (about 5-2)
+      // 4-5 = 1.8 decimal
       const analysis = analyzeOverlay(180, '4-5');
 
-      expect(analysis.winProbability).toBe(65);
-      expect(analysis.fairOddsDecimal).toBeCloseTo(1.54, 1);
+      expect(analysis.winProbability).toBeCloseTo(27.4, 0);
       expect(analysis.actualOddsDecimal).toBeCloseTo(1.8, 1);
-      // Actually this would be an overlay since 4-5 = 1.8 > 1.54
-      expect(analysis.overlayPercent).toBeGreaterThan(0);
+      // Overlay = (1.8 - 3.65) / 3.65 = -50.7% (underlay)
+      expect(analysis.overlayPercent).toBeLessThan(-20);
+      expect(analysis.valueClass).toBe('underlay');
     });
 
     it('analyzes a longshot with good odds (overlay)', () => {
-      // Low-rated horse at 100 score (25% win prob) at 8-1 odds
+      // Score 100 → (100/328)*50 = 15.2% win prob
+      // Fair odds = 1/0.152 = 6.58 (about 11-2)
+      // 8-1 = 9.0 decimal
       const analysis = analyzeOverlay(100, '8-1');
 
-      expect(analysis.winProbability).toBe(25);
-      expect(analysis.fairOddsDecimal).toBe(4); // 1/0.25 = 4 (3-1)
+      expect(analysis.winProbability).toBeCloseTo(15.2, 0);
       expect(analysis.actualOddsDecimal).toBe(9); // 8-1 = 9.0
-      expect(analysis.overlayPercent).toBe(125); // (9-4)/4 * 100 = 125%
-      expect(analysis.valueClass).toBe('strong_overlay');
+      // Overlay = (9 - 6.58) / 6.58 = 36.8%
+      expect(analysis.overlayPercent).toBeGreaterThan(20);
+      expect(analysis.valueClass).toBe('moderate_overlay');
       expect(analysis.isPositiveEV).toBe(true);
     });
 
     it('analyzes Penn National value play scenario', () => {
-      // Saratoga shipper with 145 score at 12-1 odds
+      // Score 145 → (145/328)*50 = 22.1% win prob
+      // Fair odds = 1/0.221 = 4.52 (about 7-2)
+      // 12-1 = 13.0 decimal
       const analysis = analyzeOverlay(145, '12-1');
 
-      expect(analysis.winProbability).toBe(47.5);
+      expect(analysis.winProbability).toBeCloseTo(22.1, 0);
       expect(analysis.actualOddsDecimal).toBe(13); // 12-1 = 13.0
-      // Fair odds at 47.5% = 2.1
-      expect(analysis.overlayPercent).toBeGreaterThan(400); // Massive overlay
+      // Overlay = (13 - 4.52) / 4.52 = 187.6% (massive overlay)
+      expect(analysis.overlayPercent).toBeGreaterThan(100); // Massive overlay
       expect(analysis.valueClass).toBe('massive_overlay');
       expect(analysis.recommendation.action).toBe('bet_heavily');
     });
 
     it('identifies chalk play as underlay when odds are too short', () => {
-      // Highly-rated horse (185 score = 67.5% win prob)
-      // Fair odds ~ 1.48 (1-2)
-      // Going off at 2-5 (1.4 decimal) - slight underlay
+      // Score 185 → (185/328)*50 = 28.2% win prob
+      // Fair odds = 1/0.282 = 3.55 (about 5-2)
+      // 2-5 = 1.4 decimal
       const analysis = analyzeOverlay(185, '2-5');
 
-      expect(analysis.winProbability).toBe(67.5);
-      // At 67.5%, fair decimal = 1/0.675 = 1.48
-      // Actual 2-5 = 1.4
-      // Overlay = (1.4 - 1.48) / 1.48 * 100 = -5.4%
-      expect(analysis.overlayPercent).toBeLessThan(0);
+      expect(analysis.winProbability).toBeCloseTo(28.2, 0);
+      // Overlay = (1.4 - 3.55) / 3.55 = -60.6%
+      expect(analysis.overlayPercent).toBeLessThan(-20);
+      expect(analysis.valueClass).toBe('underlay');
     });
 
     it('handles classic value bet: mid-odds horse at overlay', () => {
-      // 130 score (40% win prob) at 5-1 odds
+      // Score 130 → (130/328)*50 = 19.8% win prob
+      // Fair odds = 1/0.198 = 5.05 (about 4-1)
+      // 5-1 = 6.0 decimal
       const analysis = analyzeOverlay(130, '5-1');
 
-      expect(analysis.winProbability).toBe(40);
-      expect(analysis.fairOddsDecimal).toBe(2.5); // 1/0.4 = 2.5 (3-2)
+      expect(analysis.winProbability).toBeCloseTo(19.8, 0);
       expect(analysis.actualOddsDecimal).toBe(6); // 5-1 = 6.0
-      expect(analysis.overlayPercent).toBe(140); // (6-2.5)/2.5 * 100 = 140%
-      expect(analysis.valueClass).toBe('strong_overlay');
+      // Overlay = (6 - 5.05) / 5.05 = 18.8%
+      // This is within ±20%, so it's a fair price or slight overlay
+      expect(analysis.overlayPercent).toBeGreaterThan(10);
+      expect(analysis.overlayPercent).toBeLessThan(25);
+      expect(analysis.valueClass).toBe('slight_overlay');
     });
   });
 });

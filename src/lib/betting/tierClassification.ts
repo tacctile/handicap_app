@@ -2,7 +2,7 @@ import type { HorseEntry } from '../../types/drf';
 import type { HorseScore } from '../scoring';
 import {
   parseOdds,
-  analyzeOverlay,
+  analyzeOverlayWithField,
   calculateTierAdjustment,
   type OverlayAnalysis,
   // Field-relative scoring imports
@@ -84,22 +84,23 @@ export interface TierGroup {
 }
 
 /**
- * Calculate confidence percentage based on score
- * Max score is 240, so we scale to 100%
+ * Calculate confidence percentage based on BASE score
+ * Max base score is 328, so we scale to 100%
  */
-function calculateConfidence(score: number): number {
-  // Base confidence from score (0-240 maps to 40-100%)
-  const baseConfidence = 40 + (score / 240) * 60;
+function calculateConfidence(baseScore: number): number {
+  // Base confidence from score (0-328 maps to 40-100%)
+  const baseConfidence = 40 + (baseScore / 328) * 60;
   return Math.min(100, Math.round(baseConfidence));
 }
 
 /**
  * Calculate value score - measures how much overlay exists
  * Higher value means better odds than the score suggests
+ * NOTE: This is a legacy function kept for compatibility
  */
-function calculateValueScore(score: number, odds: number): number {
-  // Expected odds based on score (higher score = lower expected odds)
-  const normalizedScore = score / 240;
+function calculateValueScore(baseScore: number, odds: number): number {
+  // Expected odds based on base score (higher score = lower expected odds)
+  const normalizedScore = baseScore / 328; // Use 328-point scale
   const expectedOdds = 1 / normalizedScore - 1;
 
   // Value = actual odds vs expected odds
@@ -178,9 +179,11 @@ export function classifyHorses(
 ): TierGroup[] {
   const classifiedHorses: ClassifiedHorse[] = [];
 
-  // Collect all non-scratched scores for field-relative calculations
+  // Collect all non-scratched BASE scores for field-relative calculations
+  // IMPORTANT: Use baseScore (not total) for proper overlay calculation
   const activeHorses = horses.filter((h) => !h.score.isScratched);
-  const allScores = activeHorses.map((h) => h.score.total);
+  const allBaseScores = activeHorses.map((h) => h.score.baseScore);
+  const allScores = activeHorses.map((h) => h.score.total); // For field context
 
   // Calculate field context if enabled and we have enough horses
   let fieldContext: FieldContext | undefined;
@@ -193,22 +196,23 @@ export function classifyHorses(
     if (score.isScratched) continue;
 
     const odds = parseOdds(horse.morningLineOdds);
-    const confidence = calculateConfidence(score.total);
+    const confidence = calculateConfidence(score.baseScore); // Use baseScore
 
-    // Perform full overlay analysis
-    const overlay = analyzeOverlay(score.total, horse.morningLineOdds);
+    // Perform full overlay analysis with field context
+    // Uses BASE scores for proper field-relative win probability
+    const overlay = analyzeOverlayWithField(score.baseScore, allBaseScores, horse.morningLineOdds);
 
     // Calculate tier adjustment based on overlay
-    // Pass both total score (for adjustment calculations) and base score (for threshold checks)
+    // Pass BASE score for both calculations (proper tier determination)
     const tierAdjustment = calculateTierAdjustment(
-      score.total,
-      score.baseScore,
+      score.baseScore, // Use baseScore for adjustment calculations
+      score.baseScore, // Use baseScore for threshold checks
       overlay.overlayPercent
     );
 
-    // Determine tier using adjusted score and special case info
+    // Determine tier using BASE score and adjusted score
     const tier = determineTier(
-      score.total,
+      score.baseScore, // Use baseScore as raw score
       tierAdjustment.adjustedScore,
       confidence,
       tierAdjustment.isSpecialCase,
@@ -235,7 +239,7 @@ export function classifyHorses(
         odds,
         oddsDisplay: horse.morningLineOdds,
         tier,
-        valueScore: calculateValueScore(score.total, odds),
+        valueScore: calculateValueScore(score.baseScore, odds),
         overlay,
         adjustedScore: tierAdjustment.adjustedScore,
         isSpecialCase: tierAdjustment.isSpecialCase,
