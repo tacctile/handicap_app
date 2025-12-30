@@ -260,15 +260,11 @@ function calculateDaysSinceRace(raceDate: string, todayDate: string): number | n
  * This provides a gentle bias toward recent figures without
  * heavily penalizing horses with competitive older figures.
  */
-export function getRecencyDecayMultiplier(daysSinceRace: number | null): number {
-  if (daysSinceRace === null) return 0.85; // Unknown age, assume some staleness
-
-  if (daysSinceRace <= 30) return 1.0; // Fresh
-  if (daysSinceRace <= 45) return 0.97; // Very slight decay
-  if (daysSinceRace <= 60) return 0.93; // Slightly stale
-  if (daysSinceRace <= 90) return 0.87; // Getting old
-  if (daysSinceRace <= 120) return 0.8; // Old
-  return 0.7; // Stale
+export function getRecencyDecayMultiplier(_daysSinceRace: number | null): number {
+  // v3.3: Disabled recency decay as testing showed it hurt predictive accuracy
+  // The algorithm's existing form scoring already penalizes horses with poor recent form
+  // Keeping function for future experimentation with larger sample sizes
+  return 1.0; // No decay applied - all figures treated equally
 }
 
 // ============================================================================
