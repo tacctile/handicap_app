@@ -530,7 +530,6 @@ function extractJockeyStatsFromHorse(horse: HorseEntry): ConnectionStats | null 
  */
 const MIN_TRAINER_SCORE_WITH_CAREER = 8; // Baseline when career stats exist
 const MIN_TRAINER_SCORE_NO_CAREER = 4; // Phase 2: Half baseline for unknowns
-const _MAX_TRAINER_SCORE_SHIPPER = 12; // Phase 2: Cap for career-only stats (v3.2: scaled to 11)
 
 const MIN_JOCKEY_SCORE_WITH_CAREER = 4; // Baseline when career stats exist
 const MIN_JOCKEY_SCORE_NO_CAREER = 2; // Phase 2: Half baseline for unknowns

@@ -608,14 +608,15 @@ export function logAggregateAnalysis(): void {
     if (data.comparison.isCloseCall) closeCallCount++;
 
     for (const impact of data.comparison.rankImpactAnalysis) {
-      if (!swingCounts[impact.category]) {
+      if (swingCounts[impact.category] === undefined) {
         swingCounts[impact.category] = 0;
         totalDifferentials[impact.category] = 0;
       }
       if (impact.wouldSwapRank) {
-        swingCounts[impact.category]++;
+        swingCounts[impact.category] = (swingCounts[impact.category] ?? 0) + 1;
       }
-      totalDifferentials[impact.category] += impact.swingPotential;
+      totalDifferentials[impact.category] =
+        (totalDifferentials[impact.category] ?? 0) + impact.swingPotential;
     }
   }
 
