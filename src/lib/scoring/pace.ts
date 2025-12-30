@@ -3,7 +3,7 @@
  * Analyzes pace scenarios and running style matchups
  *
  * Score Range: 0-35 points (Model B - reduced from 45)
- * 10.7% of 328 base score - High predictive value but reduced vs speed
+ * 10.8% of 323 base score - High predictive value but reduced vs speed
  *
  * Integrates with paceAnalysis.ts for comprehensive pace detection:
  * - Running Style Classification (E, P, C, S)

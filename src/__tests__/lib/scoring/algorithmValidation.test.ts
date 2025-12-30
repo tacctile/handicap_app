@@ -57,8 +57,8 @@ describe('Algorithm v3.1 - Category Totals', () => {
     };
 
     const sum = Object.values(expectedCategories).reduce((a, b) => a + b, 0);
-    // Model B maintains 328 max while rebalancing weights
-    expect(sum).toBe(323); // Slight adjustment due to rebalancing
+    // Model B: 323 max base score
+    expect(sum).toBe(323);
   });
 
   it('SCORE_LIMITS constants match expected values', () => {
@@ -81,15 +81,15 @@ describe('Algorithm v3.1 - Category Totals', () => {
     expect(SCORE_LIMITS.siresSire).toBe(1);
     expect(SCORE_LIMITS.weight).toBe(1);
 
-    // Totals
-    expect(SCORE_LIMITS.baseTotal).toBe(328);
+    // Totals - Model B
+    expect(SCORE_LIMITS.baseTotal).toBe(323);
     expect(SCORE_LIMITS.overlayMax).toBe(40);
-    expect(SCORE_LIMITS.total).toBe(368);
+    expect(SCORE_LIMITS.total).toBe(363);
   });
 
   it('MAX constants are correctly defined', () => {
-    expect(MAX_BASE_SCORE).toBe(328);
-    expect(MAX_SCORE).toBe(368);
+    expect(MAX_BASE_SCORE).toBe(323);
+    expect(MAX_SCORE).toBe(363);
     expect(MAX_OVERLAY).toBe(40);
   });
 });

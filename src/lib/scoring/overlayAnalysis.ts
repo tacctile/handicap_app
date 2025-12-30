@@ -164,7 +164,7 @@ export const VALUE_LABELS: Record<ValueClassification, string> = {
  * - Horse F: 160 pts → 160/1200 = 13.3%
  * Total: 1200 pts → 100%
  *
- * @param horseBaseScore - This horse's base score (0-328)
+ * @param horseBaseScore - This horse's base score (0-323)
  * @param allFieldBaseScores - Array of all non-scratched horses' base scores
  * @returns Win probability as percentage (0-100)
  */
@@ -191,14 +191,14 @@ export function calculateFieldRelativeWinProbability(
 }
 
 /**
- * Convert a score (0-328 range) to win probability
+ * Convert a score (0-323 range) to win probability
  * LEGACY FUNCTION - use calculateFieldRelativeWinProbability for accurate results
  *
  * This standalone formula is only used when field context is not available.
  * It's less accurate because it doesn't account for field strength.
  *
- * Updated formula for 328-point scale:
- * Win% = (Score / 328) × 50% (normalized to reasonable range)
+ * Updated formula for 323-point scale:
+ * Win% = (Score / 323) × 50% (normalized to reasonable range)
  * Clamped between 2% and 50% for standalone calculations
  */
 export function scoreToWinProbability(score: number): number {
@@ -207,8 +207,8 @@ export function scoreToWinProbability(score: number): number {
 
   // For standalone calculations without field context,
   // use a conservative formula that doesn't over-inflate probabilities
-  // Score of 328 → 50%, Score of 164 → 25%, Score of 82 → 12.5%
-  const rawProbability = (score / 328) * 50;
+  // Score of 323 → 50%, Score of 162 → 25%, Score of 81 → 12.5%
+  const rawProbability = (score / 323) * 50;
 
   // Clamp to realistic bounds (2% to 50%)
   // Without field context, cap at 50% to avoid unrealistic probabilities

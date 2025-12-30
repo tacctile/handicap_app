@@ -33,7 +33,7 @@
  *   - Minimum form score: 5 pts (never fully zero out a recent winner)
  *
  * PHASE 4 CHANGES:
- * - Winner bonuses dominate form scoring (was 2.5% of base, now 9% of 328)
+ * - Winner bonuses dominate form scoring (was 2.5% of base, now 9% of 323)
  * - A horse that just won should score high in form
  * - Layoff penalties capped to preserve winner value
  *

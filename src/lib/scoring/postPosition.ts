@@ -3,7 +3,7 @@
  * Calculates post position advantage based on track-specific bias data
  *
  * Score Range: 0-12 points (v3.0 - reduced from 20)
- * 3.7% of 328 base score - Track-dependent situational factor
+ * 3.7% of 323 base score - Track-dependent situational factor
  *
  * v3.0 CHANGES (Phase 3 - Speed Weight Rebalance):
  * - Reduced from 20 to 12 pts to compensate for speed increase

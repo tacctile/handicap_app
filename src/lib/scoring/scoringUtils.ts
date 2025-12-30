@@ -20,13 +20,14 @@ export const MIN_SCORE = 0;
 
 /**
  * Maximum base score before overlay
- * v3.1: Updated from 313 to 328 per Phase 6 Odds Factor
+ * v3.2 Model B (Speed-Dominant): 323 pts
  *
  * Changes:
  * - v3.0: 290 → 313 (Speed Weight Rebalance)
  * - Phase 6: 313 → 328 (Odds Factor +15 pts)
+ * - Model B: 328 → 323 (Rebalanced categories)
  */
-export const MAX_BASE_SCORE = 328;
+export const MAX_BASE_SCORE = 323;
 
 /**
  * Maximum overlay adjustment
@@ -44,10 +45,10 @@ export const MIN_OVERLAY_NEGATIVE = -40;
 export const MAX_PROTOCOL_BONUS = 60;
 
 /** Maximum final score (base + overlay) */
-export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 368 (was 353)
+export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 363
 
 /** Maximum display score (for UI - uses base score) */
-export const MAX_DISPLAY_SCORE = 328;
+export const MAX_DISPLAY_SCORE = 323;
 
 // Category maximums (Model B - Speed-Dominant Rebalance)
 export const SCORE_CATEGORY_LIMITS = {

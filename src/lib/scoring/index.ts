@@ -5,7 +5,7 @@
  * All calculations are deterministic - same inputs always produce same scores.
  * Optimized for performance: scoring 12 horses completes in under 100ms.
  *
- * BASE SCORE (0-328 points max) - Model B (Speed-Dominant):
+ * BASE SCORE (0-323 points max) - Model B (Speed-Dominant):
  * ============================================================
  * This model shifts weighting toward Intrinsic Ability (Speed/Class) over
  * Situational Factors (Pace/Connections). Speed figures are the strongest
@@ -54,7 +54,7 @@
  * - Section G: Head-to-Head & Tactical Matchups: ±6 points
  *
  * Final Score = Base Score + Overlay Adjustment
- * Practical Range: 50 to 368 points
+ * Practical Range: 50 to 363 points
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
@@ -134,7 +134,7 @@ import { calculateDataCompleteness, type DataCompletenessResult } from './dataCo
 
 /**
  * Maximum base score (before overlay)
- * Model B (Speed-Dominant): 328 pts
+ * Model B (Speed-Dominant): 323 pts
  *
  * Category breakdown:
  * - Speed & Class: 140 pts (Speed 105 + Class 35)
@@ -151,9 +151,9 @@ import { calculateDataCompleteness, type DataCompletenessResult } from './dataCo
  * - Trainer Surface/Distance: 6 pts
  * - Weight: 1 pt
  * - P3 (Age + Sire's Sire): 2 pts
- * Total: 328 pts (subtotals may include rounding)
+ * Total: 323 pts
  */
-export const MAX_BASE_SCORE = 328;
+export const MAX_BASE_SCORE = 323;
 
 /**
  * Maximum overlay adjustment
@@ -162,7 +162,7 @@ export const MAX_BASE_SCORE = 328;
 export const MAX_OVERLAY = 40;
 
 /** Maximum total score (base + overlay) */
-export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 368 (was 353, originally 363)
+export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 363
 
 /**
  * Score limits by category
@@ -174,27 +174,27 @@ export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 368 (was 353, original
  * at 30-40% weight, with class providing additional context.
  *
  * Core Categories (272 pts):
- * - Speed/Class: 140 pts (42.7%) — Speed 105 pts (~32%) + Class 35 pts (~11%)
- * - Form: 42 pts (12.8%) — Recent performance patterns (reduced from 50)
- * - Pace: 35 pts (10.7%) — Race shape analysis (reduced from 45)
- * - Connections: 23 pts (7.0%) — Partnership bonus reduced from 4 to 2
+ * - Speed/Class: 140 pts (43.3%) — Speed 105 pts (~32.5%) + Class 35 pts (~10.8%)
+ * - Form: 42 pts (13.0%) — Recent performance patterns (reduced from 50)
+ * - Pace: 35 pts (10.8%) — Race shape analysis (reduced from 45)
+ * - Connections: 23 pts (7.1%) — Partnership bonus reduced from 4 to 2
  * - Odds Factor: 12 pts (3.7%) — Market wisdom (reduced from 15)
  * - Post Position: 12 pts (3.7%) — Track-dependent situational factor
- * - Equipment: 8 pts (2.4%) — Speculative, fine-tuning only
+ * - Equipment: 8 pts (2.5%) — Speculative, fine-tuning only
  *
- * Bonus Categories (40 pts):
- * - Distance/Surface: 20 pts (6.1%) — Turf (8) + Wet (6) + Distance (6)
- * - Track Specialist: 10 pts (3.0%) — Proven success at today's track (increased from 6)
- * - Trainer Patterns: 8 pts (2.4%) — Situational patterns (reduced from 10)
+ * Bonus Categories (48 pts):
+ * - Distance/Surface: 20 pts (6.2%) — Turf (8) + Wet (6) + Distance (6)
+ * - Track Specialist: 10 pts (3.1%) — Proven success at today's track (increased from 6)
+ * - Trainer Patterns: 8 pts (2.5%) — Situational patterns (reduced from 10)
  * - Combo Patterns: 4 pts (1.2%) — Informational combo bonuses
- * - Trainer Surface/Distance: 6 pts (1.8%) — Trainer specialization bonus
+ * - Trainer Surface/Distance: 6 pts (1.9%) — Trainer specialization bonus
  *
- * Weight Change (3 pts):
+ * Weight & P3 Refinements (3 pts):
  * - Weight: 1 pt (subtle refinement for weight drops)
  * - Age Factor: ±1 pt (peak performance at 4-5yo, declining at 8+)
  * - Sire's Sire: ±1 pt (integrated into breeding for known influential sires)
  *
- * Total: 328 points base score
+ * Total: 323 points base score
  */
 export const SCORE_LIMITS = {
   connections: 23, // Model B: reduced from 27 (partnership 4→2)
@@ -213,38 +213,38 @@ export const SCORE_LIMITS = {
   // P3 refinements (subtle, ±1 pt each)
   ageFactor: 1, // Age-based peak performance (+1 for 4-5yo, -1 for 8+)
   siresSire: 1, // Sire's sire breeding influence (±1 integrated into breeding)
-  baseTotal: MAX_BASE_SCORE, // 328
+  baseTotal: MAX_BASE_SCORE, // 323
   overlayMax: MAX_OVERLAY, // 40
-  total: MAX_SCORE, // 368
+  total: MAX_SCORE, // 363
 } as const;
 
 /**
  * Score thresholds for color coding and tier classification
- * Based on BASE SCORE ONLY (328 max), not total score with overlay
+ * Based on BASE SCORE ONLY (323 max), not total score with overlay
  *
  * | Base Score | Percentage | Rating     |
  * |------------|------------|------------|
- * | 270+       | 82%+       | Elite      |
- * | 220-269    | 67-81%     | Strong     |
- * | 170-219    | 52-66%     | Contender  |
- * | 120-169    | 37-51%     | Fair       |
- * | Below 120  | <37%       | Weak       |
+ * | 265+       | 82%+       | Elite      |
+ * | 216-264    | 67-81%     | Strong     |
+ * | 165-215    | 51-66%     | Contender  |
+ * | 116-164    | 36-50%     | Fair       |
+ * | Below 116  | <36%       | Weak       |
  */
 export const SCORE_THRESHOLDS = {
-  elite: 270, // 82%+ of 328 base score
-  strong: 220, // 67-81% of 328 base score
-  contender: 170, // 52-66% of 328 base score (renamed from 'good')
-  fair: 120, // 37-51% of 328 base score
-  weak: 0, // Below 37%
+  elite: 265, // 82%+ of 323 base score
+  strong: 216, // 67-81% of 323 base score
+  contender: 165, // 51-66% of 323 base score
+  fair: 116, // 36-50% of 323 base score
+  weak: 0, // Below 36%
 } as const;
 
 /** Score colors matching thresholds (based on base score) */
 export const SCORE_COLORS = {
-  elite: '#22c55e', // Green - Elite (270+, 82%+)
-  strong: '#4ade80', // Light Green - Strong (220-269, 67-81%)
-  contender: '#eab308', // Yellow - Contender (170-219, 52-66%)
-  fair: '#f97316', // Orange - Fair (120-169, 37-51%)
-  weak: '#ef4444', // Red - Weak (<120, <37%)
+  elite: '#22c55e', // Green - Elite (265+, 82%+)
+  strong: '#4ade80', // Light Green - Strong (216-264, 67-81%)
+  contender: '#eab308', // Yellow - Contender (165-215, 51-66%)
+  fair: '#f97316', // Orange - Fair (116-164, 36-50%)
+  weak: '#ef4444', // Red - Weak (<116, <36%)
 } as const;
 
 // ============================================================================
@@ -432,7 +432,7 @@ export interface ScoreBreakdown {
 export interface HorseScore {
   /** Final total score (base + overlay) */
   total: number;
-  /** Base score (0-328) before overlay */
+  /** Base score (0-323) before overlay */
   baseScore: number;
   /** Overlay adjustment (±40) */
   overlayScore: number;
@@ -514,9 +514,9 @@ export function parseOdds(oddsStr: string): number {
 
 /**
  * Get the color for a BASE score based on thresholds
- * IMPORTANT: This should be called with baseScore (0-328), NOT total score
+ * IMPORTANT: This should be called with baseScore (0-323), NOT total score
  *
- * @param baseScore - The horse's base score (0-328 range)
+ * @param baseScore - The horse's base score (0-323 range)
  * @param isScratched - Whether the horse is scratched
  */
 export function getScoreColor(baseScore: number, isScratched: boolean): string {
@@ -530,17 +530,17 @@ export function getScoreColor(baseScore: number, isScratched: boolean): string {
 
 /**
  * Get score tier name based on BASE score
- * IMPORTANT: This should be called with baseScore (0-328), NOT total score
+ * IMPORTANT: This should be called with baseScore (0-323), NOT total score
  *
  * | Base Score | Percentage | Rating     |
  * |------------|------------|------------|
- * | 270+       | 82%+       | Elite      |
- * | 220-269    | 67-81%     | Strong     |
- * | 170-219    | 52-66%     | Contender  |
- * | 120-169    | 37-51%     | Fair       |
- * | Below 120  | <37%       | Weak       |
+ * | 265+       | 82%+       | Elite      |
+ * | 216-264    | 67-81%     | Strong     |
+ * | 165-215    | 51-66%     | Contender  |
+ * | 116-164    | 36-50%     | Fair       |
+ * | Below 116  | <36%       | Weak       |
  *
- * @param baseScore - The horse's base score (0-328 range)
+ * @param baseScore - The horse's base score (0-323 range)
  */
 export function getScoreTier(baseScore: number): string {
   if (baseScore >= SCORE_THRESHOLDS.elite) return 'Elite';
@@ -1080,7 +1080,7 @@ function calculateHorseScoreWithContext(
   const overlayScore = enforceOverlayBoundaries(overlayResult.cappedScore);
 
   // Final score = Base + Overlay (with boundary enforcement)
-  // Ensures score is floored at MIN_SCORE (0) and capped at MAX_FINAL_SCORE (368)
+  // Ensures score is floored at MIN_SCORE (0) and capped at MAX_FINAL_SCORE (363)
   const total = enforceScoreBoundaries(baseScore + overlayScore);
 
   // Add overlay to breakdown

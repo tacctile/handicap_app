@@ -6,7 +6,7 @@
  * - Speed Figure Score: 0-105 points (based on Beyer/TimeformUS figures)
  * - Class Level Score: 0-35 points (based on class movement and success)
  *
- * Total: 0-140 points (42.7% of 328 base)
+ * Total: 0-140 points (43.3% of 323 base)
  *
  * Model B CHANGES (Speed-Dominant Rebalance):
  * - Speed figures increased from 90 to 105 pts (~32% of base)

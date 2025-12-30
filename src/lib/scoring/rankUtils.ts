@@ -1,10 +1,10 @@
 /**
  * Rank Utility Functions
  *
- * Calculates projected finish order based on base score (X/328)
+ * Calculates projected finish order based on base score (X/323)
  * and provides dynamic gradient coloring based on field size.
  *
- * v3.1: Updated for 328 base score (from 313) per Phase 6 Odds Factor
+ * v3.2 Model B: Updated for 323 base score (from 328)
  *
  * @module scoring/rankUtils
  */
@@ -78,7 +78,7 @@ export interface RankInfo {
 }
 
 /**
- * Calculate ranks based on BASE SCORE (X/328), not total score with overlay
+ * Calculate ranks based on BASE SCORE (X/323), not total score with overlay
  *
  * This function:
  * 1. Filters to non-scratched horses only
