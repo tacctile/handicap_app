@@ -1668,3 +1668,25 @@ export {
   // Types
   type OddsScoreResult,
 } from './oddsScore';
+
+// Rank diagnostics exports (READ-ONLY analysis of #1 vs #2 rankings)
+export {
+  // Main functions
+  logRankDiagnostics,
+  logCompactDiagnostic,
+  getDiagnosticJSON,
+  // Aggregate analysis
+  addToHistory,
+  getDiagnosticHistory,
+  clearDiagnosticHistory,
+  logAggregateAnalysis,
+  // Configuration
+  setDiagnosticMode,
+  DIAGNOSTIC_MODE_ENABLED,
+  // Types
+  type RaceDiagnosticData,
+  type CategoryScore,
+  type CategoryComparison,
+  type RankImpactResult,
+  type HorseDiagnostic,
+} from './rankDiagnostics';

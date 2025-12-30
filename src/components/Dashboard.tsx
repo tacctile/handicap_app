@@ -14,6 +14,8 @@ import {
   MAX_SCORE,
   analyzeOverlayWithField,
   calculateBaseScoreRanks,
+  logRankDiagnostics,
+  addToHistory,
 } from '../lib/scoring';
 import { rankHorsesByBlended, type BlendedRankedHorse } from '../lib/scoring/blendedRank';
 import { toOrdinal, calculateRankGradientColor } from '../lib/scoring/rankUtils';
@@ -276,6 +278,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const baseScoreRankMap = useMemo(() => {
     return calculateBaseScoreRanks(currentRaceScoredHorses);
   }, [currentRaceScoredHorses]);
+
+  // DIAGNOSTIC: Log rank analysis when scored horses change
+  useEffect(() => {
+    if (currentRaceScoredHorses.length > 0 && parsedData) {
+      const race = parsedData.races[selectedRaceIndex];
+      const raceId = race
+        ? `${race.header.trackCode} R${race.header.raceNumber}`
+        : `Race ${selectedRaceIndex + 1}`;
+      const diagnosticData = logRankDiagnostics(currentRaceScoredHorses, raceId);
+      if (diagnosticData) {
+        addToHistory(diagnosticData);
+      }
+    }
+  }, [currentRaceScoredHorses, parsedData, selectedRaceIndex]);
 
   // Get current race data
   const currentRace = parsedData?.races?.[selectedRaceIndex];
