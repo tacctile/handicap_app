@@ -243,13 +243,13 @@ describe('Algorithm v3.1 - Favorite Advantage', () => {
 
   it('odds score gives 12 pts for heavy favorite vs 2 pts for longshot (Model B)', () => {
     const favorite = createHorseEntry({ morningLineOdds: '1-1', morningLineDecimal: 1 });
-    const longshot = createHorseEntry({ morningLineOdds: '30-1', morningLineDecimal: 30 });
+    const longshot = createHorseEntry({ morningLineOdds: '20-1', morningLineDecimal: 20 });
 
     const header = createRaceHeader();
     const favScore = calculateHorseScore(favorite, header, '1-1', 'fast', false);
-    const longScore = calculateHorseScore(longshot, header, '30-1', 'fast', false);
+    const longScore = calculateHorseScore(longshot, header, '20-1', 'fast', false);
 
-    // Model B: Max odds score is 12, longshot gets 2
+    // Model B: Max odds score is 12, longshot (10-1 to 20-1) gets 2 pts
     expect(favScore.breakdown.odds.total).toBe(12);
     expect(longScore.breakdown.odds.total).toBe(2);
   });
