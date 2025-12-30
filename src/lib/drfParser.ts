@@ -1540,6 +1540,112 @@ function parseWorkouts(fields: string[], maxWorkouts = 10): Workout[] {
 // ============================================================================
 
 /**
+ * Derived statistics from past performances
+ * Used to calculate wet track and distance records when DRF header fields are unavailable
+ */
+interface DerivedStats {
+  wetStarts: number;
+  wetWins: number;
+  wetPlaces: number;
+  wetShows: number;
+  distanceStarts: number;
+  distanceWins: number;
+  distancePlaces: number;
+  distanceShows: number;
+}
+
+/**
+ * Track conditions considered "wet" for wet track statistics
+ * Per DRF_FIELD_MAP.md:
+ * - good: Both surfaces, slightly off
+ * - muddy: Dirt, wet holding moisture
+ * - sloppy: Dirt, standing water
+ * - heavy: Both surfaces, deep very wet
+ * - yielding: Turf, soft but not soggy
+ * - soft: Turf, wetter than yielding
+ *
+ * Excluded (not wet):
+ * - fast: Dirt, optimal dry
+ * - firm: Turf, optimal dry
+ * - slow: Dirt, drying out (transitional, not truly wet)
+ */
+const WET_TRACK_CONDITIONS: TrackCondition[] = [
+  'good',
+  'muddy',
+  'sloppy',
+  'heavy',
+  'yielding',
+  'soft',
+];
+
+/**
+ * Calculate derived wet track and distance statistics from past performances
+ *
+ * This function addresses a known limitation where DRF header fields for wet track
+ * and distance records (Fields 89-96) are not reliably available. Instead, we
+ * dynamically calculate these statistics by analyzing the horse's past performances.
+ *
+ * @param pastPerformances - Array of past performance records
+ * @param currentDistanceFurlongs - Today's race distance in furlongs
+ * @returns DerivedStats object with wet and distance record counts
+ */
+function calculateDerivedStats(
+  pastPerformances: PastPerformance[],
+  currentDistanceFurlongs: number
+): DerivedStats {
+  const stats: DerivedStats = {
+    wetStarts: 0,
+    wetWins: 0,
+    wetPlaces: 0,
+    wetShows: 0,
+    distanceStarts: 0,
+    distanceWins: 0,
+    distancePlaces: 0,
+    distanceShows: 0,
+  };
+
+  for (const pp of pastPerformances) {
+    // Wet track calculation: count races on wet surfaces
+    if (WET_TRACK_CONDITIONS.includes(pp.trackCondition)) {
+      stats.wetStarts++;
+      if (pp.finishPosition === 1) {
+        stats.wetWins++;
+      }
+      if (pp.finishPosition === 2) {
+        stats.wetPlaces++;
+      }
+      if (pp.finishPosition === 3) {
+        stats.wetShows++;
+      }
+    }
+
+    // Distance calculation: count races within ±0.5 furlongs of today's distance
+    // Only calculate if we have valid distance data
+    if (pp.distanceFurlongs > 0 && currentDistanceFurlongs > 0) {
+      const distanceDiff = Math.abs(pp.distanceFurlongs - currentDistanceFurlongs);
+      if (distanceDiff <= 0.5) {
+        stats.distanceStarts++;
+        if (pp.finishPosition === 1) {
+          stats.distanceWins++;
+        }
+        if (pp.finishPosition === 2) {
+          stats.distancePlaces++;
+        }
+        if (pp.finishPosition === 3) {
+          stats.distanceShows++;
+        }
+      }
+    }
+  }
+
+  return stats;
+}
+
+// ============================================================================
+// HORSE ENTRY CREATION
+// ============================================================================
+
+/**
  * Create a default horse entry
  */
 function createDefaultHorseEntry(index: number): HorseEntry {
@@ -1729,34 +1835,17 @@ function parseHorseEntry(fields: string[], lineIndex: number): HorseEntry {
   horse.trackShows = parseIntSafe(getField(fields, DRF_COLUMNS.TRACK_SHOWS.index));
 
   // Turf Record (Fields 85-88) - P0 critical handicapping data
+  // Turf stats are correctly available in DRF header fields
   horse.turfStarts = parseStatField(getField(fields, DRF_COLUMNS.TURF_STARTS.index), 'turfStarts');
   horse.turfWins = parseStatField(getField(fields, DRF_COLUMNS.TURF_WINS.index), 'turfWins');
   horse.turfPlaces = parseStatField(getField(fields, DRF_COLUMNS.TURF_PLACES.index), 'turfPlaces');
   horse.turfShows = parseStatField(getField(fields, DRF_COLUMNS.TURF_SHOWS.index), 'turfShows');
 
-  // Wet Track Record (Fields 89-92) - P0 critical handicapping data
-  horse.wetStarts = parseStatField(getField(fields, DRF_COLUMNS.WET_STARTS.index), 'wetStarts');
-  horse.wetWins = parseStatField(getField(fields, DRF_COLUMNS.WET_WINS.index), 'wetWins');
-  horse.wetPlaces = parseStatField(getField(fields, DRF_COLUMNS.WET_PLACES.index), 'wetPlaces');
-  horse.wetShows = parseStatField(getField(fields, DRF_COLUMNS.WET_SHOWS.index), 'wetShows');
-
-  // Current Distance Record (Fields 93-96) - P0 critical handicapping data
-  horse.distanceStarts = parseStatField(
-    getField(fields, DRF_COLUMNS.DISTANCE_STARTS.index),
-    'distanceStarts'
-  );
-  horse.distanceWins = parseStatField(
-    getField(fields, DRF_COLUMNS.DISTANCE_WINS.index),
-    'distanceWins'
-  );
-  horse.distancePlaces = parseStatField(
-    getField(fields, DRF_COLUMNS.DISTANCE_PLACES.index),
-    'distancePlaces'
-  );
-  horse.distanceShows = parseStatField(
-    getField(fields, DRF_COLUMNS.DISTANCE_SHOWS.index),
-    'distanceShows'
-  );
+  // Wet Track and Distance Records - DERIVED FROM PAST PERFORMANCES
+  // DRF header fields for wet track (Fields 89-92) and distance (Fields 93-96) are not
+  // reliably available. These stats are calculated dynamically from past performances.
+  // See calculateDerivedStats() for implementation details.
+  // The actual assignment happens after pastPerformances are parsed (below).
 
   // Running style (Field 210)
   horse.runningStyle = getField(fields, DRF_COLUMNS.RUNNING_STYLE.index);
@@ -1774,6 +1863,32 @@ function parseHorseEntry(fields: string[], lineIndex: number): HorseEntry {
 
   // Past performances
   horse.pastPerformances = parsePastPerformances(fields);
+
+  // Calculate derived wet track and distance statistics from past performances
+  // Get current race distance for comparison (Field 15, index 14)
+  const rawDistanceFurlongs = getField(fields, DRF_COLUMNS.DISTANCE_FURLONGS.index);
+  let currentDistanceFurlongs = parseFloatSafe(rawDistanceFurlongs);
+
+  // Auto-detect format: if value is > 16, it's likely in eighths of furlongs
+  // (Max race distance is ~16 furlongs = 2 miles, so values > 16 are probably encoded differently)
+  if (currentDistanceFurlongs > 16) {
+    currentDistanceFurlongs = currentDistanceFurlongs / 8;
+  }
+
+  // Calculate derived stats from past performances
+  const derivedStats = calculateDerivedStats(horse.pastPerformances, currentDistanceFurlongs);
+
+  // Assign wet track statistics (derived from PP analysis)
+  horse.wetStarts = derivedStats.wetStarts;
+  horse.wetWins = derivedStats.wetWins;
+  horse.wetPlaces = derivedStats.wetPlaces;
+  horse.wetShows = derivedStats.wetShows;
+
+  // Assign distance statistics (derived from PP analysis)
+  horse.distanceStarts = derivedStats.distanceStarts;
+  horse.distanceWins = derivedStats.distanceWins;
+  horse.distancePlaces = derivedStats.distancePlaces;
+  horse.distanceShows = derivedStats.distanceShows;
 
   // Workouts
   horse.workouts = parseWorkouts(fields);
@@ -2399,4 +2514,6 @@ export {
   createDefaultRunningLine,
   createDefaultSpeedFigures,
   parseOdds,
+  calculateDerivedStats,
+  WET_TRACK_CONDITIONS,
 };
