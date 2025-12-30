@@ -216,18 +216,18 @@ export function isValidCategoryScore(score: unknown, maxValue: number): score is
  * These "Paper Tigers" look good on paper but lack current fitness and
  * tactical advantage to convert their speed into wins.
  *
- * Model B Part 5/6: Targeted penalty to prevent over-ranking of horses that
+ * Model B Part 5/6/7: Targeted penalty to prevent over-ranking of horses that
  * have fast historical numbers but no recent form to back it up.
  *
- * CALIBRATION (Part 6):
- * - Increased penalty from -25 to -50 (ensures "kill shot" drops horse to mid-pack)
- * - Widened form threshold from <6 to <10 (catches "negligible" form, not just zero)
- * - Tightened pace safety from >=25 to >=30 (only Elite pace types protected)
+ * CALIBRATION HISTORY:
+ * - Part 5: -25 pts (too weak, Rio Grande stayed #1)
+ * - Part 6: -50 pts (still surviving in weak fields)
+ * - Part 7: -100 pts (nuclear option - ensures Paper Tigers cannot win ranking)
  *
  * @param speedScore - The horse's speed score (0-105 in Model B)
  * @param formScore - The horse's form score (0-42 in Model B)
  * @param paceScore - The horse's pace score (0-35 in Model B)
- * @returns -50 if Paper Tiger conditions met, 0 otherwise
+ * @returns -100 if Paper Tiger conditions met, 0 otherwise
  *
  * CONDITIONS FOR PENALTY:
  * - speedScore > 120 (Elite Ability - top-tier speed figures)
@@ -241,7 +241,7 @@ export function isValidCategoryScore(score: unknown, maxValue: number): score is
  *
  * @example
  * // Paper Tiger: Fast historical speed, no form, no pace advantage
- * calculatePaperTigerPenalty(125, 5, 20) // -50
+ * calculatePaperTigerPenalty(125, 5, 20) // -100
  *
  * // Tessuto Rule: Elite wire-to-wire threat off layoff (high pace protects)
  * calculatePaperTigerPenalty(130, 0, 32) // 0 (protected by elite pace)
@@ -265,7 +265,7 @@ export function calculatePaperTigerPenalty(
   // 2. Critical/Negligible Form (< 10) - Single-digit form score
   // 3. Non-Elite Pace (< 30) - No dominant running style advantage
   if (speedScore > 120 && formScore < 10 && paceScore < 30) {
-    return -50;
+    return -100;
   }
 
   return 0;

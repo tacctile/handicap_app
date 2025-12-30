@@ -1085,7 +1085,7 @@ function calculateHorseScoreWithContext(
     formScore: breakdown.form.total,
     paceScore: breakdown.pace.total,
     reasoning: paperTigerApplied
-      ? 'Paper Tiger Penalty: High Speed / No Form / Low Pace (-50)'
+      ? 'Paper Tiger Penalty: High Speed / No Form / Low Pace (-100)'
       : breakdown.pace.total >= 30 &&
           breakdown.speedClass.speedScore > 120 &&
           breakdown.form.total < 10
@@ -1216,13 +1216,49 @@ export function calculateRaceScores(
 
   // First, sort by BASE SCORE to determine ranks (best base score = rank 1)
   // Uses baseScore (who we think wins) not totalScore (which includes overlay adjustments)
+  //
+  // TIE-BREAKER CHAIN (Model B Final):
+  // 1. Base Score (Descending) - Primary ranking
+  // 2. Speed Score (Descending) - Intrinsic ability wins ties
+  // 3. Pace Score (Descending) - Running style advantage
+  // 4. Form Score (Descending) - Current condition
+  // 5. Post Position (Ascending) - Final deterministic resolution
+  //
+  // This ensures every horse has a UNIQUE rank (no more "3rd (tie)")
   const sortedByScore = [...scoredHorses]
     .filter((h) => !h.score.isScratched)
-    .sort((a, b) => b.score.baseScore - a.score.baseScore);
+    .sort((a, b) => {
+      // Primary: Base Score (descending)
+      const scoreDiff = b.score.baseScore - a.score.baseScore;
+      if (scoreDiff !== 0) return scoreDiff;
 
-  // Assign ranks based on score
+      // Tie-Breaker #1: Speed Score (descending) - Intrinsic Ability wins
+      const speedDiff =
+        b.score.breakdown.speedClass.speedScore - a.score.breakdown.speedClass.speedScore;
+      if (speedDiff !== 0) return speedDiff;
+
+      // Tie-Breaker #2: Pace Score (descending) - Running Style wins
+      const paceDiff = b.score.breakdown.pace.total - a.score.breakdown.pace.total;
+      if (paceDiff !== 0) return paceDiff;
+
+      // Tie-Breaker #3: Form Score (descending) - Current Condition wins
+      const formDiff = b.score.breakdown.form.total - a.score.breakdown.form.total;
+      if (formDiff !== 0) return formDiff;
+
+      // Final Resolution: Post Position (ascending) - Inside post wins
+      return a.horse.postPosition - b.horse.postPosition;
+    });
+
+  // Assign ranks based on sorted order (unique ranks, no ties)
   sortedByScore.forEach((horse, index) => {
     horse.rank = index + 1;
+  });
+
+  // Scratched horses get rank 99 to push them to the bottom of any display
+  scoredHorses.forEach((horse) => {
+    if (horse.score.isScratched) {
+      horse.rank = 99;
+    }
   });
 
   // Now sort by post position for display (scratched horses stay in place)

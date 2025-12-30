@@ -1,11 +1,16 @@
 /**
  * Paper Tiger Circuit Breaker Penalty Tests
  *
- * Model B Part 5/6: Tests for the targeted penalty that downgrades horses
+ * Model B Part 5/6/7: Tests for the targeted penalty that downgrades horses
  * with Elite Speed but Zero Form and Mediocre Pace.
  *
- * CALIBRATION (Part 6):
- * - Penalty: -50 points (kill shot to drop to mid-pack)
+ * CALIBRATION HISTORY:
+ * - Part 5: -25 pts (too weak, Rio Grande stayed #1)
+ * - Part 6: -50 pts (still surviving in weak fields)
+ * - Part 7: -100 pts (nuclear option - ensures Paper Tigers cannot win ranking)
+ *
+ * Current thresholds:
+ * - Penalty: -100 points (nuclear option)
  * - Form threshold: < 10 (catches negligible form, not just zero)
  * - Pace safety: >= 30 (only Elite pace types protected)
  */
@@ -14,40 +19,42 @@ import { describe, it, expect } from 'vitest';
 import { calculatePaperTigerPenalty } from '../scoringUtils';
 
 describe('calculatePaperTigerPenalty', () => {
-  describe('Paper Tiger Detection (Should Apply -50 Penalty)', () => {
+  describe('Paper Tiger Detection (Should Apply -100 Penalty)', () => {
     it('applies penalty for Elite Speed (>120), Low Form (<10), Non-Elite Pace (<30)', () => {
       // Classic Paper Tiger: fast historical speed, negligible form, no tactical edge
-      expect(calculatePaperTigerPenalty(125, 5, 20)).toBe(-50);
+      expect(calculatePaperTigerPenalty(125, 5, 20)).toBe(-100);
     });
 
     it('applies penalty at threshold boundaries', () => {
       // Just above speed threshold (121), just below form threshold (9), just below pace (29)
-      expect(calculatePaperTigerPenalty(121, 9, 29)).toBe(-50);
+      expect(calculatePaperTigerPenalty(121, 9, 29)).toBe(-100);
     });
 
     it('applies penalty for very high speed with zero form', () => {
-      expect(calculatePaperTigerPenalty(140, 0, 15)).toBe(-50);
+      expect(calculatePaperTigerPenalty(140, 0, 15)).toBe(-100);
     });
 
     it('applies penalty for edge case form = 9 (negligible but not zero)', () => {
-      expect(calculatePaperTigerPenalty(130, 9, 25)).toBe(-50);
+      expect(calculatePaperTigerPenalty(130, 9, 25)).toBe(-100);
     });
 
     it('applies penalty for Rio Grande type (massive speed advantage, zero form)', () => {
       // Rio Grande scenario: Elite speed (~201 base), zero form, mediocre pace
-      expect(calculatePaperTigerPenalty(135, 3, 22)).toBe(-50);
+      // With -100 penalty: 201 - 100 = 101 -> drops to bottom of field
+      expect(calculatePaperTigerPenalty(135, 3, 22)).toBe(-100);
     });
 
     it('applies penalty for Strongerthanbefore type (high speed, low form)', () => {
       // Strongerthanbefore scenario: Strong speed (~213 base), low form, okay pace
-      expect(calculatePaperTigerPenalty(128, 5, 25)).toBe(-50);
+      // With -100 penalty: 213 - 100 = 113 -> drops significantly
+      expect(calculatePaperTigerPenalty(128, 5, 25)).toBe(-100);
     });
 
-    it('NOW catches horses with "okay" pace (25-29) that were previously saved', () => {
+    it('catches horses with "okay" pace (25-29) that were previously saved', () => {
       // Part 6 calibration: pace 25-29 no longer protected
-      expect(calculatePaperTigerPenalty(125, 5, 25)).toBe(-50);
-      expect(calculatePaperTigerPenalty(125, 5, 28)).toBe(-50);
-      expect(calculatePaperTigerPenalty(125, 5, 29)).toBe(-50);
+      expect(calculatePaperTigerPenalty(125, 5, 25)).toBe(-100);
+      expect(calculatePaperTigerPenalty(125, 5, 28)).toBe(-100);
+      expect(calculatePaperTigerPenalty(125, 5, 29)).toBe(-100);
     });
   });
 
@@ -123,33 +130,33 @@ describe('calculatePaperTigerPenalty', () => {
       // Speed = 120 is NOT elite (need > 120)
       expect(calculatePaperTigerPenalty(120, 0, 0)).toBe(0);
       // Speed = 121 IS elite
-      expect(calculatePaperTigerPenalty(121, 0, 0)).toBe(-50);
+      expect(calculatePaperTigerPenalty(121, 0, 0)).toBe(-100);
     });
 
     it('correctly identifies boundary at form = 10', () => {
       // Form = 10 is NOT negligible (need < 10)
       expect(calculatePaperTigerPenalty(130, 10, 15)).toBe(0);
       // Form = 9 IS negligible
-      expect(calculatePaperTigerPenalty(130, 9, 15)).toBe(-50);
+      expect(calculatePaperTigerPenalty(130, 9, 15)).toBe(-100);
     });
 
     it('correctly identifies boundary at pace = 30', () => {
       // Pace = 30 triggers Tessuto Rule (no penalty)
       expect(calculatePaperTigerPenalty(130, 0, 30)).toBe(0);
       // Pace = 29 does not trigger Tessuto Rule
-      expect(calculatePaperTigerPenalty(130, 0, 29)).toBe(-50);
+      expect(calculatePaperTigerPenalty(130, 0, 29)).toBe(-100);
     });
   });
 
-  describe('Real-World Scenarios (Calibrated for Part 6)', () => {
-    it('Paper Tiger Rio Grande: elite speed, zero form, mediocre pace -> KILLED', () => {
-      // Rio Grande: ~201 base, took -25 but stayed #1. Now takes -50 -> drops to mid-pack
-      expect(calculatePaperTigerPenalty(130, 3, 22)).toBe(-50);
+  describe('Real-World Scenarios (Calibrated for Part 7 - Nuclear Option)', () => {
+    it('Paper Tiger Rio Grande: elite speed, zero form, mediocre pace -> DESTROYED', () => {
+      // Rio Grande: ~201 base, took -100 penalty -> 101 (bottom of field)
+      expect(calculatePaperTigerPenalty(130, 3, 22)).toBe(-100);
     });
 
-    it('Paper Tiger Strongerthanbefore: strong speed, low form, okay pace -> KILLED', () => {
-      // Strongerthanbefore: ~213 base, took -25 but stayed #2. Now takes -50 -> drops
-      expect(calculatePaperTigerPenalty(125, 5, 26)).toBe(-50);
+    it('Paper Tiger Strongerthanbefore: strong speed, low form, okay pace -> DESTROYED', () => {
+      // Strongerthanbefore: ~213 base, took -100 penalty -> 113 (drops to bottom)
+      expect(calculatePaperTigerPenalty(125, 5, 26)).toBe(-100);
     });
 
     it('Tessuto (Winner): elite speed, low form, ELITE pace -> PROTECTED', () => {
@@ -169,7 +176,7 @@ describe('calculatePaperTigerPenalty', () => {
 
     it('Fringe case: just under all thresholds -> PENALIZED', () => {
       // Speed 121, Form 9, Pace 29 - all just under thresholds
-      expect(calculatePaperTigerPenalty(121, 9, 29)).toBe(-50);
+      expect(calculatePaperTigerPenalty(121, 9, 29)).toBe(-100);
     });
 
     it('Fringe case: form exactly 10 -> NOT PENALIZED (borderline acceptable)', () => {
@@ -179,18 +186,27 @@ describe('calculatePaperTigerPenalty', () => {
   });
 
   describe('Penalty Magnitude Verification', () => {
-    it('penalty is exactly -50 points (kill shot)', () => {
+    it('penalty is exactly -100 points (nuclear option)', () => {
       const penalty = calculatePaperTigerPenalty(130, 5, 20);
-      expect(penalty).toBe(-50);
-      expect(Math.abs(penalty)).toBe(50);
+      expect(penalty).toBe(-100);
+      expect(Math.abs(penalty)).toBe(100);
     });
 
-    it('penalty is severe enough to drop horse ~2-3 ranks', () => {
-      // A -50 point penalty on a 200+ base score horse should drop them significantly
+    it('penalty is severe enough to drop horse to bottom of field', () => {
+      // A -100 point penalty on a 200+ base score horse drops them to bottom
       const baseScore = 210;
       const penalty = calculatePaperTigerPenalty(130, 5, 20);
       const adjustedScore = baseScore + penalty;
-      expect(adjustedScore).toBe(160); // From elite (210) to contender range (160)
+      expect(adjustedScore).toBe(110); // From elite (210) to weak range (110)
+    });
+
+    it('penalty ensures Paper Tiger cannot win even in weak field', () => {
+      // Even with 250 base score, -100 penalty drops to 150 (contender, not elite)
+      const baseScore = 250;
+      const penalty = calculatePaperTigerPenalty(140, 0, 20);
+      const adjustedScore = baseScore + penalty;
+      expect(adjustedScore).toBe(150);
+      expect(adjustedScore).toBeLessThan(165); // Below contender threshold
     });
   });
 });
