@@ -49,18 +49,18 @@ export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 368 (wa
 /** Maximum display score (for UI - uses base score) */
 export const MAX_DISPLAY_SCORE = 328;
 
-// Category maximums (v3.1 - Phase 6 Odds Factor)
+// Category maximums (Model B - Speed-Dominant Rebalance)
 export const SCORE_CATEGORY_LIMITS = {
-  connections: 27, // 8.2% - Modifier, not primary driver
+  connections: 23, // Model B: reduced from 27
   postPosition: 12, // 3.7% - v3.0: reduced from 20
-  speedClass: 122, // 37.2% - v3.0: Speed 90 + Class 32
-  form: 50, // 15.2% - Recent performance patterns
+  speedClass: 140, // Model B: Speed 105 + Class 35
+  form: 42, // Model B: reduced from 50
   equipment: 8, // 2.4% - v3.0: reduced from 12
-  pace: 45, // 13.7% - High predictive value for race shape
-  odds: 15, // 4.6% - Phase 6: Market wisdom for favorites
+  pace: 35, // Model B: reduced from 45
+  odds: 12, // Model B: reduced from 15
   breeding: 15,
   classHiddenDrops: 10,
-  trainerPatterns: 10, // 3.0% - v3.0: reduced from 15
+  trainerPatterns: 8, // Model B: reduced from 10
   comboPatterns: 4, // 1.2% - v3.0: reduced from 6
 } as const;
 

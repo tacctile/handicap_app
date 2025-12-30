@@ -2,22 +2,20 @@
  * Connections Scoring Module
  * Calculates trainer, jockey, and partnership scores based on DRF data
  *
- * Score Breakdown (v2.1 - Enhanced Partnership Scoring):
+ * Score Breakdown (Model B - Reduced Partnership):
  * - Trainer Score: 0-16 points (based on track/surface/class-specific win rates)
- * - Jockey Score: 0-7 points (based on track/style-specific win rates)
- * - Partnership Bonus: 0-4 points (enhanced tiered trainer-jockey partnership)
+ * - Jockey Score: 0-5 points (based on track/style-specific win rates)
+ * - Partnership Bonus: 0-2 points (reduced tiered trainer-jockey partnership)
  *
- * Partnership Bonus Tiers:
- * - Elite partnership (30%+ combo win rate, 8+ starts): 4 pts
- * - Strong partnership (25-29% combo win rate, 5+ starts): 3 pts
- * - Good partnership (20-24% combo win rate, 5+ starts): 2 pts
- * - Regular partnership (15-19% combo win rate, 5+ starts): 1 pt
- * - New or weak partnership: 0 pts
+ * Partnership Bonus Tiers (Model B - reduced from 4 to 2 max):
+ * - Elite partnership (30%+ combo win rate, 8+ starts): 2 pts
+ * - Strong partnership (25-29% combo win rate, 5+ starts): 1 pt
+ * - Good/Regular/New partnership: 0 pts
  *
- * Total: 0-27 points (11.3% of 240 base)
+ * Total: 0-23 points (7.0% of 328 base)
  *
- * NOTE: Connections reduced from 55 to 27 points to reflect industry research
- * showing this is a modifier rather than primary predictive factor.
+ * Model B: Connections reduced from 27 to 23 points to weight speed more heavily.
+ * Connections are a situational factor; speed figures are intrinsic ability.
  *
  * Dynamic Pattern Features:
  * - Track-specific: "Trainer X at Churchill Downs: 18% win (45 starts)"
@@ -240,17 +238,17 @@ const PARTNERSHIP_TIERS = {
   regular: { minWinRate: 15, minStarts: 5 }, // 15-19% win rate, 5+ starts
 } as const;
 
-/** Partnership bonus points by tier (max 4 points) */
+/** Partnership bonus points by tier (Model B: max 2 points, reduced from 4) */
 const ENHANCED_PARTNERSHIP_POINTS = {
-  elite: 4,
-  strong: 3,
-  good: 2,
-  regular: 1,
+  elite: 2, // Model B: was 4
+  strong: 1, // Model B: was 3
+  good: 0, // Model B: was 2
+  regular: 0, // Model B: was 1
   new: 0,
 } as const;
 
-/** Maximum enhanced partnership bonus points */
-export const MAX_ENHANCED_PARTNERSHIP_POINTS = 4;
+/** Maximum enhanced partnership bonus points (Model B: reduced from 4 to 2) */
+export const MAX_ENHANCED_PARTNERSHIP_POINTS = 2;
 
 /**
  * Analyze the trainer/jockey partnership by examining past performances
@@ -523,13 +521,13 @@ function extractJockeyStatsFromHorse(horse: HorseEntry): ConnectionStats | null 
  * - Jockey 0 meet starts BUT has career stats → use career, cap at 5 pts
  * - Jockey 0 meet starts AND no career stats → 2 pts (half baseline, penalized)
  */
-const MIN_TRAINER_SCORE_WITH_CAREER = 8;   // Baseline when career stats exist
-const MIN_TRAINER_SCORE_NO_CAREER = 4;     // Phase 2: Half baseline for unknowns
-const MAX_TRAINER_SCORE_SHIPPER = 12;      // Phase 2: Cap for career-only stats
+const MIN_TRAINER_SCORE_WITH_CAREER = 8; // Baseline when career stats exist
+const MIN_TRAINER_SCORE_NO_CAREER = 4; // Phase 2: Half baseline for unknowns
+const MAX_TRAINER_SCORE_SHIPPER = 12; // Phase 2: Cap for career-only stats
 
-const MIN_JOCKEY_SCORE_WITH_CAREER = 4;    // Baseline when career stats exist
-const MIN_JOCKEY_SCORE_NO_CAREER = 2;      // Phase 2: Half baseline for unknowns
-const MAX_JOCKEY_SCORE_SHIPPER = 5;        // Phase 2: Cap for career-only stats
+const MIN_JOCKEY_SCORE_WITH_CAREER = 3; // Model B: Baseline when career stats exist (was 4)
+const MIN_JOCKEY_SCORE_NO_CAREER = 1; // Model B: Half baseline for unknowns (was 2)
+const MAX_JOCKEY_SCORE_SHIPPER = 4; // Model B: Cap for career-only stats (was 5)
 
 // Keep old constants for backwards compatibility (exported for external use)
 export const MIN_TRAINER_SCORE = MIN_TRAINER_SCORE_WITH_CAREER;
@@ -565,10 +563,14 @@ function calculateTrainerScore(stats: ConnectionStats | null): number {
 
   // Calculate raw score based on win rate
   let score: number;
-  if (winRate >= 20) score = 16; // Elite trainer (20%+ win rate)
-  else if (winRate >= 15) score = 13; // Very good trainer (15-19%)
-  else if (winRate >= 10) score = 9; // Good trainer (10-14%)
-  else if (winRate >= 5) score = MIN_TRAINER_SCORE_WITH_CAREER; // Average trainer (5-9%)
+  if (winRate >= 20)
+    score = 16; // Elite trainer (20%+ win rate)
+  else if (winRate >= 15)
+    score = 13; // Very good trainer (15-19%)
+  else if (winRate >= 10)
+    score = 9; // Good trainer (10-14%)
+  else if (winRate >= 5)
+    score = MIN_TRAINER_SCORE_WITH_CAREER; // Average trainer (5-9%)
   else score = MIN_TRAINER_SCORE_WITH_CAREER; // Below average gets baseline
 
   // Phase 2: Apply shipper cap when using career stats instead of meet stats
@@ -581,53 +583,55 @@ function calculateTrainerScore(stats: ConnectionStats | null): number {
 }
 
 /**
- * Calculate jockey score (0-7 points)
+ * Calculate jockey score (0-5 points) - Model B: reduced from 7
  * Same methodology as trainer but scaled
  *
  * PHASE 2 - DATA COMPLETENESS PENALTIES:
- * - 0 meet starts AND no career stats → 2 pts (half baseline, penalized for unknown)
- * - 0 meet starts BUT has career stats → use career stats, cap at 5 pts
- * - Has meet stats → full scoring (0-7 pts)
+ * - 0 meet starts AND no career stats → 1 pt (half baseline, penalized for unknown)
+ * - 0 meet starts BUT has career stats → use career stats, cap at 4 pts
+ * - Has meet stats → full scoring (0-5 pts)
  */
 function calculateJockeyScore(stats: ConnectionStats | null): number {
   // No stats at all = penalized baseline (unknown jockey)
   if (!stats) {
-    return MIN_JOCKEY_SCORE_NO_CAREER; // Phase 2: 2 pts, not 4
+    return MIN_JOCKEY_SCORE_NO_CAREER; // 1 pt for Model B
   }
 
   // Insufficient data = penalized baseline
   if (stats.starts < 3) {
-    return MIN_JOCKEY_SCORE_NO_CAREER; // 2 pts
+    return MIN_JOCKEY_SCORE_NO_CAREER; // 1 pt
   }
 
   const winRate = stats.winRate;
   const isShipperStats = stats.source === 'pp'; // Career stats, not meet stats
 
-  // Calculate raw score based on win rate
+  // Calculate raw score based on win rate (Model B: max 5)
   let score: number;
-  if (winRate >= 20) score = 7; // Elite jockey
-  else if (winRate >= 15) score = 6; // Very good jockey
-  else if (winRate >= 10) score = MIN_JOCKEY_SCORE_WITH_CAREER; // Good jockey
-  else if (winRate >= 5) score = MIN_JOCKEY_SCORE_WITH_CAREER; // Average jockey
+  if (winRate >= 20)
+    score = 5; // Elite jockey (was 7)
+  else if (winRate >= 15)
+    score = 4; // Very good jockey (was 6)
+  else if (winRate >= 10)
+    score = MIN_JOCKEY_SCORE_WITH_CAREER; // Good jockey
+  else if (winRate >= 5)
+    score = MIN_JOCKEY_SCORE_WITH_CAREER; // Average jockey
   else score = MIN_JOCKEY_SCORE_WITH_CAREER; // Below average gets baseline
 
   // Phase 2: Apply shipper cap when using career stats instead of meet stats
   if (isShipperStats) {
-    score = Math.min(score, MAX_JOCKEY_SCORE_SHIPPER); // Cap at 5 pts
+    score = Math.min(score, MAX_JOCKEY_SCORE_SHIPPER); // Cap at 4 pts
   }
 
   return score;
 }
 
 /**
- * Calculate enhanced partnership bonus using tiered scoring (0-4 points)
+ * Calculate enhanced partnership bonus using tiered scoring (0-2 points)
  *
- * ENHANCED SCORING (v2.1):
- * - Elite partnership (30%+ combo win rate, 8+ starts): 4 pts
- * - Strong partnership (25-29% combo win rate, 5+ starts): 3 pts
- * - Good partnership (20-24% combo win rate, 5+ starts): 2 pts
- * - Regular partnership (15-19% combo win rate, 5+ starts): 1 pt
- * - New or weak partnership: 0 pts
+ * Model B SCORING (reduced from 4 to 2 max):
+ * - Elite partnership (30%+ combo win rate, 8+ starts): 2 pts
+ * - Strong partnership (25-29% combo win rate, 5+ starts): 1 pt
+ * - Good/Regular/New partnership: 0 pts
  *
  * This uses the horse's past performances to directly analyze the trainer/jockey
  * combination, giving more accurate partnership data than database lookup.
@@ -833,8 +837,8 @@ export function calculateRaceConnectionsScores(
 // DYNAMIC PATTERN SCORING (ENHANCED)
 // ============================================================================
 
-/** Maximum combined score for connections (v2.1 - enhanced partnership scoring: 16+7+4=27) */
-const MAX_CONNECTIONS_SCORE = 27;
+/** Maximum combined score for connections (Model B: 16+5+2=23, reduced from 27) */
+const MAX_CONNECTIONS_SCORE = 23;
 
 /**
  * Extended connections score result with pattern analysis

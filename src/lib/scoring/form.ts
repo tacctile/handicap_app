@@ -1087,7 +1087,7 @@ export function calculateFormScore(
   const winRecencyResult = getWinRecencyBonus(daysSinceLastWin);
 
   // v3.0: Calculate total with new scoring structure
-  // Base: recent form (18) + consistency (4) + winner bonus (28) = 50 max
+  // Model B: Base capped at 42 pts (reduced from 50)
   // Then apply layoff penalty (capped at -10) and win recency bonus (+4)
   const baseComponents =
     formResult.score + // 0-18 pts
@@ -1102,10 +1102,11 @@ export function calculateFormScore(
   const rawTotal = baseComponents + cappedLayoffPenalty + winRecencyResult.bonus;
 
   // PHASE 2: Apply confidence multiplier to penalize incomplete form data
-  // First-time starters (0 PPs) → 10 pts max (20% of 50)
-  // 1 PP → 20 pts max (40% of 50)
-  // 2 PPs → 30 pts max (60% of 50)
-  // 3+ PPs → 50 pts max (full scoring)
+  // Model B: Scaled for 42 max
+  // First-time starters (0 PPs) → 8 pts max (20% of 42)
+  // 1 PP → 17 pts max (40% of 42)
+  // 2 PPs → 25 pts max (60% of 42)
+  // 3+ PPs → 42 pts max (full scoring)
   let adjustedTotal = Math.round(rawTotal * confidenceMultiplier);
 
   // v3.0: Apply minimum form score floor for recent winners
@@ -1114,8 +1115,8 @@ export function calculateFormScore(
     adjustedTotal = MIN_FORM_SCORE_FOR_RECENT_WINNER;
   }
 
-  // Final score capped at 50 pts
-  const total = Math.min(50, Math.max(0, adjustedTotal));
+  // Model B: Final score capped at 42 pts (reduced from 50)
+  const total = Math.min(42, Math.max(0, adjustedTotal));
 
   // Build reasoning with class context info
   let reasoning = buildReasoning(

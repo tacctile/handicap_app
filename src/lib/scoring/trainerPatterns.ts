@@ -4,11 +4,11 @@
  * Uses parsed trainer category statistics (DRF Fields 1146-1221) to apply
  * situational bonuses when current race conditions match trainer's proven patterns.
  *
- * Score: 0-10 points (v3.0 - reduced from 15, stacking multiple patterns, capped)
+ * Score: 0-8 points (Model B - reduced from 10, stacking multiple patterns, capped)
  *
- * v3.0 CHANGES (Phase 3 - Speed Weight Rebalance):
- * - Reduced from 15 to 10 pts to compensate for speed increase
- * - Scale factor: 0.67 (10/15)
+ * Model B CHANGES (Speed-Dominant Rebalance):
+ * - Reduced from 10 to 8 pts to weight speed more heavily
+ * - Scale factor: 0.8 (8/10)
  * - Individual pattern points proportionally reduced
  *
  * Pattern Categories:
@@ -46,7 +46,7 @@ export interface MatchedPattern {
  * Result of trainer pattern scoring
  */
 export interface TrainerPatternResult {
-  /** Total points (0-15 max) */
+  /** Total points (0-8 max) */
   total: number;
   /** All matched patterns with details */
   matchedPatterns: MatchedPattern[];
@@ -60,10 +60,10 @@ export interface TrainerPatternResult {
 
 /**
  * Maximum total points from trainer patterns
- * v3.0: Reduced from 15 to 10 pts per Phase 3 speed rebalance.
- * Scale factor: 0.67 (10/15)
+ * Model B: Reduced from 10 to 8 pts per speed-dominant rebalance.
+ * Scale factor: 0.8 (8/10)
  */
-const MAX_TRAINER_PATTERN_POINTS = 10;
+const MAX_TRAINER_PATTERN_POINTS = 8;
 
 /** Minimum sample size to consider a pattern valid */
 const MIN_SAMPLE_SIZE = 5;
@@ -504,9 +504,9 @@ function scoreAcquisitionPattern(
  *
  * @param horse - The horse entry to score
  * @param raceHeader - Current race header for context
- * @returns Trainer pattern score result (0-10 points max)
+ * @returns Trainer pattern score result (0-8 points max)
  *
- * v3.0: All pattern points scaled by 0.67 (10/15)
+ * Model B: All pattern points scaled by 0.8 (8/10)
  */
 export function calculateTrainerPatternScore(
   horse: HorseEntry,
@@ -517,19 +517,19 @@ export function calculateTrainerPatternScore(
   const reasoning: string[] = [];
 
   // -------------------------------------------------------------------------
-  // EQUIPMENT PATTERNS (v3.0: scaled by 0.67)
+  // EQUIPMENT PATTERNS (Model B: scaled by 0.8)
   // -------------------------------------------------------------------------
 
-  // First Time Lasix: 3 pts elite, 1.5 pts good (was 4/2)
+  // First Time Lasix: 2 pts elite, 1 pt good (was 3/1.5)
   if (isFirstTimeLasix(horse)) {
-    const pattern = scoreEquipmentPattern(stats.firstTimeLasix, 'firstTimeLasix', 3);
+    const pattern = scoreEquipmentPattern(stats.firstTimeLasix, 'firstTimeLasix', 2);
     if (pattern) {
       matchedPatterns.push(pattern);
       reasoning.push(pattern.reasoning);
     }
   }
 
-  // First Time Blinkers: 2 pts elite, 1 pt good (was 3/1.5)
+  // First Time Blinkers: 2 pts elite, 1 pt good (was 2/1)
   if (isFirstTimeBlinkers(horse)) {
     const pattern = scoreEquipmentPattern(stats.firstTimeBlinkers, 'firstTimeBlinkers', 2);
     if (pattern) {
@@ -538,7 +538,7 @@ export function calculateTrainerPatternScore(
     }
   }
 
-  // Blinkers Off: 1 pt elite only (was 2)
+  // Blinkers Off: 1 pt elite only (unchanged)
   if (isBlinkersOff(horse)) {
     const pattern = scoreEquipmentPattern(stats.blinkersOff, 'blinkersOff', 1);
     if (pattern) {
@@ -548,19 +548,19 @@ export function calculateTrainerPatternScore(
   }
 
   // -------------------------------------------------------------------------
-  // LAYOFF PATTERNS (v3.0: scaled by 0.67)
+  // LAYOFF PATTERNS (Model B: scaled by 0.8)
   // -------------------------------------------------------------------------
 
-  // 2nd Off Layoff: 3 pts elite, 1.5 pts good (was 4/2)
+  // 2nd Off Layoff: 2 pts elite, 1 pt good (was 3/1.5)
   if (isSecondOffLayoff(horse)) {
-    const pattern = scoreLayoffPattern(stats.secondOffLayoff, 'secondOffLayoff', 3);
+    const pattern = scoreLayoffPattern(stats.secondOffLayoff, 'secondOffLayoff', 2);
     if (pattern) {
       matchedPatterns.push(pattern);
       reasoning.push(pattern.reasoning);
     }
   }
 
-  // Layoff duration patterns: 2 pts each (was 3)
+  // Layoff duration patterns: 2 pts each (unchanged)
   const layoffCategory = getLayoffCategory(horse.daysSinceLastRace);
   if (layoffCategory) {
     const layoffStat = stats[layoffCategory];
@@ -579,10 +579,10 @@ export function calculateTrainerPatternScore(
   }
 
   // -------------------------------------------------------------------------
-  // DISTANCE PATTERNS (v3.0: scaled by 0.67)
+  // DISTANCE PATTERNS (Model B: scaled by 0.8)
   // -------------------------------------------------------------------------
 
-  // Sprint to Route: 2 pts elite, 1 pt good (was 3/1.5)
+  // Sprint to Route: 2 pts elite, 1 pt good (unchanged)
   if (isSprintToRoute(horse, raceHeader)) {
     const pattern = scoreDistancePattern(stats.sprintToRoute, 'sprintToRoute', 2);
     if (pattern) {
@@ -591,7 +591,7 @@ export function calculateTrainerPatternScore(
     }
   }
 
-  // Route to Sprint: 2 pts elite, 1 pt good (was 3/1.5)
+  // Route to Sprint: 2 pts elite, 1 pt good (unchanged)
   if (isRouteToSprint(horse, raceHeader)) {
     const pattern = scoreDistancePattern(stats.routeToSprint, 'routeToSprint', 2);
     if (pattern) {
@@ -601,10 +601,10 @@ export function calculateTrainerPatternScore(
   }
 
   // -------------------------------------------------------------------------
-  // SURFACE PATTERNS (v3.0: scaled by 0.67)
+  // SURFACE PATTERNS (Model B: scaled by 0.8)
   // -------------------------------------------------------------------------
 
-  // Turf races: Check if today is on turf - 1 pt elite (was 2)
+  // Turf races: Check if today is on turf - 1 pt elite (unchanged)
   if (raceHeader.surface === 'turf') {
     const isSprint = raceHeader.distanceFurlongs < SPRINT_THRESHOLD;
     const surfaceStat = isSprint ? stats.turfSprint : stats.turfRoute;
@@ -616,7 +616,7 @@ export function calculateTrainerPatternScore(
     }
   }
 
-  // Wet track: 1 pt elite (was 2)
+  // Wet track: 1 pt elite (unchanged)
   if (isWetTrack(raceHeader)) {
     const pattern = scoreSurfacePattern(stats.wetTrack, 'wetTrack', 1);
     if (pattern) {
@@ -626,10 +626,10 @@ export function calculateTrainerPatternScore(
   }
 
   // -------------------------------------------------------------------------
-  // CLASS PATTERNS (v3.0: scaled by 0.67)
+  // CLASS PATTERNS (Model B: scaled by 0.8)
   // -------------------------------------------------------------------------
 
-  // Maiden Claiming: 1 pt elite (was 2)
+  // Maiden Claiming: 1 pt elite (unchanged)
   if (isMaidenClaiming(raceHeader)) {
     const pattern = scoreClassPattern(stats.maidenClaiming, 'maidenClaiming', 1);
     if (pattern) {
@@ -638,7 +638,7 @@ export function calculateTrainerPatternScore(
     }
   }
 
-  // Stakes: 1 pt elite (was 2)
+  // Stakes: 1 pt elite (unchanged)
   if (isStakesRace(raceHeader)) {
     const pattern = scoreClassPattern(stats.stakes, 'stakes', 1);
     if (pattern) {
@@ -648,21 +648,21 @@ export function calculateTrainerPatternScore(
   }
 
   // -------------------------------------------------------------------------
-  // ACQUISITION PATTERNS (v3.0: scaled by 0.67)
+  // ACQUISITION PATTERNS (Model B: scaled by 0.8)
   // -------------------------------------------------------------------------
 
-  // First Start for Trainer: 3 pts elite, 1.5 pts good (was 4/2)
+  // First Start for Trainer: 2 pts elite, 1 pt good (was 3/1.5)
   if (isFirstStartForTrainer(horse)) {
-    const pattern = scoreAcquisitionPattern(stats.firstStartTrainer, 'firstStartTrainer', 3);
+    const pattern = scoreAcquisitionPattern(stats.firstStartTrainer, 'firstStartTrainer', 2);
     if (pattern) {
       matchedPatterns.push(pattern);
       reasoning.push(pattern.reasoning);
     }
   }
 
-  // After Claim: 3 pts elite, 1.5 pts good (was 4/2)
+  // After Claim: 2 pts elite, 1 pt good (was 3/1.5)
   if (isAfterClaim(horse)) {
-    const pattern = scoreAcquisitionPattern(stats.afterClaim, 'afterClaim', 3);
+    const pattern = scoreAcquisitionPattern(stats.afterClaim, 'afterClaim', 2);
     if (pattern) {
       matchedPatterns.push(pattern);
       reasoning.push(pattern.reasoning);

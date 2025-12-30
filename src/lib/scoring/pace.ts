@@ -2,23 +2,23 @@
  * Pace Scoring Module
  * Analyzes pace scenarios and running style matchups
  *
- * Score Range: 0-45 points (v2.0 - increased from 40)
- * 18.8% of 240 base score - High predictive value for race shape
+ * Score Range: 0-35 points (Model B - reduced from 45)
+ * 10.7% of 328 base score - High predictive value but reduced vs speed
  *
  * Integrates with paceAnalysis.ts for comprehensive pace detection:
  * - Running Style Classification (E, P, C, S)
  * - Pace Pressure Index (PPI) calculation
  * - Tactical advantage scoring based on pace scenario
  *
- * Pace Scenario Scoring (from tactical advantage, rescaled by 45/40 = 1.125):
- * - Perfect pace fit (e.g., lone speed in soft pace): 28+ pts base + bonuses
- * - Good pace fit (e.g., presser in hot pace): 20-27 pts
- * - Neutral fit: 14-19 pts
- * - Poor fit (e.g., closer in soft pace): 6-13 pts
- * - Terrible fit: 0-5 pts
+ * Pace Scenario Scoring (from tactical advantage, rescaled by 35/40 = 0.875):
+ * - Perfect pace fit (e.g., lone speed in soft pace): 22+ pts base + bonuses
+ * - Good pace fit (e.g., presser in hot pace): 16-21 pts
+ * - Neutral fit: 11-15 pts
+ * - Poor fit (e.g., closer in soft pace): 5-10 pts
+ * - Terrible fit: 0-4 pts
  *
- * NOTE: Pace increased from 40 to 45 points to reflect industry research
- * showing high predictive value of pace scenario analysis.
+ * Model B: Pace reduced from 45 to 35 points to weight speed more heavily.
+ * Pace is a situational factor; speed figures are intrinsic ability.
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
@@ -270,10 +270,10 @@ function toExpectedPace(scenario: PaceScenarioType): 'fast' | 'moderate' | 'slow
  * not given neutral scores that reward unknowns.
  */
 export function getPaceConfidenceMultiplier(hasEP1LP: boolean, hasRunningStyle: boolean): number {
-  if (hasEP1LP && hasRunningStyle) return 1.0;    // Full confidence
-  if (hasEP1LP && !hasRunningStyle) return 0.75;  // 75% - have figures but no style
-  if (!hasEP1LP && hasRunningStyle) return 0.5;   // 50% - have style but no figures
-  return 0.35;                                     // 35% - neither present
+  if (hasEP1LP && hasRunningStyle) return 1.0; // Full confidence
+  if (hasEP1LP && !hasRunningStyle) return 0.75; // 75% - have figures but no style
+  if (!hasEP1LP && hasRunningStyle) return 0.5; // 50% - have style but no figures
+  return 0.35; // 35% - neither present
 }
 
 /**
@@ -391,40 +391,40 @@ export function calculatePaceScore(
   }
 
   // Apply track bias adjustments using paceAdvantageRating for granular scoring
-  // Rescaled from 40 max to 45 max (scale factor: 45/40 = 1.125)
-  let finalScore = Math.round(paceResult.totalScore * 1.125); // Scale base tactical score
+  // Model B: Rescaled from 40 max to 35 max (scale factor: 35/40 = 0.875)
+  let finalScore = Math.round(paceResult.totalScore * 0.875); // Scale base tactical score
 
   // Track bias bonus/penalty based on paceAdvantageRating (1-10 scale)
   // Rating 1-3: Closer-friendly, 4-6: Fair, 7-10: Speed-favoring
   if (paceAdvantageRating !== null) {
     if (paceAdvantageRating >= 8 && detailedProfile.style === 'E') {
       // Extreme speed track (8-10) - big bonus for early speed
-      finalScore = Math.min(45, finalScore + 6); // was +5, cap at 45
+      finalScore = Math.min(35, finalScore + 5); // cap at 35
     } else if (paceAdvantageRating >= 7 && detailedProfile.style === 'E') {
       // Strong speed track (7) - moderate bonus for early speed
-      finalScore = Math.min(45, finalScore + 3);
+      finalScore = Math.min(35, finalScore + 2);
     } else if (paceAdvantageRating >= 8 && detailedProfile.style === 'C') {
       // Extreme speed track penalizes closers
-      finalScore = Math.max(5, finalScore - 3);
+      finalScore = Math.max(4, finalScore - 2);
     } else if (paceAdvantageRating <= 3 && detailedProfile.style === 'C') {
       // Closer-friendly track (1-3) - bonus for closers
-      finalScore = Math.min(45, finalScore + 5); // was +4, cap at 45
+      finalScore = Math.min(35, finalScore + 4); // cap at 35
     } else if (paceAdvantageRating <= 3 && detailedProfile.style === 'E') {
       // Closer-friendly track penalizes pure speed
-      finalScore = Math.max(5, finalScore - 2);
+      finalScore = Math.max(4, finalScore - 2);
     }
     // Pressers and stalkers get smaller adjustments
     if (paceAdvantageRating >= 7 && detailedProfile.style === 'P') {
-      finalScore = Math.min(45, finalScore + 2);
+      finalScore = Math.min(35, finalScore + 2);
     } else if (paceAdvantageRating <= 4 && detailedProfile.style === 'S') {
-      finalScore = Math.min(45, finalScore + 2);
+      finalScore = Math.min(35, finalScore + 2);
     }
   } else if (trackSpeedBias !== null) {
     // Fallback to earlySpeedWinRate if paceAdvantageRating not available
     if (trackSpeedBias >= 55 && detailedProfile.style === 'E') {
-      finalScore = Math.min(45, finalScore + 3);
+      finalScore = Math.min(35, finalScore + 2);
     } else if (trackSpeedBias <= 45 && detailedProfile.style === 'C') {
-      finalScore = Math.min(45, finalScore + 3);
+      finalScore = Math.min(35, finalScore + 2);
     }
   }
 
@@ -486,12 +486,13 @@ export function calculatePaceScore(
 
   // PHASE 2: Add confidence info to reasoning if penalized
   if (paceConfidenceMultiplier < 1.0) {
-    const maxPossible = Math.round(45 * paceConfidenceMultiplier);
-    const dataStatus = !hasEP1LP && !hasRunningStyle
-      ? 'no EP1/LP or style'
-      : !hasEP1LP
-        ? 'no EP1/LP figures'
-        : 'unknown style';
+    const maxPossible = Math.round(35 * paceConfidenceMultiplier);
+    const dataStatus =
+      !hasEP1LP && !hasRunningStyle
+        ? 'no EP1/LP or style'
+        : !hasEP1LP
+          ? 'no EP1/LP figures'
+          : 'unknown style';
     reasoning += ` | Confidence: ${Math.round(paceConfidenceMultiplier * 100)}% (${dataStatus}, max ${maxPossible} pts)`;
   }
 
@@ -510,12 +511,12 @@ export function calculatePaceScore(
     hasEP1LP,
     hasRunningStyle,
     multiplier: paceConfidenceMultiplier,
-    maxPossibleScore: Math.round(45 * paceConfidenceMultiplier),
+    maxPossibleScore: Math.round(35 * paceConfidenceMultiplier),
     penaltyApplied: paceConfidenceMultiplier < 1.0,
   };
 
   return {
-    total: Math.max(5, Math.min(45, finalScore)), // was 40
+    total: Math.max(4, Math.min(35, finalScore)), // Model B: cap at 35
     profile,
     fieldAnalysis,
     paceFit: toLegacyPaceFit(tacticalAdvantage.level),

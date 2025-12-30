@@ -438,7 +438,8 @@ describe('Pace Scoring', () => {
       const result = calculatePaceScore(horse, header, field);
 
       expect(result.profile.style).toBe('U');
-      expect(result.total).toBeGreaterThanOrEqual(5);
+      // Model B: Pace minimum is 4 (scaled from 5 with 0.875 factor)
+      expect(result.total).toBeGreaterThanOrEqual(4);
     });
   });
 

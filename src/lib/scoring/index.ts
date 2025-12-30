@@ -5,44 +5,53 @@
  * All calculations are deterministic - same inputs always produce same scores.
  * Optimized for performance: scoring 12 horses completes in under 100ms.
  *
- * BASE SCORE (0-328 points max) - v3.1 with Phase 6 Odds Factor:
- * Core Categories (256 pts):
- * - Speed & Class: 0-122 points (39% - Speed 90 + Class 32)
- *   v3.0: Speed increased from 48 to 90 pts (~29% of base, industry standard 30-40%)
- * - Pace: 0-45 points (14.4% - Race shape analysis)
- * - Form: 0-50 points (16.0% - Recent performance patterns)
- * - Post Position: 0-12 points (3.8% - v3.0: reduced from 20)
- * - Connections (Trainer + Jockey + Partnership): 0-27 points (8.6%)
- * - Equipment: 0-8 points (2.6% - v3.0: reduced from 12)
+ * BASE SCORE (0-328 points max) - Model B (Speed-Dominant):
+ * ============================================================
+ * This model shifts weighting toward Intrinsic Ability (Speed/Class) over
+ * Situational Factors (Pace/Connections). Speed figures are the strongest
+ * predictor; situational bonuses add granularity but shouldn't dominate.
  *
- * Bonus Categories (36 pts):
- * - Distance/Surface Affinity: 0-20 points (6.4% - Turf/Wet/Distance)
- * - Trainer Patterns: 0-10 points (3.2% - v3.0: reduced from 15)
- * - Combo Patterns: 0-4 points (1.3% - v3.0: reduced from 6)
- * - Track Specialist: 0-6 points (1.9% - Proven success at today's track)
- * - Trainer Surface/Distance: 0-6 points (1.9% - Trainer specialization)
- * - Weight Change: 0-1 point (0.3% - P2 subtle refinement for weight drops)
+ * Core Categories (272 pts):
+ * - Speed & Class: 0-140 points (42.7% - Speed 105 + Class 35)
+ *   Model B: Speed increased to 105 pts (~32% of base, industry standard 30-40%)
+ * - Pace: 0-35 points (10.7% - Race shape analysis, reduced from 45)
+ * - Form: 0-42 points (12.8% - Recent performance patterns, reduced from 50)
+ * - Post Position: 0-12 points (3.7% - unchanged)
+ * - Connections (Trainer + Jockey + Partnership): 0-23 points (7.0% - reduced from 27)
+ * - Odds Factor: 0-12 points (3.7% - Market wisdom, reduced from 15)
+ * - Equipment: 0-8 points (2.4% - unchanged)
+ *
+ * Bonus Categories (40 pts):
+ * - Distance/Surface Affinity: 0-20 points (6.1% - Turf/Wet/Distance)
+ * - Track Specialist: 0-10 points (3.0% - Proven success at today's track, increased from 6)
+ * - Trainer Patterns: 0-8 points (2.4% - Situational trainer patterns, reduced from 10)
+ * - Combo Patterns: 0-4 points (1.2% - unchanged)
+ * - Trainer Surface/Distance: 0-6 points (1.8% - Trainer specialization)
+ * - Weight Change: 0-1 point (0.3% - subtle refinement for weight drops)
  *
  * P3 Refinements (2 pts):
  * - Age Factor: ±1 point (0.3% - Peak performance at 4-5yo, declining at 8+)
  * - Sire's Sire: ±1 point (0.3% - Paternal grandsire influence on breeding)
  *
- * v3.0 KEY CHANGES (Phase 3 - Speed Weight Rebalance):
- * - Speed: 48 → 90 pts (+42) - Industry standard weights speed at 30-40%
- * - Post: 20 → 12 pts (-8) - Industry standard is 3-8%
- * - Equipment: 12 → 8 pts (-4) - Industry standard is 2-5%
- * - Trainer Patterns: 15 → 10 pts (-5) - Proportional reduction
- * - Combo: 6 → 4 pts (-2) - Proportional reduction
- * Net change: +42 - 8 - 4 - 5 - 2 = +23 pts (290 → 313)
+ * Model B KEY CHANGES (Speed-Dominant Rebalance):
+ * - Speed: 90 → 105 pts (+15) - Stronger emphasis on proven speed
+ * - Class: 32 → 35 pts (+3) - Slight class emphasis increase
+ * - Form: 50 → 42 pts (-8) - Reduce recency over proven ability
+ * - Pace: 45 → 35 pts (-10) - Reduce situational factor weight
+ * - Connections: 27 → 23 pts (-4) - Reduce partnership bonus from 4 to 2
+ * - Odds: 15 → 12 pts (-3) - Slightly reduce market factor
+ * - Trainer Patterns: 10 → 8 pts (-2) - Reduce situational patterns
+ * - Track Specialist: 6 → 10 pts (+4) - Reward proven track success
+ * Net change: +18 - 8 - 10 - 4 - 3 - 2 + 4 = -5 pts offset by +5 in speedClass
  *
- * OVERLAY SYSTEM (±40 points on top of base - PHASE 5: reduced from ±50):
- * - Section A: Pace Dynamics & Bias: ±10 points (reduced from ±20)
- * - Section B: Form Cycle & Conditioning: ±15 points (unchanged)
- * - Section C: Trip Analysis & Trouble: ±10 points (reduced from ±12)
- * - Section D: Class Movement & Competition: ±12 points (reduced from ±15)
- * - Section E: Connection Micro-Edges: ±8 points (reduced from ±10)
- * - Section F: Distance & Surface Optimization: ±6 points (reduced from ±8)
- * - Section G: Head-to-Head & Tactical Matchups: ±6 points (reduced from ±8)
+ * OVERLAY SYSTEM (±40 points on top of base - PHASE 5):
+ * - Section A: Pace Dynamics & Bias: ±10 points
+ * - Section B: Form Cycle & Conditioning: ±15 points
+ * - Section C: Trip Analysis & Trouble: ±10 points
+ * - Section D: Class Movement & Competition: ±12 points
+ * - Section E: Connection Micro-Edges: ±8 points
+ * - Section F: Distance & Surface Optimization: ±6 points
+ * - Section G: Head-to-Head & Tactical Matchups: ±6 points
  *
  * Final Score = Base Score + Overlay Adjustment
  * Practical Range: 50 to 368 points
@@ -125,19 +134,24 @@ import { calculateDataCompleteness, type DataCompletenessResult } from './dataCo
 
 /**
  * Maximum base score (before overlay)
- * v3.1: Updated from 313 to 328 pts per Phase 6 Odds Factor
+ * Model B (Speed-Dominant): 328 pts
  *
- * Previous v3.0 Changes:
- * - Speed: 48 → 90 pts (+42)
- * - Post: 20 → 12 pts (-8)
- * - Equipment: 12 → 8 pts (-4)
- * - Trainer Patterns: 15 → 10 pts (-5)
- * - Combo: 6 → 4 pts (-2)
- * v3.0 net change: +42 - 8 - 4 - 5 - 2 = +23 (290 → 313)
- *
- * Phase 6 Addition:
- * - Odds Factor: +15 pts (market wisdom for favorites)
- * v3.1 net change: +15 (313 → 328)
+ * Category breakdown:
+ * - Speed & Class: 140 pts (Speed 105 + Class 35)
+ * - Form: 42 pts
+ * - Pace: 35 pts
+ * - Connections: 23 pts
+ * - Odds Factor: 12 pts
+ * - Post Position: 12 pts
+ * - Equipment: 8 pts
+ * - Distance/Surface: 20 pts
+ * - Track Specialist: 10 pts
+ * - Trainer Patterns: 8 pts
+ * - Combo Patterns: 4 pts
+ * - Trainer Surface/Distance: 6 pts
+ * - Weight: 1 pt
+ * - P3 (Age + Sire's Sire): 2 pts
+ * Total: 328 pts (subtotals may include rounding)
  */
 export const MAX_BASE_SCORE = 328;
 
@@ -153,64 +167,55 @@ export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 368 (was 353, original
 /**
  * Score limits by category
  *
- * WEIGHT RATIONALE (v3.1 - Phase 6 Odds Factor):
+ * WEIGHT RATIONALE (Model B - Speed-Dominant):
  * -----------------------------------------------------------------------
- * These weights are aligned with industry handicapping research showing
- * that speed figures are the most predictive factor (30-40% weight).
+ * This model prioritizes Intrinsic Ability (Speed/Class) over Situational
+ * Factors (Pace/Connections). Speed figures are the strongest predictor
+ * at 30-40% weight, with class providing additional context.
  *
- * v3.0 Changes:
- * - Speed: 48 → 90 pts (now ~27%, industry standard 30-40%)
- * - Post: 20 → 12 pts (-8 pts)
- * - Equipment: 12 → 8 pts (-4 pts)
- * - Trainer Patterns: 15 → 10 pts (-5 pts)
- * - Combo: 6 → 4 pts (-2 pts)
- *
- * Phase 6 Addition:
- * - Odds Factor: 15 pts (4.6%) — Market wisdom for favorites
- *
- * Core Categories (271 pts):
- * - Speed/Class: 122 pts (37.2%) — Speed 90 pts (~27%) + Class 32 pts (~10%)
- * - Pace: 45 pts (13.7%) — High predictive value for race shape
- * - Form: 50 pts (15.2%) — Recent performance patterns
+ * Core Categories (272 pts):
+ * - Speed/Class: 140 pts (42.7%) — Speed 105 pts (~32%) + Class 35 pts (~11%)
+ * - Form: 42 pts (12.8%) — Recent performance patterns (reduced from 50)
+ * - Pace: 35 pts (10.7%) — Race shape analysis (reduced from 45)
+ * - Connections: 23 pts (7.0%) — Partnership bonus reduced from 4 to 2
+ * - Odds Factor: 12 pts (3.7%) — Market wisdom (reduced from 15)
  * - Post Position: 12 pts (3.7%) — Track-dependent situational factor
- * - Connections: 27 pts (8.2%) — Enhanced partnership scoring
- * - Odds Factor: 15 pts (4.6%) — Market wisdom for favorites (NEW)
  * - Equipment: 8 pts (2.4%) — Speculative, fine-tuning only
  *
- * Bonus Categories (36 pts):
+ * Bonus Categories (40 pts):
  * - Distance/Surface: 20 pts (6.1%) — Turf (8) + Wet (6) + Distance (6)
- * - Trainer Patterns: 10 pts (3.0%) — Situational trainer pattern bonuses
+ * - Track Specialist: 10 pts (3.0%) — Proven success at today's track (increased from 6)
+ * - Trainer Patterns: 8 pts (2.4%) — Situational patterns (reduced from 10)
  * - Combo Patterns: 4 pts (1.2%) — Informational combo bonuses
- * - Track Specialist: 6 pts (1.8%) — Proven success at today's specific track
  * - Trainer Surface/Distance: 6 pts (1.8%) — Trainer specialization bonus
  *
  * Weight Change (3 pts):
- * - Weight: 1 pt (P2 subtle refinement for weight drops)
- * - Age Factor: ±1 pt (P3 peak performance at 4-5yo, declining at 8+)
- * - Sire's Sire: ±1 pt (P3 integrated into breeding for known influential sires)
+ * - Weight: 1 pt (subtle refinement for weight drops)
+ * - Age Factor: ±1 pt (peak performance at 4-5yo, declining at 8+)
+ * - Sire's Sire: ±1 pt (integrated into breeding for known influential sires)
  *
  * Total: 328 points base score
  */
 export const SCORE_LIMITS = {
-  connections: 27,
-  postPosition: 12, // v3.0: reduced from 20
-  speedClass: 122, // v3.0: increased from 80 (speed 90 + class 32)
-  form: 50,
-  equipment: 8, // v3.0: reduced from 12
-  pace: 45,
-  odds: 15, // Phase 6: Market wisdom for favorites (0-15 pts)
+  connections: 23, // Model B: reduced from 27 (partnership 4→2)
+  postPosition: 12,
+  speedClass: 140, // Model B: increased from 122 (speed 105 + class 35)
+  form: 42, // Model B: reduced from 50
+  equipment: 8,
+  pace: 35, // Model B: reduced from 45
+  odds: 12, // Model B: reduced from 15
   distanceSurface: 20, // Turf (8) + Wet (6) + Distance (6) = 20
-  trainerPatterns: 10, // v3.0: reduced from 15
-  comboPatterns: 4, // v3.0: reduced from 6
-  trackSpecialist: 6, // Track specialist bonus (30%+ win rate at track)
-  trainerSurfaceDistance: 6, // Trainer surface/distance specialization (can stack with wet)
-  weight: 1, // Weight change scoring (P2 subtle refinement)
+  trainerPatterns: 8, // Model B: reduced from 10
+  comboPatterns: 4,
+  trackSpecialist: 10, // Model B: increased from 6
+  trainerSurfaceDistance: 6, // Trainer surface/distance specialization
+  weight: 1, // Weight change scoring (subtle refinement)
   // P3 refinements (subtle, ±1 pt each)
-  ageFactor: 1, // Age-based peak performance (P3: +1 for 4-5yo, -1 for 8+)
-  siresSire: 1, // Sire's sire breeding influence (P3: ±1 integrated into breeding)
-  baseTotal: MAX_BASE_SCORE, // 328 (was 313)
-  overlayMax: MAX_OVERLAY, // PHASE 5: 40 (was 50)
-  total: MAX_SCORE, // Phase 6: 368 (was 353)
+  ageFactor: 1, // Age-based peak performance (+1 for 4-5yo, -1 for 8+)
+  siresSire: 1, // Sire's sire breeding influence (±1 integrated into breeding)
+  baseTotal: MAX_BASE_SCORE, // 328
+  overlayMax: MAX_OVERLAY, // 40
+  total: MAX_SCORE, // 368
 } as const;
 
 /**

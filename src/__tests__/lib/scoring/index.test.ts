@@ -212,7 +212,7 @@ describe('Main Scoring Engine', () => {
       expect(result.breakdown.speedClass.total).toBeLessThanOrEqual(SCORE_LIMITS.speedClass);
     });
 
-    it('form score does not exceed 30', () => {
+    it('form score does not exceed 42 (Model B)', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 21,
         pastPerformances: Array.from({ length: 5 }, () =>
