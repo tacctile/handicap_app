@@ -1085,11 +1085,11 @@ function calculateHorseScoreWithContext(
     formScore: breakdown.form.total,
     paceScore: breakdown.pace.total,
     reasoning: paperTigerApplied
-      ? 'Paper Tiger Penalty: High Speed / No Form / Low Pace (-25)'
-      : breakdown.pace.total >= 25 &&
+      ? 'Paper Tiger Penalty: High Speed / No Form / Low Pace (-50)'
+      : breakdown.pace.total >= 30 &&
           breakdown.speedClass.speedScore > 120 &&
-          breakdown.form.total < 6
-        ? 'Tessuto Rule: High pace protects despite low form (no penalty)'
+          breakdown.form.total < 10
+        ? 'Tessuto Rule: Elite pace protects despite low form (no penalty)'
         : 'No Paper Tiger penalty applied',
   };
 

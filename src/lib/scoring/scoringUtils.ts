@@ -216,30 +216,35 @@ export function isValidCategoryScore(score: unknown, maxValue: number): score is
  * These "Paper Tigers" look good on paper but lack current fitness and
  * tactical advantage to convert their speed into wins.
  *
- * Model B Part 5: Targeted penalty to prevent over-ranking of horses that
+ * Model B Part 5/6: Targeted penalty to prevent over-ranking of horses that
  * have fast historical numbers but no recent form to back it up.
+ *
+ * CALIBRATION (Part 6):
+ * - Increased penalty from -25 to -50 (ensures "kill shot" drops horse to mid-pack)
+ * - Widened form threshold from <6 to <10 (catches "negligible" form, not just zero)
+ * - Tightened pace safety from >=25 to >=30 (only Elite pace types protected)
  *
  * @param speedScore - The horse's speed score (0-105 in Model B)
  * @param formScore - The horse's form score (0-42 in Model B)
  * @param paceScore - The horse's pace score (0-35 in Model B)
- * @returns -25 if Paper Tiger conditions met, 0 otherwise
+ * @returns -50 if Paper Tiger conditions met, 0 otherwise
  *
  * CONDITIONS FOR PENALTY:
  * - speedScore > 120 (Elite Ability - top-tier speed figures)
- * - formScore < 6 (Critical Condition Issues - near-zero form)
- * - paceScore < 25 (Lacks Dominant Running Style - no tactical edge)
+ * - formScore < 10 (Critical/Negligible Form - single digits)
+ * - paceScore < 30 (Lacks Dominant Running Style - no elite tactical edge)
  *
  * SAFETY CHECK ("Tessuto Rule"):
- * - If paceScore >= 25, NO penalty applied even with zero form
- * - This protects wire-to-wire threats coming off layoffs who can
- *   steal the race with their running style
+ * - If paceScore >= 30, NO penalty applied even with low form
+ * - This protects ELITE wire-to-wire threats (like Tessuto with 35 pace)
+ *   who can steal races despite coming off layoffs
  *
  * @example
  * // Paper Tiger: Fast historical speed, no form, no pace advantage
- * calculatePaperTigerPenalty(125, 3, 18) // -25
+ * calculatePaperTigerPenalty(125, 5, 20) // -50
  *
- * // Tessuto Rule: Wire-to-wire threat off layoff (high pace protects)
- * calculatePaperTigerPenalty(130, 0, 28) // 0 (protected by pace)
+ * // Tessuto Rule: Elite wire-to-wire threat off layoff (high pace protects)
+ * calculatePaperTigerPenalty(130, 0, 32) // 0 (protected by elite pace)
  *
  * // Normal horse: Good speed with decent form
  * calculatePaperTigerPenalty(100, 25, 20) // 0
@@ -249,18 +254,18 @@ export function calculatePaperTigerPenalty(
   formScore: number,
   paceScore: number
 ): number {
-  // Safety check: "Tessuto Rule" - High pace protects even with zero form
-  // Wire-to-wire threats coming off layoffs can steal races
-  if (paceScore >= 25) {
+  // Safety check: "Tessuto Rule" - Elite pace protects even with low form
+  // Only DOMINANT wire-to-wire threats (pace >= 30) can steal races off layoffs
+  if (paceScore >= 30) {
     return 0;
   }
 
   // Paper Tiger conditions:
   // 1. Elite Speed (> 120) - Horse has top-tier historical figures
-  // 2. Critical Form Issues (< 6) - Near-zero current form
-  // 3. Mediocre Pace (< 25) - No dominant running style advantage
-  if (speedScore > 120 && formScore < 6 && paceScore < 25) {
-    return -25;
+  // 2. Critical/Negligible Form (< 10) - Single-digit form score
+  // 3. Non-Elite Pace (< 30) - No dominant running style advantage
+  if (speedScore > 120 && formScore < 10 && paceScore < 30) {
+    return -50;
   }
 
   return 0;
