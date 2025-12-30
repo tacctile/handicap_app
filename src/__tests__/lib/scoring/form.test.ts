@@ -18,11 +18,12 @@ import {
 } from '../../fixtures/testHelpers';
 
 describe('Form Scoring', () => {
-  // NOTE: v3.0 Phase 4 - Winner bonus boost and scoring rebalance
-  // - Recent form: 0-18 pts (reduced from 20)
-  // - Winner bonuses: 0-28 pts (increased from 12)
-  // - Consistency: 0-4 pts (reduced from 7)
+  // NOTE: v3.2 Model B - Speed-dominant scoring rebalance
+  // - Recent form: 0-15 pts (reduced from 18)
+  // - Winner bonuses: 0-20 pts (reduced from 28)
+  // - Consistency: 0-4 pts (unchanged)
   // - Layoff: penalty-based (-10 to 0)
+  // - Win Recency: 0-3 pts (reduced from 4)
   describe('Layoff Calculations', () => {
     // v3.0: Layoff now uses penalty system, but layoffScore returns legacy score for backward compat
     // Penalty of 0 = 13 pts, penalty of -3 = 10 pts, penalty of -6 = 7 pts, penalty of -10 = 3 pts
@@ -126,32 +127,32 @@ describe('Form Scoring', () => {
   });
 
   describe('Recent Form Patterns', () => {
-    // v3.0: Recent form max reduced from 20 to 18 pts
-    it('returns 18 points (max) for recent win', () => {
+    // v3.2: Recent form max reduced from 18 to 15 pts
+    it('returns 15 points (max) for recent win', () => {
       const horse = createHorseEntry({
         pastPerformances: [createPastPerformance({ finishPosition: 1, lengthsBehind: 0 })],
       });
 
       const result = calculateFormScore(horse);
 
-      // v3.0: Max recent form is now 18 (was 20)
-      expect(result.recentFormScore).toBe(18);
+      // v3.2: Max recent form is now 15 (was 18)
+      expect(result.recentFormScore).toBe(15);
     });
 
-    it('returns 9 points for first-time starter (neutral)', () => {
+    it('returns 8 points for first-time starter (neutral)', () => {
       const horse = createFirstTimeStarter();
 
       const result = calculateFormScore(horse);
 
-      // v3.0: Neutral reduced from 11 to 9
-      expect(result.recentFormScore).toBe(9);
+      // v3.2: Neutral reduced from 9 to 8
+      expect(result.recentFormScore).toBe(8);
     });
 
     it('weights most recent race higher (50%)', () => {
       // Recent win followed by poor races should still score well
       const horse = createHorseEntry({
         pastPerformances: [
-          createPastPerformance({ finishPosition: 1 }), // 50% weight = 18 * 0.5 = 9
+          createPastPerformance({ finishPosition: 1 }), // 50% weight = 15 * 0.5 = 7.5
           createPastPerformance({ finishPosition: 10 }), // 30% weight = 3 * 0.3 = 0.9
           createPastPerformance({ finishPosition: 10 }), // 20% weight = 3 * 0.2 = 0.6
         ],
@@ -159,8 +160,8 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      // v3.0: 18*0.5 + 3*0.3 + 3*0.2 = 9 + 0.9 + 0.6 = 10.5 -> 11 (rounded)
-      expect(result.recentFormScore).toBeGreaterThanOrEqual(9);
+      // v3.2: 15*0.5 + 3*0.3 + 3*0.2 = 7.5 + 0.9 + 0.6 = 9 (rounded)
+      expect(result.recentFormScore).toBeGreaterThanOrEqual(8);
     });
 
     it('gives higher score for close 2nd place (within 2 lengths)', () => {
@@ -318,7 +319,7 @@ describe('Form Scoring', () => {
   });
 
   describe('Total Score', () => {
-    it('is capped at 50 points maximum', () => {
+    it('is capped at 42 points maximum', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 21, // Optimal layoff = 0 penalty
         pastPerformances: [
@@ -332,7 +333,8 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      expect(result.total).toBeLessThanOrEqual(50);
+      // v3.2: Form cap reduced from 50 to 42
+      expect(result.total).toBeLessThanOrEqual(42);
     });
 
     it('includes winner bonus in total calculation', () => {
@@ -348,10 +350,10 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      // v3.0: Total should include winner bonus
-      // Recent form (18) + consistency (4) + winner bonus (20) + win recency (4) + no layoff penalty (0)
-      expect(result.recentWinnerBonus).toBe(20); // Won last out
-      expect(result.total).toBeGreaterThanOrEqual(35); // High total from winner bonus
+      // v3.2: Total should include winner bonus
+      // Recent form (15) + consistency (4) + winner bonus (12) + win recency (3) + no layoff penalty (0)
+      expect(result.recentWinnerBonus).toBe(12); // Won last out
+      expect(result.total).toBeGreaterThanOrEqual(30); // High total from winner bonus
     });
   });
 
@@ -474,8 +476,8 @@ describe('Form Scoring', () => {
     };
 
     describe('wins at higher class', () => {
-      // v3.0: Win max reduced from 20 to 18 pts
-      it('scores maximum (18) for win at G1 stakes when dropping to allowance', () => {
+      // v3.2: Win max reduced from 18 to 15 pts
+      it('scores maximum (15) for win at G1 stakes when dropping to allowance', () => {
         const horse = createHorseEntry({
           daysSinceLastRace: 21,
           pastPerformances: [
@@ -490,12 +492,12 @@ describe('Form Scoring', () => {
 
         const result = calculateFormScore(horse, todayAllowanceContext);
 
-        // v3.0: Max is now 18 (was 20)
-        expect(result.recentFormScore).toBe(18);
+        // v3.2: Max is now 15 (was 18)
+        expect(result.recentFormScore).toBe(15);
         expect(result.classAdjustmentApplied).toBe(false); // Wins don't get "adjusted", they're already max
       });
 
-      it('scores maximum (18) for win at allowance when dropping to claiming', () => {
+      it('scores maximum (15) for win at allowance when dropping to claiming', () => {
         const horse = createHorseEntry({
           daysSinceLastRace: 21,
           pastPerformances: [
@@ -510,13 +512,13 @@ describe('Form Scoring', () => {
 
         const result = calculateFormScore(horse, todayClaimingContext);
 
-        expect(result.recentFormScore).toBe(18);
+        expect(result.recentFormScore).toBe(15);
       });
     });
 
     describe('4th-6th place at higher class gets neutral boost', () => {
-      // v3.0: Neutral boost range changed from 12-14 to 11-13
-      it('boosts 5th place at G1 to neutral (11-13 pts) when dropping to allowance', () => {
+      // v3.2: Neutral boost range changed from 11-13 to 9-11
+      it('boosts 5th place at G1 to neutral (9-11 pts) when dropping to allowance', () => {
         const horse = createHorseEntry({
           daysSinceLastRace: 21,
           pastPerformances: [
@@ -535,12 +537,12 @@ describe('Form Scoring', () => {
         // With class context (dropping from G1 to allowance)
         const withContextResult = calculateFormScore(horse, todayAllowanceContext);
 
-        // Without context: 5th with 10L behind = 7 points (v3.0: was 8)
-        expect(noContextResult.recentFormScore).toBe(7);
+        // Without context: 5th with 10L behind = 5 points (v3.2: was 7)
+        expect(noContextResult.recentFormScore).toBe(5);
 
-        // With context: should be boosted to neutral (11-13)
-        expect(withContextResult.recentFormScore).toBeGreaterThanOrEqual(11);
-        expect(withContextResult.recentFormScore).toBeLessThanOrEqual(13);
+        // With context: should be boosted to neutral (9-11)
+        expect(withContextResult.recentFormScore).toBeGreaterThanOrEqual(9);
+        expect(withContextResult.recentFormScore).toBeLessThanOrEqual(11);
         expect(withContextResult.classAdjustmentApplied).toBe(true);
         expect(withContextResult.reasoning).toContain('Class drop');
       });
@@ -561,15 +563,15 @@ describe('Form Scoring', () => {
 
         const withContextResult = calculateFormScore(horse, todayClaimingContext);
 
-        // v3.0: Neutral is 11-13 (was 12+)
-        expect(withContextResult.recentFormScore).toBeGreaterThanOrEqual(11);
+        // v3.2: Neutral is 9-11 (was 11+)
+        expect(withContextResult.recentFormScore).toBeGreaterThanOrEqual(9);
         expect(withContextResult.classAdjustmentApplied).toBe(true);
       });
     });
 
     describe('7th+ at higher class gets neutral boost', () => {
-      // v3.0: Neutral boost range changed from 10-12 to 9-11
-      it('boosts 8th place at G2 to neutral (9-11 pts) when dropping to allowance', () => {
+      // v3.2: Neutral boost range changed from 9-11 to 7-9
+      it('boosts 8th place at G2 to neutral (7-9 pts) when dropping to allowance', () => {
         const horse = createHorseEntry({
           daysSinceLastRace: 21,
           pastPerformances: [
@@ -588,12 +590,12 @@ describe('Form Scoring', () => {
         // With class context (dropping from G2 to allowance)
         const withContextResult = calculateFormScore(horse, todayAllowanceContext);
 
-        // Without context: 8th place = 4 points (v3.0: was 5)
+        // Without context: 8th place = 4 points (v3.2: unchanged)
         expect(noContextResult.recentFormScore).toBe(4);
 
-        // With context: should be boosted to neutral (9-11)
-        expect(withContextResult.recentFormScore).toBeGreaterThanOrEqual(9);
-        expect(withContextResult.recentFormScore).toBeLessThanOrEqual(11);
+        // With context: should be boosted to neutral (7-9)
+        expect(withContextResult.recentFormScore).toBeGreaterThanOrEqual(7);
+        expect(withContextResult.recentFormScore).toBeLessThanOrEqual(9);
         expect(withContextResult.classAdjustmentApplied).toBe(true);
       });
 
@@ -613,14 +615,14 @@ describe('Form Scoring', () => {
 
         const withContextResult = calculateFormScore(horse, todayClaimingContext);
 
-        // v3.0: Neutral is 9-11 (was 10+)
-        expect(withContextResult.recentFormScore).toBeGreaterThanOrEqual(9);
+        // v3.2: Neutral is 7-9 (was 9+)
+        expect(withContextResult.recentFormScore).toBeGreaterThanOrEqual(7);
         expect(withContextResult.classAdjustmentApplied).toBe(true);
       });
     });
 
     describe('2nd/3rd place at higher class gets bonus', () => {
-      // v3.0: Near-win level is now capped at 16 (was 18)
+      // v3.2: Near-win level is now capped at 14 (was 16)
       it('boosts 2nd place at G1 to near-win level when dropping', () => {
         const horse = createHorseEntry({
           daysSinceLastRace: 21,
@@ -635,14 +637,14 @@ describe('Form Scoring', () => {
           ],
         });
 
-        // Without context: 2nd more than 2L behind = 11 points (v3.0: was 13)
+        // Without context: 2nd more than 2L behind = 9 points (v3.2: was 11)
         const noContextResult = calculateFormScore(horse);
         // With context: should get bonus
         const withContextResult = calculateFormScore(horse, todayAllowanceContext);
 
-        expect(noContextResult.recentFormScore).toBe(11);
-        expect(withContextResult.recentFormScore).toBeGreaterThan(11);
-        expect(withContextResult.recentFormScore).toBeLessThanOrEqual(16);
+        expect(noContextResult.recentFormScore).toBe(9);
+        expect(withContextResult.recentFormScore).toBeGreaterThan(9);
+        expect(withContextResult.recentFormScore).toBeLessThanOrEqual(14);
         expect(withContextResult.classAdjustmentApplied).toBe(true);
       });
 
@@ -662,8 +664,8 @@ describe('Form Scoring', () => {
 
         const withContextResult = calculateFormScore(horse, todayClaimingContext);
 
-        // v3.0: Base is 10 (was 12), boosted should be > 10
-        expect(withContextResult.recentFormScore).toBeGreaterThan(10);
+        // v3.2: Base is 9 (was 10), boosted should be > 9
+        expect(withContextResult.recentFormScore).toBeGreaterThan(9);
         expect(withContextResult.classAdjustmentApplied).toBe(true);
       });
     });
@@ -685,8 +687,8 @@ describe('Form Scoring', () => {
 
         const withContextResult = calculateFormScore(horse, todayAllowanceContext);
 
-        // Same class = no adjustment, v3.0: 5th = 7 pts (was 8)
-        expect(withContextResult.recentFormScore).toBe(7);
+        // Same class = no adjustment, v3.2: 5th = 5 pts (was 7)
+        expect(withContextResult.recentFormScore).toBe(5);
         expect(withContextResult.classAdjustmentApplied).toBe(false);
       });
 
@@ -706,7 +708,7 @@ describe('Form Scoring', () => {
 
         const withContextResult = calculateFormScore(horse, todayClaimingContext);
 
-        // v3.0: 8th = 4 pts (was 5)
+        // v3.2: 8th = 4 pts (unchanged)
         expect(withContextResult.recentFormScore).toBe(4);
         expect(withContextResult.classAdjustmentApplied).toBe(false);
       });
@@ -731,8 +733,8 @@ describe('Form Scoring', () => {
         const withContextResult = calculateFormScore(horse, todayAllowanceContext);
 
         // Racing up in class, no bonus for loss at lower level
-        // v3.0: 5th = 7 pts (was 8)
-        expect(withContextResult.recentFormScore).toBe(7);
+        // v3.2: 5th = 5 pts (was 7)
+        expect(withContextResult.recentFormScore).toBe(5);
         expect(withContextResult.classAdjustmentApplied).toBe(false);
       });
     });
@@ -831,8 +833,8 @@ describe('Form Scoring', () => {
         const result = calculateFormScore(horse, lowerClaimingContext);
 
         // Should get boost for dropping within claiming - significant tier drop
-        // v3.0: Neutral is 11-13 (was 12+)
-        expect(result.recentFormScore).toBeGreaterThanOrEqual(11);
+        // v3.2: Neutral is 9-11 (was 11+)
+        expect(result.recentFormScore).toBeGreaterThanOrEqual(9);
         expect(result.classAdjustmentApplied).toBe(true);
       });
 
@@ -865,9 +867,9 @@ describe('Form Scoring', () => {
     });
   });
 
-  // v3.0: New tests for Phase 4 winner bonus enhancements
-  describe('Winner Bonus Stacking (v3.0)', () => {
-    it('awards +20 pts for won last out only', () => {
+  // v3.2: Winner bonus tests for Model B (reduced from v3.0)
+  describe('Winner Bonus Stacking (v3.2)', () => {
+    it('awards +12 pts for won last out only', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 21,
         pastPerformances: [
@@ -879,12 +881,12 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      expect(result.recentWinnerBonus).toBe(20);
+      expect(result.recentWinnerBonus).toBe(12);
       expect(result.wonLastOut).toBe(true);
       expect(result.won2OfLast3).toBe(false);
     });
 
-    it('awards +28 pts for won last out AND 2 of 3', () => {
+    it('awards +17 pts for won last out AND 2 of 3', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 21,
         pastPerformances: [
@@ -896,12 +898,12 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      expect(result.recentWinnerBonus).toBe(28); // 20 + 8 = 28
+      expect(result.recentWinnerBonus).toBe(17); // 12 + 5 = 17
       expect(result.wonLastOut).toBe(true);
       expect(result.won2OfLast3).toBe(true);
     });
 
-    it('awards +8 pts for won 2 of 3 but NOT last out', () => {
+    it('awards +5 pts for won 2 of 3 but NOT last out', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 21,
         pastPerformances: [
@@ -913,7 +915,7 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      expect(result.recentWinnerBonus).toBe(8); // Only won2of3 bonus
+      expect(result.recentWinnerBonus).toBe(5); // Only won2of3 bonus
       expect(result.wonLastOut).toBe(false);
       expect(result.won2OfLast3).toBe(true);
     });
@@ -932,13 +934,13 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      // Won last out (20) + won 2/3 (8) + won 3/5 (4) = 32, capped at 28
-      expect(result.recentWinnerBonus).toBe(28);
+      // Won last out (12) + won 2/3 (5) + won 3/5 (3) = 20 pts (max)
+      expect(result.recentWinnerBonus).toBe(20);
       expect(result.won3OfLast5).toBe(true);
     });
   });
 
-  describe('Layoff Penalty Cap (v3.0)', () => {
+  describe('Layoff Penalty Cap (v3.2)', () => {
     it('caps layoff penalty at -10 for extended layoff', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 200,
@@ -958,15 +960,15 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      // Winner bonus (+20) should not be wiped out by layoff penalty
-      expect(result.recentWinnerBonus).toBe(20);
+      // Winner bonus (+12) should not be wiped out by layoff penalty
+      expect(result.recentWinnerBonus).toBe(12);
       expect(result.layoffPenalty).toBe(-10);
       // Total should be positive: recent form + winner bonus - layoff penalty
       expect(result.total).toBeGreaterThan(0);
     });
   });
 
-  describe('Minimum Form Score Floor (v3.0)', () => {
+  describe('Minimum Form Score Floor (v3.2)', () => {
     it('ensures recent winners score at least 5 pts', () => {
       // First-time winner with only 1 PP (40% confidence)
       const horse = createHorseEntry({
@@ -982,8 +984,8 @@ describe('Form Scoring', () => {
     });
   });
 
-  describe('Win Recency Bonus (v3.0)', () => {
-    it('awards +4 pts for win within 30 days', () => {
+  describe('Win Recency Bonus (v3.2)', () => {
+    it('awards +3 pts for win within 30 days', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 21,
         pastPerformances: [createPastPerformance({ finishPosition: 1, daysSinceLast: 21 })],
@@ -992,7 +994,7 @@ describe('Form Scoring', () => {
       const result = calculateFormScore(horse);
 
       // Won last race which was 21 days ago (within 30 days)
-      expect(result.winRecencyBonus).toBe(4);
+      expect(result.winRecencyBonus).toBe(3);
       expect(result.daysSinceLastWin).toBe(0); // Won most recent race
     });
 
