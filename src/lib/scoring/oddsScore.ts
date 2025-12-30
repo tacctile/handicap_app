@@ -1,7 +1,7 @@
 /**
  * Odds-Based Scoring Module
  *
- * Phase 6: Incorporates market wisdom into scoring by giving favorites
+ * Model B: Incorporates market wisdom into scoring by giving favorites
  * appropriate baseline credit. This is NOT about value betting - it's about
  * incorporating the market signal that professional handicappers use.
  *
@@ -9,16 +9,15 @@
  * horse's chances. Strong favorites (short odds) have more evidence supporting
  * their chance to win. This module gives modest credit for that signal.
  *
- * MAX_ODDS_SCORE = 15 points (4.6% of 328 pt base score)
+ * MAX_ODDS_SCORE = 12 points (3.7% of 323 pt base score)
  *
- * Tier Structure:
- * - Heavy favorite (≤2-1): 15 pts - Market strongly backs this horse
- * - Solid favorite (≤3-1): 13 pts - Clear contender
- * - Contender (≤4-1): 11 pts - Among the better chances
- * - Live price (≤6-1): 9 pts - Legitimate win candidate
- * - Midpack (≤10-1): 7 pts - Neutral baseline
- * - Outsider (≤20-1): 5 pts - Less supported by market
- * - Longshot (>20-1): 3 pts - Market sees low chance
+ * Tier Structure (Model B - 6 tiers):
+ * - Heavy favorite (<2-1): 12 pts - Market strongly backs this horse
+ * - Solid favorite (2-1 to 7-2): 10 pts - Clear contender
+ * - Contender (7-2 to 6-1): 8 pts - Among the better chances
+ * - Mid-pack (6-1 to 10-1): 5 pts - Neutral baseline
+ * - Longshot (10-1 to 20-1): 2 pts - Less supported by market
+ * - Extreme longshot (>20-1): 0 pts - Market sees very low chance
  *
  * @module scoring/oddsScore
  */
@@ -29,24 +28,24 @@ import type { HorseEntry } from '../../types/drf';
 // CONSTANTS
 // ============================================================================
 
-/** Maximum points for odds-based scoring */
-export const MAX_ODDS_SCORE = 15;
+/** Maximum points for odds-based scoring (Model B) */
+export const MAX_ODDS_SCORE = 12;
 
-/** Neutral score for horses with missing odds data */
-export const NEUTRAL_ODDS_SCORE = 7;
+/** Neutral score for horses with missing odds data (mid-pack baseline) */
+export const NEUTRAL_ODDS_SCORE = 5;
 
 /**
  * Odds tier thresholds and corresponding scores
  * Odds values are in decimal format (e.g., 3-1 = 3.0)
+ * Model B: 6-tier structure with steeper penalties for longshots
  */
 export const ODDS_TIERS = {
-  HEAVY_FAVORITE: { maxOdds: 2, score: 15, label: 'Heavy Favorite' },
-  SOLID_FAVORITE: { maxOdds: 3, score: 13, label: 'Solid Favorite' },
-  CONTENDER: { maxOdds: 4, score: 11, label: 'Contender' },
-  LIVE_PRICE: { maxOdds: 6, score: 9, label: 'Live Price' },
-  MIDPACK: { maxOdds: 10, score: 7, label: 'Midpack' },
-  OUTSIDER: { maxOdds: 20, score: 5, label: 'Outsider' },
-  LONGSHOT: { maxOdds: Infinity, score: 3, label: 'Longshot' },
+  HEAVY_FAVORITE: { maxOdds: 2, score: 12, label: 'Heavy Favorite' },
+  SOLID_FAVORITE: { maxOdds: 3.5, score: 10, label: 'Solid Favorite' },
+  CONTENDER: { maxOdds: 6, score: 8, label: 'Contender' },
+  MID_PACK: { maxOdds: 10, score: 5, label: 'Mid-Pack' },
+  LONGSHOT: { maxOdds: 20, score: 2, label: 'Longshot' },
+  EXTREME_LONGSHOT: { maxOdds: Infinity, score: 0, label: 'Extreme Longshot' },
 } as const;
 
 // ============================================================================
@@ -184,7 +183,7 @@ export function getOddsForScoring(
  * Result from odds score calculation
  */
 export interface OddsScoreResult {
-  /** Total odds score (0-15 points) */
+  /** Total odds score (0-12 points) */
   total: number;
   /** Decimal odds value used for scoring */
   oddsValue: number | null;
@@ -207,13 +206,12 @@ export function getOddsTier(odds: number | null): string {
     return 'Unknown';
   }
 
-  if (odds <= ODDS_TIERS.HEAVY_FAVORITE.maxOdds) return ODDS_TIERS.HEAVY_FAVORITE.label;
+  if (odds < ODDS_TIERS.HEAVY_FAVORITE.maxOdds) return ODDS_TIERS.HEAVY_FAVORITE.label;
   if (odds <= ODDS_TIERS.SOLID_FAVORITE.maxOdds) return ODDS_TIERS.SOLID_FAVORITE.label;
   if (odds <= ODDS_TIERS.CONTENDER.maxOdds) return ODDS_TIERS.CONTENDER.label;
-  if (odds <= ODDS_TIERS.LIVE_PRICE.maxOdds) return ODDS_TIERS.LIVE_PRICE.label;
-  if (odds <= ODDS_TIERS.MIDPACK.maxOdds) return ODDS_TIERS.MIDPACK.label;
-  if (odds <= ODDS_TIERS.OUTSIDER.maxOdds) return ODDS_TIERS.OUTSIDER.label;
-  return ODDS_TIERS.LONGSHOT.label;
+  if (odds <= ODDS_TIERS.MID_PACK.maxOdds) return ODDS_TIERS.MID_PACK.label;
+  if (odds <= ODDS_TIERS.LONGSHOT.maxOdds) return ODDS_TIERS.LONGSHOT.label;
+  return ODDS_TIERS.EXTREME_LONGSHOT.label;
 }
 
 /**
@@ -223,18 +221,17 @@ export function getOddsTier(odds: number | null): string {
  * betting - it's about incorporating the market signal that when a horse
  * is heavily backed, there's usually a reason.
  *
- * Scoring tiers:
- * - ≤2-1 (heavy favorite): 15 pts
- * - ≤3-1 (solid favorite): 13 pts
- * - ≤4-1 (contender): 11 pts
- * - ≤6-1 (live price): 9 pts
- * - ≤10-1 (midpack): 7 pts (neutral)
- * - ≤20-1 (outsider): 5 pts
- * - >20-1 (longshot): 3 pts
- * - No odds: 7 pts (neutral)
+ * Scoring tiers (Model B - 6-tier structure):
+ * - <2-1 (heavy favorite): 12 pts
+ * - 2-1 to 7-2 (solid favorite): 10 pts
+ * - 7-2 to 6-1 (contender): 8 pts
+ * - 6-1 to 10-1 (mid-pack): 5 pts (neutral)
+ * - 10-1 to 20-1 (longshot): 2 pts
+ * - >20-1 (extreme longshot): 0 pts
+ * - No odds: 5 pts (neutral)
  *
  * @param morningLineOdds - Decimal odds value (or null if unavailable)
- * @returns Score from 0-15 points
+ * @returns Score from 0-12 points
  */
 export function calculateOddsPoints(morningLineOdds: number | null): number {
   // Neutral score if no odds available
@@ -242,38 +239,33 @@ export function calculateOddsPoints(morningLineOdds: number | null): number {
     return NEUTRAL_ODDS_SCORE;
   }
 
-  // Heavy favorite (even money to 2-1)
-  if (morningLineOdds <= ODDS_TIERS.HEAVY_FAVORITE.maxOdds) {
+  // Heavy favorite (less than 2-1)
+  if (morningLineOdds < ODDS_TIERS.HEAVY_FAVORITE.maxOdds) {
     return ODDS_TIERS.HEAVY_FAVORITE.score;
   }
 
-  // Solid favorite (5-2 to 3-1)
+  // Solid favorite (2-1 to 7-2)
   if (morningLineOdds <= ODDS_TIERS.SOLID_FAVORITE.maxOdds) {
     return ODDS_TIERS.SOLID_FAVORITE.score;
   }
 
-  // Contender (7-2 to 4-1)
+  // Contender (7-2 to 6-1)
   if (morningLineOdds <= ODDS_TIERS.CONTENDER.maxOdds) {
     return ODDS_TIERS.CONTENDER.score;
   }
 
-  // Live price (9-2 to 6-1)
-  if (morningLineOdds <= ODDS_TIERS.LIVE_PRICE.maxOdds) {
-    return ODDS_TIERS.LIVE_PRICE.score;
+  // Mid-pack (6-1 to 10-1)
+  if (morningLineOdds <= ODDS_TIERS.MID_PACK.maxOdds) {
+    return ODDS_TIERS.MID_PACK.score;
   }
 
-  // Midpack (7-1 to 10-1)
-  if (morningLineOdds <= ODDS_TIERS.MIDPACK.maxOdds) {
-    return ODDS_TIERS.MIDPACK.score;
+  // Longshot (10-1 to 20-1)
+  if (morningLineOdds <= ODDS_TIERS.LONGSHOT.maxOdds) {
+    return ODDS_TIERS.LONGSHOT.score;
   }
 
-  // Outsider (12-1 to 20-1)
-  if (morningLineOdds <= ODDS_TIERS.OUTSIDER.maxOdds) {
-    return ODDS_TIERS.OUTSIDER.score;
-  }
-
-  // Longshot (over 20-1)
-  return ODDS_TIERS.LONGSHOT.score;
+  // Extreme longshot (over 20-1)
+  return ODDS_TIERS.EXTREME_LONGSHOT.score;
 }
 
 /**
@@ -367,23 +359,23 @@ export function formatOdds(odds: number | null): string {
 /**
  * Get the score color for odds tier
  *
- * @param score - The odds score (0-15)
+ * @param score - The odds score (0-12)
  * @returns Hex color string
  */
 export function getOddsScoreColor(score: number): string {
-  if (score >= 13) return '#22c55e'; // Green - Heavy/Solid favorite
-  if (score >= 11) return '#4ade80'; // Light green - Contender
-  if (score >= 9) return '#eab308'; // Yellow - Live price
-  if (score >= 7) return '#94a3b8'; // Gray - Midpack/Neutral
-  if (score >= 5) return '#f97316'; // Orange - Outsider
-  return '#ef4444'; // Red - Longshot
+  if (score >= 12) return '#22c55e'; // Green - Heavy favorite
+  if (score >= 10) return '#4ade80'; // Light green - Solid favorite
+  if (score >= 8) return '#eab308'; // Yellow - Contender
+  if (score >= 5) return '#94a3b8'; // Gray - Mid-pack/Neutral
+  if (score >= 2) return '#f97316'; // Orange - Longshot
+  return '#ef4444'; // Red - Extreme longshot
 }
 
 /**
  * Check if odds indicate a favorite
  *
  * @param odds - Decimal odds value
- * @returns True if odds are 4-1 or less
+ * @returns True if odds are 6-1 or less (Contender tier or better)
  */
 export function isFavorite(odds: number | null): boolean {
   if (odds === null || odds <= 0) return false;
@@ -394,11 +386,11 @@ export function isFavorite(odds: number | null): boolean {
  * Check if odds indicate a longshot
  *
  * @param odds - Decimal odds value
- * @returns True if odds are greater than 20-1
+ * @returns True if odds are greater than 20-1 (Extreme Longshot tier)
  */
 export function isLongshot(odds: number | null): boolean {
   if (odds === null || odds <= 0) return false;
-  return odds > ODDS_TIERS.OUTSIDER.maxOdds;
+  return odds > ODDS_TIERS.LONGSHOT.maxOdds;
 }
 
 /**

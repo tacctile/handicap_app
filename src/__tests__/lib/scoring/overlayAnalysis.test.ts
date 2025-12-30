@@ -20,17 +20,17 @@ import {
 
 describe('Overlay Analysis', () => {
   describe('scoreToWinProbability', () => {
-    // v3.1: Formula updated to (score/328) * 50, clamped 2-50%
-    it('converts score 160 to approximately 24% win probability', () => {
+    // Model B: Formula updated to (score/323) * 50, clamped 2-50%
+    it('converts score 160 to approximately 25% win probability', () => {
       const prob = scoreToWinProbability(160);
-      // (160/328) * 50 = 24.4%
-      expect(prob).toBeCloseTo(24, 0);
+      // (160/323) * 50 = 24.77%
+      expect(prob).toBeCloseTo(25, 0);
     });
 
-    it('converts score 200 to approximately 30% win probability', () => {
+    it('converts score 200 to approximately 31% win probability', () => {
       const prob = scoreToWinProbability(200);
-      // (200/328) * 50 = 30.5%
-      expect(prob).toBeCloseTo(30, 0);
+      // (200/323) * 50 = 30.96%
+      expect(prob).toBeCloseTo(31, 0);
     });
 
     it('clamps probability to minimum 2%', () => {

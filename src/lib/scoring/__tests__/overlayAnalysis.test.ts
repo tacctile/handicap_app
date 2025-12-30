@@ -35,44 +35,44 @@ describe('Overlay Analysis', () => {
    * Score to Win Probability Conversion (Legacy - standalone function)
    *
    * This is the LEGACY function for standalone use when field context isn't available.
-   * The new formula is: (score / 328) * 50, clamped to 2-50% range.
+   * Model B formula: (score / 323) * 50, clamped to 2-50% range.
    * For field-relative calculations, use calculateFieldRelativeWinProbability instead.
    */
   describe('Score to Win Probability Conversion', () => {
-    it('converts 200 pts → ~30.5% win probability (standalone formula)', () => {
+    it('converts 200 pts → ~31.0% win probability (standalone formula)', () => {
       const probability = scoreToWinProbability(200);
-      // New formula: (200/328) * 50 = 30.49%
-      expect(probability).toBeCloseTo(30.49, 0);
+      // Model B formula: (200/323) * 50 = 30.96%
+      expect(probability).toBeCloseTo(30.96, 0);
     });
 
-    it('converts 140 pts → ~21.3% win probability (standalone formula)', () => {
+    it('converts 140 pts → ~21.7% win probability (standalone formula)', () => {
       const probability = scoreToWinProbability(140);
-      // New formula: (140/328) * 50 = 21.34%
-      expect(probability).toBeCloseTo(21.34, 0);
+      // Model B formula: (140/323) * 50 = 21.67%
+      expect(probability).toBeCloseTo(21.67, 0);
     });
 
-    it('converts 100 pts → ~15.2% win probability (standalone formula)', () => {
+    it('converts 100 pts → ~15.5% win probability (standalone formula)', () => {
       const probability = scoreToWinProbability(100);
-      // New formula: (100/328) * 50 = 15.24%
-      expect(probability).toBeCloseTo(15.24, 0);
+      // Model B formula: (100/323) * 50 = 15.48%
+      expect(probability).toBeCloseTo(15.48, 0);
     });
 
-    it('converts 150 pts → ~22.9% win probability (standalone formula)', () => {
+    it('converts 150 pts → ~23.2% win probability (standalone formula)', () => {
       const probability = scoreToWinProbability(150);
-      // New formula: (150/328) * 50 = 22.87%
-      expect(probability).toBeCloseTo(22.87, 0);
+      // Model B formula: (150/323) * 50 = 23.22%
+      expect(probability).toBeCloseTo(23.22, 0);
     });
 
-    it('converts 50 pts → ~7.6% win probability', () => {
+    it('converts 50 pts → ~7.7% win probability', () => {
       const probability = scoreToWinProbability(50);
-      // New formula: (50/328) * 50 = 7.62%
-      expect(probability).toBeCloseTo(7.62, 0);
+      // Model B formula: (50/323) * 50 = 7.74%
+      expect(probability).toBeCloseTo(7.74, 0);
     });
 
-    it('converts 250 pts → ~38.1% win probability', () => {
+    it('converts 250 pts → ~38.7% win probability', () => {
       const probability = scoreToWinProbability(250);
-      // New formula: (250/328) * 50 = 38.11%
-      expect(probability).toBeCloseTo(38.11, 0);
+      // Model B formula: (250/323) * 50 = 38.70%
+      expect(probability).toBeCloseTo(38.7, 0);
     });
 
     it('handles scores near 0 (clamps to 2%)', () => {
@@ -689,13 +689,13 @@ describe('Overlay Analysis', () => {
     });
 
     it('handles score out of expected range (very high)', () => {
-      // Score 300 → (300/328)*50 = 45.73% (not quite 50%)
-      // Fair odds = 1/0.457 = 2.19 (about 6-5)
+      // Model B: Score 300 → (300/323)*50 = 46.44% (not quite 50%)
+      // Fair odds = 1/0.4644 = 2.15 (about 6-5)
       // Actual 2-1 = 3.0 decimal
       const analysis = analyzeOverlay(300, '2-1');
 
-      expect(analysis.winProbability).toBeCloseTo(45.73, 0); // Near max
-      // 2-1 (3.0) vs fair 2.19 is about 37% overlay
+      expect(analysis.winProbability).toBeCloseTo(46.44, 0); // Near max
+      // 2-1 (3.0) vs fair 2.15 is about 39% overlay
       expect(analysis.overlayPercent).toBeGreaterThan(30);
       expect(analysis.valueClass).toBe('moderate_overlay');
     });
@@ -812,18 +812,18 @@ describe('Overlay Analysis', () => {
     });
 
     it('handles classic value bet: mid-odds horse at overlay', () => {
-      // Score 130 → (130/328)*50 = 19.8% win prob
-      // Fair odds = 1/0.198 = 5.05 (about 4-1)
+      // Model B: Score 130 → (130/323)*50 = 20.12% win prob
+      // Fair odds = 1/0.2012 = 4.97 (about 4-1)
       // 5-1 = 6.0 decimal
       const analysis = analyzeOverlay(130, '5-1');
 
-      expect(analysis.winProbability).toBeCloseTo(19.8, 0);
+      expect(analysis.winProbability).toBeCloseTo(20.12, 0);
       expect(analysis.actualOddsDecimal).toBe(6); // 5-1 = 6.0
-      // Overlay = (6 - 5.05) / 5.05 = 18.8%
-      // This is within ±20%, so it's a fair price or slight overlay
-      expect(analysis.overlayPercent).toBeGreaterThan(10);
-      expect(analysis.overlayPercent).toBeLessThan(25);
-      expect(analysis.valueClass).toBe('slight_overlay');
+      // Overlay = (6 - 4.97) / 4.97 = 20.7%
+      // This is now a moderate overlay (20%+ threshold)
+      expect(analysis.overlayPercent).toBeGreaterThan(15);
+      expect(analysis.overlayPercent).toBeLessThan(30);
+      expect(analysis.valueClass).toBe('moderate_overlay');
     });
   });
 });

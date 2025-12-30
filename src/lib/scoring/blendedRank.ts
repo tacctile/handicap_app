@@ -32,8 +32,8 @@ export interface BlendWeights {
 
 /** Default blending weights */
 export const DEFAULT_BLEND_WEIGHTS: BlendWeights = {
-  base: 0.60, // 60% base ability
-  trend: 0.40, // 40% momentum/trend
+  base: 0.6, // 60% base ability
+  trend: 0.4, // 40% momentum/trend
 };
 
 /** Agreement level between base and trend ranks */
@@ -47,7 +47,7 @@ export interface BlendedRankResult {
   blendedScore: number;
   /** Base rank position */
   baseRank: number;
-  /** Base score (0-328) */
+  /** Base score (0-323) */
   baseScore: number;
   /** Trend rank position */
   trendRank: number;
@@ -84,10 +84,10 @@ export interface BlendedRankedHorse {
  * Formula: Blended = (Base × BaseWeight) + (Trend × TrendWeight)
  *
  * Scores are normalized before blending:
- * - Base score: 0-328 → 0-100
+ * - Base score: 0-323 → 0-100
  * - Trend score: already 0-100
  *
- * @param baseScore - Base score (0-328)
+ * @param baseScore - Base score (0-323)
  * @param trendScore - Trend normalized score (0-100)
  * @param weights - Optional custom weights
  * @returns Blended score (0-100)
@@ -97,8 +97,8 @@ export function calculateBlendedScore(
   trendScore: number,
   weights: BlendWeights = DEFAULT_BLEND_WEIGHTS
 ): number {
-  // Normalize base score to 0-100 scale (328 is max)
-  const normalizedBase = (baseScore / 328) * 100;
+  // Normalize base score to 0-100 scale (323 is max)
+  const normalizedBase = (baseScore / 323) * 100;
 
   // Calculate weighted blend
   const blended = normalizedBase * weights.base + trendScore * weights.trend;
@@ -146,9 +146,7 @@ export function calculateBlendedRank(
   const limitedTrendData = !trendScore.hasSufficientData;
 
   // If limited trend data, use base only (effectively 100% base weight)
-  const effectiveWeights = limitedTrendData
-    ? { base: 1.0, trend: 0.0 }
-    : weights;
+  const effectiveWeights = limitedTrendData ? { base: 1.0, trend: 0.0 } : weights;
 
   // Calculate blended score
   const blendedScore = calculateBlendedScore(
@@ -243,8 +241,26 @@ export function rankHorsesByBlended(
         backToWinningDistance: false,
         preferredSurface: false,
       },
-      finishWindows: { window1: null, window1_2: null, window1_3: null, window1_4: null, window1_5: null, window4_5: null, window3_5: null, raceCount: 0 },
-      beyerWindows: { window1: null, window1_2: null, window1_3: null, window1_4: null, window1_5: null, window4_5: null, window3_5: null, raceCount: 0 },
+      finishWindows: {
+        window1: null,
+        window1_2: null,
+        window1_3: null,
+        window1_4: null,
+        window1_5: null,
+        window4_5: null,
+        window3_5: null,
+        raceCount: 0,
+      },
+      beyerWindows: {
+        window1: null,
+        window1_2: null,
+        window1_3: null,
+        window1_4: null,
+        window1_5: null,
+        window4_5: null,
+        window3_5: null,
+        raceCount: 0,
+      },
       finishHistory: [],
       beyerHistory: [],
       hasSufficientData: false,
@@ -324,8 +340,26 @@ export function rankHorsesByBlended(
         backToWinningDistance: false,
         preferredSurface: false,
       },
-      finishWindows: { window1: null, window1_2: null, window1_3: null, window1_4: null, window1_5: null, window4_5: null, window3_5: null, raceCount: 0 },
-      beyerWindows: { window1: null, window1_2: null, window1_3: null, window1_4: null, window1_5: null, window4_5: null, window3_5: null, raceCount: 0 },
+      finishWindows: {
+        window1: null,
+        window1_2: null,
+        window1_3: null,
+        window1_4: null,
+        window1_5: null,
+        window4_5: null,
+        window3_5: null,
+        raceCount: 0,
+      },
+      beyerWindows: {
+        window1: null,
+        window1_2: null,
+        window1_3: null,
+        window1_4: null,
+        window1_5: null,
+        window4_5: null,
+        window3_5: null,
+        raceCount: 0,
+      },
       finishHistory: [],
       beyerHistory: [],
       hasSufficientData: false,

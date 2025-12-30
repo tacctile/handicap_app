@@ -493,7 +493,7 @@ describe('Distance & Surface Affinity Scoring', () => {
 
 describe('Track Specialist Scoring', () => {
   describe('calculateTrackSpecialistScore', () => {
-    it('returns 6 points (max) for 30%+ win rate with 4+ starts (track specialist)', () => {
+    it('returns 10 points (max) for 40%+ win rate with 4+ starts (track ace) (Model B)', () => {
       const horse = createHorseEntry({
         trackStarts: 8,
         trackWins: 4, // 50% win rate
@@ -503,27 +503,58 @@ describe('Track Specialist Scoring', () => {
 
       const result = calculateTrackSpecialistScore(horse, 'CD');
 
-      expect(result.score).toBe(6);
+      expect(result.score).toBe(10);
       expect(result.isSpecialist).toBe(true);
       expect(result.trackWinRate).toBeCloseTo(0.5, 2);
-      expect(result.reasoning).toContain('Track specialist');
+      expect(result.reasoning).toContain('Track ace');
     });
 
-    it('returns 6 points for exactly 30% win rate (threshold)', () => {
+    it('returns 10 points for exactly 40% win rate (track ace threshold) (Model B)', () => {
+      const horse = createHorseEntry({
+        trackStarts: 10,
+        trackWins: 4, // Exactly 40%
+        trackPlaces: 2,
+        trackShows: 1,
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(10);
+      expect(result.isSpecialist).toBe(true);
+      expect(result.reasoning).toContain('Track ace');
+    });
+
+    it('returns 8 points for 30-39% win rate (track specialist) (Model B)', () => {
       const horse = createHorseEntry({
         trackStarts: 10,
         trackWins: 3, // Exactly 30%
-        trackPlaces: 2,
-        trackShows: 2,
+        trackPlaces: 1,
+        trackShows: 0, // 40% ITM - below 50% threshold for bonus
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(8);
+      expect(result.isSpecialist).toBe(true);
+      expect(result.reasoning).toContain('Track specialist');
+    });
+
+    it('returns 6 points for 25-29% win rate (track positive) (Model B)', () => {
+      const horse = createHorseEntry({
+        trackStarts: 12,
+        trackWins: 3, // 25% win rate
+        trackPlaces: 1,
+        trackShows: 1, // 42% ITM - below 50% threshold for bonus
       });
 
       const result = calculateTrackSpecialistScore(horse, 'CD');
 
       expect(result.score).toBe(6);
-      expect(result.isSpecialist).toBe(true);
+      expect(result.isSpecialist).toBe(false);
+      expect(result.reasoning).toContain('Track positive');
     });
 
-    it('returns 4 points for 20-29% win rate (track positive)', () => {
+    it('returns 5 points for 20-24% win rate (track affinity) (Model B)', () => {
       const horse = createHorseEntry({
         trackStarts: 10,
         trackWins: 2, // 20% win rate
@@ -533,12 +564,12 @@ describe('Track Specialist Scoring', () => {
 
       const result = calculateTrackSpecialistScore(horse, 'CD');
 
-      expect(result.score).toBe(4);
+      expect(result.score).toBe(5);
       expect(result.isSpecialist).toBe(false);
-      expect(result.reasoning).toContain('Track positive');
+      expect(result.reasoning).toContain('Track affinity');
     });
 
-    it('returns 2 points for 10-19% win rate (track experience)', () => {
+    it('returns 3 points for 10-19% win rate (track experience) (Model B)', () => {
       const horse = createHorseEntry({
         trackStarts: 10,
         trackWins: 1, // 10% win rate
@@ -548,7 +579,7 @@ describe('Track Specialist Scoring', () => {
 
       const result = calculateTrackSpecialistScore(horse, 'CD');
 
-      expect(result.score).toBe(2);
+      expect(result.score).toBe(3);
       expect(result.reasoning).toContain('Track experience');
     });
 
@@ -580,7 +611,7 @@ describe('Track Specialist Scoring', () => {
       expect(result.reasoning).toContain('Struggles here');
     });
 
-    it('returns neutral baseline for insufficient data (<4 starts) (v2.5)', () => {
+    it('returns neutral baseline for insufficient data (<4 starts) (Model B)', () => {
       const horse = createHorseEntry({
         trackStarts: 2,
         trackWins: 1, // 50% but only 2 starts
@@ -590,13 +621,13 @@ describe('Track Specialist Scoring', () => {
 
       const result = calculateTrackSpecialistScore(horse, 'CD');
 
-      // v2.5: Neutral baseline instead of 0
-      expect(result.score).toBe(3);
+      // Model B: Neutral baseline of 5 instead of 0
+      expect(result.score).toBe(5);
       expect(result.isSpecialist).toBe(false);
       expect(result.reasoning).toContain('neutral');
     });
 
-    it('returns neutral baseline for first time at track (v2.5)', () => {
+    it('returns neutral baseline for first time at track (Model B)', () => {
       const horse = createHorseEntry({
         trackStarts: 0,
         trackWins: 0,
@@ -606,52 +637,82 @@ describe('Track Specialist Scoring', () => {
 
       const result = calculateTrackSpecialistScore(horse, 'CD');
 
-      // v2.5: Neutral baseline (50% of max 6 = 3) instead of 0
-      expect(result.score).toBe(3);
+      // Model B: Neutral baseline of 5 instead of 0
+      expect(result.score).toBe(5);
       expect(result.isSpecialist).toBe(false);
       expect(result.reasoning).toContain('neutral baseline');
     });
 
-    it('adds ITM bonus (2 pts) for 50%+ ITM rate when win rate is 10-19%', () => {
+    it('adds ITM bonus (2 pts) for 60%+ ITM rate when win rate is 10-19% (Model B)', () => {
       const horse = createHorseEntry({
         trackStarts: 8,
-        trackWins: 1, // 12.5% win rate = 2 pts base
+        trackWins: 1, // 12.5% win rate = 3 pts base
         trackPlaces: 2,
         trackShows: 2, // 62.5% ITM rate = +2 bonus
       });
 
       const result = calculateTrackSpecialistScore(horse, 'CD');
 
-      expect(result.score).toBe(4); // 2 base + 2 ITM bonus
+      expect(result.score).toBe(5); // 3 base + 2 ITM bonus
       expect(result.trackITMRate).toBeCloseTo(0.625, 2);
-      expect(result.reasoning).toContain('Consistent');
+      expect(result.reasoning).toContain('Highly consistent');
     });
 
-    it('adds ITM bonus (2 pts) for 50%+ ITM rate when win rate is 20-29%', () => {
+    it('adds ITM bonus (1 pt) for 50-59% ITM rate when win rate is 10-19% (Model B)', () => {
       const horse = createHorseEntry({
-        trackStarts: 8,
-        trackWins: 2, // 25% win rate = 4 pts base
-        trackPlaces: 2,
-        trackShows: 1, // 62.5% ITM rate = +2 bonus (capped to 6)
+        trackStarts: 10,
+        trackWins: 1, // 10% win rate = 3 pts base
+        trackPlaces: 3,
+        trackShows: 1, // 50% ITM rate = +1 bonus
       });
 
       const result = calculateTrackSpecialistScore(horse, 'CD');
 
-      expect(result.score).toBe(6); // 4 base + 2 ITM bonus = 6 (max)
+      expect(result.score).toBe(4); // 3 base + 1 ITM bonus
+      expect(result.trackITMRate).toBeCloseTo(0.5, 2);
       expect(result.reasoning).toContain('Consistent');
     });
 
-    it('does not add ITM bonus when already at max (30%+ win rate)', () => {
+    it('adds ITM bonus (2 pts) for 60%+ ITM rate when win rate is 25-29% (Model B)', () => {
       const horse = createHorseEntry({
         trackStarts: 8,
-        trackWins: 4, // 50% win rate = 6 pts (already max)
+        trackWins: 2, // 25% win rate = 6 pts base
+        trackPlaces: 2,
+        trackShows: 1, // 62.5% ITM rate = +2 bonus
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(8); // 6 base + 2 ITM bonus (capped at 10)
+      expect(result.reasoning).toContain('Highly consistent');
+    });
+
+    it('caps ITM bonus at 10 points max (30% win + 60% ITM) (Model B)', () => {
+      const horse = createHorseEntry({
+        trackStarts: 10,
+        trackWins: 3, // 30% win rate = 8 pts base
+        trackPlaces: 3,
+        trackShows: 0, // 60% ITM rate = +2 bonus
+      });
+
+      const result = calculateTrackSpecialistScore(horse, 'CD');
+
+      expect(result.score).toBe(10); // 8 base + 2 ITM bonus capped at 10
+      expect(result.trackITMRate).toBeCloseTo(0.6, 2);
+      expect(result.reasoning).toContain('Highly consistent');
+    });
+
+    it('does not add ITM bonus when already at max (40%+ win rate) (Model B)', () => {
+      const horse = createHorseEntry({
+        trackStarts: 8,
+        trackWins: 4, // 50% win rate = 10 pts (already max)
         trackPlaces: 2,
         trackShows: 2, // 100% ITM rate
       });
 
       const result = calculateTrackSpecialistScore(horse, 'CD');
 
-      expect(result.score).toBe(6); // Already at max, no bonus needed
+      expect(result.score).toBe(10); // Already at max, no bonus needed
     });
 
     it('does not add ITM bonus when win rate <10% (struggles)', () => {
@@ -667,7 +728,7 @@ describe('Track Specialist Scoring', () => {
       expect(result.score).toBe(0); // No ITM bonus when struggling
     });
 
-    it('handles 4-for-7 at track = 6 pts (specialist)', () => {
+    it('handles 4-for-7 at track = 10 pts (track ace) (Model B)', () => {
       const horse = createHorseEntry({
         trackStarts: 7,
         trackWins: 4, // ~57% win rate
@@ -677,11 +738,11 @@ describe('Track Specialist Scoring', () => {
 
       const result = calculateTrackSpecialistScore(horse, 'CD');
 
-      expect(result.score).toBe(6);
+      expect(result.score).toBe(10);
       expect(result.isSpecialist).toBe(true);
     });
 
-    it('handles 2-for-10 at track = 2 pts (experience only)', () => {
+    it('handles 2-for-10 at track with ITM bonus (Model B)', () => {
       const horse = createHorseEntry({
         trackStarts: 10,
         trackWins: 2, // 20% win rate
@@ -691,11 +752,11 @@ describe('Track Specialist Scoring', () => {
 
       const result = calculateTrackSpecialistScore(horse, 'CD');
 
-      // 4 pts for 20% win rate + 2 pts ITM bonus = 6
+      // 5 pts for 20% win rate + 1 pt ITM bonus (50-59%) = 6
       expect(result.score).toBe(6);
     });
 
-    it('handles null/undefined track stats gracefully (v2.5)', () => {
+    it('handles null/undefined track stats gracefully (Model B)', () => {
       const horse = createHorseEntry({});
       (horse as Record<string, unknown>).trackStarts = null;
       (horse as Record<string, unknown>).trackWins = null;
@@ -704,14 +765,14 @@ describe('Track Specialist Scoring', () => {
 
       const result = calculateTrackSpecialistScore(horse, 'CD');
 
-      // v2.5: Neutral baseline instead of 0
-      expect(result.score).toBe(3);
+      // Model B: Neutral baseline of 5 instead of 0
+      expect(result.score).toBe(5);
       expect(result.reasoning).toContain('neutral');
     });
   });
 
   describe('isTrackSpecialist', () => {
-    it('returns true for 30%+ win rate with 4+ starts', () => {
+    it('returns true for 30%+ win rate with 4+ starts (Model B)', () => {
       const horse = createHorseEntry({
         trackStarts: 8,
         trackWins: 4, // 50% win rate
@@ -720,7 +781,7 @@ describe('Track Specialist Scoring', () => {
       expect(isTrackSpecialist(horse)).toBe(true);
     });
 
-    it('returns false for <30% win rate', () => {
+    it('returns false for <30% win rate (Model B)', () => {
       const horse = createHorseEntry({
         trackStarts: 10,
         trackWins: 2, // 20% win rate
@@ -790,8 +851,8 @@ describe('Track Specialist Scoring', () => {
   });
 
   describe('Constants', () => {
-    it('exports trackSpecialist limit', () => {
-      expect(DISTANCE_SURFACE_LIMITS.trackSpecialist).toBe(6);
+    it('exports trackSpecialist limit (Model B)', () => {
+      expect(DISTANCE_SURFACE_LIMITS.trackSpecialist).toBe(10);
     });
   });
 });

@@ -212,7 +212,7 @@ describe('Main Scoring Engine', () => {
       expect(result.breakdown.speedClass.total).toBeLessThanOrEqual(SCORE_LIMITS.speedClass);
     });
 
-    it('form score does not exceed 30', () => {
+    it('form score does not exceed 42 (Model B)', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 21,
         pastPerformances: Array.from({ length: 5 }, () =>
@@ -470,12 +470,12 @@ describe('Main Scoring Engine', () => {
   });
 
   describe('Score Thresholds', () => {
-    it('thresholds are correctly defined for base score (328 max)', () => {
-      expect(SCORE_THRESHOLDS.elite).toBe(270); // 82%+
-      expect(SCORE_THRESHOLDS.strong).toBe(220); // 67-81%
-      expect(SCORE_THRESHOLDS.contender).toBe(170); // 52-66%
-      expect(SCORE_THRESHOLDS.fair).toBe(120); // 37-51%
-      expect(SCORE_THRESHOLDS.weak).toBe(0); // <37%
+    it('thresholds are correctly defined for base score (323 max)', () => {
+      expect(SCORE_THRESHOLDS.elite).toBe(265); // 82%+
+      expect(SCORE_THRESHOLDS.strong).toBe(216); // 67-81%
+      expect(SCORE_THRESHOLDS.contender).toBe(165); // 51-66%
+      expect(SCORE_THRESHOLDS.fair).toBe(116); // 36-50%
+      expect(SCORE_THRESHOLDS.weak).toBe(0); // <36%
     });
   });
 });

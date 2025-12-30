@@ -1,9 +1,19 @@
 /**
- * Connections Scoring Tests
+ * Connections Scoring Tests (Model B)
  * Tests trainer, jockey, and partnership scoring logic
  *
  * FIX: v2.1 - Now uses actual DRF trainer/jockey stats (Fields 29-32, 35-38)
  * instead of building stats from the horse's own past performances.
+ *
+ * Model B Updates:
+ * - Jockey max score: 7 → 5
+ * - MIN_JOCKEY_SCORE_WITH_CAREER: 4 → 3
+ * - MIN_JOCKEY_SCORE_NO_CAREER: 2 → 1
+ * - MAX_JOCKEY_SCORE_SHIPPER: 5 → 4
+ * - Elite jockey (20%+): 7 → 5
+ * - Very good jockey (15%+): 6 → 4
+ * - Partnership bonuses: Elite 4→2, Strong 3→1, Good 2→0, Regular 1→0
+ * - Total connections max: 27 → 23 pts (Trainer 16 + Jockey 5 + Partnership 2)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -16,6 +26,7 @@ import { createHorseEntry, createPastPerformance } from '../../fixtures/testHelp
 // NOTE: v2.0 rescaled from 55 max to 25 max (scale factor: 25/55 ≈ 0.455)
 // NOTE: v2.1 uses DRF stats (trainerMeetStarts, etc.) as primary source
 // NOTE: v2.2 enhanced partnership scoring (0-4 pts based on tiers)
+// NOTE: Model B rescaled to 23 max (Trainer 16 + Jockey 5 + Partnership 2)
 describe('Connections Scoring', () => {
   describe('Trainer Scoring', () => {
     it('returns penalized baseline (4) for trainer with insufficient data (<3 starts)', () => {
@@ -133,7 +144,7 @@ describe('Connections Scoring', () => {
   });
 
   describe('Jockey Scoring', () => {
-    it('returns penalized baseline (2) for jockey with insufficient data', () => {
+    it('returns penalized baseline (1) for jockey with insufficient data (Model B)', () => {
       const horse = createHorseEntry({
         jockeyName: 'New Jockey',
         pastPerformances: [createPastPerformance({ jockey: 'New Jockey', finishPosition: 1 })],
@@ -141,11 +152,11 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      // Phase 2: Penalized baseline is 2 for jockeys with insufficient data
-      expect(result.jockey).toBe(2);
+      // Model B: Penalized baseline is 1 for jockeys with insufficient data (MIN_JOCKEY_SCORE_NO_CAREER)
+      expect(result.jockey).toBe(1);
     });
 
-    it('returns 5 points (shipper cap) for elite jockey with 20%+ win rate from PP stats', () => {
+    it('returns 4 points (shipper cap) for elite jockey with 20%+ win rate from PP stats (Model B)', () => {
       const pastPerformances = Array.from({ length: 10 }, (_, i) =>
         createPastPerformance({
           jockey: 'Elite Jockey',
@@ -160,11 +171,11 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      // Phase 2: Shipper stats capped at 5 (was 7)
-      expect(result.jockey).toBe(5);
+      // Model B: Shipper stats capped at 4 (MAX_JOCKEY_SCORE_SHIPPER)
+      expect(result.jockey).toBe(4);
     });
 
-    it('returns 4 points (minimum baseline) for jockey with <5% win rate (v2.5)', () => {
+    it('returns 3 points (minimum baseline) for jockey with <5% win rate (Model B)', () => {
       const pastPerformances = Array.from({ length: 10 }, (_, i) =>
         createPastPerformance({
           jockey: 'Poor Jockey',
@@ -179,20 +190,20 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      // v2.5: Minimum baseline is 4 for any jockey
-      expect(result.jockey).toBe(4);
+      // Model B: Minimum baseline is 3 for any jockey (MIN_JOCKEY_SCORE_WITH_CAREER)
+      expect(result.jockey).toBe(3);
     });
   });
 
-  describe('Partnership Bonus (Enhanced v2.2)', () => {
-    // Enhanced partnership scoring tiers:
-    // - Elite: 30%+ win rate, 8+ starts = 4 pts
-    // - Strong: 25-29% win rate, 5+ starts = 3 pts
-    // - Good: 20-24% win rate, 5+ starts = 2 pts
-    // - Regular: 15-19% win rate, 5+ starts = 1 pt
+  describe('Partnership Bonus (Model B)', () => {
+    // Model B partnership scoring tiers:
+    // - Elite: 30%+ win rate, 8+ starts = 2 pts (was 4)
+    // - Strong: 25-29% win rate, 5+ starts = 1 pt (was 3)
+    // - Good: 20-24% win rate, 5+ starts = 0 pts (was 2)
+    // - Regular: 15-19% win rate, 5+ starts = 0 pts (was 1)
     // - New/weak: 0 pts
 
-    it('returns 4 point bonus for elite partnership (30%+ win rate with 8+ starts)', () => {
+    it('returns 2 point bonus for elite partnership (30%+ win rate with 8+ starts) (Model B)', () => {
       const trainerName = 'Bob Baffert';
       const jockeyName = 'Mike Smith';
 
@@ -213,11 +224,11 @@ describe('Connections Scoring', () => {
       const database = buildConnectionsDatabase(horses);
       const result = calculateConnectionsScore(horses[0], database);
 
-      expect(result.partnershipBonus).toBe(4);
+      expect(result.partnershipBonus).toBe(2);
       expect(result.reasoning).toContain('Elite combo');
     });
 
-    it('returns 3 point bonus for strong partnership (25-29% win rate with 5+ starts)', () => {
+    it('returns 1 point bonus for strong partnership (25-29% win rate with 5+ starts) (Model B)', () => {
       const trainerName = 'Chad Brown';
       const jockeyName = 'Irad Ortiz Jr';
 
@@ -238,11 +249,11 @@ describe('Connections Scoring', () => {
       const database = buildConnectionsDatabase(horses);
       const result = calculateConnectionsScore(horses[0], database);
 
-      expect(result.partnershipBonus).toBe(3);
+      expect(result.partnershipBonus).toBe(1);
       expect(result.reasoning).toContain('Strong combo');
     });
 
-    it('returns 2 point bonus for good partnership (20-24% win rate with 5+ starts)', () => {
+    it('returns 0 point bonus for good partnership (20-24% win rate with 5+ starts) (Model B)', () => {
       const trainerName = 'Average Trainer';
       const jockeyName = 'Average Jockey';
 
@@ -263,11 +274,11 @@ describe('Connections Scoring', () => {
       const database = buildConnectionsDatabase(horses);
       const result = calculateConnectionsScore(horses[0], database);
 
-      expect(result.partnershipBonus).toBe(2);
+      expect(result.partnershipBonus).toBe(0);
       expect(result.reasoning).toContain('Good combo');
     });
 
-    it('returns 1 point bonus for regular partnership (15-19% win rate with 5+ starts)', () => {
+    it('returns 0 point bonus for regular partnership (15-19% win rate with 5+ starts) (Model B)', () => {
       const trainerName = 'Decent Trainer';
       const jockeyName = 'Decent Jockey';
 
@@ -288,7 +299,7 @@ describe('Connections Scoring', () => {
       const database = buildConnectionsDatabase(horses);
       const result = calculateConnectionsScore(horses[0], database);
 
-      expect(result.partnershipBonus).toBe(1);
+      expect(result.partnershipBonus).toBe(0);
       expect(result.reasoning).toContain('Regular combo');
     });
 
@@ -384,7 +395,7 @@ describe('Connections Scoring', () => {
       expect(result.total).toBe(result.trainer + result.jockey + result.partnershipBonus);
     });
 
-    it('total score stays within limit of 27 points (v2.2 enhanced partnership)', () => {
+    it('total score stays within limit of 23 points (Model B)', () => {
       const horse = createHorseEntry({
         trainerName: 'Elite Trainer',
         jockeyName: 'Elite Jockey',
@@ -398,11 +409,11 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      // Max: 16 (trainer) + 7 (jockey) + 4 (elite partnership) = 27
-      expect(result.total).toBeLessThanOrEqual(27);
+      // Model B Max: 16 (trainer) + 5 (jockey) + 2 (elite partnership) = 23
+      expect(result.total).toBeLessThanOrEqual(23);
     });
 
-    it('handles missing past performances gracefully', () => {
+    it('handles missing past performances gracefully (Model B)', () => {
       const horse = createHorseEntry({
         trainerName: 'Test Trainer',
         jockeyName: 'Test Jockey',
@@ -412,9 +423,9 @@ describe('Connections Scoring', () => {
       const result = calculateConnectionsScore(horse);
 
       expect(result.total).toBeGreaterThan(0); // Returns baseline scores
-      // Phase 2: Penalized baselines are 4 for trainer, 2 for jockey (no career data)
+      // Model B: Penalized baselines are 4 for trainer, 1 for jockey (no career data)
       expect(result.trainer).toBe(4);
-      expect(result.jockey).toBe(2);
+      expect(result.jockey).toBe(1);
     });
   });
 
@@ -490,7 +501,7 @@ describe('Connections Scoring', () => {
       expect(result.trainerStats?.winRate).toBeCloseTo(22, 0);
     });
 
-    it('uses DRF jockey stats instead of PP-based stats', () => {
+    it('uses DRF jockey stats instead of PP-based stats (Model B)', () => {
       // Horse with poor PP record with this jockey
       // but elite DRF jockey stats (25% win rate at meet)
       const horse = createHorseEntry({
@@ -509,9 +520,9 @@ describe('Connections Scoring', () => {
 
       const result = calculateConnectionsScore(horse);
 
-      // Should score 7 points (20%+ win rate) based on DRF stats
+      // Model B: Should score 5 points (20%+ win rate) based on DRF stats
       // NOT 1 point (0% win rate) based on PP record
-      expect(result.jockey).toBe(7);
+      expect(result.jockey).toBe(5);
       expect(result.jockeyStats?.source).toBe('drf');
       expect(result.jockeyStats?.winRate).toBe(25);
     });
@@ -537,7 +548,7 @@ describe('Connections Scoring', () => {
       expect(result.trainerStats?.source).toBe('pp');
     });
 
-    it('poor PP record with elite trainer DRF stats scores high', () => {
+    it('poor PP record with elite trainer DRF stats scores high (Model B)', () => {
       // CRITICAL TEST: This is the exact bug case from the audit
       // A horse with only 2 PP wins should still score high if trainer has 22% meet win rate
       const horse = createHorseEntry({
@@ -566,12 +577,12 @@ describe('Connections Scoring', () => {
 
       // Should score based on DRF stats, not PP record
       expect(result.trainer).toBe(16); // 22% = 20%+ tier = 16 pts
-      expect(result.jockey).toBe(7); // 20% = 20%+ tier = 7 pts
+      expect(result.jockey).toBe(5); // Model B: 20% = 20%+ tier = 5 pts
       expect(result.trainerStats?.source).toBe('drf');
       expect(result.jockeyStats?.source).toBe('drf');
 
-      // Total should be at least 23 (16 + 7) without partnership bonus
-      expect(result.total).toBeGreaterThanOrEqual(23);
+      // Model B: Total should be at least 21 (16 + 5) without partnership bonus
+      expect(result.total).toBeGreaterThanOrEqual(21);
     });
 
     it('marks stats source correctly in reasoning', () => {

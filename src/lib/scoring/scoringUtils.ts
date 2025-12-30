@@ -20,13 +20,14 @@ export const MIN_SCORE = 0;
 
 /**
  * Maximum base score before overlay
- * v3.1: Updated from 313 to 328 per Phase 6 Odds Factor
+ * v3.2 Model B (Speed-Dominant): 323 pts
  *
  * Changes:
  * - v3.0: 290 → 313 (Speed Weight Rebalance)
  * - Phase 6: 313 → 328 (Odds Factor +15 pts)
+ * - Model B: 328 → 323 (Rebalanced categories)
  */
-export const MAX_BASE_SCORE = 328;
+export const MAX_BASE_SCORE = 323;
 
 /**
  * Maximum overlay adjustment
@@ -44,23 +45,23 @@ export const MIN_OVERLAY_NEGATIVE = -40;
 export const MAX_PROTOCOL_BONUS = 60;
 
 /** Maximum final score (base + overlay) */
-export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 368 (was 353)
+export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 363
 
 /** Maximum display score (for UI - uses base score) */
-export const MAX_DISPLAY_SCORE = 328;
+export const MAX_DISPLAY_SCORE = 323;
 
-// Category maximums (v3.1 - Phase 6 Odds Factor)
+// Category maximums (Model B - Speed-Dominant Rebalance)
 export const SCORE_CATEGORY_LIMITS = {
-  connections: 27, // 8.2% - Modifier, not primary driver
+  connections: 23, // Model B: reduced from 27
   postPosition: 12, // 3.7% - v3.0: reduced from 20
-  speedClass: 122, // 37.2% - v3.0: Speed 90 + Class 32
-  form: 50, // 15.2% - Recent performance patterns
+  speedClass: 140, // Model B: Speed 105 + Class 35
+  form: 42, // Model B: reduced from 50
   equipment: 8, // 2.4% - v3.0: reduced from 12
-  pace: 45, // 13.7% - High predictive value for race shape
-  odds: 15, // 4.6% - Phase 6: Market wisdom for favorites
+  pace: 35, // Model B: reduced from 45
+  odds: 12, // Model B: reduced from 15
   breeding: 15,
   classHiddenDrops: 10,
-  trainerPatterns: 10, // 3.0% - v3.0: reduced from 15
+  trainerPatterns: 8, // Model B: reduced from 10
   comboPatterns: 4, // 1.2% - v3.0: reduced from 6
 } as const;
 

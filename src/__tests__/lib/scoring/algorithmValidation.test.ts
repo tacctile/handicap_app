@@ -37,18 +37,19 @@ import {
 
 describe('Algorithm v3.1 - Category Totals', () => {
   it('sum of all category max points equals 328', () => {
+    // Model B: Speed-Dominant Scoring Rebalance
     const expectedCategories = {
-      speedFigures: 90,
-      class: 32,
-      form: 50,
-      pace: 45,
-      connections: 27,
+      speedFigures: 105, // Increased from 90
+      class: 35, // Increased from 32
+      form: 42, // Decreased from 50
+      pace: 35, // Decreased from 45
+      connections: 23, // Decreased from 27
       distanceSurface: 20,
-      odds: 15,
+      odds: 12, // Decreased from 15
       postPosition: 12,
-      trainerPatterns: 10,
+      trainerPatterns: 8, // Decreased from 10
       equipment: 8,
-      trackSpecialist: 6,
+      trackSpecialist: 10, // Increased from 6
       trainerSurfaceDistance: 6,
       comboPatterns: 4,
       p3Refinements: 2, // age + siresSire
@@ -56,38 +57,39 @@ describe('Algorithm v3.1 - Category Totals', () => {
     };
 
     const sum = Object.values(expectedCategories).reduce((a, b) => a + b, 0);
-    expect(sum).toBe(328);
+    // Model B: 323 max base score
+    expect(sum).toBe(323);
   });
 
   it('SCORE_LIMITS constants match expected values', () => {
-    // Speed + Class combined
-    expect(SCORE_LIMITS.speedClass).toBe(122); // 90 + 32
+    // Model B: Speed + Class combined = 105 + 35 = 140
+    expect(SCORE_LIMITS.speedClass).toBe(140);
 
-    // Individual categories
-    expect(SCORE_LIMITS.form).toBe(50);
-    expect(SCORE_LIMITS.pace).toBe(45);
-    expect(SCORE_LIMITS.connections).toBe(27);
+    // Model B individual categories
+    expect(SCORE_LIMITS.form).toBe(42);
+    expect(SCORE_LIMITS.pace).toBe(35);
+    expect(SCORE_LIMITS.connections).toBe(23);
     expect(SCORE_LIMITS.distanceSurface).toBe(20);
-    expect(SCORE_LIMITS.odds).toBe(15);
+    expect(SCORE_LIMITS.odds).toBe(12);
     expect(SCORE_LIMITS.postPosition).toBe(12);
-    expect(SCORE_LIMITS.trainerPatterns).toBe(10);
+    expect(SCORE_LIMITS.trainerPatterns).toBe(8);
     expect(SCORE_LIMITS.equipment).toBe(8);
-    expect(SCORE_LIMITS.trackSpecialist).toBe(6);
+    expect(SCORE_LIMITS.trackSpecialist).toBe(10);
     expect(SCORE_LIMITS.trainerSurfaceDistance).toBe(6);
     expect(SCORE_LIMITS.comboPatterns).toBe(4);
     expect(SCORE_LIMITS.ageFactor).toBe(1);
     expect(SCORE_LIMITS.siresSire).toBe(1);
     expect(SCORE_LIMITS.weight).toBe(1);
 
-    // Totals
-    expect(SCORE_LIMITS.baseTotal).toBe(328);
+    // Totals - Model B
+    expect(SCORE_LIMITS.baseTotal).toBe(323);
     expect(SCORE_LIMITS.overlayMax).toBe(40);
-    expect(SCORE_LIMITS.total).toBe(368);
+    expect(SCORE_LIMITS.total).toBe(363);
   });
 
   it('MAX constants are correctly defined', () => {
-    expect(MAX_BASE_SCORE).toBe(328);
-    expect(MAX_SCORE).toBe(368);
+    expect(MAX_BASE_SCORE).toBe(323);
+    expect(MAX_SCORE).toBe(363);
     expect(MAX_OVERLAY).toBe(40);
   });
 });
@@ -239,17 +241,17 @@ describe('Algorithm v3.1 - Favorite Advantage', () => {
     expect(favoriteScore.breakdown.odds.total).toBeGreaterThan(longshotScore.breakdown.odds.total);
   });
 
-  it('odds score gives 15 pts for heavy favorite vs 3 pts for longshot', () => {
+  it('odds score gives 12 pts for heavy favorite vs 2 pts for longshot (Model B)', () => {
     const favorite = createHorseEntry({ morningLineOdds: '1-1', morningLineDecimal: 1 });
-    const longshot = createHorseEntry({ morningLineOdds: '30-1', morningLineDecimal: 30 });
+    const longshot = createHorseEntry({ morningLineOdds: '20-1', morningLineDecimal: 20 });
 
     const header = createRaceHeader();
     const favScore = calculateHorseScore(favorite, header, '1-1', 'fast', false);
-    const longScore = calculateHorseScore(longshot, header, '30-1', 'fast', false);
+    const longScore = calculateHorseScore(longshot, header, '20-1', 'fast', false);
 
-    // Check odds breakdown specifically
-    expect(favScore.breakdown.odds.total).toBe(15);
-    expect(longScore.breakdown.odds.total).toBe(3);
+    // Model B: Max odds score is 12, longshot (10-1 to 20-1) gets 2 pts
+    expect(favScore.breakdown.odds.total).toBe(12);
+    expect(longScore.breakdown.odds.total).toBe(2);
   });
 });
 

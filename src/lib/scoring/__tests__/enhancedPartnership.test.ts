@@ -421,7 +421,7 @@ describe('analyzeTrainerJockeyPartnership', () => {
 });
 
 describe('calculateConnectionsScore with Enhanced Partnership', () => {
-  it('should award 4 points for elite partnership in total connections score', () => {
+  it('should award 2 points for elite partnership in total connections score (Model B)', () => {
     // Create horse with elite partnership (8-for-20 = 40%)
     const pps: PastPerformance[] = [];
     for (let i = 0; i < 20; i++) {
@@ -431,12 +431,12 @@ describe('calculateConnectionsScore with Enhanced Partnership', () => {
     const horse = createTestHorse('J. Smith', pps);
     const result = calculateConnectionsScore(horse);
 
-    expect(result.partnershipBonus).toBe(4);
+    expect(result.partnershipBonus).toBe(2); // Model B: was 4
     expect(result.reasoning).toContain('Elite combo');
     expect(result.reasoning).toContain('40%');
   });
 
-  it('should award 3 points for strong partnership', () => {
+  it('should award 1 point for strong partnership (Model B)', () => {
     // 3-for-12 = 25%
     const pps: PastPerformance[] = [];
     for (let i = 0; i < 12; i++) {
@@ -446,11 +446,11 @@ describe('calculateConnectionsScore with Enhanced Partnership', () => {
     const horse = createTestHorse('J. Ortiz', pps);
     const result = calculateConnectionsScore(horse);
 
-    expect(result.partnershipBonus).toBe(3);
+    expect(result.partnershipBonus).toBe(1); // Model B: was 3
     expect(result.reasoning).toContain('Strong combo');
   });
 
-  it('should award 2 points for good partnership', () => {
+  it('should award 0 points for good partnership (Model B)', () => {
     // 1-for-5 = 20%
     const pps: PastPerformance[] = [];
     for (let i = 0; i < 5; i++) {
@@ -460,11 +460,11 @@ describe('calculateConnectionsScore with Enhanced Partnership', () => {
     const horse = createTestHorse('I. Ortiz Jr.', pps);
     const result = calculateConnectionsScore(horse);
 
-    expect(result.partnershipBonus).toBe(2);
-    expect(result.reasoning).toContain('Good combo');
+    expect(result.partnershipBonus).toBe(0); // Model B: was 2
+    // Good partnerships no longer get reasoning in Model B
   });
 
-  it('should award 1 point for regular partnership', () => {
+  it('should award 0 points for regular partnership (Model B)', () => {
     // 1-for-6 ≈ 16.7%
     const pps: PastPerformance[] = [];
     for (let i = 0; i < 6; i++) {
@@ -474,8 +474,8 @@ describe('calculateConnectionsScore with Enhanced Partnership', () => {
     const horse = createTestHorse('J. Velazquez', pps);
     const result = calculateConnectionsScore(horse);
 
-    expect(result.partnershipBonus).toBe(1);
-    expect(result.reasoning).toContain('Regular combo');
+    expect(result.partnershipBonus).toBe(0); // Model B: was 1
+    // Regular partnerships no longer get reasoning in Model B
   });
 
   it('should award 0 points for weak partnership', () => {
@@ -505,8 +505,8 @@ describe('calculateConnectionsScore with Enhanced Partnership', () => {
 });
 
 describe('MAX_ENHANCED_PARTNERSHIP_POINTS', () => {
-  it('should be 4 points maximum', () => {
-    expect(MAX_ENHANCED_PARTNERSHIP_POINTS).toBe(4);
+  it('should be 2 points maximum (Model B)', () => {
+    expect(MAX_ENHANCED_PARTNERSHIP_POINTS).toBe(2); // Model B: was 4
   });
 });
 

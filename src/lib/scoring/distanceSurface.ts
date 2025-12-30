@@ -45,7 +45,7 @@ export interface DistanceSurfaceResult {
  * Identifies horses with proven success at today's specific track
  */
 export interface TrackSpecialistResult {
-  /** Total score 0-6 points */
+  /** Total score 0-10 points (Model B: increased from 6) */
   score: number;
   /** Track win rate (wins/starts) */
   trackWinRate: number;
@@ -69,7 +69,7 @@ export const DISTANCE_SURFACE_LIMITS = {
   turf: 8,
   wet: 6,
   distance: 6,
-  trackSpecialist: 6,
+  trackSpecialist: 10, // Model B: increased from 6 to reward proven track success
   total: 20,
 } as const;
 
@@ -84,13 +84,13 @@ export const DISTANCE_SURFACE_LIMITS = {
  * - Turf (0 starts in turf race): 4 pts (50% of 8)
  * - Wet (0 starts in wet race): 3 pts (50% of 6)
  * - Distance (0 starts at distance): 3 pts (50% of 6)
- * - Track specialist (0 starts at track): 3 pts (50% of 6)
+ * - Track specialist (0 starts at track): 5 pts (50% of 10) - Model B adjusted
  */
 export const NEUTRAL_BASELINES = {
   turf: 4, // 50% of 8 max
   wet: 3, // 50% of 6 max
   distance: 3, // 50% of 6 max
-  trackSpecialist: 3, // 50% of 6 max
+  trackSpecialist: 5, // Model B: 50% of 10 max (increased from 3)
 } as const;
 
 /** Minimum starts required for track specialist scoring */
@@ -326,16 +326,21 @@ function calculateDistanceScore(horse: HorseEntry): {
 // ============================================================================
 
 /**
- * Calculate track specialist score (0-6 points)
+ * Calculate track specialist score (0-10 points)
  * Identifies horses with proven success at today's specific track
  *
- * Scoring:
- * - 30%+ win rate at track (min 4 starts): 6 pts "Track specialist"
- * - 20-29% win rate at track (min 4 starts): 4 pts "Track positive"
- * - 50%+ ITM rate at track (min 4 starts): 2 pts bonus "Consistent at track"
- * - 10-19% win rate (min 4 starts): 2 pts "Track experience"
+ * Model B Scoring (increased from 6 to 10 max):
+ * - 40%+ win rate at track (min 4 starts): 10 pts "Track ace"
+ * - 30-39% win rate at track (min 4 starts): 8 pts "Track specialist"
+ * - 25-29% win rate at track (min 4 starts): 6 pts "Track positive"
+ * - 20-24% win rate at track (min 4 starts): 5 pts "Track affinity"
+ * - 10-19% win rate (min 4 starts): 3 pts "Track experience"
  * - <10% win rate or 0 wins (4+ starts): 0 pts "Struggles here"
- * - <4 starts: 0 pts (insufficient data, not penalized)
+ * - <4 starts: neutral baseline (insufficient data, not penalized)
+ *
+ * ITM Bonus (stacks with win rate score, capped at 10 total):
+ * - 60%+ ITM rate: +2 pts "Highly consistent"
+ * - 50-59% ITM rate: +1 pt "Consistent"
  *
  * @param horse - The horse entry to score
  * @param _trackCode - The track code for today's race (unused but available for future enhancements)
@@ -350,10 +355,10 @@ export function calculateTrackSpecialistScore(
   const places = horse.trackPlaces ?? 0;
   const shows = horse.trackShows ?? 0;
 
-  // Insufficient data - v2.5: give neutral baseline instead of 0
+  // Insufficient data - give neutral baseline instead of 0
   if (starts < MIN_TRACK_STARTS) {
     return {
-      score: NEUTRAL_BASELINES.trackSpecialist, // v2.5: neutral instead of 0
+      score: NEUTRAL_BASELINES.trackSpecialist, // neutral instead of 0
       trackWinRate: starts > 0 ? wins / starts : 0,
       trackITMRate: starts > 0 ? (wins + places + shows) / starts : 0,
       isSpecialist: false,
@@ -371,30 +376,40 @@ export function calculateTrackSpecialistScore(
   let baseScore = 0;
   let tier = '';
 
-  // Win rate-based scoring
-  if (winRate >= 0.3) {
-    baseScore = 6;
+  // Win rate-based scoring (Model B: expanded tiers up to 10)
+  if (winRate >= 0.4) {
+    baseScore = 10;
+    tier = 'Track ace';
+  } else if (winRate >= 0.3) {
+    baseScore = 8;
     tier = 'Track specialist';
-  } else if (winRate >= 0.2) {
-    baseScore = 4;
+  } else if (winRate >= 0.25) {
+    baseScore = 6;
     tier = 'Track positive';
+  } else if (winRate >= 0.2) {
+    baseScore = 5;
+    tier = 'Track affinity';
   } else if (winRate >= 0.1) {
-    baseScore = 2;
+    baseScore = 3;
     tier = 'Track experience';
   } else {
     baseScore = 0;
     tier = 'Struggles here';
   }
 
-  // ITM bonus (only if win rate is at least 10% and not already at max)
+  // ITM bonus (stacks with base score, capped at 10)
   let itmBonus = 0;
-  if (itmRate >= 0.5 && winRate >= 0.1 && baseScore < 6) {
-    // Cap so total doesn't exceed 6
-    itmBonus = Math.min(2, 6 - baseScore);
-    tier = tier + ' + Consistent';
+  if (winRate >= 0.1 && baseScore < 10) {
+    if (itmRate >= 0.6) {
+      itmBonus = Math.min(2, 10 - baseScore);
+      tier = tier + ' + Highly consistent';
+    } else if (itmRate >= 0.5) {
+      itmBonus = Math.min(1, 10 - baseScore);
+      tier = tier + ' + Consistent';
+    }
   }
 
-  const finalScore = baseScore + itmBonus;
+  const finalScore = Math.min(10, baseScore + itmBonus);
   const isSpecialist = winRate >= 0.3 && starts >= MIN_TRACK_STARTS;
 
   // Build reasoning string

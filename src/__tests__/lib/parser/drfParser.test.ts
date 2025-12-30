@@ -8,7 +8,10 @@ import {
   parseDRFFile,
   createDefaultHorseEntry,
   createDefaultRaceHeader,
+  calculateDerivedStats,
+  WET_TRACK_CONDITIONS,
 } from '../../../lib/drfParser';
+import type { PastPerformance, TrackCondition } from '../../../types/drf';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -434,9 +437,9 @@ describe('DRF Parser', () => {
       expect(horse.turfShows).toBe(2);
     });
 
-    it('parses wet track record correctly from valid DRF data', () => {
-      // NOTE: Wet track field locations are UNKNOWN in DRF spec
-      // Parser returns 0 for all wet track fields by design
+    it('wet track record is derived from past performances (no PPs = 0)', () => {
+      // NOTE: Wet track stats are now DERIVED from past performances
+      // Without PPs, wet track stats will be 0
       const content = createDRFWithSurfaceRecords([0, 0, 0, 0], [8, 2, 3, 1], [0, 0, 0, 0]);
 
       const result = parseDRFFile(content, 'wet-test.drf');
@@ -444,16 +447,16 @@ describe('DRF Parser', () => {
       expect(result.races.length).toBeGreaterThan(0);
       const horse = result.races[0].horses[0];
 
-      // Parser returns 0 for wet track fields (location unknown)
+      // Without past performances, wet track stats are 0
       expect(horse.wetStarts).toBe(0);
       expect(horse.wetWins).toBe(0);
       expect(horse.wetPlaces).toBe(0);
       expect(horse.wetShows).toBe(0);
     });
 
-    it('parses distance record correctly from valid DRF data', () => {
-      // NOTE: Distance field locations are UNKNOWN in DRF spec
-      // Parser returns 0 for all distance fields by design
+    it('distance record is derived from past performances (no PPs = 0)', () => {
+      // NOTE: Distance stats are now DERIVED from past performances
+      // Without PPs, distance stats will be 0
       const content = createDRFWithSurfaceRecords([0, 0, 0, 0], [0, 0, 0, 0], [15, 5, 4, 3]);
 
       const result = parseDRFFile(content, 'distance-test.drf');
@@ -461,7 +464,7 @@ describe('DRF Parser', () => {
       expect(result.races.length).toBeGreaterThan(0);
       const horse = result.races[0].horses[0];
 
-      // Parser returns 0 for distance fields (location unknown)
+      // Without past performances, distance stats are 0
       expect(horse.distanceStarts).toBe(0);
       expect(horse.distanceWins).toBe(0);
       expect(horse.distancePlaces).toBe(0);
@@ -482,13 +485,13 @@ describe('DRF Parser', () => {
       expect(horse.turfPlaces).toBe(2);
       expect(horse.turfShows).toBe(1);
 
-      // Wet - location unknown, returns 0
+      // Wet - derived from PPs (no PPs = 0)
       expect(horse.wetStarts).toBe(0);
       expect(horse.wetWins).toBe(0);
       expect(horse.wetPlaces).toBe(0);
       expect(horse.wetShows).toBe(0);
 
-      // Distance - location unknown, returns 0
+      // Distance - derived from PPs (no PPs = 0)
       expect(horse.distanceStarts).toBe(0);
       expect(horse.distanceWins).toBe(0);
       expect(horse.distancePlaces).toBe(0);
@@ -807,6 +810,308 @@ describe('DRF Parser', () => {
       expect(horse.pastPerformances[1].earlyPace1).toBe(85);
       expect(horse.pastPerformances[0].latePace).toBe(0);
       expect(horse.pastPerformances[1].latePace).toBe(90);
+    });
+  });
+
+  describe('Derived Wet Track and Distance Statistics (calculateDerivedStats)', () => {
+    // Helper to create a minimal PastPerformance object for testing
+    function createMockPP(
+      trackCondition: TrackCondition,
+      distanceFurlongs: number,
+      finishPosition: number
+    ): PastPerformance {
+      return {
+        date: '20240101',
+        track: 'CD',
+        trackName: 'Churchill Downs',
+        raceNumber: 1,
+        distanceFurlongs,
+        distance: `${distanceFurlongs}f`,
+        surface: 'dirt',
+        trackCondition,
+        classification: 'allowance',
+        claimingPrice: null,
+        purse: 50000,
+        fieldSize: 8,
+        finishPosition,
+        lengthsBehind: finishPosition === 1 ? 0 : 2.5,
+        lengthsAhead: null,
+        finalTime: 72.5,
+        finalTimeFormatted: '1:12.50',
+        speedFigures: {
+          beyer: 85,
+          timeformUS: null,
+          equibase: null,
+          trackVariant: null,
+          dirtVariant: null,
+          turfVariant: null,
+        },
+        runningLine: {
+          start: 3,
+          quarterMile: 3,
+          quarterMileLengths: 2,
+          halfMile: 2,
+          halfMileLengths: 1.5,
+          threeQuarters: 2,
+          threeQuartersLengths: 1,
+          stretch: 1,
+          stretchLengths: 0,
+          finish: finishPosition,
+          finishLengths: finishPosition === 1 ? 0 : 2.5,
+        },
+        jockey: 'Test Jockey',
+        weight: 120,
+        apprenticeAllowance: 0,
+        equipment: '',
+        medication: '',
+        winner: finishPosition === 1 ? 'Test Horse' : 'Other Horse',
+        secondPlace: finishPosition === 2 ? 'Test Horse' : 'Another',
+        thirdPlace: finishPosition === 3 ? 'Test Horse' : 'Third',
+        tripComment: '',
+        comment: '',
+        odds: 5.0,
+        favoriteRank: null,
+        wasClaimed: false,
+        claimedFrom: null,
+        daysSinceLast: 21,
+        earlyPace1: 80,
+        latePace: 85,
+      };
+    }
+
+    describe('Wet Track Calculation', () => {
+      it('counts a PP on sloppy track as wet start', () => {
+        const pps = [createMockPP('sloppy', 6.0, 3)];
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        expect(stats.wetStarts).toBe(1);
+      });
+
+      it('counts a win on wet track correctly', () => {
+        const pps = [createMockPP('muddy', 6.0, 1)]; // Win on muddy track
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        expect(stats.wetStarts).toBe(1);
+        expect(stats.wetWins).toBe(1);
+      });
+
+      it('counts place (2nd) on wet track correctly', () => {
+        const pps = [createMockPP('heavy', 6.0, 2)]; // 2nd place on heavy track
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        expect(stats.wetStarts).toBe(1);
+        expect(stats.wetWins).toBe(0);
+        expect(stats.wetPlaces).toBe(1);
+      });
+
+      it('counts show (3rd) on wet track correctly', () => {
+        const pps = [createMockPP('soft', 6.0, 3)]; // 3rd place on soft track
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        expect(stats.wetStarts).toBe(1);
+        expect(stats.wetShows).toBe(1);
+      });
+
+      it('does NOT count fast track as wet', () => {
+        const pps = [createMockPP('fast', 6.0, 1)];
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        expect(stats.wetStarts).toBe(0);
+        expect(stats.wetWins).toBe(0);
+      });
+
+      it('does NOT count firm track as wet', () => {
+        const pps = [createMockPP('firm', 6.0, 1)];
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        expect(stats.wetStarts).toBe(0);
+      });
+
+      it('counts all wet track conditions correctly', () => {
+        // One PP for each wet condition, all wins for simplicity
+        const pps = [
+          createMockPP('good', 6.0, 1),
+          createMockPP('muddy', 6.0, 1),
+          createMockPP('sloppy', 6.0, 1),
+          createMockPP('heavy', 6.0, 1),
+          createMockPP('yielding', 6.0, 1),
+          createMockPP('soft', 6.0, 1),
+        ];
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        expect(stats.wetStarts).toBe(6);
+        expect(stats.wetWins).toBe(6);
+      });
+
+      it('includes correct track conditions in WET_TRACK_CONDITIONS', () => {
+        expect(WET_TRACK_CONDITIONS).toContain('good');
+        expect(WET_TRACK_CONDITIONS).toContain('muddy');
+        expect(WET_TRACK_CONDITIONS).toContain('sloppy');
+        expect(WET_TRACK_CONDITIONS).toContain('heavy');
+        expect(WET_TRACK_CONDITIONS).toContain('yielding');
+        expect(WET_TRACK_CONDITIONS).toContain('soft');
+
+        // These should NOT be in wet conditions
+        expect(WET_TRACK_CONDITIONS).not.toContain('fast');
+        expect(WET_TRACK_CONDITIONS).not.toContain('firm');
+      });
+    });
+
+    describe('Distance Calculation', () => {
+      it('counts PP at same distance', () => {
+        const pps = [createMockPP('fast', 6.0, 1)];
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        expect(stats.distanceStarts).toBe(1);
+        expect(stats.distanceWins).toBe(1);
+      });
+
+      it('counts PP at +0.5 furlongs (6.5f for 6.0f race)', () => {
+        const pps = [createMockPP('fast', 6.5, 1)];
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        expect(stats.distanceStarts).toBe(1);
+        expect(stats.distanceWins).toBe(1);
+      });
+
+      it('counts PP at -0.5 furlongs (5.5f for 6.0f race)', () => {
+        const pps = [createMockPP('fast', 5.5, 1)];
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        expect(stats.distanceStarts).toBe(1);
+        expect(stats.distanceWins).toBe(1);
+      });
+
+      it('does NOT count PP beyond +0.5 furlongs (7.0f for 6.0f race)', () => {
+        const pps = [createMockPP('fast', 7.0, 1)];
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        expect(stats.distanceStarts).toBe(0);
+        expect(stats.distanceWins).toBe(0);
+      });
+
+      it('does NOT count PP beyond -0.5 furlongs (5.0f for 6.0f race)', () => {
+        const pps = [createMockPP('fast', 5.0, 1)];
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        expect(stats.distanceStarts).toBe(0);
+        expect(stats.distanceWins).toBe(0);
+      });
+
+      it('counts multiple PPs at similar distances', () => {
+        // 6.0f race: PPs at 5.5f, 6.0f, and 6.5f should count
+        const pps = [
+          createMockPP('fast', 5.5, 1), // Win
+          createMockPP('fast', 6.0, 2), // Place
+          createMockPP('fast', 6.5, 3), // Show
+          createMockPP('fast', 7.0, 4), // Too far - should not count
+        ];
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        expect(stats.distanceStarts).toBe(3);
+        expect(stats.distanceWins).toBe(1);
+        expect(stats.distancePlaces).toBe(1);
+        expect(stats.distanceShows).toBe(1);
+      });
+
+      it('handles 1 mile (8.0f) race correctly', () => {
+        // 8.0f race: PPs at 7.5f, 8.0f, and 8.5f should count
+        const pps = [
+          createMockPP('fast', 7.5, 1),
+          createMockPP('fast', 8.0, 1),
+          createMockPP('fast', 8.5, 1),
+          createMockPP('fast', 9.0, 1), // Should NOT count
+        ];
+
+        const stats = calculateDerivedStats(pps, 8.0);
+
+        expect(stats.distanceStarts).toBe(3);
+        expect(stats.distanceWins).toBe(3);
+      });
+
+      it('handles 0 distance gracefully', () => {
+        const pps = [createMockPP('fast', 6.0, 1)];
+
+        const stats = calculateDerivedStats(pps, 0);
+
+        expect(stats.distanceStarts).toBe(0);
+      });
+
+      it('handles PP with 0 distance gracefully', () => {
+        const pps = [createMockPP('fast', 0, 1)];
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        expect(stats.distanceStarts).toBe(0);
+      });
+    });
+
+    describe('Combined Wet and Distance Calculation', () => {
+      it('correctly counts a wet track win at same distance', () => {
+        // PP is on sloppy track at 6.0f, horse won
+        const pps = [createMockPP('sloppy', 6.0, 1)];
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        // Should count for BOTH wet and distance
+        expect(stats.wetStarts).toBe(1);
+        expect(stats.wetWins).toBe(1);
+        expect(stats.distanceStarts).toBe(1);
+        expect(stats.distanceWins).toBe(1);
+      });
+
+      it('counts wet but not distance when PP is at different distance', () => {
+        // PP is on muddy track but at 8.0f when today's race is 6.0f
+        const pps = [createMockPP('muddy', 8.0, 1)];
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        // Should count for wet but NOT distance
+        expect(stats.wetStarts).toBe(1);
+        expect(stats.wetWins).toBe(1);
+        expect(stats.distanceStarts).toBe(0);
+        expect(stats.distanceWins).toBe(0);
+      });
+
+      it('counts distance but not wet when PP is on fast track', () => {
+        // PP is on fast track at 6.0f
+        const pps = [createMockPP('fast', 6.0, 1)];
+
+        const stats = calculateDerivedStats(pps, 6.0);
+
+        // Should count for distance but NOT wet
+        expect(stats.wetStarts).toBe(0);
+        expect(stats.distanceStarts).toBe(1);
+        expect(stats.distanceWins).toBe(1);
+      });
+    });
+
+    describe('Empty Past Performances', () => {
+      it('returns all zeros for empty PP array', () => {
+        const stats = calculateDerivedStats([], 6.0);
+
+        expect(stats.wetStarts).toBe(0);
+        expect(stats.wetWins).toBe(0);
+        expect(stats.wetPlaces).toBe(0);
+        expect(stats.wetShows).toBe(0);
+        expect(stats.distanceStarts).toBe(0);
+        expect(stats.distanceWins).toBe(0);
+        expect(stats.distancePlaces).toBe(0);
+        expect(stats.distanceShows).toBe(0);
+      });
     });
   });
 });
