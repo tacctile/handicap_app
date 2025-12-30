@@ -2,17 +2,15 @@
  * Speed & Class Scoring Module
  * Calculates scores based on speed figures and class level analysis
  *
- * Score Breakdown (Model B - Speed-Dominant):
+ * Score Breakdown (v3.2 - Model B Speed-Dominant):
  * - Speed Figure Score: 0-105 points (based on Beyer/TimeformUS figures)
  * - Class Level Score: 0-35 points (based on class movement and success)
  *
  * Total: 0-140 points (43.3% of 323 base)
  *
- * Model B CHANGES (Speed-Dominant Rebalance):
- * - Speed figures increased from 90 to 105 pts (~32% of base)
- * - Class increased from 32 to 35 pts (~11% of base)
- * - Industry standard weights speed at 30-40%, this is most predictive factor
- * - Granular tiers based on par differential
+ * v3.2 CHANGES:
+ * - Speed figures increased to 105 pts (Intrinsic Ability focus)
+ * - Class increased to 35 pts
  */
 
 import type { HorseEntry, RaceHeader, PastPerformance, RaceClassification } from '../../types/drf';
