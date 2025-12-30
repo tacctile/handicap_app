@@ -78,13 +78,23 @@ export interface RankInfo {
 }
 
 /**
- * Calculate ranks based on BASE SCORE (X/323), not total score with overlay
+ * Calculate ranks based on BASE SCORE (X/323) with full tie-breaker chain
+ *
+ * Model B Final: Uses deterministic tie-breaker chain to ensure UNIQUE ranks.
+ * No more "1st (tie)" situations - every horse gets a distinct rank.
  *
  * This function:
  * 1. Filters to non-scratched horses only
- * 2. Sorts by baseScore descending
- * 3. Assigns ranks with proper tie handling
+ * 2. Sorts by baseScore with tie-breaker chain (Speed → Pace → Form → Post)
+ * 3. Assigns SEQUENTIAL ranks (1, 2, 3, 4...) - no ties
  * 4. Calculates gradient color for each rank
+ *
+ * TIE-BREAKER CHAIN (Model B Final):
+ * 1. Base Score (Descending) - Primary ranking (includes Paper Tiger penalty)
+ * 2. Speed Score (Descending) - Intrinsic ability wins ties
+ * 3. Pace Score (Descending) - Running style advantage
+ * 4. Form Score (Descending) - Current condition
+ * 5. Post Position (Ascending) - Final deterministic resolution
  *
  * @param scoredHorses - Array of ScoredHorse objects
  * @returns Map of horse index to RankInfo
@@ -104,39 +114,43 @@ export function calculateBaseScoreRanks(scoredHorses: ScoredHorse[]): Map<number
     return rankMap;
   }
 
-  // Sort by BASE SCORE descending (not total score)
-  const sortedByBaseScore = [...activeHorses].sort((a, b) => b.score.baseScore - a.score.baseScore);
+  // Sort by BASE SCORE with full Tie-Breaker Chain (Model B Final)
+  // Ensures every horse has a UNIQUE rank - no more duplicate ranks
+  const sortedByBaseScore = [...activeHorses].sort((a, b) => {
+    // 1. Primary: Base Score (descending)
+    // Note: baseScore already includes the -100 Paper Tiger penalty
+    const scoreDiff = b.score.baseScore - a.score.baseScore;
+    if (scoreDiff !== 0) return scoreDiff;
 
-  // Assign ranks with tie handling
-  // Ties get the same rank, then we skip (e.g., 1, 1, 3 for two ties at first)
-  let currentRank = 1;
-  let previousBaseScore: number | null = null;
-  let sameRankCount = 0;
+    // 2. Tie-Breaker #1: Speed Score (descending) - Intrinsic Ability wins
+    // Access structured breakdown data safely
+    const speedA = a.score.breakdown?.speedClass?.speedScore ?? 0;
+    const speedB = b.score.breakdown?.speedClass?.speedScore ?? 0;
+    if (speedB !== speedA) return speedB - speedA;
 
+    // 3. Tie-Breaker #2: Pace Score (descending) - Running Style wins
+    const paceA = a.score.breakdown?.pace?.total ?? 0;
+    const paceB = b.score.breakdown?.pace?.total ?? 0;
+    if (paceB !== paceA) return paceB - paceA;
+
+    // 4. Tie-Breaker #3: Form Score (descending) - Current Condition wins
+    const formA = a.score.breakdown?.form?.total ?? 0;
+    const formB = b.score.breakdown?.form?.total ?? 0;
+    if (formB !== formA) return formB - formA;
+
+    // 5. Final Resolution: Post Position (ascending) - Inside post wins
+    return a.horse.postPosition - b.horse.postPosition;
+  });
+
+  // Assign SEQUENTIAL ranks (1, 2, 3, 4...) - no ties
+  // Tie-breakers ensure deterministic unique order
   sortedByBaseScore.forEach((horse, sortIndex) => {
-    const baseScore = horse.score.baseScore;
-
-    if (previousBaseScore !== null && baseScore < previousBaseScore) {
-      // Different score than previous - advance rank by count of tied horses
-      currentRank += sameRankCount;
-      sameRankCount = 1;
-    } else if (previousBaseScore !== null && baseScore === previousBaseScore) {
-      // Same score as previous - keep same rank, increment tie counter
-      sameRankCount++;
-    } else {
-      // First horse
-      sameRankCount = 1;
-    }
-
-    previousBaseScore = baseScore;
-
     // Calculate gradient color based on position in sorted order
-    // Use sortIndex (0-based) for smooth gradient
     const color = calculateRankGradientColor(sortIndex, fieldSize);
 
     rankMap.set(horse.index, {
-      rank: currentRank,
-      ordinal: toOrdinal(currentRank),
+      rank: sortIndex + 1, // Sequential: 1, 2, 3, 4...
+      ordinal: toOrdinal(sortIndex + 1),
       color,
       fieldSize,
     });
