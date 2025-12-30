@@ -2,12 +2,18 @@
  * Distance & Surface Affinity Scoring Module
  * Calculates bonus points based on horse's lifetime record on turf, wet tracks, and at distance
  *
- * Score Breakdown:
+ * Score Breakdown (v3.2 - Distance/Surface Balance Adjustment):
  * - Turf Score: 0-8 points (only applies if today's race is on turf)
  * - Wet Track Score: 0-6 points (only applies if track condition is wet/off)
  * - Distance Score: 0-6 points (always applies)
+ * - Track Specialist: 0-10 points (v3.2: increased from 6)
  *
- * Total: 0-20 points (additive bonus to base score)
+ * Total: 0-25 points (v3.2: increased from 20 to balance 328 total)
+ *
+ * v3.2 CHANGES (Phase 7 - Balance Adjustment):
+ * - Increased from 20 to 25 pts to maintain 328 total
+ * - Track Specialist increased from 6 to 10 pts (1.8% → 3.0% of 328)
+ * - Turf/Wet/Distance unchanged
  *
  * Uses lifetime records from DRF Fields 85-96:
  * - turfStarts, turfWins (Fields 85-88)
@@ -45,7 +51,7 @@ export interface DistanceSurfaceResult {
  * Identifies horses with proven success at today's specific track
  */
 export interface TrackSpecialistResult {
-  /** Total score 0-6 points */
+  /** Total score 0-10 points (v3.2: increased from 6) */
   score: number;
   /** Track win rate (wins/starts) */
   trackWinRate: number;
@@ -64,13 +70,13 @@ export interface TrackSpecialistResult {
 /** Minimum starts required for full credit */
 const MIN_STARTS_FULL_CREDIT = 3;
 
-/** Maximum scores by category */
+/** Maximum scores by category (v3.2: track specialist and total increased) */
 export const DISTANCE_SURFACE_LIMITS = {
   turf: 8,
   wet: 6,
   distance: 6,
-  trackSpecialist: 6,
-  total: 20,
+  trackSpecialist: 10, // v3.2: increased from 6 to 10 (1.8% → 3.0%)
+  total: 25, // v3.2: increased from 20 to 25 for balance
 } as const;
 
 /**
@@ -84,13 +90,13 @@ export const DISTANCE_SURFACE_LIMITS = {
  * - Turf (0 starts in turf race): 4 pts (50% of 8)
  * - Wet (0 starts in wet race): 3 pts (50% of 6)
  * - Distance (0 starts at distance): 3 pts (50% of 6)
- * - Track specialist (0 starts at track): 3 pts (50% of 6)
+ * - Track specialist (0 starts at track): 5 pts (50% of 10, v3.2)
  */
 export const NEUTRAL_BASELINES = {
   turf: 4, // 50% of 8 max
   wet: 3, // 50% of 6 max
   distance: 3, // 50% of 6 max
-  trackSpecialist: 3, // 50% of 6 max
+  trackSpecialist: 5, // v3.2: 50% of 10 max (was 3)
 } as const;
 
 /** Minimum starts required for track specialist scoring */
@@ -326,16 +332,17 @@ function calculateDistanceScore(horse: HorseEntry): {
 // ============================================================================
 
 /**
- * Calculate track specialist score (0-6 points)
+ * Calculate track specialist score (0-10 points)
  * Identifies horses with proven success at today's specific track
  *
- * Scoring:
- * - 30%+ win rate at track (min 4 starts): 6 pts "Track specialist"
- * - 20-29% win rate at track (min 4 starts): 4 pts "Track positive"
- * - 50%+ ITM rate at track (min 4 starts): 2 pts bonus "Consistent at track"
- * - 10-19% win rate (min 4 starts): 2 pts "Track experience"
- * - <10% win rate or 0 wins (4+ starts): 0 pts "Struggles here"
- * - <4 starts: 0 pts (insufficient data, not penalized)
+ * v3.2 Scoring (increased from 6 to 10 max):
+ * - 30%+ win rate at track (min 4 starts): 10 pts "Track specialist"
+ * - 25-29% win rate at track (min 4 starts): 8 pts "Strong track record"
+ * - 20-24% win rate at track (min 4 starts): 6 pts "Track positive"
+ * - 50%+ ITM rate at track (min 4 starts): +2 pts bonus "Consistent at track"
+ * - 10-19% win rate (min 4 starts): 4 pts "Track experience"
+ * - <10% win rate or 0 wins (4+ starts): 2 pts "Struggles here"
+ * - <4 starts: 5 pts (neutral baseline)
  *
  * @param horse - The horse entry to score
  * @param _trackCode - The track code for today's race (unused but available for future enhancements)
@@ -353,7 +360,7 @@ export function calculateTrackSpecialistScore(
   // Insufficient data - v2.5: give neutral baseline instead of 0
   if (starts < MIN_TRACK_STARTS) {
     return {
-      score: NEUTRAL_BASELINES.trackSpecialist, // v2.5: neutral instead of 0
+      score: NEUTRAL_BASELINES.trackSpecialist, // v3.2: 5 pts neutral
       trackWinRate: starts > 0 ? wins / starts : 0,
       trackITMRate: starts > 0 ? (wins + places + shows) / starts : 0,
       isSpecialist: false,
@@ -371,26 +378,29 @@ export function calculateTrackSpecialistScore(
   let baseScore = 0;
   let tier = '';
 
-  // Win rate-based scoring
+  // v3.2: Win rate-based scoring (10 max, scaled from 6)
   if (winRate >= 0.3) {
-    baseScore = 6;
+    baseScore = 10;
     tier = 'Track specialist';
+  } else if (winRate >= 0.25) {
+    baseScore = 8;
+    tier = 'Strong track record';
   } else if (winRate >= 0.2) {
-    baseScore = 4;
+    baseScore = 6;
     tier = 'Track positive';
   } else if (winRate >= 0.1) {
-    baseScore = 2;
+    baseScore = 4;
     tier = 'Track experience';
   } else {
-    baseScore = 0;
+    baseScore = 2;
     tier = 'Struggles here';
   }
 
   // ITM bonus (only if win rate is at least 10% and not already at max)
   let itmBonus = 0;
-  if (itmRate >= 0.5 && winRate >= 0.1 && baseScore < 6) {
-    // Cap so total doesn't exceed 6
-    itmBonus = Math.min(2, 6 - baseScore);
+  if (itmRate >= 0.5 && winRate >= 0.1 && baseScore < 10) {
+    // Cap so total doesn't exceed 10
+    itmBonus = Math.min(2, 10 - baseScore);
     tier = tier + ' + Consistent';
   }
 

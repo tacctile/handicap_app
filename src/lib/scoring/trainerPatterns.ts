@@ -4,11 +4,11 @@
  * Uses parsed trainer category statistics (DRF Fields 1146-1221) to apply
  * situational bonuses when current race conditions match trainer's proven patterns.
  *
- * Score: 0-10 points (v3.0 - reduced from 15, stacking multiple patterns, capped)
+ * Score: 0-8 points (v3.2 - reduced from 10, stacking multiple patterns, capped)
  *
- * v3.0 CHANGES (Phase 3 - Speed Weight Rebalance):
- * - Reduced from 15 to 10 pts to compensate for speed increase
- * - Scale factor: 0.67 (10/15)
+ * v3.2 CHANGES (Phase 7 - Trainer Patterns Reduction):
+ * - Reduced from 10 to 8 pts (3.0% → 2.4% of 328)
+ * - Scale factor: 0.8 (8/10)
  * - Individual pattern points proportionally reduced
  *
  * Pattern Categories:
@@ -60,10 +60,10 @@ export interface TrainerPatternResult {
 
 /**
  * Maximum total points from trainer patterns
- * v3.0: Reduced from 15 to 10 pts per Phase 3 speed rebalance.
- * Scale factor: 0.67 (10/15)
+ * v3.2: Reduced from 10 to 8 pts per Phase 7 speed rebalance.
+ * Scale factor: 0.8 (8/10)
  */
-const MAX_TRAINER_PATTERN_POINTS = 10;
+const MAX_TRAINER_PATTERN_POINTS = 8;
 
 /** Minimum sample size to consider a pattern valid */
 const MIN_SAMPLE_SIZE = 5;

@@ -29,24 +29,25 @@ import type { HorseEntry } from '../../types/drf';
 // CONSTANTS
 // ============================================================================
 
-/** Maximum points for odds-based scoring */
-export const MAX_ODDS_SCORE = 15;
+/** Maximum points for odds-based scoring (v3.2: reduced from 15 to 12) */
+export const MAX_ODDS_SCORE = 12;
 
-/** Neutral score for horses with missing odds data */
-export const NEUTRAL_ODDS_SCORE = 7;
+/** Neutral score for horses with missing odds data (v3.2: reduced from 7 to 6) */
+export const NEUTRAL_ODDS_SCORE = 6;
 
 /**
  * Odds tier thresholds and corresponding scores
  * Odds values are in decimal format (e.g., 3-1 = 3.0)
+ * v3.2: All scores scaled by 0.8 (12/15)
  */
 export const ODDS_TIERS = {
-  HEAVY_FAVORITE: { maxOdds: 2, score: 15, label: 'Heavy Favorite' },
-  SOLID_FAVORITE: { maxOdds: 3, score: 13, label: 'Solid Favorite' },
-  CONTENDER: { maxOdds: 4, score: 11, label: 'Contender' },
-  LIVE_PRICE: { maxOdds: 6, score: 9, label: 'Live Price' },
-  MIDPACK: { maxOdds: 10, score: 7, label: 'Midpack' },
-  OUTSIDER: { maxOdds: 20, score: 5, label: 'Outsider' },
-  LONGSHOT: { maxOdds: Infinity, score: 3, label: 'Longshot' },
+  HEAVY_FAVORITE: { maxOdds: 2, score: 12, label: 'Heavy Favorite' },
+  SOLID_FAVORITE: { maxOdds: 3, score: 10, label: 'Solid Favorite' },
+  CONTENDER: { maxOdds: 4, score: 9, label: 'Contender' },
+  LIVE_PRICE: { maxOdds: 6, score: 7, label: 'Live Price' },
+  MIDPACK: { maxOdds: 10, score: 6, label: 'Midpack' },
+  OUTSIDER: { maxOdds: 20, score: 4, label: 'Outsider' },
+  LONGSHOT: { maxOdds: Infinity, score: 2, label: 'Longshot' },
 } as const;
 
 // ============================================================================

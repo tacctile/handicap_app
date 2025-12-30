@@ -1,11 +1,12 @@
 /**
  * Tests for Enhanced Trainer/Jockey Partnership Scoring
  *
+ * v3.2: Partnership bonus capped at 2 pts max
  * Tests the analyzeTrainerJockeyPartnership and enhanced partnership bonus
  * which awards points based on trainer/jockey combo win rate:
- * - Elite partnership (30%+ combo win rate, 8+ starts): 4 pts
- * - Strong partnership (25-29% combo win rate, 5+ starts): 3 pts
- * - Good partnership (20-24% combo win rate, 5+ starts): 2 pts
+ * - Elite partnership (30%+ combo win rate, 8+ starts): 2 pts (was 4)
+ * - Strong partnership (25-29% combo win rate, 5+ starts): 2 pts (was 3)
+ * - Good partnership (20-24% combo win rate, 5+ starts): 1 pt (was 2)
  * - Regular partnership (15-19% combo win rate, 5+ starts): 1 pt
  * - New or weak partnership: 0 pts
  */
@@ -421,8 +422,9 @@ describe('analyzeTrainerJockeyPartnership', () => {
 });
 
 describe('calculateConnectionsScore with Enhanced Partnership', () => {
-  it('should award 4 points for elite partnership in total connections score', () => {
+  it('should award 2 points for elite partnership in total connections score', () => {
     // Create horse with elite partnership (8-for-20 = 40%)
+    // v3.2: capped at 2 pts (was 4)
     const pps: PastPerformance[] = [];
     for (let i = 0; i < 20; i++) {
       pps.push(createPP('J. Smith', i < 8 ? 1 : 4));
@@ -431,13 +433,14 @@ describe('calculateConnectionsScore with Enhanced Partnership', () => {
     const horse = createTestHorse('J. Smith', pps);
     const result = calculateConnectionsScore(horse);
 
-    expect(result.partnershipBonus).toBe(4);
+    expect(result.partnershipBonus).toBe(2);
     expect(result.reasoning).toContain('Elite combo');
     expect(result.reasoning).toContain('40%');
   });
 
-  it('should award 3 points for strong partnership', () => {
+  it('should award 2 points for strong partnership', () => {
     // 3-for-12 = 25%
+    // v3.2: capped at 2 pts (was 3)
     const pps: PastPerformance[] = [];
     for (let i = 0; i < 12; i++) {
       pps.push(createPP('J. Ortiz', i < 3 ? 1 : 4));
@@ -446,12 +449,13 @@ describe('calculateConnectionsScore with Enhanced Partnership', () => {
     const horse = createTestHorse('J. Ortiz', pps);
     const result = calculateConnectionsScore(horse);
 
-    expect(result.partnershipBonus).toBe(3);
+    expect(result.partnershipBonus).toBe(2);
     expect(result.reasoning).toContain('Strong combo');
   });
 
-  it('should award 2 points for good partnership', () => {
+  it('should award 1 point for good partnership', () => {
     // 1-for-5 = 20%
+    // v3.2: reduced to 1 pt (was 2)
     const pps: PastPerformance[] = [];
     for (let i = 0; i < 5; i++) {
       pps.push(createPP('I. Ortiz Jr.', i === 0 ? 1 : 4));
@@ -460,7 +464,7 @@ describe('calculateConnectionsScore with Enhanced Partnership', () => {
     const horse = createTestHorse('I. Ortiz Jr.', pps);
     const result = calculateConnectionsScore(horse);
 
-    expect(result.partnershipBonus).toBe(2);
+    expect(result.partnershipBonus).toBe(1);
     expect(result.reasoning).toContain('Good combo');
   });
 
@@ -505,8 +509,8 @@ describe('calculateConnectionsScore with Enhanced Partnership', () => {
 });
 
 describe('MAX_ENHANCED_PARTNERSHIP_POINTS', () => {
-  it('should be 4 points maximum', () => {
-    expect(MAX_ENHANCED_PARTNERSHIP_POINTS).toBe(4);
+  it('should be 2 points maximum (v3.2 cap)', () => {
+    expect(MAX_ENHANCED_PARTNERSHIP_POINTS).toBe(2);
   });
 });
 

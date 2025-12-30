@@ -8,11 +8,11 @@
 
 > ⚠️ **IMPORTANT: Algorithm Version Notice**
 >
-> The current implementation uses **Algorithm v3.1** with a **328-point base score** and **±40 overlay adjustment**.
+> The current implementation uses **Algorithm v3.2** with a **328-point base score** and **±40 overlay adjustment**.
 >
 > The detailed category sections below (Categories 1-6) document **v2.0 legacy scoring logic** for historical reference. For current implementation details, see **[ALGORITHM_V3_SUMMARY.md](./ALGORITHM_V3_SUMMARY.md)**.
 >
-> The summary table immediately below reflects the current v3.1 weights.
+> The summary table immediately below reflects the current v3.2 weights.
 
 ---
 
@@ -22,34 +22,34 @@
 
 **The 328-point base system provides granular precision while maintaining track specificity:**
 
-**Core Philosophy (v3.1 - Phase 6 Algorithm):**
+**Core Philosophy (v3.2 - Phase 7 Speed Dominance):**
 
-- Speed figures as primary predictive factor (27.4% of base)
-- Pace scenario analysis for race shape prediction
-- Form cycle patterns with enhanced winner bonuses
-- Track bias and post position as situational modifiers
-- Odds factor incorporates market wisdom
+- Speed figures as dominant predictive factor (32.0% of base)
+- Class as strong secondary factor (10.7%)
+- Reduced form/pace/connections volatility
+- Margin-based winner bonuses
+- Track specialist emphasis
 - Connections and equipment as fine-tuning factors
 
-**Weight Distribution Rationale (v3.1):**
+**Weight Distribution Rationale (v3.2):**
 
-| Category         | Points | % of 328 | Rationale                                    |
-| ---------------- | ------ | -------- | -------------------------------------------- |
-| Speed Figures    | 90     | 27.4%    | Most predictive factor per industry research |
-| Form             | 50     | 15.2%    | Enhanced winner bonuses (+20 for WLO)        |
-| Pace             | 45     | 13.7%    | High predictive value for race shape         |
-| Class            | 32     | 9.8%     | Class movement and competition level         |
-| Connections      | 27     | 8.2%     | Modifier, not primary driver                 |
-| Distance/Surface | 20     | 6.1%     | Turf/Wet/Distance affinities                 |
-| Odds Factor      | 15     | 4.6%     | Phase 6: Market wisdom for favorites         |
-| Post Position    | 12     | 3.7%     | Track-dependent situational factor           |
-| Trainer Patterns | 10     | 3.0%     | Situational trainer bonuses                  |
-| Equipment        | 8      | 2.4%     | Speculative, fine-tuning only                |
-| Track Specialist | 6      | 1.8%     | Proven success at today's track              |
-| Trainer S/D      | 6      | 1.8%     | Trainer surface/distance specialization      |
-| Combo Patterns   | 4      | 1.2%     | Jockey/trainer combinations                  |
-| P3 Refinements   | 2      | 0.6%     | Age factor + Sire's Sire                     |
-| Weight           | 1      | 0.3%     | Subtle weight change refinement              |
+| Category         | Points | % of 328 | Rationale                                |
+| ---------------- | ------ | -------- | ---------------------------------------- |
+| Speed Figures    | 105    | 32.0%    | v3.2: Increased for speed dominance      |
+| Form             | 42     | 12.8%    | v3.2: Reduced, margin-based winner bonus |
+| Class            | 35     | 10.7%    | v3.2: Increased for class dominance      |
+| Pace             | 35     | 10.7%    | v3.2: Reduced, min 8pt floor             |
+| Distance/Surface | 25     | 7.6%     | v3.2: Increased for balance              |
+| Connections      | 23     | 7.0%     | v3.2: Reduced, partnership capped at 2   |
+| Odds Factor      | 12     | 3.7%     | v3.2: Reduced from 15                    |
+| Post Position    | 12     | 3.7%     | Track-dependent situational factor       |
+| Track Specialist | 10     | 3.0%     | v3.2: Increased from 6                   |
+| Trainer Patterns | 8      | 2.4%     | v3.2: Reduced from 10                    |
+| Equipment        | 8      | 2.4%     | Speculative, fine-tuning only            |
+| Trainer S/D      | 6      | 1.8%     | Trainer surface/distance specialization  |
+| Combo Patterns   | 4      | 1.2%     | Jockey/trainer combinations              |
+| P3 Refinements   | 2      | 0.6%     | Age factor + Sire's Sire                 |
+| Weight           | 1      | 0.3%     | Subtle weight change refinement          |
 
 **Scoring Limits:**
 
@@ -643,10 +643,11 @@ The system automatically detects the current month and applies track-specific se
 
 ---
 
-_Document Version: 3.1_
+_Document Version: 3.2_
 _Last Updated: December 2025_
 _Status: Track-Agnostic Universal Scoring Engine_
 _Integration: Requires Track Intelligence Database for track-specific values_
+_Changes in v3.2: Phase 7 speed dominance (105 pts), form/pace/connections reduced, margin-based winner bonus, pace floor 8pts._
 _Changes in v3.1: Algorithm rebuild with 328-point base. See ALGORITHM_V3_SUMMARY.md for complete category breakdown._
 _Changes in v3.0: Phase 3 speed rebalance (90 pts), base increased to 313._
 _Changes in v2.5: Overlay system added with ±50 cap._

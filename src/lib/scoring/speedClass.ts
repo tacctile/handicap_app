@@ -2,16 +2,17 @@
  * Speed & Class Scoring Module
  * Calculates scores based on speed figures and class level analysis
  *
- * Score Breakdown (v3.0 - Speed Weight Rebalance):
- * - Speed Figure Score: 0-90 points (based on Beyer/TimeformUS figures)
- * - Class Level Score: 0-32 points (based on class movement and success)
+ * Score Breakdown (v3.2 - Phase 7 Weight Rebalance):
+ * - Speed Figure Score: 0-105 points (based on Beyer/TimeformUS figures)
+ * - Class Level Score: 0-35 points (based on class movement and success)
  *
- * Total: 0-122 points (37% of 328 base)
+ * Total: 0-140 points (42.7% of 328 base)
  *
- * v3.0 CHANGES (Phase 3 - Speed Weight Increase):
- * - Speed figures increased from 48 to 90 pts (was 16.5%, now ~29%)
- * - Industry standard weights speed at 30-40%, this is most predictive factor
- * - New granular tiers based on par differential
+ * v3.2 CHANGES (Phase 7 - Speed/Class Dominance):
+ * - Speed figures increased from 90 to 105 pts (27.4% → 32.0%)
+ * - Class increased from 32 to 35 pts (9.8% → 10.7%)
+ * - Combined Speed/Class now 42.7% of base score (was 37.2%)
+ * - Addresses over-indexing on situational factors
  */
 
 import type { HorseEntry, RaceHeader, PastPerformance, RaceClassification } from '../../types/drf';
@@ -382,23 +383,23 @@ function countSpeedFigures(pastPerformances: PastPerformance[], count: number = 
 // SPEED FIGURE SCORING
 // ============================================================================
 
-/** Maximum speed figure score (v3.0: increased from 48 to 90) */
-export const MAX_SPEED_SCORE = 90;
+/** Maximum speed figure score (v3.2: increased from 90 to 105 for speed dominance) */
+export const MAX_SPEED_SCORE = 105;
 
 /**
- * Calculate RAW speed figure score (0-90 points) before confidence adjustment
+ * Calculate RAW speed figure score (0-105 points) before confidence adjustment
  * Based on comparison to par for today's class
  *
- * v3.0 NEW TIERS (90 max):
- * ≥ +10 differential to par → 90 pts
- * +7 to +9 → 80 pts
- * +4 to +6 → 70 pts
- * +1 to +3 (slightly above par) → 60 pts
- * 0 (at par) → 50 pts
- * -1 to -3 → 40 pts
- * -4 to -6 → 30 pts
- * -7 to -9 → 20 pts
- * ≤ -10 → 10 pts
+ * v3.2 NEW TIERS (105 max - increased for speed dominance):
+ * ≥ +10 differential to par → 105 pts
+ * +7 to +9 → 93 pts
+ * +4 to +6 → 82 pts
+ * +1 to +3 (slightly above par) → 70 pts
+ * 0 (at par) → 58 pts
+ * -1 to -3 → 47 pts
+ * -4 to -6 → 35 pts
+ * -7 to -9 → 23 pts
+ * ≤ -10 → 12 pts
  */
 function calculateRawSpeedScore(
   figure: number,
@@ -410,31 +411,31 @@ function calculateRawSpeedScore(
   let reasoning: string;
 
   if (differential >= 10) {
-    score = 90;
+    score = 105;
     reasoning = `${figure} Beyer (+${differential} above par ${parForClass}) - Elite`;
   } else if (differential >= 7) {
-    score = 80;
+    score = 93;
     reasoning = `${figure} Beyer (+${differential} above par ${parForClass}) - Strong`;
   } else if (differential >= 4) {
-    score = 70;
+    score = 82;
     reasoning = `${figure} Beyer (+${differential} above par ${parForClass}) - Good`;
   } else if (differential >= 1) {
-    score = 60;
+    score = 70;
     reasoning = `${figure} Beyer (+${differential} above par ${parForClass}) - Above par`;
   } else if (differential === 0) {
-    score = 50;
+    score = 58;
     reasoning = `${figure} Beyer (at par ${parForClass})`;
   } else if (differential >= -3) {
-    score = 40;
+    score = 47;
     reasoning = `${figure} Beyer (${Math.abs(differential)} below par ${parForClass})`;
   } else if (differential >= -6) {
-    score = 30;
+    score = 35;
     reasoning = `${figure} Beyer (${Math.abs(differential)} below par ${parForClass})`;
   } else if (differential >= -9) {
-    score = 20;
+    score = 23;
     reasoning = `${figure} Beyer (${Math.abs(differential)} below par ${parForClass})`;
   } else {
-    score = 10;
+    score = 12;
     reasoning = `${figure} Beyer (${Math.abs(differential)} below par ${parForClass}) - Below par`;
   }
 
@@ -442,16 +443,16 @@ function calculateRawSpeedScore(
 }
 
 /**
- * Calculate speed figure score (0-90 points)
+ * Calculate speed figure score (0-105 points)
  * Based on comparison to par for today's class
  *
- * v3.0: Increased from 48 to 90 max to weight speed at ~29% (industry standard 30-40%)
+ * v3.2: Increased from 90 to 105 max for speed dominance (32% of base)
  *
  * SCORING WITH CONFIDENCE (Phase 2 still applies):
- * - No Beyer figures → 22.5 pts (25% of max 90, penalized for unknown)
- * - Only 1 figure in last 3 → score capped at 33.75 pts max
- * - 2 figures in last 3 → score capped at 67.5 pts max
- * - 3+ figures in last 3 → full 90 pts max
+ * - No Beyer figures → 26.25 pts (25% of max 105, penalized for unknown)
+ * - Only 1 figure in last 3 → score capped at 39.4 pts max
+ * - 2 figures in last 3 → score capped at 78.75 pts max
+ * - 3+ figures in last 3 → full 105 pts max
  */
 function calculateSpeedFigureScore(
   bestRecent: number | null,
@@ -587,8 +588,8 @@ function hasValidExcuse(pp: PastPerformance): boolean {
 }
 
 /**
- * Calculate class level score (0-32 points)
- * Rescaled from 20 max to 32 max (scale factor: 80/50 = 1.6)
+ * Calculate class level score (0-35 points)
+ * v3.2: Increased from 32 to 35 max for class dominance
  */
 function calculateClassScore(
   currentClass: RaceClassification,
@@ -597,7 +598,7 @@ function calculateClassScore(
 ): { score: number; reasoning: string } {
   if (pastPerformances.length === 0) {
     return {
-      score: 16, // Neutral for first-time starters (was 10)
+      score: 18, // Neutral for first-time starters
       reasoning: 'First-time starter - class unknown',
     };
   }
@@ -606,7 +607,7 @@ function calculateClassScore(
   const lastRace = pastPerformances[0];
   if (!lastRace) {
     return {
-      score: 16, // was 10
+      score: 18,
       reasoning: 'No recent race data',
     };
   }
@@ -615,7 +616,7 @@ function calculateClassScore(
   // Proven winner at this level
   if (provenData.proven) {
     return {
-      score: 32, // was 20
+      score: 35,
       reasoning: `Proven winner at level (${provenData.wins}W, ${provenData.itmCount} ITM at class)`,
     };
   }
@@ -623,7 +624,7 @@ function calculateClassScore(
   // Competitive at level (placed but not won)
   if (provenData.itmCount >= 2) {
     return {
-      score: 24, // was 15
+      score: 26,
       reasoning: `Competitive at level (${provenData.itmCount} ITM at class)`,
     };
   }
@@ -631,7 +632,7 @@ function calculateClassScore(
   // Class drop with valid excuse
   if (classMovement === 'drop' && hasExcuse) {
     return {
-      score: 29, // was 18
+      score: 32,
       reasoning: `Class drop with excuse: "${lastRace.tripComment.substring(0, 30)}..."`,
     };
   }
@@ -639,7 +640,7 @@ function calculateClassScore(
   // Simple class drop
   if (classMovement === 'drop') {
     return {
-      score: 26, // was 16
+      score: 28,
       reasoning: 'Dropping in class',
     };
   }
@@ -652,13 +653,13 @@ function calculateClassScore(
 
     if (wasCompetitive) {
       return {
-        score: 19, // was 12
+        score: 21,
         reasoning: 'Rising in class, competitive last out',
       };
     }
 
     return {
-      score: 16, // was 10
+      score: 18,
       reasoning: 'Rising in class - testing',
     };
   }
@@ -666,7 +667,7 @@ function calculateClassScore(
   // Level class, not proven
   if (provenData.itmCount >= 1) {
     return {
-      score: 19, // was 12
+      score: 21,
       reasoning: 'Placed at level, seeking first win',
     };
   }
@@ -676,13 +677,13 @@ function calculateClassScore(
 
   if (recentPlacings === 0) {
     return {
-      score: 8, // was 5
+      score: 9,
       reasoning: 'Struggling at current level',
     };
   }
 
   return {
-    score: 16, // was 10
+    score: 18,
     reasoning: 'Competitive but unproven at level',
   };
 }
@@ -866,7 +867,7 @@ export function calculateSpeedClassScore(
   }
 
   // Apply shipper adjustment to speed score (±2-5 points max)
-  // v3.0: Updated max from 48 to 90
+  // v3.2: Updated max from 90 to 105
   const adjustedSpeedScore = Math.max(
     0,
     Math.min(

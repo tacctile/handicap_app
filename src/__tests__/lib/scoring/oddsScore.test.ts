@@ -93,97 +93,97 @@ describe('Odds Scoring', () => {
   });
 
   describe('Odds Scoring Tiers', () => {
-    // MAX_ODDS_SCORE = 15
-    it('scores 1-1 (even money) as 15 pts (heavy favorite)', () => {
-      expect(calculateOddsPoints(1.0)).toBe(15);
+    // v3.2: MAX_ODDS_SCORE = 12 (reduced from 15)
+    it('scores 1-1 (even money) as 12 pts (heavy favorite)', () => {
+      expect(calculateOddsPoints(1.0)).toBe(12);
     });
 
-    it('scores 2-1 as 15 pts (heavy favorite)', () => {
-      expect(calculateOddsPoints(2.0)).toBe(15);
+    it('scores 2-1 as 12 pts (heavy favorite)', () => {
+      expect(calculateOddsPoints(2.0)).toBe(12);
     });
 
-    it('scores 5-2 (2.5) as 13 pts (solid favorite)', () => {
-      expect(calculateOddsPoints(2.5)).toBe(13);
+    it('scores 5-2 (2.5) as 10 pts (solid favorite)', () => {
+      expect(calculateOddsPoints(2.5)).toBe(10);
     });
 
-    it('scores 3-1 as 13 pts (solid favorite)', () => {
-      expect(calculateOddsPoints(3.0)).toBe(13);
+    it('scores 3-1 as 10 pts (solid favorite)', () => {
+      expect(calculateOddsPoints(3.0)).toBe(10);
     });
 
-    it('scores 7-2 (3.5) as 11 pts (contender)', () => {
-      expect(calculateOddsPoints(3.5)).toBe(11);
+    it('scores 7-2 (3.5) as 9 pts (contender)', () => {
+      expect(calculateOddsPoints(3.5)).toBe(9);
     });
 
-    it('scores 4-1 as 11 pts (contender)', () => {
-      expect(calculateOddsPoints(4.0)).toBe(11);
+    it('scores 4-1 as 9 pts (contender)', () => {
+      expect(calculateOddsPoints(4.0)).toBe(9);
     });
 
-    it('scores 9-2 (4.5) as 9 pts (live price)', () => {
-      expect(calculateOddsPoints(4.5)).toBe(9);
+    it('scores 9-2 (4.5) as 7 pts (live price)', () => {
+      expect(calculateOddsPoints(4.5)).toBe(7);
     });
 
-    it('scores 5-1 as 9 pts (live price)', () => {
-      expect(calculateOddsPoints(5.0)).toBe(9);
+    it('scores 5-1 as 7 pts (live price)', () => {
+      expect(calculateOddsPoints(5.0)).toBe(7);
     });
 
-    it('scores 6-1 as 9 pts (live price)', () => {
-      expect(calculateOddsPoints(6.0)).toBe(9);
+    it('scores 6-1 as 7 pts (live price)', () => {
+      expect(calculateOddsPoints(6.0)).toBe(7);
     });
 
-    it('scores 7-1 as 7 pts (midpack)', () => {
-      expect(calculateOddsPoints(7.0)).toBe(7);
+    it('scores 7-1 as 6 pts (midpack)', () => {
+      expect(calculateOddsPoints(7.0)).toBe(6);
     });
 
-    it('scores 10-1 as 7 pts (midpack)', () => {
-      expect(calculateOddsPoints(10.0)).toBe(7);
+    it('scores 10-1 as 6 pts (midpack)', () => {
+      expect(calculateOddsPoints(10.0)).toBe(6);
     });
 
-    it('scores 12-1 as 5 pts (outsider)', () => {
-      expect(calculateOddsPoints(12.0)).toBe(5);
+    it('scores 12-1 as 4 pts (outsider)', () => {
+      expect(calculateOddsPoints(12.0)).toBe(4);
     });
 
-    it('scores 15-1 as 5 pts (outsider)', () => {
-      expect(calculateOddsPoints(15.0)).toBe(5);
+    it('scores 15-1 as 4 pts (outsider)', () => {
+      expect(calculateOddsPoints(15.0)).toBe(4);
     });
 
-    it('scores 20-1 as 5 pts (outsider)', () => {
-      expect(calculateOddsPoints(20.0)).toBe(5);
+    it('scores 20-1 as 4 pts (outsider)', () => {
+      expect(calculateOddsPoints(20.0)).toBe(4);
     });
 
-    it('scores 30-1 as 3 pts (longshot)', () => {
-      expect(calculateOddsPoints(30.0)).toBe(3);
+    it('scores 30-1 as 2 pts (longshot)', () => {
+      expect(calculateOddsPoints(30.0)).toBe(2);
     });
 
-    it('scores 50-1 as 3 pts (longshot)', () => {
-      expect(calculateOddsPoints(50.0)).toBe(3);
+    it('scores 50-1 as 2 pts (longshot)', () => {
+      expect(calculateOddsPoints(50.0)).toBe(2);
     });
 
-    it('scores null odds as 7 pts (neutral)', () => {
+    it('scores null odds as 6 pts (neutral)', () => {
       expect(calculateOddsPoints(null)).toBe(NEUTRAL_ODDS_SCORE);
     });
 
-    it('scores 0 odds as 7 pts (neutral)', () => {
+    it('scores 0 odds as 6 pts (neutral)', () => {
       expect(calculateOddsPoints(0)).toBe(NEUTRAL_ODDS_SCORE);
     });
 
-    it('scores negative odds as 7 pts (neutral)', () => {
+    it('scores negative odds as 6 pts (neutral)', () => {
       expect(calculateOddsPoints(-5)).toBe(NEUTRAL_ODDS_SCORE);
     });
   });
 
   describe('Score Spread', () => {
-    it('has 12 point spread between heavy favorite and longshot', () => {
-      const heavyFavorite = calculateOddsPoints(1.0); // 15 pts
-      const longshot = calculateOddsPoints(30.0); // 3 pts
-      expect(heavyFavorite - longshot).toBe(12);
+    it('has 10 point spread between heavy favorite and longshot', () => {
+      const heavyFavorite = calculateOddsPoints(1.0); // 12 pts
+      const longshot = calculateOddsPoints(30.0); // 2 pts
+      expect(heavyFavorite - longshot).toBe(10);
     });
 
-    it('has MAX_ODDS_SCORE of 15', () => {
-      expect(MAX_ODDS_SCORE).toBe(15);
+    it('has MAX_ODDS_SCORE of 12', () => {
+      expect(MAX_ODDS_SCORE).toBe(12);
     });
 
-    it('has NEUTRAL_ODDS_SCORE of 7', () => {
-      expect(NEUTRAL_ODDS_SCORE).toBe(7);
+    it('has NEUTRAL_ODDS_SCORE of 6', () => {
+      expect(NEUTRAL_ODDS_SCORE).toBe(6);
     });
   });
 
@@ -196,7 +196,7 @@ describe('Odds Scoring', () => {
 
       const result = calculateOddsScore(horse);
 
-      expect(result.total).toBe(13);
+      expect(result.total).toBe(10);
       expect(result.oddsValue).toBe(3.0);
       expect(result.oddsSource).toBe('morning_line');
       expect(result.tier).toBe('Solid Favorite');
@@ -210,7 +210,7 @@ describe('Odds Scoring', () => {
 
       const result = calculateOddsScore(horse);
 
-      expect(result.total).toBe(15);
+      expect(result.total).toBe(12);
       expect(result.oddsValue).toBe(1.0);
       expect(result.tier).toBe('Heavy Favorite');
     });
@@ -223,7 +223,7 @@ describe('Odds Scoring', () => {
 
       const result = calculateOddsScore(horse);
 
-      expect(result.total).toBe(3);
+      expect(result.total).toBe(2);
       expect(result.tier).toBe('Longshot');
     });
 
@@ -235,7 +235,7 @@ describe('Odds Scoring', () => {
 
       const result = calculateOddsScore(horse);
 
-      expect(result.total).toBe(7);
+      expect(result.total).toBe(6);
       expect(result.oddsValue).toBeNull();
       expect(result.oddsSource).toBe('none');
       expect(result.tier).toBe('Unknown');
@@ -251,7 +251,7 @@ describe('Odds Scoring', () => {
 
       const result = calculateOddsScore(horse, 2.0);
 
-      expect(result.total).toBe(15); // 2-1 = heavy favorite
+      expect(result.total).toBe(12); // 2-1 = heavy favorite
       expect(result.oddsValue).toBe(2.0);
       expect(result.oddsSource).toBe('live');
     });
@@ -264,7 +264,7 @@ describe('Odds Scoring', () => {
 
       const result = calculateOddsScore(horse, '3-1');
 
-      expect(result.total).toBe(13); // 3-1 = solid favorite
+      expect(result.total).toBe(10); // 3-1 = solid favorite
       expect(result.oddsValue).toBe(3.0);
       expect(result.oddsSource).toBe('live');
     });
@@ -277,7 +277,7 @@ describe('Odds Scoring', () => {
 
       const result = calculateOddsScore(horse, 'invalid');
 
-      expect(result.total).toBe(9); // 5-1 from morning line
+      expect(result.total).toBe(7); // 5-1 from morning line
       expect(result.oddsValue).toBe(5.0);
       expect(result.oddsSource).toBe('morning_line');
     });
@@ -290,7 +290,7 @@ describe('Odds Scoring', () => {
 
       const result = calculateOddsScore(horse, null);
 
-      expect(result.total).toBe(11); // 7-2 from morning line
+      expect(result.total).toBe(9); // 7-2 from morning line
       expect(result.oddsValue).toBe(3.5);
     });
   });
@@ -406,13 +406,13 @@ describe('Odds Scoring', () => {
 
     describe('calculateOddsPointDifference', () => {
       it('calculates positive difference when odds shorten', () => {
-        // From 5-1 to 2-1 = gains 6 points (9 to 15)
-        expect(calculateOddsPointDifference(5.0, 2.0)).toBe(6);
+        // From 5-1 to 2-1 = gains 5 points (7 to 12)
+        expect(calculateOddsPointDifference(5.0, 2.0)).toBe(5);
       });
 
       it('calculates negative difference when odds lengthen', () => {
-        // From 3-1 to 10-1 = loses 6 points (13 to 7)
-        expect(calculateOddsPointDifference(3.0, 10.0)).toBe(-6);
+        // From 3-1 to 10-1 = loses 4 points (10 to 6)
+        expect(calculateOddsPointDifference(3.0, 10.0)).toBe(-4);
       });
 
       it('returns 0 when odds unchanged', () => {
@@ -420,39 +420,39 @@ describe('Odds Scoring', () => {
       });
 
       it('handles null values', () => {
-        expect(calculateOddsPointDifference(null, 5.0)).toBe(2); // 7 (neutral) to 9
-        expect(calculateOddsPointDifference(5.0, null)).toBe(-2); // 9 to 7 (neutral)
+        expect(calculateOddsPointDifference(null, 5.0)).toBe(1); // 6 (neutral) to 7
+        expect(calculateOddsPointDifference(5.0, null)).toBe(-1); // 7 to 6 (neutral)
       });
     });
   });
 
   describe('Integration Scenarios', () => {
     it('Scenario A: Favorite gets credit', () => {
-      // 1-1 favorite should get maximum 15 points
+      // 1-1 favorite should get maximum 12 points (v3.2)
       const favorite = createHorseEntry({
         morningLineOdds: '1-1',
         morningLineDecimal: 1.0,
       });
 
       const result = calculateOddsScore(favorite);
-      expect(result.total).toBe(15);
+      expect(result.total).toBe(12);
       expect(result.tier).toBe('Heavy Favorite');
     });
 
     it('Scenario B: Longshot still has modest points', () => {
-      // 20-1 horse gets 5 points (not zero)
+      // 20-1 horse gets 4 points (not zero)
       const longshot = createHorseEntry({
         morningLineOdds: '20-1',
         morningLineDecimal: 20.0,
       });
 
       const result = calculateOddsScore(longshot);
-      expect(result.total).toBe(5);
+      expect(result.total).toBe(4);
       expect(result.tier).toBe('Outsider');
     });
 
     it('Scenario C: Live odds override morning line', () => {
-      // Morning line 5-1 (9 pts), live odds 2-1 (15 pts) = +6 points
+      // Morning line 5-1 (7 pts), live odds 2-1 (12 pts) = +5 points
       const horse = createHorseEntry({
         morningLineOdds: '5-1',
         morningLineDecimal: 5.0,
@@ -461,9 +461,9 @@ describe('Odds Scoring', () => {
       const withMorningLine = calculateOddsScore(horse);
       const withLiveOdds = calculateOddsScore(horse, 2.0);
 
-      expect(withMorningLine.total).toBe(9);
-      expect(withLiveOdds.total).toBe(15);
-      expect(withLiveOdds.total - withMorningLine.total).toBe(6);
+      expect(withMorningLine.total).toBe(7);
+      expect(withLiveOdds.total).toBe(12);
+      expect(withLiveOdds.total - withMorningLine.total).toBe(5);
     });
 
     it('Scenario D: Missing odds gets neutral score', () => {
@@ -473,7 +473,7 @@ describe('Odds Scoring', () => {
       });
 
       const result = calculateOddsScore(horse);
-      expect(result.total).toBe(7); // Neutral
+      expect(result.total).toBe(6); // Neutral (v3.2)
       expect(result.oddsSource).toBe('none');
     });
   });

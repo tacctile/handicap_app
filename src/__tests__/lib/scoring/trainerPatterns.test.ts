@@ -287,7 +287,7 @@ describe('Trainer Patterns Scoring', () => {
       expect(result.matchedPatterns.length).toBe(2);
     });
 
-    it('caps at 15 pts when multiple patterns exceed limit', () => {
+    it('caps at 8 pts when multiple patterns exceed limit', () => {
       const horse = createHorseEntry({
         lifetimeStarts: 0,
         medication: createMedication({
@@ -301,11 +301,11 @@ describe('Trainer Patterns Scoring', () => {
         }),
         daysSinceLastRace: 90,
         trainerCategoryStats: createTrainerCategoryStats({
-          firstTimeLasix: createTrainerStat(30, 25), // 3 pts (v3.0: scaled from 4)
-          firstTimeBlinkers: createTrainerStat(28, 20), // 2 pts (v3.0: scaled from 3)
-          firstStartTrainer: createTrainerStat(30, 40), // 3 pts (v3.0: scaled from 4)
-          days61to90: createTrainerStat(28, 20), // 2 pts (v3.0: scaled from 3)
-          wetTrack: createTrainerStat(30, 15), // 1 pt (v3.0: scaled from 2)
+          firstTimeLasix: createTrainerStat(30, 25), // 2 pts (v3.2: scaled from 3)
+          firstTimeBlinkers: createTrainerStat(28, 20), // 2 pts (v3.2: scaled from 2)
+          firstStartTrainer: createTrainerStat(30, 40), // 2 pts (v3.2: scaled from 3)
+          days61to90: createTrainerStat(28, 20), // 2 pts (v3.2: scaled from 2)
+          wetTrack: createTrainerStat(30, 15), // 1 pt (v3.2: scaled from 1)
         }),
         pastPerformances: [],
       });
@@ -315,8 +315,8 @@ describe('Trainer Patterns Scoring', () => {
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      // Multiple patterns but capped at 10 (v3.0: reduced from 15)
-      expect(result.total).toBe(10);
+      // Multiple patterns but capped at 8 (v3.2: reduced from 10)
+      expect(result.total).toBe(8);
       expect(result.matchedPatterns.length).toBeGreaterThan(3);
     });
   });

@@ -1,14 +1,25 @@
 /**
- * Algorithm v3.1 Validation Test Suite
+ * Algorithm v3.2 Validation Test Suite
  *
  * Phase 7: Final calibration tests to verify all scoring components
- * work together correctly after the algorithm rebuild (Phases 1-6).
+ * work together correctly after the algorithm rebuild (Phases 1-7).
+ *
+ * v3.2 Changes:
+ * - Speed: 90 → 105 pts
+ * - Class: 32 → 35 pts
+ * - Form: 50 → 42 pts
+ * - Pace: 45 → 35 pts
+ * - Connections: 27 → 23 pts
+ * - Odds: 15 → 12 pts
+ * - TrainerPatterns: 10 → 8 pts
+ * - TrackSpecialist: 6 → 10 pts
+ * - DistanceSurface: 20 → 25 pts (combined with trackSpecialist)
  *
  * Validates:
  * - Category totals sum to 328 pts
  * - Score bounds (0-368 total, 0-328 base, ±40 overlay)
  * - Favorite advantage (market wisdom incorporated)
- * - Recent winner advantage (+20 pts for WLO)
+ * - Recent winner advantage (margin-based WLO)
  * - Missing data penalty (FTS scores lower)
  * - Proven horse protection (reduced pace penalties)
  * - Score distribution sanity checks
@@ -35,44 +46,47 @@ import {
 // PART 1: CATEGORY TOTALS VALIDATION
 // ============================================================================
 
-describe('Algorithm v3.1 - Category Totals', () => {
+describe('Algorithm v3.2 - Category Totals', () => {
   it('sum of all category max points equals 328', () => {
     const expectedCategories = {
-      speedFigures: 90,
-      class: 32,
-      form: 50,
-      pace: 45,
-      connections: 27,
-      distanceSurface: 20,
-      odds: 15,
+      speedFigures: 105, // v3.2: increased from 90
+      class: 35, // v3.2: increased from 32
+      form: 42, // v3.2: reduced from 50
+      pace: 35, // v3.2: reduced from 45
+      connections: 23, // v3.2: reduced from 27
+      distanceSurface: 25, // v3.2: increased from 20 (includes trackSpecialist)
+      odds: 12, // v3.2: reduced from 15
       postPosition: 12,
-      trainerPatterns: 10,
+      trainerPatterns: 8, // v3.2: reduced from 10
       equipment: 8,
-      trackSpecialist: 6,
+      trackSpecialist: 10, // v3.2: increased from 6 (part of distanceSurface)
       trainerSurfaceDistance: 6,
       comboPatterns: 4,
       p3Refinements: 2, // age + siresSire
       weight: 1,
     };
 
+    // Note: trackSpecialist (10) is now included in distanceSurface (25 total)
+    // So we don't double count: 105+35+42+35+23+(25-10)+12+12+8+8+10+6+4+2+1 = 328
+    // Or: 105+35+42+35+23+15+12+12+8+8+10+6+4+2+1 = 328
     const sum = Object.values(expectedCategories).reduce((a, b) => a + b, 0);
     expect(sum).toBe(328);
   });
 
   it('SCORE_LIMITS constants match expected values', () => {
-    // Speed + Class combined
-    expect(SCORE_LIMITS.speedClass).toBe(122); // 90 + 32
+    // v3.2: Speed + Class combined = 105 + 35 = 140
+    expect(SCORE_LIMITS.speedClass).toBe(140);
 
-    // Individual categories
-    expect(SCORE_LIMITS.form).toBe(50);
-    expect(SCORE_LIMITS.pace).toBe(45);
-    expect(SCORE_LIMITS.connections).toBe(27);
-    expect(SCORE_LIMITS.distanceSurface).toBe(20);
-    expect(SCORE_LIMITS.odds).toBe(15);
+    // Individual categories (v3.2 values)
+    expect(SCORE_LIMITS.form).toBe(42);
+    expect(SCORE_LIMITS.pace).toBe(35);
+    expect(SCORE_LIMITS.connections).toBe(23);
+    expect(SCORE_LIMITS.distanceSurface).toBe(25);
+    expect(SCORE_LIMITS.odds).toBe(12);
     expect(SCORE_LIMITS.postPosition).toBe(12);
-    expect(SCORE_LIMITS.trainerPatterns).toBe(10);
+    expect(SCORE_LIMITS.trainerPatterns).toBe(8);
     expect(SCORE_LIMITS.equipment).toBe(8);
-    expect(SCORE_LIMITS.trackSpecialist).toBe(6);
+    expect(SCORE_LIMITS.trackSpecialist).toBe(10);
     expect(SCORE_LIMITS.trainerSurfaceDistance).toBe(6);
     expect(SCORE_LIMITS.comboPatterns).toBe(4);
     expect(SCORE_LIMITS.ageFactor).toBe(1);
@@ -96,7 +110,7 @@ describe('Algorithm v3.1 - Category Totals', () => {
 // PART 2: SCORE BOUNDS VALIDATION
 // ============================================================================
 
-describe('Algorithm v3.1 - Score Bounds', () => {
+describe('Algorithm v3.2 - Score Bounds', () => {
   it('no horse can score below 0', () => {
     // Create worst case: FTS with no data
     const horse = createHorseEntry({
@@ -193,7 +207,7 @@ describe('Algorithm v3.1 - Score Bounds', () => {
 // PART 3: FAVORITE ADVANTAGE VALIDATION
 // ============================================================================
 
-describe('Algorithm v3.1 - Favorite Advantage', () => {
+describe('Algorithm v3.2 - Favorite Advantage', () => {
   it('1-1 favorite scores higher than 20-1 with average stats', () => {
     // Create two identical horses, only odds differ
     const baseHorse = {
@@ -239,7 +253,7 @@ describe('Algorithm v3.1 - Favorite Advantage', () => {
     expect(favoriteScore.breakdown.odds.total).toBeGreaterThan(longshotScore.breakdown.odds.total);
   });
 
-  it('odds score gives 15 pts for heavy favorite vs 3 pts for longshot', () => {
+  it('odds score gives 12 pts for heavy favorite vs 2 pts for longshot (v3.2)', () => {
     const favorite = createHorseEntry({ morningLineOdds: '1-1', morningLineDecimal: 1 });
     const longshot = createHorseEntry({ morningLineOdds: '30-1', morningLineDecimal: 30 });
 
@@ -247,9 +261,9 @@ describe('Algorithm v3.1 - Favorite Advantage', () => {
     const favScore = calculateHorseScore(favorite, header, '1-1', 'fast', false);
     const longScore = calculateHorseScore(longshot, header, '30-1', 'fast', false);
 
-    // Check odds breakdown specifically
-    expect(favScore.breakdown.odds.total).toBe(15);
-    expect(longScore.breakdown.odds.total).toBe(3);
+    // v3.2: Check odds breakdown specifically (scaled from 15/3 to 12/2)
+    expect(favScore.breakdown.odds.total).toBe(12);
+    expect(longScore.breakdown.odds.total).toBe(2);
   });
 });
 
@@ -257,7 +271,7 @@ describe('Algorithm v3.1 - Favorite Advantage', () => {
 // PART 4: RECENT WINNER ADVANTAGE VALIDATION
 // ============================================================================
 
-describe('Algorithm v3.1 - Recent Winner Advantage', () => {
+describe('Algorithm v3.2 - Recent Winner Advantage', () => {
   it('WLO horse scores 20+ pts higher in form than horse that ran 5th', () => {
     // Winner last out
     const winner = createHorseEntry({
@@ -335,7 +349,7 @@ describe('Algorithm v3.1 - Recent Winner Advantage', () => {
 // PART 5: MISSING DATA PENALTY VALIDATION
 // ============================================================================
 
-describe('Algorithm v3.1 - Missing Data Penalty', () => {
+describe('Algorithm v3.2 - Missing Data Penalty', () => {
   it('first-time starter scores significantly lower than proven horse', () => {
     // First-time starter
     const fts = createHorseEntry({
@@ -436,7 +450,7 @@ describe('Algorithm v3.1 - Missing Data Penalty', () => {
 // PART 6: PROVEN HORSE PROTECTION VALIDATION
 // ============================================================================
 
-describe('Algorithm v3.1 - Proven Horse Protection', () => {
+describe('Algorithm v3.2 - Proven Horse Protection', () => {
   it('E horse with baseScore >= 180 gets reduced pace penalty in speed duel', () => {
     // High-scoring speed horse
     const provenSpeed = createHorseEntry({
@@ -504,7 +518,7 @@ describe('Algorithm v3.1 - Proven Horse Protection', () => {
 // PART 7: SCORE DISTRIBUTION SANITY CHECKS
 // ============================================================================
 
-describe('Algorithm v3.1 - Score Distribution Sanity', () => {
+describe('Algorithm v3.2 - Score Distribution Sanity', () => {
   it('elite horse with good data scores 250-320 base', () => {
     const elite = createHorseEntry({
       lifetimeStarts: 20,
@@ -649,7 +663,7 @@ describe('Algorithm v3.1 - Score Distribution Sanity', () => {
 // PART 8: REGRESSION TESTS
 // ============================================================================
 
-describe('Algorithm v3.1 - Regression Tests', () => {
+describe('Algorithm v3.2 - Regression Tests', () => {
   it('scores are deterministic (same inputs = same output)', () => {
     const horse = createHorseEntry({
       bestBeyer: 85,

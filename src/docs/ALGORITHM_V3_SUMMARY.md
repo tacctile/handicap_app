@@ -1,15 +1,16 @@
-# Furlong Scoring Algorithm v3.1
+# Furlong Scoring Algorithm v3.2
 
 ## Overview
 
-The Furlong scoring algorithm v3.1 represents a complete rebuild through Phases 1-6, focusing on:
+The Furlong scoring algorithm v3.2 represents Phase 7 improvements based on analysis of 27 races that showed over-indexing on situational factors. The update focuses on:
 
-- Speed figures as the dominant predictive factor (27.4% of base)
-- Enhanced winner bonuses (+20 pts for WLO)
-- Market wisdom incorporation via odds factor
-- Missing data penalties for low-confidence horses
-- Proven horse protection to prevent favorites from being destroyed by pace overlay
-- Reduced and capped overlay adjustments
+- Speed figures as the DOMINANT predictive factor (32.0% of base)
+- Class as strong secondary factor (10.7%)
+- Reduced form/pace/connections volatility
+- Margin-based winner bonuses (scales by lengths won)
+- Pace volatility reduction with minimum 8pt floor
+- EP1/LP exceptions for elite pace figures
+- Partnership bonus capped at 2 pts
 
 **Score Ranges:**
 
@@ -20,26 +21,65 @@ The Furlong scoring algorithm v3.1 represents a complete rebuild through Phases 
 
 ## Category Weights
 
-| Category         | Points | % of Base | Description                                   |
-| ---------------- | ------ | --------- | --------------------------------------------- |
-| Speed Figures    | 90     | 27.4%     | Most predictive factor - Beyer/TimeformUS     |
-| Form             | 50     | 15.2%     | Recent performance + winner bonuses (+20 WLO) |
-| Pace             | 45     | 13.7%     | Race shape analysis and pace scenarios        |
-| Class            | 32     | 9.8%      | Class movement and competition level          |
-| Connections      | 27     | 8.2%      | Trainer + jockey + partnership bonuses        |
-| Distance/Surface | 20     | 6.1%      | Turf (8) + Wet (6) + Distance (6) affinities  |
-| Odds Factor      | 15     | 4.6%      | Market wisdom for favorites (Phase 6)         |
-| Post Position    | 12     | 3.7%      | Track-dependent positional advantage          |
-| Trainer Patterns | 10     | 3.0%      | Situational trainer stat bonuses              |
-| Equipment        | 8      | 2.4%      | First-time Lasix, blinkers changes            |
-| Track Specialist | 6      | 1.8%      | Proven success at today's track               |
-| Trainer S/D      | 6      | 1.8%      | Trainer surface/distance specialization       |
-| Combo Patterns   | 4      | 1.2%      | Jockey/trainer combination bonuses            |
-| P3 Refinements   | 2      | 0.6%      | Age factor (±1) + Sire's Sire (±1)            |
-| Weight           | 1      | 0.3%      | Subtle weight change refinement               |
-| **TOTAL**        | 328    | 100%      |                                               |
+| Category         | Points | % of Base | Description                               |
+| ---------------- | ------ | --------- | ----------------------------------------- |
+| Speed Figures    | 105    | 32.0%     | v3.2: Dominant factor (was 90)            |
+| Form             | 42     | 12.8%     | v3.2: Reduced, margin-based WLO (was 50)  |
+| Class            | 35     | 10.7%     | v3.2: Increased (was 32)                  |
+| Pace             | 35     | 10.7%     | v3.2: Reduced, min 8pt floor (was 45)     |
+| Distance/Surface | 25     | 7.6%      | v3.2: Increased for balance (was 20)      |
+| Connections      | 23     | 7.0%      | v3.2: Reduced, partnership cap 2 (was 27) |
+| Odds Factor      | 12     | 3.7%      | v3.2: Reduced (was 15)                    |
+| Post Position    | 12     | 3.7%      | Track-dependent positional advantage      |
+| Track Specialist | 10     | 3.0%      | v3.2: Increased (was 6)                   |
+| Trainer Patterns | 8      | 2.4%      | v3.2: Reduced (was 10)                    |
+| Equipment        | 8      | 2.4%      | First-time Lasix, blinkers changes        |
+| Trainer S/D      | 6      | 1.8%      | Trainer surface/distance specialization   |
+| Combo Patterns   | 4      | 1.2%      | Jockey/trainer combination bonuses        |
+| P3 Refinements   | 2      | 0.6%      | Age factor (±1) + Sire's Sire (±1)        |
+| Weight           | 1      | 0.3%      | Subtle weight change refinement           |
+| **TOTAL**        | 328    | 100%      |                                           |
 
-## Key Changes from v2.5
+## Key Changes from v3.1
+
+### Phase 7: Speed/Class Dominance (v3.2)
+
+Based on analysis of 27 races showing over-indexing on situational factors:
+
+**Weight Adjustments:**
+
+- Speed Figures: 90 → 105 pts (27.4% → 32.0%) - DOMINANT factor
+- Class: 32 → 35 pts (9.8% → 10.7%)
+- Form: 50 → 42 pts (15.2% → 12.8%)
+- Pace: 45 → 35 pts (13.7% → 10.7%)
+- Connections: 27 → 23 pts (8.2% → 7.0%)
+- Odds Factor: 15 → 12 pts (4.6% → 3.7%)
+- Trainer Patterns: 10 → 8 pts (3.0% → 2.4%)
+- Track Specialist: 6 → 10 pts (1.8% → 3.0%)
+- Distance/Surface: 20 → 25 pts (6.1% → 7.6%) - balance adjustment
+
+**Form Winner Bonus Restructure:**
+
+- Won Last Out now scales by margin of victory:
+  - 6+ lengths: +16 pts (dominant)
+  - 3-5 lengths: +12 pts (comfortable)
+  - 1-2 lengths: +10 pts (solid)
+  - <1 length: +7 pts (close)
+- Won 2/3: +6 pts (was +8)
+- Won 3/5: +3 pts (was +4)
+
+**Pace Volatility Reduction:**
+
+- Minimum floor of 8 pts for terrible fit (was 0-5)
+- EP1 ≥ 126 exception: +3 pts in contested/speed_duel scenarios
+- LP ≥ 130 exception: +3 pts for closers in soft pace
+
+**Connections Cleanup:**
+
+- Partnership bonus capped at 2 pts (was 4)
+- Trainer max reduced to 14 pts (was 16)
+
+## Changes from v2.5 (Phases 1-6)
 
 ### Phase 1: Data Completeness Infrastructure
 
@@ -76,14 +116,14 @@ The Furlong scoring algorithm v3.1 represents a complete rebuild through Phases 
 
 ### Phase 6: Odds Factor
 
-- Added 0-15 pt category based on morning line / live odds
-- Heavy favorite (1-1 or lower): 15 pts
-- Strong favorite (5-2 to 3-1): 12 pts
-- Low favorite (4-1 to 5-1): 10 pts
-- Contender (6-1 to 10-1): 8 pts
-- Mid-odds (11-1 to 15-1): 6 pts
-- Longer (16-1 to 24-1): 5 pts
-- Longshot (25-1 or higher): 3 pts
+- Added 0-15 pt category based on morning line / live odds (v3.2: max now 12 pts)
+- Heavy favorite (≤2-1): 12 pts
+- Solid favorite (≤3-1): 10 pts
+- Contender (≤4-1): 9 pts
+- Live price (≤6-1): 7 pts
+- Midpack (≤10-1): 6 pts
+- Outsider (≤20-1): 4 pts
+- Longshot (>20-1): 2 pts
 
 ## Data Completeness System
 
@@ -173,6 +213,7 @@ Use `generateRaceDiagnostic()` from `src/lib/scoring/diagnostics.ts` to get full
 
 ## Version History
 
+- **v3.2** (Phase 7): Speed/Class dominance (105/35), form reduced (42), margin-based WLO, pace floor 8pts
 - **v3.1** (Phase 6): Added odds factor (+15 pts), base now 328
 - **v3.0** (Phase 3): Speed rebalance, base increased to 313
 - **v2.5**: Overlay system added, cap at ±50
