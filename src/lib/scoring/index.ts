@@ -125,6 +125,7 @@ import {
   enforceScoreBoundaries,
   enforceBaseScoreBoundaries,
   enforceOverlayBoundaries,
+  calculatePaperTigerPenalty,
 } from './scoringUtils';
 import { calculateDataCompleteness, type DataCompletenessResult } from './dataCompleteness';
 
@@ -411,6 +412,15 @@ export interface ScoreBreakdown {
     isValuePlay: boolean;
     reasoning: string;
   };
+  /** Paper Tiger circuit breaker penalty (Model B Part 5) */
+  paperTiger?: {
+    penaltyApplied: boolean;
+    penaltyAmount: number;
+    speedScore: number;
+    formScore: number;
+    paceScore: number;
+    reasoning: string;
+  };
   /** Overlay system adjustments (±50 points) */
   overlay?: {
     cappedScore: number;
@@ -456,6 +466,10 @@ export interface HorseScore {
   lowConfidencePenaltyApplied: boolean;
   /** Phase 2: Amount deducted due to low confidence (in points) */
   lowConfidencePenaltyAmount: number;
+  /** Model B Part 5: Whether Paper Tiger penalty was applied (-25 pts) */
+  paperTigerPenaltyApplied: boolean;
+  /** Model B Part 5: Amount deducted due to Paper Tiger circuit breaker */
+  paperTigerPenaltyAmount: number;
 }
 
 /** Scored horse with index for sorting */
@@ -805,6 +819,8 @@ function calculateHorseScoreWithContext(
       },
       lowConfidencePenaltyApplied: false,
       lowConfidencePenaltyAmount: 0,
+      paperTigerPenaltyApplied: false,
+      paperTigerPenaltyAmount: 0,
     };
   }
 
@@ -1048,12 +1064,41 @@ function calculateHorseScoreWithContext(
     breedingContribution + // Includes P3 sire's sire adjustment if applicable
     hiddenDropsBonus; // Add hidden class drop bonuses
 
+  // MODEL B PART 5: Paper Tiger Circuit Breaker
+  // Penalize horses with Elite Speed but Zero Form and Mediocre Pace
+  // These horses look good on paper but lack current fitness to win
+  const paperTigerPenalty = calculatePaperTigerPenalty(
+    breakdown.speedClass.speedScore,
+    breakdown.form.total,
+    breakdown.pace.total
+  );
+
+  // Apply Paper Tiger penalty to raw base total
+  const adjustedBaseTotal = rawBaseTotal + paperTigerPenalty;
+
+  // Add Paper Tiger analysis to breakdown
+  const paperTigerApplied = paperTigerPenalty !== 0;
+  breakdown.paperTiger = {
+    penaltyApplied: paperTigerApplied,
+    penaltyAmount: paperTigerPenalty,
+    speedScore: breakdown.speedClass.speedScore,
+    formScore: breakdown.form.total,
+    paceScore: breakdown.pace.total,
+    reasoning: paperTigerApplied
+      ? 'Paper Tiger Penalty: High Speed / No Form / Low Pace (-25)'
+      : breakdown.pace.total >= 25 &&
+          breakdown.speedClass.speedScore > 120 &&
+          breakdown.form.total < 6
+        ? 'Tessuto Rule: High pace protects despite low form (no penalty)'
+        : 'No Paper Tiger penalty applied',
+  };
+
   // Calculate data completeness BEFORE applying low confidence penalty
   // This way we can check isLowConfidence to decide on penalty
   const dataCompleteness = calculateDataCompleteness(horse, context.raceHeader);
 
   // Enforce base score boundaries (0 to MAX_BASE_SCORE)
-  let baseScore = enforceBaseScoreBoundaries(rawBaseTotal);
+  let baseScore = enforceBaseScoreBoundaries(adjustedBaseTotal);
 
   // PHASE 2: Apply 15% penalty to base score for low confidence horses
   // Low confidence = criticalComplete < 75% (missing key data like speed figures, PPs)
@@ -1119,6 +1164,8 @@ function calculateHorseScoreWithContext(
     dataCompleteness,
     lowConfidencePenaltyApplied,
     lowConfidencePenaltyAmount,
+    paperTigerPenaltyApplied: paperTigerApplied,
+    paperTigerPenaltyAmount: paperTigerPenalty,
   };
 }
 
@@ -1481,6 +1528,8 @@ export {
   enforceOverlayBoundaries,
   enforceProtocolBoundaries,
   enforceCategoryBoundaries,
+  // Circuit breaker penalties
+  calculatePaperTigerPenalty,
   // Display helpers
   formatDisplayScore,
   formatOverlay,

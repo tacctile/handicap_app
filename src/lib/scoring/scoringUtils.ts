@@ -206,6 +206,67 @@ export function isValidCategoryScore(score: unknown, maxValue: number): score is
 }
 
 // ============================================================================
+// CIRCUIT BREAKER PENALTIES
+// ============================================================================
+
+/**
+ * Paper Tiger Circuit Breaker Penalty
+ *
+ * Identifies horses with Elite Speed Figures but Zero Form and Mediocre Pace.
+ * These "Paper Tigers" look good on paper but lack current fitness and
+ * tactical advantage to convert their speed into wins.
+ *
+ * Model B Part 5: Targeted penalty to prevent over-ranking of horses that
+ * have fast historical numbers but no recent form to back it up.
+ *
+ * @param speedScore - The horse's speed score (0-105 in Model B)
+ * @param formScore - The horse's form score (0-42 in Model B)
+ * @param paceScore - The horse's pace score (0-35 in Model B)
+ * @returns -25 if Paper Tiger conditions met, 0 otherwise
+ *
+ * CONDITIONS FOR PENALTY:
+ * - speedScore > 120 (Elite Ability - top-tier speed figures)
+ * - formScore < 6 (Critical Condition Issues - near-zero form)
+ * - paceScore < 25 (Lacks Dominant Running Style - no tactical edge)
+ *
+ * SAFETY CHECK ("Tessuto Rule"):
+ * - If paceScore >= 25, NO penalty applied even with zero form
+ * - This protects wire-to-wire threats coming off layoffs who can
+ *   steal the race with their running style
+ *
+ * @example
+ * // Paper Tiger: Fast historical speed, no form, no pace advantage
+ * calculatePaperTigerPenalty(125, 3, 18) // -25
+ *
+ * // Tessuto Rule: Wire-to-wire threat off layoff (high pace protects)
+ * calculatePaperTigerPenalty(130, 0, 28) // 0 (protected by pace)
+ *
+ * // Normal horse: Good speed with decent form
+ * calculatePaperTigerPenalty(100, 25, 20) // 0
+ */
+export function calculatePaperTigerPenalty(
+  speedScore: number,
+  formScore: number,
+  paceScore: number
+): number {
+  // Safety check: "Tessuto Rule" - High pace protects even with zero form
+  // Wire-to-wire threats coming off layoffs can steal races
+  if (paceScore >= 25) {
+    return 0;
+  }
+
+  // Paper Tiger conditions:
+  // 1. Elite Speed (> 120) - Horse has top-tier historical figures
+  // 2. Critical Form Issues (< 6) - Near-zero current form
+  // 3. Mediocre Pace (< 25) - No dominant running style advantage
+  if (speedScore > 120 && formScore < 6 && paceScore < 25) {
+    return -25;
+  }
+
+  return 0;
+}
+
+// ============================================================================
 // SCORE BOUNDARY ENFORCEMENT
 // ============================================================================
 
