@@ -2,28 +2,29 @@
  * Form Scoring Module
  * Analyzes recent race form, layoff patterns, and consistency
  *
- * Score Breakdown (v3.0 - Phase 4 Winner Bonus Boost):
+ * Score Breakdown (v3.2 - Model B Speed-Dominant Rebalance):
  *
- * FORM SCORING BREAKDOWN (50 pts max)
+ * FORM SCORING BREAKDOWN (42 pts max, reduced from 50)
  *
- * Recent Performance Base: 0-18 pts (reduced from 20)
+ * Recent Performance Base: 0-15 pts (reduced from 18)
  *   - Last 3 race finishes weighted (50%, 30%, 20%)
- *   - 1st = 6 pts, 2nd = 4 pts, 3rd = 3 pts, 4th-5th = 1 pt, 6th+ = 0
+ *   - 1st = 15 pts, 2nd/3rd (<2L) = 12 pts, 2nd/3rd (>2L) = 9 pts
+ *   - 4th-5th (competitive) = 7 pts, lower = 3-5 pts
  *
- * Winner Bonuses: 0-28 pts (increased from 12)
- *   - Won Last Out: +20 pts (dominant signal)
- *   - Won 2 of Last 3: +8 pts (stacks with above)
- *   - Won 3 of Last 5: +4 pts (stacks, rewards consistent winners)
- *   - Win Recency (within 30 days): +4 pts (hot horse bonus)
+ * Winner Bonuses: 0-20 pts (reduced from 28)
+ *   - Won Last Out: +12 pts (strong signal, not dominant)
+ *   - Won 2 of Last 3: +5 pts (stacks with above)
+ *   - Won 3 of Last 5: +3 pts (stacks, rewards consistent winners)
+ *   - Win Recency (within 30 days): +3 pts (hot horse bonus)
  *
- * Consistency: 0-4 pts (reduced from 7)
+ * Consistency: 0-4 pts (unchanged)
  *   - ITM 50%+ in last 10: 4 pts
  *   - ITM 40-49%: 3 pts
  *   - ITM 30-39%: 2 pts
  *   - ITM 20-29%: 1 pt
  *   - ITM <20%: 0 pts
  *
- * TOTAL MAX: 18 + 28 + 4 = 50 pts
+ * TOTAL MAX: 15 + 20 + 4 + 3 = 42 pts
  *
  * Layoff Adjustments:
  *   - Optimal (7-35 days): 0 penalty
@@ -32,10 +33,10 @@
  *   - Extended (90+ days): -10 penalty (capped, never wipes out winner bonus)
  *   - Minimum form score: 5 pts (never fully zero out a recent winner)
  *
- * PHASE 4 CHANGES:
- * - Winner bonuses dominate form scoring (was 2.5% of base, now 9% of 323)
- * - A horse that just won should score high in form
- * - Layoff penalties capped to preserve winner value
+ * MODEL B CHANGES (v3.2):
+ * - Form cap reduced from 50 to 42 to prioritize Speed (105) + Class (35)
+ * - Winner bonuses scaled down to prevent Form from overpowering Speed
+ * - Base performance rescaled proportionally
  *
  * FIX v2.1: Added class-context adjustment for Recent Form.
  * Losses at higher class levels are now treated as neutral when
@@ -86,7 +87,7 @@ export interface FormScoreResult {
   beatenLengthsProfile: BeatenLengthsProfile | null;
   /** Beaten lengths reasoning */
   beatenLengthsReasoning: string;
-  /** v3.0: Recent winner bonus (0-28 pts, increased from 10) */
+  /** v3.2: Recent winner bonus (0-20 pts, reduced from 28 for Model B) */
   recentWinnerBonus: number;
   /** v2.5: Won last race */
   wonLastOut: boolean;
@@ -241,58 +242,58 @@ function getClassComparisonLabel(
 
 /**
  * Analyze a single race finish for form score
- * v3.0: Rescaled from 20 max to 18 max to accommodate larger winner bonuses
+ * v3.2: Rescaled from 18 max to 15 max for Model B (42 pt Form cap)
  *
  * Scoring:
- * - 1st = 18 pts (was 20)
- * - 2nd within 2L = 14 pts (was 16)
- * - 3rd within 2L = 13 pts (was 15)
- * - 2nd >2L = 11 pts (was 13)
- * - 3rd >2L = 10 pts (was 12)
- * - 4th-5th competitive = 9 pts (was 11)
- * - 4th-5th = 7 pts (was 8)
- * - 6th-8th = 4 pts (was 5)
- * - 9th+ = 3 pts (was 4)
+ * - 1st = 15 pts (was 18)
+ * - 2nd within 2L = 12 pts (was 14)
+ * - 3rd within 2L = 12 pts (was 13)
+ * - 2nd >2L = 9 pts (was 11)
+ * - 3rd >2L = 9 pts (was 10)
+ * - 4th-5th competitive = 7 pts (was 9)
+ * - 4th-5th = 5 pts (was 7)
+ * - 6th-8th = 4 pts (unchanged)
+ * - 9th+ = 3 pts (unchanged)
  */
 function analyzeRaceFinish(pp: PastPerformance): number {
   // Won the race
   if (pp.finishPosition === 1) {
-    return 18; // v3.0: reduced from 20 to make room for winner bonuses
+    return 15; // v3.2: reduced from 18 for Model B
   }
 
   // 2nd or 3rd within 2 lengths
   if (pp.finishPosition === 2 && pp.lengthsBehind <= 2) {
-    return 14; // v3.0: reduced from 16
+    return 12; // v3.2: reduced from 14
   }
   if (pp.finishPosition === 3 && pp.lengthsBehind <= 2) {
-    return 13; // v3.0: reduced from 15
+    return 12; // v3.2: reduced from 13
   }
 
   // 2nd or 3rd more than 2 lengths
   if (pp.finishPosition === 2) {
-    return 11; // v3.0: reduced from 13
+    return 9; // v3.2: reduced from 11
   }
   if (pp.finishPosition === 3) {
-    return 10; // v3.0: reduced from 12
+    return 9; // v3.2: reduced from 10
   }
 
   // 4th-5th competitive effort
   if (pp.finishPosition <= 5 && pp.lengthsBehind < 5) {
-    return 9; // v3.0: reduced from 11
+    return 7; // v3.2: reduced from 9
   }
 
   // 4th-5th less competitive
   if (pp.finishPosition <= 5) {
-    return 7; // v3.0: reduced from 8
+    return 5; // v3.2: reduced from 7
   }
 
   // 6th-8th
   if (pp.finishPosition <= 8) {
-    return 4; // v3.0: reduced from 5
+    return 4; // v3.2: unchanged
   }
 
   // Poor effort
-  return 3; // v3.0: reduced from 4
+  return 3; // v3.2: unchanged
 }
 
 /**
@@ -308,13 +309,13 @@ interface ClassContextFinishResult {
  * Analyze a single race finish for form score WITH class context
  * Applies class-context adjustment when past race was at higher class
  *
- * v3.0: Updated for new 18 pt max base scoring
+ * v3.2: Updated for new 15 pt max base scoring (Model B)
  *
  * Per requirements:
- * - WIN at any class level still scores maximum points (18)
+ * - WIN at any class level still scores maximum points (15)
  * - If past race was HIGHER class than today → treat loss as NEUTRAL:
- *   - 4th-6th place at higher class = 11-13 pts (scaled from 12-14)
- *   - 7th+ at higher class = 9-11 pts (scaled from 10-12)
+ *   - 4th-6th place at higher class = 9-11 pts (scaled from 11-13)
+ *   - 7th+ at higher class = 7-9 pts (scaled from 9-11)
  * - If past race was SAME class as today → score normally
  */
 function analyzeRaceFinishWithClassContext(
@@ -348,7 +349,7 @@ function analyzeRaceFinishWithClassContext(
       classComparison
     );
     return {
-      score: 18, // v3.0: reduced from 20
+      score: 15, // v3.2: reduced from 18 for Model B
       classAdjusted: false,
       adjustmentNote: classComparison === 'higher' ? `Won ${label}` : null,
     };
@@ -360,7 +361,7 @@ function analyzeRaceFinishWithClassContext(
 
     if (classComparison === 'higher') {
       // 2nd/3rd at higher class is excellent - boost to near-win level
-      const adjustedScore = Math.min(16, baseScore + 3); // v3.0: capped at 16 (was 18)
+      const adjustedScore = Math.min(14, baseScore + 2); // v3.2: capped at 14 (was 16)
       const label = getClassComparisonLabel(
         pp.classification,
         todayContext.classification,
@@ -380,13 +381,13 @@ function analyzeRaceFinishWithClassContext(
     };
   }
 
-  // 4th-6th at higher class → treat as neutral (11-13 pts, scaled from 12-14)
+  // 4th-6th at higher class → treat as neutral (9-11 pts, scaled from 11-13)
   if (pp.finishPosition >= 4 && pp.finishPosition <= 6) {
     const baseScore = analyzeRaceFinish(pp);
 
     if (classComparison === 'higher') {
-      // Upgrade to neutral: 11-13 pts (v3.0: scaled from 12-14)
-      const adjustedScore = Math.max(11, Math.min(13, baseScore + 4));
+      // Upgrade to neutral: 9-11 pts (v3.2: scaled from 11-13)
+      const adjustedScore = Math.max(9, Math.min(11, baseScore + 4));
       const label = getClassComparisonLabel(
         pp.classification,
         todayContext.classification,
@@ -406,13 +407,13 @@ function analyzeRaceFinishWithClassContext(
     };
   }
 
-  // 7th+ at higher class → treat as neutral (9-11 pts, scaled from 10-12)
+  // 7th+ at higher class → treat as neutral (7-9 pts, scaled from 9-11)
   if (pp.finishPosition >= 7) {
     const baseScore = analyzeRaceFinish(pp);
 
     if (classComparison === 'higher') {
-      // Upgrade to neutral: 9-11 pts (v3.0: scaled from 10-12)
-      const adjustedScore = Math.max(9, Math.min(11, baseScore + 6));
+      // Upgrade to neutral: 7-9 pts (v3.2: scaled from 9-11)
+      const adjustedScore = Math.max(7, Math.min(9, baseScore + 4));
       const label = getClassComparisonLabel(
         pp.classification,
         todayContext.classification,
@@ -485,7 +486,7 @@ interface RecentFormResult {
 
 /**
  * Calculate recent form score from last 3 races
- * v3.0: Rescaled from 20 max to 18 max to accommodate larger winner bonuses
+ * v3.2: Rescaled from 18 max to 15 max for Model B (42 pt Form cap)
  *
  * @param pastPerformances - Array of past performance records
  * @param todayContext - Optional class context for today's race
@@ -496,7 +497,7 @@ function calculateRecentFormScore(
 ): RecentFormResult {
   if (pastPerformances.length === 0) {
     return {
-      score: 9, // v3.0: Neutral for debut (scaled from 11)
+      score: 8, // v3.2: Neutral for debut (scaled from 9)
       lastResult: 'First starter',
       classAdjustmentApplied: false,
       classAdjustments: [],
@@ -541,7 +542,7 @@ function calculateRecentFormScore(
   const lastPP = pastPerformances[0];
   if (!lastPP) {
     return {
-      score: 9, // v3.0: Neutral (scaled from 11)
+      score: 8, // v3.2: Neutral (scaled from 9)
       lastResult: 'No race history',
       classAdjustmentApplied: false,
       classAdjustments: [],
@@ -553,7 +554,7 @@ function calculateRecentFormScore(
   }
 
   return {
-    score: Math.min(18, score), // v3.0: capped at 18 (was 20)
+    score: Math.min(15, score), // v3.2: capped at 15 (was 18)
     lastResult,
     classAdjustmentApplied: anyClassAdjusted,
     classAdjustments,
@@ -830,11 +831,11 @@ function buildReasoning(
 /**
  * Get form confidence multiplier based on PP count
  *
- * PENALTY LOGIC (Phase 2 - Missing Data Penalties):
- * - 3+ PPs → 100% confidence (full scoring, 50 pts max)
- * - 2 PPs → 60% confidence (30 pts max)
- * - 1 PP → 40% confidence (20 pts max)
- * - 0 PPs (first-time starter) → 20% confidence (10 pts max, penalized for unknown)
+ * PENALTY LOGIC (Phase 2 - Missing Data Penalties, v3.2 Model B):
+ * - 3+ PPs → 100% confidence (full scoring, 42 pts max)
+ * - 2 PPs → 60% confidence (25 pts max)
+ * - 1 PP → 40% confidence (17 pts max)
+ * - 0 PPs (first-time starter) → 20% confidence (8 pts max, penalized for unknown)
  *
  * This ensures horses with incomplete form data are penalized,
  * not given neutral scores that reward unknowns.
@@ -847,27 +848,28 @@ export function getFormConfidenceMultiplier(ppCount: number): number {
 }
 
 // ============================================================================
-// RECENT WINNER BONUS (v3.0 - Phase 4 Winner Boost)
+// RECENT WINNER BONUS (v3.2 - Model B Winner Bonus)
 // ============================================================================
 
 /**
- * Winner bonus point values (v3.0)
+ * Winner bonus point values (v3.2 - Model B)
  * All bonuses stack when applicable
+ * Reduced from v3.0 to fit 42 pt Form cap
  */
 const WINNER_BONUSES = {
-  wonLastOut: 20, // Won most recent race (dominant signal)
-  won2of3: 8, // Won 2 of last 3 (stacks with above)
-  won3of5: 4, // Won 3 of last 5 (stacks)
-  lastWinWithin30Days: 4, // Won last out within 30 days (freshness/hot horse)
+  wonLastOut: 12, // Won most recent race (strong signal, not dominant)
+  won2of3: 5, // Won 2 of last 3 (stacks with above)
+  won3of5: 3, // Won 3 of last 5 (stacks)
+  lastWinWithin30Days: 3, // Won last out within 30 days (freshness/hot horse)
   lastWinWithin60Days: 2, // Won within 60 days (warm)
 };
 
 /**
- * Maximum recent winner bonus points (v3.0)
- * Won Last Out (20) + Won 2/3 (8) + Won 3/5 (4) = 32 pts theoretical max
- * Practical cap at 28 pts (won last out + 2/3 doesn't usually stack with 3/5)
+ * Maximum recent winner bonus points (v3.2 - Model B)
+ * Won Last Out (12) + Won 2/3 (5) + Won 3/5 (3) = 20 pts theoretical max
+ * Reduced from 28 to fit within 42 pt Form cap
  */
-const MAX_RECENT_WINNER_BONUS = 28;
+const MAX_RECENT_WINNER_BONUS = 20;
 
 /**
  * Calculate days since last win from past performances
@@ -902,11 +904,11 @@ function getDaysSinceLastWin(pastPerformances: PastPerformance[]): number | null
 }
 
 /**
- * Calculate win recency bonus (v3.0)
+ * Calculate win recency bonus (v3.2 - Model B)
  * Rewards horses that won recently (within 30/60 days)
  *
  * Scoring:
- * - Won within 30 days: +4 pts (hot horse)
+ * - Won within 30 days: +3 pts (hot horse)
  * - Won within 60 days: +2 pts (warm horse)
  * - Won 60+ days ago or never: 0 pts
  *
@@ -939,18 +941,18 @@ function getWinRecencyBonus(daysSinceLastWin: number | null): {
 }
 
 /**
- * Calculate recent winner bonus (v3.0 - Phase 4)
+ * Calculate recent winner bonus (v3.2 - Model B)
  *
  * STACKING LOGIC (all bonuses stack):
- * - Won Last Out: +20 pts
- * - Won 2 of 3: +8 pts (stacks)
- * - Won 3 of 5: +4 pts (stacks)
+ * - Won Last Out: +12 pts
+ * - Won 2 of 3: +5 pts (stacks)
+ * - Won 3 of 5: +3 pts (stacks)
  *
  * EXAMPLES:
- * - Horse won last race only: +20 pts
- * - Horse won last race AND 2 of 3: +20 + 8 = +28 pts
- * - Horse won last race AND 2 of 3 AND 3 of 5: +20 + 8 + 4 = +32 pts (capped at 28)
- * - Horse won 2 of 3 but NOT last out: +8 pts
+ * - Horse won last race only: +12 pts
+ * - Horse won last race AND 2 of 3: +12 + 5 = +17 pts
+ * - Horse won last race AND 2 of 3 AND 3 of 5: +12 + 5 + 3 = +20 pts (max)
+ * - Horse won 2 of 3 but NOT last out: +5 pts
  *
  * @param pastPerformances - Horse's past performances
  * @returns Bonus points and analysis
@@ -1032,7 +1034,7 @@ function calculateRecentWinnerBonus(pastPerformances: PastPerformance[]): {
 // ============================================================================
 
 /**
- * Minimum form score for horses that won last out (v3.0)
+ * Minimum form score for horses that won last out (v3.2)
  * Even with layoff penalties, a recent winner should score at least 5 pts
  */
 const MIN_FORM_SCORE_FOR_RECENT_WINNER = 5;
@@ -1040,12 +1042,12 @@ const MIN_FORM_SCORE_FOR_RECENT_WINNER = 5;
 /**
  * Calculate form score for a horse
  *
- * v3.0 SCORING BREAKDOWN (50 pts max):
- * - Recent Performance Base: 0-18 pts
- * - Winner Bonuses (stacking): 0-28 pts
+ * v3.2 SCORING BREAKDOWN (42 pts max - Model B):
+ * - Recent Performance Base: 0-15 pts
+ * - Winner Bonuses (stacking): 0-20 pts
  * - Consistency: 0-4 pts
  * - Layoff Penalty: -10 to 0 pts (capped)
- * - Win Recency Bonus: 0-4 pts (for wins within 30/60 days)
+ * - Win Recency Bonus: 0-3 pts (for wins within 30/60 days)
  *
  * @param horse - The horse entry to score
  * @param todayContext - Optional class context for today's race (enables class-aware scoring)
@@ -1061,7 +1063,7 @@ export function calculateFormScore(
   const ppCount = pastPerformances.length;
   const confidenceMultiplier = getFormConfidenceMultiplier(ppCount);
 
-  // Calculate recent form with class context (0-18 pts)
+  // Calculate recent form with class context (0-15 pts)
   const formResult = calculateRecentFormScore(pastPerformances, todayContext ?? null);
 
   // Calculate layoff penalty (v3.0: now returns penalty, not score)
@@ -1079,26 +1081,26 @@ export function calculateFormScore(
   const beatenLengthsAdjustments = calculateBeatenLengthsAdjustments(horse);
   const beatenLengthsProfile = buildBeatenLengthsProfile(pastPerformances);
 
-  // v3.0: Calculate recent winner bonus (0-28 pts with stacking)
+  // v3.2: Calculate recent winner bonus (0-20 pts with stacking)
   const recentWinnerResult = calculateRecentWinnerBonus(pastPerformances);
 
-  // v3.0: Calculate days since last win and win recency bonus
+  // v3.2: Calculate days since last win and win recency bonus
   const daysSinceLastWin = getDaysSinceLastWin(pastPerformances);
   const winRecencyResult = getWinRecencyBonus(daysSinceLastWin);
 
-  // v3.0: Calculate total with new scoring structure
+  // v3.2: Calculate total with new scoring structure
   // Model B: Base capped at 42 pts (reduced from 50)
-  // Then apply layoff penalty (capped at -10) and win recency bonus (+4)
+  // Then apply layoff penalty (capped at -10) and win recency bonus (+3)
   const baseComponents =
-    formResult.score + // 0-18 pts
+    formResult.score + // 0-15 pts
     consistencyResult.bonus + // 0-4 pts
-    recentWinnerResult.bonus + // 0-28 pts (stacking winner bonus)
+    recentWinnerResult.bonus + // 0-20 pts (stacking winner bonus)
     beatenLengthsAdjustments.formPoints; // ±adjustment
 
   // Apply layoff penalty (capped at -10)
   const cappedLayoffPenalty = Math.max(layoffResult.penalty, -MAX_LAYOFF_PENALTY);
 
-  // Add win recency bonus (0-4 pts for hot/warm horses)
+  // Add win recency bonus (0-3 pts for hot/warm horses)
   const rawTotal = baseComponents + cappedLayoffPenalty + winRecencyResult.bonus;
 
   // PHASE 2: Apply confidence multiplier to penalize incomplete form data
@@ -1109,7 +1111,7 @@ export function calculateFormScore(
   // 3+ PPs → 42 pts max (full scoring)
   let adjustedTotal = Math.round(rawTotal * confidenceMultiplier);
 
-  // v3.0: Apply minimum form score floor for recent winners
+  // v3.2: Apply minimum form score floor for recent winners
   // A horse that won last out should never score below 5 pts
   if (recentWinnerResult.wonLastOut && adjustedTotal < MIN_FORM_SCORE_FOR_RECENT_WINNER) {
     adjustedTotal = MIN_FORM_SCORE_FOR_RECENT_WINNER;
@@ -1136,24 +1138,24 @@ export function calculateFormScore(
     reasoning += ` | ${beatenLengthsAdjustments.formReasoning}`;
   }
 
-  // v3.0: Add recent winner bonus to reasoning
+  // v3.2: Add recent winner bonus to reasoning
   if (recentWinnerResult.bonus > 0) {
     reasoning += ` | ${recentWinnerResult.reasoning}`;
   }
 
-  // v3.0: Add win recency bonus to reasoning
+  // v3.2: Add win recency bonus to reasoning
   if (winRecencyResult.bonus > 0) {
     reasoning += ` | ${winRecencyResult.reasoning}`;
   }
 
-  // v3.0: Add layoff penalty to reasoning if applied
+  // v3.2: Add layoff penalty to reasoning if applied
   if (cappedLayoffPenalty < 0) {
     reasoning += ` | Layoff: ${cappedLayoffPenalty} pts`;
   }
 
   // PHASE 2: Add confidence info to reasoning if penalized
   if (confidenceMultiplier < 1.0) {
-    const maxPossible = Math.round(50 * confidenceMultiplier);
+    const maxPossible = Math.round(42 * confidenceMultiplier);
     reasoning += ` | Confidence: ${Math.round(confidenceMultiplier * 100)}% (${ppCount} PP${ppCount === 1 ? '' : 's'}, max ${maxPossible} pts)`;
   }
 
@@ -1161,7 +1163,7 @@ export function calculateFormScore(
   const formConfidence = {
     ppCount,
     multiplier: confidenceMultiplier,
-    maxPossibleScore: Math.round(50 * confidenceMultiplier),
+    maxPossibleScore: Math.round(42 * confidenceMultiplier),
     penaltyApplied: confidenceMultiplier < 1.0,
   };
 
