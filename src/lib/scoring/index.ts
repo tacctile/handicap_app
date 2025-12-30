@@ -125,6 +125,7 @@ import {
   enforceScoreBoundaries,
   enforceBaseScoreBoundaries,
   enforceOverlayBoundaries,
+  calculatePaperTigerPenalty,
 } from './scoringUtils';
 import { calculateDataCompleteness, type DataCompletenessResult } from './dataCompleteness';
 
@@ -411,6 +412,15 @@ export interface ScoreBreakdown {
     isValuePlay: boolean;
     reasoning: string;
   };
+  /** Paper Tiger circuit breaker penalty (Model B Part 5) */
+  paperTiger?: {
+    penaltyApplied: boolean;
+    penaltyAmount: number;
+    speedScore: number;
+    formScore: number;
+    paceScore: number;
+    reasoning: string;
+  };
   /** Overlay system adjustments (±50 points) */
   overlay?: {
     cappedScore: number;
@@ -456,6 +466,10 @@ export interface HorseScore {
   lowConfidencePenaltyApplied: boolean;
   /** Phase 2: Amount deducted due to low confidence (in points) */
   lowConfidencePenaltyAmount: number;
+  /** Model B Part 5: Whether Paper Tiger penalty was applied (-25 pts) */
+  paperTigerPenaltyApplied: boolean;
+  /** Model B Part 5: Amount deducted due to Paper Tiger circuit breaker */
+  paperTigerPenaltyAmount: number;
 }
 
 /** Scored horse with index for sorting */
@@ -805,6 +819,8 @@ function calculateHorseScoreWithContext(
       },
       lowConfidencePenaltyApplied: false,
       lowConfidencePenaltyAmount: 0,
+      paperTigerPenaltyApplied: false,
+      paperTigerPenaltyAmount: 0,
     };
   }
 
@@ -1048,12 +1064,41 @@ function calculateHorseScoreWithContext(
     breedingContribution + // Includes P3 sire's sire adjustment if applicable
     hiddenDropsBonus; // Add hidden class drop bonuses
 
+  // MODEL B PART 5: Paper Tiger Circuit Breaker
+  // Penalize horses with Elite Speed but Zero Form and Mediocre Pace
+  // These horses look good on paper but lack current fitness to win
+  const paperTigerPenalty = calculatePaperTigerPenalty(
+    breakdown.speedClass.speedScore,
+    breakdown.form.total,
+    breakdown.pace.total
+  );
+
+  // Apply Paper Tiger penalty to raw base total
+  const adjustedBaseTotal = rawBaseTotal + paperTigerPenalty;
+
+  // Add Paper Tiger analysis to breakdown
+  const paperTigerApplied = paperTigerPenalty !== 0;
+  breakdown.paperTiger = {
+    penaltyApplied: paperTigerApplied,
+    penaltyAmount: paperTigerPenalty,
+    speedScore: breakdown.speedClass.speedScore,
+    formScore: breakdown.form.total,
+    paceScore: breakdown.pace.total,
+    reasoning: paperTigerApplied
+      ? 'Paper Tiger Penalty: High Speed / No Form / Low Pace (-100)'
+      : breakdown.pace.total >= 30 &&
+          breakdown.speedClass.speedScore > 120 &&
+          breakdown.form.total < 10
+        ? 'Tessuto Rule: Elite pace protects despite low form (no penalty)'
+        : 'No Paper Tiger penalty applied',
+  };
+
   // Calculate data completeness BEFORE applying low confidence penalty
   // This way we can check isLowConfidence to decide on penalty
   const dataCompleteness = calculateDataCompleteness(horse, context.raceHeader);
 
   // Enforce base score boundaries (0 to MAX_BASE_SCORE)
-  let baseScore = enforceBaseScoreBoundaries(rawBaseTotal);
+  let baseScore = enforceBaseScoreBoundaries(adjustedBaseTotal);
 
   // PHASE 2: Apply 15% penalty to base score for low confidence horses
   // Low confidence = criticalComplete < 75% (missing key data like speed figures, PPs)
@@ -1119,6 +1164,8 @@ function calculateHorseScoreWithContext(
     dataCompleteness,
     lowConfidencePenaltyApplied,
     lowConfidencePenaltyAmount,
+    paperTigerPenaltyApplied: paperTigerApplied,
+    paperTigerPenaltyAmount: paperTigerPenalty,
   };
 }
 
@@ -1169,13 +1216,49 @@ export function calculateRaceScores(
 
   // First, sort by BASE SCORE to determine ranks (best base score = rank 1)
   // Uses baseScore (who we think wins) not totalScore (which includes overlay adjustments)
+  //
+  // TIE-BREAKER CHAIN (Model B Final):
+  // 1. Base Score (Descending) - Primary ranking
+  // 2. Speed Score (Descending) - Intrinsic ability wins ties
+  // 3. Pace Score (Descending) - Running style advantage
+  // 4. Form Score (Descending) - Current condition
+  // 5. Post Position (Ascending) - Final deterministic resolution
+  //
+  // This ensures every horse has a UNIQUE rank (no more "3rd (tie)")
   const sortedByScore = [...scoredHorses]
     .filter((h) => !h.score.isScratched)
-    .sort((a, b) => b.score.baseScore - a.score.baseScore);
+    .sort((a, b) => {
+      // Primary: Base Score (descending)
+      const scoreDiff = b.score.baseScore - a.score.baseScore;
+      if (scoreDiff !== 0) return scoreDiff;
 
-  // Assign ranks based on score
+      // Tie-Breaker #1: Speed Score (descending) - Intrinsic Ability wins
+      const speedDiff =
+        b.score.breakdown.speedClass.speedScore - a.score.breakdown.speedClass.speedScore;
+      if (speedDiff !== 0) return speedDiff;
+
+      // Tie-Breaker #2: Pace Score (descending) - Running Style wins
+      const paceDiff = b.score.breakdown.pace.total - a.score.breakdown.pace.total;
+      if (paceDiff !== 0) return paceDiff;
+
+      // Tie-Breaker #3: Form Score (descending) - Current Condition wins
+      const formDiff = b.score.breakdown.form.total - a.score.breakdown.form.total;
+      if (formDiff !== 0) return formDiff;
+
+      // Final Resolution: Post Position (ascending) - Inside post wins
+      return a.horse.postPosition - b.horse.postPosition;
+    });
+
+  // Assign ranks based on sorted order (unique ranks, no ties)
   sortedByScore.forEach((horse, index) => {
     horse.rank = index + 1;
+  });
+
+  // Scratched horses get rank 99 to push them to the bottom of any display
+  scoredHorses.forEach((horse) => {
+    if (horse.score.isScratched) {
+      horse.rank = 99;
+    }
   });
 
   // Now sort by post position for display (scratched horses stay in place)
@@ -1481,6 +1564,8 @@ export {
   enforceOverlayBoundaries,
   enforceProtocolBoundaries,
   enforceCategoryBoundaries,
+  // Circuit breaker penalties
+  calculatePaperTigerPenalty,
   // Display helpers
   formatDisplayScore,
   formatOverlay,
