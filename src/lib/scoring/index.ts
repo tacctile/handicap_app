@@ -282,6 +282,10 @@ export interface ScoreBreakdown {
     consistencyBonus: number;
     formTrend: string;
     reasoning: string;
+    /** v3.2: Won last race */
+    wonLastOut: boolean;
+    /** v3.2: Won 2 of last 3 races */
+    won2OfLast3: boolean;
   };
   equipment: {
     total: number;
@@ -707,6 +711,8 @@ function calculateHorseScoreWithContext(
           consistencyBonus: 0,
           formTrend: 'unknown',
           reasoning: 'Scratched',
+          wonLastOut: false,
+          won2OfLast3: false,
         },
         equipment: { total: 0, hasChanges: false, reasoning: 'Scratched' },
         pace: { total: 0, runningStyle: 'Unknown', paceFit: 'neutral', reasoning: 'Scratched' },
@@ -939,6 +945,8 @@ function calculateHorseScoreWithContext(
       consistencyBonus: form.consistencyBonus,
       formTrend: form.formTrend,
       reasoning: form.reasoning,
+      wonLastOut: form.wonLastOut,
+      won2OfLast3: form.won2OfLast3,
     },
     equipment: {
       total: equipment.total,

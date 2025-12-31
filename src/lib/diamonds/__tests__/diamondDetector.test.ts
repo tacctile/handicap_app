@@ -208,6 +208,8 @@ function createMockScore(total: number, overrides: Partial<HorseScore> = {}): Ho
         consistencyBonus: 2,
         formTrend: 'improving',
         reasoning: 'Test form',
+        wonLastOut: false,
+        won2OfLast3: false,
       },
       equipment: { total: 15, hasChanges: true, reasoning: 'First-time Lasix added' },
       pace: { total: 20, runningStyle: 'P', paceFit: 'good', reasoning: 'Good pace fit' },
