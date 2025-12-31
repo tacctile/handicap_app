@@ -10,6 +10,7 @@
  */
 
 import type { RaceValueAnalysis, ValuePlay } from '../../hooks/useValueDetection';
+import type { ScoredHorse } from '../scoring';
 import type {
   MultiRaceBetType,
   MultiRaceOpportunity,
