@@ -37,10 +37,21 @@ import {
   isSessionComplete,
   getRaceAllocation,
   isRaceCompleted,
+  addMultiRaceBet,
+  updateMultiRaceBet,
   type DaySession,
 } from '../../lib/betting/daySession';
 import { analyzeRaceValue } from '../../hooks/useValueDetection';
-import type { RiskStyle, ExperienceLevel, BetCalculationResult } from '../../lib/betting/betTypes';
+import type {
+  RiskStyle,
+  ExperienceLevel,
+  BetCalculationResult,
+  MultiRaceOpportunity,
+  MultiRaceBet,
+} from '../../lib/betting/betTypes';
+import { detectMultiRaceOpportunities, type RaceAnalysisData } from '../../lib/betting/multiRaceBets';
+import { buildAllTickets } from '../../lib/betting/multiRaceTickets';
+import { MultiRaceBetDetail, MultiRaceTicketEditor } from './MultiRace';
 import type { ParsedRace } from '../../types/drf';
 import type { RaceValueAnalysis } from '../../hooks/useValueDetection';
 import type { ScoredHorse } from '../../lib/scoring';
@@ -51,7 +62,7 @@ import './BetModeContainer.css';
 // ============================================================================
 
 type BetFlowStep = 'mode-select' | 'budget' | 'style' | 'results';
-type DayFlowStep = 'bankroll' | 'experience' | 'style' | 'overview' | 'race-bets' | 'complete';
+type DayFlowStep = 'bankroll' | 'experience' | 'style' | 'overview' | 'race-bets' | 'multi-race-detail' | 'multi-race-edit' | 'complete';
 
 interface BetModeContainerProps {
   /** Current race data */
@@ -121,6 +132,10 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
   const [daySession, setDaySession] = useState<DaySession | null>(null);
   const [selectedDayRace, setSelectedDayRace] = useState<number | null>(null);
   const [showBudgetAdjust, setShowBudgetAdjust] = useState<number | null>(null);
+
+  // Multi-race state
+  const [selectedMultiRaceOpp, setSelectedMultiRaceOpp] = useState<MultiRaceOpportunity | null>(null);
+  const [selectedMultiRaceTicket, setSelectedMultiRaceTicket] = useState<MultiRaceBet | null>(null);
 
   // Check for existing session on mount
   useEffect(() => {
@@ -213,6 +228,57 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
       isScratched,
     });
   }, [daySession, selectedDayRace, allRaces, allScoredHorses, getOdds, isScratched]);
+
+  // ============================================================================
+  // MULTI-RACE OPPORTUNITIES
+  // ============================================================================
+
+  // Race analysis data for multi-race detection
+  const raceAnalysisData: RaceAnalysisData[] = useMemo(() => {
+    if (!daySession) return [];
+
+    return allRaces.map((raceData, index) => {
+      const raceScored = allScoredHorses[index] || [];
+      const valueAnalysis = raceScored.length > 0
+        ? analyzeRaceValue(raceScored, getOdds, isScratched)
+        : {
+            verdict: 'PASS' as const,
+            confidence: 'LOW' as const,
+            verdictReason: 'No data available',
+            valuePlays: [],
+            primaryValuePlay: null,
+            secondaryValuePlays: [],
+            hasValuePlay: false,
+            topPick: null,
+            totalFieldScore: 0,
+            activeHorseCount: 0,
+          };
+
+      return {
+        raceNumber: index + 1,
+        scoredHorses: raceScored,
+        valueAnalysis,
+        trackName,
+      };
+    });
+  }, [daySession, allRaces, allScoredHorses, getOdds, isScratched, trackName]);
+
+  // Detect multi-race opportunities
+  const multiRaceOpportunities = useMemo(() => {
+    if (!daySession || raceAnalysisData.length === 0) return [];
+    return detectMultiRaceOpportunities(raceAnalysisData, daySession.experienceLevel);
+  }, [daySession, raceAnalysisData]);
+
+  // Build tickets for all opportunities
+  const multiRaceTickets = useMemo(() => {
+    if (!daySession || multiRaceOpportunities.length === 0) return [];
+    return buildAllTickets(
+      multiRaceOpportunities,
+      raceAnalysisData,
+      daySession.riskStyle,
+      daySession.multiRaceReserve
+    );
+  }, [daySession, multiRaceOpportunities, raceAnalysisData]);
 
   // ============================================================================
   // MODE SELECTION HANDLERS
@@ -331,7 +397,8 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
         dayBankroll,
         dayExperience,
         dayRiskStyle,
-        allocation.raceAllocations
+        allocation.raceAllocations,
+        allocation.multiRaceReserve
       );
 
       saveDaySession(session);
@@ -444,6 +511,43 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
   };
 
   // ============================================================================
+  // MULTI-RACE HANDLERS
+  // ============================================================================
+
+  const handleViewMultiRace = (opportunity: MultiRaceOpportunity, ticket: MultiRaceBet) => {
+    setSelectedMultiRaceOpp(opportunity);
+    setSelectedMultiRaceTicket(ticket);
+    setDayFlowStep('multi-race-detail');
+  };
+
+  const handleMultiRaceBack = () => {
+    setSelectedMultiRaceOpp(null);
+    setSelectedMultiRaceTicket(null);
+    setDayFlowStep('overview');
+  };
+
+  const handleMultiRaceEdit = () => {
+    setDayFlowStep('multi-race-edit');
+  };
+
+  const handleMultiRaceSave = (updatedTicket: MultiRaceBet) => {
+    setSelectedMultiRaceTicket(updatedTicket);
+    setDayFlowStep('multi-race-detail');
+  };
+
+  const handleMultiRaceCancelEdit = () => {
+    setDayFlowStep('multi-race-detail');
+  };
+
+  const handleAddMultiRaceToBets = (ticket: MultiRaceBet) => {
+    if (daySession) {
+      const updatedSession = addMultiRaceBet(daySession, ticket);
+      setDaySession(updatedSession);
+      handleMultiRaceBack();
+    }
+  };
+
+  // ============================================================================
   // RENDER HELPERS
   // ============================================================================
 
@@ -537,6 +641,42 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
               onEdit={handleEditSettings}
               onSelectRace={handleSelectDayRace}
               onStartBetting={handleStartBetting}
+              multiRaceOpportunities={multiRaceOpportunities}
+              multiRaceTickets={multiRaceTickets}
+              onViewMultiRace={handleViewMultiRace}
+            />
+          );
+        }
+        return null;
+
+      case 'multi-race-detail':
+        if (selectedMultiRaceOpp && selectedMultiRaceTicket) {
+          return (
+            <MultiRaceBetDetail
+              ticket={selectedMultiRaceTicket}
+              opportunity={selectedMultiRaceOpp}
+              onBack={handleMultiRaceBack}
+              onEdit={handleMultiRaceEdit}
+              onAddToBets={handleAddMultiRaceToBets}
+            />
+          );
+        }
+        return null;
+
+      case 'multi-race-edit':
+        if (selectedMultiRaceOpp && selectedMultiRaceTicket) {
+          // Get race data for the legs
+          const legRaceData = selectedMultiRaceOpp.races.map(raceNum =>
+            raceAnalysisData.find(r => r.raceNumber === raceNum)
+          ).filter((r): r is RaceAnalysisData => r !== undefined);
+
+          return (
+            <MultiRaceTicketEditor
+              ticket={selectedMultiRaceTicket}
+              raceData={legRaceData}
+              maxBudget={daySession?.multiRaceReserve}
+              onSave={handleMultiRaceSave}
+              onCancel={handleMultiRaceCancelEdit}
             />
           );
         }

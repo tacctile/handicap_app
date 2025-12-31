@@ -56,8 +56,10 @@ export interface DayAllocationInput {
 export interface DayAllocationResult {
   /** Allocations for each race */
   raceAllocations: RaceAllocation[];
-  /** Total allocated */
+  /** Total allocated to single-race bets */
   totalAllocated: number;
+  /** Reserve for multi-race bets */
+  multiRaceReserve: number;
   /** Count by verdict type */
   verdictCounts: {
     bet: number;
@@ -78,10 +80,11 @@ export interface DayAllocationResult {
 
 /**
  * Allocation percentages by risk style and verdict
+ * Note: These percentages apply to the single-race portion of the bankroll
  */
 const ALLOCATION_PERCENTAGES: Record<RiskStyle, { bet: number; caution: number; pass: number }> = {
   safe: {
-    bet: 0.35,     // 35% of bankroll to BET races
+    bet: 0.35,     // 35% of single-race bankroll to BET races
     caution: 0.25, // 25% to CAUTION races
     pass: 0.40,    // 40% to PASS races (stay in action)
   },
@@ -95,6 +98,16 @@ const ALLOCATION_PERCENTAGES: Record<RiskStyle, { bet: number; caution: number; 
     caution: 0.20, // 20% to CAUTION races
     pass: 0.15,    // 15% to PASS races (minimal)
   },
+};
+
+/**
+ * Multi-race reserve percentages by risk style
+ * This portion is set aside for multi-race bets (Daily Double, Pick 3, etc.)
+ */
+const MULTI_RACE_RESERVE_PERCENTAGES: Record<RiskStyle, number> = {
+  safe: 0.05,       // 5% reserve for multi-race (minimal)
+  balanced: 0.15,   // 15% reserve for multi-race
+  aggressive: 0.25, // 25% reserve for multi-race
 };
 
 /**
@@ -126,6 +139,13 @@ function ensureMinimum(amount: number, min: number = MIN_RACE_BUDGET): number {
 export function allocateDayBudget(input: DayAllocationInput): DayAllocationResult {
   const { totalBankroll, raceAnalyses, trackName, riskStyle, postTimes } = input;
   const percentages = ALLOCATION_PERCENTAGES[riskStyle];
+  const multiRaceReservePercent = MULTI_RACE_RESERVE_PERCENTAGES[riskStyle];
+
+  // Calculate multi-race reserve first
+  const multiRaceReserve = roundToFive(totalBankroll * multiRaceReservePercent);
+
+  // Remaining bankroll for single-race bets
+  const singleRaceBankroll = totalBankroll - multiRaceReserve;
 
   // Count races by verdict
   let betCount = 0;
@@ -183,10 +203,10 @@ export function allocateDayBudget(input: DayAllocationInput): DayAllocationResul
     passPercent = 0;
   }
 
-  // Calculate total budget for each verdict type
-  const betBudget = totalBankroll * betPercent;
-  const cautionBudget = totalBankroll * cautionPercent;
-  const passBudget = totalBankroll * passPercent;
+  // Calculate total budget for each verdict type (from single-race bankroll)
+  const betBudget = singleRaceBankroll * betPercent;
+  const cautionBudget = singleRaceBankroll * cautionPercent;
+  const passBudget = singleRaceBankroll * passPercent;
 
   // Calculate per-race budgets
   const perBetRace = betCount > 0 ? betBudget / betCount : 0;
@@ -253,6 +273,7 @@ export function allocateDayBudget(input: DayAllocationInput): DayAllocationResul
   return {
     raceAllocations,
     totalAllocated,
+    multiRaceReserve,
     verdictCounts: {
       bet: betCount,
       caution: cautionCount,
@@ -260,6 +281,13 @@ export function allocateDayBudget(input: DayAllocationInput): DayAllocationResul
     },
     verdictBudgets,
   };
+}
+
+/**
+ * Get the multi-race reserve percentage for a given risk style
+ */
+export function getMultiRaceReservePercent(riskStyle: RiskStyle): number {
+  return MULTI_RACE_RESERVE_PERCENTAGES[riskStyle];
 }
 
 // ============================================================================
