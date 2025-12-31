@@ -91,7 +91,7 @@ export const ValueTooltip: React.FC<ValueTooltipProps> = ({
     top: 0,
     left: 0,
   });
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const tooltipData = TOOLTIP_CONTENT[term];
@@ -178,7 +178,7 @@ export const InlineValueTooltip: React.FC<InlineTooltipProps> = ({
   customTitle,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const defaultData = TOOLTIP_CONTENT[term] || { title: term, content: '' };
