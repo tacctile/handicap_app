@@ -733,11 +733,25 @@ function calculateClassScore(
   }
   const hasExcuse = hasValidExcuse(lastRace);
 
-  // Proven winner at this level
-  if (provenData.proven) {
+  // v3.4 FIX: For maiden races, "proven winner at level" is illogical.
+  // If a horse truly won a maiden race, they can't run in another maiden race.
+  // Any "win" in PP data at maiden level is likely from a different tier/price class.
+  // So we cap maiden class scores at 26 pts (competitive, not "proven winner").
+  const isMaidenRace = currentClass === 'maiden' || currentClass === 'maiden-claiming';
+
+  // Proven winner at this level (but NOT for maiden races)
+  if (provenData.proven && !isMaidenRace) {
     return {
       score: 35, // Max score
       reasoning: `Proven winner at level (${provenData.wins}W, ${provenData.itmCount} ITM at class)`,
+    };
+  }
+
+  // v3.4: For maiden races with "proven" data, treat as competitive only
+  if (provenData.proven && isMaidenRace) {
+    return {
+      score: 26, // Capped for maiden races
+      reasoning: `Maiden race - capped at competitive (${provenData.wins}W at similar class)`,
     };
   }
 
