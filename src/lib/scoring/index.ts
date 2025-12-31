@@ -1110,11 +1110,11 @@ function calculateHorseScoreWithContext(
     breedingContribution + // Includes P3 sire's sire adjustment if applicable
     hiddenDropsBonus; // Add hidden class drop bonuses
 
-  // MODEL B PART 5: Paper Tiger Circuit Breaker (v3.3 - Tiered Penalties)
+  // MODEL B PART 5: Paper Tiger Circuit Breaker (v3.5e - Simplified)
   // Penalize horses with high Speed but poor Form and mediocre Pace
-  // v3.3: Broadened criteria with tiered penalties (-20/-40/-100)
-  // v3.3: Recent winners are protected from penalty
+  // v3.5e: Restored simple Tessuto Rule after testing showed LP refinement hurt win rate
   const hasRecentWin = breakdown.form.wonLastOut || breakdown.form.won2OfLast3;
+
   const paperTigerPenalty = calculatePaperTigerPenalty(
     breakdown.speedClass.speedScore,
     breakdown.form.total,

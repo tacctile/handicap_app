@@ -470,18 +470,43 @@ export function getFieldPacePressure(horses: HorseEntry[]): FieldPacePressureAna
 }
 
 /**
+ * Thresholds for "Fade Penalty" - penalizes one-dimensional speed horses
+ * who run fast early but fade in the stretch ("Quitters")
+ *
+ * v3.5b: MODERATED thresholds after testing showed penalties too aggressive
+ * - Only penalize EXTREME faders (E1 - LP > 18) to avoid over-correcting
+ * - Focus on rewarding closing ability rather than penalizing faders
+ */
+export const FADE_PENALTY_THRESHOLDS = {
+  /** Severe fade: E1 - LP > 18, apply moderate penalty (was 15) */
+  SEVERE: 18,
+  /** Moderate fade: E1 - LP > 12, apply small penalty (was 8) */
+  MODERATE: 12,
+  /** Mild fade: E1 - LP > 8, apply tiny penalty (only in routes) (was 5) */
+  MILD: 8,
+} as const;
+
+/**
  * Calculate pace figure bonus/penalty points for a horse
  * Used to adjust tactical scoring based on actual pace figures
+ *
+ * v3.5 REBALANCE ("Quitter Penalty" Update):
+ * - DECREASED E1/E2 bonuses by ~15% (from +5 to +4, +3 to +2)
+ * - INCREASED LP bonuses by ~15% (from +5 to +6, +3 to +4)
+ * - ADDED "Fade Penalty" for horses with E1 - LP > threshold
+ * - ADDED stamina bonus for closing kick in all styles (not just closers)
  *
  * @param paceFigures - Horse's pace figure analysis
  * @param fieldPressure - Field pace pressure analysis
  * @param runningStyle - Horse's running style
- * @returns Adjustment points (-5 to +5)
+ * @param isRoute - Whether this is a route race (7f+) - stamina matters more
+ * @returns Adjustment points (-8 to +8) - expanded range for fade penalties
  */
 export function calculatePaceFigureAdjustment(
   paceFigures: PaceFigureAnalysis,
   fieldPressure: FieldPacePressureAnalysis,
-  runningStyle: RunningStyleCode
+  runningStyle: RunningStyleCode,
+  isRoute: boolean = false
 ): { points: number; reasoning: string } {
   let points = 0;
   const reasons: string[] = [];
@@ -491,12 +516,51 @@ export function calculatePaceFigureAdjustment(
     return { points: 0, reasoning: 'No pace figures available' };
   }
 
-  // Speed horse bonuses/penalties
+  // ==========================================================================
+  // FADE PENALTY: Penalize "Quitters" (high E1, poor LP)
+  // ==========================================================================
+  // v3.5d: REMOVED fade penalty entirely after testing showed it hurt win rate
+  // The original diagnosis showed most bad beats were NOT quitters, so this
+  // penalty was addressing the wrong problem.
+  //
+  // Instead, we focus on REWARDING closing ability rather than PENALIZING faders.
+  // This is a more positive-sum approach that doesn't hurt our existing picks.
+  //
+  // The fade penalty logic is preserved for reference but disabled:
+  // if (paceFigures.avgEarlyPace !== null && paceFigures.avgLatePace !== null) {
+  //   const fadeDifferential = paceFigures.avgEarlyPace - paceFigures.avgLatePace;
+  //   if (fadeDifferential >= FADE_PENALTY_THRESHOLDS.SEVERE && isRoute) {
+  //     points -= 3;
+  //   }
+  // }
+
+  // ==========================================================================
+  // STAMINA BONUS: Reward closing ability (LP > E1) for ALL running styles
+  // ==========================================================================
+  // v3.5f: Enhanced closing kick bonus
+  if (paceFigures.hasClosingKick && paceFigures.closingKickDifferential !== null) {
+    const kickDiff = paceFigures.closingKickDifferential;
+    if (kickDiff >= 10) {
+      // Excellent closing kick (+10 or more LP over E1)
+      points += 3;
+      reasons.push(`💪 Excellent closing kick: LP +${kickDiff.toFixed(1)} over E1`);
+    } else if (kickDiff >= 5) {
+      // Strong closing kick (+5-9 LP over E1)
+      points += 2;
+      reasons.push(`Strong closing kick: LP +${kickDiff.toFixed(1)} over E1`);
+    }
+  }
+
+  // ==========================================================================
+  // EARLY SPEED BONUSES (v3.5e: RESTORED to original values)
+  // ==========================================================================
+  // Testing showed that reducing E1 bonuses hurt win rate. The issue isn't
+  // overweighting E1, it's underweighting LP. Keep E1 bonuses and add LP bonuses.
   if (runningStyle === 'E' || paceFigures.isConfirmedSpeed) {
     if (fieldPressure.pressure === 'soft') {
-      // Strong early pace in soft pace scenario: big bonus
+      // Strong early pace in soft pace scenario: RESTORED to original +5
       if (paceFigures.avgEarlyPace !== null && paceFigures.avgEarlyPace >= EP1_THRESHOLDS.HIGH) {
-        points += 5;
+        points += 5; // RESTORED to original value
         reasons.push(
           `Strong EP1 (${paceFigures.avgEarlyPace}) in soft pace = wire-to-wire opportunity`
         );
@@ -504,42 +568,38 @@ export function calculatePaceFigureAdjustment(
         paceFigures.avgEarlyPace !== null &&
         paceFigures.avgEarlyPace >= EP1_THRESHOLDS.MODERATE
       ) {
-        points += 3;
+        points += 3; // Original value
         reasons.push(`Good EP1 (${paceFigures.avgEarlyPace}) in soft pace`);
       }
     } else if (fieldPressure.pressure === 'duel') {
-      // Speed in a duel: penalty (unless they have the best EP1)
+      // Speed in a duel: penalty (original value)
       if (paceFigures.avgEarlyPace !== null && fieldPressure.avgFieldEP1 !== null) {
         if (paceFigures.avgEarlyPace < fieldPressure.avgFieldEP1 - 3) {
-          points -= 3;
+          points -= 3; // Original value
           reasons.push(`EP1 (${paceFigures.avgEarlyPace}) below field avg in speed duel`);
         }
       }
     }
   }
 
-  // Closer bonuses/penalties
+  // ==========================================================================
+  // CLOSER BONUSES (v3.5f: Further increased to reward stamina)
+  // ==========================================================================
   if (runningStyle === 'C' || paceFigures.isConfirmedCloser) {
     if (fieldPressure.pressure === 'duel' || fieldPressure.pressure === 'contested') {
-      // Strong closing kick in contested/duel pace: big bonus
+      // Strong closing kick in contested/duel pace: Enhanced bonus
       if (paceFigures.avgLatePace !== null && paceFigures.avgLatePace >= LP_THRESHOLDS.STRONG) {
-        points += 5;
+        points += 7; // Increased from 5 → 6 → 7 (rewarding elite stamina)
         reasons.push(`Strong LP (${paceFigures.avgLatePace}) in ${fieldPressure.pressure} pace`);
       } else if (
         paceFigures.avgLatePace !== null &&
         paceFigures.avgLatePace >= LP_THRESHOLDS.GOOD
       ) {
-        points += 3;
+        points += 5; // Increased from 3 → 4 → 5 (reward good LP)
         reasons.push(`Good LP (${paceFigures.avgLatePace}) in ${fieldPressure.pressure} pace`);
       }
-
-      // Extra bonus for closing kick differential
-      if (paceFigures.hasClosingKick && paceFigures.closingKickDifferential !== null) {
-        points += 1;
-        reasons.push(`Closing kick (+${paceFigures.closingKickDifferential} LP over EP1)`);
-      }
     } else if (fieldPressure.pressure === 'soft') {
-      // Closer in soft pace: penalty
+      // Closer in soft pace: penalty (unchanged)
       if (paceFigures.avgLatePace !== null && paceFigures.avgLatePace < LP_THRESHOLDS.GOOD) {
         points -= 2;
         reasons.push(
@@ -555,6 +615,24 @@ export function calculatePaceFigureAdjustment(
     reasons.push('LP trending up');
   }
 
+  // ==========================================================================
+  // LATE PACE QUALITY BONUS: Reward high LP in routes (stamina matters)
+  // ==========================================================================
+  // v3.5f: Enhanced route stamina bonus for ALL running styles
+  // This helps identify horses that can maintain speed through the stretch
+  if (isRoute && paceFigures.avgLatePace !== null) {
+    if (paceFigures.avgLatePace >= LP_THRESHOLDS.STRONG) {
+      points += 3; // Increased from 2 (stamina critical in routes)
+      reasons.push(`Route stamina: Strong LP (${paceFigures.avgLatePace})`);
+    } else if (paceFigures.avgLatePace >= LP_THRESHOLDS.GOOD) {
+      points += 2; // Increased from 1
+      reasons.push(`Route stamina: Good LP (${paceFigures.avgLatePace})`);
+    } else if (paceFigures.avgLatePace >= LP_THRESHOLDS.MODERATE) {
+      points += 1; // New: Even moderate LP gets a small bonus in routes
+      reasons.push(`Route stamina: Moderate LP (${paceFigures.avgLatePace})`);
+    }
+  }
+
   // Pace mismatch penalty: slow closer in speed-favoring race
   if (
     paceFigures.avgLatePace !== null &&
@@ -566,8 +644,8 @@ export function calculatePaceFigureAdjustment(
     reasons.push('Pace mismatch: slow closer in speed-favoring setup');
   }
 
-  // Clamp to range
-  points = Math.max(-5, Math.min(5, points));
+  // Clamp to range: EXPANDED from ±5 to ±8 to accommodate fade penalties
+  points = Math.max(-8, Math.min(8, points));
 
   return {
     points,
@@ -1156,11 +1234,17 @@ function generateTacticalReasoning(
 
 /**
  * Perform complete pace analysis for a horse within a race context
+ *
+ * @param horse - The horse entry to analyze
+ * @param allHorses - All horses in the race
+ * @param preCalculatedScenario - Optional pre-calculated pace scenario for efficiency
+ * @param isRoute - Whether this is a route race (7f+) - affects fade penalty severity
  */
 export function analyzePaceForHorse(
   horse: HorseEntry,
   allHorses: HorseEntry[],
-  preCalculatedScenario?: PaceScenarioAnalysis
+  preCalculatedScenario?: PaceScenarioAnalysis,
+  isRoute: boolean = false
 ): PaceAnalysisResult {
   // Get horse's running style profile (includes pace figure analysis)
   const profile = parseRunningStyle(horse);
@@ -1180,13 +1264,15 @@ export function analyzePaceForHorse(
 
   let totalScore = Math.min(40, tactical.points + confidenceBonus + evidenceBonus);
 
-  // Apply pace figure adjustments if available (±5 pts)
+  // Apply pace figure adjustments if available (±8 pts - expanded range for v3.5)
   // This integrates EP1/LP figures into tactical scoring
+  // v3.5: Added isRoute parameter for route-specific fade penalties
   if (profile.paceFigures && scenario.pacePressure) {
     const paceFigureAdj = calculatePaceFigureAdjustment(
       profile.paceFigures,
       scenario.pacePressure,
-      profile.style
+      profile.style,
+      isRoute // NEW: Pass isRoute for route-specific stamina scoring
     );
 
     totalScore = Math.min(40, Math.max(0, totalScore + paceFigureAdj.points));

@@ -59,6 +59,7 @@ import {
   EP1_THRESHOLDS,
   LP_THRESHOLDS,
   FIELD_PACE_THRESHOLDS,
+  FADE_PENALTY_THRESHOLDS,
 } from './paceAnalysis';
 
 // Re-export all types and utilities from paceAnalysis
@@ -92,7 +93,45 @@ export {
   EP1_THRESHOLDS,
   LP_THRESHOLDS,
   FIELD_PACE_THRESHOLDS,
+  FADE_PENALTY_THRESHOLDS,
 };
+
+// ============================================================================
+// ROUTE RACE DETECTION (v3.5)
+// ============================================================================
+
+/**
+ * Determine if a race is a "Route" (7 furlongs or longer)
+ * Routes require more stamina, so fade penalties are more severe.
+ *
+ * @param distanceStr - Distance string from race header (e.g., "6.5f", "1.16 miles", "7f")
+ * @returns true if race is a route (7f+), false if sprint
+ */
+function isRouteRace(distanceStr: string): boolean {
+  const normalized = distanceStr.toLowerCase().trim();
+
+  // Handle "X miles" format
+  if (normalized.includes('mile')) {
+    return true; // Any race measured in miles is a route
+  }
+
+  // Handle "Xf" format (furlongs)
+  const furlongMatch = normalized.match(/^([\d.]+)\s*f/);
+  if (furlongMatch) {
+    const furlongs = parseFloat(furlongMatch[1]);
+    return furlongs >= 7; // 7f+ is a route
+  }
+
+  // Handle "X furlongs" format
+  const furlongsMatch = normalized.match(/([\d.]+)\s*furlong/);
+  if (furlongsMatch) {
+    const furlongs = parseFloat(furlongsMatch[1]);
+    return furlongs >= 7;
+  }
+
+  // Default to sprint if we can't parse
+  return false;
+}
 
 // Re-export seasonal adjustment types from trackIntelligence
 export { type SeasonalAdjustmentResult } from '../trackIntelligence';
@@ -356,7 +395,11 @@ export function calculatePaceScore(
     ? analyzePaceScenario(allHorses)
     : analyzePaceScenario(allHorses);
 
-  const paceResult = analyzePaceForHorse(horse, allHorses, paceScenario);
+  // Determine if this is a route race (7f+ / 1 mile+)
+  // Routes require more stamina, so fade penalties are more severe
+  const isRoute = isRouteRace(raceHeader.distance);
+
+  const paceResult = analyzePaceForHorse(horse, allHorses, paceScenario, isRoute);
 
   // Get running style profile
   const detailedProfile = paceResult.profile;
