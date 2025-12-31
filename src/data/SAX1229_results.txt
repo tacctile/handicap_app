@@ -4,48 +4,56 @@ RACE 1
 3rd: 4 True Patriot
 4th: 3 Exington
 SCRATCHED: None
+
 RACE 2
 1st: 7 Billie Holiday
 2nd: 3 Goodgollytizmolly
 3rd: 1 Goje
 4th: 2 Meridian Mae
 SCRATCHED: 4 Christa McAuliffe
+
 RACE 3
 1st: 4 La Ville Lumiere
 2nd: 5 Wild Like the West
 3rd: 3 Peanutbutterbombe
 4th: 2 Hypergamy
 SCRATCHED: None
+
 RACE 4
 1st: 8 Into the Hall
 2nd: 7 Convo
 3rd: 1 Lubie's Music
 4th: 6 Manhattan Beauty
 SCRATCHED: 4 Sparrow, 5 Thatsalrightmama
+
 RACE 5
 1st: 4 Captain Choochies
 2nd: 6 American Glory (GB)
 3rd: 3 Mr. Leasure
 4th: 1 Sketchy
 SCRATCHED: None
+
 RACE 6
 1st: 4 Tessuto
 2nd: 2 Uncle Chilly
 3rd: 8 Mr. Machupicchu
 4th: 1 Thirty Two Chunk
 SCRATCHED: 3 B Grayson
+
 RACE 7
 1st: 9 Gas Me Up
 2nd: 10 Sumter
 3rd: 2 Zio Jo
 4th: 8 El Potente
 SCRATCHED: 1 Imagination, 13 Feel the Magic, 14 Son of a Birch, 15 First Peace, 7 Unconquerable Keen (IRE)
+
 RACE 8
 1st: 7 Mr. Disrespectful
 2nd: 2 Left Hand Man
 3rd: 5 Team Player
 4th: 10 Keithing Thunder
 SCRATCHED: None
+
 RACE 9
 1st: 11 Medici
 2nd: 3 House of Mischief
