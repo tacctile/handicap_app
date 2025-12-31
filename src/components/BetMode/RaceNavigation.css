@@ -1,0 +1,205 @@
+/**
+ * RaceNavigation Styles
+ *
+ * Bottom race selector and copy all button for bet mode.
+ */
+
+.race-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-cards, #0F0F10);
+  border-top: 1px solid var(--border-subtle, #2A2A2C);
+}
+
+/* Scroll buttons (hidden on desktop) */
+.race-nav__scroll {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--bg-elevated, #1A1A1C);
+  border: 1px solid var(--border-subtle, #2A2A2C);
+  border-radius: 4px;
+  color: var(--text-secondary, #B4B4B6);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.race-nav__scroll:hover {
+  background: var(--bg-hover, #222224);
+  color: var(--text-primary, #EEEFF1);
+}
+
+.race-nav__scroll .material-icons {
+  font-size: 20px;
+}
+
+/* Race buttons container */
+.race-nav__races {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.race-nav__races::-webkit-scrollbar {
+  display: none;
+}
+
+/* Individual race button */
+.race-nav__race {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 44px;
+  height: 36px;
+  padding: 0 10px;
+  background: var(--bg-elevated, #1A1A1C);
+  border: 1px solid var(--border-subtle, #2A2A2C);
+  border-radius: 6px;
+  color: var(--text-secondary, #B4B4B6);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.race-nav__race:hover {
+  background: var(--bg-hover, #222224);
+  border-color: var(--border-hover, #4A4A4C);
+  color: var(--text-primary, #EEEFF1);
+}
+
+/* Active race */
+.race-nav__race--active {
+  background: var(--primary, #19abb5);
+  border-color: var(--primary, #19abb5);
+  color: var(--bg-base, #0A0A0B);
+}
+
+.race-nav__race--active:hover {
+  background: var(--primary-hover, #1992a1);
+  border-color: var(--primary-hover, #1992a1);
+  color: var(--bg-base, #0A0A0B);
+}
+
+/* Verdict colors */
+.race-nav__race--bet {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.race-nav__race--bet:not(.race-nav__race--active) {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.race-nav__race--caution {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.race-nav__race--caution:not(.race-nav__race--active) {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.race-nav__race--pass {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.race-nav__race--pass:not(.race-nav__race--active) {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Completed race */
+.race-nav__race--completed {
+  position: relative;
+}
+
+.race-nav__race-check {
+  font-size: 12px;
+  color: #10b981;
+}
+
+.race-nav__race--active .race-nav__race-check {
+  color: var(--bg-base, #0A0A0B);
+}
+
+.race-nav__race-label {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Copy All button */
+.race-nav__copy-all {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--primary, #19abb5);
+  border: none;
+  border-radius: 6px;
+  color: var(--bg-base, #0A0A0B);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.race-nav__copy-all:hover {
+  background: var(--primary-hover, #1992a1);
+}
+
+.race-nav__copy-all--success {
+  background: #10b981;
+}
+
+.race-nav__copy-all .material-icons {
+  font-size: 18px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .race-nav {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  .race-nav__scroll {
+    display: flex;
+  }
+
+  .race-nav__race {
+    min-width: 40px;
+    height: 32px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .race-nav__copy-all {
+    padding: 8px 12px;
+  }
+
+  .race-nav__copy-text {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .race-nav__race {
+    min-width: 36px;
+    height: 30px;
+    font-size: 11px;
+  }
+
+  .race-nav__copy-all {
+    padding: 6px 10px;
+  }
+}

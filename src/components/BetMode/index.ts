@@ -4,15 +4,14 @@
 
 export { BetModeContainer } from './BetModeContainer';
 export { BetModeHeader } from './BetModeHeader';
-export { BudgetStep } from './BudgetStep';
-export { StyleStep } from './StyleStep';
 export { BetResults } from './BetResults';
 export { BetCard, SkipCard } from './BetCard';
 export { ExplanationTooltip, BetTypeTooltip, WhyBetTooltip } from './ExplanationTooltip';
-export { ModeSelection } from './ModeSelection';
-export type { BetModeType } from './ModeSelection';
+export { InlineSettings } from './InlineSettings';
+export { RaceNavigation } from './RaceNavigation';
+export { DayPlanModal } from './DayPlanModal';
 
-// Day Setup Components
+// Day Setup Components (kept for day planning modal)
 export {
   DayBankrollStep,
   DayExperienceStep,

@@ -309,3 +309,93 @@
     padding: 0 16px 14px;
   }
 }
+
+/* ============================================
+   COMPACT MODE
+   ============================================ */
+
+.bet-card--compact {
+  border-radius: 8px;
+}
+
+.bet-card--compact .bet-card__header {
+  padding: 12px 14px;
+}
+
+.bet-card--compact .bet-card__type {
+  font-size: 15px;
+}
+
+.bet-card--compact .bet-card__cost {
+  font-size: 16px;
+}
+
+.bet-card--compact .bet-card__divider {
+  margin: 0 14px;
+}
+
+.bet-card--compact .bet-card__info {
+  padding: 10px 14px;
+  gap: 6px;
+}
+
+.bet-card--compact .bet-card__row {
+  gap: 8px;
+}
+
+.bet-card--compact .bet-card__info-label,
+.bet-card--compact .bet-card__info-value {
+  font-size: 12px;
+}
+
+.bet-card--compact .bet-card__what-to-say {
+  padding: 10px 14px;
+}
+
+.bet-card--compact .bet-card__what-to-say-header {
+  margin-bottom: 6px;
+}
+
+.bet-card--compact .bet-card__what-to-say-label {
+  font-size: 10px;
+}
+
+.bet-card--compact .bet-card__what-to-say-box {
+  padding: 10px 12px;
+  gap: 8px;
+}
+
+.bet-card--compact .bet-card__what-to-say-text {
+  font-size: 13px;
+}
+
+.bet-card--compact .bet-card__explanations {
+  padding: 0 14px 10px;
+}
+
+/* Compact skip card */
+.skip-card--compact {
+  padding: 10px 12px;
+}
+
+.skip-card--compact .skip-card__icon {
+  font-size: 14px;
+}
+
+.skip-card--compact .skip-card__title {
+  font-size: 12px;
+}
+
+.skip-card--compact .skip-card__toggle {
+  margin-top: 6px;
+  font-size: 11px;
+}
+
+.skip-card--compact .skip-card__content {
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.skip-card--compact .skip-card__content p {
+  font-size: 12px;
+}

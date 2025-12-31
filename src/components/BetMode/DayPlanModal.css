@@ -1,0 +1,370 @@
+/**
+ * DayPlanModal Styles
+ *
+ * Modal for full day bankroll planning.
+ */
+
+.day-plan-modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: overlayFadeIn 0.2s ease;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.day-plan-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  background: var(--bg-elevated, #1A1A1C);
+  border: 1px solid var(--border-subtle, #2A2A2C);
+  border-radius: 12px;
+  animation: modalSlideIn 0.2s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Header */
+.day-plan-modal__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle, #2A2A2C);
+}
+
+.day-plan-modal__icon {
+  font-size: 24px;
+}
+
+.day-plan-modal__title {
+  flex: 1;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #EEEFF1);
+}
+
+.day-plan-modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-secondary, #B4B4B6);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.day-plan-modal__close:hover {
+  background: var(--bg-hover, #222224);
+  color: var(--text-primary, #EEEFF1);
+}
+
+/* Bankroll input */
+.day-plan-modal__bankroll {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--bg-cards, #0F0F10);
+}
+
+.day-plan-modal__bankroll-label {
+  color: var(--text-secondary, #B4B4B6);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.day-plan-modal__bankroll-input {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  background: var(--bg-elevated, #1A1A1C);
+  border: 1px solid var(--border-subtle, #2A2A2C);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.day-plan-modal__bankroll-prefix {
+  color: var(--text-tertiary, #6E6E70);
+  font-size: 16px;
+  margin-right: 4px;
+}
+
+.day-plan-modal__bankroll-input input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary, #EEEFF1);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.day-plan-modal__bankroll-input input:focus {
+  outline: none;
+}
+
+.day-plan-modal__bankroll-input input:disabled {
+  opacity: 0.7;
+}
+
+/* Description */
+.day-plan-modal__desc {
+  margin: 0;
+  padding: 16px 20px 8px;
+  color: var(--text-secondary, #B4B4B6);
+  font-size: 14px;
+}
+
+.day-plan-modal__bullets {
+  margin: 0;
+  padding: 0 20px 16px;
+  list-style: none;
+}
+
+.day-plan-modal__bullets li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  color: var(--text-secondary, #B4B4B6);
+  font-size: 13px;
+}
+
+.day-plan-modal__bullet-icon {
+  font-size: 14px;
+}
+
+/* Race allocations */
+.day-plan-modal__races {
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0 20px;
+  border: 1px solid var(--border-subtle, #2A2A2C);
+  border-radius: 8px;
+}
+
+.day-plan-modal__race {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle, #2A2A2C);
+}
+
+.day-plan-modal__race:last-child {
+  border-bottom: none;
+}
+
+.day-plan-modal__race-num {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary, #EEEFF1);
+  width: 32px;
+}
+
+.day-plan-modal__race-verdict {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.day-plan-modal__race--bet .day-plan-modal__race-verdict {
+  color: #10b981;
+}
+
+.day-plan-modal__race--caution .day-plan-modal__race-verdict {
+  color: #f59e0b;
+}
+
+.day-plan-modal__race--pass .day-plan-modal__race-verdict {
+  color: #ef4444;
+}
+
+.day-plan-modal__race-budget {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary, #EEEFF1);
+  font-variant-numeric: tabular-nums;
+}
+
+.day-plan-modal__race-value {
+  font-size: 11px;
+  color: #10b981;
+  font-weight: 500;
+}
+
+/* Summary */
+.day-plan-modal__summary {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-subtle, #2A2A2C);
+  margin-top: 16px;
+}
+
+.day-plan-modal__summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--text-secondary, #B4B4B6);
+}
+
+.day-plan-modal__summary-row--total {
+  padding-top: 10px;
+  margin-top: 6px;
+  border-top: 1px solid var(--border-subtle, #2A2A2C);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary, #EEEFF1);
+}
+
+/* Actions */
+.day-plan-modal__actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-subtle, #2A2A2C);
+}
+
+.day-plan-modal__cancel {
+  flex: 1;
+  padding: 12px;
+  background: transparent;
+  border: 1px solid var(--border-subtle, #2A2A2C);
+  border-radius: 6px;
+  color: var(--text-secondary, #B4B4B6);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.day-plan-modal__cancel:hover {
+  background: var(--bg-hover, #222224);
+  border-color: var(--border-hover, #4A4A4C);
+}
+
+.day-plan-modal__apply {
+  flex: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--primary, #19abb5);
+  border: none;
+  border-radius: 6px;
+  color: var(--bg-base, #0A0A0B);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.day-plan-modal__apply:hover {
+  background: var(--primary-hover, #1992a1);
+}
+
+.day-plan-modal__apply .material-icons {
+  font-size: 18px;
+}
+
+.day-plan-modal__clear {
+  flex: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: #ef4444;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.day-plan-modal__clear:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.day-plan-modal__clear .material-icons {
+  font-size: 18px;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .day-plan-modal__overlay {
+    padding: 10px;
+  }
+
+  .day-plan-modal {
+    max-height: calc(100vh - 20px);
+  }
+
+  .day-plan-modal__header {
+    padding: 14px 16px;
+  }
+
+  .day-plan-modal__title {
+    font-size: 16px;
+  }
+
+  .day-plan-modal__bankroll {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  .day-plan-modal__bankroll-input {
+    width: 100%;
+  }
+
+  .day-plan-modal__races {
+    margin: 0 16px;
+    max-height: 180px;
+  }
+
+  .day-plan-modal__actions {
+    flex-direction: column;
+    padding: 12px 16px;
+  }
+
+  .day-plan-modal__cancel,
+  .day-plan-modal__apply,
+  .day-plan-modal__clear {
+    flex: none;
+  }
+}
