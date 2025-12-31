@@ -673,3 +673,89 @@
 .horse-list__item:has(.horse-summary-bar--tier-bad) .horse-expanded {
   border-left-color: var(--color-tier-bad);
 }
+
+/* ============================================
+   VALUE PLAY HIGHLIGHTING
+   Highlights horses identified as value bets
+   ============================================ */
+
+/* Any value play gets subtle highlight */
+.horse-summary-bar--value-play {
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.horse-summary-bar--value-play:hover {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+/* Primary value play gets stronger highlight + pulsing border */
+.horse-summary-bar--primary-value-play {
+  background: rgba(16, 185, 129, 0.08);
+  border-left-width: 6px;
+  animation: value-play-pulse 2s ease-in-out infinite;
+}
+
+.horse-summary-bar--primary-value-play:hover {
+  background: rgba(16, 185, 129, 0.15);
+}
+
+@keyframes value-play-pulse {
+  0%, 100% {
+    border-left-color: #10b981;
+  }
+  50% {
+    border-left-color: #22d3ee;
+  }
+}
+
+/* Value play fire icon */
+.horse-summary-bar__value-play-icon {
+  font-size: 16px;
+  margin-right: 6px;
+  animation: fire-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes fire-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px rgba(255, 100, 0, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 6px rgba(255, 100, 0, 0.9));
+  }
+}
+
+/* ============================================
+   VALUE BADGE WITH EDGE PERCENTAGE
+   Shows "Overlay +142%" instead of just "Overlay"
+   ============================================ */
+
+.horse-summary-bar__value-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.horse-summary-bar__value-label {
+  font-weight: 600;
+}
+
+.horse-summary-bar__value-edge {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+
+/* Highlighted scroll target state */
+.horse-summary-bar--highlighted {
+  animation: highlight-flash 1.5s ease-out;
+}
+
+@keyframes highlight-flash {
+  0% {
+    background: rgba(25, 171, 181, 0.4);
+  }
+  100% {
+    background: var(--color-card);
+  }
+}
