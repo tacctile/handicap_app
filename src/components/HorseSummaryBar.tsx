@@ -33,10 +33,24 @@ const getEdgeColor = (edgePercent: number): string => {
 };
 
 /**
- * Format edge percentage for display
+ * Get rank display color based on position
+ * Top 3 are green, 4th is yellow, 5th+ is gray
  */
-const formatEdgePercent = (edgePercent: number): string => {
+const getRankColor = (rank: number | undefined): string => {
+  if (!rank) return '#6B7280';
+  if (rank === 1) return '#10b981'; // Bright green, top pick
+  if (rank <= 3) return '#22c55e'; // Green, contender
+  if (rank === 4) return '#eab308'; // Yellow, playable
+  return '#6B7280'; // Gray, longshot
+};
+
+/**
+ * Format edge percentage for the EDGE column display
+ * Shows ±X% for neutral, +X% for positive, -X% for negative
+ */
+const formatEdgeDisplay = (edgePercent: number): string => {
   const rounded = Math.round(edgePercent);
+  if (rounded >= -5 && rounded <= 5) return '±5%';
   if (rounded >= 0) return `+${rounded}%`;
   return `${rounded}%`;
 };
@@ -163,19 +177,19 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   isCompareSelected,
   onCompareToggle,
   // Base score rank (projected finish order)
-  baseScoreRank: _baseScoreRank, // Available for future use (e.g., sorting indicators)
-  baseScoreRankOrdinal,
-  baseScoreRankColor,
-  // Trend rank (form trajectory)
+  baseScoreRank,
+  baseScoreRankOrdinal: _baseScoreRankOrdinal, // Kept for compatibility but not used
+  baseScoreRankColor: _baseScoreRankColor, // Kept for compatibility but not used
+  // Trend rank (form trajectory) - kept for compatibility but not displayed
   trendRank: _trendRank,
-  trendRankOrdinal,
-  trendRankColor,
-  trendScore: _trendScore, // Kept for future sparkline restoration
-  onTrendClick: _onTrendClick, // Kept for future sparkline restoration
-  // Blended rank (combined base + trend)
+  trendRankOrdinal: _trendRankOrdinal,
+  trendRankColor: _trendRankColor,
+  trendScore: _trendScore,
+  onTrendClick: _onTrendClick,
+  // Blended rank (combined base + trend) - kept for compatibility but not displayed
   blendedRank: _blendedRank,
-  blendedRankOrdinal,
-  blendedRankColor,
+  blendedRankOrdinal: _blendedRankOrdinal,
+  blendedRankColor: _blendedRankColor,
   blendedResult: _blendedResult,
   // Value play props
   isValuePlay = false,
@@ -311,33 +325,13 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       {/* Column 3: HORSE Name - FULL WIDTH, NO TRUNCATION */}
       <div className="horse-summary-bar__name">{horseName.toUpperCase()}</div>
 
-      {/* Column 4: BASE RANK - Projected Finish Order (based on base score) */}
+      {/* Column 4: RANK - Model Ranking (#1, #2, etc. based on base score) */}
       <div className="horse-summary-bar__rank">
         <span
-          className="horse-summary-bar__rank-value"
-          style={{ color: isScratched ? undefined : baseScoreRankColor }}
+          className={`horse-summary-bar__rank-value ${!isScratched && baseScoreRank && baseScoreRank <= 3 ? 'horse-summary-bar__rank-value--top' : ''}`}
+          style={{ color: isScratched ? undefined : getRankColor(baseScoreRank) }}
         >
-          {isScratched ? '—' : baseScoreRankOrdinal || '—'}
-        </span>
-      </div>
-
-      {/* Column 5: TREND RANK - Form Trajectory */}
-      <div className="horse-summary-bar__trend-rank">
-        <span
-          className="horse-summary-bar__trend-rank-value"
-          style={{ color: isScratched ? undefined : trendRankColor }}
-        >
-          {isScratched ? '—' : trendRankOrdinal || '—'}
-        </span>
-      </div>
-
-      {/* Column 6: BLENDED RANK - Combined Base + Trend */}
-      <div className="horse-summary-bar__blended-rank">
-        <span
-          className="horse-summary-bar__blended-rank-value"
-          style={{ color: isScratched ? undefined : blendedRankColor }}
-        >
-          {isScratched ? '—' : blendedRankOrdinal || '—'}
+          {isScratched ? '—' : baseScoreRank ? `#${baseScoreRank}` : '—'}
         </span>
       </div>
 
@@ -374,23 +368,33 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         )}
       </div>
 
-      {/* Column 8: FAIR - Calculated fair odds */}
+      {/* Column 6: FAIR - Calculated fair odds */}
       <div className="horse-summary-bar__fair-odds">
         <span className="horse-summary-bar__fair-odds-value">
           {isScratched ? '—' : fairOddsDisplay}
         </span>
       </div>
 
-      {/* Column 9: VALUE Badge (Overlay/Fair/Underlay with edge %) */}
+      {/* Column 7: EDGE - Value gap percentage */}
+      <div className="horse-summary-bar__edge">
+        <span
+          className={`horse-summary-bar__edge-value ${displayEdge >= 75 ? 'horse-summary-bar__edge-value--hot' : ''}`}
+          style={{ color: isScratched ? undefined : getEdgeColor(displayEdge) }}
+        >
+          {isScratched ? '—' : formatEdgeDisplay(displayEdge)}
+        </span>
+      </div>
+
+      {/* Column 8: VALUE Badge (Overlay/Fair/Underlay) */}
       <div className="horse-summary-bar__value-wrapper">
         {/* Value play fire indicator */}
         {isPrimaryValuePlay && !isScratched && (
           <span className="horse-summary-bar__value-play-icon" title="Primary Value Play">
-            {'\u{1F525}'}
+            🔥
           </span>
         )}
         <div
-          className={`horse-summary-bar__value-badge horse-summary-bar__value-badge--${valueBadge.className}`}
+          className={`horse-summary-bar__value-badge horse-summary-bar__value-badge--${valueBadge.className} ${isPrimaryValuePlay && !isScratched ? 'horse-summary-bar__value-badge--primary' : ''}`}
           style={{
             backgroundColor: `${valueBadge.color}20`,
             borderColor: valueBadge.color,
@@ -398,14 +402,6 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
           }}
         >
           <span className="horse-summary-bar__value-label">{valueBadge.label}</span>
-          {valueBadge.showEdge && !isScratched && (
-            <span
-              className="horse-summary-bar__value-edge"
-              style={{ color: getEdgeColor(displayEdge) }}
-            >
-              {formatEdgePercent(displayEdge)}
-            </span>
-          )}
         </div>
       </div>
 

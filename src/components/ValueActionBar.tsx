@@ -58,9 +58,7 @@ export const ValueActionBar: React.FC<ValueActionBarProps> = ({
     return (
       <div className="value-action-bar value-action-bar--empty">
         <div className="value-action-bar__content">
-          <span className="value-action-bar__placeholder">
-            Upload a race to see value analysis
-          </span>
+          <span className="value-action-bar__placeholder">Upload a race to see value analysis</span>
         </div>
       </div>
     );
@@ -76,13 +74,8 @@ export const ValueActionBar: React.FC<ValueActionBarProps> = ({
     >
       <div className="value-action-bar__content">
         {/* Verdict badge */}
-        <div
-          className="value-action-bar__verdict"
-          style={{ color: verdictColor }}
-        >
-          <span className="value-action-bar__icon">
-            {getVerdictIcon(verdict)}
-          </span>
+        <div className="value-action-bar__verdict" style={{ color: verdictColor }}>
+          <span className="value-action-bar__icon">{getVerdictIcon(verdict)}</span>
           <span className="value-action-bar__race">R{raceNumber}:</span>
           <span className="value-action-bar__verdict-text">{verdict}</span>
         </div>
@@ -92,20 +85,14 @@ export const ValueActionBar: React.FC<ValueActionBarProps> = ({
 
         {verdict === 'PASS' ? (
           /* PASS verdict - no value play */
-          <div className="value-action-bar__pass-message">
-            No value plays \u2014 skip this race
-          </div>
+          <div className="value-action-bar__pass-message">No value plays — skip this race</div>
         ) : primaryValuePlay ? (
           /* BET or CAUTION verdict with value play */
           <>
             {/* Horse name and odds */}
             <div className="value-action-bar__horse-info">
-              <span className="value-action-bar__horse-name">
-                {primaryValuePlay.horseName}
-              </span>
-              <span className="value-action-bar__odds">
-                ({primaryValuePlay.currentOdds})
-              </span>
+              <span className="value-action-bar__horse-name">{primaryValuePlay.horseName}</span>
+              <span className="value-action-bar__odds">({primaryValuePlay.currentOdds})</span>
             </div>
 
             {/* Separator */}
@@ -137,9 +124,7 @@ export const ValueActionBar: React.FC<ValueActionBarProps> = ({
               title="Scroll to value play horse"
             >
               <span className="value-action-bar__view-text">View Value Play</span>
-              <span className="material-icons value-action-bar__view-icon">
-                arrow_upward
-              </span>
+              <span className="material-icons value-action-bar__view-icon">arrow_upward</span>
             </button>
           </>
         ) : null}

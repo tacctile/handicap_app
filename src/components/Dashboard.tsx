@@ -892,7 +892,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   </div>
                 </div>
 
-                {/* Column Headers - 10 columns: icons | POST | HORSE | BASE RANK | TREND RANK | BLENDED RANK | ODDS | FAIR | VALUE | expand */}
+                {/* Column Headers - 9 columns: icons | POST | HORSE | RANK | ODDS | FAIR | EDGE | VALUE | expand */}
                 <div className="horse-list-header">
                   {/* Column 1: Help button */}
                   <div className="horse-list-header__cell horse-list-header__cell--icons">
@@ -911,7 +911,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <div className="horse-list-header__cell horse-list-header__cell--pp horse-list-header__cell--no-subtext">
                     <HeaderTooltip
                       title="Post Position"
-                      content="The starting gate number where the horse begins the race. Horses are displayed in POST order (1, 2, 3...). This is their physical position in the starting gate."
+                      content="The starting gate number where the horse begins the race. Lower numbers start closer to the inside rail."
                     >
                       <span className="horse-list-header__label">POST</span>
                     </HeaderTooltip>
@@ -921,75 +921,59 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <div className="horse-list-header__cell horse-list-header__cell--name horse-list-header__cell--no-subtext">
                     <HeaderTooltip
                       title="Horse Name"
-                      content="The horse's registered racing name. Click on a horse row to see detailed information including past races, trainer, jockey, and full scoring breakdown."
+                      content="Click on a horse row to see detailed information including past races, trainer, jockey, and scoring breakdown."
                     >
                       <span className="horse-list-header__label">HORSE</span>
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 4: BASE RANK - Projected finish order based on base score */}
-                  <div className="horse-list-header__cell horse-list-header__cell--rank">
+                  {/* Column 4: RANK - Model ranking based on base score */}
+                  <div className="horse-list-header__cell horse-list-header__cell--rank horse-list-header__cell--no-subtext">
                     <HeaderTooltip
-                      title="Base Rank (Ability)"
-                      content="Predicted finish order based on the 328-point algorithm. Measures fundamental ability, class, speed, and connections. 1st = highest base score."
+                      title="Model Ranking"
+                      content="Our algorithm's ranking of this horse based on ability, speed, class, and connections. #1 is our top pick to win. Green = contender, Yellow = playable, Gray = longshot."
                     >
-                      <span className="horse-list-header__label">BASE</span>
-                      <span className="horse-list-header__sublabel">Ability</span>
+                      <span className="horse-list-header__label">RANK</span>
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 5: TREND RANK - Form trajectory */}
-                  <div className="horse-list-header__cell horse-list-header__cell--trend-rank">
-                    <HeaderTooltip
-                      title="Trend Rank (Momentum)"
-                      content="Ranking based on recent form trajectory. Compares recent races to older races to detect if a horse is improving, declining, or flat. 1st = most improving trend."
-                    >
-                      <span className="horse-list-header__label">TREND</span>
-                      <span className="horse-list-header__sublabel">Momentum</span>
-                    </HeaderTooltip>
-                  </div>
-
-                  {/* Column 6: BLENDED RANK - Combined base + trend */}
-                  <div className="horse-list-header__cell horse-list-header__cell--blended-rank">
-                    <HeaderTooltip
-                      title="Blended Rank (Combined)"
-                      content="Combined ranking: 60% Base Rank (ability) + 40% Trend Rank (momentum). Balances who SHOULD win with who is PEAKING now. 1st = best overall pick."
-                    >
-                      <span className="horse-list-header__label">BLENDED</span>
-                      <span className="horse-list-header__sublabel">Combined</span>
-                    </HeaderTooltip>
-                  </div>
-
-                  {/* Column 7: ODDS - Market price */}
-                  <div className="horse-list-header__cell horse-list-header__cell--odds">
+                  {/* Column 5: ODDS - Market price */}
+                  <div className="horse-list-header__cell horse-list-header__cell--odds horse-list-header__cell--no-subtext">
                     <HeaderTooltip
                       title="Current Odds"
-                      content="The morning line odds or current market odds. For example, 5-1 means you'd win $5 for every $1 bet (plus your original bet back). Click to adjust based on live tote board changes."
+                      content="Morning line or live odds. Click to edit. 5-1 means you'd win $5 for every $1 bet (plus your original bet back)."
                     >
                       <span className="horse-list-header__label">ODDS</span>
-                      <span className="horse-list-header__sublabel">Market Price</span>
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 8: FAIR - Calculated fair odds based on base score */}
-                  <div className="horse-list-header__cell horse-list-header__cell--fair-odds">
+                  {/* Column 6: FAIR - Calculated fair odds based on base score */}
+                  <div className="horse-list-header__cell horse-list-header__cell--fair-odds horse-list-header__cell--no-subtext">
                     <HeaderTooltip
                       title="Fair Odds"
-                      content="Calculated fair odds based on the horse's base score relative to the field. This is what the odds SHOULD be according to our algorithm."
+                      content="What the odds SHOULD be according to our algorithm. Compare to current ODDS to find value."
                     >
                       <span className="horse-list-header__label">FAIR</span>
-                      <span className="horse-list-header__sublabel">Algorithm Odds</span>
                     </HeaderTooltip>
                   </div>
 
-                  {/* Column 9: VALUE - Overlay/Fair/Underlay badge */}
-                  <div className="horse-list-header__cell horse-list-header__cell--value">
+                  {/* Column 7: EDGE - Value gap percentage */}
+                  <div className="horse-list-header__cell horse-list-header__cell--edge horse-list-header__cell--no-subtext">
+                    <HeaderTooltip
+                      title="Edge (Value Gap)"
+                      content="The difference between our fair odds and public odds. Positive edge = value bet opportunity. +50% or higher is strong value. Negative edge = horse is overbet."
+                    >
+                      <span className="horse-list-header__label">EDGE</span>
+                    </HeaderTooltip>
+                  </div>
+
+                  {/* Column 8: VALUE - Overlay/Fair/Underlay badge */}
+                  <div className="horse-list-header__cell horse-list-header__cell--value horse-list-header__cell--no-subtext">
                     <HeaderTooltip
                       title="Value Assessment"
-                      content="Quick value indicator: OVERLAY (green) = odds are better than fair value (good bet). FAIR (gray) = odds match our assessment. UNDERLAY (red) = odds are worse than fair value (public overbet)."
+                      content="OVERLAY (green) = positive edge, worth betting. FAIR (gray) = no edge. UNDERLAY (red) = negative edge, skip."
                     >
                       <span className="horse-list-header__label">VALUE</span>
-                      <span className="horse-list-header__sublabel">Odds vs Fair</span>
                     </HeaderTooltip>
                   </div>
 

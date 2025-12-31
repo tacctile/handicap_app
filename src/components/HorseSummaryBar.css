@@ -187,11 +187,11 @@
 }
 
 /* ============================================
-   TREND RANK COLUMN
+   EDGE COLUMN
    ============================================ */
 
-.horse-summary-bar__trend-rank {
-  font-size: 18px;
+.horse-summary-bar__edge {
+  font-size: 16px;
   font-weight: 700;
   text-align: center;
   display: flex;
@@ -199,45 +199,19 @@
   align-items: center;
 }
 
-.horse-summary-bar__trend-rank-value {
+.horse-summary-bar__edge-value {
   font-weight: 700;
   letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
-.horse-summary-bar--scratched .horse-summary-bar__trend-rank-value {
+/* Hot edge (75%+) gets subtle glow */
+.horse-summary-bar__edge-value--hot {
+  text-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.horse-summary-bar--scratched .horse-summary-bar__edge-value {
   color: var(--color-tier-scratched);
-}
-
-/* ============================================
-   BLENDED RANK COLUMN
-   ============================================ */
-
-.horse-summary-bar__blended-rank {
-  font-size: 18px;
-  font-weight: 700;
-  text-align: center;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.horse-summary-bar__blended-rank-value {
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.horse-summary-bar--scratched .horse-summary-bar__blended-rank-value {
-  color: var(--color-tier-scratched);
-}
-
-/* ============================================
-   TREND GRAPH (SPARKLINE) COLUMN
-   ============================================ */
-
-.horse-summary-bar__trend-graph {
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 /* Live odds - key interactive element (Option C hierarchy) */
@@ -679,49 +653,74 @@
    Highlights horses identified as value bets
    ============================================ */
 
-/* Any value play gets subtle highlight */
+/* Any value play gets light green tint */
 .horse-summary-bar--value-play {
-  background: rgba(16, 185, 129, 0.05);
+  background: rgba(16, 185, 129, 0.08);
 }
 
 .horse-summary-bar--value-play:hover {
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(16, 185, 129, 0.12);
 }
 
-/* Primary value play gets stronger highlight + pulsing border */
+/* Primary value play - stands out strongly */
 .horse-summary-bar--primary-value-play {
-  background: rgba(16, 185, 129, 0.08);
+  background: rgba(16, 185, 129, 0.12);
   border-left-width: 6px;
-  animation: value-play-pulse 2s ease-in-out infinite;
+  border-left-color: #10b981;
+}
+
+.horse-summary-bar--primary-value-play .horse-summary-bar__name {
+  font-size: 26px; /* Slightly larger name */
 }
 
 .horse-summary-bar--primary-value-play:hover {
-  background: rgba(16, 185, 129, 0.15);
-}
-
-@keyframes value-play-pulse {
-  0%, 100% {
-    border-left-color: #10b981;
-  }
-  50% {
-    border-left-color: #22d3ee;
-  }
+  background: rgba(16, 185, 129, 0.18);
 }
 
 /* Value play fire icon */
 .horse-summary-bar__value-play-icon {
-  font-size: 16px;
+  font-size: 18px;
   margin-right: 6px;
   animation: fire-glow 1.5s ease-in-out infinite;
 }
 
 @keyframes fire-glow {
-  0%, 100% {
+  0%,
+  100% {
     filter: drop-shadow(0 0 2px rgba(255, 100, 0, 0.6));
   }
   50% {
-    filter: drop-shadow(0 0 6px rgba(255, 100, 0, 0.9));
+    filter: drop-shadow(0 0 8px rgba(255, 100, 0, 1));
   }
+}
+
+/* Primary value badge gets subtle pulse */
+.horse-summary-bar__value-badge--primary {
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+  50% {
+    box-shadow: 0 0 8px 2px rgba(16, 185, 129, 0.4);
+  }
+}
+
+/* ============================================
+   UNDERLAY ROW STYLING
+   Subtle red indicator for negative edge horses
+   ============================================ */
+
+.horse-summary-bar--tier-underlay {
+  border-left-color: #ef4444;
+  background: rgba(239, 68, 68, 0.03);
+}
+
+.horse-summary-bar--tier-underlay:hover {
+  background: rgba(239, 68, 68, 0.06);
 }
 
 /* ============================================
@@ -758,4 +757,63 @@
   100% {
     background: var(--color-card);
   }
+}
+
+/* ============================================
+   RESPONSIVE BEHAVIOR
+   ============================================ */
+
+/* Tablet: Hide FAIR column, condense layout */
+@media (max-width: 1200px) {
+  .horse-summary-bar__fair-odds {
+    display: none;
+  }
+
+  .horse-list-header__cell--fair-odds {
+    display: none;
+  }
+}
+
+/* Mobile: Show only essential columns */
+@media (max-width: 768px) {
+  .horse-summary-bar {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .horse-summary-bar__fair-odds,
+  .horse-summary-bar__edge {
+    display: none;
+  }
+
+  .horse-list-header__cell--fair-odds,
+  .horse-list-header__cell--edge {
+    display: none;
+  }
+
+  .horse-summary-bar__rank {
+    font-size: 14px;
+  }
+
+  .horse-summary-bar__pp {
+    font-size: 20px;
+  }
+
+  .horse-summary-bar__name {
+    font-size: 16px;
+  }
+
+  .horse-summary-bar__odds {
+    font-size: 14px;
+  }
+
+  .horse-summary-bar__value-badge {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}
+
+/* Top rank styling */
+.horse-summary-bar__rank-value--top {
+  font-weight: 800;
 }
