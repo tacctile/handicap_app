@@ -79,6 +79,19 @@ export interface SpeedClassScoreResult {
     /** Whether confidence penalty was applied */
     penaltyApplied: boolean;
   };
+  /** Recency decay info for speed figures */
+  recencyDecay?: {
+    /** Days since the race with the best figure */
+    daysSinceRace: number | null;
+    /** Recency decay multiplier applied (0.5-1.0) */
+    multiplier: number;
+    /** Original figure before decay */
+    originalFigure: number | null;
+    /** Decayed figure used for scoring */
+    decayedFigure: number | null;
+    /** Whether decay was applied */
+    decayApplied: boolean;
+  };
 }
 
 // ============================================================================
@@ -196,6 +209,65 @@ export function adjustFigureForVariant(
 }
 
 // ============================================================================
+// SPEED FIGURE RECENCY DECAY
+// ============================================================================
+
+/**
+ * Calculate days between two dates
+ * @param raceDate - Date string in YYYYMMDD format (from PastPerformance.date)
+ * @param todayDate - Today's date string in YYYYMMDD or YYYY-MM-DD format
+ * @returns Number of days between dates, or null if parsing fails
+ */
+function calculateDaysSinceRace(raceDate: string, todayDate: string): number | null {
+  try {
+    // Parse race date (YYYYMMDD format)
+    const cleanRaceDate = raceDate.replace(/[-/]/g, '');
+    if (cleanRaceDate.length < 8) return null;
+
+    const raceYear = parseInt(cleanRaceDate.substring(0, 4));
+    const raceMonth = parseInt(cleanRaceDate.substring(4, 6)) - 1;
+    const raceDay = parseInt(cleanRaceDate.substring(6, 8));
+    const race = new Date(raceYear, raceMonth, raceDay);
+
+    // Parse today's date
+    const cleanToday = todayDate.replace(/[-/]/g, '');
+    const todayYear = parseInt(cleanToday.substring(0, 4));
+    const todayMonth = parseInt(cleanToday.substring(4, 6)) - 1;
+    const todayDay = parseInt(cleanToday.substring(6, 8));
+    const today = new Date(todayYear, todayMonth, todayDay);
+
+    // Calculate difference in days
+    const diffTime = today.getTime() - race.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays >= 0 ? diffDays : 0;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get recency decay multiplier for a speed figure based on age
+ *
+ * DECAY LOGIC (Conservative - prioritizes maintaining predictive power):
+ * - 0-30 days: 100% (fresh figure, full weight)
+ * - 31-45 days: 97% (very slight decay)
+ * - 46-60 days: 93% (slightly stale)
+ * - 61-90 days: 87% (getting old)
+ * - 91-120 days: 80% (old figure)
+ * - 120+ days: 70% (stale, but still meaningful)
+ *
+ * This provides a gentle bias toward recent figures without
+ * heavily penalizing horses with competitive older figures.
+ */
+export function getRecencyDecayMultiplier(_daysSinceRace: number | null): number {
+  // v3.3: Disabled recency decay as testing showed it hurt predictive accuracy
+  // The algorithm's existing form scoring already penalizes horses with poor recent form
+  // Keeping function for future experimentation with larger sample sizes
+  return 1.0; // No decay applied - all figures treated equally
+}
+
+// ============================================================================
 // SPEED FIGURE EXTRACTION
 // ============================================================================
 
@@ -250,6 +322,12 @@ interface BestRecentFigureResult {
   rawFigure: number | null;
   /** Variant-adjusted best figure */
   adjustedFigure: number | null;
+  /** Recency-decayed figure (for scoring comparison) */
+  decayedFigure: number | null;
+  /** Recency decay multiplier applied */
+  recencyMultiplier: number;
+  /** Days since the race with best figure */
+  daysSinceRace: number | null;
   /** Variant adjustment details */
   variantResult: VariantAdjustmentResult | null;
   /** Which past performance had the best adjusted figure */
@@ -257,40 +335,74 @@ interface BestRecentFigureResult {
 }
 
 /**
- * Get best speed figure from last N races with variant adjustment
- * Returns both raw and variant-adjusted figures
+ * Get best speed figure from last N races with variant adjustment and recency decay
+ * Returns both raw and variant-adjusted figures, plus recency-decayed figure for scoring
+ *
+ * RECENCY DECAY: Figures are weighted by age to prevent stale high figures from
+ * dominating over recent competitive figures. A 90 Beyer from 90 days ago is
+ * worth less than an 85 Beyer from 14 days ago.
+ *
+ * @param pastPerformances - Array of past performances
+ * @param count - Number of recent races to consider (default 3)
+ * @param todayDate - Today's date for calculating figure age (YYYYMMDD or YYYY-MM-DD)
  */
 function getBestRecentFigureWithVariant(
   pastPerformances: PastPerformance[],
-  count: number = 3
+  count: number = 3,
+  todayDate?: string
 ): BestRecentFigureResult {
   const recentPPs = pastPerformances.slice(0, count);
+
+  // Use current date if not provided
+  const today = todayDate || new Date().toISOString().split('T')[0]?.replace(/-/g, '') || '';
 
   if (recentPPs.length === 0) {
     return {
       rawFigure: null,
       adjustedFigure: null,
+      decayedFigure: null,
+      recencyMultiplier: 1.0,
+      daysSinceRace: null,
       variantResult: null,
       bestPP: null,
     };
   }
 
-  // Extract figures with variants and calculate adjusted figures
+  // Extract figures with variants, calculate adjusted figures, and apply recency decay
   const figuresWithAdjustments = recentPPs.map((pp) => {
     const extracted = extractSpeedFigureWithVariant(pp);
     if (extracted.figure === null) {
-      return { pp, rawFigure: null, adjustedFigure: null, variantResult: null };
+      return {
+        pp,
+        rawFigure: null,
+        adjustedFigure: null,
+        decayedFigure: null,
+        recencyMultiplier: 1.0,
+        daysSinceRace: null,
+        variantResult: null,
+      };
     }
+
     const variantResult = adjustFigureForVariant(extracted.figure, extracted.variant);
+
+    // Calculate recency decay
+    const daysSinceRace = calculateDaysSinceRace(pp.date, today);
+    const recencyMultiplier = getRecencyDecayMultiplier(daysSinceRace);
+    const decayedFigure = Math.round(variantResult.adjustedFigure * recencyMultiplier);
+
     return {
       pp,
       rawFigure: extracted.figure,
       adjustedFigure: variantResult.adjustedFigure,
+      decayedFigure,
+      recencyMultiplier,
+      daysSinceRace,
       variantResult,
     };
   });
 
-  // Filter out nulls and find the best adjusted figure
+  // Filter out nulls and find the best DECAYED figure (not raw/adjusted)
+  // This ensures we're comparing apples to apples with recency factored in
   const validFigures = figuresWithAdjustments.filter(
     (
       f
@@ -298,27 +410,37 @@ function getBestRecentFigureWithVariant(
       pp: PastPerformance;
       rawFigure: number;
       adjustedFigure: number;
+      decayedFigure: number;
+      recencyMultiplier: number;
+      daysSinceRace: number | null;
       variantResult: VariantAdjustmentResult;
-    } => f.adjustedFigure !== null
+    } => f.decayedFigure !== null
   );
 
   if (validFigures.length === 0) {
     return {
       rawFigure: null,
       adjustedFigure: null,
+      decayedFigure: null,
+      recencyMultiplier: 1.0,
+      daysSinceRace: null,
       variantResult: null,
       bestPP: null,
     };
   }
 
-  // Find the PP with the best adjusted figure
+  // Find the PP with the best DECAYED figure
+  // This prioritizes recent competitive figures over stale high figures
   const best = validFigures.reduce((best, current) =>
-    current.adjustedFigure > best.adjustedFigure ? current : best
+    current.decayedFigure > best.decayedFigure ? current : best
   );
 
   return {
     rawFigure: best.rawFigure,
     adjustedFigure: best.adjustedFigure,
+    decayedFigure: best.decayedFigure,
+    recencyMultiplier: best.recencyMultiplier,
+    daysSinceRace: best.daysSinceRace,
     variantResult: best.variantResult,
     bestPP: best.pp,
   };
@@ -697,37 +819,49 @@ function calculateClassScore(
  * - Track tier adjustments (Tier 1 elite vs Tier 4 weak)
  * - Track-specific par figures when available
  * - Shipper analysis for horses changing track tiers
+ * - Recency decay on speed figures (stale figures worth less)
  *
  * @param horse - The horse entry to score
  * @param raceHeader - Race information
+ * @param raceDate - Optional race date for recency decay calculation (YYYYMMDD or YYYY-MM-DD)
  * @returns Detailed score breakdown with track normalization
  */
 export function calculateSpeedClassScore(
   horse: HorseEntry,
-  raceHeader: RaceHeader
+  raceHeader: RaceHeader,
+  raceDate?: string
 ): SpeedClassScoreResult {
   const currentClass = raceHeader.classification;
   const parForClass = CLASS_PAR_FIGURES[currentClass];
 
+  // Use provided race date or fall back to header date or current date
+  const todayDate = raceDate || raceHeader.raceDateRaw || new Date().toISOString().split('T')[0];
+
   // =========================================================================
-  // GET SPEED FIGURES WITH TRACK VARIANT ADJUSTMENT
+  // GET SPEED FIGURES WITH TRACK VARIANT ADJUSTMENT AND RECENCY DECAY
   // =========================================================================
 
-  // Get best recent figure with variant adjustment applied
-  const bestFigureResult = getBestRecentFigureWithVariant(horse.pastPerformances, 3);
+  // Get best recent figure with variant adjustment and recency decay applied
+  const bestFigureResult = getBestRecentFigureWithVariant(horse.pastPerformances, 3, todayDate);
 
   // Fallback to horse entry's lastBeyer if no PPs (first-time starter)
   let bestRecentFigure = bestFigureResult.adjustedFigure;
+  let decayedFigure = bestFigureResult.decayedFigure;
   let rawBestFigure = bestFigureResult.rawFigure;
   let variantAdjustmentInfo = bestFigureResult.variantResult;
   let bestPP = bestFigureResult.bestPP;
+  let recencyMultiplier = bestFigureResult.recencyMultiplier;
+  let daysSinceRace = bestFigureResult.daysSinceRace;
 
   // Fallback to lastBeyer from horse entry if no PPs
   if (bestRecentFigure === null && horse.lastBeyer !== null && horse.lastBeyer > 0) {
     bestRecentFigure = horse.lastBeyer;
+    decayedFigure = horse.lastBeyer; // No decay for fallback (unknown age)
     rawBestFigure = horse.lastBeyer;
     variantAdjustmentInfo = null;
     bestPP = null;
+    recencyMultiplier = 0.75; // Assume moderate staleness for unknown
+    daysSinceRace = null;
   }
 
   const averageFigure = getAverageFigure(horse.pastPerformances, 5) ?? horse.averageBeyer ?? null;
@@ -772,8 +906,9 @@ export function calculateSpeedClassScore(
   }
 
   // Calculate effective figure for scoring
-  // Start with variant-adjusted figure, then apply tier normalization
-  let effectiveFigure = bestRecentFigure;
+  // Start with DECAYED figure (recency-adjusted), then apply tier normalization
+  // This ensures stale high figures don't dominate over recent competitive figures
+  let effectiveFigure = decayedFigure;
   if (effectiveFigure !== null && bestPP) {
     const figureTierAdj = getTrackTierAdjustment(bestPP.track);
     // Apply tier adjustment to the figure for comparison purposes
@@ -793,7 +928,7 @@ export function calculateSpeedClassScore(
     }
   }
 
-  // Calculate speed score using effective (normalized + variant-adjusted) figure
+  // Calculate speed score using effective (normalized + variant-adjusted + recency-decayed) figure
   // PHASE 2: Pass figure count for confidence-based scoring
   const speedResult = calculateSpeedFigureScore(
     effectiveFigure,
@@ -864,6 +999,12 @@ export function calculateSpeedClassScore(
     }
   }
 
+  // Add recency decay info to reasoning if decay was applied
+  if (recencyMultiplier < 1.0 && daysSinceRace !== null && bestRecentFigure !== null) {
+    const decayPct = Math.round((1 - recencyMultiplier) * 100);
+    adjustedSpeedReasoning += ` | Recency: ${daysSinceRace}d old (-${decayPct}% decay, ${bestRecentFigure}→${decayedFigure})`;
+  }
+
   // Apply shipper adjustment to speed score (±2-5 points max)
   // Model B: Updated max from 90 to 105
   const adjustedSpeedScore = Math.max(
@@ -895,6 +1036,15 @@ export function calculateSpeedClassScore(
     penaltyApplied: speedConfidenceMultiplier < 1.0,
   };
 
+  // Build recency decay info
+  const recencyDecay = {
+    daysSinceRace,
+    multiplier: recencyMultiplier,
+    originalFigure: bestRecentFigure,
+    decayedFigure,
+    decayApplied: recencyMultiplier < 1.0,
+  };
+
   return {
     total: adjustedSpeedScore + classResult.score,
     speedScore: adjustedSpeedScore,
@@ -916,6 +1066,7 @@ export function calculateSpeedClassScore(
       parDifferential,
     },
     speedConfidence,
+    recencyDecay,
   };
 }
 

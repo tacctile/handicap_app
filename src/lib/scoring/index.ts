@@ -1064,13 +1064,16 @@ function calculateHorseScoreWithContext(
     breedingContribution + // Includes P3 sire's sire adjustment if applicable
     hiddenDropsBonus; // Add hidden class drop bonuses
 
-  // MODEL B PART 5: Paper Tiger Circuit Breaker
-  // Penalize horses with Elite Speed but Zero Form and Mediocre Pace
-  // These horses look good on paper but lack current fitness to win
+  // MODEL B PART 5: Paper Tiger Circuit Breaker (v3.3 - Tiered Penalties)
+  // Penalize horses with high Speed but poor Form and mediocre Pace
+  // v3.3: Broadened criteria with tiered penalties (-20/-40/-100)
+  // v3.3: Recent winners are protected from penalty
+  const hasRecentWin = breakdown.form.wonLastOut || breakdown.form.won2OfLast3;
   const paperTigerPenalty = calculatePaperTigerPenalty(
     breakdown.speedClass.speedScore,
     breakdown.form.total,
-    breakdown.pace.total
+    breakdown.pace.total,
+    hasRecentWin
   );
 
   // Apply Paper Tiger penalty to raw base total
@@ -1085,12 +1088,12 @@ function calculateHorseScoreWithContext(
     formScore: breakdown.form.total,
     paceScore: breakdown.pace.total,
     reasoning: paperTigerApplied
-      ? 'Paper Tiger Penalty: High Speed / No Form / Low Pace (-100)'
-      : breakdown.pace.total >= 30 &&
-          breakdown.speedClass.speedScore > 120 &&
-          breakdown.form.total < 10
-        ? 'Tessuto Rule: Elite pace protects despite low form (no penalty)'
-        : 'No Paper Tiger penalty applied',
+      ? `Paper Tiger Penalty: Speed ${breakdown.speedClass.speedScore} / Form ${breakdown.form.total} / Pace ${breakdown.pace.total} (${paperTigerPenalty})`
+      : hasRecentWin
+        ? 'Protected by recent win (no Paper Tiger penalty)'
+        : breakdown.pace.total >= 30
+          ? 'Tessuto Rule: Elite pace protects (no penalty)'
+          : 'No Paper Tiger penalty applied',
   };
 
   // Calculate data completeness BEFORE applying low confidence penalty
