@@ -2,20 +2,37 @@
  * Form Scoring Module
  * Analyzes recent race form, layoff patterns, and consistency
  *
- * Score Breakdown (v3.3 - Increased Form Weight):
+ * Score Breakdown (v3.5 - Winner Bonus Recency Decay):
  *
- * FORM SCORING BREAKDOWN (55 pts max, increased from 42)
+ * FORM SCORING BREAKDOWN (55 pts max)
  *
- * Recent Performance Base: 0-18 pts (increased from 15)
+ * Recent Performance Base: 0-18 pts
  *   - Last 3 race finishes weighted (50%, 30%, 20%)
  *   - 1st = 18 pts, 2nd/3rd (<2L) = 14 pts, 2nd/3rd (>2L) = 11 pts
  *   - 4th-5th (competitive) = 8 pts, lower = 3-6 pts
  *
- * Winner Bonuses: 0-31 pts (increased from 20)
- *   - Won Last Out: +18 pts (strong signal, increased from 12)
- *   - Won 2 of Last 3: +8 pts (stacks with above, increased from 5)
- *   - Won 3 of Last 5: +5 pts (stacks, rewards consistent winners, increased from 3)
- *   - Win Recency (within 30 days): +4 pts (hot horse bonus, increased from 3)
+ * Winner Bonuses: 0-31 pts (NOW WITH RECENCY DECAY)
+ *   - Won Last Out: +1-18 pts (DECAYED based on days since win)
+ *     | Days Since Win | Bonus | Reasoning |
+ *     |----------------|-------|-----------|
+ *     | 0-21 days      | 18 pts | Hot winner, full credit |
+ *     | 22-35 days     | 14 pts | Recent winner, slight decay |
+ *     | 36-50 days     | 10 pts | Freshening, moderate decay |
+ *     | 51-75 days     | 6 pts  | Stale, heavy decay |
+ *     | 76-90 days     | 3 pts  | Very stale, minimal credit |
+ *     | 91+ days       | 1 pt   | Ancient history, token credit |
+ *   - Won 2 of Last 3: +2-8 pts (pattern bonus with 0.25-1.0 multiplier)
+ *   - Won 3 of Last 5: +1-5 pts (pattern bonus with 0.25-1.0 multiplier)
+ *   - Win Recency (within 30 days): +4 pts (hot horse bonus, unchanged)
+ *   - Win Recency (within 60 days): +3 pts (warm horse bonus, unchanged)
+ *
+ * Pattern Bonus Multiplier (for won2of3, won3of5):
+ *   | Days Since Most Recent Win | Multiplier |
+ *   |----------------------------|------------|
+ *   | 0-35 days                  | 1.0 (full) |
+ *   | 36-60 days                 | 0.75       |
+ *   | 61-90 days                 | 0.50       |
+ *   | 91+ days                   | 0.25       |
  *
  * Consistency: 0-4 pts (unchanged)
  *   - ITM 50%+ in last 10: 4 pts
@@ -32,6 +49,14 @@
  *   - Moderate (61-90 days): -5 penalty
  *   - Extended (90+ days): -10 penalty (capped, never wipes out winner bonus)
  *   - Minimum form score: 5 pts (never fully zero out a recent winner)
+ *
+ * v3.5 CHANGES (Winner Bonus Recency Decay):
+ * - CRITICAL FIX: "Won Last Out" bonus now DECAYS based on days since win
+ * - Algorithm Audit Finding #1: 53% of Bad Beat picks had "stale form"
+ *   - Old wins (90 days ago) were getting same +18 pts as fresh wins (14 days ago)
+ *   - This inflated scores for horses with stale winning form
+ * - Pattern bonuses (won2of3, won3of5) now apply decay multiplier
+ * - lastWinWithin30Days (+4) and lastWinWithin60Days (+3) unchanged (already time-gated)
  *
  * v3.3 CHANGES (Increased Form Weight):
  * - Form cap INCREASED from 42 to 55 to better compete with Speed (105)
@@ -872,9 +897,153 @@ const WINNER_BONUSES = {
  */
 const MAX_RECENT_WINNER_BONUS = 31;
 
+// ============================================================================
+// v3.5 WINNER BONUS RECENCY DECAY SYSTEM
+// ============================================================================
+// Algorithm Audit Finding #1: 53% of Bad Beat picks had "stale form"
+// The "won last out" bonus had NO recency check - a horse that won 90 days ago
+// got the same +18 pts as a horse that won 14 days ago.
+// This fix implements decay so recent winners are rewarded more than stale winners.
+// ============================================================================
+
 /**
- * Calculate days since last win from past performances
+ * Day thresholds for wonLastOut decay (v3.5)
+ * Each threshold marks the upper bound of that decay tier
+ */
+export const WINNER_DECAY_THRESHOLDS = {
+  HOT: 21, // 0-21 days: Hot winner, full credit
+  RECENT: 35, // 22-35 days: Recent winner, slight decay
+  FRESH: 50, // 36-50 days: Freshening, moderate decay
+  STALE: 75, // 51-75 days: Stale, heavy decay
+  VERY_STALE: 90, // 76-90 days: Very stale, minimal credit
+  // 91+ days: Ancient history, token credit
+} as const;
+
+/**
+ * Bonus point values for each decay tier (v3.5)
+ * These correspond to the thresholds above
+ */
+export const WINNER_DECAY_BONUSES = {
+  HOT: 18, // 0-21 days: Full credit
+  RECENT: 14, // 22-35 days: Slight decay
+  FRESH: 10, // 36-50 days: Moderate decay
+  STALE: 6, // 51-75 days: Heavy decay
+  VERY_STALE: 3, // 76-90 days: Minimal credit
+  ANCIENT: 1, // 91+ days: Token credit
+} as const;
+
+/**
+ * Thresholds for pattern bonus decay (won2of3, won3of5)
+ * Patterns represent multiple events so they decay at half the rate
+ */
+export const PATTERN_DECAY_THRESHOLDS = {
+  FULL: 35, // 0-35 days: Full multiplier (1.0)
+  MODERATE: 60, // 36-60 days: 0.75 multiplier
+  REDUCED: 90, // 61-90 days: 0.50 multiplier
+  // 91+ days: 0.25 multiplier
+} as const;
+
+/**
+ * Get the decayed wonLastOut bonus based on days since win (v3.5)
+ *
+ * Algorithm Audit Finding #1 fix: Instead of a flat +18 pts for any "won last out",
+ * we now decay the bonus based on how long ago the win occurred.
+ *
+ * | Days Since Win | Bonus | Reasoning |
+ * |----------------|-------|-----------|
+ * | 0-21 days      | 18 pts | Hot winner, full credit |
+ * | 22-35 days     | 14 pts | Recent winner, slight decay |
+ * | 36-50 days     | 10 pts | Freshening, moderate decay |
+ * | 51-75 days     | 6 pts  | Stale, heavy decay |
+ * | 76-90 days     | 3 pts  | Very stale, minimal credit |
+ * | 91+ days       | 1 pt   | Ancient history, token credit |
+ *
+ * @param daysSinceWin - Days since the horse's last win (from daysSinceLastWin)
+ * @returns The decayed bonus points (1-18)
+ */
+export function getDecayedWonLastOutBonus(daysSinceWin: number): number {
+  // Edge case: invalid input
+  if (daysSinceWin < 0) {
+    return WINNER_DECAY_BONUSES.HOT; // Assume fresh if invalid
+  }
+
+  // Hot: 0-21 days - full credit
+  if (daysSinceWin <= WINNER_DECAY_THRESHOLDS.HOT) {
+    return WINNER_DECAY_BONUSES.HOT;
+  }
+
+  // Recent: 22-35 days - slight decay
+  if (daysSinceWin <= WINNER_DECAY_THRESHOLDS.RECENT) {
+    return WINNER_DECAY_BONUSES.RECENT;
+  }
+
+  // Fresh: 36-50 days - moderate decay
+  if (daysSinceWin <= WINNER_DECAY_THRESHOLDS.FRESH) {
+    return WINNER_DECAY_BONUSES.FRESH;
+  }
+
+  // Stale: 51-75 days - heavy decay
+  if (daysSinceWin <= WINNER_DECAY_THRESHOLDS.STALE) {
+    return WINNER_DECAY_BONUSES.STALE;
+  }
+
+  // Very stale: 76-90 days - minimal credit
+  if (daysSinceWin <= WINNER_DECAY_THRESHOLDS.VERY_STALE) {
+    return WINNER_DECAY_BONUSES.VERY_STALE;
+  }
+
+  // Ancient: 91+ days - token credit
+  return WINNER_DECAY_BONUSES.ANCIENT;
+}
+
+/**
+ * Get the pattern bonus multiplier based on days since most recent win (v3.5)
+ *
+ * For won2of3 and won3of5 bonuses, which represent patterns rather than single
+ * events, we apply a multiplier that decays at half the rate of wonLastOut.
+ *
+ * | Days Since Most Recent Win | Multiplier |
+ * |----------------------------|------------|
+ * | 0-35 days                  | 1.0 (full) |
+ * | 36-60 days                 | 0.75       |
+ * | 61-90 days                 | 0.50       |
+ * | 91+ days                   | 0.25       |
+ *
+ * @param daysSinceWin - Days since the horse's most recent win
+ * @returns The multiplier to apply to pattern bonuses (0.25-1.0)
+ */
+export function getPatternBonusMultiplier(daysSinceWin: number): number {
+  // Edge case: invalid input
+  if (daysSinceWin < 0) {
+    return 1.0; // Assume fresh if invalid
+  }
+
+  // Full: 0-35 days
+  if (daysSinceWin <= PATTERN_DECAY_THRESHOLDS.FULL) {
+    return 1.0;
+  }
+
+  // Moderate: 36-60 days
+  if (daysSinceWin <= PATTERN_DECAY_THRESHOLDS.MODERATE) {
+    return 0.75;
+  }
+
+  // Reduced: 61-90 days
+  if (daysSinceWin <= PATTERN_DECAY_THRESHOLDS.REDUCED) {
+    return 0.5;
+  }
+
+  // Ancient: 91+ days
+  return 0.25;
+}
+
+/**
+ * Calculate days since last win from past performances (v3.5 - FIXED)
  * @returns Days since last win, or null if horse has never won
+ *
+ * v3.5 FIX: Previously returned 0 if horse won last race, but we need the
+ * ACTUAL days since that winning race occurred (from daysSinceLast on PP[0]).
+ * This is critical for the recency decay system.
  */
 function getDaysSinceLastWin(pastPerformances: PastPerformance[]): number | null {
   if (pastPerformances.length === 0) return null;
@@ -886,6 +1055,8 @@ function getDaysSinceLastWin(pastPerformances: PastPerformance[]): number | null
     if (!pp) continue;
 
     // Add days since the previous race to get cumulative time
+    // For PP[0], daysSinceLast = days from today to that race
+    // For PP[1+], daysSinceLast = days between that race and the one before it
     if (i === 0 && pp.daysSinceLast !== null) {
       cumulativeDays = pp.daysSinceLast;
     } else if (pp.daysSinceLast !== null) {
@@ -893,9 +1064,15 @@ function getDaysSinceLastWin(pastPerformances: PastPerformance[]): number | null
     }
 
     if (pp.finishPosition === 1) {
-      // Found a win - if it's the most recent race, use its daysSinceLast
+      // v3.5 FIX: Found a win - return ACTUAL days since that win occurred
+      // For PP[0] (most recent race was a win): use daysSinceLast from that PP
+      //   - If race was 14 days ago, return 14 (not 0!)
+      //   - This enables proper decay calculation
+      // For PP[1+]: return cumulative days to that winning race
       if (i === 0) {
-        return 0; // Won last race, 0 days "since" that win
+        // Most recent race was a win - return how long ago it was
+        // Fall back to 14 days (typical race interval) if daysSinceLast is null
+        return pp.daysSinceLast ?? 14;
       }
       return cumulativeDays;
     }
@@ -942,18 +1119,31 @@ function getWinRecencyBonus(daysSinceLastWin: number | null): {
 }
 
 /**
- * Calculate recent winner bonus (v3.2 - Model B)
+ * Calculate recent winner bonus (v3.5 - With Recency Decay)
  *
- * STACKING LOGIC (all bonuses stack):
- * - Won Last Out: +12 pts
- * - Won 2 of 3: +5 pts (stacks)
- * - Won 3 of 5: +3 pts (stacks)
+ * v3.5 CHANGE: Bonuses now DECAY based on days since last win
+ * Algorithm Audit Finding #1 fix: 53% of Bad Beat picks had "stale form"
  *
- * EXAMPLES:
- * - Horse won last race only: +12 pts
- * - Horse won last race AND 2 of 3: +12 + 5 = +17 pts
- * - Horse won last race AND 2 of 3 AND 3 of 5: +12 + 5 + 3 = +20 pts (max)
- * - Horse won 2 of 3 but NOT last out: +5 pts
+ * STACKING LOGIC (all bonuses stack, but with decay):
+ * - Won Last Out: +1-18 pts (DECAYED based on days since win)
+ * - Won 2 of 3: +2-8 pts (base 8 * pattern multiplier 0.25-1.0)
+ * - Won 3 of 5: +1-5 pts (base 5 * pattern multiplier 0.25-1.0)
+ *
+ * DECAY TIERS for wonLastOut:
+ * | Days Since Win | Bonus | Reasoning |
+ * |----------------|-------|-----------|
+ * | 0-21 days      | 18 pts | Hot winner, full credit |
+ * | 22-35 days     | 14 pts | Recent winner, slight decay |
+ * | 36-50 days     | 10 pts | Freshening, moderate decay |
+ * | 51-75 days     | 6 pts  | Stale, heavy decay |
+ * | 76-90 days     | 3 pts  | Very stale, minimal credit |
+ * | 91+ days       | 1 pt   | Ancient history, token credit |
+ *
+ * EXAMPLES WITH DECAY:
+ * - Horse won 14 days ago only: +18 pts (hot)
+ * - Horse won 60 days ago only: +6 pts (stale)
+ * - Horse won 100 days ago, also won 2/3: +1 + 8*0.25 = +3 pts (ancient)
+ * - Horse won 20 days ago, also won 2/3: +18 + 8*1.0 = +26 pts (hot, full)
  *
  * @param pastPerformances - Horse's past performances
  * @returns Bonus points and analysis
@@ -988,23 +1178,62 @@ function calculateRecentWinnerBonus(pastPerformances: PastPerformance[]): {
   const winsInLast5 = last5.filter((pp) => pp.finishPosition === 1).length;
   const won3OfLast5 = winsInLast5 >= 3;
 
-  // Calculate stacking bonus
+  // v3.5: Calculate days since last win for decay
+  const daysSinceWin = getDaysSinceLastWin(pastPerformances);
+
+  // Calculate stacking bonus with decay
   let bonus = 0;
   const reasoningParts: string[] = [];
 
   if (wonLastOut) {
-    bonus += WINNER_BONUSES.wonLastOut;
-    reasoningParts.push(`Won Last Out (+${WINNER_BONUSES.wonLastOut})`);
+    // v3.5: Use decayed bonus based on days since win
+    const decayedBonus = daysSinceWin !== null
+      ? getDecayedWonLastOutBonus(daysSinceWin)
+      : WINNER_BONUSES.wonLastOut; // Fallback to full if unknown
+
+    bonus += decayedBonus;
+
+    // Build reasoning with decay info
+    if (daysSinceWin !== null && decayedBonus < WINNER_BONUSES.wonLastOut) {
+      reasoningParts.push(
+        `Won Last Out ${daysSinceWin}d ago (+${decayedBonus}, decayed from ${WINNER_BONUSES.wonLastOut})`
+      );
+    } else {
+      reasoningParts.push(`Won Last Out (+${decayedBonus})`);
+    }
   }
 
+  // v3.5: Apply pattern multiplier to won2of3 and won3of5
+  const patternMultiplier = daysSinceWin !== null
+    ? getPatternBonusMultiplier(daysSinceWin)
+    : 1.0; // Fallback to full if unknown
+
   if (won2OfLast3) {
-    bonus += WINNER_BONUSES.won2of3;
-    reasoningParts.push(`Won ${winsInLast3}/3 (+${WINNER_BONUSES.won2of3})`);
+    const baseBonus = WINNER_BONUSES.won2of3;
+    const decayedBonus = Math.round(baseBonus * patternMultiplier);
+    bonus += decayedBonus;
+
+    if (patternMultiplier < 1.0) {
+      reasoningParts.push(
+        `Won ${winsInLast3}/3 (+${decayedBonus}, ${Math.round(patternMultiplier * 100)}% of ${baseBonus})`
+      );
+    } else {
+      reasoningParts.push(`Won ${winsInLast3}/3 (+${decayedBonus})`);
+    }
   }
 
   if (won3OfLast5) {
-    bonus += WINNER_BONUSES.won3of5;
-    reasoningParts.push(`Won ${winsInLast5}/5 (+${WINNER_BONUSES.won3of5})`);
+    const baseBonus = WINNER_BONUSES.won3of5;
+    const decayedBonus = Math.round(baseBonus * patternMultiplier);
+    bonus += decayedBonus;
+
+    if (patternMultiplier < 1.0) {
+      reasoningParts.push(
+        `Won ${winsInLast5}/5 (+${decayedBonus}, ${Math.round(patternMultiplier * 100)}% of ${baseBonus})`
+      );
+    } else {
+      reasoningParts.push(`Won ${winsInLast5}/5 (+${decayedBonus})`);
+    }
   }
 
   // Cap at maximum
