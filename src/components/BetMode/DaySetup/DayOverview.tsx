@@ -6,11 +6,13 @@
  * For STANDARD and EXPERT users, also shows multi-race opportunities.
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import type { DaySession } from '../../../lib/betting/daySession';
 import type { RaceAllocation } from '../../../lib/betting/allocateDayBudget';
 import type { MultiRaceOpportunity, MultiRaceBet } from '../../../lib/betting/betTypes';
 import { MultiRaceOpportunities } from '../MultiRace';
+import { ShareControls } from '../LiveShare';
+import { useLiveSessionAdmin } from '../../../hooks/useLiveSessionAdmin';
 import './DaySetup.css';
 
 interface DayOverviewProps {
@@ -64,6 +66,19 @@ export const DayOverview: React.FC<DayOverviewProps> = ({
   onViewMultiRace,
 }) => {
   const { raceAllocations, totalBankroll, experienceLevel, riskStyle, trackName, multiRaceReserve = 0 } = session;
+
+  // Live sharing hook
+  const liveAdmin = useLiveSessionAdmin();
+
+  // Handle starting live share
+  const handleStartSharing = useCallback(async () => {
+    await liveAdmin.startSharing(session);
+  }, [liveAdmin, session]);
+
+  // Handle stopping live share
+  const handleStopSharing = useCallback(async () => {
+    await liveAdmin.stopSharing();
+  }, [liveAdmin]);
 
   // Count verdicts
   const betRaces = raceAllocations.filter((r) => r.verdict === 'BET');
@@ -188,6 +203,19 @@ export const DayOverview: React.FC<DayOverviewProps> = ({
           onViewOpportunity={onViewMultiRace}
         />
       )}
+
+      {/* Live sharing controls */}
+      <ShareControls
+        daySession={session}
+        isAvailable={liveAdmin.isAvailable}
+        isSharing={liveAdmin.isSharing}
+        liveSession={liveAdmin.liveSession}
+        shareUrl={liveAdmin.shareUrl}
+        isLoading={liveAdmin.isLoading}
+        error={liveAdmin.error}
+        onStartSharing={handleStartSharing}
+        onStopSharing={handleStopSharing}
+      />
 
       {/* Help tip */}
       <div className="day-overview__help">
