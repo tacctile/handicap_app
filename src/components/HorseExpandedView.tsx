@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './HorseExpandedView.css';
 import { PPLine } from './PPLine';
 import type { HorseEntry, PastPerformance, Workout } from '../types/drf';
@@ -15,7 +15,6 @@ import {
   MAX_BASE_SCORE,
   MAX_SCORE,
   getScoreColor,
-  getScoreTier,
 } from '../lib/scoring';
 
 // Score limits by category - derived from lib/scoring for display
@@ -62,39 +61,121 @@ const MEDICATION_CODES: Record<string, string> = {
   b: 'Bute',
 };
 
-// Determine tier class based on value percentage
-const getTierClass = (value: number): string => {
-  if (value >= 100) return 'elite';
-  if (value >= 50) return 'good';
-  if (value >= 10) return 'fair';
-  if (value >= -10) return 'neutral';
-  return 'bad';
+// Category configuration for display
+interface CategoryConfig {
+  key: string;
+  label: string;
+  labelFull: string;
+  max: number;
+}
+
+const CATEGORIES: CategoryConfig[] = [
+  { key: 'speedClass', label: 'SPEED', labelFull: 'Speed/Class', max: SCORE_LIMITS.speedClass },
+  { key: 'form', label: 'FORM', labelFull: 'Recent Form', max: SCORE_LIMITS.form },
+  { key: 'pace', label: 'PACE', labelFull: 'Pace Scenario', max: SCORE_LIMITS.pace },
+  {
+    key: 'connections',
+    label: 'CONNECTIONS',
+    labelFull: 'Connections',
+    max: SCORE_LIMITS.connections,
+  },
+  {
+    key: 'postPosition',
+    label: 'POST',
+    labelFull: 'Post Position',
+    max: SCORE_LIMITS.postPosition,
+  },
+  { key: 'equipment', label: 'EQUIPMENT', labelFull: 'Equipment', max: SCORE_LIMITS.equipment },
+];
+
+/**
+ * Get category rating info based on percentage
+ */
+interface CategoryRating {
+  icon: string;
+  label: string;
+  colorClass: string;
+}
+
+const getCategoryRating = (percent: number): CategoryRating => {
+  if (percent >= 80) return { icon: '✅', label: 'Elite', colorClass: 'elite' };
+  if (percent >= 60) return { icon: '✅', label: 'Good', colorClass: 'good' };
+  if (percent >= 40) return { icon: '➖', label: 'Average', colorClass: 'average' };
+  if (percent >= 20) return { icon: '⚠️', label: 'Weak', colorClass: 'weak' };
+  return { icon: '❌', label: 'Poor', colorClass: 'poor' };
+};
+
+/**
+ * Generate dynamic explanation for each category
+ */
+const getCategoryExplanation = (
+  key: string,
+  percent: number,
+  _score: HorseScore | undefined,
+  horse: HorseEntry
+): string => {
+  switch (key) {
+    case 'speedClass': {
+      const bestBeyer = horse.pastPerformances?.[0]?.speedFigures?.beyer || horse.lastBeyer || 0;
+      if (percent >= 80) return `Best Beyer ${bestBeyer} — elite speed`;
+      if (percent >= 60) return `Beyer ${bestBeyer} competitive with field`;
+      if (percent >= 40) return `Speed figures in the mid-range`;
+      return `Speed figures below field average`;
+    }
+    case 'form': {
+      const lastFinish = horse.pastPerformances?.[0]?.finishPosition || 0;
+      const lastFinishOrd =
+        lastFinish === 1
+          ? '1st'
+          : lastFinish === 2
+            ? '2nd'
+            : lastFinish === 3
+              ? '3rd'
+              : `${lastFinish}th`;
+      if (percent >= 80) return `Hot form — recent top finishes`;
+      if (percent >= 60) return `Solid form — top 3 recently`;
+      if (percent >= 40) return `Mixed form — ${lastFinishOrd} last out`;
+      if (percent >= 20) return `Concerning — ${lastFinishOrd} last out`;
+      return `Cold form — needs bounce-back`;
+    }
+    case 'pace': {
+      if (percent >= 80) return `Perfect pace scenario for this style`;
+      if (percent >= 60) return `Favorable pace setup`;
+      if (percent >= 40) return `Pace scenario is neutral`;
+      return `Pace scenario may hurt`;
+    }
+    case 'connections': {
+      const trainer = horse.trainerName?.split(' ').pop() || 'Trainer';
+      const jockey = horse.jockeyName?.split(' ').pop() || 'Jockey';
+      if (percent >= 80) return `${trainer}/${jockey} — top combo`;
+      if (percent >= 60) return `${trainer}/${jockey} — solid`;
+      if (percent >= 40) return `Average trainer/jockey stats`;
+      return `Below-average connections`;
+    }
+    case 'postPosition': {
+      const post = horse.postPosition || horse.programNumber;
+      if (percent >= 80) return `Post ${post} — great position`;
+      if (percent >= 60) return `Post ${post} — solid position`;
+      if (percent >= 40) return `Post ${post} — neutral`;
+      return `Post ${post} — challenging draw`;
+    }
+    case 'equipment': {
+      const hasFirstTimeBlinkers =
+        horse.equipment?.firstTimeEquipment?.includes('blinkers') || false;
+      if (hasFirstTimeBlinkers) return `First-time blinkers — watch for improvement`;
+      if (percent >= 60) return `Equipment suits this horse`;
+      return `Standard equipment`;
+    }
+    default:
+      return '';
+  }
 };
 
 /**
  * Get tier color for BASE score using authoritative scoring thresholds
- * IMPORTANT: This uses BASE SCORE (0-328), not total score
- *
- * | Base Score | Percentage | Rating     | Color       |
- * |------------|------------|------------|-------------|
- * | 270+       | 82%+       | Elite      | Green       |
- * | 220-269    | 67-81%     | Strong     | Light Green |
- * | 170-219    | 52-66%     | Contender  | Yellow      |
- * | 120-169    | 37-51%     | Fair       | Orange      |
- * | Below 120  | <37%       | Weak       | Red         |
  */
 const getTierColor = (baseScore: number): string => {
-  // Use the authoritative getScoreColor from the scoring engine
   return getScoreColor(baseScore, false);
-};
-
-/**
- * Get tier name for BASE score using authoritative scoring thresholds
- * IMPORTANT: This uses BASE SCORE (0-328), not total score
- */
-const getTierName = (baseScore: number): string => {
-  // Use the authoritative getScoreTier from the scoring engine
-  return getScoreTier(baseScore).toUpperCase();
 };
 
 // Get data quality color
@@ -111,28 +192,13 @@ const getDataQualityColor = (quality: string | undefined): string => {
   }
 };
 
-/**
- * Get value label and color based on overlay percentage
- * Uses the same thresholds as overlayAnalysis.ts:
- * - Overlay (>= 20%): Bargain (green)
- * - Fair (-20% to +19%): Fair Price (secondary text)
- * - Underlay (< -20%): Overpriced (red)
- */
-const getValueIndicator = (overlayPercent: number): { label: string; color: string } => {
-  if (overlayPercent >= 20) {
-    return { label: 'Bargain', color: 'var(--color-tier-elite)' };
-  }
-  if (overlayPercent >= -20) {
-    return { label: 'Fair Price', color: 'var(--color-text-secondary)' };
-  }
-  return { label: 'Overpriced', color: 'var(--color-tier-bad)' };
-};
-
-// Get category bar fill class based on percentage
-const getCategoryFillClass = (percent: number): string => {
-  if (percent >= 70) return 'high';
-  if (percent >= 40) return 'medium';
-  return 'low';
+// Get edge color
+const getEdgeColor = (edge: number): string => {
+  if (edge >= 75) return '#10b981'; // Bright green
+  if (edge >= 50) return '#22c55e'; // Green
+  if (edge >= 25) return '#84cc16'; // Yellow-green
+  if (edge >= -25) return '#6B7280'; // Gray (fair)
+  return '#ef4444'; // Red (underlay)
 };
 
 // Helper to determine if win rate is good (25%+)
@@ -234,10 +300,8 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => 
   const formatWorkoutDate = (): string => {
     const dateStr = w.date || w.workDate || w.workoutDate;
     if (!dateStr || dateStr === 'undefined' || dateStr === 'null') return '—';
-
     const str = String(dateStr).trim();
     if (!str) return '—';
-
     try {
       if (/^\d{8}$/.test(str)) {
         const months = [
@@ -258,7 +322,6 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => 
         const day = parseInt(str.slice(6, 8), 10);
         return `${day}${month}`;
       }
-
       const date = new Date(str);
       if (!isNaN(date.getTime())) {
         const months = [
@@ -275,11 +338,8 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => 
           'Nov',
           'Dec',
         ];
-        const month = months[date.getMonth()];
-        const day = date.getDate();
-        return `${day}${month}`;
+        return `${date.getDate()}${months[date.getMonth()]}`;
       }
-
       return str.slice(0, 5) || '—';
     } catch {
       return '—';
@@ -289,9 +349,7 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => 
   const formatWorkoutTrack = (): string => {
     const track = w.track || w.workTrack || w.trackCode;
     if (!track || track === 'undefined' || track === 'null') return '—';
-    const str = String(track).trim();
-    if (!str || str.toLowerCase() === 'nan' || str.toLowerCase() === 'undefined') return '—';
-    return str.toUpperCase().slice(0, 3);
+    return String(track).trim().toUpperCase().slice(0, 3);
   };
 
   const getWorkoutDistance = (): string => {
@@ -299,9 +357,7 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => 
     if (typeof furlongs !== 'number' || furlongs < 3 || furlongs > 7) {
       if (w.distance && typeof w.distance === 'string') {
         const cleaned = String(w.distance).trim();
-        if (cleaned && !cleaned.includes('undefined') && cleaned.length < 6) {
-          return cleaned;
-        }
+        if (cleaned && !cleaned.includes('undefined') && cleaned.length < 6) return cleaned;
       }
       return '—';
     }
@@ -322,7 +378,6 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => 
     const cond = w.trackCondition || w.surface || w.condition;
     if (!cond) return '—';
     const str = String(cond).toLowerCase().trim();
-    if (!str || str === 'nan' || str === 'undefined' || str === 'null') return '—';
     const abbrevs: Record<string, string> = {
       fast: 'ft',
       good: 'gd',
@@ -339,19 +394,9 @@ const WorkoutItem: React.FC<WorkoutItemProps> = ({ workout, index: _index }) => 
   const getWorkoutRanking = (): string => {
     const rank = w.rankNumber || w.rank;
     const total = w.totalWorks || w.total;
-
-    if (w.ranking && typeof w.ranking === 'string' && w.ranking.includes('/')) {
-      return w.ranking;
-    }
-
-    if (rank && total && !isNaN(Number(rank)) && !isNaN(Number(total))) {
-      return `${rank}/${total}`;
-    }
-
-    if (rank && !isNaN(Number(rank))) {
-      return `#${rank}`;
-    }
-
+    if (w.ranking && typeof w.ranking === 'string' && w.ranking.includes('/')) return w.ranking;
+    if (rank && total && !isNaN(Number(rank)) && !isNaN(Number(total))) return `${rank}/${total}`;
+    if (rank && !isNaN(Number(rank))) return `#${rank}`;
     return '—';
   };
 
@@ -382,22 +427,51 @@ interface HorseExpandedViewProps {
   isVisible: boolean;
   valuePercent?: number;
   score?: HorseScore;
+  // New props for value-focused display
+  currentOdds?: string;
+  fairOdds?: string;
+  edgePercent?: number;
+  modelRank?: number;
+  totalHorses?: number;
+  isOverlay?: boolean;
+  isUnderlay?: boolean;
+  isPrimaryValuePlay?: boolean;
+  betTypeSuggestion?: string;
+  valueExplanation?: string;
+  // Race-level context for PASS races
+  raceVerdict?: 'BET' | 'CAUTION' | 'PASS';
+  isBestInPassRace?: boolean;
 }
 
 export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   horse,
   isVisible,
-  valuePercent = 0,
+  valuePercent: _valuePercent = 0,
   score,
+  currentOdds = '—',
+  fairOdds = '—',
+  edgePercent = 0,
+  modelRank = 0,
+  totalHorses = 0,
+  isOverlay = false,
+  isUnderlay = false,
+  isPrimaryValuePlay = false,
+  betTypeSuggestion = '—',
+  valueExplanation: _valueExplanation = '',
+  raceVerdict = 'BET',
+  isBestInPassRace = false,
 }) => {
+  // State for collapsible sections
+  const [activeTab, setActiveTab] = useState<'analysis' | 'pps' | 'workouts' | 'profile'>(
+    'analysis'
+  );
+
   if (!isVisible) return null;
 
-  const tierClass = getTierClass(valuePercent);
   const scoreTotal = score?.total || 0;
   const baseScore = score?.baseScore || 0;
-  const overlayScore = score?.overlayScore || 0;
   const scoreBreakdown = score?.breakdown;
-  const scorePercentage = Math.round((scoreTotal / SCORE_LIMITS.total) * 100);
+  const scorePercentage = Math.round((baseScore / SCORE_LIMITS.base) * 100);
 
   // Format horse identity info
   const colorDisplay = formatColor(horse.color);
@@ -405,400 +479,570 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   const equipmentDisplay = formatEquipment(horse.equipment?.raw);
   const medicationDisplay = formatMedication(horse.medication?.raw);
 
+  // Determine value status
+  const valueStatus = isOverlay ? 'OVERLAY' : isUnderlay ? 'UNDERLAY' : 'FAIR';
+  const valueStatusColor = isOverlay ? '#10b981' : isUnderlay ? '#ef4444' : '#6B7280';
+  const valueStatusLabel = isOverlay ? '🔥 OVERLAY' : isUnderlay ? '🔴 UNDERLAY' : 'FAIR VALUE';
+
+  // Build category analysis
+  const categoryAnalysis = CATEGORIES.map((cat) => {
+    const category = scoreBreakdown?.[cat.key as keyof typeof scoreBreakdown] as
+      | { total?: number }
+      | undefined;
+    const value = category?.total || 0;
+    const percent = Math.round((value / cat.max) * 100);
+    const rating = getCategoryRating(percent);
+    const explanation = getCategoryExplanation(cat.key, percent, score, horse);
+
+    return {
+      ...cat,
+      value,
+      percent,
+      rating,
+      explanation,
+    };
+  });
+
+  // Check if this is a PASS race
+  const isPassRace = raceVerdict === 'PASS';
+
+  // Generate betting suggestion content
+  const getBettingSuggestion = () => {
+    // Special handling for PASS races
+    if (isPassRace && isBestInPassRace) {
+      return {
+        isPassRace: true,
+        primary: 'SHOW',
+        primaryReason: `If you must bet, this is the least-bad option. Best edge in a weak field: ${edgePercent >= 0 ? '+' : ''}${Math.round(edgePercent)}%`,
+        passMessage: 'Save your bankroll for races with real value.',
+        skip: null,
+        skipReason: null,
+      };
+    } else if (isPassRace) {
+      return {
+        isPassRace: true,
+        primary: null,
+        primaryReason: null,
+        passMessage: 'No value in this race. Save your bankroll.',
+        skip: 'Skip this race',
+        skipReason: 'No horses offer value at current odds.',
+      };
+    } else if (isOverlay && isPrimaryValuePlay) {
+      return {
+        primary: betTypeSuggestion || 'PLACE',
+        primaryReason: `Ranked #${modelRank}, huge edge. ${betTypeSuggestion === 'WIN' ? 'WIN for maximum value.' : 'PLACE is safer than WIN for this profile.'}`,
+        exotic: `Key in trifecta with top contenders`,
+        exoticReason: `$2 key = potential payout $300-900`,
+        skip: betTypeSuggestion === 'WIN' ? null : 'WIN bet',
+        skipReason: edgePercent < 100 ? `Form concerns make WIN risky despite edge.` : null,
+      };
+    } else if (isOverlay) {
+      return {
+        primary: betTypeSuggestion || 'SHOW',
+        primaryReason: `Value exists at +${Math.round(edgePercent)}% edge.`,
+        exotic: `Use in exacta/trifecta underneath favorites`,
+        exoticReason: `Good to pair with chalk horses`,
+        skip: null,
+        skipReason: null,
+      };
+    } else if (isUnderlay) {
+      return {
+        primary: null,
+        primaryReason: null,
+        skip: 'No value at this price',
+        skipReason: `Likely wins, but ${Math.round(edgePercent)}% edge means you lose money long-term betting these.`,
+        ifYouMust: 'Use in exacta/trifecta underneath value plays',
+        ifYouMustReason: `Don't bet to win. Use as a "with" horse in exotics.`,
+      };
+    } else {
+      return {
+        primary: null,
+        primaryReason: 'Neutral — no strong edge either way',
+        skip: null,
+        skipReason: "Bet if you like the horse, but don't expect value.",
+        ifYouMust: null,
+        ifYouMustReason: null,
+      };
+    }
+  };
+
+  const bettingSuggestion = getBettingSuggestion();
+
   return (
-    <div className={`horse-expanded horse-expanded--tier-${tierClass}`}>
+    <div className={`horse-expanded horse-expanded--${valueStatus.toLowerCase()}`}>
       {/* ================================================================
-          SECTION 1: FURLONG SCORE ANALYSIS
+          SECTION 1: VALUE ANALYSIS HEADER
           ================================================================ */}
-      <section className="furlong-score-analysis">
-        <div className="furlong-score-analysis__header">FURLONG SCORE ANALYSIS</div>
-
-        <div className="furlong-score-analysis__content">
-          {/* Total Score - Hero (Left Side) */}
-          {/* NOTE: Color is based on BASE score tier, not total score */}
-          <div className="furlong-score__total">
-            <div className="furlong-score__total-number">
-              <span
-                className="furlong-score__total-value"
-                style={{ color: getTierColor(baseScore) }}
-              >
-                {scoreTotal}
-              </span>
-              <span className="furlong-score__total-max">/{SCORE_LIMITS.total}</span>
-            </div>
-            <div className="furlong-score__total-bar">
-              <div
-                className="furlong-score__total-bar-fill"
-                style={{
-                  width: `${scorePercentage}%`,
-                  backgroundColor: getTierColor(baseScore),
-                }}
-              />
-            </div>
-            <div className="furlong-score__breakdown">
-              <span className="furlong-score__breakdown-item">
-                Base: {baseScore}/{SCORE_LIMITS.base}
-              </span>
-              <span className="furlong-score__breakdown-separator">•</span>
-              <span className="furlong-score__breakdown-item">
-                Edge: {overlayScore >= 0 ? '+' : ''}
-                {overlayScore}
-              </span>
-            </div>
-            <div className="furlong-score__rating-section">
-              <div className="furlong-score__tier-rating">
-                <span className="furlong-score__tier-value-row">
-                  <span
-                    className="furlong-score__tier-value"
-                    style={{ color: getTierColor(baseScore) }}
-                  >
-                    {getTierName(baseScore)}
-                  </span>
-                  <span className="furlong-score__value-separator"> · </span>
-                  <span
-                    className="furlong-score__value-indicator"
-                    style={{ color: getValueIndicator(valuePercent).color }}
-                  >
-                    {getValueIndicator(valuePercent).label}
-                  </span>
-                </span>
-                <span className="furlong-score__tier-label">RATING</span>
-              </div>
-              <div className="furlong-score__data-quality">
-                <span
-                  className="furlong-score__quality-value"
-                  style={{ color: getDataQualityColor(score?.confidenceLevel) }}
-                >
-                  {score?.confidenceLevel?.toUpperCase() || 'HIGH'}
-                </span>
-                <span className="furlong-score__quality-label">DATA QUALITY</span>
-              </div>
-            </div>
+      <section className="value-analysis-header">
+        <div className="value-analysis-header__top">
+          <div className="value-analysis-header__horse">
+            <span className="value-analysis-header__name">
+              {horse.horseName?.toUpperCase()} (#{horse.programNumber})
+            </span>
+            <span className="value-analysis-header__odds-compare">
+              {currentOdds} → {fairOdds}
+            </span>
           </div>
-
-          {/* Category Scores - Supporting (Right Side) */}
-          <div className="furlong-score__categories">
-            {[
-              {
-                key: 'connections',
-                label: 'CONNECTIONS',
-                desc: 'Trainer & Jockey Stats',
-                max: SCORE_LIMITS.connections,
-              },
-              {
-                key: 'postPosition',
-                label: 'POST',
-                desc: 'Starting Gate Advantage',
-                max: SCORE_LIMITS.postPosition,
-              },
-              {
-                key: 'speedClass',
-                label: 'SPEED/CLASS',
-                desc: 'Speed Figures & Class',
-                max: SCORE_LIMITS.speedClass,
-              },
-              { key: 'form', label: 'FORM', desc: 'Recent Performance', max: SCORE_LIMITS.form },
-              {
-                key: 'equipment',
-                label: 'EQUIPMENT',
-                desc: 'Equipment Changes',
-                max: SCORE_LIMITS.equipment,
-              },
-              { key: 'pace', label: 'PACE', desc: 'Running Style & Pace', max: SCORE_LIMITS.pace },
-            ].map((cat) => {
-              const category =
-                scoreBreakdown?.[
-                  cat.key as
-                    | 'connections'
-                    | 'postPosition'
-                    | 'speedClass'
-                    | 'form'
-                    | 'equipment'
-                    | 'pace'
-                ];
-              const value = category?.total || 0;
-              const percent = (value / cat.max) * 100;
-              const fillClass = getCategoryFillClass(percent);
-
-              return (
-                <div key={cat.key} className="furlong-score__category">
-                  <span className="furlong-score__category-label">{cat.label}</span>
-                  <span className="furlong-score__category-value">
-                    {value}/{cat.max}
-                  </span>
-                  <div className="furlong-score__category-bar">
-                    <div
-                      className={`furlong-score__category-bar-fill furlong-score__category-bar-fill--${fillClass}`}
-                      style={{ width: `${percent}%` }}
-                    />
-                  </div>
-                  <span className="furlong-score__category-desc">{cat.desc}</span>
-                </div>
-              );
-            })}
+          <div className="value-analysis-header__edge">
+            <span className="value-analysis-header__edge-label">Edge:</span>
+            <span
+              className="value-analysis-header__edge-value"
+              style={{ color: getEdgeColor(edgePercent) }}
+            >
+              {edgePercent >= 0 ? '+' : ''}
+              {Math.round(edgePercent)}%
+            </span>
+            <span className="value-analysis-header__status" style={{ color: valueStatusColor }}>
+              {valueStatusLabel}
+            </span>
           </div>
         </div>
       </section>
 
       {/* ================================================================
-          SECTION 2: HORSE PROFILE (Compact 5-Column Layout)
+          SECTION 2: WHY THIS IS/ISN'T A VALUE PLAY
           ================================================================ */}
-      <section className="horse-expanded__section horse-expanded__section--profile">
-        <SectionHeader title="HORSE PROFILE" />
+      <section className="value-reasons">
+        <div className="value-reasons__header">
+          {isOverlay
+            ? 'WHY THIS IS A VALUE PLAY:'
+            : isUnderlay
+              ? 'WHY THIS IS NOT A VALUE PLAY:'
+              : 'FACTOR ANALYSIS:'}
+        </div>
+        <div className="value-reasons__divider" />
 
-        <div className="profile-row">
-          {/* Column 1: Identity */}
-          <div className="profile-col">
-            <div className="profile-col__header">IDENTITY</div>
-            <div className="profile-col__content">
-              <div className="profile-col__primary">
-                {colorDisplay} {sexDisplay}, {horse.age || '?'}
-                {horse.breeding?.whereBred && (
-                  <span className="profile-col__sub"> ({horse.breeding.whereBred})</span>
-                )}
-              </div>
-              <div className="profile-col__line">
-                <span className="profile-col__label">Weight:</span>
-                <span className="profile-col__value">{horse.weight || '—'} lbs</span>
-              </div>
-              {equipmentDisplay && (
-                <div className="profile-col__line">
-                  <span className="profile-col__label">Equipment:</span>
-                  <span className="profile-col__value">{equipmentDisplay}</span>
-                </div>
-              )}
-              {medicationDisplay && (
-                <div className="profile-col__line">
-                  <span className="profile-col__label">Medication:</span>
-                  <span className="profile-col__value">{medicationDisplay}</span>
-                </div>
+        <div className="value-reasons__categories">
+          {categoryAnalysis.map((cat) => (
+            <div
+              key={cat.key}
+              className={`value-reasons__category value-reasons__category--${cat.rating.colorClass}`}
+            >
+              <span className="value-reasons__category-icon">{cat.rating.icon}</span>
+              <span className="value-reasons__category-name">
+                {cat.label}: {cat.rating.label} ({cat.percent}%)
+              </span>
+              <span className="value-reasons__category-explanation">{cat.explanation}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Overall Score & Rank */}
+        <div className="value-reasons__summary">
+          <div className="value-reasons__summary-item">
+            <span className="value-reasons__summary-label">OVERALL SCORE:</span>
+            <span
+              className="value-reasons__summary-value"
+              style={{ color: getTierColor(baseScore) }}
+            >
+              {scoreTotal}/{SCORE_LIMITS.total} ({scorePercentage}%)
+            </span>
+          </div>
+          <div className="value-reasons__summary-item">
+            <span className="value-reasons__summary-label">MODEL RANK:</span>
+            <span className="value-reasons__summary-value">
+              #{modelRank} of {totalHorses}
+            </span>
+          </div>
+          <div className="value-reasons__summary-item">
+            <span className="value-reasons__summary-label">DATA QUALITY:</span>
+            <span
+              className="value-reasons__summary-value"
+              style={{ color: getDataQualityColor(score?.confidenceLevel) }}
+            >
+              {score?.confidenceLevel?.toUpperCase() || 'HIGH'} ✓
+            </span>
+          </div>
+        </div>
+
+        {/* Underlay Problem Explanation */}
+        {isUnderlay && (
+          <div className="value-reasons__problem">
+            <span className="value-reasons__problem-icon">⚠️</span>
+            <span className="value-reasons__problem-text">
+              THE PROBLEM: Public knows this. Odds are too low.
+              <br />
+              Our fair odds: {fairOdds}. Public odds: {currentOdds}.
+              <br />
+              You're not getting paid enough for the risk.
+            </span>
+          </div>
+        )}
+      </section>
+
+      {/* ================================================================
+          SECTION 3: BETTING SUGGESTION
+          ================================================================ */}
+      <section className={`betting-suggestion ${isPassRace ? 'betting-suggestion--pass' : ''}`}>
+        <div className="betting-suggestion__header">
+          <span className="betting-suggestion__icon">💰</span>
+          <span className="betting-suggestion__title">BETTING SUGGESTION</span>
+        </div>
+        <div className="betting-suggestion__divider" />
+
+        <div className="betting-suggestion__content">
+          {/* PASS race warning */}
+          {'isPassRace' in bettingSuggestion && bettingSuggestion.isPassRace && (
+            <div className="betting-suggestion__pass-warning">
+              <span className="betting-suggestion__pass-icon">⚠️</span>
+              <span className="betting-suggestion__pass-text">NO VALUE IN THIS RACE</span>
+            </div>
+          )}
+
+          {bettingSuggestion.primary && (
+            <div className="betting-suggestion__item betting-suggestion__item--primary">
+              <span className="betting-suggestion__item-label">
+                {'isPassRace' in bettingSuggestion && bettingSuggestion.isPassRace
+                  ? 'IF YOU MUST:'
+                  : 'PRIMARY:'}
+              </span>
+              <span className="betting-suggestion__item-bet">{bettingSuggestion.primary} bet</span>
+              <span className="betting-suggestion__item-reason">
+                "{bettingSuggestion.primaryReason}"
+              </span>
+            </div>
+          )}
+
+          {'passMessage' in bettingSuggestion && bettingSuggestion.passMessage && (
+            <div className="betting-suggestion__pass-message">
+              "{bettingSuggestion.passMessage}"
+            </div>
+          )}
+
+          {bettingSuggestion.exotic && (
+            <div className="betting-suggestion__item betting-suggestion__item--exotic">
+              <span className="betting-suggestion__item-label">EXOTIC:</span>
+              <span className="betting-suggestion__item-bet">{bettingSuggestion.exotic}</span>
+              <span className="betting-suggestion__item-reason">
+                "{bettingSuggestion.exoticReason}"
+              </span>
+            </div>
+          )}
+
+          {bettingSuggestion.skip && (
+            <div className="betting-suggestion__item betting-suggestion__item--skip">
+              <span className="betting-suggestion__item-label">SKIP:</span>
+              <span className="betting-suggestion__item-bet">{bettingSuggestion.skip}</span>
+              {bettingSuggestion.skipReason && (
+                <span className="betting-suggestion__item-reason">
+                  "{bettingSuggestion.skipReason}"
+                </span>
               )}
             </div>
-          </div>
+          )}
 
-          {/* Column 2: Breeding */}
-          <div className="profile-col">
-            <div className="profile-col__header">BREEDING</div>
-            <div className="profile-col__content">
-              <div className="profile-col__line">
-                <span className="profile-col__label">Sire:</span>
-                <span className="profile-col__value profile-col__value--wrap">
-                  {horse.breeding?.sire || '—'}
-                  {horse.breeding?.sireOfSire && (
-                    <span className="profile-col__sub"> ({horse.breeding.sireOfSire})</span>
-                  )}
+          {'ifYouMust' in bettingSuggestion && bettingSuggestion.ifYouMust && (
+            <div className="betting-suggestion__item betting-suggestion__item--ifyoumust">
+              <span className="betting-suggestion__item-label">IF YOU MUST:</span>
+              <span className="betting-suggestion__item-bet">{bettingSuggestion.ifYouMust}</span>
+              {'ifYouMustReason' in bettingSuggestion && bettingSuggestion.ifYouMustReason && (
+                <span className="betting-suggestion__item-reason">
+                  "{bettingSuggestion.ifYouMustReason}"
                 </span>
-              </div>
-              <div className="profile-col__line">
-                <span className="profile-col__label">Dam:</span>
-                <span className="profile-col__value profile-col__value--wrap">
-                  {horse.breeding?.dam || '—'}
-                  {horse.breeding?.damSire && (
-                    <span className="profile-col__sub"> ({horse.breeding.damSire})</span>
-                  )}
-                </span>
-              </div>
-              <div className="profile-col__line">
-                <span className="profile-col__label">Breeder:</span>
-                <span className="profile-col__value profile-col__value--wrap">
-                  {horse.breeding?.breeder || '—'}
-                </span>
-              </div>
+              )}
             </div>
-          </div>
+          )}
 
-          {/* Column 3: Connections */}
-          <div className="profile-col">
-            <div className="profile-col__header">CONNECTIONS</div>
-            <div className="profile-col__content">
-              <div className="profile-col__line">
-                <span className="profile-col__label">Owner:</span>
-                <span className="profile-col__value profile-col__value--wrap">
-                  {horse.owner || '—'}
-                </span>
-              </div>
-              <div className="profile-col__line">
-                <span className="profile-col__label">Trainer:</span>
-                <span className="profile-col__value profile-col__value--wrap">
-                  {horse.trainerName || '—'}
-                </span>
-              </div>
-              <div className="profile-col__line">
-                <span className="profile-col__label">Jockey:</span>
-                <span className="profile-col__value profile-col__value--wrap">
-                  {horse.jockeyName || '—'}
-                </span>
-              </div>
+          {!isOverlay && !isUnderlay && !isPassRace && (
+            <div className="betting-suggestion__item betting-suggestion__item--neutral">
+              <span className="betting-suggestion__item-label">NEUTRAL:</span>
+              <span className="betting-suggestion__item-bet">No strong edge either way</span>
+              <span className="betting-suggestion__item-reason">
+                "Bet if you like the horse, but don't expect value."
+              </span>
             </div>
-          </div>
-
-          {/* Column 4: Overall Record */}
-          <div className="profile-col">
-            <div className="profile-col__header">OVERALL RECORD</div>
-            <div className="profile-col__content">
-              <div className="profile-col__record-header">
-                <span></span>
-                <span className="profile-col__record-label">W-P-S-R</span>
-              </div>
-              <div className="profile-col__record-row">
-                <span className="profile-col__record-year">{new Date().getFullYear() - 1}</span>
-                <span className="profile-col__record-value">
-                  {horse.previousYearStarts || 0}-{horse.previousYearWins || 0}-
-                  {horse.previousYearPlaces || 0}-{horse.previousYearShows || 0}
-                </span>
-              </div>
-              <div className="profile-col__record-row">
-                <span className="profile-col__record-year">{new Date().getFullYear()}</span>
-                <span className="profile-col__record-value">
-                  {horse.currentYearStarts || 0}-{horse.currentYearWins || 0}-
-                  {horse.currentYearPlaces || 0}-{horse.currentYearShows || 0}
-                </span>
-              </div>
-              <div className="profile-col__record-row profile-col__record-row--highlight">
-                <span className="profile-col__record-year">Lifetime</span>
-                <span className="profile-col__record-value">
-                  {horse.lifetimeStarts || 0}-{horse.lifetimeWins || 0}-{horse.lifetimePlaces || 0}-
-                  {horse.lifetimeShows || 0}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Column 5: Surface & Distance Splits */}
-          <div className="profile-col">
-            <div className="profile-col__header">SURFACE & DISTANCE</div>
-            <div className="profile-col__content">
-              <div className="profile-col__split-row">
-                <span className="profile-col__split-label">Dirt (Fast):</span>
-                <span
-                  className={`profile-col__split-value ${isGoodWinRate(horse.surfaceStarts || 0, horse.surfaceWins || 0) ? 'profile-col__split-value--hot' : ''}`}
-                >
-                  {horse.surfaceStarts || 0}-{horse.surfaceWins || 0}
-                </span>
-              </div>
-              <div className="profile-col__split-row">
-                <span className="profile-col__split-label">Wet Track:</span>
-                <span
-                  className={`profile-col__split-value ${isGoodWinRate(horse.wetStarts || 0, horse.wetWins || 0) ? 'profile-col__split-value--hot' : ''}`}
-                >
-                  {horse.wetStarts || 0}-{horse.wetWins || 0}
-                </span>
-              </div>
-              <div className="profile-col__split-row">
-                <span className="profile-col__split-label">Turf:</span>
-                <span
-                  className={`profile-col__split-value ${isGoodWinRate(horse.turfStarts || 0, horse.turfWins || 0) ? 'profile-col__split-value--hot' : ''}`}
-                >
-                  {horse.turfStarts || 0}-{horse.turfWins || 0}
-                </span>
-              </div>
-              <div className="profile-col__split-row">
-                <span className="profile-col__split-label">Distance:</span>
-                <span
-                  className={`profile-col__split-value ${isGoodWinRate(horse.distanceStarts || 0, horse.distanceWins || 0) ? 'profile-col__split-value--hot' : ''}`}
-                >
-                  {horse.distanceStarts || 0}-{horse.distanceWins || 0}
-                </span>
-              </div>
-              <div className="profile-col__split-row">
-                <span className="profile-col__split-label">Track:</span>
-                <span
-                  className={`profile-col__split-value ${isGoodWinRate(horse.trackStarts || 0, horse.trackWins || 0) ? 'profile-col__split-value--hot' : ''}`}
-                >
-                  {horse.trackStarts || 0}-{horse.trackWins || 0}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ================================================================
-          SECTION 4: PAST PERFORMANCES
-          ================================================================ */}
-      <section className="horse-expanded__section horse-expanded__section--pp">
-        <SectionHeader title="PAST PERFORMANCES" />
-
-        <div className="pp-panel">
-          {/* PP Header Row with FULL column names */}
-          <div className="pp-header">
-            <span className="pp-header__col pp-header__col--date">DATE</span>
-            <span className="pp-header__col pp-header__col--track">TRACK</span>
-            <span className="pp-header__col pp-header__col--dist">DISTANCE</span>
-            <span className="pp-header__col pp-header__col--cond">COND</span>
-            <span className="pp-header__col pp-header__col--class">CLASS</span>
-            <span className="pp-header__col pp-header__col--finish">FINISH</span>
-            <span className="pp-header__col pp-header__col--odds">ODDS</span>
-            <span className="pp-header__col pp-header__col--figure">FIGURE</span>
-            <span className="pp-header__col pp-header__col--time">TIME</span>
-            <span className="pp-header__col pp-header__col--days">DAYS</span>
-            <span className="pp-header__col pp-header__col--em">EQUIP/MED</span>
-            <span className="pp-header__col pp-header__col--running">RUNNING LINE</span>
-            <span className="pp-header__col pp-header__col--jockey">JOCKEY</span>
-            <span className="pp-header__col pp-header__col--weight">WEIGHT</span>
-            <span className="pp-header__col pp-header__col--comment">COMMENT</span>
-          </div>
-
-          {/* PP Lines */}
-          <div className="pp-lines">
-            {horse.pastPerformances && horse.pastPerformances.length > 0 ? (
-              horse.pastPerformances
-                .slice(0, 10)
-                .map((pp: PastPerformance, index: number) => (
-                  <PPLine key={`${pp.date}-${pp.track}-${index}`} pp={pp} index={index} />
-                ))
-            ) : (
-              <div className="pp-lines__no-data">
-                No past performances available (First-time starter)
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ================================================================
-          SECTION 5: RECENT WORKOUTS
-          ================================================================ */}
-      <section className="horse-expanded__section horse-expanded__section--workouts">
-        <SectionHeader title="RECENT WORKOUTS" />
-
-        <div className="workouts-panel">
-          {horse.workouts && horse.workouts.length > 0 ? (
-            <>
-              {/* Workout Header Row */}
-              <div className="workout-header">
-                <span className="workout-header__col workout-header__col--date">DATE</span>
-                <span className="workout-header__col workout-header__col--track">TRACK</span>
-                <span className="workout-header__col workout-header__col--dist">DISTANCE</span>
-                <span className="workout-header__col workout-header__col--surface">SURFACE</span>
-                <span className="workout-header__col workout-header__col--cond">COND</span>
-                <span className="workout-header__col workout-header__col--rank">RANKING</span>
-              </div>
-
-              {/* Workout Items */}
-              <div className="workout-list">
-                {horse.workouts.slice(0, 5).map((workout: Workout, index: number) => (
-                  <WorkoutItem
-                    key={`${workout.date}-${workout.track}-${index}`}
-                    workout={workout}
-                    index={index}
-                  />
-                ))}
-              </div>
-
-              {/* Legend */}
-              <div className="workouts-panel__legend">
-                <span className="workouts-panel__legend-item">
-                  <span className="workouts-panel__legend-bullet">●</span> = Bullet (fastest of the
-                  day at distance)
-                </span>
-              </div>
-            </>
-          ) : (
-            <div className="workouts-panel__no-data">No workouts available</div>
           )}
         </div>
       </section>
+
+      {/* ================================================================
+          SECTION 4: TAB NAVIGATION
+          ================================================================ */}
+      <div className="expanded-tabs">
+        <button
+          className={`expanded-tabs__btn ${activeTab === 'analysis' ? 'expanded-tabs__btn--active' : ''}`}
+          onClick={() => setActiveTab('analysis')}
+        >
+          <span className="expanded-tabs__btn-icon material-icons">analytics</span>
+          <span className="expanded-tabs__btn-text">Analysis</span>
+        </button>
+        <button
+          className={`expanded-tabs__btn ${activeTab === 'pps' ? 'expanded-tabs__btn--active' : ''}`}
+          onClick={() => setActiveTab('pps')}
+        >
+          <span className="expanded-tabs__btn-icon material-icons">history</span>
+          <span className="expanded-tabs__btn-text">View Full PPs</span>
+        </button>
+        <button
+          className={`expanded-tabs__btn ${activeTab === 'workouts' ? 'expanded-tabs__btn--active' : ''}`}
+          onClick={() => setActiveTab('workouts')}
+        >
+          <span className="expanded-tabs__btn-icon material-icons">fitness_center</span>
+          <span className="expanded-tabs__btn-text">View Workouts</span>
+        </button>
+        <button
+          className={`expanded-tabs__btn ${activeTab === 'profile' ? 'expanded-tabs__btn--active' : ''}`}
+          onClick={() => setActiveTab('profile')}
+        >
+          <span className="expanded-tabs__btn-icon material-icons">info</span>
+          <span className="expanded-tabs__btn-text">View Profile</span>
+        </button>
+      </div>
+
+      {/* ================================================================
+          TAB CONTENT: PAST PERFORMANCES
+          ================================================================ */}
+      {activeTab === 'pps' && (
+        <section className="horse-expanded__section horse-expanded__section--pp">
+          <SectionHeader title="PAST PERFORMANCES" />
+          <div className="pp-panel">
+            <div className="pp-header">
+              <span className="pp-header__col pp-header__col--date">DATE</span>
+              <span className="pp-header__col pp-header__col--track">TRACK</span>
+              <span className="pp-header__col pp-header__col--dist">DISTANCE</span>
+              <span className="pp-header__col pp-header__col--cond">COND</span>
+              <span className="pp-header__col pp-header__col--class">CLASS</span>
+              <span className="pp-header__col pp-header__col--finish">FINISH</span>
+              <span className="pp-header__col pp-header__col--odds">ODDS</span>
+              <span className="pp-header__col pp-header__col--figure">FIGURE</span>
+              <span className="pp-header__col pp-header__col--time">TIME</span>
+              <span className="pp-header__col pp-header__col--days">DAYS</span>
+              <span className="pp-header__col pp-header__col--em">EQUIP/MED</span>
+              <span className="pp-header__col pp-header__col--running">RUNNING LINE</span>
+              <span className="pp-header__col pp-header__col--jockey">JOCKEY</span>
+              <span className="pp-header__col pp-header__col--weight">WEIGHT</span>
+              <span className="pp-header__col pp-header__col--comment">COMMENT</span>
+            </div>
+            <div className="pp-lines">
+              {horse.pastPerformances && horse.pastPerformances.length > 0 ? (
+                horse.pastPerformances
+                  .slice(0, 10)
+                  .map((pp: PastPerformance, index: number) => (
+                    <PPLine key={`${pp.date}-${pp.track}-${index}`} pp={pp} index={index} />
+                  ))
+              ) : (
+                <div className="pp-lines__no-data">
+                  No past performances available (First-time starter)
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ================================================================
+          TAB CONTENT: WORKOUTS
+          ================================================================ */}
+      {activeTab === 'workouts' && (
+        <section className="horse-expanded__section horse-expanded__section--workouts">
+          <SectionHeader title="RECENT WORKOUTS" />
+          <div className="workouts-panel">
+            {horse.workouts && horse.workouts.length > 0 ? (
+              <>
+                <div className="workout-header">
+                  <span className="workout-header__col workout-header__col--date">DATE</span>
+                  <span className="workout-header__col workout-header__col--track">TRACK</span>
+                  <span className="workout-header__col workout-header__col--dist">DISTANCE</span>
+                  <span className="workout-header__col workout-header__col--surface">SURFACE</span>
+                  <span className="workout-header__col workout-header__col--cond">COND</span>
+                  <span className="workout-header__col workout-header__col--rank">RANKING</span>
+                </div>
+                <div className="workout-list">
+                  {horse.workouts.slice(0, 5).map((workout: Workout, index: number) => (
+                    <WorkoutItem
+                      key={`${workout.date}-${workout.track}-${index}`}
+                      workout={workout}
+                      index={index}
+                    />
+                  ))}
+                </div>
+                <div className="workouts-panel__legend">
+                  <span className="workouts-panel__legend-item">
+                    <span className="workouts-panel__legend-bullet">●</span> = Bullet (fastest of
+                    the day at distance)
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="workouts-panel__no-data">No workouts available</div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ================================================================
+          TAB CONTENT: HORSE PROFILE
+          ================================================================ */}
+      {activeTab === 'profile' && (
+        <section className="horse-expanded__section horse-expanded__section--profile">
+          <SectionHeader title="HORSE PROFILE" />
+          <div className="profile-row">
+            {/* Column 1: Identity */}
+            <div className="profile-col">
+              <div className="profile-col__header">IDENTITY</div>
+              <div className="profile-col__content">
+                <div className="profile-col__primary">
+                  {colorDisplay} {sexDisplay}, {horse.age || '?'}
+                  {horse.breeding?.whereBred && (
+                    <span className="profile-col__sub"> ({horse.breeding.whereBred})</span>
+                  )}
+                </div>
+                <div className="profile-col__line">
+                  <span className="profile-col__label">Weight:</span>
+                  <span className="profile-col__value">{horse.weight || '—'} lbs</span>
+                </div>
+                {equipmentDisplay && (
+                  <div className="profile-col__line">
+                    <span className="profile-col__label">Equipment:</span>
+                    <span className="profile-col__value">{equipmentDisplay}</span>
+                  </div>
+                )}
+                {medicationDisplay && (
+                  <div className="profile-col__line">
+                    <span className="profile-col__label">Medication:</span>
+                    <span className="profile-col__value">{medicationDisplay}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Column 2: Breeding */}
+            <div className="profile-col">
+              <div className="profile-col__header">BREEDING</div>
+              <div className="profile-col__content">
+                <div className="profile-col__line">
+                  <span className="profile-col__label">Sire:</span>
+                  <span className="profile-col__value profile-col__value--wrap">
+                    {horse.breeding?.sire || '—'}
+                    {horse.breeding?.sireOfSire && (
+                      <span className="profile-col__sub"> ({horse.breeding.sireOfSire})</span>
+                    )}
+                  </span>
+                </div>
+                <div className="profile-col__line">
+                  <span className="profile-col__label">Dam:</span>
+                  <span className="profile-col__value profile-col__value--wrap">
+                    {horse.breeding?.dam || '—'}
+                    {horse.breeding?.damSire && (
+                      <span className="profile-col__sub"> ({horse.breeding.damSire})</span>
+                    )}
+                  </span>
+                </div>
+                <div className="profile-col__line">
+                  <span className="profile-col__label">Breeder:</span>
+                  <span className="profile-col__value profile-col__value--wrap">
+                    {horse.breeding?.breeder || '—'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Column 3: Connections */}
+            <div className="profile-col">
+              <div className="profile-col__header">CONNECTIONS</div>
+              <div className="profile-col__content">
+                <div className="profile-col__line">
+                  <span className="profile-col__label">Owner:</span>
+                  <span className="profile-col__value profile-col__value--wrap">
+                    {horse.owner || '—'}
+                  </span>
+                </div>
+                <div className="profile-col__line">
+                  <span className="profile-col__label">Trainer:</span>
+                  <span className="profile-col__value profile-col__value--wrap">
+                    {horse.trainerName || '—'}
+                  </span>
+                </div>
+                <div className="profile-col__line">
+                  <span className="profile-col__label">Jockey:</span>
+                  <span className="profile-col__value profile-col__value--wrap">
+                    {horse.jockeyName || '—'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Column 4: Overall Record */}
+            <div className="profile-col">
+              <div className="profile-col__header">OVERALL RECORD</div>
+              <div className="profile-col__content">
+                <div className="profile-col__record-header">
+                  <span></span>
+                  <span className="profile-col__record-label">W-P-S-R</span>
+                </div>
+                <div className="profile-col__record-row">
+                  <span className="profile-col__record-year">{new Date().getFullYear() - 1}</span>
+                  <span className="profile-col__record-value">
+                    {horse.previousYearStarts || 0}-{horse.previousYearWins || 0}-
+                    {horse.previousYearPlaces || 0}-{horse.previousYearShows || 0}
+                  </span>
+                </div>
+                <div className="profile-col__record-row">
+                  <span className="profile-col__record-year">{new Date().getFullYear()}</span>
+                  <span className="profile-col__record-value">
+                    {horse.currentYearStarts || 0}-{horse.currentYearWins || 0}-
+                    {horse.currentYearPlaces || 0}-{horse.currentYearShows || 0}
+                  </span>
+                </div>
+                <div className="profile-col__record-row profile-col__record-row--highlight">
+                  <span className="profile-col__record-year">Lifetime</span>
+                  <span className="profile-col__record-value">
+                    {horse.lifetimeStarts || 0}-{horse.lifetimeWins || 0}-
+                    {horse.lifetimePlaces || 0}-{horse.lifetimeShows || 0}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Column 5: Surface & Distance Splits */}
+            <div className="profile-col">
+              <div className="profile-col__header">SURFACE & DISTANCE</div>
+              <div className="profile-col__content">
+                <div className="profile-col__split-row">
+                  <span className="profile-col__split-label">Dirt (Fast):</span>
+                  <span
+                    className={`profile-col__split-value ${isGoodWinRate(horse.surfaceStarts || 0, horse.surfaceWins || 0) ? 'profile-col__split-value--hot' : ''}`}
+                  >
+                    {horse.surfaceStarts || 0}-{horse.surfaceWins || 0}
+                  </span>
+                </div>
+                <div className="profile-col__split-row">
+                  <span className="profile-col__split-label">Wet Track:</span>
+                  <span
+                    className={`profile-col__split-value ${isGoodWinRate(horse.wetStarts || 0, horse.wetWins || 0) ? 'profile-col__split-value--hot' : ''}`}
+                  >
+                    {horse.wetStarts || 0}-{horse.wetWins || 0}
+                  </span>
+                </div>
+                <div className="profile-col__split-row">
+                  <span className="profile-col__split-label">Turf:</span>
+                  <span
+                    className={`profile-col__split-value ${isGoodWinRate(horse.turfStarts || 0, horse.turfWins || 0) ? 'profile-col__split-value--hot' : ''}`}
+                  >
+                    {horse.turfStarts || 0}-{horse.turfWins || 0}
+                  </span>
+                </div>
+                <div className="profile-col__split-row">
+                  <span className="profile-col__split-label">Distance:</span>
+                  <span
+                    className={`profile-col__split-value ${isGoodWinRate(horse.distanceStarts || 0, horse.distanceWins || 0) ? 'profile-col__split-value--hot' : ''}`}
+                  >
+                    {horse.distanceStarts || 0}-{horse.distanceWins || 0}
+                  </span>
+                </div>
+                <div className="profile-col__split-row">
+                  <span className="profile-col__split-label">Track:</span>
+                  <span
+                    className={`profile-col__split-value ${isGoodWinRate(horse.trackStarts || 0, horse.trackWins || 0) ? 'profile-col__split-value--hot' : ''}`}
+                  >
+                    {horse.trackStarts || 0}-{horse.trackWins || 0}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 };

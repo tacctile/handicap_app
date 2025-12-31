@@ -930,8 +930,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   {/* Column 4: RANK - Model ranking based on base score */}
                   <div className="horse-list-header__cell horse-list-header__cell--rank horse-list-header__cell--no-subtext">
                     <HeaderTooltip
-                      title="Model Ranking"
-                      content="Our algorithm's ranking of this horse based on ability, speed, class, and connections. #1 is our top pick to win. Green = contender, Yellow = playable, Gray = longshot."
+                      title="Model Rank"
+                      content="Our model's ranking of this horse based on speed, class, form, pace, and connections. #1 is our top pick."
                     >
                       <span className="horse-list-header__label">RANK</span>
                     </HeaderTooltip>
@@ -941,7 +941,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <div className="horse-list-header__cell horse-list-header__cell--odds horse-list-header__cell--no-subtext">
                     <HeaderTooltip
                       title="Current Odds"
-                      content="Morning line or live odds. Click to edit. 5-1 means you'd win $5 for every $1 bet (plus your original bet back)."
+                      content="Current odds from morning line or your manual update. Click to edit with live odds."
                     >
                       <span className="horse-list-header__label">ODDS</span>
                     </HeaderTooltip>
@@ -951,7 +951,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <div className="horse-list-header__cell horse-list-header__cell--fair-odds horse-list-header__cell--no-subtext">
                     <HeaderTooltip
                       title="Fair Odds"
-                      content="What the odds SHOULD be according to our algorithm. Compare to current ODDS to find value."
+                      content="What we think the odds SHOULD be based on our analysis. Lower fair odds = better horse."
                     >
                       <span className="horse-list-header__label">FAIR</span>
                     </HeaderTooltip>
@@ -960,8 +960,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   {/* Column 7: EDGE - Value gap percentage */}
                   <div className="horse-list-header__cell horse-list-header__cell--edge horse-list-header__cell--no-subtext">
                     <HeaderTooltip
-                      title="Edge (Value Gap)"
-                      content="The difference between our fair odds and public odds. Positive edge = value bet opportunity. +50% or higher is strong value. Negative edge = horse is overbet."
+                      title="Edge"
+                      content="The value gap. Positive = public is offering better odds than deserved (bet these). Negative = horse is overbet (skip)."
                     >
                       <span className="horse-list-header__label">EDGE</span>
                     </HeaderTooltip>
@@ -970,8 +970,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   {/* Column 8: VALUE - Overlay/Fair/Underlay badge */}
                   <div className="horse-list-header__cell horse-list-header__cell--value horse-list-header__cell--no-subtext">
                     <HeaderTooltip
-                      title="Value Assessment"
-                      content="OVERLAY (green) = positive edge, worth betting. FAIR (gray) = no edge. UNDERLAY (red) = negative edge, skip."
+                      title="Value Status"
+                      content="Overlay = value bet. Underlay = no value. Fair = neutral."
                     >
                       <span className="horse-list-header__label">VALUE</span>
                     </HeaderTooltip>
@@ -1136,6 +1136,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           isVisible={expandedHorseId === horseId && !isScratched}
                           valuePercent={overlay.overlayPercent}
                           score={scoredHorse.score}
+                          // New value-focused props
+                          currentOdds={currentOddsString}
+                          fairOdds={overlay.fairOddsDisplay}
+                          edgePercent={valuePlay?.valueEdge ?? overlay.overlayPercent}
+                          modelRank={rankInfo?.rank ?? scoredHorse.rank}
+                          totalHorses={activeFieldSize}
+                          isOverlay={overlay.overlayPercent > 20}
+                          isUnderlay={overlay.overlayPercent < -20}
+                          isPrimaryValuePlay={horseIndex === primaryValuePlayIndex}
+                          betTypeSuggestion={valuePlay?.betType || undefined}
+                          // Race-level context for PASS race handling
+                          raceVerdict={valueAnalysis.verdict}
+                          isBestInPassRace={
+                            valueAnalysis.verdict === 'PASS' &&
+                            (rankInfo?.rank ?? scoredHorse.rank) === 1
+                          }
                         />
                       </div>
                     );
