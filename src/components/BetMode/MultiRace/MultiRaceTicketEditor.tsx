@@ -8,9 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import type { MultiRaceBet, MultiRaceLeg } from '../../../lib/betting/betTypes';
 import { MULTI_RACE_BET_CONFIGS } from '../../../lib/betting/betTypes';
-import type { ScoredHorse } from '../../../lib/scoring';
 import type { RaceAnalysisData } from '../../../lib/betting/multiRaceBets';
-import { getCombinationMath } from '../../../lib/betting/multiRaceTickets';
 import './MultiRace.css';
 
 interface MultiRaceTicketEditorProps {

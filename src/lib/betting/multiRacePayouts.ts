@@ -127,7 +127,7 @@ function calculateAverageOdds(legs: MultiRaceLeg[]): number {
 export function estimateMultiRacePayout(
   type: MultiRaceBetType,
   legs: MultiRaceLeg[],
-  combinations: number
+  _combinations: number
 ): { min: number; max: number } {
   const basePayout = BASE_PAYOUTS[type];
   const longshotCount = countLongshots(legs);

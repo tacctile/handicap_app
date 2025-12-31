@@ -4,8 +4,22 @@ export * from './kellyCriterion';
 export * from './kellyValidator';
 export * from './kellySettings';
 
-// Bet types and configuration
-export * from './betTypes';
+// Bet types - selectively export to avoid conflicts with betRecommendations
+export type {
+  MultiRaceBetType,
+  LegStrategy,
+  MultiRaceQuality,
+  MultiRaceConfidence,
+  MultiRaceLeg,
+  MultiRaceBet,
+  MultiRaceOpportunity,
+  MultiRaceBetTypeInfo,
+} from './betTypes';
+export {
+  MULTI_RACE_BET_CONFIGS,
+  isMultiRaceBetAvailable,
+  getAvailableMultiRaceBetTypes,
+} from './betTypes';
 
 // Day session management
 export * from './daySession';

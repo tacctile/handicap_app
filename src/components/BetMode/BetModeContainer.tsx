@@ -38,7 +38,6 @@ import {
   getRaceAllocation,
   isRaceCompleted,
   addMultiRaceBet,
-  updateMultiRaceBet,
   type DaySession,
 } from '../../lib/betting/daySession';
 import { analyzeRaceValue } from '../../hooks/useValueDetection';
@@ -237,7 +236,7 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
   const raceAnalysisData: RaceAnalysisData[] = useMemo(() => {
     if (!daySession) return [];
 
-    return allRaces.map((raceData, index) => {
+    return allRaces.map((_raceData, index) => {
       const raceScored = allScoredHorses[index] || [];
       const valueAnalysis = raceScored.length > 0
         ? analyzeRaceValue(raceScored, getOdds, isScratched)

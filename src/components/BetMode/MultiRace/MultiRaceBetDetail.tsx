@@ -9,7 +9,7 @@ import React, { useState } from 'react';
 import type { MultiRaceBet, MultiRaceOpportunity } from '../../../lib/betting/betTypes';
 import { MULTI_RACE_BET_CONFIGS } from '../../../lib/betting/betTypes';
 import { getCombinationMath } from '../../../lib/betting/multiRaceTickets';
-import { getPayoutScenarios, formatPayoutRange } from '../../../lib/betting/multiRacePayouts';
+import { getPayoutScenarios } from '../../../lib/betting/multiRacePayouts';
 import { getQualityIcon } from '../../../lib/betting/multiRaceBets';
 import { MultiRaceExplanations } from './MultiRaceExplanations';
 import './MultiRace.css';

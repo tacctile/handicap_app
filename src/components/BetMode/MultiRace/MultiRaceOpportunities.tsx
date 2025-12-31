@@ -14,7 +14,6 @@ import type {
 import { MULTI_RACE_BET_CONFIGS } from '../../../lib/betting/betTypes';
 import {
   getQualityIcon,
-  getQualityColor,
   formatRaceRange,
 } from '../../../lib/betting/multiRaceBets';
 import { formatPayoutRange } from '../../../lib/betting/multiRacePayouts';
@@ -76,7 +75,6 @@ export const MultiRaceOpportunities: React.FC<MultiRaceOpportunitiesProps> = ({
 
           const config = MULTI_RACE_BET_CONFIGS[opp.type];
           const qualityIcon = getQualityIcon(opp.quality);
-          const qualityColor = getQualityColor(opp.quality);
 
           return (
             <button

@@ -10,7 +10,7 @@
  */
 
 import type { ScoredHorse } from '../scoring';
-import type { RaceValueAnalysis, ValuePlay } from '../../hooks/useValueDetection';
+import type { RaceValueAnalysis } from '../../hooks/useValueDetection';
 import type {
   MultiRaceBetType,
   MultiRaceOpportunity,
@@ -186,11 +186,10 @@ function determineQuality(criteria: SequenceQualityCriteria): MultiRaceQuality {
  * Generate reasoning text for an opportunity
  */
 function generateReasoning(
-  type: MultiRaceBetType,
+  _type: MultiRaceBetType,
   races: RaceAnalysisData[],
   criteria: SequenceQualityCriteria
 ): string {
-  const config = MULTI_RACE_BET_CONFIGS[type];
   const parts: string[] = [];
 
   // Value plays

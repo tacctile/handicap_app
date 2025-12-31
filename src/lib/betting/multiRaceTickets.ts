@@ -9,7 +9,6 @@
  * - Risk style preferences
  */
 
-import type { ScoredHorse } from '../scoring';
 import type { RaceValueAnalysis, ValuePlay } from '../../hooks/useValueDetection';
 import type {
   MultiRaceBetType,
@@ -272,7 +271,7 @@ function generateTicketExplanation(
  * Determine confidence level for a ticket
  */
 function determineConfidence(
-  legs: MultiRaceLeg[],
+  _legs: MultiRaceLeg[],
   valuePlayCount: number,
   combinations: number
 ): MultiRaceConfidence {
@@ -307,7 +306,7 @@ export function buildMultiRaceTicket(
   opportunity: MultiRaceOpportunity,
   races: RaceAnalysisData[],
   riskStyle: RiskStyle,
-  budget: number,
+  _budget: number,
   costPerCombo?: number
 ): MultiRaceBet {
   const config = MULTI_RACE_BET_CONFIGS[opportunity.type];
