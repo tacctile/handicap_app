@@ -21,7 +21,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "validate:bulk": "npx tsx scripts/run-bulk-validation.ts"
+    "validate:bulk": "npx tsx scripts/run-bulk-validation.ts",
+    "model-c:validate": "npx tsx scripts/validate-model-c.ts"
   },
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
