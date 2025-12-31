@@ -466,20 +466,21 @@ function getAverageFigure(pastPerformances: PastPerformance[], count: number = 5
 /**
  * Get speed confidence multiplier based on figure count in last 3 races
  *
- * PENALTY LOGIC (Phase 2 - Missing Data Penalties):
+ * PENALTY LOGIC (v3.4 - Algorithm Tuning Package v1):
  * - 3+ figures in last 3 races → 100% confidence (full scoring)
- * - 2 figures in last 3 races → 75% confidence (36 pts max)
- * - 1 figure in last 3 races → 37.5% confidence (18 pts max)
- * - 0 figures → 25% baseline (12 pts max, penalized for unknown)
+ * - 2 figures in last 3 races → 75% confidence (79 pts max)
+ * - 1 figure in last 3 races → 75% confidence (79 pts max) - FIXED: Trust the talent
+ * - 0 figures → 50% baseline (52 pts max) - FIXED: Mercy rule for shippers
  *
- * This ensures horses with incomplete speed data are penalized,
- * not given neutral scores that reward unknowns.
+ * v3.4 FIX: "The Blind Spot" - Previous multipliers were too aggressive,
+ * crushing legitimate contenders (shippers, fresh horses) with 95 Beyers
+ * down to 35 points due to "missing data". Now we trust the talent.
  */
 export function getSpeedConfidenceMultiplier(figureCount: number): number {
   if (figureCount >= 3) return 1.0; // Full confidence
   if (figureCount === 2) return 0.75; // 75% confidence
-  if (figureCount === 1) return 0.375; // 37.5% confidence
-  return 0.25; // 25% baseline for no figures
+  if (figureCount === 1) return 0.75; // v3.4: Trust the talent (was 0.375)
+  return 0.50; // v3.4: Mercy rule for shippers (was 0.25)
 }
 
 /**

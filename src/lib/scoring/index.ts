@@ -1053,16 +1053,54 @@ function calculateHorseScoreWithContext(
   // Note: Class score is already included in speedClass.classScore, but enhanced analysis
   // provides additional hidden drop bonuses that we add separately
   const hiddenDropsBonus = classScoreResult.hiddenDropsScore;
+
+  // =========================================================================
+  // v3.4 FIX: "Bias Inflation" - Algorithm Tuning Package v1
+  // =========================================================================
+  // PROBLEM: We were unconditionally adding up to 47 points for Connections/
+  // Post/Odds/Trainer Patterns, allowing slow horses with famous jockeys to
+  // outscore fast horses.
+  //
+  // SOLUTION: Cap "Bias Score" at 25% of "Ability Score"
+  // - Ability Score = Speed + Class + Form + Pace (intrinsic ability)
+  // - Bias Score = Connections + Post Position + Odds + Trainer Patterns
+  // - Final Bias Score = Math.min(Raw Bias Score, Ability Score * 0.25)
+  // =========================================================================
+
+  // ABILITY SCORE: The horse's intrinsic performance potential
+  // speedClass.total includes both speed (105 max) and class (35 max)
+  const abilityScore =
+    breakdown.speedClass.total + // Speed (105) + Class (35) = 140 max
+    breakdown.form.total + // Recent form (42 max)
+    breakdown.pace.total; // Pace fit (35 max)
+  // Total ability: 217 pts max
+
+  // BIAS SCORE (RAW): External factors that can inflate scores
+  const rawBiasScore =
+    breakdown.connections.total + // Trainer + Jockey (23 max)
+    breakdown.postPosition.total + // Post position (12 max)
+    breakdown.odds.total + // Market wisdom (12 max)
+    breakdown.trainerPatterns.total; // Trainer situational patterns (8 max)
+  // Total raw bias: 55 pts max
+
+  // BIAS CAP: Bias cannot exceed 25% of Ability Score
+  // This prevents famous jockeys from rescuing slow horses
+  const maxBiasAllowed = Math.round(abilityScore * 0.25);
+  const cappedBiasScore = Math.min(rawBiasScore, maxBiasAllowed);
+  const biasReduction = rawBiasScore - cappedBiasScore;
+
+  // Log bias reduction for debugging (can be removed after validation)
+  if (biasReduction > 0) {
+    // Bias was capped - this horse had inflated situational factors
+    // console.log(`Bias cap applied: ${rawBiasScore} → ${cappedBiasScore} (-${biasReduction}) for ability ${abilityScore}`);
+  }
+
+  // Calculate final base score with capped bias
   const rawBaseTotal =
-    breakdown.connections.total +
-    breakdown.postPosition.total +
-    breakdown.speedClass.total +
-    breakdown.form.total +
-    breakdown.equipment.total +
-    breakdown.pace.total +
-    breakdown.odds.total + // Phase 6: Odds factor (0-15, market wisdom for favorites)
+    abilityScore + // Speed + Class + Form + Pace (intrinsic ability)
+    cappedBiasScore + // Connections + Post + Odds + Trainer Patterns (CAPPED)
+    breakdown.equipment.total + // Equipment changes (8 max)
     breakdown.distanceSurface.total + // Distance/surface affinity bonus (0-20)
-    breakdown.trainerPatterns.total + // Trainer pattern bonuses (0-15)
     breakdown.comboPatterns.total + // Combo pattern bonuses (0-12)
     breakdown.trackSpecialist.total + // Track specialist bonus (0-6)
     breakdown.trainerSurfaceDistance.total + // Trainer surface/distance specialization (0-6)
