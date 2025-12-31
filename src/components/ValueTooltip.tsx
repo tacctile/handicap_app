@@ -10,11 +10,69 @@ import './ValueTooltip.css';
 
 // Tooltip content for each term
 const TOOLTIP_CONTENT: Record<string, { title: string; content: string }> = {
+  // Column header tooltips
+  RANK: {
+    title: 'Model Rank',
+    content:
+      "Our model's ranking of this horse based on speed, class, form, pace, and connections. #1 is our top pick.",
+  },
+  ODDS: {
+    title: 'Current Odds',
+    content: 'Current odds from morning line or your manual update. Click to edit with live odds.',
+  },
+  FAIR: {
+    title: 'Fair Odds',
+    content:
+      'What we think the odds SHOULD be based on our analysis. Lower fair odds = better horse.',
+  },
   EDGE: {
     title: 'Edge (Value Edge)',
     content:
-      'Edge is the difference between what our model thinks and what the public thinks. A +100% edge means our model sees this horse as twice as likely to hit the board as the public odds suggest. Positive edge = value bet.',
+      'The value gap. Positive = public is offering better odds than deserved (bet these). Negative = horse is overbet (skip).',
   },
+  VALUE: {
+    title: 'Value Status',
+    content: 'Overlay = value bet. Underlay = no value. Fair = neutral.',
+  },
+  // Race verdict tooltips
+  BETTABLE_RACE: {
+    title: 'Bettable Race',
+    content: 'Our model found a value play. A horse the public is undervaluing.',
+  },
+  CAUTION_RACE: {
+    title: 'Caution',
+    content: 'Marginal value exists. Consider a smaller bet.',
+  },
+  PASS_RACE: {
+    title: 'Pass',
+    content: 'No value plays. Betting here is gambling, not smart handicapping.',
+  },
+  HIGH_CONFIDENCE: {
+    title: 'High Confidence',
+    content: 'Clear separation between value play and field. Strong conviction.',
+  },
+  MEDIUM_CONFIDENCE: {
+    title: 'Medium Confidence',
+    content: 'Value exists but less certain. Bet smaller.',
+  },
+  // Category icon tooltips
+  STRONG_FACTOR: {
+    title: 'Strong Factor',
+    content: 'This is a strong positive factor that helps this horse.',
+  },
+  CONCERNING_FACTOR: {
+    title: 'Concerning Factor',
+    content: 'This is a concerning factor — potential weakness.',
+  },
+  WEAK_FACTOR: {
+    title: 'Weak Factor',
+    content: 'This is a weak factor that hurts this horse.',
+  },
+  NEUTRAL_FACTOR: {
+    title: 'Neutral Factor',
+    content: 'This factor is neutral — neither helps nor hurts.',
+  },
+  // Existing tooltips
   MORNING_LINE: {
     title: 'Morning Line Odds',
     content:

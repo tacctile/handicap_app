@@ -224,12 +224,31 @@ export const RaceVerdictHeader: React.FC<RaceVerdictHeaderProps> = ({
       <div className="race-verdict-header__top-row">
         <div className="race-verdict-header__verdict-section">
           <span className="race-verdict-header__icon">{getVerdictIcon(verdict)}</span>
-          <span className="race-verdict-header__verdict-label" style={{ color: verdictColor }}>
+          <span
+            className="race-verdict-header__verdict-label"
+            style={{ color: verdictColor }}
+            title={
+              verdict === 'BET'
+                ? 'Our model found a value play. A horse the public is undervaluing.'
+                : verdict === 'CAUTION'
+                  ? 'Marginal value exists. Consider a smaller bet.'
+                  : 'No value plays. Betting here is gambling, not smart handicapping.'
+            }
+          >
             {getVerdictLabel(verdict)}
           </span>
         </div>
         <div className="race-verdict-header__controls">
-          <span className="race-verdict-header__confidence">{confidence} Confidence</span>
+          <span
+            className="race-verdict-header__confidence"
+            title={
+              confidence === 'HIGH'
+                ? 'Clear separation between value play and field. Strong conviction.'
+                : 'Value exists but less certain. Bet smaller.'
+            }
+          >
+            {confidence} Confidence
+          </span>
           <button
             className="race-verdict-header__collapse-btn"
             onClick={toggleCollapse}
