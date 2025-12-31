@@ -19,15 +19,6 @@
   align-items: center;
 }
 
-/* Adjust for betting panel */
-.app-layout--betting-expanded .value-action-bar {
-  right: 320px; /* Width of expanded betting panel */
-}
-
-.app-layout--betting-collapsed .value-action-bar {
-  right: 48px; /* Width of collapsed betting panel */
-}
-
 /* Content container */
 .value-action-bar__content {
   display: flex;
@@ -223,12 +214,6 @@
 
   .value-action-bar__horse-name {
     max-width: 120px;
-  }
-
-  /* Adjust for mobile - no betting panel */
-  .app-layout--betting-expanded .value-action-bar,
-  .app-layout--betting-collapsed .value-action-bar {
-    right: 0;
   }
 }
 

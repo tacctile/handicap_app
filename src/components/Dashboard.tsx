@@ -1,10 +1,8 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import './Dashboard.css';
 import { usePostTime } from '../hooks/usePostTime';
-import { useBankroll } from '../hooks/useBankroll';
 import { useValueDetection } from '../hooks/useValueDetection';
-import { BankrollSettings } from './BankrollSettings';
-import { BettingRecommendations } from './BettingRecommendations';
+import { BetModeContainer } from './BetMode';
 import { FileUpload } from './FileUpload';
 import { HorseExpandedView } from './HorseExpandedView';
 import { HorseSummaryBar } from './HorseSummaryBar';
@@ -181,14 +179,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   isLoading = false,
   onParsed,
 }) => {
-  // Bankroll management hook
-  const bankroll = useBankroll();
-
-  // UI state for bankroll config slide-out
-  const [bankrollConfigOpen, setBankrollConfigOpen] = useState(false);
-
-  // UI state for betting panel collapse
-  const [bettingPanelCollapsed, setBettingPanelCollapsed] = useState(false);
+  // View mode state: 'analysis' (default) or 'betMode'
+  const [viewMode, setViewMode] = useState<'analysis' | 'betMode'>('analysis');
 
   // State for expanded horse in horse list
   const [expandedHorseId, setExpandedHorseId] = useState<string | number | null>(null);
@@ -264,10 +256,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           allKeys: header ? Object.keys(header) : [],
         });
       });
-
-      // Expand betting panel when new file is loaded
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional expand on new data load
-      setBettingPanelCollapsed(false);
     }
   }, [parsedData]);
 
@@ -688,9 +676,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const countdownSeconds = countdown.totalMs > 0 ? Math.floor(countdown.totalMs / 1000) : 0;
 
   return (
-    <div
-      className={`app-layout ${bettingPanelCollapsed ? 'app-layout--betting-collapsed' : 'app-layout--betting-expanded'}`}
-    >
+    <div className="app-layout app-layout--full-width">
+
       {/* LEFT ZONE: Top bar, Race rail + Main content, Bottom bar */}
       <div className="app-left-zone">
         {/* Top Bar - Single row */}
@@ -835,30 +822,41 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Main Content */}
         <main className="app-main">
-          <div className="app-main__content">
-            {!parsedData ? (
-              <div className="app-main__placeholder">
-                <span
-                  className="material-icons"
-                  style={{ fontSize: '48px', marginBottom: 'var(--gap-container)' }}
-                >
-                  upload_file
-                </span>
-                <h2>No Race Data</h2>
-                <p>Upload a DRF file to see horses and analysis</p>
-              </div>
-            ) : !currentRaceScoredHorses?.length ? (
-              <div className="app-main__placeholder">
-                <span
-                  className="material-icons"
-                  style={{ fontSize: '48px', marginBottom: 'var(--gap-container)' }}
-                >
-                  analytics
-                </span>
-                <h2>Select a Race</h2>
-                <p>Click a race on the left to see horses</p>
-              </div>
-            ) : (
+          {viewMode === 'betMode' ? (
+            /* BET MODE - Full screen betting interface */
+            <BetModeContainer
+              race={currentRace}
+              raceNumber={selectedRaceIndex + 1}
+              trackName={trackCode ? getTrackDisplayName(trackCode, getTrackSize(trackCode)) : undefined}
+              valueAnalysis={valueAnalysis}
+              onClose={() => setViewMode('analysis')}
+            />
+          ) : (
+            /* ANALYSIS MODE - Horse list and analysis view */
+            <div className="app-main__content">
+              {!parsedData ? (
+                <div className="app-main__placeholder">
+                  <span
+                    className="material-icons"
+                    style={{ fontSize: '48px', marginBottom: 'var(--gap-container)' }}
+                  >
+                    upload_file
+                  </span>
+                  <h2>No Race Data</h2>
+                  <p>Upload a DRF file to see horses and analysis</p>
+                </div>
+              ) : !currentRaceScoredHorses?.length ? (
+                <div className="app-main__placeholder">
+                  <span
+                    className="material-icons"
+                    style={{ fontSize: '48px', marginBottom: 'var(--gap-container)' }}
+                  >
+                    analytics
+                  </span>
+                  <h2>Select a Race</h2>
+                  <p>Click a race on the left to see horses</p>
+                </div>
+              ) : (
               <div className="horse-list" ref={horseListRef}>
                 {/* Race Verdict Header - Shows BET/CAUTION/PASS verdict */}
                 <RaceVerdictHeader
@@ -1159,7 +1157,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 })()}
               </div>
             )}
-          </div>
+            </div>
+          )}
         </main>
 
         {/* Value Action Bar - Fixed above bottom bar */}
@@ -1192,6 +1191,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {/* Separator after Settings */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* BET MODE button - Primary action */}
+          <div className="app-bottombar__cluster">
+            <button
+              className={`app-bottombar__item app-bottombar__item--bet-mode ${viewMode === 'betMode' ? 'app-bottombar__item--bet-mode-active' : ''}`}
+              onClick={() => setViewMode(viewMode === 'betMode' ? 'analysis' : 'betMode')}
+              disabled={!parsedData || isLoading}
+              title={viewMode === 'betMode' ? 'Return to analysis view' : 'Enter bet mode to place bets'}
+            >
+              <span className="app-bottombar__bet-icon">🎯</span>
+              <span>{viewMode === 'betMode' ? 'ANALYSIS' : 'BET MODE'}</span>
+            </button>
+          </div>
+
+          {/* Separator */}
           <div className="app-bottombar__separator"></div>
 
           {/* Center spacer */}
@@ -1256,160 +1271,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </footer>
       </div>
-
-      {/* RIGHT ZONE: Betting Panel (full height) */}
-      <aside
-        className={`app-betting-panel ${bettingPanelCollapsed ? 'app-betting-panel--collapsed' : ''}`}
-      >
-        {bettingPanelCollapsed ? (
-          /* COLLAPSED STATE */
-          <div
-            className="app-betting-panel__collapsed-content"
-            onClick={() => setBettingPanelCollapsed(false)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                setBettingPanelCollapsed(false);
-              }
-            }}
-            aria-label="Expand betting panel"
-          >
-            <div className="app-betting-panel__collapsed-icon">$</div>
-            <div className="app-betting-panel__collapsed-text">Expand</div>
-          </div>
-        ) : (
-          /* EXPANDED STATE */
-          <div className="app-betting-panel__expanded-content">
-            {/* Collapse button in upper left */}
-            <button
-              className="app-betting-panel__collapse-btn"
-              onClick={() => setBettingPanelCollapsed(true)}
-              aria-label="Collapse betting panel"
-            >
-              <span className="material-icons">close</span>
-            </button>
-
-            {/* Existing betting panel content */}
-            <div className="app-betting-panel__content-wrapper">
-              {/* Bankroll Summary - Clickable to open config */}
-              <button
-                className="app-betting-panel__bankroll"
-                onClick={() => setBankrollConfigOpen(true)}
-              >
-                <div className="app-betting-panel__bankroll-header">
-                  <span className="material-icons">account_balance_wallet</span>
-                  <span>Today's Bankroll</span>
-                  <span className="material-icons app-betting-panel__bankroll-config">
-                    settings
-                  </span>
-                </div>
-                <div className="app-betting-panel__bankroll-stats">
-                  <div className="app-betting-panel__stat">
-                    <span className="app-betting-panel__stat-label">P&L</span>
-                    <span
-                      className={`app-betting-panel__stat-value ${bankroll.dailyPL >= 0 ? 'app-betting-panel__stat-value--positive' : 'app-betting-panel__stat-value--negative'}`}
-                    >
-                      {bankroll.dailyPL >= 0 ? '+' : ''}
-                      {formatCurrency(bankroll.dailyPL)}
-                    </span>
-                  </div>
-                  <div className="app-betting-panel__stat">
-                    <span className="app-betting-panel__stat-label">Spent</span>
-                    <span className="app-betting-panel__stat-value">
-                      {formatCurrency(bankroll.getSpentToday?.() || 0)}
-                    </span>
-                  </div>
-                  <div className="app-betting-panel__stat">
-                    <span className="app-betting-panel__stat-label">Budget</span>
-                    <span className="app-betting-panel__stat-value">
-                      {formatCurrency(
-                        bankroll.getDailyBudget?.() || bankroll.settings?.dailyBudgetValue || 0
-                      )}
-                    </span>
-                  </div>
-                </div>
-                <div className="app-betting-panel__bankroll-mode">
-                  <span>{bankroll.settings?.complexityMode || 'Simple'} Mode</span>
-                  <span className="app-betting-panel__bankroll-race">
-                    ${bankroll.getRaceBudget?.() || bankroll.settings?.perRaceBudget || 20}/race
-                  </span>
-                </div>
-              </button>
-
-              {/* Betting Recommendations */}
-              <div className="app-betting-panel__recommendations">
-                <div className="app-betting-panel__recommendations-header">
-                  <span className="material-icons">tips_and_updates</span>
-                  <span>Recommendations</span>
-                  {parsedData && (
-                    <span className="app-betting-panel__recommendations-race">
-                      R{selectedRaceIndex + 1}
-                    </span>
-                  )}
-                </div>
-                <div className="app-betting-panel__recommendations-content">
-                  {!parsedData ? (
-                    <div className="app-betting-panel__empty">
-                      <span className="material-icons">upload_file</span>
-                      <p>Upload a DRF file to see betting recommendations</p>
-                    </div>
-                  ) : !currentRaceScoredHorses?.length ? (
-                    <div className="app-betting-panel__empty">
-                      <span className="material-icons">analytics</span>
-                      <p>Select a race to see recommendations</p>
-                    </div>
-                  ) : (
-                    <BettingRecommendations
-                      horses={currentRaceScoredHorses}
-                      bankroll={bankroll}
-                      raceNumber={selectedRaceIndex + 1}
-                      onOpenBankrollSettings={() => setBankrollConfigOpen(true)}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </aside>
-
-      {/* Bankroll Config Slide-out */}
-      {bankrollConfigOpen && (
-        <>
-          {/* Overlay - covers race analysis, click to close */}
-          <div className="app-config-overlay" onClick={() => setBankrollConfigOpen(false)} />
-          {/* Config Panel */}
-          <div className="app-config-panel">
-            <div className="app-config-panel__header">
-              <div className="app-config-panel__title">
-                <span className="material-icons">account_balance_wallet</span>
-                <span>Bankroll Settings</span>
-              </div>
-              <button
-                className="app-config-panel__close"
-                onClick={() => setBankrollConfigOpen(false)}
-              >
-                <span className="material-icons">close</span>
-              </button>
-            </div>
-            <div className="app-config-panel__content">
-              <BankrollSettings
-                isOpen={true}
-                onClose={() => setBankrollConfigOpen(false)}
-                settings={bankroll.settings}
-                onSave={bankroll.updateSettings}
-                onReset={bankroll.resetToDefaults}
-                dailyPL={bankroll.dailyPL}
-                spentToday={bankroll.getSpentToday()}
-                dailyBudget={bankroll.getDailyBudget()}
-                embedded={true}
-              />
-            </div>
-          </div>
-        </>
-      )}
 
       {/* Hidden file upload - FileUpload component handles parsing */}
       <div className="sr-only">
