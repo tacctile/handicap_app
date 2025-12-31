@@ -1035,10 +1035,14 @@ function calculateRecentWinnerBonus(pastPerformances: PastPerformance[]): {
 // ============================================================================
 
 /**
- * Minimum form score for horses that won last out (v3.2)
- * Even with layoff penalties, a recent winner should score at least 5 pts
+ * Minimum form score for horses that won last out (v3.4 - Algorithm Tuning Package v1)
+ * Even with layoff penalties, a recent winner should score at least 15 pts
+ *
+ * v3.4 FIX: "Winner Protection" - Increased from 5 to 15 pts.
+ * This prevents layoff penalties or confidence multipliers from destroying
+ * the score of a horse that won its last race. Winners deserve respect.
  */
-const MIN_FORM_SCORE_FOR_RECENT_WINNER = 5;
+const MIN_FORM_SCORE_FOR_RECENT_WINNER = 15;
 
 /**
  * Calculate form score for a horse
