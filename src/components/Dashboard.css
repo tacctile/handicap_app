@@ -4,7 +4,7 @@
 
 .app-layout {
   display: grid;
-  grid-template-columns: 1fr var(--betting-panel-width, 400px);
+  grid-template-columns: 1fr;
   grid-template-rows: 1fr;
   height: 100vh;
   width: 100vw;
@@ -15,17 +15,11 @@
     -apple-system,
     BlinkMacSystemFont,
     sans-serif;
-  transition: grid-template-columns var(--transition-normal);
-  will-change: grid-template-columns;
 }
 
-/* Betting panel collapse/expand states */
-.app-layout--betting-collapsed {
-  --betting-panel-width: var(--dimension-bar); /* 64px when collapsed */
-}
-
-.app-layout--betting-expanded {
-  --betting-panel-width: 400px;
+/* Full width layout (no betting panel) */
+.app-layout--full-width {
+  grid-template-columns: 1fr;
 }
 
 /* Left zone: contains top bar, race rail + main content, bottom bar */
@@ -681,6 +675,58 @@
 
 .app-bottombar__item--upload:disabled:hover {
   background: var(--color-primary);
+}
+
+/* BET MODE button - Primary action with prominent styling */
+.app-bottombar__item--bet-mode {
+  background: linear-gradient(135deg, var(--color-tier-elite) 0%, var(--color-success) 100%);
+  color: var(--color-base, #0a0a0b);
+  font-weight: 700;
+  padding: var(--gap-element) 16px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+  transition: all var(--transition-fast);
+}
+
+.app-bottombar__item--bet-mode:hover {
+  background: linear-gradient(135deg, var(--color-tier-elite) 0%, #16a34a 100%);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+  transform: translateY(-1px);
+  color: var(--color-base, #0a0a0b);
+}
+
+.app-bottombar__item--bet-mode:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
+}
+
+.app-bottombar__item--bet-mode:disabled {
+  background: var(--color-elevated);
+  color: var(--color-text-tertiary);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.app-bottombar__item--bet-mode:disabled:hover {
+  transform: none;
+  background: var(--color-elevated);
+}
+
+/* BET MODE button active state (when in bet mode) */
+.app-bottombar__item--bet-mode-active {
+  background: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(25, 171, 181, 0.3);
+}
+
+.app-bottombar__item--bet-mode-active:hover {
+  background: var(--color-primary-hover);
+  box-shadow: 0 4px 12px rgba(25, 171, 181, 0.4);
+}
+
+/* BET MODE icon styling */
+.app-bottombar__bet-icon {
+  font-size: 16px;
+  margin-right: 2px;
 }
 
 /* ============================================

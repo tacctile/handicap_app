@@ -1,0 +1,319 @@
+/**
+ * BetModeContainer Styles
+ *
+ * Full-screen bet mode interface styles.
+ * Matches the existing dark theme and design system.
+ */
+
+/* ============================================
+   BET MODE CONTAINER
+   ============================================ */
+
+.bet-mode-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--color-base, #0a0a0b);
+  animation: bet-mode-enter 200ms ease-out;
+}
+
+@keyframes bet-mode-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   BET MODE HEADER
+   ============================================ */
+
+.bet-mode-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: var(--color-card, #0f0f10);
+  border-bottom: 1px solid var(--color-border, #2a2a2c);
+  flex-shrink: 0;
+}
+
+.bet-mode-header__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bet-mode-header__icon {
+  font-size: 20px;
+}
+
+.bet-mode-header__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-primary, #19abb5);
+  letter-spacing: 0.05em;
+}
+
+.bet-mode-header__separator {
+  color: var(--color-text-tertiary, #6e6e70);
+}
+
+.bet-mode-header__race {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text-primary, #eeeff1);
+}
+
+.bet-mode-header__close-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--color-elevated, #1a1a1c);
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: var(--radius-md, 8px);
+  color: var(--color-text-secondary, #b4b4b6);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms ease);
+}
+
+.bet-mode-header__close-btn:hover {
+  background: var(--color-card, #0f0f10);
+  border-color: var(--color-border-prominent, #3a3a3c);
+  color: var(--color-text-primary, #eeeff1);
+}
+
+.bet-mode-header__close-btn:active {
+  transform: scale(0.98);
+}
+
+.bet-mode-header__close-btn .material-icons {
+  font-size: 18px;
+}
+
+/* ============================================
+   BET MODE CONTENT
+   ============================================ */
+
+.bet-mode-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* ============================================
+   PLACEHOLDER STATE
+   ============================================ */
+
+.bet-mode-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+}
+
+.bet-mode-placeholder__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.bet-mode-placeholder__icon {
+  font-size: 48px;
+}
+
+.bet-mode-placeholder__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-primary, #eeeff1);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.bet-mode-placeholder__subtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary, #b4b4b6);
+  margin: 0 0 24px 0;
+}
+
+/* Race info card */
+.bet-mode-placeholder__info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 20px;
+  background: var(--color-card, #0f0f10);
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: var(--radius-lg, 12px);
+  margin-bottom: 24px;
+}
+
+.bet-mode-placeholder__info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border, #2a2a2c);
+}
+
+.bet-mode-placeholder__info-row:last-child {
+  border-bottom: none;
+}
+
+.bet-mode-placeholder__info-row--highlight {
+  background: rgba(25, 171, 181, 0.05);
+  margin: 0 -16px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md, 8px);
+  border-bottom: none;
+}
+
+.bet-mode-placeholder__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-tertiary, #6e6e70);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.bet-mode-placeholder__value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary, #eeeff1);
+}
+
+.bet-mode-placeholder__verdict {
+  font-weight: 700;
+}
+
+.bet-mode-placeholder__horse-name {
+  color: var(--color-primary, #19abb5);
+}
+
+.bet-mode-placeholder__edge {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.bet-mode-placeholder__pass-message {
+  color: var(--color-text-secondary, #b4b4b6);
+  font-style: italic;
+}
+
+/* Back button */
+.bet-mode-placeholder__back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--color-primary, #19abb5);
+  border: none;
+  border-radius: var(--radius-md, 8px);
+  color: var(--color-base, #0a0a0b);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms ease);
+}
+
+.bet-mode-placeholder__back-btn:hover {
+  background: var(--color-primary-hover, #1992a1);
+}
+
+.bet-mode-placeholder__back-btn:active {
+  transform: scale(0.98);
+}
+
+.bet-mode-placeholder__back-btn .material-icons {
+  font-size: 18px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .bet-mode-header {
+    padding: 12px 16px;
+  }
+
+  .bet-mode-header__left {
+    gap: 8px;
+  }
+
+  .bet-mode-header__title {
+    font-size: 16px;
+  }
+
+  .bet-mode-header__race {
+    font-size: 14px;
+  }
+
+  .bet-mode-header__close-text {
+    display: none;
+  }
+
+  .bet-mode-header__close-btn {
+    padding: 8px;
+  }
+
+  .bet-mode-content {
+    padding: 16px;
+  }
+
+  .bet-mode-placeholder__title {
+    font-size: 20px;
+  }
+
+  .bet-mode-placeholder__info {
+    padding: 16px;
+  }
+
+  .bet-mode-placeholder__info-row--highlight {
+    margin: 0 -12px;
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bet-mode-header__separator,
+  .bet-mode-header__race {
+    display: none;
+  }
+
+  .bet-mode-placeholder__icon {
+    font-size: 36px;
+  }
+
+  .bet-mode-placeholder__title {
+    font-size: 18px;
+  }
+
+  .bet-mode-placeholder__label {
+    font-size: 12px;
+  }
+
+  .bet-mode-placeholder__value {
+    font-size: 13px;
+  }
+}
