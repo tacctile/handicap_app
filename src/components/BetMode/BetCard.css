@@ -1,0 +1,311 @@
+/**
+ * BetCard Styles
+ *
+ * Individual bet card display with all details
+ */
+
+/* ============================================
+   BET CARD
+   ============================================ */
+
+.bet-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: var(--color-card, #0f0f10);
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: var(--radius-lg, 12px);
+  overflow: hidden;
+}
+
+.bet-card--skip {
+  opacity: 0.6;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.bet-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+}
+
+.bet-card__title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.bet-card__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-tertiary, #6e6e70);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.bet-card__type {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary, #eeeff1);
+}
+
+.bet-card__cost {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-primary, #19abb5);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================
+   DIVIDER
+   ============================================ */
+
+.bet-card__divider {
+  height: 1px;
+  background: var(--color-border, #2a2a2c);
+  margin: 0 20px;
+}
+
+/* ============================================
+   INFO ROWS
+   ============================================ */
+
+.bet-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 20px;
+}
+
+.bet-card__row {
+  display: flex;
+  gap: 12px;
+}
+
+.bet-card__info-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-tertiary, #6e6e70);
+  white-space: nowrap;
+}
+
+.bet-card__info-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary, #eeeff1);
+}
+
+.bet-card__info-value--highlight {
+  color: var(--color-tier-good, #4ade80);
+}
+
+/* ============================================
+   WHAT TO SAY
+   ============================================ */
+
+.bet-card__what-to-say {
+  padding: 16px 20px;
+  border-top: 1px solid var(--color-border, #2a2a2c);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.bet-card__what-to-say-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.bet-card__what-to-say-icon {
+  font-size: 16px;
+}
+
+.bet-card__what-to-say-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-tertiary, #6e6e70);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bet-card__what-to-say-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--color-elevated, #1a1a1c);
+  border: 1px solid var(--color-border-prominent, #3a3a3c);
+  border-radius: var(--radius-md, 8px);
+}
+
+.bet-card__what-to-say-text {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary, #eeeff1);
+  font-style: italic;
+}
+
+.bet-card__copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 8px 12px;
+  background: var(--color-primary, #19abb5);
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  color: var(--color-base, #0a0a0b);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms ease);
+}
+
+.bet-card__copy-btn:hover {
+  background: var(--color-primary-hover, #1992a1);
+}
+
+.bet-card__copy-btn:active {
+  transform: scale(0.95);
+}
+
+.bet-card__copy-btn--copied {
+  background: var(--color-success, #10b981);
+}
+
+.bet-card__copy-btn .material-icons {
+  font-size: 14px;
+}
+
+.bet-card__copy-text {
+  display: none;
+}
+
+@media (min-width: 400px) {
+  .bet-card__copy-text {
+    display: inline;
+  }
+}
+
+/* ============================================
+   EXPLANATIONS
+   ============================================ */
+
+.bet-card__explanations {
+  padding: 0 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ============================================
+   SKIP CARD
+   ============================================ */
+
+.skip-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 16px 20px;
+  background: var(--color-card, #0f0f10);
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-left: 3px solid var(--color-warning, #f59e0b);
+  border-radius: var(--radius-md, 8px);
+}
+
+.skip-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.skip-card__icon {
+  font-size: 18px;
+}
+
+.skip-card__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary, #eeeff1);
+}
+
+.skip-card__toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary, #b4b4b6);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color var(--transition-fast, 150ms ease);
+}
+
+.skip-card__toggle:hover {
+  color: var(--color-primary, #19abb5);
+}
+
+.skip-card__toggle .material-icons {
+  font-size: 16px;
+}
+
+.skip-card__content {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border, #2a2a2c);
+}
+
+.skip-card__content p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text-secondary, #b4b4b6);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 480px) {
+  .bet-card__header {
+    padding: 14px 16px;
+  }
+
+  .bet-card__divider {
+    margin: 0 16px;
+  }
+
+  .bet-card__info {
+    padding: 14px 16px;
+  }
+
+  .bet-card__what-to-say {
+    padding: 14px 16px;
+  }
+
+  .bet-card__what-to-say-box {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .bet-card__copy-btn {
+    align-self: stretch;
+    justify-content: center;
+  }
+
+  .bet-card__explanations {
+    padding: 0 16px 14px;
+  }
+}
