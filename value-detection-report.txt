@@ -1,0 +1,636 @@
+================================================================================
+VALUE DETECTION SYSTEM REPORT
+Test Set: 12 tracks, 122 races
+Date: 2025-12-31T06:23:47.028Z
+Strategy: Find live longshots the public undervalues
+================================================================================
+
+EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+Races Analyzed:        122
+Races with Value Play: 91 (74.6%)
+Races to PASS:         31 (25.4%)
+
+Total Value Bets Identified: 131
+Value Bets that HIT:         17 (13.0%)
+================================================================================
+
+VALUE BET PERFORMANCE BY TYPE
+--------------------------------------------------------------------------------
+Bet Type      Bets    Hits    Hit%    Avg Odds    $2 Invested    Return      ROI
+--------------------------------------------------------------------------------
+WIN             36       0      0.0%      16.4-1    $        72    $    0.00    -100.0%
+PLACE           35       5     14.3%      13.6-1    $        70    $   75.00      +7.1%
+SHOW            47      10     21.3%      13.1-1    $        94    $   85.33      -9.2%
+TRIFECTA_KEY    13       2     15.4%      20.5-1    $        26    $  190.00    +630.8%
+--------------------------------------------------------------------------------
+TOTAL          131      17     13.0%          --    $       262    $  350.33     +33.7%
+================================================================================
+
+BEST VALUE PLAYS (Highest Edge that Hit)
+--------------------------------------------------------------------------------
+Race          Horse                    ML Odds    Model Rank    Edge      Result    Payout
+--------------------------------------------------------------------------------
+PRX R8        HIGHER SENSE           15.00    #3            +412%       2nd      $17.00 (P)
+SA R10        SPEEDY WILSON          15.00    #1            +330%       3rd      $12.00 (S)
+GP R7         RASHID                 20.00    #1            +323%       3rd      $15.33 (S)
+GP R8         BRAWN                  20.00    #3            +236%       3rd      $15.33 (S)
+PEN R4        BRACCESCA              10.00    #1            +189%       3rd      $8.67 (S)
+SA R9         HOUSE OF MISCHIEF      20.00    #3            +171%       2nd      $22.00 (P)
+SA R7         SUMTER                 20.00    #2            +170%       2nd      $22.00 (P)
+PRX R7        SILENT MODE            15.00    #2            +154%       2nd      $17.00 (P)
+AQU R10       FURRY FOX              20.00    #3            +136%       3rd      $15.33 (S)
+GP R4         DUNE ROAD              12.00    #3            +125%       2nd      $14.00 (P)
+================================================================================
+
+MISSED VALUE PLAYS (High Edge that Lost)
+--------------------------------------------------------------------------------
+Race          Horse                    ML Odds    Model Rank    Edge      Result
+--------------------------------------------------------------------------------
+GP R10        LETHAL SPEED           50.00    #4            +680%      DNF
+GP R9         CELESTIAL EXPRESS      50.00    #4            +558%      DNF
+GP R9         MIZOULA                30.00    #1            +524%      DNF
+SA R4         TUPELO                 30.00    #2            +519%      DNF
+PEN R4        TRIVISTA               30.00    #3            +508%      DNF
+GP R2         EL RABANO              30.00    #2            +424%      DNF
+PEN R7        DANCING CHIME          30.00    #2            +388%      DNF
+AQU R6        MO KREESA              20.00    #1            +382%      DNF
+PEN R4        TRIVISTA               30.00    #4            +336%      DNF
+GP R6         FOURTH DIMENSION       20.00    #3            +312%      4th
+================================================================================
+
+RACE-BY-RACE BREAKDOWN
+================================================================================
+
+TRACK: AQU (10 races)
+--------------------------------------------------------------------------------
+Race 1: 🟡 CAUTION
+   Value Play: BANK ON BEBE #2 at 20.00 (Edge: +280%)
+   Suggestion: WIN BET
+
+Race 2: 🟡 CAUTION
+   Value Play: LUNA MOTH #1 at 12.00 (Edge: +123%)
+   Suggestion: WIN BET
+
+Race 3: 🟡 CAUTION
+   Value Play: MARKET MAVEN #1 at 6.00 (Edge: +65%)
+   Suggestion: SHOW BET
+   Result: 3rd - Paid $6.00 (S) ✅
+
+Race 4: 🔴 PASS
+   Reason: No value plays identified
+
+Race 5: 🟡 CAUTION
+   Value Play: FREE SPIN #3 at 15.00 (Edge: +164%)
+   Suggestion: PLACE BET
+
+Race 6: 🟢 BET
+   Value Play: MO KREESA #1 at 20.00 (Edge: +382%)
+   Suggestion: WIN BET
+
+Race 7: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 8: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 9: 🟢 BET
+   Value Play: SMALLCHANGEGEEP #1 at 12.00 (Edge: +78%)
+   Suggestion: PLACE BET
+
+Race 10: 🟡 CAUTION
+   Value Play: FURRY FOX #3 at 20.00 (Edge: +136%)
+   Suggestion: SHOW BET
+   Result: 3rd - Paid $15.33 (S) ✅
+
+
+TRACK: DED (9 races)
+--------------------------------------------------------------------------------
+Race 1: 🟡 CAUTION
+   Value Play: ADAYINSPAIN #2 at 8.00 (Edge: +53%)
+   Suggestion: SHOW BET
+
+Race 2: 🟢 BET
+   Value Play: MO DIXIE DIVA #3 at 20.00 (Edge: +246%)
+   Suggestion: PLACE BET
+
+Race 3: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 4: 🟢 BET
+   Value Play: POLTERER #1 at 10.00 (Edge: +121%)
+   Suggestion: WIN BET
+   Result: 4th ❌
+
+Race 5: 🟢 BET
+   Value Play: LEE STREET #1 at 12.00 (Edge: +143%)
+   Suggestion: WIN BET
+
+Race 6: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 7: 🟡 CAUTION
+   Value Play: SUPREME CAPO #4 at 10.00 (Edge: +82%)
+   Suggestion: SHOW BET
+
+Race 8: 🟢 BET
+   Value Play: THE BOSS SOSS #1 at 10.00 (Edge: +97%)
+   Suggestion: PLACE BET
+   Result: 3rd - Paid $8.67 (S) ✅
+
+Race 9: 🟡 CAUTION
+   Value Play: LIVE AFFAIR #2 at 15.00 (Edge: +78%)
+   Suggestion: PLACE BET
+
+
+TRACK: FG (8 races)
+--------------------------------------------------------------------------------
+Race 1: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 2: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 3: 🟢 BET
+   Value Play: DELIGHTFUL HALO #1 at 12.00 (Edge: +95%)
+   Suggestion: PLACE BET
+
+Race 4: 🟡 CAUTION
+   Value Play: SUMMER SPLASH #3 at 8.00 (Edge: +50%)
+   Suggestion: SHOW BET
+
+Race 5: 🟡 CAUTION
+   Value Play: TANGO MIKE MIKE #3 at 20.00 (Edge: +167%)
+   Suggestion: SHOW BET
+
+Race 6: 🟡 CAUTION
+   Value Play: HARD TO FATHOM #2 at 15.00 (Edge: +150%)
+   Suggestion: WIN BET
+
+Race 7: 🟡 CAUTION
+   Value Play: JOCASTA #1 at 15.00 (Edge: +160%)
+   Suggestion: WIN BET
+
+Race 8: 🟡 CAUTION
+   Value Play: ALEXAPLAYBORNTORUN #3 at 15.00 (Edge: +126%)
+   Suggestion: PLACE BET
+
+
+TRACK: GP (20 races)
+--------------------------------------------------------------------------------
+Race 1: 🟡 CAUTION
+   Value Play: PAN PAN #1 at 10.00 (Edge: +73%)
+   Suggestion: SHOW BET
+   Result: 4th ❌
+
+Race 1: 🔴 PASS
+   Reason: No value plays identified
+
+Race 2: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 2: 🟡 CAUTION
+   Value Play: EL RABANO #2 at 30.00 (Edge: +424%)
+   Suggestion: WIN BET
+
+Race 3: 🟡 CAUTION
+   Value Play: TITAN #4 at 20.00 (Edge: +263%)
+   Suggestion: SHOW BET
+
+Race 3: 🟡 CAUTION
+   Value Play: BRODERICK #2 at 8.00 (Edge: +51%)
+   Suggestion: SHOW BET
+
+Race 4: 🟡 CAUTION
+   Value Play: GOLDIE GLORY #1 at 10.00 (Edge: +89%)
+   Suggestion: PLACE BET
+
+Race 4: 🟢 BET
+   Value Play: DUNE ROAD #3 at 12.00 (Edge: +125%)
+   Suggestion: PLACE BET
+   Result: 2nd - Paid $14.00 (P) ✅
+
+Race 5: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 5: 🟢 BET
+   Value Play: VINO SANTO #1 at 15.00 (Edge: +139%)
+   Suggestion: WIN BET
+
+Race 6: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 6: 🟢 BET
+   Value Play: FOURTH DIMENSION #3 at 20.00 (Edge: +312%)
+   Suggestion: PLACE BET
+   Result: 4th ❌
+
+Race 7: 🟢 BET
+   Value Play: RASHID #1 at 20.00 (Edge: +323%)
+   Suggestion: WIN BET
+   Result: 3rd - Paid $15.33 (S) ✅
+
+Race 7: 🟢 BET
+   Value Play: ICE CHOCOLAT #1 at 12.00 (Edge: +95%)
+   Suggestion: PLACE BET
+
+Race 8: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 8: 🟢 BET
+   Value Play: BRAWN #3 at 20.00 (Edge: +236%)
+   Suggestion: PLACE BET
+   Result: 3rd - Paid $15.33 (S) ✅
+
+Race 9: 🟡 CAUTION
+   Value Play: CELESTIAL EXPRESS #4 at 50.00 (Edge: +558%)
+   Suggestion: SHOW BET
+
+Race 9: 🟡 CAUTION
+   Value Play: MIZOULA #1 at 30.00 (Edge: +524%)
+   Suggestion: WIN BET
+
+Race 10: 🟡 CAUTION
+   Value Play: LETHAL SPEED #4 at 50.00 (Edge: +680%)
+   Suggestion: SHOW BET
+
+Race 11: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+
+TRACK: PEN (27 races)
+--------------------------------------------------------------------------------
+Race 1: 🟢 BET
+   Value Play: FREE DROP BACH #1 at 8.00 (Edge: +162%)
+   Suggestion: WIN BET
+   Result: 4th ❌
+
+Race 1: 🟡 CAUTION
+   Value Play: AIR FORCE SUE #2 at 10.00 (Edge: +209%)
+   Suggestion: WIN BET
+
+Race 1: 🟢 BET
+   Value Play: AIR FORCE SUE #3 at 10.00 (Edge: +132%)
+   Suggestion: PLACE BET
+
+Race 2: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 2: 🟢 BET
+   Value Play: CINDY'S SONG #3 at 12.00 (Edge: +127%)
+   Suggestion: PLACE BET
+
+Race 2: 🟢 BET
+   Value Play: CINDY'S SONG #3 at 12.00 (Edge: +127%)
+   Suggestion: PLACE BET
+
+Race 3: 🟢 BET
+   Value Play: JACK SLYE #2 at 15.00 (Edge: +110%)
+   Suggestion: WIN BET
+
+Race 3: 🟢 BET
+   Value Play: LIVING WATER #4 at 30.00 (Edge: +234%)
+   Suggestion: TRIFECTA_KEY BET
+
+Race 3: 🔴 PASS
+   Reason: No value plays identified
+
+Race 4: 🟡 CAUTION
+   Value Play: FASHIONISTA #4 at 12.00 (Edge: +204%)
+   Suggestion: SHOW BET
+   Result: 4th ❌
+
+Race 4: 🟡 CAUTION
+   Value Play: TRIVISTA #3 at 30.00 (Edge: +508%)
+   Suggestion: PLACE BET
+
+Race 4: 🟡 CAUTION
+   Value Play: TRIVISTA #4 at 30.00 (Edge: +336%)
+   Suggestion: TRIFECTA_KEY BET
+
+Race 5: 🟡 CAUTION
+   Value Play: CALI HEAT #2 at 6.00 (Edge: +78%)
+   Suggestion: PLACE BET
+   Result: WON - Paid $14.00 ✅
+
+Race 5: 🟡 CAUTION
+   Value Play: RENEWING VOWS #2 at 6.00 (Edge: +60%)
+   Suggestion: SHOW BET
+   Result: 2nd - Paid $8.00 (P) ✅
+
+Race 5: 🟡 CAUTION
+   Value Play: MO SAYS #3 at 10.00 (Edge: +86%)
+   Suggestion: SHOW BET
+
+Race 6: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 6: 🟡 CAUTION
+   Value Play: HAZEDNCONFUSED #4 at 12.00 (Edge: +85%)
+   Suggestion: SHOW BET
+
+Race 6: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 7: 🟡 CAUTION
+   Value Play: DANCING CHIME #2 at 30.00 (Edge: +388%)
+   Suggestion: WIN BET
+
+Race 7: 🟡 CAUTION
+   Value Play: MY DETROIT CITY #1 at 8.00 (Edge: +64%)
+   Suggestion: SHOW BET
+   Result: WON - Paid $18.00 ✅
+
+Race 7: 🟡 CAUTION
+   Value Play: MY DETROIT CITY #1 at 8.00 (Edge: +50%)
+   Suggestion: SHOW BET
+
+Race 8: 🟢 BET
+   Value Play: LETSGETLUCKYTONITE #1 at 8.00 (Edge: +105%)
+   Suggestion: WIN BET
+   Result: 2nd - Paid $10.00 (P) ✅
+
+Race 8: 🟡 CAUTION
+   Value Play: LETSGETLUCKYTONITE #1 at 8.00 (Edge: +70%)
+   Suggestion: SHOW BET
+
+Race 9: 🟡 CAUTION
+   Value Play: STYLE TO FOLLOW #1 at 6.00 (Edge: +55%)
+   Suggestion: SHOW BET
+
+Race 9: 🔴 PASS
+   Reason: No value plays identified
+
+Race 10: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 10: 🟡 CAUTION
+   Value Play: PURECRAZIGROOVE #3 at 15.00 (Edge: +84%)
+   Suggestion: SHOW BET
+
+
+TRACK: PRX (20 races)
+--------------------------------------------------------------------------------
+Race 1: 🔴 PASS
+   Reason: No value plays identified
+
+Race 1: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 2: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 2: 🟢 BET
+   Value Play: AMORE D'ORO #3 at 15.00 (Edge: +122%)
+   Suggestion: PLACE BET
+
+Race 3: 🟡 CAUTION
+   Value Play: ZEENA SWIFT #3 at 10.00 (Edge: +70%)
+   Suggestion: SHOW BET
+   Result: 4th ❌
+
+Race 3: 🟢 BET
+   Value Play: CELESTIAL SPEED #1 at 10.00 (Edge: +86%)
+   Suggestion: PLACE BET
+
+Race 4: 🟡 CAUTION
+   Value Play: DRUNKLE #4 at 12.00 (Edge: +111%)
+   Suggestion: SHOW BET
+
+Race 4: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 5: 🟢 BET
+   Value Play: THOMAS BENJAMIN #3 at 15.00 (Edge: +122%)
+   Suggestion: PLACE BET
+
+Race 5: 🔴 PASS
+   Reason: No value plays identified
+
+Race 6: 🟢 BET
+   Value Play: EXTREMELY GRUNTLED #1 at 20.00 (Edge: +171%)
+   Suggestion: WIN BET
+
+Race 6: 🟢 BET
+   Value Play: RESEARCH TRIANGLE #4 at 8.00 (Edge: +75%)
+   Suggestion: SHOW BET
+
+Race 7: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 7: 🟡 CAUTION
+   Value Play: SILENT MODE #2 at 15.00 (Edge: +154%)
+   Suggestion: WIN BET
+   Result: 2nd - Paid $17.00 (P) ✅
+
+Race 8: 🟢 BET
+   Value Play: CAHVARI #4 at 20.00 (Edge: +210%)
+   Suggestion: SHOW BET
+
+Race 8: 🟢 BET
+   Value Play: HIGHER SENSE #3 at 15.00 (Edge: +412%)
+   Suggestion: PLACE BET
+   Result: 2nd - Paid $17.00 (P) ✅
+
+Race 9: 🟡 CAUTION
+   Value Play: TAP DANCIN COWGIRL #1 at 10.00 (Edge: +71%)
+   Suggestion: SHOW BET
+   Result: 2nd - Paid $12.00 (P) ✅
+
+Race 9: 🟡 CAUTION
+   Value Play: MOON HALORY #4 at 20.00 (Edge: +218%)
+   Suggestion: SHOW BET
+
+Race 10: 🔴 PASS
+   Reason: No value plays identified
+
+Race 10: 🟡 CAUTION
+   Value Play: CHIP'S FRIEND #4 at 20.00 (Edge: +126%)
+   Suggestion: TRIFECTA_KEY BET
+
+
+TRACK: SA (20 races)
+--------------------------------------------------------------------------------
+Race 1: 🟢 BET
+   Value Play: PHOTOGENIC #4 at 30.00 (Edge: +191%)
+   Suggestion: TRIFECTA_KEY BET
+
+Race 1: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 2: 🟡 CAUTION
+   Value Play: PLAGARIST #2 at 10.00 (Edge: +132%)
+   Suggestion: WIN BET
+
+Race 2: 🟢 BET
+   Value Play: GOGOTIZ #3 at 20.00 (Edge: +299%)
+   Suggestion: PLACE BET
+
+Race 3: 🟡 CAUTION
+   Value Play: ROYAL CHARTER #3 at 12.00 (Edge: +71%)
+   Suggestion: SHOW BET
+   Result: 4th ❌
+
+Race 3: 🟢 BET
+   Value Play: TOTAL VAL #4 at 15.00 (Edge: +175%)
+   Suggestion: SHOW BET
+
+Race 4: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 4: 🟢 BET
+   Value Play: TUPELO #2 at 30.00 (Edge: +519%)
+   Suggestion: WIN BET
+
+Race 5: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 5: 🟡 CAUTION
+   Value Play: SPEARFISH #3 at 15.00 (Edge: +143%)
+   Suggestion: PLACE BET
+
+Race 6: 🟢 BET
+   Value Play: INDISPENSABLE #2 at 8.00 (Edge: +138%)
+   Suggestion: WIN BET
+
+Race 6: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 7: 🟢 BET
+   Value Play: I'MGONNABESOMEBODY #2 at 15.00 (Edge: +138%)
+   Suggestion: WIN BET
+
+Race 7: 🟢 BET
+   Value Play: SUMTER #2 at 20.00 (Edge: +170%)
+   Suggestion: WIN BET
+   Result: 2nd - Paid $22.00 (P) ✅
+
+Race 8: 🟡 CAUTION
+   Value Play: ARTISMA #4 at 15.00 (Edge: +69%)
+   Suggestion: TRIFECTA_KEY BET
+
+Race 8: 🟢 BET
+   Value Play: THE GYPSY COWBOY #1 at 15.00 (Edge: +156%)
+   Suggestion: WIN BET
+
+Race 9: 🟢 BET
+   Value Play: FLASHIEST #4 at 20.00 (Edge: +131%)
+   Suggestion: SHOW BET
+
+Race 9: 🟢 BET
+   Value Play: SAHARIAN #4 at 30.00 (Edge: +250%)
+   Suggestion: TRIFECTA_KEY BET
+
+Race 10: 🟢 BET
+   Value Play: SPEEDY WILSON #1 at 15.00 (Edge: +330%)
+   Suggestion: WIN BET
+   Result: 3rd - Paid $12.00 (S) ✅
+
+Race 11: 🟡 CAUTION
+   Value Play: SLICK #2 at 20.00 (Edge: +180%)
+   Suggestion: WIN BET
+
+
+TRACK: TUP (8 races)
+--------------------------------------------------------------------------------
+Race 1: 🟡 CAUTION
+   Value Play: MAGIC KING CORONA #1 at 8.00 (Edge: +80%)
+   Suggestion: PLACE BET
+   Result: 4th ❌
+
+Race 2: 🟡 CAUTION
+   Value Play: FAST CAPTAIN SHANA #2 at 12.00 (Edge: +68%)
+   Suggestion: SHOW BET
+   Result: 2nd - Paid $14.00 (P) ✅
+
+Race 3: 🟡 CAUTION
+   Value Play: ITS PALADIN TIME #2 at 15.00 (Edge: +116%)
+   Suggestion: WIN BET
+
+Race 4: 🟡 CAUTION
+   Value Play: YOU'RE THE CAUSE #1 at 15.00 (Edge: +158%)
+   Suggestion: WIN BET
+
+Race 5: 🔴 PASS
+   Reason: All contenders are chalk (top 4 all under 6-1)
+
+Race 6: 🟡 CAUTION
+   Value Play: SHAUN'S JAZZ #1 at 20.00 (Edge: +161%)
+   Suggestion: WIN BET
+
+Race 7: 🟡 CAUTION
+   Value Play: PEPPER JACK #2 at 15.00 (Edge: +79%)
+   Suggestion: PLACE BET
+
+Race 8: 🟡 CAUTION
+   Value Play: HACKSAW MOUNTAIN #3 at 20.00 (Edge: +137%)
+   Suggestion: SHOW BET
+
+================================================================================
+
+LIVE LONGSHOT PROFILE
+--------------------------------------------------------------------------------
+                        Value Plays that HIT    Value Plays that MISSED
+                        --------------------    -----------------------
+Avg Model Rank              #2.1                    #2.4
+Avg Score                   214 pts                 208 pts
+Avg ML Odds                 12.3-1                    15.5-1
+Avg Edge                    +131%                   +155%
+% with Class Drop           0%                     0%
+% Won Last Out              44%                     33%
+Avg Days Since Race         20251100 days                20251100 days
+
+KEY INSIGHT: Value plays that hit tend to be ranked HIGHER (avg #2.1 vs #2.4). Recent winners hit more often.
+================================================================================
+
+CONFIDENCE LEVEL ANALYSIS
+--------------------------------------------------------------------------------
+                Races    Value Hits    Hit Rate    ROI
+--------------------------------------------------------------------------------
+HIGH               38            12         23%       +35%
+MEDIUM             53            15         19%       -14%
+LOW                31             0          0%        +0%
+
+INSIGHT: Confidence level shows moderate correlation with success.
+================================================================================
+
+RECOMMENDATIONS
+================================================================================
+
+BETTING STRATEGY:
+   Best performing bet type: TRIFECTA_KEY (+630.8% ROI)
+
+RACE SELECTION:
+   Bet 75% of races (91 of 122)
+   Pass on races where all contenders are chalk or no clear value exists.
+
+EDGE THRESHOLD:
+   Minimum edge to bet: 50%
+   Optimal edge for high confidence: 75%+
+
+OPTIMAL BET TYPE BY SCENARIO:
+   WIN BET: Value horse ranked #1-2 with 100%+ edge
+   PLACE BET: Value horse ranked #2-3 with 75%+ edge, 60%+ Top 3 prob
+   SHOW BET: Value horse ranked #3-4 with 50%+ edge, 50%+ Top 3 prob
+   EXOTIC: Use value horses as keys in trifectas when odds are 8-1+
+================================================================================
+
+THE BOTTOM LINE
+================================================================================
+
+If you had bet $2 on every flagged value play:
+   Investment:     $262
+   Return:         $350.33
+   Net Profit:     $88.33
+   ROI:            +33.7%
+
+Compared to betting the favorite (our #1 pick) to WIN every race:
+   Investment:     $224
+   Return:         $115.00
+   Hit Rate:       11.5%
+   ROI:            -48.7%
+
+🎯 VALUE BETTING OUTPERFORMS CHALK BY 82.4 PERCENTAGE POINTS!
+================================================================================
+Report generated: 2025-12-31T06:23:47.031Z
+================================================================================
