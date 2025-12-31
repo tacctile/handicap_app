@@ -1,0 +1,951 @@
+/* ============================================================================
+   LiveViewer Component Styles
+   ============================================================================ */
+
+/* ============================================================================
+   Layout
+   ============================================================================ */
+
+.viewer-layout {
+  min-height: 100vh;
+  background: var(--color-background, #0a0a0b);
+  color: var(--color-text-primary, #fff);
+}
+
+.viewer-layout--loading,
+.viewer-layout--error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewer-layout__loading {
+  text-align: center;
+}
+
+.viewer-layout__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-border, #2a2a2c);
+  border-top-color: var(--color-accent, #19abb5);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error state */
+.viewer-layout__error-content {
+  text-align: center;
+  padding: 40px 20px;
+  max-width: 400px;
+}
+
+.viewer-layout__error-icon {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.viewer-layout__error-content h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.viewer-layout__error-content p {
+  color: var(--color-text-secondary, #888);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.viewer-layout__error-hint {
+  font-size: 13px;
+  color: var(--color-text-tertiary, #666);
+}
+
+.viewer-layout__error-btn {
+  margin-top: 24px;
+  padding: 14px 24px;
+  background: var(--color-accent, #19abb5);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewer-layout__error-btn:hover {
+  background: var(--color-accent-hover, #15959e);
+}
+
+/* Header */
+.viewer-layout__header {
+  background: var(--color-surface, #1a1a1c);
+  border-bottom: 1px solid var(--color-border, #2a2a2c);
+  padding: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.viewer-layout__header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.viewer-layout__header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.viewer-layout__icon {
+  font-size: 24px;
+}
+
+.viewer-layout__title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.viewer-layout__title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.viewer-layout__subtitle {
+  font-size: 13px;
+  color: var(--color-text-secondary, #888);
+}
+
+.viewer-layout__live-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 20px;
+  color: #22c55e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.viewer-layout__live-dot {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.viewer-layout__header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--color-text-secondary, #888);
+}
+
+.viewer-layout__content {
+  padding: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ============================================================================
+   Race List
+   ============================================================================ */
+
+.viewer-race-list__section {
+  margin-bottom: 24px;
+}
+
+.viewer-race-list__section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #888);
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.viewer-race-list__races,
+.viewer-race-list__multi-races {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.viewer-race-list__race-row,
+.viewer-race-list__multi-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--color-surface, #1a1a1c);
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.viewer-race-list__race-row:hover,
+.viewer-race-list__multi-row:hover {
+  background: var(--color-surface-hover, #242426);
+  border-color: var(--color-border-hover, #3a3a3c);
+}
+
+.viewer-race-list__race-number {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-accent, #19abb5);
+  min-width: 32px;
+}
+
+.viewer-race-list__race-verdict {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 80px;
+}
+
+.viewer-race-list__verdict-emoji {
+  font-size: 14px;
+}
+
+.viewer-race-list__verdict-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.viewer-race-list__race-value {
+  flex: 1;
+  min-width: 0;
+}
+
+.viewer-race-list__value-horse {
+  font-size: 13px;
+  color: var(--color-text-primary, #fff);
+  margin-right: 6px;
+}
+
+.viewer-race-list__value-odds {
+  font-size: 12px;
+  color: var(--color-text-secondary, #888);
+}
+
+.viewer-race-list__no-value {
+  font-size: 12px;
+  color: var(--color-text-tertiary, #666);
+  font-style: italic;
+}
+
+.viewer-race-list__race-edge {
+  min-width: 50px;
+  text-align: right;
+}
+
+.viewer-race-list__edge-value {
+  font-size: 13px;
+  color: var(--color-text-secondary, #888);
+}
+
+.viewer-race-list__edge-value--high {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.viewer-race-list__edge-dash {
+  color: var(--color-text-tertiary, #666);
+}
+
+.viewer-race-list__race-arrow {
+  color: var(--color-text-tertiary, #666);
+}
+
+.viewer-race-list__race-arrow .material-icons {
+  font-size: 20px;
+}
+
+/* Multi-race rows */
+.viewer-race-list__multi-quality {
+  font-size: 16px;
+}
+
+.viewer-race-list__multi-info {
+  flex: 1;
+}
+
+.viewer-race-list__multi-type {
+  font-size: 14px;
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.viewer-race-list__multi-races-range {
+  font-size: 12px;
+  color: var(--color-text-secondary, #888);
+}
+
+.viewer-race-list__multi-cost {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-accent, #19abb5);
+}
+
+.viewer-race-list__multi-potential {
+  font-size: 12px;
+  color: var(--color-text-secondary, #888);
+}
+
+.viewer-race-list__empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--color-text-secondary, #888);
+  font-size: 14px;
+}
+
+.viewer-race-list__tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--color-surface, #1a1a1c);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--color-text-secondary, #888);
+}
+
+.viewer-race-list__tip-icon {
+  font-size: 16px;
+}
+
+/* ============================================================================
+   Race Detail
+   ============================================================================ */
+
+.viewer-race-detail {
+  padding-bottom: 24px;
+}
+
+.viewer-race-detail__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.viewer-race-detail__back-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: 6px;
+  color: var(--color-text-primary, #fff);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.viewer-race-detail__back-btn:hover {
+  background: var(--color-surface, #1a1a1c);
+}
+
+.viewer-race-detail__back-btn .material-icons {
+  font-size: 18px;
+}
+
+.viewer-race-detail__title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Verdict banner */
+.viewer-race-detail__verdict {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.viewer-race-detail__verdict--bet {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.viewer-race-detail__verdict--caution {
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.viewer-race-detail__verdict--pass {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.viewer-race-detail__verdict-emoji {
+  font-size: 18px;
+}
+
+.viewer-race-detail__verdict-text {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.viewer-race-detail__confidence {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-text-secondary, #888);
+  text-transform: lowercase;
+}
+
+/* Value play */
+.viewer-race-detail__value-play {
+  padding: 16px;
+  background: var(--color-surface, #1a1a1c);
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.viewer-race-detail__value-play-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #888);
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.viewer-race-detail__value-play-horse {
+  font-size: 18px;
+  font-weight: 700;
+  color: #22c55e;
+  margin-bottom: 8px;
+}
+
+.viewer-race-detail__value-play-info {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--color-text-secondary, #888);
+}
+
+/* Budget */
+.viewer-race-detail__budget {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--color-surface, #1a1a1c);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.viewer-race-detail__budget-label {
+  font-size: 13px;
+  color: var(--color-text-secondary, #888);
+}
+
+.viewer-race-detail__budget-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-accent, #19abb5);
+}
+
+/* Bet cards */
+.viewer-race-detail__bets {
+  margin-bottom: 20px;
+}
+
+.viewer-race-detail__bets-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #888);
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.viewer-race-detail__bet-card {
+  padding: 16px;
+  background: var(--color-surface, #1a1a1c);
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.viewer-race-detail__bet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.viewer-race-detail__bet-type {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.viewer-race-detail__bet-amount {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-accent, #19abb5);
+}
+
+.viewer-race-detail__what-to-say {
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border, #2a2a2c);
+}
+
+.viewer-race-detail__what-to-say-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-tertiary, #666);
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.viewer-race-detail__what-to-say-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--color-surface-elevated, #2a2a2c);
+  border-radius: 8px;
+}
+
+.viewer-race-detail__what-to-say-text {
+  flex: 1;
+  font-size: 14px;
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  color: var(--color-text-primary, #fff);
+}
+
+.viewer-race-detail__copy-btn {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--color-text-secondary, #888);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.viewer-race-detail__copy-btn:hover {
+  background: var(--color-surface-hover, #3a3a3c);
+  color: var(--color-text-primary, #fff);
+}
+
+.viewer-race-detail__copy-btn--copied {
+  color: #22c55e;
+}
+
+/* Horses */
+.viewer-race-detail__horses {
+  margin-bottom: 20px;
+}
+
+.viewer-race-detail__horses-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #888);
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.viewer-race-detail__horse-list {
+  background: var(--color-surface, #1a1a1c);
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.viewer-race-detail__horse-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border, #2a2a2c);
+}
+
+.viewer-race-detail__horse-row:last-child {
+  border-bottom: none;
+}
+
+.viewer-race-detail__horse-row--scratched {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.viewer-race-detail__horse-row--overlay {
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.viewer-race-detail__horse-post {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent, #19abb5);
+  min-width: 32px;
+}
+
+.viewer-race-detail__horse-name {
+  flex: 1;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.viewer-race-detail__scratched-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.viewer-race-detail__horse-odds {
+  font-size: 13px;
+  color: var(--color-text-secondary, #888);
+  min-width: 50px;
+  text-align: right;
+}
+
+.viewer-race-detail__horse-edge {
+  font-size: 12px;
+  color: var(--color-text-secondary, #888);
+  min-width: 45px;
+  text-align: right;
+}
+
+.viewer-race-detail__horse-edge--high {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.viewer-race-detail__updated {
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-tertiary, #666);
+  padding: 12px;
+}
+
+/* ============================================================================
+   Multi-Race Detail
+   ============================================================================ */
+
+.viewer-multi-race {
+  padding-bottom: 24px;
+}
+
+.viewer-multi-race__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.viewer-multi-race__back-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: 6px;
+  color: var(--color-text-primary, #fff);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.viewer-multi-race__back-btn:hover {
+  background: var(--color-surface, #1a1a1c);
+}
+
+.viewer-multi-race__back-btn .material-icons {
+  font-size: 18px;
+}
+
+.viewer-multi-race__title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Quality badge */
+.viewer-multi-race__quality {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.viewer-multi-race__quality--prime {
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  color: #eab308;
+}
+
+.viewer-multi-race__quality--good {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #22c55e;
+}
+
+.viewer-multi-race__quality--marginal {
+  background: var(--color-surface, #1a1a1c);
+  border: 1px solid var(--color-border, #2a2a2c);
+  color: var(--color-text-secondary, #888);
+}
+
+.viewer-multi-race__quality-emoji {
+  font-size: 16px;
+}
+
+.viewer-multi-race__quality-text {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.viewer-multi-race__range {
+  font-size: 13px;
+  color: var(--color-text-secondary, #888);
+  margin-bottom: 16px;
+}
+
+/* Stats */
+.viewer-multi-race__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.viewer-multi-race__stat {
+  padding: 12px 16px;
+  background: var(--color-surface, #1a1a1c);
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: 8px;
+  flex: 1;
+  min-width: 100px;
+}
+
+.viewer-multi-race__stat--potential {
+  flex-basis: 100%;
+}
+
+.viewer-multi-race__stat-label {
+  display: block;
+  font-size: 11px;
+  color: var(--color-text-tertiary, #666);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.viewer-multi-race__stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary, #fff);
+}
+
+.viewer-multi-race__stat--potential .viewer-multi-race__stat-value {
+  color: #22c55e;
+}
+
+/* Legs */
+.viewer-multi-race__legs {
+  margin-bottom: 20px;
+}
+
+.viewer-multi-race__legs-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #888);
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.viewer-multi-race__leg {
+  padding: 14px 16px;
+  background: var(--color-surface, #1a1a1c);
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.viewer-multi-race__leg-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.viewer-multi-race__leg-race {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-accent, #19abb5);
+}
+
+.viewer-multi-race__leg-verdict {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.viewer-multi-race__leg-verdict--bet {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.viewer-multi-race__leg-verdict--caution {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+}
+
+.viewer-multi-race__leg-verdict--pass {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.viewer-multi-race__leg-horses {
+  font-size: 14px;
+  color: var(--color-text-primary, #fff);
+  line-height: 1.5;
+}
+
+.viewer-multi-race__leg-horse {
+  color: inherit;
+}
+
+/* What to say */
+.viewer-multi-race__what-to-say {
+  padding: 16px;
+  background: var(--color-surface, #1a1a1c);
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: 10px;
+}
+
+.viewer-multi-race__what-to-say-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-tertiary, #666);
+  margin-bottom: 10px;
+  letter-spacing: 0.5px;
+}
+
+.viewer-multi-race__what-to-say-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: var(--color-surface-elevated, #2a2a2c);
+  border-radius: 8px;
+}
+
+.viewer-multi-race__what-to-say-text {
+  font-size: 14px;
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  color: var(--color-text-primary, #fff);
+  line-height: 1.5;
+}
+
+.viewer-multi-race__copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: var(--color-accent, #19abb5);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.viewer-multi-race__copy-btn:hover {
+  background: var(--color-accent-hover, #15959e);
+}
+
+.viewer-multi-race__copy-btn--copied {
+  background: #22c55e;
+}
+
+.viewer-multi-race__copy-btn .material-icons {
+  font-size: 18px;
+}
+
+/* ============================================================================
+   Responsive
+   ============================================================================ */
+
+@media (max-width: 480px) {
+  .viewer-layout__header {
+    padding: 12px 16px;
+  }
+
+  .viewer-layout__title {
+    font-size: 16px;
+  }
+
+  .viewer-layout__content {
+    padding: 12px;
+  }
+
+  .viewer-race-list__race-row,
+  .viewer-race-list__multi-row {
+    padding: 12px;
+  }
+
+  .viewer-race-detail__header,
+  .viewer-multi-race__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .viewer-multi-race__stats {
+    flex-direction: column;
+  }
+
+  .viewer-multi-race__stat {
+    min-width: auto;
+  }
+}

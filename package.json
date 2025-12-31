@@ -25,6 +25,7 @@
     "value:detect": "npx tsx scripts/value-detector.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.89.0",
     "@testing-library/dom": "^10.4.1",
     "framer-motion": "^12.23.26",
     "material-icons": "^1.13.14",
