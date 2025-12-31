@@ -823,6 +823,14 @@ function parseRaceClassification(typeCode: string, conditions: string): RaceClas
   if (condLower.includes('maiden')) {
     return 'maiden';
   }
+  // v3.4: Check for "Md" abbreviation (e.g., "Md 12500" = Maiden Claiming $12,500)
+  // This catches common DRF formats like "Md 12500", "Md 25000", etc.
+  if (/\bmd\s*\d/.test(condLower)) {
+    return 'maiden-claiming';
+  }
+  if (condLower.startsWith('md ') || condLower === 'md') {
+    return 'maiden';
+  }
 
   // Check for claiming
   if (code === 'CLM' || code === 'C' || condLower.includes('claiming')) {
