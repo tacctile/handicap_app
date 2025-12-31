@@ -17,7 +17,7 @@ import { allocateDayBudget } from '../../lib/betting/allocateDayBudget';
 import { analyzeRaceValue } from '../../hooks/useValueDetection';
 import { generateCompleteTicket } from '../../lib/betting/whatToSay';
 import type { RiskStyle, BetCalculationResult, SingleBet } from '../../lib/betting/betTypes';
-import type { RaceAllocation } from '../../lib/betting/daySession';
+import type { RaceAllocation } from '../../lib/betting/allocateDayBudget';
 import type { ParsedRace } from '../../types/drf';
 import type { RaceValueAnalysis } from '../../hooks/useValueDetection';
 import type { ScoredHorse } from '../../lib/scoring';

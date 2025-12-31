@@ -5,8 +5,8 @@
  * Allows quick navigation between races while staying in bet mode.
  */
 
-import React, { useState } from 'react';
-import type { RaceAllocation } from '../../lib/betting/daySession';
+import React from 'react';
+import type { RaceAllocation } from '../../lib/betting/allocateDayBudget';
 import './RaceNavigation.css';
 
 interface RaceNavigationProps {
@@ -35,7 +35,6 @@ export const RaceNavigation: React.FC<RaceNavigationProps> = ({
   raceAllocations,
   completedRaces = [],
 }) => {
-  const [scrollPosition, setScrollPosition] = useState(0);
 
   // Get verdict for a race (if allocations provided)
   const getVerdictClass = (raceNum: number): string => {
@@ -56,7 +55,6 @@ export const RaceNavigation: React.FC<RaceNavigationProps> = ({
     if (container) {
       const scrollAmount = direction === 'left' ? -150 : 150;
       container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-      setScrollPosition(container.scrollLeft + scrollAmount);
     }
   };
 

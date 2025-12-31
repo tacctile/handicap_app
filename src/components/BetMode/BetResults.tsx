@@ -8,7 +8,7 @@
  * Mobile: Single column, bets first.
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { BetCard, SkipCard } from './BetCard';
 import type { BetCalculationResult } from '../../lib/betting/calculateBets';
 import type { RiskStyle, SingleBet } from '../../lib/betting/betTypes';
@@ -42,8 +42,8 @@ interface BetResultsProps {
 
 export const BetResults: React.FC<BetResultsProps> = ({
   result,
-  raceNumber,
-  trackName,
+  raceNumber: _raceNumber,
+  trackName: _trackName,
   budget,
   riskStyle: _riskStyle,
   onChangeOptions: _onChangeOptions,
@@ -87,7 +87,9 @@ export const BetResults: React.FC<BetResultsProps> = ({
               <div className="bet-results__odds-compare">
                 <span className="bet-results__current-odds">{result.valuePlay.currentOdds}</span>
                 <span className="bet-results__odds-arrow">→</span>
-                <span className="bet-results__fair-odds">{result.valuePlay.fairOdds} Fair</span>
+                <span className="bet-results__fair-odds">
+                  {Math.round((100 / result.valuePlay.modelWinProb) - 1)}-1 Fair
+                </span>
               </div>
 
               <div className="bet-results__edge-display">
@@ -112,16 +114,16 @@ export const BetResults: React.FC<BetResultsProps> = ({
               </div>
 
               <p className="bet-results__value-reason">
-                "Ranked #{valueAnalysis?.primaryValuePlay?.horseRank || '?'}, huge overlay.
+                "Ranked #{result.valuePlay.modelRank}, huge overlay.
                 Public has at longshot odds. This is the play."
               </p>
 
               <details className="bet-results__full-analysis">
                 <summary>❓ Full Analysis</summary>
                 <p>
-                  Our model ranks this horse at position {valueAnalysis?.primaryValuePlay?.horseRank || '?'},
+                  Our model ranks this horse at position {result.valuePlay.modelRank},
                   but the public is betting it at {result.valuePlay.currentOdds} odds.
-                  Fair odds should be {result.valuePlay.fairOdds}.
+                  Fair odds should be {Math.round((100 / result.valuePlay.modelWinProb) - 1)}-1.
                   This gives us a {formatEdge(result.valuePlay.valueEdge)} edge.
                 </p>
               </details>
@@ -142,7 +144,7 @@ export const BetResults: React.FC<BetResultsProps> = ({
                 <div className="bet-results__least-bad">
                   <div className="bet-results__least-bad-label">LEAST BAD:</div>
                   <div className="bet-results__least-bad-horse">
-                    #{valueAnalysis.topPick.horse.programNumber} {valueAnalysis.topPick.horse.name}
+                    #{valueAnalysis.topPick.rank} {valueAnalysis.topPick.name}
                   </div>
                   <div className="bet-results__least-bad-edge">
                     Edge: ~0% (least negative)

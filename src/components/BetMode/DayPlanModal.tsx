@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import type { RaceAllocation } from '../../lib/betting/daySession';
+import type { RaceAllocation } from '../../lib/betting/allocateDayBudget';
 import type { RiskStyle } from '../../lib/betting/betTypes';
 import './DayPlanModal.css';
 
@@ -39,7 +39,7 @@ export const DayPlanModal: React.FC<DayPlanModalProps> = ({
   raceAllocations,
   totalBankroll,
   onBankrollChange,
-  riskStyle,
+  riskStyle: _riskStyle,
   multiRaceReserve,
   onApply,
   onClear,
@@ -72,7 +72,6 @@ export const DayPlanModal: React.FC<DayPlanModalProps> = ({
 
   // Count races by verdict
   const betRaces = raceAllocations.filter((a) => a.verdict === 'BET').length;
-  const cautionRaces = raceAllocations.filter((a) => a.verdict === 'CAUTION').length;
   const passRaces = raceAllocations.filter((a) => a.verdict === 'PASS').length;
 
   return (
