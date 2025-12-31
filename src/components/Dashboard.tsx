@@ -9,7 +9,6 @@ import { HorseSummaryBar } from './HorseSummaryBar';
 import { HeaderTooltip } from './InfoTooltip';
 import { ScoringHelpModal } from './ScoringHelpModal';
 import { RaceVerdictHeader } from './RaceVerdictHeader';
-import { ValueActionBar } from './ValueActionBar';
 import {
   calculateRaceScores,
   MAX_SCORE,
@@ -1189,14 +1188,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           )}
         </main>
-
-        {/* Value Action Bar - Fixed above bottom bar */}
-        <ValueActionBar
-          valueAnalysis={parsedData ? valueAnalysis : null}
-          raceNumber={selectedRaceIndex + 1}
-          onViewValuePlay={scrollToHorse}
-          hasRaceData={!!parsedData && currentRaceScoredHorses.length > 0}
-        />
 
         {/* Bottom Bar */}
         <footer className="app-bottombar">

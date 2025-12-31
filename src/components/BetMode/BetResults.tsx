@@ -1,21 +1,20 @@
 /**
  * BetResults Component
  *
- * Step 3 of the betting flow: Display all calculated bets.
- * Shows bet cards, value play info, totals, and return scenarios.
+ * TWO-COLUMN DASHBOARD LAYOUT for bet display.
+ * Left: Value analysis and skip info
+ * Right: Bet cards with "what to say" scripts
  *
- * Supports both single-race mode and day planning mode.
+ * Mobile: Single column, bets first.
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { BetCard, SkipCard } from './BetCard';
 import type { BetCalculationResult } from '../../lib/betting/calculateBets';
 import type { RiskStyle, SingleBet } from '../../lib/betting/betTypes';
-import type { DaySession } from '../../lib/betting/daySession';
-import { getSessionProgress } from '../../lib/betting/daySession';
+import type { RaceValueAnalysis } from '../../hooks/useValueDetection';
 import { formatReturnRange, calculateReturnScenarios } from '../../lib/betting/returnEstimates';
-import { generateCompleteTicket } from '../../lib/betting/whatToSay';
-import { formatEdge } from '../../hooks/useValueDetection';
+import { formatEdge, getEdgeColor } from '../../hooks/useValueDetection';
 import './BetResults.css';
 
 interface BetResultsProps {
@@ -27,53 +26,33 @@ interface BetResultsProps {
   trackName: string;
   /** User's budget */
   budget: number;
-  /** User's selected style (unused but kept for potential future use) */
+  /** User's selected style */
   riskStyle: RiskStyle;
-  /** Callback to change options (go back to style selection) */
+  /** Callback to change options (deprecated - settings are inline now) */
   onChangeOptions: () => void;
-
-  // Day mode specific props
+  /** Value analysis for detailed display */
+  valueAnalysis?: RaceValueAnalysis | null;
   /** Whether this is part of a day plan */
   isDayMode?: boolean;
-  /** Active day session (for day mode) */
-  daySession?: DaySession | null;
-  /** Callback to go to previous race */
-  onPrevRace?: () => void;
-  /** Callback to go to next race */
-  onNextRace?: () => void;
-  /** Callback to view the day plan overview */
-  onViewPlan?: () => void;
-  /** Callback when user marks this race as bet */
-  onMarkAsBet?: () => void;
-  /** Whether this race has already been marked as bet */
+  /** Whether this race has been marked as bet */
   isRaceCompleted?: boolean;
-  /** Callback to adjust the race budget */
-  onAdjustBudget?: () => void;
+  /** Callback to mark race as bet */
+  onMarkAsBet?: () => void;
 }
 
 export const BetResults: React.FC<BetResultsProps> = ({
   result,
-  raceNumber,
-  trackName,
+  raceNumber: _raceNumber,
+  trackName: _trackName,
   budget,
   riskStyle: _riskStyle,
-  onChangeOptions,
-  // Day mode props
+  onChangeOptions: _onChangeOptions,
+  valueAnalysis,
   isDayMode = false,
-  daySession,
-  onPrevRace,
-  onNextRace,
-  onViewPlan,
-  onMarkAsBet,
   isRaceCompleted = false,
-  onAdjustBudget,
+  onMarkAsBet,
 }) => {
-  const [allCopied, setAllCopied] = useState(false);
-
   const isPassRace = result.raceVerdict === 'PASS';
-
-  // Get session progress for day mode
-  const sessionProgress = daySession ? getSessionProgress(daySession) : null;
 
   // Format potential returns
   const returnScenarios = calculateReturnScenarios(
@@ -86,265 +65,201 @@ export const BetResults: React.FC<BetResultsProps> = ({
     result.totalCost
   );
 
-  // Copy all bets to clipboard
-  const handleCopyAll = async () => {
-    try {
-      const ticket = generateCompleteTicket(
-        raceNumber,
-        trackName,
-        result.bets.map((b: SingleBet) => ({
-          betType: b.type,
-          horses: b.horses,
-          amount: b.amount,
-          totalCost: b.totalCost,
-        }))
-      );
-      await navigator.clipboard.writeText(ticket);
-      setAllCopied(true);
-      setTimeout(() => setAllCopied(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy:', error);
-    }
-  };
-
   return (
-    <div className="bet-results">
-      {/* Header */}
-      <div className="bet-results__header">
-        <div className="bet-results__title-row">
-          <span className="bet-results__icon">🎯</span>
-          <h2 className="bet-results__title">
-            {isDayMode ? `RACE ${raceNumber} BETS` : `YOUR BETS — RACE ${raceNumber}`}
-          </h2>
+    <div className="bet-results bet-results--dashboard">
+      {/* Two-column layout container */}
+      <div className="bet-results__columns">
+        {/* LEFT COLUMN: Analysis & Skip Info */}
+        <div className="bet-results__left-column">
+          {/* Value Play or No Value Section */}
+          {result.valuePlay ? (
+            <div className="bet-results__value-section bet-results__value-section--bet">
+              <div className="bet-results__value-header">
+                <span className="bet-results__value-icon">🔥</span>
+                <span className="bet-results__value-label">VALUE PLAY</span>
+              </div>
+
+              <div className="bet-results__value-horse">
+                <span className="bet-results__value-pp">#{result.valuePlay.programNumber}</span>
+                <span className="bet-results__value-name">{result.valuePlay.horseName}</span>
+              </div>
+
+              <div className="bet-results__odds-compare">
+                <span className="bet-results__current-odds">{result.valuePlay.currentOdds}</span>
+                <span className="bet-results__odds-arrow">→</span>
+                <span className="bet-results__fair-odds">
+                  {Math.round((100 / result.valuePlay.modelWinProb) - 1)}-1 Fair
+                </span>
+              </div>
+
+              <div className="bet-results__edge-display">
+                <span className="bet-results__edge-label">Edge:</span>
+                <span
+                  className="bet-results__edge-value"
+                  style={{ color: getEdgeColor(result.valuePlay.valueEdge) }}
+                >
+                  {formatEdge(result.valuePlay.valueEdge)}
+                </span>
+              </div>
+
+              {/* Edge bar visualization */}
+              <div className="bet-results__edge-bar">
+                <div
+                  className="bet-results__edge-fill"
+                  style={{
+                    width: `${Math.min(100, Math.abs(result.valuePlay.valueEdge))}%`,
+                    backgroundColor: getEdgeColor(result.valuePlay.valueEdge),
+                  }}
+                />
+              </div>
+
+              <p className="bet-results__value-reason">
+                "Ranked #{result.valuePlay.modelRank}, huge overlay.
+                Public has at longshot odds. This is the play."
+              </p>
+
+              <details className="bet-results__full-analysis">
+                <summary>❓ Full Analysis</summary>
+                <p>
+                  Our model ranks this horse at position {result.valuePlay.modelRank},
+                  but the public is betting it at {result.valuePlay.currentOdds} odds.
+                  Fair odds should be {Math.round((100 / result.valuePlay.modelWinProb) - 1)}-1.
+                  This gives us a {formatEdge(result.valuePlay.valueEdge)} edge.
+                </p>
+              </details>
+            </div>
+          ) : (
+            <div className="bet-results__value-section bet-results__value-section--pass">
+              <div className="bet-results__value-header">
+                <span className="bet-results__value-icon">🔴</span>
+                <span className="bet-results__value-label">NO VALUE IN THIS RACE</span>
+              </div>
+
+              <p className="bet-results__pass-reason">
+                All contenders are chalk or underlays. Smart money skips this race entirely.
+              </p>
+
+              {/* Least bad option */}
+              {valueAnalysis?.topPick && (
+                <div className="bet-results__least-bad">
+                  <div className="bet-results__least-bad-label">LEAST BAD:</div>
+                  <div className="bet-results__least-bad-horse">
+                    #{valueAnalysis.topPick.rank} {valueAnalysis.topPick.name}
+                  </div>
+                  <div className="bet-results__least-bad-edge">
+                    Edge: ~0% (least negative)
+                  </div>
+                </div>
+              )}
+
+              <div className="bet-results__divider" />
+
+              <div className="bet-results__honest-advice">
+                <span className="bet-results__advice-icon">💡</span>
+                <div className="bet-results__advice-content">
+                  <strong>HONEST ADVICE:</strong>
+                  <p>Save your money for races with real value. This is gambling.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Skip Section */}
+          {result.skippedBets.length > 0 && (
+            <div className="bet-results__skip-section">
+              <div className="bet-results__skip-header">
+                <span className="bet-results__skip-icon">⚠️</span>
+                <span className="bet-results__skip-label">SKIP THESE</span>
+              </div>
+
+              {result.skippedBets.slice(0, 3).map((bet: SingleBet, index: number) => (
+                <SkipCard
+                  key={`skip-${index}`}
+                  horseName={bet.horseNames[0] || 'Unknown'}
+                  programNumber={bet.horses[0] || 0}
+                  odds={bet.explanation.match(/\d+-1/)?.[0] || 'N/A'}
+                  explanation={bet.explanation}
+                  compact={true}
+                />
+              ))}
+            </div>
+          )}
         </div>
-        <div className="bet-results__budget-section">
-          <div className="bet-results__budget-badge">
-            {isDayMode ? 'Day Plan Budget:' : 'Budget:'} ${budget}
+
+        {/* RIGHT COLUMN: Bets */}
+        <div className="bet-results__right-column">
+          {/* Bets Header */}
+          <div className="bet-results__bets-header">
+            <div className="bet-results__bets-title">
+              <span className="bet-results__bets-icon">💰</span>
+              <span className="bet-results__bets-label">
+                {isPassRace ? '"SURVIVAL" BETS' : 'YOUR BETS'}
+              </span>
+            </div>
+            <div className="bet-results__bets-total">
+              Total: ${result.totalCost}
+            </div>
           </div>
-          {isDayMode && onAdjustBudget && (
-            <button className="bet-results__adjust-btn" onClick={onAdjustBudget}>
-              Adjust Budget
+
+          {/* Day Mode Completed Badge */}
+          {isDayMode && isRaceCompleted && (
+            <div className="bet-results__completed-badge">
+              <span className="material-icons">check_circle</span>
+              <span>RACE MARKED AS BET</span>
+            </div>
+          )}
+
+          {/* Bet Cards */}
+          <div className="bet-results__bets-list">
+            {result.bets.map((bet: SingleBet, index: number) => (
+              <BetCard key={bet.id} bet={bet} betNumber={index + 1} compact={true} />
+            ))}
+          </div>
+
+          {/* Potential Returns */}
+          <div className="bet-results__returns">
+            <div className="bet-results__returns-title">POTENTIAL RETURNS:</div>
+            <div className="bet-results__returns-list">
+              {returnScenarios.slice(0, 3).map((scenario, index) => (
+                <div
+                  key={index}
+                  className={`bet-results__returns-item ${scenario.isMainScenario ? 'bet-results__returns-item--main' : ''}`}
+                >
+                  <span className="bet-results__returns-desc">{scenario.description}:</span>
+                  <span className="bet-results__returns-amount">
+                    {formatReturnRange(scenario.totalReturn)}
+                  </span>
+                  {scenario.isMainScenario && (
+                    <span className="bet-results__returns-fire">🔥</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Mark as Bet (Day Mode) */}
+          {isDayMode && onMarkAsBet && !isRaceCompleted && (
+            <button className="bet-results__mark-btn" onClick={onMarkAsBet}>
+              <span className="material-icons">check</span>
+              <span>MARK AS BET</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Day Mode Bankroll Status */}
-      {isDayMode && sessionProgress && (
-        <div className="bet-results__day-status">
-          <div className="bet-results__day-status-title">💰 BANKROLL STATUS</div>
-          <div className="bet-results__day-status-rows">
-            <div className="bet-results__day-status-row">
-              <span className="bet-results__day-status-label">Started:</span>
-              <span className="bet-results__day-status-value">${daySession?.totalBankroll}</span>
-            </div>
-            <div className="bet-results__day-status-row">
-              <span className="bet-results__day-status-label">Wagered:</span>
-              <span className="bet-results__day-status-value">${sessionProgress.amountWagered}</span>
-            </div>
-            <div className="bet-results__day-status-row">
-              <span className="bet-results__day-status-label">Remaining:</span>
-              <span className="bet-results__day-status-value bet-results__day-status-value--remaining">
-                ${sessionProgress.amountRemaining}
-              </span>
-            </div>
-            <div className="bet-results__day-status-row">
-              <span className="bet-results__day-status-label">Races left:</span>
-              <span className="bet-results__day-status-value">{sessionProgress.remainingRaces}</span>
-            </div>
-          </div>
+      {/* Budget Info Footer (mobile only) */}
+      <div className="bet-results__mobile-footer">
+        <div className="bet-results__budget-info">
+          <span className="bet-results__budget-label">Budget:</span>
+          <span className="bet-results__budget-value">${budget}</span>
         </div>
-      )}
-
-      {/* Completed badge for day mode */}
-      {isDayMode && isRaceCompleted && (
-        <div className="bet-results__completed-badge">
-          <span className="material-icons">check_circle</span>
-          <span>RACE MARKED AS BET</span>
-        </div>
-      )}
-
-      {/* Value play banner */}
-      {result.valuePlay ? (
-        <div className="bet-results__value-banner bet-results__value-banner--bet">
-          <div className="bet-results__value-badge">
-            <span className="bet-results__value-dot"></span>
-            <span>VALUE PLAY</span>
-          </div>
-          <div className="bet-results__value-info">
-            <span className="bet-results__value-horse">
-              #{result.valuePlay.programNumber} {result.valuePlay.horseName} (
-              {result.valuePlay.currentOdds})
-            </span>
-            <span className="bet-results__value-edge">
-              Edge: {formatEdge(result.valuePlay.valueEdge)}
-            </span>
-          </div>
-          <p className="bet-results__value-reason">Our model loves this horse at this price</p>
-        </div>
-      ) : isPassRace ? (
-        <div className="bet-results__value-banner bet-results__value-banner--pass">
-          <div className="bet-results__value-badge bet-results__value-badge--pass">
-            <span className="bet-results__value-dot bet-results__value-dot--pass"></span>
-            <span>NO VALUE IN THIS RACE</span>
-          </div>
-          <p className="bet-results__value-reason">
-            All contenders are fairly priced or overbet. There's no edge. Smart bettors skip this
-            race. But if you're betting anyway...
-          </p>
-        </div>
-      ) : null}
-
-      {/* PASS race header */}
-      {isPassRace && (
-        <div className="bet-results__pass-header">
-          <span className="bet-results__pass-label">"LEAST BAD" BETS:</span>
-        </div>
-      )}
-
-      {/* Bet cards */}
-      <div className="bet-results__bets">
-        {result.bets.map((bet: SingleBet, index: number) => (
-          <BetCard key={bet.id} bet={bet} betNumber={index + 1} />
-        ))}
-      </div>
-
-      {/* Skipped bets */}
-      {result.skippedBets.length > 0 && (
-        <div className="bet-results__skipped">
-          {result.skippedBets.map((bet: SingleBet, index: number) => (
-            <SkipCard
-              key={`skip-${index}`}
-              horseName={bet.horseNames[0] || 'Unknown'}
-              programNumber={bet.horses[0] || 0}
-              odds={bet.explanation.match(/\d+-1/)?.[0] || 'N/A'}
-              explanation={bet.explanation}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Summary */}
-      <div className="bet-results__summary">
-        <div className="bet-results__summary-row">
-          <span className="bet-results__summary-label">
-            {isDayMode ? 'TOTAL THIS RACE:' : 'TOTAL:'}
-          </span>
-          <span className="bet-results__summary-value">${result.totalCost}</span>
-        </div>
-
         {result.remainingBudget > 0 && (
-          <div className="bet-results__summary-row bet-results__summary-row--secondary">
-            <span className="bet-results__summary-label">Remaining from budget:</span>
-            <span className="bet-results__summary-value">${result.remainingBudget}</span>
+          <div className="bet-results__remaining-info">
+            <span className="bet-results__remaining-label">Remaining:</span>
+            <span className="bet-results__remaining-value">${result.remainingBudget}</span>
           </div>
         )}
       </div>
-
-      {/* Potential returns */}
-      <div className="bet-results__returns">
-        <h3 className="bet-results__returns-title">POTENTIAL RETURNS:</h3>
-        <ul className="bet-results__returns-list">
-          {returnScenarios.map((scenario, index) => (
-            <li
-              key={index}
-              className={`bet-results__returns-item ${scenario.isMainScenario ? 'bet-results__returns-item--main' : ''}`}
-            >
-              <span className="bet-results__returns-desc">{scenario.description}:</span>
-              <span className="bet-results__returns-amount">
-                {formatReturnRange(scenario.totalReturn)}
-              </span>
-              <span className="bet-results__returns-profit">
-                ({scenario.profit.min >= 0 ? '+' : ''}${scenario.profit.min}-{scenario.profit.max}{' '}
-                profit)
-              </span>
-              {scenario.isMainScenario && <span className="bet-results__returns-fire">🔥</span>}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Honest advice for PASS races */}
-      {isPassRace && (
-        <div className="bet-results__advice">
-          <span className="bet-results__advice-icon">⚠️</span>
-          <div className="bet-results__advice-content">
-            <strong>HONEST ADVICE:</strong>
-            <p>
-              Save your money for races with value. This one is a coin flip at best. If you must
-              bet, keep it small.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Day Mode Navigation */}
-      {isDayMode && (
-        <div className="bet-results__day-nav">
-          <button
-            className="bet-results__nav-btn"
-            onClick={onPrevRace}
-            disabled={!onPrevRace}
-          >
-            <span className="material-icons">arrow_back</span>
-            <span>PREV RACE</span>
-          </button>
-
-          <button className="bet-results__nav-btn bet-results__nav-btn--overview" onClick={onViewPlan}>
-            <span>DAY OVERVIEW</span>
-          </button>
-
-          <button
-            className="bet-results__nav-btn"
-            onClick={onNextRace}
-            disabled={!onNextRace}
-          >
-            <span>NEXT RACE</span>
-            <span className="material-icons">arrow_forward</span>
-          </button>
-        </div>
-      )}
-
-      {/* Day Mode Mark as Bet */}
-      {isDayMode && onMarkAsBet && !isRaceCompleted && (
-        <div className="bet-results__mark-section">
-          <button className="bet-results__mark-btn" onClick={onMarkAsBet}>
-            <span className="material-icons">check</span>
-            <span>MARK AS BET</span>
-          </button>
-        </div>
-      )}
-
-      {/* Standard Actions (for single race mode) */}
-      {!isDayMode && (
-        <div className="bet-results__actions">
-          <button className="bet-results__back-btn" onClick={onChangeOptions}>
-            <span className="material-icons">arrow_back</span>
-            <span>CHANGE OPTIONS</span>
-          </button>
-
-          <button
-            className={`bet-results__copy-all-btn ${allCopied ? 'bet-results__copy-all-btn--copied' : ''}`}
-            onClick={handleCopyAll}
-          >
-            <span className="material-icons">{allCopied ? 'check' : 'content_copy'}</span>
-            <span>{allCopied ? 'COPIED!' : 'COPY ALL'}</span>
-          </button>
-        </div>
-      )}
-
-      {/* Copy All Button (shown in both modes) */}
-      {isDayMode && (
-        <div className="bet-results__copy-section">
-          <button
-            className={`bet-results__copy-all-btn ${allCopied ? 'bet-results__copy-all-btn--copied' : ''}`}
-            onClick={handleCopyAll}
-          >
-            <span className="material-icons">{allCopied ? 'check' : 'content_copy'}</span>
-            <span>{allCopied ? 'COPIED!' : 'COPY ALL BETS'}</span>
-          </button>
-        </div>
-      )}
     </div>
   );
 };

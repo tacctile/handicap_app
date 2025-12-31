@@ -485,7 +485,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0; /* NO padding - content goes to edges */
-  padding-bottom: 100px; /* Space for fixed action bar (44px) + footer (48px) + buffer */
+  padding-bottom: 56px; /* Space for footer (48px) + small buffer */
   margin: 0;
   width: 100%;
   max-width: none; /* Ensure full width */

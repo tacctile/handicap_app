@@ -1,0 +1,359 @@
+/**
+ * InlineSettings Styles
+ *
+ * Inline dropdowns for budget and style at the top of bet mode.
+ */
+
+.inline-settings {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--bg-cards, #0F0F10);
+  border-bottom: 1px solid var(--border-subtle, #2A2A2C);
+  flex-wrap: wrap;
+}
+
+.inline-settings__label {
+  color: var(--text-tertiary, #6E6E70);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Dropdown container */
+.inline-settings__dropdown {
+  position: relative;
+}
+
+/* Dropdown trigger button */
+.inline-settings__trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-elevated, #1A1A1C);
+  border: 1px solid var(--border-subtle, #2A2A2C);
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.inline-settings__trigger:hover:not(:disabled) {
+  border-color: var(--border-hover, #4A4A4C);
+  background: var(--bg-hover, #222224);
+}
+
+.inline-settings__trigger--open {
+  border-color: var(--primary, #19abb5);
+  background: var(--bg-hover, #222224);
+}
+
+.inline-settings__trigger--locked {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.inline-settings__trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inline-settings__trigger-label {
+  color: var(--text-tertiary, #6E6E70);
+  font-size: 12px;
+}
+
+.inline-settings__trigger-value {
+  color: var(--text-primary, #EEEFF1);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.inline-settings__trigger-icon {
+  color: var(--text-tertiary, #6E6E70);
+  font-size: 18px;
+}
+
+.inline-settings__lock-icon {
+  color: var(--text-tertiary, #6E6E70);
+  font-size: 14px;
+  margin-left: 4px;
+}
+
+/* Dropdown menu */
+.inline-settings__menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 160px;
+  background: var(--bg-elevated, #1A1A1C);
+  border: 1px solid var(--border-subtle, #2A2A2C);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  padding: 4px;
+  animation: dropdownFadeIn 0.15s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.inline-settings__menu--style {
+  min-width: 280px;
+}
+
+.inline-settings__menu-divider {
+  height: 1px;
+  background: var(--border-subtle, #2A2A2C);
+  margin: 4px 0;
+}
+
+/* Menu items */
+.inline-settings__menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-primary, #EEEFF1);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  text-align: left;
+}
+
+.inline-settings__menu-item:hover {
+  background: var(--bg-hover, #222224);
+}
+
+.inline-settings__menu-item--selected {
+  background: rgba(25, 171, 181, 0.15);
+  color: var(--primary, #19abb5);
+}
+
+.inline-settings__menu-item--selected:hover {
+  background: rgba(25, 171, 181, 0.2);
+}
+
+.inline-settings__menu-item--custom {
+  color: var(--text-secondary, #B4B4B6);
+}
+
+.inline-settings__check {
+  font-size: 16px;
+  color: var(--primary, #19abb5);
+}
+
+/* Style menu items */
+.inline-settings__menu-item--style {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px;
+}
+
+.inline-settings__style-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.inline-settings__style-icon {
+  font-size: 16px;
+}
+
+.inline-settings__style-name {
+  font-weight: 600;
+  flex: 1;
+}
+
+.inline-settings__style-desc {
+  font-size: 12px;
+  color: var(--text-secondary, #B4B4B6);
+  margin: 0;
+  font-style: italic;
+}
+
+/* Custom budget input */
+.inline-settings__custom-input {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+}
+
+.inline-settings__custom-prefix {
+  color: var(--text-tertiary, #6E6E70);
+  font-size: 14px;
+}
+
+.inline-settings__custom-input input {
+  flex: 1;
+  background: var(--bg-base, #0A0A0B);
+  border: 1px solid var(--border-subtle, #2A2A2C);
+  border-radius: 4px;
+  padding: 6px 8px;
+  color: var(--text-primary, #EEEFF1);
+  font-size: 14px;
+  width: 80px;
+}
+
+.inline-settings__custom-input input:focus {
+  outline: none;
+  border-color: var(--primary, #19abb5);
+}
+
+.inline-settings__custom-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--primary, #19abb5);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.inline-settings__custom-submit:hover {
+  background: var(--primary-hover, #1992a1);
+}
+
+.inline-settings__custom-submit .material-icons {
+  font-size: 16px;
+  color: var(--bg-base, #0A0A0B);
+}
+
+/* Day Plan button */
+.inline-settings__day-plan-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--primary, #19abb5);
+  border-radius: 6px;
+  color: var(--primary, #19abb5);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.inline-settings__day-plan-btn:hover:not(:disabled) {
+  background: rgba(25, 171, 181, 0.1);
+}
+
+.inline-settings__day-plan-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inline-settings__day-plan-btn .material-icons {
+  font-size: 16px;
+}
+
+/* Clear day plan button */
+.inline-settings__clear-plan-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 6px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: #ef4444;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.inline-settings__clear-plan-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.inline-settings__clear-plan-btn .material-icons {
+  font-size: 14px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .inline-settings {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .inline-settings__label {
+    display: none;
+  }
+
+  .inline-settings__trigger {
+    padding: 6px 10px;
+  }
+
+  .inline-settings__trigger-label {
+    display: none;
+  }
+
+  .inline-settings__menu--style {
+    min-width: 240px;
+    right: 0;
+    left: auto;
+  }
+
+  .inline-settings__day-plan-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .inline-settings__day-plan-btn span:first-child {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .inline-settings {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .inline-settings__dropdown {
+    flex: 1;
+    min-width: calc(50% - 6px);
+  }
+
+  .inline-settings__trigger {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .inline-settings__day-plan-btn {
+    width: 100%;
+    justify-content: center;
+    margin-top: 4px;
+  }
+
+  .inline-settings__day-plan-btn span:first-child {
+    display: inline;
+  }
+}

@@ -19,9 +19,11 @@ interface BetCardProps {
   bet: SingleBet;
   /** Bet number for display (1, 2, 3...) */
   betNumber: number;
+  /** Compact mode for dashboard layout */
+  compact?: boolean;
 }
 
-export const BetCard: React.FC<BetCardProps> = ({ bet, betNumber }) => {
+export const BetCard: React.FC<BetCardProps> = ({ bet, betNumber, compact = false }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -44,7 +46,7 @@ export const BetCard: React.FC<BetCardProps> = ({ bet, betNumber }) => {
       : bet.horseNames[0];
 
   return (
-    <div className={`bet-card ${bet.skip ? 'bet-card--skip' : ''}`}>
+    <div className={`bet-card ${bet.skip ? 'bet-card--skip' : ''} ${compact ? 'bet-card--compact' : ''}`}>
       {/* Header */}
       <div className="bet-card__header">
         <div className="bet-card__title">
@@ -130,6 +132,8 @@ interface SkipCardProps {
   programNumber: number;
   odds: string;
   explanation: string;
+  /** Compact mode for dashboard layout */
+  compact?: boolean;
 }
 
 export const SkipCard: React.FC<SkipCardProps> = ({
@@ -137,11 +141,12 @@ export const SkipCard: React.FC<SkipCardProps> = ({
   programNumber,
   odds,
   explanation,
+  compact = false,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="skip-card">
+    <div className={`skip-card ${compact ? 'skip-card--compact' : ''}`}>
       <div className="skip-card__header">
         <span className="skip-card__icon">⚠️</span>
         <span className="skip-card__title">
