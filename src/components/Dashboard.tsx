@@ -283,6 +283,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
     );
   }, [parsedData, selectedRaceIndex, raceState]);
 
+  // Calculate scored horses for ALL races (for day planning mode)
+  // Uses original odds (not live updates) for consistent planning
+  const allScoredHorses = useMemo(() => {
+    if (!parsedData) return [];
+
+    return parsedData.races.map((race) => {
+      return calculateRaceScores(
+        race.horses,
+        race.header,
+        (_i, originalOdds) => originalOdds, // Use original odds for planning
+        () => false, // No scratches for planning (user can adjust per-race)
+        raceState.trackCondition
+      );
+    });
+  }, [parsedData, raceState.trackCondition]);
+
   // Calculate ranks based on BASE SCORE (not total score with overlay)
   const baseScoreRankMap = useMemo(() => {
     return calculateBaseScoreRanks(currentRaceScoredHorses);
@@ -834,6 +850,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
               getOdds={(index, defaultOdds) => raceState.getOdds(index, defaultOdds)}
               isScratched={(index) => raceState.isScratched(index)}
               onClose={() => setViewMode('analysis')}
+              allRaces={parsedData?.races}
+              allScoredHorses={allScoredHorses}
+              onNavigateToRace={onRaceSelect}
             />
           ) : (
             /* ANALYSIS MODE - Horse list and analysis view */
