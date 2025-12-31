@@ -28,17 +28,17 @@ const TOOLTIP_CONTENT: Record<string, { title: string; content: string }> = {
   OVERLAY: {
     title: 'Overlay',
     content:
-      "An overlay means the public is offering better odds than the horse deserves. Example: Our model says 5-1, public says 15-1 \u2014 that's value. Bet these.",
+      "An overlay means the public is offering better odds than the horse deserves. Example: Our model says 5-1, public says 15-1 — that's value. Bet these.",
   },
   UNDERLAY: {
     title: 'Underlay',
     content:
-      "An underlay means the horse is over-bet by the public. Example: Our model says 8-1, public says 3-1 \u2014 no value. Skip these.",
+      'An underlay means the horse is over-bet by the public. Example: Our model says 8-1, public says 3-1 — no value. Skip these.',
   },
   VERDICT: {
     title: 'Race Verdict',
     content:
-      "Our race verdict tells you if this race has a value betting opportunity. BET = clear value exists. CAUTION = marginal value, smaller bet. PASS = no value, skip it.",
+      'Our race verdict tells you if this race has a value betting opportunity. BET = clear value exists. CAUTION = marginal value, smaller bet. PASS = no value, skip it.',
   },
   PLACE: {
     title: 'PLACE Bet',
@@ -63,7 +63,7 @@ const TOOLTIP_CONTENT: Record<string, { title: string; content: string }> = {
   MODEL_RANK: {
     title: 'Model Rank',
     content:
-      "Our model ranks horses 1-N based on 25+ factors: speed, class, form, pace, connections, and more. Rank #1 = highest probability of winning according to our analysis.",
+      'Our model ranks horses 1-N based on 25+ factors: speed, class, form, pace, connections, and more. Rank #1 = highest probability of winning according to our analysis.',
   },
   TRIFECTA_KEY: {
     title: 'Trifecta Key',
@@ -94,9 +94,6 @@ export const ValueTooltip: React.FC<ValueTooltipProps> = ({
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const tooltipData = TOOLTIP_CONTENT[term];
-  if (!tooltipData) return null;
-
   const showTooltip = useCallback(() => {
     // Clear any existing timeout
     if (timeoutRef.current) {
@@ -123,6 +120,9 @@ export const ValueTooltip: React.FC<ValueTooltipProps> = ({
     setIsVisible(false);
   }, []);
 
+  const tooltipData = TOOLTIP_CONTENT[term];
+  if (!tooltipData) return null;
+
   return (
     <>
       <button
@@ -137,9 +137,7 @@ export const ValueTooltip: React.FC<ValueTooltipProps> = ({
         aria-describedby={isVisible ? `tooltip-${term}` : undefined}
       >
         <span className="material-icons value-tooltip-icon">help_outline</span>
-        {!iconOnly && (
-          <span className="value-tooltip-text">{term}</span>
-        )}
+        {!iconOnly && <span className="value-tooltip-text">{term}</span>}
       </button>
 
       {isVisible && (

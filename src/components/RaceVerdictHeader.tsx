@@ -11,11 +11,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import type {
-  RaceValueAnalysis,
-  RaceVerdict,
-  BetTypeSuggestion,
-} from '../hooks/useValueDetection';
+import type { RaceValueAnalysis, RaceVerdict, BetTypeSuggestion } from '../hooks/useValueDetection';
 import {
   formatEdge,
   getEdgeColor,
@@ -59,9 +55,9 @@ function getVerdictLabel(verdict: RaceVerdict): string {
     case 'BET':
       return 'BETTABLE RACE';
     case 'CAUTION':
-      return 'CAUTION \u2014 MARGINAL VALUE';
+      return 'CAUTION — MARGINAL VALUE';
     case 'PASS':
-      return 'PASS \u2014 NO VALUE IN THIS RACE';
+      return 'PASS — NO VALUE IN THIS RACE';
   }
 }
 
@@ -73,7 +69,7 @@ function getValuePlayIcon(verdict: RaceVerdict): string {
     case 'BET':
       return '\u{1F525}'; // Fire
     case 'CAUTION':
-      return '\u26A0\uFE0F'; // Warning
+      return '⚠️'; // Warning
     case 'PASS':
       return '';
   }
@@ -96,16 +92,14 @@ function getValuePlayLabel(verdict: RaceVerdict): string {
 /**
  * Generate educational explanation based on verdict and value play
  */
-function getEducationalExplanation(
-  valueAnalysis: RaceValueAnalysis
-): string {
+function getEducationalExplanation(valueAnalysis: RaceValueAnalysis): string {
   const { verdict, primaryValuePlay, topPick } = valueAnalysis;
 
   if (verdict === 'PASS') {
     if (topPick?.isChalk) {
       return 'The favorites are fairly priced. Betting here is gambling, not smart handicapping. Professional bettors skip races like this and wait for better opportunities.';
     }
-    return 'Our model does not see a clear edge in this race. The odds accurately reflect each horse\'s chances. Wait for a better opportunity.';
+    return "Our model does not see a clear edge in this race. The odds accurately reflect each horse's chances. Wait for a better opportunity.";
   }
 
   if (!primaryValuePlay) {
@@ -117,15 +111,16 @@ function getEducationalExplanation(
   const betType = primaryValuePlay.betType;
 
   if (verdict === 'BET') {
-    const betExplanation = betType === 'WIN'
-      ? `Bet WIN for maximum payout.`
-      : betType === 'PLACE'
-        ? `Bet PLACE (top 2 finish) for the best risk/reward.`
-        : betType === 'SHOW'
-          ? `Bet SHOW (top 3 finish) for a safer play.`
-          : `Use as a key in exotic bets.`;
+    const betExplanation =
+      betType === 'WIN'
+        ? `Bet WIN for maximum payout.`
+        : betType === 'PLACE'
+          ? `Bet PLACE (top 2 finish) for the best risk/reward.`
+          : betType === 'SHOW'
+            ? `Bet SHOW (top 3 finish) for a safer play.`
+            : `Use as a key in exotic bets.`;
 
-    return `Our model ranks this horse #${rank} in the field \u2014 a legit contender for the top ${rank <= 2 ? '2' : '3'}. But the public has them at ${primaryValuePlay.currentOdds} (longshot). That's a +${edge}% edge. ${betExplanation}`;
+    return `Our model ranks this horse #${rank} in the field — a legit contender for the top ${rank <= 2 ? '2' : '3'}. But the public has them at ${primaryValuePlay.currentOdds} (longshot). That's a +${edge}% edge. ${betExplanation}`;
   }
 
   // CAUTION
@@ -135,10 +130,7 @@ function getEducationalExplanation(
 /**
  * Get bet type explanation for the suggestion
  */
-function getBetTypeExplanation(
-  betType: BetTypeSuggestion,
-  edge: number
-): string {
+function getBetTypeExplanation(betType: BetTypeSuggestion, edge: number): string {
   switch (betType) {
     case 'WIN':
       return '';
@@ -195,13 +187,8 @@ export const RaceVerdictHeader: React.FC<RaceVerdictHeaderProps> = ({
         aria-label="Expand race verdict"
       >
         <div className="race-verdict-header__collapsed-content">
-          <span className="race-verdict-header__icon">
-            {getVerdictIcon(verdict)}
-          </span>
-          <span
-            className="race-verdict-header__verdict-label"
-            style={{ color: verdictColor }}
-          >
+          <span className="race-verdict-header__icon">{getVerdictIcon(verdict)}</span>
+          <span className="race-verdict-header__verdict-label" style={{ color: verdictColor }}>
             R{raceNumber}: {verdict}
           </span>
           {primaryValuePlay && (
@@ -218,9 +205,7 @@ export const RaceVerdictHeader: React.FC<RaceVerdictHeaderProps> = ({
               </span>
             </>
           )}
-          <span className="material-icons race-verdict-header__expand-icon">
-            expand_more
-          </span>
+          <span className="material-icons race-verdict-header__expand-icon">expand_more</span>
         </div>
       </div>
     );
@@ -238,20 +223,13 @@ export const RaceVerdictHeader: React.FC<RaceVerdictHeaderProps> = ({
       {/* Header row with verdict and confidence */}
       <div className="race-verdict-header__top-row">
         <div className="race-verdict-header__verdict-section">
-          <span className="race-verdict-header__icon">
-            {getVerdictIcon(verdict)}
-          </span>
-          <span
-            className="race-verdict-header__verdict-label"
-            style={{ color: verdictColor }}
-          >
+          <span className="race-verdict-header__icon">{getVerdictIcon(verdict)}</span>
+          <span className="race-verdict-header__verdict-label" style={{ color: verdictColor }}>
             {getVerdictLabel(verdict)}
           </span>
         </div>
         <div className="race-verdict-header__controls">
-          <span className="race-verdict-header__confidence">
-            {confidence} Confidence
-          </span>
+          <span className="race-verdict-header__confidence">{confidence} Confidence</span>
           <button
             className="race-verdict-header__collapse-btn"
             onClick={toggleCollapse}
@@ -268,18 +246,14 @@ export const RaceVerdictHeader: React.FC<RaceVerdictHeaderProps> = ({
         {verdict === 'PASS' ? (
           /* PASS verdict - no value play to show */
           <div className="race-verdict-header__pass-content">
-            <p className="race-verdict-header__pass-reason">
-              {verdictReason}
-            </p>
+            <p className="race-verdict-header__pass-reason">{verdictReason}</p>
           </div>
         ) : primaryValuePlay ? (
           /* BET or CAUTION verdict with value play */
           <>
             {/* Value play identification */}
             <div className="race-verdict-header__value-play-section">
-              <span className="race-verdict-header__value-icon">
-                {getValuePlayIcon(verdict)}
-              </span>
+              <span className="race-verdict-header__value-icon">{getValuePlayIcon(verdict)}</span>
               <span className="race-verdict-header__value-label">
                 {getValuePlayLabel(verdict)}:
               </span>
@@ -300,21 +274,18 @@ export const RaceVerdictHeader: React.FC<RaceVerdictHeaderProps> = ({
                   {primaryValuePlay.currentOdds}
                 </span>
               </span>
-              <span className="race-verdict-header__odds-arrow">\u2192</span>
+              <span className="race-verdict-header__odds-arrow">→</span>
               <span className="race-verdict-header__odds-item">
                 <span className="race-verdict-header__odds-label">Our Fair Odds:</span>
                 <span className="race-verdict-header__odds-value">
                   ~{Math.round(100 / primaryValuePlay.modelWinProb - 1)}-1
                 </span>
               </span>
-              <span className="race-verdict-header__odds-arrow">\u2192</span>
+              <span className="race-verdict-header__odds-arrow">→</span>
               <span className="race-verdict-header__odds-item race-verdict-header__odds-item--edge">
                 <span className="race-verdict-header__odds-label">
                   EDGE:
-                  <ValueTooltip
-                    term="EDGE"
-                    className="race-verdict-header__tooltip"
-                  />
+                  <ValueTooltip term="EDGE" className="race-verdict-header__tooltip" />
                 </span>
                 <span
                   className="race-verdict-header__edge-value"
@@ -332,10 +303,7 @@ export const RaceVerdictHeader: React.FC<RaceVerdictHeaderProps> = ({
                 {getBetTypeDisplay(primaryValuePlay.betType)}
               </span>
               <span className="race-verdict-header__bet-explanation">
-                {getBetTypeExplanation(
-                  primaryValuePlay.betType,
-                  primaryValuePlay.valueEdge
-                )}
+                {getBetTypeExplanation(primaryValuePlay.betType, primaryValuePlay.valueEdge)}
               </span>
             </div>
           </>
@@ -344,12 +312,8 @@ export const RaceVerdictHeader: React.FC<RaceVerdictHeaderProps> = ({
         {/* Divider and educational explanation */}
         <div className="race-verdict-header__divider" />
         <div className="race-verdict-header__explanation">
-          <span className="race-verdict-header__explanation-icon">
-            {'\u{1F4A1}'}
-          </span>
-          <span className="race-verdict-header__explanation-label">
-            What this means:
-          </span>
+          <span className="race-verdict-header__explanation-icon">{'\u{1F4A1}'}</span>
+          <span className="race-verdict-header__explanation-label">What this means:</span>
           <span className="race-verdict-header__explanation-text">
             {getEducationalExplanation(valueAnalysis)}
           </span>

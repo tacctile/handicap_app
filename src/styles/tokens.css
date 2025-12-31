@@ -94,16 +94,16 @@
   /* ============================================
      HORSE LIST GRID COLUMNS
      Single source of truth for header + rows
-     10 columns: icons | PP | name | BASE RANK | TREND RANK | BLENDED RANK | TREND GRAPH | odds | VALUE | expand
+     8 columns: icons | POST | HORSE | RANK | ODDS | FAIR | EDGE | VALUE | expand
 
-     Horse name is FIXED WIDTH (340px) - sized for 20 characters at 24px font
-     Empty space to right of shorter names is intentional - columns never stretch left
-     RANK columns are fixed 72px for ordinal display (1st, 10th, etc.)
-     TREND GRAPH column is 70px for sparkline
-     ODDS and VALUE columns use 1fr to fill remaining space
-     POST column increased to 64px to accommodate header label + icon
+     Horse name uses flex to fill remaining space
+     POST: 50px (narrow, just "#1")
+     RANK: 60px (narrow, just "#1")
+     ODDS: 70px (fits "20-1")
+     FAIR: 70px (fits "20-1")
+     EDGE: 80px (fits "+445%")
+     VALUE: 120px (fits "Overlay +445%")
      ============================================ */
-  --horse-list-grid: 70px /* icons */ 64px /* PP */ 280px
-    /* horse name - FIXED, reduced for space */ 72px /* BASE RANK */ 72px /* TREND RANK */ 72px
-    /* BLENDED RANK */ 80px /* ODDS */ 80px /* FAIR odds */ minmax(90px, 1fr) /* VALUE badge */ 40px; /* expand chevron */
+  --horse-list-grid: 70px /* icons */ 50px /* POST */ 1fr /* horse name - flex */ 60px /* RANK */
+    70px /* ODDS */ 70px /* FAIR odds */ 80px /* EDGE */ minmax(120px, 140px) /* VALUE badge */ 40px; /* expand chevron */
 }
