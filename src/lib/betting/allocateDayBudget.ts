@@ -273,7 +273,7 @@ export function adjustRaceBudget(
   allocations: RaceAllocation[],
   raceIndex: number,
   newBudget: number,
-  totalBankroll: number
+  _totalBankroll: number
 ): RaceAllocation[] {
   const updated = allocations.map((a) => ({ ...a }));
   const targetRace = updated[raceIndex];

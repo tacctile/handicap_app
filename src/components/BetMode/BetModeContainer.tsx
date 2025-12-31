@@ -26,7 +26,6 @@ import {
 } from './DaySetup';
 import { calculateBets, getContenders } from '../../lib/betting/calculateBets';
 import { allocateDayBudget, adjustRaceBudget } from '../../lib/betting/allocateDayBudget';
-import type { RaceAllocation } from '../../lib/betting/allocateDayBudget';
 import {
   createDaySession,
   saveDaySession,
@@ -294,7 +293,7 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
   const handleSeePlan = () => {
     if (dayBankroll !== null && dayExperience !== null && dayRiskStyle !== null) {
       // Generate race analyses for all races
-      const raceAnalyses = allRaces.map((raceData, index) => {
+      const raceAnalyses = allRaces.map((_raceData, index) => {
         const raceScored = allScoredHorses[index] || [];
         if (raceScored.length === 0) {
           // Return default PASS analysis for races without data

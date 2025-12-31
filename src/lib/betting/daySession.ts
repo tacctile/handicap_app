@@ -82,7 +82,8 @@ function generateSessionId(): string {
  * Get today's date in YYYY-MM-DD format
  */
 function getTodayDate(): string {
-  return new Date().toISOString().split('T')[0];
+  const isoString = new Date().toISOString();
+  return isoString.split('T')[0] ?? isoString.slice(0, 10);
 }
 
 /**
