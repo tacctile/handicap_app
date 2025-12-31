@@ -21,6 +21,18 @@ import { generateCompleteTicket } from '../../lib/betting/whatToSay';
 import { formatEdge } from '../../hooks/useValueDetection';
 import './BetResults.css';
 
+// Helper to calculate fair odds string from model win probability
+function calculateFairOdds(modelWinProb: number): string {
+  if (modelWinProb <= 0 || modelWinProb >= 100) return 'N/A';
+  const fairOddsDecimal = (100 / modelWinProb) - 1;
+  if (fairOddsDecimal < 1) {
+    // Odds-on (e.g., 1-2, 2-5)
+    const denominator = Math.round(1 / fairOddsDecimal);
+    return `1-${denominator}`;
+  }
+  return `${Math.round(fairOddsDecimal)}-1`;
+}
+
 interface BetResultsProps {
   /** Calculation result */
   result: BetCalculationResult;
@@ -291,7 +303,7 @@ export const BetResults: React.FC<BetResultsProps> = ({
   onViewPlan,
   onMarkAsBet,
   isRaceCompleted = false,
-  onAdjustBudget,
+  // onAdjustBudget - available but not used in current UI
   onClose,
 }) => {
   const [allCopied, setAllCopied] = useState(false);
@@ -415,7 +427,7 @@ export const BetResults: React.FC<BetResultsProps> = ({
               horseName={result.valuePlay.horseName}
               programNumber={result.valuePlay.programNumber}
               currentOdds={result.valuePlay.currentOdds}
-              fairOdds={result.valuePlay.fairOdds}
+              fairOdds={calculateFairOdds(result.valuePlay.modelWinProb)}
               edge={result.valuePlay.valueEdge}
               explanation="Ranked higher than public pricing. Huge overlay. Primary target."
             />
