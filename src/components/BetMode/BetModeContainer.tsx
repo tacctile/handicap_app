@@ -140,9 +140,9 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
                 </div>
 
                 <div className="bet-mode-placeholder__info-row">
-                  <span className="bet-mode-placeholder__label">Fair Odds:</span>
+                  <span className="bet-mode-placeholder__label">Win Probability:</span>
                   <span className="bet-mode-placeholder__value">
-                    {primaryValuePlay.fairOdds || '--'}
+                    {primaryValuePlay.modelWinProb ? `${Math.round(primaryValuePlay.modelWinProb)}%` : '--'}
                   </span>
                 </div>
               </>
