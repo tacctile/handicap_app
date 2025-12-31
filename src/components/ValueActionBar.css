@@ -1,0 +1,243 @@
+/**
+ * Value Action Bar Styles
+ *
+ * Persistent bottom bar showing race verdict at a glance.
+ * Positioned above the existing footer buttons.
+ */
+
+.value-action-bar {
+  position: fixed;
+  bottom: 48px; /* Height of existing footer */
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: var(--bg-cards, #0F0F10);
+  border-top: 3px solid;
+  padding: 0 16px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+/* Adjust for betting panel */
+.app-layout--betting-expanded .value-action-bar {
+  right: 320px; /* Width of expanded betting panel */
+}
+
+.app-layout--betting-collapsed .value-action-bar {
+  right: 48px; /* Width of collapsed betting panel */
+}
+
+/* Content container */
+.value-action-bar__content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Empty state */
+.value-action-bar--empty {
+  border-top-color: var(--border-subtle, #2A2A2C);
+}
+
+.value-action-bar__placeholder {
+  color: var(--text-tertiary, #6E6E70);
+  font-size: 13px;
+}
+
+/* Verdict section */
+.value-action-bar__verdict {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.value-action-bar__icon {
+  font-size: 14px;
+}
+
+.value-action-bar__race {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.value-action-bar__verdict-text {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Separator */
+.value-action-bar__separator {
+  width: 1px;
+  height: 20px;
+  background: var(--border-subtle, #2A2A2C);
+}
+
+/* PASS message */
+.value-action-bar__pass-message {
+  color: var(--text-secondary, #B4B4B6);
+  font-size: 13px;
+}
+
+/* Horse info */
+.value-action-bar__horse-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.value-action-bar__horse-name {
+  color: var(--text-primary, #EEEFF1);
+  font-size: 13px;
+  font-weight: 600;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.value-action-bar__odds {
+  color: var(--text-secondary, #B4B4B6);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Edge section */
+.value-action-bar__edge-section {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.value-action-bar__edge-label {
+  color: var(--text-tertiary, #6E6E70);
+  font-size: 12px;
+}
+
+.value-action-bar__edge-value {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bet type */
+.value-action-bar__bet-type {
+  color: var(--text-primary, #EEEFF1);
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* View button */
+.value-action-bar__view-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary, #19abb5);
+  color: var(--bg-base, #0A0A0B);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.value-action-bar__view-btn:hover {
+  background: var(--primary-hover, #1992a1);
+}
+
+.value-action-bar__view-btn:active {
+  background: var(--primary-pressed, #1b7583);
+}
+
+.value-action-bar__view-icon {
+  font-size: 16px;
+}
+
+/* Verdict-specific backgrounds */
+.value-action-bar--bet {
+  background: linear-gradient(
+    to right,
+    rgba(16, 185, 129, 0.1),
+    var(--bg-cards, #0F0F10) 40%
+  );
+}
+
+.value-action-bar--caution {
+  background: linear-gradient(
+    to right,
+    rgba(245, 158, 11, 0.1),
+    var(--bg-cards, #0F0F10) 40%
+  );
+}
+
+.value-action-bar--pass {
+  background: linear-gradient(
+    to right,
+    rgba(239, 68, 68, 0.1),
+    var(--bg-cards, #0F0F10) 40%
+  );
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .value-action-bar {
+    padding: 0 12px;
+    height: 48px;
+  }
+
+  .value-action-bar__content {
+    gap: 8px;
+  }
+
+  /* Hide some elements on mobile */
+  .value-action-bar__edge-label {
+    display: none;
+  }
+
+  .value-action-bar__odds {
+    display: none;
+  }
+
+  .value-action-bar__bet-type {
+    display: none;
+  }
+
+  .value-action-bar__view-text {
+    display: none;
+  }
+
+  .value-action-bar__view-btn {
+    padding: 8px;
+  }
+
+  .value-action-bar__horse-name {
+    max-width: 120px;
+  }
+
+  /* Adjust for mobile - no betting panel */
+  .app-layout--betting-expanded .value-action-bar,
+  .app-layout--betting-collapsed .value-action-bar {
+    right: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .value-action-bar__horse-name {
+    max-width: 80px;
+  }
+
+  .value-action-bar__verdict-text {
+    font-size: 12px;
+  }
+}

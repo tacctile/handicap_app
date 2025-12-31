@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import './Dashboard.css';
 import { usePostTime } from '../hooks/usePostTime';
 import { useBankroll } from '../hooks/useBankroll';
+import { useValueDetection } from '../hooks/useValueDetection';
 import { BankrollSettings } from './BankrollSettings';
 import { BettingRecommendations } from './BettingRecommendations';
 import { FileUpload } from './FileUpload';
@@ -9,6 +10,8 @@ import { HorseExpandedView } from './HorseExpandedView';
 import { HorseSummaryBar } from './HorseSummaryBar';
 import { HeaderTooltip } from './InfoTooltip';
 import { ScoringHelpModal } from './ScoringHelpModal';
+import { RaceVerdictHeader } from './RaceVerdictHeader';
+import { ValueActionBar } from './ValueActionBar';
 import {
   calculateRaceScores,
   MAX_SCORE,
@@ -202,9 +205,29 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // State for scoring help modal
   const [helpModalOpen, setHelpModalOpen] = useState(false);
 
+  // State for horse list sort order
+  type SortOption = 'POST' | 'BASE' | 'VALUE' | 'ODDS';
+  const [sortBy, setSortBy] = useState<SortOption>('POST');
+
+  // Ref for scrolling to value play horse
+  const horseListRef = useRef<HTMLDivElement>(null);
+
   const toggleHorseExpand = (horseId: string | number) => {
     setExpandedHorseId((prev) => (prev === horseId ? null : horseId));
   };
+
+  // Scroll to and highlight a specific horse row
+  const scrollToHorse = useCallback((horseIndex: number) => {
+    const horseRow = document.getElementById(`horse-row-${horseIndex}`);
+    if (horseRow) {
+      horseRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Add highlight animation
+      horseRow.classList.add('horse-summary-bar--highlighted');
+      setTimeout(() => {
+        horseRow.classList.remove('horse-summary-bar--highlighted');
+      }, 1500);
+    }
+  }, []);
 
   // Handler for toggling compare selection
   const handleCompareToggle = (programNumber: number, selected: boolean) => {
@@ -276,6 +299,69 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const baseScoreRankMap = useMemo(() => {
     return calculateBaseScoreRanks(currentRaceScoredHorses);
   }, [currentRaceScoredHorses]);
+
+  // Value detection analysis for the current race
+  const valueAnalysis = useValueDetection(
+    currentRaceScoredHorses,
+    (index, originalOdds) => raceState.getOdds(index, originalOdds),
+    (index) => raceState.isScratched(index)
+  );
+
+  // Create a set of value play horse indices for quick lookup
+  const valuePlayIndices = useMemo(() => {
+    const indices = new Set<number>();
+    for (const play of valueAnalysis.valuePlays) {
+      indices.add(play.horseIndex);
+    }
+    return indices;
+  }, [valueAnalysis.valuePlays]);
+
+  // Get the primary value play horse index
+  const primaryValuePlayIndex = valueAnalysis.primaryValuePlay?.horseIndex ?? -1;
+
+  // Sort horses based on current sort option
+  const sortedScoredHorses = useMemo(() => {
+    if (!currentRaceScoredHorses.length) return currentRaceScoredHorses;
+
+    const horses = [...currentRaceScoredHorses];
+
+    switch (sortBy) {
+      case 'POST':
+        // Sort by post position (program number)
+        return horses.sort((a, b) => a.horse.programNumber - b.horse.programNumber);
+
+      case 'BASE':
+        // Sort by base score (highest first)
+        return horses.sort((a, b) => b.score.baseScore - a.score.baseScore);
+
+      case 'VALUE':
+        // Sort by overlay/edge percentage (highest first, then underlays)
+        return horses.sort((a, b) => {
+          const playA = valueAnalysis.valuePlays.find((p) => p.horseIndex === a.index);
+          const playB = valueAnalysis.valuePlays.find((p) => p.horseIndex === b.index);
+          const edgeA = playA?.valueEdge ?? -999;
+          const edgeB = playB?.valueEdge ?? -999;
+          return edgeB - edgeA;
+        });
+
+      case 'ODDS':
+        // Sort by odds (lowest/favorites first)
+        return horses.sort((a, b) => {
+          const parseOdds = (oddsStr: string): number => {
+            const parts = oddsStr.split('-');
+            const num = parseFloat(parts[0] || '10');
+            const den = parseFloat(parts[1] || '1');
+            return num / den;
+          };
+          const oddsA = parseOdds(raceState.getOdds(a.index, a.horse.morningLineOdds));
+          const oddsB = parseOdds(raceState.getOdds(b.index, b.horse.morningLineOdds));
+          return oddsA - oddsB;
+        });
+
+      default:
+        return horses;
+    }
+  }, [currentRaceScoredHorses, sortBy, valueAnalysis.valuePlays, raceState]);
 
   // Get current race data
   const currentRace = parsedData?.races?.[selectedRaceIndex];
@@ -773,7 +859,39 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <p>Click a race on the left to see horses</p>
               </div>
             ) : (
-              <div className="horse-list">
+              <div className="horse-list" ref={horseListRef}>
+                {/* Race Verdict Header - Shows BET/CAUTION/PASS verdict */}
+                <RaceVerdictHeader
+                  valueAnalysis={valueAnalysis}
+                  raceNumber={selectedRaceIndex + 1}
+                  onValuePlayClick={scrollToHorse}
+                />
+
+                {/* Sort Controls */}
+                <div className="horse-list-sort">
+                  <span className="horse-list-sort__label">Sort by:</span>
+                  <div className="horse-list-sort__options">
+                    {(['POST', 'BASE', 'VALUE', 'ODDS'] as const).map((option) => (
+                      <button
+                        key={option}
+                        className={`horse-list-sort__btn ${sortBy === option ? 'horse-list-sort__btn--active' : ''}`}
+                        onClick={() => setSortBy(option)}
+                        title={
+                          option === 'POST'
+                            ? 'Sort by post position'
+                            : option === 'BASE'
+                              ? 'Sort by model rank (highest score first)'
+                              : option === 'VALUE'
+                                ? 'Sort by edge % (best overlays first)'
+                                : 'Sort by odds (favorites first)'
+                        }
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Column Headers - 10 columns: icons | POST | HORSE | BASE RANK | TREND RANK | BLENDED RANK | ODDS | FAIR | VALUE | expand */}
                 <div className="horse-list-header">
                   {/* Column 1: Help button */}
@@ -883,11 +1001,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                 {/* Collect all field base scores for proper overlay calculation */}
                 {(() => {
-                  const allFieldBaseScores = currentRaceScoredHorses
+                  const allFieldBaseScores = sortedScoredHorses
                     .filter((h) => !h.score.isScratched)
                     .map((h) => h.score.baseScore);
 
-                  return currentRaceScoredHorses.map((scoredHorse, index) => {
+                  return sortedScoredHorses.map((scoredHorse, index) => {
                     const horse = scoredHorse.horse;
                     const horseId = horse.programNumber || index;
                     const horseIndex = scoredHorse.index;
@@ -976,6 +1094,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         ? calculateRankGradientColor(blendedRank - 1, activeFieldSize)
                         : '#555555';
 
+                    // Find value play info for this horse
+                    const valuePlay = valueAnalysis.valuePlays.find(
+                      (vp) => vp.horseIndex === horseIndex
+                    );
+
                     return (
                       <div key={horseId} className="horse-list__item">
                         <HorseSummaryBar
@@ -1018,6 +1141,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           blendedRankOrdinal={blendedRank > 0 ? toOrdinal(blendedRank) : '—'}
                           blendedRankColor={blendedRankColor}
                           blendedResult={blendedInfo?.blendedResult}
+                          // Value play highlighting
+                          isValuePlay={valuePlayIndices.has(horseIndex)}
+                          isPrimaryValuePlay={horseIndex === primaryValuePlayIndex}
+                          edgePercent={valuePlay?.valueEdge}
+                          rowId={`horse-row-${horseIndex}`}
                         />
                         <HorseExpandedView
                           horse={horse}
@@ -1033,6 +1161,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
             )}
           </div>
         </main>
+
+        {/* Value Action Bar - Fixed above bottom bar */}
+        <ValueActionBar
+          valueAnalysis={parsedData ? valueAnalysis : null}
+          raceNumber={selectedRaceIndex + 1}
+          onViewValuePlay={scrollToHorse}
+          hasRaceData={!!parsedData && currentRaceScoredHorses.length > 0}
+        />
 
         {/* Bottom Bar */}
         <footer className="app-bottombar">

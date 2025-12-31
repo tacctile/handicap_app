@@ -7,14 +7,39 @@ import { normalizeOddsFormat } from '../lib/utils/oddsStepper';
 
 /**
  * Get VALUE badge based on edge percentage
- * Simplified 3-tier system: Overlay, Fair, Underlay
- * Uses thresholds: >20% = Overlay, -20% to +20% = Fair, <-20% = Underlay
+ * Enhanced to show edge percentage with color coding:
+ * - +75% or higher: Bright green, bold
+ * - +50% to +74%: Green
+ * - +25% to +49%: Yellow-green
+ * - -25% to +24%: Gray (fair)
+ * - -25% or lower: Red (underlay)
  */
 interface ValueBadgeInfo {
   label: string;
   className: string;
   color: string;
+  showEdge: boolean;
 }
+
+/**
+ * Get edge color based on percentage
+ */
+const getEdgeColor = (edgePercent: number): string => {
+  if (edgePercent >= 75) return '#10b981'; // Bright green
+  if (edgePercent >= 50) return '#22c55e'; // Green
+  if (edgePercent >= 25) return '#84cc16'; // Yellow-green
+  if (edgePercent >= -25) return '#6B7280'; // Gray (fair)
+  return '#ef4444'; // Red (underlay)
+};
+
+/**
+ * Format edge percentage for display
+ */
+const formatEdgePercent = (edgePercent: number): string => {
+  const rounded = Math.round(edgePercent);
+  if (rounded >= 0) return `+${rounded}%`;
+  return `${rounded}%`;
+};
 
 const getValueBadge = (valuePercent: number, isScratched: boolean): ValueBadgeInfo => {
   if (isScratched) {
@@ -22,6 +47,7 @@ const getValueBadge = (valuePercent: number, isScratched: boolean): ValueBadgeIn
       label: 'SCRATCHED',
       className: 'scratched',
       color: '#6E6E70',
+      showEdge: false,
     };
   }
 
@@ -30,6 +56,7 @@ const getValueBadge = (valuePercent: number, isScratched: boolean): ValueBadgeIn
       label: 'Overlay',
       className: 'overlay',
       color: '#10b981', // Green
+      showEdge: true,
     };
   }
 
@@ -38,6 +65,7 @@ const getValueBadge = (valuePercent: number, isScratched: boolean): ValueBadgeIn
       label: 'Fair',
       className: 'fair',
       color: '#6E6E70', // Gray
+      showEdge: false, // Don't show edge for fair (close to 0)
     };
   }
 
@@ -45,6 +73,7 @@ const getValueBadge = (valuePercent: number, isScratched: boolean): ValueBadgeIn
     label: 'Underlay',
     className: 'underlay',
     color: '#ef4444', // Red
+    showEdge: true,
   };
 };
 
@@ -92,6 +121,12 @@ interface HorseSummaryBarProps {
   blendedRankOrdinal?: string;
   blendedRankColor?: string;
   blendedResult?: BlendedRankResult;
+  // Props for value play highlighting
+  isValuePlay?: boolean;
+  isPrimaryValuePlay?: boolean;
+  edgePercent?: number;
+  /** HTML id for scroll targeting */
+  rowId?: string;
 }
 
 // Helper to convert odds object to string
@@ -142,6 +177,11 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   blendedRankOrdinal,
   blendedRankColor,
   blendedResult: _blendedResult,
+  // Value play props
+  isValuePlay = false,
+  isPrimaryValuePlay = false,
+  edgePercent,
+  rowId,
 }) => {
   // Extract horse data from HorseEntry type
   const programNumber = horse.programNumber;
@@ -211,12 +251,18 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
     handleOddsSubmit();
   }, [handleOddsSubmit]);
 
+  // Use edgePercent for display if provided, otherwise fall back to valuePercent
+  const displayEdge = edgePercent !== undefined ? edgePercent : valuePercent;
+
   return (
     <div
+      id={rowId}
       className={`horse-summary-bar
         horse-summary-bar--tier-${tierClass}
         ${isExpanded ? 'horse-summary-bar--expanded' : ''}
-        ${isScratched ? 'horse-summary-bar--scratched' : ''}`}
+        ${isScratched ? 'horse-summary-bar--scratched' : ''}
+        ${isValuePlay ? 'horse-summary-bar--value-play' : ''}
+        ${isPrimaryValuePlay ? 'horse-summary-bar--primary-value-play' : ''}`}
       onClick={handleRowClick}
     >
       {/* Column 1: Scratch and Compare icons stacked */}
@@ -335,8 +381,14 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         </span>
       </div>
 
-      {/* Column 9: VALUE Badge (Overlay/Fair/Underlay) */}
+      {/* Column 9: VALUE Badge (Overlay/Fair/Underlay with edge %) */}
       <div className="horse-summary-bar__value-wrapper">
+        {/* Value play fire indicator */}
+        {isPrimaryValuePlay && !isScratched && (
+          <span className="horse-summary-bar__value-play-icon" title="Primary Value Play">
+            {'\u{1F525}'}
+          </span>
+        )}
         <div
           className={`horse-summary-bar__value-badge horse-summary-bar__value-badge--${valueBadge.className}`}
           style={{
@@ -345,7 +397,15 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
             color: valueBadge.color,
           }}
         >
-          {valueBadge.label}
+          <span className="horse-summary-bar__value-label">{valueBadge.label}</span>
+          {valueBadge.showEdge && !isScratched && (
+            <span
+              className="horse-summary-bar__value-edge"
+              style={{ color: getEdgeColor(displayEdge) }}
+            >
+              {formatEdgePercent(displayEdge)}
+            </span>
+          )}
         </div>
       </div>
 
