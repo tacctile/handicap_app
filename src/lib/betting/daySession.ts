@@ -7,7 +7,7 @@
  * - Race completion tracking
  */
 
-import type { RiskStyle, ExperienceLevel } from './betTypes';
+import type { RiskStyle, ExperienceLevel, MultiRaceBet } from './betTypes';
 import type { RaceAllocation } from './allocateDayBudget';
 
 // ============================================================================
@@ -48,6 +48,8 @@ export interface DaySession {
   // Allocations
   /** Budget allocations per race */
   raceAllocations: RaceAllocation[];
+  /** Budget reserved for multi-race bets */
+  multiRaceReserve: number;
 
   // Tracking
   /** Race numbers that have been marked as bet */
@@ -56,6 +58,12 @@ export interface DaySession {
   amountWagered: number;
   /** Amount remaining from bankroll */
   amountRemaining: number;
+
+  // Multi-race bets tracking
+  /** Multi-race bets that have been added */
+  multiRaceBets: MultiRaceBet[];
+  /** Total wagered on multi-race bets */
+  multiRaceWagered: number;
 
   // Optional: results tracking (future feature)
   results?: RaceResult[];
@@ -94,7 +102,8 @@ export function createDaySession(
   totalBankroll: number,
   experienceLevel: ExperienceLevel,
   riskStyle: RiskStyle,
-  raceAllocations: RaceAllocation[]
+  raceAllocations: RaceAllocation[],
+  multiRaceReserve: number = 0
 ): DaySession {
   const session: DaySession = {
     id: generateSessionId(),
@@ -105,9 +114,12 @@ export function createDaySession(
     experienceLevel,
     riskStyle,
     raceAllocations,
+    multiRaceReserve,
     racesCompleted: [],
     amountWagered: 0,
     amountRemaining: totalBankroll,
+    multiRaceBets: [],
+    multiRaceWagered: 0,
     results: [],
   };
 
@@ -308,5 +320,118 @@ export function getDaySummary(session: DaySession): {
     racesBet: session.racesCompleted.length,
     valueRacesBet,
     valueRacesBudget,
+  };
+}
+
+// ============================================================================
+// MULTI-RACE BET FUNCTIONS
+// ============================================================================
+
+/**
+ * Add a multi-race bet to the session
+ */
+export function addMultiRaceBet(
+  session: DaySession,
+  bet: MultiRaceBet
+): DaySession {
+  // Don't add duplicates
+  if (session.multiRaceBets.some(b => b.id === bet.id)) {
+    return session;
+  }
+
+  const updated: DaySession = {
+    ...session,
+    multiRaceBets: [...session.multiRaceBets, { ...bet, isSelected: true }],
+    multiRaceWagered: session.multiRaceWagered + bet.totalCost,
+    amountRemaining: session.amountRemaining - bet.totalCost,
+    amountWagered: session.amountWagered + bet.totalCost,
+  };
+
+  saveDaySession(updated);
+  return updated;
+}
+
+/**
+ * Remove a multi-race bet from the session
+ */
+export function removeMultiRaceBet(
+  session: DaySession,
+  betId: string
+): DaySession {
+  const bet = session.multiRaceBets.find(b => b.id === betId);
+  if (!bet) return session;
+
+  const updated: DaySession = {
+    ...session,
+    multiRaceBets: session.multiRaceBets.filter(b => b.id !== betId),
+    multiRaceWagered: Math.max(0, session.multiRaceWagered - bet.totalCost),
+    amountRemaining: session.amountRemaining + bet.totalCost,
+    amountWagered: Math.max(0, session.amountWagered - bet.totalCost),
+  };
+
+  saveDaySession(updated);
+  return updated;
+}
+
+/**
+ * Update a multi-race bet in the session
+ */
+export function updateMultiRaceBet(
+  session: DaySession,
+  updatedBet: MultiRaceBet
+): DaySession {
+  const oldBet = session.multiRaceBets.find(b => b.id === updatedBet.id);
+  if (!oldBet) {
+    // If not found, add as new
+    return addMultiRaceBet(session, updatedBet);
+  }
+
+  const costDiff = updatedBet.totalCost - oldBet.totalCost;
+
+  const updated: DaySession = {
+    ...session,
+    multiRaceBets: session.multiRaceBets.map(b =>
+      b.id === updatedBet.id ? updatedBet : b
+    ),
+    multiRaceWagered: session.multiRaceWagered + costDiff,
+    amountRemaining: session.amountRemaining - costDiff,
+    amountWagered: session.amountWagered + costDiff,
+  };
+
+  saveDaySession(updated);
+  return updated;
+}
+
+/**
+ * Get remaining multi-race reserve budget
+ */
+export function getMultiRaceRemaining(session: DaySession): number {
+  return Math.max(0, session.multiRaceReserve - session.multiRaceWagered);
+}
+
+/**
+ * Check if can afford a multi-race bet
+ */
+export function canAffordMultiRaceBet(
+  session: DaySession,
+  betCost: number
+): boolean {
+  return betCost <= getMultiRaceRemaining(session);
+}
+
+/**
+ * Get multi-race bet summary
+ */
+export function getMultiRaceSummary(session: DaySession): {
+  reserve: number;
+  wagered: number;
+  remaining: number;
+  betCount: number;
+} {
+  return {
+    reserve: session.multiRaceReserve,
+    wagered: session.multiRaceWagered,
+    remaining: getMultiRaceRemaining(session),
+    betCount: session.multiRaceBets.length,
   };
 }

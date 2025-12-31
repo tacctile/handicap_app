@@ -39,6 +39,220 @@ export type BetType =
   | 'TRIFECTA_BOX'
   | 'SUPERFECTA_KEY';
 
+// ============================================================================
+// MULTI-RACE BET TYPES
+// ============================================================================
+
+/**
+ * Types of multi-race bets
+ */
+export type MultiRaceBetType =
+  | 'DAILY_DOUBLE'  // 2 consecutive races
+  | 'PICK_3'        // 3 consecutive races
+  | 'PICK_4'        // 4 consecutive races
+  | 'PICK_5'        // 5 consecutive races
+  | 'PICK_6';       // 6 consecutive races
+
+/**
+ * Strategy for selecting horses in a multi-race leg
+ */
+export type LegStrategy = 'SINGLE' | 'SPREAD' | 'ALL';
+
+/**
+ * Quality rating for multi-race opportunities
+ */
+export type MultiRaceQuality = 'PRIME' | 'GOOD' | 'MARGINAL';
+
+/**
+ * Confidence level for multi-race bets
+ */
+export type MultiRaceConfidence = 'HIGH' | 'MEDIUM' | 'LOW';
+
+/**
+ * A single leg of a multi-race bet
+ */
+export interface MultiRaceLeg {
+  /** Race number (1-indexed) */
+  raceNumber: number;
+  /** Post positions of selected horses */
+  horses: number[];
+  /** Horse names for display */
+  horseNames: string[];
+  /** Horse odds for display */
+  horseOdds: string[];
+  /** Strategy used for this leg */
+  strategy: LegStrategy;
+  /** Reasoning for the selection */
+  reasoning: string;
+  /** Whether this leg has a value play */
+  hasValuePlay: boolean;
+  /** Value play horse number (if any) */
+  valuePlayHorse?: number;
+}
+
+/**
+ * A complete multi-race bet recommendation
+ */
+export interface MultiRaceBet {
+  /** Unique ID for this bet */
+  id: string;
+  /** Type of multi-race bet */
+  type: MultiRaceBetType;
+  /** Starting race number */
+  startingRace: number;
+  /** Ending race number */
+  endingRace: number;
+  /** All legs of the bet */
+  legs: MultiRaceLeg[];
+  /** Number of combinations */
+  combinations: number;
+  /** Cost per combination (usually $0.50 or $1) */
+  costPerCombo: number;
+  /** Total cost of the ticket */
+  totalCost: number;
+  /** Potential return range */
+  potentialReturn: { min: number; max: number };
+  /** Confidence level */
+  confidence: MultiRaceConfidence;
+  /** What to say at the betting window */
+  whatToSay: string;
+  /** Plain English explanation */
+  explanation: string;
+  /** Quality rating of this opportunity */
+  quality: MultiRaceQuality;
+  /** Number of value plays in the sequence */
+  valuePlayCount: number;
+  /** Whether this bet is marked to be placed */
+  isSelected: boolean;
+}
+
+/**
+ * Multi-race opportunity before ticket construction
+ */
+export interface MultiRaceOpportunity {
+  /** Type of multi-race bet */
+  type: MultiRaceBetType;
+  /** Race numbers included */
+  races: number[];
+  /** Quality rating */
+  quality: MultiRaceQuality;
+  /** Number of value plays in the sequence */
+  valuePlaysInSequence: number;
+  /** Races with value plays */
+  valuePlayRaces: number[];
+  /** Races that can be singled */
+  singleableRaces: number[];
+  /** Reasoning for this opportunity */
+  reasoning: string;
+}
+
+/**
+ * Multi-race bet type metadata
+ */
+export interface MultiRaceBetTypeInfo {
+  /** Display name */
+  name: string;
+  /** Short name */
+  shortName: string;
+  /** Number of races */
+  raceCount: number;
+  /** Default cost per combination */
+  defaultCostPerCombo: number;
+  /** Available cost options */
+  costOptions: number[];
+  /** Icon for display */
+  icon: string;
+  /** Description */
+  description: string;
+  /** Minimum experience level required */
+  minExperienceLevel: ExperienceLevel;
+}
+
+/**
+ * Multi-race bet type configurations
+ */
+export const MULTI_RACE_BET_CONFIGS: Record<MultiRaceBetType, MultiRaceBetTypeInfo> = {
+  DAILY_DOUBLE: {
+    name: 'Daily Double',
+    shortName: 'DD',
+    raceCount: 2,
+    defaultCostPerCombo: 2,
+    costOptions: [1, 2, 5],
+    icon: '2️⃣',
+    description: 'Pick the winners of 2 consecutive races',
+    minExperienceLevel: 'standard',
+  },
+  PICK_3: {
+    name: 'Pick 3',
+    shortName: 'P3',
+    raceCount: 3,
+    defaultCostPerCombo: 1,
+    costOptions: [0.5, 1, 2],
+    icon: '3️⃣',
+    description: 'Pick the winners of 3 consecutive races',
+    minExperienceLevel: 'standard',
+  },
+  PICK_4: {
+    name: 'Pick 4',
+    shortName: 'P4',
+    raceCount: 4,
+    defaultCostPerCombo: 1,
+    costOptions: [0.5, 1],
+    icon: '4️⃣',
+    description: 'Pick the winners of 4 consecutive races',
+    minExperienceLevel: 'expert',
+  },
+  PICK_5: {
+    name: 'Pick 5',
+    shortName: 'P5',
+    raceCount: 5,
+    defaultCostPerCombo: 0.5,
+    costOptions: [0.5, 1],
+    icon: '5️⃣',
+    description: 'Pick the winners of 5 consecutive races',
+    minExperienceLevel: 'expert',
+  },
+  PICK_6: {
+    name: 'Pick 6',
+    shortName: 'P6',
+    raceCount: 6,
+    defaultCostPerCombo: 0.5,
+    costOptions: [0.2, 0.5],
+    icon: '6️⃣',
+    description: 'Pick the winners of 6 consecutive races',
+    minExperienceLevel: 'expert',
+  },
+};
+
+/**
+ * Check if a multi-race bet type is available for an experience level
+ */
+export function isMultiRaceBetAvailable(
+  betType: MultiRaceBetType,
+  experienceLevel: ExperienceLevel
+): boolean {
+  if (experienceLevel === 'beginner') return false;
+
+  const config = MULTI_RACE_BET_CONFIGS[betType];
+  if (experienceLevel === 'standard') {
+    return config.minExperienceLevel === 'standard';
+  }
+  // Expert can access all
+  return true;
+}
+
+/**
+ * Get available multi-race bet types for an experience level
+ */
+export function getAvailableMultiRaceBetTypes(
+  experienceLevel: ExperienceLevel
+): MultiRaceBetType[] {
+  if (experienceLevel === 'beginner') return [];
+
+  const allTypes: MultiRaceBetType[] = ['DAILY_DOUBLE', 'PICK_3', 'PICK_4', 'PICK_5', 'PICK_6'];
+  return allTypes.filter(type => isMultiRaceBetAvailable(type, experienceLevel));
+}
+
 /**
  * A single bet recommendation
  */

@@ -3,11 +3,14 @@
  *
  * Shows the complete day plan with all race allocations.
  * User can drill into individual races or adjust budgets.
+ * For STANDARD and EXPERT users, also shows multi-race opportunities.
  */
 
 import React from 'react';
 import type { DaySession } from '../../../lib/betting/daySession';
 import type { RaceAllocation } from '../../../lib/betting/allocateDayBudget';
+import type { MultiRaceOpportunity, MultiRaceBet } from '../../../lib/betting/betTypes';
+import { MultiRaceOpportunities } from '../MultiRace';
 import './DaySetup.css';
 
 interface DayOverviewProps {
@@ -19,6 +22,12 @@ interface DayOverviewProps {
   onSelectRace: (raceNumber: number) => void;
   /** Callback to start betting */
   onStartBetting: () => void;
+  /** Multi-race opportunities (optional, for STANDARD and EXPERT users) */
+  multiRaceOpportunities?: MultiRaceOpportunity[];
+  /** Pre-built multi-race tickets */
+  multiRaceTickets?: MultiRaceBet[];
+  /** Callback when user wants to view a multi-race opportunity */
+  onViewMultiRace?: (opportunity: MultiRaceOpportunity, ticket: MultiRaceBet) => void;
 }
 
 const EXPERIENCE_LABELS: Record<string, string> = {
@@ -50,8 +59,11 @@ export const DayOverview: React.FC<DayOverviewProps> = ({
   onEdit,
   onSelectRace,
   onStartBetting,
+  multiRaceOpportunities = [],
+  multiRaceTickets = [],
+  onViewMultiRace,
 }) => {
-  const { raceAllocations, totalBankroll, experienceLevel, riskStyle, trackName } = session;
+  const { raceAllocations, totalBankroll, experienceLevel, riskStyle, trackName, multiRaceReserve = 0 } = session;
 
   // Count verdicts
   const betRaces = raceAllocations.filter((r) => r.verdict === 'BET');
@@ -62,7 +74,13 @@ export const DayOverview: React.FC<DayOverviewProps> = ({
   const betBudget = betRaces.reduce((sum, r) => sum + r.allocatedBudget, 0);
   const cautionBudget = cautionRaces.reduce((sum, r) => sum + r.allocatedBudget, 0);
   const passBudget = passRaces.reduce((sum, r) => sum + r.allocatedBudget, 0);
-  const totalAllocated = betBudget + cautionBudget + passBudget;
+  const singleRaceTotal = betBudget + cautionBudget + passBudget;
+  const totalAllocated = singleRaceTotal + multiRaceReserve;
+
+  // Check if multi-race opportunities are available
+  const showMultiRace = experienceLevel !== 'beginner' &&
+    multiRaceOpportunities.length > 0 &&
+    onViewMultiRace !== undefined;
 
   return (
     <div className="day-overview">
@@ -146,10 +164,30 @@ export const DayOverview: React.FC<DayOverviewProps> = ({
         </div>
 
         <div className="day-overview__total-row">
+          <span className="day-overview__total-label">SINGLE RACE BETS:</span>
+          <span className="day-overview__total-value">${singleRaceTotal}</span>
+        </div>
+        {multiRaceReserve > 0 && (
+          <div className="day-overview__total-row" style={{ marginTop: 4 }}>
+            <span className="day-overview__total-label">MULTI-RACE RESERVE:</span>
+            <span className="day-overview__total-value">${multiRaceReserve}</span>
+          </div>
+        )}
+        <div className="day-overview__total-row" style={{ marginTop: 4, borderTop: '1px solid var(--color-border, #2a2a2c)', paddingTop: 12 }}>
           <span className="day-overview__total-label">TOTAL ALLOCATED:</span>
           <span className="day-overview__total-value">${totalAllocated}</span>
         </div>
       </div>
+
+      {/* Multi-race opportunities section (for STANDARD and EXPERT users) */}
+      {showMultiRace && onViewMultiRace && (
+        <MultiRaceOpportunities
+          opportunities={multiRaceOpportunities}
+          tickets={multiRaceTickets}
+          experienceLevel={experienceLevel}
+          onViewOpportunity={onViewMultiRace}
+        />
+      )}
 
       {/* Help tip */}
       <div className="day-overview__help">
