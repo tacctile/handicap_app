@@ -22,6 +22,18 @@
 import { DRFParseError, FileFormatError } from '../types/errors';
 import { logger } from '../services/logging';
 
+/**
+ * Safe check for development mode
+ * Works in both Vite (browser) and Node.js (scripts) environments
+ */
+function isDevMode(): boolean {
+  try {
+    return typeof import.meta !== 'undefined' && import.meta.env?.DEV === true;
+  } catch {
+    return false;
+  }
+}
+
 import {
   createDefaultTrainerCategoryStats,
   type HorseEntry,
@@ -590,7 +602,7 @@ function parseStatField(value: string, fieldName: string, maxExpected = 500): nu
 
   // Validate non-negative
   if (parsed < 0) {
-    if (import.meta.env.DEV) {
+    if (isDevMode()) {
       logger.logWarning(`Unexpected negative value for ${fieldName}: ${parsed}`, {
         fieldName,
         value: parsed,
@@ -602,7 +614,7 @@ function parseStatField(value: string, fieldName: string, maxExpected = 500): nu
 
   // Validate reasonable range (warn but still use the value)
   if (parsed > maxExpected) {
-    if (import.meta.env.DEV) {
+    if (isDevMode()) {
       logger.logWarning(`Unusually high value for ${fieldName}: ${parsed}`, {
         fieldName,
         value: parsed,
@@ -666,7 +678,7 @@ function parsePaceFigure(value: string, fieldName: string): number | null {
 
   // Negative values are invalid
   if (parsed < 0) {
-    if (import.meta.env.DEV) {
+    if (isDevMode()) {
       logger.logWarning(`Unexpected negative pace figure for ${fieldName}: ${parsed}`, {
         fieldName,
         value: parsed,
@@ -679,7 +691,7 @@ function parsePaceFigure(value: string, fieldName: string): number | null {
   // Warn for outliers above typical range (>150) but still use the value
   // Normal pace figures are 0-120, with rare outliers up to 150
   if (parsed > 150) {
-    if (import.meta.env.DEV) {
+    if (isDevMode()) {
       logger.logWarning(`Unusually high pace figure for ${fieldName}: ${parsed}`, {
         fieldName,
         value: parsed,

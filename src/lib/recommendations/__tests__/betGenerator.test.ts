@@ -88,6 +88,8 @@ function createMockScoreBreakdown(overrides: Partial<ScoreBreakdown> = {}): Scor
       consistencyBonus: 0,
       formTrend: 'consistent',
       reasoning: 'Good form',
+      wonLastOut: false,
+      won2OfLast3: false,
     },
     equipment: { total: 10, hasChanges: false, reasoning: 'Standard equipment' },
     pace: { total: 30, runningStyle: 'Stalker', paceFit: 'favorable', reasoning: 'Good pace fit' },

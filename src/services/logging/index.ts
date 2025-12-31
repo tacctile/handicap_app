@@ -47,16 +47,38 @@ const MAX_ERROR_QUEUE = 50;
 
 /**
  * Detect if we're running in development mode
+ * Handles both Vite and Node.js environments
  */
 function isDevelopment(): boolean {
-  return import.meta.env.MODE === 'development';
+  // Check Vite's import.meta.env first (browser/Vite context)
+  if (typeof import.meta !== 'undefined' && import.meta.env?.MODE) {
+    return import.meta.env.MODE === 'development';
+  }
+  // Fall back to Node.js environment (scripts context)
+  // Use globalThis to avoid TypeScript errors with process
+  const nodeProcess = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process;
+  if (nodeProcess?.env?.NODE_ENV) {
+    return nodeProcess.env.NODE_ENV === 'development';
+  }
+  return false;
 }
 
 /**
  * Get the current environment name
+ * Handles both Vite and Node.js environments
  */
 function getEnvironment(): string {
-  return import.meta.env.MODE || 'unknown';
+  // Check Vite's import.meta.env first (browser/Vite context)
+  if (typeof import.meta !== 'undefined' && import.meta.env?.MODE) {
+    return import.meta.env.MODE;
+  }
+  // Fall back to Node.js environment (scripts context)
+  // Use globalThis to avoid TypeScript errors with process
+  const nodeProcess = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process;
+  if (nodeProcess?.env?.NODE_ENV) {
+    return nodeProcess.env.NODE_ENV;
+  }
+  return 'unknown';
 }
 
 // ============================================================================
