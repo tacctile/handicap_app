@@ -1,0 +1,175 @@
+/**
+ * ExplanationTooltip Styles
+ *
+ * Expandable tooltips for explaining betting terms.
+ * Matches the app's dark theme.
+ */
+
+/* ============================================
+   BASE TOOLTIP STYLES
+   ============================================ */
+
+.explanation-tooltip,
+.bet-type-tooltip,
+.why-bet-tooltip {
+  width: 100%;
+}
+
+/* ============================================
+   TRIGGER BUTTON
+   ============================================ */
+
+.explanation-tooltip__trigger,
+.bet-type-tooltip__trigger,
+.why-bet-tooltip__trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md, 8px);
+  color: var(--color-text-secondary, #b4b4b6);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms ease);
+}
+
+.explanation-tooltip__trigger:hover,
+.bet-type-tooltip__trigger:hover,
+.why-bet-tooltip__trigger:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary, #eeeff1);
+}
+
+.explanation-tooltip__trigger--expanded,
+.bet-type-tooltip__trigger--expanded,
+.why-bet-tooltip__trigger--expanded {
+  color: var(--color-primary, #19abb5);
+}
+
+/* ============================================
+   TRIGGER ELEMENTS
+   ============================================ */
+
+.explanation-tooltip__icon,
+.bet-type-tooltip__icon,
+.why-bet-tooltip__icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.explanation-tooltip__question,
+.bet-type-tooltip__question,
+.why-bet-tooltip__question {
+  flex: 1;
+  font-weight: 500;
+}
+
+.explanation-tooltip__chevron,
+.bet-type-tooltip__chevron,
+.why-bet-tooltip__chevron {
+  font-size: 18px !important;
+  flex-shrink: 0;
+  transition: transform var(--transition-fast, 150ms ease);
+}
+
+/* ============================================
+   CONTENT AREA
+   ============================================ */
+
+.explanation-tooltip__content,
+.bet-type-tooltip__content,
+.why-bet-tooltip__content {
+  padding: 12px 16px;
+  margin-top: 4px;
+  background: rgba(25, 171, 181, 0.08);
+  border: 1px solid rgba(25, 171, 181, 0.2);
+  border-radius: var(--radius-md, 8px);
+  animation: tooltip-expand 200ms ease-out;
+}
+
+@keyframes tooltip-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.explanation-tooltip__text,
+.why-bet-tooltip__text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text-primary, #eeeff1);
+  white-space: pre-wrap;
+}
+
+/* ============================================
+   BET TYPE TOOLTIP SECTIONS
+   ============================================ */
+
+.bet-type-tooltip__section {
+  margin-bottom: 12px;
+}
+
+.bet-type-tooltip__section:last-child {
+  margin-bottom: 0;
+}
+
+.bet-type-tooltip__section strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary, #19abb5);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.bet-type-tooltip__section p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-primary, #eeeff1);
+}
+
+/* ============================================
+   COMPACT MODE
+   ============================================ */
+
+.explanation-tooltip--compact .explanation-tooltip__trigger,
+.why-bet-tooltip--compact .why-bet-tooltip__trigger {
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.explanation-tooltip--compact .explanation-tooltip__content,
+.why-bet-tooltip--compact .why-bet-tooltip__content {
+  padding: 10px 12px;
+}
+
+.explanation-tooltip--compact .explanation-tooltip__text,
+.why-bet-tooltip--compact .why-bet-tooltip__text {
+  font-size: 12px;
+}
+
+/* ============================================
+   TAP TARGET (MOBILE)
+   ============================================ */
+
+@media (max-width: 768px) {
+  .explanation-tooltip__trigger,
+  .bet-type-tooltip__trigger,
+  .why-bet-tooltip__trigger {
+    min-height: 44px; /* iOS minimum tap target */
+  }
+}
