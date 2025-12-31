@@ -3,12 +3,16 @@
  *
  * Step 3 of the betting flow: Display all calculated bets.
  * Shows bet cards, value play info, totals, and return scenarios.
+ *
+ * Supports both single-race mode and day planning mode.
  */
 
 import React, { useState } from 'react';
 import { BetCard, SkipCard } from './BetCard';
 import type { BetCalculationResult } from '../../lib/betting/calculateBets';
 import type { RiskStyle, SingleBet } from '../../lib/betting/betTypes';
+import type { DaySession } from '../../lib/betting/daySession';
+import { getSessionProgress } from '../../lib/betting/daySession';
 import { formatReturnRange, calculateReturnScenarios } from '../../lib/betting/returnEstimates';
 import { generateCompleteTicket } from '../../lib/betting/whatToSay';
 import { formatEdge } from '../../hooks/useValueDetection';
@@ -27,6 +31,24 @@ interface BetResultsProps {
   riskStyle: RiskStyle;
   /** Callback to change options (go back to style selection) */
   onChangeOptions: () => void;
+
+  // Day mode specific props
+  /** Whether this is part of a day plan */
+  isDayMode?: boolean;
+  /** Active day session (for day mode) */
+  daySession?: DaySession | null;
+  /** Callback to go to previous race */
+  onPrevRace?: () => void;
+  /** Callback to go to next race */
+  onNextRace?: () => void;
+  /** Callback to view the day plan overview */
+  onViewPlan?: () => void;
+  /** Callback when user marks this race as bet */
+  onMarkAsBet?: () => void;
+  /** Whether this race has already been marked as bet */
+  isRaceCompleted?: boolean;
+  /** Callback to adjust the race budget */
+  onAdjustBudget?: () => void;
 }
 
 export const BetResults: React.FC<BetResultsProps> = ({
@@ -36,10 +58,22 @@ export const BetResults: React.FC<BetResultsProps> = ({
   budget,
   riskStyle: _riskStyle,
   onChangeOptions,
+  // Day mode props
+  isDayMode = false,
+  daySession,
+  onPrevRace,
+  onNextRace,
+  onViewPlan,
+  onMarkAsBet,
+  isRaceCompleted = false,
+  onAdjustBudget,
 }) => {
   const [allCopied, setAllCopied] = useState(false);
 
   const isPassRace = result.raceVerdict === 'PASS';
+
+  // Get session progress for day mode
+  const sessionProgress = daySession ? getSessionProgress(daySession) : null;
 
   // Format potential returns
   const returnScenarios = calculateReturnScenarios(
@@ -79,10 +113,56 @@ export const BetResults: React.FC<BetResultsProps> = ({
       <div className="bet-results__header">
         <div className="bet-results__title-row">
           <span className="bet-results__icon">🎯</span>
-          <h2 className="bet-results__title">YOUR BETS — RACE {raceNumber}</h2>
+          <h2 className="bet-results__title">
+            {isDayMode ? `RACE ${raceNumber} BETS` : `YOUR BETS — RACE ${raceNumber}`}
+          </h2>
         </div>
-        <div className="bet-results__budget-badge">Budget: ${budget}</div>
+        <div className="bet-results__budget-section">
+          <div className="bet-results__budget-badge">
+            {isDayMode ? 'Day Plan Budget:' : 'Budget:'} ${budget}
+          </div>
+          {isDayMode && onAdjustBudget && (
+            <button className="bet-results__adjust-btn" onClick={onAdjustBudget}>
+              Adjust Budget
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Day Mode Bankroll Status */}
+      {isDayMode && sessionProgress && (
+        <div className="bet-results__day-status">
+          <div className="bet-results__day-status-title">💰 BANKROLL STATUS</div>
+          <div className="bet-results__day-status-rows">
+            <div className="bet-results__day-status-row">
+              <span className="bet-results__day-status-label">Started:</span>
+              <span className="bet-results__day-status-value">${daySession?.totalBankroll}</span>
+            </div>
+            <div className="bet-results__day-status-row">
+              <span className="bet-results__day-status-label">Wagered:</span>
+              <span className="bet-results__day-status-value">${sessionProgress.amountWagered}</span>
+            </div>
+            <div className="bet-results__day-status-row">
+              <span className="bet-results__day-status-label">Remaining:</span>
+              <span className="bet-results__day-status-value bet-results__day-status-value--remaining">
+                ${sessionProgress.amountRemaining}
+              </span>
+            </div>
+            <div className="bet-results__day-status-row">
+              <span className="bet-results__day-status-label">Races left:</span>
+              <span className="bet-results__day-status-value">{sessionProgress.remainingRaces}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Completed badge for day mode */}
+      {isDayMode && isRaceCompleted && (
+        <div className="bet-results__completed-badge">
+          <span className="material-icons">check_circle</span>
+          <span>RACE MARKED AS BET</span>
+        </div>
+      )}
 
       {/* Value play banner */}
       {result.valuePlay ? (
@@ -147,7 +227,9 @@ export const BetResults: React.FC<BetResultsProps> = ({
       {/* Summary */}
       <div className="bet-results__summary">
         <div className="bet-results__summary-row">
-          <span className="bet-results__summary-label">TOTAL:</span>
+          <span className="bet-results__summary-label">
+            {isDayMode ? 'TOTAL THIS RACE:' : 'TOTAL:'}
+          </span>
           <span className="bet-results__summary-value">${result.totalCost}</span>
         </div>
 
@@ -196,21 +278,73 @@ export const BetResults: React.FC<BetResultsProps> = ({
         </div>
       )}
 
-      {/* Actions */}
-      <div className="bet-results__actions">
-        <button className="bet-results__back-btn" onClick={onChangeOptions}>
-          <span className="material-icons">arrow_back</span>
-          <span>CHANGE OPTIONS</span>
-        </button>
+      {/* Day Mode Navigation */}
+      {isDayMode && (
+        <div className="bet-results__day-nav">
+          <button
+            className="bet-results__nav-btn"
+            onClick={onPrevRace}
+            disabled={!onPrevRace}
+          >
+            <span className="material-icons">arrow_back</span>
+            <span>PREV RACE</span>
+          </button>
 
-        <button
-          className={`bet-results__copy-all-btn ${allCopied ? 'bet-results__copy-all-btn--copied' : ''}`}
-          onClick={handleCopyAll}
-        >
-          <span className="material-icons">{allCopied ? 'check' : 'content_copy'}</span>
-          <span>{allCopied ? 'COPIED!' : 'COPY ALL'}</span>
-        </button>
-      </div>
+          <button className="bet-results__nav-btn bet-results__nav-btn--overview" onClick={onViewPlan}>
+            <span>DAY OVERVIEW</span>
+          </button>
+
+          <button
+            className="bet-results__nav-btn"
+            onClick={onNextRace}
+            disabled={!onNextRace}
+          >
+            <span>NEXT RACE</span>
+            <span className="material-icons">arrow_forward</span>
+          </button>
+        </div>
+      )}
+
+      {/* Day Mode Mark as Bet */}
+      {isDayMode && onMarkAsBet && !isRaceCompleted && (
+        <div className="bet-results__mark-section">
+          <button className="bet-results__mark-btn" onClick={onMarkAsBet}>
+            <span className="material-icons">check</span>
+            <span>MARK AS BET</span>
+          </button>
+        </div>
+      )}
+
+      {/* Standard Actions (for single race mode) */}
+      {!isDayMode && (
+        <div className="bet-results__actions">
+          <button className="bet-results__back-btn" onClick={onChangeOptions}>
+            <span className="material-icons">arrow_back</span>
+            <span>CHANGE OPTIONS</span>
+          </button>
+
+          <button
+            className={`bet-results__copy-all-btn ${allCopied ? 'bet-results__copy-all-btn--copied' : ''}`}
+            onClick={handleCopyAll}
+          >
+            <span className="material-icons">{allCopied ? 'check' : 'content_copy'}</span>
+            <span>{allCopied ? 'COPIED!' : 'COPY ALL'}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Copy All Button (shown in both modes) */}
+      {isDayMode && (
+        <div className="bet-results__copy-section">
+          <button
+            className={`bet-results__copy-all-btn ${allCopied ? 'bet-results__copy-all-btn--copied' : ''}`}
+            onClick={handleCopyAll}
+          >
+            <span className="material-icons">{allCopied ? 'check' : 'content_copy'}</span>
+            <span>{allCopied ? 'COPIED!' : 'COPY ALL BETS'}</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
