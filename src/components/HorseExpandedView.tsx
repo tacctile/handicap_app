@@ -162,26 +162,18 @@ const getCategoryExplanation = (
 };
 
 /**
- * Get tier rating label based on BASE score
- */
-const getTierRating = (baseScore: number): { label: string; className: string } => {
-  if (baseScore >= 200) return { label: 'ELITE', className: 'elite' };
-  if (baseScore >= 180) return { label: 'STRONG', className: 'strong' };
-  if (baseScore >= 160) return { label: 'COMPETITIVE', className: 'competitive' };
-  if (baseScore >= 140) return { label: 'MARGINAL', className: 'marginal' };
-  return { label: 'WEAK', className: 'weak' };
-};
-
-/**
- * Get value indicator based on edge
+ * Get value indicator based on edge - simplified to single word only
+ * VALUE (green) = overlay, good bet
+ * PASS (red) = underlay, skip it
+ * FAIR (gray) = fairly priced, no edge
  */
 const getValueIndicator = (
   isOverlay: boolean,
   isUnderlay: boolean
-): { label: string; className: string } => {
-  if (isOverlay) return { label: 'Bargain', className: 'bargain' };
-  if (isUnderlay) return { label: 'Avoid', className: 'avoid' };
-  return { label: 'Fair', className: 'fair' };
+): { label: string; className: string; color: string } => {
+  if (isOverlay) return { label: 'VALUE', className: 'value', color: '#10b981' };
+  if (isUnderlay) return { label: 'PASS', className: 'pass', color: '#ef4444' };
+  return { label: 'FAIR', className: 'fair', color: '#6B7280' };
 };
 
 /**
@@ -214,11 +206,17 @@ const getEdgeColor = (edge: number): string => {
   return '#ef4444'; // Red (underlay)
 };
 
-// Get progress bar fill color class
-const getBarFillClass = (percent: number): string => {
-  if (percent >= 60) return 'furlong-score__category-bar-fill--high';
-  if (percent >= 40) return 'furlong-score__category-bar-fill--medium';
-  return 'furlong-score__category-bar-fill--low';
+/**
+ * Get teal gradient color based on score percentage
+ * Uses neutral teal tones instead of judgment colors (red/yellow/green)
+ * Low scores (0-33%): #0e343e (dark muted teal)
+ * Mid scores (34-66%): #1b7583 (medium teal)
+ * High scores (67-100%): #19abb5 (bright teal)
+ */
+const getTealGradientColor = (percent: number): string => {
+  if (percent >= 67) return '#19abb5'; // Bright teal for high scores
+  if (percent >= 34) return '#1b7583'; // Medium teal for mid scores
+  return '#0e343e'; // Dark muted teal for low scores
 };
 
 // Helper to determine if win rate is good (25%+)
@@ -461,6 +459,8 @@ interface HorseExpandedViewProps {
   // Race-level context for PASS races
   raceVerdict?: 'BET' | 'CAUTION' | 'PASS';
   isBestInPassRace?: boolean;
+  // All horses in the race for suggested bets display
+  raceHorses?: Array<{ horseName: string; modelRank?: number; programNumber?: string }>;
 }
 
 export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
@@ -475,11 +475,12 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   totalHorses = 0,
   isOverlay = false,
   isUnderlay = false,
-  isPrimaryValuePlay = false,
-  betTypeSuggestion = '—',
+  isPrimaryValuePlay: _isPrimaryValuePlay = false,
+  betTypeSuggestion: _betTypeSuggestion = '—',
   valueExplanation: _valueExplanation = '',
-  raceVerdict = 'BET',
-  isBestInPassRace = false,
+  raceVerdict: _raceVerdict = 'BET',
+  isBestInPassRace: _isBestInPassRace = false,
+  raceHorses = [],
 }) => {
   // State for active tab - defaults to 'analysis'
   const [activeTab, setActiveTab] = useState<'analysis' | 'pps' | 'workouts' | 'profile'>(
@@ -503,8 +504,7 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   // Determine value status
   const valueStatus = isOverlay ? 'OVERLAY' : isUnderlay ? 'UNDERLAY' : 'FAIR';
 
-  // Get tier rating and value indicator
-  const tierRating = getTierRating(baseScore);
+  // Get value indicator (simplified to single word: VALUE/PASS/FAIR)
   const valueIndicator = getValueIndicator(isOverlay, isUnderlay);
 
   // Build category analysis with proper max values from requirements
@@ -526,70 +526,33 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
     };
   });
 
-  // Check if this is a PASS race
-  const isPassRace = raceVerdict === 'PASS';
-
-  // Generate betting suggestion content
-  const getBettingSuggestion = () => {
-    // Special handling for PASS races
-    if (isPassRace && isBestInPassRace) {
-      return {
-        isPassRace: true,
-        primary: 'SHOW',
-        primaryReason: `If you must bet, this is the least-bad option. Best edge in a weak field: ${edgePercent >= 0 ? '+' : ''}${Math.round(edgePercent)}%`,
-        passMessage: 'Save your bankroll for races with real value.',
-        skip: null,
-        skipReason: null,
-      };
-    } else if (isPassRace) {
-      return {
-        isPassRace: true,
-        primary: null,
-        primaryReason: null,
-        passMessage: 'No value in this race. Save your bankroll.',
-        skip: 'Skip this race',
-        skipReason: 'No horses offer value at current odds.',
-      };
-    } else if (isOverlay && isPrimaryValuePlay) {
-      return {
-        primary: betTypeSuggestion || 'PLACE',
-        primaryReason: `Ranked #${modelRank}, huge edge. ${betTypeSuggestion === 'WIN' ? 'WIN for maximum value.' : 'PLACE is safer than WIN for this profile.'}`,
-        exotic: `Key in trifecta with top contenders`,
-        exoticReason: `$2 key = potential payout $300-900`,
-        skip: betTypeSuggestion === 'WIN' ? null : 'WIN bet',
-        skipReason: edgePercent < 100 ? `Form concerns make WIN risky despite edge.` : null,
-      };
-    } else if (isOverlay) {
-      return {
-        primary: betTypeSuggestion || 'SHOW',
-        primaryReason: `Value exists at +${Math.round(edgePercent)}% edge.`,
-        exotic: `Use in exacta/trifecta underneath favorites`,
-        exoticReason: `Good to pair with chalk horses`,
-        skip: null,
-        skipReason: null,
-      };
-    } else if (isUnderlay) {
-      return {
-        primary: null,
-        primaryReason: null,
-        skip: 'No value at this price',
-        skipReason: `Likely wins, but ${Math.round(edgePercent)}% edge means you lose money long-term betting these.`,
-        ifYouMust: 'Use in exacta/trifecta underneath value plays',
-        ifYouMustReason: `Don't bet to win. Use as a "with" horse in exotics.`,
-      };
-    } else {
-      return {
-        primary: null,
-        primaryReason: 'Neutral — no strong edge either way',
-        skip: null,
-        skipReason: "Bet if you like the horse, but don't expect value.",
-        ifYouMust: null,
-        ifYouMustReason: null,
-      };
+  // Get top ranked horses for suggested bets
+  const getSortedHorses = () => {
+    if (!raceHorses || raceHorses.length === 0) {
+      // Fallback: use current horse name if no race data
+      return [
+        { horseName: horse.horseName || 'Horse 1', rank: 1 },
+        { horseName: 'Horse 2', rank: 2 },
+        { horseName: 'Horse 3', rank: 3 },
+        { horseName: 'Horse 4', rank: 4 },
+        { horseName: 'Horse 5', rank: 5 },
+      ];
     }
+    return [...raceHorses]
+      .sort((a, b) => (a.modelRank || 99) - (b.modelRank || 99))
+      .slice(0, 5)
+      .map((h, i) => ({ horseName: h.horseName, rank: i + 1 }));
   };
 
-  const bettingSuggestion = getBettingSuggestion();
+  const topHorses = getSortedHorses();
+  const horse1 = topHorses[0]?.horseName || 'TBD';
+  const horse2 = topHorses[1]?.horseName || 'TBD';
+  const horse3 = topHorses[2]?.horseName || 'TBD';
+  const horse4 = topHorses[3]?.horseName || 'TBD';
+  const horse5 = topHorses[4]?.horseName || 'TBD';
+
+  // Note: Betting suggestion logic moved to race-level component
+  // This component now shows the Suggested Bets placeholder in the Analysis tab
 
   return (
     <div className={`horse-expanded horse-expanded--${valueStatus.toLowerCase()}`}>
@@ -614,13 +577,13 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
               <span className="furlong-score__total-percent">({scorePercentage}%)</span>
             </div>
 
-            {/* Progress Bar */}
+            {/* Progress Bar - using teal gradient */}
             <div className="furlong-score__total-bar">
               <div
                 className="furlong-score__total-bar-fill"
                 style={{
                   width: `${scorePercentage}%`,
-                  backgroundColor: getTierColor(baseScore),
+                  backgroundColor: getTealGradientColor(scorePercentage),
                 }}
               />
             </div>
@@ -640,24 +603,15 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
               </span>
             </div>
 
-            {/* Rating Section */}
+            {/* Rating Section - Simplified to single word only */}
             <div className="furlong-score__rating-section">
               <div className="furlong-score__tier-rating">
-                <div className="furlong-score__tier-value-row">
-                  <span
-                    className="furlong-score__tier-value"
-                    style={{ color: getTierColor(baseScore) }}
-                  >
-                    {tierRating.label}
-                  </span>
-                  <span className="furlong-score__value-separator">-</span>
-                  <span
-                    className="furlong-score__value-indicator"
-                    style={{ color: getEdgeColor(edgePercent) }}
-                  >
-                    {valueIndicator.label}
-                  </span>
-                </div>
+                <span
+                  className="furlong-score__value-indicator"
+                  style={{ color: valueIndicator.color }}
+                >
+                  {valueIndicator.label}
+                </span>
                 <span className="furlong-score__tier-label">RATING</span>
               </div>
 
@@ -673,7 +627,7 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
             </div>
           </div>
 
-          {/* Right Side: Category Breakdown - Horizontal */}
+          {/* Right Side: Category Breakdown - Horizontal with teal gradient bars */}
           <div className="furlong-score__categories">
             {categoryAnalysis.map((cat) => (
               <div key={cat.key} className="furlong-score__category">
@@ -683,8 +637,11 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                 </span>
                 <div className="furlong-score__category-bar">
                   <div
-                    className={`furlong-score__category-bar-fill ${getBarFillClass(cat.percent)}`}
-                    style={{ width: `${cat.percent}%` }}
+                    className="furlong-score__category-bar-fill"
+                    style={{
+                      width: `${cat.percent}%`,
+                      backgroundColor: getTealGradientColor(cat.percent),
+                    }}
                   />
                 </div>
                 <span className="furlong-score__category-desc">{cat.description}</span>
@@ -696,7 +653,7 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
 
       {/* ================================================================
           SECTION 2: TAB NAVIGATION
-          [Analysis] [View Full PPs] [View Workouts] [View Profile]
+          [Analysis] [View Profile] [View Full PPs] [View Workouts]
           ================================================================ */}
       <div className="expanded-tabs">
         <button
@@ -705,6 +662,13 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
         >
           <span className="expanded-tabs__btn-icon material-icons">analytics</span>
           <span className="expanded-tabs__btn-text">Analysis</span>
+        </button>
+        <button
+          className={`expanded-tabs__btn ${activeTab === 'profile' ? 'expanded-tabs__btn--active' : ''}`}
+          onClick={() => setActiveTab('profile')}
+        >
+          <span className="expanded-tabs__btn-icon material-icons">info</span>
+          <span className="expanded-tabs__btn-text">View Profile</span>
         </button>
         <button
           className={`expanded-tabs__btn ${activeTab === 'pps' ? 'expanded-tabs__btn--active' : ''}`}
@@ -720,175 +684,142 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
           <span className="expanded-tabs__btn-icon material-icons">fitness_center</span>
           <span className="expanded-tabs__btn-text">View Workouts</span>
         </button>
-        <button
-          className={`expanded-tabs__btn ${activeTab === 'profile' ? 'expanded-tabs__btn--active' : ''}`}
-          onClick={() => setActiveTab('profile')}
-        >
-          <span className="expanded-tabs__btn-icon material-icons">info</span>
-          <span className="expanded-tabs__btn-text">View Profile</span>
-        </button>
       </div>
 
       {/* ================================================================
           TAB CONTENT: ANALYSIS
-          WHY THIS IS A VALUE PLAY + Betting Suggestion
+          Two-column layout: Factor Breakdown (left) + Suggested Bets (right)
           ================================================================ */}
       {activeTab === 'analysis' && (
         <div className="tab-content tab-content--analysis">
-          {/* Value Reasons Section */}
-          <section className="value-reasons">
-            <div className="value-reasons__header">
-              {isOverlay
-                ? 'WHY THIS IS A VALUE PLAY:'
-                : isUnderlay
-                  ? 'WHY THIS IS NOT A VALUE PLAY:'
-                  : 'FACTOR ANALYSIS:'}
-            </div>
-            <div className="value-reasons__divider" />
+          <div className="analysis-two-column">
+            {/* LEFT SECTION: Factor Breakdown */}
+            <section className="factor-breakdown">
+              <div className="factor-breakdown__header">FACTOR BREAKDOWN</div>
+              <div className="factor-breakdown__divider" />
 
-            <div className="value-reasons__categories">
-              {categoryAnalysis.map((cat) => (
-                <div
-                  key={cat.key}
-                  className={`value-reasons__category value-reasons__category--${cat.rating.colorClass}`}
-                >
-                  <span className="value-reasons__category-icon">{cat.rating.icon}</span>
-                  <span className="value-reasons__category-name">
-                    {cat.label}: {cat.rating.label} ({cat.percent}%)
-                  </span>
-                  <span className="value-reasons__category-explanation">{cat.explanation}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Overall Score & Rank Summary */}
-            <div className="value-reasons__summary">
-              <div className="value-reasons__summary-item">
-                <span className="value-reasons__summary-label">OVERALL SCORE:</span>
-                <span
-                  className="value-reasons__summary-value"
-                  style={{ color: getTierColor(baseScore) }}
-                >
-                  {scoreTotal}/{SCORE_LIMITS.total} ({scorePercentage}%)
-                </span>
-              </div>
-              <div className="value-reasons__summary-item">
-                <span className="value-reasons__summary-label">MODEL RANK:</span>
-                <span className="value-reasons__summary-value">
-                  #{modelRank} of {totalHorses}
-                </span>
-              </div>
-              <div className="value-reasons__summary-item">
-                <span className="value-reasons__summary-label">ODDS COMPARE:</span>
-                <span className="value-reasons__summary-value">
-                  {currentOdds} → {fairOdds}
-                </span>
-              </div>
-            </div>
-
-            {/* Underlay Problem Explanation */}
-            {isUnderlay && (
-              <div className="value-reasons__problem">
-                <span className="value-reasons__problem-icon">⚠️</span>
-                <span className="value-reasons__problem-text">
-                  THE PROBLEM: Public knows this. Odds are too low.
-                  <br />
-                  Our fair odds: {fairOdds}. Public odds: {currentOdds}.
-                  <br />
-                  You're not getting paid enough for the risk.
-                </span>
-              </div>
-            )}
-          </section>
-
-          {/* Betting Suggestion Section */}
-          <section className={`betting-suggestion ${isPassRace ? 'betting-suggestion--pass' : ''}`}>
-            <div className="betting-suggestion__header">
-              <span className="betting-suggestion__icon">💰</span>
-              <span className="betting-suggestion__title">BETTING SUGGESTION</span>
-            </div>
-            <div className="betting-suggestion__divider" />
-
-            <div className="betting-suggestion__content">
-              {/* PASS race warning */}
-              {'isPassRace' in bettingSuggestion && bettingSuggestion.isPassRace && (
-                <div className="betting-suggestion__pass-warning">
-                  <span className="betting-suggestion__pass-icon">⚠️</span>
-                  <span className="betting-suggestion__pass-text">NO VALUE IN THIS RACE</span>
-                </div>
-              )}
-
-              {bettingSuggestion.primary && (
-                <div className="betting-suggestion__item betting-suggestion__item--primary">
-                  <span className="betting-suggestion__item-label">
-                    {'isPassRace' in bettingSuggestion && bettingSuggestion.isPassRace
-                      ? 'IF YOU MUST:'
-                      : 'PRIMARY:'}
-                  </span>
-                  <span className="betting-suggestion__item-bet">
-                    {bettingSuggestion.primary} bet
-                  </span>
-                  <span className="betting-suggestion__item-reason">
-                    "{bettingSuggestion.primaryReason}"
-                  </span>
-                </div>
-              )}
-
-              {'passMessage' in bettingSuggestion && bettingSuggestion.passMessage && (
-                <div className="betting-suggestion__pass-message">
-                  "{bettingSuggestion.passMessage}"
-                </div>
-              )}
-
-              {'exotic' in bettingSuggestion && bettingSuggestion.exotic && (
-                <div className="betting-suggestion__item betting-suggestion__item--exotic">
-                  <span className="betting-suggestion__item-label">EXOTIC:</span>
-                  <span className="betting-suggestion__item-bet">{bettingSuggestion.exotic}</span>
-                  {'exoticReason' in bettingSuggestion && bettingSuggestion.exoticReason && (
-                    <span className="betting-suggestion__item-reason">
-                      "{bettingSuggestion.exoticReason}"
+              <div className="factor-breakdown__categories">
+                {categoryAnalysis.map((cat) => (
+                  <div
+                    key={cat.key}
+                    className={`factor-breakdown__category factor-breakdown__category--${cat.rating.colorClass}`}
+                  >
+                    <span className="factor-breakdown__category-icon">{cat.rating.icon}</span>
+                    <span className="factor-breakdown__category-name">
+                      {cat.label}: {cat.rating.label} ({cat.percent}%)
                     </span>
-                  )}
-                </div>
-              )}
+                    <span className="factor-breakdown__category-explanation">{cat.explanation}</span>
+                  </div>
+                ))}
+              </div>
 
-              {bettingSuggestion.skip && (
-                <div className="betting-suggestion__item betting-suggestion__item--skip">
-                  <span className="betting-suggestion__item-label">SKIP:</span>
-                  <span className="betting-suggestion__item-bet">{bettingSuggestion.skip}</span>
-                  {bettingSuggestion.skipReason && (
-                    <span className="betting-suggestion__item-reason">
-                      "{bettingSuggestion.skipReason}"
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {'ifYouMust' in bettingSuggestion && bettingSuggestion.ifYouMust && (
-                <div className="betting-suggestion__item betting-suggestion__item--ifyoumust">
-                  <span className="betting-suggestion__item-label">IF YOU MUST:</span>
-                  <span className="betting-suggestion__item-bet">
-                    {bettingSuggestion.ifYouMust}
-                  </span>
-                  {'ifYouMustReason' in bettingSuggestion && bettingSuggestion.ifYouMustReason && (
-                    <span className="betting-suggestion__item-reason">
-                      "{bettingSuggestion.ifYouMustReason}"
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {!isOverlay && !isUnderlay && !isPassRace && (
-                <div className="betting-suggestion__item betting-suggestion__item--neutral">
-                  <span className="betting-suggestion__item-label">NEUTRAL:</span>
-                  <span className="betting-suggestion__item-bet">No strong edge either way</span>
-                  <span className="betting-suggestion__item-reason">
-                    "Bet if you like the horse, but don't expect value."
+              {/* Overall Score & Rank Summary */}
+              <div className="factor-breakdown__summary">
+                <div className="factor-breakdown__summary-item">
+                  <span className="factor-breakdown__summary-label">OVERALL SCORE:</span>
+                  <span
+                    className="factor-breakdown__summary-value"
+                    style={{ color: getTierColor(baseScore) }}
+                  >
+                    {scoreTotal}/{SCORE_LIMITS.total} ({scorePercentage}%)
                   </span>
                 </div>
+                <div className="factor-breakdown__summary-item">
+                  <span className="factor-breakdown__summary-label">MODEL RANK:</span>
+                  <span className="factor-breakdown__summary-value">
+                    #{modelRank} of {totalHorses}
+                  </span>
+                </div>
+                <div className="factor-breakdown__summary-item">
+                  <span className="factor-breakdown__summary-label">ODDS COMPARE:</span>
+                  <span className="factor-breakdown__summary-value">
+                    {currentOdds} → {fairOdds}
+                  </span>
+                </div>
+              </div>
+
+              {/* Underlay Problem Explanation */}
+              {isUnderlay && (
+                <div className="factor-breakdown__problem">
+                  <span className="factor-breakdown__problem-icon">⚠️</span>
+                  <span className="factor-breakdown__problem-text">
+                    THE PROBLEM: Public knows this. Odds are too low.
+                    <br />
+                    Our fair odds: {fairOdds}. Public odds: {currentOdds}.
+                    <br />
+                    You're not getting paid enough for the risk.
+                  </span>
+                </div>
               )}
-            </div>
-          </section>
+            </section>
+
+            {/* RIGHT SECTION: Suggested Bets */}
+            <section className="suggested-bets">
+              <div className="suggested-bets__header">SUGGESTED BETS</div>
+              <div className="suggested-bets__divider" />
+
+              <div className="suggested-bets__content">
+                {/* CONSERVATIVE Tier */}
+                <div className="suggested-bets__tier">
+                  <div className="suggested-bets__tier-header">
+                    <span className="suggested-bets__tier-icon">🎯</span>
+                    <span className="suggested-bets__tier-label">CONSERVATIVE</span>
+                  </div>
+                  <div className="suggested-bets__tier-bets">
+                    <div className="suggested-bets__bet">
+                      <span className="suggested-bets__bet-type">Win:</span>
+                      <span className="suggested-bets__bet-horses">{horse1}</span>
+                    </div>
+                    <div className="suggested-bets__bet">
+                      <span className="suggested-bets__bet-type">Place:</span>
+                      <span className="suggested-bets__bet-horses">{horse2}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* MODERATE Tier */}
+                <div className="suggested-bets__tier">
+                  <div className="suggested-bets__tier-header">
+                    <span className="suggested-bets__tier-icon">🎲</span>
+                    <span className="suggested-bets__tier-label">MODERATE</span>
+                  </div>
+                  <div className="suggested-bets__tier-bets">
+                    <div className="suggested-bets__bet">
+                      <span className="suggested-bets__bet-type">Exacta Box:</span>
+                      <span className="suggested-bets__bet-horses">{horse1}, {horse2}</span>
+                    </div>
+                    <div className="suggested-bets__bet">
+                      <span className="suggested-bets__bet-type">Trifecta Key:</span>
+                      <span className="suggested-bets__bet-horses">{horse1} over {horse2}, {horse3}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* AGGRESSIVE Tier */}
+                <div className="suggested-bets__tier">
+                  <div className="suggested-bets__tier-header">
+                    <span className="suggested-bets__tier-icon">🔥</span>
+                    <span className="suggested-bets__tier-label">AGGRESSIVE</span>
+                  </div>
+                  <div className="suggested-bets__tier-bets">
+                    <div className="suggested-bets__bet">
+                      <span className="suggested-bets__bet-type">Trifecta Box:</span>
+                      <span className="suggested-bets__bet-horses">{horse1}, {horse2}, {horse3}, {horse4}</span>
+                    </div>
+                    <div className="suggested-bets__bet">
+                      <span className="suggested-bets__bet-type">Superfecta:</span>
+                      <span className="suggested-bets__bet-horses">{horse1}/{horse2} over {horse3}, {horse4}, {horse5}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Placeholder note */}
+                <div className="suggested-bets__note">
+                  Suggestions based on model rankings. Adjust based on current odds and bankroll.
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
       )}
 
