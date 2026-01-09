@@ -3,6 +3,7 @@ import './Dashboard.css';
 import { useValueDetection } from '../hooks/useValueDetection';
 import { useRaceBets } from '../hooks/useRaceBets';
 import { BetModeContainer } from './BetMode';
+import { TopBetsPanel } from './TopBets';
 import { FileUpload } from './FileUpload';
 import { HorseExpandedView } from './HorseExpandedView';
 import { HorseSummaryBar } from './HorseSummaryBar';
@@ -214,8 +215,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   isLoading = false,
   onParsed,
 }) => {
-  // View mode state: 'analysis' (default) or 'betMode'
-  const [viewMode, setViewMode] = useState<'analysis' | 'betMode'>('analysis');
+  // View mode state: 'analysis' (default), 'betMode', or 'topBets'
+  const [viewMode, setViewMode] = useState<'analysis' | 'betMode' | 'topBets'>('analysis');
 
   // State for expanded horse in horse list
   const [expandedHorseId, setExpandedHorseId] = useState<string | number | null>(null);
@@ -840,7 +841,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Main Content */}
         <main className="app-main">
-          {viewMode === 'betMode' ? (
+          {viewMode === 'topBets' ? (
+            /* TOP BETS - Top 25 bet recommendations */
+            <TopBetsPanel
+              race={currentRace}
+              raceNumber={selectedRaceIndex + 1}
+              trackName={
+                trackCode ? getTrackDisplayName(trackCode, getTrackSize(trackCode)) : undefined
+              }
+              scoredHorses={currentRaceScoredHorses}
+              getOdds={(index, defaultOdds) => raceState.getOdds(index, defaultOdds)}
+              isScratched={(index) => raceState.isScratched(index)}
+              onClose={() => setViewMode('analysis')}
+              allRaces={parsedData?.races}
+              allScoredHorses={allScoredHorses}
+              onNavigateToRace={onRaceSelect}
+            />
+          ) : viewMode === 'betMode' ? (
             /* BET MODE - Full screen betting interface */
             <BetModeContainer
               race={currentRace}
@@ -1251,6 +1268,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
             >
               <span className="app-bottombar__bet-icon">🎯</span>
               <span>{viewMode === 'betMode' ? 'ANALYSIS' : 'BET MODE'}</span>
+            </button>
+          </div>
+
+          {/* Separator */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* TOP BETS button - Shows Top 25 bets by EV */}
+          <div className="app-bottombar__cluster">
+            <button
+              className={`app-bottombar__item app-bottombar__item--top-bets ${viewMode === 'topBets' ? 'app-bottombar__item--top-bets-active' : ''}`}
+              onClick={() => setViewMode(viewMode === 'topBets' ? 'analysis' : 'topBets')}
+              disabled={!parsedData || isLoading}
+              title={
+                viewMode === 'topBets'
+                  ? 'Return to analysis view'
+                  : 'View Top 25 bets ranked by expected value'
+              }
+            >
+              <span className="app-bottombar__top-bets-icon">🏆</span>
+              <span>{viewMode === 'topBets' ? 'ANALYSIS' : 'TOP BETS'}</span>
             </button>
           </div>
 
