@@ -172,6 +172,12 @@
   white-space: nowrap;
 }
 
+/* Muted secondary race info (turf course, rail, chute) */
+.app-topbar__race-info-text--muted {
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
 /* Post time - single value */
 .app-topbar__post-time {
   display: flex;
