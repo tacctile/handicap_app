@@ -751,6 +751,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                   {/* Column Headers - Sortable: POST, RANK, ODDS, FAIR, EDGE | Non-sortable: HORSE, VALUE */}
                   <div className="horse-list-header">
+                    {/* Column 0: RACES label - positioned above race rail */}
+                    <div className="horse-list-header__cell horse-list-header__cell--races-label">
+                      <span className="horse-list-header__races-text">RACES</span>
+                    </div>
+
                     {/* Column 1: Help button */}
                     <div className="horse-list-header__cell horse-list-header__cell--icons">
                       <button
@@ -774,11 +779,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     >
                       <span className="horse-list-header__label">
                         POST
-                        {sortColumn === 'POST' && (
-                          <span className="horse-list-header__arrow">
-                            {sortDirection === 'asc' ? '▲' : '▼'}
-                          </span>
-                        )}
+                        <span
+                          className={`horse-list-header__arrow ${sortColumn === 'POST' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
+                        >
+                          {sortColumn === 'POST' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                        </span>
                       </span>
                     </div>
 
@@ -797,11 +802,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     >
                       <span className="horse-list-header__label">
                         RANK
-                        {sortColumn === 'RANK' && (
-                          <span className="horse-list-header__arrow">
-                            {sortDirection === 'asc' ? '▲' : '▼'}
-                          </span>
-                        )}
+                        <span
+                          className={`horse-list-header__arrow ${sortColumn === 'RANK' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
+                        >
+                          {sortColumn === 'RANK' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                        </span>
                       </span>
                     </div>
 
@@ -815,11 +820,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     >
                       <span className="horse-list-header__label">
                         ODDS
-                        {sortColumn === 'ODDS' && (
-                          <span className="horse-list-header__arrow">
-                            {sortDirection === 'asc' ? '▲' : '▼'}
-                          </span>
-                        )}
+                        <span
+                          className={`horse-list-header__arrow ${sortColumn === 'ODDS' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
+                        >
+                          {sortColumn === 'ODDS' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                        </span>
                       </span>
                     </div>
 
@@ -833,11 +838,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     >
                       <span className="horse-list-header__label">
                         FAIR
-                        {sortColumn === 'FAIR' && (
-                          <span className="horse-list-header__arrow">
-                            {sortDirection === 'asc' ? '▲' : '▼'}
-                          </span>
-                        )}
+                        <span
+                          className={`horse-list-header__arrow ${sortColumn === 'FAIR' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
+                        >
+                          {sortColumn === 'FAIR' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                        </span>
                       </span>
                     </div>
 
@@ -851,11 +856,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     >
                       <span className="horse-list-header__label">
                         EDGE
-                        {sortColumn === 'EDGE' && (
-                          <span className="horse-list-header__arrow">
-                            {sortDirection === 'asc' ? '▲' : '▼'}
-                          </span>
-                        )}
+                        <span
+                          className={`horse-list-header__arrow ${sortColumn === 'EDGE' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
+                        >
+                          {sortColumn === 'EDGE' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                        </span>
                       </span>
                     </div>
 

@@ -249,19 +249,8 @@
   position: relative;
 }
 
-/* Header bar extension into race rail area - covers verdict bar + column headers */
-.app-layout .app-race-rail::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: -1px;
-  /* Height = verdict bar + column headers = 96px */
-  height: calc(var(--bar-height, 48px) * 2);
-  background: var(--color-elevated);
-  border-bottom: 1px solid var(--color-border);
-  z-index: 25; /* Above verdict bar and column headers */
-}
+/* Race rail top area - no longer needed as verdict bar and column headers now extend to fill this space */
+/* Kept as comment for reference - bars use negative margins to extend backgrounds */
 
 .app-race-rail__item {
   flex: 1;
@@ -1175,13 +1164,15 @@
 
 .horse-list-header {
   display: grid;
-  grid-template-columns: var(--horse-list-grid);
+  /* Add races-label column before the regular grid columns */
+  grid-template-columns: var(--dimension-bar, 64px) var(--horse-list-grid);
   align-items: center;
   gap: 16px;
   padding: 0 16px;
   margin: 0;
-  margin-left: -1px;
-  padding-left: 17px;
+  /* Extend to left edge - covers race rail area */
+  margin-left: calc(-1 * var(--dimension-bar, 64px) - 1px);
+  padding-left: 0; /* No padding - races label uses the left space */
   background: var(--color-elevated);
   border-bottom: 1px solid var(--color-border);
   position: sticky;
@@ -1189,7 +1180,7 @@
   z-index: 15;
   height: var(--bar-height, 48px);
   min-height: var(--bar-height, 48px);
-  width: calc(100% + 1px);
+  width: calc(100% + var(--dimension-bar, 64px) + 1px);
   min-width: 0;
 }
 
@@ -1198,6 +1189,22 @@
   align-items: center;
   justify-content: center;
   height: 100%;
+}
+
+/* RACES label cell - positioned in the left extension area above race rail */
+.horse-list-header__cell--races-label {
+  justify-content: center;
+  border-right: 1px solid var(--color-border);
+  margin-right: -1px;
+  padding-right: 1px;
+}
+
+.horse-list-header__races-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .horse-list-header__label {
@@ -1213,11 +1220,22 @@
   gap: 4px;
 }
 
-/* Sort arrow */
+/* Sort arrow - shows on all sortable columns */
 .horse-list-header__arrow {
   font-size: 10px;
-  color: var(--color-primary);
   margin-left: 2px;
+  transition: color 0.15s ease;
+}
+
+/* Active sort column arrow - bright teal */
+.horse-list-header__arrow--active {
+  color: var(--color-primary);
+}
+
+/* Inactive sortable column arrow - muted gray */
+.horse-list-header__arrow--inactive {
+  color: var(--color-text-tertiary);
+  opacity: 0.6;
 }
 
 /* Sortable column styles */
@@ -1243,9 +1261,10 @@
   font-weight: 700;
 }
 
-/* Icons column - help button */
+/* Icons column - help button, left-aligned to match SCRATCH button and verdict dots below */
 .horse-list-header__cell--icons {
-  justify-content: center;
+  justify-content: flex-start;
+  padding-left: 16px;
 }
 
 /* Help trigger button */
