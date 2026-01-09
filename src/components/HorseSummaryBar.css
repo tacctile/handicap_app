@@ -48,7 +48,8 @@
 
 .horse-summary-bar--expanded {
   /* CRITICAL: solid opaque background to prevent content bleed-through */
-  background-color: #1e1e20; /* Solid hex - slightly lighter than base for elevated look */
+  /* Use !important to override value-play, tier, and other semi-transparent backgrounds */
+  background: #1e1e20 !important; /* Solid hex - slightly lighter than base for elevated look */
   /* Sticky positioning when expanded - sticks below verdict bar and column headers */
   position: sticky;
   top: calc(var(--bar-height, 48px) * 2); /* 96px - below both sticky headers */
