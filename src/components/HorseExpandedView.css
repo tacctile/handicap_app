@@ -1455,12 +1455,19 @@
 /* ============================================================================
    ANALYSIS TAB - Two Column Layout
    Left: Factor Breakdown | Right: Suggested Bets
+   Both sections equal height using flexbox
    ============================================================================ */
 
 .analysis-two-column {
   display: flex;
   gap: 0;
   min-height: 400px;
+  align-items: stretch;
+}
+
+.analysis-two-column > section {
+  display: flex;
+  flex-direction: column;
 }
 
 /* LEFT SECTION: Factor Breakdown */
@@ -1490,7 +1497,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 20px;
+  flex: 1;
 }
 
 .factor-breakdown__category {
@@ -1612,12 +1619,26 @@
 }
 
 .suggested-bets__header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.suggested-bets__header-title {
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.5px;
   color: var(--color-text-primary, #eeeff1);
-  margin-bottom: 8px;
+}
+
+.suggested-bets__header-subtitle {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--color-text-tertiary, #6e6e70);
 }
 
 .suggested-bets__divider {
@@ -1630,6 +1651,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  flex: 1;
 }
 
 /* Bet Tier Styling */
@@ -1659,17 +1681,12 @@
   margin-bottom: 10px;
 }
 
-.suggested-bets__tier-icon {
-  font-size: 16px;
-}
-
 .suggested-bets__tier-label {
   font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: var(--color-text-secondary, #b4b4b6);
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--color-text-primary, #eeeff1);
 }
 
 .suggested-bets__tier-bets {
@@ -1698,16 +1715,6 @@
   font-size: 12px;
   font-weight: 500;
   color: var(--color-text-primary, #eeeff1);
-}
-
-.suggested-bets__note {
-  font-family: var(--font-sans);
-  font-size: 10px;
-  font-style: italic;
-  color: var(--color-text-tertiary, #6e6e70);
-  padding: 8px 0;
-  border-top: 1px solid var(--subtle-border);
-  margin-top: 8px;
 }
 
 /* Responsive: Stack columns on smaller screens */
