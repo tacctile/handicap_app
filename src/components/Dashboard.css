@@ -27,7 +27,7 @@
   display: grid;
   grid-template-rows: var(--bar-height) 1fr var(--bar-height);
   grid-template-columns: var(--dimension-bar) 1fr;
-  overflow: hidden;
+  overflow: visible; /* Allow bars in main content to extend into race rail column */
   transition: width var(--transition-normal);
   width: 100%;
   min-width: 0; /* Allow flex item to shrink below content size */
@@ -387,7 +387,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible; /* Allow bars to extend into race rail area */
   background: var(--color-base);
   padding: 0;
   margin: 0;
@@ -401,7 +401,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: visible; /* Allow bars to extend into race rail area */
   padding: 0; /* NO padding - content goes to edges */
   padding-bottom: 56px; /* Space for footer (48px) + small buffer */
   margin: 0;

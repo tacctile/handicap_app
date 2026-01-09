@@ -489,6 +489,7 @@
   padding: 0;
   /* Create stacking context - sticky headers inside will layer properly */
   position: relative;
+  overflow: visible; /* Allow bars to extend into race rail area */
 }
 
 .horse-list__item {
