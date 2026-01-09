@@ -4,7 +4,7 @@ import { PPLine } from './PPLine';
 import type { HorseEntry, PastPerformance, Workout } from '../types/drf';
 import type { HorseScore } from '../lib/scoring';
 import { formatRacingDistance } from '../utils/formatters';
-import type { BetTier } from '../hooks/useRaceBets';
+import type { BetTier, RaceContextSummary } from '../hooks/useRaceBets';
 
 // ============================================================================
 // CONSTANTS & UTILITIES
@@ -464,6 +464,10 @@ interface HorseExpandedViewProps {
     aggressive: BetTier;
     hasRecommendations: boolean;
     summary: string;
+    raceContext?: RaceContextSummary;
+    isPassRace?: boolean;
+    fieldSize?: number;
+    scratchCount?: number;
   };
 }
 
@@ -735,7 +739,9 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
             </section>
 
             {/* RIGHT SECTION: Suggested Bets */}
-            <section className="suggested-bets">
+            <section
+              className={`suggested-bets ${betRecommendations?.isPassRace ? 'suggested-bets--pass' : ''}`}
+            >
               <div className="suggested-bets__header">
                 <span className="suggested-bets__header-title">SUGGESTED BETS</span>
                 <span className="suggested-bets__header-subtitle">
@@ -745,6 +751,35 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                 </span>
               </div>
               <div className="suggested-bets__divider" />
+
+              {/* Race Context Summary - Shows at top of Suggested Bets */}
+              {betRecommendations?.raceContext && (
+                <div
+                  className={`suggested-bets__race-context suggested-bets__race-context--${betRecommendations.raceContext.severity}`}
+                >
+                  <span className="suggested-bets__race-context-icon">
+                    {betRecommendations.raceContext.severity === 'pass'
+                      ? '⚠️'
+                      : betRecommendations.raceContext.severity === 'caution'
+                        ? '⚠️'
+                        : betRecommendations.raceContext.severity === 'good'
+                          ? '✅'
+                          : betRecommendations.raceContext.severity === 'limited'
+                            ? 'ℹ️'
+                            : 'ℹ️'}
+                  </span>
+                  <div className="suggested-bets__race-context-content">
+                    <span className="suggested-bets__race-context-message">
+                      {betRecommendations.raceContext.message}
+                    </span>
+                    {betRecommendations.raceContext.details && (
+                      <span className="suggested-bets__race-context-details">
+                        {betRecommendations.raceContext.details}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="suggested-bets__content">
                 {/* Conservative Bets Tier */}
@@ -764,10 +799,18 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                       ))
                     ) : (
                       <div className="suggested-bets__bet suggested-bets__bet--empty">
-                        <span className="suggested-bets__bet-empty-message">
-                          {betRecommendations?.conservative.emptyMessage ||
-                            'No conservative bets recommended'}
-                        </span>
+                        <span className="suggested-bets__bet-empty-icon">ℹ️</span>
+                        <div className="suggested-bets__bet-empty-content">
+                          <span className="suggested-bets__bet-empty-message">
+                            {betRecommendations?.conservative.emptyMessage ||
+                              'No win/place value identified — all horses are fairly priced or underlays.'}
+                          </span>
+                          {betRecommendations?.conservative.contextStats && (
+                            <span className="suggested-bets__bet-empty-stats">
+                              ({betRecommendations.conservative.contextStats})
+                            </span>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -790,10 +833,18 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                       ))
                     ) : (
                       <div className="suggested-bets__bet suggested-bets__bet--empty">
-                        <span className="suggested-bets__bet-empty-message">
-                          {betRecommendations?.moderate.emptyMessage ||
-                            'No moderate bets recommended'}
-                        </span>
+                        <span className="suggested-bets__bet-empty-icon">ℹ️</span>
+                        <div className="suggested-bets__bet-empty-content">
+                          <span className="suggested-bets__bet-empty-message">
+                            {betRecommendations?.moderate.emptyMessage ||
+                              'No exotic combinations recommended — not enough high-confidence value plays to justify multi-horse bet costs.'}
+                          </span>
+                          {betRecommendations?.moderate.contextStats && (
+                            <span className="suggested-bets__bet-empty-stats">
+                              ({betRecommendations.moderate.contextStats})
+                            </span>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -816,10 +867,18 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                       ))
                     ) : (
                       <div className="suggested-bets__bet suggested-bets__bet--empty">
-                        <span className="suggested-bets__bet-empty-message">
-                          {betRecommendations?.aggressive.emptyMessage ||
-                            'No aggressive bets recommended'}
-                        </span>
+                        <span className="suggested-bets__bet-empty-icon">ℹ️</span>
+                        <div className="suggested-bets__bet-empty-content">
+                          <span className="suggested-bets__bet-empty-message">
+                            {betRecommendations?.aggressive.emptyMessage ||
+                              'No high-risk plays identified — no longshots showing significant overlay.'}
+                          </span>
+                          {betRecommendations?.aggressive.contextStats && (
+                            <span className="suggested-bets__bet-empty-stats">
+                              ({betRecommendations.aggressive.contextStats})
+                            </span>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

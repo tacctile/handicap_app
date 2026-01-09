@@ -1738,13 +1738,139 @@
 /* Empty state styling for suggested bets */
 .suggested-bets__bet--empty {
   padding: 8px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.suggested-bets__bet-empty-icon {
+  font-size: 14px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.suggested-bets__bet-empty-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .suggested-bets__bet-empty-message {
   font-family: var(--font-sans);
   font-size: 11px;
-  font-style: italic;
+  font-weight: 400;
+  color: #6b7280; /* Muted text color as specified */
+  line-height: 1.5;
+}
+
+.suggested-bets__bet-empty-stats {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 500;
   color: var(--color-text-tertiary, #6e6e70);
+}
+
+/* ============================================================================
+   RACE CONTEXT SUMMARY - Shows at top of Suggested Bets
+   ============================================================================ */
+
+.suggested-bets__race-context {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  border-left: 3px solid var(--section-border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.suggested-bets__race-context-icon {
+  font-size: 16px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.suggested-bets__race-context-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.suggested-bets__race-context-message {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-text-primary, #eeeff1);
+}
+
+.suggested-bets__race-context-details {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-secondary, #b4b4b6);
+}
+
+/* Race Context Severity Variants */
+.suggested-bets__race-context--good {
+  border-left-color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.suggested-bets__race-context--good .suggested-bets__race-context-message {
+  color: #10b981;
+}
+
+.suggested-bets__race-context--limited {
+  border-left-color: #6b7280;
+  background: rgba(107, 114, 128, 0.08);
+}
+
+.suggested-bets__race-context--limited .suggested-bets__race-context-message {
+  color: var(--color-text-secondary, #b4b4b6);
+}
+
+.suggested-bets__race-context--none {
+  border-left-color: #6b7280;
+  background: rgba(107, 114, 128, 0.05);
+}
+
+.suggested-bets__race-context--none .suggested-bets__race-context-message {
+  color: var(--color-text-tertiary, #6e6e70);
+}
+
+.suggested-bets__race-context--caution {
+  border-left-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.suggested-bets__race-context--caution .suggested-bets__race-context-message {
+  color: #f59e0b;
+}
+
+/* PASS Race - Amber/Yellow caution styling */
+.suggested-bets__race-context--pass {
+  border-left-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-left-width: 3px;
+}
+
+.suggested-bets__race-context--pass .suggested-bets__race-context-message {
+  color: #f59e0b;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.suggested-bets__race-context--pass .suggested-bets__race-context-details {
+  color: rgba(245, 158, 11, 0.8);
+}
+
+/* PASS race styling for entire section */
+.suggested-bets--pass {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(245, 158, 11, 0.02));
 }
 
 /* Responsive: Stack columns on smaller screens */
@@ -1782,5 +1908,32 @@
 
   .suggested-bets__bet-type {
     min-width: auto;
+  }
+
+  /* Mobile: Race context summary */
+  .suggested-bets__race-context {
+    padding: 10px 12px;
+  }
+
+  .suggested-bets__race-context-message {
+    font-size: 11px;
+  }
+
+  .suggested-bets__race-context-details {
+    font-size: 10px;
+  }
+
+  /* Mobile: Empty state styles */
+  .suggested-bets__bet--empty {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .suggested-bets__bet-empty-message {
+    font-size: 10px;
+  }
+
+  .suggested-bets__bet-empty-stats {
+    font-size: 9px;
   }
 }
