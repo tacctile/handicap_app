@@ -710,19 +710,43 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                 ))}
               </div>
 
-              {/* Underlay Problem Explanation */}
-              {isUnderlay && (
-                <div className="factor-breakdown__problem">
-                  <span className="factor-breakdown__problem-icon">⚠️</span>
-                  <span className="factor-breakdown__problem-text">
-                    THE PROBLEM: Public knows this. Odds are too low.
-                    <br />
-                    Our fair odds: {fairOdds}. Public odds: {currentOdds}.
-                    <br />
-                    You're not getting paid enough for the risk.
-                  </span>
-                </div>
-              )}
+              {/* Value Rating Indicator - shows for all horses */}
+              <div
+                className={`factor-breakdown__rating factor-breakdown__rating--${valueIndicator.className}`}
+              >
+                <span className="factor-breakdown__rating-icon">
+                  {isOverlay ? '✅' : isUnderlay ? '⚠️' : '➖'}
+                </span>
+                <span className="factor-breakdown__rating-text">
+                  {isOverlay && (
+                    <>
+                      VALUE DETECTED: This horse is underbet by the public.
+                      <br />
+                      Our fair odds: {fairOdds}. Public odds: {currentOdds}.
+                      <br />
+                      You're getting paid more than the risk warrants.
+                    </>
+                  )}
+                  {isUnderlay && (
+                    <>
+                      THE PROBLEM: Public knows this. Odds are too low.
+                      <br />
+                      Our fair odds: {fairOdds}. Public odds: {currentOdds}.
+                      <br />
+                      You're not getting paid enough for the risk.
+                    </>
+                  )}
+                  {!isOverlay && !isUnderlay && (
+                    <>
+                      FAIR PRICE: Odds reflect the horse's true chance.
+                      <br />
+                      Our fair odds: {fairOdds}. Public odds: {currentOdds}.
+                      <br />
+                      No significant edge either way.
+                    </>
+                  )}
+                </span>
+              </div>
             </section>
 
             {/* RIGHT SECTION: Suggested Bets */}

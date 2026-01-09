@@ -1587,23 +1587,37 @@
   font-weight: 700;
 }
 
-/* Problem callout for underlays */
-.factor-breakdown__problem {
+/* Value Rating Indicator - shows for all horses */
+.factor-breakdown__rating {
   display: flex;
   align-items: flex-start;
   gap: 12px;
   padding: 12px 16px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 6px;
+  margin-top: 16px;
 }
 
-.factor-breakdown__problem-icon {
+.factor-breakdown__rating--value {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.factor-breakdown__rating--fair {
+  background: rgba(107, 114, 128, 0.1);
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+.factor-breakdown__rating--no-value {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.factor-breakdown__rating-icon {
   font-size: 20px;
   flex-shrink: 0;
 }
 
-.factor-breakdown__problem-text {
+.factor-breakdown__rating-text {
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 500;
