@@ -280,7 +280,11 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       onClick={handleRowClick}
     >
       {/* Column 1: Scratch and Compare icons stacked */}
-      <div className="horse-summary-bar__icons" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="horse-summary-bar__icons"
+        onClick={(e) => e.stopPropagation()}
+        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}
+      >
         {/* Scratch row */}
         <div className="horse-summary-bar__icon-row">
           <button
@@ -320,7 +324,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       </div>
 
       {/* Column 2: POST (Program Position) */}
-      <div className="horse-summary-bar__pp">#{programNumber}</div>
+      <div className="horse-summary-bar__pp" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', width: '100%' }}>#{programNumber}</div>
 
       {/* Column 3: HORSE Name - FULL WIDTH, NO TRUNCATION */}
       <div className="horse-summary-bar__name">{horseName.toUpperCase()}</div>
