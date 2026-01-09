@@ -102,7 +102,7 @@ const buildCompactRaceInfo = (race: ParsedRace | undefined): string => {
     raceTypeDisplay = header.raceType;
   } else if (header.classification) {
     // Fallback to classification if raceType not set
-    const classDisplay = {
+    const classDisplay: Record<string, string> = {
       'maiden': 'Maiden',
       'maiden-claiming': 'Maiden Claiming',
       'claiming': 'Claiming',
@@ -115,8 +115,9 @@ const buildCompactRaceInfo = (race: ParsedRace | undefined): string => {
       'stakes-graded-2': 'G2 Stakes',
       'stakes-graded-1': 'G1 Stakes',
       'handicap': 'Handicap',
-    }[header.classification] || header.classification;
-    raceTypeDisplay = classDisplay;
+      'unknown': 'Race',
+    };
+    raceTypeDisplay = classDisplay[header.classification] || header.classification;
   }
 
   if (raceTypeDisplay) {
