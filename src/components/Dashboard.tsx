@@ -399,21 +399,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const { countdown } = usePostTime(postTimeString, raceDateString);
 
   // Format race date for display
+  // Uses manual string formatting to avoid JavaScript Date timezone issues
   const formatRaceDate = (dateStr: string | undefined): string => {
     if (!dateStr) return 'Unknown Date';
-    // Try to parse and format the date
     try {
-      // DRF dates are typically YYYYMMDD format
+      // DRF dates are YYYYMMDD format
       if (dateStr.length === 8) {
         const year = dateStr.substring(0, 4);
-        const month = dateStr.substring(4, 6);
-        const day = dateStr.substring(6, 8);
-        const date = new Date(`${year}-${month}-${day}`);
-        return date.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        });
+        const monthNum = parseInt(dateStr.substring(4, 6), 10);
+        const dayNum = parseInt(dateStr.substring(6, 8), 10);
+
+        // Manual month lookup to avoid Date object timezone shifts
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthName = months[monthNum - 1];
+
+        if (!monthName || isNaN(dayNum) || dayNum < 1 || dayNum > 31) {
+          return dateStr;
+        }
+
+        return `${monthName} ${dayNum}, ${year}`;
       }
       return dateStr;
     } catch {
@@ -771,18 +776,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
               {/* Separator */}
               <div className="app-topbar__separator"></div>
 
-              {/* Post time countdown */}
-              <div
-                className={`app-topbar__countdown ${countdownDisplay.isPosted ? 'app-topbar__countdown--posted' : `app-topbar__countdown--${getCountdownUrgency(countdownSeconds)}`}`}
-              >
-                {countdownDisplay.isPosted ? (
-                  <span className="app-topbar__countdown-time">{countdownDisplay.text}</span>
-                ) : (
-                  <>
-                    <span>Post </span>
-                    <span className="app-topbar__countdown-time">{countdownDisplay.text}</span>
-                  </>
-                )}
+              {/* Post time display - shows scheduled time with timezone */}
+              <div className="app-topbar__post-time">
+                {(() => {
+                  const postTimeValue = getPostTime(currentRace);
+                  const formattedTime = formatPostTime(postTimeValue);
+                  const hasPostTime = formattedTime !== '--:--';
+
+                  return (
+                    <>
+                      <span className="app-topbar__post-time-value">
+                        {hasPostTime ? `${formattedTime} ET` : 'TBD'}
+                      </span>
+                      <span className="app-topbar__post-time-label">Scheduled post</span>
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Separator */}
