@@ -162,18 +162,6 @@ const getCategoryExplanation = (
 };
 
 /**
- * Get tier rating label based on BASE score
- * Note: Currently unused - rating section now shows single-word value indicator only
- */
-const _getTierRating = (baseScore: number): { label: string; className: string } => {
-  if (baseScore >= 200) return { label: 'ELITE', className: 'elite' };
-  if (baseScore >= 180) return { label: 'STRONG', className: 'strong' };
-  if (baseScore >= 160) return { label: 'COMPETITIVE', className: 'competitive' };
-  if (baseScore >= 140) return { label: 'MARGINAL', className: 'marginal' };
-  return { label: 'WEAK', className: 'weak' };
-};
-
-/**
  * Get value indicator based on edge - simplified to single word only
  * VALUE (green) = overlay, good bet
  * PASS (red) = underlay, skip it
@@ -229,13 +217,6 @@ const getTealGradientColor = (percent: number): string => {
   if (percent >= 67) return '#19abb5'; // Bright teal for high scores
   if (percent >= 34) return '#1b7583'; // Medium teal for mid scores
   return '#0e343e'; // Dark muted teal for low scores
-};
-
-// Get progress bar fill color class (now using teal gradient)
-const getBarFillClass = (percent: number): string => {
-  if (percent >= 67) return 'furlong-score__category-bar-fill--high';
-  if (percent >= 34) return 'furlong-score__category-bar-fill--medium';
-  return 'furlong-score__category-bar-fill--low';
 };
 
 // Helper to determine if win rate is good (25%+)
