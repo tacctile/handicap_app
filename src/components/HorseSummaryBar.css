@@ -67,7 +67,7 @@
 .horse-summary-bar__icons {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center; /* Center icons horizontally in column */
   justify-content: center;
   gap: 4px;
   padding: 4px 0;
@@ -153,6 +153,9 @@
 
 /* Program number - anchor/identifier (Option C hierarchy) */
 .horse-summary-bar__pp {
+  display: flex;
+  align-items: center; /* Center vertically */
+  justify-content: center; /* Center horizontally */
   font-size: 28px;
   font-weight: 700;
   color: var(--color-text-primary);
