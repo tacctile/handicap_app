@@ -1497,7 +1497,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  flex: 1;
 }
 
 .factor-breakdown__category {
@@ -1594,7 +1593,8 @@
   gap: 12px;
   padding: 12px 16px;
   border-radius: 6px;
-  margin-top: 16px;
+  margin-top: auto;
+  padding-top: 16px;
 }
 
 .factor-breakdown__rating--value {
@@ -1674,6 +1674,9 @@
   background: rgba(255, 255, 255, 0.03);
   border-radius: 8px;
   border-left: 3px solid var(--section-border);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .suggested-bets__tier:nth-child(1) {
