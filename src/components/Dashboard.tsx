@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import './Dashboard.css';
 import { useValueDetection } from '../hooks/useValueDetection';
+import { useRaceBets } from '../hooks/useRaceBets';
 import { BetModeContainer } from './BetMode';
 import { FileUpload } from './FileUpload';
 import { HorseExpandedView } from './HorseExpandedView';
@@ -97,27 +98,33 @@ const buildFullRaceInfo = (race: ParsedRace | undefined): string => {
     parts.push(header.raceType);
   } else if (header.classification) {
     const classDisplay: Record<string, string> = {
-      'maiden': 'Maiden',
+      maiden: 'Maiden',
       'maiden-claiming': 'Maiden Claiming',
-      'claiming': 'Claiming',
-      'allowance': 'Allowance',
+      claiming: 'Claiming',
+      allowance: 'Allowance',
       'allowance-optional-claiming': 'Allowance Optional Claiming',
       'starter-allowance': 'Starter Allowance',
-      'stakes': 'Stakes',
+      stakes: 'Stakes',
       'stakes-listed': 'Listed Stakes',
       'stakes-graded-3': 'Grade 3 Stakes',
       'stakes-graded-2': 'Grade 2 Stakes',
       'stakes-graded-1': 'Grade 1 Stakes',
-      'handicap': 'Handicap',
-      'unknown': 'Race',
+      handicap: 'Handicap',
+      unknown: 'Race',
     };
     parts.push(classDisplay[header.classification] || header.classification);
   }
 
   // 4. Claiming price - full dollar amounts
   if (header.claimingPriceMin || header.claimingPriceMax) {
-    if (header.claimingPriceMin && header.claimingPriceMax && header.claimingPriceMin !== header.claimingPriceMax) {
-      parts.push(`Claiming Price ${formatCurrency(header.claimingPriceMin)} to ${formatCurrency(header.claimingPriceMax)}`);
+    if (
+      header.claimingPriceMin &&
+      header.claimingPriceMax &&
+      header.claimingPriceMin !== header.claimingPriceMax
+    ) {
+      parts.push(
+        `Claiming Price ${formatCurrency(header.claimingPriceMin)} to ${formatCurrency(header.claimingPriceMax)}`
+      );
     } else {
       const price = header.claimingPriceMax || header.claimingPriceMin || 0;
       parts.push(`Claiming Price ${formatCurrency(price)}`);
@@ -444,6 +451,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // Get current race data
   const currentRace = parsedData?.races?.[selectedRaceIndex];
 
+  // Get bet recommendations for the current race using the recommendation engine
+  // This recalculates when scoredHorses change (including odds/scratch updates)
+  const betRecommendations = useRaceBets(
+    currentRaceScoredHorses,
+    currentRace?.header,
+    selectedRaceIndex + 1
+  );
+
   // Calculate blended rankings (includes trend analysis)
   const blendedRankedHorses = useMemo(() => {
     if (!currentRace) return [];
@@ -745,9 +760,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
               {/* Race info - FULL details, no abbreviations */}
               <div className="app-topbar__race-info">
-                <span className="app-topbar__race-info-text">
-                  {buildFullRaceInfo(currentRace)}
-                </span>
+                <span className="app-topbar__race-info-text">{buildFullRaceInfo(currentRace)}</span>
               </div>
 
               {/* Full conditions text - if available */}
@@ -1178,6 +1191,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             isBestInPassRace={
                               valueAnalysis.verdict === 'PASS' &&
                               (rankInfo?.rank ?? scoredHorse.rank) === 1
+                            }
+                            // Bet recommendations from useRaceBets hook
+                            betRecommendations={
+                              betRecommendations.hasRecommendations
+                                ? {
+                                    conservative: betRecommendations.conservative,
+                                    moderate: betRecommendations.moderate,
+                                    aggressive: betRecommendations.aggressive,
+                                    hasRecommendations: betRecommendations.hasRecommendations,
+                                    summary: betRecommendations.summary,
+                                  }
+                                : undefined
                             }
                           />
                         </div>
