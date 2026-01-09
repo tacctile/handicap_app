@@ -25,7 +25,7 @@
 /* Left zone: contains top bar, race rail + main content, bottom bar */
 .app-left-zone {
   display: grid;
-  grid-template-rows: var(--dimension-bar) 1fr var(--dimension-bar);
+  grid-template-rows: var(--bar-height) 1fr var(--bar-height);
   grid-template-columns: var(--dimension-bar) 1fr;
   overflow: hidden;
   transition: width var(--transition-normal);
@@ -34,7 +34,7 @@
 }
 
 /* ============================================
-   TOP BAR
+   TOP BAR - Single Line Layout (48px height)
    ============================================ */
 
 /* Grid-based topbar - spans full width of left zone */
@@ -47,13 +47,13 @@
   padding: 0 16px;
   background: var(--color-card);
   border-bottom: 1px solid var(--color-border);
-  height: var(--dimension-bar);
+  height: var(--bar-height);
   z-index: 100;
-  gap: var(--gap-container);
+  gap: 12px;
   transition: width var(--transition-normal);
 }
 
-/* Logo */
+/* Logo - icon only in loaded state */
 .app-topbar__logo {
   display: flex;
   align-items: center;
@@ -62,31 +62,31 @@
 }
 
 .app-topbar__logo-icon {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--color-primary);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   color: white;
 }
 
 .app-topbar__logo-icon .material-icons {
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .app-topbar__logo-text {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--color-text-primary);
   letter-spacing: -0.01em;
 }
 
-/* Separator - partial height */
+/* Separator - shorter height */
 .app-topbar__separator {
   width: 1px;
-  height: 32px;
+  height: 24px;
   background: var(--color-border);
   flex-shrink: 0;
 }
@@ -104,13 +104,13 @@
   display: flex;
   align-items: center;
   gap: var(--gap-element);
-  padding: var(--gap-element) var(--gap-container);
+  padding: 6px 12px;
   background: var(--color-primary);
   color: white;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   font-family: inherit;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition:
@@ -127,56 +127,25 @@
 }
 
 .app-topbar__upload-btn--large .material-icons {
-  font-size: 20px;
-}
-
-/* Upload button - small (loaded state) */
-.app-topbar__upload-btn--small {
-  display: flex;
-  align-items: center;
-  gap: var(--gap-element);
-  padding: var(--gap-element) var(--gap-container);
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background var(--transition-fast),
-    transform var(--transition-fast);
-  flex-shrink: 0;
-}
-
-.app-topbar__upload-btn--small:active {
-  transform: scale(0.98);
-}
-
-.app-topbar__upload-btn--small:hover {
-  background: var(--color-primary-hover);
-}
-
-.app-topbar__upload-btn--small .material-icons {
   font-size: 18px;
 }
 
-/* Identity section - Track, Date, Race (larger font) */
+/* Identity section - Track · Date · Race (uniform 14px) */
 .app-topbar__identity {
   display: flex;
   align-items: center;
-  gap: var(--gap-element);
-  font-size: 16px;
+  gap: 6px;
+  font-size: 14px;
   color: var(--color-text-primary);
   flex-shrink: 0;
 }
 
-.app-topbar__track {
+.app-topbar__track-name {
   font-weight: 600;
+  color: var(--color-text-primary);
 }
 
-.app-topbar__dot {
+.app-topbar__middot {
   color: var(--color-text-tertiary);
 }
 
@@ -184,116 +153,38 @@
   color: var(--color-text-primary);
 }
 
-/* Race label - "Race X of Y" - all teal */
+/* Race label - "Race X of Y" - teal accent */
 .app-topbar__race-label {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--color-primary);
 }
 
-/* Race info box - centered in the middle space */
-.app-topbar__race-info-box {
-  flex: 1;
+/* Race info - Distance · Purse · Runners */
+.app-topbar__race-info {
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-width: 0;
-  padding: 0 var(--gap-container);
-}
-
-/* Race info text container - center justified */
-.app-topbar__race-info-text {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  text-align: center;
-}
-
-/* Individual lines in race info */
-.app-topbar__race-info-line {
-  font-size: 14px;
-  color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-/* Spacer to push items to the right */
-.app-topbar__spacer {
-  flex: 1;
-  min-width: var(--gap-container);
-}
-
-/* Countdown section */
-.app-topbar__countdown {
-  display: flex;
-  align-items: center;
-  gap: var(--gap-tight);
-  font-size: 14px;
   flex-shrink: 0;
-  min-width: 140px; /* Fixed width to prevent layout shift */
 }
 
-.app-topbar__countdown-time {
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+.app-topbar__race-info-text {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
-/* Countdown urgency states */
-.app-topbar__countdown--normal {
-  color: var(--color-success);
-}
-
-.app-topbar__countdown--warning {
-  color: var(--color-warning);
-}
-
-.app-topbar__countdown--critical {
-  color: var(--color-error);
-  animation: pulse-critical 2s ease-in-out infinite;
-}
-
-.app-topbar__countdown--posted {
-  color: var(--color-text-tertiary);
-  font-style: italic;
-}
-
-/* Post time display - scheduled time with timezone */
+/* Post time - single value */
 .app-topbar__post-time {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
   flex-shrink: 0;
-  min-width: 100px;
 }
 
 .app-topbar__post-time-value {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-}
-
-.app-topbar__post-time-label {
-  font-size: 11px;
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-@keyframes pulse-critical {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
 }
 
 /* Track condition dropdown */
@@ -302,19 +193,18 @@
 }
 
 .app-topbar__condition-select {
-  padding: var(--gap-element) var(--gap-container);
-  padding-right: calc(var(--gap-container) + 16px);
+  padding: 4px 28px 4px 10px;
   background: var(--color-elevated);
   color: var(--color-text-primary);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: 14px;
   cursor: pointer;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%23B4B4B6'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 8px center;
+  background-position: right 6px center;
   transition:
     border-color var(--transition-fast),
     background-color var(--transition-fast);
@@ -354,21 +244,23 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  padding-top: 60px; /* Offset race items below the header row height */
-  position: relative; /* For pseudo-element positioning */
+  /* Offset = verdict bar height (48px) + column headers height (48px) = 96px */
+  padding-top: calc(var(--bar-height, 48px) * 2);
+  position: relative;
 }
 
-/* Header bar extension into race rail area - creates continuous header background */
+/* Header bar extension into race rail area - covers verdict bar + column headers */
 .app-layout .app-race-rail::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
-  right: -1px; /* Extend past the border-right to eliminate seam */
-  height: 60px; /* Match race rail padding-top which creates header space */
+  right: -1px;
+  /* Height = verdict bar + column headers = 96px */
+  height: calc(var(--bar-height, 48px) * 2);
   background: var(--color-elevated);
-  border-bottom: 2px solid var(--color-border);
-  z-index: 11; /* Above sticky header z-index (10) to cover the edge */
+  border-bottom: 1px solid var(--color-border);
+  z-index: 25; /* Above verdict bar and column headers */
 }
 
 .app-race-rail__item {
@@ -612,7 +504,7 @@
   padding: 0 16px;
   background: var(--color-card);
   border-top: 1px solid var(--color-border);
-  height: var(--dimension-bar);
+  height: var(--bar-height);
   gap: 8px;
   transition: width var(--transition-normal);
 }
@@ -1062,10 +954,10 @@
 
 .app-config-overlay {
   position: fixed;
-  top: var(--dimension-bar);
+  top: var(--bar-height);
   left: 0;
   right: 0;
-  bottom: var(--dimension-bar);
+  bottom: var(--bar-height);
   background: rgba(0, 0, 0, 0.6);
   z-index: 200;
   animation: fadeIn 200ms ease;
@@ -1082,8 +974,8 @@
 
 .app-config-panel {
   position: fixed;
-  top: var(--dimension-bar);
-  bottom: var(--dimension-bar);
+  top: var(--bar-height);
+  bottom: var(--bar-height);
   right: calc(1 / 3 * 100vw);
   width: 420px;
   background: var(--color-card);
@@ -1277,141 +1169,82 @@
 }
 
 /* ============================================
-   HORSE LIST SORT CONTROLS
-   ============================================ */
-
-.horse-list-sort {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  background: var(--color-card);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.horse-list-sort__label {
-  font-size: 12px;
-  color: var(--text-tertiary, #6e6e70);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.horse-list-sort__options {
-  display: flex;
-  gap: 4px;
-}
-
-.horse-list-sort__btn {
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary, #b4b4b6);
-  background: transparent;
-  border: 1px solid var(--color-border, #2a2a2c);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.horse-list-sort__btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--text-tertiary, #6e6e70);
-}
-
-.horse-list-sort__btn--active {
-  background: var(--color-primary, #19abb5);
-  color: var(--bg-base, #0a0a0b);
-  border-color: var(--color-primary, #19abb5);
-}
-
-.horse-list-sort__btn--active:hover {
-  background: var(--color-primary-hover, #1992a1);
-  border-color: var(--color-primary-hover, #1992a1);
-}
-
-/* ============================================
-   HORSE LIST HEADER
+   HORSE LIST HEADER - Sortable Column Headers
+   Height: --bar-height (48px), sticky below verdict bar
    ============================================ */
 
 .horse-list-header {
   display: grid;
   grid-template-columns: var(--horse-list-grid);
   align-items: center;
-  gap: 16px; /* Match row gap for uniform spacing */
-  padding: 12px 16px; /* Consistent padding on all sides */
-  margin: 0; /* NO margin - flush with edges */
-  margin-left: -1px; /* Overlap race rail border for seamless header bar */
-  padding-left: 17px; /* Compensate for negative margin to maintain column alignment */
+  gap: 16px;
+  padding: 0 16px;
+  margin: 0;
+  margin-left: -1px;
+  padding-left: 17px;
   background: var(--color-elevated);
-  border-bottom: 2px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
   position: sticky;
-  top: 0;
-  z-index: 10;
-  width: calc(100% + 1px); /* Compensate for negative margin */
-  min-width: 0; /* Allow flex item to shrink below content size */
+  top: var(--bar-height, 48px); /* Sticky below verdict bar */
+  z-index: 15;
+  height: var(--bar-height, 48px);
+  min-height: var(--bar-height, 48px);
+  width: calc(100% + 1px);
+  min-width: 0;
 }
 
 .horse-list-header__cell {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: flex-start; /* Default: align to top for cells with subtext */
-  gap: 2px;
-  min-height: 36px; /* Reserve space for label + subtext */
-}
-
-/* Cells without subtext should be vertically centered */
-.horse-list-header__cell--no-subtext {
   justify-content: center;
-  min-height: auto; /* Don't reserve extra space */
+  height: 100%;
 }
 
 .horse-list-header__label {
-  font-size: 16px; /* Match row data font sizes (Score: 16px, Fair: 16px, Edge: 16px) */
-  font-weight: 700;
-  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  white-space: nowrap; /* NEVER wrap header text to multiple lines */
-  line-height: 1.2;
-  text-align: center; /* Ensure text is perfectly centered */
-}
-
-.horse-list-header__sublabel {
-  font-size: 10px; /* Consistent subtext size across all columns */
-  font-weight: 500;
-  color: var(--color-text-tertiary);
-  text-transform: none;
-  letter-spacing: 0.02em;
-  text-align: center; /* Center under label only */
-}
-
-/* HeaderTooltip integration - ensures proper centering */
-.horse-list-header__cell .header-tooltip-wrapper {
+  white-space: nowrap;
+  line-height: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  width: 100%;
+  gap: 4px;
 }
 
-.horse-list-header__cell .header-tooltip-trigger {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  cursor: help;
+/* Sort arrow */
+.horse-list-header__arrow {
+  font-size: 10px;
+  color: var(--color-primary);
+  margin-left: 2px;
 }
 
-/* Ensure headers without subtext are properly centered */
-.horse-list-header__cell--no-subtext .header-tooltip-wrapper,
-.horse-list-header__cell--no-subtext .header-tooltip-trigger {
-  justify-content: center;
+/* Sortable column styles */
+.horse-list-header__cell--sortable {
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin: 0 -8px;
+}
+
+.horse-list-header__cell--sortable:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.horse-list-header__cell--sortable:hover .horse-list-header__label {
+  color: var(--color-text-primary);
+}
+
+/* Active sort column */
+.horse-list-header__cell--active .horse-list-header__label {
+  color: var(--color-primary);
+  font-weight: 700;
 }
 
 /* Icons column - help button */
 .horse-list-header__cell--icons {
-  display: flex;
-  align-items: center;
   justify-content: center;
 }
 
@@ -1424,83 +1257,43 @@
   height: 28px;
   padding: 0;
   background: transparent;
-  border: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  border-radius: 6px;
-  color: var(--color-text-secondary, rgba(238, 239, 241, 0.5));
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-text-tertiary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .help-trigger-btn:hover {
-  background: var(--color-surface-variant, #242428);
-  border-color: var(--color-primary, #19abb5);
-  color: var(--color-primary, #19abb5);
+  background: var(--color-elevated);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .help-trigger-btn:focus {
   outline: none;
-  border-color: var(--color-primary, #19abb5);
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 2px rgba(25, 171, 181, 0.2);
 }
 
 .help-trigger-btn .material-icons {
-  font-size: 18px;
+  font-size: 16px;
 }
 
-/* Center align data columns by default */
+/* Center align data columns */
 .horse-list-header__cell--rank,
-.horse-list-header__cell--trend-rank,
-.horse-list-header__cell--blended-rank,
-.horse-list-header__cell--trend-graph,
 .horse-list-header__cell--odds,
 .horse-list-header__cell--fair-odds,
-.horse-list-header__cell--score,
-.horse-list-header__cell--confidence,
-.horse-list-header__cell--fair,
+.horse-list-header__cell--edge,
 .horse-list-header__cell--value,
-.horse-list-header__cell--rating {
-  text-align: center;
-  align-items: center;
-  justify-content: center;
-}
-
-/* RANK columns - centered with gradient color */
-.horse-list-header__cell--rank .header-tooltip-wrapper,
-.horse-list-header__cell--rank .header-tooltip-trigger,
-.horse-list-header__cell--trend-rank .header-tooltip-wrapper,
-.horse-list-header__cell--trend-rank .header-tooltip-trigger,
-.horse-list-header__cell--blended-rank .header-tooltip-wrapper,
-.horse-list-header__cell--blended-rank .header-tooltip-trigger,
-.horse-list-header__cell--trend-graph .header-tooltip-wrapper,
-.horse-list-header__cell--trend-graph .header-tooltip-trigger {
-  align-items: center;
-  justify-content: center;
-}
-
-/* POST column - centered like other data columns */
 .horse-list-header__cell--pp {
   text-align: center;
-  align-items: center;
   justify-content: center;
 }
 
-/* POST column tooltip wrapper also centered */
-.horse-list-header__cell--pp .header-tooltip-wrapper,
-.horse-list-header__cell--pp .header-tooltip-trigger {
-  align-items: center;
-  justify-content: center;
-}
-
-/* Name column - left aligned to match horse name data */
+/* Name column - left aligned */
 .horse-list-header__cell--name {
-  text-align: left;
-  align-items: flex-start;
-}
-
-/* Name column tooltip wrapper also left-aligned */
-.horse-list-header__cell--name .header-tooltip-wrapper,
-.horse-list-header__cell--name .header-tooltip-trigger {
-  align-items: flex-start;
+  justify-content: flex-start;
 }
 
 /* Expand column - empty */

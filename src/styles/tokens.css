@@ -11,6 +11,9 @@
   /* Universal dimension - top bar, bottom bar, sidebar collapsed width */
   --dimension-bar: 64px;
 
+  /* Unified bar height for top bar, verdict bar, column headers */
+  --bar-height: 48px;
+
   /* Betting panel width */
   --betting-panel-width: 400px;
 
