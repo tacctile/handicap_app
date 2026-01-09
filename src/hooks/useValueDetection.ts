@@ -79,6 +79,24 @@ export interface ValuePlay {
   isPrimary: boolean;
 }
 
+/** Info about horse closest to meeting value threshold (for PASS races) */
+export interface ClosestToThreshold {
+  /** Horse name */
+  horseName: string;
+  /** Program/post position number */
+  programNumber: number;
+  /** Horse index in array */
+  horseIndex: number;
+  /** Current odds string */
+  currentOdds: string;
+  /** Fair odds string (model's valuation) */
+  fairOdds: string;
+  /** Edge percentage (below 50% threshold) */
+  edge: number;
+  /** Model rank */
+  modelRank: number;
+}
+
 export interface RaceValueAnalysis {
   /** Race verdict: BET, CAUTION, or PASS */
   verdict: RaceVerdict;
@@ -107,6 +125,8 @@ export interface RaceValueAnalysis {
   totalFieldScore: number;
   /** Number of active (non-scratched) horses */
   activeHorseCount: number;
+  /** For PASS races: the horse closest to meeting the value threshold */
+  closestToThreshold: ClosestToThreshold | null;
 }
 
 // ============================================================================
@@ -161,11 +181,7 @@ export function calculateValueEdge(modelProb: number, impliedProb: number): numb
 /**
  * Calculate Top 3 probability based on model rank and score gap
  */
-function calculateTop3Probability(
-  rank: number,
-  scoreGap: number,
-  fieldSize: number
-): number {
+function calculateTop3Probability(rank: number, scoreGap: number, fieldSize: number): number {
   // Base probabilities by rank
   const baseProbs: Record<number, number> = {
     1: 80,
@@ -236,10 +252,7 @@ function determineBetType(
 /**
  * Determine confidence level for a value play
  */
-function determinePlayConfidence(
-  rank: number,
-  edge: number
-): ConfidenceLevel {
+function determinePlayConfidence(rank: number, edge: number): ConfidenceLevel {
   if (edge >= VALUE_THRESHOLDS.highConfidenceEdge && rank <= 3) {
     return 'HIGH';
   }
@@ -299,9 +312,10 @@ function determineRaceVerdict(
     return {
       verdict: 'CAUTION',
       confidence: 'MEDIUM',
-      reason: valuePlays.length >= 3
-        ? 'Multiple value plays - harder to choose'
-        : `Moderate edge: +${Math.round(bestPlay.valueEdge)}%`,
+      reason:
+        valuePlays.length >= 3
+          ? 'Multiple value plays - harder to choose'
+          : `Moderate edge: +${Math.round(bestPlay.valueEdge)}%`,
     };
   }
 
@@ -411,17 +425,27 @@ export function analyzeRaceValue(
       topPick: null,
       totalFieldScore: 0,
       activeHorseCount: 0,
+      closestToThreshold: null,
     };
   }
 
   // Calculate total field score for probability calculations
-  const totalFieldScore = activeHorses.reduce(
-    (sum, h) => sum + h.score.baseScore,
-    0
-  );
+  const totalFieldScore = activeHorses.reduce((sum, h) => sum + h.score.baseScore, 0);
 
   // Analyze each horse for value
   const valuePlays: ValuePlay[] = [];
+
+  // Track horses that didn't meet the value threshold (for PASS race display)
+  const nearMissHorses: Array<{
+    horseName: string;
+    programNumber: number;
+    horseIndex: number;
+    currentOdds: string;
+    oddsDecimal: number;
+    edge: number;
+    modelRank: number;
+    modelWinProb: number;
+  }> = [];
 
   for (const scoredHorse of activeHorses) {
     const horse = scoredHorse.horse;
@@ -433,18 +457,34 @@ export function analyzeRaceValue(
     const currentOdds = getOdds(scoredHorse.index, horse.morningLineOdds);
     const oddsDecimal = parseOddsToNumber(currentOdds);
 
-    // Skip chalk horses (under 6-1)
-    if (oddsDecimal < VALUE_THRESHOLDS.minOddsForValue) continue;
-
-    // Calculate probabilities
+    // Calculate probabilities regardless of odds threshold (for near-miss tracking)
     const modelWinProb =
-      totalFieldScore > 0
-        ? (scoredHorse.score.baseScore / totalFieldScore) * 100
-        : 0;
+      totalFieldScore > 0 ? (scoredHorse.score.baseScore / totalFieldScore) * 100 : 0;
     const impliedProb = oddsToImpliedProbability(oddsDecimal);
     const valueEdge = calculateValueEdge(modelWinProb, impliedProb);
 
-    // Skip if edge is below threshold
+    // Track horses at 6-1 or higher that have positive edge but below threshold
+    if (
+      oddsDecimal >= VALUE_THRESHOLDS.minOddsForValue &&
+      valueEdge > 0 &&
+      valueEdge < VALUE_THRESHOLDS.minEdgePercent
+    ) {
+      nearMissHorses.push({
+        horseName: horse.horseName,
+        programNumber: horse.programNumber,
+        horseIndex: scoredHorse.index,
+        currentOdds,
+        oddsDecimal,
+        edge: valueEdge,
+        modelRank: rank,
+        modelWinProb,
+      });
+    }
+
+    // Skip chalk horses (under 6-1) for value plays
+    if (oddsDecimal < VALUE_THRESHOLDS.minOddsForValue) continue;
+
+    // Skip if edge is below threshold for value plays
     if (valueEdge < VALUE_THRESHOLDS.minEdgePercent) continue;
 
     // Calculate Top 3 probability
@@ -507,10 +547,29 @@ export function analyzeRaceValue(
     : null;
 
   // Determine race verdict
-  const { verdict, confidence, reason } = determineRaceVerdict(
-    valuePlays,
-    topPickIsChalk
-  );
+  const { verdict, confidence, reason } = determineRaceVerdict(valuePlays, topPickIsChalk);
+
+  // Find the closest horse to threshold for PASS races
+  let closestToThreshold: ClosestToThreshold | null = null;
+  if (valuePlays.length === 0 && nearMissHorses.length > 0) {
+    // Sort by edge descending to find the horse closest to threshold
+    nearMissHorses.sort((a, b) => b.edge - a.edge);
+    const closest = nearMissHorses[0];
+    if (closest) {
+      // Calculate fair odds from model win probability
+      const fairOddsDecimal =
+        closest.modelWinProb > 0 ? Math.round(100 / closest.modelWinProb - 1) : 10;
+      closestToThreshold = {
+        horseName: closest.horseName,
+        programNumber: closest.programNumber,
+        horseIndex: closest.horseIndex,
+        currentOdds: closest.currentOdds,
+        fairOdds: `${fairOddsDecimal}-1`,
+        edge: closest.edge,
+        modelRank: closest.modelRank,
+      };
+    }
+  }
 
   return {
     verdict,
@@ -523,6 +582,7 @@ export function analyzeRaceValue(
     topPick,
     totalFieldScore,
     activeHorseCount: activeHorses.length,
+    closestToThreshold,
   };
 }
 

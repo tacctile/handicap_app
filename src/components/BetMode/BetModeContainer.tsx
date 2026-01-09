@@ -183,7 +183,7 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
 
     // Get budget - from day plan if active, otherwise from inline setting
     const raceBudget = isDayPlanActive
-      ? (raceAllocations.find((a) => a.raceNumber === viewedRaceNumber)?.allocatedBudget || budget)
+      ? raceAllocations.find((a) => a.raceNumber === viewedRaceNumber)?.allocatedBudget || budget
       : budget;
 
     return calculateBets({
@@ -236,6 +236,7 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
             topPick: null,
             totalFieldScore: 0,
             activeHorseCount: 0,
+            closestToThreshold: null,
           };
         }
         return analyzeRaceValue(raceScored, getOdds, isScratched);
@@ -285,6 +286,7 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
           topPick: null,
           totalFieldScore: 0,
           activeHorseCount: 0,
+          closestToThreshold: null,
         };
       }
       return analyzeRaceValue(raceScored, getOdds, isScratched);
@@ -305,12 +307,15 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
   // RACE NAVIGATION
   // ============================================================================
 
-  const handleRaceSelect = useCallback((raceNum: number) => {
-    setViewedRaceNumber(raceNum);
-    if (onNavigateToRace) {
-      onNavigateToRace(raceNum - 1);
-    }
-  }, [onNavigateToRace]);
+  const handleRaceSelect = useCallback(
+    (raceNum: number) => {
+      setViewedRaceNumber(raceNum);
+      if (onNavigateToRace) {
+        onNavigateToRace(raceNum - 1);
+      }
+    },
+    [onNavigateToRace]
+  );
 
   // ============================================================================
   // COPY ALL BETS
@@ -353,12 +358,10 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
   // ============================================================================
 
   const currentBudget = isDayPlanActive
-    ? (raceAllocations.find((a) => a.raceNumber === viewedRaceNumber)?.allocatedBudget || budget)
+    ? raceAllocations.find((a) => a.raceNumber === viewedRaceNumber)?.allocatedBudget || budget
     : budget;
 
-  const dayPlanBudgetLabel = isDayPlanActive
-    ? `Day Plan: $${currentBudget}`
-    : undefined;
+  const dayPlanBudgetLabel = isDayPlanActive ? `Day Plan: $${currentBudget}` : undefined;
 
   // ============================================================================
   // RENDER
@@ -367,11 +370,7 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
   return (
     <div className="bet-mode-container bet-mode-container--single-screen">
       {/* Header with close button */}
-      <BetModeHeader
-        raceNumber={viewedRaceNumber}
-        trackName={trackName}
-        onClose={onClose}
-      />
+      <BetModeHeader raceNumber={viewedRaceNumber} trackName={trackName} onClose={onClose} />
 
       {/* Inline Settings Bar */}
       <InlineSettings
@@ -398,7 +397,11 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
             // Day mode props
             isDayMode={isDayPlanActive}
             isRaceCompleted={completedRaces.includes(viewedRaceNumber)}
-            onMarkAsBet={isDayPlanActive && !completedRaces.includes(viewedRaceNumber) ? handleMarkAsBet : undefined}
+            onMarkAsBet={
+              isDayPlanActive && !completedRaces.includes(viewedRaceNumber)
+                ? handleMarkAsBet
+                : undefined
+            }
           />
         ) : (
           <div className="bet-mode-loading">
