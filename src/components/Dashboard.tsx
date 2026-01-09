@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import './Dashboard.css';
-import { usePostTime } from '../hooks/usePostTime';
 import { useValueDetection } from '../hooks/useValueDetection';
 import { BetModeContainer } from './BetMode';
 import { FileUpload } from './FileUpload';
@@ -388,15 +387,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const activeFieldSize = useMemo(() => {
     return blendedRankedHorses.filter((h) => !h.horse.isScratched).length;
   }, [blendedRankedHorses]);
-  const postTimeString = currentRace?.header?.postTime;
-  const raceDateString = currentRace?.header?.raceDateRaw;
 
   // Get raceDate from the first race (all races in a file are same track/date)
   const raceDate = parsedData?.races?.[0]?.header?.raceDateRaw;
   const trackCode = parsedData?.races?.[0]?.header?.trackCode;
-
-  // Use post time hook for countdown
-  const { countdown } = usePostTime(postTimeString, raceDateString);
 
   // Format race date for display
   // Uses manual string formatting to avoid JavaScript Date timezone issues
@@ -444,92 +438,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
       FG: '1mi',
     };
     return trackSizes[code || ''] || '1mi';
-  };
-
-  // Format countdown for display - handles past races
-  const formatCountdownDisplay = (
-    postTime: string | undefined,
-    raceDate: string | undefined,
-    _countdownMs: number
-  ): { text: string; isPosted: boolean } => {
-    if (!postTime) return { text: '--:--', isPosted: false };
-
-    try {
-      // Construct full datetime from race date and post time
-      let raceDateTime: Date;
-      const timeStr = String(postTime).trim();
-
-      // Parse the race date (YYYYMMDD format)
-      let targetDate = new Date();
-      if (raceDate && /^\d{8}$/.test(raceDate)) {
-        const year = parseInt(raceDate.substring(0, 4));
-        const month = parseInt(raceDate.substring(4, 6)) - 1; // 0-indexed
-        const day = parseInt(raceDate.substring(6, 8));
-        targetDate = new Date(year, month, day);
-      }
-
-      // Handle HHMM format (e.g., "1326" for 1:26 PM)
-      if (/^\d{3,4}$/.test(timeStr)) {
-        const padded = timeStr.padStart(4, '0');
-        const hours = parseInt(padded.substring(0, 2));
-        const minutes = parseInt(padded.substring(2));
-        raceDateTime = new Date(targetDate);
-        raceDateTime.setHours(hours, minutes, 0, 0);
-      } else if (timeStr.includes(':')) {
-        // Handle "HH:MM" or "H:MM" format
-        const parts = timeStr.replace(/\s*(AM|PM)/i, '').split(':');
-        let hours = parseInt(parts[0] || '0');
-        const minutes = parseInt(parts[1] || '0');
-
-        // Check for AM/PM
-        if (/PM/i.test(timeStr) && hours < 12) hours += 12;
-        if (/AM/i.test(timeStr) && hours === 12) hours = 0;
-
-        raceDateTime = new Date(targetDate);
-        raceDateTime.setHours(hours, minutes, 0, 0);
-      } else {
-        return { text: '--:--', isPosted: false };
-      }
-
-      const now = new Date();
-      const diffMs = raceDateTime.getTime() - now.getTime();
-
-      // If race is in the past, show "POSTED"
-      if (diffMs < 0) {
-        return { text: 'POSTED', isPosted: true };
-      }
-
-      // Convert to seconds
-      const diffSeconds = Math.floor(diffMs / 1000);
-      const minutes = Math.floor(diffSeconds / 60);
-      const seconds = diffSeconds % 60;
-
-      // If more than 60 minutes, show hours:minutes:seconds
-      if (minutes >= 60) {
-        const hours = Math.floor(minutes / 60);
-        const remainingMinutes = minutes % 60;
-        return {
-          text: `${hours}:${remainingMinutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`,
-          isPosted: false,
-        };
-      }
-
-      // Show minutes:seconds
-      return {
-        text: `${minutes}:${seconds.toString().padStart(2, '0')}`,
-        isPosted: false,
-      };
-    } catch {
-      return { text: '--:--', isPosted: false };
-    }
-  };
-
-  // Get countdown urgency level
-  const getCountdownUrgency = (seconds: number | undefined): string => {
-    if (seconds === undefined || seconds <= 0) return 'normal';
-    if (seconds <= 300) return 'critical'; // 5 minutes
-    if (seconds <= 600) return 'warning'; // 10 minutes
-    return 'normal';
   };
 
   // Get post time from race header, checking all possible field names
@@ -684,16 +592,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
       fileInput.click();
     }
   };
-
-  // Get countdown display info
-  const countdownDisplay = formatCountdownDisplay(
-    postTimeString,
-    raceDateString,
-    countdown.totalMs
-  );
-
-  // Get countdown seconds from the countdown state (for urgency calculation)
-  const countdownSeconds = countdown.totalMs > 0 ? Math.floor(countdown.totalMs / 1000) : 0;
 
   return (
     <div className="app-layout app-layout--full-width">
