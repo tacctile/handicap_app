@@ -47,8 +47,17 @@
 }
 
 .horse-summary-bar--expanded {
-  background-color: var(--color-elevated);
-  border-bottom-color: transparent;
+  /* CRITICAL: solid opaque background to prevent content bleed-through */
+  /* Use !important to override value-play, tier, and other semi-transparent backgrounds */
+  background: #1e1e20 !important; /* Solid hex - slightly lighter than base for elevated look */
+  /* Sticky positioning when expanded - sticks below verdict bar and column headers */
+  position: sticky;
+  top: calc(var(--bar-height, 48px) * 2); /* 96px - below both sticky headers */
+  z-index: 5; /* Above regular content (0), below column headers (10) */
+  /* Subtle shadow to indicate floating state when stuck */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  /* Keep bottom border for visual separation from expanded content */
+  border-bottom-color: var(--color-border);
 }
 
 /* ============================================
