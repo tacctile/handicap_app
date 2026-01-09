@@ -252,9 +252,12 @@ function* generateCombinations(n: number, k: number): Generator<number[]> {
 
     if (i < 0) return;
 
-    indices[i]++;
+    // Safe to access since i >= 0 and i < k (indices length)
+    const currentVal = indices[i]!;
+    indices[i] = currentVal + 1;
     for (let j = i + 1; j < k; j++) {
-      indices[j] = indices[j - 1] + 1;
+      const prevVal = indices[j - 1]!;
+      indices[j] = prevVal + 1;
     }
   }
 }
