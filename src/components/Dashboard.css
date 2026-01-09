@@ -172,6 +172,20 @@
   white-space: nowrap;
 }
 
+/* Full conditions text - detailed eligibility */
+.app-topbar__race-info--conditions {
+  max-width: 400px;
+  overflow: hidden;
+}
+
+.app-topbar__race-info-text--conditions {
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Post time - single value */
 .app-topbar__post-time {
   display: flex;
@@ -269,7 +283,7 @@
     opacity var(--transition-fast);
   position: relative;
   padding: var(--gap-tight);
-  min-height: 0; /* Allow flexbox to shrink */
+  min-height: 0;
   font-family: inherit;
 }
 
@@ -296,21 +310,27 @@
   background: var(--color-primary);
 }
 
-/* Race number - large and prominent */
+/* Race number - large and prominent, centered */
 .app-race-rail__number {
   font-size: 16px;
   font-weight: 700;
   color: var(--color-text-primary);
   line-height: 1;
+  text-align: center !important;
+  width: 100% !important;
+  display: block !important;
 }
 
-/* Post time - smaller below */
+/* Post time - smaller below, centered */
 .app-race-rail__time {
   font-size: 10px;
   color: var(--color-text-secondary);
   line-height: 1;
   font-variant-numeric: tabular-nums;
   transition: color var(--transition-fast);
+  text-align: center !important;
+  width: 100% !important;
+  display: block !important;
 }
 
 /* Status states */
@@ -1171,7 +1191,7 @@
   padding: 0 16px;
   margin: 0;
   /* Extend to left edge - covers race rail area */
-  margin-left: calc(-1 * var(--dimension-bar, 64px) - 1px);
+  margin-left: calc(-1 * var(--dimension-bar, 64px));
   padding-left: 0; /* No padding - races label uses the left space */
   /* CRITICAL: solid opaque background to prevent content bleed-through */
   background-color: #1a1a1c; /* Solid hex, no transparency */
@@ -1181,7 +1201,7 @@
   z-index: 10; /* Above horse content (0), below verdict bar (20) */
   height: var(--bar-height, 48px);
   min-height: var(--bar-height, 48px);
-  width: calc(100% + var(--dimension-bar, 64px) + 1px);
+  width: calc(100% + var(--dimension-bar, 64px));
   min-width: 0;
 }
 
@@ -1194,10 +1214,12 @@
 
 /* RACES label cell - positioned in the left extension area above race rail */
 .horse-list-header__cell--races-label {
-  justify-content: center;
+  display: flex !important;
+  align-items: center !important; /* Center vertically */
+  justify-content: center !important; /* Center horizontally */
+  text-align: center !important;
   border-right: 1px solid var(--color-border);
-  margin-right: -1px;
-  padding-right: 1px;
+  height: 100%;
 }
 
 .horse-list-header__races-text {
@@ -1206,6 +1228,7 @@
   color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  text-align: center !important;
 }
 
 .horse-list-header__label {
@@ -1262,9 +1285,12 @@
   font-weight: 700;
 }
 
-/* Icons column - help button, centered to align with verdict dot above */
+/* Icons column - help button, centered to align with scratch/compare below */
 .horse-list-header__cell--icons {
-  justify-content: center;
+  display: flex !important;
+  align-items: center !important; /* Center vertically */
+  justify-content: center !important; /* Center horizontally */
+  width: 100%;
 }
 
 /* Help trigger button */
@@ -1304,10 +1330,20 @@
 .horse-list-header__cell--odds,
 .horse-list-header__cell--fair-odds,
 .horse-list-header__cell--edge,
-.horse-list-header__cell--value,
-.horse-list-header__cell--pp {
-  text-align: center;
+.horse-list-header__cell--value {
+  display: flex;
+  align-items: center;
   justify-content: center;
+  text-align: center;
+}
+
+/* POST column - centered above post position numbers */
+.horse-list-header__cell--pp {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100%;
 }
 
 /* Name column - left aligned */
