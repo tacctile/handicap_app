@@ -501,6 +501,29 @@
 }
 
 /* ============================================================================
+   TAB CONTENT AREA - Smooth Transitions
+   ============================================================================ */
+
+.tab-content {
+  animation: tabFadeIn 200ms ease-out;
+}
+
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tab-content--analysis {
+  /* Analysis tab specific styling - inherits from value-reasons and betting-suggestion */
+}
+
+/* ============================================================================
    MOBILE RESPONSIVE - Value Sections
    ============================================================================ */
 
@@ -587,6 +610,7 @@
 .horse-expanded__section {
   padding: var(--section-padding);
   border-bottom: 1px solid var(--section-border);
+  animation: tabFadeIn 200ms ease-out;
 }
 
 .horse-expanded__section:last-child {
