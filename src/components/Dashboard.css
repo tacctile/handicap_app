@@ -1206,7 +1206,6 @@
   text-align: center !important;
   border-right: 1px solid var(--color-border);
   height: 100%;
-  background: rgba(128, 0, 255, 0.3) !important; /* DEBUG: purple */
 }
 
 .horse-list-header__races-text {
@@ -1278,7 +1277,6 @@
   align-items: center !important; /* Center vertically */
   justify-content: center !important; /* Center horizontally */
   width: 100%;
-  background: rgba(0, 100, 255, 0.3) !important; /* DEBUG: blue */
 }
 
 /* Help trigger button */
@@ -1332,7 +1330,6 @@
   justify-content: center !important;
   text-align: center !important;
   width: 100%;
-  background: rgba(255, 255, 0, 0.3) !important; /* DEBUG: yellow */
 }
 
 /* Name column - left aligned */
