@@ -13,7 +13,7 @@
   /* Sticky positioning inside scrollable container */
   position: sticky;
   top: 0;
-  z-index: 30; /* Higher z-index to ensure it sits above all content */
+  z-index: 20; /* Middle of sticky stack - below top bar (30), above column headers (10) */
 
   /* Fixed height: same as top bar */
   height: var(--bar-height, 48px);
