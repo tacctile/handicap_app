@@ -200,13 +200,14 @@
   padding: 0 var(--gap-container);
 }
 
-/* Race info text container - left justified paragraph style */
+/* Race info text container - center justified */
 .app-topbar__race-info-text {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   gap: 2px;
+  text-align: center;
 }
 
 /* Individual lines in race info */
@@ -257,6 +258,32 @@
 .app-topbar__countdown--posted {
   color: var(--color-text-tertiary);
   font-style: italic;
+}
+
+/* Post time display - scheduled time with timezone */
+.app-topbar__post-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex-shrink: 0;
+  min-width: 100px;
+}
+
+.app-topbar__post-time-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.app-topbar__post-time-label {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 @keyframes pulse-critical {
