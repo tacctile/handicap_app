@@ -11,12 +11,7 @@
  */
 
 import type { ScoredHorse } from '../scoring';
-import type { RaceHeader, TrackCondition } from '../../types/drf';
-import { parseOdds } from '../scoring';
-import {
-  PAYOUT_MULTIPLIERS,
-  TRACK_TAKEOUT,
-} from '../exotics/exoticPayoutEstimator';
+import type { RaceHeader } from '../../types/drf';
 import { logger } from '../../services/logging';
 
 // ============================================================================
@@ -284,19 +279,24 @@ function* permuteArray(arr: number[]): Generator<number[]> {
     return;
   }
 
-  const c = new Array(n).fill(0);
+  const c = new Array<number>(n).fill(0);
   yield [...arr];
 
   let i = 0;
   while (i < n) {
-    if (c[i] < i) {
+    const ci = c[i] as number;
+    if (ci < i) {
       if (i % 2 === 0) {
-        [arr[0], arr[i]] = [arr[i], arr[0]];
+        const temp = arr[0] as number;
+        arr[0] = arr[i] as number;
+        arr[i] = temp;
       } else {
-        [arr[c[i]], arr[i]] = [arr[i], arr[c[i]]];
+        const temp = arr[ci] as number;
+        arr[ci] = arr[i] as number;
+        arr[i] = temp;
       }
       yield [...arr];
-      c[i]++;
+      c[i] = ci + 1;
       i = 0;
     } else {
       c[i] = 0;
@@ -483,22 +483,20 @@ function calculateBoxProb(
 
   // Sum probability of all valid orderings
   for (const perm of generatePermutations(indices.length, positions)) {
-    const selectedIndices = perm.map(p => indices[p]);
+    const selectedIndices: number[] = perm
+      .map(p => indices[p])
+      .filter((n): n is number => n !== undefined);
 
-    if (positions === 2) {
-      const first = selectedIndices[0];
-      const second = selectedIndices[1];
-      if (first !== undefined && second !== undefined) {
-        totalProb += calculateExactaProb(horses, first, second);
-      }
-    } else if (positions === 3) {
-      const first = selectedIndices[0];
-      const second = selectedIndices[1];
-      const third = selectedIndices[2];
-      if (first !== undefined && second !== undefined && third !== undefined) {
-        totalProb += calculateTrifectaProb(horses, first, second, third);
-      }
-    } else if (positions === 4) {
+    if (positions === 2 && selectedIndices.length >= 2) {
+      const first = selectedIndices[0]!;
+      const second = selectedIndices[1]!;
+      totalProb += calculateExactaProb(horses, first, second);
+    } else if (positions === 3 && selectedIndices.length >= 3) {
+      const first = selectedIndices[0]!;
+      const second = selectedIndices[1]!;
+      const third = selectedIndices[2]!;
+      totalProb += calculateTrifectaProb(horses, first, second, third);
+    } else if (positions === 4 && selectedIndices.length >= 4) {
       totalProb += calculateSuperfectaProb(horses, selectedIndices);
     }
   }
@@ -519,7 +517,9 @@ function estimatePayout(
   selectedIndices: number[],
   baseCost: number
 ): { min: number; max: number; likely: number } {
-  const selectedHorses = selectedIndices.map(i => horses[i]).filter(Boolean);
+  const selectedHorses = selectedIndices
+    .map(i => horses[i])
+    .filter((h): h is HorseProb => h !== undefined);
   if (selectedHorses.length === 0) return { min: 0, max: 0, likely: 0 };
 
   const avgOdds = selectedHorses.reduce((sum, h) => sum + h.odds, 0) / selectedHorses.length;
@@ -668,7 +668,9 @@ function generateWhyThisBet(
   horses: HorseProb[],
   selectedIndices: number[]
 ): string {
-  const selectedHorses = selectedIndices.map(i => horses[i]).filter(Boolean);
+  const selectedHorses = selectedIndices
+    .map(i => horses[i])
+    .filter((h): h is HorseProb => h !== undefined);
   if (selectedHorses.length === 0) return '';
 
   const firstHorse = selectedHorses[0];
@@ -1097,17 +1099,8 @@ function generateSuperfectaBox5Bets(horses: HorseProb[]): BetCandidate[] {
  */
 function enforceTypeDiversity(
   candidates: BetCandidate[],
-  horses: HorseProb[],
   targetCount: number = 25
 ): BetCandidate[] {
-  // Group candidates by bet type category
-  const straightBets = candidates.filter(c =>
-    c.type === 'WIN' || c.type === 'PLACE' || c.type === 'SHOW'
-  );
-  const exactaBets = candidates.filter(c => c.type.startsWith('EXACTA'));
-  const trifectaBets = candidates.filter(c => c.type.startsWith('TRIFECTA'));
-  const superfectaBets = candidates.filter(c => c.type.startsWith('SUPERFECTA'));
-
   // Group by risk tier
   const conservative = candidates.filter(c =>
     determineRiskTier(c.probability) === 'Conservative'
@@ -1208,9 +1201,8 @@ export function generateTopBets(
   scoredHorses: ScoredHorse[],
   raceHeader: RaceHeader,
   raceNumber: number,
-  getOdds: (index: number, original: string) => string = (i, o) => o,
-  isScratched: (index: number) => boolean = () => false,
-  trackCondition?: TrackCondition
+  getOdds: (index: number, original: string) => string = (_i, o) => o,
+  isScratched: (index: number) => boolean = () => false
 ): TopBetsResult {
   const startTime = performance.now();
 
@@ -1222,7 +1214,7 @@ export function generateTopBets(
       topBets: [],
       totalCombinationsAnalyzed: 0,
       raceContext: {
-        trackCode: raceHeader.track || 'UNKNOWN',
+        trackCode: raceHeader.trackCode || 'UNKNOWN',
         raceNumber,
         fieldSize: horses.length,
         surface: raceHeader.surface || 'dirt',
@@ -1284,11 +1276,10 @@ export function generateTopBets(
     : allCandidates;
 
   // Apply diversity enforcement to get top 25
-  const top25Candidates = enforceTypeDiversity(candidatesToRank, horses, 25);
+  const top25Candidates = enforceTypeDiversity(candidatesToRank, 25);
 
   // Convert to TopBet format
   const topBets: TopBet[] = top25Candidates.map((candidate, index) => {
-    const selectedHorses = candidate.horseIndices.map(i => horses[i]).filter(Boolean);
     const payout = estimatePayout(
       candidate.type,
       horses,
@@ -1358,7 +1349,7 @@ export function generateTopBets(
     topBets,
     totalCombinationsAnalyzed: totalCombinations,
     raceContext: {
-      trackCode: raceHeader.track || 'UNKNOWN',
+      trackCode: raceHeader.trackCode || 'UNKNOWN',
       raceNumber,
       fieldSize: horses.length,
       surface: raceHeader.surface || 'dirt',

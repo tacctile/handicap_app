@@ -13,9 +13,9 @@
  * @module hooks/useTopBets
  */
 
-import { useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 import type { ScoredHorse } from '../lib/scoring';
-import type { RaceHeader, TrackCondition } from '../types/drf';
+import type { RaceHeader } from '../types/drf';
 import {
   generateTopBets,
   estimateCombinationCount,
@@ -39,8 +39,6 @@ export interface UseTopBetsInput {
   getOdds?: (index: number, originalOdds: string) => string;
   /** Function to check if a horse is scratched */
   isScratched?: (index: number) => boolean;
-  /** Current track condition */
-  trackCondition?: TrackCondition;
 }
 
 export interface UseTopBetsResult {
@@ -139,7 +137,6 @@ export function useTopBets(input: UseTopBetsInput): UseTopBetsResult {
     raceNumber,
     getOdds = (_, original) => original,
     isScratched = () => false,
-    trackCondition,
   } = input;
 
   // Memoize the result - recalculates when dependencies change
@@ -210,7 +207,7 @@ export function useTopBets(input: UseTopBetsInput): UseTopBetsResult {
         ...emptyResult,
         error: 'Not enough active horses (minimum 2 required)',
         raceContext: {
-          trackCode: raceHeader.track || 'UNKNOWN',
+          trackCode: raceHeader.trackCode || 'UNKNOWN',
           raceNumber,
           fieldSize: activeHorses.length,
           surface: raceHeader.surface || 'dirt',
@@ -229,8 +226,7 @@ export function useTopBets(input: UseTopBetsInput): UseTopBetsResult {
         raceHeader,
         raceNumber,
         getOdds,
-        isScratched,
-        trackCondition
+        isScratched
       );
     } catch (error) {
       console.error('Error generating top bets:', error);
@@ -238,7 +234,7 @@ export function useTopBets(input: UseTopBetsInput): UseTopBetsResult {
         ...emptyResult,
         error: `Generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
         raceContext: {
-          trackCode: raceHeader.track || 'UNKNOWN',
+          trackCode: raceHeader.trackCode || 'UNKNOWN',
           raceNumber,
           fieldSize: activeHorses.length,
           surface: raceHeader.surface || 'dirt',
@@ -322,7 +318,7 @@ export function useTopBets(input: UseTopBetsInput): UseTopBetsResult {
       getBetsForHorse,
       getBestByTier,
     };
-  }, [scoredHorses, raceHeader, raceNumber, getOdds, isScratched, trackCondition]);
+  }, [scoredHorses, raceHeader, raceNumber, getOdds, isScratched]);
 
   return result;
 }
