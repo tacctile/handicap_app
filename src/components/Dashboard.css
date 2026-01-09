@@ -248,6 +248,7 @@
   /* Offset = verdict bar height (48px) + column headers height (48px) = 96px */
   padding-top: calc(var(--bar-height, 48px) * 2);
   position: relative;
+  z-index: 1; /* Below the verdict and header bars that extend into this area */
 }
 
 /* Race rail top area - no longer needed as verdict bar and column headers now extend to fill this space */
@@ -394,6 +395,8 @@
   width: 100%;
   max-width: none; /* Override index.css max-width: 1200px */
   min-width: 0; /* Allow flex item to shrink below content size */
+  position: relative;
+  z-index: 5; /* Above race rail (1) so bars can overlay it */
 }
 
 .app-main__content {
