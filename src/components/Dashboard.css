@@ -45,10 +45,10 @@
   flex-direction: row;
   align-items: center;
   padding: 0 16px;
-  background: var(--color-card);
+  background-color: var(--color-card);
   border-bottom: 1px solid var(--color-border);
   height: var(--bar-height);
-  z-index: 100;
+  z-index: 30; /* Top of sticky stack - highest */
   gap: 12px;
   transition: width var(--transition-normal);
 }
@@ -1173,11 +1173,12 @@
   /* Extend to left edge - covers race rail area */
   margin-left: calc(-1 * var(--dimension-bar, 64px) - 1px);
   padding-left: 0; /* No padding - races label uses the left space */
-  background: var(--color-elevated);
+  /* CRITICAL: solid opaque background to prevent content bleed-through */
+  background-color: #1a1a1c; /* Solid hex, no transparency */
   border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: var(--bar-height, 48px); /* Sticky below verdict bar */
-  z-index: 15;
+  z-index: 10; /* Above horse content (0), below verdict bar (20) */
   height: var(--bar-height, 48px);
   min-height: var(--bar-height, 48px);
   width: calc(100% + var(--dimension-bar, 64px) + 1px);
@@ -1261,10 +1262,9 @@
   font-weight: 700;
 }
 
-/* Icons column - help button, left-aligned to match SCRATCH button and verdict dots below */
+/* Icons column - help button, centered to align with verdict dot above */
 .horse-list-header__cell--icons {
-  justify-content: flex-start;
-  padding-left: 16px;
+  justify-content: center;
 }
 
 /* Help trigger button */

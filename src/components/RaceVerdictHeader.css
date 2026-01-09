@@ -13,7 +13,7 @@
   /* Sticky positioning inside scrollable container */
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 20; /* Middle of sticky stack - below top bar (30), above column headers (10) */
 
   /* Fixed height: same as top bar */
   height: var(--bar-height, 48px);
@@ -25,17 +25,20 @@
   margin: 0;
   margin-left: calc(-1 * var(--dimension-bar, 64px) - 1px);
   padding: 0 16px;
-  padding-left: calc(var(--dimension-bar, 64px) + 16px + 1px);
+  /* Padding aligns content so verdict dot centers over icons column (64px RACES + 35px half of 70px icons = 99px) */
+  /* Icon is ~14px so start at 99px - 7px = 92px, but account for icon container/spacing */
+  padding-left: calc(var(--dimension-bar, 64px) + 28px + 1px);
   box-sizing: border-box;
 
   /* Layout: single line, vertically centered */
   display: flex;
   align-items: center;
 
-  /* Styling */
+  /* Styling - CRITICAL: solid opaque background to prevent content bleed-through */
+  /* Note: backgroundColor is set via inline style for verdict color, this is fallback */
   border-left: 4px solid;
   border-bottom: 1px solid var(--color-border, #2a2a2c);
-  background: var(--color-card, #0f0f10);
+  background-color: #0f0f10; /* Solid hex fallback, no transparency */
 
   /* Typography base */
   font-family:

@@ -360,16 +360,17 @@ export function getVerdictColor(verdict: RaceVerdict): string {
 }
 
 /**
- * Get verdict background color (lighter version)
+ * Get verdict background color - SOLID opaque colors (no transparency)
+ * These are the rgba values pre-blended with the dark background #0f0f10
  */
 export function getVerdictBgColor(verdict: RaceVerdict): string {
   switch (verdict) {
     case 'BET':
-      return 'rgba(16, 185, 129, 0.15)';
+      return '#0f2921'; // Solid dark green (was rgba(16, 185, 129, 0.15))
     case 'CAUTION':
-      return 'rgba(245, 158, 11, 0.15)';
+      return '#2e240f'; // Solid dark amber (was rgba(245, 158, 11, 0.15))
     case 'PASS':
-      return 'rgba(239, 68, 68, 0.15)';
+      return '#2e1010'; // Solid dark red (was rgba(239, 68, 68, 0.15))
   }
 }
 
