@@ -4,6 +4,7 @@ import { PPLine } from './PPLine';
 import type { HorseEntry, PastPerformance, Workout } from '../types/drf';
 import type { HorseScore } from '../lib/scoring';
 import { formatRacingDistance } from '../utils/formatters';
+import type { BetTier } from '../hooks/useRaceBets';
 
 // ============================================================================
 // CONSTANTS & UTILITIES
@@ -454,8 +455,16 @@ interface HorseExpandedViewProps {
   // Race-level context for PASS races
   raceVerdict?: 'BET' | 'CAUTION' | 'PASS';
   isBestInPassRace?: boolean;
-  // All horses in the race for suggested bets display
+  // All horses in the race for suggested bets display (legacy)
   raceHorses?: Array<{ horseName: string; modelRank?: number; programNumber?: string }>;
+  // New bet recommendations from useRaceBets hook
+  betRecommendations?: {
+    conservative: BetTier;
+    moderate: BetTier;
+    aggressive: BetTier;
+    hasRecommendations: boolean;
+    summary: string;
+  };
 }
 
 export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
@@ -475,7 +484,8 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   valueExplanation: _valueExplanation = '',
   raceVerdict: _raceVerdict = 'BET',
   isBestInPassRace: _isBestInPassRace = false,
-  raceHorses = [],
+  raceHorses: _raceHorses = [],
+  betRecommendations,
 }) => {
   // State for active tab - defaults to 'analysis'
   const [activeTab, setActiveTab] = useState<'analysis' | 'pps' | 'workouts' | 'profile'>(
@@ -521,33 +531,8 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
     };
   });
 
-  // Get top ranked horses for suggested bets
-  const getSortedHorses = () => {
-    if (!raceHorses || raceHorses.length === 0) {
-      // Fallback: use current horse name if no race data
-      return [
-        { horseName: horse.horseName || 'Horse 1', rank: 1 },
-        { horseName: 'Horse 2', rank: 2 },
-        { horseName: 'Horse 3', rank: 3 },
-        { horseName: 'Horse 4', rank: 4 },
-        { horseName: 'Horse 5', rank: 5 },
-      ];
-    }
-    return [...raceHorses]
-      .sort((a, b) => (a.modelRank || 99) - (b.modelRank || 99))
-      .slice(0, 5)
-      .map((h, i) => ({ horseName: h.horseName, rank: i + 1 }));
-  };
-
-  const topHorses = getSortedHorses();
-  const horse1 = topHorses[0]?.horseName || 'TBD';
-  const horse2 = topHorses[1]?.horseName || 'TBD';
-  const horse3 = topHorses[2]?.horseName || 'TBD';
-  const horse4 = topHorses[3]?.horseName || 'TBD';
-  const horse5 = topHorses[4]?.horseName || 'TBD';
-
-  // Note: Betting suggestion logic moved to race-level component
-  // This component now shows the Suggested Bets placeholder in the Analysis tab
+  // Note: Betting suggestions now come from betRecommendations prop
+  // which is calculated at the Dashboard level using the useRaceBets hook
 
   return (
     <div className={`horse-expanded horse-expanded--${valueStatus.toLowerCase()}`}>
@@ -754,7 +739,9 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
               <div className="suggested-bets__header">
                 <span className="suggested-bets__header-title">SUGGESTED BETS</span>
                 <span className="suggested-bets__header-subtitle">
-                  (Suggestions based on model rankings. Adjust based on current odds and bankroll.)
+                  {betRecommendations?.hasRecommendations
+                    ? '(Calculated from scoring analysis. Adjust based on live odds.)'
+                    : '(No recommendations available for this race.)'}
                 </span>
               </div>
               <div className="suggested-bets__divider" />
@@ -763,59 +750,78 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                 {/* Conservative Bets Tier */}
                 <div className="suggested-bets__tier">
                   <div className="suggested-bets__tier-header">
-                    <span className="suggested-bets__tier-label">Conservative Bets</span>
+                    <span className="suggested-bets__tier-label">
+                      {betRecommendations?.conservative.label || 'Conservative Bets'}
+                    </span>
                   </div>
                   <div className="suggested-bets__tier-bets">
-                    <div className="suggested-bets__bet">
-                      <span className="suggested-bets__bet-type">Win:</span>
-                      <span className="suggested-bets__bet-horses">{horse1}</span>
-                    </div>
-                    <div className="suggested-bets__bet">
-                      <span className="suggested-bets__bet-type">Place:</span>
-                      <span className="suggested-bets__bet-horses">{horse2}</span>
-                    </div>
+                    {betRecommendations?.conservative.hasBets ? (
+                      betRecommendations.conservative.bets.map((bet, idx) => (
+                        <div key={`conservative-${idx}`} className="suggested-bets__bet">
+                          <span className="suggested-bets__bet-type">{bet.type}:</span>
+                          <span className="suggested-bets__bet-horses">{bet.horsesDisplay}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="suggested-bets__bet suggested-bets__bet--empty">
+                        <span className="suggested-bets__bet-empty-message">
+                          {betRecommendations?.conservative.emptyMessage ||
+                            'No conservative bets recommended'}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Moderate Bets Tier */}
                 <div className="suggested-bets__tier">
                   <div className="suggested-bets__tier-header">
-                    <span className="suggested-bets__tier-label">Moderate Bets</span>
+                    <span className="suggested-bets__tier-label">
+                      {betRecommendations?.moderate.label || 'Moderate Bets'}
+                    </span>
                   </div>
                   <div className="suggested-bets__tier-bets">
-                    <div className="suggested-bets__bet">
-                      <span className="suggested-bets__bet-type">Exacta Box:</span>
-                      <span className="suggested-bets__bet-horses">
-                        {horse1}, {horse2}
-                      </span>
-                    </div>
-                    <div className="suggested-bets__bet">
-                      <span className="suggested-bets__bet-type">Trifecta Key:</span>
-                      <span className="suggested-bets__bet-horses">
-                        {horse1} over {horse2}, {horse3}
-                      </span>
-                    </div>
+                    {betRecommendations?.moderate.hasBets ? (
+                      betRecommendations.moderate.bets.map((bet, idx) => (
+                        <div key={`moderate-${idx}`} className="suggested-bets__bet">
+                          <span className="suggested-bets__bet-type">{bet.type}:</span>
+                          <span className="suggested-bets__bet-horses">{bet.horsesDisplay}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="suggested-bets__bet suggested-bets__bet--empty">
+                        <span className="suggested-bets__bet-empty-message">
+                          {betRecommendations?.moderate.emptyMessage ||
+                            'No moderate bets recommended'}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Aggressive Bets Tier */}
                 <div className="suggested-bets__tier">
                   <div className="suggested-bets__tier-header">
-                    <span className="suggested-bets__tier-label">Aggressive Bets</span>
+                    <span className="suggested-bets__tier-label">
+                      {betRecommendations?.aggressive.label || 'Aggressive Bets'}
+                    </span>
                   </div>
                   <div className="suggested-bets__tier-bets">
-                    <div className="suggested-bets__bet">
-                      <span className="suggested-bets__bet-type">Trifecta Box:</span>
-                      <span className="suggested-bets__bet-horses">
-                        {horse1}, {horse2}, {horse3}, {horse4}
-                      </span>
-                    </div>
-                    <div className="suggested-bets__bet">
-                      <span className="suggested-bets__bet-type">Superfecta:</span>
-                      <span className="suggested-bets__bet-horses">
-                        {horse1}/{horse2} over {horse3}, {horse4}, {horse5}
-                      </span>
-                    </div>
+                    {betRecommendations?.aggressive.hasBets ? (
+                      betRecommendations.aggressive.bets.map((bet, idx) => (
+                        <div key={`aggressive-${idx}`} className="suggested-bets__bet">
+                          <span className="suggested-bets__bet-type">{bet.type}:</span>
+                          <span className="suggested-bets__bet-horses">{bet.horsesDisplay}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="suggested-bets__bet suggested-bets__bet--empty">
+                        <span className="suggested-bets__bet-empty-message">
+                          {betRecommendations?.aggressive.emptyMessage ||
+                            'No aggressive bets recommended'}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

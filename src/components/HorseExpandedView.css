@@ -1735,6 +1735,18 @@
   color: var(--color-text-primary, #eeeff1);
 }
 
+/* Empty state styling for suggested bets */
+.suggested-bets__bet--empty {
+  padding: 8px 0;
+}
+
+.suggested-bets__bet-empty-message {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-style: italic;
+  color: var(--color-text-tertiary, #6e6e70);
+}
+
 /* Responsive: Stack columns on smaller screens */
 @media (max-width: 900px) {
   .analysis-two-column {
