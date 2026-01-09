@@ -35,9 +35,10 @@
   align-items: center;
 
   /* Styling - CRITICAL: solid opaque background to prevent content bleed-through */
+  /* Note: backgroundColor is set via inline style for verdict color, this is fallback */
   border-left: 4px solid;
   border-bottom: 1px solid var(--color-border, #2a2a2c);
-  background-color: var(--color-card, #0f0f10);
+  background-color: #0f0f10; /* Solid hex fallback, no transparency */
 
   /* Typography base */
   font-family:

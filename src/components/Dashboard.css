@@ -1174,7 +1174,7 @@
   margin-left: calc(-1 * var(--dimension-bar, 64px) - 1px);
   padding-left: 0; /* No padding - races label uses the left space */
   /* CRITICAL: solid opaque background to prevent content bleed-through */
-  background-color: var(--color-elevated);
+  background-color: #1a1a1c; /* Solid hex, no transparency */
   border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: var(--bar-height, 48px); /* Sticky below verdict bar */
