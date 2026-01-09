@@ -1183,8 +1183,6 @@
   min-height: var(--bar-height, 48px);
   width: calc(100% + var(--dimension-bar, 64px) + 1px);
   min-width: 0;
-  /* Create stacking context to ensure proper layering */
-  isolation: isolate;
 }
 
 .horse-list-header__cell {
