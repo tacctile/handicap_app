@@ -1,15 +1,11 @@
 /**
- * Race Verdict Header Component (Redesigned)
+ * Race Verdict Header Component (Single Line Layout)
  *
- * Fixed 2-unit height (128px = 2 × top bar height) sticky header showing:
- * - Line 1: Verdict type + confidence level
- * - Line 2: Value play details (horse name, odds, fair odds, edge%, bet type)
+ * Single-line sticky header using --bar-height (48px) showing:
+ * - Verdict icon + label + confidence + value play details on one line
  *
- * Always visible, no collapse/expand functionality.
- * Uses 3-tier typography system:
- * - PRIMARY: 16px semibold — horse name, edge percentage, bet type
- * - SECONDARY: 14px regular — odds values, fair odds, verdict label, confidence
- * - TERTIARY: 12px regular, muted — labels
+ * Full viewport width, no side margins. Uses uniform 14px typography.
+ * Differentiates with color/weight only.
  */
 
 import React, { useCallback } from 'react';
@@ -52,7 +48,7 @@ function getVerdictIcon(verdict: RaceVerdict): string {
 function getVerdictLabel(verdict: RaceVerdict): string {
   switch (verdict) {
     case 'BET':
-      return 'BETTABLE RACE';
+      return 'BETTABLE';
     case 'CAUTION':
       return 'CAUTION';
     case 'PASS':
@@ -72,6 +68,25 @@ function getConfidenceLabel(confidence: 'HIGH' | 'MEDIUM' | 'LOW'): string {
     case 'LOW':
       return 'Low Confidence';
   }
+}
+
+/**
+ * Convert decimal odds (like "10.00") to fractional (like "10-1")
+ * or pass through if already in fractional format
+ */
+function convertToFractionalOdds(odds: string): string {
+  if (!odds) return '—';
+
+  // If already in fractional format (contains "-"), return as-is
+  if (odds.includes('-')) return odds;
+
+  // Parse decimal odds
+  const decimal = parseFloat(odds);
+  if (isNaN(decimal) || decimal <= 1) return odds;
+
+  // Convert to fractional: decimal - 1 = X-1 format
+  const fractional = Math.round(decimal - 1);
+  return `${fractional}-1`;
 }
 
 /**
@@ -106,12 +121,12 @@ export const RaceVerdictHeader: React.FC<RaceVerdictHeaderProps> = ({
   const verdictColor = getVerdictColor(verdict);
   const verdictBgColor = getVerdictBgColor(verdict);
 
-  // Build PASS reason for display
+  // Build short PASS reason for display
   const getPassReason = (): string => {
     if (verdictReason.includes('chalk')) {
-      return 'All contenders are chalk (under 6-1 odds)';
+      return 'No longshots';
     }
-    return 'No horses show 50%+ edge at 6-1 or longer';
+    return 'Below threshold';
   };
 
   return (
@@ -122,96 +137,92 @@ export const RaceVerdictHeader: React.FC<RaceVerdictHeaderProps> = ({
         backgroundColor: verdictBgColor,
       }}
     >
-      {/* LINE 1: Verdict type + confidence */}
-      <div className="race-verdict-header__line1">
+      {/* Single line layout: Verdict + Details */}
+      <div className="race-verdict-header__content">
+        {/* Left: Verdict icon + label + confidence/reason */}
         <div className="race-verdict-header__verdict-section">
           <span className="race-verdict-header__icon">{getVerdictIcon(verdict)}</span>
           <span className="race-verdict-header__verdict-label" style={{ color: verdictColor }}>
             {getVerdictLabel(verdict)}
           </span>
-          {verdict === 'PASS' && (
-            <>
-              <span className="race-verdict-header__middot">·</span>
-              <span className="race-verdict-header__pass-reason">{getPassReason()}</span>
-            </>
-          )}
-          {verdict !== 'PASS' && (
-            <>
-              <span className="race-verdict-header__middot">·</span>
-              <span className="race-verdict-header__confidence">
-                {getConfidenceLabel(confidence)}
-              </span>
-            </>
-          )}
+          <span className="race-verdict-header__middot">·</span>
+          <span className="race-verdict-header__confidence">
+            {verdict === 'PASS' ? getPassReason() : getConfidenceLabel(confidence)}
+          </span>
         </div>
-      </div>
 
-      {/* LINE 2: Value play details OR closest-to-threshold for PASS */}
-      <div className="race-verdict-header__line2">
-        {verdict === 'PASS' ? (
-          /* PASS verdict - show closest horse to threshold */
-          closestToThreshold ? (
-            <div className="race-verdict-header__closest-section">
-              <span className="race-verdict-header__closest-label">Closest:</span>
+        {/* Separator */}
+        <div className="race-verdict-header__divider"></div>
+
+        {/* Right: Value play details */}
+        <div className="race-verdict-header__details-section">
+          {verdict === 'PASS' ? (
+            /* PASS verdict - show closest horse */
+            closestToThreshold ? (
+              <>
+                <span className="race-verdict-header__label">Closest:</span>
+                <button
+                  className="race-verdict-header__horse-btn"
+                  onClick={handleClosestHorseClick}
+                  title="Click to scroll to this horse"
+                >
+                  {closestToThreshold.horseName.toUpperCase()} (#{closestToThreshold.programNumber})
+                </button>
+                <span className="race-verdict-header__middot">·</span>
+                <span className="race-verdict-header__odds-value">
+                  {convertToFractionalOdds(closestToThreshold.currentOdds)}
+                </span>
+                <span className="race-verdict-header__middot">·</span>
+                <span className="race-verdict-header__label">Fair:</span>
+                <span className="race-verdict-header__fair-value">
+                  {closestToThreshold.fairOdds}
+                </span>
+                <span className="race-verdict-header__middot">·</span>
+                <span
+                  className="race-verdict-header__edge-value"
+                  style={{ color: getEdgeColor(closestToThreshold.edge) }}
+                >
+                  {formatEdge(closestToThreshold.edge)} Edge
+                </span>
+                <span className="race-verdict-header__threshold-note">(below threshold)</span>
+              </>
+            ) : (
+              <span className="race-verdict-header__no-value">No longshots with positive edge</span>
+            )
+          ) : primaryValuePlay ? (
+            /* BET or CAUTION verdict with value play */
+            <>
+              <span className="race-verdict-header__fire-icon">{'\u{1F525}'}</span>
               <button
                 className="race-verdict-header__horse-btn"
-                onClick={handleClosestHorseClick}
+                onClick={handleValuePlayClick}
                 title="Click to scroll to this horse"
               >
-                {closestToThreshold.horseName.toUpperCase()} (#{closestToThreshold.programNumber})
+                {primaryValuePlay.horseName.toUpperCase()} (#{primaryValuePlay.programNumber})
               </button>
               <span className="race-verdict-header__middot">·</span>
               <span className="race-verdict-header__odds-value">
-                {closestToThreshold.currentOdds}
+                {convertToFractionalOdds(primaryValuePlay.currentOdds)}
               </span>
               <span className="race-verdict-header__middot">·</span>
-              <span className="race-verdict-header__fair-label">Fair:</span>
-              <span className="race-verdict-header__fair-value">{closestToThreshold.fairOdds}</span>
+              <span className="race-verdict-header__label">Fair:</span>
+              <span className="race-verdict-header__fair-value">
+                {calculateFairOdds(primaryValuePlay.modelWinProb)}
+              </span>
               <span className="race-verdict-header__middot">·</span>
               <span
                 className="race-verdict-header__edge-value"
-                style={{ color: getEdgeColor(closestToThreshold.edge) }}
+                style={{ color: getEdgeColor(primaryValuePlay.valueEdge) }}
               >
-                {formatEdge(closestToThreshold.edge)} Edge
+                {formatEdge(primaryValuePlay.valueEdge)} Edge
               </span>
-              <span className="race-verdict-header__threshold-note">(below 50% threshold)</span>
-            </div>
-          ) : (
-            <div className="race-verdict-header__no-value">
-              No horses at 6-1 or longer odds with positive edge
-            </div>
-          )
-        ) : primaryValuePlay ? (
-          /* BET or CAUTION verdict with value play */
-          <div className="race-verdict-header__value-section">
-            <span className="race-verdict-header__fire-icon">{'\u{1F525}'}</span>
-            <button
-              className="race-verdict-header__horse-btn"
-              onClick={handleValuePlayClick}
-              title="Click to scroll to this horse"
-            >
-              {primaryValuePlay.horseName.toUpperCase()} (#{primaryValuePlay.programNumber})
-            </button>
-            <span className="race-verdict-header__middot">·</span>
-            <span className="race-verdict-header__odds-value">{primaryValuePlay.currentOdds}</span>
-            <span className="race-verdict-header__middot">·</span>
-            <span className="race-verdict-header__fair-label">Fair:</span>
-            <span className="race-verdict-header__fair-value">
-              {calculateFairOdds(primaryValuePlay.modelWinProb)}
-            </span>
-            <span className="race-verdict-header__middot">·</span>
-            <span
-              className="race-verdict-header__edge-value"
-              style={{ color: getEdgeColor(primaryValuePlay.valueEdge) }}
-            >
-              {formatEdge(primaryValuePlay.valueEdge)} Edge
-            </span>
-            <span className="race-verdict-header__middot">·</span>
-            <span className="race-verdict-header__bet-type">
-              {getBetTypeDisplay(primaryValuePlay.betType)}
-            </span>
-          </div>
-        ) : null}
+              <span className="race-verdict-header__middot">·</span>
+              <span className="race-verdict-header__bet-type">
+                {getBetTypeDisplay(primaryValuePlay.betType)}
+              </span>
+            </>
+          ) : null}
+        </div>
       </div>
     </div>
   );

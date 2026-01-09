@@ -5,7 +5,6 @@ import { BetModeContainer } from './BetMode';
 import { FileUpload } from './FileUpload';
 import { HorseExpandedView } from './HorseExpandedView';
 import { HorseSummaryBar } from './HorseSummaryBar';
-import { HeaderTooltip } from './InfoTooltip';
 import { ScoringHelpModal } from './ScoringHelpModal';
 import { RaceVerdictHeader } from './RaceVerdictHeader';
 import {
@@ -44,70 +43,6 @@ const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
-// Expand race classification abbreviations to readable text
-const expandClassification = (classification: string): string => {
-  const expansions: Record<string, string> = {
-    maiden: 'MAIDEN',
-    maiden_claiming: 'MAIDEN CLAIMING',
-    maiden_special_weight: 'MAIDEN SPECIAL WEIGHT',
-    claiming: 'CLAIMING',
-    allowance: 'ALLOWANCE',
-    allowance_optional_claiming: 'ALLOWANCE OPTIONAL CLAIMING',
-    stakes: 'STAKES',
-    graded_stakes: 'GRADED STAKES',
-    listed: 'LISTED STAKES',
-    handicap: 'HANDICAP',
-    starter_allowance: 'STARTER ALLOWANCE',
-    unknown: 'UNKNOWN',
-    // Also handle abbreviated codes
-    MSW: 'MAIDEN SPECIAL WEIGHT',
-    MCL: 'MAIDEN CLAIMING',
-    CLM: 'CLAIMING',
-    ALW: 'ALLOWANCE',
-    AOC: 'ALLOWANCE OPTIONAL CLAIMING',
-    STK: 'STAKES',
-    HCP: 'HANDICAP',
-  };
-  return (
-    expansions[classification] ||
-    expansions[classification.toUpperCase()] ||
-    classification.toUpperCase()
-  );
-};
-
-// Expand age restriction to readable text
-const expandAge = (age: string): string => {
-  if (!age) return '';
-  const ageMap: Record<string, string> = {
-    '2YO': '2-Year-Olds',
-    '3YO': '3-Year-Olds',
-    '4YO': '4-Year-Olds',
-    '5YO': '5-Year-Olds',
-    '3&UP': '3-Year-Olds & Up',
-    '3+': '3-Year-Olds & Up',
-    '4&UP': '4-Year-Olds & Up',
-    '4+': '4-Year-Olds & Up',
-    '5&UP': '5-Year-Olds & Up',
-    '5+': '5-Year-Olds & Up',
-  };
-  return ageMap[age.toUpperCase()] || age;
-};
-
-// Expand sex restriction to readable text
-const expandSex = (sex: string): string => {
-  if (!sex) return '';
-  const sexMap: Record<string, string> = {
-    F: 'Fillies',
-    M: 'Mares',
-    'F&M': 'Fillies & Mares',
-    C: 'Colts',
-    G: 'Geldings',
-    'C&G': 'Colts & Geldings',
-    H: 'Horses',
-  };
-  return sexMap[sex.toUpperCase()] || sex;
-};
-
 // Get full track name with code and size
 const getTrackDisplayName = (trackCode: string | undefined, trackSize: string): string => {
   if (!trackCode) return 'Unknown Track';
@@ -119,52 +54,30 @@ const getTrackDisplayName = (trackCode: string | undefined, trackSize: string): 
   return `${trackCode} (${trackSize})`;
 };
 
-// Build readable race description as flowing sentences
-const buildRaceDescription = (race: ParsedRace | undefined): { line1: string; line2: string } => {
-  if (!race?.header) return { line1: '', line2: '' };
+// Build compact race description for single-line display
+// Format: Distance · Purse · Runners
+const buildCompactRaceInfo = (race: ParsedRace | undefined): string => {
+  if (!race?.header) return '';
 
-  // Line 1: Distance + Classification + "for [restrictions]"
-  const line1Parts: string[] = [];
+  const parts: string[] = [];
 
   // Distance
   if (race.header.distance) {
-    line1Parts.push(race.header.distance);
+    parts.push(race.header.distance);
   }
-
-  // Classification
-  if (race.header.classification && race.header.classification !== 'unknown') {
-    line1Parts.push(expandClassification(race.header.classification));
-  }
-
-  // Build "for [sex] [age]" phrase
-  const sexText = expandSex(race.header.sexRestriction);
-  const ageText = expandAge(race.header.ageRestriction);
-  if (sexText && ageText) {
-    line1Parts.push(`for ${sexText} ${ageText}`);
-  } else if (ageText) {
-    line1Parts.push(`for ${ageText}`);
-  } else if (sexText) {
-    line1Parts.push(`for ${sexText}`);
-  }
-
-  // Line 2: Purse + Field size
-  const line2Parts: string[] = [];
 
   // Purse
   if (race.header.purse) {
-    line2Parts.push(`Purse ${race.header.purseFormatted || formatCurrency(race.header.purse)}`);
+    parts.push(race.header.purseFormatted || formatCurrency(race.header.purse));
   }
 
   // Field size
   const fieldSize = race.horses?.length || race.header.fieldSize || 0;
   if (fieldSize > 0) {
-    line2Parts.push(`${fieldSize} Runners`);
+    parts.push(`${fieldSize} Runners`);
   }
 
-  return {
-    line1: line1Parts.join(' ') + (line1Parts.length > 0 ? '.' : ''),
-    line2: line2Parts.join('. ') + (line2Parts.length > 0 ? '.' : ''),
-  };
+  return parts.join(' · ');
 };
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -195,9 +108,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // State for scoring help modal
   const [helpModalOpen, setHelpModalOpen] = useState(false);
 
-  // State for horse list sort order
-  type SortOption = 'POST' | 'BASE' | 'VALUE' | 'ODDS';
-  const [sortBy, setSortBy] = useState<SortOption>('POST');
+  // State for horse list sort order and direction
+  // Sortable columns: POST, RANK, ODDS, FAIR, EDGE
+  // Non-sortable: HORSE (name), VALUE (badge)
+  type SortColumn = 'POST' | 'RANK' | 'ODDS' | 'FAIR' | 'EDGE';
+  type SortDirection = 'asc' | 'desc';
+  const [sortColumn, setSortColumn] = useState<SortColumn>('POST');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  // Handle column header click for sorting
+  const handleColumnSort = useCallback(
+    (column: SortColumn) => {
+      if (column === sortColumn) {
+        // Toggle direction if clicking same column
+        setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      } else {
+        // Switch to new column with default ascending
+        setSortColumn(column);
+        setSortDirection('asc');
+      }
+    },
+    [sortColumn]
+  );
 
   // Ref for scrolling to value play horse
   const horseListRef = useRef<HTMLDivElement>(null);
@@ -321,49 +253,76 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // Get the primary value play horse index
   const primaryValuePlayIndex = valueAnalysis.primaryValuePlay?.horseIndex ?? -1;
 
-  // Sort horses based on current sort option
+  // Sort horses based on current sort column and direction
   const sortedScoredHorses = useMemo(() => {
     if (!currentRaceScoredHorses.length) return currentRaceScoredHorses;
 
     const horses = [...currentRaceScoredHorses];
+    const direction = sortDirection === 'asc' ? 1 : -1;
 
-    switch (sortBy) {
+    // Helper to parse odds string to decimal
+    const parseOdds = (oddsStr: string): number => {
+      const parts = oddsStr.split('-');
+      const num = parseFloat(parts[0] || '10');
+      const den = parseFloat(parts[1] || '1');
+      return num / den;
+    };
+
+    switch (sortColumn) {
       case 'POST':
         // Sort by post position (program number)
-        return horses.sort((a, b) => a.horse.programNumber - b.horse.programNumber);
+        return horses.sort((a, b) => (a.horse.programNumber - b.horse.programNumber) * direction);
 
-      case 'BASE':
-        // Sort by base score (highest first)
-        return horses.sort((a, b) => b.score.baseScore - a.score.baseScore);
+      case 'RANK':
+        // Sort by base score rank (lower rank = better)
+        return horses.sort((a, b) => {
+          const rankA = baseScoreRankMap.get(a.index)?.rank ?? 999;
+          const rankB = baseScoreRankMap.get(b.index)?.rank ?? 999;
+          return (rankA - rankB) * direction;
+        });
 
-      case 'VALUE':
-        // Sort by overlay/edge percentage (highest first, then underlays)
+      case 'ODDS':
+        // Sort by odds (lower = favorites first in asc)
+        return horses.sort((a, b) => {
+          const oddsA = parseOdds(raceState.getOdds(a.index, a.horse.morningLineOdds));
+          const oddsB = parseOdds(raceState.getOdds(b.index, b.horse.morningLineOdds));
+          return (oddsA - oddsB) * direction;
+        });
+
+      case 'FAIR':
+        // Sort by fair odds (lower = better horse)
+        return horses.sort((a, b) => {
+          // Need to calculate fair odds for each horse
+          const scoreA = a.score.baseScore;
+          const scoreB = b.score.baseScore;
+          // Higher score = lower fair odds (better horse)
+          // So we sort by score descending for ascending fair odds order
+          return (scoreB - scoreA) * direction;
+        });
+
+      case 'EDGE':
+        // Sort by edge percentage (higher = better value)
         return horses.sort((a, b) => {
           const playA = valueAnalysis.valuePlays.find((p) => p.horseIndex === a.index);
           const playB = valueAnalysis.valuePlays.find((p) => p.horseIndex === b.index);
           const edgeA = playA?.valueEdge ?? -999;
           const edgeB = playB?.valueEdge ?? -999;
-          return edgeB - edgeA;
-        });
-
-      case 'ODDS':
-        // Sort by odds (lowest/favorites first)
-        return horses.sort((a, b) => {
-          const parseOdds = (oddsStr: string): number => {
-            const parts = oddsStr.split('-');
-            const num = parseFloat(parts[0] || '10');
-            const den = parseFloat(parts[1] || '1');
-            return num / den;
-          };
-          const oddsA = parseOdds(raceState.getOdds(a.index, a.horse.morningLineOdds));
-          const oddsB = parseOdds(raceState.getOdds(b.index, b.horse.morningLineOdds));
-          return oddsA - oddsB;
+          // For edge, descending is more natural (best first)
+          // So we invert the direction
+          return (edgeB - edgeA) * direction;
         });
 
       default:
         return horses;
     }
-  }, [currentRaceScoredHorses, sortBy, valueAnalysis.valuePlays, raceState]);
+  }, [
+    currentRaceScoredHorses,
+    sortColumn,
+    sortDirection,
+    valueAnalysis.valuePlays,
+    raceState,
+    baseScoreRankMap,
+  ]);
 
   // Get current race data
   const currentRace = parsedData?.races?.[selectedRaceIndex];
@@ -404,8 +363,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
         const dayNum = parseInt(dateStr.substring(6, 8), 10);
 
         // Manual month lookup to avoid Date object timezone shifts
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const months = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ];
         const monthName = months[monthNum - 1];
 
         if (!monthName || isNaN(dayNum) || dayNum < 1 || dayNum > 31) {
@@ -627,27 +598,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </>
           ) : (
-            /* LOADED STATE - DRF file loaded */
+            /* LOADED STATE - DRF file loaded - Single line layout */
             <>
               {/* Logo */}
               <div className="app-topbar__logo">
                 <div className="app-topbar__logo-icon">
                   <span className="material-icons">casino</span>
                 </div>
-                <span className="app-topbar__logo-text">Furlong</span>
               </div>
 
               {/* Separator after logo */}
               <div className="app-topbar__separator"></div>
 
-              {/* Left section: Track, Date, Race - larger font */}
+              {/* Track · Date · Race X of X */}
               <div className="app-topbar__identity">
-                <span className="app-topbar__track">
+                <span className="app-topbar__track-name">
                   {getTrackDisplayName(trackCode, getTrackSize(trackCode))}
                 </span>
-                <span className="app-topbar__dot">•</span>
+                <span className="app-topbar__middot">·</span>
                 <span className="app-topbar__date">{formatRaceDate(raceDate)}</span>
-                <span className="app-topbar__dot">•</span>
+                <span className="app-topbar__middot">·</span>
                 <span className="app-topbar__race-label">
                   Race {selectedRaceIndex + 1} of {parsedData.races?.length || 0}
                 </span>
@@ -656,40 +626,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
               {/* Separator */}
               <div className="app-topbar__separator"></div>
 
-              {/* Center: Race info box - can be 1 or 2 lines */}
-              <div className="app-topbar__race-info-box">
-                {(() => {
-                  const desc = buildRaceDescription(currentRace);
-                  return (
-                    <div className="app-topbar__race-info-text">
-                      <span className="app-topbar__race-info-line">{desc.line1}</span>
-                      {desc.line2 && (
-                        <span className="app-topbar__race-info-line">{desc.line2}</span>
-                      )}
-                    </div>
-                  );
-                })()}
+              {/* Distance · Purse · Runners */}
+              <div className="app-topbar__race-info">
+                <span className="app-topbar__race-info-text">
+                  {buildCompactRaceInfo(currentRace)}
+                </span>
               </div>
 
               {/* Separator */}
               <div className="app-topbar__separator"></div>
 
-              {/* Post time display - shows scheduled time with timezone */}
+              {/* Post time - single value with ET */}
               <div className="app-topbar__post-time">
-                {(() => {
-                  const postTimeValue = getPostTime(currentRace);
-                  const formattedTime = formatPostTime(postTimeValue);
-                  const hasPostTime = formattedTime !== '--:--';
-
-                  return (
-                    <>
-                      <span className="app-topbar__post-time-value">
-                        {hasPostTime ? `${formattedTime} ET` : 'TBD'}
-                      </span>
-                      <span className="app-topbar__post-time-label">Scheduled post</span>
-                    </>
-                  );
-                })()}
+                <span className="app-topbar__post-time-value">
+                  {(() => {
+                    const postTimeValue = getPostTime(currentRace);
+                    const formattedTime = formatPostTime(postTimeValue);
+                    return formattedTime !== '--:--' ? `${formattedTime} ET` : 'TBD';
+                  })()}
+                </span>
               </div>
 
               {/* Separator */}
@@ -794,32 +749,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     onValuePlayClick={scrollToHorse}
                   />
 
-                  {/* Sort Controls */}
-                  <div className="horse-list-sort">
-                    <span className="horse-list-sort__label">Sort by:</span>
-                    <div className="horse-list-sort__options">
-                      {(['POST', 'BASE', 'VALUE', 'ODDS'] as const).map((option) => (
-                        <button
-                          key={option}
-                          className={`horse-list-sort__btn ${sortBy === option ? 'horse-list-sort__btn--active' : ''}`}
-                          onClick={() => setSortBy(option)}
-                          title={
-                            option === 'POST'
-                              ? 'Sort by post position'
-                              : option === 'BASE'
-                                ? 'Sort by model rank (highest score first)'
-                                : option === 'VALUE'
-                                  ? 'Sort by edge % (best overlays first)'
-                                  : 'Sort by odds (favorites first)'
-                          }
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Column Headers - 9 columns: icons | POST | HORSE | RANK | ODDS | FAIR | EDGE | VALUE | expand */}
+                  {/* Column Headers - Sortable: POST, RANK, ODDS, FAIR, EDGE | Non-sortable: HORSE, VALUE */}
                   <div className="horse-list-header">
                     {/* Column 1: Help button */}
                     <div className="horse-list-header__cell horse-list-header__cell--icons">
@@ -834,74 +764,104 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       </button>
                     </div>
 
-                    {/* Column 2: POST - No subtext, vertically centered */}
-                    <div className="horse-list-header__cell horse-list-header__cell--pp horse-list-header__cell--no-subtext">
-                      <HeaderTooltip
-                        title="Post Position"
-                        content="The starting gate number where the horse begins the race. Lower numbers start closer to the inside rail."
-                      >
-                        <span className="horse-list-header__label">POST</span>
-                      </HeaderTooltip>
+                    {/* Column 2: POST - Sortable */}
+                    <div
+                      className={`horse-list-header__cell horse-list-header__cell--pp horse-list-header__cell--sortable ${sortColumn === 'POST' ? 'horse-list-header__cell--active' : ''}`}
+                      onClick={() => handleColumnSort('POST')}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('POST')}
+                    >
+                      <span className="horse-list-header__label">
+                        POST
+                        {sortColumn === 'POST' && (
+                          <span className="horse-list-header__arrow">
+                            {sortDirection === 'asc' ? '▲' : '▼'}
+                          </span>
+                        )}
+                      </span>
                     </div>
 
-                    {/* Column 3: Horse Name - No subtext, vertically centered */}
-                    <div className="horse-list-header__cell horse-list-header__cell--name horse-list-header__cell--no-subtext">
-                      <HeaderTooltip
-                        title="Horse Name"
-                        content="Click on a horse row to see detailed information including past races, trainer, jockey, and scoring breakdown."
-                      >
-                        <span className="horse-list-header__label">HORSE</span>
-                      </HeaderTooltip>
+                    {/* Column 3: Horse Name - NOT sortable */}
+                    <div className="horse-list-header__cell horse-list-header__cell--name">
+                      <span className="horse-list-header__label">HORSE</span>
                     </div>
 
-                    {/* Column 4: RANK - Model ranking based on base score */}
-                    <div className="horse-list-header__cell horse-list-header__cell--rank horse-list-header__cell--no-subtext">
-                      <HeaderTooltip
-                        title="Model Rank"
-                        content="Our model's ranking of this horse based on speed, class, form, pace, and connections. #1 is our top pick."
-                      >
-                        <span className="horse-list-header__label">RANK</span>
-                      </HeaderTooltip>
+                    {/* Column 4: RANK - Sortable */}
+                    <div
+                      className={`horse-list-header__cell horse-list-header__cell--rank horse-list-header__cell--sortable ${sortColumn === 'RANK' ? 'horse-list-header__cell--active' : ''}`}
+                      onClick={() => handleColumnSort('RANK')}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('RANK')}
+                    >
+                      <span className="horse-list-header__label">
+                        RANK
+                        {sortColumn === 'RANK' && (
+                          <span className="horse-list-header__arrow">
+                            {sortDirection === 'asc' ? '▲' : '▼'}
+                          </span>
+                        )}
+                      </span>
                     </div>
 
-                    {/* Column 5: ODDS - Market price */}
-                    <div className="horse-list-header__cell horse-list-header__cell--odds horse-list-header__cell--no-subtext">
-                      <HeaderTooltip
-                        title="Current Odds"
-                        content="Current odds from morning line or your manual update. Click to edit with live odds."
-                      >
-                        <span className="horse-list-header__label">ODDS</span>
-                      </HeaderTooltip>
+                    {/* Column 5: ODDS - Sortable */}
+                    <div
+                      className={`horse-list-header__cell horse-list-header__cell--odds horse-list-header__cell--sortable ${sortColumn === 'ODDS' ? 'horse-list-header__cell--active' : ''}`}
+                      onClick={() => handleColumnSort('ODDS')}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('ODDS')}
+                    >
+                      <span className="horse-list-header__label">
+                        ODDS
+                        {sortColumn === 'ODDS' && (
+                          <span className="horse-list-header__arrow">
+                            {sortDirection === 'asc' ? '▲' : '▼'}
+                          </span>
+                        )}
+                      </span>
                     </div>
 
-                    {/* Column 6: FAIR - Calculated fair odds based on base score */}
-                    <div className="horse-list-header__cell horse-list-header__cell--fair-odds horse-list-header__cell--no-subtext">
-                      <HeaderTooltip
-                        title="Fair Odds"
-                        content="What we think the odds SHOULD be based on our analysis. Lower fair odds = better horse."
-                      >
-                        <span className="horse-list-header__label">FAIR</span>
-                      </HeaderTooltip>
+                    {/* Column 6: FAIR - Sortable */}
+                    <div
+                      className={`horse-list-header__cell horse-list-header__cell--fair-odds horse-list-header__cell--sortable ${sortColumn === 'FAIR' ? 'horse-list-header__cell--active' : ''}`}
+                      onClick={() => handleColumnSort('FAIR')}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('FAIR')}
+                    >
+                      <span className="horse-list-header__label">
+                        FAIR
+                        {sortColumn === 'FAIR' && (
+                          <span className="horse-list-header__arrow">
+                            {sortDirection === 'asc' ? '▲' : '▼'}
+                          </span>
+                        )}
+                      </span>
                     </div>
 
-                    {/* Column 7: EDGE - Value gap percentage */}
-                    <div className="horse-list-header__cell horse-list-header__cell--edge horse-list-header__cell--no-subtext">
-                      <HeaderTooltip
-                        title="Edge"
-                        content="The value gap. Positive = public is offering better odds than deserved (bet these). Negative = horse is overbet (skip)."
-                      >
-                        <span className="horse-list-header__label">EDGE</span>
-                      </HeaderTooltip>
+                    {/* Column 7: EDGE - Sortable */}
+                    <div
+                      className={`horse-list-header__cell horse-list-header__cell--edge horse-list-header__cell--sortable ${sortColumn === 'EDGE' ? 'horse-list-header__cell--active' : ''}`}
+                      onClick={() => handleColumnSort('EDGE')}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('EDGE')}
+                    >
+                      <span className="horse-list-header__label">
+                        EDGE
+                        {sortColumn === 'EDGE' && (
+                          <span className="horse-list-header__arrow">
+                            {sortDirection === 'asc' ? '▲' : '▼'}
+                          </span>
+                        )}
+                      </span>
                     </div>
 
-                    {/* Column 8: VALUE - Overlay/Fair/Underlay badge */}
-                    <div className="horse-list-header__cell horse-list-header__cell--value horse-list-header__cell--no-subtext">
-                      <HeaderTooltip
-                        title="Value Status"
-                        content="Overlay = value bet. Underlay = no value. Fair = neutral."
-                      >
-                        <span className="horse-list-header__label">VALUE</span>
-                      </HeaderTooltip>
+                    {/* Column 8: VALUE - NOT sortable */}
+                    <div className="horse-list-header__cell horse-list-header__cell--value">
+                      <span className="horse-list-header__label">VALUE</span>
                     </div>
 
                     {/* Column 9: Expand */}

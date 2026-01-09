@@ -1,13 +1,8 @@
 /**
- * Race Verdict Header Styles (Redesigned)
+ * Race Verdict Header Styles (Single Line Layout)
  *
- * Fixed 2-unit height (128px = 2 × --dimension-bar) sticky header
- * that stays visible when scrolling the horse list.
- *
- * Typography System (3 tiers only):
- * - PRIMARY: 16px semibold — horse name, edge percentage, bet type
- * - SECONDARY: 14px regular — odds values, fair odds, verdict label, confidence
- * - TERTIARY: 12px regular, muted — labels like "Fair:", "Closest:"
+ * Fixed height using --bar-height (48px) sticky header.
+ * Full viewport width, no side margins. Uniform 14px typography.
  */
 
 /* ============================================
@@ -18,27 +13,27 @@
   /* Sticky positioning inside scrollable container */
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
 
-  /* Fixed height: 2 × top bar height (64px) = 128px */
-  height: 128px;
-  min-height: 128px;
-  max-height: 128px;
+  /* Fixed height: same as top bar */
+  height: var(--bar-height, 48px);
+  min-height: var(--bar-height, 48px);
+  max-height: var(--bar-height, 48px);
 
-  /* Layout: 2 lines stacked vertically, centered */
+  /* Full width - no margins */
+  width: 100%;
+  margin: 0;
+  padding: 0 16px;
+  box-sizing: border-box;
+
+  /* Layout: single line, vertically centered */
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 12px;
+  align-items: center;
 
   /* Styling */
-  border: 2px solid;
-  border-radius: 0; /* No border radius for sticky header */
-  padding: 0 24px;
-  margin: 0;
-
-  /* Ensure content fits */
-  overflow: hidden;
+  border-left: 4px solid;
+  border-bottom: 1px solid var(--color-border, #2a2a2c);
+  background: var(--color-card, #0f0f10);
 
   /* Typography base */
   font-family:
@@ -46,34 +41,40 @@
     -apple-system,
     BlinkMacSystemFont,
     sans-serif;
+  font-size: 14px;
 }
 
 /* ============================================
-   LINE 1: Verdict + Confidence
+   CONTENT WRAPPER
    ============================================ */
 
-.race-verdict-header__line1 {
+.race-verdict-header__content {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  gap: 12px;
   width: 100%;
+  overflow: hidden;
 }
+
+/* ============================================
+   VERDICT SECTION (Left side)
+   ============================================ */
 
 .race-verdict-header__verdict-section {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 /* Verdict icon emoji */
 .race-verdict-header__icon {
-  font-size: 18px;
+  font-size: 14px;
   line-height: 1;
   flex-shrink: 0;
 }
 
-/* Verdict label - SECONDARY tier but bold */
+/* Verdict label - bold uppercase */
 .race-verdict-header__verdict-label {
   font-size: 14px;
   font-weight: 700;
@@ -89,76 +90,66 @@
   flex-shrink: 0;
 }
 
-/* Confidence label - SECONDARY tier */
+/* Confidence label */
 .race-verdict-header__confidence {
   font-size: 14px;
   font-weight: 400;
   color: var(--color-text-secondary, #b4b4b6);
 }
 
-/* PASS reason text - SECONDARY tier */
-.race-verdict-header__pass-reason {
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--color-text-secondary, #b4b4b6);
+/* ============================================
+   DIVIDER
+   ============================================ */
+
+.race-verdict-header__divider {
+  width: 1px;
+  height: 24px;
+  background: var(--color-border, #2a2a2c);
+  flex-shrink: 0;
 }
 
 /* ============================================
-   LINE 2: Value Play Details
+   DETAILS SECTION (Right side)
    ============================================ */
 
-.race-verdict-header__line2 {
+.race-verdict-header__details-section {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  width: 100%;
-  min-height: 32px; /* Ensure consistent height */
-}
-
-/* Value section (for BET/CAUTION verdicts) */
-.race-verdict-header__value-section {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-/* Closest section (for PASS verdicts) */
-.race-verdict-header__closest-section {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Fire emoji icon */
 .race-verdict-header__fire-icon {
-  font-size: 18px;
+  font-size: 14px;
   line-height: 1;
   flex-shrink: 0;
 }
 
-/* Closest label - TERTIARY tier */
-.race-verdict-header__closest-label {
-  font-size: 12px;
+/* Generic label - muted */
+.race-verdict-header__label {
+  font-size: 14px;
   font-weight: 400;
   color: var(--color-text-tertiary, #6e6e70);
   flex-shrink: 0;
 }
 
-/* Horse name button - PRIMARY tier with pill styling */
+/* Horse name button - clickable pill */
 .race-verdict-header__horse-btn {
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.25);
   color: var(--color-text-primary, #eeeff1);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
-  padding: 4px 12px;
+  padding: 2px 10px;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.15s ease;
   font-family: inherit;
   line-height: 1.2;
+  flex-shrink: 0;
 }
 
 .race-verdict-header__horse-btn:hover {
@@ -171,56 +162,53 @@
   outline-offset: 2px;
 }
 
-/* Odds value - SECONDARY tier, no box */
+/* Odds value - white */
 .race-verdict-header__odds-value {
   font-size: 14px;
   font-weight: 400;
   color: var(--color-text-primary, #eeeff1);
   font-variant-numeric: tabular-nums;
-}
-
-/* Fair label - TERTIARY tier */
-.race-verdict-header__fair-label {
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--color-text-tertiary, #6e6e70);
   flex-shrink: 0;
 }
 
-/* Fair odds value - SECONDARY tier */
+/* Fair odds value - muted */
 .race-verdict-header__fair-value {
   font-size: 14px;
   font-weight: 400;
   color: var(--color-text-secondary, #b4b4b6);
   font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
 }
 
-/* Edge value - PRIMARY tier, color applied via inline style */
+/* Edge value - color set via inline style */
 .race-verdict-header__edge-value {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
 }
 
-/* Threshold note for PASS races - TERTIARY tier */
+/* Threshold note for PASS races - muted, italic */
 .race-verdict-header__threshold-note {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 400;
   color: var(--color-text-tertiary, #6e6e70);
   font-style: italic;
+  flex-shrink: 0;
 }
 
-/* Bet type badge - PRIMARY tier with pill styling */
+/* Bet type badge - subtle pill */
 .race-verdict-header__bet-type {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary, #eeeff1);
   background: rgba(255, 255, 255, 0.12);
-  padding: 4px 10px;
+  padding: 2px 8px;
   border-radius: 4px;
+  flex-shrink: 0;
 }
 
-/* No value message for PASS races */
+/* No value message */
 .race-verdict-header__no-value {
   font-size: 14px;
   font-weight: 400;
@@ -228,69 +216,56 @@
 }
 
 /* ============================================
-   TABLET RESPONSIVE (768-1023px)
-   Content reflows within 2-line container
+   RESPONSIVE (Tablet)
    ============================================ */
 
 @media (max-width: 1023px) {
   .race-verdict-header {
-    padding: 0 16px;
+    padding: 0 12px;
+  }
+
+  .race-verdict-header__content {
     gap: 8px;
   }
 
   .race-verdict-header__verdict-section,
-  .race-verdict-header__value-section,
-  .race-verdict-header__closest-section {
-    gap: 8px;
+  .race-verdict-header__details-section {
+    gap: 6px;
   }
 
-  /* Allow wrapping but keep content readable */
-  .race-verdict-header__horse-btn {
-    font-size: 15px;
-    padding: 3px 10px;
-  }
-
-  .race-verdict-header__edge-value {
-    font-size: 15px;
-  }
-
-  .race-verdict-header__bet-type {
-    font-size: 15px;
-    padding: 3px 8px;
+  /* Hide threshold note on tablet to save space */
+  .race-verdict-header__threshold-note {
+    display: none;
   }
 }
 
 /* ============================================
-   MOBILE (< 768px) - Out of scope per requirements
-   Keeping minimal styles to prevent layout break
+   MOBILE (< 768px) - Out of scope
+   Basic fallback to prevent layout break
    ============================================ */
 
 @media (max-width: 767px) {
   .race-verdict-header {
-    /* Keep sticky but allow more flexible height */
-    min-height: 100px;
-    height: auto;
-    max-height: none;
-    padding: 12px 12px;
-    gap: 6px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .race-verdict-header__verdict-label,
+  .race-verdict-header__confidence,
+  .race-verdict-header__horse-btn,
+  .race-verdict-header__odds-value,
+  .race-verdict-header__fair-value,
+  .race-verdict-header__edge-value,
+  .race-verdict-header__bet-type {
+    font-size: 12px;
   }
 
   .race-verdict-header__horse-btn {
-    font-size: 14px;
-    padding: 3px 8px;
+    padding: 2px 6px;
   }
 
-  .race-verdict-header__edge-value,
-  .race-verdict-header__bet-type {
-    font-size: 14px;
-  }
-
-  .race-verdict-header__verdict-label {
-    font-size: 13px;
-  }
-
-  /* Hide threshold note on mobile to save space */
-  .race-verdict-header__threshold-note {
+  .race-verdict-header__threshold-note,
+  .race-verdict-header__label {
     display: none;
   }
 }
