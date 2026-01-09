@@ -172,10 +172,18 @@
   white-space: nowrap;
 }
 
-/* Muted secondary race info (turf course, rail, chute) */
-.app-topbar__race-info-text--muted {
+/* Full conditions text - detailed eligibility */
+.app-topbar__race-info--conditions {
+  max-width: 400px;
+  overflow: hidden;
+}
+
+.app-topbar__race-info-text--conditions {
   color: var(--color-text-tertiary);
-  font-style: italic;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Post time - single value */

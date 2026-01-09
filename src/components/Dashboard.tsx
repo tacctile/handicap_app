@@ -54,148 +54,147 @@ const getTrackDisplayName = (trackCode: string | undefined, trackSize: string): 
   return `${trackCode} (${trackSize})`;
 };
 
-// Build comprehensive race description for single-line display
-// Shows maximum available data from DRF file
-// Format: Surface · Distance · Race Type · Stakes Name/Grade · Claiming Price · Age · Sex · State-Bred · Purse · Runners
-const buildCompactRaceInfo = (race: ParsedRace | undefined): string => {
+// Build FULL race description - NO abbreviations, ALL data shown
+// A 5-year-old should understand exactly what this race is about
+const buildFullRaceInfo = (race: ParsedRace | undefined): string => {
   if (!race?.header) return '';
 
   const parts: string[] = [];
   const header = race.header;
 
-  // 1. Surface - fundamental info (Dirt/Turf/Synthetic/AW)
+  // 1. Surface - full word
   if (header.surface) {
-    const surfaceDisplay = {
+    const surfaceDisplay: Record<string, string> = {
       dirt: 'Dirt',
       turf: 'Turf',
-      synthetic: 'Synth',
-      'all-weather': 'AW',
-    }[header.surface] || header.surface;
-    parts.push(surfaceDisplay);
+      synthetic: 'Synthetic',
+      'all-weather': 'All-Weather',
+    };
+    parts.push(surfaceDisplay[header.surface] || header.surface);
   }
 
-  // 2. Distance - prefer shorter format
+  // 2. Distance - FULL format, no abbreviations
   if (header.distance) {
     let distanceDisplay = header.distance;
-    // Shorten "furlongs" to "f" and "miles" to "mi"
-    distanceDisplay = distanceDisplay.replace(/\s+furlongs?/i, 'f').replace(/\s+miles?/i, 'mi');
-    // Add "about" indicator if approximate distance
+    // Keep full words - don't abbreviate
     if (header.isAbout) {
-      distanceDisplay = `~${distanceDisplay}`;
+      distanceDisplay = `About ${distanceDisplay}`;
     }
     parts.push(distanceDisplay);
   }
 
-  // 3. Race type/classification
-  // Build race type with stakes name/grade if applicable
-  let raceTypeDisplay = '';
-
-  // Stakes race name and grade
+  // 3. Race type/classification - FULL names
   if (header.raceName) {
-    raceTypeDisplay = header.raceName;
+    // Stakes race with full grade
+    let stakesDisplay = header.raceName;
     if (header.grade) {
-      raceTypeDisplay = `G${header.grade} ${raceTypeDisplay}`;
+      stakesDisplay = `Grade ${header.grade} ${stakesDisplay}`;
     } else if (header.isListed) {
-      raceTypeDisplay = `Listed ${raceTypeDisplay}`;
+      stakesDisplay = `Listed Stakes: ${stakesDisplay}`;
     }
+    parts.push(stakesDisplay);
   } else if (header.raceType && header.raceType.trim()) {
-    raceTypeDisplay = header.raceType;
+    parts.push(header.raceType);
   } else if (header.classification) {
-    // Fallback to classification if raceType not set
     const classDisplay: Record<string, string> = {
       'maiden': 'Maiden',
       'maiden-claiming': 'Maiden Claiming',
       'claiming': 'Claiming',
       'allowance': 'Allowance',
-      'allowance-optional-claiming': 'AOC',
-      'starter-allowance': 'Starter Alw',
+      'allowance-optional-claiming': 'Allowance Optional Claiming',
+      'starter-allowance': 'Starter Allowance',
       'stakes': 'Stakes',
       'stakes-listed': 'Listed Stakes',
-      'stakes-graded-3': 'G3 Stakes',
-      'stakes-graded-2': 'G2 Stakes',
-      'stakes-graded-1': 'G1 Stakes',
+      'stakes-graded-3': 'Grade 3 Stakes',
+      'stakes-graded-2': 'Grade 2 Stakes',
+      'stakes-graded-1': 'Grade 1 Stakes',
       'handicap': 'Handicap',
       'unknown': 'Race',
     };
-    raceTypeDisplay = classDisplay[header.classification] || header.classification;
+    parts.push(classDisplay[header.classification] || header.classification);
   }
 
-  if (raceTypeDisplay) {
-    parts.push(raceTypeDisplay);
-  }
-
-  // 4. Claiming price (for claiming races)
+  // 4. Claiming price - full dollar amounts
   if (header.claimingPriceMin || header.claimingPriceMax) {
     if (header.claimingPriceMin && header.claimingPriceMax && header.claimingPriceMin !== header.claimingPriceMax) {
-      parts.push(`$${(header.claimingPriceMin / 1000).toFixed(0)}K-$${(header.claimingPriceMax / 1000).toFixed(0)}K`);
+      parts.push(`Claiming Price ${formatCurrency(header.claimingPriceMin)} to ${formatCurrency(header.claimingPriceMax)}`);
     } else {
       const price = header.claimingPriceMax || header.claimingPriceMin || 0;
-      if (price >= 1000) {
-        parts.push(`$${(price / 1000).toFixed(0)}K tag`);
-      } else {
-        parts.push(`$${price} tag`);
-      }
+      parts.push(`Claiming Price ${formatCurrency(price)}`);
     }
   }
 
-  // 5. Age restriction (e.g., "3YO", "3&UP")
+  // 5. Age restriction - FULL words
   if (header.ageRestriction && header.ageRestriction.trim()) {
+    // Expand common abbreviations to full words
     let ageDisplay = header.ageRestriction;
     ageDisplay = ageDisplay
-      .replace(/\s*year\s*old/i, 'yo')
-      .replace(/\s*years?\s*old/i, 'yo')
-      .replace(/\s*&\s*up/i, '+')
-      .replace(/\s+/g, '');
+      .replace(/(\d+)\s*yo\b/gi, '$1 Year Olds')
+      .replace(/(\d+)\s*&\s*up/gi, '$1 Years Old and Up')
+      .replace(/(\d+)\s*\+/g, '$1 Years Old and Up')
+      .replace(/3yo/gi, '3 Year Olds')
+      .replace(/2yo/gi, '2 Year Olds')
+      .replace(/4yo/gi, '4 Year Olds');
     parts.push(ageDisplay);
   }
 
-  // 6. Sex restriction (e.g., "F&M", "Fillies", "C&G")
+  // 6. Sex restriction - FULL words
   if (header.sexRestriction && header.sexRestriction.trim()) {
-    parts.push(header.sexRestriction);
+    // Expand common abbreviations
+    let sexDisplay = header.sexRestriction;
+    sexDisplay = sexDisplay
+      .replace(/\bF\s*&\s*M\b/gi, 'Fillies and Mares')
+      .replace(/\bC\s*&\s*G\b/gi, 'Colts and Geldings')
+      .replace(/\bF\b/g, 'Fillies')
+      .replace(/\bM\b/g, 'Mares')
+      .replace(/\bC\b/g, 'Colts')
+      .replace(/\bG\b/g, 'Geldings');
+    parts.push(sexDisplay);
   }
 
   // 7. State-bred restriction
   if (header.stateBred && header.stateBred.trim()) {
-    parts.push(header.stateBred);
+    parts.push(`${header.stateBred} Bred`);
   }
 
-  // 8. Purse
+  // 8. Purse - full currency format
   if (header.purse) {
-    parts.push(header.purseFormatted || formatCurrency(header.purse));
+    parts.push(`Purse ${header.purseFormatted || formatCurrency(header.purse)}`);
   }
 
-  // 9. Field size
+  // 9. Field size - full words
   const fieldSize = race.horses?.length || header.fieldSize || 0;
   if (fieldSize > 0) {
-    parts.push(`${fieldSize} Runners`);
+    parts.push(`${fieldSize} Horse${fieldSize !== 1 ? 's' : ''} Entered`);
+  }
+
+  // 10. Weight conditions if available
+  if (header.weightConditions && header.weightConditions.trim()) {
+    parts.push(header.weightConditions);
+  }
+
+  // 11. Turf course type
+  if (header.turfCourseType && header.turfCourseType.trim()) {
+    parts.push(`${header.turfCourseType} Turf Course`);
+  }
+
+  // 12. Temp rail position
+  if (header.tempRail && header.tempRail.trim()) {
+    parts.push(`Rail at ${header.tempRail}`);
+  }
+
+  // 13. Chute start
+  if (header.chuteStart) {
+    parts.push('Starting from Chute');
   }
 
   return parts.join(' · ');
 };
 
-// Build secondary race details (turf course, rail position, chute start)
-const buildSecondaryRaceInfo = (race: ParsedRace | undefined): string => {
-  if (!race?.header) return '';
-
-  const parts: string[] = [];
-  const header = race.header;
-
-  // Turf course type (inner/outer)
-  if (header.turfCourseType && header.turfCourseType.trim()) {
-    parts.push(header.turfCourseType);
-  }
-
-  // Temp rail position
-  if (header.tempRail && header.tempRail.trim()) {
-    parts.push(`Rail ${header.tempRail}`);
-  }
-
-  // Chute start
-  if (header.chuteStart) {
-    parts.push('Chute Start');
-  }
-
-  return parts.join(' · ');
+// Get the full race conditions text (the detailed eligibility conditions)
+const getFullConditions = (race: ParsedRace | undefined): string => {
+  if (!race?.header?.conditions) return '';
+  return race.header.conditions;
 };
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -744,20 +743,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
               {/* Separator */}
               <div className="app-topbar__separator"></div>
 
-              {/* Race info - Surface · Distance · Type · etc */}
+              {/* Race info - FULL details, no abbreviations */}
               <div className="app-topbar__race-info">
                 <span className="app-topbar__race-info-text">
-                  {buildCompactRaceInfo(currentRace)}
+                  {buildFullRaceInfo(currentRace)}
                 </span>
               </div>
 
-              {/* Secondary race info (turf course, rail, chute) - only if present */}
-              {buildSecondaryRaceInfo(currentRace) && (
+              {/* Full conditions text - if available */}
+              {getFullConditions(currentRace) && (
                 <>
                   <div className="app-topbar__separator"></div>
-                  <div className="app-topbar__race-info app-topbar__race-info--secondary">
-                    <span className="app-topbar__race-info-text app-topbar__race-info-text--muted">
-                      {buildSecondaryRaceInfo(currentRace)}
+                  <div className="app-topbar__race-info app-topbar__race-info--conditions">
+                    <span className="app-topbar__race-info-text app-topbar__race-info-text--conditions">
+                      {getFullConditions(currentRace)}
                     </span>
                   </div>
                 </>
