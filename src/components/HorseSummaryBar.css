@@ -47,7 +47,8 @@
 }
 
 .horse-summary-bar--expanded {
-  background-color: var(--color-elevated);
+  /* CRITICAL: solid opaque background to prevent content bleed-through */
+  background-color: #1e1e20; /* Solid hex - slightly lighter than base for elevated look */
   /* Sticky positioning when expanded - sticks below verdict bar and column headers */
   position: sticky;
   top: calc(var(--bar-height, 48px) * 2); /* 96px - below both sticky headers */
