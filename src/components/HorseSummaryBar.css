@@ -37,7 +37,6 @@
     width var(--transition-normal);
   width: 100%;
   min-width: 0; /* Allow flex item to shrink below content size */
-  will-change: background, opacity;
   /* Ensure rows stay below sticky headers */
   position: relative;
   z-index: 0;
