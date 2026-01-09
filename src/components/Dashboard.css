@@ -1173,15 +1173,18 @@
   /* Extend to left edge - covers race rail area */
   margin-left: calc(-1 * var(--dimension-bar, 64px) - 1px);
   padding-left: 0; /* No padding - races label uses the left space */
-  background: var(--color-elevated);
+  /* CRITICAL: solid opaque background to prevent content bleed-through */
+  background-color: var(--color-elevated);
   border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: var(--bar-height, 48px); /* Sticky below verdict bar */
-  z-index: 15;
+  z-index: 25; /* Higher z-index - below verdict bar (30) but above content */
   height: var(--bar-height, 48px);
   min-height: var(--bar-height, 48px);
   width: calc(100% + var(--dimension-bar, 64px) + 1px);
   min-width: 0;
+  /* Create stacking context to ensure proper layering */
+  isolation: isolate;
 }
 
 .horse-list-header__cell {
@@ -1261,10 +1264,9 @@
   font-weight: 700;
 }
 
-/* Icons column - help button, left-aligned to match SCRATCH button and verdict dots below */
+/* Icons column - help button, centered to align with verdict dot above */
 .horse-list-header__cell--icons {
-  justify-content: flex-start;
-  padding-left: 16px;
+  justify-content: center;
 }
 
 /* Help trigger button */

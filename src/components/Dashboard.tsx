@@ -54,16 +54,43 @@ const getTrackDisplayName = (trackCode: string | undefined, trackSize: string): 
   return `${trackCode} (${trackSize})`;
 };
 
-// Build compact race description for single-line display
-// Format: Distance · Purse · Runners
+// Build comprehensive race description for single-line display
+// Format: Distance · Race Type · Age/Sex · Purse · Runners
+// Example: "7f · Maiden Special Weight · 3yo · $12,200 · 10 Runners"
 const buildCompactRaceInfo = (race: ParsedRace | undefined): string => {
   if (!race?.header) return '';
 
   const parts: string[] = [];
 
-  // Distance
+  // Distance - prefer shorter format if available
   if (race.header.distance) {
-    parts.push(race.header.distance);
+    // Convert common distance formats to abbreviations for compactness
+    let distanceDisplay = race.header.distance;
+    // Shorten "furlongs" to "f" and "miles" to "mi"
+    distanceDisplay = distanceDisplay.replace(/\s+furlongs?/i, 'f').replace(/\s+miles?/i, 'mi');
+    parts.push(distanceDisplay);
+  }
+
+  // Race type/class (e.g., "Maiden Special Weight", "Claiming", "Allowance")
+  if (race.header.raceType && race.header.raceType.trim()) {
+    parts.push(race.header.raceType);
+  }
+
+  // Age restriction (e.g., "3YO", "3&UP") - format for display
+  if (race.header.ageRestriction && race.header.ageRestriction.trim()) {
+    let ageDisplay = race.header.ageRestriction;
+    // Normalize common formats
+    ageDisplay = ageDisplay
+      .replace(/\s*year\s*old/i, 'yo')
+      .replace(/\s*years?\s*old/i, 'yo')
+      .replace(/\s*&\s*up/i, '+')
+      .replace(/\s+/g, '');
+    parts.push(ageDisplay);
+  }
+
+  // Sex restriction (e.g., "F&M", "Fillies", "C&G") - only if present
+  if (race.header.sexRestriction && race.header.sexRestriction.trim()) {
+    parts.push(race.header.sexRestriction);
   }
 
   // Purse
