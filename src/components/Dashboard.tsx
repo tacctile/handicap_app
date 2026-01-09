@@ -701,7 +701,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Race Rail */}
         <aside
           className={`app-race-rail ${parsedData?.races ? getRailCompactClass(parsedData.races.length) : ''}`}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
         >
           {parsedData?.races?.map((race, index) => {
             const raceStatus = getRaceStatus(race, index);
@@ -712,12 +711,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 key={index}
                 className={`app-race-rail__item ${isActive ? 'app-race-rail__item--active' : ''} app-race-rail__item--${raceStatus.status}`}
                 onClick={() => onRaceSelect?.(index)}
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', width: '100%' }}
               >
-                <span className="app-race-rail__number" style={{ textAlign: 'center', width: '100%', display: 'block' }}>
+                <span className="app-race-rail__number">
                   R{race.header?.raceNumber || index + 1}
                 </span>
-                <span className="app-race-rail__time" style={{ textAlign: 'center', width: '100%', display: 'block' }}>
+                <span className="app-race-rail__time">
                   {raceStatus.status === 'final' ? 'FINAL' : formatPostTime(getPostTime(race))}
                 </span>
               </button>
@@ -781,18 +779,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   {/* Column Headers - Sortable: POST, RANK, ODDS, FAIR, EDGE | Non-sortable: HORSE, VALUE */}
                   <div className="horse-list-header">
                     {/* Column 0: RACES label - positioned above race rail */}
-                    <div
-                      className="horse-list-header__cell horse-list-header__cell--races-label"
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', height: '100%' }}
-                    >
-                      <span className="horse-list-header__races-text" style={{ textAlign: 'center' }}>RACES</span>
+                    <div className="horse-list-header__cell horse-list-header__cell--races-label">
+                      <span className="horse-list-header__races-text">RACES</span>
                     </div>
 
                     {/* Column 1: Help button */}
-                    <div
-                      className="horse-list-header__cell horse-list-header__cell--icons"
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}
-                    >
+                    <div className="horse-list-header__cell horse-list-header__cell--icons">
                       <button
                         type="button"
                         className="help-trigger-btn"
@@ -811,7 +803,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('POST')}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}
                     >
                       <span className="horse-list-header__label">
                         POST

@@ -27,7 +27,7 @@
   display: grid;
   grid-template-rows: var(--bar-height) 1fr var(--bar-height);
   grid-template-columns: var(--dimension-bar) 1fr;
-  overflow: visible; /* Allow bars in main content to extend into race rail column */
+  overflow: hidden;
   transition: width var(--transition-normal);
   width: 100%;
   min-width: 0; /* Allow flex item to shrink below content size */
@@ -242,13 +242,11 @@
   background: var(--color-card);
   border-right: 1px solid var(--color-border);
   overflow-y: auto;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important; /* Center race items horizontally */
+  display: flex;
+  flex-direction: column;
   /* Offset = verdict bar height (48px) + column headers height (48px) = 96px */
   padding-top: calc(var(--bar-height, 48px) * 2);
   position: relative;
-  z-index: 1; /* Below the verdict and header bars that extend into this area */
 }
 
 /* Race rail top area - no longer needed as verdict bar and column headers now extend to fill this space */
@@ -388,15 +386,13 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: visible; /* Allow bars to extend into race rail area */
+  overflow: hidden;
   background: var(--color-base);
   padding: 0;
   margin: 0;
   width: 100%;
   max-width: none; /* Override index.css max-width: 1200px */
   min-width: 0; /* Allow flex item to shrink below content size */
-  position: relative;
-  z-index: 5; /* Above race rail (1) so bars can overlay it */
 }
 
 .app-main__content {
@@ -404,7 +400,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  overflow-x: visible; /* Allow bars to extend into race rail area */
+  overflow-x: hidden;
   padding: 0; /* NO padding - content goes to edges */
   padding-bottom: 56px; /* Space for footer (48px) + small buffer */
   margin: 0;
