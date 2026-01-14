@@ -28,12 +28,11 @@
   margin: 0;
   background-color: var(--color-card); /* Solid opaque background */
   border-bottom: 1px solid var(--color-border);
-  border-left: 4px solid transparent;
+  /* No left border indicator - background color is sufficient */
   cursor: pointer;
   transition:
     background var(--transition-fast),
     opacity var(--transition-fast),
-    border-left-color var(--transition-fast),
     width var(--transition-normal);
   width: 100%;
   min-width: 0; /* Allow flex item to shrink below content size */
@@ -535,24 +534,10 @@
 }
 
 /* ============================================
-   TIER LEFT BORDER COLORS (Simplified 3-tier system)
+   TIER CLASSES (Background color only, no left border)
    ============================================ */
 
-.horse-summary-bar--tier-overlay {
-  border-left-color: #10b981; /* Green - Overlay */
-}
-
-.horse-summary-bar--tier-fair {
-  border-left-color: #6e6e70; /* Gray - Fair */
-}
-
-.horse-summary-bar--tier-underlay {
-  border-left-color: #ef4444; /* Red - Underlay */
-}
-
-.horse-summary-bar--tier-scratched {
-  border-left-color: var(--color-tier-scratched);
-}
+/* Tier classes no longer set left border colors - background color is sufficient */
 
 /* ============================================
    VALUE PERCENTAGE TEXT COLORS
@@ -688,11 +673,10 @@
   background: rgba(16, 185, 129, 0.12);
 }
 
-/* Primary value play - stands out strongly */
+/* Primary value play - stands out strongly with background color */
 .horse-summary-bar--primary-value-play {
   background: rgba(16, 185, 129, 0.12);
-  border-left-width: 6px;
-  border-left-color: #10b981;
+  /* No left border indicator - background color is sufficient */
 }
 
 .horse-summary-bar--primary-value-play .horse-summary-bar__name {
@@ -741,8 +725,8 @@
    ============================================ */
 
 .horse-summary-bar--tier-underlay {
-  border-left-color: #ef4444;
   background: rgba(239, 68, 68, 0.03);
+  /* No left border indicator - background color is sufficient */
 }
 
 .horse-summary-bar--tier-underlay:hover {
