@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import './Dashboard.css';
 import { useValueDetection } from '../hooks/useValueDetection';
 import { useRaceBets } from '../hooks/useRaceBets';
+import type { UseSessionPersistenceReturn } from '../hooks/useSessionPersistence';
 import { BetModeContainer } from './BetMode';
 import { TopBetsPanel } from './TopBets';
 import { FileUpload } from './FileUpload';
@@ -37,6 +38,12 @@ interface DashboardProps {
   raceState: ReturnType<typeof useRaceState>;
   isLoading?: boolean;
   onParsed?: (data: ParsedDRFFile) => void;
+  /** Session persistence for sort preferences */
+  sessionPersistence?: UseSessionPersistenceReturn;
+  /** Handler to reset current race state */
+  onResetRace?: () => void;
+  /** Handler to reset all races state */
+  onResetAllRaces?: () => void;
 }
 
 // Format currency helper
@@ -218,6 +225,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   raceState,
   isLoading = false,
   onParsed,
+  sessionPersistence,
+  onResetRace,
+  onResetAllRaces,
 }) => {
   // View mode state: 'overview' (default after parse), 'analysis', 'betMode', or 'topBets'
   const [viewMode, setViewMode] = useState<'overview' | 'analysis' | 'betMode' | 'topBets'>(
@@ -247,17 +257,52 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // Handle column header click for sorting
   const handleColumnSort = useCallback(
     (column: SortColumn) => {
+      let newDirection: SortDirection = 'asc';
       if (column === sortColumn) {
         // Toggle direction if clicking same column
-        setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-      } else {
-        // Switch to new column with default ascending
-        setSortColumn(column);
-        setSortDirection('asc');
+        newDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+      }
+
+      setSortColumn(column);
+      setSortDirection(newDirection);
+
+      // Save to session persistence
+      if (sessionPersistence) {
+        sessionPersistence.updateRaceState(selectedRaceIndex, {
+          sortColumn: column,
+          sortDirection: newDirection,
+        });
       }
     },
-    [sortColumn]
+    [sortColumn, sortDirection, selectedRaceIndex, sessionPersistence]
   );
+
+  // Load sort preferences from session when race changes
+  useEffect(() => {
+    if (!sessionPersistence?.session) return;
+
+    const savedRaceState = sessionPersistence.getRaceState(selectedRaceIndex);
+    if (savedRaceState) {
+      // Validate and apply saved sort column
+      const validColumns: SortColumn[] = ['POST', 'RANK', 'ODDS', 'FAIR', 'EDGE'];
+      const savedColumn = savedRaceState.sortColumn as SortColumn;
+      if (validColumns.includes(savedColumn)) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing sort state with persisted session on race change
+        setSortColumn(savedColumn);
+      } else {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing sort state with persisted session on race change
+        setSortColumn('POST');
+      }
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing sort state with persisted session on race change
+      setSortDirection(savedRaceState.sortDirection || 'asc');
+    } else {
+      // Reset to defaults for new races
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing sort state with persisted session on race change
+      setSortColumn('POST');
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing sort state with persisted session on race change
+      setSortDirection('asc');
+    }
+  }, [selectedRaceIndex, sessionPersistence]);
 
   // Ref for scrolling to value play horse
   const horseListRef = useRef<HTMLDivElement>(null);
@@ -362,12 +407,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   }, [parsedData]);
 
-  // Reset scratches, odds, and expanded state when race changes
+  // Reset expanded state when race changes
+  // Note: Race state (scratches, odds) is now managed by session persistence in App.tsx
   useEffect(() => {
-    raceState.resetAll();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional reset on race selection change
     setExpandedHorseId(null);
-  }, [selectedRaceIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedRaceIndex]);
 
   // Calculate scored horses for current race (needed for betting recommendations)
   const currentRaceScoredHorses = useMemo(() => {
@@ -1428,6 +1473,35 @@ export const Dashboard: React.FC<DashboardProps> = ({
             >
               <span className="app-bottombar__top-bets-icon">🏆</span>
               <span>{viewMode === 'topBets' ? 'ANALYSIS' : 'TOP BETS'}</span>
+            </button>
+          </div>
+
+          {/* Separator */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* RESET RACE button - Resets current race to defaults */}
+          <div className="app-bottombar__cluster">
+            <button
+              className="app-bottombar__item app-bottombar__item--reset"
+              onClick={onResetRace}
+              disabled={!parsedData || isLoading || !raceState.hasChanges}
+              title="Reset current race to default state (clears scratches, odds changes, sort)"
+            >
+              <span className="material-icons">restart_alt</span>
+              <span>RESET RACE</span>
+            </button>
+          </div>
+
+          {/* RESET ALL button - Resets all races to defaults */}
+          <div className="app-bottombar__cluster">
+            <button
+              className="app-bottombar__item app-bottombar__item--reset-all"
+              onClick={onResetAllRaces}
+              disabled={!parsedData || isLoading}
+              title="Reset ALL races to default state"
+            >
+              <span className="material-icons">settings_backup_restore</span>
+              <span>RESET ALL</span>
             </button>
           </div>
 

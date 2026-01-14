@@ -789,6 +789,78 @@
   color: var(--color-text-tertiary);
 }
 
+/* Reset Race Button */
+.app-bottombar__item--reset {
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  gap: var(--gap-element);
+  padding: var(--gap-element) var(--gap-container);
+}
+
+.app-bottombar__item--reset:hover {
+  background: var(--color-card);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.app-bottombar__item--reset:hover .material-icons {
+  color: var(--color-warning);
+}
+
+.app-bottombar__item--reset:active {
+  transform: scale(0.98);
+}
+
+.app-bottombar__item--reset:disabled {
+  background: var(--color-elevated);
+  border-color: var(--color-border);
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
+.app-bottombar__item--reset:disabled .material-icons {
+  color: var(--color-text-tertiary);
+}
+
+/* Reset All Button */
+.app-bottombar__item--reset-all {
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  gap: var(--gap-element);
+  padding: var(--gap-element) var(--gap-container);
+}
+
+.app-bottombar__item--reset-all:hover {
+  background: var(--color-card);
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.app-bottombar__item--reset-all:hover .material-icons {
+  color: var(--color-error);
+}
+
+.app-bottombar__item--reset-all:active {
+  transform: scale(0.98);
+}
+
+.app-bottombar__item--reset-all:disabled {
+  background: var(--color-elevated);
+  border-color: var(--color-border);
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
+.app-bottombar__item--reset-all:disabled .material-icons {
+  color: var(--color-text-tertiary);
+}
+
 /* ============================================
    BETTING PANEL - Bankroll Summary
    ============================================ */

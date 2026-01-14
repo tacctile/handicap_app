@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import type { TrackCondition } from '../types/drf';
+import type { PersistedRaceState } from '../services/storage/sessions';
 
 // Re-export for convenience
 export type { TrackCondition };
@@ -65,6 +66,10 @@ export interface RaceStateActions {
   resetAll: () => void;
   storeOriginalOdds: (originalOdds: Record<number, string>) => void;
   clearChangeHighlights: () => void;
+  /** Initialize state from persisted data (for session restoration) */
+  initializeFromPersisted: (state: PersistedRaceState) => void;
+  /** Get current state for serialization (for session saving) */
+  getSerializableState: () => Pick<PersistedRaceState, 'scratches' | 'oddsOverrides' | 'trackCondition'>;
 }
 
 export interface UseRaceStateReturn extends RaceState, RaceStateActions {
@@ -296,6 +301,33 @@ export function useRaceState(): UseRaceStateReturn {
     setCalculationState(initialCalculationState);
   }, [addToHistory]);
 
+  // Initialize state from persisted data (for session restoration)
+  const initializeFromPersisted = useCallback((state: PersistedRaceState) => {
+    // Set track condition
+    setTrackConditionState(state.trackCondition);
+
+    // Set scratched horses
+    setScratchedHorses(new Set(state.scratches));
+
+    // Set odds overrides
+    setUpdatedOdds(state.oddsOverrides);
+
+    // Reset calculation state
+    setCalculationState(initialCalculationState);
+
+    // Clear history for restored session
+    setHistory([]);
+  }, []);
+
+  // Get current state for serialization (for session saving)
+  const getSerializableState = useCallback((): Pick<PersistedRaceState, 'scratches' | 'oddsOverrides' | 'trackCondition'> => {
+    return {
+      scratches: Array.from(scratchedHorses),
+      oddsOverrides: { ...updatedOdds },
+      trackCondition,
+    };
+  }, [scratchedHorses, updatedOdds, trackCondition]);
+
   // Check if a horse is scratched
   const isScratched = useCallback(
     (horseIndex: number): boolean => {
@@ -347,6 +379,8 @@ export function useRaceState(): UseRaceStateReturn {
       resetAll,
       storeOriginalOdds,
       clearChangeHighlights,
+      initializeFromPersisted,
+      getSerializableState,
       // Helpers
       isScratched,
       getOdds,
@@ -372,6 +406,8 @@ export function useRaceState(): UseRaceStateReturn {
       resetAll,
       storeOriginalOdds,
       clearChangeHighlights,
+      initializeFromPersisted,
+      getSerializableState,
       isScratched,
       getOdds,
       hasOddsChanged,
