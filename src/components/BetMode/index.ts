@@ -10,6 +10,7 @@ export { ExplanationTooltip, BetTypeTooltip, WhyBetTooltip } from './Explanation
 export { InlineSettings } from './InlineSettings';
 export { RaceNavigation } from './RaceNavigation';
 export { DayPlanModal } from './DayPlanModal';
+export { BetBuilderInterface } from './BetBuilderInterface';
 
 // Day Setup Components (kept for day planning modal)
 export {

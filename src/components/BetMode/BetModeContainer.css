@@ -477,3 +477,63 @@
   justify-content: flex-start;
   align-items: stretch;
 }
+
+/* ============================================
+   VIEW TOGGLE (Quick Bets vs Bet Builder)
+   ============================================ */
+
+.bet-mode-view-toggle {
+  display: flex;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--color-card, #0f0f10);
+  border-bottom: 1px solid var(--color-border, #2a2a2c);
+}
+
+.bet-mode-view-toggle__btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: var(--radius-md, 8px);
+  color: var(--color-text-secondary, #b4b4b6);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.bet-mode-view-toggle__btn:hover {
+  background: var(--color-elevated, #1a1a1c);
+  border-color: var(--color-border-prominent, #3a3a3c);
+  color: var(--color-text-primary, #eeeff1);
+}
+
+.bet-mode-view-toggle__btn--active {
+  background: rgba(25, 171, 181, 0.1);
+  border-color: var(--color-primary, #19abb5);
+  color: var(--color-primary, #19abb5);
+}
+
+.bet-mode-view-toggle__btn .material-icons {
+  font-size: 18px;
+}
+
+@media (max-width: 480px) {
+  .bet-mode-view-toggle {
+    padding: 10px 16px;
+    gap: 6px;
+  }
+
+  .bet-mode-view-toggle__btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .bet-mode-view-toggle__btn .material-icons {
+    font-size: 16px;
+  }
+}

@@ -1,8 +1,10 @@
 /**
  * BetModeContainer Component
  *
- * SINGLE-SCREEN betting interface.
- * No wizard, no steps. Tap BET MODE → See bets immediately.
+ * SINGLE-SCREEN betting interface with two modes:
+ * 1. Quick View: Auto-generated bets based on value analysis
+ * 2. Bet Builder: Interactive two-column interface for custom bet building
+ *
  * Budget and style are inline dropdowns that recalculate instantly.
  */
 
@@ -12,6 +14,7 @@ import { BetResults } from './BetResults';
 import { InlineSettings } from './InlineSettings';
 import { RaceNavigation } from './RaceNavigation';
 import { DayPlanModal } from './DayPlanModal';
+import { BetBuilderInterface } from './BetBuilderInterface';
 import { calculateBets, getContenders } from '../../lib/betting/calculateBets';
 import { allocateDayBudget } from '../../lib/betting/allocateDayBudget';
 import { analyzeRaceValue } from '../../hooks/useValueDetection';
@@ -117,6 +120,12 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
   // ============================================================================
 
   const [copySuccess, setCopySuccess] = useState(false);
+
+  // ============================================================================
+  // STATE - Bet Builder View
+  // ============================================================================
+
+  const [showBetBuilder, setShowBetBuilder] = useState(false);
 
   // ============================================================================
   // STATE - Current viewed race (for navigation)
@@ -364,13 +373,49 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
   const dayPlanBudgetLabel = isDayPlanActive ? `Day Plan: $${currentBudget}` : undefined;
 
   // ============================================================================
-  // RENDER
+  // RENDER - BET BUILDER MODE
+  // ============================================================================
+
+  if (showBetBuilder && viewedRaceData) {
+    return (
+      <BetBuilderInterface
+        race={viewedRaceData}
+        raceNumber={viewedRaceNumber}
+        trackName={trackName}
+        scoredHorses={viewedScoredHorses}
+        getOdds={getOdds}
+        isScratched={isScratched}
+        onClose={() => setShowBetBuilder(false)}
+      />
+    );
+  }
+
+  // ============================================================================
+  // RENDER - QUICK VIEW MODE
   // ============================================================================
 
   return (
     <div className="bet-mode-container bet-mode-container--single-screen">
       {/* Header with close button */}
       <BetModeHeader raceNumber={viewedRaceNumber} trackName={trackName} onClose={onClose} />
+
+      {/* View Toggle + Inline Settings Bar */}
+      <div className="bet-mode-view-toggle">
+        <button
+          className={`bet-mode-view-toggle__btn ${!showBetBuilder ? 'bet-mode-view-toggle__btn--active' : ''}`}
+          onClick={() => setShowBetBuilder(false)}
+        >
+          <span className="material-icons">flash_on</span>
+          <span>Quick Bets</span>
+        </button>
+        <button
+          className={`bet-mode-view-toggle__btn ${showBetBuilder ? 'bet-mode-view-toggle__btn--active' : ''}`}
+          onClick={() => setShowBetBuilder(true)}
+        >
+          <span className="material-icons">build</span>
+          <span>Bet Builder</span>
+        </button>
+      </div>
 
       {/* Inline Settings Bar */}
       <InlineSettings
