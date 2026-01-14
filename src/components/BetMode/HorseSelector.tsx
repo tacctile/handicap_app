@@ -112,7 +112,7 @@ interface HorseDropdownProps {
 }
 
 const HorseDropdown: React.FC<HorseDropdownProps> = ({
-  slotIndex,
+  slotIndex: _slotIndex,
   label,
   options,
   selectedProgram,

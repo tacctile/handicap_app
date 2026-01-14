@@ -25,7 +25,6 @@ import type {
   BetCalculationResult,
   SingleBet,
   UserSelectableBetType,
-  BetTypeConfig,
 } from '../../lib/betting/betTypes';
 import { USER_BET_TYPE_CONFIGS } from '../../lib/betting/betTypes';
 import type { RaceAllocation } from '../../lib/betting/allocateDayBudget';
