@@ -911,6 +911,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <aside
             className={`app-race-rail ${parsedData?.races ? getRailCompactClass(parsedData.races.length) : ''}`}
           >
+            {/* ALL RACES back button - above race buttons */}
+            {viewMode === 'analysis' && (
+              <button
+                className="app-race-rail__back-btn"
+                onClick={handleBackToOverview}
+                title="Back to Race Overview"
+              >
+                <span className="material-icons app-race-rail__back-icon">arrow_upward</span>
+                <span className="app-race-rail__back-text">ALL RACES</span>
+              </button>
+            )}
             {parsedData?.races?.map((race, index) => {
               const raceStatus = getRaceStatus(race, index);
               const isActive = index === selectedRaceIndex;
@@ -1005,27 +1016,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
               ) : (
                 <div className="horse-list" ref={horseListRef}>
-                  {/* Back to Overview button */}
-                  <div className="race-detail-header">
-                    <button
-                      className="back-to-overview-btn"
-                      onClick={handleBackToOverview}
-                      title="Back to Race Overview"
-                    >
-                      <span className="material-icons">arrow_back</span>
-                      <span>All Races</span>
-                    </button>
-                    <div className="race-detail-header__title">
-                      <span className="race-detail-header__race-num">
-                        Race {selectedRaceIndex + 1}
-                      </span>
-                      <span className="race-detail-header__separator">·</span>
-                      <span className="race-detail-header__horses">
-                        {currentRaceScoredHorses.filter((h) => !h.score.isScratched).length} horses
-                      </span>
-                    </div>
-                  </div>
-
                   {/* Race Verdict Header - Shows BET/CAUTION/PASS verdict */}
                   <RaceVerdictHeader
                     valueAnalysis={valueAnalysis}
