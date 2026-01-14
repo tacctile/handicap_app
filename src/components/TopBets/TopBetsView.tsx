@@ -6,8 +6,8 @@
  * Features bordered bet cards for clear visual separation.
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { generateTopBets, type TopBet, type TopBetType } from '../../lib/betting/topBetsGenerator';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { generateTopBets, type TopBet, type TopBetType, type TopBetHorse } from '../../lib/betting/topBetsGenerator';
 import type { ScoredHorse } from '../../lib/scoring';
 import type { RaceHeader } from '../../types/drf';
 import './TopBetsView.css';
@@ -308,6 +308,19 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
           </div>
         </div>
 
+        {/* Horse Reference List (Middle) */}
+        <div className="top-bets-controls__horses">
+          {scoredHorses
+            .filter((h) => !isScratched(h.index) && !h.score.isScratched)
+            .sort((a, b) => a.horse.programNumber - b.horse.programNumber)
+            .map((h, idx, arr) => (
+              <span key={h.index} className="top-bets-controls__horse">
+                #{h.horse.programNumber} {h.horse.horseName}
+                {idx < arr.length - 1 && <span className="top-bets-controls__horse-sep"> · </span>}
+              </span>
+            ))}
+        </div>
+
         {/* Sort Dropdown (Right) */}
         <div className="top-bets-controls__sort">
           <label htmlFor="sort-select" className="top-bets-controls__label">
@@ -387,6 +400,79 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
 };
 
 // ============================================================================
+// EXOTIC BET TOOLTIP COMPONENT
+// ============================================================================
+
+interface ExoticBetTooltipProps {
+  horses: TopBetHorse[];
+  children: React.ReactNode;
+}
+
+const ExoticBetTooltip: React.FC<ExoticBetTooltipProps> = ({ horses, children }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [shouldRender, setShouldRender] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMouseEnter = useCallback(() => {
+    // Clear any pending hide timeout
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+    // Start showing after 500ms delay
+    timeoutRef.current = setTimeout(() => {
+      setShouldRender(true);
+      // Small delay to allow DOM to render before animating
+      requestAnimationFrame(() => {
+        setIsVisible(true);
+      });
+    }, 500);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    // Clear the show timeout if mouse leaves before delay
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    // Start fade out
+    setIsVisible(false);
+    // Remove from DOM after fade out animation completes
+    hideTimeoutRef.current = setTimeout(() => {
+      setShouldRender(false);
+    }, 150);
+  }, []);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    };
+  }, []);
+
+  return (
+    <div
+      className="exotic-bet-tooltip-wrapper"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {shouldRender && (
+        <div className={`exotic-bet-tooltip ${isVisible ? 'exotic-bet-tooltip--visible' : ''}`}>
+          {horses.map((horse, idx) => (
+            <div key={`${horse.programNumber}-${idx}`} className="exotic-bet-tooltip__horse">
+              #{horse.programNumber} {horse.name}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
 // COMPACT BET CARD COMPONENT
 // ============================================================================
 
@@ -397,6 +483,7 @@ interface CompactBetCardProps {
 const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
   // Format horse display based on bet type
   const horseDisplay = formatHorseDisplay(bet);
+  const showTooltip = isExoticBet(bet.internalType);
 
   // Calculate confidence display (show decimal for low probabilities to reveal variation)
   // For exotic bets with low probability, integer rounding hides meaningful differences
@@ -410,7 +497,13 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
     <div className="compact-bet-card">
       {/* Row 1: Horse numbers (full width) */}
       <div className="compact-bet-card__header">
-        <span className="compact-bet-card__horses">{horseDisplay}</span>
+        {showTooltip ? (
+          <ExoticBetTooltip horses={bet.horses}>
+            <span className="compact-bet-card__horses compact-bet-card__horses--hoverable">{horseDisplay}</span>
+          </ExoticBetTooltip>
+        ) : (
+          <span className="compact-bet-card__horses">{horseDisplay}</span>
+        )}
       </div>
 
       {/* Row 2: Cost and Payout with labels */}
@@ -443,10 +536,14 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
 
 /**
  * Format horse display based on bet type
+ * For WIN/PLACE/SHOW: includes horse name (e.g., "#4 FREE DROP BACH")
+ * For exotic bets: just numbers (tooltip shows names)
  */
 function formatHorseDisplay(bet: ScaledTopBet): string {
+  // For single horse bets (WIN/PLACE/SHOW), include horse name in uppercase
   if (bet.horses.length === 1) {
-    return `#${bet.horses[0]?.programNumber}`;
+    const horse = bet.horses[0];
+    return `#${horse?.programNumber} ${horse?.name?.toUpperCase() ?? ''}`;
   }
 
   // For exacta straight / trifecta straight - use "over" notation
@@ -478,6 +575,13 @@ function formatHorseDisplay(bet: ScaledTopBet): string {
 
   // For box bets, show hyphenated numbers
   return bet.horses.map((h) => `#${h.programNumber}`).join('-');
+}
+
+/**
+ * Check if bet type is an exotic bet (multi-horse)
+ */
+function isExoticBet(internalType: TopBetType): boolean {
+  return !['WIN', 'PLACE', 'SHOW'].includes(internalType);
 }
 
 /**

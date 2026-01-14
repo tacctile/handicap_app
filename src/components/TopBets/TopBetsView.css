@@ -97,6 +97,30 @@
   color: var(--color-text-tertiary);
 }
 
+/* Horse Reference List (Middle) */
+.top-bets-controls__horses {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-primary);
+  min-width: 0;
+  overflow: hidden;
+  line-height: 1.5;
+}
+
+.top-bets-controls__horse {
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+.top-bets-controls__horse-sep {
+  color: var(--color-text-tertiary);
+}
+
 .top-bets-controls__sort {
   display: flex;
   align-items: center;
@@ -590,4 +614,54 @@
 
 .top-bets-column::-webkit-scrollbar-thumb:hover {
   background: var(--color-border-prominent);
+}
+
+/* ============================================
+   EXOTIC BET TOOLTIP
+   ============================================ */
+
+.exotic-bet-tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.compact-bet-card__horses--hoverable {
+  cursor: pointer;
+}
+
+.exotic-bet-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 100;
+  min-width: 160px;
+  padding: 10px 12px;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border-prominent);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+  pointer-events: none;
+}
+
+.exotic-bet-tooltip--visible {
+  opacity: 1;
+  transition: opacity 200ms ease-in;
+}
+
+.exotic-bet-tooltip__horse {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary);
+  padding: 3px 0;
+  white-space: nowrap;
+}
+
+.exotic-bet-tooltip__horse:first-child {
+  padding-top: 0;
+}
+
+.exotic-bet-tooltip__horse:last-child {
+  padding-bottom: 0;
 }
