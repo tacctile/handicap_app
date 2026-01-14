@@ -7103,6 +7103,39 @@ input:-webkit-autofill:focus {
 }
 
 /* ============================================
+   Diamond Badge Styling
+   ============================================ */
+
+.diamond-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.diamond-badge-icon {
+  font-size: 0.9rem;
+}
+
+.diamond-badge-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.race-card-diamond-indicator {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+}
+
+.race-card-has-diamonds {
+  border-color: #a855f7;
+}
+
+/* ============================================
    Race Detail Header with Back Navigation
    ============================================ */
 
@@ -7110,10 +7143,58 @@ input:-webkit-autofill:focus {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  padding: var(--space-4);
-  background: var(--bg-card);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-elevated);
   border-bottom: 1px solid var(--border-subtle);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-md);
+}
+
+.race-detail-header__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.race-detail-header__race-num {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.race-detail-header__separator {
+  color: var(--text-tertiary);
+}
+
+.race-detail-header__horses {
+  color: var(--text-secondary);
+}
+
+/* Back to Overview Button */
+.back-to-overview-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-to-overview-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.back-to-overview-btn .material-icons {
+  font-size: 18px;
 }
 
 .race-detail-back-btn {
