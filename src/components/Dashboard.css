@@ -386,6 +386,74 @@
   font-size: 8px;
 }
 
+/* Back to All Races button - positioned in the reserved space above race buttons */
+.app-race-rail__back-btn {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Height matches one bar (48px) - sits in the top portion of the reserved space */
+  height: var(--bar-height, 48px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: var(--color-elevated);
+  border: none;
+  border-bottom: 2px solid var(--color-primary);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+  font-family: inherit;
+  z-index: 1;
+}
+
+.app-race-rail__back-btn:hover {
+  background: var(--color-primary);
+}
+
+.app-race-rail__back-btn:hover .app-race-rail__back-icon,
+.app-race-rail__back-btn:hover .app-race-rail__back-text {
+  color: #fff;
+}
+
+.app-race-rail__back-icon {
+  font-size: 20px;
+  color: var(--color-primary);
+  line-height: 1;
+  transition: color var(--transition-fast);
+}
+
+.app-race-rail__back-text {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  transition: color var(--transition-fast);
+}
+
+/* Compact modes for back button - scale font sizes */
+.app-race-rail--compact .app-race-rail__back-icon {
+  font-size: 18px;
+}
+
+.app-race-rail--compact .app-race-rail__back-text {
+  font-size: 8px;
+}
+
+.app-race-rail--very-compact .app-race-rail__back-icon {
+  font-size: 16px;
+}
+
+.app-race-rail--very-compact .app-race-rail__back-text {
+  font-size: 7px;
+  letter-spacing: 0.02em;
+}
+
 /* ============================================
    MAIN CONTENT AREA
    ============================================ */
