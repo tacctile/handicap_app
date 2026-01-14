@@ -61,72 +61,75 @@
 }
 
 /* ============================================
-   SCRATCH & COMPARE ICONS (Stacked)
+   SCRATCH BUTTON (Simplified - Single Action)
+   44px minimum touch target for mobile usability
    ============================================ */
 
-.horse-summary-bar__icons {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important; /* Center icons horizontally in column */
-  justify-content: center !important;
-  gap: 4px;
-  padding: 4px 0;
-  width: 100%;
-}
-
-.horse-summary-bar__icon-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.horse-summary-bar__icon-btn {
-  width: 20px;
-  height: 20px;
+.horse-summary-bar__scratch-col {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  border: none;
-  padding: 0;
+  width: 100%;
+}
+
+.horse-summary-bar__scratch-btn {
+  /* 44px minimum touch target per WCAG guidelines */
+  min-width: 48px;
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 4px);
   cursor: pointer;
   color: var(--color-text-tertiary);
   transition:
     color var(--transition-fast),
     background var(--transition-fast),
-    opacity var(--transition-fast);
-  border-radius: 2px;
+    border-color var(--transition-fast),
+    transform var(--transition-fast);
 }
 
-.horse-summary-bar__icon-btn:hover:not(:disabled) {
+.horse-summary-bar__scratch-btn:hover {
   color: var(--color-text-primary);
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.4);
+  transform: scale(1.02);
 }
 
-.horse-summary-bar__icon-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
+.horse-summary-bar__scratch-btn:active {
+  transform: scale(0.98);
 }
 
-.horse-summary-bar__icon-btn .material-icons {
-  font-size: 18px;
+/* Active state - horse is scratched */
+.horse-summary-bar__scratch-btn--active {
+  color: #10b981; /* Green for undo action */
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.4);
 }
 
-/* Active states */
-.horse-summary-bar__icon-btn--scratch.horse-summary-bar__icon-btn--active {
-  color: var(--color-tier-bad); /* Red when scratched */
+.horse-summary-bar__scratch-btn--active:hover {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.6);
 }
 
-.horse-summary-bar__icon-btn--compare.horse-summary-bar__icon-btn--active {
-  color: var(--color-primary); /* Teal when selected for compare */
+/* Scratch icon - prominent and clear */
+.horse-summary-bar__scratch-icon {
+  font-size: 22px;
+  line-height: 1;
 }
 
-/* Labels */
-.horse-summary-bar__icon-label {
-  font-size: 9px;
-  color: var(--color-text-tertiary);
+/* Scratch label - small but readable */
+.horse-summary-bar__scratch-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
-  user-select: none;
+  line-height: 1;
 }
 
 /* ============================================
@@ -241,12 +244,14 @@
   align-items: center;
 }
 
-/* Wrapper for odds value + label */
+/* Wrapper for odds value + label - fixed height for consistent row sizing */
 .odds-edit-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  justify-content: center;
+  gap: 1px;
+  min-height: 48px; /* Fixed height to match scratch button */
 }
 
 /* Editable odds value button */
@@ -258,11 +263,13 @@
   background: transparent;
   border: none;
   border-bottom: 1px dashed rgba(25, 171, 181, 0.5);
-  padding: 4px 10px;
+  padding: 6px 10px;
   cursor: pointer;
   transition: all 0.15s ease;
   min-width: 56px;
+  min-height: 32px; /* Consistent height */
   text-align: center;
+  line-height: 1.2;
 }
 
 .odds-edit-value:hover:not(:disabled) {
@@ -300,6 +307,17 @@
 .odds-edit-input::placeholder {
   color: var(--color-text-tertiary);
   font-weight: 400;
+}
+
+/* Odds edit hint - compact label below odds value */
+.odds-edit-hint {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+  line-height: 1;
 }
 
 /* Score - supporting data (Option C hierarchy) */
