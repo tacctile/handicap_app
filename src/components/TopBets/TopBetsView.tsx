@@ -19,6 +19,7 @@ import './TopBetsView.css';
 export type SortOption = 'confidence' | 'payout' | 'price_low' | 'price_high';
 export type ExactaVariant = 'straight' | 'box';
 export type TrifectaVariant = 'straight' | 'box' | 'key';
+export type SuperfectaVariant = 'straight' | 'box' | 'key';
 
 export interface TopBetsViewProps {
   /** Race number (1-indexed) */
@@ -59,7 +60,9 @@ const EXACTA_BOX_TYPES: TopBetType[] = ['EXACTA_BOX_2', 'EXACTA_BOX_3'];
 const TRIFECTA_STRAIGHT_TYPES: TopBetType[] = ['TRIFECTA_STRAIGHT'];
 const TRIFECTA_BOX_TYPES: TopBetType[] = ['TRIFECTA_BOX_3', 'TRIFECTA_BOX_4'];
 const TRIFECTA_KEY_TYPES: TopBetType[] = ['TRIFECTA_KEY'];
-const SUPERFECTA_TYPES: TopBetType[] = ['SUPERFECTA_BOX_4', 'SUPERFECTA_BOX_5'];
+const SUPERFECTA_STRAIGHT_TYPES: TopBetType[] = ['SUPERFECTA_STRAIGHT'];
+const SUPERFECTA_BOX_TYPES: TopBetType[] = ['SUPERFECTA_BOX_4', 'SUPERFECTA_BOX_5'];
+const SUPERFECTA_KEY_TYPES: TopBetType[] = ['SUPERFECTA_KEY'];
 
 // Column configuration
 type ColumnId = 'win' | 'place' | 'show' | 'exacta' | 'trifecta' | 'superfecta';
@@ -97,7 +100,17 @@ const COLUMNS: ColumnConfig[] = [
     ],
     defaultVariant: 'straight',
   },
-  { id: 'superfecta', title: 'SUPERFECTA', hasDropdown: false },
+  {
+    id: 'superfecta',
+    title: 'SUPERFECTA',
+    hasDropdown: true,
+    dropdownOptions: [
+      { value: 'straight', label: 'Straight' },
+      { value: 'box', label: 'Box' },
+      { value: 'key', label: 'Key' },
+    ],
+    defaultVariant: 'straight',
+  },
 ];
 
 // ============================================================================
@@ -122,6 +135,7 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   const [sortBy, setSortBy] = useState<SortOption>('confidence');
   const [exactaVariant, setExactaVariant] = useState<ExactaVariant>('straight');
   const [trifectaVariant, setTrifectaVariant] = useState<TrifectaVariant>('straight');
+  const [superfectaVariant, setSuperfectaVariant] = useState<SuperfectaVariant>('straight');
 
   // ============================================================================
   // GENERATE TOP BETS
@@ -199,7 +213,13 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
           }
           break;
         case 'superfecta':
-          typesToInclude = SUPERFECTA_TYPES;
+          if (superfectaVariant === 'straight') {
+            typesToInclude = SUPERFECTA_STRAIGHT_TYPES;
+          } else if (superfectaVariant === 'box') {
+            typesToInclude = SUPERFECTA_BOX_TYPES;
+          } else {
+            typesToInclude = SUPERFECTA_KEY_TYPES;
+          }
           break;
         default:
           typesToInclude = [];
@@ -214,7 +234,7 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
       // Limit to reasonable number per column (6 bets)
       return filtered.slice(0, 6);
     },
-    [allScaledBets, exactaVariant, trifectaVariant, sortBy]
+    [allScaledBets, exactaVariant, trifectaVariant, superfectaVariant, sortBy]
   );
 
   // ============================================================================
@@ -242,6 +262,8 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
       setExactaVariant(value as ExactaVariant);
     } else if (columnId === 'trifecta') {
       setTrifectaVariant(value as TrifectaVariant);
+    } else if (columnId === 'superfecta') {
+      setSuperfectaVariant(value as SuperfectaVariant);
     }
   }, []);
 
@@ -317,7 +339,9 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
               ? exactaVariant
               : column.id === 'trifecta'
                 ? trifectaVariant
-                : undefined;
+                : column.id === 'superfecta'
+                  ? superfectaVariant
+                  : undefined;
 
           return (
             <div key={column.id} className="top-bets-column">
@@ -441,8 +465,19 @@ function formatHorseDisplay(bet: ScaledTopBet): string {
     return bet.horses.map((h) => `#${h.programNumber}`).join('-');
   }
 
-  // For key bets
+  // For superfecta straight - hyphenated numbers
+  if (bet.internalType === 'SUPERFECTA_STRAIGHT') {
+    return bet.horses.map((h) => `#${h.programNumber}`).join('-');
+  }
+
+  // For key bets (trifecta and superfecta)
   if (bet.internalType === 'TRIFECTA_KEY' && bet.horses.length > 0) {
+    const keyHorse = bet.horses[0];
+    const withHorses = bet.horses.slice(1);
+    return `#${keyHorse?.programNumber} ALL with ${withHorses.map((h) => `#${h.programNumber}`).join(', ')}`;
+  }
+
+  if (bet.internalType === 'SUPERFECTA_KEY' && bet.horses.length > 0) {
     const keyHorse = bet.horses[0];
     const withHorses = bet.horses.slice(1);
     return `#${keyHorse?.programNumber} ALL with ${withHorses.map((h) => `#${h.programNumber}`).join(', ')}`;

@@ -32,8 +32,10 @@ export type TopBetType =
   | 'TRIFECTA_BOX_3'
   | 'TRIFECTA_BOX_4'
   | 'TRIFECTA_KEY'
+  | 'SUPERFECTA_STRAIGHT'
   | 'SUPERFECTA_BOX_4'
-  | 'SUPERFECTA_BOX_5';
+  | 'SUPERFECTA_BOX_5'
+  | 'SUPERFECTA_KEY';
 
 export interface TopBetHorse {
   programNumber: number;
@@ -125,8 +127,10 @@ const ESTIMATED_PAYOUT_MULTIPLIERS: Record<TopBetType, { base: number; longshot:
   TRIFECTA_BOX_3: { base: 60, longshot: 150 },
   TRIFECTA_BOX_4: { base: 40, longshot: 100 },
   TRIFECTA_KEY: { base: 50, longshot: 120 },
+  SUPERFECTA_STRAIGHT: { base: 800, longshot: 3000 },
   SUPERFECTA_BOX_4: { base: 500, longshot: 2000 },
   SUPERFECTA_BOX_5: { base: 300, longshot: 1500 },
+  SUPERFECTA_KEY: { base: 600, longshot: 2500 },
 };
 
 /**
@@ -167,10 +171,14 @@ const BET_TYPE_EXPLANATIONS: Record<TopBetType, string> = {
     'A 4-horse Trifecta Box covers any order of your 4 horses in the top 3. 24 combinations at $1 each = $24.',
   TRIFECTA_KEY:
     "A Trifecta Key puts one horse on top to win, with others filling 2nd and 3rd in any order. Good when you're confident in the winner.",
+  SUPERFECTA_STRAIGHT:
+    'A Superfecta Straight pays if your four horses finish 1st, 2nd, 3rd, and 4th in the exact order. Highest payout, hardest to hit.',
   SUPERFECTA_BOX_4:
     'A Superfecta Box pays if your horses finish 1st, 2nd, 3rd, and 4th in any order. Very hard to hit but massive payouts.',
   SUPERFECTA_BOX_5:
     'A 5-horse Superfecta Box covers all orders of your 5 horses in the top 4. 120 combinations = $120 at $1.',
+  SUPERFECTA_KEY:
+    "A Superfecta Key puts one horse on top to win, with others filling 2nd, 3rd, and 4th in any order. Good when you're confident in the winner.",
 };
 
 /**
@@ -188,8 +196,10 @@ const BET_TYPE_NAMES: Record<TopBetType, string> = {
   TRIFECTA_BOX_3: 'TRIFECTA BOX',
   TRIFECTA_BOX_4: 'TRIFECTA BOX',
   TRIFECTA_KEY: 'TRIFECTA KEY',
+  SUPERFECTA_STRAIGHT: 'SUPERFECTA',
   SUPERFECTA_BOX_4: 'SUPERFECTA BOX',
   SUPERFECTA_BOX_5: 'SUPERFECTA BOX',
+  SUPERFECTA_KEY: 'SUPERFECTA KEY',
 };
 
 // ============================================================================
@@ -595,6 +605,14 @@ function estimatePayout(
         likely: Math.round(baseCost * avgOdds * avgOdds * avgOdds * baseMultiplier * 0.3),
       };
 
+    case 'SUPERFECTA_STRAIGHT':
+    case 'SUPERFECTA_KEY':
+      return {
+        min: Math.round(baseCost * minOdds * avgOdds * avgOdds * avgOdds * baseMultiplier * 0.15),
+        max: Math.round(baseCost * maxOdds * avgOdds * avgOdds * avgOdds * baseMultiplier * 1.2),
+        likely: Math.round(baseCost * avgOdds * avgOdds * avgOdds * avgOdds * baseMultiplier * 0.4),
+      };
+
     case 'SUPERFECTA_BOX_4':
     case 'SUPERFECTA_BOX_5':
       return {
@@ -660,11 +678,17 @@ function generateWhatToSay(
     case 'TRIFECTA_KEY':
       return `$1 TRIFECTA KEY, ${nums[0]} with ${nums.slice(1).join(', ')}`;
 
+    case 'SUPERFECTA_STRAIGHT':
+      return `$1 SUPERFECTA, ${nums[0]}-${nums[1]}-${nums[2]}-${nums[3]}`;
+
     case 'SUPERFECTA_BOX_4':
       return `$1 SUPERFECTA BOX, ${nums[0]}-${nums[1]}-${nums[2]}-${nums[3]}`;
 
     case 'SUPERFECTA_BOX_5':
       return `$1 SUPERFECTA BOX, ${nums[0]}-${nums[1]}-${nums[2]}-${nums[3]}-${nums[4]}`;
+
+    case 'SUPERFECTA_KEY':
+      return `$1 SUPERFECTA KEY, ${nums[0]} with ${nums.slice(1).join(', ')}`;
 
     default:
       return '';
@@ -744,14 +768,21 @@ function generateWhyThisBet(
   }
 
   // Four+ horse bets (TRIFECTA BOX 4, SUPERFECTA)
-  if (selectedHorses.length >= 4) {
+  if (selectedHorses.length >= 4 || type === 'SUPERFECTA_KEY') {
     const topRanks = selectedHorses
       .slice(0, 4)
       .map((h) => h.modelRank)
       .join(', ');
     const hasLongshot = selectedHorses.some((h) => h.odds >= 10);
 
-    if (type.includes('SUPERFECTA')) {
+    if (type === 'SUPERFECTA_KEY') {
+      const keyHorse = selectedHorses[0];
+      const withHorses = selectedHorses.slice(1);
+      if (!keyHorse) return '';
+      return `A superfecta key bet on #${keyHorse.programNumber} makes sense because our model gives ${keyHorse.name} the highest probability of winning${keyHorse.edgePercent > 50 ? ' despite long odds' : ''}. If #${keyHorse.programNumber} wins, any order of ${withHorses.map((h) => `#${h.programNumber}`).join(', ')} in 2nd/3rd/4th pays.`;
+    } else if (type === 'SUPERFECTA_STRAIGHT') {
+      return `Our model has these horses ranked #${topRanks}. This specific order represents the most likely superfecta outcome with massive payout potential.`;
+    } else if (type.includes('SUPERFECTA')) {
       return `This superfecta box includes our top model picks (ranks #${topRanks})${hasLongshot ? ' plus a live longshot for massive payout potential' : ''}. While hard to hit, the EV is positive when these horses fill the top 4.`;
     } else {
       return `Expanding to a 4-horse trifecta box covers 24 combinations with our top contenders (ranks #${topRanks}). The extra coverage is worth the cost given the horses involved.`;
@@ -1137,6 +1168,88 @@ function generateSuperfectaBox5Bets(horses: HorseProb[]): BetCandidate[] {
   return candidates;
 }
 
+/**
+ * Generate SUPERFECTA STRAIGHT bets (all 4-horse permutations in exact order)
+ */
+function generateSuperfectaStraightBets(horses: HorseProb[]): BetCandidate[] {
+  const candidates: BetCandidate[] = [];
+
+  for (const perm of generatePermutations(horses.length, 4)) {
+    const prob = calculateSuperfectaProb(horses, perm);
+    const payout = estimatePayout('SUPERFECTA_STRAIGHT', horses, perm, BASE_UNIT);
+    const ev = (prob / 100) * payout.likely - BASE_UNIT;
+
+    candidates.push({
+      type: 'SUPERFECTA_STRAIGHT',
+      horseIndices: perm,
+      cost: BASE_UNIT,
+      probability: prob,
+      estimatedPayout: payout.likely,
+      expectedValue: ev,
+      combinationsInvolved: 1,
+    });
+  }
+
+  return candidates;
+}
+
+/**
+ * Generate SUPERFECTA KEY bets (top 5 horses as key)
+ */
+function generateSuperfectaKeyBets(horses: HorseProb[]): BetCandidate[] {
+  const candidates: BetCandidate[] = [];
+  const maxKeyHorses = Math.min(5, horses.length);
+
+  for (let keyIdx = 0; keyIdx < maxKeyHorses; keyIdx++) {
+    // Key this horse over the rest
+    const withHorses = horses
+      .map((_, i) => i)
+      .filter((i) => i !== keyIdx)
+      .slice(0, 5); // Limit "with" horses
+
+    if (withHorses.length < 3) continue;
+
+    // Calculate probability (key horse wins, any of the "with" horses 2nd/3rd/4th)
+    let prob = 0;
+    const keyHorse = horses[keyIdx];
+    if (!keyHorse) continue;
+
+    // Count all permutations of "with" horses in positions 2, 3, 4
+    for (let i = 0; i < withHorses.length; i++) {
+      for (let j = 0; j < withHorses.length; j++) {
+        if (i === j) continue;
+        for (let k = 0; k < withHorses.length; k++) {
+          if (k === i || k === j) continue;
+          const second = withHorses[i];
+          const third = withHorses[j];
+          const fourth = withHorses[k];
+          if (second !== undefined && third !== undefined && fourth !== undefined) {
+            prob += calculateSuperfectaProb(horses, [keyIdx, second, third, fourth]);
+          }
+        }
+      }
+    }
+
+    // P(n,3) combinations where n = withHorses.length
+    const combos = withHorses.length * (withHorses.length - 1) * (withHorses.length - 2);
+    const cost = BASE_UNIT * combos;
+    const payout = estimatePayout('SUPERFECTA_KEY', horses, [keyIdx, ...withHorses], BASE_UNIT);
+    const ev = (prob / 100) * payout.likely - cost;
+
+    candidates.push({
+      type: 'SUPERFECTA_KEY',
+      horseIndices: [keyIdx, ...withHorses],
+      cost,
+      probability: prob,
+      estimatedPayout: payout.likely,
+      expectedValue: ev,
+      combinationsInvolved: combos,
+    });
+  }
+
+  return candidates;
+}
+
 // ============================================================================
 // DIVERSITY ENFORCEMENT
 // ============================================================================
@@ -1154,7 +1267,9 @@ type BetSubCategory =
   | 'trifecta_straight'
   | 'trifecta_box'
   | 'trifecta_key'
-  | 'superfecta';
+  | 'superfecta_straight'
+  | 'superfecta_box'
+  | 'superfecta_key';
 
 /**
  * Get the subcategory for a bet type
@@ -1180,9 +1295,13 @@ function getBetSubCategory(type: TopBetType): BetSubCategory {
       return 'trifecta_box';
     case 'TRIFECTA_KEY':
       return 'trifecta_key';
+    case 'SUPERFECTA_STRAIGHT':
+      return 'superfecta_straight';
     case 'SUPERFECTA_BOX_4':
     case 'SUPERFECTA_BOX_5':
-      return 'superfecta';
+      return 'superfecta_box';
+    case 'SUPERFECTA_KEY':
+      return 'superfecta_key';
     default:
       return 'exacta_straight';
   }
@@ -1210,7 +1329,9 @@ function enforceTypeDiversity(
     trifecta_straight: [],
     trifecta_box: [],
     trifecta_key: [],
-    superfecta: [],
+    superfecta_straight: [],
+    superfecta_box: [],
+    superfecta_key: [],
   };
 
   for (const candidate of candidates) {
@@ -1234,7 +1355,9 @@ function enforceTypeDiversity(
     'trifecta_straight',
     'trifecta_box',
     'trifecta_key',
-    'superfecta',
+    'superfecta_straight',
+    'superfecta_box',
+    'superfecta_key',
   ];
 
   for (const subCategory of subCategories) {
@@ -1335,7 +1458,9 @@ export function generateTopBets(
 
   // SUPERFECTA (need at least 4 horses)
   if (horses.length >= 4) {
+    allCandidates.push(...generateSuperfectaStraightBets(horses));
     allCandidates.push(...generateSuperfectaBox4Bets(horses));
+    allCandidates.push(...generateSuperfectaKeyBets(horses));
   }
 
   // SUPERFECTA BOX 5 (need at least 5 horses)
@@ -1365,9 +1490,9 @@ export function generateTopBets(
 
       let position: TopBetHorse['position'] = undefined;
 
-      if (candidate.type === 'TRIFECTA_KEY' && posIdx === 0) {
+      if ((candidate.type === 'TRIFECTA_KEY' || candidate.type === 'SUPERFECTA_KEY') && posIdx === 0) {
         position = 'Key';
-      } else if (candidate.type === 'TRIFECTA_KEY' && posIdx > 0) {
+      } else if ((candidate.type === 'TRIFECTA_KEY' || candidate.type === 'SUPERFECTA_KEY') && posIdx > 0) {
         position = 'With';
       } else if (candidate.type === 'EXACTA_STRAIGHT' && posIdx === 0) {
         position = 'Over';
