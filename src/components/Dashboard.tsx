@@ -810,7 +810,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="app-layout app-layout--full-width">
       {/* LEFT ZONE: Top bar, Race rail + Main content, Bottom bar */}
-      <div className="app-left-zone">
+      <div className={`app-left-zone ${viewMode === 'overview' ? 'app-left-zone--overview' : ''}`}>
         {/* Top Bar - Single row */}
         <header className="app-topbar">
           {!parsedData ? (
@@ -840,8 +840,35 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </button>
               </div>
             </>
+          ) : viewMode === 'overview' ? (
+            /* OVERVIEW MODE - Simplified header: Track · Date · Race Count only */
+            <>
+              {/* Logo */}
+              <div className="app-topbar__logo">
+                <div className="app-topbar__logo-icon">
+                  <span className="material-icons">casino</span>
+                </div>
+              </div>
+
+              {/* Separator after logo */}
+              <div className="app-topbar__separator"></div>
+
+              {/* Track · Date · X Races - Simple track-level info only */}
+              <div className="app-topbar__identity">
+                <span className="app-topbar__track-name">
+                  {getTrackDisplayName(trackCode, getTrackSize(trackCode))}
+                </span>
+                <span className="app-topbar__middot">·</span>
+                <span className="app-topbar__date">{formatRaceDate(raceDate)}</span>
+                <span className="app-topbar__middot">·</span>
+                <span className="app-topbar__race-count">
+                  {parsedData.races?.length || 0} Race
+                  {(parsedData.races?.length || 0) !== 1 ? 's' : ''}
+                </span>
+              </div>
+            </>
           ) : (
-            /* LOADED STATE - DRF file loaded - Single line layout */
+            /* ANALYSIS/BET MODE - Full race-specific header */
             <>
               {/* Logo */}
               <div className="app-topbar__logo">

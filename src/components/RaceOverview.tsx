@@ -1,4 +1,4 @@
-import { memo, useMemo, useCallback, useEffect } from 'react';
+import { memo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ParsedRace, ParsedDRFFile } from '../types/drf';
 import type { ScoredHorse } from '../lib/scoring';
@@ -286,84 +286,14 @@ export const RaceOverview = memo(function RaceOverview({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Summary stats
-  const stats = useMemo(() => {
-    let totalHorses = 0;
-    let tier1Races = 0;
-    let totalDiamonds = 0;
-    let totalEliteConnections = 0;
-
-    parsedData.races.forEach((race, index) => {
-      totalHorses += race.horses.length;
-      const topHorses = topHorsesByRace.get(index) || [];
-      if (topHorses.some((h) => h.score.total >= SCORE_THRESHOLDS.strong)) {
-        tier1Races++;
-      }
-      totalDiamonds += diamondCountByRace?.get(index) || 0;
-      totalEliteConnections += eliteConnectionsCountByRace?.get(index) || 0;
-    });
-
-    return { totalHorses, tier1Races, totalDiamonds, totalEliteConnections };
-  }, [parsedData.races, topHorsesByRace, diamondCountByRace, eliteConnectionsCountByRace]);
-
   return (
     <div className="race-overview">
-      {/* Header */}
+      {/* Header - Title only, no stats (track info is in top bar) */}
       <div className="race-overview-header">
         <div className="race-overview-title">
           <Icon name="view_module" className="race-overview-icon" />
           <h2>Race Overview</h2>
         </div>
-        <div className="race-overview-stats">
-          <span className="race-overview-stat">
-            <span className="tabular-nums">{parsedData.races.length}</span> races
-          </span>
-          <span className="race-overview-stat-divider">•</span>
-          <span className="race-overview-stat">
-            <span className="tabular-nums">{stats.totalHorses}</span> horses
-          </span>
-          {stats.tier1Races > 0 && (
-            <>
-              <span className="race-overview-stat-divider">•</span>
-              <span className="race-overview-stat race-overview-stat-tier1">
-                <Icon name="trending_up" className="race-overview-tier1-icon" />
-                <span className="tabular-nums">{stats.tier1Races}</span> Tier 1
-              </span>
-            </>
-          )}
-          {stats.totalDiamonds > 0 && (
-            <>
-              <span className="race-overview-stat-divider">•</span>
-              <span
-                className="race-overview-stat race-overview-stat-diamonds"
-                style={{ color: getDiamondColor() }}
-              >
-                <span className="race-overview-diamond-icon">💎</span>
-                <span className="tabular-nums">{stats.totalDiamonds}</span> Hidden Gem
-                {stats.totalDiamonds > 1 ? 's' : ''}
-              </span>
-            </>
-          )}
-          {stats.totalEliteConnections > 0 && (
-            <>
-              <span className="race-overview-stat-divider">•</span>
-              <span
-                className="race-overview-stat race-overview-stat-connections"
-                style={{ color: '#22c55e' }}
-              >
-                <span style={{ marginRight: '4px' }}>🤝</span>
-                <span className="tabular-nums">{stats.totalEliteConnections}</span> Elite Connection
-                {stats.totalEliteConnections > 1 ? 's' : ''}
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Keyboard hint */}
-      <div className="race-overview-hint">
-        <Icon name="keyboard" className="race-overview-hint-icon" />
-        <span>Press 1-{Math.min(9, parsedData.races.length)} for quick access</span>
       </div>
 
       {/* Race grid */}

@@ -40,6 +40,16 @@
   min-width: 0; /* Allow flex item to shrink below content size */
 }
 
+/* Overview mode: full-width layout without race rail column */
+.app-left-zone--overview {
+  grid-template-columns: 1fr;
+}
+
+/* In overview mode, main content spans full width */
+.app-left-zone--overview .app-main {
+  grid-column: 1 / -1;
+}
+
 /* ============================================
    TOP BAR - Single Line Layout (48px height)
    ============================================ */
@@ -162,6 +172,12 @@
 
 /* Race label - "Race X of Y" - teal accent */
 .app-topbar__race-label {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* Race count - "X Races" - for overview mode */
+.app-topbar__race-count {
   font-weight: 600;
   color: var(--color-primary);
 }
