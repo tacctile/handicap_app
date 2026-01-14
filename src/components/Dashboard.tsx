@@ -916,8 +916,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </button>
               </div>
             </>
+          ) : viewMode === 'overview' ? (
+            /* OVERVIEW MODE - Track-level info only */
+            <>
+              {/* Logo */}
+              <div className="app-topbar__logo">
+                <div className="app-topbar__logo-icon">
+                  <span className="material-icons">casino</span>
+                </div>
+              </div>
+
+              {/* Separator after logo */}
+              <div className="app-topbar__separator"></div>
+
+              {/* Track · Date · Total Races */}
+              <div className="app-topbar__identity">
+                <span className="app-topbar__track-name">
+                  {getTrackDisplayName(trackCode, getTrackSize(trackCode))}
+                </span>
+                <span className="app-topbar__middot">·</span>
+                <span className="app-topbar__date">{formatRaceDate(raceDate)}</span>
+                <span className="app-topbar__middot">·</span>
+                <span className="app-topbar__race-label">
+                  {parsedData.races?.length || 0} Races
+                </span>
+              </div>
+            </>
           ) : (
-            /* LOADED STATE - DRF file loaded - Single line layout */
+            /* LOADED STATE - DRF file loaded - Single line layout (Race Detail View) */
             <>
               {/* Logo */}
               <div className="app-topbar__logo">
@@ -1507,21 +1533,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
           </div>
 
-          {/* Separator */}
-          <div className="app-bottombar__separator"></div>
+          {/* Separator - only shown when RESET RACE is visible */}
+          {viewMode !== 'overview' && <div className="app-bottombar__separator"></div>}
 
-          {/* RESET RACE button - Resets current race to defaults */}
-          <div className="app-bottombar__cluster">
-            <button
-              className="app-bottombar__item app-bottombar__item--reset"
-              onClick={onResetRace}
-              disabled={!parsedData || isLoading || !raceState.hasChanges}
-              title="Reset current race to default state (clears scratches, odds changes, sort)"
-            >
-              <span className="material-icons">restart_alt</span>
-              <span>RESET RACE</span>
-            </button>
-          </div>
+          {/* RESET RACE button - Resets current race to defaults (hidden on Overview) */}
+          {viewMode !== 'overview' && (
+            <div className="app-bottombar__cluster">
+              <button
+                className="app-bottombar__item app-bottombar__item--reset"
+                onClick={onResetRace}
+                disabled={!parsedData || isLoading || !raceState.hasChanges}
+                title="Reset current race to default state (clears scratches, odds changes, sort)"
+              >
+                <span className="material-icons">restart_alt</span>
+                <span>RESET RACE</span>
+              </button>
+            </div>
+          )}
 
           {/* RESET ALL button - Resets all races to defaults */}
           <div className="app-bottombar__cluster">
