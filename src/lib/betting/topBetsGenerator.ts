@@ -1351,11 +1351,11 @@ export function generateTopBets(
   // If we filtered too aggressively, use all candidates
   const candidatesToRank = viableCandidates.length >= 25 ? viableCandidates : allCandidates;
 
-  // Apply diversity enforcement to get top 25
-  const top25Candidates = enforceTypeDiversity(candidatesToRank, 25);
+  // Apply diversity enforcement to get top 50 (ensures all bet type subcategories are represented)
+  const topCandidates = enforceTypeDiversity(candidatesToRank, 50);
 
   // Convert to TopBet format
-  const topBets: TopBet[] = top25Candidates.map((candidate, index) => {
+  const topBets: TopBet[] = topCandidates.map((candidate, index) => {
     const payout = estimatePayout(candidate.type, horses, candidate.horseIndices, BASE_UNIT);
 
     // Determine horse positions for display
