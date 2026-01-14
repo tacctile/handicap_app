@@ -313,11 +313,11 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
           {scoredHorses
             .filter((h) => !isScratched(h.index) && !h.score.isScratched)
             .sort((a, b) => a.horse.programNumber - b.horse.programNumber)
-            .map((h, idx, arr) => (
-              <span key={h.index} className="top-bets-controls__horse">
-                #{h.horse.programNumber} {h.horse.horseName}
-                {idx < arr.length - 1 && <span className="top-bets-controls__horse-sep"> · </span>}
-              </span>
+            .map((h) => (
+              <div key={h.index} className="top-bets-controls__horse">
+                <span className="top-bets-controls__horse-num">#{h.horse.programNumber}</span>
+                <span className="top-bets-controls__horse-name">{h.horse.horseName}</span>
+              </div>
             ))}
         </div>
 
