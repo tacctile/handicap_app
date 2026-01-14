@@ -1481,6 +1481,16 @@
   justify-content: flex-start;
 }
 
+/* Value label column - left aligned to match the badge position */
+.horse-list-header__cell--value-label {
+  justify-content: flex-start;
+}
+
+/* PROJECTED FINISH column - centered with larger text */
+.horse-list-header__cell--rank .horse-list-header__label {
+  font-size: 12px; /* Slightly smaller to fit "PROJECTED FINISH" */
+}
+
 /* Expand column - empty */
 .horse-list-header__cell--expand {
   /* Empty for expand chevron column */

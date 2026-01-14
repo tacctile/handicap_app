@@ -97,16 +97,17 @@
   /* ============================================
      HORSE LIST GRID COLUMNS
      Single source of truth for header + rows
-     8 columns: icons | POST | HORSE | RANK | ODDS | FAIR | EDGE | VALUE | expand
+     9 columns: icons | POST | HORSE | VALUE LABEL | PROJECTED FINISH | ODDS | FAIR | EDGE | expand
 
      Horse name uses flex to fill remaining space
      POST: 50px (narrow, just "#1")
-     RANK: 80px (wider for better spacing)
+     VALUE LABEL: minmax(180px, 220px) (plain-English value description)
+     PROJECTED FINISH: 145px (fits "PROJECTED FINISH" header and "#1" data)
      ODDS: 90px (fits "20-1" + edit hint)
      FAIR: 80px (fits "20-1")
      EDGE: 90px (fits "+445%")
-     VALUE: 130px (fits "Overlay" badge)
      ============================================ */
-  --horse-list-grid: 70px /* icons */ 50px /* POST */ 1fr /* horse name - flex */ 80px /* RANK */
-    90px /* ODDS */ 80px /* FAIR odds */ 90px /* EDGE */ minmax(130px, 150px) /* VALUE badge */ 40px; /* expand chevron */
+  --horse-list-grid: 70px /* icons */ 50px /* POST */ 1fr /* horse name - flex */
+    minmax(180px, 220px) /* value label */ 145px /* PROJECTED FINISH */ 90px /* ODDS */ 80px
+    /* FAIR odds */ 90px /* EDGE */ 40px; /* expand chevron */
 }

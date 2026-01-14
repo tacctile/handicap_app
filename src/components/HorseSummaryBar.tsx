@@ -6,20 +6,84 @@ import type { BlendedRankResult } from '../lib/scoring/blendedRank';
 import { normalizeOddsFormat } from '../lib/utils/oddsStepper';
 
 /**
- * Get VALUE badge based on edge percentage
- * Enhanced to show edge percentage with color coding:
- * - +75% or higher: Bright green, bold
- * - +50% to +74%: Green
- * - +25% to +49%: Yellow-green
- * - -25% to +24%: Gray (fair)
- * - -25% or lower: Red (underlay)
+ * Plain-English value label based on edge percentage
+ * Uses clear, human-readable labels instead of racing jargon:
+ * - +50% or higher: "BETTER THAN ODDS SUGGEST" (Green #10b981)
+ * - +20% to +49%: "GETTING EXTRA VALUE" (Teal #19abb5)
+ * - -19% to +19%: "FAIR VALUE HORSE" (Grey #6E6E70)
+ * - -20% to -49%: "OVERBET BY PUBLIC" (Yellow #f59e0b)
+ * - -50% or worse AND is favorite: "FALSE FAVORITE" (Red #ef4444)
+ * - -50% or worse AND not favorite: "OVERBET BY PUBLIC" (Red #ef4444)
  */
-interface ValueBadgeInfo {
+interface ValueLabelInfo {
   label: string;
-  className: string;
   color: string;
-  showEdge: boolean;
+  bgColor: string;
 }
+
+/**
+ * Get plain-English value label based on edge percentage and favorite status
+ */
+const getValueLabel = (
+  edgePercent: number,
+  isFavorite: boolean,
+  isScratched: boolean
+): ValueLabelInfo => {
+  if (isScratched) {
+    return {
+      label: '',
+      color: '#6E6E70',
+      bgColor: 'transparent',
+    };
+  }
+
+  if (edgePercent >= 50) {
+    return {
+      label: 'BETTER THAN ODDS SUGGEST',
+      color: '#10b981',
+      bgColor: 'rgba(16, 185, 129, 0.15)',
+    };
+  }
+
+  if (edgePercent >= 20) {
+    return {
+      label: 'GETTING EXTRA VALUE',
+      color: '#19abb5',
+      bgColor: 'rgba(25, 171, 181, 0.15)',
+    };
+  }
+
+  if (edgePercent >= -19) {
+    return {
+      label: 'FAIR VALUE HORSE',
+      color: '#6E6E70',
+      bgColor: 'rgba(110, 110, 112, 0.15)',
+    };
+  }
+
+  if (edgePercent >= -49) {
+    return {
+      label: 'OVERBET BY PUBLIC',
+      color: '#f59e0b',
+      bgColor: 'rgba(245, 158, 11, 0.15)',
+    };
+  }
+
+  // Edge is -50% or worse
+  if (isFavorite) {
+    return {
+      label: 'FALSE FAVORITE',
+      color: '#ef4444',
+      bgColor: 'rgba(239, 68, 68, 0.15)',
+    };
+  }
+
+  return {
+    label: 'OVERBET BY PUBLIC',
+    color: '#ef4444',
+    bgColor: 'rgba(239, 68, 68, 0.15)',
+  };
+};
 
 /**
  * Get edge color based on percentage
@@ -53,42 +117,6 @@ const formatEdgeDisplay = (edgePercent: number): string => {
   if (rounded >= -5 && rounded <= 5) return '±5%';
   if (rounded >= 0) return `+${rounded}%`;
   return `${rounded}%`;
-};
-
-const getValueBadge = (valuePercent: number, isScratched: boolean): ValueBadgeInfo => {
-  if (isScratched) {
-    return {
-      label: 'SCRATCHED',
-      className: 'scratched',
-      color: '#6E6E70',
-      showEdge: false,
-    };
-  }
-
-  if (valuePercent > 20) {
-    return {
-      label: 'Overlay',
-      className: 'overlay',
-      color: '#10b981', // Green
-      showEdge: true,
-    };
-  }
-
-  if (valuePercent >= -20) {
-    return {
-      label: 'Fair',
-      className: 'fair',
-      color: '#6E6E70', // Gray
-      showEdge: false, // Don't show edge for fair (close to 0)
-    };
-  }
-
-  return {
-    label: 'Underlay',
-    className: 'underlay',
-    color: '#ef4444', // Red
-    showEdge: true,
-  };
 };
 
 /**
@@ -138,6 +166,8 @@ interface HorseSummaryBarProps {
   edgePercent?: number;
   /** HTML id for scroll targeting */
   rowId?: string;
+  /** Whether this horse is the favorite (lowest odds in the field) */
+  isFavorite?: boolean;
 }
 
 // Helper to convert odds object to string
@@ -191,6 +221,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   isPrimaryValuePlay = false,
   edgePercent,
   rowId,
+  isFavorite = false,
 }) => {
   // Extract horse data from HorseEntry type
   const programNumber = horse.programNumber;
@@ -199,8 +230,11 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   // Get tier class for left border styling
   const tierClass = getTierClass(valuePercent, isScratched);
 
-  // Get VALUE badge info (Overlay/Fair/Underlay)
-  const valueBadge = getValueBadge(valuePercent, isScratched);
+  // Use edgePercent for display if provided, otherwise fall back to valuePercent
+  const displayEdge = edgePercent !== undefined ? edgePercent : valuePercent;
+
+  // Get plain-English value label based on edge percentage and favorite status
+  const valueLabelInfo = getValueLabel(displayEdge, isFavorite, isScratched);
 
   const handleRowClick = () => {
     if (!isScratched) {
@@ -260,9 +294,6 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
     handleOddsSubmit();
   }, [handleOddsSubmit]);
 
-  // Use edgePercent for display if provided, otherwise fall back to valuePercent
-  const displayEdge = edgePercent !== undefined ? edgePercent : valuePercent;
-
   return (
     <div
       id={rowId}
@@ -298,7 +329,23 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       {/* Column 3: HORSE Name - FULL WIDTH, NO TRUNCATION */}
       <div className="horse-summary-bar__name">{horseName.toUpperCase()}</div>
 
-      {/* Column 4: RANK - Model Ranking (#1, #2, etc. based on base score) */}
+      {/* Column 4: VALUE LABEL - Plain-English value description */}
+      <div className="horse-summary-bar__value-label-wrapper">
+        {valueLabelInfo.label && (
+          <span
+            className="horse-summary-bar__value-label-badge"
+            style={{
+              backgroundColor: valueLabelInfo.bgColor,
+              color: valueLabelInfo.color,
+              borderColor: valueLabelInfo.color,
+            }}
+          >
+            {valueLabelInfo.label}
+          </span>
+        )}
+      </div>
+
+      {/* Column 5: PROJECTED FINISH - Model Ranking (#1, #2, etc. based on base score) */}
       <div className="horse-summary-bar__rank">
         <span
           className={`horse-summary-bar__rank-value ${!isScratched && baseScoreRank && baseScoreRank <= 3 ? 'horse-summary-bar__rank-value--top' : ''}`}
@@ -308,7 +355,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         </span>
       </div>
 
-      {/* Column 7: ODDS - Click to edit */}
+      {/* Column 6: ODDS - Click to edit */}
       <div className="horse-summary-bar__odds" onClick={(e) => e.stopPropagation()}>
         {isEditingOdds ? (
           <div className="odds-edit-wrapper">
@@ -348,7 +395,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         </span>
       </div>
 
-      {/* Column 7: EDGE - Value gap percentage */}
+      {/* Column 8: EDGE - Value gap percentage */}
       <div className="horse-summary-bar__edge">
         <span
           className={`horse-summary-bar__edge-value ${displayEdge >= 75 ? 'horse-summary-bar__edge-value--hot' : ''}`}
@@ -356,20 +403,6 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         >
           {isScratched ? '—' : formatEdgeDisplay(displayEdge)}
         </span>
-      </div>
-
-      {/* Column 8: VALUE Badge (Overlay/Fair/Underlay) */}
-      <div className="horse-summary-bar__value-wrapper">
-        <div
-          className={`horse-summary-bar__value-badge horse-summary-bar__value-badge--${valueBadge.className} ${isPrimaryValuePlay && !isScratched ? 'horse-summary-bar__value-badge--primary' : ''}`}
-          style={{
-            backgroundColor: `${valueBadge.color}20`,
-            borderColor: valueBadge.color,
-            color: valueBadge.color,
-          }}
-        >
-          <span className="horse-summary-bar__value-label">{valueBadge.label}</span>
-        </div>
       </div>
 
       {/* Column 9: Expand Chevron */}
