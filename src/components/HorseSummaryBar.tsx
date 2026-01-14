@@ -117,9 +117,6 @@ interface HorseSummaryBarProps {
   onScratchToggle: (scratched: boolean) => void;
   currentOdds: { numerator: number; denominator: number };
   onOddsChange: (odds: { numerator: number; denominator: number }) => void;
-  // Props for compare functionality
-  isCompareSelected: boolean;
-  onCompareToggle: (selected: boolean) => void;
   // Props for base score rank (projected finish order)
   baseScoreRank?: number;
   baseScoreRankOrdinal?: string;
@@ -174,8 +171,6 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   onScratchToggle,
   currentOdds,
   onOddsChange,
-  isCompareSelected,
-  onCompareToggle,
   // Base score rank (projected finish order)
   baseScoreRank,
   baseScoreRankOrdinal: _baseScoreRankOrdinal, // Kept for compatibility but not used
@@ -279,44 +274,24 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         ${isPrimaryValuePlay ? 'horse-summary-bar--primary-value-play' : ''}`}
       onClick={handleRowClick}
     >
-      {/* Column 1: Scratch and Compare icons stacked */}
-      <div className="horse-summary-bar__icons" onClick={(e) => e.stopPropagation()}>
-        {/* Scratch row */}
-        <div className="horse-summary-bar__icon-row">
-          <button
-            className={`horse-summary-bar__icon-btn horse-summary-bar__icon-btn--scratch ${isScratched ? 'horse-summary-bar__icon-btn--active' : ''}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onScratchToggle(!isScratched);
-            }}
-            title="Mark as scratched"
-            aria-label="Mark as scratched"
-          >
-            <span className="material-icons">
-              {isScratched ? 'close' : 'remove_circle_outline'}
-            </span>
-          </button>
-          <span className="horse-summary-bar__icon-label">Scratch</span>
-        </div>
-
-        {/* Compare row */}
-        <div className="horse-summary-bar__icon-row">
-          <button
-            className={`horse-summary-bar__icon-btn horse-summary-bar__icon-btn--compare ${isCompareSelected ? 'horse-summary-bar__icon-btn--active' : ''}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onCompareToggle(!isCompareSelected);
-            }}
-            title="Select for comparison"
-            aria-label="Select for comparison"
-            disabled={isScratched}
-          >
-            <span className="material-icons">
-              {isCompareSelected ? 'check_box' : 'check_box_outline_blank'}
-            </span>
-          </button>
-          <span className="horse-summary-bar__icon-label">Compare</span>
-        </div>
+      {/* Column 1: Scratch button - larger touch target */}
+      <div className="horse-summary-bar__scratch-col" onClick={(e) => e.stopPropagation()}>
+        <button
+          className={`horse-summary-bar__scratch-btn ${isScratched ? 'horse-summary-bar__scratch-btn--active' : ''}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onScratchToggle(!isScratched);
+          }}
+          title={isScratched ? 'Unscratch horse' : 'Scratch horse from race'}
+          aria-label={isScratched ? 'Unscratch horse' : 'Scratch horse from race'}
+        >
+          <span className="material-icons horse-summary-bar__scratch-icon">
+            {isScratched ? 'undo' : 'block'}
+          </span>
+          <span className="horse-summary-bar__scratch-label">
+            {isScratched ? 'UNDO' : 'SCR'}
+          </span>
+        </button>
       </div>
 
       {/* Column 2: POST (Program Position) */}
