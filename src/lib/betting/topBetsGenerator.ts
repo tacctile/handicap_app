@@ -1481,11 +1481,23 @@ export function generateTopBets(
 
   const totalCombinations = allCandidates.length;
 
-  // Filter out extremely negative EV bets (keep at least some options)
-  const viableCandidates = allCandidates.filter((c) => c.expectedValue >= MIN_EV_THRESHOLD);
+  // Separate WIN/PLACE/SHOW from exotic bets
+  // WIN/PLACE/SHOW must ALWAYS include ALL horses (no EV filtering)
+  const winPlaceShowBets = allCandidates.filter(
+    (c) => c.type === 'WIN' || c.type === 'PLACE' || c.type === 'SHOW'
+  );
+  const exoticBets = allCandidates.filter(
+    (c) => c.type !== 'WIN' && c.type !== 'PLACE' && c.type !== 'SHOW'
+  );
 
-  // If we filtered too aggressively, use all candidates
-  const candidatesToRank = viableCandidates.length >= 25 ? viableCandidates : allCandidates;
+  // Only filter exotic bets by EV threshold
+  const viableExoticBets = exoticBets.filter((c) => c.expectedValue >= MIN_EV_THRESHOLD);
+
+  // If we filtered too aggressively, use all exotic bets
+  const exoticCandidates = viableExoticBets.length >= 20 ? viableExoticBets : exoticBets;
+
+  // Combine: ALL win/place/show + filtered exotics
+  const candidatesToRank = [...winPlaceShowBets, ...exoticCandidates];
 
   // Apply diversity enforcement to get top 50 (ensures all bet type subcategories are represented)
   const topCandidates = enforceTypeDiversity(candidatesToRank, 50);
@@ -1501,9 +1513,15 @@ export function generateTopBets(
 
       let position: TopBetHorse['position'] = undefined;
 
-      if ((candidate.type === 'TRIFECTA_KEY' || candidate.type === 'SUPERFECTA_KEY') && posIdx === 0) {
+      if (
+        (candidate.type === 'TRIFECTA_KEY' || candidate.type === 'SUPERFECTA_KEY') &&
+        posIdx === 0
+      ) {
         position = 'Key';
-      } else if ((candidate.type === 'TRIFECTA_KEY' || candidate.type === 'SUPERFECTA_KEY') && posIdx > 0) {
+      } else if (
+        (candidate.type === 'TRIFECTA_KEY' || candidate.type === 'SUPERFECTA_KEY') &&
+        posIdx > 0
+      ) {
         position = 'With';
       } else if (candidate.type === 'EXACTA_STRAIGHT' && posIdx === 0) {
         position = 'Over';
