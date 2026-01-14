@@ -1,8 +1,8 @@
 /**
- * Top Bets View Styles
+ * Top Bets View Styles - 6-Column Layout
  *
- * Ultra-simple betting view - compact cards with copy functionality.
- * Clean, minimal design matching app theme.
+ * Clean, minimal design with 6 bet type columns.
+ * Responsive: 6 cols desktop, 3x2 tablet, stacked mobile.
  */
 
 /* ============================================
@@ -15,60 +15,6 @@
   height: 100%;
   background: var(--color-base);
   overflow: hidden;
-}
-
-/* ============================================
-   HEADER
-   ============================================ */
-
-.top-bets-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  background: var(--color-card);
-  border-bottom: 1px solid var(--color-border);
-  flex-shrink: 0;
-}
-
-.top-bets-header__title {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.top-bets-header__title h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  letter-spacing: 0.5px;
-}
-
-.top-bets-header__track {
-  font-size: 13px;
-  color: var(--color-text-tertiary);
-}
-
-.top-bets-header__close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  background: var(--color-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  color: var(--color-text-secondary);
-  font-size: 24px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.top-bets-header__close:hover {
-  background: var(--color-card);
-  color: var(--color-text-primary);
-  border-color: var(--color-border-prominent);
 }
 
 /* ============================================
@@ -182,248 +128,265 @@
   border-color: var(--color-primary);
 }
 
+.top-bets-controls__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: 20px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-left: auto;
+}
+
+.top-bets-controls__close:hover {
+  background: var(--color-card);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-prominent);
+}
+
 /* ============================================
-   BET LIST
+   6-COLUMN GRID
    ============================================ */
 
-.top-bets-list {
+.top-bets-columns {
   flex: 1;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+  background: var(--color-border);
   overflow-y: auto;
-  padding: 12px 20px;
+  overflow-x: hidden;
+}
+
+/* ============================================
+   INDIVIDUAL COLUMN
+   ============================================ */
+
+.top-bets-column {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-base);
+  min-width: 0;
+}
+
+.top-bets-column__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 10px;
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  min-height: 48px; /* Ensure consistent height across all columns */
+  box-sizing: border-box;
+}
+
+.top-bets-column__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.top-bets-column__dropdown {
+  padding: 4px 24px 4px 8px;
+  background: var(--color-elevated);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23B4B4B6'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  min-width: 70px;
+}
+
+.top-bets-column__dropdown:hover {
+  border-color: var(--color-border-prominent);
+  color: var(--color-text-primary);
+}
+
+.top-bets-column__dropdown:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.top-bets-column__list {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 0;
+  overflow-y: auto;
+  padding: 0;
 }
 
-.top-bets-empty {
+.top-bets-column__empty {
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+/* ============================================
+   COMPACT BET CARD
+   ============================================ */
+
+.compact-bet-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 24px;
-  text-align: center;
-}
-
-.top-bets-empty__icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
-.top-bets-empty p {
-  font-size: 16px;
-  color: var(--color-text-secondary);
-  margin: 0;
-}
-
-/* ============================================
-   FOOTER
-   ============================================ */
-
-.top-bets-footer {
-  padding: 16px 20px;
-  background: var(--color-card);
-  border-top: 1px solid var(--color-border);
-  flex-shrink: 0;
-}
-
-.top-bets-copy-all {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 14px;
-  background: var(--color-primary);
-  border: none;
-  border-radius: var(--radius-md);
-  color: white;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.top-bets-copy-all:hover {
-  background: var(--color-primary-hover);
-  box-shadow: 0 4px 12px rgba(25, 171, 181, 0.3);
-  transform: translateY(-1px);
-}
-
-.top-bets-copy-all:active {
-  transform: translateY(0);
-}
-
-.top-bets-copy-all--copied {
-  background: var(--color-success);
-}
-
-.top-bets-copy-all--copied:hover {
-  background: var(--color-success);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-/* ============================================
-   SIMPLE BET CARD
-   ============================================ */
-
-.simple-bet-card {
-  display: flex;
-  align-items: stretch;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 3px;
+  padding: 10px 10px;
   background: var(--color-card);
   border-bottom: 1px solid var(--color-border);
   transition: background var(--transition-fast);
 }
 
-.simple-bet-card:first-child {
-  border-top-left-radius: var(--radius-md);
-  border-top-right-radius: var(--radius-md);
-}
-
-.simple-bet-card:last-child {
-  border-bottom: none;
-  border-bottom-left-radius: var(--radius-md);
-  border-bottom-right-radius: var(--radius-md);
-}
-
-.simple-bet-card--even {
-  background: var(--color-elevated);
-}
-
-.simple-bet-card:hover {
+.compact-bet-card:hover {
   background: rgba(25, 171, 181, 0.05);
 }
 
-/* Rank Badge */
-.simple-bet-card__rank {
+.compact-bet-card:last-child {
+  border-bottom: none;
+}
+
+/* Header row with horse numbers and confidence */
+.compact-bet-card__header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  min-width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.compact-bet-card__horses {
   font-size: 14px;
   font-weight: 700;
-  flex-shrink: 0;
-  align-self: flex-start;
-  margin-top: 2px;
-}
-
-/* Content Column */
-.simple-bet-card__content {
+  color: var(--color-primary);
+  line-height: 1.2;
+  word-break: break-word;
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
-/* Header Row: Bet Type + Horses */
-.simple-bet-card__header {
+/* Confidence percentage badge */
+.compact-bet-card__confidence {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.compact-bet-card__confidence--high {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.compact-bet-card__confidence--medium {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.compact-bet-card__confidence--low {
+  background: rgba(156, 163, 175, 0.15);
+  color: var(--color-text-tertiary);
+}
+
+/* Cost and return stats */
+.compact-bet-card__stats {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
   flex-wrap: wrap;
 }
 
-.simple-bet-card__type {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  letter-spacing: 0.3px;
-}
-
-.simple-bet-card__horses {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-primary);
-}
-
-/* Stats Row: Cost + Return */
-.simple-bet-card__stats {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-}
-
-.simple-bet-card__cost {
+.compact-bet-card__cost {
   font-weight: 600;
   color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
-.simple-bet-card__separator {
+.compact-bet-card__dot {
   color: var(--color-text-tertiary);
 }
 
-.simple-bet-card__return {
+.compact-bet-card__return {
   color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
 }
 
-/* Window Script */
-.simple-bet-card__script {
+/* Window script */
+.compact-bet-card__script {
   font-family: 'SF Mono', 'Monaco', 'Consolas', 'Liberation Mono', monospace;
-  font-size: 12px;
-  color: var(--color-text-secondary);
+  font-size: 10px;
+  color: var(--color-text-tertiary);
   background: var(--color-base);
-  padding: 6px 10px;
+  padding: 5px 7px;
   border-radius: var(--radius-sm);
-  margin-top: 4px;
-}
-
-/* Copy Button */
-.simple-bet-card__copy {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 14px;
-  background: var(--color-primary);
-  border: none;
-  border-radius: var(--radius-sm);
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  flex-shrink: 0;
-  align-self: center;
-  min-width: 64px;
-}
-
-.simple-bet-card__copy:hover {
-  background: var(--color-primary-hover);
-  transform: translateY(-1px);
-}
-
-.simple-bet-card__copy:active {
-  transform: translateY(0);
-}
-
-.simple-bet-card__copy--copied {
-  background: var(--color-success);
-  min-width: 72px;
-}
-
-.simple-bet-card__copy--copied:hover {
-  background: var(--color-success);
+  line-height: 1.3;
+  word-break: break-word;
 }
 
 /* ============================================
-   MOBILE RESPONSIVE
+   RESPONSIVE: TABLET (3 columns x 2 rows)
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .top-bets-columns {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto auto;
+  }
+
+  .top-bets-column__header {
+    padding: 10px 8px;
+    min-height: 44px; /* Consistent height at tablet size */
+  }
+
+  .top-bets-column__title {
+    font-size: 11px;
+  }
+
+  .compact-bet-card {
+    padding: 8px;
+  }
+
+  .compact-bet-card__horses {
+    font-size: 13px;
+  }
+
+  .compact-bet-card__confidence {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+
+  .compact-bet-card__stats {
+    font-size: 11px;
+  }
+
+  .compact-bet-card__script {
+    font-size: 9px;
+  }
+}
+
+/* ============================================
+   RESPONSIVE: SMALL TABLET (2 columns x 3 rows)
    ============================================ */
 
 @media (max-width: 768px) {
-  .top-bets-header {
-    padding: 14px 16px;
-  }
-
-  .top-bets-header__title h2 {
-    font-size: 18px;
-  }
-
   .top-bets-controls {
     flex-direction: column;
     align-items: stretch;
@@ -443,71 +406,163 @@
     justify-content: flex-start;
   }
 
-  .top-bets-list {
-    padding: 8px 16px;
+  .top-bets-controls__close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
   }
 
-  .simple-bet-card {
-    padding: 10px 10px;
-    gap: 10px;
-    flex-wrap: wrap;
+  .top-bets-columns {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto auto auto;
   }
 
-  .simple-bet-card__rank {
-    width: 28px;
-    min-width: 28px;
-    height: 28px;
-    font-size: 12px;
-  }
-
-  .simple-bet-card__content {
-    flex: 1;
-    min-width: calc(100% - 120px);
-  }
-
-  .simple-bet-card__type {
-    font-size: 13px;
-  }
-
-  .simple-bet-card__horses {
-    font-size: 12px;
-  }
-
-  .simple-bet-card__script {
-    font-size: 11px;
-    padding: 5px 8px;
-  }
-
-  .simple-bet-card__copy {
-    padding: 10px 16px;
-    min-width: 70px;
-    font-size: 12px;
-  }
-
-  .top-bets-footer {
-    padding: 12px 16px;
-  }
-
-  .top-bets-copy-all {
-    padding: 12px;
-    font-size: 13px;
+  .top-bets-column__dropdown {
+    font-size: 10px;
+    padding: 3px 20px 3px 6px;
+    min-width: 60px;
   }
 }
 
-@media (max-width: 480px) {
+/* ============================================
+   RESPONSIVE: MOBILE (1 column, horizontal scroll option)
+   ============================================ */
+
+@media (max-width: 540px) {
+  .top-bets-columns {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    overflow-y: auto;
+  }
+
+  .top-bets-column {
+    border-bottom: 4px solid var(--color-border);
+  }
+
+  .top-bets-column:last-child {
+    border-bottom: none;
+  }
+
+  .top-bets-column__header {
+    padding: 10px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  .top-bets-column__title {
+    font-size: 12px;
+  }
+
+  .compact-bet-card {
+    padding: 10px 12px;
+  }
+
+  .compact-bet-card__horses {
+    font-size: 14px;
+  }
+
+  .compact-bet-card__stats {
+    font-size: 12px;
+  }
+
+  .compact-bet-card__script {
+    font-size: 10px;
+    padding: 6px 10px;
+  }
+
   .top-bets-base-btn {
     padding: 5px 10px;
     font-size: 12px;
     min-width: 36px;
   }
+}
 
-  .simple-bet-card {
+/* ============================================
+   MOBILE: HORIZONTAL SCROLL ALTERNATIVE
+   (Uncomment to use instead of stacked)
+   ============================================ */
+
+/*
+@media (max-width: 540px) {
+  .top-bets-columns {
+    display: flex;
     flex-direction: row;
-    align-items: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 0;
+    background: var(--color-base);
   }
 
-  .simple-bet-card__copy {
-    align-self: flex-start;
-    margin-top: 2px;
+  .top-bets-column {
+    flex: 0 0 80%;
+    min-width: 260px;
+    max-width: 320px;
+    scroll-snap-align: start;
+    border-right: 1px solid var(--color-border);
+    border-bottom: none;
+    height: 100%;
   }
+
+  .top-bets-column:last-child {
+    border-right: none;
+  }
+
+  .top-bets-column__list {
+    max-height: none;
+    overflow-y: auto;
+  }
+}
+*/
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+
+.top-bets-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  grid-column: 1 / -1;
+}
+
+.top-bets-empty__icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.top-bets-empty p {
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+
+.top-bets-columns::-webkit-scrollbar,
+.top-bets-column__list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.top-bets-columns::-webkit-scrollbar-track,
+.top-bets-column__list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.top-bets-columns::-webkit-scrollbar-thumb,
+.top-bets-column__list::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+.top-bets-columns::-webkit-scrollbar-thumb:hover,
+.top-bets-column__list::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-prominent);
 }

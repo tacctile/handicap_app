@@ -1142,86 +1142,118 @@ function generateSuperfectaBox5Bets(horses: HorseProb[]): BetCandidate[] {
 // ============================================================================
 
 /**
- * Ensure diversity in top 25 by including best from each tier
+ * Bet type subcategories for diversity enforcement
+ * More granular than before to ensure straight and box variants are both included
+ */
+type BetSubCategory =
+  | 'win'
+  | 'place'
+  | 'show'
+  | 'exacta_straight'
+  | 'exacta_box'
+  | 'trifecta_straight'
+  | 'trifecta_box'
+  | 'trifecta_key'
+  | 'superfecta';
+
+/**
+ * Get the subcategory for a bet type
+ */
+function getBetSubCategory(type: TopBetType): BetSubCategory {
+  switch (type) {
+    case 'WIN':
+      return 'win';
+    case 'PLACE':
+      return 'place';
+    case 'SHOW':
+      return 'show';
+    case 'QUINELLA':
+    case 'EXACTA_STRAIGHT':
+      return 'exacta_straight';
+    case 'EXACTA_BOX_2':
+    case 'EXACTA_BOX_3':
+      return 'exacta_box';
+    case 'TRIFECTA_STRAIGHT':
+      return 'trifecta_straight';
+    case 'TRIFECTA_BOX_3':
+    case 'TRIFECTA_BOX_4':
+      return 'trifecta_box';
+    case 'TRIFECTA_KEY':
+      return 'trifecta_key';
+    case 'SUPERFECTA_BOX_4':
+    case 'SUPERFECTA_BOX_5':
+      return 'superfecta';
+    default:
+      return 'exacta_straight';
+  }
+}
+
+/**
+ * Ensure diversity in top bets by including best from each bet type subcategory
+ * This guarantees all 6 columns have bets, including straight variants
  */
 function enforceTypeDiversity(
   candidates: BetCandidate[],
-  targetCount: number = 25
+  targetCount: number = 50
 ): BetCandidate[] {
-  // Group by risk tier
-  const conservative = candidates
-    .filter((c) => determineRiskTier(c.probability) === 'Conservative')
-    .sort((a, b) => b.expectedValue - a.expectedValue);
-
-  const moderate = candidates
-    .filter((c) => determineRiskTier(c.probability) === 'Moderate')
-    .sort((a, b) => b.expectedValue - a.expectedValue);
-
-  const aggressive = candidates
-    .filter((c) => determineRiskTier(c.probability) === 'Aggressive')
-    .sort((a, b) => b.expectedValue - a.expectedValue);
-
-  // Start with top EV overall
-  const allSorted = [...candidates].sort((a, b) => b.expectedValue - a.expectedValue);
   const selected = new Set<string>();
   const result: BetCandidate[] = [];
-
   const makeKey = (c: BetCandidate) => `${c.type}-${c.horseIndices.join(',')}`;
 
-  // Add top 15 by pure EV
-  for (const candidate of allSorted) {
-    if (result.length >= 15) break;
-    const key = makeKey(candidate);
-    if (!selected.has(key)) {
-      selected.add(key);
-      result.push(candidate);
+  // Group by bet subcategory and sort each group by EV
+  const bySubCategory: Record<BetSubCategory, BetCandidate[]> = {
+    win: [],
+    place: [],
+    show: [],
+    exacta_straight: [],
+    exacta_box: [],
+    trifecta_straight: [],
+    trifecta_box: [],
+    trifecta_key: [],
+    superfecta: [],
+  };
+
+  for (const candidate of candidates) {
+    const subCategory = getBetSubCategory(candidate.type);
+    bySubCategory[subCategory].push(candidate);
+  }
+
+  // Sort each subcategory by EV
+  for (const subCategory of Object.keys(bySubCategory) as BetSubCategory[]) {
+    bySubCategory[subCategory].sort((a, b) => b.expectedValue - a.expectedValue);
+  }
+
+  // STEP 1: Ensure at least 6 bets from each subcategory for fuller columns
+  const minPerSubCategory = 6;
+  const subCategories: BetSubCategory[] = [
+    'win',
+    'place',
+    'show',
+    'exacta_straight',
+    'exacta_box',
+    'trifecta_straight',
+    'trifecta_box',
+    'trifecta_key',
+    'superfecta',
+  ];
+
+  for (const subCategory of subCategories) {
+    const subCategoryBets = bySubCategory[subCategory];
+    let count = 0;
+    for (const candidate of subCategoryBets) {
+      if (count >= minPerSubCategory) break;
+      const key = makeKey(candidate);
+      if (!selected.has(key)) {
+        selected.add(key);
+        result.push(candidate);
+        count++;
+      }
     }
   }
 
-  // Ensure at least 3 conservative
-  let conservativeCount = result.filter(
-    (c) => determineRiskTier(c.probability) === 'Conservative'
-  ).length;
+  // STEP 2: Fill remaining slots with highest EV bets
+  const allSorted = [...candidates].sort((a, b) => b.expectedValue - a.expectedValue);
 
-  for (const candidate of conservative) {
-    if (conservativeCount >= 3) break;
-    const key = makeKey(candidate);
-    if (!selected.has(key)) {
-      selected.add(key);
-      result.push(candidate);
-      conservativeCount++;
-    }
-  }
-
-  // Ensure at least 3 moderate
-  let moderateCount = result.filter((c) => determineRiskTier(c.probability) === 'Moderate').length;
-
-  for (const candidate of moderate) {
-    if (moderateCount >= 3) break;
-    const key = makeKey(candidate);
-    if (!selected.has(key)) {
-      selected.add(key);
-      result.push(candidate);
-      moderateCount++;
-    }
-  }
-
-  // Ensure at least 3 aggressive
-  let aggressiveCount = result.filter(
-    (c) => determineRiskTier(c.probability) === 'Aggressive'
-  ).length;
-
-  for (const candidate of aggressive) {
-    if (aggressiveCount >= 3) break;
-    const key = makeKey(candidate);
-    if (!selected.has(key)) {
-      selected.add(key);
-      result.push(candidate);
-      aggressiveCount++;
-    }
-  }
-
-  // Fill remaining from sorted list
   for (const candidate of allSorted) {
     if (result.length >= targetCount) break;
     const key = makeKey(candidate);
@@ -1319,11 +1351,11 @@ export function generateTopBets(
   // If we filtered too aggressively, use all candidates
   const candidatesToRank = viableCandidates.length >= 25 ? viableCandidates : allCandidates;
 
-  // Apply diversity enforcement to get top 25
-  const top25Candidates = enforceTypeDiversity(candidatesToRank, 25);
+  // Apply diversity enforcement to get top 50 (ensures all bet type subcategories are represented)
+  const topCandidates = enforceTypeDiversity(candidatesToRank, 50);
 
   // Convert to TopBet format
-  const topBets: TopBet[] = top25Candidates.map((candidate, index) => {
+  const topBets: TopBet[] = topCandidates.map((candidate, index) => {
     const payout = estimatePayout(candidate.type, horses, candidate.horseIndices, BASE_UNIT);
 
     // Determine horse positions for display

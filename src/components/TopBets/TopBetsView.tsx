@@ -1,14 +1,13 @@
 /**
  * TopBetsView Component
  *
- * Ultra-simple betting view showing top 20 algorithm-generated betting suggestions.
- * No customization, no horse selection — just a ranked list of bets with copy buttons.
- * Single-race bets only.
+ * 6-column betting view showing algorithm-generated betting suggestions.
+ * Columns: WIN, PLACE, SHOW, EXACTA, TRIFECTA, SUPERFECTA
+ * No copy buttons, no rank badges — just compact bet cards with window scripts.
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { SimpleTopBetCard, type ScaledTopBet } from './SimpleTopBetCard';
-import { generateTopBets, type TopBetsResult } from '../../lib/betting/topBetsGenerator';
+import { generateTopBets, type TopBet, type TopBetType } from '../../lib/betting/topBetsGenerator';
 import type { ScoredHorse } from '../../lib/scoring';
 import type { RaceHeader } from '../../types/drf';
 import './TopBetsView.css';
@@ -17,7 +16,9 @@ import './TopBetsView.css';
 // TYPES
 // ============================================================================
 
-export type SortOption = 'confidence' | 'payout' | 'cost';
+export type SortOption = 'confidence' | 'payout' | 'price_low' | 'price_high';
+export type ExactaVariant = 'straight' | 'box';
+export type TrifectaVariant = 'straight' | 'box' | 'key';
 
 export interface TopBetsViewProps {
   /** Race number (1-indexed) */
@@ -36,13 +37,68 @@ export interface TopBetsViewProps {
   onClose: () => void;
 }
 
+export interface ScaledTopBet extends TopBet {
+  scaledCost: number;
+  scaledWhatToSay: string;
+  scaledPayout: string;
+}
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
 const BASE_AMOUNTS = [1, 2, 5, 10];
 const DEFAULT_BASE = 1;
-const MAX_BETS = 20;
+
+// Bet types per column
+const WIN_TYPES: TopBetType[] = ['WIN'];
+const PLACE_TYPES: TopBetType[] = ['PLACE'];
+const SHOW_TYPES: TopBetType[] = ['SHOW'];
+const EXACTA_STRAIGHT_TYPES: TopBetType[] = ['EXACTA_STRAIGHT'];
+const EXACTA_BOX_TYPES: TopBetType[] = ['EXACTA_BOX_2', 'EXACTA_BOX_3'];
+const TRIFECTA_STRAIGHT_TYPES: TopBetType[] = ['TRIFECTA_STRAIGHT'];
+const TRIFECTA_BOX_TYPES: TopBetType[] = ['TRIFECTA_BOX_3', 'TRIFECTA_BOX_4'];
+const TRIFECTA_KEY_TYPES: TopBetType[] = ['TRIFECTA_KEY'];
+const SUPERFECTA_TYPES: TopBetType[] = ['SUPERFECTA_BOX_4', 'SUPERFECTA_BOX_5'];
+
+// Column configuration
+type ColumnId = 'win' | 'place' | 'show' | 'exacta' | 'trifecta' | 'superfecta';
+
+interface ColumnConfig {
+  id: ColumnId;
+  title: string;
+  hasDropdown: boolean;
+  dropdownOptions?: { value: string; label: string }[];
+  defaultVariant?: string;
+}
+
+const COLUMNS: ColumnConfig[] = [
+  { id: 'win', title: 'WIN', hasDropdown: false },
+  { id: 'place', title: 'PLACE', hasDropdown: false },
+  { id: 'show', title: 'SHOW', hasDropdown: false },
+  {
+    id: 'exacta',
+    title: 'EXACTA',
+    hasDropdown: true,
+    dropdownOptions: [
+      { value: 'straight', label: 'Straight' },
+      { value: 'box', label: 'Box' },
+    ],
+    defaultVariant: 'straight',
+  },
+  {
+    id: 'trifecta',
+    title: 'TRIFECTA',
+    hasDropdown: true,
+    dropdownOptions: [
+      { value: 'straight', label: 'Straight' },
+      { value: 'box', label: 'Box' },
+      { value: 'key', label: 'Key' },
+    ],
+    defaultVariant: 'straight',
+  },
+  { id: 'superfecta', title: 'SUPERFECTA', hasDropdown: false },
+];
 
 // ============================================================================
 // COMPONENT
@@ -50,7 +106,6 @@ const MAX_BETS = 20;
 
 export const TopBetsView: React.FC<TopBetsViewProps> = ({
   raceNumber,
-  trackName = 'Track',
   raceHeader,
   scoredHorses,
   getOdds = (_index, defaultOdds) => defaultOdds,
@@ -65,76 +120,102 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   const [customAmount, setCustomAmount] = useState<string>('');
   const [isCustom, setIsCustom] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('confidence');
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
-  const [copiedAll, setCopiedAll] = useState(false);
+  const [exactaVariant, setExactaVariant] = useState<ExactaVariant>('straight');
+  const [trifectaVariant, setTrifectaVariant] = useState<TrifectaVariant>('straight');
 
   // ============================================================================
   // GENERATE TOP BETS
   // ============================================================================
 
   // Calculate derived state to ensure reactivity when scratches/odds change
-  // These values change when user modifies race state in Analysis mode
   const scratchedCount = useMemo(
     () => scoredHorses.filter((h) => isScratched(h.index) || h.score.isScratched).length,
     [scoredHorses, isScratched]
   );
 
   // Create a stable key that changes when odds are modified
-  // This ensures the useMemo below reruns when odds change
   const oddsSignature = useMemo(() => {
     return scoredHorses
       .map((h) => `${h.index}:${getOdds(h.index, h.horse.morningLineOdds)}`)
       .join('|');
   }, [scoredHorses, getOdds]);
 
-  const topBetsResult: TopBetsResult | null = useMemo(() => {
+  const topBetsResult = useMemo(() => {
     if (scoredHorses.length === 0) return null;
     return generateTopBets(scoredHorses, raceHeader, raceNumber, getOdds, isScratched);
   }, [scoredHorses, raceHeader, raceNumber, getOdds, isScratched, scratchedCount, oddsSignature]);
 
   // ============================================================================
-  // SORT AND SCALE BETS
+  // COMPUTED: EFFECTIVE BASE AMOUNT
   // ============================================================================
 
-  const sortedBets = useMemo((): ScaledTopBet[] => {
+  const effectiveBase = useMemo(() => {
+    return isCustom && customAmount ? parseInt(customAmount, 10) || DEFAULT_BASE : baseAmount;
+  }, [isCustom, customAmount, baseAmount]);
+
+  // ============================================================================
+  // SCALE AND SORT BETS
+  // ============================================================================
+
+  const allScaledBets = useMemo((): ScaledTopBet[] => {
     if (!topBetsResult) return [];
 
-    // Get effective base amount
-    const effectiveBase =
-      isCustom && customAmount ? parseInt(customAmount, 10) || DEFAULT_BASE : baseAmount;
-
-    // Scale costs and payouts by base amount
-    const scaledBets: ScaledTopBet[] = topBetsResult.topBets.map((bet) => ({
+    return topBetsResult.topBets.map((bet) => ({
       ...bet,
       scaledCost: bet.cost * effectiveBase,
       scaledWhatToSay: scaleWhatToSay(bet.whatToSay, effectiveBase),
       scaledPayout: scalePayoutEstimate(bet.estimatedPayout, effectiveBase),
     }));
+  }, [topBetsResult, effectiveBase]);
 
-    // Sort by selected option
-    const sorted = [...scaledBets];
-    switch (sortBy) {
-      case 'payout':
-        // Sort by max potential payout (descending)
-        sorted.sort((a, b) => {
-          const aMax = parseMaxPayout(a.scaledPayout);
-          const bMax = parseMaxPayout(b.scaledPayout);
-          return bMax - aMax;
-        });
-        break;
-      case 'cost':
-        // Sort by cost (ascending)
-        sorted.sort((a, b) => a.scaledCost - b.scaledCost);
-        break;
-      case 'confidence':
-      default:
-        // Keep original EV-based ranking (already sorted by generateTopBets)
-        break;
-    }
+  // ============================================================================
+  // FILTER BETS BY COLUMN TYPE
+  // ============================================================================
 
-    // Limit to MAX_BETS
-    return sorted.slice(0, MAX_BETS);
-  }, [topBetsResult, baseAmount, customAmount, isCustom, sortBy]);
+  const getBetsForColumn = useCallback(
+    (columnId: ColumnId): ScaledTopBet[] => {
+      let typesToInclude: TopBetType[];
+
+      switch (columnId) {
+        case 'win':
+          typesToInclude = WIN_TYPES;
+          break;
+        case 'place':
+          typesToInclude = PLACE_TYPES;
+          break;
+        case 'show':
+          typesToInclude = SHOW_TYPES;
+          break;
+        case 'exacta':
+          typesToInclude = exactaVariant === 'straight' ? EXACTA_STRAIGHT_TYPES : EXACTA_BOX_TYPES;
+          break;
+        case 'trifecta':
+          if (trifectaVariant === 'straight') {
+            typesToInclude = TRIFECTA_STRAIGHT_TYPES;
+          } else if (trifectaVariant === 'box') {
+            typesToInclude = TRIFECTA_BOX_TYPES;
+          } else {
+            typesToInclude = TRIFECTA_KEY_TYPES;
+          }
+          break;
+        case 'superfecta':
+          typesToInclude = SUPERFECTA_TYPES;
+          break;
+        default:
+          typesToInclude = [];
+      }
+
+      // Filter bets by type
+      let filtered = allScaledBets.filter((bet) => typesToInclude.includes(bet.internalType));
+
+      // Apply sorting
+      filtered = sortBets(filtered, sortBy);
+
+      // Limit to reasonable number per column (6 bets)
+      return filtered.slice(0, 6);
+    },
+    [allScaledBets, exactaVariant, trifectaVariant, sortBy]
+  );
 
   // ============================================================================
   // HANDLERS
@@ -156,28 +237,13 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
     }
   }, []);
 
-  const handleCopySingle = useCallback(async (index: number, script: string) => {
-    try {
-      await navigator.clipboard.writeText(script);
-      setCopiedIndex(index);
-      setTimeout(() => setCopiedIndex(null), 2000);
-    } catch (error) {
-      console.error('Failed to copy:', error);
+  const handleColumnVariantChange = useCallback((columnId: ColumnId, value: string) => {
+    if (columnId === 'exacta') {
+      setExactaVariant(value as ExactaVariant);
+    } else if (columnId === 'trifecta') {
+      setTrifectaVariant(value as TrifectaVariant);
     }
   }, []);
-
-  const handleCopyAll = useCallback(async () => {
-    if (sortedBets.length === 0) return;
-
-    try {
-      const allScripts = sortedBets.map((bet) => bet.scaledWhatToSay).join('\n');
-      await navigator.clipboard.writeText(allScripts);
-      setCopiedAll(true);
-      setTimeout(() => setCopiedAll(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy all:', error);
-    }
-  }, [sortedBets]);
 
   // ============================================================================
   // RENDER
@@ -185,20 +251,9 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
 
   return (
     <div className="top-bets-view">
-      {/* Header */}
-      <div className="top-bets-header">
-        <div className="top-bets-header__title">
-          <h2>TOP BETS — Race {raceNumber}</h2>
-          <span className="top-bets-header__track">{trackName}</span>
-        </div>
-        <button className="top-bets-header__close" onClick={onClose} aria-label="Close">
-          ×
-        </button>
-      </div>
-
       {/* Controls Bar */}
       <div className="top-bets-controls">
-        {/* Base Amount Selector */}
+        {/* Base Amount Selector (Left) */}
         <div className="top-bets-controls__base">
           <span className="top-bets-controls__label">Base:</span>
           <div className="top-bets-controls__buttons">
@@ -229,7 +284,7 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
           </div>
         </div>
 
-        {/* Sort Dropdown */}
+        {/* Sort Dropdown (Right) */}
         <div className="top-bets-controls__sort">
           <label htmlFor="sort-select" className="top-bets-controls__label">
             Sort:
@@ -242,42 +297,111 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
           >
             <option value="confidence">Confidence</option>
             <option value="payout">Biggest Payout</option>
-            <option value="cost">Lowest Cost</option>
+            <option value="price_low">Price: Low to High</option>
+            <option value="price_high">Price: High to Low</option>
           </select>
         </div>
+
+        {/* Close button */}
+        <button className="top-bets-controls__close" onClick={onClose} aria-label="Close">
+          ×
+        </button>
       </div>
 
-      {/* Bet List */}
-      <div className="top-bets-list">
-        {sortedBets.length > 0 ? (
-          sortedBets.map((bet, index) => (
-            <SimpleTopBetCard
-              key={`${bet.internalType}-${bet.horseNumbers.join('-')}`}
-              bet={bet}
-              rank={index + 1}
-              isCopied={copiedIndex === index}
-              onCopy={() => handleCopySingle(index, bet.scaledWhatToSay)}
-            />
-          ))
-        ) : (
-          <div className="top-bets-empty">
-            <span className="top-bets-empty__icon">🏇</span>
-            <p>No bets available for this race.</p>
-          </div>
-        )}
+      {/* 6-Column Grid */}
+      <div className="top-bets-columns">
+        {COLUMNS.map((column) => {
+          const bets = getBetsForColumn(column.id);
+          const currentVariant =
+            column.id === 'exacta'
+              ? exactaVariant
+              : column.id === 'trifecta'
+                ? trifectaVariant
+                : undefined;
+
+          return (
+            <div key={column.id} className="top-bets-column">
+              {/* Column Header */}
+              <div className="top-bets-column__header">
+                <h3 className="top-bets-column__title">{column.title}</h3>
+                {column.hasDropdown && column.dropdownOptions && (
+                  <select
+                    className="top-bets-column__dropdown"
+                    value={currentVariant}
+                    onChange={(e) => handleColumnVariantChange(column.id, e.target.value)}
+                  >
+                    {column.dropdownOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Bets List */}
+              <div className="top-bets-column__list">
+                {bets.length > 0 ? (
+                  bets.map((bet, index) => (
+                    <CompactBetCard
+                      key={`${bet.internalType}-${bet.horseNumbers.join('-')}-${index}`}
+                      bet={bet}
+                    />
+                  ))
+                ) : (
+                  <div className="top-bets-column__empty">No bets</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// COMPACT BET CARD COMPONENT
+// ============================================================================
+
+interface CompactBetCardProps {
+  bet: ScaledTopBet;
+}
+
+const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
+  // Format horse display based on bet type
+  const horseDisplay = formatHorseDisplay(bet);
+
+  // Calculate confidence as a percentage (probability capped at 99%)
+  const confidencePercent = Math.min(Math.round(bet.probability), 99);
+
+  // Determine confidence color class
+  const confidenceClass =
+    confidencePercent >= 70
+      ? 'compact-bet-card__confidence--high'
+      : confidencePercent >= 40
+        ? 'compact-bet-card__confidence--medium'
+        : 'compact-bet-card__confidence--low';
+
+  return (
+    <div className="compact-bet-card">
+      {/* Header row: Horse numbers + Confidence */}
+      <div className="compact-bet-card__header">
+        <span className="compact-bet-card__horses">{horseDisplay}</span>
+        <span className={`compact-bet-card__confidence ${confidenceClass}`}>
+          {confidencePercent}%
+        </span>
       </div>
 
-      {/* Copy All Button */}
-      {sortedBets.length > 0 && (
-        <div className="top-bets-footer">
-          <button
-            className={`top-bets-copy-all ${copiedAll ? 'top-bets-copy-all--copied' : ''}`}
-            onClick={handleCopyAll}
-          >
-            {copiedAll ? 'Copied!' : 'COPY ALL'}
-          </button>
-        </div>
-      )}
+      {/* Cost and return */}
+      <div className="compact-bet-card__stats">
+        <span className="compact-bet-card__cost">${bet.scaledCost}</span>
+        <span className="compact-bet-card__dot">·</span>
+        <span className="compact-bet-card__return">{bet.scaledPayout}</span>
+      </div>
+
+      {/* Window script */}
+      <div className="compact-bet-card__script">"{bet.scaledWhatToSay}"</div>
     </div>
   );
 };
@@ -287,10 +411,37 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
 // ============================================================================
 
 /**
+ * Format horse display based on bet type
+ */
+function formatHorseDisplay(bet: ScaledTopBet): string {
+  if (bet.horses.length === 1) {
+    return `#${bet.horses[0]?.programNumber}`;
+  }
+
+  // For exacta straight / trifecta straight - use "over" notation
+  if (bet.internalType === 'EXACTA_STRAIGHT') {
+    return bet.horses.map((h) => `#${h.programNumber}`).join(' over ');
+  }
+
+  if (bet.internalType === 'TRIFECTA_STRAIGHT') {
+    return bet.horses.map((h) => `#${h.programNumber}`).join('-');
+  }
+
+  // For key bets
+  if (bet.internalType === 'TRIFECTA_KEY' && bet.horses.length > 0) {
+    const keyHorse = bet.horses[0];
+    const withHorses = bet.horses.slice(1);
+    return `#${keyHorse?.programNumber} ALL with ${withHorses.map((h) => `#${h.programNumber}`).join(', ')}`;
+  }
+
+  // For box bets, show hyphenated numbers
+  return bet.horses.map((h) => `#${h.programNumber}`).join('-');
+}
+
+/**
  * Scale the "what to say" script with a new base amount
  */
 function scaleWhatToSay(original: string, baseAmount: number): string {
-  // Replace $1 with $baseAmount
   return original.replace(/\$1/g, `$${baseAmount}`);
 }
 
@@ -298,11 +449,46 @@ function scaleWhatToSay(original: string, baseAmount: number): string {
  * Scale payout estimate string with base amount
  */
 function scalePayoutEstimate(original: string, baseAmount: number): string {
-  // Parse and scale dollar amounts in the string
   return original.replace(/\$(\d+)/g, (_, num) => {
     const scaled = parseInt(num, 10) * baseAmount;
     return `$${scaled}`;
   });
+}
+
+/**
+ * Sort bets by selected option
+ */
+function sortBets(bets: ScaledTopBet[], sortBy: SortOption): ScaledTopBet[] {
+  const sorted = [...bets];
+
+  switch (sortBy) {
+    case 'confidence':
+      // Sort by probability (confidence) descending
+      sorted.sort((a, b) => b.probability - a.probability);
+      break;
+    case 'payout':
+      // Sort by max potential payout (descending)
+      sorted.sort((a, b) => {
+        const aMax = parseMaxPayout(a.scaledPayout);
+        const bMax = parseMaxPayout(b.scaledPayout);
+        return bMax - aMax;
+      });
+      break;
+    case 'price_low':
+      // Sort by cost (ascending)
+      sorted.sort((a, b) => a.scaledCost - b.scaledCost);
+      break;
+    case 'price_high':
+      // Sort by cost (descending)
+      sorted.sort((a, b) => b.scaledCost - a.scaledCost);
+      break;
+    default:
+      // Default to confidence
+      sorted.sort((a, b) => b.probability - a.probability);
+      break;
+  }
+
+  return sorted;
 }
 
 /**
