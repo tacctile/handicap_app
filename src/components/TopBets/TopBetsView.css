@@ -184,7 +184,7 @@
   background: var(--color-card);
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
-  min-height: 48px; /* Ensure consistent height across all columns */
+  height: 56px; /* Fixed height ensures all columns match (accommodates dropdown) */
   box-sizing: border-box;
 }
 
@@ -353,7 +353,7 @@
 
   .top-bets-column__header {
     padding: 10px 8px;
-    min-height: 44px; /* Consistent height at tablet size */
+    height: 50px; /* Fixed height ensures all columns match at tablet size */
   }
 
   .top-bets-column__title {
