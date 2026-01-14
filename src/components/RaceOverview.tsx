@@ -363,12 +363,6 @@ export const RaceOverview = memo(function RaceOverview({
 
   return (
     <div className="race-overview race-overview-redesigned">
-      {/* Keyboard hint */}
-      <div className="race-overview-hint">
-        <span className="material-icons race-overview-hint-icon">keyboard</span>
-        <span>Press 1-{Math.min(9, parsedData.races.length)} for quick access</span>
-      </div>
-
       {/* Race grid - full width, centered */}
       <div className="race-overview-grid race-overview-grid-redesigned">
         <AnimatePresence>
