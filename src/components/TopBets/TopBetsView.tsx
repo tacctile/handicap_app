@@ -3,7 +3,7 @@
  *
  * 6-column betting view showing algorithm-generated betting suggestions.
  * Columns: WIN, PLACE, SHOW, EXACTA, TRIFECTA, SUPERFECTA
- * Features bordered bet cards with rank numbers for easy reference.
+ * Features bordered bet cards for clear visual separation.
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -346,7 +346,6 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
                     <CompactBetCard
                       key={`${bet.internalType}-${bet.horseNumbers.join('-')}-${index}`}
                       bet={bet}
-                      rank={index + 1}
                     />
                   ))
                 ) : (
@@ -367,10 +366,9 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
 
 interface CompactBetCardProps {
   bet: ScaledTopBet;
-  rank: number;
 }
 
-const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet, rank }) => {
+const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
   // Format horse display based on bet type
   const horseDisplay = formatHorseDisplay(bet);
 
@@ -395,9 +393,8 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet, rank }) => {
 
   return (
     <div className="compact-bet-card">
-      {/* Row 1: Rank + Horse numbers + Confidence label and value */}
+      {/* Row 1: Horse numbers + Confidence label and value */}
       <div className="compact-bet-card__header">
-        <span className="compact-bet-card__rank">{rank}</span>
         <span className="compact-bet-card__horses">{horseDisplay}</span>
         <span className={`compact-bet-card__confidence ${confidenceClass}`}>
           <span className="compact-bet-card__label">CONFIDENCE:</span>
