@@ -253,8 +253,8 @@
 .compact-bet-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 10px;
+  gap: 0;
+  padding: 0;
   background: var(--color-card);
   border: 1px solid #2a2a2c;
   border-radius: 5px;
@@ -263,6 +263,7 @@
     background var(--transition-fast),
     border-color var(--transition-fast);
   min-height: 90px;
+  overflow: hidden;
 }
 
 .compact-bet-card:first-child {
@@ -274,53 +275,46 @@
   border-color: #3a3a3c;
 }
 
-/* Shared label styling for CONFIDENCE, COST, PAYOUT */
+/* Consistent font for all card content */
 .compact-bet-card__label {
-  font-size: 9px;
-  font-weight: 500;
-  color: var(--color-text-tertiary);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  margin-right: 3px;
+  margin-right: 4px;
 }
 
-/* Shared value styling */
+/* Shared value styling - same as label */
 .compact-bet-card__value {
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
 }
 
 /* Header row with horse numbers (full width) */
 .compact-bet-card__header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  padding: 10px 10px;
+  border-bottom: 1px solid #2a2a2c;
 }
 
 .compact-bet-card__horses {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 400;
   color: var(--color-primary);
   line-height: 1.3;
   word-break: break-word;
 }
 
-/* Confidence - plain text at bottom of card */
+/* Confidence row - with divider */
 .compact-bet-card__confidence {
   display: flex;
   align-items: center;
-  font-size: 11px;
-  color: var(--color-text-tertiary);
-}
-
-.compact-bet-card__confidence .compact-bet-card__label {
-  font-size: 9px;
-  color: var(--color-text-tertiary);
-}
-
-.compact-bet-card__confidence .compact-bet-card__value {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-text-tertiary);
+  padding: 10px 10px;
+  border-bottom: 1px solid #2a2a2c;
 }
 
 /* Cost and payout stats row */
@@ -329,10 +323,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-size: 12px;
-  padding: 6px 0;
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
+  padding: 10px 10px;
+  border-bottom: 1px solid #2a2a2c;
 }
 
 .compact-bet-card__cost {
@@ -340,29 +332,17 @@
   align-items: center;
 }
 
-.compact-bet-card__cost .compact-bet-card__value {
-  color: var(--color-text-secondary);
-  font-size: 13px;
-}
-
 .compact-bet-card__payout {
   display: flex;
   align-items: center;
 }
 
-.compact-bet-card__payout .compact-bet-card__value {
-  color: var(--color-text-secondary);
-  font-size: 12px;
-}
-
-/* Window script */
+/* Window script - plain text, no grey box */
 .compact-bet-card__script {
-  font-family: 'SF Mono', 'Monaco', 'Consolas', 'Liberation Mono', monospace;
-  font-size: 10px;
-  color: var(--color-text-tertiary);
-  background: var(--color-base);
-  padding: 6px 8px;
-  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  padding: 10px 10px;
   line-height: 1.4;
   word-break: break-word;
 }
@@ -387,44 +367,22 @@
   }
 
   .compact-bet-card {
-    padding: 10px 8px;
     margin: 6px 4px;
-    gap: 6px;
     min-height: 85px;
   }
 
-  .compact-bet-card__horses {
-    font-size: 13px;
-  }
-
-  .compact-bet-card__label {
-    font-size: 8px;
-  }
-
-  .compact-bet-card__confidence .compact-bet-card__label {
-    font-size: 8px;
-  }
-
-  .compact-bet-card__confidence .compact-bet-card__value {
-    font-size: 10px;
-  }
-
-  .compact-bet-card__stats {
-    font-size: 11px;
-    padding: 5px 0;
-  }
-
-  .compact-bet-card__cost .compact-bet-card__value {
-    font-size: 12px;
-  }
-
-  .compact-bet-card__payout .compact-bet-card__value {
-    font-size: 11px;
-  }
-
+  .compact-bet-card__header,
+  .compact-bet-card__stats,
+  .compact-bet-card__confidence,
   .compact-bet-card__script {
-    font-size: 9px;
-    padding: 5px 6px;
+    padding: 8px 8px;
+  }
+
+  .compact-bet-card__horses,
+  .compact-bet-card__label,
+  .compact-bet-card__value,
+  .compact-bet-card__script {
+    font-size: 11px;
   }
 }
 
@@ -478,7 +436,6 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
-    padding: 5px 0;
   }
 }
 
@@ -513,25 +470,27 @@
   }
 
   .compact-bet-card {
-    padding: 12px;
     margin: 8px 8px;
     min-height: auto;
-    gap: 8px;
   }
 
-  .compact-bet-card__horses {
-    font-size: 14px;
+  .compact-bet-card__header,
+  .compact-bet-card__stats,
+  .compact-bet-card__confidence,
+  .compact-bet-card__script {
+    padding: 10px 12px;
+  }
+
+  .compact-bet-card__horses,
+  .compact-bet-card__label,
+  .compact-bet-card__value,
+  .compact-bet-card__script {
+    font-size: 12px;
   }
 
   .compact-bet-card__stats {
-    font-size: 12px;
     flex-direction: row;
     justify-content: space-between;
-  }
-
-  .compact-bet-card__script {
-    font-size: 10px;
-    padding: 6px 10px;
   }
 
   .top-bets-base-btn {

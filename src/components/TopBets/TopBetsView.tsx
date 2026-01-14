@@ -425,14 +425,14 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
         </span>
       </div>
 
-      {/* Row 3: Window script */}
-      <div className="compact-bet-card__script">"{bet.scaledWhatToSay}"</div>
-
-      {/* Row 4: Confidence (plain text at bottom) */}
+      {/* Row 3: Confidence */}
       <div className="compact-bet-card__confidence">
         <span className="compact-bet-card__label">CONFIDENCE:</span>
         <span className="compact-bet-card__value">{confidenceDisplay}</span>
       </div>
+
+      {/* Row 4: Window script (last row) */}
+      <div className="compact-bet-card__script">"{bet.scaledWhatToSay}"</div>
     </div>
   );
 };
