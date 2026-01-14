@@ -9,12 +9,16 @@ import { HorseExpandedView } from './HorseExpandedView';
 import { HorseSummaryBar } from './HorseSummaryBar';
 import { ScoringHelpModal } from './ScoringHelpModal';
 import { RaceVerdictHeader } from './RaceVerdictHeader';
+import { RaceOverview } from './RaceOverview';
 import {
   calculateRaceScores,
   MAX_SCORE,
   analyzeOverlayWithField,
   calculateBaseScoreRanks,
+  calculateRaceConfidence,
+  getTopHorses,
 } from '../lib/scoring';
+import { analyzeRaceDiamonds } from '../lib/diamonds';
 import { rankHorsesByBlended, type BlendedRankedHorse } from '../lib/scoring/blendedRank';
 import { toOrdinal, calculateRankGradientColor } from '../lib/scoring/rankUtils';
 import type { TrendScore } from '../lib/scoring/trendAnalysis';
@@ -215,8 +219,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
   isLoading = false,
   onParsed,
 }) => {
-  // View mode state: 'analysis' (default), 'betMode', or 'topBets'
-  const [viewMode, setViewMode] = useState<'analysis' | 'betMode' | 'topBets'>('analysis');
+  // View mode state: 'overview' (default after parse), 'analysis', 'betMode', or 'topBets'
+  const [viewMode, setViewMode] = useState<'overview' | 'analysis' | 'betMode' | 'topBets'>(
+    'analysis'
+  );
 
   // State for expanded horse in horse list
   const [expandedHorseId, setExpandedHorseId] = useState<string | number | null>(null);
@@ -289,9 +295,32 @@ export const Dashboard: React.FC<DashboardProps> = ({
     });
   };
 
-  // Debug: Log parsed data when it changes
+  // Handler for selecting a race from the overview and transitioning to analysis mode
+  const handleRaceSelectFromOverview = useCallback(
+    (raceIndex: number) => {
+      onRaceSelect?.(raceIndex);
+      setViewMode('analysis');
+    },
+    [onRaceSelect]
+  );
+
+  // Handler for going back to overview from analysis mode
+  const handleBackToOverview = useCallback(() => {
+    setViewMode('overview');
+  }, []);
+
+  // Track previous parsedData to detect when new data is loaded
+  const prevParsedDataRef = useRef<ParsedDRFFile | null>(null);
+
+  // Set viewMode to 'overview' when new DRF data is parsed
   useEffect(() => {
-    if (parsedData) {
+    if (parsedData && parsedData !== prevParsedDataRef.current) {
+      // New data loaded - switch to overview mode
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing viewMode with new parsedData prop
+      setViewMode('overview');
+      prevParsedDataRef.current = parsedData;
+
+      // Debug logging
       console.log('Parsed DRF data:', parsedData);
       console.log('Track:', parsedData.races?.[0]?.header?.trackCode);
       console.log('Date:', parsedData.races?.[0]?.header?.raceDateRaw);
@@ -353,6 +382,69 @@ export const Dashboard: React.FC<DashboardProps> = ({
       );
     });
   }, [parsedData, raceState.trackCondition]);
+
+  // Calculate RaceOverview data: confidences, top horses, diamonds, elite connections
+  const raceOverviewData = useMemo(() => {
+    if (!parsedData || allScoredHorses.length === 0) {
+      return {
+        raceConfidences: new Map<number, number>(),
+        topHorsesByRace: new Map<number, (typeof allScoredHorses)[0]>(),
+        diamondCountByRace: new Map<number, number>(),
+        eliteConnectionsCountByRace: new Map<number, number>(),
+      };
+    }
+
+    const raceConfidences = new Map<number, number>();
+    const topHorsesByRace = new Map<number, (typeof allScoredHorses)[0]>();
+    const diamondCountByRace = new Map<number, number>();
+    const eliteConnectionsCountByRace = new Map<number, number>();
+
+    parsedData.races.forEach((race, raceIndex) => {
+      const scoredHorses = allScoredHorses[raceIndex] || [];
+
+      // Calculate race confidence
+      const confidence = calculateRaceConfidence(scoredHorses);
+      raceConfidences.set(raceIndex, confidence);
+
+      // Get top 3 horses for preview
+      const topHorses = getTopHorses(scoredHorses, 3);
+      topHorsesByRace.set(raceIndex, topHorses);
+
+      // Count diamonds in this race
+      const scoreMap = new Map<number, (typeof scoredHorses)[0]['score']>();
+      scoredHorses.forEach((sh) => {
+        scoreMap.set(sh.index, sh.score);
+      });
+
+      const diamondSummary = analyzeRaceDiamonds(
+        race.horses,
+        scoreMap,
+        race.header,
+        (_index, defaultOdds) => defaultOdds // Use morning line for overview
+      );
+      diamondCountByRace.set(raceIndex, diamondSummary.diamondCount);
+
+      // Count horses with elite connections (30+ connection points)
+      let eliteCount = 0;
+      for (const sh of scoredHorses) {
+        if (!sh.score.isScratched) {
+          // Elite connections defined as 30+ points in connections category
+          const connectionsTotal = sh.score.breakdown.connections.total;
+          if (connectionsTotal >= 30) {
+            eliteCount++;
+          }
+        }
+      }
+      eliteConnectionsCountByRace.set(raceIndex, eliteCount);
+    });
+
+    return {
+      raceConfidences,
+      topHorsesByRace,
+      diamondCountByRace,
+      eliteConnectionsCountByRace,
+    };
+  }, [parsedData, allScoredHorses]);
 
   // Calculate ranks based on BASE SCORE (not total score with overlay)
   const baseScoreRankMap = useMemo(() => {
@@ -814,34 +906,46 @@ export const Dashboard: React.FC<DashboardProps> = ({
           )}
         </header>
 
-        {/* Race Rail */}
-        <aside
-          className={`app-race-rail ${parsedData?.races ? getRailCompactClass(parsedData.races.length) : ''}`}
-        >
-          {parsedData?.races?.map((race, index) => {
-            const raceStatus = getRaceStatus(race, index);
-            const isActive = index === selectedRaceIndex;
+        {/* Race Rail - Hidden in overview mode since RaceOverview serves that purpose */}
+        {viewMode !== 'overview' && (
+          <aside
+            className={`app-race-rail ${parsedData?.races ? getRailCompactClass(parsedData.races.length) : ''}`}
+          >
+            {parsedData?.races?.map((race, index) => {
+              const raceStatus = getRaceStatus(race, index);
+              const isActive = index === selectedRaceIndex;
 
-            return (
-              <button
-                key={index}
-                className={`app-race-rail__item ${isActive ? 'app-race-rail__item--active' : ''} app-race-rail__item--${raceStatus.status}`}
-                onClick={() => onRaceSelect?.(index)}
-              >
-                <span className="app-race-rail__number">
-                  R{race.header?.raceNumber || index + 1}
-                </span>
-                <span className="app-race-rail__time">
-                  {raceStatus.status === 'final' ? 'FINAL' : formatPostTime(getPostTime(race))}
-                </span>
-              </button>
-            );
-          })}
-        </aside>
+              return (
+                <button
+                  key={index}
+                  className={`app-race-rail__item ${isActive ? 'app-race-rail__item--active' : ''} app-race-rail__item--${raceStatus.status}`}
+                  onClick={() => onRaceSelect?.(index)}
+                >
+                  <span className="app-race-rail__number">
+                    R{race.header?.raceNumber || index + 1}
+                  </span>
+                  <span className="app-race-rail__time">
+                    {raceStatus.status === 'final' ? 'FINAL' : formatPostTime(getPostTime(race))}
+                  </span>
+                </button>
+              );
+            })}
+          </aside>
+        )}
 
         {/* Main Content */}
         <main className="app-main">
-          {viewMode === 'topBets' ? (
+          {viewMode === 'overview' && parsedData ? (
+            /* OVERVIEW MODE - All races at a glance */
+            <RaceOverview
+              parsedData={parsedData}
+              raceConfidences={raceOverviewData.raceConfidences}
+              topHorsesByRace={raceOverviewData.topHorsesByRace}
+              diamondCountByRace={raceOverviewData.diamondCountByRace}
+              eliteConnectionsCountByRace={raceOverviewData.eliteConnectionsCountByRace}
+              onRaceSelect={handleRaceSelectFromOverview}
+            />
+          ) : viewMode === 'topBets' ? (
             /* TOP BETS - Top 25 bet recommendations */
             <TopBetsPanel
               race={currentRace}
@@ -901,6 +1005,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
               ) : (
                 <div className="horse-list" ref={horseListRef}>
+                  {/* Back to Overview button */}
+                  <div className="race-detail-header">
+                    <button
+                      className="back-to-overview-btn"
+                      onClick={handleBackToOverview}
+                      title="Back to Race Overview"
+                    >
+                      <span className="material-icons">arrow_back</span>
+                      <span>All Races</span>
+                    </button>
+                    <div className="race-detail-header__title">
+                      <span className="race-detail-header__race-num">
+                        Race {selectedRaceIndex + 1}
+                      </span>
+                      <span className="race-detail-header__separator">·</span>
+                      <span className="race-detail-header__horses">
+                        {currentRaceScoredHorses.filter((h) => !h.score.isScratched).length} horses
+                      </span>
+                    </div>
+                  </div>
+
                   {/* Race Verdict Header - Shows BET/CAUTION/PASS verdict */}
                   <RaceVerdictHeader
                     valueAnalysis={valueAnalysis}
