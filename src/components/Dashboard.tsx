@@ -268,19 +268,33 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       // If expanding, smoothly scroll the row to the top after state update
       if (isExpanding && horseIndex !== undefined) {
-        // Use double requestAnimationFrame to ensure React has rendered
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            const horseRow = document.getElementById(`horse-row-${horseIndex}`);
-            if (horseRow) {
-              // Scroll the row to the top of the scrollable container
+        // Use setTimeout to ensure React has finished rendering
+        setTimeout(() => {
+          const horseRow = document.getElementById(`horse-row-${horseIndex}`);
+          if (horseRow) {
+            // Find the scroll container (.app-main__content)
+            const scrollContainer = horseRow.closest('.app-main__content');
+            if (scrollContainer) {
+              // Calculate the target scroll position
+              const containerRect = scrollContainer.getBoundingClientRect();
+              const rowRect = horseRow.getBoundingClientRect();
+              const currentScroll = scrollContainer.scrollTop;
+              const targetScroll = currentScroll + (rowRect.top - containerRect.top);
+
+              // Smooth scroll to bring the row to the top
+              scrollContainer.scrollTo({
+                top: targetScroll,
+                behavior: 'smooth'
+              });
+            } else {
+              // Fallback to scrollIntoView
               horseRow.scrollIntoView({
                 behavior: 'smooth',
                 block: 'start'
               });
             }
-          });
-        });
+          }
+        }, 50); // Small delay to ensure DOM is ready
       }
 
       return prev === horseId ? null : horseId;

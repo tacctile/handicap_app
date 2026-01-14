@@ -496,8 +496,8 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
     'analysis'
   );
 
-  if (!isVisible) return null;
-
+  // Always render the outer container for smooth CSS transitions
+  // The --visible class controls the expand/collapse animation
   const scoreTotal = score?.total || 0;
   const baseScore = score?.baseScore || 0;
   // overlayScore available if needed: const overlayScore = scoreTotal - baseScore;
@@ -539,7 +539,7 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   // which is calculated at the Dashboard level using the useRaceBets hook
 
   return (
-    <div className={`horse-expanded horse-expanded--${valueStatus.toLowerCase()}`}>
+    <div className={`horse-expanded ${isVisible ? 'horse-expanded--visible' : ''} horse-expanded--${valueStatus.toLowerCase()}`}>
       {/* ================================================================
           SECTION 1: FURLONG SCORE ANALYSIS (Always Visible)
           Left: Large score with progress bar, base/edge, rating
