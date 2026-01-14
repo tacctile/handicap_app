@@ -27,7 +27,8 @@
   display: grid;
   grid-template-rows: var(--bar-height) 1fr var(--bar-height);
   grid-template-columns: var(--dimension-bar) 1fr;
-  overflow: hidden;
+  overflow-x: visible; /* Allow horizontal extension for verdict/column bars */
+  overflow-y: hidden;  /* Keep vertical clipping for scroll containment */
   transition: width var(--transition-normal);
   width: 100%;
   min-width: 0; /* Allow flex item to shrink below content size */
