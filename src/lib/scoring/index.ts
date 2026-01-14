@@ -1320,9 +1320,19 @@ export function calculateRaceScores(
 
 /**
  * Get top N horses by score (excluding scratched)
+ *
+ * Returns horses sorted by their algorithm-calculated rank (based on baseScore).
+ * Rank 1 = highest baseScore = predicted 1st place finish.
+ *
+ * NOTE: This function sorts by rank before slicing because scoredHorses
+ * from calculateRaceScores() is sorted by post position for display purposes.
+ * We need to re-sort by rank to get actual projected finish order.
  */
 export function getTopHorses(scoredHorses: ScoredHorse[], count: number = 3): ScoredHorse[] {
-  return scoredHorses.filter((h) => !h.score.isScratched).slice(0, count);
+  return scoredHorses
+    .filter((h) => !h.score.isScratched)
+    .sort((a, b) => a.rank - b.rank) // Sort by rank (1 = best, lower is better)
+    .slice(0, count);
 }
 
 /**
