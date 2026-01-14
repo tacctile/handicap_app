@@ -214,9 +214,7 @@ export function useSessionPersistence(): UseSessionPersistenceReturn {
    * Loads an existing session or creates a new one for the given parsed data.
    */
   const loadOrCreateSession = useCallback(
-    async (
-      parsedData: ParsedDRFFile
-    ): Promise<{ wasRestored: boolean; session: SavedSession }> => {
+    async (parsedData: ParsedDRFFile): Promise<{ wasRestored: boolean; session: SavedSession }> => {
       if (!isStorageAvailable) {
         // If storage not available, create in-memory session
         const newSession = createNewSession(parsedData);
@@ -281,7 +279,12 @@ export function useSessionPersistence(): UseSessionPersistenceReturn {
       setSession((prev) => {
         if (!prev) return prev;
 
-        const updatedSession = { ...prev };
+        // Create a NEW raceStates object to ensure React detects the change
+        // (shallow copy of prev would share the same raceStates reference)
+        const updatedSession = {
+          ...prev,
+          raceStates: { ...prev.raceStates },
+        };
         if (!updatedSession.raceStates[raceIndex]) {
           updatedSession.raceStates[raceIndex] = {
             sortColumn: 'POST',
@@ -367,7 +370,12 @@ export function useSessionPersistence(): UseSessionPersistenceReturn {
       setSession((prev) => {
         if (!prev) return prev;
 
-        const updatedSession = { ...prev };
+        // Create NEW raceStates object to ensure React detects the change
+        const updatedSession = {
+          ...prev,
+          raceStates: { ...prev.raceStates },
+          lastAccessedAt: new Date().toISOString(),
+        };
         updatedSession.raceStates[raceIndex] = {
           sortColumn: 'POST',
           sortDirection: 'asc',
@@ -375,7 +383,6 @@ export function useSessionPersistence(): UseSessionPersistenceReturn {
           oddsOverrides: {},
           trackCondition: 'fast',
         };
-        updatedSession.lastAccessedAt = new Date().toISOString();
 
         return updatedSession;
       });
@@ -401,12 +408,12 @@ export function useSessionPersistence(): UseSessionPersistenceReturn {
     setSession((prev) => {
       if (!prev) return prev;
 
-      const updatedSession = { ...prev };
-      const raceCount = updatedSession.parsedData.races.length;
+      const raceCount = prev.parsedData.races.length;
 
-      updatedSession.raceStates = {};
+      // Create completely new raceStates object with all races reset
+      const newRaceStates: Record<number, (typeof prev.raceStates)[number]> = {};
       for (let i = 0; i < raceCount; i++) {
-        updatedSession.raceStates[i] = {
+        newRaceStates[i] = {
           sortColumn: 'POST',
           sortDirection: 'asc',
           scratches: [],
@@ -414,9 +421,12 @@ export function useSessionPersistence(): UseSessionPersistenceReturn {
           trackCondition: 'fast',
         };
       }
-      updatedSession.lastAccessedAt = new Date().toISOString();
 
-      return updatedSession;
+      return {
+        ...prev,
+        raceStates: newRaceStates,
+        lastAccessedAt: new Date().toISOString(),
+      };
     });
   }, [session, currentFilenameKey, isStorageAvailable]);
 
