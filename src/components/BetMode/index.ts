@@ -11,6 +11,9 @@ export { InlineSettings } from './InlineSettings';
 export { RaceNavigation } from './RaceNavigation';
 export { DayPlanModal } from './DayPlanModal';
 
+// Single-screen Bet Builder (two-column reactive interface)
+export { BetBuilderSingleScreen } from './BetBuilderSingleScreen';
+
 // Day Setup Components (kept for day planning modal)
 export {
   DayBankrollStep,

@@ -3,7 +3,7 @@ import './Dashboard.css';
 import { useValueDetection } from '../hooks/useValueDetection';
 import { useRaceBets } from '../hooks/useRaceBets';
 import type { UseSessionPersistenceReturn } from '../hooks/useSessionPersistence';
-import { BetModeContainer } from './BetMode';
+import { BetModeContainer, BetBuilderSingleScreen } from './BetMode';
 import { TopBetsPanel } from './TopBets';
 import { FileUpload } from './FileUpload';
 import { HorseExpandedView } from './HorseExpandedView';
@@ -229,8 +229,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onResetRace,
   onResetAllRaces,
 }) => {
-  // View mode state: 'overview' (default after parse), 'analysis', 'betMode', or 'topBets'
-  const [viewMode, setViewMode] = useState<'overview' | 'analysis' | 'betMode' | 'topBets'>(
+  // View mode state: 'overview' (default after parse), 'analysis', 'betMode', 'topBets', or 'betBuilder'
+  const [viewMode, setViewMode] = useState<'overview' | 'analysis' | 'betMode' | 'topBets' | 'betBuilder'>(
     'analysis'
   );
 
@@ -1239,6 +1239,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
               allScoredHorses={allScoredHorses}
               onNavigateToRace={onRaceSelect}
             />
+          ) : viewMode === 'betBuilder' ? (
+            /* BET BUILDER - Single-screen two-column reactive interface */
+            <BetBuilderSingleScreen
+              race={currentRace}
+              raceNumber={selectedRaceIndex + 1}
+              trackName={
+                trackCode ? getTrackDisplayName(trackCode, getTrackSize(trackCode)) : undefined
+              }
+              scoredHorses={currentRaceScoredHorses}
+              getOdds={(index, defaultOdds) => raceState.getOdds(index, defaultOdds)}
+              isScratched={(index) => raceState.isScratched(index)}
+              onClose={() => setViewMode('analysis')}
+            />
           ) : (
             /* ANALYSIS MODE - Horse list and analysis view */
             <div className="app-main__content">
@@ -1510,6 +1523,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
             >
               <span className="app-bottombar__bet-icon">🎯</span>
               <span>{viewMode === 'betMode' ? 'ANALYSIS' : 'BET MODE'}</span>
+            </button>
+          </div>
+
+          {/* Separator */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* BET BUILDER button - Single-screen reactive interface */}
+          <div className="app-bottombar__cluster">
+            <button
+              className={`app-bottombar__item app-bottombar__item--bet-builder ${viewMode === 'betBuilder' ? 'app-bottombar__item--bet-builder-active' : ''}`}
+              onClick={() => setViewMode(viewMode === 'betBuilder' ? 'analysis' : 'betBuilder')}
+              disabled={!parsedData || isLoading}
+              title={
+                viewMode === 'betBuilder'
+                  ? 'Return to analysis view'
+                  : 'Build custom bets with live results'
+              }
+            >
+              <span className="app-bottombar__builder-icon">🛠️</span>
+              <span>{viewMode === 'betBuilder' ? 'ANALYSIS' : 'BET BUILDER'}</span>
             </button>
           </div>
 
