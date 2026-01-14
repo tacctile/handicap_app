@@ -431,22 +431,36 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }, [parsedData, selectedRaceIndex, raceState.updatedOdds, raceState.scratchedHorses, raceState.trackCondition, raceState.getOdds, raceState.isScratched]);
 
   // Calculate scored horses for ALL races (for day planning mode)
-  // Uses original odds (not live updates) for consistent planning
+  // Now uses persisted per-race state (scratches, odds overrides, track condition)
+  // so that Overview reflects current user changes across all races
   const allScoredHorses = useMemo(() => {
     if (!parsedData) return [];
 
-    return parsedData.races.map((race) => {
+    return parsedData.races.map((race, raceIndex) => {
+      // Get persisted state for this race (if available)
+      const persistedState = sessionPersistence?.getRaceState(raceIndex);
+
+      // Build scratched set from persisted state
+      const scratchedSet = new Set<number>(persistedState?.scratches || []);
+
+      // Build odds override map from persisted state
+      const oddsOverrides = persistedState?.oddsOverrides || {};
+
+      // Use persisted track condition or default to 'fast'
+      const trackConditionForRace = persistedState?.trackCondition || 'fast';
+
       return calculateRaceScores(
         race.horses,
         race.header,
-        (_i, originalOdds) => originalOdds, // Use original odds for planning
-        () => false, // No scratches for planning (user can adjust per-race)
-        raceState.trackCondition
+        (i, originalOdds) => oddsOverrides[i] ?? originalOdds, // Use persisted odds or original
+        (i) => scratchedSet.has(i), // Use persisted scratches
+        trackConditionForRace
       );
     });
-  }, [parsedData, raceState.trackCondition]);
+  // sessionPersistence contains all state including getRaceState and session.raceStates
+  }, [parsedData, sessionPersistence]);
 
-  // Calculate RaceOverview data: confidences, top horses, diamonds, elite connections
+  // Calculate RaceOverview data: confidences, top horses, diamonds, elite connections, scratched counts
   const raceOverviewData = useMemo(() => {
     if (!parsedData || allScoredHorses.length === 0) {
       return {
@@ -454,6 +468,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         topHorsesByRace: new Map<number, (typeof allScoredHorses)[0]>(),
         diamondCountByRace: new Map<number, number>(),
         eliteConnectionsCountByRace: new Map<number, number>(),
+        scratchedCountByRace: new Map<number, number>(),
       };
     }
 
@@ -461,19 +476,33 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const topHorsesByRace = new Map<number, (typeof allScoredHorses)[0]>();
     const diamondCountByRace = new Map<number, number>();
     const eliteConnectionsCountByRace = new Map<number, number>();
+    const scratchedCountByRace = new Map<number, number>();
 
     parsedData.races.forEach((race, raceIndex) => {
       const scoredHorses = allScoredHorses[raceIndex] || [];
+
+      // Get persisted state for this race to get odds overrides
+      const persistedState = sessionPersistence?.getRaceState(raceIndex);
+      const oddsOverrides = persistedState?.oddsOverrides || {};
+
+      // Count scratched horses (those with isScratched flag in scored data)
+      let scratchedCount = 0;
+      for (const sh of scoredHorses) {
+        if (sh.score.isScratched) {
+          scratchedCount++;
+        }
+      }
+      scratchedCountByRace.set(raceIndex, scratchedCount);
 
       // Calculate race confidence
       const confidence = calculateRaceConfidence(scoredHorses);
       raceConfidences.set(raceIndex, confidence);
 
-      // Get top 3 horses for preview
+      // Get top 3 horses for preview (getTopHorses already filters scratched)
       const topHorses = getTopHorses(scoredHorses, 3);
       topHorsesByRace.set(raceIndex, topHorses);
 
-      // Count diamonds in this race
+      // Count diamonds in this race - use persisted odds
       const scoreMap = new Map<number, (typeof scoredHorses)[0]['score']>();
       scoredHorses.forEach((sh) => {
         scoreMap.set(sh.index, sh.score);
@@ -483,7 +512,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         race.horses,
         scoreMap,
         race.header,
-        (_index, defaultOdds) => defaultOdds // Use morning line for overview
+        (index, defaultOdds) => oddsOverrides[index] ?? defaultOdds // Use persisted odds
       );
       diamondCountByRace.set(raceIndex, diamondSummary.diamondCount);
 
@@ -506,8 +535,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
       topHorsesByRace,
       diamondCountByRace,
       eliteConnectionsCountByRace,
+      scratchedCountByRace,
     };
-  }, [parsedData, allScoredHorses]);
+  }, [parsedData, allScoredHorses, sessionPersistence]);
 
   // Calculate ranks based on BASE SCORE (not total score with overlay)
   const baseScoreRankMap = useMemo(() => {
@@ -1146,6 +1176,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               topHorsesByRace={raceOverviewData.topHorsesByRace}
               diamondCountByRace={raceOverviewData.diamondCountByRace}
               eliteConnectionsCountByRace={raceOverviewData.eliteConnectionsCountByRace}
+              scratchedCountByRace={raceOverviewData.scratchedCountByRace}
               allScoredHorses={allScoredHorses}
               onRaceSelect={handleRaceSelectFromOverview}
             />
