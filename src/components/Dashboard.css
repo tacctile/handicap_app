@@ -407,6 +407,9 @@
   width: 100%;
   max-width: none; /* Override index.css max-width: 1200px */
   min-width: 0; /* Allow flex item to shrink below content size */
+  /* Elevate stacking context above race rail so verdict bar extension is visible */
+  position: relative;
+  z-index: 1;
 }
 
 .app-main__content {
