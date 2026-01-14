@@ -189,6 +189,8 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   const getBetsForColumn = useCallback(
     (columnId: ColumnId): ScaledTopBet[] => {
       let typesToInclude: TopBetType[];
+      // WIN/PLACE/SHOW show ALL horses, exotic bets are limited to 6
+      const isWinPlaceShow = columnId === 'win' || columnId === 'place' || columnId === 'show';
 
       switch (columnId) {
         case 'win':
@@ -231,8 +233,8 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
       // Apply sorting
       filtered = sortBets(filtered, sortBy);
 
-      // Limit to reasonable number per column (6 bets)
-      return filtered.slice(0, 6);
+      // WIN/PLACE/SHOW show ALL horses, exotic bets limited to 6
+      return isWinPlaceShow ? filtered : filtered.slice(0, 6);
     },
     [allScaledBets, exactaVariant, trifectaVariant, superfectaVariant, sortBy]
   );
@@ -404,26 +406,11 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
       ? `${Math.max(0.1, rawProbability).toFixed(1)}%`
       : `${Math.round(rawProbability)}%`;
 
-  // Use rounded value for color class thresholds
-  const confidencePercent = Math.round(rawProbability);
-
-  // Determine confidence color class
-  const confidenceClass =
-    confidencePercent >= 70
-      ? 'compact-bet-card__confidence--high'
-      : confidencePercent >= 40
-        ? 'compact-bet-card__confidence--medium'
-        : 'compact-bet-card__confidence--low';
-
   return (
     <div className="compact-bet-card">
-      {/* Row 1: Horse numbers + Confidence label and value */}
+      {/* Row 1: Horse numbers (full width) */}
       <div className="compact-bet-card__header">
         <span className="compact-bet-card__horses">{horseDisplay}</span>
-        <span className={`compact-bet-card__confidence ${confidenceClass}`}>
-          <span className="compact-bet-card__label">CONFIDENCE:</span>
-          <span className="compact-bet-card__value">{confidenceDisplay}</span>
-        </span>
       </div>
 
       {/* Row 2: Cost and Payout with labels */}
@@ -440,6 +427,12 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
 
       {/* Row 3: Window script */}
       <div className="compact-bet-card__script">"{bet.scaledWhatToSay}"</div>
+
+      {/* Row 4: Confidence (plain text at bottom) */}
+      <div className="compact-bet-card__confidence">
+        <span className="compact-bet-card__label">CONFIDENCE:</span>
+        <span className="compact-bet-card__value">{confidenceDisplay}</span>
+      </div>
     </div>
   );
 };

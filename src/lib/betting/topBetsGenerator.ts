@@ -1310,6 +1310,7 @@ function getBetSubCategory(type: TopBetType): BetSubCategory {
 /**
  * Ensure diversity in top bets by including best from each bet type subcategory
  * This guarantees all 6 columns have bets, including straight variants
+ * WIN/PLACE/SHOW include ALL horses (not limited), exotic bets limited to 6
  */
 function enforceTypeDiversity(
   candidates: BetCandidate[],
@@ -1344,12 +1345,22 @@ function enforceTypeDiversity(
     bySubCategory[subCategory].sort((a, b) => b.expectedValue - a.expectedValue);
   }
 
-  // STEP 1: Ensure at least 6 bets from each subcategory for fuller columns
+  // STEP 1: Include ALL WIN/PLACE/SHOW bets (one per horse)
+  const winPlaceShowCategories: BetSubCategory[] = ['win', 'place', 'show'];
+  for (const subCategory of winPlaceShowCategories) {
+    const subCategoryBets = bySubCategory[subCategory];
+    for (const candidate of subCategoryBets) {
+      const key = makeKey(candidate);
+      if (!selected.has(key)) {
+        selected.add(key);
+        result.push(candidate);
+      }
+    }
+  }
+
+  // STEP 2: Include up to 6 bets from each exotic subcategory
   const minPerSubCategory = 6;
-  const subCategories: BetSubCategory[] = [
-    'win',
-    'place',
-    'show',
+  const exoticCategories: BetSubCategory[] = [
     'exacta_straight',
     'exacta_box',
     'trifecta_straight',
@@ -1360,7 +1371,7 @@ function enforceTypeDiversity(
     'superfecta_key',
   ];
 
-  for (const subCategory of subCategories) {
+  for (const subCategory of exoticCategories) {
     const subCategoryBets = bySubCategory[subCategory];
     let count = 0;
     for (const candidate of subCategoryBets) {
@@ -1374,7 +1385,7 @@ function enforceTypeDiversity(
     }
   }
 
-  // STEP 2: Fill remaining slots with highest EV bets
+  // STEP 3: Fill remaining slots with highest EV bets (if under target)
   const allSorted = [...candidates].sort((a, b) => b.expectedValue - a.expectedValue);
 
   for (const candidate of allSorted) {
@@ -1386,8 +1397,8 @@ function enforceTypeDiversity(
     }
   }
 
-  // Final sort by EV
-  return result.sort((a, b) => b.expectedValue - a.expectedValue).slice(0, targetCount);
+  // Final sort by EV (no slice - allow all bets through)
+  return result.sort((a, b) => b.expectedValue - a.expectedValue);
 }
 
 // ============================================================================
