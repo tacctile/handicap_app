@@ -383,7 +383,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       (i) => raceState.isScratched(i),
       raceState.trackCondition
     );
-  }, [parsedData, selectedRaceIndex, raceState]);
+  }, [parsedData, selectedRaceIndex, raceState.updatedOdds, raceState.scratchedHorses, raceState.trackCondition, raceState.getOdds, raceState.isScratched]);
 
   // Calculate scored horses for ALL races (for day planning mode)
   // Uses original odds (not live updates) for consistent planning
@@ -470,10 +470,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }, [currentRaceScoredHorses]);
 
   // Value detection analysis for the current race
+  // Pass stable callbacks directly to avoid unnecessary recalculations
   const valueAnalysis = useValueDetection(
     currentRaceScoredHorses,
-    (index, originalOdds) => raceState.getOdds(index, originalOdds),
-    (index) => raceState.isScratched(index)
+    raceState.getOdds,
+    raceState.isScratched
   );
 
   // Create a set of value play horse indices for quick lookup
@@ -555,7 +556,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     sortColumn,
     sortDirection,
     valueAnalysis.valuePlays,
-    raceState,
+    raceState.getOdds,
     baseScoreRankMap,
   ]);
 
