@@ -1,8 +1,9 @@
 /**
- * Top Bets View Styles - 6-Column Layout
+ * Top Bets View Styles - 7-Column Layout
  *
- * Clean, minimal design with 6 bet type columns.
- * Responsive: 6 cols desktop, 3x2 tablet, stacked mobile.
+ * Clean, minimal design with 7 bet type columns.
+ * Columns: WIN, PLACE, SHOW, EXACTA, TRIFECTA, SUPERFECTA, YOUR BETS
+ * Responsive: 7 cols desktop, 4+3 tablet, stacked mobile.
  */
 
 /* ============================================
@@ -238,13 +239,13 @@
 }
 
 /* ============================================
-   6-COLUMN GRID
+   7-COLUMN GRID (Equal Width)
    ============================================ */
 
 .top-bets-columns {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(7, 1fr); /* 7 equal columns (~14.28% each) */
   gap: 1px;
   background: var(--color-border);
   overflow-y: hidden;
@@ -404,22 +405,17 @@
   border-bottom: 1px solid #2a2a2c;
 }
 
-/* Cost and payout stats row */
+/* Cost stats row (payout removed - based on inaccurate odds) */
 .compact-bet-card__stats {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 8px;
   padding: 10px 10px;
   border-bottom: 1px solid #2a2a2c;
 }
 
 .compact-bet-card__cost {
-  display: flex;
-  align-items: center;
-}
-
-.compact-bet-card__payout {
   display: flex;
   align-items: center;
 }
@@ -436,18 +432,109 @@
 }
 
 /* ============================================
-   RESPONSIVE: TABLET (3 columns x 2 rows)
+   YOUR BETS COLUMN (Placeholder - Phase 1)
    ============================================ */
 
-@media (max-width: 1024px) {
+.top-bets-column--your-bets {
+  background: rgba(25, 171, 181, 0.03); /* Slightly tinted background */
+}
+
+.top-bets-column--your-bets .top-bets-column__header {
+  border-left: 2px solid var(--color-primary); /* Accent left border */
+}
+
+.your-bets-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+  height: 100%;
+  min-height: 200px;
+}
+
+.your-bets-placeholder__text {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+/* ============================================
+   RESPONSIVE: TABLET LANDSCAPE (All 7 columns, tighter)
+   ============================================ */
+
+@media (max-width: 1279px) and (min-width: 1024px) {
   .top-bets-columns {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(7, 1fr); /* Keep all 7 columns */
+  }
+
+  .top-bets-column__header {
+    padding: 10px 6px;
+    height: 50px;
+  }
+
+  .top-bets-column__title {
+    font-size: 10px;
+  }
+
+  .top-bets-column__dropdown {
+    font-size: 9px;
+    padding: 3px 18px 3px 5px;
+    min-width: 55px;
+  }
+
+  .compact-bet-card {
+    margin: 6px 4px;
+    min-height: 85px;
+  }
+
+  .compact-bet-card__header,
+  .compact-bet-card__stats,
+  .compact-bet-card__confidence,
+  .compact-bet-card__script {
+    padding: 8px 6px;
+  }
+
+  .compact-bet-card__horses {
+    font-size: 12px;
+  }
+
+  .compact-bet-card__label,
+  .compact-bet-card__value,
+  .compact-bet-card__script {
+    font-size: 10px;
+  }
+
+  .your-bets-placeholder {
+    padding: 24px 8px;
+  }
+
+  .your-bets-placeholder__text {
+    font-size: 10px;
+  }
+}
+
+/* ============================================
+   RESPONSIVE: TABLET PORTRAIT (4+3 row layout)
+   ============================================ */
+
+@media (max-width: 1023px) and (min-width: 769px) {
+  .top-bets-columns {
+    grid-template-columns: repeat(4, 1fr);
     grid-template-rows: auto auto;
+  }
+
+  /* YOUR BETS column spans 1 column in second row */
+  .top-bets-column--your-bets {
+    grid-column: 4;
+    grid-row: 2;
   }
 
   .top-bets-column__header {
     padding: 10px 8px;
-    height: 50px; /* Fixed height ensures all columns match at tablet size */
+    height: 50px;
   }
 
   .top-bets-column__title {
@@ -475,10 +562,15 @@
   .compact-bet-card__script {
     font-size: 11px;
   }
+
+  .your-bets-placeholder {
+    padding: 24px 12px;
+    min-height: 150px;
+  }
 }
 
 /* ============================================
-   RESPONSIVE: SMALL TABLET (2 columns x 3 rows)
+   RESPONSIVE: SMALL TABLET (2 columns x 4 rows)
    ============================================ */
 
 @media (max-width: 768px) {
@@ -509,7 +601,12 @@
 
   .top-bets-columns {
     grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: auto auto auto;
+    grid-template-rows: auto auto auto auto; /* 4 rows for 7 columns */
+  }
+
+  /* YOUR BETS column takes full width at bottom */
+  .top-bets-column--your-bets {
+    grid-column: 1 / -1;
   }
 
   .top-bets-column__dropdown {
@@ -523,15 +620,13 @@
     margin: 6px 4px;
   }
 
-  .compact-bet-card__stats {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
+  .your-bets-placeholder {
+    min-height: 80px;
   }
 }
 
 /* ============================================
-   RESPONSIVE: MOBILE (1 column, horizontal scroll option)
+   RESPONSIVE: MOBILE (1 column, stacked)
    ============================================ */
 
 @media (max-width: 540px) {
@@ -547,6 +642,11 @@
 
   .top-bets-column:last-child {
     border-bottom: none;
+  }
+
+  /* YOUR BETS column at bottom */
+  .top-bets-column--your-bets {
+    grid-column: 1;
   }
 
   .top-bets-column__header {
@@ -582,21 +682,21 @@
     font-size: 12px;
   }
 
-  .compact-bet-card__stats {
-    flex-direction: row;
-    justify-content: space-between;
-  }
-
   .top-bets-base-btn {
     padding: 5px 10px;
     font-size: 12px;
     min-width: 36px;
   }
+
+  .your-bets-placeholder {
+    min-height: 60px;
+    padding: 16px 12px;
+  }
 }
 
 /* ============================================
    MOBILE: HORIZONTAL SCROLL ALTERNATIVE
-   (Uncomment to use instead of stacked)
+   (Uncomment to use instead of stacked - for 7 columns)
    ============================================ */
 
 /*
@@ -624,6 +724,10 @@
 
   .top-bets-column:last-child {
     border-right: none;
+  }
+
+  .top-bets-column--your-bets {
+    flex: 0 0 80%;
   }
 
   .top-bets-column__list {
