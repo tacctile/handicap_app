@@ -109,10 +109,29 @@
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 4px 0;
+  padding: 4px 12px;
   margin: 0 8px;
-  border-left: 1px solid var(--color-border);
-  border-right: 1px solid var(--color-border);
+  position: relative;
+}
+
+/* Left and right border dividers - same height as column dividers */
+.top-bets-controls__horses::before,
+.top-bets-controls__horses::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 80px;
+  background: var(--color-border);
+}
+
+.top-bets-controls__horses::before {
+  left: 0;
+}
+
+.top-bets-controls__horses::after {
+  right: 0;
 }
 
 .top-bets-controls__horse {
