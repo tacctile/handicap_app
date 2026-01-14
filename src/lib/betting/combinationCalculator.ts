@@ -5,31 +5,9 @@
  * Also generates "what to say at window" scripts.
  */
 
-import type { BetType } from './betTypes';
-
 // ============================================================================
 // COMBINATION CALCULATIONS
 // ============================================================================
-
-/**
- * Calculate the factorial of a number
- */
-function factorial(n: number): number {
-  if (n <= 1) return 1;
-  let result = 1;
-  for (let i = 2; i <= n; i++) {
-    result *= i;
-  }
-  return result;
-}
-
-/**
- * Calculate permutations P(n, r) = n! / (n-r)!
- */
-function permutations(n: number, r: number): number {
-  if (n < r) return 0;
-  return factorial(n) / factorial(n - r);
-}
 
 /**
  * Calculate number of combinations for any bet type
@@ -229,13 +207,13 @@ export function parseOdds(oddsStr: string): number {
 
   // Handle "X-1" format
   const match = oddsStr.match(/(\d+(?:\.\d+)?)-1/);
-  if (match) {
+  if (match && match[1]) {
     return parseFloat(match[1]);
   }
 
   // Handle "X/Y" format
   const fractionMatch = oddsStr.match(/(\d+)\/(\d+)/);
-  if (fractionMatch) {
+  if (fractionMatch && fractionMatch[1] && fractionMatch[2]) {
     return parseFloat(fractionMatch[1]) / parseFloat(fractionMatch[2]);
   }
 

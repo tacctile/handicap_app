@@ -18,13 +18,11 @@ import {
   calculateTotalCost,
   calculatePotentialReturn,
   generateWindowScript,
-  generateAllBetsScript,
   parseOdds,
   type Horse,
 } from '../../lib/betting/combinationCalculator';
 import {
   BET_TYPE_DEFINITIONS,
-  generateWhyThisBet,
   getValueLabel,
   VALUE_LABEL_EXPLANATIONS,
   getBettingAdvice,
@@ -151,7 +149,6 @@ export const BetBuilderWizard: React.FC<BetBuilderWizardProps> = ({
   const [isOverrideMode, setIsOverrideMode] = useState(false);
   const [copyAllSuccess, setCopyAllSuccess] = useState(false);
   const [copiedBetId, setCopiedBetId] = useState<string | null>(null);
-  const [expandedBetId, setExpandedBetId] = useState<string | null>(null);
 
   // ============================================================================
   // DERIVED DATA
@@ -357,35 +354,37 @@ export const BetBuilderWizard: React.FC<BetBuilderWizardProps> = ({
   // Helper function to create a bet
   function createBet(
     betType: string,
-    horses: Horse[],
+    horses: (Horse | undefined)[],
     amount: number,
     risk: RiskLevel
   ): WizardBet | null {
-    if (horses.length === 0 || amount < 1) return null;
+    // Filter out undefined horses
+    const validHorses = horses.filter((h): h is Horse => h !== undefined);
+    if (validHorses.length === 0 || amount < 1) return null;
 
-    const horseNumbers = horses.map((h) => h.programNumber);
-    const keyHorseCount = betType.includes('KEY') ? horses.length - 1 : undefined;
-    const combinations = calculateCombinations(betType, horses.length, keyHorseCount);
+    const horseNumbers = validHorses.map((h) => h.programNumber);
+    const keyHorseCount = betType.includes('KEY') ? validHorses.length - 1 : undefined;
+    const combinations = calculateCombinations(betType, validHorses.length, keyHorseCount);
     const totalCost = calculateTotalCost(combinations, amount);
-    const potentialReturn = calculatePotentialReturn(betType, horses, amount, combinations);
+    const potentialReturn = calculatePotentialReturn(betType, validHorses, amount, combinations);
     const whatToSay = generateWindowScript(betType, horseNumbers, amount);
 
-    const primaryHorse = horses[0];
+    const primaryHorse = validHorses[0];
     const definition = BET_TYPE_DEFINITIONS[betType];
 
     // Generate "why this bet" explanation
     let whyThisBet = '';
-    if (valuePlay && horses.some((h) => h.programNumber === valuePlay.programNumber)) {
-      const valueLabel = getValueLabel(valuePlay.valueEdge);
+    if (primaryHorse && valuePlay && validHorses.some((h) => h.programNumber === valuePlay.programNumber)) {
+      const valueLabelKey = getValueLabel(valuePlay.valueEdge);
       whyThisBet = `${primaryHorse.horseName} is Furlong's #${primaryHorse.rank} projected finisher with a +${Math.round(valuePlay.valueEdge)}% edge. `;
       whyThisBet += `Current odds are ${primaryHorse.currentOdds} but our analysis says fair odds are ${Math.round(100 / valuePlay.modelWinProb) - 1}-1. `;
-      whyThisBet += VALUE_LABEL_EXPLANATIONS[valueLabel] + ' ';
+      whyThisBet += VALUE_LABEL_EXPLANATIONS[valueLabelKey] + ' ';
       whyThisBet += risk === 'safe'
         ? `This fits your safe approach — ${primaryHorse.horseName} is a top contender with solid fundamentals.`
         : risk === 'balanced'
         ? `This balances risk and reward — ${primaryHorse.horseName} has upside without being a pure gamble.`
         : `This fits your aggressive style — ${primaryHorse.horseName} is a longshot but the edge is massive.`;
-    } else {
+    } else if (primaryHorse) {
       whyThisBet = `${primaryHorse.horseName} is Furlong's #${primaryHorse.rank} ranked horse. `;
       whyThisBet += definition?.definition || '';
     }
@@ -393,7 +392,7 @@ export const BetBuilderWizard: React.FC<BetBuilderWizardProps> = ({
     return {
       id: `${betType}-${horseNumbers.join('-')}-${Date.now()}`,
       betType,
-      horses,
+      horses: validHorses,
       amount,
       combinations,
       totalCost,
@@ -529,10 +528,6 @@ export const BetBuilderWizard: React.FC<BetBuilderWizardProps> = ({
   const handleResetToFurlong = () => {
     generateSuggestedBets();
     setIsOverrideMode(false);
-  };
-
-  const toggleBetExpand = (betId: string) => {
-    setExpandedBetId((prev) => (prev === betId ? null : betId));
   };
 
   // ============================================================================
@@ -792,7 +787,7 @@ export const BetBuilderWizard: React.FC<BetBuilderWizardProps> = ({
 
                   <div className="bet-builder-wizard__bet-horses">
                     #{bet.horses.map((h) => h.programNumber).join(', #')}{' '}
-                    {bet.horses.length === 1 && bet.horses[0].horseName}
+                    {bet.horses.length === 1 && bet.horses[0]?.horseName}
                   </div>
 
                   {bet.combinations > 1 && (
@@ -887,7 +882,6 @@ export const BetBuilderWizard: React.FC<BetBuilderWizardProps> = ({
                 const isSelected = selectedHorses.has(horse.programNumber);
                 const isValuePlay = valuePlay?.programNumber === horse.programNumber;
                 const edge = valuePlay && isValuePlay ? valuePlay.valueEdge : 0;
-                const valueLabel = getValueLabel(edge);
 
                 return (
                   <button
