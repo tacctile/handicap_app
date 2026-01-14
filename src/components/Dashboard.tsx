@@ -226,8 +226,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   isLoading = false,
   onParsed,
   sessionPersistence,
-  onResetRace,
-  onResetAllRaces,
+  onResetRace: _onResetRace,
+  onResetAllRaces: _onResetAllRaces,
 }) => {
   // View mode state: 'overview' (default after parse), 'analysis', 'betMode', or 'topBets'
   const [viewMode, setViewMode] = useState<'overview' | 'analysis' | 'betMode' | 'topBets'>(
