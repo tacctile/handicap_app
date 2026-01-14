@@ -1142,86 +1142,92 @@ function generateSuperfectaBox5Bets(horses: HorseProb[]): BetCandidate[] {
 // ============================================================================
 
 /**
- * Ensure diversity in top 25 by including best from each tier
+ * Bet type categories for diversity enforcement
+ */
+type BetCategory = 'win' | 'place' | 'show' | 'exacta' | 'trifecta' | 'superfecta';
+
+/**
+ * Get the category for a bet type
+ */
+function getBetCategory(type: TopBetType): BetCategory {
+  switch (type) {
+    case 'WIN':
+      return 'win';
+    case 'PLACE':
+      return 'place';
+    case 'SHOW':
+      return 'show';
+    case 'QUINELLA':
+    case 'EXACTA_STRAIGHT':
+    case 'EXACTA_BOX_2':
+    case 'EXACTA_BOX_3':
+      return 'exacta';
+    case 'TRIFECTA_STRAIGHT':
+    case 'TRIFECTA_BOX_3':
+    case 'TRIFECTA_BOX_4':
+    case 'TRIFECTA_KEY':
+      return 'trifecta';
+    case 'SUPERFECTA_BOX_4':
+    case 'SUPERFECTA_BOX_5':
+      return 'superfecta';
+    default:
+      return 'exacta';
+  }
+}
+
+/**
+ * Ensure diversity in top bets by including best from each bet type category
+ * This guarantees all 6 columns (WIN, PLACE, SHOW, EXACTA, TRIFECTA, SUPERFECTA) have bets
  */
 function enforceTypeDiversity(
   candidates: BetCandidate[],
   targetCount: number = 25
 ): BetCandidate[] {
-  // Group by risk tier
-  const conservative = candidates
-    .filter((c) => determineRiskTier(c.probability) === 'Conservative')
-    .sort((a, b) => b.expectedValue - a.expectedValue);
-
-  const moderate = candidates
-    .filter((c) => determineRiskTier(c.probability) === 'Moderate')
-    .sort((a, b) => b.expectedValue - a.expectedValue);
-
-  const aggressive = candidates
-    .filter((c) => determineRiskTier(c.probability) === 'Aggressive')
-    .sort((a, b) => b.expectedValue - a.expectedValue);
-
-  // Start with top EV overall
-  const allSorted = [...candidates].sort((a, b) => b.expectedValue - a.expectedValue);
   const selected = new Set<string>();
   const result: BetCandidate[] = [];
-
   const makeKey = (c: BetCandidate) => `${c.type}-${c.horseIndices.join(',')}`;
 
-  // Add top 15 by pure EV
-  for (const candidate of allSorted) {
-    if (result.length >= 15) break;
-    const key = makeKey(candidate);
-    if (!selected.has(key)) {
-      selected.add(key);
-      result.push(candidate);
+  // Group by bet category and sort each group by EV
+  const byCategory: Record<BetCategory, BetCandidate[]> = {
+    win: [],
+    place: [],
+    show: [],
+    exacta: [],
+    trifecta: [],
+    superfecta: [],
+  };
+
+  for (const candidate of candidates) {
+    const category = getBetCategory(candidate.type);
+    byCategory[category].push(candidate);
+  }
+
+  // Sort each category by EV
+  for (const category of Object.keys(byCategory) as BetCategory[]) {
+    byCategory[category].sort((a, b) => b.expectedValue - a.expectedValue);
+  }
+
+  // STEP 1: Ensure at least 3 bets from each category for the 6-column layout
+  const minPerCategory = 3;
+  const categories: BetCategory[] = ['win', 'place', 'show', 'exacta', 'trifecta', 'superfecta'];
+
+  for (const category of categories) {
+    const categoryBets = byCategory[category];
+    let count = 0;
+    for (const candidate of categoryBets) {
+      if (count >= minPerCategory) break;
+      const key = makeKey(candidate);
+      if (!selected.has(key)) {
+        selected.add(key);
+        result.push(candidate);
+        count++;
+      }
     }
   }
 
-  // Ensure at least 3 conservative
-  let conservativeCount = result.filter(
-    (c) => determineRiskTier(c.probability) === 'Conservative'
-  ).length;
+  // STEP 2: Fill remaining slots with highest EV bets
+  const allSorted = [...candidates].sort((a, b) => b.expectedValue - a.expectedValue);
 
-  for (const candidate of conservative) {
-    if (conservativeCount >= 3) break;
-    const key = makeKey(candidate);
-    if (!selected.has(key)) {
-      selected.add(key);
-      result.push(candidate);
-      conservativeCount++;
-    }
-  }
-
-  // Ensure at least 3 moderate
-  let moderateCount = result.filter((c) => determineRiskTier(c.probability) === 'Moderate').length;
-
-  for (const candidate of moderate) {
-    if (moderateCount >= 3) break;
-    const key = makeKey(candidate);
-    if (!selected.has(key)) {
-      selected.add(key);
-      result.push(candidate);
-      moderateCount++;
-    }
-  }
-
-  // Ensure at least 3 aggressive
-  let aggressiveCount = result.filter(
-    (c) => determineRiskTier(c.probability) === 'Aggressive'
-  ).length;
-
-  for (const candidate of aggressive) {
-    if (aggressiveCount >= 3) break;
-    const key = makeKey(candidate);
-    if (!selected.has(key)) {
-      selected.add(key);
-      result.push(candidate);
-      aggressiveCount++;
-    }
-  }
-
-  // Fill remaining from sorted list
   for (const candidate of allSorted) {
     if (result.length >= targetCount) break;
     const key = makeKey(candidate);
