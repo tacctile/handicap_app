@@ -104,7 +104,7 @@
   display: grid;
   grid-template-rows: repeat(3, auto);
   grid-auto-flow: column;
-  grid-auto-columns: 175px;
+  grid-auto-columns: 200px;
   gap: 2px 0;
   min-width: 0;
   overflow-x: auto;
@@ -123,11 +123,19 @@
   font-size: 12px;
   line-height: 1.5;
   padding: 0 12px;
+  position: relative;
 }
 
-/* Vertical dividers between columns (every 3rd item starts a new column) */
-.top-bets-controls__horse:nth-child(3n+1):not(:first-child) {
-  border-left: 1px solid var(--color-border);
+/* Vertical dividers between columns - full height using pseudo-element */
+.top-bets-controls__horse:nth-child(3n+1):not(:first-child)::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 54px;
+  background: var(--color-border);
 }
 
 .top-bets-controls__horse-num {
