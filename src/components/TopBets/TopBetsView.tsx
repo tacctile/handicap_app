@@ -72,10 +72,25 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   // GENERATE TOP BETS
   // ============================================================================
 
+  // Calculate derived state to ensure reactivity when scratches/odds change
+  // These values change when user modifies race state in Analysis mode
+  const scratchedCount = useMemo(
+    () => scoredHorses.filter((h) => isScratched(h.index) || h.score.isScratched).length,
+    [scoredHorses, isScratched]
+  );
+
+  // Create a stable key that changes when odds are modified
+  // This ensures the useMemo below reruns when odds change
+  const oddsSignature = useMemo(() => {
+    return scoredHorses
+      .map((h) => `${h.index}:${getOdds(h.index, h.horse.morningLineOdds)}`)
+      .join('|');
+  }, [scoredHorses, getOdds]);
+
   const topBetsResult: TopBetsResult | null = useMemo(() => {
     if (scoredHorses.length === 0) return null;
     return generateTopBets(scoredHorses, raceHeader, raceNumber, getOdds, isScratched);
-  }, [scoredHorses, raceHeader, raceNumber, getOdds, isScratched]);
+  }, [scoredHorses, raceHeader, raceNumber, getOdds, isScratched, scratchedCount, oddsSignature]);
 
   // ============================================================================
   // SORT AND SCALE BETS
