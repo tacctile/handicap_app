@@ -22,10 +22,17 @@
   grid-template-columns: 1fr;
 }
 
-/* Left zone: contains top bar, race rail + main content, bottom bar */
+/* Left zone: contains top bar, verdict bar, column header, race rail + main content, bottom bar */
+/* Grid rows:
+   Row 1: topbar (var(--bar-height))
+   Row 2: verdict bar (auto - collapses when not shown)
+   Row 3: column header (auto - collapses when not shown)
+   Row 4: main content (1fr)
+   Row 5: bottombar (var(--bar-height))
+*/
 .app-left-zone {
   display: grid;
-  grid-template-rows: var(--bar-height) 1fr var(--bar-height);
+  grid-template-rows: var(--bar-height) auto auto 1fr var(--bar-height);
   grid-template-columns: var(--dimension-bar) 1fr;
   overflow: hidden;
   transition: width var(--transition-normal);
@@ -235,6 +242,31 @@
 }
 
 /* ============================================
+   VERDICT BAR - Grid positioned, spans full width
+   ============================================ */
+
+/* Grid-based verdict bar - spans full width of left zone */
+.app-layout .race-verdict-header {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  z-index: 20; /* Below topbar (30), above column headers (10) */
+}
+
+/* ============================================
+   COLUMN HEADER BAR - Grid positioned, spans full width
+   ============================================ */
+
+/* Grid-based column header - spans full width of left zone */
+.app-layout .horse-list-header {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  z-index: 10; /* Below verdict bar (20), above content */
+  /* Remove old sticky positioning since now using grid */
+  position: static;
+  top: auto;
+}
+
+/* ============================================
    APP BODY - Main + Betting Panel
    ============================================ */
 
@@ -248,18 +280,18 @@
    LEFT RACE RAIL
    ============================================ */
 
-/* Grid-based race rail - left column */
+/* Grid-based race rail - left column, row 4 (below verdict bar and column header) */
 .app-layout .app-race-rail {
   grid-column: 1;
-  grid-row: 2;
+  grid-row: 4;
   width: var(--dimension-bar);
   background: var(--color-card);
   border-right: 1px solid var(--color-border);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  /* Offset = verdict bar height (48px) + column headers height (48px) = 96px */
-  padding-top: calc(var(--bar-height, 48px) * 2);
+  /* No padding-top needed - verdict bar and column header are separate grid rows */
+  padding-top: 0;
   position: relative;
 }
 
@@ -390,15 +422,15 @@
    MAIN CONTENT AREA
    ============================================ */
 
-/* Grid-based main content */
+/* Grid-based main content - row 4 (below verdict bar and column header) */
 .app-layout .app-main {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 4;
   flex: 1;
   display: flex;
   flex-direction: column;
-  /* Allow horizontal overflow for full-width bars in Analysis mode */
-  overflow-x: visible;
+  /* No need for overflow-x: visible - headers are now separate grid elements */
+  overflow-x: hidden;
   overflow-y: hidden;
   background: var(--color-base);
   padding: 0;
@@ -413,8 +445,8 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  /* Allow horizontal overflow for full-width sticky bars (verdict + column headers) */
-  overflow-x: visible;
+  /* Headers are now separate grid elements, no need for overflow-x: visible */
+  overflow-x: hidden;
   padding: 0; /* NO padding - content goes to edges */
   padding-bottom: 56px; /* Space for footer (48px) + small buffer */
   margin: 0;
@@ -506,10 +538,10 @@
    BOTTOM BAR
    ============================================ */
 
-/* Grid-based bottombar - spans full width of left zone */
+/* Grid-based bottombar - spans full width of left zone, row 5 */
 .app-layout .app-bottombar {
   grid-column: 1 / -1;
-  grid-row: 3;
+  grid-row: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1260,7 +1292,7 @@
 
 /* ============================================
    HORSE LIST HEADER - Sortable Column Headers
-   Height: --bar-height (48px), sticky below verdict bar
+   Height: --bar-height (48px), grid positioned row 3
    ============================================ */
 
 .horse-list-header {
@@ -1271,18 +1303,16 @@
   gap: 16px;
   padding: 0 16px;
   margin: 0;
-  /* Extend to left edge - covers race rail area */
-  margin-left: calc(-1 * var(--dimension-bar, 64px));
+  /* No negative margin hacks needed - spans full grid via grid-column: 1 / -1 */
   padding-left: 0; /* No padding - races label uses the left space */
   /* CRITICAL: solid opaque background to prevent content bleed-through */
   background-color: #1a1a1c; /* Solid hex, no transparency */
   border-bottom: 1px solid var(--color-border);
-  position: sticky;
-  top: var(--bar-height, 48px); /* Sticky below verdict bar */
-  z-index: 10; /* Above horse content (0), below verdict bar (20) */
+  /* Grid positioning is handled by .app-layout .horse-list-header above */
+  /* z-index is handled by grid positioning CSS above */
   height: var(--bar-height, 48px);
   min-height: var(--bar-height, 48px);
-  width: calc(100% + var(--dimension-bar, 64px));
+  width: 100%;
   min-width: 0;
 }
 

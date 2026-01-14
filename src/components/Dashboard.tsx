@@ -906,6 +906,145 @@ export const Dashboard: React.FC<DashboardProps> = ({
           )}
         </header>
 
+        {/* Race Verdict Header - Direct child of grid, spans full width */}
+        {/* Only shown in analysis mode with scored horses */}
+        {viewMode === 'analysis' && parsedData && currentRaceScoredHorses?.length > 0 && (
+          <RaceVerdictHeader
+            valueAnalysis={valueAnalysis}
+            raceNumber={selectedRaceIndex + 1}
+            onValuePlayClick={scrollToHorse}
+          />
+        )}
+
+        {/* Column Headers - Direct child of grid, spans full width */}
+        {/* Only shown in analysis mode with scored horses */}
+        {viewMode === 'analysis' && parsedData && currentRaceScoredHorses?.length > 0 && (
+          <div className="horse-list-header">
+            {/* Column 0: RACES label - positioned above race rail */}
+            <div className="horse-list-header__cell horse-list-header__cell--races-label">
+              <span className="horse-list-header__races-text">RACES</span>
+            </div>
+
+            {/* Column 1: Help button */}
+            <div className="horse-list-header__cell horse-list-header__cell--icons">
+              <button
+                type="button"
+                className="help-trigger-btn"
+                onClick={() => setHelpModalOpen(true)}
+                aria-label="How to read the form"
+                title="How to Read the Form"
+              >
+                <span className="material-icons">help_outline</span>
+              </button>
+            </div>
+
+            {/* Column 2: POST - Sortable */}
+            <div
+              className={`horse-list-header__cell horse-list-header__cell--pp horse-list-header__cell--sortable ${sortColumn === 'POST' ? 'horse-list-header__cell--active' : ''}`}
+              onClick={() => handleColumnSort('POST')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('POST')}
+            >
+              <span className="horse-list-header__label">
+                POST
+                <span
+                  className={`horse-list-header__arrow ${sortColumn === 'POST' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
+                >
+                  {sortColumn === 'POST' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                </span>
+              </span>
+            </div>
+
+            {/* Column 3: Horse Name - NOT sortable */}
+            <div className="horse-list-header__cell horse-list-header__cell--name">
+              <span className="horse-list-header__label">HORSE</span>
+            </div>
+
+            {/* Column 4: RANK - Sortable */}
+            <div
+              className={`horse-list-header__cell horse-list-header__cell--rank horse-list-header__cell--sortable ${sortColumn === 'RANK' ? 'horse-list-header__cell--active' : ''}`}
+              onClick={() => handleColumnSort('RANK')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('RANK')}
+            >
+              <span className="horse-list-header__label">
+                RANK
+                <span
+                  className={`horse-list-header__arrow ${sortColumn === 'RANK' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
+                >
+                  {sortColumn === 'RANK' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                </span>
+              </span>
+            </div>
+
+            {/* Column 5: ODDS - Sortable */}
+            <div
+              className={`horse-list-header__cell horse-list-header__cell--odds horse-list-header__cell--sortable ${sortColumn === 'ODDS' ? 'horse-list-header__cell--active' : ''}`}
+              onClick={() => handleColumnSort('ODDS')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('ODDS')}
+            >
+              <span className="horse-list-header__label">
+                ODDS
+                <span
+                  className={`horse-list-header__arrow ${sortColumn === 'ODDS' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
+                >
+                  {sortColumn === 'ODDS' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                </span>
+              </span>
+            </div>
+
+            {/* Column 6: FAIR - Sortable */}
+            <div
+              className={`horse-list-header__cell horse-list-header__cell--fair-odds horse-list-header__cell--sortable ${sortColumn === 'FAIR' ? 'horse-list-header__cell--active' : ''}`}
+              onClick={() => handleColumnSort('FAIR')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('FAIR')}
+            >
+              <span className="horse-list-header__label">
+                FAIR
+                <span
+                  className={`horse-list-header__arrow ${sortColumn === 'FAIR' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
+                >
+                  {sortColumn === 'FAIR' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                </span>
+              </span>
+            </div>
+
+            {/* Column 7: EDGE - Sortable */}
+            <div
+              className={`horse-list-header__cell horse-list-header__cell--edge horse-list-header__cell--sortable ${sortColumn === 'EDGE' ? 'horse-list-header__cell--active' : ''}`}
+              onClick={() => handleColumnSort('EDGE')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('EDGE')}
+            >
+              <span className="horse-list-header__label">
+                EDGE
+                <span
+                  className={`horse-list-header__arrow ${sortColumn === 'EDGE' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
+                >
+                  {sortColumn === 'EDGE' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                </span>
+              </span>
+            </div>
+
+            {/* Column 8: VALUE - NOT sortable */}
+            <div className="horse-list-header__cell horse-list-header__cell--value">
+              <span className="horse-list-header__label">VALUE</span>
+            </div>
+
+            {/* Column 9: Expand */}
+            <div className="horse-list-header__cell horse-list-header__cell--expand">
+              {/* Empty */}
+            </div>
+          </div>
+        )}
+
         {/* Race Rail - Hidden in overview mode since RaceOverview serves that purpose */}
         {viewMode !== 'overview' && (
           <aside
@@ -1005,139 +1144,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
               ) : (
                 <div className="horse-list" ref={horseListRef}>
-                  {/* Race Verdict Header - Shows BET/CAUTION/PASS verdict */}
-                  <RaceVerdictHeader
-                    valueAnalysis={valueAnalysis}
-                    raceNumber={selectedRaceIndex + 1}
-                    onValuePlayClick={scrollToHorse}
-                  />
-
-                  {/* Column Headers - Sortable: POST, RANK, ODDS, FAIR, EDGE | Non-sortable: HORSE, VALUE */}
-                  <div className="horse-list-header">
-                    {/* Column 0: RACES label - positioned above race rail */}
-                    <div className="horse-list-header__cell horse-list-header__cell--races-label">
-                      <span className="horse-list-header__races-text">RACES</span>
-                    </div>
-
-                    {/* Column 1: Help button */}
-                    <div className="horse-list-header__cell horse-list-header__cell--icons">
-                      <button
-                        type="button"
-                        className="help-trigger-btn"
-                        onClick={() => setHelpModalOpen(true)}
-                        aria-label="How to read the form"
-                        title="How to Read the Form"
-                      >
-                        <span className="material-icons">help_outline</span>
-                      </button>
-                    </div>
-
-                    {/* Column 2: POST - Sortable */}
-                    <div
-                      className={`horse-list-header__cell horse-list-header__cell--pp horse-list-header__cell--sortable ${sortColumn === 'POST' ? 'horse-list-header__cell--active' : ''}`}
-                      onClick={() => handleColumnSort('POST')}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('POST')}
-                    >
-                      <span className="horse-list-header__label">
-                        POST
-                        <span
-                          className={`horse-list-header__arrow ${sortColumn === 'POST' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
-                        >
-                          {sortColumn === 'POST' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
-                        </span>
-                      </span>
-                    </div>
-
-                    {/* Column 3: Horse Name - NOT sortable */}
-                    <div className="horse-list-header__cell horse-list-header__cell--name">
-                      <span className="horse-list-header__label">HORSE</span>
-                    </div>
-
-                    {/* Column 4: RANK - Sortable */}
-                    <div
-                      className={`horse-list-header__cell horse-list-header__cell--rank horse-list-header__cell--sortable ${sortColumn === 'RANK' ? 'horse-list-header__cell--active' : ''}`}
-                      onClick={() => handleColumnSort('RANK')}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('RANK')}
-                    >
-                      <span className="horse-list-header__label">
-                        RANK
-                        <span
-                          className={`horse-list-header__arrow ${sortColumn === 'RANK' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
-                        >
-                          {sortColumn === 'RANK' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
-                        </span>
-                      </span>
-                    </div>
-
-                    {/* Column 5: ODDS - Sortable */}
-                    <div
-                      className={`horse-list-header__cell horse-list-header__cell--odds horse-list-header__cell--sortable ${sortColumn === 'ODDS' ? 'horse-list-header__cell--active' : ''}`}
-                      onClick={() => handleColumnSort('ODDS')}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('ODDS')}
-                    >
-                      <span className="horse-list-header__label">
-                        ODDS
-                        <span
-                          className={`horse-list-header__arrow ${sortColumn === 'ODDS' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
-                        >
-                          {sortColumn === 'ODDS' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
-                        </span>
-                      </span>
-                    </div>
-
-                    {/* Column 6: FAIR - Sortable */}
-                    <div
-                      className={`horse-list-header__cell horse-list-header__cell--fair-odds horse-list-header__cell--sortable ${sortColumn === 'FAIR' ? 'horse-list-header__cell--active' : ''}`}
-                      onClick={() => handleColumnSort('FAIR')}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('FAIR')}
-                    >
-                      <span className="horse-list-header__label">
-                        FAIR
-                        <span
-                          className={`horse-list-header__arrow ${sortColumn === 'FAIR' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
-                        >
-                          {sortColumn === 'FAIR' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
-                        </span>
-                      </span>
-                    </div>
-
-                    {/* Column 7: EDGE - Sortable */}
-                    <div
-                      className={`horse-list-header__cell horse-list-header__cell--edge horse-list-header__cell--sortable ${sortColumn === 'EDGE' ? 'horse-list-header__cell--active' : ''}`}
-                      onClick={() => handleColumnSort('EDGE')}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('EDGE')}
-                    >
-                      <span className="horse-list-header__label">
-                        EDGE
-                        <span
-                          className={`horse-list-header__arrow ${sortColumn === 'EDGE' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
-                        >
-                          {sortColumn === 'EDGE' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
-                        </span>
-                      </span>
-                    </div>
-
-                    {/* Column 8: VALUE - NOT sortable */}
-                    <div className="horse-list-header__cell horse-list-header__cell--value">
-                      <span className="horse-list-header__label">VALUE</span>
-                    </div>
-
-                    {/* Column 9: Expand */}
-                    <div className="horse-list-header__cell horse-list-header__cell--expand">
-                      {/* Empty */}
-                    </div>
-                  </div>
-
+                  {/* Horse rows only - verdict header and column header are now grid-level elements */}
                   {/* Collect all field base scores for proper overlay calculation */}
                   {(() => {
                     const allFieldBaseScores = sortedScoredHorses

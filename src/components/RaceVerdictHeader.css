@@ -10,24 +10,21 @@
    ============================================ */
 
 .race-verdict-header {
-  /* Sticky positioning inside scrollable container */
-  position: sticky;
-  top: 0;
-  z-index: 20; /* Middle of sticky stack - below top bar (30), above column headers (10) */
+  /* Grid positioning is handled by Dashboard.css (.app-layout .race-verdict-header) */
+  /* No sticky positioning needed - now uses CSS Grid row placement */
 
   /* Fixed height: same as top bar */
   height: var(--bar-height, 48px);
   min-height: var(--bar-height, 48px);
   max-height: var(--bar-height, 48px);
 
-  /* Full width - extend background to left edge using negative margin */
-  width: calc(100% + var(--dimension-bar, 64px) + 1px);
+  /* Full width - no negative margin hacks needed, spans full grid via grid-column: 1 / -1 */
+  width: 100%;
   margin: 0;
-  margin-left: calc(-1 * var(--dimension-bar, 64px) - 1px);
   padding: 0 16px;
   /* Padding aligns content so verdict dot centers over icons column (64px RACES + 35px half of 70px icons = 99px) */
   /* Icon is ~14px so start at 99px - 7px = 92px, but account for icon container/spacing */
-  padding-left: calc(var(--dimension-bar, 64px) + 28px + 1px);
+  padding-left: calc(var(--dimension-bar, 64px) + 28px);
   box-sizing: border-box;
 
   /* Layout: single line, vertically centered */
