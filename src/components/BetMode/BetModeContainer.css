@@ -109,9 +109,78 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 24px;
   overflow-y: auto;
+}
+
+.bet-mode-content--no-padding {
+  padding: 0;
+  align-items: stretch;
+}
+
+/* ============================================
+   BET MODE SECTIONS
+   ============================================ */
+
+.bet-mode-section {
+  padding: 16px 24px;
+}
+
+.bet-mode-section--user-bet {
+  background: var(--bg-base, #0A0A0B);
+}
+
+.bet-mode-section--furlongs {
+  background: var(--bg-cards, #0F0F10);
+}
+
+.bet-mode-section__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.bet-mode-section__icon {
+  font-size: 18px;
+}
+
+.bet-mode-section__title {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-primary, #EEEFF1);
+}
+
+.bet-mode-section__subtitle {
+  font-size: 12px;
+  color: var(--text-tertiary, #6E6E70);
+  margin-left: 8px;
+}
+
+/* ============================================
+   BET MODE DIVIDER
+   ============================================ */
+
+.bet-mode-divider {
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  background: var(--bg-base, #0A0A0B);
+}
+
+.bet-mode-divider__line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--border-subtle, #2A2A2C) 20%,
+    var(--border-subtle, #2A2A2C) 80%,
+    transparent
+  );
 }
 
 /* ============================================

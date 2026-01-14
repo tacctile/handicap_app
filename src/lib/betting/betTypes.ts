@@ -35,9 +35,54 @@ export type BetType =
   | 'SHOW'
   | 'EXACTA'
   | 'EXACTA_BOX'
+  | 'QUINELLA'
+  | 'TRIFECTA'
   | 'TRIFECTA_KEY'
   | 'TRIFECTA_BOX'
-  | 'SUPERFECTA_KEY';
+  | 'SUPERFECTA_KEY'
+  | 'SUPERFECTA_BOX';
+
+/**
+ * User-selectable bet types for the bet builder UI
+ */
+export type UserSelectableBetType =
+  | 'WIN'
+  | 'PLACE'
+  | 'SHOW'
+  | 'EXACTA'
+  | 'EXACTA_BOX'
+  | 'QUINELLA'
+  | 'TRIFECTA'
+  | 'TRIFECTA_BOX'
+  | 'SUPERFECTA_BOX';
+
+/**
+ * Configuration for user-selectable bet types
+ */
+export interface BetTypeConfig {
+  type: UserSelectableBetType;
+  name: string;
+  shortName: string;
+  minHorses: number;
+  maxHorses: number;
+  isBox: boolean;
+  defaultHorses: number;
+}
+
+/**
+ * Bet type configurations for the bet builder UI
+ */
+export const USER_BET_TYPE_CONFIGS: BetTypeConfig[] = [
+  { type: 'WIN', name: 'Win', shortName: 'WIN', minHorses: 1, maxHorses: 1, isBox: false, defaultHorses: 1 },
+  { type: 'PLACE', name: 'Place', shortName: 'PL', minHorses: 1, maxHorses: 1, isBox: false, defaultHorses: 1 },
+  { type: 'SHOW', name: 'Show', shortName: 'SH', minHorses: 1, maxHorses: 1, isBox: false, defaultHorses: 1 },
+  { type: 'EXACTA', name: 'Exacta', shortName: 'EX', minHorses: 2, maxHorses: 2, isBox: false, defaultHorses: 2 },
+  { type: 'EXACTA_BOX', name: 'Exacta Box', shortName: 'EX BOX', minHorses: 2, maxHorses: 6, isBox: true, defaultHorses: 2 },
+  { type: 'QUINELLA', name: 'Quinella', shortName: 'QN', minHorses: 2, maxHorses: 2, isBox: false, defaultHorses: 2 },
+  { type: 'TRIFECTA', name: 'Trifecta', shortName: 'TRI', minHorses: 3, maxHorses: 3, isBox: false, defaultHorses: 3 },
+  { type: 'TRIFECTA_BOX', name: 'Trifecta Box', shortName: 'TRI BOX', minHorses: 3, maxHorses: 6, isBox: true, defaultHorses: 3 },
+  { type: 'SUPERFECTA_BOX', name: 'Superfecta Box', shortName: 'SUPER BOX', minHorses: 4, maxHorses: 8, isBox: true, defaultHorses: 4 },
+];
 
 // ============================================================================
 // MULTI-RACE BET TYPES
@@ -470,6 +515,20 @@ export const BET_EXPLANATIONS: Record<BetType, BetTypeExplanation> = {
     example: 'Costs 2x a straight exacta (2 combinations).',
     riskLevel: 'Medium-high risk - more flexibility.',
   },
+  QUINELLA: {
+    name: 'Quinella',
+    description: 'Pick two horses to finish 1st and 2nd in either order (single bet).',
+    howToRead: 'A quinella on #2 and #3 wins if they finish 1-2 in any order.',
+    example: 'Similar to exacta box but costs half - one $2 bet instead of two.',
+    riskLevel: 'Medium risk - like exacta box but cheaper.',
+  },
+  TRIFECTA: {
+    name: 'Trifecta',
+    description: 'Pick the first three finishers in exact order.',
+    howToRead: '"1-3-5" means #1 wins, #3 second, #5 third - exact order.',
+    example: 'A $2 trifecta with longshots can pay $200-1000+.',
+    riskLevel: 'High risk - exact order of top 3 is very tough.',
+  },
   TRIFECTA_KEY: {
     name: 'Trifecta Key',
     description:
@@ -493,5 +552,12 @@ export const BET_EXPLANATIONS: Record<BetType, BetTypeExplanation> = {
       '"#2 KEY with 1, 3, 5, 7" means #2 finishes in the money combined with 3 of those others.',
     example: 'Super payouts can be $500+ even on $0.50 bets.',
     riskLevel: 'Very high risk - but life-changing payouts possible.',
+  },
+  SUPERFECTA_BOX: {
+    name: 'Superfecta Box',
+    description: 'Pick 4+ horses - they must finish 1st through 4th in any order.',
+    howToRead: 'Boxing 1, 3, 5, 7 covers all 24 possible orderings of those four horses.',
+    example: 'Boxing 5 horses = 120 combinations. Can pay $1000+ on $0.10 bets.',
+    riskLevel: 'Very high risk - needs exact top 4 horses, but big payouts.',
   },
 };

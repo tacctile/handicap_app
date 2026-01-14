@@ -54,6 +54,15 @@ export function generateWhatToSay(
       return `${racePrefix}$${amount} SUPERFECTA KEY, number ${superKey} ALL with ${formatHorseList(superWith)}`;
     }
 
+    case 'SUPERFECTA_BOX':
+      return `${racePrefix}$${amount} SUPERFECTA BOX, ${formatHorseList(horses)}`;
+
+    case 'QUINELLA':
+      return `${racePrefix}$${amount} QUINELLA, ${horses[0]} and ${horses[1]}`;
+
+    case 'TRIFECTA':
+      return `${racePrefix}$${amount} TRIFECTA, ${horses[0]}-${horses[1]}-${horses[2]}`;
+
     default:
       return `$${amount} ${betType} on ${horses.join(', ')}`;
   }

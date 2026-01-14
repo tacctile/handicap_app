@@ -186,6 +186,28 @@ export function estimateSuperfectaKeyReturn(
   };
 }
 
+/**
+ * Estimate SUPERFECTA BOX payout
+ * Similar to superfecta key but covering all orderings
+ */
+export function estimateSuperfectaBoxReturn(
+  horsesOdds: number[],
+  betAmount: number,
+  combinations: number
+): { min: number; max: number } {
+  const avgOdds = horsesOdds.reduce((a, b) => a + b, 0) / horsesOdds.length || 3;
+  const maxOdds = Math.max(...horsesOdds, 3);
+
+  const totalBet = betAmount * combinations;
+  const baseMultiplier = (maxOdds + 1) * (avgOdds * 0.4 + 1) * 3;
+  const basePayout = totalBet * baseMultiplier * 0.7;
+
+  return {
+    min: Math.round(Math.max(totalBet * 8, basePayout * 0.3)),
+    max: Math.round(basePayout * 2.5),
+  };
+}
+
 // ============================================================================
 // UNIFIED RETURN ESTIMATOR
 // ============================================================================
@@ -226,6 +248,17 @@ export function estimateBetReturn(
 
     case 'SUPERFECTA_KEY':
       return estimateSuperfectaKeyReturn(primaryOdds, horsesOdds.slice(1), betAmount, combinations);
+
+    case 'SUPERFECTA_BOX':
+      return estimateSuperfectaBoxReturn(horsesOdds, betAmount, combinations);
+
+    case 'QUINELLA':
+      // Quinella pays similar to exacta but single bet
+      return estimateExactaReturn(primaryOdds, secondaryOdds, betAmount * combinations);
+
+    case 'TRIFECTA':
+      // Straight trifecta return
+      return estimateTrifectaBoxReturn(horsesOdds, betAmount, 1);
 
     default:
       return { min: 0, max: 0 };

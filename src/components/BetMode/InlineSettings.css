@@ -240,6 +240,45 @@
   color: var(--bg-base, #0A0A0B);
 }
 
+/* Bet Type Dropdown */
+.inline-settings__trigger--bet-type {
+  min-width: 140px;
+}
+
+.inline-settings__menu--bet-type {
+  min-width: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.inline-settings__menu-group {
+  padding: 4px 0;
+}
+
+.inline-settings__menu-group-label {
+  display: block;
+  padding: 6px 12px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary, #6E6E70);
+}
+
+.inline-settings__bet-type-name {
+  flex: 1;
+}
+
+.inline-settings__bet-type-horses {
+  font-size: 11px;
+  color: var(--text-tertiary, #6E6E70);
+  margin-left: 8px;
+}
+
+.inline-settings__menu-item--selected .inline-settings__bet-type-horses {
+  color: var(--primary-light, #36d1da);
+}
+
 /* Day Plan button */
 .inline-settings__day-plan-btn {
   display: flex;

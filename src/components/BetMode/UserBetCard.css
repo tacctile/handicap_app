@@ -1,0 +1,212 @@
+/**
+ * UserBetCard Styles
+ */
+
+.user-bet-card {
+  background: var(--bg-cards, #0F0F10);
+  border: 1px solid var(--primary, #19abb5);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+/* Header */
+.user-bet-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.user-bet-card__type {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.user-bet-card__type-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #EEEFF1);
+}
+
+.user-bet-card__combinations {
+  font-size: 12px;
+  color: var(--text-tertiary, #6E6E70);
+}
+
+.user-bet-card__cost {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary, #19abb5);
+}
+
+/* Horses */
+.user-bet-card__horses {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle, #2A2A2C);
+}
+
+.user-bet-card__horses-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary, #B4B4B6);
+}
+
+.user-bet-card__horses-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.user-bet-card__horse {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.user-bet-card__horse-pp {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary, #19abb5);
+  margin-right: 4px;
+}
+
+.user-bet-card__horse-name {
+  font-size: 13px;
+  color: var(--text-primary, #EEEFF1);
+}
+
+.user-bet-card__horse-separator {
+  color: var(--text-tertiary, #6E6E70);
+  margin: 0 4px;
+}
+
+/* Return */
+.user-bet-card__return {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.user-bet-card__return-label {
+  font-size: 12px;
+  color: var(--text-secondary, #B4B4B6);
+}
+
+.user-bet-card__return-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--success, #10b981);
+}
+
+/* What to Say */
+.user-bet-card__what-to-say {
+  background: var(--bg-elevated, #1A1A1C);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.user-bet-card__what-to-say-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.user-bet-card__what-to-say-icon {
+  font-size: 14px;
+}
+
+.user-bet-card__what-to-say-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary, #6E6E70);
+}
+
+.user-bet-card__what-to-say-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-bet-card__what-to-say-text {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #EEEFF1);
+  font-style: italic;
+}
+
+.user-bet-card__copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: var(--primary, #19abb5);
+  border: none;
+  border-radius: 4px;
+  color: var(--bg-base, #0A0A0B);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.user-bet-card__copy-btn:hover {
+  background: var(--primary-hover, #1992a1);
+}
+
+.user-bet-card__copy-btn--copied {
+  background: var(--success, #10b981);
+}
+
+.user-bet-card__copy-btn .material-icons {
+  font-size: 14px;
+}
+
+.user-bet-card__copy-text {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .user-bet-card {
+    padding: 12px;
+  }
+
+  .user-bet-card__type-name {
+    font-size: 14px;
+  }
+
+  .user-bet-card__cost {
+    font-size: 16px;
+  }
+
+  .user-bet-card__horses {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .user-bet-card__what-to-say-box {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .user-bet-card__copy-btn {
+    justify-content: center;
+    padding: 10px;
+  }
+}
