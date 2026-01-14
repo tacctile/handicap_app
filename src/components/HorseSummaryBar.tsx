@@ -338,7 +338,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
             >
               {currentOddsStr}
             </button>
-            {!isScratched && <span className="horse-summary-bar__icon-label">Click to Edit</span>}
+            {!isScratched && <span className="odds-edit-hint">Edit</span>}
           </div>
         )}
       </div>

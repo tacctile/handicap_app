@@ -244,12 +244,14 @@
   align-items: center;
 }
 
-/* Wrapper for odds value + label */
+/* Wrapper for odds value + label - fixed height for consistent row sizing */
 .odds-edit-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  justify-content: center;
+  gap: 1px;
+  min-height: 48px; /* Fixed height to match scratch button */
 }
 
 /* Editable odds value button */
@@ -261,11 +263,13 @@
   background: transparent;
   border: none;
   border-bottom: 1px dashed rgba(25, 171, 181, 0.5);
-  padding: 4px 10px;
+  padding: 6px 10px;
   cursor: pointer;
   transition: all 0.15s ease;
   min-width: 56px;
+  min-height: 32px; /* Consistent height */
   text-align: center;
+  line-height: 1.2;
 }
 
 .odds-edit-value:hover:not(:disabled) {
@@ -303,6 +307,17 @@
 .odds-edit-input::placeholder {
   color: var(--color-text-tertiary);
   font-weight: 400;
+}
+
+/* Odds edit hint - compact label below odds value */
+.odds-edit-hint {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+  line-height: 1;
 }
 
 /* Score - supporting data (Option C hierarchy) */
