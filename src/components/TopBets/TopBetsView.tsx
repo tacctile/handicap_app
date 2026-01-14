@@ -3,7 +3,7 @@
  *
  * 6-column betting view showing algorithm-generated betting suggestions.
  * Columns: WIN, PLACE, SHOW, EXACTA, TRIFECTA, SUPERFECTA
- * No copy buttons, no rank badges — just compact bet cards with window scripts.
+ * Features bordered bet cards for clear visual separation.
  */
 
 import React, { useState, useMemo, useCallback } from 'react';

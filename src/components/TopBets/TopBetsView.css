@@ -250,17 +250,20 @@
   gap: 8px;
   padding: 12px 10px;
   background: var(--color-card);
-  border-bottom: 1px solid var(--color-border);
-  transition: background var(--transition-fast);
+  border: 1px solid #2A2A2C;
+  border-radius: 5px;
+  margin: 8px 6px;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
   min-height: 90px;
+}
+
+.compact-bet-card:first-child {
+  margin-top: 8px;
 }
 
 .compact-bet-card:hover {
   background: rgba(25, 171, 181, 0.05);
-}
-
-.compact-bet-card:last-child {
-  border-bottom: none;
+  border-color: #3A3A3C;
 }
 
 /* Shared label styling for CONFIDENCE, COST, PAYOUT */
@@ -410,6 +413,7 @@
 
   .compact-bet-card {
     padding: 10px 8px;
+    margin: 6px 4px;
     gap: 6px;
     min-height: 85px;
   }
@@ -496,6 +500,7 @@
 
   .compact-bet-card {
     min-height: 80px;
+    margin: 6px 4px;
   }
 
   .compact-bet-card__stats {
@@ -538,6 +543,7 @@
 
   .compact-bet-card {
     padding: 12px;
+    margin: 8px 8px;
     min-height: auto;
     gap: 8px;
   }
