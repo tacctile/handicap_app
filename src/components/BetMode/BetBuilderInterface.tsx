@@ -336,12 +336,6 @@ export const BetBuilderInterface: React.FC<BetBuilderInterfaceProps> = ({
     });
   }, [activeHorses, getOdds, allFieldBaseScores]);
 
-  // Value analysis for the race (reserved for future use)
-  const _valueAnalysis = useMemo(() => {
-    // Note: Currently not displayed directly but available for future enhancements
-    return null;
-  }, []);
-
   // ============================================================================
   // AUTO-FILL HORSES BASED ON BET TYPE AND RISK STYLE
   // ============================================================================
