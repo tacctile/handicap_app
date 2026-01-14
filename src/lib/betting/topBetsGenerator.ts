@@ -24,6 +24,7 @@ export type TopBetType =
   | 'WIN'
   | 'PLACE'
   | 'SHOW'
+  | 'QUINELLA'
   | 'EXACTA_STRAIGHT'
   | 'EXACTA_BOX_2'
   | 'EXACTA_BOX_3'
@@ -116,6 +117,7 @@ const ESTIMATED_PAYOUT_MULTIPLIERS: Record<TopBetType, { base: number; longshot:
   WIN: { base: 1.0, longshot: 1.0 },
   PLACE: { base: 0.4, longshot: 0.4 },
   SHOW: { base: 0.25, longshot: 0.25 },
+  QUINELLA: { base: 6, longshot: 12 },
   EXACTA_STRAIGHT: { base: 8, longshot: 15 },
   EXACTA_BOX_2: { base: 8, longshot: 15 },
   EXACTA_BOX_3: { base: 6, longshot: 12 },
@@ -149,15 +151,26 @@ const BET_TYPE_EXPLANATIONS: Record<TopBetType, string> = {
   WIN: 'A Win bet pays if your horse finishes 1st. Highest payout but must win.',
   PLACE: 'A Place bet pays if your horse finishes 1st or 2nd. Lower payout but safer.',
   SHOW: 'A Show bet pays if your horse finishes 1st, 2nd, or 3rd. Safest bet, lowest payout.',
-  EXACTA_STRAIGHT: 'An Exacta Straight pays if your two horses finish 1st and 2nd in the exact order you picked.',
-  EXACTA_BOX_2: 'An Exacta Box pays if your horses finish 1st and 2nd in either order. Costs more but covers both scenarios.',
-  EXACTA_BOX_3: 'A 3-horse Exacta Box pays if any two of your three horses finish 1-2 in either order. More coverage, higher cost.',
-  TRIFECTA_STRAIGHT: 'A Trifecta Straight pays if your three horses finish 1st, 2nd, and 3rd in the exact order. High payout, hard to hit.',
-  TRIFECTA_BOX_3: 'A Trifecta Box pays if your horses finish 1st, 2nd, and 3rd in any order. More combinations = higher cost but better odds of hitting.',
-  TRIFECTA_BOX_4: 'A 4-horse Trifecta Box covers any order of your 4 horses in the top 3. 24 combinations at $1 each = $24.',
-  TRIFECTA_KEY: 'A Trifecta Key puts one horse on top to win, with others filling 2nd and 3rd in any order. Good when you\'re confident in the winner.',
-  SUPERFECTA_BOX_4: 'A Superfecta Box pays if your horses finish 1st, 2nd, 3rd, and 4th in any order. Very hard to hit but massive payouts.',
-  SUPERFECTA_BOX_5: 'A 5-horse Superfecta Box covers all orders of your 5 horses in the top 4. 120 combinations = $120 at $1.',
+  QUINELLA:
+    'A Quinella pays if your two horses finish 1st and 2nd in either order. Single bet covering both orders.',
+  EXACTA_STRAIGHT:
+    'An Exacta Straight pays if your two horses finish 1st and 2nd in the exact order you picked.',
+  EXACTA_BOX_2:
+    'An Exacta Box pays if your horses finish 1st and 2nd in either order. Costs more but covers both scenarios.',
+  EXACTA_BOX_3:
+    'A 3-horse Exacta Box pays if any two of your three horses finish 1-2 in either order. More coverage, higher cost.',
+  TRIFECTA_STRAIGHT:
+    'A Trifecta Straight pays if your three horses finish 1st, 2nd, and 3rd in the exact order. High payout, hard to hit.',
+  TRIFECTA_BOX_3:
+    'A Trifecta Box pays if your horses finish 1st, 2nd, and 3rd in any order. More combinations = higher cost but better odds of hitting.',
+  TRIFECTA_BOX_4:
+    'A 4-horse Trifecta Box covers any order of your 4 horses in the top 3. 24 combinations at $1 each = $24.',
+  TRIFECTA_KEY:
+    "A Trifecta Key puts one horse on top to win, with others filling 2nd and 3rd in any order. Good when you're confident in the winner.",
+  SUPERFECTA_BOX_4:
+    'A Superfecta Box pays if your horses finish 1st, 2nd, 3rd, and 4th in any order. Very hard to hit but massive payouts.',
+  SUPERFECTA_BOX_5:
+    'A 5-horse Superfecta Box covers all orders of your 5 horses in the top 4. 120 combinations = $120 at $1.',
 };
 
 /**
@@ -167,15 +180,16 @@ const BET_TYPE_NAMES: Record<TopBetType, string> = {
   WIN: 'WIN',
   PLACE: 'PLACE',
   SHOW: 'SHOW',
-  EXACTA_STRAIGHT: 'EXACTA STRAIGHT',
+  QUINELLA: 'QUINELLA',
+  EXACTA_STRAIGHT: 'EXACTA',
   EXACTA_BOX_2: 'EXACTA BOX',
-  EXACTA_BOX_3: 'EXACTA BOX (3)',
-  TRIFECTA_STRAIGHT: 'TRIFECTA STRAIGHT',
+  EXACTA_BOX_3: 'EXACTA BOX',
+  TRIFECTA_STRAIGHT: 'TRIFECTA',
   TRIFECTA_BOX_3: 'TRIFECTA BOX',
-  TRIFECTA_BOX_4: 'TRIFECTA BOX (4)',
+  TRIFECTA_BOX_4: 'TRIFECTA BOX',
   TRIFECTA_KEY: 'TRIFECTA KEY',
   SUPERFECTA_BOX_4: 'SUPERFECTA BOX',
-  SUPERFECTA_BOX_5: 'SUPERFECTA BOX (5)',
+  SUPERFECTA_BOX_5: 'SUPERFECTA BOX',
 };
 
 // ============================================================================
@@ -215,7 +229,7 @@ function permutations(n: number, r: number): number {
   if (n < r || r < 0) return 0;
   let result = 1;
   for (let i = 0; i < r; i++) {
-    result *= (n - i);
+    result *= n - i;
   }
   return result;
 }
@@ -229,7 +243,7 @@ function combinations(n: number, r: number): number {
 
   let result = 1;
   for (let i = 0; i < r; i++) {
-    result = result * (n - i) / (i + 1);
+    result = (result * (n - i)) / (i + 1);
   }
   return Math.round(result);
 }
@@ -358,7 +372,7 @@ function prepareHorseProbs(
 ): HorseProb[] {
   // Filter active horses
   const activeHorses = scoredHorses
-    .filter(h => !isScratched(h.index) && !h.score.isScratched)
+    .filter((h) => !isScratched(h.index) && !h.score.isScratched)
     .sort((a, b) => b.score.baseScore - a.score.baseScore);
 
   if (activeHorses.length === 0) return [];
@@ -402,11 +416,7 @@ function prepareHorseProbs(
 /**
  * Calculate exacta probability (horse A wins, horse B places)
  */
-function calculateExactaProb(
-  horses: HorseProb[],
-  firstIndex: number,
-  secondIndex: number
-): number {
+function calculateExactaProb(horses: HorseProb[], firstIndex: number, secondIndex: number): number {
   const first = horses[firstIndex];
   const second = horses[secondIndex];
   if (!first || !second) return 0;
@@ -415,9 +425,8 @@ function calculateExactaProb(
   // Conditional: if A wins, remaining horses compete for 2nd
   const remainingHorses = horses.filter((_, i) => i !== firstIndex);
   const remainingScore = remainingHorses.reduce((sum, h) => sum + h.score, 0);
-  const bPlaceGivenAWins = remainingScore > 0
-    ? (second.score / remainingScore) * 100
-    : second.winProb;
+  const bPlaceGivenAWins =
+    remainingScore > 0 ? (second.score / remainingScore) * 100 : second.winProb;
 
   return (first.winProb / 100) * (bPlaceGivenAWins / 100) * 100;
 }
@@ -451,13 +460,10 @@ function calculateTrifectaProb(
 /**
  * Calculate superfecta probability
  */
-function calculateSuperfectaProb(
-  horses: HorseProb[],
-  indices: number[]
-): number {
+function calculateSuperfectaProb(horses: HorseProb[], indices: number[]): number {
   if (indices.length < 4) return 0;
 
-  const selectedHorses = indices.map(i => horses[i]).filter(Boolean);
+  const selectedHorses = indices.map((i) => horses[i]).filter(Boolean);
   if (selectedHorses.length < 4) return 0;
 
   let prob = 1;
@@ -475,11 +481,7 @@ function calculateSuperfectaProb(
 /**
  * Calculate box probability (any order of selected horses)
  */
-function calculateBoxProb(
-  horses: HorseProb[],
-  indices: number[],
-  positions: number
-): number {
+function calculateBoxProb(horses: HorseProb[], indices: number[], positions: number): number {
   if (indices.length < positions) return 0;
 
   let totalProb = 0;
@@ -487,7 +489,7 @@ function calculateBoxProb(
   // Sum probability of all valid orderings
   for (const perm of generatePermutations(indices.length, positions)) {
     const selectedIndices: number[] = perm
-      .map(p => indices[p])
+      .map((p) => indices[p])
       .filter((n): n is number => n !== undefined);
 
     if (positions === 2 && selectedIndices.length >= 2) {
@@ -521,13 +523,13 @@ function estimatePayout(
   baseCost: number
 ): { min: number; max: number; likely: number } {
   const selectedHorses = selectedIndices
-    .map(i => horses[i])
+    .map((i) => horses[i])
     .filter((h): h is HorseProb => h !== undefined);
   if (selectedHorses.length === 0) return { min: 0, max: 0, likely: 0 };
 
   const avgOdds = selectedHorses.reduce((sum, h) => sum + h.odds, 0) / selectedHorses.length;
-  const maxOdds = Math.max(...selectedHorses.map(h => h.odds));
-  const minOdds = Math.min(...selectedHorses.map(h => h.odds));
+  const maxOdds = Math.max(...selectedHorses.map((h) => h.odds));
+  const minOdds = Math.min(...selectedHorses.map((h) => h.odds));
 
   const multiplier = ESTIMATED_PAYOUT_MULTIPLIERS[type];
   const isLongshot = minOdds >= 10;
@@ -553,6 +555,13 @@ function estimatePayout(
         min: Math.round(baseCost * (minOdds * 0.2 + 1)),
         max: Math.round(baseCost * (maxOdds * 0.3 + 1)),
         likely: Math.round(baseCost * (avgOdds * 0.25 + 1)),
+      };
+
+    case 'QUINELLA':
+      return {
+        min: Math.round(baseCost * minOdds * avgOdds * baseMultiplier * 0.6),
+        max: Math.round(baseCost * maxOdds * avgOdds * baseMultiplier * 1.2),
+        likely: Math.round(baseCost * avgOdds * avgOdds * baseMultiplier * 0.8),
       };
 
     case 'EXACTA_STRAIGHT':
@@ -612,47 +621,50 @@ function generateWhatToSay(
   selectedIndices: number[]
 ): string {
   const nums = selectedIndices
-    .map(i => horses[i]?.programNumber)
+    .map((i) => horses[i]?.programNumber)
     .filter((n): n is number => n !== undefined);
 
   if (nums.length === 0) return '';
 
   switch (type) {
     case 'WIN':
-      return `$1 Win on number ${nums[0]}`;
+      return `$1 WIN on number ${nums[0]}`;
 
     case 'PLACE':
-      return `$1 Place on number ${nums[0]}`;
+      return `$1 PLACE on number ${nums[0]}`;
 
     case 'SHOW':
-      return `$1 Show on number ${nums[0]}`;
+      return `$1 SHOW on number ${nums[0]}`;
+
+    case 'QUINELLA':
+      return `$1 QUINELLA, ${nums[0]}-${nums[1]}`;
 
     case 'EXACTA_STRAIGHT':
-      return `$1 Exacta, ${nums[0]} over ${nums[1]}`;
+      return `$1 EXACTA, ${nums[0]} over ${nums[1]}`;
 
     case 'EXACTA_BOX_2':
-      return `$1 Exacta box, ${nums[0]} and ${nums[1]}`;
+      return `$1 EXACTA BOX, ${nums[0]}-${nums[1]}`;
 
     case 'EXACTA_BOX_3':
-      return `$1 Exacta box, ${nums[0]}, ${nums[1]}, and ${nums[2]}`;
+      return `$1 EXACTA BOX, ${nums[0]}-${nums[1]}-${nums[2]}`;
 
     case 'TRIFECTA_STRAIGHT':
-      return `$1 Trifecta, ${nums[0]} over ${nums[1]} over ${nums[2]}`;
+      return `$1 TRIFECTA, ${nums[0]}-${nums[1]}-${nums[2]}`;
 
     case 'TRIFECTA_BOX_3':
-      return `$1 Trifecta box, ${nums[0]}, ${nums[1]}, ${nums[2]}`;
+      return `$1 TRIFECTA BOX, ${nums[0]}-${nums[1]}-${nums[2]}`;
 
     case 'TRIFECTA_BOX_4':
-      return `$1 Trifecta box, ${nums[0]}, ${nums[1]}, ${nums[2]}, ${nums[3]}`;
+      return `$1 TRIFECTA BOX, ${nums[0]}-${nums[1]}-${nums[2]}-${nums[3]}`;
 
     case 'TRIFECTA_KEY':
-      return `$1 Trifecta key, ${nums[0]} over ${nums.slice(1).join(', ')}`;
+      return `$1 TRIFECTA KEY, ${nums[0]} with ${nums.slice(1).join(', ')}`;
 
     case 'SUPERFECTA_BOX_4':
-      return `$1 Superfecta box, ${nums[0]}, ${nums[1]}, ${nums[2]}, ${nums[3]}`;
+      return `$1 SUPERFECTA BOX, ${nums[0]}-${nums[1]}-${nums[2]}-${nums[3]}`;
 
     case 'SUPERFECTA_BOX_5':
-      return `$1 Superfecta box, ${nums[0]}, ${nums[1]}, ${nums[2]}, ${nums[3]}, ${nums[4]}`;
+      return `$1 SUPERFECTA BOX, ${nums[0]}-${nums[1]}-${nums[2]}-${nums[3]}-${nums[4]}`;
 
     default:
       return '';
@@ -672,7 +684,7 @@ function generateWhyThisBet(
   selectedIndices: number[]
 ): string {
   const selectedHorses = selectedIndices
-    .map(i => horses[i])
+    .map((i) => horses[i])
     .filter((h): h is HorseProb => h !== undefined);
   if (selectedHorses.length === 0) return '';
 
@@ -682,7 +694,7 @@ function generateWhyThisBet(
   // Single horse bets (WIN/PLACE/SHOW)
   if (selectedHorses.length === 1) {
     const h = firstHorse;
-    const fairOdds = Math.round((100 / h.winProb) - 1);
+    const fairOdds = Math.round(100 / h.winProb - 1);
 
     if (h.edgePercent >= 50) {
       return `${h.name} (#${h.programNumber}) is ranked #${h.modelRank} by our model with +${Math.round(h.edgePercent)}% edge. The public has this horse at ${h.oddsDisplay}, but our analysis says fair odds are ${fairOdds}-1. You're getting paid ${h.edgePercent > 100 ? 'more than double' : 'significantly more than'} what this horse is worth.`;
@@ -713,25 +725,31 @@ function generateWhyThisBet(
 
   // Three horse bets (TRIFECTA)
   if (selectedHorses.length === 3 || (type === 'TRIFECTA_KEY' && selectedHorses.length >= 3)) {
-    const topRanks = selectedHorses.slice(0, 3).map(h => h.modelRank).join(', ');
+    const topRanks = selectedHorses
+      .slice(0, 3)
+      .map((h) => h.modelRank)
+      .join(', ');
     const avgEdge = selectedHorses.slice(0, 3).reduce((sum, h) => sum + h.edgePercent, 0) / 3;
 
     if (type === 'TRIFECTA_KEY') {
       const keyHorse = selectedHorses[0];
       const withHorses = selectedHorses.slice(1);
       if (!keyHorse) return '';
-      return `A key bet on #${keyHorse.programNumber} makes sense because our model gives ${keyHorse.name} the highest probability of winning${keyHorse.edgePercent > 50 ? ' despite long odds' : ''}. If #${keyHorse.programNumber} wins, any combination of ${withHorses.map(h => `#${h.programNumber}`).join(', ')} underneath pays.`;
+      return `A key bet on #${keyHorse.programNumber} makes sense because our model gives ${keyHorse.name} the highest probability of winning${keyHorse.edgePercent > 50 ? ' despite long odds' : ''}. If #${keyHorse.programNumber} wins, any combination of ${withHorses.map((h) => `#${h.programNumber}`).join(', ')} underneath pays.`;
     } else if (type === 'TRIFECTA_STRAIGHT') {
       return `Our model has these horses ranked #${topRanks} with an average +${Math.round(avgEdge)}% edge. This specific order represents the most likely trifecta outcome.`;
     } else {
-      return `Boxing our top 3 model picks (#${selectedHorses.map(h => h.programNumber).join(', ')}) covers all 6 possible orders. Combined model ranks: ${topRanks}.`;
+      return `Boxing our top 3 model picks (#${selectedHorses.map((h) => h.programNumber).join(', ')}) covers all 6 possible orders. Combined model ranks: ${topRanks}.`;
     }
   }
 
   // Four+ horse bets (TRIFECTA BOX 4, SUPERFECTA)
   if (selectedHorses.length >= 4) {
-    const topRanks = selectedHorses.slice(0, 4).map(h => h.modelRank).join(', ');
-    const hasLongshot = selectedHorses.some(h => h.odds >= 10);
+    const topRanks = selectedHorses
+      .slice(0, 4)
+      .map((h) => h.modelRank)
+      .join(', ');
+    const hasLongshot = selectedHorses.some((h) => h.odds >= 10);
 
     if (type.includes('SUPERFECTA')) {
       return `This superfecta box includes our top model picks (ranks #${topRanks})${hasLongshot ? ' plus a live longshot for massive payout potential' : ''}. While hard to hit, the EV is positive when these horses fill the top 4.`;
@@ -740,7 +758,7 @@ function generateWhyThisBet(
     }
   }
 
-  return 'This combination offers the best expected value based on our model\'s probability calculations.';
+  return "This combination offers the best expected value based on our model's probability calculations.";
 }
 
 // ============================================================================
@@ -821,6 +839,32 @@ function generateShowBets(horses: HorseProb[]): BetCandidate[] {
       type: 'SHOW',
       horseIndices: [i],
       cost: BASE_UNIT,
+      probability: prob,
+      estimatedPayout: payout.likely,
+      expectedValue: ev,
+      combinationsInvolved: 1,
+    });
+  }
+
+  return candidates;
+}
+
+/**
+ * Generate QUINELLA bets (all 2-horse combinations, either order pays)
+ */
+function generateQuinellaBets(horses: HorseProb[]): BetCandidate[] {
+  const candidates: BetCandidate[] = [];
+
+  for (const combo of generateCombinations(horses.length, 2)) {
+    // Quinella pays if either horse wins and the other places (any order)
+    const prob = calculateBoxProb(horses, combo, 2);
+    const payout = estimatePayout('QUINELLA', horses, combo, BASE_UNIT);
+    const ev = (prob / 100) * payout.likely - BASE_UNIT;
+
+    candidates.push({
+      type: 'QUINELLA',
+      horseIndices: combo,
+      cost: BASE_UNIT, // Single bet covers both orders
       probability: prob,
       estimatedPayout: payout.likely,
       expectedValue: ev,
@@ -1001,7 +1045,7 @@ function generateTrifectaKeyBets(horses: HorseProb[]): BetCandidate[] {
     // Key this horse over the rest
     const withHorses = horses
       .map((_, i) => i)
-      .filter(i => i !== keyIdx)
+      .filter((i) => i !== keyIdx)
       .slice(0, 5); // Limit "with" horses
 
     if (withHorses.length < 2) continue;
@@ -1105,17 +1149,17 @@ function enforceTypeDiversity(
   targetCount: number = 25
 ): BetCandidate[] {
   // Group by risk tier
-  const conservative = candidates.filter(c =>
-    determineRiskTier(c.probability) === 'Conservative'
-  ).sort((a, b) => b.expectedValue - a.expectedValue);
+  const conservative = candidates
+    .filter((c) => determineRiskTier(c.probability) === 'Conservative')
+    .sort((a, b) => b.expectedValue - a.expectedValue);
 
-  const moderate = candidates.filter(c =>
-    determineRiskTier(c.probability) === 'Moderate'
-  ).sort((a, b) => b.expectedValue - a.expectedValue);
+  const moderate = candidates
+    .filter((c) => determineRiskTier(c.probability) === 'Moderate')
+    .sort((a, b) => b.expectedValue - a.expectedValue);
 
-  const aggressive = candidates.filter(c =>
-    determineRiskTier(c.probability) === 'Aggressive'
-  ).sort((a, b) => b.expectedValue - a.expectedValue);
+  const aggressive = candidates
+    .filter((c) => determineRiskTier(c.probability) === 'Aggressive')
+    .sort((a, b) => b.expectedValue - a.expectedValue);
 
   // Start with top EV overall
   const allSorted = [...candidates].sort((a, b) => b.expectedValue - a.expectedValue);
@@ -1135,8 +1179,8 @@ function enforceTypeDiversity(
   }
 
   // Ensure at least 3 conservative
-  let conservativeCount = result.filter(c =>
-    determineRiskTier(c.probability) === 'Conservative'
+  let conservativeCount = result.filter(
+    (c) => determineRiskTier(c.probability) === 'Conservative'
   ).length;
 
   for (const candidate of conservative) {
@@ -1150,9 +1194,7 @@ function enforceTypeDiversity(
   }
 
   // Ensure at least 3 moderate
-  let moderateCount = result.filter(c =>
-    determineRiskTier(c.probability) === 'Moderate'
-  ).length;
+  let moderateCount = result.filter((c) => determineRiskTier(c.probability) === 'Moderate').length;
 
   for (const candidate of moderate) {
     if (moderateCount >= 3) break;
@@ -1165,8 +1207,8 @@ function enforceTypeDiversity(
   }
 
   // Ensure at least 3 aggressive
-  let aggressiveCount = result.filter(c =>
-    determineRiskTier(c.probability) === 'Aggressive'
+  let aggressiveCount = result.filter(
+    (c) => determineRiskTier(c.probability) === 'Aggressive'
   ).length;
 
   for (const candidate of aggressive) {
@@ -1235,8 +1277,9 @@ export function generateTopBets(
   allCandidates.push(...generatePlaceBets(horses));
   allCandidates.push(...generateShowBets(horses));
 
-  // EXACTA (need at least 2 horses)
+  // QUINELLA and EXACTA (need at least 2 horses)
   if (horses.length >= 2) {
+    allCandidates.push(...generateQuinellaBets(horses));
     allCandidates.push(...generateExactaStraightBets(horses));
     allCandidates.push(...generateExactaBox2Bets(horses));
   }
@@ -1271,24 +1314,17 @@ export function generateTopBets(
   const totalCombinations = allCandidates.length;
 
   // Filter out extremely negative EV bets (keep at least some options)
-  const viableCandidates = allCandidates.filter(c => c.expectedValue >= MIN_EV_THRESHOLD);
+  const viableCandidates = allCandidates.filter((c) => c.expectedValue >= MIN_EV_THRESHOLD);
 
   // If we filtered too aggressively, use all candidates
-  const candidatesToRank = viableCandidates.length >= 25
-    ? viableCandidates
-    : allCandidates;
+  const candidatesToRank = viableCandidates.length >= 25 ? viableCandidates : allCandidates;
 
   // Apply diversity enforcement to get top 25
   const top25Candidates = enforceTypeDiversity(candidatesToRank, 25);
 
   // Convert to TopBet format
   const topBets: TopBet[] = top25Candidates.map((candidate, index) => {
-    const payout = estimatePayout(
-      candidate.type,
-      horses,
-      candidate.horseIndices,
-      BASE_UNIT
-    );
+    const payout = estimatePayout(candidate.type, horses, candidate.horseIndices, BASE_UNIT);
 
     // Determine horse positions for display
     const horsePositions = candidate.horseIndices.map((idx, posIdx): TopBetHorse => {
@@ -1316,9 +1352,10 @@ export function generateTopBets(
       };
     });
 
-    const payoutDisplay = payout.min === payout.max
-      ? formatDollars(payout.likely)
-      : `${formatDollars(payout.min)}-${formatDollars(payout.max)}`;
+    const payoutDisplay =
+      payout.min === payout.max
+        ? formatDollars(payout.likely)
+        : `${formatDollars(payout.min)}-${formatDollars(payout.max)}`;
 
     return {
       rank: index + 1,
@@ -1334,7 +1371,7 @@ export function generateTopBets(
       probability: Math.round(candidate.probability * 100) / 100,
       expectedValue: Math.round(candidate.expectedValue * 100) / 100,
       combinationsInvolved: candidate.combinationsInvolved,
-      horseNumbers: candidate.horseIndices.map(i => horses[i]?.programNumber || 0),
+      horseNumbers: candidate.horseIndices.map((i) => horses[i]?.programNumber || 0),
     };
   });
 
@@ -1372,6 +1409,9 @@ export function estimateCombinationCount(fieldSize: number): number {
 
   // WIN/PLACE/SHOW
   count += fieldSize * 3;
+
+  // QUINELLA
+  count += combinations(fieldSize, 2);
 
   // EXACTA STRAIGHT
   count += permutations(fieldSize, 2);
