@@ -24,13 +24,14 @@
 .top-bets-controls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 20px;
+  justify-content: flex-start;
+  padding: 8px 20px;
   background: var(--color-card);
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
   gap: 16px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-height: 72px;
 }
 
 .top-bets-controls__base {
@@ -97,10 +98,96 @@
   color: var(--color-text-tertiary);
 }
 
+/* Horse Reference List (Middle) - 3-row grid with uniform columns */
+.top-bets-controls__horses {
+  flex: 1;
+  display: grid;
+  grid-template-rows: repeat(3, auto);
+  grid-auto-flow: column;
+  grid-auto-columns: 200px;
+  gap: 2px 0;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 12px;
+  margin: 0 8px;
+  position: relative;
+}
+
+/* Left and right border dividers - same height as column dividers */
+.top-bets-controls__horses::before,
+.top-bets-controls__horses::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 80px;
+  background: var(--color-border);
+}
+
+.top-bets-controls__horses::before {
+  left: 0;
+}
+
+.top-bets-controls__horses::after {
+  right: 0;
+}
+
+.top-bets-controls__horse {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 0 12px;
+  position: relative;
+}
+
+/* Vertical dividers between columns - full height using pseudo-element */
+.top-bets-controls__horse:nth-child(3n+1):not(:first-child)::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 80px;
+  background: var(--color-border);
+}
+
+.top-bets-controls__horse-num {
+  color: var(--color-primary);
+  font-weight: 600;
+  min-width: 20px;
+}
+
+.top-bets-controls__horse-name {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+/* Hide scrollbar but allow scroll if needed */
+.top-bets-controls__horses::-webkit-scrollbar {
+  height: 4px;
+}
+
+.top-bets-controls__horses::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.top-bets-controls__horses::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
 .top-bets-controls__sort {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .top-bets-sort-select {
@@ -590,4 +677,54 @@
 
 .top-bets-column::-webkit-scrollbar-thumb:hover {
   background: var(--color-border-prominent);
+}
+
+/* ============================================
+   EXOTIC BET TOOLTIP
+   ============================================ */
+
+.exotic-bet-tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.compact-bet-card__horses--hoverable {
+  cursor: pointer;
+}
+
+.exotic-bet-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 100;
+  min-width: 160px;
+  padding: 10px 12px;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border-prominent);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+  pointer-events: none;
+}
+
+.exotic-bet-tooltip--visible {
+  opacity: 1;
+  transition: opacity 200ms ease-in;
+}
+
+.exotic-bet-tooltip__horse {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary);
+  padding: 3px 0;
+  white-space: nowrap;
+}
+
+.exotic-bet-tooltip__horse:first-child {
+  padding-top: 0;
+}
+
+.exotic-bet-tooltip__horse:last-child {
+  padding-bottom: 0;
 }
