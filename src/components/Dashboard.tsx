@@ -284,13 +284,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
               // Smooth scroll to bring the row to the top
               scrollContainer.scrollTo({
                 top: targetScroll,
-                behavior: 'smooth'
+                behavior: 'smooth',
               });
             } else {
               // Fallback to scrollIntoView
               horseRow.scrollIntoView({
                 behavior: 'smooth',
-                block: 'start'
+                block: 'start',
               });
             }
           }
@@ -1352,44 +1352,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Bottom Bar */}
         <footer className="app-bottombar">
-          {/* Left cluster - Account */}
+          {/* ALL RACES button - Always visible, disabled on Overview */}
           <div className="app-bottombar__cluster">
-            <button className="app-bottombar__item">
-              <span className="material-icons">person</span>
-              <span>Guest</span>
+            <button
+              className={`app-bottombar__item app-bottombar__item--all-races ${viewMode === 'overview' ? 'app-bottombar__item--disabled' : ''}`}
+              onClick={viewMode !== 'overview' ? handleBackToOverview : undefined}
+              disabled={viewMode === 'overview'}
+              title={
+                viewMode === 'overview' ? 'Currently viewing all races' : 'Return to Race Overview'
+              }
+            >
+              <span className="material-icons">grid_view</span>
+              <span>ALL RACES</span>
             </button>
           </div>
 
-          {/* Separator between Account and Settings */}
+          {/* Separator after ALL RACES */}
           <div className="app-bottombar__separator"></div>
-
-          {/* Settings cluster */}
-          <div className="app-bottombar__cluster">
-            <button className="app-bottombar__item">
-              <span className="material-icons">settings</span>
-              <span>Settings</span>
-            </button>
-          </div>
-
-          {/* Separator after Settings */}
-          <div className="app-bottombar__separator"></div>
-
-          {/* ALL RACES button - Only shown in analysis mode */}
-          {viewMode === 'analysis' && parsedData && (
-            <>
-              <div className="app-bottombar__cluster">
-                <button
-                  className="app-bottombar__item app-bottombar__item--all-races"
-                  onClick={handleBackToOverview}
-                  title="Return to Race Overview"
-                >
-                  <span className="material-icons">grid_view</span>
-                  <span>ALL RACES</span>
-                </button>
-              </div>
-              <div className="app-bottombar__separator"></div>
-            </>
-          )}
 
           {/* BET MODE button - Primary action */}
           <div className="app-bottombar__cluster">
@@ -1426,16 +1405,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
           </div>
 
-          {/* Separator */}
-          <div className="app-bottombar__separator"></div>
-
-          {/* Center spacer */}
+          {/* Center spacer - pushes Upload to far right */}
           <div className="app-bottombar__spacer"></div>
 
-          {/* Separator */}
+          {/* Separator before Upload */}
           <div className="app-bottombar__separator"></div>
 
-          {/* Upload button */}
+          {/* Upload button - Far right */}
           <div className="app-bottombar__cluster">
             <button
               className="app-bottombar__item app-bottombar__item--upload"
@@ -1446,47 +1422,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {isLoading ? 'hourglass_empty' : 'upload_file'}
               </span>
               <span>{isLoading ? 'Parsing...' : 'Upload'}</span>
-            </button>
-          </div>
-
-          {/* Separator */}
-          <div className="app-bottombar__separator"></div>
-
-          {/* Right cluster - Help */}
-          <div className="app-bottombar__cluster">
-            <button className="app-bottombar__item">
-              <span className="material-icons">help_outline</span>
-              <span>Help</span>
-            </button>
-          </div>
-
-          {/* Separator */}
-          <div className="app-bottombar__separator"></div>
-
-          {/* Legal */}
-          <div className="app-bottombar__cluster">
-            <button className="app-bottombar__item">
-              <span className="material-icons">gavel</span>
-              <span>Legal</span>
-            </button>
-          </div>
-
-          {/* Separator */}
-          <div className="app-bottombar__separator"></div>
-
-          {/* Icon-only cluster - Fullscreen, Multi-window */}
-          <div className="app-bottombar__cluster">
-            <button
-              className="app-bottombar__item app-bottombar__item--icon-only"
-              title="Fullscreen"
-            >
-              <span className="material-icons">fullscreen</span>
-            </button>
-            <button
-              className="app-bottombar__item app-bottombar__item--icon-only"
-              title="Multi-window"
-            >
-              <span className="material-icons">open_in_new</span>
             </button>
           </div>
         </footer>

@@ -288,9 +288,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
           <span className="material-icons horse-summary-bar__scratch-icon">
             {isScratched ? 'undo' : 'block'}
           </span>
-          <span className="horse-summary-bar__scratch-label">
-            {isScratched ? 'UNDO' : 'SCR'}
-          </span>
+          <span className="horse-summary-bar__scratch-label">{isScratched ? 'UNDO' : 'SCR'}</span>
         </button>
       </div>
 
@@ -362,12 +360,6 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
 
       {/* Column 8: VALUE Badge (Overlay/Fair/Underlay) */}
       <div className="horse-summary-bar__value-wrapper">
-        {/* Value play fire indicator */}
-        {isPrimaryValuePlay && !isScratched && (
-          <span className="horse-summary-bar__value-play-icon" title="Primary Value Play">
-            🔥
-          </span>
-        )}
         <div
           className={`horse-summary-bar__value-badge horse-summary-bar__value-badge--${valueBadge.className} ${isPrimaryValuePlay && !isScratched ? 'horse-summary-bar__value-badge--primary' : ''}`}
           style={{

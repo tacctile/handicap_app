@@ -709,23 +709,6 @@
   background: rgba(16, 185, 129, 0.18);
 }
 
-/* Value play fire icon */
-.horse-summary-bar__value-play-icon {
-  font-size: 18px;
-  margin-right: 6px;
-  animation: fire-glow 1.5s ease-in-out infinite;
-}
-
-@keyframes fire-glow {
-  0%,
-  100% {
-    filter: drop-shadow(0 0 2px rgba(255, 100, 0, 0.6));
-  }
-  50% {
-    filter: drop-shadow(0 0 8px rgba(255, 100, 0, 1));
-  }
-}
-
 /* Primary value badge gets subtle pulse */
 .horse-summary-bar__value-badge--primary {
   animation: badge-pulse 2s ease-in-out infinite;

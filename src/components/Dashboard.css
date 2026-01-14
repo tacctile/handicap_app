@@ -770,6 +770,25 @@
   color: var(--color-primary);
 }
 
+/* ALL RACES button disabled state (when on Overview) */
+.app-bottombar__item--all-races.app-bottombar__item--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--color-elevated);
+  border-color: var(--color-border);
+  color: var(--color-text-tertiary);
+}
+
+.app-bottombar__item--all-races.app-bottombar__item--disabled:hover {
+  background: var(--color-elevated);
+  border-color: var(--color-border);
+  color: var(--color-text-tertiary);
+}
+
+.app-bottombar__item--all-races.app-bottombar__item--disabled .material-icons {
+  color: var(--color-text-tertiary);
+}
+
 /* ============================================
    BETTING PANEL - Bankroll Summary
    ============================================ */
