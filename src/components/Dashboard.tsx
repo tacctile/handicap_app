@@ -226,8 +226,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   isLoading = false,
   onParsed,
   sessionPersistence,
-  onResetRace,
-  onResetAllRaces,
+  onResetRace: _onResetRace,
+  onResetAllRaces: _onResetAllRaces,
 }) => {
   // View mode state: 'overview' (default after parse), 'analysis', 'betMode', or 'topBets'
   const [viewMode, setViewMode] = useState<'overview' | 'analysis' | 'betMode' | 'topBets'>(
@@ -1536,37 +1536,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             >
               <span className="app-bottombar__top-bets-icon">🏆</span>
               <span>{viewMode === 'topBets' ? 'ANALYSIS' : 'TOP BETS'}</span>
-            </button>
-          </div>
-
-          {/* Separator - only shown when RESET RACE is visible */}
-          {viewMode !== 'overview' && <div className="app-bottombar__separator"></div>}
-
-          {/* RESET RACE button - Resets current race to defaults (hidden on Overview) */}
-          {viewMode !== 'overview' && (
-            <div className="app-bottombar__cluster">
-              <button
-                className="app-bottombar__item app-bottombar__item--reset"
-                onClick={onResetRace}
-                disabled={!parsedData || isLoading || !raceState.hasChanges}
-                title="Reset current race to default state (clears scratches, odds changes, sort)"
-              >
-                <span className="material-icons">restart_alt</span>
-                <span>RESET RACE</span>
-              </button>
-            </div>
-          )}
-
-          {/* RESET ALL button - Resets all races to defaults */}
-          <div className="app-bottombar__cluster">
-            <button
-              className="app-bottombar__item app-bottombar__item--reset-all"
-              onClick={onResetAllRaces}
-              disabled={!parsedData || isLoading}
-              title="Reset ALL races to default state"
-            >
-              <span className="material-icons">settings_backup_restore</span>
-              <span>RESET ALL</span>
             </button>
           </div>
 
