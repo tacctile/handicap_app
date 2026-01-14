@@ -20,7 +20,7 @@
   min-height: var(--bar-height, 48px);
   max-height: var(--bar-height, 48px);
 
-  /* Full width - extend background to left edge */
+  /* Full width - extend background to left edge using negative margin */
   width: calc(100% + var(--dimension-bar, 64px) + 1px);
   margin: 0;
   margin-left: calc(-1 * var(--dimension-bar, 64px) - 1px);

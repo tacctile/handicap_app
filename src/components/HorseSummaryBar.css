@@ -489,6 +489,8 @@
   padding: 0;
   /* Create stacking context - sticky headers inside will layer properly */
   position: relative;
+  /* Allow full-width bars to extend beyond container bounds */
+  overflow: visible;
 }
 
 .horse-list__item {

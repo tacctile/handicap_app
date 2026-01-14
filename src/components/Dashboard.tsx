@@ -911,17 +911,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <aside
             className={`app-race-rail ${parsedData?.races ? getRailCompactClass(parsedData.races.length) : ''}`}
           >
-            {/* ALL RACES back button - above race buttons */}
-            {viewMode === 'analysis' && (
-              <button
-                className="app-race-rail__back-btn"
-                onClick={handleBackToOverview}
-                title="Back to Race Overview"
-              >
-                <span className="material-icons app-race-rail__back-icon">arrow_upward</span>
-                <span className="app-race-rail__back-text">ALL RACES</span>
-              </button>
-            )}
             {parsedData?.races?.map((race, index) => {
               const raceStatus = getRaceStatus(race, index);
               const isActive = index === selectedRaceIndex;
@@ -1370,6 +1359,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           {/* Separator after Settings */}
           <div className="app-bottombar__separator"></div>
+
+          {/* ALL RACES button - Only shown in analysis mode */}
+          {viewMode === 'analysis' && parsedData && (
+            <>
+              <div className="app-bottombar__cluster">
+                <button
+                  className="app-bottombar__item app-bottombar__item--all-races"
+                  onClick={handleBackToOverview}
+                  title="Return to Race Overview"
+                >
+                  <span className="material-icons">grid_view</span>
+                  <span>ALL RACES</span>
+                </button>
+              </div>
+              <div className="app-bottombar__separator"></div>
+            </>
+          )}
 
           {/* BET MODE button - Primary action */}
           <div className="app-bottombar__cluster">
