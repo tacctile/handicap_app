@@ -4,7 +4,7 @@ import { useValueDetection } from '../hooks/useValueDetection';
 import { useRaceBets } from '../hooks/useRaceBets';
 import type { UseSessionPersistenceReturn } from '../hooks/useSessionPersistence';
 import { BetModeContainer } from './BetMode';
-import { TopBetsPanel } from './TopBets';
+import { TopBetsView } from './TopBets';
 import { FileUpload } from './FileUpload';
 import { HorseExpandedView } from './HorseExpandedView';
 import { HorseSummaryBar } from './HorseSummaryBar';
@@ -290,16 +290,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
         // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing sort state with persisted session on race change
         setSortColumn(savedColumn);
       } else {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing sort state with persisted session on race change
         setSortColumn('POST');
       }
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing sort state with persisted session on race change
+
       setSortDirection(savedRaceState.sortDirection || 'asc');
     } else {
       // Reset to defaults for new races
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing sort state with persisted session on race change
+
       setSortColumn('POST');
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing sort state with persisted session on race change
+
       setSortDirection('asc');
     }
   }, [selectedRaceIndex, sessionPersistence]);
@@ -415,6 +414,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }, [selectedRaceIndex]);
 
   // Calculate scored horses for current race (needed for betting recommendations)
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const currentRaceScoredHorses = useMemo(() => {
     if (!parsedData) return [];
 
@@ -428,7 +428,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
       (i) => raceState.isScratched(i),
       raceState.trackCondition
     );
-  }, [parsedData, selectedRaceIndex, raceState.updatedOdds, raceState.scratchedHorses, raceState.trackCondition, raceState.getOdds, raceState.isScratched]);
+  }, [
+    parsedData,
+    selectedRaceIndex,
+    raceState.updatedOdds,
+    raceState.scratchedHorses,
+    raceState.trackCondition,
+    raceState.getOdds,
+    raceState.isScratched,
+  ]);
 
   // Calculate scored horses for ALL races (for day planning mode)
   // Now uses persisted per-race state (scratches, odds overrides, track condition)
@@ -457,7 +465,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         trackConditionForRace
       );
     });
-  // sessionPersistence contains all state including getRaceState and session.raceStates
+    // sessionPersistence contains all state including getRaceState and session.raceStates
   }, [parsedData, sessionPersistence]);
 
   // Calculate RaceOverview data: confidences, top horses, diamonds, elite connections, scratched counts
@@ -565,6 +573,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const primaryValuePlayIndex = valueAnalysis.primaryValuePlay?.horseIndex ?? -1;
 
   // Sort horses based on current sort column and direction
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const sortedScoredHorses = useMemo(() => {
     if (!currentRaceScoredHorses.length) return currentRaceScoredHorses;
 
@@ -1206,21 +1215,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
               allScoredHorses={allScoredHorses}
               onRaceSelect={handleRaceSelectFromOverview}
             />
-          ) : viewMode === 'topBets' ? (
-            /* TOP BETS - Top 25 bet recommendations */
-            <TopBetsPanel
-              race={currentRace}
+          ) : viewMode === 'topBets' && currentRace?.header ? (
+            /* TOP BETS - Simple view of top 20 bet recommendations */
+            <TopBetsView
               raceNumber={selectedRaceIndex + 1}
               trackName={
                 trackCode ? getTrackDisplayName(trackCode, getTrackSize(trackCode)) : undefined
               }
+              raceHeader={currentRace.header}
               scoredHorses={currentRaceScoredHorses}
               getOdds={(index, defaultOdds) => raceState.getOdds(index, defaultOdds)}
               isScratched={(index) => raceState.isScratched(index)}
               onClose={() => setViewMode('analysis')}
-              allRaces={parsedData?.races}
-              allScoredHorses={allScoredHorses}
-              onNavigateToRace={onRaceSelect}
             />
           ) : viewMode === 'betMode' ? (
             /* BET MODE - Full screen betting interface */
