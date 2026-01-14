@@ -211,8 +211,8 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
       // Apply sorting
       filtered = sortBets(filtered, sortBy);
 
-      // Limit to reasonable number per column
-      return filtered.slice(0, 5);
+      // Limit to reasonable number per column (6 bets)
+      return filtered.slice(0, 6);
     },
     [allScaledBets, exactaVariant, trifectaVariant, sortBy]
   );
@@ -372,10 +372,26 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
   // Format horse display based on bet type
   const horseDisplay = formatHorseDisplay(bet);
 
+  // Calculate confidence as a percentage (probability capped at 99%)
+  const confidencePercent = Math.min(Math.round(bet.probability), 99);
+
+  // Determine confidence color class
+  const confidenceClass =
+    confidencePercent >= 70
+      ? 'compact-bet-card__confidence--high'
+      : confidencePercent >= 40
+        ? 'compact-bet-card__confidence--medium'
+        : 'compact-bet-card__confidence--low';
+
   return (
     <div className="compact-bet-card">
-      {/* Horse numbers */}
-      <div className="compact-bet-card__horses">{horseDisplay}</div>
+      {/* Header row: Horse numbers + Confidence */}
+      <div className="compact-bet-card__header">
+        <span className="compact-bet-card__horses">{horseDisplay}</span>
+        <span className={`compact-bet-card__confidence ${confidenceClass}`}>
+          {confidencePercent}%
+        </span>
+      </div>
 
       {/* Cost and return */}
       <div className="compact-bet-card__stats">
@@ -446,6 +462,10 @@ function sortBets(bets: ScaledTopBet[], sortBy: SortOption): ScaledTopBet[] {
   const sorted = [...bets];
 
   switch (sortBy) {
+    case 'confidence':
+      // Sort by probability (confidence) descending
+      sorted.sort((a, b) => b.probability - a.probability);
+      break;
     case 'payout':
       // Sort by max potential payout (descending)
       sorted.sort((a, b) => {
@@ -462,9 +482,9 @@ function sortBets(bets: ScaledTopBet[], sortBy: SortOption): ScaledTopBet[] {
       // Sort by cost (descending)
       sorted.sort((a, b) => b.scaledCost - a.scaledCost);
       break;
-    case 'confidence':
     default:
-      // Keep original EV-based ranking
+      // Default to confidence
+      sorted.sort((a, b) => b.probability - a.probability);
       break;
   }
 

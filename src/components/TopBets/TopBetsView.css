@@ -247,7 +247,7 @@
 .compact-bet-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   padding: 10px 10px;
   background: var(--color-card);
   border-bottom: 1px solid var(--color-border);
@@ -262,18 +262,54 @@
   border-bottom: none;
 }
 
-.compact-bet-card__horses {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-primary);
-  line-height: 1.3;
-  word-break: break-word;
+/* Header row with horse numbers and confidence */
+.compact-bet-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
 }
 
+.compact-bet-card__horses {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1.2;
+  word-break: break-word;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Confidence percentage badge */
+.compact-bet-card__confidence {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.compact-bet-card__confidence--high {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.compact-bet-card__confidence--medium {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.compact-bet-card__confidence--low {
+  background: rgba(156, 163, 175, 0.15);
+  color: var(--color-text-tertiary);
+}
+
+/* Cost and return stats */
 .compact-bet-card__stats {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-size: 12px;
   flex-wrap: wrap;
 }
@@ -281,6 +317,7 @@
 .compact-bet-card__cost {
   font-weight: 600;
   color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
 .compact-bet-card__dot {
@@ -292,14 +329,15 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Window script */
 .compact-bet-card__script {
   font-family: 'SF Mono', 'Monaco', 'Consolas', 'Liberation Mono', monospace;
   font-size: 10px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
   background: var(--color-base);
-  padding: 6px 8px;
+  padding: 5px 7px;
   border-radius: var(--radius-sm);
-  line-height: 1.4;
+  line-height: 1.3;
   word-break: break-word;
 }
 
@@ -328,6 +366,15 @@
 
   .compact-bet-card__horses {
     font-size: 13px;
+  }
+
+  .compact-bet-card__confidence {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+
+  .compact-bet-card__stats {
+    font-size: 11px;
   }
 
   .compact-bet-card__script {

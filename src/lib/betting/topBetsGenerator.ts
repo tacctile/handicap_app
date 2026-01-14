@@ -1142,14 +1142,24 @@ function generateSuperfectaBox5Bets(horses: HorseProb[]): BetCandidate[] {
 // ============================================================================
 
 /**
- * Bet type categories for diversity enforcement
+ * Bet type subcategories for diversity enforcement
+ * More granular than before to ensure straight and box variants are both included
  */
-type BetCategory = 'win' | 'place' | 'show' | 'exacta' | 'trifecta' | 'superfecta';
+type BetSubCategory =
+  | 'win'
+  | 'place'
+  | 'show'
+  | 'exacta_straight'
+  | 'exacta_box'
+  | 'trifecta_straight'
+  | 'trifecta_box'
+  | 'trifecta_key'
+  | 'superfecta';
 
 /**
- * Get the category for a bet type
+ * Get the subcategory for a bet type
  */
-function getBetCategory(type: TopBetType): BetCategory {
+function getBetSubCategory(type: TopBetType): BetSubCategory {
   switch (type) {
     case 'WIN':
       return 'win';
@@ -1159,63 +1169,79 @@ function getBetCategory(type: TopBetType): BetCategory {
       return 'show';
     case 'QUINELLA':
     case 'EXACTA_STRAIGHT':
+      return 'exacta_straight';
     case 'EXACTA_BOX_2':
     case 'EXACTA_BOX_3':
-      return 'exacta';
+      return 'exacta_box';
     case 'TRIFECTA_STRAIGHT':
+      return 'trifecta_straight';
     case 'TRIFECTA_BOX_3':
     case 'TRIFECTA_BOX_4':
+      return 'trifecta_box';
     case 'TRIFECTA_KEY':
-      return 'trifecta';
+      return 'trifecta_key';
     case 'SUPERFECTA_BOX_4':
     case 'SUPERFECTA_BOX_5':
       return 'superfecta';
     default:
-      return 'exacta';
+      return 'exacta_straight';
   }
 }
 
 /**
- * Ensure diversity in top bets by including best from each bet type category
- * This guarantees all 6 columns (WIN, PLACE, SHOW, EXACTA, TRIFECTA, SUPERFECTA) have bets
+ * Ensure diversity in top bets by including best from each bet type subcategory
+ * This guarantees all 6 columns have bets, including straight variants
  */
 function enforceTypeDiversity(
   candidates: BetCandidate[],
-  targetCount: number = 25
+  targetCount: number = 50
 ): BetCandidate[] {
   const selected = new Set<string>();
   const result: BetCandidate[] = [];
   const makeKey = (c: BetCandidate) => `${c.type}-${c.horseIndices.join(',')}`;
 
-  // Group by bet category and sort each group by EV
-  const byCategory: Record<BetCategory, BetCandidate[]> = {
+  // Group by bet subcategory and sort each group by EV
+  const bySubCategory: Record<BetSubCategory, BetCandidate[]> = {
     win: [],
     place: [],
     show: [],
-    exacta: [],
-    trifecta: [],
+    exacta_straight: [],
+    exacta_box: [],
+    trifecta_straight: [],
+    trifecta_box: [],
+    trifecta_key: [],
     superfecta: [],
   };
 
   for (const candidate of candidates) {
-    const category = getBetCategory(candidate.type);
-    byCategory[category].push(candidate);
+    const subCategory = getBetSubCategory(candidate.type);
+    bySubCategory[subCategory].push(candidate);
   }
 
-  // Sort each category by EV
-  for (const category of Object.keys(byCategory) as BetCategory[]) {
-    byCategory[category].sort((a, b) => b.expectedValue - a.expectedValue);
+  // Sort each subcategory by EV
+  for (const subCategory of Object.keys(bySubCategory) as BetSubCategory[]) {
+    bySubCategory[subCategory].sort((a, b) => b.expectedValue - a.expectedValue);
   }
 
-  // STEP 1: Ensure at least 3 bets from each category for the 6-column layout
-  const minPerCategory = 3;
-  const categories: BetCategory[] = ['win', 'place', 'show', 'exacta', 'trifecta', 'superfecta'];
+  // STEP 1: Ensure at least 6 bets from each subcategory for fuller columns
+  const minPerSubCategory = 6;
+  const subCategories: BetSubCategory[] = [
+    'win',
+    'place',
+    'show',
+    'exacta_straight',
+    'exacta_box',
+    'trifecta_straight',
+    'trifecta_box',
+    'trifecta_key',
+    'superfecta',
+  ];
 
-  for (const category of categories) {
-    const categoryBets = byCategory[category];
+  for (const subCategory of subCategories) {
+    const subCategoryBets = bySubCategory[subCategory];
     let count = 0;
-    for (const candidate of categoryBets) {
-      if (count >= minPerCategory) break;
+    for (const candidate of subCategoryBets) {
+      if (count >= minPerSubCategory) break;
       const key = makeKey(candidate);
       if (!selected.has(key)) {
         selected.add(key);
