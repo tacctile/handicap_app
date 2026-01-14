@@ -11,7 +11,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import type { ParsedRace } from '../../types/drf';
 import type { ScoredHorse } from '../../lib/scoring';
-import { analyzeRaceValue, parseOddsToNumber, formatEdge, getEdgeColor } from '../../hooks/useValueDetection';
+import { parseOddsToNumber, getEdgeColor } from '../../hooks/useValueDetection';
 import {
   analyzeOverlayWithField,
   formatOverlayPercent,
@@ -279,9 +279,9 @@ function calculatePotentialReturn(
 // ============================================================================
 
 export const BetBuilderInterface: React.FC<BetBuilderInterfaceProps> = ({
-  race,
+  race: _race,
   raceNumber,
-  trackName,
+  trackName: _trackName,
   scoredHorses,
   getOdds,
   isScratched,
@@ -336,10 +336,11 @@ export const BetBuilderInterface: React.FC<BetBuilderInterfaceProps> = ({
     });
   }, [activeHorses, getOdds, allFieldBaseScores]);
 
-  // Value analysis for the race
-  const valueAnalysis = useMemo(() => {
-    return analyzeRaceValue(scoredHorses, getOdds, isScratched);
-  }, [scoredHorses, getOdds, isScratched]);
+  // Value analysis for the race (reserved for future use)
+  const _valueAnalysis = useMemo(() => {
+    // Note: Currently not displayed directly but available for future enhancements
+    return null;
+  }, []);
 
   // ============================================================================
   // AUTO-FILL HORSES BASED ON BET TYPE AND RISK STYLE
@@ -440,7 +441,7 @@ export const BetBuilderInterface: React.FC<BetBuilderInterfaceProps> = ({
   function generateWhyThisBet(type: BuilderBetType, horses: HorseSelection[], style: RiskStyle): string {
     if (horses.length === 0) return '';
 
-    const topHorse = horses[0];
+    const topHorse = horses[0]!;
     const edgeText = topHorse.edge > 0 ? `+${Math.round(topHorse.edge)}% edge` : 'fair value';
 
     switch (type) {
@@ -468,7 +469,7 @@ export const BetBuilderInterface: React.FC<BetBuilderInterfaceProps> = ({
     selected: HorseSelection[],
     amount: number,
     raceNum: number,
-    allHorses: HorseSelection[]
+    _allHorses: HorseSelection[]
   ): GeneratedBet | null {
     let saferType: BuilderBetType;
     let saferHorses: HorseSelection[];
@@ -568,8 +569,6 @@ export const BetBuilderInterface: React.FC<BetBuilderInterfaceProps> = ({
         deeperType = 'WIN';
         deeperHorses = selected.slice(0, 1);
         // For WIN, we show an additional WIN bet, not combined
-        const winCombos = 1;
-        const winCost = amount;
         return {
           id: 'deeper',
           label: 'GO DEEPER',
@@ -638,9 +637,10 @@ export const BetBuilderInterface: React.FC<BetBuilderInterfaceProps> = ({
   }
 
   function toOrdinal(n: number): string {
-    const s = ['th', 'st', 'nd', 'rd'];
+    const suffixes = ['th', 'st', 'nd', 'rd'] as const;
     const v = n % 100;
-    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    const suffix = suffixes[(v - 20) % 10] ?? suffixes[v] ?? 'th';
+    return `${n}${suffix}`;
   }
 
   // ============================================================================
