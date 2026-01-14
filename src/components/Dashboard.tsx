@@ -3,7 +3,8 @@ import './Dashboard.css';
 import { useValueDetection } from '../hooks/useValueDetection';
 import { useRaceBets } from '../hooks/useRaceBets';
 import type { UseSessionPersistenceReturn } from '../hooks/useSessionPersistence';
-import { BetModeContainer } from './BetMode';
+// Note: BetModeContainer import removed - old BET MODE screen disconnected from navigation
+// File kept at ./BetMode/BetModeContainer.tsx for potential future use
 import { TopBetsView } from './TopBets';
 import { FileUpload } from './FileUpload';
 import { HorseExpandedView } from './HorseExpandedView';
@@ -229,10 +230,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onResetRace: _onResetRace,
   onResetAllRaces: _onResetAllRaces,
 }) => {
-  // View mode state: 'overview' (default after parse), 'analysis', 'betMode', or 'topBets'
-  const [viewMode, setViewMode] = useState<'overview' | 'analysis' | 'betMode' | 'topBets'>(
-    'analysis'
-  );
+  // View mode state: 'overview' (default after parse), 'analysis', or 'topBets'
+  // Note: 'betMode' removed - old BET MODE screen is now disconnected
+  const [viewMode, setViewMode] = useState<'overview' | 'analysis' | 'topBets'>('analysis');
 
   // State for expanded horse in horse list
   const [expandedHorseId, setExpandedHorseId] = useState<string | number | null>(null);
@@ -1228,23 +1228,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
               isScratched={(index) => raceState.isScratched(index)}
               onClose={() => setViewMode('analysis')}
             />
-          ) : viewMode === 'betMode' ? (
-            /* BET MODE - Full screen betting interface */
-            <BetModeContainer
-              race={currentRace}
-              raceNumber={selectedRaceIndex + 1}
-              trackName={
-                trackCode ? getTrackDisplayName(trackCode, getTrackSize(trackCode)) : undefined
-              }
-              valueAnalysis={valueAnalysis}
-              scoredHorses={currentRaceScoredHorses}
-              getOdds={(index, defaultOdds) => raceState.getOdds(index, defaultOdds)}
-              isScratched={(index) => raceState.isScratched(index)}
-              onClose={() => setViewMode('analysis')}
-              allRaces={parsedData?.races}
-              allScoredHorses={allScoredHorses}
-              onNavigateToRace={onRaceSelect}
-            />
           ) : (
             /* ANALYSIS MODE - Horse list and analysis view */
             <div className="app-main__content">
@@ -1504,38 +1487,38 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* Separator after ALL RACES */}
           <div className="app-bottombar__separator"></div>
 
-          {/* BET MODE button - Primary action */}
+          {/* ANALYZE RACE button - Goes to single race analysis view */}
           <div className="app-bottombar__cluster">
             <button
-              className={`app-bottombar__item app-bottombar__item--bet-mode ${viewMode === 'betMode' ? 'app-bottombar__item--bet-mode-active' : ''}`}
-              onClick={() => setViewMode(viewMode === 'betMode' ? 'analysis' : 'betMode')}
-              disabled={!parsedData || isLoading}
+              className={`app-bottombar__item app-bottombar__item--analyze-race ${viewMode === 'analysis' ? 'app-bottombar__item--analyze-race-active' : ''}`}
+              onClick={() => setViewMode('analysis')}
+              disabled={!parsedData || isLoading || viewMode === 'overview'}
               title={
-                viewMode === 'betMode' ? 'Return to analysis view' : 'Enter bet mode to place bets'
+                viewMode === 'overview'
+                  ? 'Select a race first'
+                  : 'View race analysis with horse scores and odds'
               }
             >
-              <span className="app-bottombar__bet-icon">🎯</span>
-              <span>{viewMode === 'betMode' ? 'ANALYSIS' : 'BET MODE'}</span>
+              <span className="app-bottombar__analyze-icon">🎯</span>
+              <span>ANALYZE RACE</span>
             </button>
           </div>
 
           {/* Separator */}
           <div className="app-bottombar__separator"></div>
 
-          {/* TOP BETS button - Shows Top 25 bets by EV */}
+          {/* TOP BETS button - Shows 6-column bet grid */}
           <div className="app-bottombar__cluster">
             <button
               className={`app-bottombar__item app-bottombar__item--top-bets ${viewMode === 'topBets' ? 'app-bottombar__item--top-bets-active' : ''}`}
-              onClick={() => setViewMode(viewMode === 'topBets' ? 'analysis' : 'topBets')}
-              disabled={!parsedData || isLoading}
+              onClick={() => setViewMode('topBets')}
+              disabled={!parsedData || isLoading || viewMode === 'overview'}
               title={
-                viewMode === 'topBets'
-                  ? 'Return to analysis view'
-                  : 'View Top 25 bets ranked by expected value'
+                viewMode === 'overview' ? 'Select a race first' : 'View top bets in 6-column grid'
               }
             >
               <span className="app-bottombar__top-bets-icon">🏆</span>
-              <span>{viewMode === 'topBets' ? 'ANALYSIS' : 'TOP BETS'}</span>
+              <span>TOP BETS</span>
             </button>
           </div>
 
