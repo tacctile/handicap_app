@@ -282,12 +282,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Header row with horse numbers and confidence */
+/* Header row with horse numbers (full width) */
 .compact-bet-card__header {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
 }
 
 .compact-bet-card__horses {
@@ -296,56 +294,25 @@
   color: var(--color-primary);
   line-height: 1.3;
   word-break: break-word;
-  flex: 1;
-  min-width: 0;
 }
 
-/* Confidence percentage badge with label */
+/* Confidence - plain text at bottom of card */
 .compact-bet-card__confidence {
   display: flex;
   align-items: center;
   font-size: 11px;
-  padding: 3px 6px;
-  border-radius: 4px;
-  flex-shrink: 0;
+  color: var(--color-text-tertiary);
 }
 
 .compact-bet-card__confidence .compact-bet-card__label {
-  font-size: 8px;
-  opacity: 0.8;
+  font-size: 9px;
+  color: var(--color-text-tertiary);
 }
 
 .compact-bet-card__confidence .compact-bet-card__value {
   font-size: 11px;
-  font-weight: 700;
-}
-
-.compact-bet-card__confidence--high {
-  background: rgba(16, 185, 129, 0.15);
-  color: #10b981;
-}
-
-.compact-bet-card__confidence--high .compact-bet-card__label {
-  color: rgba(16, 185, 129, 0.7);
-}
-
-.compact-bet-card__confidence--medium {
-  background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
-}
-
-.compact-bet-card__confidence--medium .compact-bet-card__label {
-  color: rgba(245, 158, 11, 0.7);
-}
-
-.compact-bet-card__confidence--low {
-  background: rgba(156, 163, 175, 0.15);
+  font-weight: 600;
   color: var(--color-text-tertiary);
-}
-
-.compact-bet-card__confidence--low .compact-bet-card__label {
-  color: var(--color-text-tertiary);
-  opacity: 0.7;
 }
 
 /* Cost and payout stats row */
@@ -426,12 +393,8 @@
     font-size: 8px;
   }
 
-  .compact-bet-card__confidence {
-    padding: 2px 5px;
-  }
-
   .compact-bet-card__confidence .compact-bet-card__label {
-    font-size: 7px;
+    font-size: 8px;
   }
 
   .compact-bet-card__confidence .compact-bet-card__value {
