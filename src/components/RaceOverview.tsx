@@ -10,6 +10,7 @@ interface RaceOverviewProps {
   topHorsesByRace: Map<number, ScoredHorse[]>;
   diamondCountByRace?: Map<number, number>;
   eliteConnectionsCountByRace?: Map<number, number>;
+  scratchedCountByRace?: Map<number, number>;
   allScoredHorses?: ScoredHorse[][];
   onRaceSelect: (raceIndex: number) => void;
 }
@@ -300,6 +301,7 @@ const RaceCard = memo(function RaceCard({
 export const RaceOverview = memo(function RaceOverview({
   parsedData,
   topHorsesByRace,
+  scratchedCountByRace,
   allScoredHorses,
   onRaceSelect,
 }: RaceOverviewProps) {
@@ -321,6 +323,7 @@ export const RaceOverview = memo(function RaceOverview({
   }, [handleKeyDown]);
 
   // Calculate verdict for each race using the value detection logic
+  // Now uses the actual per-race state (scratches, odds) from allScoredHorses
   const raceVerdicts = useMemo(() => {
     const verdicts = new Map<number, RaceVerdict>();
 
@@ -333,10 +336,23 @@ export const RaceOverview = memo(function RaceOverview({
       }
 
       // Use the same value analysis logic as RaceVerdictHeader
+      // The scoredHorses already have scratches and odds applied from Dashboard's allScoredHorses
+      // Build a getOdds function that returns the horse's current (already computed) odds
+      // Build an isScratched function that checks the horse's scratched flag
       const analysis = analyzeRaceValue(
         scoredHorses,
-        (_index, originalOdds) => originalOdds, // Use morning line for overview
-        () => false // No scratches for overview
+        (index, originalOdds) => {
+          // Find the horse with this index and return its odds from morningLineOdds
+          // The scoring already factored in any odds overrides, but analyzeRaceValue
+          // uses this to check odds-based logic. Use the original horse data.
+          const horse = scoredHorses.find(sh => sh.index === index);
+          return horse?.horse.morningLineOdds ?? originalOdds;
+        },
+        (index) => {
+          // Check if horse is scratched using the scored horse data
+          const horse = scoredHorses.find(sh => sh.index === index);
+          return horse?.score.isScratched ?? false;
+        }
       );
 
       verdicts.set(raceIndex, analysis.verdict);
@@ -362,7 +378,7 @@ export const RaceOverview = memo(function RaceOverview({
               race={race}
               raceIndex={index}
               topHorses={topHorsesByRace.get(index) || []}
-              scratchedCount={0}
+              scratchedCount={scratchedCountByRace?.get(index) || 0}
               verdict={raceVerdicts.get(index) || 'PASS'}
               onClick={() => onRaceSelect(index)}
             />
