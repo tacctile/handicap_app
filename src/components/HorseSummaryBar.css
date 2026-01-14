@@ -183,10 +183,11 @@
   overflow: visible;
 }
 
-/* Rank - projected finish order based on base score (X/328)
+/* PROJECTED FINISH - projected finish order based on base score (X/328)
+   Number sized similarly to POST position for visual consistency
    Color is set dynamically via inline style using gradient from teal to gray */
 .horse-summary-bar__rank {
-  font-size: 18px;
+  font-size: 24px; /* Sized similarly to POST position for consistency */
   font-weight: 700;
   text-align: center;
   display: flex;
@@ -807,7 +808,7 @@
   }
 
   .horse-summary-bar__rank {
-    font-size: 14px;
+    font-size: 18px; /* Proportionally smaller on mobile but still readable */
   }
 
   .horse-summary-bar__pp {
@@ -831,4 +832,57 @@
 /* Top rank styling */
 .horse-summary-bar__rank-value--top {
   font-weight: 800;
+}
+
+/* ============================================
+   VALUE LABEL - Plain-English Value Description
+   Positioned between horse name and data columns
+   ============================================ */
+
+.horse-summary-bar__value-label-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0; /* Allow flex item to shrink */
+}
+
+.horse-summary-bar__value-label-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm, 6px);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  border: 1px solid;
+  text-transform: uppercase;
+  line-height: 1;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+/* Scratched state - hide value label */
+.horse-summary-bar--scratched .horse-summary-bar__value-label-wrapper {
+  opacity: 0.4;
+}
+
+/* Responsive: Hide value labels on smaller screens */
+@media (max-width: 1200px) {
+  .horse-summary-bar__value-label-badge {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+}
+
+@media (max-width: 900px) {
+  .horse-summary-bar__value-label-wrapper {
+    display: none;
+  }
+
+  .horse-list-header__cell--value-label {
+    display: none;
+  }
 }

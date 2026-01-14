@@ -979,7 +979,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span className="horse-list-header__label">HORSE</span>
             </div>
 
-            {/* Column 4: RANK - Sortable */}
+            {/* Column 4: VALUE - Plain-English value labels - NOT sortable */}
+            <div className="horse-list-header__cell horse-list-header__cell--value-label">
+              <span className="horse-list-header__label">VALUE</span>
+            </div>
+
+            {/* Column 5: PROJECTED FINISH - Sortable */}
             <div
               className={`horse-list-header__cell horse-list-header__cell--rank horse-list-header__cell--sortable ${sortColumn === 'RANK' ? 'horse-list-header__cell--active' : ''}`}
               onClick={() => handleColumnSort('RANK')}
@@ -988,7 +993,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('RANK')}
             >
               <span className="horse-list-header__label">
-                RANK
+                PROJECTED FINISH
                 <span
                   className={`horse-list-header__arrow ${sortColumn === 'RANK' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
                 >
@@ -1049,11 +1054,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   {sortColumn === 'EDGE' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
                 </span>
               </span>
-            </div>
-
-            {/* Column 8: VALUE - NOT sortable */}
-            <div className="horse-list-header__cell horse-list-header__cell--value">
-              <span className="horse-list-header__label">VALUE</span>
             </div>
 
             {/* Column 9: Expand */}
@@ -1169,6 +1169,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     const allFieldBaseScores = sortedScoredHorses
                       .filter((h) => !h.score.isScratched)
                       .map((h) => h.score.baseScore);
+
+                    // Find the favorite (horse with lowest odds in the field)
+                    // Only consider non-scratched horses
+                    const parseOddsToDecimal = (oddsStr: string): number => {
+                      const parts = oddsStr.split('-');
+                      const num = parseFloat(parts[0] || '10');
+                      const den = parseFloat(parts[1] || '1');
+                      return num / den;
+                    };
+
+                    let favoriteIndex = -1;
+                    let lowestOdds = Infinity;
+                    for (const sh of sortedScoredHorses) {
+                      if (!raceState.isScratched(sh.index)) {
+                        const oddsStr = raceState.getOdds(sh.index, sh.horse.morningLineOdds);
+                        const oddsDecimal = parseOddsToDecimal(oddsStr);
+                        if (oddsDecimal < lowestOdds) {
+                          lowestOdds = oddsDecimal;
+                          favoriteIndex = sh.index;
+                        }
+                      }
+                    }
 
                     return sortedScoredHorses.map((scoredHorse, index) => {
                       const horse = scoredHorse.horse;
@@ -1306,6 +1328,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             isPrimaryValuePlay={horseIndex === primaryValuePlayIndex}
                             edgePercent={valuePlay?.valueEdge}
                             rowId={`horse-row-${horseIndex}`}
+                            // Favorite detection for FALSE FAVORITE label
+                            isFavorite={horseIndex === favoriteIndex}
                           />
                           <HorseExpandedView
                             horse={horse}
