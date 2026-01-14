@@ -5,6 +5,7 @@ import { useRaceBets } from '../hooks/useRaceBets';
 import type { UseSessionPersistenceReturn } from '../hooks/useSessionPersistence';
 import { BetModeContainer } from './BetMode';
 import { TopBetsPanel } from './TopBets';
+import { BetBuilderWizard } from './BetBuilder';
 import { FileUpload } from './FileUpload';
 import { HorseExpandedView } from './HorseExpandedView';
 import { HorseSummaryBar } from './HorseSummaryBar';
@@ -229,8 +230,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onResetRace,
   onResetAllRaces,
 }) => {
-  // View mode state: 'overview' (default after parse), 'analysis', 'betMode', or 'topBets'
-  const [viewMode, setViewMode] = useState<'overview' | 'analysis' | 'betMode' | 'topBets'>(
+  // View mode state: 'overview' (default after parse), 'analysis', 'betMode', 'topBets', or 'betBuilder'
+  const [viewMode, setViewMode] = useState<'overview' | 'analysis' | 'betMode' | 'topBets' | 'betBuilder'>(
     'analysis'
   );
 
@@ -1222,6 +1223,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
               allScoredHorses={allScoredHorses}
               onNavigateToRace={onRaceSelect}
             />
+          ) : viewMode === 'betBuilder' ? (
+            /* BET BUILDER - Step-by-step wizard for novice bettors */
+            <BetBuilderWizard
+              raceNumber={selectedRaceIndex + 1}
+              trackName={
+                trackCode ? getTrackDisplayName(trackCode, getTrackSize(trackCode)) : 'Track'
+              }
+              scoredHorses={currentRaceScoredHorses}
+              getOdds={(index, defaultOdds) => raceState.getOdds(index, defaultOdds)}
+              isScratched={(index) => raceState.isScratched(index)}
+              valuePlay={valueAnalysis.primaryValuePlay}
+              onClose={() => setViewMode('analysis')}
+            />
           ) : viewMode === 'betMode' ? (
             /* BET MODE - Full screen betting interface */
             <BetModeContainer
@@ -1528,8 +1542,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   : 'View Top 25 bets ranked by expected value'
               }
             >
-              <span className="app-bottombar__top-bets-icon">🏆</span>
+              <span className="app-bottombar__top-bets-icon">&#127942;</span>
               <span>{viewMode === 'topBets' ? 'ANALYSIS' : 'TOP BETS'}</span>
+            </button>
+          </div>
+
+          {/* Separator */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* BET BUILDER button - Wizard for novice bettors */}
+          <div className="app-bottombar__cluster">
+            <button
+              className={`app-bottombar__item app-bottombar__item--bet-builder ${viewMode === 'betBuilder' ? 'app-bottombar__item--bet-builder-active' : ''}`}
+              onClick={() => setViewMode(viewMode === 'betBuilder' ? 'analysis' : 'betBuilder')}
+              disabled={!parsedData || isLoading}
+              title={
+                viewMode === 'betBuilder'
+                  ? 'Return to analysis view'
+                  : 'Build bets with step-by-step wizard'
+              }
+            >
+              <span className="app-bottombar__bet-builder-icon">&#128295;</span>
+              <span>{viewMode === 'betBuilder' ? 'ANALYSIS' : 'BET BUILDER'}</span>
             </button>
           </div>
 

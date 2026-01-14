@@ -1,0 +1,941 @@
+/**
+ * Bet Builder Wizard Styles
+ *
+ * A clean, step-by-step wizard interface for building bets.
+ */
+
+/* ============================================================================
+   CONTAINER
+   ============================================================================ */
+
+.bet-builder-wizard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-primary, #1a1a2e);
+  color: var(--text-primary, #ffffff);
+  font-family: var(--font-primary, 'Inter', sans-serif);
+}
+
+/* ============================================================================
+   HEADER
+   ============================================================================ */
+
+.bet-builder-wizard__header {
+  padding: 16px 20px;
+  background: var(--bg-secondary, #16213e);
+  border-bottom: 1px solid var(--border-color, #2a2a4a);
+}
+
+.bet-builder-wizard__header-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.bet-builder-wizard__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bet-builder-wizard__title-icon {
+  font-size: 24px;
+}
+
+.bet-builder-wizard__title-text {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.bet-builder-wizard__title-race {
+  font-size: 14px;
+  color: var(--text-secondary, #a0a0c0);
+  font-weight: 400;
+}
+
+.bet-builder-wizard__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary, #a0a0c0);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bet-builder-wizard__close:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.1));
+  color: var(--text-primary, #ffffff);
+}
+
+.bet-builder-wizard__header-info {
+  font-size: 13px;
+  color: var(--text-secondary, #a0a0c0);
+  margin-bottom: 16px;
+}
+
+/* Progress Bar */
+.bet-builder-wizard__progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  padding: 0 10px;
+}
+
+.bet-builder-wizard__progress::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 30px;
+  right: 30px;
+  height: 2px;
+  background: var(--border-color, #2a2a4a);
+  z-index: 0;
+}
+
+.bet-builder-wizard__progress-bar {
+  position: absolute;
+  top: 12px;
+  left: 30px;
+  height: 2px;
+  background: var(--color-success, #22c55e);
+  transition: width 0.3s ease;
+  z-index: 1;
+}
+
+.bet-builder-wizard__progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+}
+
+.bet-builder-wizard__progress-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-tertiary, #252550);
+  border: 2px solid var(--border-color, #2a2a4a);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #a0a0c0);
+  transition: all 0.2s;
+}
+
+.bet-builder-wizard__progress-dot .material-icons {
+  font-size: 14px;
+}
+
+.bet-builder-wizard__progress-step--active .bet-builder-wizard__progress-dot {
+  background: var(--color-primary, #6366f1);
+  border-color: var(--color-primary, #6366f1);
+  color: white;
+}
+
+.bet-builder-wizard__progress-step--complete .bet-builder-wizard__progress-dot {
+  background: var(--color-success, #22c55e);
+  border-color: var(--color-success, #22c55e);
+  color: white;
+}
+
+.bet-builder-wizard__progress-label {
+  font-size: 10px;
+  color: var(--text-secondary, #a0a0c0);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bet-builder-wizard__progress-step--active .bet-builder-wizard__progress-label {
+  color: var(--color-primary, #6366f1);
+  font-weight: 600;
+}
+
+/* ============================================================================
+   CONTENT
+   ============================================================================ */
+
+.bet-builder-wizard__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 20px;
+}
+
+.bet-builder-wizard__step {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bet-builder-wizard__step-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bet-builder-wizard__step-title .material-icons {
+  color: var(--color-primary, #6366f1);
+}
+
+.bet-builder-wizard__suggestion-icon {
+  font-size: 24px;
+}
+
+.bet-builder-wizard__step-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary, #a0a0c0);
+  margin-bottom: 24px;
+}
+
+/* ============================================================================
+   OPTIONS (Step 1 & 3)
+   ============================================================================ */
+
+.bet-builder-wizard__options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bet-builder-wizard__option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-secondary, #16213e);
+  border: 2px solid var(--border-color, #2a2a4a);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  color: inherit;
+}
+
+.bet-builder-wizard__option:hover {
+  border-color: var(--color-primary, #6366f1);
+  background: var(--bg-hover, rgba(99, 102, 241, 0.1));
+}
+
+.bet-builder-wizard__option--selected {
+  border-color: var(--color-primary, #6366f1);
+  background: var(--bg-hover, rgba(99, 102, 241, 0.15));
+}
+
+.bet-builder-wizard__option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--bg-tertiary, #252550);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-primary, #6366f1);
+}
+
+.bet-builder-wizard__option-icon .material-icons {
+  font-size: 24px;
+}
+
+.bet-builder-wizard__option-content {
+  flex: 1;
+}
+
+.bet-builder-wizard__option-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.bet-builder-wizard__option-desc {
+  font-size: 14px;
+  color: var(--color-primary, #6366f1);
+  margin-bottom: 2px;
+}
+
+.bet-builder-wizard__option-subtext {
+  font-size: 12px;
+  color: var(--text-secondary, #a0a0c0);
+}
+
+.bet-builder-wizard__option-check {
+  color: var(--color-success, #22c55e);
+  font-size: 24px;
+}
+
+/* ============================================================================
+   BUDGET (Step 2)
+   ============================================================================ */
+
+.bet-builder-wizard__budget-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.bet-builder-wizard__budget-btn {
+  flex: 1;
+  min-width: 60px;
+  padding: 14px 20px;
+  background: var(--bg-secondary, #16213e);
+  border: 2px solid var(--border-color, #2a2a4a);
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bet-builder-wizard__budget-btn:hover {
+  border-color: var(--color-primary, #6366f1);
+}
+
+.bet-builder-wizard__budget-btn--selected {
+  border-color: var(--color-primary, #6366f1);
+  background: var(--color-primary, #6366f1);
+}
+
+.bet-builder-wizard__budget-custom {
+  margin-bottom: 20px;
+}
+
+.bet-builder-wizard__budget-label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary, #a0a0c0);
+  margin-bottom: 8px;
+}
+
+.bet-builder-wizard__budget-input-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--bg-secondary, #16213e);
+  border: 2px solid var(--border-color, #2a2a4a);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.bet-builder-wizard__budget-prefix {
+  padding: 0 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-secondary, #a0a0c0);
+}
+
+.bet-builder-wizard__budget-input {
+  flex: 1;
+  padding: 14px 16px 14px 0;
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+  outline: none;
+}
+
+.bet-builder-wizard__budget-input::placeholder {
+  color: var(--text-muted, #6060a0);
+}
+
+.bet-builder-wizard__budget-advice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  background: var(--bg-info, rgba(59, 130, 246, 0.1));
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-secondary, #a0a0c0);
+  line-height: 1.5;
+}
+
+.bet-builder-wizard__budget-advice .material-icons {
+  color: var(--color-info, #3b82f6);
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   VALUE BADGE
+   ============================================================================ */
+
+.bet-builder-wizard__value-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(234, 88, 12, 0.2) 100%);
+  border: 1px solid var(--color-value, #ef4444);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.bet-builder-wizard__value-icon {
+  font-size: 28px;
+}
+
+.bet-builder-wizard__value-content {
+  flex: 1;
+}
+
+.bet-builder-wizard__value-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--color-value, #ef4444);
+  margin-bottom: 2px;
+}
+
+.bet-builder-wizard__value-horse {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.bet-builder-wizard__value-edge {
+  font-size: 12px;
+  color: var(--text-secondary, #a0a0c0);
+}
+
+/* ============================================================================
+   BET CARDS
+   ============================================================================ */
+
+.bet-builder-wizard__bets {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.bet-builder-wizard__bet-card {
+  background: var(--bg-secondary, #16213e);
+  border: 1px solid var(--border-color, #2a2a4a);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.bet-builder-wizard__bet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.bet-builder-wizard__bet-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bet-builder-wizard__bet-num {
+  font-size: 12px;
+  color: var(--text-secondary, #a0a0c0);
+  font-weight: 500;
+}
+
+.bet-builder-wizard__bet-type {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-primary, #6366f1);
+}
+
+.bet-builder-wizard__bet-cost {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-success, #22c55e);
+}
+
+.bet-builder-wizard__bet-horses {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.bet-builder-wizard__bet-combos {
+  font-size: 12px;
+  color: var(--text-secondary, #a0a0c0);
+  margin-bottom: 6px;
+}
+
+.bet-builder-wizard__bet-return {
+  font-size: 13px;
+  color: var(--text-secondary, #a0a0c0);
+  margin-bottom: 14px;
+}
+
+/* What to Say Script */
+.bet-builder-wizard__bet-script {
+  background: var(--bg-tertiary, #252550);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.bet-builder-wizard__bet-script-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary, #a0a0c0);
+  margin-bottom: 8px;
+}
+
+.bet-builder-wizard__bet-script-header .material-icons {
+  font-size: 14px;
+}
+
+.bet-builder-wizard__bet-script-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bet-builder-wizard__bet-script-text {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--text-primary, #ffffff);
+}
+
+.bet-builder-wizard__copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: var(--color-primary, #6366f1);
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.bet-builder-wizard__copy-btn .material-icons {
+  font-size: 14px;
+}
+
+.bet-builder-wizard__copy-btn:hover {
+  background: var(--color-primary-dark, #4f46e5);
+}
+
+.bet-builder-wizard__copy-btn--copied {
+  background: var(--color-success, #22c55e);
+}
+
+/* Expandable Details */
+.bet-builder-wizard__bet-details {
+  border-top: 1px solid var(--border-color, #2a2a4a);
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.bet-builder-wizard__bet-details + .bet-builder-wizard__bet-details {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 8px;
+}
+
+.bet-builder-wizard__bet-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-primary, #6366f1);
+  cursor: pointer;
+  list-style: none;
+  padding: 4px 0;
+}
+
+.bet-builder-wizard__bet-summary::-webkit-details-marker {
+  display: none;
+}
+
+.bet-builder-wizard__bet-summary .material-icons {
+  font-size: 18px;
+}
+
+.bet-builder-wizard__bet-explanation {
+  font-size: 13px;
+  color: var(--text-secondary, #a0a0c0);
+  line-height: 1.6;
+  padding: 10px 0 4px 24px;
+}
+
+/* ============================================================================
+   SUMMARY
+   ============================================================================ */
+
+.bet-builder-wizard__summary {
+  background: var(--bg-secondary, #16213e);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.bet-builder-wizard__summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 14px;
+  color: var(--text-secondary, #a0a0c0);
+}
+
+.bet-builder-wizard__summary-row:not(:last-child) {
+  border-bottom: 1px solid var(--border-color, #2a2a4a);
+}
+
+.bet-builder-wizard__summary-value {
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+}
+
+.bet-builder-wizard__summary-value--highlight {
+  color: var(--color-success, #22c55e);
+}
+
+/* ============================================================================
+   HORSE LIST (Override Mode)
+   ============================================================================ */
+
+.bet-builder-wizard__horse-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.bet-builder-wizard__horse-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-secondary, #16213e);
+  border: 2px solid var(--border-color, #2a2a4a);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  color: inherit;
+}
+
+.bet-builder-wizard__horse-item:hover {
+  border-color: var(--color-primary, #6366f1);
+}
+
+.bet-builder-wizard__horse-item--selected {
+  border-color: var(--color-primary, #6366f1);
+  background: var(--bg-hover, rgba(99, 102, 241, 0.1));
+}
+
+.bet-builder-wizard__horse-item--value {
+  border-color: var(--color-value, #ef4444);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.bet-builder-wizard__horse-check {
+  color: var(--text-secondary, #a0a0c0);
+}
+
+.bet-builder-wizard__horse-item--selected .bet-builder-wizard__horse-check {
+  color: var(--color-primary, #6366f1);
+}
+
+.bet-builder-wizard__horse-pp {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-primary, #6366f1);
+  min-width: 36px;
+}
+
+.bet-builder-wizard__horse-info {
+  flex: 1;
+}
+
+.bet-builder-wizard__horse-name {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.bet-builder-wizard__horse-meta {
+  font-size: 12px;
+  color: var(--text-secondary, #a0a0c0);
+}
+
+.bet-builder-wizard__horse-label {
+  display: flex;
+  gap: 6px;
+}
+
+.bet-builder-wizard__horse-badge {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.bet-builder-wizard__horse-badge--value {
+  background: var(--color-value, #ef4444);
+  color: white;
+}
+
+.bet-builder-wizard__horse-badge--edge {
+  background: var(--color-success, #22c55e);
+  color: white;
+}
+
+.bet-builder-wizard__override-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* ============================================================================
+   FINAL SUMMARY (Step 5)
+   ============================================================================ */
+
+.bet-builder-wizard__final-summary {
+  background: var(--bg-secondary, #16213e);
+  border: 2px solid var(--border-color, #2a2a4a);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.bet-builder-wizard__final-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--color-primary, #6366f1);
+  margin-bottom: 6px;
+}
+
+.bet-builder-wizard__final-track {
+  font-size: 12px;
+  color: var(--text-secondary, #a0a0c0);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color, #2a2a4a);
+}
+
+.bet-builder-wizard__final-bet {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px 12px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--border-color, #2a2a4a);
+  align-items: center;
+}
+
+.bet-builder-wizard__final-bet:last-of-type {
+  border-bottom: none;
+}
+
+.bet-builder-wizard__final-bet-type {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #a0a0c0);
+}
+
+.bet-builder-wizard__final-bet-script {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.bet-builder-wizard__final-bet-cost {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-success, #22c55e);
+}
+
+.bet-builder-wizard__final-total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 2px solid var(--border-color, #2a2a4a);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.bet-builder-wizard__final-total span:last-child {
+  color: var(--color-success, #22c55e);
+}
+
+/* Copy All Button */
+.bet-builder-wizard__copy-all {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 16px;
+  background: var(--color-primary, #6366f1);
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+}
+
+.bet-builder-wizard__copy-all:hover {
+  background: var(--color-primary-dark, #4f46e5);
+}
+
+.bet-builder-wizard__copy-all--success {
+  background: var(--color-success, #22c55e);
+}
+
+.bet-builder-wizard__final-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary, #a0a0c0);
+  line-height: 1.5;
+}
+
+.bet-builder-wizard__final-tip .material-icons {
+  color: var(--color-warning, #f59e0b);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   FOOTER
+   ============================================================================ */
+
+.bet-builder-wizard__footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--bg-secondary, #16213e);
+  border-top: 1px solid var(--border-color, #2a2a4a);
+}
+
+.bet-builder-wizard__footer-spacer {
+  flex: 1;
+}
+
+.bet-builder-wizard__btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bet-builder-wizard__btn .material-icons {
+  font-size: 18px;
+}
+
+.bet-builder-wizard__btn--primary {
+  background: var(--color-primary, #6366f1);
+  color: white;
+}
+
+.bet-builder-wizard__btn--primary:hover {
+  background: var(--color-primary-dark, #4f46e5);
+}
+
+.bet-builder-wizard__btn--primary:disabled {
+  background: var(--bg-disabled, #404060);
+  color: var(--text-disabled, #606080);
+  cursor: not-allowed;
+}
+
+.bet-builder-wizard__btn--secondary {
+  background: var(--bg-tertiary, #252550);
+  color: var(--text-primary, #ffffff);
+  border: 1px solid var(--border-color, #2a2a4a);
+}
+
+.bet-builder-wizard__btn--secondary:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.1));
+}
+
+.bet-builder-wizard__btn--back {
+  background: transparent;
+  color: var(--text-secondary, #a0a0c0);
+}
+
+.bet-builder-wizard__btn--back:hover {
+  color: var(--text-primary, #ffffff);
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 480px) {
+  .bet-builder-wizard__progress-label {
+    display: none;
+  }
+
+  .bet-builder-wizard__budget-presets {
+    flex-wrap: wrap;
+  }
+
+  .bet-builder-wizard__budget-btn {
+    min-width: calc(33% - 8px);
+  }
+
+  .bet-builder-wizard__override-actions {
+    flex-direction: column;
+  }
+
+  .bet-builder-wizard__footer {
+    flex-wrap: wrap;
+  }
+
+  .bet-builder-wizard__btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

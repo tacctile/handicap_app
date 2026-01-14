@@ -744,6 +744,58 @@
   margin-right: 2px;
 }
 
+/* BET BUILDER button - Wizard for novice bettors */
+.app-bottombar__item--bet-builder {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  font-weight: 700;
+  padding: var(--gap-element) 16px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+  transition: all var(--transition-fast);
+}
+
+.app-bottombar__item--bet-builder:hover {
+  background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+  transform: translateY(-1px);
+  color: white;
+}
+
+.app-bottombar__item--bet-builder:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+}
+
+.app-bottombar__item--bet-builder:disabled {
+  background: var(--color-elevated);
+  color: var(--color-text-tertiary);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.app-bottombar__item--bet-builder:disabled:hover {
+  transform: none;
+  background: var(--color-elevated);
+}
+
+/* BET BUILDER button active state (when viewing wizard) */
+.app-bottombar__item--bet-builder-active {
+  background: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(25, 171, 181, 0.3);
+}
+
+.app-bottombar__item--bet-builder-active:hover {
+  background: var(--color-primary-hover);
+  box-shadow: 0 4px 12px rgba(25, 171, 181, 0.4);
+}
+
+/* BET BUILDER icon styling */
+.app-bottombar__bet-builder-icon {
+  font-size: 16px;
+  margin-right: 2px;
+}
+
 /* ALL RACES button - Navigation to overview */
 .app-bottombar__item--all-races {
   background: var(--color-elevated);
