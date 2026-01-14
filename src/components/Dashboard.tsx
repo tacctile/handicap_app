@@ -1100,6 +1100,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               topHorsesByRace={raceOverviewData.topHorsesByRace}
               diamondCountByRace={raceOverviewData.diamondCountByRace}
               eliteConnectionsCountByRace={raceOverviewData.eliteConnectionsCountByRace}
+              allScoredHorses={allScoredHorses}
               onRaceSelect={handleRaceSelectFromOverview}
             />
           ) : viewMode === 'topBets' ? (

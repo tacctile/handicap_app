@@ -1,15 +1,8 @@
 import { memo, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { ParsedRace, ParsedDRFFile } from '../types/drf';
+import type { ParsedRace, ParsedDRFFile, RaceClassification } from '../types/drf';
 import type { ScoredHorse } from '../lib/scoring';
-import {
-  getConfidenceColor,
-  getConfidenceLabel,
-  getConfidenceBgColor,
-  getConfidenceBorderColor,
-} from '../lib/confidence';
-import { SCORE_THRESHOLDS } from '../lib/scoring';
-import { getDiamondColor, getDiamondBgColor } from '../lib/diamonds';
+import { analyzeRaceValue, type RaceVerdict } from '../hooks/useValueDetection';
 
 interface RaceOverviewProps {
   parsedData: ParsedDRFFile;
@@ -17,102 +10,197 @@ interface RaceOverviewProps {
   topHorsesByRace: Map<number, ScoredHorse[]>;
   diamondCountByRace?: Map<number, number>;
   eliteConnectionsCountByRace?: Map<number, number>;
+  allScoredHorses?: ScoredHorse[][];
   onRaceSelect: (raceIndex: number) => void;
 }
 
-// Material Icon component
-function Icon({ name, className = '' }: { name: string; className?: string }) {
-  return (
-    <span className={`material-icons ${className}`} aria-hidden="true">
-      {name}
-    </span>
-  );
+/**
+ * Get verdict color for badge background
+ */
+function getVerdictBadgeStyle(verdict: RaceVerdict): { bg: string; text: string; border: string } {
+  switch (verdict) {
+    case 'BET':
+      return {
+        bg: '#10b981', // Green
+        text: '#ffffff',
+        border: '#10b981',
+      };
+    case 'CAUTION':
+      return {
+        bg: '#f59e0b', // Amber/Yellow
+        text: '#000000',
+        border: '#f59e0b',
+      };
+    case 'PASS':
+      return {
+        bg: '#6b7280', // Grey
+        text: '#ffffff',
+        border: '#6b7280',
+      };
+  }
 }
 
-// Confidence badge component
-interface ConfidenceBadgeProps {
-  confidence: number;
-  size?: 'small' | 'normal';
+/**
+ * Format race classification for display
+ * Returns empty string if unknown (to omit rather than show "UNKNOWN")
+ */
+function formatRaceClass(
+  classification: RaceClassification | undefined,
+  raceType: string | undefined,
+  claimingPriceMin?: number | null,
+  claimingPriceMax?: number | null
+): string {
+  // Try to use raceType first if it's meaningful
+  if (raceType && raceType.trim() && raceType.trim().toUpperCase() !== 'UNKNOWN') {
+    return raceType.trim();
+  }
+
+  // Fall back to classification
+  if (!classification || classification === 'unknown') {
+    return '';
+  }
+
+  // Format claiming price if available
+  const formatPrice = (price: number): string => {
+    if (price >= 1000) {
+      return `$${Math.round(price / 1000)}K`;
+    }
+    return `$${price}`;
+  };
+
+  const claimingPrice = claimingPriceMax || claimingPriceMin;
+
+  switch (classification) {
+    case 'maiden':
+      return 'Maiden';
+    case 'maiden-claiming':
+      return claimingPrice ? `Maiden Clm ${formatPrice(claimingPrice)}` : 'Maiden Clm';
+    case 'claiming':
+      return claimingPrice ? `Clm ${formatPrice(claimingPrice)}` : 'Claiming';
+    case 'allowance':
+      return 'Allowance';
+    case 'allowance-optional-claiming':
+      return 'AOC';
+    case 'starter-allowance':
+      return 'Starter Alw';
+    case 'stakes':
+      return 'Stakes';
+    case 'stakes-listed':
+      return 'Listed Stakes';
+    case 'stakes-graded-1':
+      return 'Grade 1';
+    case 'stakes-graded-2':
+      return 'Grade 2';
+    case 'stakes-graded-3':
+      return 'Grade 3';
+    case 'handicap':
+      return 'Handicap';
+    default:
+      return '';
+  }
 }
 
-const ConfidenceBadge = memo(function ConfidenceBadge({
-  confidence,
-  size = 'normal',
-}: ConfidenceBadgeProps) {
-  const color = getConfidenceColor(confidence);
-  const label = getConfidenceLabel(confidence);
-  const bgColor = getConfidenceBgColor(confidence);
-  const borderColor = getConfidenceBorderColor(confidence);
+/**
+ * Format distance for compact display
+ * Converts full distance to abbreviated form (e.g., "6 Furlongs" -> "6F")
+ */
+function formatDistanceCompact(distance: string | undefined): string {
+  if (!distance) return '';
+
+  const d = distance.toLowerCase();
+
+  // Handle mile distances
+  if (d.includes('mile')) {
+    if (d.includes('1 1/16')) return '1 1/16mi';
+    if (d.includes('1 1/8')) return '1⅛mi';
+    if (d.includes('1 1/4')) return '1¼mi';
+    if (d.includes('1 1/2')) return '1½mi';
+    if (d.includes('1 3/16')) return '1 3/16mi';
+    if (d.includes('1 3/8')) return '1⅜mi';
+    if (d.includes('1 5/8')) return '1⅝mi';
+    if (d.includes('1 3/4')) return '1¾mi';
+    if (d.includes('2 ')) return '2mi';
+    // Plain "1 mile" or "1 Mile"
+    if (/^about\s*1\s*mile$/i.test(d.trim()) || /^1\s*mile$/i.test(d.trim())) {
+      return '1mi';
+    }
+    return '1mi';
+  }
+
+  // Handle furlong distances
+  const furlongMatch = d.match(/(\d+\.?\d*)\s*(f|furlong)/i);
+  if (furlongMatch) {
+    const furlongs = parseFloat(furlongMatch[1] || '6');
+    if (furlongs === Math.floor(furlongs)) {
+      return `${Math.floor(furlongs)}F`;
+    }
+    // Handle half furlongs
+    const whole = Math.floor(furlongs);
+    const frac = furlongs - whole;
+    if (frac >= 0.4 && frac <= 0.6) {
+      return `${whole}½F`;
+    }
+    return `${furlongs}F`;
+  }
+
+  // Return as-is if no pattern matched
+  return distance;
+}
+
+/**
+ * Format surface for display
+ */
+function formatSurface(surface: string | undefined): string {
+  if (!surface) return '';
+  const s = surface.toLowerCase();
+  if (s === 'turf') return 'Turf';
+  if (s === 'dirt') return 'Dirt';
+  if (s === 'synthetic' || s === 'all-weather') return 'Synth';
+  return surface.charAt(0).toUpperCase() + surface.slice(1);
+}
+
+/**
+ * Format age/sex restrictions for display
+ */
+function formatAgeSex(ageRestriction?: string, sexRestriction?: string): string {
+  const parts: string[] = [];
+
+  if (ageRestriction && ageRestriction.trim()) {
+    // Compact age formats
+    let age = ageRestriction.trim();
+    age = age
+      .replace(/\s*year\s*old(s)?\s*/gi, 'yo')
+      .replace(/\s*years\s*old\s*/gi, 'yo')
+      .replace(/\s*&\s*up/gi, '+')
+      .replace(/\s*and\s*up/gi, '+');
+    parts.push(age);
+  }
+
+  if (sexRestriction && sexRestriction.trim()) {
+    parts.push(sexRestriction.trim());
+  }
+
+  return parts.join(' ');
+}
+
+// Verdict badge component
+interface VerdictBadgeProps {
+  verdict: RaceVerdict;
+}
+
+const VerdictBadge = memo(function VerdictBadge({ verdict }: VerdictBadgeProps) {
+  const style = getVerdictBadgeStyle(verdict);
 
   return (
     <div
-      className={`confidence-badge ${size === 'small' ? 'confidence-badge-small' : ''}`}
+      className="race-card-verdict-badge"
       style={{
-        backgroundColor: bgColor,
-        borderColor: borderColor,
-        color: color,
+        backgroundColor: style.bg,
+        color: style.text,
+        border: `1px solid ${style.border}`,
       }}
     >
-      <span className="confidence-value tabular-nums">{confidence}%</span>
-      <span className="confidence-label">{label}</span>
-    </div>
-  );
-});
-
-// Diamond badge component
-interface DiamondBadgeProps {
-  count: number;
-}
-
-const DiamondBadge = memo(function DiamondBadge({ count }: DiamondBadgeProps) {
-  if (count === 0) return null;
-
-  return (
-    <div
-      className="diamond-badge"
-      style={{
-        backgroundColor: getDiamondBgColor(0.2),
-        borderColor: getDiamondColor(),
-        color: getDiamondColor(),
-      }}
-      title={`${count} Hidden Gem${count > 1 ? 's' : ''} in this race`}
-    >
-      <span className="diamond-badge-icon">💎</span>
-      {count > 1 && <span className="diamond-badge-count">{count}</span>}
-    </div>
-  );
-});
-
-// Elite Connections badge component
-interface EliteConnectionsBadgeProps {
-  count: number;
-}
-
-const EliteConnectionsBadge = memo(function EliteConnectionsBadge({
-  count,
-}: EliteConnectionsBadgeProps) {
-  if (count === 0) return null;
-
-  return (
-    <div
-      className="elite-connections-badge"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px',
-        backgroundColor: '#22c55e20',
-        borderColor: '#22c55e',
-        color: '#22c55e',
-        padding: '2px 8px',
-        borderRadius: '12px',
-        border: '1px solid',
-        fontSize: '0.7rem',
-        fontWeight: 600,
-      }}
-      title={`${count} horse${count > 1 ? 's' : ''} with elite connections (30+ pts)`}
-    >
-      <span style={{ fontSize: '0.9rem' }}>🤝</span>
-      {count > 1 && <span>{count}</span>}
+      {verdict}
     </div>
   );
 });
@@ -121,141 +209,89 @@ const EliteConnectionsBadge = memo(function EliteConnectionsBadge({
 interface RaceCardProps {
   race: ParsedRace;
   raceIndex: number;
-  confidence: number;
   topHorses: ScoredHorse[];
   scratchedCount: number;
-  diamondCount: number;
-  eliteConnectionsCount: number;
+  verdict: RaceVerdict;
   onClick: () => void;
 }
 
 const RaceCard = memo(function RaceCard({
   race,
   raceIndex,
-  confidence,
   topHorses,
   scratchedCount,
-  diamondCount,
-  eliteConnectionsCount,
+  verdict,
   onClick,
 }: RaceCardProps) {
   const { header, horses } = race;
   const activeCount = horses.length - scratchedCount;
 
-  // Check if there's a Tier 1 pick (180+ points)
-  const hasTier1Pick = topHorses.some((h) => h.score.total >= SCORE_THRESHOLDS.strong);
+  // Format race conditions line
+  const distanceCompact = formatDistanceCompact(header.distance);
+  const surfaceLabel = formatSurface(header.surface);
+  const classLabel = formatRaceClass(
+    header.classification,
+    header.raceType,
+    header.claimingPriceMin,
+    header.claimingPriceMax
+  );
+  const ageSexLabel = formatAgeSex(header.ageRestriction, header.sexRestriction);
 
-  // Check for diamonds
-  const hasDiamonds = diamondCount > 0;
+  // Build conditions parts
+  const conditionsParts: string[] = [];
+  if (distanceCompact) conditionsParts.push(distanceCompact);
+  if (surfaceLabel) conditionsParts.push(surfaceLabel);
+  if (classLabel) conditionsParts.push(classLabel);
+  if (ageSexLabel) conditionsParts.push(ageSexLabel);
+  conditionsParts.push(`${activeCount} horses`);
 
-  // Check for elite connections
-  const hasEliteConnections = eliteConnectionsCount > 0;
+  const conditionsLine = conditionsParts.join(' · ');
 
-  // Format surface nicely
-  const surfaceLabel = header.surface.charAt(0).toUpperCase() + header.surface.slice(1);
-
-  // Get race class/type abbreviation
-  const classLabel = header.classification || header.raceType || '';
+  // Get top 3 horses for projected finish - use full names, no truncation
+  const projectedFinish = topHorses.slice(0, 3);
 
   return (
     <motion.button
-      className={`race-card ${hasTier1Pick ? 'race-card-has-tier1' : ''} ${hasDiamonds ? 'race-card-has-diamonds' : ''}`}
+      className="race-card race-card-redesigned"
       onClick={onClick}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: raceIndex * 0.05 }}
-      aria-label={`Race ${header.raceNumber}: ${header.distance} ${surfaceLabel}. ${confidence}% confidence. Click to view details.`}
+      aria-label={`Race ${header.raceNumber}: ${conditionsLine}. ${verdict} verdict. Click to view details.`}
     >
-      {/* Race number badge */}
-      <div className="race-card-number">
-        <span>R{header.raceNumber}</span>
+      {/* TOP SECTION: Race number + Verdict badge */}
+      <div className="race-card-top-section">
+        <div className="race-card-race-number">R{header.raceNumber}</div>
+        <VerdictBadge verdict={verdict} />
       </div>
 
-      {/* Main content */}
-      <div className="race-card-content">
-        {/* Race info row */}
-        <div className="race-card-info">
-          <div className="race-card-distance">
-            <Icon name="route" className="race-card-icon" />
-            <span>{header.distance}</span>
-          </div>
-          <div className="race-card-surface">
-            <Icon name="terrain" className="race-card-icon" />
-            <span>{surfaceLabel}</span>
-          </div>
-        </div>
+      {/* MIDDLE SECTION: Race Conditions (one line) */}
+      <div className="race-card-conditions">{conditionsLine}</div>
 
-        {/* Class and purse */}
-        <div className="race-card-details">
-          {classLabel && <span className="race-card-class">{classLabel}</span>}
-          {header.purseFormatted && (
-            <span className="race-card-purse">{header.purseFormatted}</span>
+      {/* BOTTOM SECTION: Projected Finish */}
+      <div className="race-card-projected-finish">
+        <div className="race-card-projected-header">FURLONG PROJECTIONS</div>
+        <div className="race-card-projected-list">
+          {projectedFinish.length > 0 ? (
+            projectedFinish.map((horse, idx) => (
+              <div key={horse.index} className="race-card-projected-horse">
+                <span className="race-card-projected-position">
+                  {idx === 0 ? '1st' : idx === 1 ? '2nd' : '3rd'}:
+                </span>
+                <span className="race-card-projected-name">{horse.horse.horseName}</span>
+              </div>
+            ))
+          ) : (
+            <div className="race-card-projected-none">No projections available</div>
           )}
         </div>
-
-        {/* Horse count */}
-        <div className="race-card-horses">
-          <Icon name="pets" className="race-card-icon" />
-          <span className="tabular-nums">
-            {activeCount}
-            {scratchedCount > 0 && <span className="race-card-scratched">/{horses.length}</span>}
-          </span>
-          <span className="race-card-horses-label">horses</span>
-        </div>
-
-        {/* Top pick preview (if available) */}
-        {topHorses.length > 0 &&
-          topHorses[0] &&
-          topHorses[0].score.total >= SCORE_THRESHOLDS.fair && (
-            <div className="race-card-top-pick">
-              <Icon name="star" className="race-card-star" />
-              <span className="race-card-top-name">
-                {topHorses[0].horse.horseName.slice(0, 12)}
-                {topHorses[0].horse.horseName.length > 12 ? '...' : ''}
-              </span>
-              <span className="race-card-top-score tabular-nums">{topHorses[0].score.total}</span>
-            </div>
-          )}
       </div>
 
-      {/* Confidence badge */}
-      <div className="race-card-confidence">
-        <ConfidenceBadge confidence={confidence} />
-      </div>
-
-      {/* Diamond indicator */}
-      {hasDiamonds && (
-        <div className="race-card-diamond-indicator">
-          <DiamondBadge count={diamondCount} />
-        </div>
-      )}
-
-      {/* Elite Connections indicator */}
-      {hasEliteConnections && (
-        <div
-          className="race-card-elite-connections-indicator"
-          style={{
-            position: 'absolute',
-            bottom: hasDiamonds ? '36px' : '8px',
-            right: '8px',
-          }}
-        >
-          <EliteConnectionsBadge count={eliteConnectionsCount} />
-        </div>
-      )}
-
-      {/* Tier 1 indicator */}
-      {hasTier1Pick && (
-        <div className="race-card-tier1-indicator" title="Tier 1 pick available">
-          <Icon name="trending_up" />
-        </div>
-      )}
-
-      {/* Click hint */}
-      <div className="race-card-chevron">
-        <Icon name="chevron_right" />
+      {/* Click hint - chevron */}
+      <div className="race-card-chevron-new">
+        <span className="material-icons">chevron_right</span>
       </div>
     </motion.button>
   );
@@ -263,10 +299,8 @@ const RaceCard = memo(function RaceCard({
 
 export const RaceOverview = memo(function RaceOverview({
   parsedData,
-  raceConfidences,
   topHorsesByRace,
-  diamondCountByRace,
-  eliteConnectionsCountByRace,
+  allScoredHorses,
   onRaceSelect,
 }: RaceOverviewProps) {
   // Handle keyboard navigation
@@ -286,99 +320,50 @@ export const RaceOverview = memo(function RaceOverview({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Summary stats
-  const stats = useMemo(() => {
-    let totalHorses = 0;
-    let tier1Races = 0;
-    let totalDiamonds = 0;
-    let totalEliteConnections = 0;
+  // Calculate verdict for each race using the value detection logic
+  const raceVerdicts = useMemo(() => {
+    const verdicts = new Map<number, RaceVerdict>();
 
-    parsedData.races.forEach((race, index) => {
-      totalHorses += race.horses.length;
-      const topHorses = topHorsesByRace.get(index) || [];
-      if (topHorses.some((h) => h.score.total >= SCORE_THRESHOLDS.strong)) {
-        tier1Races++;
+    parsedData.races.forEach((_, raceIndex) => {
+      const scoredHorses = allScoredHorses?.[raceIndex] || [];
+
+      if (scoredHorses.length === 0) {
+        verdicts.set(raceIndex, 'PASS');
+        return;
       }
-      totalDiamonds += diamondCountByRace?.get(index) || 0;
-      totalEliteConnections += eliteConnectionsCountByRace?.get(index) || 0;
+
+      // Use the same value analysis logic as RaceVerdictHeader
+      const analysis = analyzeRaceValue(
+        scoredHorses,
+        (_index, originalOdds) => originalOdds, // Use morning line for overview
+        () => false // No scratches for overview
+      );
+
+      verdicts.set(raceIndex, analysis.verdict);
     });
 
-    return { totalHorses, tier1Races, totalDiamonds, totalEliteConnections };
-  }, [parsedData.races, topHorsesByRace, diamondCountByRace, eliteConnectionsCountByRace]);
+    return verdicts;
+  }, [parsedData.races, allScoredHorses]);
 
   return (
-    <div className="race-overview">
-      {/* Header */}
-      <div className="race-overview-header">
-        <div className="race-overview-title">
-          <Icon name="view_module" className="race-overview-icon" />
-          <h2>Race Overview</h2>
-        </div>
-        <div className="race-overview-stats">
-          <span className="race-overview-stat">
-            <span className="tabular-nums">{parsedData.races.length}</span> races
-          </span>
-          <span className="race-overview-stat-divider">•</span>
-          <span className="race-overview-stat">
-            <span className="tabular-nums">{stats.totalHorses}</span> horses
-          </span>
-          {stats.tier1Races > 0 && (
-            <>
-              <span className="race-overview-stat-divider">•</span>
-              <span className="race-overview-stat race-overview-stat-tier1">
-                <Icon name="trending_up" className="race-overview-tier1-icon" />
-                <span className="tabular-nums">{stats.tier1Races}</span> Tier 1
-              </span>
-            </>
-          )}
-          {stats.totalDiamonds > 0 && (
-            <>
-              <span className="race-overview-stat-divider">•</span>
-              <span
-                className="race-overview-stat race-overview-stat-diamonds"
-                style={{ color: getDiamondColor() }}
-              >
-                <span className="race-overview-diamond-icon">💎</span>
-                <span className="tabular-nums">{stats.totalDiamonds}</span> Hidden Gem
-                {stats.totalDiamonds > 1 ? 's' : ''}
-              </span>
-            </>
-          )}
-          {stats.totalEliteConnections > 0 && (
-            <>
-              <span className="race-overview-stat-divider">•</span>
-              <span
-                className="race-overview-stat race-overview-stat-connections"
-                style={{ color: '#22c55e' }}
-              >
-                <span style={{ marginRight: '4px' }}>🤝</span>
-                <span className="tabular-nums">{stats.totalEliteConnections}</span> Elite Connection
-                {stats.totalEliteConnections > 1 ? 's' : ''}
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-
+    <div className="race-overview race-overview-redesigned">
       {/* Keyboard hint */}
       <div className="race-overview-hint">
-        <Icon name="keyboard" className="race-overview-hint-icon" />
+        <span className="material-icons race-overview-hint-icon">keyboard</span>
         <span>Press 1-{Math.min(9, parsedData.races.length)} for quick access</span>
       </div>
 
-      {/* Race grid */}
-      <div className="race-overview-grid">
+      {/* Race grid - full width, centered */}
+      <div className="race-overview-grid race-overview-grid-redesigned">
         <AnimatePresence>
           {parsedData.races.map((race, index) => (
             <RaceCard
               key={index}
               race={race}
               raceIndex={index}
-              confidence={raceConfidences.get(index) || 0}
               topHorses={topHorsesByRace.get(index) || []}
               scratchedCount={0}
-              diamondCount={diamondCountByRace?.get(index) || 0}
-              eliteConnectionsCount={eliteConnectionsCountByRace?.get(index) || 0}
+              verdict={raceVerdicts.get(index) || 'PASS'}
               onClick={() => onRaceSelect(index)}
             />
           ))}
