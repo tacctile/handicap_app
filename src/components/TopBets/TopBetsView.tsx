@@ -372,8 +372,16 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
   // Format horse display based on bet type
   const horseDisplay = formatHorseDisplay(bet);
 
-  // Calculate confidence as a percentage (probability capped at 99%)
-  const confidencePercent = Math.min(Math.round(bet.probability), 99);
+  // Calculate confidence display (show decimal for low probabilities to reveal variation)
+  // For exotic bets with low probability, integer rounding hides meaningful differences
+  const rawProbability = Math.min(bet.probability, 99);
+  const confidenceDisplay =
+    rawProbability < 10 && rawProbability > 0
+      ? `${Math.max(0.1, rawProbability).toFixed(1)}%`
+      : `${Math.round(rawProbability)}%`;
+
+  // Use rounded value for color class thresholds
+  const confidencePercent = Math.round(rawProbability);
 
   // Determine confidence color class
   const confidenceClass =
@@ -385,22 +393,28 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
 
   return (
     <div className="compact-bet-card">
-      {/* Header row: Horse numbers + Confidence */}
+      {/* Row 1: Horse numbers + Confidence label and value */}
       <div className="compact-bet-card__header">
         <span className="compact-bet-card__horses">{horseDisplay}</span>
         <span className={`compact-bet-card__confidence ${confidenceClass}`}>
-          {confidencePercent}%
+          <span className="compact-bet-card__label">CONFIDENCE:</span>
+          <span className="compact-bet-card__value">{confidenceDisplay}</span>
         </span>
       </div>
 
-      {/* Cost and return */}
+      {/* Row 2: Cost and Payout with labels */}
       <div className="compact-bet-card__stats">
-        <span className="compact-bet-card__cost">${bet.scaledCost}</span>
-        <span className="compact-bet-card__dot">·</span>
-        <span className="compact-bet-card__return">{bet.scaledPayout}</span>
+        <span className="compact-bet-card__cost">
+          <span className="compact-bet-card__label">COST:</span>
+          <span className="compact-bet-card__value">${bet.scaledCost}</span>
+        </span>
+        <span className="compact-bet-card__payout">
+          <span className="compact-bet-card__label">PAYOUT:</span>
+          <span className="compact-bet-card__value">{bet.scaledPayout}</span>
+        </span>
       </div>
 
-      {/* Window script */}
+      {/* Row 3: Window script */}
       <div className="compact-bet-card__script">"{bet.scaledWhatToSay}"</div>
     </div>
   );
