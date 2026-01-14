@@ -49,9 +49,10 @@
   /* CRITICAL: solid opaque background to prevent content bleed-through */
   /* Use !important to override value-play, tier, and other semi-transparent backgrounds */
   background: #1e1e20 !important; /* Solid hex - slightly lighter than base for elevated look */
-  /* Sticky positioning when expanded - sticks below verdict bar and column headers */
+  /* Sticky positioning when expanded - sticks to top of scrolling container */
+  /* Verdict bar and column headers are now grid-level elements outside the scroll area */
   position: sticky;
-  top: calc(var(--bar-height, 48px) * 2); /* 96px - below both sticky headers */
+  top: 0; /* Stick to top of scroll container (headers are outside) */
   z-index: 5; /* Above regular content (0), below column headers (10) */
   /* Subtle shadow to indicate floating state when stuck */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
