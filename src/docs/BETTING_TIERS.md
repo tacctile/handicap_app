@@ -179,7 +179,7 @@ EXPECTED RETURN RANGE: $85-250 (based on current odds)
 
 **Horse Qualification Standards:**
 
-- Final Score: 140-179 points (depending on overlay size)
+- Final Score: 130-159 points (depending on overlay size)
 - Confidence Level: 25-60% (lower acceptable for bigger prices)
 - Win Probability: 5-25% calculated chance
 - Odds Range: 8/1 and higher (longshot territory)
@@ -254,14 +254,14 @@ FIELD STRENGTH: [ELITE/STRONG/AVERAGE/WEAK] | CONFIDENCE: [HIGH/MEDIUM/LOW]
 ```
 PREDICTED FINISHING ORDER:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1st: #[X] [Horse Name] - Score: [XXX]/250 - Win Prob: [XX]% - Odds: [X/1]
-2nd: #[X] [Horse Name] - Score: [XXX]/250 - Place Prob: [XX]% - Odds: [X/1]
-3rd: #[X] [Horse Name] - Score: [XXX]/250 - Show Prob: [XX]% - Odds: [X/1]
-4th: #[X] [Horse Name] - Score: [XXX]/250 - Odds: [X/1]
-5th: #[X] [Horse Name] - Score: [XXX]/250 - Odds: [X/1]
-6th: #[X] [Horse Name] - Score: [XXX]/250 - Odds: [X/1]
-7th: #[X] [Horse Name] - Score: [XXX]/250 - Odds: [X/1]
-8th: #[X] [Horse Name] - Score: [XXX]/250 - Odds: [X/1]
+1st: #[X] [Horse Name] - Score: [XXX]/328 - Win Prob: [XX]% - Odds: [X/1]
+2nd: #[X] [Horse Name] - Score: [XXX]/328 - Place Prob: [XX]% - Odds: [X/1]
+3rd: #[X] [Horse Name] - Score: [XXX]/328 - Show Prob: [XX]% - Odds: [X/1]
+4th: #[X] [Horse Name] - Score: [XXX]/328 - Odds: [X/1]
+5th: #[X] [Horse Name] - Score: [XXX]/328 - Odds: [X/1]
+6th: #[X] [Horse Name] - Score: [XXX]/328 - Odds: [X/1]
+7th: #[X] [Horse Name] - Score: [XXX]/328 - Odds: [X/1]
+8th: #[X] [Horse Name] - Score: [XXX]/328 - Odds: [X/1]
 ```
 
 ### Individual Horse Analysis Template
@@ -269,7 +269,7 @@ PREDICTED FINISHING ORDER:
 ```
 #[X] [HORSE NAME] - PREDICTED FINISH: [1st/2nd/3rd/etc.]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-FINAL SCORE: [XXX]/250 (Base: [XXX]/240, Overlay: [+/-XX]/50)
+FINAL SCORE: [XXX]/368 (Base: [XXX]/328, Overlay: [+/-XX]/40)
 CONFIDENCE: [XX]% - [MAXIMUM/HIGH/MODERATE/LOW]
 MORNING LINE: [X-1] | FAIR ODDS: [X-1] | OVERLAY: [XX]% | CURRENT: [X-1]
 
@@ -429,7 +429,7 @@ STRATEGY ADJUSTMENT:
 
 **Auto-Reject Races:**
 
-- No horse scores above 140 points
+- No horse scores above 130 points
 - Chaotic or unclear pace scenario
 - Extreme weather or surface concerns
 - No positive expected value opportunities available

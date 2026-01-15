@@ -1,6 +1,7 @@
 # Handicap App — Master Context Document
 
 > **Single source of truth.** This document serves TWO audiences:
+>
 > - **Claude Chat sessions** — For planning, brainstorming, and generating prompts
 > - **Claude Code sessions** — For executing prompts and writing code
 >
@@ -9,7 +10,8 @@
 ---
 
 # SECTION 1: PROJECT DEFINITION
-## *Applies to: Claude Chat AND Claude Code*
+
+## _Applies to: Claude Chat AND Claude Code_
 
 ---
 
@@ -18,12 +20,14 @@
 A professional-grade horse racing handicapping progressive web application. It parses DRF (Daily Racing Form) files, applies a deterministic mathematical scoring algorithm, and outputs tiered betting recommendations.
 
 **Core Function:**
+
 - Upload DRF file → Mathematical analysis → Betting recommendations
 - Every calculation is deterministic and reproducible
 - Works fully offline at the track
 - Professional-grade analysis accessible to anyone
 
 **What It Is NOT:**
+
 - NOT a gambling platform — this is a data analysis tool
 - NOT a betting app — we do not place bets, hold funds, or facilitate wagering
 - NOT customizable algorithms — users adjust inputs, never the math
@@ -52,12 +56,14 @@ This application analyzes publicly available data (DRF files) and provides stati
 This is not "build simple, scale later." Every feature includes its enterprise scaffolding:
 
 **Authentication Scaffolding:**
+
 - Auth provider abstraction (Supabase/Firebase ready)
 - Auth context and hooks exist even if login is disabled during dev
 - Protected route patterns in place
 - User state management separate from app state
 
 **Subscription Scaffolding:**
+
 - Stripe integration points defined
 - Single tier model (pay or no access, monthly only)
 - No refunds — proprietary algorithm, not for single-use abuse
@@ -66,12 +72,14 @@ This is not "build simple, scale later." Every feature includes its enterprise s
 - Subscription status checked on protected routes
 
 **Usage Tracking Infrastructure:**
+
 - Track: DRF files parsed, races analyzed, sessions, features used
 - Store: User activity log with timestamps
 - Purpose: Analytics, feature usage insights, system health monitoring
 - Privacy-conscious: minimal data, clear purpose
 
 **AI Service Layer:**
+
 - Abstract interface at `src/services/ai/`
 - Provider-agnostic (Gemini, Claude API, OpenAI — swap without touching components)
 - Disabled until activated
@@ -79,17 +87,20 @@ This is not "build simple, scale later." Every feature includes its enterprise s
 - Potential features: race narratives, natural language queries, trip note interpretation
 
 **Error Handling:**
+
 - Error boundaries on every major component
 - Graceful degradation
 - Logging abstraction (console in dev, Sentry/LogRocket ready for prod)
 - No unhandled crashes ever
 
 **State Management:**
+
 - Separated concerns: UI state, race data state, user state, calculation state
 - React Context + useReducer (no external state libraries)
 - Scales without becoming spaghetti
 
 **Testing Infrastructure:**
+
 - Unit tests for scoring logic, parsers, utilities
 - Integration tests for user flows
 - CI pipeline rejects broken code
@@ -110,6 +121,7 @@ This is not "build simple, scale later." Every feature includes its enterprise s
 ### Offline-First Design
 
 **Works Offline:**
+
 - DRF file parsing
 - All scoring calculations
 - Track intelligence lookups
@@ -117,12 +129,14 @@ This is not "build simple, scale later." Every feature includes its enterprise s
 - Previously loaded race data
 
 **Requires Online:**
+
 - Authentication/login
 - Subscription validation
 - AI features (when implemented)
 - Live odds updates (future)
 
 **Implementation:**
+
 - Service worker caches app shell and static assets
 - IndexedDB stores track intelligence database
 - IndexedDB stores parsed race data locally
@@ -135,16 +149,19 @@ This is not "build simple, scale later." Every feature includes its enterprise s
 ### Progressive Complexity
 
 **Surface (5-year-old can use it):**
+
 - Upload file → See picks → Done
 - Zero cognitive load
 - Big buttons, clear outcomes
 
 **Mid-Level (casual bettor):**
+
 - Why is this horse ranked #1?
 - What does 82% confidence mean?
 - How much should I bet?
 
 **Deep Level (pro handicapper):**
+
 - Full scoring breakdowns by category
 - Pace scenario analysis
 - Track bias data
@@ -158,12 +175,14 @@ This is not "build simple, scale later." Every feature includes its enterprise s
 **The algorithm is immutable.**
 
 Users CAN:
+
 - View scoring methodology
 - Understand why Horse X scored Y points
 - See every contributing factor
 - Adjust inputs (scratches, track condition, live odds)
 
 Users CANNOT:
+
 - Change point allocations
 - Modify category weights
 - Override tier thresholds
@@ -175,22 +194,22 @@ Inputs change → System recalculates → Math stays constant.
 
 ## Technical Stack
 
-| Layer | Technology |
-|-------|------------|
-| Framework | React 18+ with TypeScript |
-| Build | Vite |
-| Styling | CSS + Material Design 3 patterns |
-| Icons | Google Material Icons |
-| Typography | Inter (Google Fonts) |
-| State | React Context + useReducer |
-| Local Storage | IndexedDB |
-| Workers | Web Workers (DRF parsing) |
-| Animations | Framer Motion |
-| PWA | Service Worker + Web App Manifest |
-| Deployment | Vercel |
-| Auth (ready) | Supabase or Firebase |
-| Payments (ready) | Stripe |
-| AI (ready) | Gemini / Claude API / OpenAI |
+| Layer            | Technology                        |
+| ---------------- | --------------------------------- |
+| Framework        | React 18+ with TypeScript         |
+| Build            | Vite                              |
+| Styling          | CSS + Material Design 3 patterns  |
+| Icons            | Google Material Icons             |
+| Typography       | Inter (Google Fonts)              |
+| State            | React Context + useReducer        |
+| Local Storage    | IndexedDB                         |
+| Workers          | Web Workers (DRF parsing)         |
+| Animations       | Framer Motion                     |
+| PWA              | Service Worker + Web App Manifest |
+| Deployment       | Vercel                            |
+| Auth (ready)     | Supabase or Firebase              |
+| Payments (ready) | Stripe                            |
+| AI (ready)       | Gemini / Claude API / OpenAI      |
 
 ### Repository
 
@@ -200,13 +219,13 @@ Inputs change → System recalculates → Math stays constant.
 
 ### Performance Targets
 
-| Metric | Target |
-|--------|--------|
-| DRF Parse | <2 seconds (12-horse field) |
-| Score Calculation | <100ms (full field) |
-| Animation | 60fps constant |
-| Bundle Size | <500kb gzipped |
-| TTI | <3 seconds |
+| Metric            | Target                      |
+| ----------------- | --------------------------- |
+| DRF Parse         | <2 seconds (12-horse field) |
+| Score Calculation | <100ms (full field)         |
+| Animation         | 60fps constant              |
+| Bundle Size       | <500kb gzipped              |
+| TTI               | <3 seconds                  |
 
 ---
 
@@ -215,6 +234,7 @@ Inputs change → System recalculates → Math stays constant.
 ### Color Palette
 
 **Primary Accent:**
+
 ```
 Primary:    #19abb5
 Hover:      #1992a1
@@ -223,6 +243,7 @@ Light:      #36d1da
 ```
 
 **Backgrounds (Dark Theme Default):**
+
 ```
 Base:       #0A0A0B
 Cards:      #0F0F10
@@ -230,6 +251,7 @@ Elevated:   #1A1A1C
 ```
 
 **Text:**
+
 ```
 Primary:    #EEEFF1
 Secondary:  #B4B4B6
@@ -237,12 +259,14 @@ Tertiary:   #6E6E70
 ```
 
 **Borders:**
+
 ```
 Subtle:     #2A2A2C
 Prominent:  #3A3A3C
 ```
 
 **Status:**
+
 ```
 Success:    #10b981
 Warning:    #f59e0b
@@ -250,6 +274,7 @@ Error:      #ef4444
 ```
 
 **Score Colors:**
+
 ```
 200+ pts:   #36d1da (elite)
 180-199:    #19abb5 (strong)
@@ -265,6 +290,7 @@ Error:      #ef4444
 **Weights:** 400 (regular), 500 (medium), 600 (semibold), 700 (bold)
 
 **Scale:**
+
 ```
 H1:     32px / 40px
 H2:     24px / 32px
@@ -274,6 +300,7 @@ Small:  12px / 16px
 ```
 
 **Rules:**
+
 - Tabular numbers (`font-variant-numeric: tabular-nums`) for all data
 - 8px spacing grid — all margins/padding multiples of 8
 
@@ -282,10 +309,18 @@ Small:  12px / 16px
 **Mobile-first. 375px is the primary design target.**
 
 ```css
-@media (min-width: 640px)  { /* sm: tablet portrait */ }
-@media (min-width: 768px)  { /* md: tablet landscape */ }
-@media (min-width: 1024px) { /* lg: desktop */ }
-@media (min-width: 1280px) { /* xl: large desktop */ }
+@media (min-width: 640px) {
+  /* sm: tablet portrait */
+}
+@media (min-width: 768px) {
+  /* md: tablet landscape */
+}
+@media (min-width: 1024px) {
+  /* lg: desktop */
+}
+@media (min-width: 1280px) {
+  /* xl: large desktop */
+}
 ```
 
 ---
@@ -296,35 +331,38 @@ Small:  12px / 16px
 
 ### Scoring Structure
 
-| Component | Points |
-|-----------|--------|
-| Base Score | 0-328 (15 categories) |
-| Overlay Adjustment | ±40 (race-day adjustments) |
-| **Final Score** | **0-368** |
+| Component          | Points                          |
+| ------------------ | ------------------------------- |
+| Base Score         | 0-323 (Model B: Speed-Dominant) |
+| Overlay Adjustment | ±40 (race-day adjustments)      |
+| **Final Score**    | **0-363**                       |
 
-### Base Score Categories (328 pts total)
+### Base Score Categories (323 pts total)
 
-**Core Categories (271 pts):**
-- Speed & Class: 0-122 pts (Speed 90 + Class 32)
-- Form: 0-50 pts (Recent form, layoff, consistency)
-- Pace: 0-45 pts (Pace scenario fit, tactical advantages)
-- Connections: 0-27 pts (Trainer + Jockey + Partnership)
+**Core Categories (272 pts):**
+
+- Speed & Class: 0-140 pts (Speed 105 + Class 35)
+- Form: 0-42 pts (Recent form, layoff, consistency)
+- Pace: 0-35 pts (Pace scenario fit, tactical advantages)
+- Connections: 0-23 pts (Trainer + Jockey + Partnership)
 - Distance/Surface: 0-20 pts (Turf/Wet/Distance affinities)
-- Odds Factor: 0-15 pts (Market wisdom for favorites)
+- Odds Factor: 0-12 pts (Market wisdom for favorites)
 - Post Position: 0-12 pts (Track-dependent bias)
-- Trainer Patterns: 0-10 pts (Situational trainer bonuses)
+- Trainer Patterns: 0-8 pts (Situational trainer bonuses)
 - Equipment: 0-8 pts (Equipment changes)
 
-**Bonus Categories (57 pts):**
-- Track Specialist: 0-6 pts (Proven success at today's track)
+**Bonus Categories (48 pts):**
+
+- Track Specialist: 0-10 pts (Proven success at today's track)
 - Trainer Surface/Distance: 0-6 pts (Trainer specialization)
 - Combo Patterns: 0-4 pts (Multiple positive signals aligned)
 - Weight Change: 0-1 pt (Significant weight drops)
-- P3 Refinements: ±2 pts (Age factor, Sire's Sire)
+- P3 Refinements: ±3 pts (Age factor ±1, Sire's Sire ±1)
 
 ### Overlay Adjustments (±40 pts)
 
 Applied after base scoring (Phase 5: reduced from ±50):
+
 - Pace Dynamics & Bias: ±10 pts
 - Form Cycle & Conditioning: ±15 pts
 - Trip Analysis & Trouble: ±10 pts
@@ -335,12 +373,12 @@ Applied after base scoring (Phase 5: reduced from ±50):
 
 ### Betting Tiers
 
-| Tier | Score | Confidence | Hit Rate | Action |
-|------|-------|------------|----------|--------|
-| 1 (Chalk) | 180+ | High | 50-70% | Primary bets |
-| 2 (Alternatives) | 160-179 | Medium | 20-40% | Secondary bets |
-| 3 (Value) | 140-159 | Lower | 5-20% | Small stabs |
-| Pass | <140 | — | — | No bet |
+| Tier             | Score   | Confidence | Hit Rate | Action         |
+| ---------------- | ------- | ---------- | -------- | -------------- |
+| 1 (Chalk)        | 180+    | High       | 50-70%   | Primary bets   |
+| 2 (Alternatives) | 160-179 | Medium     | 20-40%   | Secondary bets |
+| 3 (Value)        | 130-159 | Lower      | 5-20%    | Small stabs    |
+| Pass             | <130    | —          | —        | No bet         |
 
 ### Edge Case Protocols
 
@@ -354,22 +392,23 @@ Applied after base scoring (Phase 5: reduced from ±50):
 ## DRF File Format
 
 ### Structure
+
 - CSV format, 1,435 fields per line
 - One line per horse entry
 - ASCII encoding
 
 ### Key Field Groups
 
-| Fields | Content |
-|--------|---------|
-| 1-27 | Race header (track, date, distance, surface, purse) |
-| 28-57 | Horse identity (trainer, jockey, breeding) |
-| 62-101 | Lifetime records (starts, wins, earnings) |
-| 102-113 | Past performance dates (up to 12) |
-| 114-700 | PP details (figures, positions, equipment, margins) |
-| 700-900 | Pace figures, fractional times |
-| 900-1100 | Trainer/jockey names per PP |
-| 1100-1435 | Workouts, extended stats, comments |
+| Fields    | Content                                             |
+| --------- | --------------------------------------------------- |
+| 1-27      | Race header (track, date, distance, surface, purse) |
+| 28-57     | Horse identity (trainer, jockey, breeding)          |
+| 62-101    | Lifetime records (starts, wins, earnings)           |
+| 102-113   | Past performance dates (up to 12)                   |
+| 114-700   | PP details (figures, positions, equipment, margins) |
+| 700-900   | Pace figures, fractional times                      |
+| 900-1100  | Trainer/jockey names per PP                         |
+| 1100-1435 | Workouts, extended stats, comments                  |
 
 ### Critical Scoring Fields
 
@@ -392,7 +431,7 @@ interface TrackIntelligence {
   code: string;              // "CD", "SAR", "GP"
   name: string;              // "Churchill Downs"
   location: string;          // "Louisville, KY"
-  
+
   surface: {
     main: {
       material: string;
@@ -401,7 +440,7 @@ interface TrackIntelligence {
     };
     turf?: { ... };
   };
-  
+
   bias: {
     sprint: {
       speedBias: number;     // 0-100
@@ -411,7 +450,7 @@ interface TrackIntelligence {
     route: { ... };
     turf?: { ... };
   };
-  
+
   pars: {
     [distance: number]: {
       quarter: number;
@@ -434,6 +473,7 @@ src/data/tracks/
 ### Fallback
 
 Unknown tracks get:
+
 - 55% speed bias (neutral)
 - Even post distribution
 - National average pars
@@ -448,6 +488,7 @@ Unknown tracks get:
 **User Flow:** Upload DRF file → Race Overview (all races) → Click race → Race Detail → Back to Overview
 
 **Primary View: Race Overview**
+
 - Displays ALL races from parsed DRF file as cards
 - Each card shows: race number, distance, surface, class, confidence badge
 - Confidence badges use color-coded indicators (High/Moderate/Low)
@@ -455,6 +496,7 @@ Unknown tracks get:
 - Click any race card to drill into details
 
 **Secondary View: Race Detail**
+
 - Full horse-by-horse analysis
 - Scoring breakdowns, betting recommendations
 - Controls for scratches, odds updates, track conditions
@@ -560,6 +602,7 @@ src/
 **Scope definition only. All boxes unchecked. Actual state determined by snapshot.**
 
 ### Phase 1: Foundation
+
 - [ ] Project scaffolding (Vite + React + TypeScript)
 - [ ] Design system implementation (colors, typography, spacing)
 - [ ] Component library (buttons, cards, inputs, modals)
@@ -568,6 +611,7 @@ src/
 - [ ] PWA manifest and service worker shell
 
 ### Phase 2: Core Data Layer
+
 - [ ] DRF parser (all 1,435 fields)
 - [ ] Web Worker for off-thread parsing
 - [ ] TypeScript interfaces for all data types
@@ -575,6 +619,7 @@ src/
 - [ ] IndexedDB storage for parsed data
 
 ### Phase 3: Track Intelligence
+
 - [ ] Track schema definition
 - [ ] Track data files (40+ tracks)
 - [ ] Track lookup service
@@ -582,6 +627,7 @@ src/
 - [ ] Bias calculation helpers
 
 ### Phase 4: Scoring Engine
+
 - [ ] Category 1: Connections scoring
 - [ ] Category 2: Post position scoring
 - [ ] Category 3: Speed/class scoring
@@ -593,6 +639,7 @@ src/
 - [ ] Edge case protocols (diamond, nuclear, lightly raced)
 
 ### Phase 5: Betting Logic
+
 - [ ] Tier classification
 - [ ] Bet type recommendations
 - [ ] Unit sizing calculations
@@ -600,6 +647,7 @@ src/
 - [ ] Multi-race optimization (pick 3/4/5)
 
 ### Phase 6: User Interface
+
 - [ ] File upload flow
 - [ ] Race Overview screen (all races with confidence badges)
 - [ ] Race Detail screen (single race deep dive)
@@ -613,6 +661,7 @@ src/
 - [ ] Keyboard navigation (Escape returns to overview)
 
 ### Phase 7: Enterprise Scaffolding
+
 - [ ] Auth service abstraction
 - [ ] Auth context and hooks
 - [ ] Protected route patterns
@@ -622,12 +671,14 @@ src/
 - [ ] Analytics abstraction
 
 ### Phase 8: AI Integration (Scaffolding)
+
 - [ ] AI service interface
 - [ ] Provider abstraction (Gemini/Claude/OpenAI)
 - [ ] Feature flags for AI features
 - [ ] AI query components (hidden until enabled)
 
 ### Phase 9: Offline & PWA
+
 - [ ] Service worker implementation
 - [ ] Cache strategies (app shell, track data)
 - [ ] IndexedDB sync patterns
@@ -636,6 +687,7 @@ src/
 - [ ] Background sync queue
 
 ### Phase 10: Testing & Quality
+
 - [ ] Unit tests for scoring modules
 - [ ] Unit tests for parser
 - [ ] Integration tests for user flows
@@ -644,12 +696,14 @@ src/
 - [ ] Error logging abstraction
 
 ### Phase 11: Legal & Compliance
+
 - [ ] Terms of Service
 - [ ] Privacy Policy
 - [ ] Data analysis tool disclaimers
 - [ ] No-refund policy documentation
 
 ### Phase 12: Launch Prep
+
 - [ ] Production environment config
 - [ ] Stripe production setup
 - [ ] Auth production setup
@@ -660,8 +714,10 @@ src/
 ---
 
 # SECTION 2: CLAUDE CHAT INSTRUCTIONS
-## *Applies to: Claude Chat sessions ONLY*
-## *Claude Code: SKIP THIS ENTIRE SECTION*
+
+## _Applies to: Claude Chat sessions ONLY_
+
+## _Claude Code: SKIP THIS ENTIRE SECTION_
 
 ---
 
@@ -773,6 +829,7 @@ Provide the snapshot as a structured document with clear sections matching the r
 ## Technical Snapshot Freshness
 
 Before planning, check if any of these occurred since last snapshot:
+
 - Added or removed a major component or service
 - Changed state management patterns
 - Modified data flow or calculation pipeline
@@ -786,7 +843,8 @@ Before planning, check if any of these occurred since last snapshot:
 ---
 
 # SECTION 3: PROMPT FORMAT
-## *Applies to: Claude Chat (for writing) AND Claude Code (for executing)*
+
+## _Applies to: Claude Chat (for writing) AND Claude Code (for executing)_
 
 ---
 
@@ -877,13 +935,15 @@ When finished, provide:
 ---
 
 # SECTION 4: CLAUDE CODE INSTRUCTIONS
-## *Applies to: Claude Code sessions ONLY*
+
+## _Applies to: Claude Code sessions ONLY_
 
 ---
 
 ## What You Are
 
 You are executing a prompt in a fresh session. You have no memory of previous sessions. Your only context comes from:
+
 1. The prompt you were given
 2. The files in the codebase (including MASTER_CONTEXT.md and methodology docs)
 
@@ -898,14 +958,14 @@ You are executing a prompt in a fresh session. You have no memory of previous se
 
 **Then, based on the task, read relevant methodology docs:**
 
-| If the task involves... | Also read... |
-|-------------------------|--------------|
-| Scoring, points, categories | src/docs/SCORING_ENGINE.md |
-| DRF parsing, field extraction | src/docs/DRF_FIELD_MAP.md |
-| Race-day adjustments, pace analysis | src/docs/OVERLAY_SYSTEM.md |
+| If the task involves...                | Also read...                    |
+| -------------------------------------- | ------------------------------- |
+| Scoring, points, categories            | src/docs/SCORING_ENGINE.md      |
+| DRF parsing, field extraction          | src/docs/DRF_FIELD_MAP.md       |
+| Race-day adjustments, pace analysis    | src/docs/OVERLAY_SYSTEM.md      |
 | Longshots, first-timers, special cases | src/docs/EDGE_CASE_PROTOCOLS.md |
-| Bet construction, tiers, output format | src/docs/BETTING_TIERS.md |
-| Track data, bias, connections | src/docs/TRACK_INTELLIGENCE.md |
+| Bet construction, tiers, output format | src/docs/BETTING_TIERS.md       |
+| Track data, bias, connections          | src/docs/TRACK_INTELLIGENCE.md  |
 
 **When in doubt, read all six.** These documents ARE the algorithm specification. The code implements what they define.
 
@@ -940,11 +1000,12 @@ You are executing a prompt in a fresh session. You have no memory of previous se
 
 ## Section 2 Is Not For You
 
-Section 2 of this document contains instructions for Claude Chat sessions (session continuity, snapshot protocol, prompt generation). 
+Section 2 of this document contains instructions for Claude Chat sessions (session continuity, snapshot protocol, prompt generation).
 
 **You are Claude Code. Ignore Section 2 entirely.**
 
 Your job is to:
+
 1. Read Section 1 (understand the project)
 2. Read methodology docs in src/docs/ (understand the algorithm)
 3. Read Section 3 (understand the prompt format)
@@ -987,18 +1048,17 @@ src/lib/
 
 ## Enterprise Quality Standards
 
-*Applies to ALL code written in this project.*
+_Applies to ALL code written in this project._
 
 - All new functions must have error handling (try/catch with logging)
 - All external inputs must be validated/sanitized before use
-- All new modules must include corresponding test file in src/__tests__/
+- All new modules must include corresponding test file in src/**tests**/
 - No console.log in production code — use logging service
 - No 'any' types — explicit TypeScript typing required
 - All async operations must handle failure states
 - New components must be wrapped in ErrorBoundary or handle errors gracefully
 - Code must pass TypeScript strict mode
 - Follow existing patterns in codebase — don't introduce new paradigms without justification
-- 
----
+- ***
 
-*End of Section 4*
+_End of Section 4_
