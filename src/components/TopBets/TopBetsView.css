@@ -432,7 +432,7 @@
 }
 
 /* ============================================
-   YOUR BETS COLUMN (Placeholder - Phase 1)
+   YOUR BETS COLUMN - Suggestion Engine
    ============================================ */
 
 .top-bets-column--your-bets {
@@ -440,9 +440,264 @@
 }
 
 .top-bets-column--your-bets .top-bets-column__header {
-  border-left: 2px solid var(--color-primary); /* Accent left border */
+  border-left: 3px solid var(--color-primary); /* Accent left border */
 }
 
+.your-bets-header {
+  height: auto !important;
+  min-height: 56px;
+}
+
+/* Budget and Style Controls */
+.your-bets-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 10px;
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 56px;
+  z-index: 1;
+}
+
+.your-bets-control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.your-bets-control__label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.your-bets-control__input-wrapper {
+  display: flex;
+  align-items: center;
+  background: var(--color-base);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.your-bets-control__prefix {
+  padding: 6px 0 6px 10px;
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.your-bets-control__input {
+  flex: 1;
+  padding: 6px 10px 6px 2px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  min-width: 0;
+}
+
+.your-bets-control__input::placeholder {
+  color: var(--color-text-tertiary);
+  font-weight: 400;
+}
+
+.your-bets-control__input:focus {
+  outline: none;
+}
+
+.your-bets-control__input-wrapper:focus-within {
+  border-color: var(--color-primary);
+}
+
+.your-bets-control__select {
+  width: 100%;
+  padding: 6px 28px 6px 10px;
+  background: var(--color-base);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23B4B4B6'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+.your-bets-control__select:hover {
+  border-color: var(--color-border-prominent);
+}
+
+.your-bets-control__select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+/* Suggestions List */
+.your-bets-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.your-bets-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Empty State */
+.your-bets-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+  height: 100%;
+  min-height: 150px;
+}
+
+.your-bets-empty__text {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+/* Suggestion Card */
+.suggestion-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
+  transition: background var(--transition-fast);
+}
+
+.suggestion-card:hover {
+  background: rgba(25, 171, 181, 0.08);
+}
+
+.suggestion-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.suggestion-card__type {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.suggestion-card__amount {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.suggestion-card__horses {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary);
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+/* Totals Section */
+.your-bets-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 10px;
+  background: var(--color-elevated);
+  border-top: 2px solid var(--color-primary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.your-bets-totals__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.your-bets-totals__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.your-bets-totals__value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.your-bets-totals__row--remaining .your-bets-totals__label {
+  font-weight: 400;
+  text-transform: none;
+  font-size: 11px;
+}
+
+.your-bets-totals__row--remaining .your-bets-totals__value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+}
+
+/* At the Window Section */
+.your-bets-window {
+  padding: 12px 10px;
+  background: var(--color-card);
+  border-top: 1px solid var(--color-border);
+}
+
+.your-bets-window__title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin: 0 0 10px 0;
+}
+
+.your-bets-window__scripts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.your-bets-window__script {
+  font-size: 12px;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+  padding: 6px 8px;
+  background: var(--color-base);
+  border-radius: var(--radius-sm);
+  word-break: break-word;
+}
+
+/* Legacy placeholder for backwards compatibility */
 .your-bets-placeholder {
   display: flex;
   flex-direction: column;
@@ -514,6 +769,67 @@
   .your-bets-placeholder__text {
     font-size: 10px;
   }
+
+  /* Your Bets responsive - tablet landscape */
+  .your-bets-controls {
+    padding: 8px 6px;
+    gap: 6px;
+  }
+
+  .your-bets-control__label {
+    font-size: 9px;
+  }
+
+  .your-bets-control__input,
+  .your-bets-control__prefix {
+    font-size: 12px;
+  }
+
+  .your-bets-control__select {
+    font-size: 11px;
+    padding: 4px 24px 4px 6px;
+  }
+
+  .suggestion-card {
+    padding: 8px 6px;
+  }
+
+  .suggestion-card__type {
+    font-size: 10px;
+  }
+
+  .suggestion-card__amount {
+    font-size: 12px;
+  }
+
+  .suggestion-card__horses {
+    font-size: 11px;
+  }
+
+  .your-bets-totals {
+    padding: 8px 6px;
+  }
+
+  .your-bets-totals__label {
+    font-size: 10px;
+  }
+
+  .your-bets-totals__value {
+    font-size: 14px;
+  }
+
+  .your-bets-window {
+    padding: 8px 6px;
+  }
+
+  .your-bets-window__title {
+    font-size: 10px;
+  }
+
+  .your-bets-window__script {
+    font-size: 10px;
+    padding: 4px 6px;
+  }
 }
 
 /* ============================================
@@ -566,6 +882,16 @@
   .your-bets-placeholder {
     padding: 24px 12px;
     min-height: 150px;
+  }
+
+  /* Your Bets - tablet portrait */
+  .your-bets-controls {
+    flex-direction: row;
+    gap: 12px;
+  }
+
+  .your-bets-control {
+    flex: 1;
   }
 }
 
@@ -622,6 +948,36 @@
 
   .your-bets-placeholder {
     min-height: 80px;
+  }
+
+  /* Your Bets - small tablet (full width row) */
+  .your-bets-controls {
+    flex-direction: row;
+    gap: 16px;
+  }
+
+  .your-bets-control {
+    flex: 1;
+  }
+
+  .your-bets-suggestions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+  }
+
+  .suggestion-card {
+    border-right: 1px solid var(--color-border);
+  }
+
+  .suggestion-card:nth-child(2n) {
+    border-right: none;
+  }
+
+  .your-bets-window__scripts {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
   }
 }
 
@@ -691,6 +1047,62 @@
   .your-bets-placeholder {
     min-height: 60px;
     padding: 16px 12px;
+  }
+
+  /* Your Bets - mobile */
+  .your-bets-controls {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .your-bets-control__input,
+  .your-bets-control__prefix {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  .your-bets-control__select {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  .your-bets-suggestions {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .suggestion-card {
+    padding: 12px;
+    border-right: none;
+  }
+
+  .suggestion-card__amount {
+    font-size: 16px;
+  }
+
+  .suggestion-card__horses {
+    font-size: 14px;
+  }
+
+  .your-bets-totals {
+    padding: 12px;
+  }
+
+  .your-bets-totals__value {
+    font-size: 18px;
+  }
+
+  .your-bets-window {
+    padding: 12px;
+  }
+
+  .your-bets-window__scripts {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .your-bets-window__script {
+    font-size: 13px;
+    padding: 8px 10px;
   }
 }
 

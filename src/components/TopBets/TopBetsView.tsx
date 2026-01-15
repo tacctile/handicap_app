@@ -4,11 +4,16 @@
  * 7-column betting view showing algorithm-generated betting suggestions.
  * Columns: WIN, PLACE, SHOW, EXACTA, TRIFECTA, SUPERFECTA, YOUR BETS
  * Features bordered bet cards for clear visual separation.
- * YOUR BETS column is a placeholder for building bet slips (Phase 1).
+ *
+ * YOUR BETS column is an algorithm-driven betting suggestion engine:
+ * - User enters budget and selects risk style (Conservative/Moderate/Aggressive)
+ * - Algorithm generates optimal bet allocation suggestions
+ * - Shows suggestions with totals and window scripts
  */
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { generateTopBets, type TopBet, type TopBetType, type TopBetHorse } from '../../lib/betting/topBetsGenerator';
+import { generateBettingSuggestions, type BettingStyle, type BetSuggestion } from '../../lib/betting/suggestionEngine';
 import type { ScoredHorse } from '../../lib/scoring';
 import type { RaceHeader } from '../../types/drf';
 import './TopBetsView.css';
@@ -139,6 +144,10 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   const [trifectaVariant, setTrifectaVariant] = useState<TrifectaVariant>('straight');
   const [superfectaVariant, setSuperfectaVariant] = useState<SuperfectaVariant>('straight');
 
+  // Your Bets suggestion engine state
+  const [raceBudget, setRaceBudget] = useState<string>('20');
+  const [bettingStyle, setBettingStyle] = useState<BettingStyle>('Moderate');
+
   // ============================================================================
   // GENERATE TOP BETS
   // ============================================================================
@@ -160,6 +169,23 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
     if (scoredHorses.length === 0) return null;
     return generateTopBets(scoredHorses, raceHeader, raceNumber, getOdds, isScratched);
   }, [scoredHorses, raceHeader, raceNumber, getOdds, isScratched, scratchedCount, oddsSignature]);
+
+  // ============================================================================
+  // GENERATE BETTING SUGGESTIONS (Your Bets Column)
+  // ============================================================================
+
+  const suggestionResult = useMemo(() => {
+    const budgetNumber = parseInt(raceBudget, 10) || 0;
+    return generateBettingSuggestions(
+      budgetNumber,
+      bettingStyle,
+      scoredHorses,
+      raceHeader,
+      raceNumber,
+      getOdds,
+      isScratched
+    );
+  }, [raceBudget, bettingStyle, scoredHorses, raceHeader, raceNumber, getOdds, isScratched, scratchedCount, oddsSignature]);
 
   // ============================================================================
   // COMPUTED: EFFECTIVE BASE AMOUNT
@@ -271,6 +297,18 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
     }
   }, []);
 
+  const handleBudgetChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    // Allow empty or valid numbers up to 9999
+    if (value === '' || (parseInt(value, 10) >= 0 && parseInt(value, 10) <= 9999)) {
+      setRaceBudget(value);
+    }
+  }, []);
+
+  const handleStyleChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setBettingStyle(e.target.value as BettingStyle);
+  }, []);
+
   // ============================================================================
   // RENDER
   // ============================================================================
@@ -350,19 +388,99 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
       {/* 7-Column Grid */}
       <div className="top-bets-columns">
         {COLUMNS.map((column) => {
-          // YOUR BETS column is a placeholder - doesn't show bet cards
+          // YOUR BETS column - Algorithm-driven suggestion engine
           if (column.id === 'your-bets') {
+            const budgetNumber = parseInt(raceBudget, 10) || 0;
+            const hasBudget = budgetNumber > 0;
+            const hasSuggestions = suggestionResult.suggestions.length > 0;
+
             return (
               <div key={column.id} className="top-bets-column top-bets-column--your-bets">
-                {/* Column Header */}
-                <div className="top-bets-column__header">
+                {/* Column Header with Budget and Style inputs */}
+                <div className="top-bets-column__header your-bets-header">
                   <h3 className="top-bets-column__title">{column.title}</h3>
                 </div>
-                {/* Placeholder content */}
-                <div className="top-bets-column__list">
-                  <div className="your-bets-placeholder">
-                    <span className="your-bets-placeholder__text">Select bets to add here</span>
+
+                {/* Budget and Style Controls */}
+                <div className="your-bets-controls">
+                  <div className="your-bets-control">
+                    <label className="your-bets-control__label">BUDGET</label>
+                    <div className="your-bets-control__input-wrapper">
+                      <span className="your-bets-control__prefix">$</span>
+                      <input
+                        type="text"
+                        className="your-bets-control__input"
+                        value={raceBudget}
+                        onChange={handleBudgetChange}
+                        placeholder="20"
+                        maxLength={4}
+                      />
+                    </div>
                   </div>
+                  <div className="your-bets-control">
+                    <label className="your-bets-control__label">STYLE</label>
+                    <select
+                      className="your-bets-control__select"
+                      value={bettingStyle}
+                      onChange={handleStyleChange}
+                    >
+                      <option value="Conservative">Conservative</option>
+                      <option value="Moderate">Moderate</option>
+                      <option value="Aggressive">Aggressive</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Suggestions List */}
+                <div className="top-bets-column__list your-bets-list">
+                  {!hasBudget ? (
+                    <div className="your-bets-empty">
+                      <span className="your-bets-empty__text">Enter budget to see suggestions</span>
+                    </div>
+                  ) : suggestionResult.error ? (
+                    <div className="your-bets-empty">
+                      <span className="your-bets-empty__text">{suggestionResult.error}</span>
+                    </div>
+                  ) : hasSuggestions ? (
+                    <>
+                      {/* Suggestions */}
+                      <div className="your-bets-suggestions">
+                        {suggestionResult.suggestions.map((suggestion, idx) => (
+                          <SuggestionCard key={`${suggestion.internalType}-${suggestion.horseNumbers.join('-')}-${idx}`} suggestion={suggestion} />
+                        ))}
+                      </div>
+
+                      {/* Totals */}
+                      <div className="your-bets-totals">
+                        <div className="your-bets-totals__row">
+                          <span className="your-bets-totals__label">TOTAL:</span>
+                          <span className="your-bets-totals__value">${suggestionResult.totalAllocated}</span>
+                        </div>
+                        {suggestionResult.remaining > 0 && (
+                          <div className="your-bets-totals__row your-bets-totals__row--remaining">
+                            <span className="your-bets-totals__label">Remaining:</span>
+                            <span className="your-bets-totals__value">${suggestionResult.remaining}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* At the Window Scripts */}
+                      <div className="your-bets-window">
+                        <h4 className="your-bets-window__title">AT THE WINDOW</h4>
+                        <div className="your-bets-window__scripts">
+                          {suggestionResult.suggestions.map((suggestion, idx) => (
+                            <div key={`script-${idx}`} className="your-bets-window__script">
+                              "{suggestion.windowScript}"
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="your-bets-empty">
+                      <span className="your-bets-empty__text">No suggestions available</span>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -542,6 +660,31 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
 
       {/* Row 4: Window script (last row) */}
       <div className="compact-bet-card__script">"{bet.scaledWhatToSay}"</div>
+    </div>
+  );
+};
+
+// ============================================================================
+// SUGGESTION CARD COMPONENT
+// ============================================================================
+
+interface SuggestionCardProps {
+  suggestion: BetSuggestion;
+}
+
+const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion }) => {
+  // Format horse display
+  const horseDisplay = suggestion.horseNumbers.length === 1
+    ? `#${suggestion.horseNumbers[0]} ${suggestion.horseNames[0]?.toUpperCase() || ''}`
+    : suggestion.horseNumbers.map((n) => `#${n}`).join('-');
+
+  return (
+    <div className="suggestion-card">
+      <div className="suggestion-card__header">
+        <span className="suggestion-card__type">{suggestion.betType}</span>
+        <span className="suggestion-card__amount">${suggestion.amount}</span>
+      </div>
+      <div className="suggestion-card__horses">{horseDisplay}</div>
     </div>
   );
 };
