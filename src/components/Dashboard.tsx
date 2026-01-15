@@ -1006,18 +1006,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span className="horse-list-header__races-text">RACES</span>
             </div>
 
-            {/* Column 1: Help button */}
-            <div className="horse-list-header__cell horse-list-header__cell--icons">
-              <button
-                type="button"
-                className="help-trigger-btn"
-                onClick={() => setHelpModalOpen(true)}
-                aria-label="How to read the form"
-                title="How to Read the Form"
-              >
-                <span className="material-icons">help_outline</span>
-              </button>
-            </div>
+            {/* Column 1: Empty placeholder - aligns with scratch button column on cards */}
+            <div className="horse-list-header__cell horse-list-header__cell--icons"></div>
 
             {/* Column 2: POST - Sortable */}
             <div
@@ -1503,6 +1493,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
             >
               <span className="material-icons">casino</span>
               <span>STRATEGY GUIDE</span>
+            </button>
+          </div>
+
+          {/* Separator */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* FORM GUIDE button - Opens how to read the form modal */}
+          <div className="app-bottombar__cluster">
+            <button
+              className="app-bottombar__item app-bottombar__item--form-guide"
+              onClick={() => setHelpModalOpen(true)}
+              title="How to Read the Form"
+            >
+              <span className="app-bottombar__form-guide-icon">📖</span>
+              <span>FORM GUIDE</span>
             </button>
           </div>
 
