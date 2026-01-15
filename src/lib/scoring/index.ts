@@ -158,9 +158,9 @@ import {
  * - Trainer Surface/Distance: 6 pts
  * - Weight: 1 pt
  * - P3 (Age + Sire's Sire): 2 pts
- * Total: 323 pts
+ * Total: 331 pts (v3.6: Form Decay System restored form to 50 pts)
  */
-export const MAX_BASE_SCORE = 323;
+export const MAX_BASE_SCORE = 331;
 
 /**
  * Maximum overlay adjustment
@@ -169,7 +169,7 @@ export const MAX_BASE_SCORE = 323;
 export const MAX_OVERLAY = 40;
 
 /** Maximum total score (base + overlay) */
-export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 363
+export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 371
 
 /**
  * Score limits by category
@@ -207,7 +207,7 @@ export const SCORE_LIMITS = {
   connections: 23, // Model B: reduced from 27 (partnership 4→2)
   postPosition: 12,
   speedClass: 140, // Model B: increased from 122 (speed 105 + class 35)
-  form: 42, // Model B: reduced from 50
+  form: 50, // v3.6: Form Decay System restored to 50
   equipment: 8,
   pace: 35, // Model B: reduced from 45
   odds: 12, // Model B: reduced from 15
@@ -220,9 +220,9 @@ export const SCORE_LIMITS = {
   // P3 refinements (subtle, ±1 pt each)
   ageFactor: 1, // Age-based peak performance (+1 for 4-5yo, -1 for 8+)
   siresSire: 1, // Sire's sire breeding influence (±1 integrated into breeding)
-  baseTotal: MAX_BASE_SCORE, // 323
+  baseTotal: MAX_BASE_SCORE, // 331
   overlayMax: MAX_OVERLAY, // 40
-  total: MAX_SCORE, // 363
+  total: MAX_SCORE, // 371
 } as const;
 
 /**

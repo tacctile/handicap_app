@@ -36,12 +36,12 @@ import {
 // ============================================================================
 
 describe('Algorithm v3.1 - Category Totals', () => {
-  it('sum of all category max points equals 328', () => {
-    // Model B: Speed-Dominant Scoring Rebalance
+  it('sum of all category max points equals 331', () => {
+    // Model B: Speed-Dominant Scoring Rebalance + v3.6 Form Decay System
     const expectedCategories = {
       speedFigures: 105, // Increased from 90
       class: 35, // Increased from 32
-      form: 42, // Decreased from 50
+      form: 50, // v3.6: Form Decay System restored to 50
       pace: 35, // Decreased from 45
       connections: 23, // Decreased from 27
       distanceSurface: 20,
@@ -57,8 +57,8 @@ describe('Algorithm v3.1 - Category Totals', () => {
     };
 
     const sum = Object.values(expectedCategories).reduce((a, b) => a + b, 0);
-    // Model B: 323 max base score
-    expect(sum).toBe(323);
+    // v3.6: 331 max base score (323 + 8 from form increase)
+    expect(sum).toBe(331);
   });
 
   it('SCORE_LIMITS constants match expected values', () => {
@@ -66,7 +66,7 @@ describe('Algorithm v3.1 - Category Totals', () => {
     expect(SCORE_LIMITS.speedClass).toBe(140);
 
     // Model B individual categories
-    expect(SCORE_LIMITS.form).toBe(42);
+    expect(SCORE_LIMITS.form).toBe(50); // v3.6: Form Decay System
     expect(SCORE_LIMITS.pace).toBe(35);
     expect(SCORE_LIMITS.connections).toBe(23);
     expect(SCORE_LIMITS.distanceSurface).toBe(20);
@@ -81,15 +81,15 @@ describe('Algorithm v3.1 - Category Totals', () => {
     expect(SCORE_LIMITS.siresSire).toBe(1);
     expect(SCORE_LIMITS.weight).toBe(1);
 
-    // Totals - Model B
-    expect(SCORE_LIMITS.baseTotal).toBe(323);
+    // Totals - v3.6 Form Decay System
+    expect(SCORE_LIMITS.baseTotal).toBe(331);
     expect(SCORE_LIMITS.overlayMax).toBe(40);
-    expect(SCORE_LIMITS.total).toBe(363);
+    expect(SCORE_LIMITS.total).toBe(371);
   });
 
   it('MAX constants are correctly defined', () => {
-    expect(MAX_BASE_SCORE).toBe(323);
-    expect(MAX_SCORE).toBe(363);
+    expect(MAX_BASE_SCORE).toBe(331); // v3.6: Form Decay System
+    expect(MAX_SCORE).toBe(371); // v3.6: Form Decay System
     expect(MAX_OVERLAY).toBe(40);
   });
 });

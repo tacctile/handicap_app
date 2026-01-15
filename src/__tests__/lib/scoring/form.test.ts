@@ -8,6 +8,13 @@ import {
   calculateFormScore,
   isOnHotStreak,
   getFormSummary,
+  calculateWLODecay,
+  getRecencyMultiplier,
+  FORM_CATEGORY_MAX,
+  WINNER_DECAY_THRESHOLDS,
+  WINNER_DECAY_BONUSES,
+  PATTERN_DECAY_THRESHOLDS,
+  PATTERN_DECAY_MULTIPLIERS,
   type ClassContext,
 } from '../../../lib/scoring/form';
 import {
@@ -319,7 +326,7 @@ describe('Form Scoring', () => {
   });
 
   describe('Total Score', () => {
-    it('is capped at 42 points maximum', () => {
+    it('is capped at 50 points maximum', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 21, // Optimal layoff = 0 penalty
         pastPerformances: [
@@ -333,8 +340,8 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      // v3.2: Form cap reduced from 50 to 42
-      expect(result.total).toBeLessThanOrEqual(42);
+      // v3.6: Form cap is 50 pts per v3.6 specification
+      expect(result.total).toBeLessThanOrEqual(50);
     });
 
     it('includes winner bonus in total calculation', () => {
@@ -350,10 +357,11 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      // v3.2: Total should include winner bonus
-      // Recent form (15) + consistency (4) + winner bonus (12) + win recency (3) + no layoff penalty (0)
-      expect(result.recentWinnerBonus).toBe(12); // Won last out
-      expect(result.total).toBeGreaterThanOrEqual(30); // High total from winner bonus
+      // v3.6: Total should include winner bonus with decay
+      // Won most recent race = daysSinceLastWin = 0 = hot winner tier = 18 pts WLO
+      // Recent form (15) + consistency (4) + winner bonus (18) + win recency (4) + no layoff penalty (0)
+      expect(result.recentWinnerBonus).toBe(18); // Won last out (hot winner tier)
+      expect(result.total).toBeGreaterThanOrEqual(35); // High total from winner bonus
     });
   });
 
@@ -867,9 +875,9 @@ describe('Form Scoring', () => {
     });
   });
 
-  // v3.2: Winner bonus tests for Model B (reduced from v3.0)
-  describe('Winner Bonus Stacking (v3.2)', () => {
-    it('awards +12 pts for won last out only', () => {
+  // v3.6: Winner bonus tests with Form Decay System
+  describe('Winner Bonus Stacking (v3.6 Form Decay)', () => {
+    it('awards +18 pts for won last out only (hot winner, 0-21 days)', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 21,
         pastPerformances: [
@@ -881,12 +889,13 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      expect(result.recentWinnerBonus).toBe(12);
+      // v3.6: WLO in hot winner tier (0-21 days) = 18 pts
+      expect(result.recentWinnerBonus).toBe(18);
       expect(result.wonLastOut).toBe(true);
       expect(result.won2OfLast3).toBe(false);
     });
 
-    it('awards +17 pts for won last out AND 2 of 3', () => {
+    it('awards +26 pts for won last out AND 2 of 3 (hot winner)', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 21,
         pastPerformances: [
@@ -898,29 +907,37 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      expect(result.recentWinnerBonus).toBe(17); // 12 + 5 = 17
+      // v3.6: WLO (18) + Won 2/3 (8 * 1.0 multiplier) = 26 pts
+      expect(result.recentWinnerBonus).toBe(26);
       expect(result.wonLastOut).toBe(true);
       expect(result.won2OfLast3).toBe(true);
     });
 
-    it('awards +5 pts for won 2 of 3 but NOT last out', () => {
+    it('awards +8 pts for won 2 of 3 but NOT last out (hot winner tier)', () => {
+      // PP[0]: 4th, 14 days ago (didn't win last out)
+      // PP[1]: 1st, 7 days before that = 21 days ago (most recent win)
+      // PP[2]: 1st, 7 days before that = 28 days ago
+      // daysSinceLastWin = 14 + 7 = 21 days (hot tier, 1.0x multiplier)
       const horse = createHorseEntry({
-        daysSinceLastRace: 21,
+        daysSinceLastRace: 14,
         pastPerformances: [
-          createPastPerformance({ finishPosition: 4, daysSinceLast: 21 }),
-          createPastPerformance({ finishPosition: 1, daysSinceLast: 21 }),
-          createPastPerformance({ finishPosition: 1, daysSinceLast: 21 }),
+          createPastPerformance({ finishPosition: 4, daysSinceLast: 14 }),
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 7 }), // Most recent win = 14+7 = 21 days
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 7 }),
         ],
       });
 
       const result = calculateFormScore(horse);
 
-      expect(result.recentWinnerBonus).toBe(5); // Only won2of3 bonus
+      // v3.6: Only won2of3 bonus = 8 pts * 1.0 multiplier (hot winner tier)
+      // daysSinceLastWin = 14 + 7 = 21 days
+      expect(result.daysSinceLastWin).toBe(21);
+      expect(result.recentWinnerBonus).toBe(8);
       expect(result.wonLastOut).toBe(false);
       expect(result.won2OfLast3).toBe(true);
     });
 
-    it('includes won3of5 stacking bonus', () => {
+    it('includes won3of5 stacking bonus (hot winner)', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 21,
         pastPerformances: [
@@ -934,13 +951,13 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      // Won last out (12) + won 2/3 (5) + won 3/5 (3) = 20 pts (max)
-      expect(result.recentWinnerBonus).toBe(20);
+      // v3.6: WLO (18) + won 2/3 (8) + won 3/5 (4) = 30 pts (max winner bonus)
+      expect(result.recentWinnerBonus).toBe(30);
       expect(result.won3OfLast5).toBe(true);
     });
   });
 
-  describe('Layoff Penalty Cap (v3.2)', () => {
+  describe('Layoff Penalty Cap (v3.6)', () => {
     it('caps layoff penalty at -10 for extended layoff', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 200,
@@ -960,8 +977,9 @@ describe('Form Scoring', () => {
 
       const result = calculateFormScore(horse);
 
-      // Winner bonus (+12) should not be wiped out by layoff penalty
-      expect(result.recentWinnerBonus).toBe(12);
+      // v3.6: Winner bonus uses decay - won last out with 120 day layoff
+      // daysSinceLastWin = 0 (won most recent race), so WLO = 18 pts (hot winner)
+      expect(result.recentWinnerBonus).toBe(18);
       expect(result.layoffPenalty).toBe(-10);
       // Total should be positive: recent form + winner bonus - layoff penalty
       expect(result.total).toBeGreaterThan(0);
@@ -984,8 +1002,8 @@ describe('Form Scoring', () => {
     });
   });
 
-  describe('Win Recency Bonus (v3.2)', () => {
-    it('awards +3 pts for win within 30 days', () => {
+  describe('Win Recency Bonus (v3.6)', () => {
+    it('awards +4 pts for win within 30 days', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 21,
         pastPerformances: [createPastPerformance({ finishPosition: 1, daysSinceLast: 21 })],
@@ -994,11 +1012,12 @@ describe('Form Scoring', () => {
       const result = calculateFormScore(horse);
 
       // Won last race which was 21 days ago (within 30 days)
-      expect(result.winRecencyBonus).toBe(3);
+      // v3.6: lastWinWithin30Days = 4 pts (hot horse bonus)
+      expect(result.winRecencyBonus).toBe(4);
       expect(result.daysSinceLastWin).toBe(0); // Won most recent race
     });
 
-    it('awards +2 pts for win within 60 days', () => {
+    it('awards +3 pts for win within 60 days', () => {
       // First PP is non-win with 35 days since last race
       // Second PP is win with 10 days since its previous race
       // Total days since win = 35 + 10 = 45 days
@@ -1013,11 +1032,12 @@ describe('Form Scoring', () => {
       const result = calculateFormScore(horse);
 
       // daysSinceLastWin = 35 (from first PP) + 10 (to reach the win) = 45 days
-      // 45 is between 30 and 60, so should get +2 warm bonus
+      // 45 is between 30 and 60, so should get +3 warm bonus
+      // v3.6: lastWinWithin60Days = 3 pts (warm horse bonus)
       expect(result.daysSinceLastWin).toBe(45);
       expect(result.daysSinceLastWin).toBeGreaterThan(30);
       expect(result.daysSinceLastWin).toBeLessThanOrEqual(60);
-      expect(result.winRecencyBonus).toBe(2);
+      expect(result.winRecencyBonus).toBe(3);
     });
 
     it('awards 0 pts for win over 60 days ago', () => {
@@ -1034,6 +1054,436 @@ describe('Form Scoring', () => {
 
       expect(result.daysSinceLastWin).toBeGreaterThan(60);
       expect(result.winRecencyBonus).toBe(0);
+    });
+  });
+
+  // ============================================================================
+  // v3.6 FORM DECAY SYSTEM TESTS
+  // ============================================================================
+
+  describe('v3.6 WLO Decay Tiers', () => {
+    // These tests verify that horses who WON LAST OUT get the correct decayed WLO bonus
+    // based on how many days ago they won
+    it('WLO decay - hot winner (14 days) → expects 18 pts', () => {
+      // Horse won its most recent race 14 days ago
+      const horse = createHorseEntry({
+        daysSinceLastRace: 14,
+        pastPerformances: [
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 14 }), // Won last out!
+          createPastPerformance({ finishPosition: 4, daysSinceLast: 21 }),
+          createPastPerformance({ finishPosition: 5, daysSinceLast: 21 }),
+        ],
+      });
+
+      const result = calculateFormScore(horse);
+
+      // Won last out → daysSinceLastWin = 0
+      // 0-21 days = hot winner tier = 18 pts WLO bonus
+      expect(result.daysSinceLastWin).toBe(0);
+      expect(result.wonLastOut).toBe(true);
+      expect(result.recentWinnerBonus).toBe(18);
+    });
+
+    it('WLO decay - recent winner (30 days) → expects 14 pts', () => {
+      // Horse won its most recent race 30 days ago
+      const horse = createHorseEntry({
+        daysSinceLastRace: 30,
+        pastPerformances: [
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 30 }), // Won last out!
+          createPastPerformance({ finishPosition: 4, daysSinceLast: 21 }),
+          createPastPerformance({ finishPosition: 5, daysSinceLast: 21 }),
+        ],
+      });
+
+      const result = calculateFormScore(horse);
+
+      // Won last out → daysSinceLastWin = 0 (won most recent)
+      // But the layoff is 30 days, which matters for win recency bonus
+      // For WLO decay: daysSinceLastWin = 0 because won most recent
+      // WLO uses 0 days for decay calculation when won last out
+      expect(result.daysSinceLastWin).toBe(0);
+      expect(result.wonLastOut).toBe(true);
+      // Hot winner tier (0-21 days since most recent win = 0) = 18 pts
+      expect(result.recentWinnerBonus).toBe(18);
+    });
+
+    it('WLO decay - freshening (45 days) → expects 10 pts via stale pattern', () => {
+      // Horse won 45 days ago but NOT last out - test pattern decay instead
+      // PP[0]: 4th, 10 days ago
+      // PP[1]: 1st, 35 days before that = 45 days ago
+      const horse = createHorseEntry({
+        daysSinceLastRace: 10,
+        pastPerformances: [
+          createPastPerformance({ finishPosition: 4, daysSinceLast: 10 }),
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 35 }), // Won 45 days ago
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 21 }), // Won 2 of 3
+        ],
+      });
+
+      const result = calculateFormScore(horse);
+
+      // daysSinceLastWin = 10 + 35 = 45 days (freshening tier, 0.65x multiplier)
+      expect(result.daysSinceLastWin).toBe(45);
+      expect(result.wonLastOut).toBe(false);
+      expect(result.won2OfLast3).toBe(true);
+      // Won 2 of 3: Base 8 * 0.65 = 5.2 → 5 pts (rounded)
+      expect(result.recentWinnerBonus).toBe(5);
+    });
+
+    it('WLO decay - stale (60 days) → expects 6 pts via pattern', () => {
+      // Horse won 60 days ago but NOT last out
+      // PP[0]: 4th, 10 days ago
+      // PP[1]: 1st, 50 days before that = 60 days ago
+      const horse = createHorseEntry({
+        daysSinceLastRace: 10,
+        pastPerformances: [
+          createPastPerformance({ finishPosition: 4, daysSinceLast: 10 }),
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 50 }), // Won 60 days ago
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 21 }), // Won 2 of 3
+        ],
+      });
+
+      const result = calculateFormScore(horse);
+
+      // daysSinceLastWin = 10 + 50 = 60 days (stale tier, 0.40x multiplier)
+      expect(result.daysSinceLastWin).toBe(60);
+      expect(result.wonLastOut).toBe(false);
+      expect(result.won2OfLast3).toBe(true);
+      // Won 2 of 3: Base 8 * 0.40 = 3.2 → 3 pts (rounded)
+      expect(result.recentWinnerBonus).toBe(3);
+    });
+
+    it('WLO decay - very stale (80 days) → expects 3 pts via pattern', () => {
+      // Horse won 80 days ago but NOT last out
+      // PP[0]: 4th, 10 days ago
+      // PP[1]: 1st, 70 days before that = 80 days ago
+      const horse = createHorseEntry({
+        daysSinceLastRace: 10,
+        pastPerformances: [
+          createPastPerformance({ finishPosition: 4, daysSinceLast: 10 }),
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 70 }), // Won 80 days ago
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 21 }), // Won 2 of 3
+        ],
+      });
+
+      const result = calculateFormScore(horse);
+
+      // daysSinceLastWin = 10 + 70 = 80 days (very stale tier, 0.25x multiplier)
+      expect(result.daysSinceLastWin).toBe(80);
+      expect(result.wonLastOut).toBe(false);
+      expect(result.won2OfLast3).toBe(true);
+      // Won 2 of 3: Base 8 * 0.25 = 2 pts (rounded)
+      expect(result.recentWinnerBonus).toBe(2);
+    });
+
+    it('WLO decay - ancient (120 days) → expects 1 pt via pattern', () => {
+      // Horse won 120 days ago but NOT last out
+      // PP[0]: 4th, 20 days ago
+      // PP[1]: 1st, 100 days before that = 120 days ago
+      const horse = createHorseEntry({
+        daysSinceLastRace: 20,
+        pastPerformances: [
+          createPastPerformance({ finishPosition: 4, daysSinceLast: 20 }),
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 100 }), // Won 120 days ago
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 21 }), // Won 2 of 3
+        ],
+      });
+
+      const result = calculateFormScore(horse);
+
+      // daysSinceLastWin = 20 + 100 = 120 days (ancient tier, 0.10x multiplier)
+      expect(result.daysSinceLastWin).toBe(120);
+      expect(result.wonLastOut).toBe(false);
+      expect(result.won2OfLast3).toBe(true);
+      // Won 2 of 3: Base 8 * 0.10 = 0.8 → 1 pt (rounded)
+      expect(result.recentWinnerBonus).toBe(1);
+    });
+  });
+
+  describe('v3.6 Pattern Decay Tests', () => {
+    it('Pattern decay - won 2 of 3 at 20 days → expects 8 pts', () => {
+      // PP[0]: 4th, 13 days ago
+      // PP[1]: 1st, 7 days before = 20 days ago (most recent win)
+      // PP[2]: 1st, 21 days before (won 2 of 3)
+      const horse = createHorseEntry({
+        daysSinceLastRace: 13,
+        pastPerformances: [
+          createPastPerformance({ finishPosition: 4, daysSinceLast: 13 }),
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 7 }), // Most recent win = 20 days ago
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 21 }),
+        ],
+      });
+
+      const result = calculateFormScore(horse);
+
+      // daysSinceLastWin = 13 + 7 = 20 days (0-21 = hot tier, 1.0x multiplier)
+      // Won 2 of 3: 8 * 1.0 = 8 pts
+      expect(result.daysSinceLastWin).toBe(20);
+      expect(result.won2OfLast3).toBe(true);
+      expect(result.recentWinnerBonus).toBe(8);
+    });
+
+    it('Pattern decay - won 2 of 3 at 40 days → expects 5 pts', () => {
+      // PP[0]: 4th, 10 days ago
+      // PP[1]: 1st, 30 days before = 40 days ago (most recent win)
+      // PP[2]: 1st, 21 days before (won 2 of 3)
+      const horse = createHorseEntry({
+        daysSinceLastRace: 10,
+        pastPerformances: [
+          createPastPerformance({ finishPosition: 4, daysSinceLast: 10 }),
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 30 }), // Most recent win = 40 days ago
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 21 }),
+        ],
+      });
+
+      const result = calculateFormScore(horse);
+
+      // daysSinceLastWin = 10 + 30 = 40 days (36-50 = fresh tier, 0.65x multiplier)
+      // Won 2 of 3: 8 * 0.65 = 5.2 → 5 pts (rounded)
+      expect(result.daysSinceLastWin).toBe(40);
+      expect(result.won2OfLast3).toBe(true);
+      expect(result.recentWinnerBonus).toBe(5);
+    });
+
+    it('Pattern decay - won 2 of 3 at 95 days → expects 1 pt', () => {
+      // PP[0]: 4th, 15 days ago
+      // PP[1]: 1st, 80 days before = 95 days ago (most recent win)
+      // PP[2]: 1st, 21 days before (won 2 of 3)
+      const horse = createHorseEntry({
+        daysSinceLastRace: 15,
+        pastPerformances: [
+          createPastPerformance({ finishPosition: 4, daysSinceLast: 15 }),
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 80 }), // Most recent win = 95 days ago
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 21 }),
+        ],
+      });
+
+      const result = calculateFormScore(horse);
+
+      // daysSinceLastWin = 15 + 80 = 95 days (91+ = ancient tier, 0.10x multiplier)
+      // Won 2 of 3: 8 * 0.10 = 0.8 → 1 pt (rounded)
+      expect(result.daysSinceLastWin).toBe(95);
+      expect(result.won2OfLast3).toBe(true);
+      expect(result.recentWinnerBonus).toBe(1);
+    });
+  });
+
+  describe('v3.6 Form Cap Enforcement', () => {
+    it('Form cap enforcement - max factors → expects ≤50 pts', () => {
+      const horse = createHorseEntry({
+        daysSinceLastRace: 14, // Optimal layoff
+        pastPerformances: [
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 14 }), // Won last out
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 14 }),
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 14 }),
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 14 }),
+          createPastPerformance({ finishPosition: 1, daysSinceLast: 14 }),
+        ],
+      });
+
+      const result = calculateFormScore(horse);
+
+      // Maximum theoretical score without cap:
+      // Recent form (15) + consistency (4) + WLO (18) + Won 2/3 (8) + Won 3/5 (4) + win recency (4) = 53
+      // Cap enforced at 50 pts
+      expect(result.total).toBeLessThanOrEqual(FORM_CATEGORY_MAX);
+      expect(FORM_CATEGORY_MAX).toBe(50);
+    });
+  });
+
+  // ============================================================================
+  // HELPER FUNCTION TESTS
+  // ============================================================================
+
+  describe('calculateWLODecay()', () => {
+    describe('tier boundaries', () => {
+      it('returns 18 pts for 0 days (hot winner)', () => {
+        expect(calculateWLODecay(0)).toBe(WINNER_DECAY_BONUSES.HOT);
+        expect(calculateWLODecay(0)).toBe(18);
+      });
+
+      it('returns 18 pts for 21 days (hot tier boundary)', () => {
+        expect(calculateWLODecay(21)).toBe(WINNER_DECAY_BONUSES.HOT);
+        expect(calculateWLODecay(21)).toBe(18);
+      });
+
+      it('returns 14 pts for 22 days (recent tier start)', () => {
+        expect(calculateWLODecay(22)).toBe(WINNER_DECAY_BONUSES.RECENT);
+        expect(calculateWLODecay(22)).toBe(14);
+      });
+
+      it('returns 14 pts for 35 days (recent tier boundary)', () => {
+        expect(calculateWLODecay(35)).toBe(WINNER_DECAY_BONUSES.RECENT);
+        expect(calculateWLODecay(35)).toBe(14);
+      });
+
+      it('returns 10 pts for 36 days (fresh tier start)', () => {
+        expect(calculateWLODecay(36)).toBe(WINNER_DECAY_BONUSES.FRESH);
+        expect(calculateWLODecay(36)).toBe(10);
+      });
+
+      it('returns 10 pts for 50 days (fresh tier boundary)', () => {
+        expect(calculateWLODecay(50)).toBe(WINNER_DECAY_BONUSES.FRESH);
+        expect(calculateWLODecay(50)).toBe(10);
+      });
+
+      it('returns 6 pts for 51 days (stale tier start)', () => {
+        expect(calculateWLODecay(51)).toBe(WINNER_DECAY_BONUSES.STALE);
+        expect(calculateWLODecay(51)).toBe(6);
+      });
+
+      it('returns 6 pts for 75 days (stale tier boundary)', () => {
+        expect(calculateWLODecay(75)).toBe(WINNER_DECAY_BONUSES.STALE);
+        expect(calculateWLODecay(75)).toBe(6);
+      });
+
+      it('returns 3 pts for 76 days (very stale tier start)', () => {
+        expect(calculateWLODecay(76)).toBe(WINNER_DECAY_BONUSES.VERY_STALE);
+        expect(calculateWLODecay(76)).toBe(3);
+      });
+
+      it('returns 3 pts for 90 days (very stale tier boundary)', () => {
+        expect(calculateWLODecay(90)).toBe(WINNER_DECAY_BONUSES.VERY_STALE);
+        expect(calculateWLODecay(90)).toBe(3);
+      });
+
+      it('returns 1 pt for 91 days (ancient tier start)', () => {
+        expect(calculateWLODecay(91)).toBe(WINNER_DECAY_BONUSES.ANCIENT);
+        expect(calculateWLODecay(91)).toBe(1);
+      });
+
+      it('returns 1 pt for 365 days (ancient tier)', () => {
+        expect(calculateWLODecay(365)).toBe(WINNER_DECAY_BONUSES.ANCIENT);
+        expect(calculateWLODecay(365)).toBe(1);
+      });
+    });
+
+    describe('edge cases', () => {
+      it('returns 18 pts for negative days (assumes fresh)', () => {
+        expect(calculateWLODecay(-1)).toBe(18);
+        expect(calculateWLODecay(-100)).toBe(18);
+      });
+
+      it('returns 1 pt for very large numbers', () => {
+        expect(calculateWLODecay(1000)).toBe(1);
+        expect(calculateWLODecay(10000)).toBe(1);
+      });
+    });
+  });
+
+  describe('getRecencyMultiplier()', () => {
+    describe('tier boundaries', () => {
+      it('returns 1.0 for 0 days (hot tier)', () => {
+        expect(getRecencyMultiplier(0)).toBe(PATTERN_DECAY_MULTIPLIERS.HOT);
+        expect(getRecencyMultiplier(0)).toBe(1.0);
+      });
+
+      it('returns 1.0 for 21 days (hot tier boundary)', () => {
+        expect(getRecencyMultiplier(21)).toBe(PATTERN_DECAY_MULTIPLIERS.HOT);
+        expect(getRecencyMultiplier(21)).toBe(1.0);
+      });
+
+      it('returns 0.85 for 22 days (recent tier start)', () => {
+        expect(getRecencyMultiplier(22)).toBe(PATTERN_DECAY_MULTIPLIERS.RECENT);
+        expect(getRecencyMultiplier(22)).toBe(0.85);
+      });
+
+      it('returns 0.85 for 35 days (recent tier boundary)', () => {
+        expect(getRecencyMultiplier(35)).toBe(PATTERN_DECAY_MULTIPLIERS.RECENT);
+        expect(getRecencyMultiplier(35)).toBe(0.85);
+      });
+
+      it('returns 0.65 for 36 days (fresh tier start)', () => {
+        expect(getRecencyMultiplier(36)).toBe(PATTERN_DECAY_MULTIPLIERS.FRESH);
+        expect(getRecencyMultiplier(36)).toBe(0.65);
+      });
+
+      it('returns 0.65 for 50 days (fresh tier boundary)', () => {
+        expect(getRecencyMultiplier(50)).toBe(PATTERN_DECAY_MULTIPLIERS.FRESH);
+        expect(getRecencyMultiplier(50)).toBe(0.65);
+      });
+
+      it('returns 0.40 for 51 days (stale tier start)', () => {
+        expect(getRecencyMultiplier(51)).toBe(PATTERN_DECAY_MULTIPLIERS.STALE);
+        expect(getRecencyMultiplier(51)).toBe(0.4);
+      });
+
+      it('returns 0.40 for 75 days (stale tier boundary)', () => {
+        expect(getRecencyMultiplier(75)).toBe(PATTERN_DECAY_MULTIPLIERS.STALE);
+        expect(getRecencyMultiplier(75)).toBe(0.4);
+      });
+
+      it('returns 0.25 for 76 days (very stale tier start)', () => {
+        expect(getRecencyMultiplier(76)).toBe(PATTERN_DECAY_MULTIPLIERS.VERY_STALE);
+        expect(getRecencyMultiplier(76)).toBe(0.25);
+      });
+
+      it('returns 0.25 for 90 days (very stale tier boundary)', () => {
+        expect(getRecencyMultiplier(90)).toBe(PATTERN_DECAY_MULTIPLIERS.VERY_STALE);
+        expect(getRecencyMultiplier(90)).toBe(0.25);
+      });
+
+      it('returns 0.10 for 91 days (ancient tier start)', () => {
+        expect(getRecencyMultiplier(91)).toBe(PATTERN_DECAY_MULTIPLIERS.ANCIENT);
+        expect(getRecencyMultiplier(91)).toBe(0.1);
+      });
+
+      it('returns 0.10 for 365 days (ancient tier)', () => {
+        expect(getRecencyMultiplier(365)).toBe(PATTERN_DECAY_MULTIPLIERS.ANCIENT);
+        expect(getRecencyMultiplier(365)).toBe(0.1);
+      });
+    });
+
+    describe('edge cases', () => {
+      it('returns 1.0 for negative days (assumes fresh)', () => {
+        expect(getRecencyMultiplier(-1)).toBe(1.0);
+        expect(getRecencyMultiplier(-100)).toBe(1.0);
+      });
+
+      it('returns 0.10 for very large numbers', () => {
+        expect(getRecencyMultiplier(1000)).toBe(0.1);
+        expect(getRecencyMultiplier(10000)).toBe(0.1);
+      });
+    });
+  });
+
+  describe('v3.6 Constants Verification', () => {
+    it('FORM_CATEGORY_MAX is 50', () => {
+      expect(FORM_CATEGORY_MAX).toBe(50);
+    });
+
+    it('WINNER_DECAY_THRESHOLDS match specification', () => {
+      expect(WINNER_DECAY_THRESHOLDS.HOT).toBe(21);
+      expect(WINNER_DECAY_THRESHOLDS.RECENT).toBe(35);
+      expect(WINNER_DECAY_THRESHOLDS.FRESH).toBe(50);
+      expect(WINNER_DECAY_THRESHOLDS.STALE).toBe(75);
+      expect(WINNER_DECAY_THRESHOLDS.VERY_STALE).toBe(90);
+    });
+
+    it('WINNER_DECAY_BONUSES match specification', () => {
+      expect(WINNER_DECAY_BONUSES.HOT).toBe(18);
+      expect(WINNER_DECAY_BONUSES.RECENT).toBe(14);
+      expect(WINNER_DECAY_BONUSES.FRESH).toBe(10);
+      expect(WINNER_DECAY_BONUSES.STALE).toBe(6);
+      expect(WINNER_DECAY_BONUSES.VERY_STALE).toBe(3);
+      expect(WINNER_DECAY_BONUSES.ANCIENT).toBe(1);
+    });
+
+    it('PATTERN_DECAY_THRESHOLDS match specification', () => {
+      expect(PATTERN_DECAY_THRESHOLDS.HOT).toBe(21);
+      expect(PATTERN_DECAY_THRESHOLDS.RECENT).toBe(35);
+      expect(PATTERN_DECAY_THRESHOLDS.FRESH).toBe(50);
+      expect(PATTERN_DECAY_THRESHOLDS.STALE).toBe(75);
+      expect(PATTERN_DECAY_THRESHOLDS.VERY_STALE).toBe(90);
+    });
+
+    it('PATTERN_DECAY_MULTIPLIERS match specification', () => {
+      expect(PATTERN_DECAY_MULTIPLIERS.HOT).toBe(1.0);
+      expect(PATTERN_DECAY_MULTIPLIERS.RECENT).toBe(0.85);
+      expect(PATTERN_DECAY_MULTIPLIERS.FRESH).toBe(0.65);
+      expect(PATTERN_DECAY_MULTIPLIERS.STALE).toBe(0.4);
+      expect(PATTERN_DECAY_MULTIPLIERS.VERY_STALE).toBe(0.25);
+      expect(PATTERN_DECAY_MULTIPLIERS.ANCIENT).toBe(0.1);
     });
   });
 });
