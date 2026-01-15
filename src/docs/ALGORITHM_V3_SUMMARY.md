@@ -1,11 +1,11 @@
-# Furlong Scoring Algorithm v3.1
+# Furlong Scoring Algorithm v3.6
 
 ## Overview
 
-The Furlong scoring algorithm v3.1 represents a complete rebuild through Phases 1-6, focusing on:
+The Furlong scoring algorithm v3.6 represents a complete rebuild through Phases 1-7, focusing on:
 
 - Speed figures as the dominant predictive factor (27.4% of base)
-- Enhanced winner bonuses (+20 pts for WLO)
+- Form decay system to scale winner bonuses by recency (Phase 7)
 - Market wisdom incorporation via odds factor
 - Missing data penalties for low-confidence horses
 - Proven horse protection to prevent favorites from being destroyed by pace overlay
@@ -84,6 +84,49 @@ The Furlong scoring algorithm v3.1 represents a complete rebuild through Phases 
 - Mid-odds (11-1 to 15-1): 6 pts
 - Longer (16-1 to 24-1): 5 pts
 - Longshot (25-1 or higher): 3 pts
+
+### Phase 7: Form Decay System (v3.6)
+
+**Rationale:** Addresses Algorithm Audit Finding #1 — 53% of bad picks had stale form. Horses that won 90 days ago were receiving the same bonus as horses that won 14 days ago. Decay fixes this by scaling winner bonuses based on recency.
+
+**Won Last Out (WLO) Decay:**
+
+| Days Since Win | Points | Description      |
+| -------------- | ------ | ---------------- |
+| 0-21 days      | +18    | Hot winner       |
+| 22-35 days     | +14    | Recent winner    |
+| 36-50 days     | +10    | Freshening       |
+| 51-75 days     | +6     | Stale            |
+| 76-90 days     | +3     | Very stale       |
+| 91+ days       | +1     | Ancient history  |
+
+**Pattern Bonus Decay:**
+
+Pattern bonuses (Won 2 of 3, Won 3 of 5) apply a recency multiplier based on most recent win date:
+
+| Days Since Win | Multiplier | Description      |
+| -------------- | ---------- | ---------------- |
+| 0-21 days      | 1.00x      | Full credit      |
+| 22-35 days     | 0.85x      | Slight discount  |
+| 36-50 days     | 0.65x      | Moderate decay   |
+| 51-75 days     | 0.40x      | Significant decay|
+| 76-90 days     | 0.25x      | Heavy decay      |
+| 91+ days       | 0.10x      | Minimal credit   |
+
+**Base Pattern Values (before multiplier):**
+
+- Won 2 of 3: +8 pts base
+- Won 3 of 5: +4 pts base
+
+**Form Category Cap:** 50 pts maximum (unchanged from v3.1)
+
+**Maximum Form Score Calculation (v3.6):**
+
+- WLO (hot winner, 0-21 days): +18 pts
+- Won 2 of 3 (1.0x multiplier): +8 pts
+- Won 3 of 5 (1.0x multiplier): +4 pts
+- Other form factors (layoff, consistency): up to +20 pts
+- **Total possible: 50 pts** (cap enforced)
 
 ## Data Completeness System
 
@@ -173,6 +216,7 @@ Use `generateRaceDiagnostic()` from `src/lib/scoring/diagnostics.ts` to get full
 
 ## Version History
 
+- **v3.6** (Phase 7): Form Decay System — scales winner bonuses by recency
 - **v3.1** (Phase 6): Added odds factor (+15 pts), base now 328
 - **v3.0** (Phase 3): Speed rebalance, base increased to 313
 - **v2.5**: Overlay system added, cap at ±50

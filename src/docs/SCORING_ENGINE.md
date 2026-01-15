@@ -8,11 +8,11 @@
 
 > ⚠️ **IMPORTANT: Algorithm Version Notice**
 >
-> The current implementation uses **Algorithm v3.1** with a **328-point base score** and **±40 overlay adjustment**.
+> The current implementation uses **Algorithm v3.6** with a **328-point base score** and **±40 overlay adjustment**.
 >
 > The detailed category sections below (Categories 1-6) document **v2.0 legacy scoring logic** for historical reference. For current implementation details, see **[ALGORITHM_V3_SUMMARY.md](./ALGORITHM_V3_SUMMARY.md)**.
 >
-> The summary table immediately below reflects the current v3.1 weights.
+> The summary table immediately below reflects the current v3.6 weights. Form category (50 pts) now includes the Form Decay System (Phase 7).
 
 ---
 
@@ -22,21 +22,21 @@
 
 **The 328-point base system provides granular precision while maintaining track specificity:**
 
-**Core Philosophy (v3.1 - Phase 6 Algorithm):**
+**Core Philosophy (v3.6 - Phase 7 Algorithm):**
 
 - Speed figures as primary predictive factor (27.4% of base)
 - Pace scenario analysis for race shape prediction
-- Form cycle patterns with enhanced winner bonuses
+- Form decay system scales winner bonuses by recency (Phase 7)
 - Track bias and post position as situational modifiers
 - Odds factor incorporates market wisdom
 - Connections and equipment as fine-tuning factors
 
-**Weight Distribution Rationale (v3.1):**
+**Weight Distribution Rationale (v3.6):**
 
 | Category         | Points | % of 328 | Rationale                                    |
 | ---------------- | ------ | -------- | -------------------------------------------- |
 | Speed Figures    | 90     | 27.4%    | Most predictive factor per industry research |
-| Form             | 50     | 15.2%    | Enhanced winner bonuses (+20 for WLO)        |
+| Form             | 50     | 15.2%    | Form decay system scales winner bonuses      |
 | Pace             | 45     | 13.7%    | High predictive value for race shape         |
 | Class            | 32     | 9.8%     | Class movement and competition level         |
 | Connections      | 27     | 8.2%     | Modifier, not primary driver                 |
@@ -340,9 +340,53 @@ Track bias data from Track Intelligence Database determines running style advant
 
 ---
 
-## CATEGORY 4: FORM CYCLE & CONDITIONING (40 POINTS MAXIMUM)
+## CATEGORY 4: FORM CYCLE & CONDITIONING (50 POINTS MAXIMUM)
 
-> **v2.0 Note:** Form increased from 30 to 40 points (16.7% of base) to better capture recent performance patterns.
+> **v3.6 Note:** Form category updated to 50 pts with decay system. Winner bonuses now scale by recency to address Algorithm Audit Finding #1 — 53% of bad picks had stale form.
+
+### Form Decay System (v3.6)
+
+The Form Decay system scales winner bonuses based on how recently the horse won, preventing stale form from being overvalued.
+
+**Won Last Out (WLO) Decay Tiers:**
+
+| Days Since Win | Points | Description      |
+| -------------- | ------ | ---------------- |
+| 0-21 days      | +18    | Hot winner       |
+| 22-35 days     | +14    | Recent winner    |
+| 36-50 days     | +10    | Freshening       |
+| 51-75 days     | +6     | Stale            |
+| 76-90 days     | +3     | Very stale       |
+| 91+ days       | +1     | Ancient history  |
+
+**Pattern Bonus Decay Multipliers:**
+
+Applied to Won 2 of 3 and Won 3 of 5 patterns based on most recent win date:
+
+| Days Since Win | Multiplier |
+| -------------- | ---------- |
+| 0-21 days      | 1.00x      |
+| 22-35 days     | 0.85x      |
+| 36-50 days     | 0.65x      |
+| 51-75 days     | 0.40x      |
+| 76-90 days     | 0.25x      |
+| 91+ days       | 0.10x      |
+
+**Base Pattern Values (before multiplier):**
+
+- Won 2 of 3: +8 pts base
+- Won 3 of 5: +4 pts base
+
+**Form Decay Calculation Examples:**
+
+- **Horse A** won 14 days ago: +18 pts WLO (hot winner tier)
+- **Horse B** won 45 days ago: +10 pts WLO (freshening tier)
+- **Horse C** won 100 days ago: +1 pt WLO (ancient history tier)
+- **Horse D** won 2 of 3, most recent win 30 days ago: +8 × 0.85 = +6.8 pts → **+7 pts** (rounded)
+
+**Form Category Cap:** 50 pts maximum
+
+Maximum possible from decay system: WLO (18) + Won 2/3 (8) + Won 3/5 (4) = 30 pts, leaving 20 pts for other form factors (layoff, consistency, recent finish position). Cap is enforced.
 
 ### Recent Performance Analysis (20 points maximum)
 
@@ -639,14 +683,15 @@ The system automatically detects the current month and applies track-specific se
 
 ---
 
-> **NOTE:** The detailed category sections above document the v2.0 scoring logic for reference. The actual implementation uses Algorithm v3.1 (Phases 1-6) as documented in **[ALGORITHM_V3_SUMMARY.md](./ALGORITHM_V3_SUMMARY.md)**, which has a 328-point base with 15 refined categories, odds factor integration, and data completeness penalties.
+> **NOTE:** The detailed category sections above document the v2.0 scoring logic for reference. The actual implementation uses Algorithm v3.6 (Phases 1-7) as documented in **[ALGORITHM_V3_SUMMARY.md](./ALGORITHM_V3_SUMMARY.md)**, which has a 328-point base with 15 refined categories, form decay system, odds factor integration, and data completeness penalties.
 
 ---
 
-_Document Version: 3.1_
-_Last Updated: December 2025_
+_Document Version: 3.6_
+_Last Updated: January 2026_
 _Status: Track-Agnostic Universal Scoring Engine_
 _Integration: Requires Track Intelligence Database for track-specific values_
+_Changes in v3.6: Form Decay System — scales winner bonuses by recency (Phase 7). Form cap 50 pts._
 _Changes in v3.1: Algorithm rebuild with 328-point base. See ALGORITHM_V3_SUMMARY.md for complete category breakdown._
 _Changes in v3.0: Phase 3 speed rebalance (90 pts), base increased to 313._
 _Changes in v2.5: Overlay system added with ±50 cap._

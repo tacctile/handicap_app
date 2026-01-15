@@ -11,8 +11,8 @@
 ```
 src/docs/
 ├── METHODOLOGY_INDEX.md      ← You are here
-├── ALGORITHM_V3_SUMMARY.md   ← Current v3.1 algorithm (328-pt base, 15 categories)
-├── SCORING_ENGINE.md         ← Detailed scoring reference (v2.0 legacy + v3.1 notes)
+├── ALGORITHM_V3_SUMMARY.md   ← Current v3.6 algorithm (328-pt base, form decay)
+├── SCORING_ENGINE.md         ← Detailed scoring reference (v2.0 legacy + v3.6 notes)
 ├── DRF_FIELD_MAP.md          ← All 1,435 DRF fields mapped
 ├── OVERLAY_SYSTEM.md         ← ±40 point adjustment logic
 ├── EDGE_CASE_PROTOCOLS.md    ← Diamond, Nuclear, Lightly Raced, Late-Breaking
@@ -73,13 +73,14 @@ src/docs/
 
 ### 0. ALGORITHM_V3_SUMMARY.md (PRIMARY REFERENCE)
 
-**Purpose:** Current algorithm implementation (v3.1, Phases 1-6)
+**Purpose:** Current algorithm implementation (v3.6, Phases 1-7)
 
 **Key Contents:**
 
 - 328-point base score with 15 categories
 - Category weights: Speed (90), Form (50), Pace (45), Class (32), Connections (27), etc.
-- Phase 1-6 changes documented
+- Phase 1-7 changes documented
+- Form Decay System (Phase 7) - scales winner bonuses by recency
 - Overlay system (±40 pts)
 - Data completeness and low confidence penalties
 - Proven horse protection
@@ -92,16 +93,17 @@ src/docs/
 
 ### 1. SCORING_ENGINE.md
 
-**Purpose:** Detailed scoring reference with v2.0 legacy documentation and v3.1 notes
+**Purpose:** Detailed scoring reference with v2.0 legacy documentation and v3.6 notes
 
 **Key Contents:**
 
 - Category 1: Elite Connections (50 pts max)
 - Category 2: Post Position & Track Bias (45 pts max)
 - Category 3: Speed Figures & Class (50 pts max)
-- Category 4: Form Cycle & Conditioning (30 pts max)
+- Category 4: Form Cycle & Conditioning (50 pts max, includes Form Decay v3.6)
 - Category 5: Equipment & Medication (25 pts max)
 - Category 6: Pace & Tactical (40 pts max)
+- Form Decay System (v3.6) - WLO decay tiers, pattern multipliers
 - Score categorization thresholds
 - Quality control verification
 
@@ -329,6 +331,7 @@ Recommended update frequency:
 
 | Version | Date    | Changes                                                    |
 | ------- | ------- | ---------------------------------------------------------- |
+| 3.6     | 2026-01 | v3.6 - Form Decay System - Scales winner bonuses by recency|
 | 3.1     | 2025-12 | Algorithm v3.1 (Phase 6): Added ALGORITHM_V3_SUMMARY.md    |
 | 3.0     | 2025-12 | Algorithm rebuild Phases 1-5: 328-pt base, overlay cap ±40 |
 | 1.0     | 2024-12 | Initial methodology documentation                          |
@@ -351,6 +354,6 @@ Recommended update frequency:
 
 ---
 
-_Document Version: 3.1_
+_Document Version: 3.6_
 _Status: Complete Methodology Index_
 _Purpose: Entry point and navigation for all methodology documentation_
