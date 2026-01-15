@@ -128,6 +128,12 @@ import {
   calculatePaperTigerPenalty,
 } from './scoringUtils';
 import { calculateDataCompleteness, type DataCompletenessResult } from './dataCompleteness';
+import {
+  calculateKeyRaceIndexForRace,
+  type KeyRaceIndexResult,
+  type KeyRaceMatch,
+  MAX_KEY_RACE_BONUS,
+} from './keyRaceIndex';
 
 // ============================================================================
 // CONSTANTS
@@ -440,6 +446,15 @@ export interface ScoreBreakdown {
     headToHead: number;
     reasoning: string;
   };
+  /** Key Race Index bonus (0-6 pts, cross-referencing horses within today's card) */
+  keyRaceIndex?: {
+    total: number;
+    rawBonus: number;
+    capApplied: boolean;
+    matches: KeyRaceMatch[];
+    reasoning: string;
+    hasMatches: boolean;
+  };
 }
 
 /** Complete score result for a horse */
@@ -474,6 +489,10 @@ export interface HorseScore {
   paperTigerPenaltyApplied: boolean;
   /** Model B Part 5: Amount deducted due to Paper Tiger circuit breaker */
   paperTigerPenaltyAmount: number;
+  /** Key Race Index bonus applied (0-6 pts) */
+  keyRaceIndexBonus: number;
+  /** Key Race Index full result */
+  keyRaceIndexResult?: KeyRaceIndexResult;
 }
 
 /** Scored horse with index for sorting */
@@ -827,6 +846,8 @@ function calculateHorseScoreWithContext(
       lowConfidencePenaltyAmount: 0,
       paperTigerPenaltyApplied: false,
       paperTigerPenaltyAmount: 0,
+      keyRaceIndexBonus: 0,
+      keyRaceIndexResult: undefined,
     };
   }
 
@@ -1215,6 +1236,9 @@ function calculateHorseScoreWithContext(
     lowConfidencePenaltyAmount,
     paperTigerPenaltyApplied: paperTigerApplied,
     paperTigerPenaltyAmount: paperTigerPenalty,
+    // Key Race Index - will be populated in second pass by calculateRaceScores
+    keyRaceIndexBonus: 0,
+    keyRaceIndexResult: undefined,
   };
 }
 
@@ -1238,6 +1262,14 @@ export function calculateHorseScore(
 /**
  * Calculate scores for all horses in a race and return sorted by score descending
  * Optimized for performance - builds shared context once
+ *
+ * INCLUDES TWO-PASS KEY RACE INDEX CALCULATION:
+ * Pass 1: Calculate base scores without Key Race Index
+ * Pass 2: Calculate Key Race Index using rankings from Pass 1
+ *
+ * Key Race Index identifies "hidden form" by cross-referencing horses
+ * that have met before. A horse that finished 2nd behind a top-ranked
+ * horse in today's race gets a bonus.
  */
 export function calculateRaceScores(
   horses: HorseEntry[],
@@ -1249,7 +1281,9 @@ export function calculateRaceScores(
   // Build shared context for efficiency
   const context = buildScoringContext(horses, raceHeader, isScratched);
 
-  // Calculate scores for all horses
+  // =========================================================================
+  // PASS 1: Calculate base scores for all horses (WITHOUT Key Race Index)
+  // =========================================================================
   const scoredHorses: ScoredHorse[] = horses.map((horse, index) => ({
     horse,
     index,
@@ -1263,7 +1297,7 @@ export function calculateRaceScores(
     rank: 0, // Will be set after sorting
   }));
 
-  // First, sort by BASE SCORE to determine ranks (best base score = rank 1)
+  // Sort by BASE SCORE to determine initial ranks (best base score = rank 1)
   // Uses baseScore (who we think wins) not totalScore (which includes overlay adjustments)
   //
   // TIE-BREAKER CHAIN (Model B Final):
@@ -1303,14 +1337,79 @@ export function calculateRaceScores(
     horse.rank = index + 1;
   });
 
-  // Scratched horses get rank 99 to push them to the bottom of any display
+  // Scratched horses get rank 99
   scoredHorses.forEach((horse) => {
     if (horse.score.isScratched) {
       horse.rank = 99;
     }
   });
 
-  // Now sort by post position for display (scratched horses stay in place)
+  // =========================================================================
+  // PASS 2: Calculate Key Race Index using rankings from Pass 1
+  // =========================================================================
+  // Build base scores map for Key Race Index calculation
+  const baseScoresMap = new Map<number, number>();
+  scoredHorses.forEach((sh) => {
+    if (!sh.score.isScratched) {
+      baseScoresMap.set(sh.horse.programNumber, sh.score.baseScore);
+    }
+  });
+
+  // Get active (non-scratched) horses for Key Race Index calculation
+  const activeHorses = horses.filter((_, i) => !isScratched(i));
+
+  // Calculate Key Race Index for all horses in this race
+  const keyRaceResults = calculateKeyRaceIndexForRace(activeHorses, baseScoresMap);
+
+  // Apply Key Race Index bonus to each horse's score
+  scoredHorses.forEach((sh) => {
+    if (sh.score.isScratched) return;
+
+    const keyRaceResult = keyRaceResults.get(sh.horse.programNumber);
+    if (keyRaceResult && keyRaceResult.totalBonus > 0) {
+      // Store the Key Race Index result
+      sh.score.keyRaceIndexBonus = keyRaceResult.totalBonus;
+      sh.score.keyRaceIndexResult = keyRaceResult;
+
+      // Add to breakdown
+      sh.score.breakdown.keyRaceIndex = {
+        total: keyRaceResult.totalBonus,
+        rawBonus: keyRaceResult.rawBonus,
+        capApplied: keyRaceResult.capApplied,
+        matches: keyRaceResult.matches,
+        reasoning: keyRaceResult.reasoning,
+        hasMatches: keyRaceResult.hasMatches,
+      };
+
+      // Apply Key Race Index bonus to scores
+      // Add to baseScore (capped at MAX_BASE_SCORE + MAX_KEY_RACE_BONUS)
+      sh.score.baseScore = Math.min(
+        sh.score.baseScore + keyRaceResult.totalBonus,
+        MAX_BASE_SCORE + MAX_KEY_RACE_BONUS
+      );
+
+      // Update total score (base + overlay)
+      sh.score.total = enforceScoreBoundaries(sh.score.baseScore + sh.score.overlayScore);
+    } else if (keyRaceResult) {
+      // Store result even if no bonus (for transparency)
+      sh.score.keyRaceIndexResult = keyRaceResult;
+      sh.score.breakdown.keyRaceIndex = {
+        total: 0,
+        rawBonus: 0,
+        capApplied: false,
+        matches: [],
+        reasoning: keyRaceResult.reasoning,
+        hasMatches: false,
+      };
+    }
+  });
+
+  // Note: We don't re-rank after Key Race Index because:
+  // 1. The bonus is small (max +6 pts) and unlikely to change relative ranks
+  // 2. Rankings should be stable for UI consistency
+  // 3. Key Race Index is informational enhancement, not a ranking factor
+
+  // Sort by post position for display (scratched horses stay in place)
   scoredHorses.sort((a, b) => {
     return a.horse.postPosition - b.horse.postPosition;
   });
@@ -1818,3 +1917,27 @@ export {
   // Types
   type OddsScoreResult,
 } from './oddsScore';
+
+// Key Race Index exports (cross-referencing horses within today's card)
+export {
+  // Main functions
+  calculateKeyRaceIndex,
+  calculateKeyRaceIndexForRace,
+  // Utility functions
+  normalizeHorseName,
+  buildTodayHorseMap,
+  buildRankingsFromScores,
+  hasKeyRacePotential,
+  getKeyRaceSummary,
+  // Constants
+  MAX_KEY_RACE_BONUS,
+  MAX_PP_TO_ANALYZE,
+  MIN_RANK_FOR_BONUS,
+  POINTS_BEHIND_TOP_2,
+  POINTS_BEHIND_TOP_4,
+  POINTS_4TH_5TH_BEHIND_TOP_2,
+  // Types
+  type KeyRaceIndexResult,
+  type KeyRaceMatch,
+  type HorseRanking,
+} from './keyRaceIndex';
