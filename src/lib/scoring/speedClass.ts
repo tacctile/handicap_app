@@ -8,6 +8,12 @@
  *
  * Total: 0-140 points (43.3% of 323 base)
  *
+ * v3.7 CHANGES (Speed Recency Decay Re-enabled):
+ * - Re-enabled getRecencyDecayMultiplier() with calibrated tiers
+ * - Decay is GENTLER than Form Decay (speed = ability, form = condition)
+ * - Added Active Horse Protection (3+ figs in 90 days = protected)
+ * - Decay tiers: 0-30d=1.0, 31-60d=0.95, 61-90d=0.85, 91-120d=0.75, 121-180d=0.60, 181+d=0.45
+ *
  * v3.2 CHANGES:
  * - Speed figures increased to 105 pts (Intrinsic Ability focus)
  * - Class increased to 35 pts
@@ -224,8 +230,67 @@ export function adjustFigureForVariant(
 }
 
 // ============================================================================
-// SPEED FIGURE RECENCY DECAY
+// SPEED FIGURE RECENCY DECAY (v3.7 - Re-enabled with Calibrated Tiers)
 // ============================================================================
+
+/**
+ * v3.7 Speed Recency Decay Thresholds
+ *
+ * These thresholds define the recency tiers for speed figure decay.
+ * Speed figure decay is GENTLER than Form Decay because:
+ * - Speed figures represent ABILITY (more stable over time)
+ * - Form represents CURRENT CONDITION (more volatile)
+ * - A horse can maintain ability while losing form
+ *
+ * Re-enabled in v3.7 after v3.6 Form Decay System provided better framework
+ * for understanding recency effects. Original disable in v3.3 was before
+ * Form Decay existed.
+ */
+export const SPEED_RECENCY_THRESHOLDS = {
+  RECENT: 30, // 0-30 days: Full credit
+  RELEVANT: 60, // 31-60 days: Still relevant
+  GETTING_STALE: 90, // 61-90 days: Getting stale
+  STALE: 120, // 91-120 days: Stale
+  VERY_STALE: 180, // 121-180 days: Very stale
+  // 181+ days: Ancient
+} as const;
+
+/**
+ * v3.7 Speed Recency Decay Multipliers
+ *
+ * These multipliers are applied to speed figures based on age.
+ * Gentler than Form Decay (which goes from 1.0 to 0.10) because
+ * speed figures represent ability, not current condition.
+ *
+ * Comparison to Form Decay:
+ * | Days      | Speed Decay | Form Decay |
+ * |-----------|-------------|------------|
+ * | 0-30      | 1.00        | 1.00       |
+ * | 31-60     | 0.95        | 0.65-0.85  |
+ * | 61-90     | 0.85        | 0.25-0.40  |
+ * | 91-120    | 0.75        | 0.10       |
+ * | 121-180   | 0.60        | 0.10       |
+ * | 181+      | 0.45        | 0.10       |
+ */
+export const SPEED_RECENCY_MULTIPLIERS = {
+  RECENT: 1.0, // 0-30 days: Full credit - recent figure
+  RELEVANT: 0.95, // 31-60 days: 5% reduction - still relevant
+  GETTING_STALE: 0.85, // 61-90 days: 15% reduction - getting stale
+  STALE: 0.75, // 91-120 days: 25% reduction - stale
+  VERY_STALE: 0.6, // 121-180 days: 40% reduction - very stale
+  ANCIENT: 0.45, // 181+ days: 55% reduction - ancient
+} as const;
+
+/**
+ * Number of figures in last 90 days needed to qualify for Active Horse Protection
+ * When a horse has this many recent figures, we don't penalize old standout figures
+ */
+export const ACTIVE_HORSE_FIGURE_THRESHOLD = 3;
+
+/**
+ * Maximum days to look back for "active horse" determination
+ */
+export const ACTIVE_HORSE_WINDOW_DAYS = 90;
 
 /**
  * Calculate days between two dates
@@ -262,24 +327,151 @@ function calculateDaysSinceRace(raceDate: string, todayDate: string): number | n
 }
 
 /**
- * Get recency decay multiplier for a speed figure based on age
+ * Get recency decay multiplier for a speed figure based on age.
  *
- * DECAY LOGIC (Conservative - prioritizes maintaining predictive power):
- * - 0-30 days: 100% (fresh figure, full weight)
- * - 31-45 days: 97% (very slight decay)
- * - 46-60 days: 93% (slightly stale)
- * - 61-90 days: 87% (getting old)
- * - 91-120 days: 80% (old figure)
- * - 120+ days: 70% (stale, but still meaningful)
+ * v3.7 CALIBRATED DECAY (Re-enabled after v3.6 Form Decay established framework):
  *
- * This provides a gentle bias toward recent figures without
- * heavily penalizing horses with competitive older figures.
+ * | Days Since Race | Multiplier | Description        |
+ * |-----------------|------------|--------------------|
+ * | 0-30 days       | 1.00       | Full credit        |
+ * | 31-60 days      | 0.95       | Still relevant     |
+ * | 61-90 days      | 0.85       | Getting stale      |
+ * | 91-120 days     | 0.75       | Stale              |
+ * | 121-180 days    | 0.60       | Very stale         |
+ * | 181+ days       | 0.45       | Ancient            |
+ *
+ * These tiers are GENTLER than Form Decay because:
+ * - Speed figures represent ABILITY (more stable over time)
+ * - Form represents CURRENT CONDITION (more volatile)
+ * - A horse can maintain ability while temporarily losing form
+ *
+ * RATIONALE FOR RE-ENABLING (v3.7):
+ * Originally disabled in v3.3 because "testing showed it hurt predictive accuracy".
+ * However, that was BEFORE v3.6 Form Decay existed. With Form Decay now handling
+ * the "current condition" aspect, Speed Recency Decay can properly address the
+ * separate concern of whether old Beyer figures still represent current ability.
+ *
+ * A 95 Beyer from 180 days ago should NOT be treated equally to a 95 from 14 days ago.
+ * The old figure was earned under different conditions (different track maintenance,
+ * potentially different fitness level, different training regimen).
+ *
+ * @param daysSinceRace - Days since the race where the figure was earned
+ * @returns Multiplier to apply to the figure (0.45-1.0)
  */
-export function getRecencyDecayMultiplier(_daysSinceRace: number | null): number {
-  // v3.3: Disabled recency decay as testing showed it hurt predictive accuracy
-  // The algorithm's existing form scoring already penalizes horses with poor recent form
-  // Keeping function for future experimentation with larger sample sizes
-  return 1.0; // No decay applied - all figures treated equally
+export function getRecencyDecayMultiplier(daysSinceRace: number | null): number {
+  // If no date available, assume moderate staleness (60-day estimate)
+  if (daysSinceRace === null) {
+    return SPEED_RECENCY_MULTIPLIERS.RELEVANT; // 0.95
+  }
+
+  // Invalid input protection
+  if (daysSinceRace < 0) {
+    return SPEED_RECENCY_MULTIPLIERS.RECENT; // 1.0
+  }
+
+  // 0-30 days: Full credit - recent figure
+  if (daysSinceRace <= SPEED_RECENCY_THRESHOLDS.RECENT) {
+    return SPEED_RECENCY_MULTIPLIERS.RECENT;
+  }
+
+  // 31-60 days: 5% reduction - still relevant
+  if (daysSinceRace <= SPEED_RECENCY_THRESHOLDS.RELEVANT) {
+    return SPEED_RECENCY_MULTIPLIERS.RELEVANT;
+  }
+
+  // 61-90 days: 15% reduction - getting stale
+  if (daysSinceRace <= SPEED_RECENCY_THRESHOLDS.GETTING_STALE) {
+    return SPEED_RECENCY_MULTIPLIERS.GETTING_STALE;
+  }
+
+  // 91-120 days: 25% reduction - stale
+  if (daysSinceRace <= SPEED_RECENCY_THRESHOLDS.STALE) {
+    return SPEED_RECENCY_MULTIPLIERS.STALE;
+  }
+
+  // 121-180 days: 40% reduction - very stale
+  if (daysSinceRace <= SPEED_RECENCY_THRESHOLDS.VERY_STALE) {
+    return SPEED_RECENCY_MULTIPLIERS.VERY_STALE;
+  }
+
+  // 181+ days: 55% reduction - ancient
+  return SPEED_RECENCY_MULTIPLIERS.ANCIENT;
+}
+
+/**
+ * Count the number of valid speed figures within a given day window.
+ *
+ * Used for Active Horse Protection: if a horse has 3+ figures in the last 90 days,
+ * it's considered "active" and old standout figures shouldn't be heavily penalized.
+ *
+ * @param pastPerformances - Array of past performances
+ * @param todayDate - Today's date for calculating figure age
+ * @param windowDays - Maximum days to look back (default: 90)
+ * @returns Count of figures within the window
+ */
+function countFiguresInWindow(
+  pastPerformances: PastPerformance[],
+  todayDate: string,
+  windowDays: number = ACTIVE_HORSE_WINDOW_DAYS
+): number {
+  let count = 0;
+
+  for (const pp of pastPerformances) {
+    // Check if this PP has a valid figure
+    const figure = extractSpeedFigure(pp);
+    if (figure === null) continue;
+
+    // Calculate days since this race
+    const daysSinceRace = calculateDaysSinceRace(pp.date, todayDate);
+    if (daysSinceRace === null) continue;
+
+    // Count if within window
+    if (daysSinceRace <= windowDays) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
+/**
+ * Get the best (highest) recency multiplier from recent figures within a window.
+ *
+ * Used for Active Horse Protection: when an active horse (3+ figures in 90 days)
+ * has an old standout figure, we use this better multiplier instead of the
+ * stale multiplier that would normally apply to the old figure.
+ *
+ * @param pastPerformances - Array of past performances
+ * @param todayDate - Today's date for calculating figure age
+ * @param windowDays - Maximum days to look back (default: 90)
+ * @returns The best (highest) multiplier found, or null if no figures in window
+ */
+function getBestMultiplierInWindow(
+  pastPerformances: PastPerformance[],
+  todayDate: string,
+  windowDays: number = ACTIVE_HORSE_WINDOW_DAYS
+): number | null {
+  let bestMultiplier: number | null = null;
+
+  for (const pp of pastPerformances) {
+    // Check if this PP has a valid figure
+    const figure = extractSpeedFigure(pp);
+    if (figure === null) continue;
+
+    // Calculate days since this race
+    const daysSinceRace = calculateDaysSinceRace(pp.date, todayDate);
+    if (daysSinceRace === null) continue;
+
+    // Only consider figures within the window
+    if (daysSinceRace <= windowDays) {
+      const multiplier = getRecencyDecayMultiplier(daysSinceRace);
+      if (bestMultiplier === null || multiplier > bestMultiplier) {
+        bestMultiplier = multiplier;
+      }
+    }
+  }
+
+  return bestMultiplier;
 }
 
 // ============================================================================
@@ -350,12 +542,22 @@ interface BestRecentFigureResult {
 }
 
 /**
- * Get best speed figure from last N races with variant adjustment and recency decay
- * Returns both raw and variant-adjusted figures, plus recency-decayed figure for scoring
+ * Get best speed figure from last N races with variant adjustment and recency decay.
+ * Returns both raw and variant-adjusted figures, plus recency-decayed figure for scoring.
  *
- * RECENCY DECAY: Figures are weighted by age to prevent stale high figures from
- * dominating over recent competitive figures. A 90 Beyer from 90 days ago is
- * worth less than an 85 Beyer from 14 days ago.
+ * v3.7 RECENCY DECAY:
+ * Figures are weighted by age to prevent stale high figures from dominating over
+ * recent competitive figures. A 90 Beyer from 120 days ago is worth less than
+ * an 85 Beyer from 14 days ago.
+ *
+ * v3.7 ACTIVE HORSE PROTECTION:
+ * If a horse has 3+ figures in the last 90 days, it's considered "active".
+ * For active horses, old standout figures (>90 days) are protected from heavy
+ * decay by using the best multiplier from recent figures instead.
+ *
+ * This prevents penalizing an active horse that happens to have an older
+ * career-best figure. If they're racing frequently, the old figure still
+ * reflects maintained ability.
  *
  * @param pastPerformances - Array of past performances
  * @param count - Number of recent races to consider (default 3)
@@ -383,6 +585,16 @@ function getBestRecentFigureWithVariant(
     };
   }
 
+  // v3.7 ACTIVE HORSE PROTECTION
+  // Check if horse qualifies for active horse protection:
+  // - Has 3+ figures in the last 90 days
+  // - If so, old standout figures use the best recent multiplier instead of stale one
+  const figuresInWindow = countFiguresInWindow(pastPerformances, today, ACTIVE_HORSE_WINDOW_DAYS);
+  const isActiveHorse = figuresInWindow >= ACTIVE_HORSE_FIGURE_THRESHOLD;
+  const bestRecentMultiplier = isActiveHorse
+    ? getBestMultiplierInWindow(pastPerformances, today, ACTIVE_HORSE_WINDOW_DAYS)
+    : null;
+
   // Extract figures with variants, calculate adjusted figures, and apply recency decay
   const figuresWithAdjustments = recentPPs.map((pp) => {
     const extracted = extractSpeedFigureWithVariant(pp);
@@ -402,7 +614,22 @@ function getBestRecentFigureWithVariant(
 
     // Calculate recency decay
     const daysSinceRace = calculateDaysSinceRace(pp.date, today);
-    const recencyMultiplier = getRecencyDecayMultiplier(daysSinceRace);
+    let recencyMultiplier = getRecencyDecayMultiplier(daysSinceRace);
+
+    // v3.7 ACTIVE HORSE PROTECTION:
+    // If this is an active horse and the figure is old (>90 days),
+    // use the best recent multiplier to protect the old standout figure
+    if (
+      isActiveHorse &&
+      bestRecentMultiplier !== null &&
+      daysSinceRace !== null &&
+      daysSinceRace > ACTIVE_HORSE_WINDOW_DAYS
+    ) {
+      // Use the better of: the figure's natural multiplier OR the best recent multiplier
+      // This ensures active horses aren't penalized for having an old career-best
+      recencyMultiplier = Math.max(recencyMultiplier, bestRecentMultiplier);
+    }
+
     const decayedFigure = Math.round(variantResult.adjustedFigure * recencyMultiplier);
 
     return {

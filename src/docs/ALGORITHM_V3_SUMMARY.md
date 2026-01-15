@@ -91,27 +91,27 @@ The Furlong scoring algorithm v3.6 represents a complete rebuild through Phases 
 
 **Won Last Out (WLO) Decay:**
 
-| Days Since Win | Points | Description      |
-| -------------- | ------ | ---------------- |
-| 0-21 days      | +18    | Hot winner       |
-| 22-35 days     | +14    | Recent winner    |
-| 36-50 days     | +10    | Freshening       |
-| 51-75 days     | +6     | Stale            |
-| 76-90 days     | +3     | Very stale       |
-| 91+ days       | +1     | Ancient history  |
+| Days Since Win | Points | Description     |
+| -------------- | ------ | --------------- |
+| 0-21 days      | +18    | Hot winner      |
+| 22-35 days     | +14    | Recent winner   |
+| 36-50 days     | +10    | Freshening      |
+| 51-75 days     | +6     | Stale           |
+| 76-90 days     | +3     | Very stale      |
+| 91+ days       | +1     | Ancient history |
 
 **Pattern Bonus Decay:**
 
 Pattern bonuses (Won 2 of 3, Won 3 of 5) apply a recency multiplier based on most recent win date:
 
-| Days Since Win | Multiplier | Description      |
-| -------------- | ---------- | ---------------- |
-| 0-21 days      | 1.00x      | Full credit      |
-| 22-35 days     | 0.85x      | Slight discount  |
-| 36-50 days     | 0.65x      | Moderate decay   |
-| 51-75 days     | 0.40x      | Significant decay|
-| 76-90 days     | 0.25x      | Heavy decay      |
-| 91+ days       | 0.10x      | Minimal credit   |
+| Days Since Win | Multiplier | Description       |
+| -------------- | ---------- | ----------------- |
+| 0-21 days      | 1.00x      | Full credit       |
+| 22-35 days     | 0.85x      | Slight discount   |
+| 36-50 days     | 0.65x      | Moderate decay    |
+| 51-75 days     | 0.40x      | Significant decay |
+| 76-90 days     | 0.25x      | Heavy decay       |
+| 91+ days       | 0.10x      | Minimal credit    |
 
 **Base Pattern Values (before multiplier):**
 
@@ -214,8 +214,48 @@ Use `generateRaceDiagnostic()` from `src/lib/scoring/diagnostics.ts` to get full
 - Low confidence flags
 - Predicted finish position
 
+### Phase 8: Speed Recency Decay (v3.7)
+
+**Rationale:** Algorithm Audit found that Speed Recency Decay was DISABLED in v3.3, meaning a 95 Beyer from 180 days ago was treated identically to one from 14 days ago. With v3.6 Form Decay now handling current condition, Speed Decay can address the separate concern of whether old figures still reflect current ability.
+
+**Speed Recency Decay Tiers (v3.7):**
+
+| Days Since Race | Multiplier | Description   |
+| --------------- | ---------- | ------------- |
+| 0-30 days       | 1.00       | Full credit   |
+| 31-60 days      | 0.95       | 5% reduction  |
+| 61-90 days      | 0.85       | 15% reduction |
+| 91-120 days     | 0.75       | 25% reduction |
+| 121-180 days    | 0.60       | 40% reduction |
+| 181+ days       | 0.45       | 55% reduction |
+
+**Why Gentler Than Form Decay:**
+
+- Speed figures represent ABILITY (more stable over time)
+- Form represents CURRENT CONDITION (more volatile)
+- A horse can maintain ability while temporarily losing form
+- Speed decay: 1.00 → 0.45 (55% range)
+- Form decay: 1.00 → 0.10 (90% range)
+
+**Active Horse Protection (v3.7):**
+
+To prevent penalizing active horses with old standout figures:
+
+- If horse has 3+ speed figures in last 90 days, it's "active"
+- Old figures (>90 days) use the best multiplier from recent figures
+- This allows old career-bests to retain value for frequently racing horses
+
+**Example:**
+
+- Horse A: 95 Beyer from 150 days ago, 88 Beyer from 20 days ago
+- The 88 from 20 days = 1.0x multiplier (recent)
+- Active horse: Yes (has recent figure)
+- The old 95 uses 1.0x instead of 0.60x (protected)
+- Result: Old standout figure isn't heavily penalized
+
 ## Version History
 
+- **v3.7** (Phase 8): Speed Recency Decay — re-enabled with calibrated tiers and active horse protection
 - **v3.6** (Phase 7): Form Decay System — scales winner bonuses by recency
 - **v3.1** (Phase 6): Added odds factor (+15 pts), base now 328
 - **v3.0** (Phase 3): Speed rebalance, base increased to 313
