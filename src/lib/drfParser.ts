@@ -272,6 +272,17 @@ const DRF_COLUMNS = {
   PP_AVERAGE_PACE_START: 855, // Field 856 - First PP average pace
 
   // =========================================================================
+  // FRACTIONAL TIMES (Fields 866-945) - For velocity analysis
+  // =========================================================================
+  PP_QUARTER_TIME_START: 865, // Field 866 - Quarter time (2f) in seconds
+  // Fields 876-885: Reserved
+  // Fields 886-895: Reserved
+  PP_HALF_MILE_TIME_START: 895, // Field 896 - Half-mile time (4f) in seconds
+  PP_SIX_FURLONG_TIME_START: 905, // Field 906 - Six furlong time in seconds
+  PP_MILE_TIME_START: 915, // Field 916 - Mile time in seconds
+  // Fields 926-945: Extended Fractional Data (route analysis)
+
+  // =========================================================================
   // PAST PERFORMANCES (structured data starting at Field 102)
   // Each PP has data spread across multiple field ranges
   // =========================================================================
@@ -710,6 +721,50 @@ function parsePaceFigure(value: string, fieldName: string): number | null {
         component: 'DRFParser',
       });
     }
+  }
+
+  return parsed;
+}
+
+/**
+ * Parse and validate a fractional time (in seconds).
+ * Fractional times are typically in seconds (e.g., 22.4 for quarter, 45.2 for half).
+ * Returns null for missing/empty values.
+ *
+ * @param value - Raw string value to parse
+ * @returns Validated fractional time in seconds, or null if empty/invalid
+ */
+function parseFractionalTime(value: string): number | null {
+  // Empty/missing values return null (valid - no data available)
+  if (!value || value.trim() === '') {
+    return null;
+  }
+
+  const parsed = parseFloat(value);
+
+  // Non-numeric values return null
+  if (isNaN(parsed)) {
+    return null;
+  }
+
+  // Negative or zero values are invalid
+  if (parsed <= 0) {
+    return null;
+  }
+
+  // Sanity check: fractional times should be reasonable
+  // Quarter mile (2f): typically 21-26 seconds
+  // Half mile (4f): typically 44-50 seconds
+  // 6 furlongs: typically 66-76 seconds (1:06-1:16)
+  // Mile: typically 93-105 seconds (1:33-1:45)
+  // Allow range from 20 seconds (fast quarter) to 180 seconds (slow 1.5 mile)
+  if (parsed < 20 || parsed > 180) {
+    // Value may be in different format (hundredths, etc.) - try to convert
+    if (parsed > 1000 && parsed < 20000) {
+      // Likely in hundredths of seconds (e.g., 2240 = 22.40 seconds)
+      return parsed / 100;
+    }
+    return null;
   }
 
   return parsed;
@@ -1287,6 +1342,11 @@ function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance
   const PP_VARIANT = 775; // Field 776
   const PP_EARLY_PACE = 815; // Field 816
   const PP_LATE_PACE = 845; // Field 846
+  // Fractional Times (DRF Fields 866-945) - for velocity analysis
+  const PP_QUARTER_TIME = 865; // Field 866 - 2f/quarter time in seconds
+  const PP_HALF_MILE_TIME = 895; // Field 896 - 4f/half-mile time in seconds
+  const PP_SIX_FURLONG_TIME = 905; // Field 906 - 6f time in seconds
+  const PP_MILE_TIME = 915; // Field 916 - Mile time in seconds
   const PP_WINNER = 405; // Field 406
   const PP_SECOND = 415; // Field 416
   const PP_THIRD = 425; // Field 426
@@ -1368,6 +1428,11 @@ function parsePastPerformances(fields: string[], maxRaces = 12): PastPerformance
       daysSinceLast: null, // Calculated from dates
       earlyPace1: parsePaceFigure(getField(fields, PP_EARLY_PACE + i), 'earlyPace1'),
       latePace: parsePaceFigure(getField(fields, PP_LATE_PACE + i), 'latePace'),
+      // Fractional times for velocity analysis (DRF Fields 866-945)
+      quarterTime: parseFractionalTime(getField(fields, PP_QUARTER_TIME + i)),
+      halfMileTime: parseFractionalTime(getField(fields, PP_HALF_MILE_TIME + i)),
+      sixFurlongTime: parseFractionalTime(getField(fields, PP_SIX_FURLONG_TIME + i)),
+      mileTime: parseFractionalTime(getField(fields, PP_MILE_TIME + i)),
     };
 
     // Calculate lengths ahead if this horse won

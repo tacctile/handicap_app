@@ -346,6 +346,18 @@ export interface PastPerformance {
   earlyPace1: number | null;
   /** Late Pace figure - closing ability rating (DRF Fields 846-855) */
   latePace: number | null;
+
+  // ============================================================================
+  // FRACTIONAL TIMES (DRF Fields 866-945) - Added for velocity analysis
+  // ============================================================================
+  /** Quarter time (2f) in seconds (DRF Fields 866-875) */
+  quarterTime: number | null;
+  /** Half-mile time (4f) in seconds (DRF Fields 896-905) */
+  halfMileTime: number | null;
+  /** Six furlong time in seconds (DRF Fields 906-915) */
+  sixFurlongTime: number | null;
+  /** Mile time in seconds (DRF Fields 916-925) */
+  mileTime: number | null;
 }
 
 // ============================================================================

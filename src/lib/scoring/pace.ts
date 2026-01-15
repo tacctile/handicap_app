@@ -30,6 +30,13 @@ import {
 } from '../trackIntelligence';
 import { calculateBeatenLengthsAdjustments } from './beatenLengths';
 import {
+  calculateVelocityScore,
+  hasVelocityData,
+  type VelocityScoreResult,
+  type VelocityProfile,
+  type LateKickPower,
+} from './velocityAnalysis';
+import {
   parseRunningStyle,
   analyzePaceScenario,
   calculateTacticalAdvantage,
@@ -97,6 +104,25 @@ export {
 // Re-export seasonal adjustment types from trackIntelligence
 export { type SeasonalAdjustmentResult } from '../trackIntelligence';
 
+// Re-export velocity analysis types and functions
+export {
+  calculateVelocityScore,
+  hasVelocityData,
+  buildVelocityProfile,
+  calculateLateKickPower,
+  getVelocitySummary,
+  analyzePPVelocity,
+  // Types
+  type VelocityScoreResult,
+  type VelocityProfile,
+  type LateKickPower,
+  type PPVelocityAnalysis,
+  // Constants
+  VELOCITY_DIFF_THRESHOLDS,
+  VELOCITY_SCORE_POINTS,
+  LATE_KICK_POWER_THRESHOLDS,
+} from './velocityAnalysis';
+
 // ============================================================================
 // LEGACY TYPES (for backwards compatibility)
 // ============================================================================
@@ -159,6 +185,19 @@ export interface PaceScoreResult {
     maxPossibleScore: number;
     /** Whether confidence penalty was applied */
     penaltyApplied: boolean;
+  };
+  /** Velocity differential analysis (fractional time-based) */
+  velocityAnalysis?: {
+    /** Velocity profile (VD classification, trend, etc.) */
+    velocityProfile: VelocityProfile;
+    /** Late kick power analysis */
+    lateKickPower: LateKickPower;
+    /** Bonus/penalty points from velocity analysis */
+    bonusPoints: number;
+    /** Reasoning string for velocity adjustments */
+    reasoning: string;
+    /** Whether velocity data was available */
+    hasVelocityData: boolean;
   };
 }
 
@@ -454,6 +493,21 @@ export function calculatePaceScore(
   // Apply seasonal adjustment (±2 pts max, doesn't change category limits)
   finalScore += seasonalAdjustment.adjustment;
 
+  // VELOCITY DIFFERENTIAL ANALYSIS: Calculate velocity-based adjustments
+  // This analyzes fractional times to identify late kick and energy distribution
+  let velocityAnalysisResult: VelocityScoreResult | undefined;
+  const hasVelocity = hasVelocityData(horse);
+
+  if (hasVelocity) {
+    velocityAnalysisResult = calculateVelocityScore(
+      horse,
+      detailedProfile.style,
+      paceResult.scenario.scenario
+    );
+    // Apply velocity bonus/penalty (max ±5 pts)
+    finalScore += velocityAnalysisResult.totalBonusPoints;
+  }
+
   // PHASE 2: Apply pace confidence multiplier for data completeness
   // Penalize horses with missing EP1/LP figures or unknown running style
   const hasEP1LP = hasPaceFigures(detailedProfile);
@@ -482,6 +536,11 @@ export function calculatePaceScore(
   // Add seasonal adjustment reasoning if applicable
   if (seasonalAdjustment.adjustment !== 0) {
     reasoning += ` | ${seasonalAdjustment.reasoning}`;
+  }
+
+  // Add velocity analysis reasoning if applicable
+  if (velocityAnalysisResult && velocityAnalysisResult.totalBonusPoints !== 0) {
+    reasoning += ` | ${velocityAnalysisResult.reasoning}`;
   }
 
   // PHASE 2: Add confidence info to reasoning if penalized
@@ -536,6 +595,16 @@ export function calculatePaceScore(
     seasonalAdjustment,
     // Phase 2: Pace confidence info
     paceConfidence,
+    // Velocity differential analysis (fractional time-based)
+    velocityAnalysis: velocityAnalysisResult
+      ? {
+          velocityProfile: velocityAnalysisResult.velocityProfile,
+          lateKickPower: velocityAnalysisResult.lateKickPower,
+          bonusPoints: velocityAnalysisResult.totalBonusPoints,
+          reasoning: velocityAnalysisResult.reasoning,
+          hasVelocityData: hasVelocity,
+        }
+      : undefined,
   };
 }
 
