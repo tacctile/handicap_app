@@ -585,6 +585,33 @@
   flex: 1;
 }
 
+/* Track info section - left side of bottom bar */
+.app-bottombar__track-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.app-bottombar__track-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.app-bottombar__date {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.app-bottombar__middot {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
 .app-bottombar__item {
   display: flex;
   align-items: center;
