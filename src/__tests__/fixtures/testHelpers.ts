@@ -60,8 +60,17 @@ export function createRunningLine(overrides: Partial<RunningLine> = {}): Running
  * Create a mock past performance
  */
 export function createPastPerformance(overrides: Partial<PastPerformance> = {}): PastPerformance {
+  // v3.7: Use recent date (7 days ago) as default to avoid speed recency decay
+  // Old default (2024-01-15) was causing ancient tier decay (0.45x) in tests
+  const defaultDate = new Date();
+  defaultDate.setDate(defaultDate.getDate() - 7);
+  const year = defaultDate.getFullYear();
+  const month = String(defaultDate.getMonth() + 1).padStart(2, '0');
+  const day = String(defaultDate.getDate()).padStart(2, '0');
+  const recentDateStr = `${year}${month}${day}`;
+
   return {
-    date: '2024-01-15',
+    date: recentDateStr,
     track: 'CD',
     trackName: 'Churchill Downs',
     raceNumber: 5,
@@ -513,16 +522,29 @@ export function createEquipmentChangeHorse(
 /**
  * Create a horse with specific speed figures
  * Uses LRL (Laurel Park, Tier 3) as the default track for neutral tier adjustment
+ *
+ * v3.7: Updated to use recent dates (within 30 days) to ensure full credit
+ * with Speed Recency Decay. Previous dates from 2024 were causing 55% decay.
  */
 export function createSpeedFigureHorse(figures: number[], track: string = 'LRL'): HorseEntry {
-  const pastPerformances = figures.map((beyer, i) =>
-    createPastPerformance({
+  // Generate recent dates (within 30 days) to get full recency credit
+  // Each PP is 7 days apart, with PP[0] being 7 days ago
+  const today = new Date();
+  const pastPerformances = figures.map((beyer, i) => {
+    const raceDate = new Date(today);
+    raceDate.setDate(raceDate.getDate() - 7 * (i + 1)); // 7, 14, 21 days ago, etc.
+    const year = raceDate.getFullYear();
+    const month = String(raceDate.getMonth() + 1).padStart(2, '0');
+    const day = String(raceDate.getDate()).padStart(2, '0');
+    const dateStr = `${year}${month}${day}`;
+
+    return createPastPerformance({
       speedFigures: createSpeedFigures({ beyer }),
-      date: `2024-0${Math.max(1, 10 - i)}-15`,
+      date: dateStr,
       track,
       trackName: track === 'LRL' ? 'Laurel Park' : track,
-    })
-  );
+    });
+  });
 
   return createHorseEntry({
     bestBeyer: Math.max(...figures),

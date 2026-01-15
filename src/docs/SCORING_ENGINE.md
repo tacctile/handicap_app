@@ -285,6 +285,44 @@ Track bias data from Track Intelligence Database determines running style advant
 - Speed figure achieved at current track: +2 bonus points
 - Speed figure on similar track condition: +2 bonus points
 
+### Speed Recency Decay (v3.7)
+
+> **v3.7 Note:** Speed figure recency decay has been re-enabled with calibrated tiers that are GENTLER than Form Decay. Speed figures represent ability (stable), while form represents current condition (volatile).
+
+**Speed Recency Decay Tiers:**
+
+| Days Since Race | Multiplier | Description   |
+| --------------- | ---------- | ------------- |
+| 0-30 days       | 1.00x      | Full credit   |
+| 31-60 days      | 0.95x      | 5% reduction  |
+| 61-90 days      | 0.85x      | 15% reduction |
+| 91-120 days     | 0.75x      | 25% reduction |
+| 121-180 days    | 0.60x      | 40% reduction |
+| 181+ days       | 0.45x      | 55% reduction |
+
+**Active Horse Protection:**
+
+To prevent penalizing active horses with old standout figures:
+
+- Horse is "active" if it has 3+ speed figures in the last 90 days
+- Old figures (>90 days) use the best multiplier from recent figures
+- Example: A 95 Beyer from 150 days ago, when horse also has an 88 from 20 days ago:
+  - Normal decay would give the 95 a 0.60x multiplier (very stale)
+  - Active protection uses the 1.0x multiplier from the recent 88
+  - Result: Old career-best retains full value for frequently racing horses
+
+**Comparison: Speed vs Form Decay:**
+
+| Days   | Speed Decay | Form Decay |
+| ------ | ----------- | ---------- |
+| 0-30   | 1.00x       | 1.00x      |
+| 31-60  | 0.95x       | 0.65-0.85x |
+| 61-90  | 0.85x       | 0.25-0.40x |
+| 91-120 | 0.75x       | 0.10x      |
+| 121+   | 0.45-0.60x  | 0.10x      |
+
+Speed decay is gentler because ability is more stable than current condition.
+
 ### Speed Figure Progression Analysis (10 points maximum)
 
 **Improvement Patterns:**
@@ -350,14 +388,14 @@ The Form Decay system scales winner bonuses based on how recently the horse won,
 
 **Won Last Out (WLO) Decay Tiers:**
 
-| Days Since Win | Points | Description      |
-| -------------- | ------ | ---------------- |
-| 0-21 days      | +18    | Hot winner       |
-| 22-35 days     | +14    | Recent winner    |
-| 36-50 days     | +10    | Freshening       |
-| 51-75 days     | +6     | Stale            |
-| 76-90 days     | +3     | Very stale       |
-| 91+ days       | +1     | Ancient history  |
+| Days Since Win | Points | Description     |
+| -------------- | ------ | --------------- |
+| 0-21 days      | +18    | Hot winner      |
+| 22-35 days     | +14    | Recent winner   |
+| 36-50 days     | +10    | Freshening      |
+| 51-75 days     | +6     | Stale           |
+| 76-90 days     | +3     | Very stale      |
+| 91+ days       | +1     | Ancient history |
 
 **Pattern Bonus Decay Multipliers:**
 
@@ -687,10 +725,11 @@ The system automatically detects the current month and applies track-specific se
 
 ---
 
-_Document Version: 3.6_
+_Document Version: 3.7_
 _Last Updated: January 2026_
 _Status: Track-Agnostic Universal Scoring Engine_
 _Integration: Requires Track Intelligence Database for track-specific values_
+_Changes in v3.7: Speed Recency Decay — re-enabled with calibrated tiers (Phase 8). Active Horse Protection added._
 _Changes in v3.6: Form Decay System — scales winner bonuses by recency (Phase 7). Form cap 50 pts._
 _Changes in v3.1: Algorithm rebuild with 328-point base. See ALGORITHM_V3_SUMMARY.md for complete category breakdown._
 _Changes in v3.0: Phase 3 speed rebalance (90 pts), base increased to 313._

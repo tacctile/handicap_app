@@ -852,27 +852,42 @@ describe('Speed & Class Scoring', () => {
         });
 
         // PP1: 88 raw, +6 variant = 86 adjusted
-        // PP2: 85 raw, -6 variant = 87 adjusted (best adjusted)
-        // PP3: 90 raw, +8 variant = 88 adjusted
+        // PP2: 85 raw, -6 variant = 87 adjusted
+        // PP3: 90 raw, +8 variant = 88 adjusted (best adjusted)
+        // v3.7: Use recent dates to avoid recency decay affecting selection
+        const today = new Date();
+        const date1 = new Date(today);
+        date1.setDate(date1.getDate() - 7);
+        const date2 = new Date(today);
+        date2.setDate(date2.getDate() - 14);
+        const date3 = new Date(today);
+        date3.setDate(date3.getDate() - 21);
+        const formatDate = (d: Date) => {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${y}${m}${day}`;
+        };
+
         const horse = createHorseEntry({
           pastPerformances: [
             createPastPerformance({
               track: 'LRL',
               speedFigures: createSpeedFigures({ beyer: 88, trackVariant: 6 }),
               finishPosition: 3,
-              date: '2024-03-15',
+              date: formatDate(date1),
             }),
             createPastPerformance({
               track: 'LRL',
               speedFigures: createSpeedFigures({ beyer: 85, trackVariant: -6 }),
               finishPosition: 2,
-              date: '2024-02-15',
+              date: formatDate(date2),
             }),
             createPastPerformance({
               track: 'LRL',
               speedFigures: createSpeedFigures({ beyer: 90, trackVariant: 8 }),
               finishPosition: 4,
-              date: '2024-01-15',
+              date: formatDate(date3),
             }),
           ],
         });
