@@ -191,6 +191,81 @@ export const VELOCITY_SCORE_POINTS = {
 export const MIN_SEGMENT_FURLONGS = 1.5;
 
 // ============================================================================
+// RUNNING STYLE CLASSIFICATION HELPERS
+// ============================================================================
+
+/**
+ * Running style classification for velocity bonus eligibility
+ *
+ * Maps running style codes to their bonus eligibility category:
+ * - 'early': E-type horses (E, E/P) - NO closer bonuses, they lead early
+ * - 'presser': P-type horses (P, E-P) - 50% closer bonuses
+ * - 'closer': C/S-type horses (C, S) - full closer bonuses
+ * - 'unknown': Missing/invalid running style - 50% closer bonuses (conservative)
+ */
+export type RunningStyleCategory = 'early' | 'presser' | 'closer' | 'unknown';
+
+/**
+ * Classify a running style code for velocity bonus eligibility
+ *
+ * This function determines how much (if any) of the velocity-based closer
+ * bonus a horse should receive based on their running style. E-type horses
+ * should not receive closer bonuses even if their velocity data suggests
+ * late acceleration, as they are front-runners by nature.
+ *
+ * @param runningStyle - Running style code (E, E-P, P, S, C, U, or undefined)
+ * @returns Running style category for bonus calculation
+ *
+ * @example
+ * classifyRunningStyle('E')   // 'early' - no closer bonus
+ * classifyRunningStyle('C')   // 'closer' - full bonus
+ * classifyRunningStyle('P')   // 'presser' - 50% bonus
+ * classifyRunningStyle('')    // 'unknown' - 50% bonus (conservative)
+ */
+export function classifyRunningStyle(
+  runningStyle: string | undefined | null
+): RunningStyleCategory {
+  const normalized = (runningStyle || '').toUpperCase().trim();
+
+  // Early speed horses - lead the race, do NOT benefit from closer bonuses
+  if (normalized === 'E' || normalized === 'E/P') {
+    return 'early';
+  }
+
+  // Pressers - stalk the pace, get partial closer bonus
+  if (normalized === 'E-P' || normalized === 'P') {
+    return 'presser';
+  }
+
+  // Closers/Sustainers - come from behind, get full closer bonus
+  if (normalized === 'S' || normalized === 'C') {
+    return 'closer';
+  }
+
+  // Unknown or missing - apply conservative 50% bonus
+  return 'unknown';
+}
+
+/**
+ * Get the closer bonus multiplier for a running style
+ *
+ * @param runningStyle - Running style code
+ * @returns Multiplier (0.0, 0.5, or 1.0) to apply to closer bonuses
+ */
+export function getCloserBonusMultiplier(runningStyle: string | undefined | null): number {
+  const category = classifyRunningStyle(runningStyle);
+  switch (category) {
+    case 'closer':
+      return 1.0;
+    case 'presser':
+    case 'unknown':
+      return 0.5;
+    case 'early':
+      return 0.0;
+  }
+}
+
+// ============================================================================
 // VELOCITY DIFFERENTIAL CALCULATION
 // ============================================================================
 
@@ -669,14 +744,43 @@ export function calculateVelocityScore(
   const lateKickPower = calculateLateKickPower(horse, runningStyle);
 
   // Calculate base velocity differential points
+  // IMPORTANT: Cross-reference running style to prevent E-type horses from receiving closer bonuses
+  // Even if an E-type horse shows VD > +2.0, they are front-runners by nature, not closers
   let vdPoints = 0;
   if (velocityProfile.isReliable) {
+    // Normalize running style - handle missing/undefined/empty values
+    const normalizedStyle = (runningStyle || 'U').toUpperCase().trim();
+    const isEarlySpeed = normalizedStyle.startsWith('E') && normalizedStyle !== 'E-P';
+    const isPresser = normalizedStyle === 'E-P' || normalizedStyle === 'P';
+    const isCloser = normalizedStyle === 'S' || normalizedStyle === 'C';
+
     switch (velocityProfile.classification) {
       case 'strong_closer':
-        vdPoints = VELOCITY_SCORE_POINTS.STRONG_CLOSER;
+        // E-type horses: NO closer bonus regardless of VD data
+        // S/C (sustainer/closer): full closer bonus
+        // E-P/P (presser): 50% closer bonus (rounded down)
+        if (isCloser) {
+          vdPoints = VELOCITY_SCORE_POINTS.STRONG_CLOSER;
+        } else if (isPresser) {
+          vdPoints = Math.floor(VELOCITY_SCORE_POINTS.STRONG_CLOSER * 0.5);
+        } else if (isEarlySpeed) {
+          vdPoints = 0; // E-type horses do not get closer bonus
+        } else {
+          // Unknown running style: apply reduced bonus
+          vdPoints = Math.floor(VELOCITY_SCORE_POINTS.STRONG_CLOSER * 0.5);
+        }
         break;
       case 'moderate_closer':
-        vdPoints = VELOCITY_SCORE_POINTS.MODERATE_CLOSER;
+        // Same logic for moderate closer
+        if (isCloser) {
+          vdPoints = VELOCITY_SCORE_POINTS.MODERATE_CLOSER;
+        } else if (isPresser) {
+          vdPoints = Math.floor(VELOCITY_SCORE_POINTS.MODERATE_CLOSER * 0.5);
+        } else if (isEarlySpeed) {
+          vdPoints = 0;
+        } else {
+          vdPoints = Math.floor(VELOCITY_SCORE_POINTS.MODERATE_CLOSER * 0.5);
+        }
         break;
       case 'steady_pace':
         vdPoints = VELOCITY_SCORE_POINTS.STEADY_PACE;
@@ -689,16 +793,29 @@ export function calculateVelocityScore(
 
   // Apply pace scenario multipliers
   // Hot pace benefits closers more, soft pace benefits speed
+  // NOTE: Only apply extra closer bonus if running style is compatible (S/C/P, not E)
+  const normalizedStyleForScenario = (runningStyle || 'U').toUpperCase().trim();
+  const isCloserForScenario =
+    normalizedStyleForScenario === 'S' ||
+    normalizedStyleForScenario === 'C' ||
+    normalizedStyleForScenario === 'P' ||
+    normalizedStyleForScenario === 'E-P';
+
   if (paceScenario === 'speed_duel' || paceScenario === 'contested') {
-    if (velocityProfile.classification === 'strong_closer') {
+    // Only give extra closer bonus to actual closers/stalkers, not E-type horses
+    if (velocityProfile.classification === 'strong_closer' && isCloserForScenario) {
       vdPoints += 1; // Extra bonus for closers in hot pace
     } else if (velocityProfile.classification === 'fader') {
       vdPoints -= 1; // Extra penalty for faders in hot pace
     }
   } else if (paceScenario === 'soft') {
-    if (velocityProfile.classification === 'strong_closer') {
+    if (velocityProfile.classification === 'strong_closer' && isCloserForScenario) {
       vdPoints -= 1; // Reduced benefit for closers in soft pace
-    } else if (velocityProfile.classification === 'fader' && runningStyle === 'E') {
+    } else if (
+      velocityProfile.classification === 'fader' &&
+      normalizedStyleForScenario.startsWith('E') &&
+      normalizedStyleForScenario !== 'E-P'
+    ) {
       vdPoints += 1; // Fading front-runner in soft pace may still succeed
     }
   }
