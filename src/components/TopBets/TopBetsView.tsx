@@ -1,10 +1,9 @@
 /**
  * TopBetsView Component
  *
- * 7-column betting view showing algorithm-generated betting suggestions.
- * Columns: WIN, PLACE, SHOW, EXACTA, TRIFECTA, SUPERFECTA, YOUR BETS
+ * 6-column betting view showing algorithm-generated betting suggestions.
+ * Columns: WIN, PLACE, SHOW, EXACTA, TRIFECTA, SUPERFECTA
  * Features bordered bet cards for clear visual separation.
- * YOUR BETS column is a placeholder for building bet slips (Phase 1).
  */
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
@@ -66,7 +65,7 @@ const SUPERFECTA_BOX_TYPES: TopBetType[] = ['SUPERFECTA_BOX_4', 'SUPERFECTA_BOX_
 const SUPERFECTA_KEY_TYPES: TopBetType[] = ['SUPERFECTA_KEY'];
 
 // Column configuration
-type ColumnId = 'win' | 'place' | 'show' | 'exacta' | 'trifecta' | 'superfecta' | 'your-bets';
+type ColumnId = 'win' | 'place' | 'show' | 'exacta' | 'trifecta' | 'superfecta';
 
 interface ColumnConfig {
   id: ColumnId;
@@ -112,7 +111,6 @@ const COLUMNS: ColumnConfig[] = [
     ],
     defaultVariant: 'straight',
   },
-  { id: 'your-bets', title: 'YOUR BETS', hasDropdown: false },
 ];
 
 // ============================================================================
@@ -347,27 +345,9 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
         </button>
       </div>
 
-      {/* 7-Column Grid */}
+      {/* 6-Column Grid */}
       <div className="top-bets-columns">
         {COLUMNS.map((column) => {
-          // YOUR BETS column is a placeholder - doesn't show bet cards
-          if (column.id === 'your-bets') {
-            return (
-              <div key={column.id} className="top-bets-column top-bets-column--your-bets">
-                {/* Column Header */}
-                <div className="top-bets-column__header">
-                  <h3 className="top-bets-column__title">{column.title}</h3>
-                </div>
-                {/* Placeholder content */}
-                <div className="top-bets-column__list">
-                  <div className="your-bets-placeholder">
-                    <span className="your-bets-placeholder__text">Select bets to add here</span>
-                  </div>
-                </div>
-              </div>
-            );
-          }
-
           const bets = getBetsForColumn(column.id);
           const currentVariant =
             column.id === 'exacta'
