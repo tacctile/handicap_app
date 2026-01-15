@@ -1441,7 +1441,16 @@ export {
   type TrainerEquipmentPattern,
 } from './equipment';
 export { getOptimalPostPositions } from './postPosition';
-export { getParFigures, getClassHierarchy } from './speedClass';
+export {
+  getParFigures,
+  getClassHierarchy,
+  // Sale price scoring for FTS/lightly raced horses
+  calculateSalePriceBonus,
+  hasReliableSpeedFigures,
+  MAX_SALE_PRICE_BONUS,
+  MAX_STARTS_FOR_SALE_PRICE,
+  type SalePriceBonusResult,
+} from './speedClass';
 
 // Track speed normalization exports
 export {

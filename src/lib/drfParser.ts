@@ -291,6 +291,13 @@ const DRF_COLUMNS = {
   TRAINER_STATS_START: 1145, // Field 1146 - Trainer category statistics
 
   // =========================================================================
+  // SALE/AUCTION DATA (Fields 1222-1223, indices 1221-1222)
+  // Used for evaluating first-time starters and lightly raced horses
+  // =========================================================================
+  SALE_PRICE: { index: 1221, name: 'Sale/Auction Price' }, // Field 1222
+  SALE_LOCATION: { index: 1222, name: 'Sale Location/Type' }, // Field 1223
+
+  // =========================================================================
   // DETAILED TRIP NOTES (Fields 1383-1392, indices 1382-1391)
   // =========================================================================
   PP_TRIP_NOTES_START: 1382, // Field 1383 - Detailed trip notes
@@ -1764,6 +1771,10 @@ function createDefaultHorseEntry(index: number): HorseEntry {
     isCoupledMain: true,
     coupledWith: [],
     rawLine: '',
+
+    // Sale/auction data (DRF Fields 1222-1223)
+    salePrice: null,
+    saleLocation: null,
   };
 }
 
@@ -1916,6 +1927,19 @@ function parseHorseEntry(fields: string[], lineIndex: number): HorseEntry {
 
   // Workouts
   horse.workouts = parseWorkouts(fields);
+
+  // Sale/Auction Data (DRF Fields 1222-1223)
+  // Used for evaluating first-time starters and lightly raced horses
+  const salePriceRaw = getField(fields, DRF_COLUMNS.SALE_PRICE.index);
+  if (salePriceRaw) {
+    // Sale price may contain commas (e.g., "500,000") or dollar signs
+    const cleanedPrice = salePriceRaw.replace(/[$,]/g, '').trim();
+    const parsedPrice = parseFloat(cleanedPrice);
+    if (!isNaN(parsedPrice) && parsedPrice > 0) {
+      horse.salePrice = parsedPrice;
+    }
+  }
+  horse.saleLocation = getField(fields, DRF_COLUMNS.SALE_LOCATION.index) || null;
 
   // Store raw line for debugging
   horse.rawLine = fields.slice(0, 50).join(',');

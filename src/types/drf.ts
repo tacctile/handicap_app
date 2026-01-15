@@ -537,6 +537,15 @@ export interface HorseEntry {
   coupledWith: number[];
   /** Raw DRF line for debugging */
   rawLine: string;
+
+  // =========================================================================
+  // SALE/AUCTION DATA (DRF Fields 1222-1223)
+  // Used for evaluating first-time starters and lightly raced horses
+  // =========================================================================
+  /** Auction/sale price in dollars (DRF Field 1222) - 0 or null means homebred/private */
+  salePrice: number | null;
+  /** Sale location/type description (DRF Field 1223) - e.g., "KEE SEP YRLG", "OBS APR 2YO" */
+  saleLocation: string | null;
 }
 
 // ============================================================================
