@@ -1633,14 +1633,14 @@
   justify-content: flex-start;
 }
 
-/* Value label column - left aligned to match the badge position */
+/* Value label column - centered to match content */
 .horse-list-header__cell--value-label {
-  justify-content: flex-start;
+  justify-content: center;
 }
 
-/* PROJECTED FINISH column - centered with larger text */
+/* PROJECTED FINISH column - centered, same font size as other headers */
 .horse-list-header__cell--rank .horse-list-header__label {
-  font-size: 12px; /* Slightly smaller to fit "PROJECTED FINISH" */
+  font-size: 14px; /* Match other header labels */
 }
 
 /* Expand column - empty */
