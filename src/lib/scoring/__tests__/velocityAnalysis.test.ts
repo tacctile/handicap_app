@@ -484,3 +484,149 @@ describe('velocity thresholds', () => {
     expect(VELOCITY_SCORE_POINTS.FADER).toBe(-1);
   });
 });
+
+// ============================================================================
+// MINIMUM SEGMENT LENGTH TESTS (Bug fix for "about 1 mile" races)
+// ============================================================================
+
+describe('minimum segment length handling', () => {
+  it('skips velocity calculation for "about 1 mile" races (8.1f) with tiny late segment', () => {
+    // 8.1f race: late segment = 8.1 - 8 = 0.1f (too short)
+    const pp = createMockPP({
+      distanceFurlongs: 8.1,
+      halfMileTime: 46.5,
+      mileTime: 72.0,
+      finalTime: 97.0, // 25 seconds for 0.1f would be unrealistic
+    });
+
+    const result = analyzePPVelocity(pp, 0);
+
+    // Should NOT produce extreme VD (like 243 sec/f)
+    // Either skip the calculation or use alternative method
+    if (result.velocityDiff !== null) {
+      expect(Math.abs(result.velocityDiff)).toBeLessThan(15);
+    }
+    // If late pace rate is calculated, it should be reasonable
+    if (result.latePaceRate !== null) {
+      expect(result.latePaceRate).toBeLessThan(20); // Max reasonable: ~20 sec/f
+    }
+  });
+
+  it('skips velocity calculation for 8.25f (about 1 mile) races', () => {
+    const pp = createMockPP({
+      distanceFurlongs: 8.25,
+      halfMileTime: 46.5,
+      mileTime: 72.0,
+      finalTime: 98.0,
+    });
+
+    const result = analyzePPVelocity(pp, 0);
+
+    // Either incomplete or reasonable value
+    if (result.velocityDiff !== null) {
+      expect(Math.abs(result.velocityDiff)).toBeLessThan(15);
+    }
+  });
+
+  it('calculates normally for 1 1/8 miles (9f) races with adequate late segment', () => {
+    // 9f race: late segment = 9 - 8 = 1f, still short but with 6f fallback
+    const pp = createMockPP({
+      distanceFurlongs: 9,
+      halfMileTime: 46.5,
+      sixFurlongTime: 71.0,
+      mileTime: 96.0,
+      finalTime: 109.0, // ~13 seconds for last furlong
+    });
+
+    const result = analyzePPVelocity(pp, 0);
+
+    // Should calculate with 6f fallback method
+    expect(result.isComplete).toBe(true);
+    // VD should be reasonable (typical range -5 to +5)
+    expect(result.velocityDiff).not.toBeNull();
+    if (result.velocityDiff !== null) {
+      expect(Math.abs(result.velocityDiff)).toBeLessThan(15);
+    }
+  });
+
+  it('handles exactly 1 mile (8f) races correctly', () => {
+    const pp = createMockPP({
+      distanceFurlongs: 8,
+      halfMileTime: 46.5,
+      sixFurlongTime: 71.0,
+      mileTime: 96.0,
+      finalTime: 96.0,
+    });
+
+    const result = analyzePPVelocity(pp, 0);
+
+    // Should use 6f to finish (2f) as late segment
+    expect(result.isComplete).toBe(true);
+    if (result.latePaceRate !== null) {
+      // 2f segment: should be reasonable (~12-14 sec/f)
+      expect(result.latePaceRate).toBeGreaterThan(8);
+      expect(result.latePaceRate).toBeLessThan(18);
+    }
+  });
+
+  it('does not produce NaN or Infinity for edge cases', () => {
+    const edgeCases = [
+      { distanceFurlongs: 8.0, halfMileTime: 46.0, mileTime: 96.0, finalTime: 96.0 },
+      { distanceFurlongs: 8.1, halfMileTime: 46.0, mileTime: 96.0, finalTime: 99.0 },
+      { distanceFurlongs: 8.5, halfMileTime: 46.0, mileTime: 96.0, finalTime: 102.0 },
+      { distanceFurlongs: 9.0, halfMileTime: 46.0, mileTime: 96.0, finalTime: 109.0 },
+    ];
+
+    for (const overrides of edgeCases) {
+      const pp = createMockPP(overrides);
+      const result = analyzePPVelocity(pp, 0);
+
+      // Never should have NaN or Infinity
+      if (result.velocityDiff !== null) {
+        expect(Number.isFinite(result.velocityDiff)).toBe(true);
+      }
+      if (result.earlyPaceRate !== null) {
+        expect(Number.isFinite(result.earlyPaceRate)).toBe(true);
+      }
+      if (result.latePaceRate !== null) {
+        expect(Number.isFinite(result.latePaceRate)).toBe(true);
+      }
+    }
+  });
+
+  it('profile handles horses with mixed "about 1 mile" races gracefully', () => {
+    // Horse with some problematic race distances
+    const pps = [
+      createMockPP({
+        distanceFurlongs: 8.1, // About 1 mile - should skip
+        halfMileTime: 46.0,
+        mileTime: 96.0,
+        finalTime: 99.0,
+      }),
+      createMockPP({
+        distanceFurlongs: 6.0, // Sprint - should calculate
+        quarterTime: 22.4,
+        halfMileTime: 45.2,
+        finalTime: 70.5,
+      }),
+      createMockPP({
+        distanceFurlongs: 8.0, // Exactly 1 mile - should use 6f fallback
+        halfMileTime: 46.0,
+        sixFurlongTime: 71.0,
+        mileTime: 96.0,
+        finalTime: 96.0,
+      }),
+    ];
+
+    const horse = createMockHorse(pps);
+    const profile = buildVelocityProfile(horse);
+
+    // Should not crash
+    expect(profile).toBeDefined();
+
+    // Average VD should be reasonable (if calculated)
+    if (profile.avgVelocityDiff !== null) {
+      expect(Math.abs(profile.avgVelocityDiff)).toBeLessThan(15);
+    }
+  });
+});
