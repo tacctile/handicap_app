@@ -1006,20 +1006,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span className="horse-list-header__races-text">RACES</span>
             </div>
 
-            {/* Column 1: Help button */}
-            <div className="horse-list-header__cell horse-list-header__cell--icons">
-              <button
-                type="button"
-                className="help-trigger-btn"
-                onClick={() => setHelpModalOpen(true)}
-                aria-label="How to read the form"
-                title="How to Read the Form"
-              >
-                <span className="material-icons">help_outline</span>
-              </button>
-            </div>
-
-            {/* Column 2: POST - Sortable */}
+            {/* Column 1: POST - Sortable */}
             <div
               className={`horse-list-header__cell horse-list-header__cell--pp horse-list-header__cell--sortable ${sortColumn === 'POST' ? 'horse-list-header__cell--active' : ''}`}
               onClick={() => handleColumnSort('POST')}
@@ -1503,6 +1490,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
             >
               <span className="material-icons">casino</span>
               <span>STRATEGY GUIDE</span>
+            </button>
+          </div>
+
+          {/* Separator */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* FORM GUIDE button - Opens how to read the form modal */}
+          <div className="app-bottombar__cluster">
+            <button
+              className="app-bottombar__item app-bottombar__item--form-guide"
+              onClick={() => setHelpModalOpen(true)}
+              title="How to Read the Form"
+            >
+              <span className="app-bottombar__form-guide-icon">📖</span>
+              <span>FORM GUIDE</span>
             </button>
           </div>
 
