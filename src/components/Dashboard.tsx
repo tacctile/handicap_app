@@ -10,6 +10,7 @@ import { FileUpload } from './FileUpload';
 import { HorseExpandedView } from './HorseExpandedView';
 import { HorseSummaryBar } from './HorseSummaryBar';
 import { ScoringHelpModal } from './ScoringHelpModal';
+import { BettingStrategyGuide } from './BettingStrategyGuide';
 import { RaceVerdictHeader } from './RaceVerdictHeader';
 import { RaceOverview } from './RaceOverview';
 import {
@@ -244,6 +245,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // State for scoring help modal
   const [helpModalOpen, setHelpModalOpen] = useState(false);
+
+  // State for betting strategy guide modal
+  const [strategyGuideOpen, setStrategyGuideOpen] = useState(false);
 
   // State for horse list sort order and direction
   // Sortable columns: POST, RANK, ODDS, FAIR, EDGE
@@ -1487,6 +1491,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
           </div>
 
+          {/* Separator */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* STRATEGY GUIDE button - Opens betting strategy guide modal */}
+          <div className="app-bottombar__cluster">
+            <button
+              className="app-bottombar__item app-bottombar__item--strategy-guide"
+              onClick={() => setStrategyGuideOpen(true)}
+              title="Open betting strategy guide"
+            >
+              <span className="material-icons">casino</span>
+              <span>STRATEGY GUIDE</span>
+            </button>
+          </div>
+
           {/* Center spacer - pushes Upload to far right */}
           <div className="app-bottombar__spacer"></div>
 
@@ -1526,6 +1545,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Scoring Help Modal */}
       <ScoringHelpModal isOpen={helpModalOpen} onClose={() => setHelpModalOpen(false)} />
+
+      {/* Betting Strategy Guide Modal */}
+      <BettingStrategyGuide
+        isOpen={strategyGuideOpen}
+        onClose={() => setStrategyGuideOpen(false)}
+      />
 
       {/* Trend Detail Modal */}
       {trendModalHorse && (

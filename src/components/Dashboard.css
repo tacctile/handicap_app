@@ -771,6 +771,32 @@
   margin-right: 2px;
 }
 
+/* STRATEGY GUIDE button - Opens betting strategy modal */
+.app-bottombar__item--strategy-guide {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  font-weight: 700;
+  padding: var(--gap-element) 16px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+  transition: all var(--transition-fast);
+}
+
+.app-bottombar__item--strategy-guide:hover {
+  background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+.app-bottombar__item--strategy-guide:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+}
+
+.app-bottombar__item--strategy-guide .material-icons {
+  font-size: 18px;
+}
+
 /* ALL RACES button - Navigation to overview */
 .app-bottombar__item--all-races {
   background: var(--color-elevated);
