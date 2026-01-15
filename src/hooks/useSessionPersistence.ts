@@ -242,7 +242,6 @@ export function useSessionPersistence(): UseSessionPersistenceReturn {
           setCurrentFilenameKey(filenameKey);
           setWasRestored(true);
 
-          console.log('[SessionPersistence] Restored existing session:', filenameKey);
           return { wasRestored: true, session: existingSession };
         }
       } catch (error) {
@@ -262,7 +261,6 @@ export function useSessionPersistence(): UseSessionPersistenceReturn {
       setCurrentFilenameKey(filenameKey);
       setWasRestored(false);
 
-      console.log('[SessionPersistence] Created new session:', filenameKey);
       return { wasRestored: false, session: newSession };
     },
     [isStorageAvailable]

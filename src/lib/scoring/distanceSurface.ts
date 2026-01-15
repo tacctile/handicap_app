@@ -304,7 +304,18 @@ function calculateDistanceScore(horse: HorseEntry): {
   reasoning: string;
 } {
   const starts = horse.distanceStarts ?? 0;
-  const wins = horse.distanceWins ?? 0;
+  const rawWins = horse.distanceWins ?? 0;
+
+  // Defensive clamping: invalid data (negative wins) returns neutral score
+  if (rawWins < 0) {
+    return {
+      score: 0,
+      winRate: 0,
+      reasoning: 'Distance: invalid data (neutral)',
+    };
+  }
+
+  const wins = rawWins;
 
   if (starts <= 0) {
     // v2.5: Neutral baseline instead of 0 (unproven ≠ bad)

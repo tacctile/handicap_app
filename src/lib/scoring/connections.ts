@@ -701,51 +701,6 @@ function buildReasoning(
   return parts.join(' | ');
 }
 
-/**
- * Dev-only logging for connections scoring comparison
- * Logs old (PP-based) vs new (DRF-based) calculation results
- */
-function logConnectionsDebug(
-  horse: HorseEntry,
-  trainerStats: ConnectionStats | null,
-  jockeyStats: ConnectionStats | null,
-  trainerScore: number,
-  jockeyScore: number
-): void {
-  // Only log in development mode
-  // Use import.meta.env.DEV for Vite compatibility (works in both browser and test)
-  if (typeof import.meta !== 'undefined' && !import.meta.env?.DEV) return;
-  if (typeof import.meta === 'undefined') return; // Skip in non-Vite environments
-
-  // Calculate what the old PP-based calculation would have produced
-  const ppWins = horse.pastPerformances.filter((pp) => pp.finishPosition === 1).length;
-  const ppStarts = horse.pastPerformances.length;
-  const ppWinRate = ppStarts > 0 ? (ppWins / ppStarts) * 100 : 0;
-
-  // Determine old trainer score (PP-based)
-  let oldTrainerScore = 7; // neutral default
-  if (ppStarts >= 3) {
-    if (ppWinRate >= 20) oldTrainerScore = 16;
-    else if (ppWinRate >= 15) oldTrainerScore = 13;
-    else if (ppWinRate >= 10) oldTrainerScore = 9;
-    else if (ppWinRate >= 5) oldTrainerScore = 5;
-    else oldTrainerScore = 2;
-  }
-
-  // Only log if there's a significant difference
-  const trainerDiff = Math.abs(trainerScore - oldTrainerScore);
-  const usedDRF = trainerStats?.source === 'drf' || jockeyStats?.source === 'drf';
-
-  if (usedDRF && trainerDiff >= 3) {
-    console.log(
-      `[Connections Debug] ${horse.horseName}: ` +
-        `Trainer OLD (PP): ${ppWinRate.toFixed(0)}% → ${oldTrainerScore}pts | ` +
-        `NEW (${trainerStats?.source?.toUpperCase() || 'null'}): ${trainerStats?.winRate.toFixed(0) || 0}% → ${trainerScore}pts | ` +
-        `Jockey (${jockeyStats?.source?.toUpperCase() || 'null'}): ${jockeyStats?.winRate.toFixed(0) || 0}% → ${jockeyScore}pts`
-    );
-  }
-}
-
 // ============================================================================
 // MAIN EXPORT
 // ============================================================================
@@ -784,9 +739,6 @@ export function calculateConnectionsScore(
   // Calculate individual scores
   const trainerScore = calculateTrainerScore(trainerStats);
   const jockeyScore = calculateJockeyScore(jockeyStats);
-
-  // Dev-only: Log comparison between old (PP-based) and new (DRF-based) calculations
-  logConnectionsDebug(horse, trainerStats, jockeyStats, trainerScore, jockeyScore);
 
   // Check for enhanced partnership bonus (0-4 points based on tier)
   const {
