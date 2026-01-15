@@ -130,6 +130,8 @@ function createTestHorse(trainerCategoryStats: Partial<TrainerCategoryStats> = {
     isCoupledMain: false,
     coupledWith: [],
     rawLine: '',
+    salePrice: null,
+    saleLocation: null,
   };
 }
 

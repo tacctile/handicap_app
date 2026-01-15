@@ -81,6 +81,10 @@ function createPP(
     daysSinceLast: null,
     earlyPace1: null,
     latePace: null,
+    quarterTime: null,
+    halfMileTime: null,
+    sixFurlongTime: null,
+    mileTime: null,
   };
 }
 
@@ -203,6 +207,8 @@ function createTestHorse(
     isCoupledMain: false,
     coupledWith: [],
     rawLine: '',
+    salePrice: null,
+    saleLocation: null,
   };
 }
 

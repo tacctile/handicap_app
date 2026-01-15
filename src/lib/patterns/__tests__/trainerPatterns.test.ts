@@ -140,6 +140,10 @@ function createMockPastPerformance(overrides: Partial<PastPerformance> = {}): Pa
     medication: '',
     earlyPace1: null,
     latePace: null,
+    quarterTime: null,
+    halfMileTime: null,
+    sixFurlongTime: null,
+    mileTime: null,
     ...overrides,
   };
 }
@@ -228,6 +232,8 @@ function createMockHorse(overrides: Partial<HorseEntry> = {}): HorseEntry {
     isCoupledMain: false,
     coupledWith: [],
     rawLine: '',
+    salePrice: null,
+    saleLocation: null,
     ...overrides,
   };
 }

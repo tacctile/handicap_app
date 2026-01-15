@@ -85,6 +85,10 @@ function createMockPP(weight: number): PastPerformance {
     daysSinceLast: 21,
     earlyPace1: 90,
     latePace: 88,
+    quarterTime: null,
+    halfMileTime: null,
+    sixFurlongTime: null,
+    mileTime: null,
   };
 }
 
@@ -207,6 +211,8 @@ function createMockHorse(currentWeight: number, lastRaceWeight: number | null): 
     isCoupledMain: false,
     coupledWith: [],
     rawLine: '',
+    salePrice: null,
+    saleLocation: null,
   };
 }
 

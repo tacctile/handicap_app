@@ -138,6 +138,8 @@ function createMockHorse(overrides: Partial<HorseEntry> = {}): HorseEntry {
     isCoupledMain: false,
     coupledWith: [],
     rawLine: '',
+    salePrice: null,
+    saleLocation: null,
     ...overrides,
   };
 }
