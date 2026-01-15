@@ -1337,10 +1337,10 @@ export function calculateRaceScores(
     horse.rank = index + 1;
   });
 
-  // Scratched horses get rank 99
+  // Scratched horses get rank 0 (not ranked)
   scoredHorses.forEach((horse) => {
     if (horse.score.isScratched) {
-      horse.rank = 99;
+      horse.rank = 0;
     }
   });
 

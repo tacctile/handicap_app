@@ -91,9 +91,9 @@ describe('Main Scoring Engine', () => {
       // Ranks should be 1-5 but may appear in any order since sorted by post position
       expect(ranks.sort()).toEqual([1, 2, 3, 4, 5]);
 
-      // Scratched horse should have rank 99 (pushed to bottom of display)
+      // Scratched horse should have rank 0 (not ranked)
       const scratchedRanks = results.filter((r) => r.score.isScratched).map((r) => r.rank);
-      expect(scratchedRanks.every((r) => r === 99)).toBe(true);
+      expect(scratchedRanks.every((r) => r === 0)).toBe(true);
     });
   });
 

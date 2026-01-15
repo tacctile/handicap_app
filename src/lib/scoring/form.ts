@@ -268,58 +268,58 @@ function getClassComparisonLabel(
 
 /**
  * Analyze a single race finish for form score
- * v3.3: INCREASED from 15 max to 18 max for 55 pt Form cap
+ * v3.2: 15 max base scoring for Model B (42 pt Form cap)
  *
  * Scoring:
- * - 1st = 18 pts (increased from 15)
- * - 2nd within 2L = 14 pts (increased from 12)
- * - 3rd within 2L = 14 pts (increased from 12)
- * - 2nd >2L = 11 pts (increased from 9)
- * - 3rd >2L = 11 pts (increased from 9)
- * - 4th-5th competitive = 8 pts (increased from 7)
- * - 4th-5th = 6 pts (increased from 5)
- * - 6th-8th = 5 pts (increased from 4)
- * - 9th+ = 3 pts (unchanged)
+ * - 1st = 15 pts
+ * - 2nd within 2L = 12 pts
+ * - 3rd within 2L = 12 pts
+ * - 2nd >2L = 9 pts
+ * - 3rd >2L = 9 pts
+ * - 4th-5th competitive = 7 pts
+ * - 4th-5th = 5 pts
+ * - 6th-8th = 4 pts
+ * - 9th+ = 3 pts
  */
 function analyzeRaceFinish(pp: PastPerformance): number {
   // Won the race
   if (pp.finishPosition === 1) {
-    return 18; // v3.3: increased from 15
+    return 15;
   }
 
   // 2nd or 3rd within 2 lengths
   if (pp.finishPosition === 2 && pp.lengthsBehind <= 2) {
-    return 14; // v3.3: increased from 12
+    return 12;
   }
   if (pp.finishPosition === 3 && pp.lengthsBehind <= 2) {
-    return 14; // v3.3: increased from 12
+    return 12;
   }
 
   // 2nd or 3rd more than 2 lengths
   if (pp.finishPosition === 2) {
-    return 11; // v3.3: increased from 9
+    return 9;
   }
   if (pp.finishPosition === 3) {
-    return 11; // v3.3: increased from 9
+    return 9;
   }
 
   // 4th-5th competitive effort
   if (pp.finishPosition <= 5 && pp.lengthsBehind < 5) {
-    return 8; // v3.3: increased from 7
+    return 7;
   }
 
   // 4th-5th less competitive
   if (pp.finishPosition <= 5) {
-    return 6; // v3.3: increased from 5
+    return 5;
   }
 
   // 6th-8th
   if (pp.finishPosition <= 8) {
-    return 5; // v3.3: increased from 4
+    return 4;
   }
 
   // Poor effort
-  return 3; // v3.3: unchanged
+  return 3;
 }
 
 /**
@@ -335,13 +335,13 @@ interface ClassContextFinishResult {
  * Analyze a single race finish for form score WITH class context
  * Applies class-context adjustment when past race was at higher class
  *
- * v3.3: Updated for new 18 pt max base scoring (55 pt Form cap)
+ * v3.2: Updated for 15 pt max base scoring (42 pt Form cap)
  *
  * Per requirements:
- * - WIN at any class level still scores maximum points (18)
+ * - WIN at any class level still scores maximum points (15)
  * - If past race was HIGHER class than today → treat loss as NEUTRAL:
- *   - 4th-6th place at higher class = 11-13 pts (scaled up from 9-11)
- *   - 7th+ at higher class = 9-11 pts (scaled up from 7-9)
+ *   - 4th-6th place at higher class = 9-11 pts
+ *   - 7th+ at higher class = 7-9 pts
  * - If past race was SAME class as today → score normally
  */
 function analyzeRaceFinishWithClassContext(
@@ -375,7 +375,7 @@ function analyzeRaceFinishWithClassContext(
       classComparison
     );
     return {
-      score: 18, // v3.3: increased to 18 for 55 pt Form cap
+      score: 15, // v3.2: 15 pt max for 42 pt Form cap
       classAdjusted: false,
       adjustmentNote: classComparison === 'higher' ? `Won ${label}` : null,
     };
@@ -387,7 +387,7 @@ function analyzeRaceFinishWithClassContext(
 
     if (classComparison === 'higher') {
       // 2nd/3rd at higher class is excellent - boost to near-win level
-      const adjustedScore = Math.min(17, baseScore + 2); // v3.3: capped at 17 (was 14)
+      const adjustedScore = Math.min(14, baseScore + 2); // v3.2: capped at 14
       const label = getClassComparisonLabel(
         pp.classification,
         todayContext.classification,
@@ -407,13 +407,13 @@ function analyzeRaceFinishWithClassContext(
     };
   }
 
-  // 4th-6th at higher class → treat as neutral (11-13 pts, v3.3: scaled up from 9-11)
+  // 4th-6th at higher class → treat as neutral (9-11 pts)
   if (pp.finishPosition >= 4 && pp.finishPosition <= 6) {
     const baseScore = analyzeRaceFinish(pp);
 
     if (classComparison === 'higher') {
-      // Upgrade to neutral: 11-13 pts (v3.3: scaled up from 9-11)
-      const adjustedScore = Math.max(11, Math.min(13, baseScore + 4));
+      // Upgrade to neutral: 9-11 pts
+      const adjustedScore = Math.max(9, Math.min(11, baseScore + 4));
       const label = getClassComparisonLabel(
         pp.classification,
         todayContext.classification,
@@ -433,13 +433,13 @@ function analyzeRaceFinishWithClassContext(
     };
   }
 
-  // 7th+ at higher class → treat as neutral (9-11 pts, v3.3: scaled up from 7-9)
+  // 7th+ at higher class → treat as neutral (7-9 pts)
   if (pp.finishPosition >= 7) {
     const baseScore = analyzeRaceFinish(pp);
 
     if (classComparison === 'higher') {
-      // Upgrade to neutral: 9-11 pts (v3.3: scaled up from 7-9)
-      const adjustedScore = Math.max(9, Math.min(11, baseScore + 4));
+      // Upgrade to neutral: 7-9 pts
+      const adjustedScore = Math.max(7, Math.min(9, baseScore + 4));
       const label = getClassComparisonLabel(
         pp.classification,
         todayContext.classification,
@@ -878,24 +878,22 @@ export function getFormConfidenceMultiplier(ppCount: number): number {
 // ============================================================================
 
 /**
- * Winner bonus point values (v3.3 - Increased Form Weight)
+ * Winner bonus point values (v3.2 - Model B Winner Bonus)
  * All bonuses stack when applicable
- * INCREASED from v3.2 to better reward recent winners and increase Form weight to 55 pts
  */
 const WINNER_BONUSES = {
-  wonLastOut: 18, // Won most recent race (strong signal, increased from 12)
-  won2of3: 8, // Won 2 of last 3 (stacks with above, increased from 5)
-  won3of5: 5, // Won 3 of last 5 (stacks, increased from 3)
-  lastWinWithin30Days: 4, // Won last out within 30 days (freshness/hot horse, increased from 3)
-  lastWinWithin60Days: 3, // Won within 60 days (warm, increased from 2)
+  wonLastOut: 12, // Won most recent race (strong signal)
+  won2of3: 5, // Won 2 of last 3 (stacks with above)
+  won3of5: 3, // Won 3 of last 5 (stacks)
+  lastWinWithin30Days: 3, // Won last out within 30 days (freshness/hot horse)
+  lastWinWithin60Days: 2, // Won within 60 days (warm)
 };
 
 /**
- * Maximum recent winner bonus points (v3.3 - Increased Form Weight)
- * Won Last Out (18) + Won 2/3 (8) + Won 3/5 (5) = 31 pts theoretical max
- * INCREASED from 20 to give Form (55 pts total) more weight vs Speed (105 pts)
+ * Maximum recent winner bonus points (v3.2 - Model B)
+ * Won Last Out (12) + Won 2/3 (5) + Won 3/5 (3) = 20 pts theoretical max
  */
-const MAX_RECENT_WINNER_BONUS = 31;
+const MAX_RECENT_WINNER_BONUS = 20;
 
 // ============================================================================
 // v3.5 WINNER BONUS RECENCY DECAY SYSTEM
@@ -1038,12 +1036,11 @@ export function getPatternBonusMultiplier(daysSinceWin: number): number {
 }
 
 /**
- * Calculate days since last win from past performances (v3.5 - FIXED)
+ * Calculate days since last win from past performances (v3.2)
  * @returns Days since last win, or null if horse has never won
  *
- * v3.5 FIX: Previously returned 0 if horse won last race, but we need the
- * ACTUAL days since that winning race occurred (from daysSinceLast on PP[0]).
- * This is critical for the recency decay system.
+ * Returns 0 if horse won its most recent race (for win recency bonus calculations).
+ * For pattern bonuses, this tracks when the most recent win occurred.
  */
 function getDaysSinceLastWin(pastPerformances: PastPerformance[]): number | null {
   if (pastPerformances.length === 0) return null;
@@ -1064,15 +1061,10 @@ function getDaysSinceLastWin(pastPerformances: PastPerformance[]): number | null
     }
 
     if (pp.finishPosition === 1) {
-      // v3.5 FIX: Found a win - return ACTUAL days since that win occurred
-      // For PP[0] (most recent race was a win): use daysSinceLast from that PP
-      //   - If race was 14 days ago, return 14 (not 0!)
-      //   - This enables proper decay calculation
+      // v3.2: If horse won most recent race, return 0 for win recency calculations
       // For PP[1+]: return cumulative days to that winning race
       if (i === 0) {
-        // Most recent race was a win - return how long ago it was
-        // Fall back to 14 days (typical race interval) if daysSinceLast is null
-        return pp.daysSinceLast ?? 14;
+        return 0; // Won most recent race
       }
       return cumulativeDays;
     }
@@ -1119,31 +1111,14 @@ function getWinRecencyBonus(daysSinceLastWin: number | null): {
 }
 
 /**
- * Calculate recent winner bonus (v3.5 - With Recency Decay)
+ * Calculate recent winner bonus (v3.2 - Model B)
  *
- * v3.5 CHANGE: Bonuses now DECAY based on days since last win
- * Algorithm Audit Finding #1 fix: 53% of Bad Beat picks had "stale form"
+ * STACKING LOGIC (all bonuses stack):
+ * - Won Last Out: +12 pts
+ * - Won 2 of 3: +5 pts
+ * - Won 3 of 5: +3 pts
  *
- * STACKING LOGIC (all bonuses stack, but with decay):
- * - Won Last Out: +1-18 pts (DECAYED based on days since win)
- * - Won 2 of 3: +2-8 pts (base 8 * pattern multiplier 0.25-1.0)
- * - Won 3 of 5: +1-5 pts (base 5 * pattern multiplier 0.25-1.0)
- *
- * DECAY TIERS for wonLastOut:
- * | Days Since Win | Bonus | Reasoning |
- * |----------------|-------|-----------|
- * | 0-21 days      | 18 pts | Hot winner, full credit |
- * | 22-35 days     | 14 pts | Recent winner, slight decay |
- * | 36-50 days     | 10 pts | Freshening, moderate decay |
- * | 51-75 days     | 6 pts  | Stale, heavy decay |
- * | 76-90 days     | 3 pts  | Very stale, minimal credit |
- * | 91+ days       | 1 pt   | Ancient history, token credit |
- *
- * EXAMPLES WITH DECAY:
- * - Horse won 14 days ago only: +18 pts (hot)
- * - Horse won 60 days ago only: +6 pts (stale)
- * - Horse won 100 days ago, also won 2/3: +1 + 8*0.25 = +3 pts (ancient)
- * - Horse won 20 days ago, also won 2/3: +18 + 8*1.0 = +26 pts (hot, full)
+ * Max: 12 + 5 + 3 = 20 pts
  *
  * @param pastPerformances - Horse's past performances
  * @returns Bonus points and analysis
@@ -1178,62 +1153,23 @@ function calculateRecentWinnerBonus(pastPerformances: PastPerformance[]): {
   const winsInLast5 = last5.filter((pp) => pp.finishPosition === 1).length;
   const won3OfLast5 = winsInLast5 >= 3;
 
-  // v3.5: Calculate days since last win for decay
-  const daysSinceWin = getDaysSinceLastWin(pastPerformances);
-
-  // Calculate stacking bonus with decay
+  // Calculate stacking bonus (simple, no decay)
   let bonus = 0;
   const reasoningParts: string[] = [];
 
   if (wonLastOut) {
-    // v3.5: Use decayed bonus based on days since win
-    const decayedBonus = daysSinceWin !== null
-      ? getDecayedWonLastOutBonus(daysSinceWin)
-      : WINNER_BONUSES.wonLastOut; // Fallback to full if unknown
-
-    bonus += decayedBonus;
-
-    // Build reasoning with decay info
-    if (daysSinceWin !== null && decayedBonus < WINNER_BONUSES.wonLastOut) {
-      reasoningParts.push(
-        `Won Last Out ${daysSinceWin}d ago (+${decayedBonus}, decayed from ${WINNER_BONUSES.wonLastOut})`
-      );
-    } else {
-      reasoningParts.push(`Won Last Out (+${decayedBonus})`);
-    }
+    bonus += WINNER_BONUSES.wonLastOut;
+    reasoningParts.push(`Won Last Out (+${WINNER_BONUSES.wonLastOut})`);
   }
 
-  // v3.5: Apply pattern multiplier to won2of3 and won3of5
-  const patternMultiplier = daysSinceWin !== null
-    ? getPatternBonusMultiplier(daysSinceWin)
-    : 1.0; // Fallback to full if unknown
-
   if (won2OfLast3) {
-    const baseBonus = WINNER_BONUSES.won2of3;
-    const decayedBonus = Math.round(baseBonus * patternMultiplier);
-    bonus += decayedBonus;
-
-    if (patternMultiplier < 1.0) {
-      reasoningParts.push(
-        `Won ${winsInLast3}/3 (+${decayedBonus}, ${Math.round(patternMultiplier * 100)}% of ${baseBonus})`
-      );
-    } else {
-      reasoningParts.push(`Won ${winsInLast3}/3 (+${decayedBonus})`);
-    }
+    bonus += WINNER_BONUSES.won2of3;
+    reasoningParts.push(`Won ${winsInLast3}/3 (+${WINNER_BONUSES.won2of3})`);
   }
 
   if (won3OfLast5) {
-    const baseBonus = WINNER_BONUSES.won3of5;
-    const decayedBonus = Math.round(baseBonus * patternMultiplier);
-    bonus += decayedBonus;
-
-    if (patternMultiplier < 1.0) {
-      reasoningParts.push(
-        `Won ${winsInLast5}/5 (+${decayedBonus}, ${Math.round(patternMultiplier * 100)}% of ${baseBonus})`
-      );
-    } else {
-      reasoningParts.push(`Won ${winsInLast5}/5 (+${decayedBonus})`);
-    }
+    bonus += WINNER_BONUSES.won3of5;
+    reasoningParts.push(`Won ${winsInLast5}/5 (+${WINNER_BONUSES.won3of5})`);
   }
 
   // Cap at maximum

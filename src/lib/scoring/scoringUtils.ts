@@ -227,8 +227,8 @@ export function isValidCategoryScore(score: unknown, maxValue: number): score is
  * @returns -100 if Paper Tiger conditions met, 0 otherwise
  *
  * CONDITIONS FOR PENALTY:
- * - speedScore > 100 (Elite Ability - very high speed figures)
- * - formScore < 15 (Critical/Negligible Form - low form score)
+ * - speedScore > 120 (Elite Ability - very high speed figures)
+ * - formScore < 10 (Critical/Negligible Form - low form score)
  * - paceScore < 30 (Lacks Dominant Running Style - no elite tactical edge)
  * - hasRecentWin = false (not protected by recent wins)
  *
@@ -238,16 +238,16 @@ export function isValidCategoryScore(score: unknown, maxValue: number): score is
  *
  * @example
  * // Paper Tiger: Fast historical speed, no form, no pace advantage
- * calculatePaperTigerPenalty(105, 5, 20) // -100
+ * calculatePaperTigerPenalty(125, 5, 20) // -100
  *
  * // Protected by recent win
- * calculatePaperTigerPenalty(105, 5, 20, true) // 0 (winner protection)
+ * calculatePaperTigerPenalty(125, 5, 20, true) // 0 (winner protection)
  *
  * // Tessuto Rule: Elite wire-to-wire threat off layoff (high pace protects)
- * calculatePaperTigerPenalty(105, 5, 32) // 0 (protected by elite pace)
+ * calculatePaperTigerPenalty(130, 0, 32) // 0 (protected by elite pace)
  *
  * // Normal horse: Good speed with decent form
- * calculatePaperTigerPenalty(90, 25, 20) // 0
+ * calculatePaperTigerPenalty(130, 10, 20) // 0 (form >= 10 is acceptable)
  */
 export function calculatePaperTigerPenalty(
   speedScore: number,
@@ -267,11 +267,11 @@ export function calculatePaperTigerPenalty(
     return 0;
   }
 
-  // Paper Tiger conditions (v3.3 - slightly broadened from v3.2):
-  // 1. Elite Speed (> 100) - Horse has very high speed figures (was > 120)
-  // 2. Critical/Negligible Form (< 15) - Low form score (was < 10)
+  // Paper Tiger conditions (v3.2 thresholds - documented in test file):
+  // 1. Elite Speed (> 120) - Horse has very high speed figures
+  // 2. Critical/Negligible Form (< 10) - Low form score (catches negligible form, not just zero)
   // 3. Non-Elite Pace (< 30) - No dominant running style advantage
-  if (speedScore > 100 && formScore < 15 && paceScore < 30) {
+  if (speedScore > 120 && formScore < 10 && paceScore < 30) {
     return -100;
   }
 
