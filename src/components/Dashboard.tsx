@@ -381,27 +381,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing viewMode with new parsedData prop
       setViewMode('overview');
       prevParsedDataRef.current = parsedData;
-
-      // Debug logging
-      console.log('Parsed DRF data:', parsedData);
-      console.log('Track:', parsedData.races?.[0]?.header?.trackCode);
-      console.log('Date:', parsedData.races?.[0]?.header?.raceDateRaw);
-      console.log('Races:', parsedData.races?.length);
-
-      // Debug: Log all race post time fields to find missing data patterns
-      parsedData.races?.forEach((race, index) => {
-        const header = race.header as unknown as Record<string, unknown>;
-        console.log(`Race ${index + 1} post time fields:`, {
-          postTime: header?.postTime,
-          post_time: header?.post_time,
-          PostTime: header?.PostTime,
-          racePostTime: header?.racePostTime,
-          postTimeText: header?.postTimeText,
-          time: header?.time,
-          raceTime: header?.raceTime,
-          allKeys: header ? Object.keys(header) : [],
-        });
-      });
     }
   }, [parsedData]);
 

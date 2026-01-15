@@ -521,23 +521,6 @@ export function useRaceBets(
       };
     }
 
-    // ========== DEBUG: Log input to generateRecommendations ==========
-    console.log('=== useRaceBets DEBUG: INPUT ===');
-    console.log('Active horses count:', activeHorses.length);
-    console.log(
-      'Active horses:',
-      activeHorses.map((h) => ({
-        name: h.horse.horseName,
-        programNumber: h.horse.programNumber,
-        score: h.score.total,
-        baseScore: h.score.baseScore,
-        isScratched: h.score.isScratched,
-      }))
-    );
-    console.log('Race number:', raceNumber);
-    console.log('Race header surface:', raceHeader.surface);
-    console.log('Bankroll mode:', bankroll.getComplexityMode());
-
     // Generate recommendations
     let generatorResult: BetGeneratorResult;
     try {
@@ -547,56 +530,6 @@ export function useRaceBets(
         raceNumber,
         bankroll,
       });
-
-      // ========== DEBUG: Log full generator result ==========
-      console.log('=== useRaceBets DEBUG: GENERATOR RESULT ===');
-      console.log('Total bets in allBets:', generatorResult.allBets.length);
-      console.log('Summary:', generatorResult.summary);
-
-      // Log tierBets
-      console.log('--- TIER BETS ---');
-      for (const tierBet of generatorResult.tierBets) {
-        console.log(`Tier ${tierBet.tier}:`, {
-          name: tierBet.tierName,
-          betCount: tierBet.bets.length,
-          bets: tierBet.bets.map((b) => ({
-            type: b.type,
-            typeName: b.typeName,
-            horseNumbers: b.horseNumbers,
-            horses: b.horses?.map((h) => h.horse?.horseName),
-            horsesLength: b.horses?.length,
-          })),
-        });
-      }
-
-      // Log specialBets
-      console.log('--- SPECIAL BETS ---');
-      console.log('Nuclear longshots:', generatorResult.specialBets.nuclearLongshots.length);
-      console.log('Diamonds:', generatorResult.specialBets.diamonds.length);
-      console.log('Value bombs:', generatorResult.specialBets.valueBombs.length);
-
-      // Log ALL bets with full details
-      console.log('--- ALL BETS (full details) ---');
-      for (const bet of generatorResult.allBets) {
-        console.log({
-          type: bet.type,
-          typeName: bet.typeName,
-          tier: bet.tier,
-          specialCategory: bet.specialCategory,
-          horseNumbers: bet.horseNumbers,
-          horsesArrayLength: bet.horses?.length,
-          horsesNames: bet.horses?.map((h) => h?.horse?.horseName),
-          confidence: bet.confidence,
-          description: bet.description,
-        });
-      }
-
-      // Check mapping
-      console.log('--- BET TYPE MAPPING CHECK ---');
-      for (const bet of generatorResult.allBets) {
-        const tier = BET_TYPE_TO_TIER[bet.type];
-        console.log(`Bet type "${bet.type}" -> UI tier: ${tier || 'UNMAPPED!'}`);
-      }
     } catch (error) {
       console.error('Error generating bet recommendations:', error);
       return {
@@ -623,19 +556,14 @@ export function useRaceBets(
     const moderateBets: FormattedBetSuggestion[] = [];
     const aggressiveBets: FormattedBetSuggestion[] = [];
 
-    // ========== DEBUG: Track what gets added to each tier ==========
-    console.log('=== useRaceBets DEBUG: PROCESSING BETS ===');
-
     // Process all generated bets
     for (const bet of generatorResult.allBets) {
       const tier = BET_TYPE_TO_TIER[bet.type];
       if (!tier) {
-        console.log(`SKIPPING bet type "${bet.type}" - no mapping`);
         continue; // Skip unmapped bet types
       }
 
       const horsesDisplay = formatHorsesForBet(bet);
-      console.log(`Processing: ${bet.type} -> ${tier} | horses: ${horsesDisplay}`);
 
       const formatted: FormattedBetSuggestion = {
         type: BET_TYPE_DISPLAY[bet.type] || bet.typeName || bet.type,
@@ -651,49 +579,25 @@ export function useRaceBets(
         case 'conservative':
           if (conservativeBets.length < 2) {
             conservativeBets.push(formatted);
-            console.log(`  -> ADDED to conservative (now ${conservativeBets.length})`);
-          } else {
-            console.log(`  -> SKIPPED conservative (tier full)`);
           }
           break;
         case 'moderate':
           if (moderateBets.length < 2) {
             moderateBets.push(formatted);
-            console.log(`  -> ADDED to moderate (now ${moderateBets.length})`);
-          } else {
-            console.log(`  -> SKIPPED moderate (tier full)`);
           }
           break;
         case 'aggressive':
           if (aggressiveBets.length < 2) {
             aggressiveBets.push(formatted);
-            console.log(`  -> ADDED to aggressive (now ${aggressiveBets.length})`);
-          } else {
-            console.log(`  -> SKIPPED aggressive (tier full)`);
           }
           break;
       }
 
       // Stop if all tiers are full
       if (conservativeBets.length >= 2 && moderateBets.length >= 2 && aggressiveBets.length >= 2) {
-        console.log('All tiers full, stopping processing');
         break;
       }
     }
-
-    console.log('=== useRaceBets DEBUG: FINAL TIERS ===');
-    console.log(
-      'Conservative:',
-      conservativeBets.map((b) => `${b.type}: ${b.horsesDisplay}`)
-    );
-    console.log(
-      'Moderate:',
-      moderateBets.map((b) => `${b.type}: ${b.horsesDisplay}`)
-    );
-    console.log(
-      'Aggressive:',
-      aggressiveBets.map((b) => `${b.type}: ${b.horsesDisplay}`)
-    );
 
     // Extract summary stats from generator result
     const {

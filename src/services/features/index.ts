@@ -135,11 +135,6 @@ class FeatureFlagService {
 
     // Override with localStorage (for development)
     this.loadFromStorage();
-
-    // Log initial state in debug mode
-    if (this.flags.DEBUG_MODE) {
-      console.log('[FeatureFlags] Initialized:', this.flags);
-    }
   }
 
   /**
@@ -240,10 +235,6 @@ class FeatureFlagService {
       this.flags[flagName] = value;
       this.saveToStorage();
       this.notifyListeners();
-
-      if (this.flags.DEBUG_MODE) {
-        console.log(`[FeatureFlags] ${flagName} = ${value}`);
-      }
     }
   }
 
@@ -268,10 +259,6 @@ class FeatureFlagService {
     if (changed) {
       this.saveToStorage();
       this.notifyListeners();
-
-      if (this.flags.DEBUG_MODE) {
-        console.log('[FeatureFlags] Updated:', updates);
-      }
     }
   }
 
@@ -289,10 +276,6 @@ class FeatureFlagService {
     this.flags = this.getDefaults();
     localStorage.removeItem(STORAGE_KEY);
     this.notifyListeners();
-
-    if (this.flags.DEBUG_MODE) {
-      console.log('[FeatureFlags] Reset to defaults');
-    }
   }
 
   /**
