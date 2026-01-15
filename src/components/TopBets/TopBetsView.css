@@ -832,3 +832,383 @@
 .exotic-bet-tooltip__horse:last-child {
   padding-bottom: 0;
 }
+
+/* ============================================
+   BET CARD CHECKBOX STYLING
+   ============================================ */
+
+.compact-bet-card {
+  cursor: pointer;
+}
+
+.compact-bet-card--selected {
+  border-color: var(--color-primary);
+  background: rgba(25, 171, 181, 0.08);
+}
+
+.compact-bet-card--selected:hover {
+  background: rgba(25, 171, 181, 0.12);
+  border-color: var(--color-primary);
+}
+
+.compact-bet-card__checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.compact-bet-card__checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.compact-bet-card__checkbox-custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: var(--color-elevated);
+  border: 2px solid var(--color-border-prominent);
+  border-radius: 3px;
+  transition: all var(--transition-fast);
+}
+
+.compact-bet-card__checkbox:checked + .compact-bet-card__checkbox-custom {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.compact-bet-card__checkbox:checked + .compact-bet-card__checkbox-custom::after {
+  content: '';
+  display: block;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-top: -2px;
+}
+
+.compact-bet-card__checkbox-wrapper:hover .compact-bet-card__checkbox-custom {
+  border-color: var(--color-primary);
+}
+
+/* ============================================
+   YOUR BETS COLUMN STYLING
+   ============================================ */
+
+.your-bets-header {
+  flex-direction: column;
+  align-items: flex-start !important;
+  height: auto !important;
+  min-height: 56px;
+  padding: 10px !important;
+  gap: 6px !important;
+}
+
+.your-bets-budget {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.your-bets-budget__label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.3px;
+}
+
+.your-bets-budget__input-wrapper {
+  display: flex;
+  align-items: center;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+
+.your-bets-budget__dollar {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.your-bets-budget__input {
+  width: 45px;
+  padding: 2px 4px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  outline: none;
+  font-family: inherit;
+}
+
+.your-bets-budget__input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.your-bets-list {
+  padding: 8px 6px !important;
+}
+
+/* ============================================
+   YOUR BET ITEM STYLING
+   ============================================ */
+
+.your-bet-item {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-card);
+  border: 1px solid #2a2a2c;
+  border-radius: 5px;
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  transition: border-color var(--transition-fast);
+}
+
+.your-bet-item:hover {
+  border-color: #3a3a3c;
+}
+
+.your-bet-item__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.your-bet-item__type {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  letter-spacing: 0.3px;
+}
+
+.your-bet-item__remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  color: var(--color-text-tertiary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0;
+  line-height: 1;
+}
+
+.your-bet-item__remove:hover {
+  background: rgba(255, 100, 100, 0.1);
+  border-color: rgba(255, 100, 100, 0.4);
+  color: #ff6464;
+}
+
+.your-bet-item__horse-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.your-bet-item__amount-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.your-bet-item__amount-wrapper {
+  display: flex;
+  align-items: center;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 3px 6px;
+}
+
+.your-bet-item__dollar {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.your-bet-item__amount-input {
+  width: 35px;
+  padding: 2px 4px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  outline: none;
+  font-family: inherit;
+}
+
+.your-bet-item__cost {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* ============================================
+   YOUR BETS TOTALS STYLING
+   ============================================ */
+
+.your-bets-totals {
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  padding: 10px;
+  margin-top: 8px;
+}
+
+.your-bets-totals__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.your-bets-totals__row:first-child {
+  padding-top: 0;
+}
+
+.your-bets-totals__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.3px;
+}
+
+.your-bets-totals__value {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.your-bets-totals__row--remaining {
+  border-top: 1px solid var(--color-border);
+  margin-top: 4px;
+  padding-top: 8px !important;
+}
+
+.your-bets-totals__row--remaining .your-bets-totals__label,
+.your-bets-totals__row--remaining .your-bets-totals__value {
+  color: var(--color-primary);
+}
+
+.your-bets-totals__row--over .your-bets-totals__label,
+.your-bets-totals__row--over .your-bets-totals__value {
+  color: #ff6464;
+}
+
+.your-bets-totals__warning {
+  background: rgba(255, 100, 100, 0.15);
+  border: 1px solid rgba(255, 100, 100, 0.3);
+  border-radius: 3px;
+  padding: 6px 8px;
+  margin-top: 8px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ff6464;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================
+   CLEAR ALL BUTTON STYLING
+   ============================================ */
+
+.your-bets-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 10px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.your-bets-clear-btn:hover {
+  background: rgba(255, 100, 100, 0.1);
+  border-color: rgba(255, 100, 100, 0.4);
+  color: #ff6464;
+}
+
+/* ============================================
+   RESPONSIVE: Checkbox adjustments
+   ============================================ */
+
+@media (max-width: 1279px) and (min-width: 1024px) {
+  .compact-bet-card__checkbox-custom {
+    width: 16px;
+    height: 16px;
+  }
+
+  .compact-bet-card__checkbox:checked + .compact-bet-card__checkbox-custom::after {
+    width: 4px;
+    height: 8px;
+  }
+
+  .compact-bet-card__checkbox-wrapper {
+    margin-right: 6px;
+  }
+
+  .your-bet-item {
+    padding: 6px 8px;
+  }
+
+  .your-bet-item__type {
+    font-size: 10px;
+  }
+
+  .your-bet-item__horse-name {
+    font-size: 9px;
+  }
+
+  .your-bet-item__amount-input,
+  .your-bet-item__cost,
+  .your-bet-item__dollar {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .your-bets-header {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between;
+    height: auto;
+    min-height: 50px;
+  }
+
+  .your-bets-budget {
+    width: auto;
+  }
+}

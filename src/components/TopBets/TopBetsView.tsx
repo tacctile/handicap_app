@@ -45,6 +45,13 @@ export interface ScaledTopBet extends TopBet {
   scaledPayout: string;
 }
 
+// Selected bet with custom amount
+export interface SelectedBet {
+  bet: ScaledTopBet;
+  betId: string;
+  customAmount: number; // User-editable amount
+}
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -139,6 +146,13 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   const [trifectaVariant, setTrifectaVariant] = useState<TrifectaVariant>('straight');
   const [superfectaVariant, setSuperfectaVariant] = useState<SuperfectaVariant>('straight');
 
+  // Selected bets state (bet slip)
+  const [selectedBets, setSelectedBets] = useState<Map<string, SelectedBet>>(new Map());
+  const [raceBudget, setRaceBudget] = useState<string>('50');
+
+  // Track race number to clear selections when race changes
+  const prevRaceNumberRef = useRef<number>(raceNumber);
+
   // ============================================================================
   // GENERATE TOP BETS
   // ============================================================================
@@ -183,6 +197,96 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
       scaledPayout: scalePayoutEstimate(bet.estimatedPayout, effectiveBase),
     }));
   }, [topBetsResult, effectiveBase]);
+
+  // ============================================================================
+  // CLEAR SELECTIONS WHEN RACE CHANGES
+  // ============================================================================
+
+  useEffect(() => {
+    if (prevRaceNumberRef.current !== raceNumber) {
+      setSelectedBets(new Map());
+      prevRaceNumberRef.current = raceNumber;
+    }
+  }, [raceNumber]);
+
+  // ============================================================================
+  // BET SELECTION HELPERS
+  // ============================================================================
+
+  // Generate unique ID for a bet
+  const generateBetId = useCallback((bet: ScaledTopBet): string => {
+    return `${bet.internalType}-${bet.horseNumbers.join('-')}`;
+  }, []);
+
+  // Check if a bet is selected
+  const isBetSelected = useCallback(
+    (bet: ScaledTopBet): boolean => {
+      const betId = generateBetId(bet);
+      return selectedBets.has(betId);
+    },
+    [selectedBets, generateBetId]
+  );
+
+  // Toggle bet selection
+  const toggleBetSelection = useCallback(
+    (bet: ScaledTopBet) => {
+      const betId = generateBetId(bet);
+      setSelectedBets((prev) => {
+        const newMap = new Map(prev);
+        if (newMap.has(betId)) {
+          newMap.delete(betId);
+        } else {
+          newMap.set(betId, {
+            bet,
+            betId,
+            customAmount: bet.scaledCost,
+          });
+        }
+        return newMap;
+      });
+    },
+    [generateBetId]
+  );
+
+  // Remove a bet from selection
+  const removeBetSelection = useCallback((betId: string) => {
+    setSelectedBets((prev) => {
+      const newMap = new Map(prev);
+      newMap.delete(betId);
+      return newMap;
+    });
+  }, []);
+
+  // Update custom amount for a selected bet
+  const updateBetAmount = useCallback((betId: string, amount: number) => {
+    setSelectedBets((prev) => {
+      const newMap = new Map(prev);
+      const existing = newMap.get(betId);
+      if (existing) {
+        newMap.set(betId, { ...existing, customAmount: amount });
+      }
+      return newMap;
+    });
+  }, []);
+
+  // Clear all selections
+  const clearAllSelections = useCallback(() => {
+    setSelectedBets(new Map());
+  }, []);
+
+  // ============================================================================
+  // COMPUTED: TOTALS
+  // ============================================================================
+
+  const totals = useMemo(() => {
+    const total = Array.from(selectedBets.values()).reduce(
+      (sum, sb) => sum + sb.customAmount,
+      0
+    );
+    const budget = parseInt(raceBudget, 10) || 0;
+    const remaining = budget - total;
+    return { total, budget, remaining };
+  }, [selectedBets, raceBudget]);
 
   // ============================================================================
   // FILTER BETS BY COLUMN TYPE
@@ -350,19 +454,80 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
       {/* 7-Column Grid */}
       <div className="top-bets-columns">
         {COLUMNS.map((column) => {
-          // YOUR BETS column is a placeholder - doesn't show bet cards
+          // YOUR BETS column - shows selected bets and totals
           if (column.id === 'your-bets') {
+            const selectedBetsArray = Array.from(selectedBets.values());
             return (
               <div key={column.id} className="top-bets-column top-bets-column--your-bets">
-                {/* Column Header */}
-                <div className="top-bets-column__header">
+                {/* Column Header with Budget */}
+                <div className="top-bets-column__header your-bets-header">
                   <h3 className="top-bets-column__title">{column.title}</h3>
-                </div>
-                {/* Placeholder content */}
-                <div className="top-bets-column__list">
-                  <div className="your-bets-placeholder">
-                    <span className="your-bets-placeholder__text">Select bets to add here</span>
+                  <div className="your-bets-budget">
+                    <span className="your-bets-budget__label">BUDGET:</span>
+                    <div className="your-bets-budget__input-wrapper">
+                      <span className="your-bets-budget__dollar">$</span>
+                      <input
+                        type="text"
+                        className="your-bets-budget__input"
+                        value={raceBudget}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9]/g, '');
+                          setRaceBudget(value);
+                        }}
+                        placeholder="50"
+                        maxLength={4}
+                      />
+                    </div>
                   </div>
+                </div>
+
+                {/* Selected Bets List */}
+                <div className="top-bets-column__list your-bets-list">
+                  {selectedBetsArray.length > 0 ? (
+                    <>
+                      {selectedBetsArray.map((selectedBet) => (
+                        <YourBetItem
+                          key={selectedBet.betId}
+                          selectedBet={selectedBet}
+                          onUpdateAmount={updateBetAmount}
+                          onRemove={removeBetSelection}
+                        />
+                      ))}
+
+                      {/* Totals Section */}
+                      <div className="your-bets-totals">
+                        <div className="your-bets-totals__row">
+                          <span className="your-bets-totals__label">TOTAL:</span>
+                          <span className="your-bets-totals__value">${totals.total}</span>
+                        </div>
+                        <div className="your-bets-totals__row">
+                          <span className="your-bets-totals__label">BUDGET:</span>
+                          <span className="your-bets-totals__value">${totals.budget}</span>
+                        </div>
+                        <div className={`your-bets-totals__row your-bets-totals__row--remaining ${totals.remaining < 0 ? 'your-bets-totals__row--over' : ''}`}>
+                          <span className="your-bets-totals__label">REMAINING:</span>
+                          <span className="your-bets-totals__value">${totals.remaining}</span>
+                        </div>
+                        {totals.remaining < 0 && (
+                          <div className="your-bets-totals__warning">
+                            OVER BUDGET
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Clear All Button */}
+                      <button
+                        className="your-bets-clear-btn"
+                        onClick={clearAllSelections}
+                      >
+                        CLEAR ALL
+                      </button>
+                    </>
+                  ) : (
+                    <div className="your-bets-placeholder">
+                      <span className="your-bets-placeholder__text">Select bets to add here</span>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -405,6 +570,8 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
                     <CompactBetCard
                       key={`${bet.internalType}-${bet.horseNumbers.join('-')}-${index}`}
                       bet={bet}
+                      isSelected={isBetSelected(bet)}
+                      onToggleSelect={toggleBetSelection}
                     />
                   ))
                 ) : (
@@ -493,14 +660,101 @@ const ExoticBetTooltip: React.FC<ExoticBetTooltipProps> = ({ horses, children })
 };
 
 // ============================================================================
+// YOUR BET ITEM COMPONENT (for the Your Bets column)
+// ============================================================================
+
+interface YourBetItemProps {
+  selectedBet: SelectedBet;
+  onUpdateAmount: (betId: string, amount: number) => void;
+  onRemove: (betId: string) => void;
+}
+
+const YourBetItem: React.FC<YourBetItemProps> = ({ selectedBet, onUpdateAmount, onRemove }) => {
+  const { bet, betId, customAmount } = selectedBet;
+  const [inputValue, setInputValue] = useState<string>(customAmount.toString());
+
+  // Sync input value when customAmount changes externally
+  useEffect(() => {
+    setInputValue(customAmount.toString());
+  }, [customAmount]);
+
+  // Format bet type for display (e.g., "WIN #4" or "EXACTA #4-#6")
+  const betTypeDisplay = useMemo(() => {
+    // Get simplified bet type name
+    const typeName = bet.internalType
+      .replace(/_STRAIGHT/g, '')
+      .replace(/_BOX_\d/g, ' BOX')
+      .replace(/_KEY/g, ' KEY')
+      .replace(/_/g, ' ');
+
+    // Format horse numbers
+    const horseNums = bet.horseNumbers.map((n) => `#${n}`).join('-');
+
+    return `${typeName} ${horseNums}`;
+  }, [bet]);
+
+  // Get horse name for single-horse bets
+  const horseName = bet.horses.length === 1 ? bet.horses[0]?.name?.toUpperCase() : null;
+
+  const handleAmountChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value.replace(/[^0-9]/g, '');
+      setInputValue(value);
+      const numValue = parseInt(value, 10);
+      if (!isNaN(numValue) && numValue >= 0) {
+        onUpdateAmount(betId, numValue);
+      } else if (value === '') {
+        onUpdateAmount(betId, 0);
+      }
+    },
+    [betId, onUpdateAmount]
+  );
+
+  const handleRemove = useCallback(() => {
+    onRemove(betId);
+  }, [betId, onRemove]);
+
+  return (
+    <div className="your-bet-item">
+      <div className="your-bet-item__header">
+        <span className="your-bet-item__type">{betTypeDisplay}</span>
+        <button
+          className="your-bet-item__remove"
+          onClick={handleRemove}
+          aria-label="Remove bet"
+        >
+          ×
+        </button>
+      </div>
+      {horseName && <div className="your-bet-item__horse-name">{horseName}</div>}
+      <div className="your-bet-item__amount-row">
+        <div className="your-bet-item__amount-wrapper">
+          <span className="your-bet-item__dollar">$</span>
+          <input
+            type="text"
+            className="your-bet-item__amount-input"
+            value={inputValue}
+            onChange={handleAmountChange}
+            maxLength={4}
+          />
+        </div>
+        <span className="your-bet-item__cost">→ ${customAmount}</span>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
 // COMPACT BET CARD COMPONENT
 // ============================================================================
 
 interface CompactBetCardProps {
   bet: ScaledTopBet;
+  isSelected: boolean;
+  onToggleSelect: (bet: ScaledTopBet) => void;
 }
 
-const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
+const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet, isSelected, onToggleSelect }) => {
   // Format horse display based on bet type
   const horseDisplay = formatHorseDisplay(bet);
   const showTooltip = isExoticBet(bet.internalType);
@@ -513,10 +767,34 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
       ? `${Math.max(0.1, rawProbability).toFixed(1)}%`
       : `${Math.round(rawProbability)}%`;
 
+  const handleCheckboxChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      e.stopPropagation();
+      onToggleSelect(bet);
+    },
+    [bet, onToggleSelect]
+  );
+
+  const handleCardClick = useCallback(() => {
+    onToggleSelect(bet);
+  }, [bet, onToggleSelect]);
+
   return (
-    <div className="compact-bet-card">
-      {/* Row 1: Horse numbers (full width) */}
+    <div
+      className={`compact-bet-card ${isSelected ? 'compact-bet-card--selected' : ''}`}
+      onClick={handleCardClick}
+    >
+      {/* Row 1: Checkbox + Horse numbers */}
       <div className="compact-bet-card__header">
+        <label className="compact-bet-card__checkbox-wrapper" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            className="compact-bet-card__checkbox"
+            checked={isSelected}
+            onChange={handleCheckboxChange}
+          />
+          <span className="compact-bet-card__checkbox-custom" />
+        </label>
         {showTooltip ? (
           <ExoticBetTooltip horses={bet.horses}>
             <span className="compact-bet-card__horses compact-bet-card__horses--hoverable">{horseDisplay}</span>
