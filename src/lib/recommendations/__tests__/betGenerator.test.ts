@@ -192,6 +192,7 @@ function createMockHorseScore(total: number, overrides: Partial<HorseScore> = {}
     lowConfidencePenaltyAmount: 0,
     paperTigerPenaltyApplied: false,
     paperTigerPenaltyAmount: 0,
+    keyRaceIndexBonus: 0,
     ...overrides,
   };
 }

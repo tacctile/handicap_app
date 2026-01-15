@@ -143,6 +143,8 @@ function createMockHorse(options: {
     isCoupledMain: false,
     coupledWith: [],
     rawLine: '',
+    salePrice: null,
+    saleLocation: null,
   };
 }
 

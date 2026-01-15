@@ -97,6 +97,10 @@ export function createPastPerformance(overrides: Partial<PastPerformance> = {}):
     daysSinceLast: 21,
     earlyPace1: null,
     latePace: null,
+    quarterTime: null,
+    halfMileTime: null,
+    sixFurlongTime: null,
+    mileTime: null,
     ...overrides,
   };
 }
@@ -265,6 +269,8 @@ export function createHorseEntry(overrides: Partial<HorseEntry> = {}): HorseEntr
     isCoupledMain: true,
     coupledWith: [],
     rawLine: '',
+    salePrice: null,
+    saleLocation: null,
     ...overrides,
   };
 }
