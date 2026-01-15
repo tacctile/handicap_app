@@ -92,6 +92,21 @@ export interface SpeedClassScoreResult {
     /** Whether decay was applied */
     decayApplied: boolean;
   };
+  /** Sale price scoring for FTS/lightly raced horses */
+  salePriceScoring?: {
+    /** Whether sale price bonus was applied */
+    applied: boolean;
+    /** Bonus points awarded (0-8) */
+    bonus: number;
+    /** Sale price in dollars */
+    salePrice: number | null;
+    /** Sale location/type */
+    saleLocation: string | null;
+    /** Price tier description */
+    priceTier: string;
+    /** Human-readable reasoning */
+    reasoning: string;
+  };
 }
 
 // ============================================================================
@@ -824,6 +839,183 @@ function calculateClassScore(
 }
 
 // ============================================================================
+// SALE PRICE SCORING (for FTS and lightly raced horses)
+// ============================================================================
+
+/** Maximum bonus points from sale price */
+export const MAX_SALE_PRICE_BONUS = 8;
+
+/** Maximum career starts for sale price scoring to apply */
+export const MAX_STARTS_FOR_SALE_PRICE = 5;
+
+/**
+ * Sale price tier definitions with bonus points
+ *
+ * Typical thoroughbred sale prices:
+ * - Elite: $500,000+ (top prospects, Grade 1 potential)
+ * - High: $200,000 - $499,999 (stakes potential)
+ * - Above Average: $100,000 - $199,999 (solid prospects)
+ * - Average: $50,000 - $99,999 (typical claimers/allowance)
+ * - Below Average: $20,000 - $49,999 (lower expectations)
+ * - Bargain: <$20,000 (longshots, rescue cases)
+ * - Private/No Sale: $0 or null (homebred or no auction record)
+ */
+const SALE_PRICE_TIERS = [
+  { minPrice: 500000, bonus: 8, tier: 'Elite' },
+  { minPrice: 200000, bonus: 6, tier: 'High-End' },
+  { minPrice: 100000, bonus: 4, tier: 'Above Average' },
+  { minPrice: 50000, bonus: 2, tier: 'Solid' },
+  { minPrice: 20000, bonus: 1, tier: 'Average' },
+] as const;
+
+/**
+ * Result of sale price bonus calculation
+ */
+export interface SalePriceBonusResult {
+  /** Whether sale price bonus was applied */
+  applied: boolean;
+  /** Bonus points awarded (0-8) */
+  bonus: number;
+  /** Sale price in dollars */
+  salePrice: number | null;
+  /** Sale location/type */
+  saleLocation: string | null;
+  /** Price tier description */
+  priceTier: string;
+  /** Human-readable reasoning */
+  reasoning: string;
+}
+
+/**
+ * Calculate sale price bonus for first-time starters and lightly raced horses
+ *
+ * Sale price indicates the market's perceived class potential based on
+ * pedigree, conformation, and professional assessment at auction.
+ *
+ * ELIGIBILITY:
+ * - Horse is first-time starter (0 career starts), OR
+ * - Horse has fewer than 5 career starts AND lacks reliable speed figures
+ *
+ * SCORING:
+ * - $500,000+: +8 pts (elite purchase)
+ * - $200,000 - $499,999: +6 pts (high-end purchase)
+ * - $100,000 - $199,999: +4 pts (above average)
+ * - $50,000 - $99,999: +2 pts (solid purchase)
+ * - $20,000 - $49,999: +1 pt (average)
+ * - <$20,000: 0 pts (no bonus, no penalty)
+ * - $0/null: 0 pts (homebred/unknown - use breeding fallback)
+ *
+ * @param salePrice - The horse's auction/sale price in dollars
+ * @param saleLocation - The sale location/type (e.g., "KEE SEP YRLG")
+ * @param lifetimeStarts - Horse's total career starts
+ * @param hasReliableSpeedFigures - Whether horse has established speed figures
+ */
+export function calculateSalePriceBonus(
+  salePrice: number | null,
+  saleLocation: string | null,
+  lifetimeStarts: number,
+  hasReliableSpeedFigures: boolean
+): SalePriceBonusResult {
+  // Default result for ineligible horses
+  const defaultResult: SalePriceBonusResult = {
+    applied: false,
+    bonus: 0,
+    salePrice,
+    saleLocation,
+    priceTier: 'N/A',
+    reasoning: '',
+  };
+
+  // Eligibility check: Only apply to FTS or lightly raced horses
+  const isFirstTimeStarter = lifetimeStarts === 0;
+  const isLightlyRaced = lifetimeStarts > 0 && lifetimeStarts < MAX_STARTS_FOR_SALE_PRICE;
+
+  // Experienced horses (5+ starts) don't get sale price bonus - they have race records
+  if (lifetimeStarts >= MAX_STARTS_FOR_SALE_PRICE) {
+    return {
+      ...defaultResult,
+      reasoning: `Not applied - horse has ${lifetimeStarts} starts (5+ = has race record)`,
+    };
+  }
+
+  // Lightly raced horses with reliable speed figures don't need sale price bonus
+  if (isLightlyRaced && hasReliableSpeedFigures) {
+    return {
+      ...defaultResult,
+      reasoning: `Not applied - lightly raced (${lifetimeStarts} starts) but has established speed figures`,
+    };
+  }
+
+  // No sale price data (homebred or private purchase)
+  if (salePrice === null || salePrice === 0) {
+    return {
+      ...defaultResult,
+      priceTier: 'Homebred/Private',
+      reasoning: isFirstTimeStarter
+        ? 'FTS - No sale price (homebred/private), using breeding fallback'
+        : `Lightly raced (${lifetimeStarts} starts) - No sale price, using breeding fallback`,
+    };
+  }
+
+  // Find the appropriate price tier and bonus
+  for (const tier of SALE_PRICE_TIERS) {
+    if (salePrice >= tier.minPrice) {
+      const prefix = isFirstTimeStarter ? 'FTS' : `Lightly raced (${lifetimeStarts} starts)`;
+      const locationInfo = saleLocation ? ` at ${saleLocation}` : '';
+
+      return {
+        applied: true,
+        bonus: tier.bonus,
+        salePrice,
+        saleLocation,
+        priceTier: tier.tier,
+        reasoning: `${prefix} - $${salePrice.toLocaleString()}${locationInfo} (${tier.tier}: +${tier.bonus} pts)`,
+      };
+    }
+  }
+
+  // Below $20,000 - no bonus but acknowledge the sale
+  const prefix = isFirstTimeStarter ? 'FTS' : `Lightly raced (${lifetimeStarts} starts)`;
+  const locationInfo = saleLocation ? ` at ${saleLocation}` : '';
+
+  return {
+    applied: false,
+    bonus: 0,
+    salePrice,
+    saleLocation,
+    priceTier: 'Bargain',
+    reasoning: `${prefix} - $${salePrice.toLocaleString()}${locationInfo} (below bonus threshold)`,
+  };
+}
+
+/**
+ * Check if a horse has reliable speed figures
+ * Used to determine if sale price scoring should apply to lightly raced horses
+ *
+ * @param pastPerformances - Horse's past performance records
+ * @param figureCount - Number of valid figures in recent races (from speed confidence)
+ */
+export function hasReliableSpeedFigures(
+  pastPerformances: PastPerformance[],
+  figureCount: number
+): boolean {
+  // Need at least 2 valid speed figures to be "reliable"
+  if (figureCount < 2) return false;
+
+  // Check if the figures are reasonably high (not all 0s or very low)
+  const validFigures = pastPerformances
+    .slice(0, 3)
+    .map((pp) => pp.speedFigures.beyer ?? pp.speedFigures.timeformUS ?? pp.speedFigures.equibase)
+    .filter((f): f is number => f !== null && f > 0);
+
+  // Need at least 2 valid figures with average above 50 to be "reliable"
+  if (validFigures.length < 2) return false;
+
+  const avgFigure = validFigures.reduce((sum, f) => sum + f, 0) / validFigures.length;
+  return avgFigure >= 50;
+}
+
+// ============================================================================
 // MAIN EXPORT
 // ============================================================================
 
@@ -1060,17 +1252,40 @@ export function calculateSpeedClassScore(
     decayApplied: recencyMultiplier < 1.0,
   };
 
+  // SALE PRICE SCORING: Apply bonus for FTS and lightly raced horses
+  // This helps evaluate horses that lack performance history
+  const lifetimeStarts = horse.lifetimeStarts ?? horse.pastPerformances.length;
+  const hasReliableFigures = hasReliableSpeedFigures(horse.pastPerformances, figureCount);
+  const salePriceBonus = calculateSalePriceBonus(
+    horse.salePrice,
+    horse.saleLocation,
+    lifetimeStarts,
+    hasReliableFigures
+  );
+
+  // Calculate final total with sale price bonus (bonus is added to class score conceptually)
+  const totalWithSalePrice = adjustedSpeedScore + classResult.score + salePriceBonus.bonus;
+
+  // Add sale price info to class reasoning if bonus was applied
+  let adjustedClassReasoning = classResult.reasoning;
+  if (salePriceBonus.applied) {
+    adjustedClassReasoning += ` | Sale: ${salePriceBonus.reasoning}`;
+  } else if (salePriceBonus.priceTier === 'Homebred/Private' && lifetimeStarts === 0) {
+    // Note homebred status for FTS even though no bonus
+    adjustedClassReasoning += ' | Homebred (no sale bonus)';
+  }
+
   return {
-    total: adjustedSpeedScore + classResult.score,
+    total: totalWithSalePrice,
     speedScore: adjustedSpeedScore,
-    classScore: classResult.score,
+    classScore: classResult.score + salePriceBonus.bonus, // Include bonus in class score display
     seasonalAdjustment,
     bestRecentFigure,
     averageFigure,
     parForClass,
     classMovement,
     speedReasoning: adjustedSpeedReasoning,
-    classReasoning: classResult.reasoning,
+    classReasoning: adjustedClassReasoning,
     variantAdjustment: variantAdjustmentResult,
     trackNormalization: {
       currentTrackTier,
@@ -1082,6 +1297,14 @@ export function calculateSpeedClassScore(
     },
     speedConfidence,
     recencyDecay,
+    salePriceScoring: {
+      applied: salePriceBonus.applied,
+      bonus: salePriceBonus.bonus,
+      salePrice: salePriceBonus.salePrice,
+      saleLocation: salePriceBonus.saleLocation,
+      priceTier: salePriceBonus.priceTier,
+      reasoning: salePriceBonus.reasoning,
+    },
   };
 }
 
