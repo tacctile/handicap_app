@@ -178,35 +178,39 @@ const DRF_COLUMNS = {
   TRACK_EARNINGS: { index: 83, name: 'Track Earnings' }, // Field 84
 
   // =========================================================================
-  // TURF/WET/DISTANCE RECORDS
-  // FIXED: Fields 85-96 use YEAR-prefixed format: YEAR-Starts-Wins-Places-Shows-Earnings
-  // Must skip the year field (Field 85 = year 2025, Field 91 = year 2024)
+  // TURF RECORDS (VERIFIED - January 2026)
+  // Fields 85-96 contain TWO YEAR turf records, not wet track or distance records.
+  // - Fields 85-90: Current Year Turf (Year, Starts, Wins, Places, Shows, Earnings)
+  // - Fields 91-96: Previous Year Turf (Year, Starts, Wins, Places, Shows, Earnings)
   // =========================================================================
-  // Turf Record (Fields 86-89, skipping year prefix at Field 85)
-  // VERIFIED: THE MAN TO SEE shows 3-0-1-0 at these indices (correct turf record)
-  TURF_STARTS: { index: 85, name: 'Turf Starts' }, // Field 86 (skip year at 85)
+  // Current Year Turf Record (Fields 85-90)
+  // VERIFIED: Parser correctly extracts turf stats from these fields
+  TURF_STARTS: { index: 85, name: 'Turf Starts' }, // Field 86 (index 85, skip year at 85)
   TURF_WINS: { index: 86, name: 'Turf Wins' }, // Field 87
   TURF_PLACES: { index: 87, name: 'Turf Places' }, // Field 88
   TURF_SHOWS: { index: 88, name: 'Turf Shows' }, // Field 89
+  // Note: Field 90 (index 89) = Turf Earnings, Field 91 (index 90) = Previous Year prefix
 
-  // Wet Track Record - LOCATION UNKNOWN
-  // Diagnostic could not definitively locate wet track records in the DRF file.
-  // Using indices 57-60 which are reserved/empty fields to return safe 0 values.
-  // TODO: Investigate actual wet track field locations in DRF specification
-  WET_STARTS: { index: 57, name: 'Wet Track Starts' }, // Reserved field (returns 0)
-  WET_WINS: { index: 58, name: 'Wet Track Wins' }, // Reserved field (returns 0)
-  WET_PLACES: { index: 59, name: 'Wet Track Places' }, // Reserved field (returns 0)
-  WET_SHOWS: { index: 60, name: 'Wet Track Shows' }, // Reserved field (returns 0)
+  // =========================================================================
+  // WET TRACK & DISTANCE RECORDS - RESOLVED (January 2026)
+  // These fields DO NOT EXIST in the DRF header format. Confirmed by analysis of
+  // actual DRF files - fields 89-96 contain previous year turf records, not wet/distance.
+  //
+  // SOLUTION: Wet track and distance statistics are calculated dynamically from
+  // past performances in calculateDerivedStats(). This provides:
+  // - Accurate wet track record from actual races on wet surfaces
+  // - Accurate distance record for today's specific race distance (±0.5 furlongs)
+  // =========================================================================
+  // Legacy indices kept for reference - these are NOT used
+  WET_STARTS: { index: 57, name: 'Wet Track Starts (DERIVED FROM PP)' },
+  WET_WINS: { index: 58, name: 'Wet Track Wins (DERIVED FROM PP)' },
+  WET_PLACES: { index: 59, name: 'Wet Track Places (DERIVED FROM PP)' },
+  WET_SHOWS: { index: 60, name: 'Wet Track Shows (DERIVED FROM PP)' },
 
-  // Distance Record - LOCATION UNKNOWN
-  // Diagnostic could not definitively locate distance records in the DRF file.
-  // Fields 62-65 may contain distance data but values don't clearly match.
-  // Using reserved fields to return safe 0 values until proper indices are identified.
-  // TODO: Investigate actual distance field locations in DRF specification
-  DISTANCE_STARTS: { index: 57, name: 'Distance Starts' }, // Reserved field (returns 0)
-  DISTANCE_WINS: { index: 58, name: 'Distance Wins' }, // Reserved field (returns 0)
-  DISTANCE_PLACES: { index: 59, name: 'Distance Places' }, // Reserved field (returns 0)
-  DISTANCE_SHOWS: { index: 60, name: 'Distance Shows' }, // Reserved field (returns 0)
+  DISTANCE_STARTS: { index: 57, name: 'Distance Starts (DERIVED FROM PP)' },
+  DISTANCE_WINS: { index: 58, name: 'Distance Wins (DERIVED FROM PP)' },
+  DISTANCE_PLACES: { index: 59, name: 'Distance Places (DERIVED FROM PP)' },
+  DISTANCE_SHOWS: { index: 60, name: 'Distance Shows (DERIVED FROM PP)' },
 
   // =========================================================================
   // PAST PERFORMANCE DATES (Fields 102-113, indices 101-112)

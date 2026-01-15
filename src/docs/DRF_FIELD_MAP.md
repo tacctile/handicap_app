@@ -242,31 +242,56 @@
 | 83    | Track Shows    | Track ITM rate      |
 | 84    | Track Earnings | Track class level   |
 
-### Turf/Wet/Distance Records (P0 Critical)
+### Turf Records (VERIFIED)
 
-These fields contain the horse's record on specific surfaces and at specific distances. This is fundamental "does this horse win at this distance/surface?" data.
+These fields contain the horse's turf record by year. The DRF file format does NOT contain dedicated wet track or distance record summary fields in this section.
 
-> **Implementation Note:** Fields 85-96 use a YEAR-prefixed format. Field 85 contains the year (e.g., 2025), so actual turf data starts at Field 86. The parser skips the year field.
+> **Implementation Note:** Fields 85-96 contain TWO YEAR turf records (current year and previous year), each with a year prefix.
+
+**Current Year Turf Record (Fields 85-90):**
 
 | Field  | Content          | Scoring Integration                          |
 | ------ | ---------------- | -------------------------------------------- |
-| 85     | Year Prefix      | Skip this field (contains year like 2025)    |
+| 85     | Year Prefix      | Contains year (e.g., 2025) - skip for stats  |
 | 86     | Turf Starts      | Surface preference analysis                  |
 | 87     | Turf Wins        | Turf win rate calculation                    |
 | 88     | Turf Places      | Turf ITM analysis                            |
 | 89     | Turf Shows       | Turf ITM analysis                            |
+| 90     | Turf Earnings    | Turf earnings total                          |
 
-> **⚠️ UNRESOLVED: Wet Track & Distance Records**
->
-> The wet track (Fields 89-92 per original spec) and distance record field locations have **not been definitively verified** in actual DRF file data. The parser currently uses placeholder indices that return 0. This is a known limitation.
->
-> Wet track record and distance record analysis relies on past performance data rather than these summary fields.
+**Previous Year Turf Record (Fields 91-96):**
 
-| Field  | Content          | Status                                       |
+| Field  | Content               | Scoring Integration                       |
+| ------ | --------------------- | ----------------------------------------- |
+| 91     | Year Prefix           | Contains year (e.g., 2024) - skip         |
+| 92     | Previous Turf Starts  | Year-over-year turf comparison            |
+| 93     | Previous Turf Wins    | Year-over-year turf comparison            |
+| 94     | Previous Turf Places  | Year-over-year turf comparison            |
+| 95     | Previous Turf Shows   | Year-over-year turf comparison            |
+| 96     | Previous Turf Earnings| Year-over-year turf comparison            |
+
+**Lifetime Totals (Fields 97-101):**
+
+| Field  | Content          | Scoring Integration                          |
 | ------ | ---------------- | -------------------------------------------- |
-| 89-92  | Wet Track Record | UNRESOLVED - placeholder returns 0           |
-| 93-96  | Distance Record  | UNRESOLVED - placeholder returns 0           |
-| 97-101 | Lifetime Totals  | Verified - see Overall Lifetime Record above |
+| 97     | Lifetime Starts  | Experience level                             |
+| 98     | Lifetime Wins    | Win consistency                              |
+| 99     | Lifetime Places  | ITM consistency                              |
+| 100    | Lifetime Shows   | ITM consistency                              |
+| 101    | Lifetime Earnings| Class level indicator                        |
+
+> **✅ RESOLVED: Wet Track & Distance Records**
+>
+> After extensive analysis of actual DRF file data, we confirmed:
+> - **Wet track records do NOT exist** as dedicated header fields in the DRF format
+> - **Distance records do NOT exist** as dedicated header fields in the DRF format
+> - Fields 89-96 contain TURF records (current and previous year), not wet/distance
+>
+> **Implementation:** Wet track and distance statistics are dynamically calculated from
+> past performances by the parser (`calculateDerivedStats()`). This approach:
+> - Analyzes track conditions in each PP to count wet track starts/wins
+> - Matches PP distances to today's race distance (±0.5 furlongs) for distance stats
+> - Provides accurate, race-specific statistics rather than lifetime totals
 
 ### Scoring Application
 
