@@ -97,7 +97,7 @@ const buildFullRaceInfo = (race: ParsedRace | undefined): string => {
     parts.push(distanceDisplay);
   }
 
-  // 3. Race type/classification - FULL names
+  // 3. Race type/classification - FULL names only (no abbreviations like "Clm 10000n2l")
   if (header.raceName) {
     // Stakes race with full grade
     let stakesDisplay = header.raceName;
@@ -107,9 +107,8 @@ const buildFullRaceInfo = (race: ParsedRace | undefined): string => {
       stakesDisplay = `Listed Stakes: ${stakesDisplay}`;
     }
     parts.push(stakesDisplay);
-  } else if (header.raceType && header.raceType.trim()) {
-    parts.push(header.raceType);
   } else if (header.classification) {
+    // Skip header.raceType (abbreviated) - use classification for full names
     const classDisplay: Record<string, string> = {
       maiden: 'Maiden',
       'maiden-claiming': 'Maiden Claiming',
@@ -952,7 +951,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </>
           ) : (
-            /* LOADED STATE - DRF file loaded - Single line layout (Race Detail View) */
+            /* LOADED STATE - DRF file loaded - Clean top bar with race details only */
             <>
               {/* Logo */}
               <div className="app-topbar__logo">
@@ -962,22 +961,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
 
               {/* Separator after logo */}
-              <div className="app-topbar__separator"></div>
-
-              {/* Track · Date · Race X of X */}
-              <div className="app-topbar__identity">
-                <span className="app-topbar__track-name">
-                  {getTrackDisplayName(trackCode, getTrackSize(trackCode))}
-                </span>
-                <span className="app-topbar__middot">·</span>
-                <span className="app-topbar__date">{formatRaceDate(raceDate)}</span>
-                <span className="app-topbar__middot">·</span>
-                <span className="app-topbar__race-label">
-                  Race {selectedRaceIndex + 1} of {parsedData.races?.length || 0}
-                </span>
-              </div>
-
-              {/* Separator */}
               <div className="app-topbar__separator"></div>
 
               {/* Race info - FULL details, no abbreviations */}
@@ -996,20 +979,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   </div>
                 </>
               )}
-
-              {/* Separator */}
-              <div className="app-topbar__separator"></div>
-
-              {/* Post time - single value with ET */}
-              <div className="app-topbar__post-time">
-                <span className="app-topbar__post-time-value">
-                  {(() => {
-                    const postTimeValue = getPostTime(currentRace);
-                    const formattedTime = formatPostTime(postTimeValue);
-                    return formattedTime !== '--:--' ? `${formattedTime} ET` : 'TBD';
-                  })()}
-                </span>
-              </div>
 
               {/* Separator */}
               <div className="app-topbar__separator"></div>
@@ -1469,6 +1438,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Bottom Bar */}
         <footer className="app-bottombar">
+          {/* Track Name · Date - Left side info */}
+          {parsedData && (
+            <>
+              <div className="app-bottombar__track-info">
+                <span className="app-bottombar__track-name">
+                  {(() => {
+                    const trackData = getTrackData(trackCode || '');
+                    return trackData?.name || trackCode || 'Unknown Track';
+                  })()}
+                </span>
+                <span className="app-bottombar__middot">·</span>
+                <span className="app-bottombar__date">{formatRaceDate(raceDate)}</span>
+              </div>
+              <div className="app-bottombar__separator"></div>
+            </>
+          )}
+
           {/* ALL RACES button - Always visible, disabled on Overview */}
           <div className="app-bottombar__cluster">
             <button
