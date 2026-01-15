@@ -179,6 +179,17 @@ export const VELOCITY_SCORE_POINTS = {
   LKP_ADEQUATE: 1, // +1 pt for adequate closer
 };
 
+/**
+ * Minimum segment length for reliable velocity calculations
+ *
+ * Segments shorter than this will be skipped to avoid division by small numbers
+ * which produces unreliable extreme values.
+ *
+ * 1.5 furlongs = ~330 yards = reasonable minimum for pace rate calculation
+ * This handles "about 1 mile" races (8.0-8.5f) where late segment would be too short
+ */
+export const MIN_SEGMENT_FURLONGS = 1.5;
+
 // ============================================================================
 // VELOCITY DIFFERENTIAL CALCULATION
 // ============================================================================
@@ -254,7 +265,8 @@ function analyzeSprintVelocity(
 
     // Late pace segment: 4f to finish
     const lateFurlongs = pp.distanceFurlongs - 4;
-    if (lateFurlongs > 0) {
+    // Only calculate if segment is long enough for reliable data
+    if (lateFurlongs >= MIN_SEGMENT_FURLONGS) {
       result.latePaceTime = finalTime - halfMileTime;
       result.latePaceRate = result.latePaceTime / lateFurlongs;
     }
@@ -262,7 +274,8 @@ function analyzeSprintVelocity(
     // Fallback: only half-mile and final available
     // Use opening half vs closing portion
     const closingFurlongs = pp.distanceFurlongs - 4;
-    if (closingFurlongs > 0) {
+    // Only calculate if segment is long enough for reliable data
+    if (closingFurlongs >= MIN_SEGMENT_FURLONGS) {
       // Early pace = opening 4f (approximated as halfMileTime / 4 per furlong)
       result.earlyPaceRate = halfMileTime / 4;
       result.earlyPaceTime = halfMileTime;
@@ -285,6 +298,10 @@ function analyzeSprintVelocity(
 
 /**
  * Analyze velocity for route races (over 6f)
+ *
+ * Handles special cases:
+ * - "About 1 mile" races (8.0-8.5f) where late segment is too short
+ * - Uses MIN_SEGMENT_FURLONGS to avoid division by small numbers
  */
 function analyzeRouteVelocity(pp: PastPerformance, result: PPVelocityAnalysis): PPVelocityAnalysis {
   const halfMileTime = pp.halfMileTime;
@@ -307,7 +324,8 @@ function analyzeRouteVelocity(pp: PastPerformance, result: PPVelocityAnalysis): 
 
     // Late pace: 6f to finish
     const lateFurlongs = distance - 6;
-    if (lateFurlongs > 0) {
+    // Only calculate if segment is long enough for reliable data
+    if (lateFurlongs >= MIN_SEGMENT_FURLONGS) {
       result.latePaceTime = finalTime - sixFurlongTime;
       result.latePaceRate = result.latePaceTime / lateFurlongs;
     }
@@ -328,21 +346,28 @@ function analyzeRouteVelocity(pp: PastPerformance, result: PPVelocityAnalysis): 
 
     // Late pace: mile to finish
     const lateFurlongs = distance - 8;
-    if (lateFurlongs > 0) {
+    // For "about 1 mile" races (8.0-8.5f), the late segment is too short
+    // Only calculate if segment is long enough for reliable data
+    if (lateFurlongs >= MIN_SEGMENT_FURLONGS) {
       result.latePaceTime = finalTime - mileTime;
       result.latePaceRate = result.latePaceTime / lateFurlongs;
-    } else if (distance === 8) {
-      // Exactly 1 mile - use last 2f
+    } else if (distance >= 8 && distance < 8 + MIN_SEGMENT_FURLONGS) {
+      // "About 1 mile" races: use 6f to finish as late segment instead
+      // This gives us a 2f segment which is reliable
       if (sixFurlongTime !== null) {
         result.latePaceTime = finalTime - sixFurlongTime;
-        result.latePaceRate = result.latePaceTime / 2;
+        const actualLateFurlongs = distance - 6;
+        if (actualLateFurlongs >= MIN_SEGMENT_FURLONGS) {
+          result.latePaceRate = result.latePaceTime / actualLateFurlongs;
+        }
       }
     }
   }
   // Fallback: use whatever fractions are available
   else if (halfMileTime !== null && finalTime !== null) {
     const closingFurlongs = distance - 4;
-    if (closingFurlongs > 0) {
+    // Only calculate if segment is long enough for reliable data
+    if (closingFurlongs >= MIN_SEGMENT_FURLONGS) {
       result.earlyPaceRate = halfMileTime / 4;
       result.latePaceTime = finalTime - halfMileTime;
       result.latePaceRate = result.latePaceTime / closingFurlongs;
