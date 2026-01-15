@@ -1006,7 +1006,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span className="horse-list-header__races-text">RACES</span>
             </div>
 
-            {/* Column 1: POST - Sortable */}
+            {/* Column 1: Empty placeholder - aligns with scratch button column on cards */}
+            <div className="horse-list-header__cell horse-list-header__cell--icons"></div>
+
+            {/* Column 2: POST - Sortable */}
             <div
               className={`horse-list-header__cell horse-list-header__cell--pp horse-list-header__cell--sortable ${sortColumn === 'POST' ? 'horse-list-header__cell--active' : ''}`}
               onClick={() => handleColumnSort('POST')}
