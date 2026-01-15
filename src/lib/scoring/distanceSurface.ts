@@ -1,18 +1,22 @@
 /**
  * Distance & Surface Affinity Scoring Module
- * Calculates bonus points based on horse's lifetime record on turf, wet tracks, and at distance
+ * Calculates bonus/penalty points based on horse's record on turf, wet tracks, and at distance
  *
- * Score Breakdown:
+ * Score Breakdown (v3.6 - January 2026):
  * - Turf Score: 0-8 points (only applies if today's race is on turf)
- * - Wet Track Score: 0-6 points (only applies if track condition is wet/off)
- * - Distance Score: 0-6 points (always applies)
+ * - Wet Track Score: -2 to +6 points (only applies if track condition is wet/off)
+ * - Distance Score: -2 to +6 points (always applies)
  *
- * Total: 0-20 points (additive bonus to base score)
+ * Total: -4 to +20 points (can be negative for proven poor performers)
  *
- * Uses lifetime records from DRF Fields 85-96:
- * - turfStarts, turfWins (Fields 85-88)
- * - wetStarts, wetWins (Fields 89-92)
- * - distanceStarts, distanceWins (Fields 93-96)
+ * Data Sources:
+ * - Turf: From DRF Fields 85-90 (current year turf record)
+ * - Wet Track: Derived from past performance track conditions (no DRF header field exists)
+ * - Distance: Derived from past performances at today's distance ±0.5 furlongs
+ *
+ * v3.6 Enhancement: Added penalties (-2 pts) for horses with extensive experience (5+ starts)
+ * but very poor win rates (<10%) at wet tracks or at today's distance. This differentiates
+ * between "unproven" (neutral) and "proven poor performer" (penalty).
  */
 
 import type { HorseEntry, RaceHeader, TrackCondition } from '../../types/drf';
@@ -203,15 +207,20 @@ function calculateTurfScore(
 }
 
 /**
- * Calculate wet track score (0-6 points)
+ * Calculate wet track score (-2 to +6 points)
  * Only applies if track condition is wet/off
  *
- * Scoring:
- * - 25%+ win rate: 6 pts
- * - 15-24%: 4 pts
- * - 10-14%: 2 pts
- * - <10% or no starts: 0 pts
- * - 1-2 starts = half credit maximum
+ * v3.6 Enhanced Scoring (January 2026):
+ * - 30%+ win rate: 6 pts (wet track specialist)
+ * - 20-29%: 4 pts (handles wet)
+ * - 10-19%: 2 pts (adequate wet form)
+ * - <10% win rate with 5+ starts: -2 pts (struggles on wet - PENALTY)
+ * - <10% win rate with <5 starts: 0 pts (insufficient data)
+ * - No starts: neutral baseline (unproven ≠ bad)
+ * - 1-2 starts = half credit maximum for bonuses
+ *
+ * Key insight: Horses with extensive wet track experience (5+ starts) but
+ * very low win rates (<10%) are penalized, as this represents proven inability.
  */
 function calculateWetScore(
   horse: HorseEntry,
@@ -241,22 +250,29 @@ function calculateWetScore(
   let baseScore: number;
   let tier: string;
 
-  if (winRate >= 0.25) {
+  // v3.6: Enhanced tiers with penalty for proven poor wet track record
+  if (winRate >= 0.3) {
     baseScore = 6;
-    tier = 'proven mudder';
-  } else if (winRate >= 0.15) {
+    tier = 'wet track specialist';
+  } else if (winRate >= 0.2) {
     baseScore = 4;
-    tier = 'handles wet tracks';
+    tier = 'handles wet';
   } else if (winRate >= 0.1) {
     baseScore = 2;
-    tier = 'moderate wet ability';
+    tier = 'adequate wet form';
+  } else if (starts >= 5) {
+    // v3.6 NEW: Penalty for horses with extensive wet track experience but poor results
+    baseScore = -2;
+    tier = 'struggles on wet (penalty)';
   } else {
+    // Insufficient sample size to penalize
     baseScore = 0;
-    tier = 'weak wet track record';
+    tier = 'weak wet record (small sample)';
   }
 
-  const adjustedScore = applySmallSampleAdjustment(baseScore, starts);
-  const sampleNote = starts < MIN_STARTS_FULL_CREDIT ? ' (small sample)' : '';
+  // Only apply small sample adjustment for positive scores
+  const adjustedScore = baseScore > 0 ? applySmallSampleAdjustment(baseScore, starts) : baseScore;
+  const sampleNote = starts < MIN_STARTS_FULL_CREDIT && baseScore >= 0 ? ' (small sample)' : '';
 
   return {
     score: adjustedScore,
@@ -266,15 +282,21 @@ function calculateWetScore(
 }
 
 /**
- * Calculate distance affinity score (0-6 points)
+ * Calculate distance affinity score (-2 to +6 points)
  * Always applies regardless of surface/condition
  *
- * Scoring:
- * - 25%+ win rate: 6 pts
- * - 15-24%: 4 pts
- * - 10-14%: 2 pts
- * - <10% or no starts: 0 pts
- * - 1-2 starts = half credit maximum
+ * v3.6 Enhanced Scoring (January 2026):
+ * - 30%+ win rate: 6 pts (distance specialist)
+ * - 20-29%: 4 pts (proven at distance)
+ * - 10-19%: 2 pts (adequate at distance)
+ * - <10% win rate with 5+ starts: -2 pts (questionable at distance - PENALTY)
+ * - <10% win rate with <5 starts: 0 pts (insufficient data)
+ * - No starts: neutral baseline (unproven ≠ bad, may use pedigree fallback)
+ * - 1-2 starts = half credit maximum for bonuses
+ *
+ * Key insight: Distance affinity is derived from past performances at today's
+ * distance (±0.5 furlongs). Horses with extensive experience (5+ starts) at
+ * this distance but very low win rates are penalized as proven non-performers.
  */
 function calculateDistanceScore(horse: HorseEntry): {
   score: number;
@@ -297,22 +319,29 @@ function calculateDistanceScore(horse: HorseEntry): {
   let baseScore: number;
   let tier: string;
 
-  if (winRate >= 0.25) {
+  // v3.6: Enhanced tiers with penalty for proven poor distance record
+  if (winRate >= 0.3) {
     baseScore = 6;
     tier = 'distance specialist';
-  } else if (winRate >= 0.15) {
+  } else if (winRate >= 0.2) {
     baseScore = 4;
-    tier = 'good at distance';
+    tier = 'proven at distance';
   } else if (winRate >= 0.1) {
     baseScore = 2;
-    tier = 'moderate at distance';
+    tier = 'adequate at distance';
+  } else if (starts >= 5) {
+    // v3.6 NEW: Penalty for horses with extensive experience but poor results at distance
+    baseScore = -2;
+    tier = 'questionable at distance (penalty)';
   } else {
+    // Insufficient sample size to penalize
     baseScore = 0;
-    tier = 'weak at distance';
+    tier = 'weak at distance (small sample)';
   }
 
-  const adjustedScore = applySmallSampleAdjustment(baseScore, starts);
-  const sampleNote = starts < MIN_STARTS_FULL_CREDIT ? ' (small sample)' : '';
+  // Only apply small sample adjustment for positive scores
+  const adjustedScore = baseScore > 0 ? applySmallSampleAdjustment(baseScore, starts) : baseScore;
+  const sampleNote = starts < MIN_STARTS_FULL_CREDIT && baseScore >= 0 ? ' (small sample)' : '';
 
   return {
     score: adjustedScore,
