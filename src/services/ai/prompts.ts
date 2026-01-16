@@ -378,9 +378,11 @@ export function extractMentionedHorses(
   for (const pattern of positivePatterns) {
     let match;
     while ((match = pattern.exec(text)) !== null) {
-      const num = parseInt(match[1], 10);
-      if (horseMap.has(num)) {
-        positive.add(num);
+      if (match[1]) {
+        const num = parseInt(match[1], 10);
+        if (horseMap.has(num)) {
+          positive.add(num);
+        }
       }
     }
   }
@@ -388,9 +390,11 @@ export function extractMentionedHorses(
   for (const pattern of negativePatterns) {
     let match;
     while ((match = pattern.exec(text)) !== null) {
-      const num = parseInt(match[1], 10);
-      if (horseMap.has(num)) {
-        negative.add(num);
+      if (match[1]) {
+        const num = parseInt(match[1], 10);
+        if (horseMap.has(num)) {
+          negative.add(num);
+        }
       }
     }
   }
@@ -426,7 +430,8 @@ export function extractMentionedHorses(
  */
 export function extractConfidence(text: string): number {
   const lowPatterns = /\b(?:low confidence|uncertain|unclear|difficult to assess|not confident)\b/i;
-  const highPatterns = /\b(?:high confidence|confident|strong conviction|clear advantage|standout)\b/i;
+  const highPatterns =
+    /\b(?:high confidence|confident|strong conviction|clear advantage|standout)\b/i;
 
   if (highPatterns.test(text)) return 80;
   if (lowPatterns.test(text)) return 40;

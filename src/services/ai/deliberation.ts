@@ -14,8 +14,8 @@ import type {
   DeliberationOutput,
   HorseRanking,
   BettingSuggestion,
-  BOT_INFO,
 } from './types';
+import { BOT_INFO } from './types';
 import { callGeminiWithRetry, isGeminiError } from './gemini';
 import {
   BOT_PROMPTS,
@@ -64,7 +64,7 @@ async function executeBotAnalysis(
   horseMap: Map<number, string>
 ): Promise<BotAnalysis> {
   const startTime = Date.now();
-  const botInfo = (await import('./types')).BOT_INFO[botId];
+  const botInfo = BOT_INFO[botId];
 
   try {
     const response = await callGeminiWithRetry({
@@ -131,7 +131,7 @@ function parseNarratorResponse(
 
   // Extract narrative
   const narrativeMatch = text.match(/<narrative>([\s\S]*?)<\/narrative>/i);
-  if (narrativeMatch) {
+  if (narrativeMatch && narrativeMatch[1]) {
     narrative = narrativeMatch[1].trim();
   } else {
     // Fallback: use first few paragraphs
@@ -141,11 +141,11 @@ function parseNarratorResponse(
 
   // Extract rankings
   const rankingsMatch = text.match(/<rankings>([\s\S]*?)<\/rankings>/i);
-  if (rankingsMatch) {
+  if (rankingsMatch && rankingsMatch[1]) {
     try {
       // Find JSON array in the rankings section
       const jsonMatch = rankingsMatch[1].match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
+      if (jsonMatch && jsonMatch[0]) {
         rankings = JSON.parse(jsonMatch[0]);
       }
     } catch {
@@ -158,7 +158,7 @@ function parseNarratorResponse(
 
   // Extract insights
   const insightsMatch = text.match(/<insights>([\s\S]*?)<\/insights>/i);
-  if (insightsMatch) {
+  if (insightsMatch && insightsMatch[1]) {
     insights = insightsMatch[1]
       .split(/[-•*]\s+/)
       .map((s) => s.trim())
@@ -167,7 +167,7 @@ function parseNarratorResponse(
 
   // Extract betting suggestions
   const bettingMatch = text.match(/<betting>([\s\S]*?)<\/betting>/i);
-  if (bettingMatch) {
+  if (bettingMatch && bettingMatch[1]) {
     bettingSuggestions = parseBettingSuggestions(bettingMatch[1], horses);
   }
 
@@ -194,12 +194,11 @@ function createFallbackRankings(horses: DeliberationInput['horses']): HorseRanki
 /**
  * Determine value rating based on horse data
  */
-function determineValueRating(
-  horse: DeliberationInput['horses'][0]
-): HorseRanking['valueRating'] {
+function determineValueRating(horse: DeliberationInput['horses'][0]): HorseRanking['valueRating'] {
   // Parse morning line to decimal
   const mlParts = horse.morningLineOdds.split('-').map(Number);
-  const mlDecimal = mlParts.length === 2 ? mlParts[0] / mlParts[1] : 5;
+  const mlDecimal =
+    mlParts.length === 2 && mlParts[1] !== 0 ? (mlParts[0] ?? 5) / (mlParts[1] ?? 1) : 5;
 
   // Higher tier + higher odds = more value potential
   if (horse.tier <= 2 && mlDecimal >= 4) return 'strong-value';
@@ -233,7 +232,7 @@ function parseBettingSuggestions(
   }
 
   // Look for exacta mentions
-  const exactaMatch = text.match(/exacta[:\s]+#?(\d+)\s*[-\/over]*\s*#?(\d+)/gi);
+  const exactaMatch = text.match(/exacta[:\s]+#?(\d+)\s*[-/over]*\s*#?(\d+)/gi);
   if (exactaMatch) {
     const nums = exactaMatch[0].match(/\d+/g)?.map(Number) || [];
     if (nums.length >= 2 && nums.every((n) => horseMap.has(n))) {
@@ -247,7 +246,7 @@ function parseBettingSuggestions(
   }
 
   // Look for trifecta mentions
-  const trifectaMatch = text.match(/trifecta[:\s]+#?(\d+)[\s,\-\/]+#?(\d+)[\s,\-\/]+#?(\d+)/gi);
+  const trifectaMatch = text.match(/trifecta[:\s]+#?(\d+)[\s,\-/]+#?(\d+)[\s,\-/]+#?(\d+)/gi);
   if (trifectaMatch) {
     const nums = trifectaMatch[0].match(/\d+/g)?.map(Number) || [];
     if (nums.length >= 3 && nums.every((n) => horseMap.has(n))) {
@@ -310,7 +309,12 @@ export async function runDeliberation(input: DeliberationInput): Promise<Deliber
   // =========================================================================
   // PHASE 1: Run bots 1-4 in parallel
   // =========================================================================
-  const phase1Bots: BotId[] = ['pattern-scanner', 'longshot-hunter', 'favorite-killer', 'trip-analyst'];
+  const phase1Bots: BotId[] = [
+    'pattern-scanner',
+    'longshot-hunter',
+    'favorite-killer',
+    'trip-analyst',
+  ];
 
   const phase1Results = await Promise.all(
     phase1Bots.map((botId) =>
@@ -445,10 +449,7 @@ export async function runDeliberation(input: DeliberationInput): Promise<Deliber
 /**
  * Run a single bot for testing/debugging
  */
-export async function runSingleBot(
-  botId: BotId,
-  input: DeliberationInput
-): Promise<BotAnalysis> {
+export async function runSingleBot(botId: BotId, input: DeliberationInput): Promise<BotAnalysis> {
   const horseMap = new Map<number, string>(input.horses.map((h) => [h.programNumber, h.name]));
   const content = generateAnalysisBotContent(input);
 

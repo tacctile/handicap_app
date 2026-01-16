@@ -130,10 +130,7 @@ class GeminiAIService implements IAIProvider {
     this.config = { ...defaultAIConfig, ...config, provider: 'gemini' };
   }
 
-  private async callGeminiInternal(
-    systemPrompt: string,
-    userContent: string
-  ): Promise<AIResponse> {
+  private async callGeminiInternal(systemPrompt: string, userContent: string): Promise<AIResponse> {
     // Import dynamically to avoid circular dependencies
     const { callGemini, GEMINI_MODEL } = await import('./gemini');
     const startTime = Date.now();
@@ -210,7 +207,11 @@ Provide a helpful, accurate answer.`;
       // Check synchronously by looking for the API key or being in browser
       if (typeof window !== 'undefined') return true;
       if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) return true;
-      if (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) return true;
+      // Server-side check
+      if (typeof globalThis !== 'undefined' && 'process' in globalThis) {
+        const nodeProcess = globalThis.process as { env?: Record<string, string | undefined> };
+        if (nodeProcess.env?.GEMINI_API_KEY) return true;
+      }
       return false;
     } catch {
       return false;

@@ -39,9 +39,13 @@ export function getGeminiApiKey(): string | null {
     return import.meta.env.VITE_GEMINI_API_KEY;
   }
 
-  // Server-side (Node.js / Vercel)
-  if (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) {
-    return process.env.GEMINI_API_KEY;
+  // Server-side (Node.js / Vercel) - check is done at runtime
+
+  if (typeof globalThis !== 'undefined' && 'process' in globalThis) {
+    const nodeProcess = globalThis.process as { env?: Record<string, string | undefined> };
+    if (nodeProcess.env?.GEMINI_API_KEY) {
+      return nodeProcess.env.GEMINI_API_KEY;
+    }
   }
 
   return null;
@@ -109,7 +113,12 @@ function parseApiError(statusCode: number, responseText: string): GeminiError {
 
     return createGeminiError('API_ERROR', message, statusCode >= 500, statusCode);
   } catch {
-    return createGeminiError('API_ERROR', responseText || 'Unknown API error', statusCode >= 500, statusCode);
+    return createGeminiError(
+      'API_ERROR',
+      responseText || 'Unknown API error',
+      statusCode >= 500,
+      statusCode
+    );
   }
 }
 
@@ -183,7 +192,7 @@ async function callGeminiViaProxy(request: GeminiRequest): Promise<GeminiRespons
       completionTokens: data.completionTokens || 0,
       totalTokens: data.totalTokens || 0,
       model: data.model || GEMINI_MODEL,
-      processingTimeMs: data.processingTimeMs || (Date.now() - startTime),
+      processingTimeMs: data.processingTimeMs || Date.now() - startTime,
     };
   } catch (error) {
     // Re-throw if it's already a GeminiError
@@ -268,11 +277,7 @@ async function callGeminiDirect(request: GeminiRequest): Promise<GeminiResponse>
     // Extract text from response
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) {
-      throw createGeminiError(
-        'PARSE_ERROR',
-        'No text content in Gemini response',
-        false
-      );
+      throw createGeminiError('PARSE_ERROR', 'No text content in Gemini response', false);
     }
 
     // Extract token usage
