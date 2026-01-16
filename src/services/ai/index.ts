@@ -2,8 +2,7 @@
  * AI Service Implementation
  *
  * Provides AI services with support for multiple providers.
- * Currently implements a mock provider for development/testing.
- * Ready for Gemini, Claude, and OpenAI integration.
+ * Includes Gemini 2.0 Flash-Lite integration for the 6-bot deliberation system.
  */
 
 import type {
@@ -20,6 +19,15 @@ import { defaultAIConfig, createAIError } from './types';
 
 // Re-export types for convenience
 export * from './types';
+
+// Re-export Gemini service
+export * from './gemini';
+
+// Re-export prompts
+export * from './prompts';
+
+// Re-export deliberation orchestrator
+export * from './deliberation';
 
 // ============================================================================
 // MOCK AI SERVICE
@@ -112,24 +120,81 @@ class MockAIService implements IAIProvider {
 // ============================================================================
 
 /**
- * Gemini AI service stub
- * Throws "not implemented" error until actual integration is added
+ * Gemini AI service implementation using Gemini 2.0 Flash-Lite
+ * Provides the IAIProvider interface backed by the Gemini API
  */
 class GeminiAIService implements IAIProvider {
-  constructor(_config: Partial<AIConfig> = {}) {
-    // Config would be used when implementing actual Gemini integration
+  private config: AIConfig;
+
+  constructor(config: Partial<AIConfig> = {}) {
+    this.config = { ...defaultAIConfig, ...config, provider: 'gemini' };
   }
 
-  async generateNarrative(_context: NarrativeContext): Promise<AIResponse> {
-    throw createAIError('NOT_IMPLEMENTED', 'Gemini AI provider is not yet implemented', false);
+  private async callGeminiInternal(systemPrompt: string, userContent: string): Promise<AIResponse> {
+    // Import dynamically to avoid circular dependencies
+    const { callGemini, GEMINI_MODEL } = await import('./gemini');
+    const startTime = Date.now();
+
+    const response = await callGemini({
+      systemPrompt,
+      userContent,
+      temperature: 0.7,
+      maxOutputTokens: this.config.defaultMaxTokens,
+    });
+
+    return {
+      content: response.text,
+      tokensUsed: response.totalTokens,
+      provider: 'gemini',
+      model: GEMINI_MODEL,
+      durationMs: Date.now() - startTime,
+    };
   }
 
-  async interpretTripNotes(_context: TripNoteContext): Promise<AIResponse> {
-    throw createAIError('NOT_IMPLEMENTED', 'Gemini AI provider is not yet implemented', false);
+  async generateNarrative(context: NarrativeContext): Promise<AIResponse> {
+    const systemPrompt = `You are an expert horse racing analyst. Generate a concise, insightful narrative summary for the race.`;
+
+    const userContent = `Race ${context.raceNumber} at ${context.trackName}
+Distance: ${context.distance} | Surface: ${context.surface} | Class: ${context.raceClass}
+
+Horses:
+${context.horses
+  .map(
+    (h) =>
+      `- ${h.name}: Score ${h.score}, Tier ${h.tier}, Jockey: ${h.jockey}, Trainer: ${h.trainer}
+   Key Factors: ${h.keyFactors.join(', ') || 'None'}`
+  )
+  .join('\n')}
+
+Generate a 2-3 paragraph narrative covering the top contenders, pace scenario, and key angles.`;
+
+    return this.callGeminiInternal(systemPrompt, userContent);
   }
 
-  async answerQuery(_context: QueryContext): Promise<AIResponse> {
-    throw createAIError('NOT_IMPLEMENTED', 'Gemini AI provider is not yet implemented', false);
+  async interpretTripNotes(context: TripNoteContext): Promise<AIResponse> {
+    const systemPrompt = `You are an expert at interpreting horse racing trip notes. Explain what the trip note means in plain language and assess its impact on the horse's chances.`;
+
+    const userContent = `Horse: ${context.horseName}
+${context.trackName ? `Track: ${context.trackName}` : ''}
+${context.raceDate ? `Date: ${context.raceDate}` : ''}
+
+Trip Note: "${context.tripNote}"
+
+Explain what this trip note means and whether it suggests the horse had trouble or ran a clean race.`;
+
+    return this.callGeminiInternal(systemPrompt, userContent);
+  }
+
+  async answerQuery(context: QueryContext): Promise<AIResponse> {
+    const systemPrompt = `You are an expert horse racing analyst assistant. Answer questions about race data clearly and concisely.`;
+
+    const userContent = `Question: ${context.query}
+${context.viewContext ? `\nContext: ${context.viewContext}` : ''}
+${context.raceData ? `\nRace Data: ${JSON.stringify(context.raceData, null, 2)}` : ''}
+
+Provide a helpful, accurate answer.`;
+
+    return this.callGeminiInternal(systemPrompt, userContent);
   }
 
   getProviderType(): AIProviderType {
@@ -137,7 +202,19 @@ class GeminiAIService implements IAIProvider {
   }
 
   isAvailable(): boolean {
-    return false;
+    // Import check function dynamically
+    try {
+      // Check synchronously by looking for the API key or being in browser
+      if (typeof window !== 'undefined') return true;
+      if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) return true;
+      // Server-side check
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const nodeProcess = (globalThis as any).process;
+      if (nodeProcess?.env?.GEMINI_API_KEY) return true;
+      return false;
+    } catch {
+      return false;
+    }
   }
 }
 
@@ -219,7 +296,6 @@ export function getAIProvider(
 
   switch (type) {
     case 'gemini':
-      console.warn('[AI] Gemini provider not yet implemented, returning stub');
       return new GeminiAIService(finalConfig);
 
     case 'claude':
