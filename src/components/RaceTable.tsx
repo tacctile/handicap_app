@@ -186,11 +186,13 @@ const RankBadge = memo(function RankBadge({ rank }: RankBadgeProps) {
 })
 
 // Overlay badge component for displaying value
+// PRESERVED FOR EXPANDED ROW INTEGRATION - intentionally unused in main table
 interface OverlayBadgeProps {
   overlay: OverlayAnalysis
   compact?: boolean
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const OverlayBadge = memo(function OverlayBadge({ overlay, compact = false }: OverlayBadgeProps) {
   const color = getOverlayColor(overlay.overlayPercent)
   const bgColor = getOverlayBgColor(overlay.overlayPercent)
@@ -244,10 +246,12 @@ const FairOddsDisplay = memo(function FairOddsDisplay({ overlay }: FairOddsDispl
 })
 
 // EV display component
+// PRESERVED FOR EXPANDED ROW INTEGRATION - intentionally unused in main table
 interface EVDisplayProps {
   overlay: OverlayAnalysis
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const EVDisplay = memo(function EVDisplay({ overlay }: EVDisplayProps) {
   const isPositive = overlay.evPerDollar > 0
   const color = isPositive ? '#22c55e' : overlay.evPerDollar < -0.05 ? '#ef4444' : '#9ca3af'
@@ -264,10 +268,12 @@ const EVDisplay = memo(function EVDisplay({ overlay }: EVDisplayProps) {
 })
 
 // Equipment badge component for displaying equipment changes
+// PRESERVED FOR EXPANDED ROW INTEGRATION - intentionally unused in main table
 interface EquipmentBadgeProps {
   horse: HorseEntry
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const EquipmentBadge = memo(function EquipmentBadge({ horse }: EquipmentBadgeProps) {
   const equipmentInfo = getEquipmentImpactSummary(horse)
 
@@ -301,10 +307,12 @@ const EquipmentBadge = memo(function EquipmentBadge({ horse }: EquipmentBadgePro
 })
 
 // Class movement badge component for displaying class changes
+// PRESERVED FOR EXPANDED ROW INTEGRATION - intentionally unused in main table
 interface ClassBadgeProps {
   score: HorseScore
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ClassBadge = memo(function ClassBadge({ score }: ClassBadgeProps) {
   if (!score.classScore) {
     return <span className="text-white/30">—</span>
@@ -763,12 +771,14 @@ const NuclearLongshotsDetector = memo(function NuclearLongshotsDetector({
 })
 
 // Score badge component with pulse animation and tier coloring
+// PRESERVED FOR EXPANDED ROW INTEGRATION - intentionally unused in main table
 interface ScoreBadgeProps {
   score: HorseScore
   rank: number
   hasChanged?: boolean
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ScoreBadge = memo(function ScoreBadge({ score, rank, hasChanged = false }: ScoreBadgeProps) {
   const color = getScoreColor(score.total, score.isScratched)
   const tier = getScoreTier(score.total)
@@ -1179,8 +1189,8 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
         case 'fair':
           const aOverlay = overlaysByIndex.get(a.index)
           const bOverlay = overlaysByIndex.get(b.index)
-          aVal = aOverlay?.fairOdds ?? 999
-          bVal = bOverlay?.fairOdds ?? 999
+          aVal = aOverlay?.fairOddsDecimal ?? 999
+          bVal = bOverlay?.fairOddsDecimal ?? 999
           break
         case 'edge':
           const aEdge = overlaysByIndex.get(a.index)
