@@ -1,0 +1,210 @@
+/* ============================================
+   DESIGN TOKENS - Furlong Pro Handicapping
+   Single source of truth for all design variables
+
+   Aesthetic: Supabase (60%) + Linear (40%)
+   Preserves existing teal brand accent
+   ============================================ */
+
+:root {
+  /* ============================================
+     PART 1: COLOR TOKENS (Supabase-inspired warmth)
+     ============================================ */
+
+  /* Background scale (warmer than current, not pure black) */
+  --color-bg-base: #111113;
+  --color-bg-surface: #18181b;
+  --color-bg-elevated: #1f1f23;
+  --color-bg-hover: #27272b;
+  --color-bg-active: #2f2f35;
+
+  /* Border scale */
+  --color-border-subtle: #27272b;
+  --color-border-default: #3f3f46;
+  --color-border-strong: #52525b;
+
+  /* Text scale */
+  --color-text-primary: #fafafa;
+  --color-text-secondary: #a1a1aa;
+  --color-text-tertiary: #71717a;
+  --color-text-muted: #52525b;
+
+  /* Brand accent (preserve existing teal identity) */
+  --color-accent: #19abb5;
+  --color-accent-hover: #1fc3cf;
+  --color-accent-subtle: rgba(25, 171, 181, 0.15);
+  --color-accent-border: rgba(25, 171, 181, 0.4);
+
+  /* Semantic colors */
+  --color-success: #10b981;
+  --color-success-subtle: rgba(16, 185, 129, 0.15);
+  --color-warning: #f59e0b;
+  --color-warning-subtle: rgba(245, 158, 11, 0.15);
+  --color-danger: #ef4444;
+  --color-danger-subtle: rgba(239, 68, 68, 0.15);
+
+  /* Score tier colors (preserve existing logic) */
+  --color-tier-elite: #36d1da;
+  --color-tier-strong: #19abb5;
+  --color-tier-competitive: #1b7583;
+  --color-tier-marginal: #71717a;
+  --color-tier-pass: #52525b;
+
+  /* ============================================
+     PART 2: TYPOGRAPHY TOKENS
+     ============================================ */
+
+  /* Font family */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Font sizes (strict 5-size scale) */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.5rem;
+  --text-xl: 2rem;
+
+  /* Font weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Line heights */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* ============================================
+     PART 3: SPACING TOKENS (8px grid)
+     ============================================ */
+
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2rem;
+  --space-6: 3rem;
+
+  /* ============================================
+     PART 4: COMPONENT TOKENS
+     ============================================ */
+
+  /* Border radius */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Shadows (subtle, Supabase-style) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --shadow-glow-accent: 0 0 20px rgba(25, 171, 181, 0.3);
+
+  /* Transitions */
+  --transition-fast: 100ms ease;
+  --transition-normal: 150ms ease;
+  --transition-slow: 300ms ease;
+
+  /* Z-index scale */
+  --z-dropdown: 100;
+  --z-modal: 200;
+  --z-toast: 300;
+  --z-tooltip: 400;
+
+  /* ============================================
+     PART 5: TABLE-SPECIFIC TOKENS (Linear-inspired)
+     ============================================ */
+
+  --table-row-height: 48px;
+  --table-row-height-compact: 40px;
+  --table-header-height: 40px;
+  --table-cell-padding-x: 16px;
+  --table-cell-padding-y: 12px;
+  --table-border-color: var(--color-border-subtle);
+  --table-header-bg: var(--color-bg-surface);
+  --table-row-bg: transparent;
+  --table-row-hover: var(--color-bg-hover);
+  --table-row-selected: var(--color-accent-subtle);
+
+  /* ============================================
+     LEGACY MAPPING (for migration reference)
+
+     Old Variable → New Variable
+     ----------------------------------------
+     --bg-base → --color-bg-base
+     --bg-card → --color-bg-surface
+     --bg-cards → --color-bg-surface
+     --bg-elevated → --color-bg-elevated
+     --bg-hover → --color-bg-hover
+     --text-primary → --color-text-primary
+     --text-secondary → --color-text-secondary
+     --text-tertiary → --color-text-tertiary
+     --text-disabled → --color-text-muted
+     --border-subtle → --color-border-subtle
+     --border-prominent → --color-border-default
+     --primary → --color-accent
+     --color-primary → --color-accent
+     --color-primary-hover → --color-accent-hover
+     --accent-primary → --color-accent
+     --accent-hover → --color-accent-hover
+     --accent-glow → --shadow-glow-accent
+     --color-base → --color-bg-base
+     --color-card → --color-bg-surface
+     --color-elevated → --color-bg-elevated
+     --color-border → --color-border-subtle
+     --color-border-prominent → --color-border-default
+     --color-primary-muted → --color-accent-subtle
+     --color-error → --color-danger
+     ============================================ */
+
+  /* ============================================
+     TEMPORARY ALIASES - Remove after full migration
+     These allow existing CSS to continue working
+     ============================================ */
+
+  /* Background aliases */
+  --bg-base: var(--color-bg-base);
+  --bg-card: var(--color-bg-surface);
+  --bg-cards: var(--color-bg-surface);
+  --bg-elevated: var(--color-bg-elevated);
+  --bg-hover: var(--color-bg-hover);
+
+  /* Text aliases */
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --text-tertiary: var(--color-text-tertiary);
+  --text-disabled: var(--color-text-muted);
+
+  /* Border aliases */
+  --border-subtle: var(--color-border-subtle);
+  --border-prominent: var(--color-border-default);
+
+  /* Accent aliases */
+  --primary: var(--color-accent);
+  --primary-hover: var(--color-accent-hover);
+  --accent-primary: var(--color-accent);
+  --accent-hover: var(--color-accent-hover);
+  --accent-pressed: var(--color-tier-competitive);
+  --accent-glow: rgba(25, 171, 181, 0.3);
+
+  /* Legacy color aliases from tokens.css */
+  --color-base: var(--color-bg-base);
+  --color-card: var(--color-bg-surface);
+  --color-elevated: var(--color-bg-elevated);
+  --color-border: var(--color-border-subtle);
+  --color-border-prominent: var(--color-border-default);
+  --color-primary: var(--color-accent);
+  --color-primary-hover: var(--color-accent-hover);
+  --color-primary-muted: var(--color-accent-subtle);
+  --color-error: var(--color-danger);
+
+  /* Legacy text aliases from tokens.css */
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-tertiary: var(--color-text-tertiary);
+}
