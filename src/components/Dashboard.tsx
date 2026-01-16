@@ -559,6 +559,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // Calculate edge gradient colors for the current field
   // These colors are used for the left border accent on each horse row
   // Recalculates when: odds change, horse scratched, race changes, or reactivityVersion changes
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const edgeGradientMap = useMemo(() => {
     if (!valueAnalysis || !currentRaceScoredHorses?.length) return new Map();
 
@@ -574,7 +575,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     });
 
     return calculateFieldEdgeGradients(horseEdgeData);
-  }, [currentRaceScoredHorses, valueAnalysis, raceState.isScratched, reactivityVersion]);
+  }, [currentRaceScoredHorses, valueAnalysis, raceState.isScratched, raceState.reactivityVersion]);
 
   // Sort horses based on current sort column and direction
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
@@ -1411,7 +1412,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             isFavorite={horseIndex === favoriteIndex}
                             // Edge gradient accent colors (left border based on field edge distribution)
                             edgeGradientBorderColor={edgeGradientMap.get(horseIndex)?.borderColor}
-                            edgeGradientBackgroundColor={edgeGradientMap.get(horseIndex)?.backgroundColor}
+                            edgeGradientBackgroundColor={
+                              edgeGradientMap.get(horseIndex)?.backgroundColor
+                            }
                           />
                           <HorseExpandedView
                             horse={horse}
