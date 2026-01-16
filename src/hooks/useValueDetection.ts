@@ -597,6 +597,7 @@ export function useValueDetection(
   isScratched: (index: number) => boolean
 ): RaceValueAnalysis {
   return useMemo(() => {
+    console.log('[ODDS-DEBUG] RECALC: valueAnalysis', { scoredHorsesCount: scoredHorses.length });
     return analyzeRaceValue(scoredHorses, getOdds, isScratched);
   }, [scoredHorses, getOdds, isScratched]);
 }

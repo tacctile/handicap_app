@@ -260,10 +260,15 @@ export function useRaceState(): UseRaceStateReturn {
   // Update odds for a horse
   const updateOdds = useCallback(
     (horseIndex: number, newOdds: string) => {
-      setUpdatedOdds((prev) => ({
-        ...prev,
-        [horseIndex]: newOdds,
-      }));
+      console.log('[ODDS-DEBUG] updateOdds called:', { horseIndex, newOdds });
+      setUpdatedOdds((prev) => {
+        const next = {
+          ...prev,
+          [horseIndex]: newOdds,
+        };
+        console.log('[ODDS-DEBUG] updateOdds state after update:', { prev, next });
+        return next;
+      });
       // Mark this horse as having odds change for highlight
       setCalculationState((prev) => ({
         ...prev,
@@ -339,7 +344,9 @@ export function useRaceState(): UseRaceStateReturn {
   // Get current odds for a horse (updated or original)
   const getOdds = useCallback(
     (horseIndex: number, originalOdds: string): string => {
-      return updatedOdds[horseIndex] ?? originalOdds;
+      const result = updatedOdds[horseIndex] ?? originalOdds;
+      console.log('[ODDS-DEBUG] getOdds called:', { horseIndex, originalOdds, hasOverride: horseIndex in updatedOdds, result });
+      return result;
     },
     [updatedOdds]
   );
