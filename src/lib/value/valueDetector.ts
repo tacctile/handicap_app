@@ -12,6 +12,20 @@
  * - EV = (Our prob × Payout) - (Loss prob × Bet amount)
  * - EV% = EV / Bet amount × 100
  *
+ * ============================================================================
+ * PRESERVATION NOTICE - UI PHASE 1
+ * ============================================================================
+ * This module is PRESERVED for expanded row integration.
+ * Value tag display removed from main table but ALL logic intact.
+ *
+ * Key exports for expanded row:
+ * - ValueClassification type
+ * - VALUE_CLASSIFICATION_META (colors, icons, actions)
+ * - analyzeValue() function
+ * - classifyValue() function
+ * - getValueSummary() function
+ * ============================================================================
+ *
  * @module value/valueDetector
  */
 

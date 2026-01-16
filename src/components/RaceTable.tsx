@@ -24,7 +24,7 @@ import {
   getEquipmentImpactSummary,
   getImpactColor,
   getImpactIcon,
-  // Class analysis imports
+  // Class analysis imports - PRESERVED FOR EXPANDED ROW INTEGRATION
   getClassMovementColor,
   getClassMovementIcon,
   getClassLevelAbbrev,
@@ -33,6 +33,7 @@ import {
   type OverlayAnalysis,
   type ValuePlay,
 } from '../lib/scoring'
+import { calculateEdgeColor, formatEdgePercent } from '../lib/edgeGradient'
 import { getTrackBiasSummary } from '../lib/trackIntelligence'
 import {
   analyzeRaceLongshots,
@@ -996,6 +997,16 @@ interface SelectedHorseData {
   predictedPosition: number
 }
 
+// Sort column type for table sorting
+// Default is POST position ascending when race loads
+type SortColumn = 'post' | 'horse' | 'odds' | 'finish' | 'fair' | 'edge'
+type SortDirection = 'asc' | 'desc'
+
+interface SortState {
+  column: SortColumn
+  direction: SortDirection
+}
+
 // Main RaceTable component
 export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }: RaceTableProps) {
   const { horses, header } = race
@@ -1024,6 +1035,9 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
 
   // Highlighted horse index (from value plays click)
   const [highlightedHorseIndex, setHighlightedHorseIndex] = useState<number | null>(null)
+
+  // Sort state - default to POST position ascending when race loads
+  const [sortState, setSortState] = useState<SortState>({ column: 'post', direction: 'asc' })
 
   // Track previous scores for change detection
   const prevScoresRef = useRef<Map<number, number>>(new Map())
@@ -1100,6 +1114,109 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
     }
     return map
   }, [longshotSummary])
+
+  // Calculate all edges in the race for gradient coloring
+  // This recalculates when scratches change (field composition affects min/max)
+  const allEdgesInRace = useMemo(() => {
+    const edges: number[] = []
+    for (const { index, score } of scoredHorses) {
+      if (!score.isScratched) {
+        const overlay = overlaysByIndex.get(index)
+        if (overlay) {
+          edges.push(overlay.overlayPercent)
+        }
+      }
+    }
+    return edges
+  }, [scoredHorses, overlaysByIndex])
+
+  // Parse odds string to numeric value for sorting
+  const parseOddsForSort = useCallback((oddsStr: string): number => {
+    // Parse odds like "5-1", "3/2", "EVEN" to a numeric value
+    if (!oddsStr || oddsStr === 'EVEN') return 1
+    const parts = oddsStr.split(/[-/]/)
+    if (parts.length === 2) {
+      const numerator = parseFloat(parts[0])
+      const denominator = parseFloat(parts[1])
+      if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+        return numerator / denominator
+      }
+    }
+    return parseFloat(oddsStr) || 999
+  }, [])
+
+  // Sort horses based on current sort state
+  const sortedHorses = useMemo(() => {
+    const sorted = [...scoredHorses]
+
+    sorted.sort((a, b) => {
+      // Scratched horses always go to the bottom
+      if (a.score.isScratched && !b.score.isScratched) return 1
+      if (!a.score.isScratched && b.score.isScratched) return -1
+      if (a.score.isScratched && b.score.isScratched) return 0
+
+      let aVal: number | string
+      let bVal: number | string
+
+      switch (sortState.column) {
+        case 'post':
+          aVal = a.horse.postPosition
+          bVal = b.horse.postPosition
+          break
+        case 'horse':
+          aVal = a.horse.horseName.toLowerCase()
+          bVal = b.horse.horseName.toLowerCase()
+          break
+        case 'odds':
+          aVal = parseOddsForSort(getOdds(a.index, a.horse.morningLineOdds))
+          bVal = parseOddsForSort(getOdds(b.index, b.horse.morningLineOdds))
+          break
+        case 'finish':
+          // Lower rank = better finish position
+          aVal = a.rank
+          bVal = b.rank
+          break
+        case 'fair':
+          const aOverlay = overlaysByIndex.get(a.index)
+          const bOverlay = overlaysByIndex.get(b.index)
+          aVal = aOverlay?.fairOdds ?? 999
+          bVal = bOverlay?.fairOdds ?? 999
+          break
+        case 'edge':
+          const aEdge = overlaysByIndex.get(a.index)
+          const bEdge = overlaysByIndex.get(b.index)
+          aVal = aEdge?.overlayPercent ?? -999
+          bVal = bEdge?.overlayPercent ?? -999
+          break
+        default:
+          aVal = a.horse.postPosition
+          bVal = b.horse.postPosition
+      }
+
+      // Compare
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        const comparison = aVal.localeCompare(bVal)
+        return sortState.direction === 'asc' ? comparison : -comparison
+      }
+
+      const numComparison = (aVal as number) - (bVal as number)
+      return sortState.direction === 'asc' ? numComparison : -numComparison
+    })
+
+    return sorted
+  }, [scoredHorses, sortState, getOdds, overlaysByIndex, parseOddsForSort])
+
+  // Handle sort column click
+  const handleSortClick = useCallback((column: SortColumn) => {
+    setSortState(prev => {
+      if (prev.column === column) {
+        // Toggle direction
+        return { column, direction: prev.direction === 'asc' ? 'desc' : 'asc' }
+      }
+      // New column - default to ascending (except edge which defaults descending)
+      return { column, direction: column === 'edge' ? 'desc' : 'asc' }
+    })
+  }, [])
 
   // Handle highlight horse from value plays click
   const handleHighlightHorse = useCallback((index: number) => {
@@ -1201,33 +1318,103 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
       />
 
       {/* Desktop/Tablet Table View - visible at 768px+ */}
+      {/* Column order: SCR, POST, HORSE, ODDS, FINISH, FAIR, EDGE */}
+      {/* VALUE tag column removed from display - preserved for expanded row integration */}
       <div className="race-table-wrapper">
         <table className="race-table">
           <thead>
             <tr>
+              {/* SCR - Scratch toggle */}
               <th className="w-12 text-center">
                 <Icon name="cancel" className="text-base text-white/40" />
               </th>
-              <th className="w-20 text-center">Score</th>
-              <th className="w-16 text-center">PP</th>
-              <th className="text-left">Horse</th>
-              <th className="w-24 text-center hide-on-small" title="Class movement (↓drop ↑rise →lateral)">Class</th>
-              <th className="w-20 text-center hide-on-small" title="Equipment changes">Equip</th>
-              <th className="text-left hide-on-small">Trainer</th>
-              <th className="text-left hide-on-small">Jockey</th>
-              <th className="w-20 text-right">Odds</th>
-              <th className="w-16 text-center" title="Fair Odds based on score">Fair</th>
-              <th className="w-20 text-center" title="Overlay percentage (value)">Overlay</th>
-              <th className="w-16 text-center" title="Expected Value per $1">EV</th>
+              {/* POST - Post position, sortable */}
+              <th
+                className="w-16 text-center sortable-header"
+                onClick={() => handleSortClick('post')}
+                title="Sort by post position"
+              >
+                <span className="header-content">
+                  POST
+                  {sortState.column === 'post' && (
+                    <Icon name={sortState.direction === 'asc' ? 'arrow_upward' : 'arrow_downward'} className="sort-icon" />
+                  )}
+                </span>
+              </th>
+              {/* HORSE - Horse name, sortable */}
+              <th
+                className="text-left sortable-header"
+                onClick={() => handleSortClick('horse')}
+                title="Sort by horse name"
+              >
+                <span className="header-content">
+                  HORSE
+                  {sortState.column === 'horse' && (
+                    <Icon name={sortState.direction === 'asc' ? 'arrow_upward' : 'arrow_downward'} className="sort-icon" />
+                  )}
+                </span>
+              </th>
+              {/* ODDS - Current odds, sortable */}
+              <th
+                className="w-20 text-center sortable-header"
+                onClick={() => handleSortClick('odds')}
+                title="Sort by current odds"
+              >
+                <span className="header-content">
+                  ODDS
+                  {sortState.column === 'odds' && (
+                    <Icon name={sortState.direction === 'asc' ? 'arrow_upward' : 'arrow_downward'} className="sort-icon" />
+                  )}
+                </span>
+              </th>
+              {/* FINISH - Predicted finish position, sortable */}
+              <th
+                className="w-16 text-center sortable-header"
+                onClick={() => handleSortClick('finish')}
+                title="Sort by predicted finish position"
+              >
+                <span className="header-content">
+                  FINISH
+                  {sortState.column === 'finish' && (
+                    <Icon name={sortState.direction === 'asc' ? 'arrow_upward' : 'arrow_downward'} className="sort-icon" />
+                  )}
+                </span>
+              </th>
+              {/* FAIR - Fair odds based on score, sortable */}
+              <th
+                className="w-16 text-center sortable-header"
+                onClick={() => handleSortClick('fair')}
+                title="Sort by fair odds"
+              >
+                <span className="header-content">
+                  FAIR
+                  {sortState.column === 'fair' && (
+                    <Icon name={sortState.direction === 'asc' ? 'arrow_upward' : 'arrow_downward'} className="sort-icon" />
+                  )}
+                </span>
+              </th>
+              {/* EDGE - Edge percentage with gradient coloring, sortable */}
+              <th
+                className="w-20 text-center sortable-header"
+                onClick={() => handleSortClick('edge')}
+                title="Sort by edge percentage"
+              >
+                <span className="header-content">
+                  EDGE
+                  {sortState.column === 'edge' && (
+                    <Icon name={sortState.direction === 'asc' ? 'arrow_upward' : 'arrow_downward'} className="sort-icon" />
+                  )}
+                </span>
+              </th>
               <th className="w-10"></th>
             </tr>
           </thead>
           <tbody>
-            {scoredHorses.map(({ horse, index, score, rank }) => {
+            {/* Using sortedHorses with default POST ascending sort */}
+            {sortedHorses.map(({ horse, index, score, rank }) => {
               const scratched = score.isScratched
               const currentOdds = getOdds(index, horse.morningLineOdds)
               const oddsChanged = hasOddsChanged(index)
-              const scoreChanged = changedScoreIndices.has(index)
               const oddsHighlighted = calculationState.changedOddsIndices.has(index)
               const overlay = overlaysByIndex.get(index)
               const isHighlighted = highlightedHorseIndex === index
@@ -1237,16 +1424,16 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
               const diamondAnalysis = diamondsByProgram.get(horse.programNumber)
               const isDiamond = !!diamondAnalysis
               const diamondColor = getDiamondColor()
+              // Calculate edge color based on race field context
+              const edgeColor = overlay ? calculateEdgeColor(overlay.overlayPercent, allEdgesInRace) : '#6E6E70'
 
               return (
                 <tr
                   key={index}
                   data-horse-index={index}
-                  className={`race-row race-row-clickable ${scratched ? 'race-row-scratched' : ''} ${isHighlighted ? 'race-row-highlighted' : ''} ${isDiamond && !scratched ? 'race-row-diamond' : ''}`}
-                  style={isDiamond && !scratched ? {
-                    backgroundColor: getDiamondBgColor(0.08),
-                    borderLeft: `3px solid ${diamondColor}`,
-                  } : undefined}
+                  // Uniform neutral dark background - no conditional coloring based on value/edge
+                  // Preserves: hover state, expanded row styling, highlighted state
+                  className={`race-row race-row-clickable ${scratched ? 'race-row-scratched' : ''} ${isHighlighted ? 'race-row-highlighted' : ''}`}
                   onClick={() => handleRowClick(horse, score, index, rank)}
                   tabIndex={0}
                   onKeyDown={(e) => {
@@ -1258,6 +1445,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                   role="button"
                   aria-label={`View details for ${horse.horseName}`}
                 >
+                  {/* SCR - Scratch checkbox */}
                   <td className="text-center" onClick={(e) => e.stopPropagation()}>
                     <ScratchCheckbox
                       checked={scratched}
@@ -1265,12 +1453,11 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                       horseName={horse.horseName}
                     />
                   </td>
-                  <td className="text-center">
-                    <ScoreBadge score={score} rank={rank} hasChanged={scoreChanged} />
-                  </td>
+                  {/* POST - Post position */}
                   <td className="text-center tabular-nums font-medium">
                     {horse.postPosition}
                   </td>
+                  {/* HORSE - Horse name with indicator badges */}
                   <td className={`font-medium ${scratched ? 'horse-name-scratched' : 'text-foreground'}`}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       {horse.horseName}
@@ -1328,19 +1515,8 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                       )}
                     </div>
                   </td>
-                  <td className="text-center hide-on-small">
-                    {!scratched ? <ClassBadge score={score} /> : <span className="text-white/30">—</span>}
-                  </td>
-                  <td className="text-center hide-on-small">
-                    {!scratched ? <EquipmentBadge horse={horse} /> : <span className="text-white/30">—</span>}
-                  </td>
-                  <td className="text-white/70 hide-on-small">
-                    {horse.trainerName}
-                  </td>
-                  <td className="text-white/70 hide-on-small">
-                    {horse.jockeyName}
-                  </td>
-                  <td className="text-right" onClick={(e) => e.stopPropagation()}>
+                  {/* ODDS - Current odds (editable) */}
+                  <td className="text-center" onClick={(e) => e.stopPropagation()}>
                     <EditableOdds
                       value={currentOdds}
                       onChange={(newOdds) => updateOdds(index, newOdds)}
@@ -1349,6 +1525,31 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                       isHighlighted={oddsHighlighted}
                     />
                   </td>
+                  {/* FINISH - Predicted finish position (rank) */}
+                  <td className="text-center tabular-nums font-semibold">
+                    {!scratched ? (
+                      <span
+                        title={`Predicted to finish #${rank} based on score of ${score.total}`}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          minWidth: '28px',
+                          height: '28px',
+                          padding: '0 6px',
+                          borderRadius: '6px',
+                          backgroundColor: rank <= 3 ? 'rgba(25, 171, 181, 0.15)' : 'transparent',
+                          color: rank <= 3 ? '#19abb5' : 'rgba(238, 239, 241, 0.7)',
+                          fontWeight: rank <= 3 ? 700 : 500,
+                        }}
+                      >
+                        {rank}
+                      </span>
+                    ) : (
+                      <span className="text-white/30">—</span>
+                    )}
+                  </td>
+                  {/* FAIR - Fair odds */}
                   <td className="text-center">
                     {!scratched && overlay ? (
                       <FairOddsDisplay overlay={overlay} />
@@ -1356,16 +1557,17 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                       <span className="text-white/30">—</span>
                     )}
                   </td>
+                  {/* EDGE - Edge percentage with dynamic gradient color */}
+                  {/* VALUE tag display removed - logic preserved for expanded row integration */}
                   <td className="text-center">
                     {!scratched && overlay ? (
-                      <OverlayBadge overlay={overlay} compact />
-                    ) : (
-                      <span className="text-white/30">—</span>
-                    )}
-                  </td>
-                  <td className="text-center">
-                    {!scratched && overlay ? (
-                      <EVDisplay overlay={overlay} />
+                      <span
+                        className="tabular-nums font-semibold"
+                        style={{ color: edgeColor }}
+                        title={`Edge: ${formatEdgePercent(overlay.overlayPercent)}\nPositive = odds better than fair value\nColor intensity based on field range`}
+                      >
+                        {formatEdgePercent(overlay.overlayPercent)}
+                      </span>
                     ) : (
                       <span className="text-white/30">—</span>
                     )}
@@ -1381,12 +1583,13 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
       </div>
 
       {/* Mobile Card View - visible below 768px */}
+      {/* Column structure matches desktop: POST, HORSE, ODDS, FINISH, FAIR, EDGE */}
+      {/* VALUE tag display removed - preserved for expanded row integration */}
       <div className="mobile-cards-container">
-        {scoredHorses.map(({ horse, index, score, rank }) => {
+        {sortedHorses.map(({ horse, index, score, rank }) => {
           const scratched = score.isScratched
           const currentOdds = getOdds(index, horse.morningLineOdds)
           const oddsChanged = hasOddsChanged(index)
-          const scoreChanged = changedScoreIndices.has(index)
           const oddsHighlighted = calculationState.changedOddsIndices.has(index)
           const overlay = overlaysByIndex.get(index)
           const isHighlighted = highlightedHorseIndex === index
@@ -1396,16 +1599,16 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
           const diamondAnalysisMobile = diamondsByProgram.get(horse.programNumber)
           const isDiamondMobile = !!diamondAnalysisMobile
           const diamondColorMobile = getDiamondColor()
+          // Calculate edge color based on race field context
+          const edgeColorMobile = overlay ? calculateEdgeColor(overlay.overlayPercent, allEdgesInRace) : '#6E6E70'
 
           return (
             <div
               key={index}
               data-horse-index={index}
-              className={`mobile-horse-card mobile-card-clickable ${scratched ? 'mobile-card-scratched' : ''} ${isHighlighted ? 'mobile-card-highlighted' : ''} ${isDiamondMobile && !scratched ? 'mobile-card-diamond' : ''}`}
-              style={isDiamondMobile && !scratched ? {
-                backgroundColor: getDiamondBgColor(0.08),
-                borderLeft: `3px solid ${diamondColorMobile}`,
-              } : undefined}
+              // Uniform neutral dark background - no conditional coloring based on value/edge
+              // Preserves: hover state, highlighted state
+              className={`mobile-horse-card mobile-card-clickable ${scratched ? 'mobile-card-scratched' : ''} ${isHighlighted ? 'mobile-card-highlighted' : ''}`}
               onClick={() => handleRowClick(horse, score, index, rank)}
               role="button"
               tabIndex={0}
@@ -1417,13 +1620,20 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
               }}
               aria-label={`View details for ${horse.horseName}. Tap to expand for full details.`}
             >
-              {/* Rank indicator */}
-              <div className="mobile-card-rank">{rank || '—'}</div>
+              {/* FINISH - Predicted finish position (rank) */}
+              <div className="mobile-card-rank" style={{
+                backgroundColor: rank <= 3 && !scratched ? 'rgba(25, 171, 181, 0.15)' : 'transparent',
+                color: rank <= 3 && !scratched ? '#19abb5' : undefined,
+                fontWeight: rank <= 3 && !scratched ? 700 : undefined,
+              }}>
+                {!scratched ? rank : '—'}
+              </div>
 
               {/* Main card content */}
               <div className="mobile-card-main">
                 <div className="mobile-card-header">
                   <div className="mobile-card-left">
+                    {/* SCR - Scratch checkbox */}
                     <div className="mobile-scratch-area" onClick={(e) => e.stopPropagation()}>
                       <ScratchCheckbox
                         checked={scratched}
@@ -1431,11 +1641,12 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                         horseName={horse.horseName}
                       />
                     </div>
-                    <ScoreBadge score={score} rank={rank} hasChanged={scoreChanged} />
+                    {/* POST - Post position */}
                     <div className="pp-badge">
                       {horse.postPosition}
                     </div>
                   </div>
+                  {/* ODDS - Current odds (editable) */}
                   <div className="mobile-card-right" onClick={(e) => e.stopPropagation()}>
                     <EditableOdds
                       value={currentOdds}
@@ -1448,6 +1659,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                 </div>
 
                 <div className="mobile-card-body">
+                  {/* HORSE - Horse name with indicator badges */}
                   <div className={`mobile-horse-name ${scratched ? 'horse-name-scratched' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     {horse.horseName}
                     {isDiamondMobile && !scratched && (
@@ -1491,6 +1703,7 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                       </span>
                     )}
                   </div>
+                  {/* Jockey/Trainer info - kept for context */}
                   <div className="mobile-horse-details">
                     <span className="mobile-detail-item">
                       <span className="mobile-detail-label">J:</span> {horse.jockeyName}
@@ -1499,32 +1712,22 @@ export function RaceTable({ race, raceState, bankroll, onOpenBankrollSettings }:
                       <span className="mobile-detail-label">T:</span> {horse.trainerName}
                     </span>
                   </div>
-                  {/* Class info row for mobile */}
-                  {!scratched && (
-                    <div className="mobile-class-row" style={{
-                      marginTop: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}>
-                      <span style={{ color: '#888', fontSize: '0.75rem' }}>Class:</span>
-                      <ClassBadge score={score} />
-                    </div>
-                  )}
-                  {/* Overlay info row for mobile */}
+                  {/* FAIR and EDGE info row for mobile */}
+                  {/* VALUE tag display removed - preserved for expanded row integration */}
                   {!scratched && overlay && (
-                    <div className="mobile-overlay-row">
+                    <div className="mobile-overlay-row" style={{ marginTop: '8px' }}>
                       <div className="mobile-overlay-item">
                         <span className="mobile-overlay-label">Fair:</span>
                         <FairOddsDisplay overlay={overlay} />
                       </div>
                       <div className="mobile-overlay-item">
-                        <span className="mobile-overlay-label">Value:</span>
-                        <OverlayBadge overlay={overlay} compact />
-                      </div>
-                      <div className="mobile-overlay-item">
-                        <span className="mobile-overlay-label">EV:</span>
-                        <EVDisplay overlay={overlay} />
+                        <span className="mobile-overlay-label">Edge:</span>
+                        <span
+                          className="tabular-nums font-semibold"
+                          style={{ color: edgeColorMobile }}
+                        >
+                          {formatEdgePercent(overlay.overlayPercent)}
+                        </span>
                       </div>
                     </div>
                   )}

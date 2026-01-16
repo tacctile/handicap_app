@@ -123,6 +123,30 @@ body {
   border-bottom: 1px solid var(--color-outline);
 }
 
+/* Sortable column headers */
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.sortable-header:hover {
+  color: rgba(238, 239, 241, 0.8);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.sortable-header .header-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sortable-header .sort-icon {
+  font-size: 0.875rem;
+  color: var(--color-primary);
+  vertical-align: middle;
+}
+
 .race-table td {
   padding: 0.875rem 1rem;
   font-size: 0.875rem;

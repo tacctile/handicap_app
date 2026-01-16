@@ -10,6 +10,25 @@
  * - valueBetting: Strategy generation based on value analysis
  * - confidenceCalibration: Probability calibration and tracking
  *
+ * ============================================================================
+ * PRESERVATION NOTICE - UI PHASE 1
+ * ============================================================================
+ * This module is PRESERVED for expanded row integration in a future UI phase.
+ *
+ * Value tag display (OverlayBadge with VALUE_LABELS) has been removed from
+ * the main race table view but ALL logic remains intact:
+ * - Value classification (elite_value, strong_value, etc.)
+ * - EV calculations and thresholds
+ * - VALUE_CLASSIFICATION_META with colors, icons, actions
+ * - Suggested bets logic
+ *
+ * When implementing expanded row details, import from this module:
+ * - analyzeValue() for complete value analysis
+ * - VALUE_CLASSIFICATION_META for display metadata
+ * - classifyValue() for classification
+ * - getValueSummary() for human-readable summaries
+ * ============================================================================
+ *
  * @module value
  */
 
