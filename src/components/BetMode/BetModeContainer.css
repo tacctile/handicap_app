@@ -71,52 +71,33 @@
 }
 
 .bet-mode-header__close-btn {
-  /* Typography - using design tokens */
-  font-family: var(--font-sans);
-  font-weight: var(--font-medium);
-  font-size: var(--btn-md-font-size, 0.875rem);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-
-  /* Layout */
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-2, 8px);
-
-  /* Sizing - medium button */
-  padding: var(--btn-md-padding-y, 8px) var(--btn-md-padding-x, 16px);
-  min-height: var(--btn-md-min-height, 36px);
-
-  /* Appearance - secondary variant */
-  background: transparent;
-  color: var(--color-text-secondary, #a1a1aa);
-  border: 1px solid var(--color-border-default, #3f3f46);
-  border-radius: var(--radius-sm, 6px);
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--color-elevated, #1a1a1c);
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: var(--radius-md, 8px);
+  color: var(--color-text-secondary, #b4b4b6);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-
-  /* Transitions */
-  transition: var(--transition-fast, 100ms ease);
-  transition-property: background-color, color, border-color;
+  transition: all var(--transition-fast, 150ms ease);
 }
 
 .bet-mode-header__close-btn:hover {
-  background: var(--color-bg-hover, #27272b);
-  border-color: var(--color-border-strong, #52525b);
-  color: var(--color-text-primary, #fafafa);
+  background: var(--color-card, #0f0f10);
+  border-color: var(--color-border-prominent, #3a3a3c);
+  color: var(--color-text-primary, #eeeff1);
 }
 
 .bet-mode-header__close-btn:active {
-  background: var(--color-bg-active, #2f2f35);
-}
-
-.bet-mode-header__close-btn:focus-visible {
-  outline: 2px solid var(--color-accent, #19abb5);
-  outline-offset: 2px;
+  transform: scale(0.98);
 }
 
 .bet-mode-header__close-btn .material-icons {
-  font-size: var(--btn-md-icon-size, 16px);
+  font-size: 18px;
 }
 
 /* ============================================
@@ -238,52 +219,33 @@
   font-style: italic;
 }
 
-/* Back button - Primary variant, large size */
+/* Back button */
 .bet-mode-placeholder__back-btn {
-  /* Typography - using design tokens */
-  font-family: var(--font-sans);
-  font-weight: var(--font-medium);
-  font-size: var(--btn-lg-font-size, 0.875rem);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-
-  /* Layout */
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-2, 8px);
-
-  /* Sizing - large button */
-  padding: var(--btn-lg-padding-y, 12px) var(--btn-lg-padding-x, 24px);
-  min-height: var(--btn-lg-min-height, 44px);
-
-  /* Appearance - primary variant */
-  background: var(--color-accent, #19abb5);
-  color: white;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--color-primary, #19abb5);
   border: none;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-md, 8px);
+  color: var(--color-base, #0a0a0b);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-
-  /* Transitions */
-  transition: var(--transition-fast, 100ms ease);
-  transition-property: background-color, filter;
+  transition: all var(--transition-fast, 150ms ease);
 }
 
 .bet-mode-placeholder__back-btn:hover {
-  background: var(--color-accent-hover, #1fc3cf);
+  background: var(--color-primary-hover, #1992a1);
 }
 
 .bet-mode-placeholder__back-btn:active {
-  filter: brightness(0.9);
-}
-
-.bet-mode-placeholder__back-btn:focus-visible {
-  outline: 2px solid var(--color-accent, #19abb5);
-  outline-offset: 2px;
+  transform: scale(0.98);
 }
 
 .bet-mode-placeholder__back-btn .material-icons {
-  font-size: var(--btn-lg-icon-size, 18px);
+  font-size: 18px;
 }
 
 /* ============================================
