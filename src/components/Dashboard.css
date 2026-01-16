@@ -1563,10 +1563,7 @@
   font-size: 14px; /* Match other header labels */
 }
 
-/* Expand column - empty */
-.horse-list-header__cell--expand {
-  /* Empty for expand chevron column */
-}
+/* Expand column removed - row click handles expand/collapse */
 
 /* ============================================
    RESPONSIVE WIDTH TRANSITIONS

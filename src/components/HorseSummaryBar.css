@@ -475,22 +475,7 @@
   color: #6e6e70;
 }
 
-/* Expand wrapper - centered */
-.horse-summary-bar__expand-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Expand chevron - centered */
-.horse-summary-bar__expand {
-  color: var(--color-text-tertiary);
-  transition: transform var(--transition-fast);
-}
-
-.horse-summary-bar--expanded .horse-summary-bar__expand {
-  transform: rotate(180deg);
-}
+/* Chevron/expand icon removed - row click handles expand/collapse */
 
 /* OddsInput styles removed - odds now displayed as simple text
    Can be re-added later with edit popup functionality */
@@ -839,11 +824,16 @@
    Positioned between horse name and data columns
    ============================================ */
 
+/* VALUE badge container - fixed dimensions for upcoming stacked label implementation */
 .horse-summary-bar__value-label-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 0; /* Allow flex item to shrink */
+  /* Fixed width ensures all badges are same width regardless of text length */
+  width: 180px;
+  /* Fixed height to accommodate future two-line stacked labels */
+  height: 48px;
+  flex-shrink: 0;
 }
 
 .horse-summary-bar__value-label-badge {
@@ -852,6 +842,10 @@
   justify-content: center;
   font-size: 12px;
   font-weight: 600;
+  /* Badge fills container width with proper padding */
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
   padding: 6px 12px;
   border-radius: var(--radius-sm, 6px);
   letter-spacing: 0.02em;
@@ -859,9 +853,11 @@
   border: 1px solid;
   text-transform: uppercase;
   line-height: 1;
+  text-align: center;
   transition:
     background var(--transition-fast),
     color var(--transition-fast);
+  box-sizing: border-box;
 }
 
 /* Scratched state - hide value label */
@@ -869,8 +865,13 @@
   opacity: 0.4;
 }
 
-/* Responsive: Hide value labels on smaller screens */
+/* Responsive: Adjust value labels on smaller screens */
 @media (max-width: 1200px) {
+  .horse-summary-bar__value-label-wrapper {
+    width: 160px; /* Slightly narrower on tablets */
+    height: 44px;
+  }
+
   .horse-summary-bar__value-label-badge {
     font-size: 11px;
     padding: 5px 10px;

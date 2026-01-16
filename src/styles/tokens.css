@@ -97,17 +97,21 @@
   /* ============================================
      HORSE LIST GRID COLUMNS
      Single source of truth for header + rows
-     9 columns: icons | POST | HORSE | VALUE LABEL | PROJECTED FINISH | ODDS | FAIR | EDGE | expand
+     8 columns: icons | POST | HORSE | ODDS | FAIR | PROJECTED FINISH | VALUE | EDGE
+
+     Left side (horse identity + price): SCR | POST | HORSE | ODDS | FAIR
+     Right side (value analysis): PROJECTED FINISH | VALUE | EDGE
+
+     Chevron column removed - row click handles expand/collapse
 
      Horse name uses flex to fill remaining space
      POST: 50px (narrow, just "#1")
-     VALUE LABEL: minmax(180px, 220px) (plain-English value description)
-     PROJECTED FINISH: 145px (fits "PROJECTED FINISH" header and "#1" data)
      ODDS: 90px (fits "20-1" + edit hint)
      FAIR: 80px (fits "20-1")
+     PROJECTED FINISH: 145px (fits "PROJECTED FINISH" header and "#1" data)
+     VALUE: 180px (fixed width for upcoming stacked label implementation)
      EDGE: 90px (fits "+445%")
      ============================================ */
-  --horse-list-grid: 70px /* icons */ 50px /* POST */ 1fr /* horse name - flex */
-    minmax(180px, 220px) /* value label */ 145px /* PROJECTED FINISH */ 90px /* ODDS */ 80px
-    /* FAIR odds */ 90px /* EDGE */ 40px; /* expand chevron */
+  --horse-list-grid: 70px /* icons/SCR */ 50px /* POST */ 1fr /* horse name - flex */ 90px
+    /* ODDS */ 80px /* FAIR odds */ 145px /* PROJECTED FINISH */ 180px /* VALUE - fixed */ 90px; /* EDGE */
 }
