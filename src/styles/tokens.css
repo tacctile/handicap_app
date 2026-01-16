@@ -1,5 +1,21 @@
 /* ============================================
-   Furlong Design System Tokens
+   LEGACY FILE - Being migrated to design-tokens.css
+   ============================================
+
+   This file contains legacy token definitions that are
+   progressively being consolidated into design-tokens.css.
+
+   For new development, prefer using tokens from design-tokens.css:
+   - --color-bg-* for backgrounds
+   - --color-text-* for text colors
+   - --color-border-* for borders
+   - --color-accent* for accent colors
+   - --color-success, --color-warning, --color-danger for semantic
+
+   ============================================ */
+
+/* ============================================
+   Furlong Design System Tokens (Legacy)
    ============================================ */
 
 :root {
