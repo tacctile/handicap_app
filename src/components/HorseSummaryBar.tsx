@@ -80,6 +80,8 @@ interface HorseSummaryBarProps {
   rowId?: string;
   /** Whether this horse is the favorite (lowest odds in the field) */
   isFavorite?: boolean;
+  /** Dynamic gradient background color based on edge position in field */
+  gradientBackgroundColor?: string;
 }
 
 // Helper to convert odds object to string
@@ -136,6 +138,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   edgePercent,
   rowId,
   isFavorite: _isFavorite = false, // Kept for compatibility but now using value matrix
+  gradientBackgroundColor,
 }) => {
   // Extract horse data from HorseEntry type
   const programNumber = horse.programNumber;
@@ -214,6 +217,14 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
     handleOddsSubmit();
   }, [handleOddsSubmit]);
 
+  // Compute row background style (gradient applies for non-scratched, non-value-play horses)
+  // Value play highlighting takes precedence over gradient
+  const shouldShowGradient =
+    gradientBackgroundColor && !isScratched && !isValuePlay && !isPrimaryValuePlay;
+  const rowBackgroundStyle = shouldShowGradient
+    ? { backgroundColor: gradientBackgroundColor }
+    : undefined;
+
   return (
     <div
       id={rowId}
@@ -222,7 +233,9 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         ${isExpanded ? 'horse-summary-bar--expanded' : ''}
         ${isScratched ? 'horse-summary-bar--scratched' : ''}
         ${isValuePlay ? 'horse-summary-bar--value-play' : ''}
-        ${isPrimaryValuePlay ? 'horse-summary-bar--primary-value-play' : ''}`}
+        ${isPrimaryValuePlay ? 'horse-summary-bar--primary-value-play' : ''}
+        ${shouldShowGradient ? 'horse-summary-bar--gradient' : ''}`}
+      style={rowBackgroundStyle}
       onClick={handleRowClick}
     >
       {/* Column 1: Scratch button - larger touch target */}

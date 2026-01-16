@@ -24,6 +24,7 @@ import {
 import { analyzeRaceDiamonds } from '../lib/diamonds';
 import { rankHorsesByBlended, type BlendedRankedHorse } from '../lib/scoring/blendedRank';
 import { toOrdinal, calculateRankGradientColor } from '../lib/scoring/rankUtils';
+import { calculateEdgeRange, getEdgeGradientBackground } from '../lib/utils/edgeGradient';
 import type { TrendScore } from '../lib/scoring/trendAnalysis';
 import { TrendDetailModal } from './TrendDetailModal';
 import { getTrackData } from '../data/tracks';
@@ -250,9 +251,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [strategyGuideOpen, setStrategyGuideOpen] = useState(false);
 
   // State for horse list sort order and direction
-  // Sortable columns: POST, RANK, ODDS, FAIR, EDGE
-  // Non-sortable: HORSE (name), VALUE (badge)
-  type SortColumn = 'POST' | 'RANK' | 'ODDS' | 'FAIR' | 'EDGE';
+  // Sortable columns: POST, RANK, ODDS, FAIR, EDGE, VALUE
+  // Non-sortable: HORSE (name)
+  type SortColumn = 'POST' | 'RANK' | 'ODDS' | 'FAIR' | 'EDGE' | 'VALUE';
   type SortDirection = 'asc' | 'desc';
   const [sortColumn, setSortColumn] = useState<SortColumn>('POST');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -287,7 +288,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const savedRaceState = sessionPersistence.getRaceState(selectedRaceIndex);
     if (savedRaceState) {
       // Validate and apply saved sort column
-      const validColumns: SortColumn[] = ['POST', 'RANK', 'ODDS', 'FAIR', 'EDGE'];
+      const validColumns: SortColumn[] = ['POST', 'RANK', 'ODDS', 'FAIR', 'EDGE', 'VALUE'];
       const savedColumn = savedRaceState.sortColumn as SortColumn;
       if (validColumns.includes(savedColumn)) {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing sort state with persisted session on race change
@@ -612,6 +613,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
           const edgeB = playB?.valueEdge ?? -999;
           // For edge, descending is more natural (best first)
           // So we invert the direction
+          return (edgeB - edgeA) * direction;
+        });
+
+      case 'VALUE':
+        // Sort by edge percentage (same as EDGE - value badge reflects edge)
+        // Ascending = worst value first, Descending = best value first
+        return horses.sort((a, b) => {
+          const playA = valueAnalysis.valuePlays.find((p) => p.horseIndex === a.index);
+          const playB = valueAnalysis.valuePlays.find((p) => p.horseIndex === b.index);
+          const edgeA = playA?.valueEdge ?? -999;
+          const edgeB = playB?.valueEdge ?? -999;
+          // For value, descending shows best value first
           return (edgeB - edgeA) * direction;
         });
 
@@ -1087,9 +1100,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </span>
             </div>
 
-            {/* Column 7: VALUE - Plain-English value labels - NOT sortable (right side - value analysis) */}
-            <div className="horse-list-header__cell horse-list-header__cell--value-label">
-              <span className="horse-list-header__label">VALUE</span>
+            {/* Column 7: VALUE - Plain-English value labels - Sortable by edge % (right side - value analysis) */}
+            <div
+              className={`horse-list-header__cell horse-list-header__cell--value-label horse-list-header__cell--sortable ${sortColumn === 'VALUE' ? 'horse-list-header__cell--active' : ''}`}
+              onClick={() => handleColumnSort('VALUE')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('VALUE')}
+            >
+              <span className="horse-list-header__label">
+                VALUE
+                <span
+                  className={`horse-list-header__arrow ${sortColumn === 'VALUE' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
+                >
+                  {sortColumn === 'VALUE' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                </span>
+              </span>
             </div>
 
             {/* Column 8: EDGE - Sortable (right side - value analysis, far right) */}
@@ -1222,6 +1248,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       }
                     }
 
+                    // Pre-calculate overlay/edge values for all horses to determine edge range
+                    // This is needed for dynamic gradient coloring
+                    const horseOverlays = sortedScoredHorses.map((sh) => {
+                      const oddsStr = raceState.getOdds(sh.index, sh.horse.morningLineOdds);
+                      const overlay = analyzeOverlayWithField(
+                        sh.score.baseScore,
+                        allFieldBaseScores,
+                        oddsStr
+                      );
+                      // Use valuePlay edge if available, otherwise overlay percent
+                      const valuePlay = valueAnalysis.valuePlays.find(
+                        (vp) => vp.horseIndex === sh.index
+                      );
+                      const edgePercent = valuePlay?.valueEdge ?? overlay.overlayPercent;
+                      return {
+                        index: sh.index,
+                        edgePercent,
+                        overlay,
+                        isScratched: raceState.isScratched(sh.index) || sh.score.isScratched,
+                      };
+                    });
+
+                    // Calculate edge range for active (non-scratched) horses
+                    const activeEdgeValues = horseOverlays
+                      .filter((ho) => !ho.isScratched)
+                      .map((ho) => ho.edgePercent);
+                    const edgeRange = calculateEdgeRange(activeEdgeValues);
+
                     return sortedScoredHorses.map((scoredHorse, index) => {
                       const horse = scoredHorse.horse;
                       const horseId = horse.programNumber || index;
@@ -1231,13 +1285,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         horse.morningLineOdds
                       );
 
-                      // Calculate overlay analysis using field-relative base scores
-                      // Uses BASE score (not total) for proper fair odds calculation
-                      const overlay = analyzeOverlayWithField(
-                        scoredHorse.score.baseScore,
-                        allFieldBaseScores,
-                        currentOddsString
-                      );
+                      // Get pre-calculated overlay for this horse
+                      const horseOverlay = horseOverlays.find((ho) => ho.index === horseIndex);
+                      const overlay =
+                        horseOverlay?.overlay ??
+                        analyzeOverlayWithField(
+                          scoredHorse.score.baseScore,
+                          allFieldBaseScores,
+                          currentOddsString
+                        );
+
+                      // Calculate gradient background color based on edge position in field
+                      const isScratched = raceState.isScratched(horseIndex);
+                      const displayEdge = horseOverlay?.edgePercent ?? overlay.overlayPercent;
+                      const gradientBackgroundColor = edgeRange
+                        ? getEdgeGradientBackground(
+                            displayEdge,
+                            edgeRange.minEdge,
+                            edgeRange.maxEdge,
+                            isScratched
+                          )
+                        : undefined;
 
                       // Parse fair odds display (e.g., "3-1" to numerator/denominator)
                       // Handle special cases: "EVEN", "N/A", or em-dash fallback
@@ -1275,7 +1343,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       };
 
                       const currentOdds = parseOdds(currentOddsString);
-                      const isScratched = raceState.isScratched(horseIndex);
+                      // isScratched already declared above for gradient calculation
 
                       // Handle odds change - convert back to string format for raceState
                       const handleOddsChange = (odds: {
@@ -1362,6 +1430,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             rowId={`horse-row-${horseIndex}`}
                             // Favorite detection for FALSE FAVORITE label
                             isFavorite={horseIndex === favoriteIndex}
+                            // Dynamic gradient background based on edge position in field
+                            gradientBackgroundColor={gradientBackgroundColor}
                           />
                           <HorseExpandedView
                             horse={horse}

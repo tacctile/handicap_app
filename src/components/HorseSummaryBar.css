@@ -665,6 +665,31 @@
 }
 
 /* ============================================
+   DYNAMIC GRADIENT BACKGROUND
+   Based on edge % position in field (Google Sheets style)
+   Best edge = green, middle = yellow, worst edge = red
+   ============================================ */
+
+/* Gradient background class - inline style sets the actual color */
+/* This class ensures proper interaction with other background states */
+.horse-summary-bar--gradient {
+  /* Gradient background color is set via inline style */
+  /* Ensure text remains readable over gradient */
+  transition: background-color var(--transition-fast);
+}
+
+/* Gradient background should work with hover state */
+.horse-summary-bar--gradient:hover {
+  /* Slightly increase opacity on hover for visual feedback */
+  filter: brightness(1.1);
+}
+
+/* Gradient takes precedence over tier backgrounds, but not over expanded/scratched */
+.horse-summary-bar--gradient:not(.horse-summary-bar--expanded):not(.horse-summary-bar--scratched) {
+  /* Gradient background applied via inline style */
+}
+
+/* ============================================
    VALUE PLAY HIGHLIGHTING
    Highlights horses identified as value bets
    ============================================ */
