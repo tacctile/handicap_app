@@ -225,10 +225,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Hot edge (75%+) gets subtle glow */
-.horse-summary-bar__edge-value--hot {
-  text-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
-}
+/* Hot edge glow removed - all edge values use neutral white styling */
 
 .horse-summary-bar--scratched .horse-summary-bar__edge-value {
   color: var(--color-tier-scratched);
@@ -850,6 +847,13 @@
   transition:
     background var(--transition-fast),
     color var(--transition-fast);
+}
+
+/* Neutral styling for all value badges - no color variation */
+.value-badge--neutral {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
 }
 
 /* Top line - plain English label */

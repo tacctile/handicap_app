@@ -174,44 +174,21 @@ export function calculateValueScore(rank: number, fieldSize: number, edgePercent
   return Math.round(edgeScore + rankScore);
 }
 
+// Color functions removed - value columns now use neutral styling
+// The following functions are deprecated and return neutral colors only
+
 /**
- * Map a value score (0-100) to a color on the gradient.
- *
- * 0-20: Deep red (#ef4444)
- * 20-35: Orange (#f97316)
- * 35-50: Yellow (#eab308)
- * 50-65: Gray (#6b7280)
- * 65-80: Teal (#14b8a6)
- * 80-90: Green (#10b981)
- * 90-100: Bright green (#22c55e)
+ * @deprecated Color system removed. Returns neutral color for all values.
  */
-export function getValueColor(valueScore: number): string {
-  if (valueScore >= 90) return '#22c55e'; // Bright green
-  if (valueScore >= 80) return '#10b981'; // Green
-  if (valueScore >= 65) return '#14b8a6'; // Teal
-  if (valueScore >= 50) return '#6b7280'; // Gray
-  if (valueScore >= 35) return '#eab308'; // Yellow
-  if (valueScore >= 20) return '#f97316'; // Orange
-  return '#ef4444'; // Deep red
+export function getValueColor(_valueScore: number): string {
+  return 'transparent'; // No longer used for dynamic coloring
 }
 
 /**
- * Get contrasting text color for a given background color.
- * Returns white for dark backgrounds, dark gray for light backgrounds.
+ * @deprecated Color system removed. Returns white text color for all backgrounds.
  */
-export function getContrastTextColor(bgColor: string): string {
-  // Map of background colors to appropriate text colors
-  const colorMap: Record<string, string> = {
-    '#22c55e': '#ffffff', // Bright green -> white
-    '#10b981': '#ffffff', // Green -> white
-    '#14b8a6': '#ffffff', // Teal -> white
-    '#6b7280': '#ffffff', // Gray -> white
-    '#eab308': '#1a1a1c', // Yellow -> dark
-    '#f97316': '#ffffff', // Orange -> white
-    '#ef4444': '#ffffff', // Deep red -> white
-  };
-
-  return colorMap[bgColor] || '#ffffff';
+export function getContrastTextColor(_bgColor: string): string {
+  return '#ffffff'; // All text is now white
 }
 
 /**
@@ -220,14 +197,16 @@ export function getContrastTextColor(bgColor: string): string {
  * @param rank - Horse's projected finish rank (1 = best)
  * @param fieldSize - Total number of active horses in the race
  * @param edgePercent - Edge percentage (positive = overlay, negative = underlay)
- * @returns Complete ValueTagResult with tag, tier, colors, and score
+ * @returns Complete ValueTagResult with tag, tier, and score (colors are neutral)
  */
 export function getValueTag(rank: number, fieldSize: number, edgePercent: number): ValueTagResult {
   const tier = getRankTier(rank, fieldSize);
   const edgeBucket = getEdgeBucket(edgePercent);
   const valueScore = calculateValueScore(rank, fieldSize, edgePercent);
-  const color = getValueColor(valueScore);
-  const textColor = getContrastTextColor(color);
+
+  // Neutral colors for all value badges - no color variation
+  const neutralBgColor = 'transparent'; // Background handled by CSS
+  const neutralTextColor = '#ffffff'; // White text for all
 
   const tag = VALUE_TAG_MATRIX[tier][edgeBucket] ?? {
     plainLabel: 'UNKNOWN',
@@ -240,8 +219,8 @@ export function getValueTag(rank: number, fieldSize: number, edgePercent: number
     tier,
     edgeBucket,
     valueScore,
-    color,
-    textColor,
+    color: neutralBgColor,
+    textColor: neutralTextColor,
   };
 }
 
@@ -258,7 +237,7 @@ export function getScratchedValueTag(): ValueTagResult {
     tier: 'BOTTOM',
     edgeBucket: 'SCRATCHED',
     valueScore: 0,
-    color: '#6e6e70',
-    textColor: '#ffffff',
+    color: 'transparent', // Neutral background
+    textColor: '#ffffff', // White text
   };
 }
