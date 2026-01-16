@@ -1458,7 +1458,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   : 'View race analysis with horse scores and odds'
               }
             >
-              <span className="app-bottombar__analyze-icon">🎯</span>
               <span>ANALYZE RACE</span>
             </button>
           </div>
@@ -1476,7 +1475,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 viewMode === 'overview' ? 'Select a race first' : 'View top bets in 6-column grid'
               }
             >
-              <span className="app-bottombar__top-bets-icon">🏆</span>
               <span>TOP BETS</span>
             </button>
           </div>
@@ -1491,7 +1489,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onClick={() => setStrategyGuideOpen(true)}
               title="Open betting strategy guide"
             >
-              <span className="material-icons">casino</span>
               <span>STRATEGY GUIDE</span>
             </button>
           </div>
@@ -1506,7 +1503,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onClick={() => setHelpModalOpen(true)}
               title="How to Read the Form"
             >
-              <span className="app-bottombar__form-guide-icon">📖</span>
               <span>FORM GUIDE</span>
             </button>
           </div>
@@ -1527,7 +1523,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span className="material-icons">
                 {isLoading ? 'hourglass_empty' : 'upload_file'}
               </span>
-              <span>{isLoading ? 'Parsing...' : 'Upload'}</span>
+              <span>{isLoading ? 'Parsing...' : 'UPLOAD'}</span>
             </button>
           </div>
         </footer>
