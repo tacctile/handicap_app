@@ -640,153 +640,150 @@
 }
 
 /* ============================================================================
-   SECTION 1: FURLONG SCORE ANALYSIS (Redesigned - Compact Horizontal Layout)
+   SECTION 1: FURLONG SCORE ANALYSIS (Compact Single-Row Horizontal Layout)
+   Target height: ~80-100px. Score summary left, 6 categories right.
    ============================================================================ */
 
-/* Section Container */
+/* Section Container - Compact with minimal padding */
 .furlong-score-analysis {
   position: relative;
-  padding: 16px 20px;
+  padding: 12px 16px;
   background: var(--color-elevated, #1a1a1c);
-  border-radius: 8px;
-  margin-bottom: 0;
   border-bottom: 1px solid var(--section-border);
 }
 
-.furlong-score-analysis__header {
+/* Main Row - Single horizontal line containing everything */
+.furlong-score-analysis__row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  min-height: 70px;
+}
+
+/* ----------------------------------------
+   LEFT: Score Summary (~22% width)
+   ---------------------------------------- */
+.furlong-score__summary {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding-right: 20px;
+  border-right: 1px solid var(--section-border, #2a2a2c);
+  min-width: 200px;
+  max-width: 240px;
+}
+
+/* Section header - small, caps, muted */
+.furlong-score__summary-header {
   font-family: var(--font-sans);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: var(--color-text-secondary, #b4b4b6);
-  margin-bottom: 12px;
+  color: var(--color-text-tertiary, #6e6e70);
 }
 
-.furlong-score-analysis__content {
+/* Main score line: 128 / 371 (34%) */
+.furlong-score__summary-main {
   display: flex;
-  align-items: flex-end;
-  gap: 0;
-}
-
-/* Total Score - Left Side Container */
-.furlong-score__total {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding-right: 24px;
-  border-right: 1px solid var(--section-border, #2a2a2c);
-  min-width: 180px;
-  gap: 12px;
-}
-
-/* Hero Score Display - Main score is the hero, largest and most prominent */
-.furlong-score__hero {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-}
-
-.furlong-score__hero-value {
-  font-family: var(--font-sans);
-  font-size: 42px;
-  font-weight: 700;
+  align-items: baseline;
+  gap: 2px;
   line-height: 1;
-  font-variant-numeric: tabular-nums;
-  color: #19abb5; /* Primary teal accent */
 }
 
-.furlong-score__hero-subtitle {
+.furlong-score__summary-value {
+  font-family: var(--font-sans);
+  font-size: 28px;
+  font-weight: 700;
+  color: #19abb5; /* Primary teal */
+  font-variant-numeric: tabular-nums;
+}
+
+.furlong-score__summary-divider {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--color-text-secondary, #b4b4b6);
+  margin: 0 1px;
+}
+
+.furlong-score__summary-max {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--color-text-primary, #eeeff1);
+  font-variant-numeric: tabular-nums;
+}
+
+.furlong-score__summary-pct {
   font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 500;
   color: var(--color-text-secondary, #b4b4b6);
+  margin-left: 6px;
 }
 
-.furlong-score__hero-helper {
+/* One-liner explanation */
+.furlong-score__summary-explainer {
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 400;
-  color: var(--color-text-tertiary, #6e6e70);
+  color: var(--color-text-secondary, #b4b4b6);
+  line-height: 1.3;
+}
+
+/* Meta line: Base: X/Y | Data: HIGH */
+.furlong-score__summary-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin-top: 2px;
 }
 
-/* Progress Bar - solid teal */
-.furlong-score__total-bar {
-  width: 100%;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.furlong-score__total-bar-fill {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.3s ease;
-  background-color: #19abb5; /* Primary teal */
-}
-
-/* Base Score - Supporting info */
-.furlong-score__base-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.furlong-score__base-label {
+.furlong-score__summary-base {
   font-family: var(--font-sans);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--color-text-secondary, #b4b4b6);
   font-variant-numeric: tabular-nums;
 }
 
-.furlong-score__base-helper {
-  font-family: var(--font-sans);
-  font-size: 10px;
-  font-weight: 400;
+.furlong-score__summary-sep {
+  font-size: 11px;
   color: var(--color-text-tertiary, #6e6e70);
 }
 
-/* Data Quality - Supporting info */
-.furlong-score__quality-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.furlong-score__quality-label {
+.furlong-score__summary-data {
   font-family: var(--font-sans);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--color-text-secondary, #b4b4b6);
 }
 
-.furlong-score__quality-badge {
+.furlong-score__summary-data-badge {
   font-weight: 700;
   letter-spacing: 0.3px;
-  /* Color set inline based on HIGH/MEDIUM/LOW:
-     HIGH = #10b981 (success green)
-     MEDIUM = #f59e0b (warning yellow)
-     LOW = #ef4444 (error red)
-  */
+  /* Color set inline: HIGH=#10b981, MEDIUM=#f59e0b, LOW=#ef4444 */
 }
 
-.furlong-score__quality-helper {
+/* Helper text under meta */
+.furlong-score__summary-helper {
   font-family: var(--font-sans);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 400;
   color: var(--color-text-tertiary, #6e6e70);
 }
 
-/* Category Scores - Supporting (Right Side) */
+/* ----------------------------------------
+   RIGHT: 6 Category Columns (~78% width)
+   ---------------------------------------- */
 .furlong-score__categories {
   display: flex;
   flex: 1;
-  gap: 20px;
-  padding-left: 24px;
+  gap: 8px;
+  padding-left: 20px;
+  align-items: center;
 }
 
 .furlong-score__category {
@@ -794,24 +791,37 @@
   flex-direction: column;
   align-items: flex-start;
   flex: 1;
-  min-width: 70px;
+  min-width: 65px;
+  gap: 2px;
 }
 
+/* Category header - small caps, muted */
+.furlong-score__category-label {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary, #6e6e70);
+}
+
+/* Score fraction - prominent */
 .furlong-score__category-value {
   font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary, #eeeff1);
-  line-height: 1;
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
 }
 
+/* Progress bar - thin 4px, teal, rounded */
 .furlong-score__category-bar {
   width: 100%;
   height: 4px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 2px;
-  margin-top: 6px;
+  margin-top: 3px;
   overflow: hidden;
 }
 
@@ -819,89 +829,68 @@
   height: 100%;
   border-radius: 2px;
   transition: width 0.3s ease;
+  background-color: #19abb5; /* Primary teal */
 }
 
-/* Bar colors - neutral teal gradient based on score percentage */
-/* Low scores (0-33%): #0e343e (dark muted teal) */
-/* Mid scores (34-66%): #1b7583 (medium teal) */
-/* High scores (67-100%): #19abb5 (bright teal) */
-.furlong-score__category-bar-fill--high {
-  background: #19abb5;
-}
-
-.furlong-score__category-bar-fill--medium {
-  background: #1b7583;
-}
-
-.furlong-score__category-bar-fill--low {
-  background: #0e343e;
-}
-
-.furlong-score__category-label {
-  font-family: var(--font-sans);
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: var(--color-text-secondary, #9ca3af);
-  margin-bottom: 4px;
-}
-
+/* One-word descriptor - muted, small */
 .furlong-score__category-desc {
   font-family: var(--font-sans);
-  font-size: 0.65rem;
+  font-size: 9px;
   font-weight: 400;
   color: var(--color-text-tertiary, #6e6e70);
-  margin-top: 6px;
+  margin-top: 2px;
+  white-space: nowrap;
 }
 
-/* Responsive: Stack on smaller screens */
+/* ----------------------------------------
+   RESPONSIVE: Stack on smaller screens
+   ---------------------------------------- */
 @media (max-width: 900px) {
-  .furlong-score-analysis__content {
+  .furlong-score-analysis__row {
     flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
+    gap: 12px;
   }
 
-  .furlong-score__total {
+  .furlong-score__summary {
     border-right: none;
     border-bottom: 1px solid var(--section-border, #2a2a2c);
     padding-right: 0;
-    padding-bottom: 16px;
+    padding-bottom: 12px;
     min-width: auto;
-  }
-
-  .furlong-score__hero-value {
-    font-size: 36px;
+    max-width: none;
   }
 
   .furlong-score__categories {
     padding-left: 0;
     flex-wrap: wrap;
+    gap: 12px;
   }
 
   .furlong-score__category {
-    min-width: calc(33.33% - 14px);
+    min-width: calc(33.33% - 10px);
   }
 }
 
 @media (max-width: 600px) {
+  .furlong-score__summary-value {
+    font-size: 24px;
+  }
+
+  .furlong-score__summary-max,
+  .furlong-score__summary-divider {
+    font-size: 14px;
+  }
+
+  .furlong-score__summary-pct {
+    font-size: 11px;
+  }
+
   .furlong-score__category {
-    min-width: calc(50% - 10px);
+    min-width: calc(50% - 8px);
   }
 
-  .furlong-score__hero-value {
-    font-size: 32px;
-  }
-
-  .furlong-score__hero-subtitle {
-    font-size: 12px;
-  }
-
-  .furlong-score__hero-helper,
-  .furlong-score__base-helper,
-  .furlong-score__quality-helper {
-    font-size: 9px;
+  .furlong-score__category-value {
+    font-size: 13px;
   }
 }
 

@@ -515,62 +515,43 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
     >
       {/* ================================================================
           SECTION 1: FURLONG SCORE ANALYSIS (Always Visible)
-          Score-only section: Shows algorithm's quality assessment
-          NO betting info here - betting value is shown in main row
+          Compact horizontal layout: Score summary (left) + 6 categories (right)
           ================================================================ */}
       <section className="furlong-score-analysis">
-        <div className="furlong-score-analysis__header">FURLONG SCORE ANALYSIS</div>
-        <div className="furlong-score-analysis__content">
-          {/* Left Side: Total Score Hero - Score only, no betting info */}
-          <div className="furlong-score__total">
-            {/* Main Score Display - Hero element */}
-            <div className="furlong-score__hero">
-              <span className="furlong-score__hero-value" style={{ color: '#19abb5' }}>
-                {scoreTotal}
-              </span>
-              <span className="furlong-score__hero-subtitle">
-                out of {SCORE_LIMITS.total} possible
-              </span>
-              <span className="furlong-score__hero-helper">Our overall rating for this horse</span>
+        <div className="furlong-score-analysis__row">
+          {/* Left: Score Summary (~20-25% width) */}
+          <div className="furlong-score__summary">
+            <span className="furlong-score__summary-header">FURLONG SCORE</span>
+            <div className="furlong-score__summary-main">
+              <span className="furlong-score__summary-value">{scoreTotal}</span>
+              <span className="furlong-score__summary-divider">/</span>
+              <span className="furlong-score__summary-max">{SCORE_LIMITS.total}</span>
+              <span className="furlong-score__summary-pct">({scorePercentage}%)</span>
             </div>
-
-            {/* Progress Bar - solid teal */}
-            <div className="furlong-score__total-bar">
-              <div
-                className="furlong-score__total-bar-fill"
-                style={{
-                  width: `${scorePercentage}%`,
-                  backgroundColor: '#19abb5',
-                }}
-              />
-            </div>
-
-            {/* Base Score - supporting info */}
-            <div className="furlong-score__base-info">
-              <span className="furlong-score__base-label">
-                Base Score: {baseScore}/{SCORE_LIMITS.base}
+            <span className="furlong-score__summary-explainer">
+              How good is this horse? This is our algorithm's answer.
+            </span>
+            <div className="furlong-score__summary-meta">
+              <span className="furlong-score__summary-base">
+                Base: {baseScore}/{SCORE_LIMITS.base}
               </span>
-              <span className="furlong-score__base-helper">Before race-day adjustments</span>
-            </div>
-
-            {/* Data Quality - supporting info */}
-            <div className="furlong-score__quality-info">
-              <span className="furlong-score__quality-label">
-                Data Quality:{' '}
+              <span className="furlong-score__summary-sep">|</span>
+              <span className="furlong-score__summary-data">
+                Data:{' '}
                 <span
-                  className="furlong-score__quality-badge"
+                  className="furlong-score__summary-data-badge"
                   style={{ color: getDataQualityColor(score?.confidenceLevel) }}
                 >
                   {score?.confidenceLevel?.toUpperCase() || 'HIGH'}
                 </span>
               </span>
-              <span className="furlong-score__quality-helper">
-                How complete the horse's data is
-              </span>
             </div>
+            <span className="furlong-score__summary-helper">
+              Base = before race-day adjustments
+            </span>
           </div>
 
-          {/* Right Side: Category Breakdown - Horizontal with solid teal bars */}
+          {/* Right: 6 Category Columns (~75-80% width) */}
           <div className="furlong-score__categories">
             {categoryAnalysis.map((cat) => (
               <div key={cat.key} className="furlong-score__category">
