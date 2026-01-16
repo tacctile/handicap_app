@@ -84,6 +84,9 @@ export interface UseRaceStateReturn extends RaceState, RaceStateActions {
   // Original state for reset
   originalOdds: Record<number, string>;
   hasChanges: boolean;
+  // Reactivity version - increments on any state change to force downstream recalculation
+  // Use this as a dependency in useMemo/useEffect to guarantee recalculation
+  reactivityVersion: number;
 }
 
 const initialState: RaceState = {
@@ -135,6 +138,10 @@ export function useRaceState(): UseRaceStateReturn {
   // History for undo
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const maxHistoryLength = 50;
+
+  // Reactivity version - simple incrementing number to force downstream recalculation
+  // This guarantees React detects state changes regardless of reference equality issues
+  const [reactivityVersion, setReactivityVersion] = useState(0);
 
   // Debounced state version for triggering recalculation
   const stateVersion = useMemo(
@@ -213,6 +220,7 @@ export function useRaceState(): UseRaceStateReturn {
     (condition: TrackCondition) => {
       addToHistory(`Track condition changed to ${condition}`);
       setTrackConditionState(condition);
+      setReactivityVersion((v) => v + 1);
       triggerRecalculation(undefined, 'score');
     },
     [addToHistory, triggerRecalculation]
@@ -234,6 +242,7 @@ export function useRaceState(): UseRaceStateReturn {
       addToHistory(
         `Horse ${horseIndex} ${scratchedHorses.has(horseIndex) ? 'unscratched' : 'scratched'}`
       );
+      setReactivityVersion((v) => v + 1);
       triggerRecalculation(new Set([horseIndex]), 'score');
     },
     [addToHistory, triggerRecalculation, scratchedHorses]
@@ -252,6 +261,7 @@ export function useRaceState(): UseRaceStateReturn {
         return next;
       });
       addToHistory(`Horse ${horseIndex} ${scratched ? 'scratched' : 'unscratched'}`);
+      setReactivityVersion((v) => v + 1);
       triggerRecalculation(new Set([horseIndex]), 'score');
     },
     [addToHistory, triggerRecalculation]
@@ -260,20 +270,16 @@ export function useRaceState(): UseRaceStateReturn {
   // Update odds for a horse
   const updateOdds = useCallback(
     (horseIndex: number, newOdds: string) => {
-      console.log('[ODDS-DEBUG] updateOdds called:', { horseIndex, newOdds });
-      setUpdatedOdds((prev) => {
-        const next = {
-          ...prev,
-          [horseIndex]: newOdds,
-        };
-        console.log('[ODDS-DEBUG] updateOdds state after update:', { prev, next });
-        return next;
-      });
+      setUpdatedOdds((prev) => ({
+        ...prev,
+        [horseIndex]: newOdds,
+      }));
       // Mark this horse as having odds change for highlight
       setCalculationState((prev) => ({
         ...prev,
         changedOddsIndices: new Set([...prev.changedOddsIndices, horseIndex]),
       }));
+      setReactivityVersion((v) => v + 1);
       triggerRecalculation(new Set([horseIndex]), 'odds');
     },
     [triggerRecalculation]
@@ -287,6 +293,7 @@ export function useRaceState(): UseRaceStateReturn {
         delete next[horseIndex];
         return next;
       });
+      setReactivityVersion((v) => v + 1);
       triggerRecalculation(new Set([horseIndex]), 'odds');
     },
     [triggerRecalculation]
@@ -304,6 +311,7 @@ export function useRaceState(): UseRaceStateReturn {
     setScratchedHorses(new Set());
     setUpdatedOdds({});
     setCalculationState(initialCalculationState);
+    setReactivityVersion((v) => v + 1);
   }, [addToHistory]);
 
   // Initialize state from persisted data (for session restoration)
@@ -322,6 +330,9 @@ export function useRaceState(): UseRaceStateReturn {
 
     // Clear history for restored session
     setHistory([]);
+
+    // Force downstream recalculation
+    setReactivityVersion((v) => v + 1);
   }, []);
 
   // Get current state for serialization (for session saving)
@@ -344,9 +355,7 @@ export function useRaceState(): UseRaceStateReturn {
   // Get current odds for a horse (updated or original)
   const getOdds = useCallback(
     (horseIndex: number, originalOdds: string): string => {
-      const result = updatedOdds[horseIndex] ?? originalOdds;
-      console.log('[ODDS-DEBUG] getOdds called:', { horseIndex, originalOdds, hasOverride: horseIndex in updatedOdds, result });
-      return result;
+      return updatedOdds[horseIndex] ?? originalOdds;
     },
     [updatedOdds]
   );
@@ -400,6 +409,8 @@ export function useRaceState(): UseRaceStateReturn {
       // Original state
       originalOdds,
       hasChanges,
+      // Reactivity version - use as dependency to guarantee recalculation
+      reactivityVersion,
     }),
     [
       trackCondition,
@@ -423,6 +434,7 @@ export function useRaceState(): UseRaceStateReturn {
       canUndo,
       originalOdds,
       hasChanges,
+      reactivityVersion,
     ]
   );
 }

@@ -398,7 +398,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // Calculate scored horses for current race (needed for betting recommendations)
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const currentRaceScoredHorses = useMemo(() => {
-    console.log('[ODDS-DEBUG] RECALC: currentRaceScoredHorses', { updatedOdds: raceState.updatedOdds });
     if (!parsedData) return [];
 
     const race = parsedData.races[selectedRaceIndex];
@@ -419,6 +418,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     raceState.trackCondition,
     raceState.getOdds,
     raceState.isScratched,
+    raceState.reactivityVersion, // Guarantees recalculation on any state change
   ]);
 
   // Calculate scored horses for ALL races (for day planning mode)
@@ -1238,17 +1238,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         allFieldBaseScores,
                         currentOddsString
                       );
-
-                      // Debug logging for first horse only to avoid spam
-                      if (index === 0) {
-                        console.log('[ODDS-DEBUG] render overlay (first horse):', {
-                          horseIndex,
-                          horseName: horse.horseName,
-                          currentOddsString,
-                          fairOdds: overlay.fairOddsDisplay,
-                          overlayPercent: overlay.overlayPercent,
-                        });
-                      }
 
                       // Parse fair odds display (e.g., "3-1" to numerator/denominator)
                       // Handle special cases: "EVEN", "N/A", or em-dash fallback
