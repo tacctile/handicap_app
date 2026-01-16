@@ -23,12 +23,15 @@
   display: grid;
   grid-template-columns: var(--horse-list-grid);
   align-items: center;
-  gap: 16px; /* Increased gap for buffer space between columns */
-  padding: 14px 16px; /* Increased vertical padding for larger text */
+  gap: var(--table-cell-padding-x, 16px);
+  /* Standardized row height and padding using design tokens */
+  padding: var(--table-cell-padding-y, 12px) var(--table-cell-padding-x, 16px);
+  min-height: var(--table-row-height, 48px);
   margin: 0;
-  background-color: var(--color-card); /* Solid opaque background */
-  border-bottom: 1px solid var(--color-border);
-  /* No left border indicator - background color is sufficient */
+  /* Default: transparent background (inherits from container) */
+  background-color: transparent;
+  /* Standardized border using design tokens */
+  border-bottom: 1px solid var(--color-border-subtle);
   cursor: pointer;
   transition:
     background var(--transition-fast),
@@ -42,27 +45,26 @@
 }
 
 .horse-summary-bar:hover {
-  background-color: var(--color-elevated);
+  /* Standardized hover background using table token */
+  background-color: var(--table-row-hover);
 }
 
 .horse-summary-bar--expanded {
-  /* CRITICAL: solid opaque background to prevent content bleed-through */
-  /* Use !important to override value-play, tier, and other semi-transparent backgrounds */
-  background: #1e1e20 !important; /* Solid hex - slightly lighter than base for elevated look */
+  /* Selected/expanded state background using design tokens */
+  background: var(--color-bg-active) !important;
   /* Sticky positioning when expanded - sticks to top of scrolling container */
-  /* Verdict bar and column headers are now grid-level elements outside the scroll area */
   position: sticky;
   top: 0; /* Stick to top of scroll container (headers are outside) */
   z-index: 5; /* Above regular content (0), below column headers (10) */
   /* Subtle shadow to indicate floating state when stuck */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-sm);
   /* Keep bottom border for visual separation from expanded content */
-  border-bottom-color: var(--color-border);
+  border-bottom-color: var(--color-border-default);
 }
 
 /* ============================================
-   SCRATCH BUTTON (Simplified - Single Action)
-   44px minimum touch target for mobile usability
+   SCRATCH BUTTON - Standardized (32px circular)
+   Uses design tokens for consistent styling
    ============================================ */
 
 .horse-summary-bar__scratch-col {
@@ -73,63 +75,59 @@
 }
 
 .horse-summary-bar__scratch-btn {
-  /* 44px minimum touch target per WCAG guidelines */
-  min-width: 48px;
-  min-height: 48px;
+  /* Standardized size: 32px circular button */
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm, 4px);
+  gap: 0;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-full);
   cursor: pointer;
   color: var(--color-text-tertiary);
   transition:
     color var(--transition-fast),
     background var(--transition-fast),
-    border-color var(--transition-fast),
-    transform var(--transition-fast);
+    border-color var(--transition-fast);
 }
 
 .horse-summary-bar__scratch-btn:hover {
-  color: var(--color-text-primary);
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.4);
-  transform: scale(1.02);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-default);
 }
 
 .horse-summary-bar__scratch-btn:active {
   transform: scale(0.98);
 }
 
-/* Active state - horse is scratched */
+/* Active state - horse is scratched (shows danger styling) */
 .horse-summary-bar__scratch-btn--active {
-  color: #10b981; /* Green for undo action */
-  background: rgba(16, 185, 129, 0.12);
-  border-color: rgba(16, 185, 129, 0.4);
+  color: var(--color-danger);
+  background: var(--color-danger-subtle);
+  border-color: var(--color-danger);
 }
 
 .horse-summary-bar__scratch-btn--active:hover {
-  background: rgba(16, 185, 129, 0.18);
-  border-color: rgba(16, 185, 129, 0.6);
+  background: rgba(239, 68, 68, 0.25);
+  border-color: var(--color-danger);
 }
 
-/* Scratch icon - prominent and clear */
+/* Scratch icon - sized for 32px button */
 .horse-summary-bar__scratch-icon {
-  font-size: 22px;
+  font-size: 18px;
   line-height: 1;
 }
 
-/* Scratch label - small but readable */
+/* Hide scratch label for cleaner circular button */
 .horse-summary-bar__scratch-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  line-height: 1;
+  display: none;
 }
 
 /* ============================================
@@ -148,57 +146,63 @@
 }
 
 .horse-summary-bar--scratched:hover {
-  background-color: var(--color-card);
+  background-color: transparent;
 }
 
 /* ============================================
-   CELL STYLES
+   CELL STYLES - Standardized Typography
+   Using design tokens for consistent appearance
    ============================================ */
 
-/* Program number - anchor/identifier (Option C hierarchy) */
+/* Post position number (#1, #2, etc.) - uses tabular-nums for alignment */
 .horse-summary-bar__pp {
   display: flex !important;
-  align-items: center !important; /* Center vertically */
-  justify-content: center !important; /* Center horizontally */
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--color-text-primary);
+  align-items: center !important;
+  justify-content: center !important;
+  /* Standardized: 14px, medium weight, secondary color */
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-text-secondary);
   text-align: center !important;
   line-height: 1;
   width: 100%;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Horse name - primary info, FIXED WIDTH column (Option C hierarchy)
-   Column is sized for 20 characters - shorter names will have whitespace on right
-   This is intentional - columns never stretch to fill empty space */
+/* Horse name - primary info, most prominent text */
 .horse-summary-bar__name {
-  font-size: 24px;
-  font-weight: 700;
+  /* Standardized: 14px, semibold, primary color, uppercase */
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   color: var(--color-text-primary);
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  line-height: 1;
-  /* Name should never truncate or wrap - column is sized for 20 chars */
+  line-height: 1.25;
+  /* Name should never truncate or wrap */
   white-space: nowrap;
   overflow: visible;
 }
 
-/* PROJECTED FINISH - projected finish order based on base score (X/328)
-   Number sized similarly to POST position for visual consistency
-   Color is set dynamically via inline style using gradient from teal to gray */
+/* PROJECTED FINISH - projected finish order based on base score
+   Uses tier colors based on rank position */
 .horse-summary-bar__rank {
-  font-size: 24px; /* Sized similarly to POST position for consistency */
-  font-weight: 700;
+  /* Standardized: 14px, semibold, center aligned */
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   text-align: center;
   display: flex;
   justify-content: center;
   align-items: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .horse-summary-bar__rank-value {
-  font-weight: 700;
+  font-weight: var(--font-semibold);
   letter-spacing: 0.02em;
-  /* Color set dynamically via inline style based on rank gradient */
+  /* Color set dynamically via inline style based on rank:
+     #1: var(--color-accent)
+     #2-3: var(--color-text-primary)
+     #4+: var(--color-text-secondary) */
 }
 
 /* Scratched state for rank */
@@ -207,12 +211,14 @@
 }
 
 /* ============================================
-   EDGE COLUMN
+   EDGE COLUMN - Standardized percentage display
+   Colors: positive=success, negative=danger, neutral=tertiary
    ============================================ */
 
 .horse-summary-bar__edge {
-  font-size: 16px;
-  font-weight: 700;
+  /* Standardized: 14px, medium weight, center aligned */
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   text-align: center;
   display: flex;
   justify-content: center;
@@ -220,24 +226,33 @@
 }
 
 .horse-summary-bar__edge-value {
-  font-weight: 700;
+  font-weight: var(--font-medium);
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
+  /* Colors set dynamically:
+     Positive: var(--color-success)
+     Negative: var(--color-danger)
+     Neutral (±5%): var(--color-text-tertiary) */
 }
 
 /* Hot edge (75%+) gets subtle glow */
 .horse-summary-bar__edge-value--hot {
-  text-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+  text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
 }
 
 .horse-summary-bar--scratched .horse-summary-bar__edge-value {
-  color: var(--color-tier-scratched);
+  color: var(--color-text-muted);
 }
 
-/* Live odds - key interactive element (Option C hierarchy) */
+/* ============================================
+   ODDS COLUMN - Standardized click-to-edit
+   Current odds: accent color, medium weight
+   ============================================ */
+
 .horse-summary-bar__odds {
-  font-size: 18px;
-  font-weight: 700;
+  /* Standardized: 14px, medium weight, center aligned */
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   color: var(--color-text-primary);
   text-align: center;
   display: flex;
@@ -245,43 +260,43 @@
   align-items: center;
 }
 
-/* Wrapper for odds value + label - fixed height for consistent row sizing */
+/* Wrapper for odds value + edit hint */
 .odds-edit-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  min-height: 48px; /* Fixed height to match scratch button */
+  gap: 2px;
+  min-height: 36px;
 }
 
-/* Editable odds value button */
+/* Editable odds value button - accent color for emphasis */
 .odds-edit-value {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   font-family: inherit;
-  color: var(--color-primary, #19abb5);
+  color: var(--color-accent);
   background: transparent;
   border: none;
-  border-bottom: 1px dashed rgba(25, 171, 181, 0.5);
-  padding: 6px 10px;
+  border-bottom: 1px dashed var(--color-accent-border);
+  padding: 4px 8px;
   cursor: pointer;
-  transition: all 0.15s ease;
-  min-width: 56px;
-  min-height: 32px; /* Consistent height */
+  transition: all var(--transition-fast);
+  min-width: 48px;
   text-align: center;
   line-height: 1.2;
+  font-variant-numeric: tabular-nums;
 }
 
 .odds-edit-value:hover:not(:disabled) {
-  border-bottom-color: var(--color-primary, #19abb5);
-  background: rgba(25, 171, 181, 0.1);
+  border-bottom-color: var(--color-accent);
+  background: var(--color-accent-subtle);
 }
 
 .odds-edit-value:focus {
   outline: none;
   border-bottom-style: solid;
-  border-bottom-color: var(--color-primary, #19abb5);
+  border-bottom-color: var(--color-accent);
 }
 
 .odds-edit-value--disabled {
@@ -292,46 +307,55 @@
 
 /* Odds edit input */
 .odds-edit-input {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   font-family: inherit;
-  color: var(--color-primary, #19abb5);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--color-primary, #19abb5);
-  border-radius: 4px;
-  padding: 4px 10px;
-  width: 72px;
+  color: var(--color-accent);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  width: 64px;
   text-align: center;
   outline: none;
+  font-variant-numeric: tabular-nums;
 }
 
 .odds-edit-input::placeholder {
   color: var(--color-text-tertiary);
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 
-/* Odds edit hint - compact label below odds value */
+/* Odds edit hint - "EDIT" text below value */
 .odds-edit-hint {
-  font-size: 9px;
-  font-weight: 500;
-  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  opacity: 0.7;
+  opacity: 0.6;
   line-height: 1;
+  transition: opacity var(--transition-fast);
 }
 
-/* Score - supporting data (Option C hierarchy) */
+.odds-edit-wrapper:hover .odds-edit-hint {
+  opacity: 1;
+}
+
+/* Score - supporting data column */
 .horse-summary-bar__score {
-  font-size: 16px;
+  font-size: var(--text-sm);
+  font-weight: var(--font-normal);
+  color: var(--color-text-secondary);
   text-align: center;
   display: flex;
   justify-content: center;
   align-items: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .horse-summary-bar__score-value {
-  font-weight: 600;
+  font-weight: var(--font-medium);
   /* Color set dynamically via inline style based on score tier */
 }
 
@@ -391,21 +415,23 @@
   border: none;
 }
 
-/* Fair odds - supporting data (Option C hierarchy) */
+/* Fair odds - supporting data column */
 .horse-summary-bar__fair {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-normal);
+  color: var(--color-text-secondary);
   text-align: center;
   display: flex;
   justify-content: center;
   align-items: center;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Fair odds display column (calculated fair odds based on base score) */
 .horse-summary-bar__fair-odds {
-  font-size: 16px;
-  font-weight: 600;
+  /* Standardized: 14px, normal weight, secondary color */
+  font-size: var(--text-sm);
+  font-weight: var(--font-normal);
   color: var(--color-text-secondary);
   text-align: center;
   display: flex;
@@ -414,13 +440,15 @@
 }
 
 .horse-summary-bar__fair-odds-value {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-normal);
   letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ============================================
-   VALUE BADGE (Simplified Overlay/Fair/Underlay)
+   VALUE BADGES - Standardized styling
+   Consistent padding, typography, and semantic colors
    ============================================ */
 
 /* Value wrapper - for centering */
@@ -430,16 +458,19 @@
   justify-content: center;
 }
 
-/* VALUE badge - centered in its cell */
+/* VALUE badge - standardized appearance */
 .horse-summary-bar__value-badge {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  font-weight: 700;
-  padding: 8px 16px;
+  /* Standardized: 12px, medium weight */
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  /* Standardized padding: 4px 8px */
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   letter-spacing: 0.02em;
+  text-transform: uppercase;
   white-space: nowrap;
   border: 1px solid;
   transition:
@@ -447,32 +478,32 @@
     color var(--transition-fast);
 }
 
-/* Overlay badge - Green */
+/* Overlay badge - Green (GETTING EXTRA VALUE, BETTER THAN ODDS SUGGEST) */
 .horse-summary-bar__value-badge--overlay {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: #10b981;
-  color: #10b981;
+  background: var(--color-success-subtle);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--color-success);
 }
 
-/* Fair badge - Gray */
+/* Fair badge - Neutral gray (FAIR VALUE HORSE) */
 .horse-summary-bar__value-badge--fair {
-  background: rgba(110, 110, 112, 0.15);
-  border-color: #6e6e70;
-  color: #6e6e70;
+  background: var(--color-bg-elevated);
+  border-color: var(--color-border-default);
+  color: var(--color-text-secondary);
 }
 
-/* Underlay badge - Red */
+/* Underlay badge - Red (OVERBET BY PUBLIC, FALSE FAVORITE) */
 .horse-summary-bar__value-badge--underlay {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: #ef4444;
-  color: #ef4444;
+  background: var(--color-danger-subtle);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--color-danger);
 }
 
 /* Scratched badge */
 .horse-summary-bar__value-badge--scratched {
-  background: rgba(110, 110, 112, 0.1);
-  border-color: #6e6e70;
-  color: #6e6e70;
+  background: transparent;
+  border-color: var(--color-border-subtle);
+  color: var(--color-text-muted);
 }
 
 /* Expand wrapper - centered */
@@ -482,10 +513,19 @@
   justify-content: center;
 }
 
-/* Expand chevron - centered */
+/* Expand/collapse chevron - standardized */
 .horse-summary-bar__expand {
+  /* Standardized: 20px size, tertiary color */
+  font-size: 20px;
   color: var(--color-text-tertiary);
-  transition: transform var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    color var(--transition-fast);
+}
+
+/* Hover state - chevron becomes more visible */
+.horse-summary-bar:hover .horse-summary-bar__expand {
+  color: var(--color-text-secondary);
 }
 
 .horse-summary-bar--expanded .horse-summary-bar__expand {
@@ -525,9 +565,9 @@
 
 /* Expanded content area - uses CSS transitions for smooth expand/collapse */
 .horse-expanded {
-  background-color: var(--color-base);
-  border-bottom: 1px solid var(--color-border);
-  border-left: 4px solid var(--color-border);
+  background-color: var(--color-bg-base);
+  border-bottom: 1px solid var(--color-border-subtle);
+  border-left: 4px solid var(--color-border-subtle);
   overflow: hidden;
   /* Ensure expanded content stays below sticky headers */
   position: relative;
@@ -836,7 +876,8 @@
 
 /* ============================================
    VALUE LABEL - Plain-English Value Description
-   Positioned between horse name and data columns
+   (FAIR VALUE HORSE, OVERBET BY PUBLIC, etc.)
+   Standardized to match badge requirements
    ============================================ */
 
 .horse-summary-bar__value-label-wrapper {
@@ -850,10 +891,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: var(--radius-sm, 6px);
+  /* Standardized: 12px, medium weight */
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  /* Standardized padding: 4px 8px */
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
   letter-spacing: 0.02em;
   white-space: nowrap;
   border: 1px solid;
