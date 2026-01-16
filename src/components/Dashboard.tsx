@@ -418,6 +418,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     raceState.trackCondition,
     raceState.getOdds,
     raceState.isScratched,
+    raceState.reactivityVersion, // Guarantees recalculation on any state change
   ]);
 
   // Calculate scored horses for ALL races (for day planning mode)
