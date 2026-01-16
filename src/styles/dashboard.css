@@ -299,22 +299,30 @@ body::before {
 }
 
 .sidebar-close-btn {
-  display: flex;
+  /* Icon-only button - ghost variant */
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: var(--btn-icon-only-md, 36px);
+  height: var(--btn-icon-only-md, 36px);
+  padding: 0;
   border: none;
-  background: var(--color-bg-elevated);
-  border-radius: var(--radius-md);
+  background: transparent;
+  border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: var(--transition-fast);
+  transition-property: background-color, color;
 }
 
 .sidebar-close-btn:hover {
   background: var(--color-bg-hover);
   color: var(--color-text-primary);
+}
+
+.sidebar-close-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .sidebar-content {
