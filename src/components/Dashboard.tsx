@@ -1333,6 +1333,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             baseScoreRank={rankInfo?.rank}
                             baseScoreRankOrdinal={rankInfo?.ordinal}
                             baseScoreRankColor={rankInfo?.color}
+                            // Field size for value matrix calculations
+                            fieldSize={activeFieldSize}
                             // Trend rank info (form trajectory)
                             trendRank={trendRank}
                             trendRankOrdinal={trendRank > 0 ? toOrdinal(trendRank) : '—'}

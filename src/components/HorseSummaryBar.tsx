@@ -4,109 +4,19 @@ import type { HorseEntry } from '../types/drf';
 import type { TrendScore } from '../lib/scoring/trendAnalysis';
 import type { BlendedRankResult } from '../lib/scoring/blendedRank';
 import { normalizeOddsFormat } from '../lib/utils/oddsStepper';
+import {
+  getValueTag,
+  getScratchedValueTag,
+  type ValueTagResult,
+} from '../lib/value/valueTagMatrix';
 
 /**
- * Plain-English value label based on edge percentage
- * Uses clear, human-readable labels instead of racing jargon:
- * - +50% or higher: "BETTER THAN ODDS SUGGEST" (Green #10b981)
- * - +20% to +49%: "GETTING EXTRA VALUE" (Teal #19abb5)
- * - -19% to +19%: "FAIR VALUE HORSE" (Grey #6E6E70)
- * - -20% to -49%: "OVERBET BY PUBLIC" (Yellow #f59e0b)
- * - -50% or worse AND is favorite: "FALSE FAVORITE" (Red #ef4444)
- * - -50% or worse AND not favorite: "OVERBET BY PUBLIC" (Red #ef4444)
+ * NOTE: The old getValueLabel function and ValueLabelInfo interface have been removed.
+ * The new 15-tag value matrix system (valueTagMatrix.ts) provides:
+ * - Combined rank + edge analysis (15 distinct tags)
+ * - Two-line stacked labels (plain English + handicapper term)
+ * - Unified color gradient across PROJECTED FINISH, VALUE badge, and EDGE columns
  */
-interface ValueLabelInfo {
-  label: string;
-  color: string;
-  bgColor: string;
-}
-
-/**
- * Get plain-English value label based on edge percentage and favorite status
- */
-const getValueLabel = (
-  edgePercent: number,
-  isFavorite: boolean,
-  isScratched: boolean
-): ValueLabelInfo => {
-  if (isScratched) {
-    return {
-      label: '',
-      color: '#6E6E70',
-      bgColor: 'transparent',
-    };
-  }
-
-  if (edgePercent >= 50) {
-    return {
-      label: 'BETTER THAN ODDS SUGGEST',
-      color: '#10b981',
-      bgColor: 'rgba(16, 185, 129, 0.15)',
-    };
-  }
-
-  if (edgePercent >= 20) {
-    return {
-      label: 'GETTING EXTRA VALUE',
-      color: '#19abb5',
-      bgColor: 'rgba(25, 171, 181, 0.15)',
-    };
-  }
-
-  if (edgePercent >= -19) {
-    return {
-      label: 'FAIR VALUE HORSE',
-      color: '#6E6E70',
-      bgColor: 'rgba(110, 110, 112, 0.15)',
-    };
-  }
-
-  if (edgePercent >= -49) {
-    return {
-      label: 'OVERBET BY PUBLIC',
-      color: '#f59e0b',
-      bgColor: 'rgba(245, 158, 11, 0.15)',
-    };
-  }
-
-  // Edge is -50% or worse
-  if (isFavorite) {
-    return {
-      label: 'FALSE FAVORITE',
-      color: '#ef4444',
-      bgColor: 'rgba(239, 68, 68, 0.15)',
-    };
-  }
-
-  return {
-    label: 'OVERBET BY PUBLIC',
-    color: '#ef4444',
-    bgColor: 'rgba(239, 68, 68, 0.15)',
-  };
-};
-
-/**
- * Get edge color based on percentage
- */
-const getEdgeColor = (edgePercent: number): string => {
-  if (edgePercent >= 75) return '#10b981'; // Bright green
-  if (edgePercent >= 50) return '#22c55e'; // Green
-  if (edgePercent >= 25) return '#84cc16'; // Yellow-green
-  if (edgePercent >= -25) return '#6B7280'; // Gray (fair)
-  return '#ef4444'; // Red (underlay)
-};
-
-/**
- * Get rank display color based on position
- * Top 3 are green, 4th is yellow, 5th+ is gray
- */
-const getRankColor = (rank: number | undefined): string => {
-  if (!rank) return '#6B7280';
-  if (rank === 1) return '#10b981'; // Bright green, top pick
-  if (rank <= 3) return '#22c55e'; // Green, contender
-  if (rank === 4) return '#eab308'; // Yellow, playable
-  return '#6B7280'; // Gray, longshot
-};
 
 /**
  * Format edge percentage for the EDGE column display
@@ -149,6 +59,8 @@ interface HorseSummaryBarProps {
   baseScoreRank?: number;
   baseScoreRankOrdinal?: string;
   baseScoreRankColor?: string;
+  /** Total number of active (non-scratched) horses in the field */
+  fieldSize?: number;
   // Props for trend rank
   trendRank?: number;
   trendRankOrdinal?: string;
@@ -205,6 +117,8 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   baseScoreRank,
   baseScoreRankOrdinal: _baseScoreRankOrdinal, // Kept for compatibility but not used
   baseScoreRankColor: _baseScoreRankColor, // Kept for compatibility but not used
+  // Field size for value calculations
+  fieldSize = 10, // Default to 10 if not provided
   // Trend rank (form trajectory) - kept for compatibility but not displayed
   trendRank: _trendRank,
   trendRankOrdinal: _trendRankOrdinal,
@@ -221,7 +135,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   isPrimaryValuePlay = false,
   edgePercent,
   rowId,
-  isFavorite = false,
+  isFavorite: _isFavorite = false, // Kept for compatibility but now using value matrix
 }) => {
   // Extract horse data from HorseEntry type
   const programNumber = horse.programNumber;
@@ -233,8 +147,14 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   // Use edgePercent for display if provided, otherwise fall back to valuePercent
   const displayEdge = edgePercent !== undefined ? edgePercent : valuePercent;
 
-  // Get plain-English value label based on edge percentage and favorite status
-  const valueLabelInfo = getValueLabel(displayEdge, isFavorite, isScratched);
+  // Get 15-tag value result based on rank, field size, and edge percentage
+  // Uses new value matrix system combining projected finish rank with edge
+  const valueTagResult: ValueTagResult = isScratched
+    ? getScratchedValueTag()
+    : getValueTag(baseScoreRank ?? 10, fieldSize, displayEdge);
+
+  // Unified color for PROJECTED FINISH, VALUE badge, and EDGE columns
+  const unifiedColor = valueTagResult.color;
 
   const handleRowClick = () => {
     if (!isScratched) {
@@ -370,36 +290,40 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       </div>
 
       {/* Column 6: PROJECTED FINISH - Model Ranking (#1, #2, etc. based on base score) - right side */}
+      {/* Uses unified color from value matrix */}
       <div className="horse-summary-bar__rank">
         <span
           className={`horse-summary-bar__rank-value ${!isScratched && baseScoreRank && baseScoreRank <= 3 ? 'horse-summary-bar__rank-value--top' : ''}`}
-          style={{ color: isScratched ? undefined : getRankColor(baseScoreRank) }}
+          style={{ color: isScratched ? undefined : unifiedColor }}
         >
           {isScratched ? '—' : baseScoreRank ? `#${baseScoreRank}` : '—'}
         </span>
       </div>
 
-      {/* Column 7: VALUE LABEL - Plain-English value description (right side - fixed 180px width, 48px height) */}
+      {/* Column 7: VALUE BADGE - Two-line stacked label (right side - fixed 180px width, 48px height) */}
+      {/* Uses 15-tag value matrix with unified color */}
       <div className="horse-summary-bar__value-label-wrapper">
-        {valueLabelInfo.label && (
-          <span
-            className="horse-summary-bar__value-label-badge"
+        {valueTagResult.tag.plainLabel && (
+          <div
+            className="value-badge"
             style={{
-              backgroundColor: valueLabelInfo.bgColor,
-              color: valueLabelInfo.color,
-              borderColor: valueLabelInfo.color,
+              backgroundColor: unifiedColor,
+              color: valueTagResult.textColor,
             }}
           >
-            {valueLabelInfo.label}
-          </span>
+            <span className="value-badge__plain">{valueTagResult.tag.plainLabel}</span>
+            <div className="value-badge__divider"></div>
+            <span className="value-badge__tech">{valueTagResult.tag.techLabel}</span>
+          </div>
         )}
       </div>
 
       {/* Column 8: EDGE - Value gap percentage (right side - far right, no chevron after) */}
+      {/* Uses unified color from value matrix */}
       <div className="horse-summary-bar__edge">
         <span
           className={`horse-summary-bar__edge-value ${displayEdge >= 75 ? 'horse-summary-bar__edge-value--hot' : ''}`}
-          style={{ color: isScratched ? undefined : getEdgeColor(displayEdge) }}
+          style={{ color: isScratched ? undefined : unifiedColor }}
         >
           {isScratched ? '—' : formatEdgeDisplay(displayEdge)}
         </span>
