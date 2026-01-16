@@ -208,10 +208,9 @@ Provide a helpful, accurate answer.`;
       if (typeof window !== 'undefined') return true;
       if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) return true;
       // Server-side check
-      if (typeof globalThis !== 'undefined' && 'process' in globalThis) {
-        const nodeProcess = globalThis.process as { env?: Record<string, string | undefined> };
-        if (nodeProcess.env?.GEMINI_API_KEY) return true;
-      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const nodeProcess = (globalThis as any).process;
+      if (nodeProcess?.env?.GEMINI_API_KEY) return true;
       return false;
     } catch {
       return false;

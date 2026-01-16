@@ -40,12 +40,15 @@ export function getGeminiApiKey(): string | null {
   }
 
   // Server-side (Node.js / Vercel) - check is done at runtime
-
-  if (typeof globalThis !== 'undefined' && 'process' in globalThis) {
-    const nodeProcess = globalThis.process as { env?: Record<string, string | undefined> };
-    if (nodeProcess.env?.GEMINI_API_KEY) {
-      return nodeProcess.env.GEMINI_API_KEY;
+  // Use try/catch to safely check for Node.js process object
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const nodeProcess = (globalThis as any).process;
+    if (nodeProcess?.env?.GEMINI_API_KEY) {
+      return nodeProcess.env.GEMINI_API_KEY as string;
     }
+  } catch {
+    // Not in Node.js environment
   }
 
   return null;
