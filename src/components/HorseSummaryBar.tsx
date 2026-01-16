@@ -329,33 +329,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       {/* Column 3: HORSE Name - FULL WIDTH, NO TRUNCATION */}
       <div className="horse-summary-bar__name">{horseName.toUpperCase()}</div>
 
-      {/* Column 4: VALUE LABEL - Plain-English value description */}
-      <div className="horse-summary-bar__value-label-wrapper">
-        {valueLabelInfo.label && (
-          <span
-            className="horse-summary-bar__value-label-badge"
-            style={{
-              backgroundColor: valueLabelInfo.bgColor,
-              color: valueLabelInfo.color,
-              borderColor: valueLabelInfo.color,
-            }}
-          >
-            {valueLabelInfo.label}
-          </span>
-        )}
-      </div>
-
-      {/* Column 5: PROJECTED FINISH - Model Ranking (#1, #2, etc. based on base score) */}
-      <div className="horse-summary-bar__rank">
-        <span
-          className={`horse-summary-bar__rank-value ${!isScratched && baseScoreRank && baseScoreRank <= 3 ? 'horse-summary-bar__rank-value--top' : ''}`}
-          style={{ color: isScratched ? undefined : getRankColor(baseScoreRank) }}
-        >
-          {isScratched ? '—' : baseScoreRank ? `#${baseScoreRank}` : '—'}
-        </span>
-      </div>
-
-      {/* Column 6: ODDS - Click to edit */}
+      {/* Column 4: ODDS - Click to edit (left side - price data) */}
       <div className="horse-summary-bar__odds" onClick={(e) => e.stopPropagation()}>
         {isEditingOdds ? (
           <div className="odds-edit-wrapper">
@@ -388,14 +362,40 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         )}
       </div>
 
-      {/* Column 6: FAIR - Calculated fair odds */}
+      {/* Column 5: FAIR - Calculated fair odds (left side - price data) */}
       <div className="horse-summary-bar__fair-odds">
         <span className="horse-summary-bar__fair-odds-value">
           {isScratched ? '—' : fairOddsDisplay}
         </span>
       </div>
 
-      {/* Column 8: EDGE - Value gap percentage */}
+      {/* Column 6: PROJECTED FINISH - Model Ranking (#1, #2, etc. based on base score) - right side */}
+      <div className="horse-summary-bar__rank">
+        <span
+          className={`horse-summary-bar__rank-value ${!isScratched && baseScoreRank && baseScoreRank <= 3 ? 'horse-summary-bar__rank-value--top' : ''}`}
+          style={{ color: isScratched ? undefined : getRankColor(baseScoreRank) }}
+        >
+          {isScratched ? '—' : baseScoreRank ? `#${baseScoreRank}` : '—'}
+        </span>
+      </div>
+
+      {/* Column 7: VALUE LABEL - Plain-English value description (right side - fixed 180px width, 48px height) */}
+      <div className="horse-summary-bar__value-label-wrapper">
+        {valueLabelInfo.label && (
+          <span
+            className="horse-summary-bar__value-label-badge"
+            style={{
+              backgroundColor: valueLabelInfo.bgColor,
+              color: valueLabelInfo.color,
+              borderColor: valueLabelInfo.color,
+            }}
+          >
+            {valueLabelInfo.label}
+          </span>
+        )}
+      </div>
+
+      {/* Column 8: EDGE - Value gap percentage (right side - far right, no chevron after) */}
       <div className="horse-summary-bar__edge">
         <span
           className={`horse-summary-bar__edge-value ${displayEdge >= 75 ? 'horse-summary-bar__edge-value--hot' : ''}`}
@@ -403,11 +403,6 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         >
           {isScratched ? '—' : formatEdgeDisplay(displayEdge)}
         </span>
-      </div>
-
-      {/* Column 9: Expand Chevron */}
-      <div className="horse-summary-bar__expand-wrapper">
-        <span className="material-icons horse-summary-bar__expand">expand_more</span>
       </div>
     </div>
   );

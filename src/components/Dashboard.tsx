@@ -1032,30 +1032,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span className="horse-list-header__label">HORSE</span>
             </div>
 
-            {/* Column 4: VALUE - Plain-English value labels - NOT sortable */}
-            <div className="horse-list-header__cell horse-list-header__cell--value-label">
-              <span className="horse-list-header__label">VALUE</span>
-            </div>
-
-            {/* Column 5: PROJECTED FINISH - Sortable */}
-            <div
-              className={`horse-list-header__cell horse-list-header__cell--rank horse-list-header__cell--sortable ${sortColumn === 'RANK' ? 'horse-list-header__cell--active' : ''}`}
-              onClick={() => handleColumnSort('RANK')}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('RANK')}
-            >
-              <span className="horse-list-header__label">
-                PROJECTED FINISH
-                <span
-                  className={`horse-list-header__arrow ${sortColumn === 'RANK' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
-                >
-                  {sortColumn === 'RANK' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
-                </span>
-              </span>
-            </div>
-
-            {/* Column 5: ODDS - Sortable */}
+            {/* Column 4: ODDS - Sortable (left side - price data) */}
             <div
               className={`horse-list-header__cell horse-list-header__cell--odds horse-list-header__cell--sortable ${sortColumn === 'ODDS' ? 'horse-list-header__cell--active' : ''}`}
               onClick={() => handleColumnSort('ODDS')}
@@ -1073,7 +1050,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </span>
             </div>
 
-            {/* Column 6: FAIR - Sortable */}
+            {/* Column 5: FAIR - Sortable (left side - price data) */}
             <div
               className={`horse-list-header__cell horse-list-header__cell--fair-odds horse-list-header__cell--sortable ${sortColumn === 'FAIR' ? 'horse-list-header__cell--active' : ''}`}
               onClick={() => handleColumnSort('FAIR')}
@@ -1091,7 +1068,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </span>
             </div>
 
-            {/* Column 7: EDGE - Sortable */}
+            {/* Column 6: PROJECTED FINISH - Sortable (right side - value analysis) */}
+            <div
+              className={`horse-list-header__cell horse-list-header__cell--rank horse-list-header__cell--sortable ${sortColumn === 'RANK' ? 'horse-list-header__cell--active' : ''}`}
+              onClick={() => handleColumnSort('RANK')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('RANK')}
+            >
+              <span className="horse-list-header__label">
+                PROJECTED FINISH
+                <span
+                  className={`horse-list-header__arrow ${sortColumn === 'RANK' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
+                >
+                  {sortColumn === 'RANK' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                </span>
+              </span>
+            </div>
+
+            {/* Column 7: VALUE - Plain-English value labels - NOT sortable (right side - value analysis) */}
+            <div className="horse-list-header__cell horse-list-header__cell--value-label">
+              <span className="horse-list-header__label">VALUE</span>
+            </div>
+
+            {/* Column 8: EDGE - Sortable (right side - value analysis, far right) */}
             <div
               className={`horse-list-header__cell horse-list-header__cell--edge horse-list-header__cell--sortable ${sortColumn === 'EDGE' ? 'horse-list-header__cell--active' : ''}`}
               onClick={() => handleColumnSort('EDGE')}
@@ -1107,11 +1107,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   {sortColumn === 'EDGE' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
                 </span>
               </span>
-            </div>
-
-            {/* Column 9: Expand */}
-            <div className="horse-list-header__cell horse-list-header__cell--expand">
-              {/* Empty */}
             </div>
           </div>
         )}
