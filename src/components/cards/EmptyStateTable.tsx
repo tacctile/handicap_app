@@ -7,14 +7,15 @@ interface EmptyStateTableProps {
   isLoading?: boolean
 }
 
+// Column structure matches RaceTable: SCR, POST, HORSE, ODDS, FINISH, FAIR, EDGE
 const tableHeaders = [
-  { key: 'pp', label: 'PP', width: '60px' },
-  { key: 'horse', label: 'Horse', width: '200px' },
-  { key: 'trainer', label: 'Trainer', width: '150px' },
-  { key: 'jockey', label: 'Jockey', width: '150px' },
-  { key: 'score', label: 'Score', width: '80px' },
-  { key: 'odds', label: 'Odds', width: '80px' },
-  { key: 'actions', label: 'Actions', width: '100px' },
+  { key: 'scr', label: 'SCR', width: '50px' },
+  { key: 'post', label: 'POST', width: '60px' },
+  { key: 'horse', label: 'HORSE', width: '200px' },
+  { key: 'odds', label: 'ODDS', width: '80px' },
+  { key: 'finish', label: 'FINISH', width: '70px' },
+  { key: 'fair', label: 'FAIR', width: '70px' },
+  { key: 'edge', label: 'EDGE', width: '80px' },
 ]
 
 export function EmptyStateTable({ onUploadClick, isLoading }: EmptyStateTableProps) {
@@ -52,22 +53,27 @@ export function EmptyStateTable({ onUploadClick, isLoading }: EmptyStateTablePro
           </thead>
           <tbody>
             {isLoading ? (
-              // Loading skeleton rows
+              // Loading skeleton rows - matches new column structure
               skeletonRows.map((i) => (
                 <tr key={i} className="skeleton-row">
-                  <td><Skeleton width="32px" height="32px" className="rounded" /></td>
+                  <td><Skeleton width="24px" height="24px" className="rounded" /></td>
+                  <td><Skeleton width="32px" height="24px" /></td>
                   <td><Skeleton width="140px" height="16px" /></td>
-                  <td><Skeleton width="100px" height="16px" /></td>
-                  <td><Skeleton width="100px" height="16px" /></td>
-                  <td><Skeleton width="48px" height="28px" className="rounded" /></td>
                   <td><Skeleton width="48px" height="20px" /></td>
-                  <td><Skeleton width="60px" height="28px" className="rounded" /></td>
+                  <td><Skeleton width="32px" height="24px" /></td>
+                  <td><Skeleton width="40px" height="20px" /></td>
+                  <td><Skeleton width="48px" height="20px" /></td>
                 </tr>
               ))
             ) : (
-              // Empty state rows with pattern
+              // Empty state rows - matches new column structure: SCR, POST, HORSE, ODDS, FINISH, FAIR, EDGE
               skeletonRows.map((i) => (
                 <tr key={i} className="empty-row">
+                  <td>
+                    <div className="empty-scr-box">
+                      <span className="material-icons" style={{ fontSize: '14px', opacity: 0.3 }}>check_box_outline_blank</span>
+                    </div>
+                  </td>
                   <td>
                     <div className="empty-pp-badge">{i + 1}</div>
                   </td>
@@ -75,21 +81,16 @@ export function EmptyStateTable({ onUploadClick, isLoading }: EmptyStateTablePro
                     <div className="empty-cell-placeholder" />
                   </td>
                   <td>
-                    <div className="empty-cell-placeholder short" />
+                    <div className="empty-odds">—</div>
                   </td>
                   <td>
-                    <div className="empty-cell-placeholder short" />
-                  </td>
-                  <td>
-                    <div className="empty-score-badge">—</div>
+                    <div className="empty-finish-badge">—</div>
                   </td>
                   <td>
                     <div className="empty-odds">—</div>
                   </td>
                   <td>
-                    <div className="empty-action-btn">
-                      <span className="material-icons">visibility</span>
-                    </div>
+                    <div className="empty-edge">—</div>
                   </td>
                 </tr>
               ))

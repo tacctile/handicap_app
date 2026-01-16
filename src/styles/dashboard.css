@@ -1217,6 +1217,30 @@ body::before {
   color: var(--text-disabled);
 }
 
+.empty-scr-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.empty-finish-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  font-weight: 500;
+  color: var(--text-disabled);
+}
+
+.empty-edge {
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--text-disabled);
+}
+
 .empty-action-btn {
   display: inline-flex;
   align-items: center;
