@@ -250,9 +250,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [strategyGuideOpen, setStrategyGuideOpen] = useState(false);
 
   // State for horse list sort order and direction
-  // Sortable columns: POST, RANK, ODDS, FAIR, EDGE
-  // Non-sortable: HORSE (name), VALUE (badge)
-  type SortColumn = 'POST' | 'RANK' | 'ODDS' | 'FAIR' | 'EDGE';
+  // Sortable columns: POST, RANK, ODDS, FAIR, VALUE, EDGE
+  // Non-sortable: HORSE (name)
+  type SortColumn = 'POST' | 'RANK' | 'ODDS' | 'FAIR' | 'VALUE' | 'EDGE';
   type SortDirection = 'asc' | 'desc';
   const [sortColumn, setSortColumn] = useState<SortColumn>('POST');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -287,7 +287,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const savedRaceState = sessionPersistence.getRaceState(selectedRaceIndex);
     if (savedRaceState) {
       // Validate and apply saved sort column
-      const validColumns: SortColumn[] = ['POST', 'RANK', 'ODDS', 'FAIR', 'EDGE'];
+      const validColumns: SortColumn[] = ['POST', 'RANK', 'ODDS', 'FAIR', 'VALUE', 'EDGE'];
       const savedColumn = savedRaceState.sortColumn as SortColumn;
       if (validColumns.includes(savedColumn)) {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing sort state with persisted session on race change
@@ -601,6 +601,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
           // Higher score = lower fair odds (better horse)
           // So we sort by score descending for ascending fair odds order
           return (scoreB - scoreA) * direction;
+        });
+
+      case 'VALUE':
+        // Sort by edge percentage (same as EDGE - value labels are derived from edge %)
+        // Ascending = lowest edge first, Descending = highest edge first
+        return horses.sort((a, b) => {
+          const playA = valueAnalysis.valuePlays.find((p) => p.horseIndex === a.index);
+          const playB = valueAnalysis.valuePlays.find((p) => p.horseIndex === b.index);
+          const edgeA = playA?.valueEdge ?? -999;
+          const edgeB = playB?.valueEdge ?? -999;
+          // For value, descending shows best value first
+          return (edgeB - edgeA) * direction;
         });
 
       case 'EDGE':
@@ -1087,9 +1099,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </span>
             </div>
 
-            {/* Column 7: VALUE - Plain-English value labels - NOT sortable (right side - value analysis) */}
-            <div className="horse-list-header__cell horse-list-header__cell--value-label">
-              <span className="horse-list-header__label">VALUE</span>
+            {/* Column 7: VALUE - Plain-English value labels - Sortable (right side - value analysis) */}
+            <div
+              className={`horse-list-header__cell horse-list-header__cell--value-label horse-list-header__cell--sortable ${sortColumn === 'VALUE' ? 'horse-list-header__cell--active' : ''}`}
+              onClick={() => handleColumnSort('VALUE')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('VALUE')}
+            >
+              <span className="horse-list-header__label">
+                VALUE
+                <span
+                  className={`horse-list-header__arrow ${sortColumn === 'VALUE' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
+                >
+                  {sortColumn === 'VALUE' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                </span>
+              </span>
             </div>
 
             {/* Column 8: EDGE - Sortable (right side - value analysis, far right) */}

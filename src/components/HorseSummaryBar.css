@@ -666,31 +666,19 @@
 
 /* ============================================
    VALUE PLAY HIGHLIGHTING
-   Highlights horses identified as value bets
+   Value play styling removed - all rows have uniform background
+   Classes kept for compatibility but no visual effect
    ============================================ */
 
-/* Any value play gets light green tint */
-.horse-summary-bar--value-play {
-  background: rgba(16, 185, 129, 0.08);
-}
-
-.horse-summary-bar--value-play:hover {
-  background: rgba(16, 185, 129, 0.12);
-}
-
-/* Primary value play - stands out strongly with background color */
-.horse-summary-bar--primary-value-play {
-  background: rgba(16, 185, 129, 0.12);
-  /* No left border indicator - background color is sufficient */
-}
-
-.horse-summary-bar--primary-value-play .horse-summary-bar__name {
-  font-size: 26px; /* Slightly larger name */
-}
-
+/* Value play classes - no background color change (uniform row styling) */
+.horse-summary-bar--value-play,
+.horse-summary-bar--value-play:hover,
+.horse-summary-bar--primary-value-play,
 .horse-summary-bar--primary-value-play:hover {
-  background: rgba(16, 185, 129, 0.18);
+  /* No background override - uses base .horse-summary-bar background */
 }
+
+/* Primary value play name styling removed for uniformity */
 
 /* Primary value badge gets subtle pulse */
 .horse-summary-bar__value-badge--primary {
@@ -709,16 +697,13 @@
 
 /* ============================================
    UNDERLAY ROW STYLING
-   Subtle red indicator for negative edge horses
+   Underlay background removed - all rows have uniform background
+   Class kept for compatibility but no visual effect
    ============================================ */
 
-.horse-summary-bar--tier-underlay {
-  background: rgba(239, 68, 68, 0.03);
-  /* No left border indicator - background color is sufficient */
-}
-
+.horse-summary-bar--tier-underlay,
 .horse-summary-bar--tier-underlay:hover {
-  background: rgba(239, 68, 68, 0.06);
+  /* No background override - uses base .horse-summary-bar background */
 }
 
 /* ============================================
