@@ -11,12 +11,7 @@ import type { BetTier, RaceContextSummary } from '../hooks/useRaceBets';
 // ============================================================================
 
 // Import score limits and tier functions from the authoritative scoring engine (single source of truth)
-import {
-  SCORE_LIMITS as SCORING_LIMITS,
-  MAX_BASE_SCORE,
-  MAX_SCORE,
-  getScoreColor,
-} from '../lib/scoring';
+import { SCORE_LIMITS as SCORING_LIMITS, MAX_BASE_SCORE, MAX_SCORE } from '../lib/scoring';
 
 // Score limits by category - derived from lib/scoring for display
 const SCORE_LIMITS = {
@@ -177,13 +172,6 @@ const getValueIndicator = (
   return { label: 'FAIR', className: 'fair', color: '#6B7280' };
 };
 
-/**
- * Get tier color for BASE score using authoritative scoring thresholds
- */
-const getTierColor = (baseScore: number): string => {
-  return getScoreColor(baseScore, false);
-};
-
 // Get data quality color
 const getDataQualityColor = (quality: string | undefined): string => {
   switch (quality?.toUpperCase()) {
@@ -196,23 +184,6 @@ const getDataQualityColor = (quality: string | undefined): string => {
     default:
       return 'var(--color-text-secondary)';
   }
-};
-
-// Get edge color
-const getEdgeColor = (edge: number): string => {
-  if (edge >= 75) return '#10b981'; // Bright green
-  if (edge >= 50) return '#22c55e'; // Green
-  if (edge >= 25) return '#84cc16'; // Yellow-green
-  if (edge >= -25) return '#6B7280'; // Gray (fair)
-  return '#ef4444'; // Red (underlay)
-};
-
-/**
- * Get solid teal color for progress bars
- * All bars use the same #19abb5 teal color regardless of score
- */
-const getSolidTealColor = (): string => {
-  return '#19abb5';
 };
 
 // Helper to determine if win rate is good (25%+)
@@ -444,7 +415,7 @@ interface HorseExpandedViewProps {
   // New props for value-focused display
   currentOdds?: string;
   fairOdds?: string;
-  edgePercent?: number;
+  edgePercent?: number; // Not used in this component but received from parent
   modelRank?: number;
   totalHorses?: number;
   isOverlay?: boolean;
@@ -478,7 +449,7 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   score,
   currentOdds = '—',
   fairOdds = '—',
-  edgePercent = 0,
+  edgePercent: _edgePercent = 0,
   modelRank: _modelRank = 0,
   totalHorses: _totalHorses = 0,
   isOverlay = false,
@@ -539,26 +510,28 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   // which is calculated at the Dashboard level using the useRaceBets hook
 
   return (
-    <div className={`horse-expanded ${isVisible ? 'horse-expanded--visible' : ''} horse-expanded--${valueStatus.toLowerCase()}`}>
+    <div
+      className={`horse-expanded ${isVisible ? 'horse-expanded--visible' : ''} horse-expanded--${valueStatus.toLowerCase()}`}
+    >
       {/* ================================================================
           SECTION 1: FURLONG SCORE ANALYSIS (Always Visible)
-          Left: Large score with progress bar, base/edge, rating
-          Right: Horizontal category breakdown with progress bars
+          Score-only section: Shows algorithm's quality assessment
+          NO betting info here - betting value is shown in main row
           ================================================================ */}
       <section className="furlong-score-analysis">
         <div className="furlong-score-analysis__header">FURLONG SCORE ANALYSIS</div>
         <div className="furlong-score-analysis__content">
-          {/* Left Side: Total Score Hero */}
+          {/* Left Side: Total Score Hero - Score only, no betting info */}
           <div className="furlong-score__total">
-            <div className="furlong-score__total-number">
-              <span
-                className="furlong-score__total-value"
-                style={{ color: getTierColor(baseScore) }}
-              >
+            {/* Main Score Display - Hero element */}
+            <div className="furlong-score__hero">
+              <span className="furlong-score__hero-value" style={{ color: '#19abb5' }}>
                 {scoreTotal}
               </span>
-              <span className="furlong-score__total-max">/{SCORE_LIMITS.total}</span>
-              <span className="furlong-score__total-percent">({scorePercentage}%)</span>
+              <span className="furlong-score__hero-subtitle">
+                out of {SCORE_LIMITS.total} possible
+              </span>
+              <span className="furlong-score__hero-helper">Our overall rating for this horse</span>
             </div>
 
             {/* Progress Bar - solid teal */}
@@ -567,47 +540,33 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                 className="furlong-score__total-bar-fill"
                 style={{
                   width: `${scorePercentage}%`,
-                  backgroundColor: getSolidTealColor(),
+                  backgroundColor: '#19abb5',
                 }}
               />
             </div>
 
-            {/* Base + Edge Breakdown */}
-            <div className="furlong-score__breakdown">
-              <span className="furlong-score__breakdown-item">
-                Base: {baseScore}/{SCORE_LIMITS.base}
+            {/* Base Score - supporting info */}
+            <div className="furlong-score__base-info">
+              <span className="furlong-score__base-label">
+                Base Score: {baseScore}/{SCORE_LIMITS.base}
               </span>
-              <span className="furlong-score__breakdown-separator">·</span>
-              <span
-                className="furlong-score__breakdown-item"
-                style={{ color: getEdgeColor(edgePercent) }}
-              >
-                Edge: {edgePercent >= 0 ? '+' : ''}
-                {Math.round(edgePercent)}%
-              </span>
+              <span className="furlong-score__base-helper">Before race-day adjustments</span>
             </div>
 
-            {/* Rating Section - Simplified to single word only */}
-            <div className="furlong-score__rating-section">
-              <div className="furlong-score__tier-rating">
+            {/* Data Quality - supporting info */}
+            <div className="furlong-score__quality-info">
+              <span className="furlong-score__quality-label">
+                Data Quality:{' '}
                 <span
-                  className="furlong-score__value-indicator"
-                  style={{ color: valueIndicator.color }}
-                >
-                  {valueIndicator.label}
-                </span>
-                <span className="furlong-score__tier-label">RATING</span>
-              </div>
-
-              <div className="furlong-score__data-quality">
-                <span
-                  className="furlong-score__quality-value"
+                  className="furlong-score__quality-badge"
                   style={{ color: getDataQualityColor(score?.confidenceLevel) }}
                 >
                   {score?.confidenceLevel?.toUpperCase() || 'HIGH'}
                 </span>
-                <span className="furlong-score__quality-label">DATA QUALITY</span>
-              </div>
+              </span>
+              <span className="furlong-score__quality-helper">
+                How complete the horse's data is
+              </span>
             </div>
           </div>
 
@@ -624,7 +583,7 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                     className="furlong-score__category-bar-fill"
                     style={{
                       width: `${cat.percent}%`,
-                      backgroundColor: getSolidTealColor(),
+                      backgroundColor: '#19abb5',
                     }}
                   />
                 </div>
