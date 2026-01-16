@@ -539,6 +539,62 @@
 }
 
 /* ============================================
+   EDGE GRADIENT ACCENT (Dynamic left border based on field edge distribution)
+   Matches the Factor Breakdown component pattern:
+   - 4px left border with gradient color
+   - Subtle background tint at 0.06 opacity
+   ============================================ */
+
+/* Base class when edge accent is applied */
+.horse-summary-bar--has-edge-accent {
+  /* Border and background are applied via inline styles for dynamic coloring */
+  /* This class provides any additional styling hooks needed */
+  border-left-width: 4px;
+  border-left-style: solid;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+/* Ensure the edge accent border is visible even in expanded state */
+.horse-summary-bar--has-edge-accent.horse-summary-bar--expanded {
+  /* Keep the border visible when expanded */
+  border-left-width: 4px;
+}
+
+/* Override scratched state to maintain subtle gray border */
+.horse-summary-bar--scratched.horse-summary-bar--has-edge-accent {
+  /* Scratched horses get gray border color via inline style */
+  opacity: 0.5;
+}
+
+/* Ensure value play highlighting takes precedence over subtle edge tint */
+.horse-summary-bar--value-play.horse-summary-bar--has-edge-accent {
+  /* Value play green background overrides edge tint */
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.horse-summary-bar--primary-value-play.horse-summary-bar--has-edge-accent {
+  /* Primary value play stronger green overrides edge tint */
+  background: rgba(16, 185, 129, 0.12);
+}
+
+/* Hover state for rows with edge accent */
+.horse-summary-bar--has-edge-accent:hover:not(.horse-summary-bar--scratched) {
+  /* Slightly elevate background on hover while keeping border */
+  background-color: var(--color-elevated);
+}
+
+.horse-summary-bar--value-play.horse-summary-bar--has-edge-accent:hover {
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.horse-summary-bar--primary-value-play.horse-summary-bar--has-edge-accent:hover {
+  background: rgba(16, 185, 129, 0.18);
+}
+
+/* ============================================
    TIER CLASSES (Background color only, no left border)
    ============================================ */
 

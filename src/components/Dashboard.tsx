@@ -24,6 +24,7 @@ import {
 import { analyzeRaceDiamonds } from '../lib/diamonds';
 import { rankHorsesByBlended, type BlendedRankedHorse } from '../lib/scoring/blendedRank';
 import { toOrdinal, calculateRankGradientColor } from '../lib/scoring/rankUtils';
+import { calculateFieldEdgeGradients } from '../lib/utils/edgeGradient';
 import type { TrendScore } from '../lib/scoring/trendAnalysis';
 import { TrendDetailModal } from './TrendDetailModal';
 import { getTrackData } from '../data/tracks';
@@ -250,9 +251,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [strategyGuideOpen, setStrategyGuideOpen] = useState(false);
 
   // State for horse list sort order and direction
-  // Sortable columns: POST, RANK, ODDS, FAIR, EDGE
-  // Non-sortable: HORSE (name), VALUE (badge)
-  type SortColumn = 'POST' | 'RANK' | 'ODDS' | 'FAIR' | 'EDGE';
+  // Sortable columns: POST, RANK, ODDS, FAIR, VALUE, EDGE
+  // Non-sortable: HORSE (name only)
+  type SortColumn = 'POST' | 'RANK' | 'ODDS' | 'FAIR' | 'VALUE' | 'EDGE';
   type SortDirection = 'asc' | 'desc';
   const [sortColumn, setSortColumn] = useState<SortColumn>('POST');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -287,7 +288,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const savedRaceState = sessionPersistence.getRaceState(selectedRaceIndex);
     if (savedRaceState) {
       // Validate and apply saved sort column
-      const validColumns: SortColumn[] = ['POST', 'RANK', 'ODDS', 'FAIR', 'EDGE'];
+      const validColumns: SortColumn[] = ['POST', 'RANK', 'ODDS', 'FAIR', 'VALUE', 'EDGE'];
       const savedColumn = savedRaceState.sortColumn as SortColumn;
       if (validColumns.includes(savedColumn)) {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing sort state with persisted session on race change
@@ -555,6 +556,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // Get the primary value play horse index
   const primaryValuePlayIndex = valueAnalysis.primaryValuePlay?.horseIndex ?? -1;
 
+  // Calculate edge gradient colors for the current field
+  // These colors are used for the left border accent on each horse row
+  // Recalculates when: odds change, horse scratched, race changes, or reactivityVersion changes
+  const edgeGradientMap = useMemo(() => {
+    if (!valueAnalysis || !currentRaceScoredHorses?.length) return new Map();
+
+    // Build horse edge data from value plays
+    const horseEdgeData = currentRaceScoredHorses.map((horse) => {
+      const valuePlay = valueAnalysis.valuePlays.find((p) => p.horseIndex === horse.index);
+      const isScratched = raceState.isScratched(horse.index);
+      return {
+        index: horse.index,
+        edgePercent: valuePlay?.valueEdge ?? 0,
+        isScratched,
+      };
+    });
+
+    return calculateFieldEdgeGradients(horseEdgeData);
+  }, [currentRaceScoredHorses, valueAnalysis, raceState.isScratched, reactivityVersion]);
+
   // Sort horses based on current sort column and direction
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const sortedScoredHorses = useMemo(() => {
@@ -601,6 +622,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
           // Higher score = lower fair odds (better horse)
           // So we sort by score descending for ascending fair odds order
           return (scoreB - scoreA) * direction;
+        });
+
+      case 'VALUE':
+        // Sort by edge percentage value (same as EDGE, but for the VALUE column)
+        // Users clicking VALUE header expect sorting by the underlying edge % value
+        return horses.sort((a, b) => {
+          const playA = valueAnalysis.valuePlays.find((p) => p.horseIndex === a.index);
+          const playB = valueAnalysis.valuePlays.find((p) => p.horseIndex === b.index);
+          const edgeA = playA?.valueEdge ?? -999;
+          const edgeB = playB?.valueEdge ?? -999;
+          // For value/edge, descending is more natural (best value first)
+          // So we invert the direction
+          return (edgeB - edgeA) * direction;
         });
 
       case 'EDGE':
@@ -1087,9 +1121,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </span>
             </div>
 
-            {/* Column 7: VALUE - Plain-English value labels - NOT sortable (right side - value analysis) */}
-            <div className="horse-list-header__cell horse-list-header__cell--value-label">
-              <span className="horse-list-header__label">VALUE</span>
+            {/* Column 7: VALUE - Plain-English value labels - NOW sortable by underlying edge % (right side - value analysis) */}
+            <div
+              className={`horse-list-header__cell horse-list-header__cell--value-label horse-list-header__cell--sortable ${sortColumn === 'VALUE' ? 'horse-list-header__cell--active' : ''}`}
+              onClick={() => handleColumnSort('VALUE')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('VALUE')}
+            >
+              <span className="horse-list-header__label">
+                VALUE
+                <span
+                  className={`horse-list-header__arrow ${sortColumn === 'VALUE' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
+                >
+                  {sortColumn === 'VALUE' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                </span>
+              </span>
             </div>
 
             {/* Column 8: EDGE - Sortable (right side - value analysis, far right) */}
@@ -1362,6 +1409,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             rowId={`horse-row-${horseIndex}`}
                             // Favorite detection for FALSE FAVORITE label
                             isFavorite={horseIndex === favoriteIndex}
+                            // Edge gradient accent colors (left border based on field edge distribution)
+                            edgeGradientBorderColor={edgeGradientMap.get(horseIndex)?.borderColor}
+                            edgeGradientBackgroundColor={edgeGradientMap.get(horseIndex)?.backgroundColor}
                           />
                           <HorseExpandedView
                             horse={horse}

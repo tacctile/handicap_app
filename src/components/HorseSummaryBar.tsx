@@ -80,6 +80,10 @@ interface HorseSummaryBarProps {
   rowId?: string;
   /** Whether this horse is the favorite (lowest odds in the field) */
   isFavorite?: boolean;
+  /** Edge gradient border color (calculated dynamically based on field edge distribution) */
+  edgeGradientBorderColor?: string;
+  /** Edge gradient background tint (subtle rgba for visual consistency with Factor Breakdown) */
+  edgeGradientBackgroundColor?: string;
 }
 
 // Helper to convert odds object to string
@@ -136,6 +140,9 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   edgePercent,
   rowId,
   isFavorite: _isFavorite = false, // Kept for compatibility but now using value matrix
+  // Edge gradient styling props (calculated dynamically based on field distribution)
+  edgeGradientBorderColor,
+  edgeGradientBackgroundColor,
 }) => {
   // Extract horse data from HorseEntry type
   const programNumber = horse.programNumber;
@@ -214,6 +221,19 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
     handleOddsSubmit();
   }, [handleOddsSubmit]);
 
+  // Build dynamic styles for edge gradient accent (left border + subtle background)
+  // This matches the Factor Breakdown component pattern
+  const edgeGradientStyle: React.CSSProperties = {};
+  if (edgeGradientBorderColor) {
+    edgeGradientStyle.borderLeftWidth = '4px';
+    edgeGradientStyle.borderLeftStyle = 'solid';
+    edgeGradientStyle.borderLeftColor = edgeGradientBorderColor;
+  }
+  if (edgeGradientBackgroundColor && !isValuePlay && !isPrimaryValuePlay) {
+    // Only apply subtle background if not already a value play (which has its own green tint)
+    edgeGradientStyle.backgroundColor = edgeGradientBackgroundColor;
+  }
+
   return (
     <div
       id={rowId}
@@ -222,7 +242,9 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         ${isExpanded ? 'horse-summary-bar--expanded' : ''}
         ${isScratched ? 'horse-summary-bar--scratched' : ''}
         ${isValuePlay ? 'horse-summary-bar--value-play' : ''}
-        ${isPrimaryValuePlay ? 'horse-summary-bar--primary-value-play' : ''}`}
+        ${isPrimaryValuePlay ? 'horse-summary-bar--primary-value-play' : ''}
+        ${edgeGradientBorderColor ? 'horse-summary-bar--has-edge-accent' : ''}`}
+      style={edgeGradientStyle}
       onClick={handleRowClick}
     >
       {/* Column 1: Scratch button - larger touch target */}
