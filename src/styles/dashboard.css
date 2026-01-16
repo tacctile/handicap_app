@@ -7164,9 +7164,8 @@ input:-webkit-autofill:focus {
 }
 
 /* ============================================
-   Redesigned Race Card Styles (v3 - Standardized)
+   Redesigned Race Card Styles (v2)
    Full-width centered layout with verdict badges
-   Using unified design tokens
    ============================================ */
 
 .race-overview-redesigned {
@@ -7176,10 +7175,9 @@ input:-webkit-autofill:focus {
   padding-top: var(--space-2);
 }
 
-/* Grid container with standardized gap */
 .race-overview-grid-redesigned {
   display: grid;
-  gap: var(--space-3); /* 16px - standardized grid gap */
+  gap: var(--space-4);
   grid-template-columns: 1fr;
   width: 100%;
   max-width: 1400px;
@@ -7204,56 +7202,32 @@ input:-webkit-autofill:focus {
   }
 }
 
-/* Standardized Race Card Container */
+/* Redesigned Race Card */
 .race-card-redesigned {
   position: relative;
   display: flex;
   flex-direction: column;
-  /* Background: var(--color-bg-surface) */
-  background: var(--color-bg-surface);
-  /* Border: 1px solid var(--color-border-subtle) */
-  border: 1px solid var(--color-border-subtle);
-  /* Border radius: var(--radius-md) (8px) */
-  border-radius: var(--radius-md);
-  /* Padding: var(--space-3) (16px) */
-  padding: var(--space-3);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
   cursor: pointer;
-  /* Transition: var(--transition-fast) */
-  transition:
-    border-color var(--transition-fast),
-    box-shadow var(--transition-fast),
-    background-color var(--transition-fast),
-    transform var(--transition-fast);
+  transition: all 0.2s ease;
   text-align: left;
   width: 100%;
   min-height: 180px;
 }
 
-/* Hover state - standardized */
 .race-card-redesigned:hover {
-  /* Border color: var(--color-border-default) */
-  border-color: var(--color-border-default);
-  /* Background: remains var(--color-bg-surface) - no change */
-  background: var(--color-bg-surface);
-  /* Box shadow: var(--shadow-sm) */
-  box-shadow: var(--shadow-sm);
+  background: var(--bg-elevated);
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-md);
 }
 
-/* Focus state (keyboard navigation) */
 .race-card-redesigned:focus {
-  /* Outline: 2px solid var(--color-accent) */
-  outline: 2px solid var(--color-accent);
-  /* Outline offset: 2px */
-  outline-offset: 2px;
-  border-color: var(--color-border-default);
-}
-
-/* Active/pressed state */
-.race-card-redesigned:active {
-  /* Background: var(--color-bg-elevated) */
-  background: var(--color-bg-elevated);
-  /* Transform: scale(0.99) for subtle press feedback */
-  transform: scale(0.99);
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px var(--accent-glow);
 }
 
 /* Top section: Race number + Verdict badge */
@@ -7261,155 +7235,90 @@ input:-webkit-autofill:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
-/* Race number (R1, R2, etc.) */
 .race-card-race-number {
-  /* Font size: var(--text-md) (18px) */
-  font-size: var(--text-md);
-  /* Font weight: var(--font-bold) (700) */
-  font-weight: var(--font-bold);
-  /* Color: var(--color-text-primary) */
-  color: var(--color-text-primary);
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--text-primary);
   line-height: 1;
 }
 
-/* Status Badge - standardized styling */
+/* Verdict Badge */
 .race-card-verdict-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* Padding: var(--space-1) var(--space-2) (4px 8px) */
-  padding: var(--space-1) var(--space-2);
-  /* Border radius: var(--radius-sm) (6px) */
+  padding: 4px 12px;
   border-radius: var(--radius-sm);
-  /* Font size: var(--text-xs) (12px) */
-  font-size: var(--text-xs);
-  /* Font weight: var(--font-semibold) (600) */
-  font-weight: var(--font-semibold);
+  font-size: var(--font-xs);
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  /* Default border for structure */
-  border: 1px solid transparent;
+  letter-spacing: 0.5px;
 }
 
-/* BET badge: background var(--color-accent), color white */
-.race-card-verdict-badge[style*='rgb(16, 185, 129)'],
-.race-card-verdict-badge[style*='#10b981'] {
-  background: var(--color-accent) !important;
-  color: white !important;
-  border-color: var(--color-accent) !important;
-}
-
-/* PASS badge: background var(--color-bg-elevated), border, secondary text */
-.race-card-verdict-badge[style*='rgb(107, 114, 128)'],
-.race-card-verdict-badge[style*='#6b7280'] {
-  background: var(--color-bg-elevated) !important;
-  border: 1px solid var(--color-border-default) !important;
-  color: var(--color-text-secondary) !important;
-}
-
-/* CAUTION badge: warning subtle background */
-.race-card-verdict-badge[style*='rgb(245, 158, 11)'],
-.race-card-verdict-badge[style*='#f59e0b'] {
-  background: var(--color-warning-subtle) !important;
-  border: 1px solid rgba(245, 158, 11, 0.3) !important;
-  color: var(--color-warning) !important;
-}
-
-/* Metadata line (distance, surface, age, horses) */
+/* Middle section: Race Conditions */
 .race-card-conditions {
-  /* Font size: var(--text-xs) (12px) */
-  font-size: var(--text-xs);
-  /* Color: var(--color-text-tertiary) */
-  color: var(--color-text-tertiary);
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
   line-height: 1.4;
-  /* Margin top: var(--space-1) (4px) */
-  margin-top: var(--space-1);
   margin-bottom: var(--space-3);
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--color-border-subtle);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
-/* Bottom section: Furlong Projections */
+/* Bottom section: Projected Finish */
 .race-card-projected-finish {
   flex: 1;
   display: flex;
   flex-direction: column;
-  /* Margin top: var(--space-3) (16px) */
-  margin-top: 0;
 }
 
-/* Section header ("FURLONG PROJECTIONS") */
 .race-card-projected-header {
-  /* Font size: var(--text-xs) (12px) */
-  font-size: var(--text-xs);
-  /* Font weight: var(--font-medium) (500) */
-  font-weight: var(--font-medium);
-  /* Color: var(--color-text-muted) */
-  color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
   text-transform: uppercase;
-  /* Letter spacing: 0.05em */
-  letter-spacing: 0.05em;
-  /* Margin bottom: var(--space-2) (8px) */
+  letter-spacing: 0.5px;
   margin-bottom: var(--space-2);
 }
 
-/* Projection rows list */
 .race-card-projected-list {
   display: flex;
   flex-direction: column;
-  /* Gap between rows: var(--space-1) (4px) */
-  gap: var(--space-1);
+  gap: 4px;
 }
 
-/* Individual projection row */
 .race-card-projected-horse {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-2);
-  /* Row height: 24px (compact) */
-  min-height: 24px;
   line-height: 1.3;
 }
 
-/* Position labels (1st:, 2nd:, 3rd:) */
 .race-card-projected-position {
-  /* Font size: var(--text-xs) (12px) */
-  font-size: var(--text-xs);
-  /* Color: var(--color-text-tertiary) */
-  color: var(--color-text-tertiary);
-  font-weight: var(--font-normal);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--accent-primary);
   flex-shrink: 0;
-  /* Fixed width for alignment */
-  width: 32px;
+  width: 28px;
 }
 
-/* Horse names in projections */
 .race-card-projected-name {
-  /* Font size: var(--text-xs) (12px) */
-  font-size: var(--text-xs);
-  /* Font weight: var(--font-medium) (500) */
-  font-weight: var(--font-medium);
-  /* Color: var(--color-text-primary) */
-  color: var(--color-text-primary);
-  /* Text transform: uppercase */
-  text-transform: uppercase;
+  font-size: var(--font-sm);
+  color: var(--text-primary);
+  font-weight: 500;
   word-break: break-word;
+  /* Allow wrapping for long horse names */
   white-space: normal;
   line-height: 1.3;
 }
 
-/* Empty state - no projections */
 .race-card-projected-none {
-  /* Font size: var(--text-sm) (14px) */
-  font-size: var(--text-sm);
-  /* Color: var(--color-text-tertiary) */
-  color: var(--color-text-tertiary);
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
   font-style: italic;
-  text-align: center;
-  padding: var(--space-2) 0;
 }
 
 /* Chevron hint */
@@ -7417,9 +7326,9 @@ input:-webkit-autofill:focus {
   position: absolute;
   right: var(--space-2);
   bottom: var(--space-2);
-  color: var(--color-text-tertiary);
+  color: var(--text-tertiary);
   opacity: 0;
-  transition: opacity var(--transition-fast);
+  transition: opacity 0.2s ease;
 }
 
 .race-card-redesigned:hover .race-card-chevron-new {
