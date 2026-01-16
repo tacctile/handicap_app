@@ -52,8 +52,6 @@
 .horse-summary-bar--expanded {
   /* Selected/expanded state background using design tokens */
   background: var(--color-bg-active) !important;
-  /* Left accent border to indicate selection */
-  border-left: 3px solid var(--color-accent);
   /* Sticky positioning when expanded - sticks to top of scrolling container */
   position: sticky;
   top: 0; /* Stick to top of scroll container (headers are outside) */
@@ -62,13 +60,6 @@
   box-shadow: var(--shadow-sm);
   /* Keep bottom border for visual separation from expanded content */
   border-bottom-color: var(--color-border-default);
-  /* Ensure consistent row height with other rows */
-  min-height: var(--table-row-height, 48px);
-  /* Smooth transition for expand/collapse */
-  transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast),
-    box-shadow var(--transition-fast);
 }
 
 /* ============================================
@@ -751,7 +742,9 @@
   /* No left border indicator - background color is sufficient */
 }
 
-/* Primary value play name uses standard typography for row height consistency */
+.horse-summary-bar--primary-value-play .horse-summary-bar__name {
+  font-size: 26px; /* Slightly larger name */
+}
 
 .horse-summary-bar--primary-value-play:hover {
   background: rgba(16, 185, 129, 0.18);
