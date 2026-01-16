@@ -153,8 +153,8 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
     ? getScratchedValueTag()
     : getValueTag(baseScoreRank ?? 10, fieldSize, displayEdge);
 
-  // Unified color for PROJECTED FINISH, VALUE badge, and EDGE columns
-  const unifiedColor = valueTagResult.color;
+  // Neutral white color for all value columns (PROJECTED FINISH, VALUE badge, EDGE)
+  const neutralTextColor = '#ffffff';
 
   const handleRowClick = () => {
     if (!isScratched) {
@@ -290,27 +290,21 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       </div>
 
       {/* Column 6: PROJECTED FINISH - Model Ranking (#1, #2, etc. based on base score) - right side */}
-      {/* Uses unified color from value matrix */}
+      {/* All ranks use neutral white text color */}
       <div className="horse-summary-bar__rank">
         <span
           className={`horse-summary-bar__rank-value ${!isScratched && baseScoreRank && baseScoreRank <= 3 ? 'horse-summary-bar__rank-value--top' : ''}`}
-          style={{ color: isScratched ? undefined : unifiedColor }}
+          style={{ color: isScratched ? undefined : neutralTextColor }}
         >
           {isScratched ? '—' : baseScoreRank ? `#${baseScoreRank}` : '—'}
         </span>
       </div>
 
       {/* Column 7: VALUE BADGE - Two-line stacked label (right side - fixed 180px width, 48px height) */}
-      {/* Uses 15-tag value matrix with unified color */}
+      {/* Uses 15-tag value matrix with neutral styling (no color variation) */}
       <div className="horse-summary-bar__value-label-wrapper">
         {valueTagResult.tag.plainLabel && (
-          <div
-            className="value-badge"
-            style={{
-              backgroundColor: unifiedColor,
-              color: valueTagResult.textColor,
-            }}
-          >
+          <div className="value-badge value-badge--neutral">
             <span className="value-badge__plain">{valueTagResult.tag.plainLabel}</span>
             <div className="value-badge__divider"></div>
             <span className="value-badge__tech">{valueTagResult.tag.techLabel}</span>
@@ -319,11 +313,11 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
       </div>
 
       {/* Column 8: EDGE - Value gap percentage (right side - far right, no chevron after) */}
-      {/* Uses unified color from value matrix */}
+      {/* All edge values use neutral white text color */}
       <div className="horse-summary-bar__edge">
         <span
-          className={`horse-summary-bar__edge-value ${displayEdge >= 75 ? 'horse-summary-bar__edge-value--hot' : ''}`}
-          style={{ color: isScratched ? undefined : unifiedColor }}
+          className="horse-summary-bar__edge-value"
+          style={{ color: isScratched ? undefined : neutralTextColor }}
         >
           {isScratched ? '—' : formatEdgeDisplay(displayEdge)}
         </span>
