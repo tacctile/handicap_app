@@ -824,18 +824,65 @@
    Positioned between horse name and data columns
    ============================================ */
 
-/* VALUE badge container - fixed dimensions for upcoming stacked label implementation */
+/* VALUE badge container - fixed dimensions for two-line stacked label */
 .horse-summary-bar__value-label-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
   /* Fixed width ensures all badges are same width regardless of text length */
   width: 180px;
-  /* Fixed height to accommodate future two-line stacked labels */
+  /* Fixed height for two-line stacked labels */
   height: 48px;
   flex-shrink: 0;
 }
 
+/* Two-line stacked value badge */
+.value-badge {
+  width: 180px;
+  height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+/* Top line - plain English label */
+.value-badge__plain {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  text-align: center;
+}
+
+/* Divider line between labels */
+.value-badge__divider {
+  width: 60%;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.3;
+  margin: 2px 0;
+}
+
+/* Bottom line - handicapper term */
+.value-badge__tech {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  opacity: 0.8;
+  line-height: 1.2;
+  text-align: center;
+}
+
+/* Legacy single-line badge style (kept for compatibility) */
 .horse-summary-bar__value-label-badge {
   display: inline-flex;
   align-items: center;
@@ -870,6 +917,20 @@
   .horse-summary-bar__value-label-wrapper {
     width: 160px; /* Slightly narrower on tablets */
     height: 44px;
+  }
+
+  .value-badge {
+    width: 160px;
+    height: 44px;
+    padding: 3px 6px;
+  }
+
+  .value-badge__plain {
+    font-size: 10px;
+  }
+
+  .value-badge__tech {
+    font-size: 9px;
   }
 
   .horse-summary-bar__value-label-badge {
