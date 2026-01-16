@@ -1,6 +1,5 @@
 /* Design Tokens - MUST be imported first */
 @import './styles/design-tokens.css';
-@import './styles/buttons.css';
 @import 'tailwindcss';
 @import './styles/tokens.css';
 

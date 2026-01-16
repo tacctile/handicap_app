@@ -132,37 +132,6 @@
   --table-row-selected: var(--color-accent-subtle);
 
   /* ============================================
-     PART 6: BUTTON SYSTEM TOKENS
-     Standardized button sizes, variants, and states
-     ============================================ */
-
-  /* Button size: Small (sm) */
-  --btn-sm-padding-y: 6px;
-  --btn-sm-padding-x: 12px;
-  --btn-sm-font-size: var(--text-xs);
-  --btn-sm-min-height: 32px;
-  --btn-sm-icon-size: 14px;
-
-  /* Button size: Medium (md) - DEFAULT */
-  --btn-md-padding-y: 8px;
-  --btn-md-padding-x: 16px;
-  --btn-md-font-size: var(--text-sm);
-  --btn-md-min-height: 36px;
-  --btn-md-icon-size: 16px;
-
-  /* Button size: Large (lg) */
-  --btn-lg-padding-y: 12px;
-  --btn-lg-padding-x: 24px;
-  --btn-lg-font-size: var(--text-sm);
-  --btn-lg-min-height: 44px;
-  --btn-lg-icon-size: 18px;
-
-  /* Icon-only button dimensions */
-  --btn-icon-only-sm: 32px;
-  --btn-icon-only-md: 36px;
-  --btn-icon-only-lg: 44px;
-
-  /* ============================================
      LEGACY MAPPING (for migration reference)
 
      Old Variable → New Variable
