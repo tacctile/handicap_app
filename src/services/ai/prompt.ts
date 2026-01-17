@@ -179,21 +179,24 @@ export function buildTripTroublePrompt(race: ParsedRace, scoringResult: RaceScor
     })
     .filter(Boolean);
 
-  // TODO: Add specialized instructions after architecture is tested
-  // Placeholder for refined trip trouble detection logic
+  return `You are a trip trouble specialist analyzing race replays via trip comments.
 
-  return `TRIP TROUBLE ANALYSIS BOT
+YOUR ONE JOB: Identify horses whose recent races don't reflect true ability due to trip trouble.
 
-Identify horses whose recent trip comments suggest masked ability.
-Look for: "blocked", "checked", "steadied", "5-wide", "no room", "bumped", "shuffled back"
+WHAT TO LOOK FOR:
+- Scan trip comments for: "blocked", "checked", "steadied", "bumped", "wide trip", "no room", "broke slow", "stumbled", "squeezed", "forced wide", "lost position"
+- Flag horses with 2+ troubled trips in last 3 races as HIGH masked ability
+- Flag horses with 1 troubled trip in last race as MEDIUM masked ability
+- Ignore vague comments like "no excuses" or "raced well"
+- A horse that finished 4th+ but had clear trouble is more interesting than a horse that finished 2nd with a clean trip
 
 HORSES:
 ${tripData.map((h) => `#${h!.num} ${h!.name}: ${h!.trips.map((t) => `${t.date} ${t.finish} "${t.comment}"`).join(' | ')}`).join('\n')}
 
-RESPOND WITH JSON ONLY:
+OUTPUT FORMAT - Return JSON only:
 {
   "horsesWithTripTrouble": [
-    { "programNumber": number, "horseName": "string", "issue": "specific trip issue", "maskedAbility": true|false }
+    { "programNumber": number, "horseName": "string", "issue": "specific trip problem", "maskedAbility": true|false }
   ]
 }
 
@@ -237,21 +240,27 @@ export function buildPaceScenarioPrompt(
 
   const { paceScenario } = scoringResult.raceAnalysis;
 
-  // TODO: Add specialized instructions after architecture is tested
-  // Placeholder for refined pace analysis logic
+  return `You are a pace analyst determining which running styles win today.
 
-  return `PACE SCENARIO ANALYSIS BOT
+YOUR ONE JOB: Determine which running styles are advantaged/disadvantaged by the likely pace scenario.
 
-Analyze pace dynamics based on running styles and early speed.
+WHAT TO LOOK FOR:
+- Count confirmed speed horses (E or E/P running style with early speed figures > 90)
+- 0-1 speed horses = SLOW pace, advantages: E, E/P (lone speed scenario)
+- 2 speed horses = MODERATE pace, advantages: E/P, S (stalkers sit the trip)
+- 3+ speed horses = HOT pace, advantages: S, C (closers inherit the race)
+- Post position matters: inside speed with outside speed = duel likely
+- Flag lone speed exceptions explicitly - a single front runner with no pressure is a major advantage regardless of other factors
+
 Algorithm's pace read: ${paceScenario.expectedPace}, Speed duel prob: ${Math.round(paceScenario.speedDuelProbability * 100)}%
 
 HORSES:
 ${paceData.map((h) => `#${h!.num} ${h!.name} PP${h!.post} Style:${h!.style} EarlySpeed:${h!.earlySpeed}`).join('\n')}
 
-RESPOND WITH JSON ONLY:
+OUTPUT FORMAT - Return JSON only:
 {
-  "advantagedStyles": ["closer", "stalker", etc],
-  "disadvantagedStyles": ["speed", etc],
+  "advantagedStyles": ["E", "E/P", "S", "C"],
+  "disadvantagedStyles": ["E", "E/P", "S", "C"],
   "paceProjection": "HOT" | "MODERATE" | "SLOW",
   "loneSpeedException": true|false,
   "speedDuelLikely": true|false
@@ -308,12 +317,21 @@ RESPOND WITH JSON ONLY:
   const fieldSize = rankedScores.length;
   const topContenders = rankedScores.filter((s) => s.finalScore >= favorite.finalScore - 15).length;
 
-  // TODO: Add specialized instructions after architecture is tested
-  // Placeholder for refined vulnerable favorite detection logic
+  return `You are a favorite vulnerability analyst evaluating chalk horses.
 
-  return `VULNERABLE FAVORITE ANALYSIS BOT
+YOUR ONE JOB: Evaluate ONLY whether the favorite can be beaten today - not who will beat them.
 
-Evaluate if the favorite can be beaten today.
+WHAT TO LOOK FOR - Check for vulnerability factors:
+- Class rise: Moving up in class from last win
+- Pace exposure: Front runner facing more speed than usual
+- Form regression: Last race was peak effort (career best Beyer) that may not repeat
+- Distance question: Trying new distance without pedigree support
+- Connections cold: Trainer or jockey in losing streak
+- Post position: Outside post for speed horse, inside post for closer
+
+VULNERABILITY THRESHOLD:
+- Require 2+ factors to flag as vulnerable
+- Confidence HIGH = 3+ factors, MEDIUM = 2 factors, LOW = 1 factor (don't flag)
 
 FAVORITE:
 #${favorite.programNumber} ${favorite.horseName} (ML ${favHorse?.morningLineOdds || 'N/A'})
@@ -327,7 +345,7 @@ FIELD CONTEXT:
 ${fieldSize} runners, ${topContenders} within 15 pts of favorite
 Class: ${race.header.classification}
 
-RESPOND WITH JSON ONLY:
+OUTPUT FORMAT - Return JSON only:
 {
   "isVulnerable": true|false,
   "reasons": ["specific reason 1", "specific reason 2"],
@@ -371,26 +389,35 @@ export function buildFieldSpreadPrompt(
   const bottomScore = rankedScores[rankedScores.length - 1]?.finalScore || 0;
   const spread = topScore - bottomScore;
 
-  // TODO: Add specialized instructions after architecture is tested
-  // Placeholder for refined field spread assessment logic
+  return `You are a field separation analyst guiding bet spread strategy.
 
-  return `FIELD SPREAD ANALYSIS BOT
+YOUR ONE JOB: Assess how separated the contenders are to guide bet spread width.
 
-Assess competitive separation in this field.
+WHAT TO LOOK FOR - Analyze algorithm score gaps:
+- SEPARATED field (go NARROW with picks):
+  * Top horse has 15+ point lead over #2
+  * Clear top 2 with 10+ point gap to #3
+  * One dominant horse stands out
+- TIGHT field (go WIDE with picks):
+  * Top 4 horses within 10 points of each other
+  * No clear separation in top tier
+  * Multiple horses with similar profiles
+- MIXED field (go MEDIUM with picks):
+  * Clear top 2-3, then a gap, then bunched middle tier
+
+TOP TIER COUNT: How many horses are legitimate win contenders (within 12 points of top score)
 
 RANKINGS:
 ${scoreData.map((h) => `${h.rank}. #${h.num} ${h.name} Score:${h.score} Tier:${h.tier} Gap:${h.gapFromAbove > 0 ? '-' + h.gapFromAbove : '—'}`).join('\n')}
 
 SPREAD: Top ${topScore} to Bottom ${bottomScore} = ${spread} pt range
 
-RESPOND WITH JSON ONLY:
+OUTPUT FORMAT - Return JSON only:
 {
   "fieldType": "TIGHT" | "SEPARATED" | "MIXED",
   "topTierCount": number,
   "recommendedSpread": "NARROW" | "MEDIUM" | "WIDE"
-}
-
-TIGHT = most horses within 15 pts, SEPARATED = clear standout(s), MIXED = clusters`;
+}`;
 }
 
 // ============================================================================
