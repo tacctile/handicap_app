@@ -63,6 +63,16 @@ function createMockPastPerformance(overrides: Partial<PastPerformance> = {}): Pa
     tripComment: 'Stalked pace, drew clear',
     comment: '',
     odds: 3.5,
+    favoriteRank: null,
+    wasClaimed: false,
+    claimedFrom: null,
+    daysSinceLast: 21,
+    earlyPace1: null,
+    latePace: null,
+    quarterTime: null,
+    halfMileTime: null,
+    sixFurlongTime: null,
+    mileTime: null,
     ...overrides,
   };
 }
