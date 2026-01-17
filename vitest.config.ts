@@ -17,8 +17,10 @@ export default defineConfig(({ mode }) => {
       setupFiles: ['./src/__tests__/setup.ts'],
 
       // Pass environment variables to test environment
+      // Explicitly include VITE_GEMINI_API_KEY for CI where it's set via secrets
       env: {
         ...env,
+        VITE_GEMINI_API_KEY: env.VITE_GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '',
       },
 
       // Enable globals for cleaner test syntax
@@ -52,8 +54,8 @@ export default defineConfig(({ mode }) => {
         },
       },
 
-      // Test timeout
-      testTimeout: 10000,
+      // Test timeout (2 min for AI tests that make external API calls)
+      testTimeout: 120000,
 
       // Clear mocks between tests
       clearMocks: true,

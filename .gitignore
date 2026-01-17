@@ -144,3 +144,6 @@ stats.html
 # Playwright
 playwright-report/
 test-results/
+
+# AI test results (generated)
+src/data/ai_comparison_results.json
