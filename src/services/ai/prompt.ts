@@ -140,6 +140,263 @@ RESPOND WITH VALID JSON ONLY:
 }`;
 }
 
+// ============================================================================
+// MULTI-BOT SPECIALIZED PROMPT BUILDERS
+// ============================================================================
+
+/**
+ * Build prompt for Trip Trouble Bot
+ *
+ * Analyzes trip comments and recent PPs to identify horses with masked ability.
+ * Focus: Recent trip trouble that hides true form.
+ *
+ * @param race - Parsed race data
+ * @param scoringResult - Algorithm scoring results
+ * @returns Prompt string (400-600 tokens input, requests 50-150 tokens output)
+ */
+export function buildTripTroublePrompt(race: ParsedRace, scoringResult: RaceScoringResult): string {
+  const rankedScores = [...scoringResult.scores]
+    .filter((s) => !s.isScratched)
+    .sort((a, b) => a.rank - b.rank);
+
+  // Extract only trip-relevant data
+  const tripData = rankedScores
+    .map((score) => {
+      const horse = race.horses.find((h) => h.programNumber === score.programNumber);
+      if (!horse) return null;
+
+      const recentTrips = horse.pastPerformances.slice(0, 3).map((pp) => ({
+        date: pp.date,
+        finish: `${pp.finishPosition}/${pp.fieldSize}`,
+        comment: pp.tripComment || 'none',
+      }));
+
+      return {
+        num: score.programNumber,
+        name: score.horseName,
+        trips: recentTrips,
+      };
+    })
+    .filter(Boolean);
+
+  // TODO: Add specialized instructions after architecture is tested
+  // Placeholder for refined trip trouble detection logic
+
+  return `TRIP TROUBLE ANALYSIS BOT
+
+Identify horses whose recent trip comments suggest masked ability.
+Look for: "blocked", "checked", "steadied", "5-wide", "no room", "bumped", "shuffled back"
+
+HORSES:
+${tripData.map((h) => `#${h!.num} ${h!.name}: ${h!.trips.map((t) => `${t.date} ${t.finish} "${t.comment}"`).join(' | ')}`).join('\n')}
+
+RESPOND WITH JSON ONLY:
+{
+  "horsesWithTripTrouble": [
+    { "programNumber": number, "horseName": "string", "issue": "specific trip issue", "maskedAbility": true|false }
+  ]
+}
+
+Only include horses with clear trip trouble. Empty array if none found.`;
+}
+
+/**
+ * Build prompt for Pace Scenario Bot
+ *
+ * Analyzes running styles, early speed figures, and post positions.
+ * Focus: Pace dynamics and which styles benefit.
+ *
+ * @param race - Parsed race data
+ * @param scoringResult - Algorithm scoring results
+ * @returns Prompt string (400-600 tokens input, requests 50-150 tokens output)
+ */
+export function buildPaceScenarioPrompt(
+  race: ParsedRace,
+  scoringResult: RaceScoringResult
+): string {
+  const rankedScores = [...scoringResult.scores]
+    .filter((s) => !s.isScratched)
+    .sort((a, b) => a.rank - b.rank);
+
+  // Extract only pace-relevant data
+  const paceData = rankedScores
+    .map((score) => {
+      const horse = race.horses.find((h) => h.programNumber === score.programNumber);
+      if (!horse) return null;
+
+      const lastPP = horse.pastPerformances[0];
+      return {
+        num: score.programNumber,
+        name: score.horseName,
+        post: horse.postPosition,
+        style: horse.runningStyle || 'Unknown',
+        earlySpeed: lastPP?.earlyPace1 ?? 'N/A',
+      };
+    })
+    .filter(Boolean);
+
+  const { paceScenario } = scoringResult.raceAnalysis;
+
+  // TODO: Add specialized instructions after architecture is tested
+  // Placeholder for refined pace analysis logic
+
+  return `PACE SCENARIO ANALYSIS BOT
+
+Analyze pace dynamics based on running styles and early speed.
+Algorithm's pace read: ${paceScenario.expectedPace}, Speed duel prob: ${Math.round(paceScenario.speedDuelProbability * 100)}%
+
+HORSES:
+${paceData.map((h) => `#${h!.num} ${h!.name} PP${h!.post} Style:${h!.style} EarlySpeed:${h!.earlySpeed}`).join('\n')}
+
+RESPOND WITH JSON ONLY:
+{
+  "advantagedStyles": ["closer", "stalker", etc],
+  "disadvantagedStyles": ["speed", etc],
+  "paceProjection": "HOT" | "MODERATE" | "SLOW",
+  "loneSpeedException": true|false,
+  "speedDuelLikely": true|false
+}`;
+}
+
+/**
+ * Build prompt for Vulnerable Favorite Bot
+ *
+ * Analyzes the favorite's data against field context.
+ * Focus: Is the chalk beatable today?
+ *
+ * @param race - Parsed race data
+ * @param scoringResult - Algorithm scoring results
+ * @returns Prompt string (400-600 tokens input, requests 50-150 tokens output)
+ */
+export function buildVulnerableFavoritePrompt(
+  race: ParsedRace,
+  scoringResult: RaceScoringResult
+): string {
+  const rankedScores = [...scoringResult.scores]
+    .filter((s) => !s.isScratched)
+    .sort((a, b) => a.rank - b.rank);
+
+  // Find the favorite (lowest ML odds or #1 ranked if no ML)
+  // Handle empty array case
+  if (rankedScores.length === 0) {
+    return `VULNERABLE FAVORITE ANALYSIS BOT
+
+No horses available for analysis.
+
+RESPOND WITH JSON ONLY:
+{
+  "isVulnerable": false,
+  "reasons": [],
+  "confidence": "LOW"
+}`;
+  }
+
+  // We know rankedScores[0] exists because of the length check above
+  const firstScore = rankedScores[0]!;
+  const favorite = rankedScores.reduce((fav, curr) => {
+    const favHorse = race.horses.find((h) => h.programNumber === fav.programNumber);
+    const currHorse = race.horses.find((h) => h.programNumber === curr.programNumber);
+    const favOdds = parseFloat(favHorse?.morningLineOdds?.replace('-', '.') || '99');
+    const currOdds = parseFloat(currHorse?.morningLineOdds?.replace('-', '.') || '99');
+    return currOdds < favOdds ? curr : fav;
+  }, firstScore);
+
+  const favHorse = race.horses.find((h) => h.programNumber === favorite.programNumber);
+  const favPPs = favHorse?.pastPerformances.slice(0, 3) || [];
+
+  // Field context
+  const fieldSize = rankedScores.length;
+  const topContenders = rankedScores.filter((s) => s.finalScore >= favorite.finalScore - 15).length;
+
+  // TODO: Add specialized instructions after architecture is tested
+  // Placeholder for refined vulnerable favorite detection logic
+
+  return `VULNERABLE FAVORITE ANALYSIS BOT
+
+Evaluate if the favorite can be beaten today.
+
+FAVORITE:
+#${favorite.programNumber} ${favorite.horseName} (ML ${favHorse?.morningLineOdds || 'N/A'})
+Algo Rank: ${favorite.rank}, Score: ${favorite.finalScore}
+Style: ${favHorse?.runningStyle || 'Unknown'}, Post: ${favHorse?.postPosition}
+Last 3: ${favPPs.map((pp) => `${pp.finishPosition}/${pp.fieldSize} Beyer:${pp.speedFigures.beyer ?? 'N/A'}`).join(', ')}
+Positives: ${favorite.positiveFactors.slice(0, 3).join(', ') || 'None'}
+Negatives: ${favorite.negativeFactors.slice(0, 3).join(', ') || 'None'}
+
+FIELD CONTEXT:
+${fieldSize} runners, ${topContenders} within 15 pts of favorite
+Class: ${race.header.classification}
+
+RESPOND WITH JSON ONLY:
+{
+  "isVulnerable": true|false,
+  "reasons": ["specific reason 1", "specific reason 2"],
+  "confidence": "HIGH" | "MEDIUM" | "LOW"
+}`;
+}
+
+/**
+ * Build prompt for Field Spread Bot
+ *
+ * Analyzes scores and ranking gaps to assess field separation.
+ * Focus: How tight is this field? How many real contenders?
+ *
+ * @param _race - Parsed race data (unused, kept for API consistency)
+ * @param scoringResult - Algorithm scoring results
+ * @returns Prompt string (400-600 tokens input, requests 50-150 tokens output)
+ */
+export function buildFieldSpreadPrompt(
+  _race: ParsedRace,
+  scoringResult: RaceScoringResult
+): string {
+  const rankedScores = [...scoringResult.scores]
+    .filter((s) => !s.isScratched)
+    .sort((a, b) => a.rank - b.rank);
+
+  // Calculate score gaps
+  const scoreData = rankedScores.map((score, idx) => {
+    const prevScore = idx > 0 ? rankedScores[idx - 1] : null;
+    const gap = prevScore ? prevScore.finalScore - score.finalScore : 0;
+    return {
+      rank: score.rank,
+      num: score.programNumber,
+      name: score.horseName,
+      score: score.finalScore,
+      tier: score.confidenceTier,
+      gapFromAbove: gap,
+    };
+  });
+
+  const topScore = rankedScores[0]?.finalScore || 0;
+  const bottomScore = rankedScores[rankedScores.length - 1]?.finalScore || 0;
+  const spread = topScore - bottomScore;
+
+  // TODO: Add specialized instructions after architecture is tested
+  // Placeholder for refined field spread assessment logic
+
+  return `FIELD SPREAD ANALYSIS BOT
+
+Assess competitive separation in this field.
+
+RANKINGS:
+${scoreData.map((h) => `${h.rank}. #${h.num} ${h.name} Score:${h.score} Tier:${h.tier} Gap:${h.gapFromAbove > 0 ? '-' + h.gapFromAbove : '—'}`).join('\n')}
+
+SPREAD: Top ${topScore} to Bottom ${bottomScore} = ${spread} pt range
+
+RESPOND WITH JSON ONLY:
+{
+  "fieldType": "TIGHT" | "SEPARATED" | "MIXED",
+  "topTierCount": number,
+  "recommendedSpread": "NARROW" | "MEDIUM" | "WIDE"
+}
+
+TIGHT = most horses within 15 pts, SEPARATED = clear standout(s), MIXED = clusters`;
+}
+
+// ============================================================================
+// SINGLE-BOT PROMPT HELPERS
+// ============================================================================
+
 /**
  * Format a single horse's data for the AI prompt
  *

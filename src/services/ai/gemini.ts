@@ -7,8 +7,22 @@
 
 import type { ParsedRace } from '../../types/drf';
 import type { RaceScoringResult } from '../../types/scoring';
-import type { AIRaceAnalysis, AIServiceError, AIServiceErrorCode } from './types';
-import { buildRaceAnalysisPrompt } from './prompt';
+import type {
+  AIRaceAnalysis,
+  AIServiceError,
+  AIServiceErrorCode,
+  TripTroubleAnalysis,
+  PaceScenarioAnalysis,
+  VulnerableFavoriteAnalysis,
+  FieldSpreadAnalysis,
+} from './types';
+import {
+  buildRaceAnalysisPrompt,
+  buildTripTroublePrompt,
+  buildPaceScenarioPrompt,
+  buildVulnerableFavoritePrompt,
+  buildFieldSpreadPrompt,
+} from './prompt';
 
 // Type declaration for Node.js process (available in test/CI environments)
 declare const process: { env?: Record<string, string | undefined> } | undefined;
@@ -204,4 +218,322 @@ export function parseGeminiResponse(
       `Failed to parse Gemini response: ${e instanceof Error ? e.message : 'Unknown'}`
     );
   }
+}
+
+// ============================================================================
+// MULTI-BOT ARCHITECTURE
+// ============================================================================
+
+/**
+ * Configuration for multi-bot API calls
+ */
+const MULTI_BOT_CONFIG = {
+  temperature: 0.2, // Lower for more consistent specialized outputs
+  topP: 0.8,
+  maxOutputTokens: 256, // Smaller output for focused bot responses
+  timeoutMs: 15000, // Shorter timeout for individual bots
+};
+
+/**
+ * Generic Gemini API caller with custom response parser
+ *
+ * Reuses existing fetch logic, timeout, and error handling.
+ * Allows any bot to call Gemini with a custom parser for their specific output format.
+ *
+ * @param prompt - The prompt to send to Gemini
+ * @param parseResponse - Function to parse the text response into type T
+ * @returns Parsed response of type T
+ * @throws AIServiceError on failure
+ */
+export async function callGeminiWithSchema<T>(
+  prompt: string,
+  parseResponse: (text: string) => T
+): Promise<T> {
+  const apiKey = getApiKey();
+
+  if (!apiKey) {
+    throw createError('API_KEY_MISSING', 'Gemini API key not configured');
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), MULTI_BOT_CONFIG.timeoutMs);
+
+  try {
+    const response = await fetch(`${API_ENDPOINT}?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: MULTI_BOT_CONFIG.temperature,
+          topP: MULTI_BOT_CONFIG.topP,
+          maxOutputTokens: MULTI_BOT_CONFIG.maxOutputTokens,
+        },
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw createError('API_ERROR', `Gemini API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!text) {
+      throw createError('PARSE_ERROR', 'No content in Gemini response');
+    }
+
+    return parseResponse(text);
+  } catch (error) {
+    clearTimeout(timeoutId);
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw createError('TIMEOUT', `Request timed out after ${MULTI_BOT_CONFIG.timeoutMs}ms`);
+    }
+
+    if (isAIServiceError(error)) {
+      throw error;
+    }
+
+    throw createError(
+      'NETWORK_ERROR',
+      `Network error: ${error instanceof Error ? error.message : 'Unknown'}`
+    );
+  }
+}
+
+// ============================================================================
+// RESPONSE PARSERS
+// ============================================================================
+
+/**
+ * Extract JSON from response text (handles markdown wrapping)
+ */
+function extractJson(text: string): string {
+  let jsonStr = text.trim();
+  if (jsonStr.startsWith('```json')) {
+    jsonStr = jsonStr.slice(7);
+  }
+  if (jsonStr.startsWith('```')) {
+    jsonStr = jsonStr.slice(3);
+  }
+  if (jsonStr.endsWith('```')) {
+    jsonStr = jsonStr.slice(0, -3);
+  }
+  return jsonStr.trim();
+}
+
+/**
+ * Parse Trip Trouble Bot response
+ *
+ * @param text - Raw text response from Gemini
+ * @returns TripTroubleAnalysis
+ * @throws Error on parse failure
+ */
+export function parseTripTroubleResponse(text: string): TripTroubleAnalysis {
+  const jsonStr = extractJson(text);
+
+  try {
+    const parsed = JSON.parse(jsonStr);
+
+    // Validate required field
+    if (!Array.isArray(parsed.horsesWithTripTrouble)) {
+      throw new Error('Missing horsesWithTripTrouble array');
+    }
+
+    // Validate each entry has required fields
+    const validatedHorses = parsed.horsesWithTripTrouble.map(
+      (h: {
+        programNumber?: number;
+        horseName?: string;
+        issue?: string;
+        maskedAbility?: boolean;
+      }) => ({
+        programNumber: typeof h.programNumber === 'number' ? h.programNumber : 0,
+        horseName: typeof h.horseName === 'string' ? h.horseName : '',
+        issue: typeof h.issue === 'string' ? h.issue : '',
+        maskedAbility: typeof h.maskedAbility === 'boolean' ? h.maskedAbility : false,
+      })
+    );
+
+    return {
+      horsesWithTripTrouble: validatedHorses,
+    };
+  } catch (e) {
+    throw new Error(
+      `Failed to parse TripTroubleResponse: ${e instanceof Error ? e.message : 'Unknown'}`
+    );
+  }
+}
+
+/**
+ * Parse Pace Scenario Bot response
+ *
+ * @param text - Raw text response from Gemini
+ * @returns PaceScenarioAnalysis
+ * @throws Error on parse failure
+ */
+export function parsePaceScenarioResponse(text: string): PaceScenarioAnalysis {
+  const jsonStr = extractJson(text);
+
+  try {
+    const parsed = JSON.parse(jsonStr);
+
+    // Validate and normalize pace projection
+    const validPaceProjections = ['HOT', 'MODERATE', 'SLOW'];
+    const paceProjection = validPaceProjections.includes(parsed.paceProjection)
+      ? (parsed.paceProjection as 'HOT' | 'MODERATE' | 'SLOW')
+      : 'MODERATE';
+
+    return {
+      advantagedStyles: Array.isArray(parsed.advantagedStyles) ? parsed.advantagedStyles : [],
+      disadvantagedStyles: Array.isArray(parsed.disadvantagedStyles)
+        ? parsed.disadvantagedStyles
+        : [],
+      paceProjection,
+      loneSpeedException:
+        typeof parsed.loneSpeedException === 'boolean' ? parsed.loneSpeedException : false,
+      speedDuelLikely: typeof parsed.speedDuelLikely === 'boolean' ? parsed.speedDuelLikely : false,
+    };
+  } catch (e) {
+    throw new Error(
+      `Failed to parse PaceScenarioResponse: ${e instanceof Error ? e.message : 'Unknown'}`
+    );
+  }
+}
+
+/**
+ * Parse Vulnerable Favorite Bot response
+ *
+ * @param text - Raw text response from Gemini
+ * @returns VulnerableFavoriteAnalysis
+ * @throws Error on parse failure
+ */
+export function parseVulnerableFavoriteResponse(text: string): VulnerableFavoriteAnalysis {
+  const jsonStr = extractJson(text);
+
+  try {
+    const parsed = JSON.parse(jsonStr);
+
+    // Validate and normalize confidence
+    const validConfidence = ['HIGH', 'MEDIUM', 'LOW'];
+    const confidence = validConfidence.includes(parsed.confidence)
+      ? (parsed.confidence as 'HIGH' | 'MEDIUM' | 'LOW')
+      : 'MEDIUM';
+
+    return {
+      isVulnerable: typeof parsed.isVulnerable === 'boolean' ? parsed.isVulnerable : false,
+      reasons: Array.isArray(parsed.reasons) ? parsed.reasons : [],
+      confidence,
+    };
+  } catch (e) {
+    throw new Error(
+      `Failed to parse VulnerableFavoriteResponse: ${e instanceof Error ? e.message : 'Unknown'}`
+    );
+  }
+}
+
+/**
+ * Parse Field Spread Bot response
+ *
+ * @param text - Raw text response from Gemini
+ * @returns FieldSpreadAnalysis
+ * @throws Error on parse failure
+ */
+export function parseFieldSpreadResponse(text: string): FieldSpreadAnalysis {
+  const jsonStr = extractJson(text);
+
+  try {
+    const parsed = JSON.parse(jsonStr);
+
+    // Validate and normalize field type
+    const validFieldTypes = ['TIGHT', 'SEPARATED', 'MIXED'];
+    const fieldType = validFieldTypes.includes(parsed.fieldType)
+      ? (parsed.fieldType as 'TIGHT' | 'SEPARATED' | 'MIXED')
+      : 'MIXED';
+
+    // Validate and normalize recommended spread
+    const validSpreads = ['NARROW', 'MEDIUM', 'WIDE'];
+    const recommendedSpread = validSpreads.includes(parsed.recommendedSpread)
+      ? (parsed.recommendedSpread as 'NARROW' | 'MEDIUM' | 'WIDE')
+      : 'MEDIUM';
+
+    return {
+      fieldType,
+      topTierCount: typeof parsed.topTierCount === 'number' ? parsed.topTierCount : 0,
+      recommendedSpread,
+    };
+  } catch (e) {
+    throw new Error(
+      `Failed to parse FieldSpreadResponse: ${e instanceof Error ? e.message : 'Unknown'}`
+    );
+  }
+}
+
+// ============================================================================
+// INDIVIDUAL BOT FUNCTIONS
+// ============================================================================
+
+/**
+ * Analyze trip trouble for horses in a race
+ *
+ * @param race - Parsed race data
+ * @param scoringResult - Algorithm scoring results
+ * @returns Trip trouble analysis
+ */
+export async function analyzeTripTrouble(
+  race: ParsedRace,
+  scoringResult: RaceScoringResult
+): Promise<TripTroubleAnalysis> {
+  const prompt = buildTripTroublePrompt(race, scoringResult);
+  return callGeminiWithSchema(prompt, parseTripTroubleResponse);
+}
+
+/**
+ * Analyze pace scenario for a race
+ *
+ * @param race - Parsed race data
+ * @param scoringResult - Algorithm scoring results
+ * @returns Pace scenario analysis
+ */
+export async function analyzePaceScenario(
+  race: ParsedRace,
+  scoringResult: RaceScoringResult
+): Promise<PaceScenarioAnalysis> {
+  const prompt = buildPaceScenarioPrompt(race, scoringResult);
+  return callGeminiWithSchema(prompt, parsePaceScenarioResponse);
+}
+
+/**
+ * Analyze if the favorite is vulnerable
+ *
+ * @param race - Parsed race data
+ * @param scoringResult - Algorithm scoring results
+ * @returns Vulnerable favorite analysis
+ */
+export async function analyzeVulnerableFavorite(
+  race: ParsedRace,
+  scoringResult: RaceScoringResult
+): Promise<VulnerableFavoriteAnalysis> {
+  const prompt = buildVulnerableFavoritePrompt(race, scoringResult);
+  return callGeminiWithSchema(prompt, parseVulnerableFavoriteResponse);
+}
+
+/**
+ * Analyze field spread for a race
+ *
+ * @param race - Parsed race data
+ * @param scoringResult - Algorithm scoring results
+ * @returns Field spread analysis
+ */
+export async function analyzeFieldSpread(
+  race: ParsedRace,
+  scoringResult: RaceScoringResult
+): Promise<FieldSpreadAnalysis> {
+  const prompt = buildFieldSpreadPrompt(race, scoringResult);
+  return callGeminiWithSchema(prompt, parseFieldSpreadResponse);
 }
