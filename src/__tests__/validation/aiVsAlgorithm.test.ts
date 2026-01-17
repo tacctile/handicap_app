@@ -18,7 +18,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { parseDRFFile } from '../../lib/drfParser';
 import { calculateRaceScores, analyzePaceScenario } from '../../lib/scoring';
-import { getAIAnalysis, checkAIServiceStatus } from '../../services/ai';
+import { getMultiBotAnalysis, checkAIServiceStatus } from '../../services/ai';
 import type { ParsedRace, HorseEntry } from '../../types/drf';
 import type { AIRaceAnalysis } from '../../services/ai/types';
 import type { RaceScoringResult, HorseScoreForAI, RaceAnalysis } from '../../types/scoring';
@@ -55,7 +55,7 @@ async function callAIWithRetry(
 ): Promise<AIRaceAnalysis | null> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      return await getAIAnalysis(race, scoringResult, { forceRefresh: true });
+      return await getMultiBotAnalysis(race, scoringResult, { forceRefresh: true });
     } catch (err: unknown) {
       const error = err as { message?: string; code?: string };
       const errorMessage = error?.message || '';
@@ -770,6 +770,11 @@ describe('AI vs Algorithm Validation', () => {
   beforeAll(() => {
     // Debug: Log environment status
     console.log('\n=== AI SERVICE ENVIRONMENT CHECK ===');
+    console.log('MULTI-BOT MODE: ACTIVE (4 specialized bots)');
+    console.log('  - Trip Trouble Bot: Identifies masked ability from past trip issues');
+    console.log('  - Pace Scenario Bot: Analyzes pace dynamics and running style advantages');
+    console.log('  - Vulnerable Favorite Bot: Evaluates if favorite is beatable');
+    console.log('  - Field Spread Bot: Assesses competitive separation');
     console.log('process.env.VITE_GEMINI_API_KEY exists:', !!process.env.VITE_GEMINI_API_KEY);
     console.log('API key length:', process.env.VITE_GEMINI_API_KEY?.length || 0);
 
