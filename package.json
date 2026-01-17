@@ -22,7 +22,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "validate:bulk": "npx tsx scripts/run-bulk-validation.ts",
-    "value:detect": "npx tsx scripts/value-detector.ts"
+    "value:detect": "npx tsx scripts/value-detector.ts",
+    "test:ai": "npx tsx src/scripts/testAISingleRace.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",
