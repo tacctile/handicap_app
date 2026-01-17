@@ -50,6 +50,7 @@ function createMockPastPerformance(overrides: Partial<PastPerformance> = {}): Pa
       stretch: 1,
       stretchLengths: 0,
       finish: 1,
+      finishLengths: 0,
     },
     jockey: 'John Smith',
     weight: 122,
@@ -217,6 +218,11 @@ function createMockRaceHeader(overrides: Partial<RaceHeader> = {}): RaceHeader {
     isAbout: false,
     tempRail: null,
     turfCourseType: null,
+    chuteStart: false,
+    hasReplay: false,
+    programNumber: 5,
+    fieldSize: 8,
+    probableFavorite: 1,
     ...overrides,
   };
 }
