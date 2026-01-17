@@ -76,6 +76,27 @@ interface RaceResult {
   scratches: { post: number; horseName: string }[];
 }
 
+interface ExoticBetResults {
+  // Exacta variants
+  exactaStraight: number;      // #1-#2 exact order
+  exactaBox2: number;          // Top 2 in any order
+  exactaBox3: number;          // Win + any of top 3 for place
+  exactaBox4: number;          // Win + any of top 4 for place
+
+  // Trifecta variants
+  trifectaStraight: number;    // #1-#2-#3 exact order
+  trifectaBox3: number;        // Top 3 in any order
+  trifectaBox4: number;        // Top 4, any 3 in order
+  trifectaBox5: number;        // Top 5, any 3 in order
+  trifectaKey: number;         // #1 over top 4 for 2nd/3rd
+
+  // Superfecta variants
+  superfectaStraight: number;  // #1-#2-#3-#4 exact order
+  superfectaBox4: number;      // Top 4 in any order
+  superfectaBox5: number;      // Top 5, any 4 in order
+  superfectaKey: number;       // #1 over top 5 for 2nd/3rd/4th
+}
+
 interface RaceComparison {
   trackCode: string;
   raceNumber: number;
@@ -113,6 +134,12 @@ interface RaceComparison {
   aiConfidence: string;
   aiFlaggedVulnerableFavorite: boolean;
   aiFlaggedLikelyUpset: boolean;
+
+  // Algorithm exotic bets
+  algorithmExotics: ExoticBetResults;
+
+  // AI exotic bets
+  aiExotics: ExoticBetResults;
 }
 
 interface TestSummary {
@@ -159,6 +186,9 @@ interface TestSummary {
     likelyUpsetsCalled: number;
     likelyUpsetsCorrect: number;
   };
+
+  algorithmExotics: ExoticBetResults;
+  aiExotics: ExoticBetResults;
 }
 
 // ============================================================================
@@ -392,6 +422,38 @@ function checkTop3Contains(predicted: number[], actualWinner: number): boolean {
   return predicted.slice(0, 3).includes(actualWinner);
 }
 
+// Check exacta box: top N picks contain the actual 1-2
+function checkExactaBox(predictedTop: number[], actual1st: number, actual2nd: number, boxSize: number): boolean {
+  const topN = new Set(predictedTop.slice(0, boxSize));
+  return topN.has(actual1st) && topN.has(actual2nd);
+}
+
+// Check trifecta box: top N picks contain the actual 1-2-3
+function checkTrifectaBox(predictedTop: number[], actual: [number, number, number], boxSize: number): boolean {
+  const topN = new Set(predictedTop.slice(0, boxSize));
+  return actual.every(pos => topN.has(pos));
+}
+
+// Check trifecta key: #1 pick wins, any of top N fill 2nd and 3rd
+function checkTrifectaKey(predictedTop: number[], actual: [number, number, number], keyOverSize: number): boolean {
+  if (predictedTop[0] !== actual[0]) return false; // Key horse must win
+  const others = new Set(predictedTop.slice(1, keyOverSize));
+  return others.has(actual[1]) && others.has(actual[2]);
+}
+
+// Check superfecta box: top N picks contain actual 1-2-3-4
+function checkSuperfectaBox(predictedTop: number[], actual: [number, number, number, number], boxSize: number): boolean {
+  const topN = new Set(predictedTop.slice(0, boxSize));
+  return actual.every(pos => topN.has(pos));
+}
+
+// Check superfecta key: #1 pick wins, any of top N fill 2nd/3rd/4th
+function checkSuperfectaKey(predictedTop: number[], actual: [number, number, number, number], keyOverSize: number): boolean {
+  if (predictedTop[0] !== actual[0]) return false;
+  const others = new Set(predictedTop.slice(1, keyOverSize));
+  return others.has(actual[1]) && others.has(actual[2]) && others.has(actual[3]);
+}
+
 // ============================================================================
 // MAIN TEST
 // ============================================================================
@@ -538,6 +600,58 @@ describe('AI vs Algorithm Validation', () => {
               .map((h) => h.programNumber);
           }
 
+          // Get actual top 4 (for superfecta)
+          const actual4th = raceResult.positions[3]?.post || 0;
+          const actualSuperfecta: [number, number, number, number] = [
+            actualWinner, actualExacta[1], actualTrifecta[2], actual4th
+          ];
+
+          // Calculate algorithm exotic hits
+          const algoTop5 = algorithmRanked.slice(0, 5).map(s => s.horse.postPosition);
+          const algorithmExotics: ExoticBetResults = {
+            exactaStraight: checkExactaHit(algorithmTop3, actualExacta) ? 1 : 0,
+            exactaBox2: checkExactaBox(algoTop5, actualWinner, actualExacta[1], 2) ? 1 : 0,
+            exactaBox3: checkExactaBox(algoTop5, actualWinner, actualExacta[1], 3) ? 1 : 0,
+            exactaBox4: checkExactaBox(algoTop5, actualWinner, actualExacta[1], 4) ? 1 : 0,
+            trifectaStraight: checkTrifectaHit(algorithmTop3, actualTrifecta) ? 1 : 0,
+            trifectaBox3: checkTrifectaBox(algoTop5, actualTrifecta, 3) ? 1 : 0,
+            trifectaBox4: checkTrifectaBox(algoTop5, actualTrifecta, 4) ? 1 : 0,
+            trifectaBox5: checkTrifectaBox(algoTop5, actualTrifecta, 5) ? 1 : 0,
+            trifectaKey: checkTrifectaKey(algoTop5, actualTrifecta, 5) ? 1 : 0,
+            superfectaStraight: actual4th > 0 && algoTop5[0] === actualWinner && algoTop5[1] === actualExacta[1] && algoTop5[2] === actualTrifecta[2] && algoTop5[3] === actual4th ? 1 : 0,
+            superfectaBox4: actual4th > 0 ? (checkSuperfectaBox(algoTop5, actualSuperfecta, 4) ? 1 : 0) : 0,
+            superfectaBox5: actual4th > 0 ? (checkSuperfectaBox(algoTop5, actualSuperfecta, 5) ? 1 : 0) : 0,
+            superfectaKey: actual4th > 0 ? (checkSuperfectaKey(algoTop5, actualSuperfecta, 6) ? 1 : 0) : 0,
+          };
+
+          // Calculate AI exotic hits
+          const aiTop5 = aiAnalysis
+            ? aiAnalysis.horseInsights
+                .sort((a, b) => a.projectedFinish - b.projectedFinish)
+                .slice(0, 5)
+                .map(h => h.programNumber)
+            : [];
+
+          const aiExotics: ExoticBetResults = aiTop5.length >= 5 ? {
+            exactaStraight: checkExactaHit(aiTop3, actualExacta) ? 1 : 0,
+            exactaBox2: checkExactaBox(aiTop5, actualWinner, actualExacta[1], 2) ? 1 : 0,
+            exactaBox3: checkExactaBox(aiTop5, actualWinner, actualExacta[1], 3) ? 1 : 0,
+            exactaBox4: checkExactaBox(aiTop5, actualWinner, actualExacta[1], 4) ? 1 : 0,
+            trifectaStraight: checkTrifectaHit(aiTop3, actualTrifecta) ? 1 : 0,
+            trifectaBox3: checkTrifectaBox(aiTop5, actualTrifecta, 3) ? 1 : 0,
+            trifectaBox4: checkTrifectaBox(aiTop5, actualTrifecta, 4) ? 1 : 0,
+            trifectaBox5: checkTrifectaBox(aiTop5, actualTrifecta, 5) ? 1 : 0,
+            trifectaKey: checkTrifectaKey(aiTop5, actualTrifecta, 5) ? 1 : 0,
+            superfectaStraight: actual4th > 0 && aiTop5[0] === actualWinner && aiTop5[1] === actualExacta[1] && aiTop5[2] === actualTrifecta[2] && aiTop5[3] === actual4th ? 1 : 0,
+            superfectaBox4: actual4th > 0 ? (checkSuperfectaBox(aiTop5, actualSuperfecta, 4) ? 1 : 0) : 0,
+            superfectaBox5: actual4th > 0 ? (checkSuperfectaBox(aiTop5, actualSuperfecta, 5) ? 1 : 0) : 0,
+            superfectaKey: actual4th > 0 ? (checkSuperfectaKey(aiTop5, actualSuperfecta, 6) ? 1 : 0) : 0,
+          } : {
+            exactaStraight: 0, exactaBox2: 0, exactaBox3: 0, exactaBox4: 0,
+            trifectaStraight: 0, trifectaBox3: 0, trifectaBox4: 0, trifectaBox5: 0, trifectaKey: 0,
+            superfectaStraight: 0, superfectaBox4: 0, superfectaBox5: 0, superfectaKey: 0,
+          };
+
           // Build comparison
           const comparison: RaceComparison = {
             trackCode,
@@ -574,6 +688,9 @@ describe('AI vs Algorithm Validation', () => {
             aiConfidence: aiAnalysis?.confidence || 'N/A',
             aiFlaggedVulnerableFavorite: aiAnalysis?.vulnerableFavorite || false,
             aiFlaggedLikelyUpset: aiAnalysis?.likelyUpset || false,
+
+            algorithmExotics,
+            aiExotics,
           };
 
           allComparisons.push(comparison);
@@ -631,6 +748,39 @@ describe('AI vs Algorithm Validation', () => {
       const upsetCalled = allComparisons.filter((c) => c.aiFlaggedLikelyUpset);
       const upsetCorrect = upsetCalled.filter((c) => c.aiCorrect && !c.algorithmCorrect).length;
 
+      // Aggregate exotic results
+      const algoExoticTotals: ExoticBetResults = {
+        exactaStraight: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.exactaStraight, 0),
+        exactaBox2: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.exactaBox2, 0),
+        exactaBox3: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.exactaBox3, 0),
+        exactaBox4: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.exactaBox4, 0),
+        trifectaStraight: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.trifectaStraight, 0),
+        trifectaBox3: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.trifectaBox3, 0),
+        trifectaBox4: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.trifectaBox4, 0),
+        trifectaBox5: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.trifectaBox5, 0),
+        trifectaKey: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.trifectaKey, 0),
+        superfectaStraight: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.superfectaStraight, 0),
+        superfectaBox4: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.superfectaBox4, 0),
+        superfectaBox5: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.superfectaBox5, 0),
+        superfectaKey: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.superfectaKey, 0),
+      };
+
+      const aiExoticTotals: ExoticBetResults = {
+        exactaStraight: allComparisons.reduce((sum, c) => sum + c.aiExotics.exactaStraight, 0),
+        exactaBox2: allComparisons.reduce((sum, c) => sum + c.aiExotics.exactaBox2, 0),
+        exactaBox3: allComparisons.reduce((sum, c) => sum + c.aiExotics.exactaBox3, 0),
+        exactaBox4: allComparisons.reduce((sum, c) => sum + c.aiExotics.exactaBox4, 0),
+        trifectaStraight: allComparisons.reduce((sum, c) => sum + c.aiExotics.trifectaStraight, 0),
+        trifectaBox3: allComparisons.reduce((sum, c) => sum + c.aiExotics.trifectaBox3, 0),
+        trifectaBox4: allComparisons.reduce((sum, c) => sum + c.aiExotics.trifectaBox4, 0),
+        trifectaBox5: allComparisons.reduce((sum, c) => sum + c.aiExotics.trifectaBox5, 0),
+        trifectaKey: allComparisons.reduce((sum, c) => sum + c.aiExotics.trifectaKey, 0),
+        superfectaStraight: allComparisons.reduce((sum, c) => sum + c.aiExotics.superfectaStraight, 0),
+        superfectaBox4: allComparisons.reduce((sum, c) => sum + c.aiExotics.superfectaBox4, 0),
+        superfectaBox5: allComparisons.reduce((sum, c) => sum + c.aiExotics.superfectaBox5, 0),
+        superfectaKey: allComparisons.reduce((sum, c) => sum + c.aiExotics.superfectaKey, 0),
+      };
+
       const summary: TestSummary = {
         totalRaces,
         totalProcessingTimeMs: totalAITime,
@@ -676,6 +826,9 @@ describe('AI vs Algorithm Validation', () => {
           likelyUpsetsCalled: upsetCalled.length,
           likelyUpsetsCorrect: upsetCorrect,
         },
+
+        algorithmExotics: algoExoticTotals,
+        aiExotics: aiExoticTotals,
       };
 
       // Print report
@@ -734,6 +887,27 @@ describe('AI vs Algorithm Validation', () => {
       console.log(
         `  - AI pick won (algo didn't):      ${summary.aiFlags.likelyUpsetsCorrect} (${summary.aiFlags.likelyUpsetsCalled > 0 ? Math.round((summary.aiFlags.likelyUpsetsCorrect / summary.aiFlags.likelyUpsetsCalled) * 100) : 0}%)`
       );
+
+      console.log('\n' + '-'.repeat(70));
+      console.log('                         EXOTIC BET RESULTS');
+      console.log('-'.repeat(70));
+      console.log(`                        ALGORITHM    AI       DIFF`);
+      console.log(`EXACTA:`);
+      console.log(`  Straight (#1-#2):      ${algoExoticTotals.exactaStraight}/${totalRaces}        ${aiExoticTotals.exactaStraight}/${totalRaces}     ${aiExoticTotals.exactaStraight - algoExoticTotals.exactaStraight >= 0 ? '+' : ''}${aiExoticTotals.exactaStraight - algoExoticTotals.exactaStraight}`);
+      console.log(`  Box 2 (top 2):         ${algoExoticTotals.exactaBox2}/${totalRaces}        ${aiExoticTotals.exactaBox2}/${totalRaces}     ${aiExoticTotals.exactaBox2 - algoExoticTotals.exactaBox2 >= 0 ? '+' : ''}${aiExoticTotals.exactaBox2 - algoExoticTotals.exactaBox2}`);
+      console.log(`  Box 3 (top 3):         ${algoExoticTotals.exactaBox3}/${totalRaces}        ${aiExoticTotals.exactaBox3}/${totalRaces}     ${aiExoticTotals.exactaBox3 - algoExoticTotals.exactaBox3 >= 0 ? '+' : ''}${aiExoticTotals.exactaBox3 - algoExoticTotals.exactaBox3}`);
+      console.log(`  Box 4 (top 4):         ${algoExoticTotals.exactaBox4}/${totalRaces}        ${aiExoticTotals.exactaBox4}/${totalRaces}     ${aiExoticTotals.exactaBox4 - algoExoticTotals.exactaBox4 >= 0 ? '+' : ''}${aiExoticTotals.exactaBox4 - algoExoticTotals.exactaBox4}`);
+      console.log(`TRIFECTA:`);
+      console.log(`  Straight (#1-#2-#3):   ${algoExoticTotals.trifectaStraight}/${totalRaces}        ${aiExoticTotals.trifectaStraight}/${totalRaces}     ${aiExoticTotals.trifectaStraight - algoExoticTotals.trifectaStraight >= 0 ? '+' : ''}${aiExoticTotals.trifectaStraight - algoExoticTotals.trifectaStraight}`);
+      console.log(`  Box 3 (top 3):         ${algoExoticTotals.trifectaBox3}/${totalRaces}        ${aiExoticTotals.trifectaBox3}/${totalRaces}     ${aiExoticTotals.trifectaBox3 - algoExoticTotals.trifectaBox3 >= 0 ? '+' : ''}${aiExoticTotals.trifectaBox3 - algoExoticTotals.trifectaBox3}`);
+      console.log(`  Box 4 (top 4):         ${algoExoticTotals.trifectaBox4}/${totalRaces}        ${aiExoticTotals.trifectaBox4}/${totalRaces}     ${aiExoticTotals.trifectaBox4 - algoExoticTotals.trifectaBox4 >= 0 ? '+' : ''}${aiExoticTotals.trifectaBox4 - algoExoticTotals.trifectaBox4}`);
+      console.log(`  Box 5 (top 5):         ${algoExoticTotals.trifectaBox5}/${totalRaces}        ${aiExoticTotals.trifectaBox5}/${totalRaces}     ${aiExoticTotals.trifectaBox5 - algoExoticTotals.trifectaBox5 >= 0 ? '+' : ''}${aiExoticTotals.trifectaBox5 - algoExoticTotals.trifectaBox5}`);
+      console.log(`  Key (#1 over 4):       ${algoExoticTotals.trifectaKey}/${totalRaces}        ${aiExoticTotals.trifectaKey}/${totalRaces}     ${aiExoticTotals.trifectaKey - algoExoticTotals.trifectaKey >= 0 ? '+' : ''}${aiExoticTotals.trifectaKey - algoExoticTotals.trifectaKey}`);
+      console.log(`SUPERFECTA:`);
+      console.log(`  Straight (#1-#2-#3-#4): ${algoExoticTotals.superfectaStraight}/${totalRaces}        ${aiExoticTotals.superfectaStraight}/${totalRaces}     ${aiExoticTotals.superfectaStraight - algoExoticTotals.superfectaStraight >= 0 ? '+' : ''}${aiExoticTotals.superfectaStraight - algoExoticTotals.superfectaStraight}`);
+      console.log(`  Box 4 (top 4):         ${algoExoticTotals.superfectaBox4}/${totalRaces}        ${aiExoticTotals.superfectaBox4}/${totalRaces}     ${aiExoticTotals.superfectaBox4 - algoExoticTotals.superfectaBox4 >= 0 ? '+' : ''}${aiExoticTotals.superfectaBox4 - algoExoticTotals.superfectaBox4}`);
+      console.log(`  Box 5 (top 5):         ${algoExoticTotals.superfectaBox5}/${totalRaces}        ${aiExoticTotals.superfectaBox5}/${totalRaces}     ${aiExoticTotals.superfectaBox5 - algoExoticTotals.superfectaBox5 >= 0 ? '+' : ''}${aiExoticTotals.superfectaBox5 - algoExoticTotals.superfectaBox5}`);
+      console.log(`  Key (#1 over 5):       ${algoExoticTotals.superfectaKey}/${totalRaces}        ${aiExoticTotals.superfectaKey}/${totalRaces}     ${aiExoticTotals.superfectaKey - algoExoticTotals.superfectaKey >= 0 ? '+' : ''}${aiExoticTotals.superfectaKey - algoExoticTotals.superfectaKey}`);
 
       console.log('\n' + '='.repeat(70));
       console.log('                              VERDICT');
