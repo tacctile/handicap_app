@@ -1,29 +1,22 @@
 /**
- * Gemini API Service
+ * Gemini AI Service
  *
- * Provides direct integration with Google's Gemini 2.0 Flash-Lite model.
- * Handles API calls, error handling, and response parsing.
+ * Single-bot race analysis using Google's Gemini 2.0 Flash-Lite model.
+ * Takes algorithm scores and produces AI insights, rankings, and value labels.
  */
 
-import type { GeminiRequest, GeminiResponse, GeminiError } from './types';
+import type { ParsedRace } from '../../types/drf';
+import type { RaceScoringResult } from '../../types/scoring';
+import type { AIRaceAnalysis, AIServiceError, AIServiceErrorCode } from './types';
+import { buildRaceAnalysisPrompt } from './prompt';
 
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
 
-/** Gemini model to use */
-export const GEMINI_MODEL = 'gemini-2.0-flash-lite';
-
-/** Gemini API endpoint */
-const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
-
-/** Default configuration */
-const DEFAULT_CONFIG = {
-  temperature: 0.7,
-  maxOutputTokens: 2048,
-  topP: 0.95,
-  topK: 40,
-};
+const GEMINI_MODEL = 'gemini-2.0-flash-lite';
+const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const TIMEOUT_MS = 30000;
 
 // ============================================================================
 // API KEY MANAGEMENT
@@ -31,16 +24,14 @@ const DEFAULT_CONFIG = {
 
 /**
  * Get the Gemini API key from environment variables
- * Checks both client-side (VITE_) and server-side env vars
  */
-export function getGeminiApiKey(): string | null {
-  // Client-side (Vite)
+function getApiKey(): string {
+  // Check for Vite environment variable
   if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) {
     return import.meta.env.VITE_GEMINI_API_KEY;
   }
 
-  // Server-side (Node.js / Vercel) - check is done at runtime
-  // Use try/catch to safely check for Node.js process object
+  // Fallback for other environments (Node.js / Vercel)
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const nodeProcess = (globalThis as any).process;
@@ -51,30 +42,7 @@ export function getGeminiApiKey(): string | null {
     // Not in Node.js environment
   }
 
-  return null;
-}
-
-/**
- * Check if the Gemini API is configured
- * Either via direct API key or via the serverless proxy
- */
-export function isGeminiConfigured(): boolean {
-  // Direct API key available
-  if (getGeminiApiKey() !== null) return true;
-
-  // In browser, we can use the /api/gemini endpoint (key is server-side)
-  if (typeof window !== 'undefined') return true;
-
-  return false;
-}
-
-/**
- * Determine if we should use the serverless proxy
- * Use proxy when: in browser AND no client-side key
- */
-function shouldUseProxy(): boolean {
-  if (typeof window === 'undefined') return false;
-  return getGeminiApiKey() === null;
+  return '';
 }
 
 // ============================================================================
@@ -82,295 +50,163 @@ function shouldUseProxy(): boolean {
 // ============================================================================
 
 /**
- * Create a structured Gemini error
+ * Create a structured AI service error
  */
-function createGeminiError(
-  code: GeminiError['code'],
-  message: string,
-  retryable: boolean,
-  statusCode?: number
-): GeminiError {
-  return { code, message, retryable, statusCode };
+function createError(code: AIServiceErrorCode, message: string): AIServiceError {
+  return {
+    code,
+    message,
+    timestamp: new Date().toISOString(),
+  };
 }
 
 /**
- * Parse API error response to structured error
+ * Type guard for AIServiceError
  */
-function parseApiError(statusCode: number, responseText: string): GeminiError {
-  // Try to parse as JSON
-  try {
-    const errorData = JSON.parse(responseText);
-    const message = errorData.error?.message || responseText;
-
-    if (statusCode === 401 || statusCode === 403) {
-      return createGeminiError('API_KEY_INVALID', `Invalid API key: ${message}`, false, statusCode);
-    }
-
-    if (statusCode === 429) {
-      return createGeminiError('RATE_LIMITED', `Rate limited: ${message}`, true, statusCode);
-    }
-
-    if (statusCode === 402 || message.toLowerCase().includes('quota')) {
-      return createGeminiError('QUOTA_EXCEEDED', `Quota exceeded: ${message}`, false, statusCode);
-    }
-
-    return createGeminiError('API_ERROR', message, statusCode >= 500, statusCode);
-  } catch {
-    return createGeminiError(
-      'API_ERROR',
-      responseText || 'Unknown API error',
-      statusCode >= 500,
-      statusCode
-    );
-  }
+function isAIServiceError(error: unknown): error is AIServiceError {
+  return typeof error === 'object' && error !== null && 'code' in error && 'message' in error;
 }
 
 // ============================================================================
-// MAIN API FUNCTION
+// MAIN ANALYSIS FUNCTION
 // ============================================================================
 
 /**
- * Call Gemini 2.0 Flash-Lite with a system prompt and user content
+ * Analyze a race using Gemini AI
  *
- * Automatically uses the serverless proxy (/api/gemini) when running in browser
- * without a client-side API key. This keeps the key secure on the server.
+ * Takes the parsed race data and algorithm scoring results,
+ * sends them to Gemini, and returns structured AI analysis.
  *
- * @param request - The request containing system prompt and user content
- * @returns Promise resolving to GeminiResponse or throwing GeminiError
- *
- * @example
- * ```typescript
- * const response = await callGemini({
- *   systemPrompt: 'You are a horse racing analyst.',
- *   userContent: 'Analyze this race data...',
- *   temperature: 0.7,
- * });
- * console.log(response.text);
- * ```
+ * @param race - Parsed race data from DRF file
+ * @param scoringResult - Algorithm scoring results
+ * @returns AIRaceAnalysis with insights and rankings
+ * @throws AIServiceError on failure
  */
-export async function callGemini(request: GeminiRequest): Promise<GeminiResponse> {
-  // Use serverless proxy if in browser without client-side key
-  if (shouldUseProxy()) {
-    return callGeminiViaProxy(request);
-  }
-
-  return callGeminiDirect(request);
-}
-
-/**
- * Call Gemini via the serverless proxy endpoint
- * Used in browser when API key is stored server-side
- */
-async function callGeminiViaProxy(request: GeminiRequest): Promise<GeminiResponse> {
+export async function analyzeRaceWithGemini(
+  race: ParsedRace,
+  scoringResult: RaceScoringResult
+): Promise<AIRaceAnalysis> {
   const startTime = Date.now();
+  const apiKey = getApiKey();
+
+  if (!apiKey) {
+    throw createError('API_KEY_MISSING', 'Gemini API key not configured');
+  }
+
+  const prompt = buildRaceAnalysisPrompt(race, scoringResult);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const response = await fetch('/api/gemini', {
+    const response = await fetch(`${API_ENDPOINT}?key=${apiKey}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        systemPrompt: request.systemPrompt,
-        userContent: request.userContent,
-        temperature: request.temperature,
-        maxOutputTokens: request.maxOutputTokens,
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.3,
+          topP: 0.8,
+          maxOutputTokens: 2048,
+        },
       }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw createError('API_ERROR', `Gemini API error: ${response.status} - ${errorText}`);
+    }
 
     const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!response.ok) {
-      throw createGeminiError(
-        data.code || 'API_ERROR',
-        data.error || 'Unknown error from proxy',
-        response.status === 429 || response.status >= 500,
-        response.status
-      );
+    if (!text) {
+      throw createError('PARSE_ERROR', 'No content in Gemini response');
     }
 
-    return {
-      text: data.text,
-      promptTokens: data.promptTokens || 0,
-      completionTokens: data.completionTokens || 0,
-      totalTokens: data.totalTokens || 0,
-      model: data.model || GEMINI_MODEL,
-      processingTimeMs: data.processingTimeMs || Date.now() - startTime,
-    };
+    return parseGeminiResponse(text, race.header.raceNumber, Date.now() - startTime);
   } catch (error) {
-    // Re-throw if it's already a GeminiError
-    if (error && typeof error === 'object' && 'code' in error && 'retryable' in error) {
+    clearTimeout(timeoutId);
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw createError('TIMEOUT', `Request timed out after ${TIMEOUT_MS}ms`);
+    }
+
+    if (isAIServiceError(error)) {
       throw error;
     }
 
-    // Network errors
-    if (error instanceof TypeError) {
-      throw createGeminiError(
-        'NETWORK_ERROR',
-        `Network error calling API proxy: ${error.message}`,
-        true
-      );
-    }
-
-    throw createGeminiError(
-      'API_ERROR',
-      `Unexpected error: ${error instanceof Error ? error.message : String(error)}`,
-      false
+    throw createError(
+      'NETWORK_ERROR',
+      `Network error: ${error instanceof Error ? error.message : 'Unknown'}`
     );
   }
 }
 
+// ============================================================================
+// RESPONSE PARSING
+// ============================================================================
+
 /**
- * Call Gemini API directly (requires API key)
- * Used server-side or when client has direct API key access
+ * Parse Gemini's JSON response into AIRaceAnalysis
+ *
+ * Handles potential markdown wrapping and validates required fields.
+ *
+ * @param text - Raw text response from Gemini
+ * @param raceNumber - Race number for the analysis
+ * @param processingTimeMs - How long the request took
+ * @returns Parsed AIRaceAnalysis object
+ * @throws AIServiceError on parse failure
  */
-async function callGeminiDirect(request: GeminiRequest): Promise<GeminiResponse> {
-  const startTime = Date.now();
-
-  // Check for API key
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    throw createGeminiError(
-      'API_KEY_MISSING',
-      'Gemini API key not configured. Set VITE_GEMINI_API_KEY or GEMINI_API_KEY environment variable.',
-      false
-    );
+export function parseGeminiResponse(
+  text: string,
+  raceNumber: number,
+  processingTimeMs: number
+): AIRaceAnalysis {
+  // Extract JSON from response (handle potential markdown wrapping)
+  let jsonStr = text.trim();
+  if (jsonStr.startsWith('```json')) {
+    jsonStr = jsonStr.slice(7);
   }
-
-  // Build request payload
-  const payload = {
-    contents: [
-      {
-        role: 'user',
-        parts: [{ text: request.userContent }],
-      },
-    ],
-    systemInstruction: {
-      parts: [{ text: request.systemPrompt }],
-    },
-    generationConfig: {
-      temperature: request.temperature ?? DEFAULT_CONFIG.temperature,
-      maxOutputTokens: request.maxOutputTokens ?? DEFAULT_CONFIG.maxOutputTokens,
-      topP: DEFAULT_CONFIG.topP,
-      topK: DEFAULT_CONFIG.topK,
-    },
-  };
-
-  // Build URL
-  const url = `${GEMINI_API_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+  if (jsonStr.startsWith('```')) {
+    jsonStr = jsonStr.slice(3);
+  }
+  if (jsonStr.endsWith('```')) {
+    jsonStr = jsonStr.slice(0, -3);
+  }
+  jsonStr = jsonStr.trim();
 
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    const parsed = JSON.parse(jsonStr);
 
-    const responseText = await response.text();
-
-    if (!response.ok) {
-      throw parseApiError(response.status, responseText);
+    // Validate required fields exist
+    if (!parsed.horseInsights || !Array.isArray(parsed.horseInsights)) {
+      throw new Error('Missing horseInsights array');
     }
-
-    // Parse successful response
-    const data = JSON.parse(responseText);
-
-    // Extract text from response
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) {
-      throw createGeminiError('PARSE_ERROR', 'No text content in Gemini response', false);
-    }
-
-    // Extract token usage
-    const usageMetadata = data.usageMetadata || {};
-    const promptTokens = usageMetadata.promptTokenCount || 0;
-    const completionTokens = usageMetadata.candidatesTokenCount || 0;
-    const totalTokens = usageMetadata.totalTokenCount || promptTokens + completionTokens;
-
-    const processingTimeMs = Date.now() - startTime;
 
     return {
-      text,
-      promptTokens,
-      completionTokens,
-      totalTokens,
-      model: GEMINI_MODEL,
+      raceId: `race-${raceNumber}`,
+      raceNumber,
+      timestamp: new Date().toISOString(),
       processingTimeMs,
+      raceNarrative: parsed.raceNarrative || '',
+      confidence: parsed.confidence || 'MEDIUM',
+      bettableRace: parsed.bettableRace ?? true,
+      horseInsights: parsed.horseInsights,
+      topPick: parsed.topPick ?? null,
+      valuePlay: parsed.valuePlay ?? null,
+      avoidList: parsed.avoidList || [],
+      vulnerableFavorite: parsed.vulnerableFavorite ?? false,
+      likelyUpset: parsed.likelyUpset ?? false,
+      chaoticRace: parsed.chaoticRace ?? false,
     };
-  } catch (error) {
-    // Re-throw if it's already a GeminiError
-    if (error && typeof error === 'object' && 'code' in error && 'retryable' in error) {
-      throw error;
-    }
-
-    // Network or other errors
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw createGeminiError(
-        'NETWORK_ERROR',
-        `Network error calling Gemini API: ${error.message}`,
-        true
-      );
-    }
-
-    throw createGeminiError(
-      'API_ERROR',
-      `Unexpected error: ${error instanceof Error ? error.message : String(error)}`,
-      false
+  } catch (e) {
+    throw createError(
+      'PARSE_ERROR',
+      `Failed to parse Gemini response: ${e instanceof Error ? e.message : 'Unknown'}`
     );
   }
-}
-
-// ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
-
-/**
- * Call Gemini with automatic retry on retryable errors
- *
- * @param request - The Gemini request
- * @param maxRetries - Maximum number of retry attempts (default: 3)
- * @param baseDelayMs - Base delay between retries in ms (default: 1000)
- * @returns Promise resolving to GeminiResponse
- */
-export async function callGeminiWithRetry(
-  request: GeminiRequest,
-  maxRetries: number = 3,
-  baseDelayMs: number = 1000
-): Promise<GeminiResponse> {
-  let lastError: GeminiError | null = null;
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await callGemini(request);
-    } catch (error) {
-      const geminiError = error as GeminiError;
-      lastError = geminiError;
-
-      // Don't retry non-retryable errors
-      if (!geminiError.retryable || attempt === maxRetries) {
-        throw error;
-      }
-
-      // Exponential backoff
-      const delayMs = baseDelayMs * Math.pow(2, attempt);
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-    }
-  }
-
-  throw lastError;
-}
-
-/**
- * Type guard to check if an error is a GeminiError
- */
-export function isGeminiError(error: unknown): error is GeminiError {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    'message' in error &&
-    'retryable' in error
-  );
 }

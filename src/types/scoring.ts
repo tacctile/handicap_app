@@ -257,3 +257,77 @@ export const DATA_COMPLETENESS_GRADES = {
  * Low confidence threshold for critical data
  */
 export const LOW_CONFIDENCE_THRESHOLD = 75;
+
+// ============================================================================
+// RACE SCORING RESULT TYPES (for AI integration)
+// ============================================================================
+
+/**
+ * Pace scenario analysis from the scoring engine
+ */
+export interface PaceScenarioAnalysis {
+  /** Expected pace scenario */
+  expectedPace: 'hot' | 'moderate' | 'slow' | 'contested';
+  /** Program number of likely leader (null if contested) */
+  likelyLeader: number | null;
+  /** Probability of a speed duel (0-1) */
+  speedDuelProbability: number;
+  /** Number of early speed horses */
+  earlySpeedCount: number;
+}
+
+/**
+ * Race-level analysis from scoring engine
+ */
+export interface RaceAnalysis {
+  /** Pace scenario breakdown */
+  paceScenario: PaceScenarioAnalysis;
+  /** Field strength classification */
+  fieldStrength: 'elite' | 'strong' | 'average' | 'weak';
+  /** Whether the betting favorite appears vulnerable */
+  vulnerableFavorite: boolean;
+  /** Whether pace is likely to collapse (benefits closers) */
+  likelyPaceCollapse: boolean;
+}
+
+/**
+ * Simplified horse score for AI prompt building
+ * Maps from the full HorseScore/ScoredHorse types
+ */
+export interface HorseScoreForAI {
+  /** Program number */
+  programNumber: number;
+  /** Horse name */
+  horseName: string;
+  /** Algorithm-assigned rank (1 = best) */
+  rank: number;
+  /** Final composite score */
+  finalScore: number;
+  /** Confidence tier */
+  confidenceTier: 'high' | 'medium' | 'low';
+  /** Score breakdown by category */
+  breakdown: {
+    speedScore: number;
+    classScore: number;
+    formScore: number;
+    paceScore: number;
+    connectionScore: number;
+  };
+  /** Factors the algorithm flagged as positive */
+  positiveFactors: string[];
+  /** Factors the algorithm flagged as negative */
+  negativeFactors: string[];
+  /** Whether this horse is scratched */
+  isScratched: boolean;
+}
+
+/**
+ * Complete race scoring result for AI analysis
+ * Combines individual horse scores with race-level analysis
+ */
+export interface RaceScoringResult {
+  /** Scored horses (sorted by rank) */
+  scores: HorseScoreForAI[];
+  /** Race-level analysis */
+  raceAnalysis: RaceAnalysis;
+}
