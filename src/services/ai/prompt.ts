@@ -291,13 +291,15 @@ RESPOND WITH JSON ONLY:
 }`;
   }
 
+  // We know rankedScores[0] exists because of the length check above
+  const firstScore = rankedScores[0]!;
   const favorite = rankedScores.reduce((fav, curr) => {
     const favHorse = race.horses.find((h) => h.programNumber === fav.programNumber);
     const currHorse = race.horses.find((h) => h.programNumber === curr.programNumber);
     const favOdds = parseFloat(favHorse?.morningLineOdds?.replace('-', '.') || '99');
     const currOdds = parseFloat(currHorse?.morningLineOdds?.replace('-', '.') || '99');
     return currOdds < favOdds ? curr : fav;
-  }, rankedScores[0]);
+  }, firstScore);
 
   const favHorse = race.horses.find((h) => h.programNumber === favorite.programNumber);
   const favPPs = favHorse?.pastPerformances.slice(0, 3) || [];
@@ -353,7 +355,8 @@ export function buildFieldSpreadPrompt(
 
   // Calculate score gaps
   const scoreData = rankedScores.map((score, idx) => {
-    const gap = idx === 0 ? 0 : rankedScores[idx - 1].finalScore - score.finalScore;
+    const prevScore = idx > 0 ? rankedScores[idx - 1] : null;
+    const gap = prevScore ? prevScore.finalScore - score.finalScore : 0;
     return {
       rank: score.rank,
       num: score.programNumber,
