@@ -26,22 +26,14 @@ const TIMEOUT_MS = 30000;
  * Get the Gemini API key from environment variables
  */
 function getApiKey(): string {
-  // Check for Vite environment variable
+  // Check Vite environment (browser)
   if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) {
     return import.meta.env.VITE_GEMINI_API_KEY;
   }
-
-  // Fallback for other environments (Node.js / Vercel)
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const nodeProcess = (globalThis as any).process;
-    if (nodeProcess?.env?.VITE_GEMINI_API_KEY) {
-      return nodeProcess.env.VITE_GEMINI_API_KEY as string;
-    }
-  } catch {
-    // Not in Node.js environment
+  // Check Node environment (test/CI)
+  if (typeof process !== 'undefined' && process.env?.VITE_GEMINI_API_KEY) {
+    return process.env.VITE_GEMINI_API_KEY;
   }
-
   return '';
 }
 
