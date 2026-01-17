@@ -26,6 +26,47 @@ import type { ScoredHorse } from '../../lib/scoring';
 import type { TrackCondition } from '../../hooks/useRaceState';
 
 // ============================================================================
+// THROTTLING UTILITIES
+// ============================================================================
+
+// Throttle API calls to avoid rate limits
+const DELAY_BETWEEN_CALLS_MS = 1500; // 1.5 seconds between calls
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Call AI with retry logic and exponential backoff for rate limits
+ */
+async function callAIWithRetry(
+  race: ParsedRace,
+  scoringResult: RaceScoringResult,
+  maxRetries: number = 3
+): Promise<AIRaceAnalysis | null> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await getAIAnalysis(race, scoringResult, { forceRefresh: true });
+    } catch (err: any) {
+      const errorMessage = err?.message || '';
+      const isRateLimit = errorMessage.includes('429') ||
+                          errorMessage.includes('RATE_LIMIT') ||
+                          errorMessage.includes('Too Many Requests') ||
+                          err?.code === 'RATE_LIMIT';
+
+      if (isRateLimit && attempt < maxRetries) {
+        const backoffMs = attempt * 5000; // 5s, 10s, 15s
+        console.log(`    ⚠️ Rate limited. Waiting ${backoffMs/1000}s before retry ${attempt + 1}/${maxRetries}...`);
+        await delay(backoffMs);
+      } else {
+        throw err;
+      }
+    }
+  }
+  return null;
+}
+
+// ============================================================================
 // TYPES
 // ============================================================================
 
@@ -360,6 +401,7 @@ describe('AI vs Algorithm Validation', () => {
   const allComparisons: RaceComparison[] = [];
   let totalAITime = 0;
   let aiSkippedCount = 0;
+  let totalRacesToProcess = 0; // Set during test execution for ETA calculation
 
   beforeAll(() => {
     // Debug: Log environment status
@@ -386,6 +428,15 @@ describe('AI vs Algorithm Validation', () => {
 
         // Parse results
         const results = parseResultsFile(resultsPath);
+
+        // Calculate total races for ETA (only races with valid results)
+        const racesWithResults = parsed.races.filter(race => {
+          const raceResult = results.find((r) => r.raceNumber === race.header.raceNumber);
+          return raceResult && raceResult.positions.length >= 3;
+        });
+        totalRacesToProcess = racesWithResults.length;
+
+        console.log(`  Processing ${totalRacesToProcess} races from ${trackCode}...`);
 
         // Process each race
         for (const race of parsed.races) {
@@ -459,11 +510,14 @@ describe('AI vs Algorithm Validation', () => {
               // Convert to RaceScoringResult format
               const scoringResult = convertToRaceScoringResult(scoredHorses, race.horses);
 
-              // Call AI service
-              aiAnalysis = await getAIAnalysis(race, scoringResult, { forceRefresh: true });
+              // Call AI service with retry logic for rate limits
+              aiAnalysis = await callAIWithRetry(race, scoringResult);
 
               aiProcessingMs = Date.now() - startTime;
               totalAITime += aiProcessingMs;
+
+              // Throttle to avoid rate limits
+              await delay(DELAY_BETWEEN_CALLS_MS);
             } catch (err) {
               console.warn(`AI failed for ${trackCode} R${race.header.raceNumber}:`, err);
               aiSkippedCount++;
@@ -524,16 +578,19 @@ describe('AI vs Algorithm Validation', () => {
 
           allComparisons.push(comparison);
 
-          // Log progress
+          // Log progress with ETA
+          const racesProcessed = allComparisons.length;
+          const estimatedRemainingMs = (totalRacesToProcess - racesProcessed) * (DELAY_BETWEEN_CALLS_MS + 3000);
+          const estimatedRemainingMin = Math.ceil(estimatedRemainingMs / 60000);
           const algoResult = comparison.algorithmCorrect ? '\u2713' : '\u2717';
           const aiResult = comparison.aiCorrect ? '\u2713' : '\u2717';
           console.log(
-            `  ${trackCode} R${race.header.raceNumber}: Algo=${algorithmPick} AI=${aiPick || 'skip'} Actual=${actualWinner} ${algoResult}/${aiResult}`
+            `  [${racesProcessed}/${totalRacesToProcess}] ${trackCode} R${race.header.raceNumber}: Algo=${algorithmPick} AI=${aiPick || 'skip'} Actual=${actualWinner} ${algoResult}/${aiResult} | ETA: ~${estimatedRemainingMin}min`
           );
         }
 
         expect(true).toBe(true); // Test passes if we get here
-      }, 120000); // 2 minute timeout per track
+      }, 600000); // 10 minute timeout per track (throttled execution)
     });
   }
 

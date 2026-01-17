@@ -24,7 +24,7 @@ jobs:
   ai-validation:
     name: AI vs Algorithm Comparison
     runs-on: ubuntu-latest
-    timeout-minutes: 45  # Allow time for 112 races
+    timeout-minutes: 60  # Allow 1 hour for throttled execution
 
     steps:
       - name: Checkout code
