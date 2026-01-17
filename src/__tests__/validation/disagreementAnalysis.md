@@ -1,311 +1,292 @@
 # Disagreement Analysis Report
 
-## STATUS: BLOCKED - Results File Not Found
+## STATUS: ENHANCED LOGGING IMPLEMENTED
 
-**Date Generated:** 2026-01-17
+**Date Updated:** 2026-01-17
 **Branch:** claude/analyze-disagreement-losses-NzXJ8
 
 ---
 
-## Executive Summary
+## Implementation Summary
 
-The detailed disagreement analysis could not be completed because the validation results file (`src/data/ai_comparison_results.json`) does not exist. This file is generated when `aiVsAlgorithm.test.ts` runs but has not been persisted.
+Enhanced validation test logging has been implemented to capture detailed disagreement data for pattern analysis.
 
-**Task Context:** From a 111-race validation test, there were reportedly 8 disagreement losses (4 AI wrong, 4 algorithm wrong). This report documents:
-1. Why the analysis is blocked
-2. What data IS currently captured by the test
-3. What data is NOT captured (critical gaps)
-4. Recommendations for enhanced logging
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `src/__tests__/validation/types.ts` | TypeScript interfaces for detailed race results |
+| `src/__tests__/validation/analyzeResults.ts` | Standalone analysis script |
+| `src/__tests__/validation/results/` | Output directory for results |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/__tests__/validation/aiVsAlgorithm.test.ts` | Enhanced to capture detailed data |
 
 ---
 
-## Part 1: Validation Test Data Status
+## New Data Captured
 
-### Expected Results File
+### DetailedRaceResult Interface
+
+Each race now captures:
+
+#### Race Identification
+- `trackCode` - Track abbreviation
+- `trackName` - Full track name
+- `raceNumber` - Race number
+- `date` - Race date
+- `surface` - dirt/turf
+- `distance` - Distance string
+- `distanceFurlongs` - Numeric furlongs
+- `fieldSize` - Number of horses
+- `raceClass` - Race type
+
+#### Algorithm Pick Details
+```typescript
+algorithmPick: {
+  postPosition: number;
+  horseName: string;
+  score: number;
+  tier: 1 | 2 | 3 | 0;
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  topCategories: string[];  // Top 3 scoring categories
+  scoreMargin: number;      // Gap to 2nd place
+}
+```
+
+#### AI Pick Details
+```typescript
+aiPick: {
+  postPosition: number | null;
+  horseName: string | null;
+  algorithmScore: number | null;  // What algorithm gave this horse
+  algorithmRank: number | null;
+  tier: 1 | 2 | 3 | 0;
+  reasoning: string;              // AI's narrative explanation
+  overrideType: 'CONFIRM' | 'OVERRIDE' | 'PASS';
+  topPickOneLiner: string | null;
+  keyStrength: string | null;
+  keyWeakness: string | null;
+}
+```
+
+#### Actual Result
+```typescript
+winner: {
+  postPosition: number;
+  horseName: string;
+  algorithmScore: number;
+  algorithmRank: number;
+  algorithmTier: 1 | 2 | 3 | 0;
+  odds: string;
+  wasAlgorithmPick: boolean;
+  wasAiPick: boolean;
+}
+```
+
+#### Bot Signals
+```typescript
+botSignals: {
+  tripTrouble: string | null;
+  tripTroubleHorses: Array<{ post, name, issue }>;
+  paceProjection: 'HOT' | 'MODERATE' | 'SLOW' | null;
+  loneSpeedException: boolean;
+  speedDuelLikely: boolean;
+  vulnerableFavorite: boolean;
+  vulnerableFavoriteReasons: string[];
+  fieldType: 'TIGHT' | 'SEPARATED' | 'MIXED' | null;
+  topTierCount: number | null;
+}
+```
+
+---
+
+## Output Files
+
+### Primary Results File
+```
+src/__tests__/validation/results/ai_comparison_results.json
+```
+
+Contains:
+- `generatedAt` - Timestamp
+- `version` - "2.0.0"
+- `summary` - Aggregate statistics
+- `detailedResults` - Array of DetailedRaceResult
+- `disagreements` - Pre-filtered disagreement races
+
+### Legacy Results File (backwards compatibility)
 ```
 src/data/ai_comparison_results.json
 ```
 
-**Status:** NOT FOUND
+---
 
-### Available Data Files
-The following results files exist but contain only raw race outcomes (not AI/algorithm comparison data):
+## Analysis Tools
 
-| File | Track | Status |
-|------|-------|--------|
-| AQU1228_results.txt | Aqueduct | Raw results only |
-| DED1230_results.txt | Delta Downs | Raw results only |
-| FGX1228_results.txt | Fair Grounds | Raw results only |
-| GPX1224_results.txt | Gulfstream Park | Raw results only |
-| GPX1227_results.txt | Gulfstream Park | Raw results only |
-| PEN0821_results.txt | Penn National | Raw results only |
-| PEN1219_results.txt | Penn National | Raw results only |
-| PRX1229_results.txt | Parx Racing | Raw results only |
-| PRX1230_results.txt | Parx Racing | Raw results only |
-| SAX1228_results.txt | Santa Anita | Raw results only |
-| SAX1229_results.txt | Santa Anita | Raw results only |
-| TUP1230_results.txt | Turf Paradise | Raw results only |
+### Standalone Analyzer
 
-### Required Action
-Run the AI validation test to generate results:
+Run the analyzer to output disagreement patterns:
+
 ```bash
+# Full analysis with pattern groupings
+npx ts-node src/__tests__/validation/analyzeResults.ts
+
+# JSON output for programmatic use
+npx ts-node src/__tests__/validation/analyzeResults.ts --json
+
+# Only disagreement details (skip groupings)
+npx ts-node src/__tests__/validation/analyzeResults.ts --disagreements-only
+```
+
+### Analysis Output Includes
+
+1. **Pattern Groupings**
+   - By track
+   - By surface (dirt/turf)
+   - By distance (sprint/route)
+   - By AI confidence level
+   - By score differential (tight/moderate/dominant)
+   - By field size (small/medium/large)
+   - By override type (CONFIRM/OVERRIDE/PASS)
+
+2. **Detailed Disagreement Races**
+   - Full race context
+   - Algorithm pick with score breakdown
+   - AI pick with reasoning
+   - Actual winner with algorithm ranking
+   - Bot signals present
+
+3. **Pattern Analysis**
+   - Score differential patterns in AI losses
+   - Tier analysis
+   - Confidence analysis
+   - Bot signal correlation
+
+4. **Recommendations**
+   - Based on identified patterns
+   - Actionable prompt adjustments
+
+---
+
+## API: getDisagreements Function
+
+```typescript
+import { getDisagreements } from './types';
+
+const disagreements = getDisagreements(detailedResults);
+// Returns:
+// {
+//   aiDisagreedAndWon: DetailedRaceResult[];    // AI was right
+//   aiDisagreedAndLost: DetailedRaceResult[];   // Algorithm was right
+//   algorithmWonDisagreement: DetailedRaceResult[]; // Same as above
+// }
+```
+
+---
+
+## Running the Validation Test
+
+```bash
+# Run the full validation test
 npm test -- --run src/__tests__/validation/aiVsAlgorithm.test.ts
+
+# Then analyze results
+npx ts-node src/__tests__/validation/analyzeResults.ts
 ```
 
-**Note:** Requires `VITE_GEMINI_API_KEY` environment variable to be set.
+**Note:** Requires `VITE_GEMINI_API_KEY` environment variable.
 
 ---
 
-## Part 2: Data Currently Captured by Test
+## Sample DetailedRaceResult
 
-When the validation test runs, it captures the following in `RaceComparison` objects:
+```json
+{
+  "trackCode": "SAX",
+  "trackName": "Santa Anita",
+  "raceNumber": 5,
+  "date": "2024-12-28",
+  "surface": "dirt",
+  "distance": "6f",
+  "distanceFurlongs": 6,
+  "fieldSize": 8,
+  "raceClass": "CLM",
 
-### Race Identification
-- `trackCode` - Track abbreviation (e.g., "SAR", "GP")
-- `raceNumber` - Race number (1-12 typically)
+  "algorithmPick": {
+    "postPosition": 3,
+    "horseName": "Fast Runner",
+    "score": 185,
+    "tier": 1,
+    "confidence": "HIGH",
+    "topCategories": ["Speed: 45", "Form: 38", "Pace: 32"],
+    "scoreMargin": 12
+  },
 
-### Actual Results
-- `actualWinner` - Post position of winner
-- `actualExacta` - Post positions of 1st and 2nd
-- `actualTrifecta` - Post positions of 1st, 2nd, and 3rd
+  "aiPick": {
+    "postPosition": 7,
+    "horseName": "Dark Horse",
+    "algorithmScore": 168,
+    "algorithmRank": 3,
+    "tier": 2,
+    "reasoning": "OVERRIDE: #7 Dark Horse has masked ability from trip trouble - promoted to top pick",
+    "overrideType": "OVERRIDE",
+    "topPickOneLiner": "Trip trouble masked true ability in last start",
+    "keyStrength": "Strong closing speed hidden by traffic trouble",
+    "keyWeakness": null
+  },
 
-### Algorithm Predictions
-- `algorithmPick` - Post position of algorithm's top pick
-- `algorithmTop3` - Array of top 3 post positions
-- `algorithmCorrect` - Boolean: did algorithm pick the winner?
-- `algorithmInTop3` - Boolean: was winner in algorithm's top 3?
-- `algorithmExactaHit` - Boolean: exact 1-2 match
-- `algorithmTrifectaHit` - Boolean: exact 1-2-3 match
+  "winner": {
+    "postPosition": 3,
+    "horseName": "Fast Runner",
+    "algorithmScore": 185,
+    "algorithmRank": 1,
+    "algorithmTier": 1,
+    "odds": "5-2",
+    "wasAlgorithmPick": true,
+    "wasAiPick": false
+  },
 
-### AI Predictions
-- `aiPick` - Post position of AI's top pick (or null if AI failed)
-- `aiTop3` - Array of AI's top 3 post positions
-- `aiCorrect` - Boolean: did AI pick the winner?
-- `aiInTop3` - Boolean: was winner in AI's top 3?
-- `aiExactaHit` - Boolean: exact 1-2 match
-- `aiTrifectaHit` - Boolean: exact 1-2-3 match
+  "agreement": false,
+  "outcome": "ALGO_CORRECT",
 
-### Comparison Flags
-- `agreedOnWinner` - Boolean: AI and algorithm had same top pick
-- `aiDisagreedAndWon` - Boolean: AI differed from algorithm AND AI was right
-- `aiDisagreedAndLost` - Boolean: AI differed from algorithm AND algorithm was right
+  "botSignals": {
+    "tripTrouble": "detected",
+    "tripTroubleHorses": [],
+    "paceProjection": null,
+    "loneSpeedException": false,
+    "speedDuelLikely": false,
+    "vulnerableFavorite": false,
+    "vulnerableFavoriteReasons": [],
+    "fieldType": null,
+    "topTierCount": null
+  },
 
-### AI Metadata
-- `aiProcessingMs` - How long AI took
-- `aiConfidence` - AI's confidence level (HIGH/MEDIUM/LOW)
-- `aiFlaggedVulnerableFavorite` - Boolean
-- `aiFlaggedLikelyUpset` - Boolean
-
-### Exotic Bet Results
-- `algorithmExotics` - Detailed exotic bet hit tracking
-- `aiExotics` - Detailed exotic bet hit tracking
-
----
-
-## Part 3: Critical Data Gaps
-
-The following data is **NOT CAPTURED** but would be essential for disagreement analysis:
-
-### Gap 1: Horse Names (CRITICAL)
-**Current:** Only post positions are stored
-**Needed:** Horse names for human-readable analysis
-**Impact:** Cannot identify specific horses without manual lookup
-
-### Gap 2: Algorithm Scores and Tiers (CRITICAL)
-**Current:** Only `algorithmPick` (post position)
-**Needed:**
-- Full score breakdown for algorithm's top pick
-- Tier classification (1/2/3)
-- Confidence level
-- Score margin between 1st and 2nd
-
-**Impact:** Cannot analyze WHY algorithm favored a horse
-
-### Gap 3: AI Reasoning/Narrative (CRITICAL)
-**Current:** Not captured
-**Needed:**
-- `raceNarrative` - AI's overall race assessment
-- Individual `oneLiner` insights for each horse
-- `keyStrength` and `keyWeakness` for top picks
-
-**Impact:** Cannot understand WHY AI overrode algorithm
-
-### Gap 4: Multi-Bot Analysis Details (HIGH)
-**Current:** Only final `aiPick` is stored
-**Needed:**
-- TripTrouble bot output (which horses had masked ability)
-- PaceScenario bot output (pace projection, lone speed exceptions)
-- VulnerableFavorite bot output (reasons for vulnerability)
-- FieldSpread bot output (field type, contender count)
-
-**Impact:** Cannot trace AI decision back to specific bot signals
-
-### Gap 5: Race Conditions (MEDIUM)
-**Current:** Not captured
-**Needed:**
-- Surface (dirt/turf)
-- Distance (sprint/route)
-- Field size
-- Race class
-
-**Impact:** Cannot analyze patterns by race type
-
-### Gap 6: Odds Data (MEDIUM)
-**Current:** Not captured
-**Needed:**
-- Morning line odds for top picks
-- Whether AI/algorithm picks were overlays
-
-**Impact:** Cannot assess value angle of picks
-
-### Gap 7: Winner's Algorithm Score (HIGH)
-**Current:** Not captured
-**Needed:**
-- What score did the actual winner have?
-- What rank did algorithm give the winner?
-
-**Impact:** Cannot determine if losses were "bad beats" (winner had low score) vs "misranks" (winner had high score but ranked lower)
-
----
-
-## Part 4: Placeholder Analysis Structure
-
-Once results are available, the analysis should follow this format:
-
-### AI DISAGREED AND LOST (Expected: 4 races)
-
-For each race where AI overrode algorithm and lost:
-
-```
-### Race X: [Track] R[Number] - [Date]
-- Algorithm pick: [Horse Name] (Score: X, Tier: X, Confidence: X)
-- AI pick: [Horse Name] (Score: X, Tier: X)
-- AI reasoning: [raceNarrative or "NOT CAPTURED"]
-- Multi-bot signals: [tripTrouble: X, pace: X, vulnerable: X, spread: X]
-- Actual winner: [Horse Name] (Algorithm Score: X, Algorithm Rank: X)
-- Analysis: [Pattern identification]
-```
-
-### ALGORITHM DISAGREED AND LOST (Expected: 4 races)
-
-For each race where algorithm's pick lost but AI's pick won:
-
-```
-### Race X: [Track] R[Number] - [Date]
-- Algorithm pick: [Horse Name] (Score: X, Tier: X, Confidence: X)
-- AI pick: [Horse Name] (Score: X, Tier: X)
-- AI reasoning: [raceNarrative]
-- What AI saw: [tripTrouble/pace/vulnerable signals]
-- Actual winner: AI's pick won
-- Analysis: [What algorithm missed]
-```
-
----
-
-## Part 5: Recommended Logging Enhancements
-
-### Priority 1: Enhance RaceComparison Interface
-
-Add to `aiVsAlgorithm.test.ts`:
-
-```typescript
-interface EnhancedRaceComparison extends RaceComparison {
-  // Horse identification
-  algorithmPickName: string;
-  aiPickName: string;
-  winnerName: string;
-
-  // Algorithm details
-  algorithmTopPickScore: number;
-  algorithmTopPickTier: number;
-  algorithmTopPickConfidence: string;
-  algorithmScoreMargin: number; // gap between 1st and 2nd
-  winnerAlgorithmScore: number;
-  winnerAlgorithmRank: number;
-
-  // AI reasoning
-  aiRaceNarrative: string;
-  aiTopPickOneLiner: string;
-  aiTopPickKeyStrength: string | null;
-  aiTopPickKeyWeakness: string | null;
-
-  // Multi-bot signals
-  tripTroubleSignal: boolean;
-  tripTroubleHorse: number | null;
-  paceProjection: string | null;
-  loneSpeedException: boolean;
-  vulnerableFavoriteSignal: boolean;
-  vulnerableFavoriteReasons: string[];
-  fieldType: string | null;
-
-  // Race conditions
-  surface: string;
-  distance: number;
-  fieldSize: number;
-  raceClass: string;
-
-  // Odds
-  algorithmPickOdds: string;
-  aiPickOdds: string;
-  winnerOdds: string;
-}
-```
-
-### Priority 2: Capture Multi-Bot Raw Results
-
-Store the `MultiBotRawResults` object for each race:
-
-```typescript
-interface RaceProcessingResult {
-  // ... existing fields ...
-  multiBotRaw: MultiBotRawResults | null;
-}
-```
-
-### Priority 3: Log Disagreement Details Separately
-
-Create a separate `disagreements.json` file capturing only disagreement races with full detail:
-
-```typescript
-interface DisagreementRecord {
-  race: EnhancedRaceComparison;
-  multiBotDetails: MultiBotRawResults;
-  aiAnalysis: AIRaceAnalysis;
-  algorithmScores: ScoredHorse[];
+  "aiProcessingMs": 2450,
+  "aiConfidence": "MEDIUM",
+  "aiFlaggedVulnerableFavorite": false,
+  "aiFlaggedLikelyUpset": false
 }
 ```
 
 ---
 
-## Part 6: Next Steps
+## Remaining Data Gaps
 
-1. **Immediate:** Run the validation test to generate `ai_comparison_results.json`
-   ```bash
-   npm test -- --run src/__tests__/validation/aiVsAlgorithm.test.ts
-   ```
+The following data is not yet captured (would require multi-bot raw results):
 
-2. **After Results Available:** Re-run this analysis task to extract the 8 disagreement races
+| Gap | Status | Impact |
+|-----|--------|--------|
+| Individual bot raw outputs | Not captured | Would allow tracing decisions to specific bot |
+| Trip trouble horse list | Empty array | Extracted from narrative only |
+| Top tier count from field spread | Null | Not exposed from combiner |
 
-3. **Enhancement:** Implement Priority 1-3 logging changes before next validation run
-
-4. **Long-term:** Set up GitHub Actions to persist results as artifacts (already configured in `.github/workflows/ai-validation.yml`)
-
----
-
-## Appendix: Test Architecture Summary
-
-The validation test uses a multi-bot AI architecture with 4 specialized bots:
-
-| Bot | Purpose | Override Trigger |
-|-----|---------|------------------|
-| TripTrouble | Identifies horses with masked ability | +1 or +2 rank boost if HIGH/MEDIUM confidence |
-| PaceScenario | Analyzes pace dynamics | +1 boost for lone speed or closer advantage |
-| VulnerableFavorite | Evaluates if favorite is beatable | -1 rank drop for favorite if HIGH confidence |
-| FieldSpread | Assesses competitive separation | Influences contender count (capped at 4) |
-
-The combiner applies conservative adjustments (max ±2 positions) and only overrides algorithm when specific bot criteria are met.
+These could be addressed in a future enhancement by exposing `MultiBotRawResults` from the AI service.
 
 ---
 
-**Report Generated By:** Claude Code
+**Report Updated By:** Claude Code
 **Task Branch:** claude/analyze-disagreement-losses-NzXJ8
