@@ -287,7 +287,16 @@ export async function callGeminiWithSchema<T>(
       throw createError('PARSE_ERROR', 'No content in Gemini response');
     }
 
-    return parseResponse(text);
+    // Log raw response text for debugging parsing issues
+    console.log('[Gemini Bot] Raw response text (first 500 chars):', text.substring(0, 500));
+
+    try {
+      return parseResponse(text);
+    } catch (parseErr) {
+      // Log full response on parse failure for debugging
+      console.error('[Gemini Bot] Parse error. Full raw response:', text);
+      throw parseErr;
+    }
   } catch (error) {
     clearTimeout(timeoutId);
 
@@ -314,7 +323,13 @@ export async function callGeminiWithSchema<T>(
  * Extract JSON from response text (handles markdown wrapping)
  */
 function extractJson(text: string): string {
+  if (!text || typeof text !== 'string') {
+    throw new Error('Empty or invalid response text');
+  }
+
   let jsonStr = text.trim();
+
+  // Handle markdown code blocks
   if (jsonStr.startsWith('```json')) {
     jsonStr = jsonStr.slice(7);
   }
@@ -324,7 +339,23 @@ function extractJson(text: string): string {
   if (jsonStr.endsWith('```')) {
     jsonStr = jsonStr.slice(0, -3);
   }
-  return jsonStr.trim();
+
+  jsonStr = jsonStr.trim();
+
+  // Try to find JSON object if text has other content
+  if (!jsonStr.startsWith('{') && !jsonStr.startsWith('[')) {
+    // Look for JSON object in the response
+    const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[0];
+    }
+  }
+
+  if (!jsonStr) {
+    throw new Error('No JSON content found in response');
+  }
+
+  return jsonStr;
 }
 
 /**

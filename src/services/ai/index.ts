@@ -220,20 +220,47 @@ export async function getMultiBotAnalysis(
   }
 
   // Launch all 4 bots in parallel with Promise.allSettled
+  // Wrap each in try/catch with detailed error logging
   const [tripResult, paceResult, favoriteResult, spreadResult] = await Promise.allSettled([
-    analyzeTripTrouble(race, scoringResult),
-    analyzePaceScenario(race, scoringResult),
-    analyzeVulnerableFavorite(race, scoringResult),
-    analyzeFieldSpread(race, scoringResult),
+    analyzeTripTrouble(race, scoringResult).catch((err) => {
+      console.error(`TripTrouble bot error:`, err?.message || err);
+      throw err;
+    }),
+    analyzePaceScenario(race, scoringResult).catch((err) => {
+      console.error(`PaceScenario bot error:`, err?.message || err);
+      throw err;
+    }),
+    analyzeVulnerableFavorite(race, scoringResult).catch((err) => {
+      console.error(`VulnerableFavorite bot error:`, err?.message || err);
+      throw err;
+    }),
+    analyzeFieldSpread(race, scoringResult).catch((err) => {
+      console.error(`FieldSpread bot error:`, err?.message || err);
+      throw err;
+    }),
   ]);
 
-  // Extract results, handling failures gracefully
+  // Extract results, handling failures gracefully with detailed error logging
   const rawResults: MultiBotRawResults = {
     tripTrouble: tripResult.status === 'fulfilled' ? tripResult.value : null,
     paceScenario: paceResult.status === 'fulfilled' ? paceResult.value : null,
     vulnerableFavorite: favoriteResult.status === 'fulfilled' ? favoriteResult.value : null,
     fieldSpread: spreadResult.status === 'fulfilled' ? spreadResult.value : null,
   };
+
+  // Log detailed failure information
+  if (tripResult.status === 'rejected') {
+    console.error(`TripTrouble bot FAILED - Reason:`, tripResult.reason?.message || tripResult.reason);
+  }
+  if (paceResult.status === 'rejected') {
+    console.error(`PaceScenario bot FAILED - Reason:`, paceResult.reason?.message || paceResult.reason);
+  }
+  if (favoriteResult.status === 'rejected') {
+    console.error(`VulnerableFavorite bot FAILED - Reason:`, favoriteResult.reason?.message || favoriteResult.reason);
+  }
+  if (spreadResult.status === 'rejected') {
+    console.error(`FieldSpread bot FAILED - Reason:`, spreadResult.reason?.message || spreadResult.reason);
+  }
 
   // Combine into AIRaceAnalysis
   const analysis = combineMultiBotResults(rawResults, race, scoringResult, Date.now() - startTime);
@@ -272,13 +299,14 @@ export function combineMultiBotResults(
 
   // ============================================================================
   // DEBUG LOGGING: Show each bot's raw output (or "bot failed" if null)
+  // Note: Detailed error messages are logged in getMultiBotAnalysis before this
   // ============================================================================
   console.log(`\n=== COMBINER DEBUG: Race ${race.header.raceNumber} ===`);
   console.log(
     'TripTrouble bot:',
     tripTrouble
       ? `SUCCESS - ${tripTrouble.horsesWithTripTrouble.length} horses with trip trouble`
-      : 'FAILED (null)'
+      : 'FAILED (see error above)'
   );
   if (tripTrouble) {
     tripTrouble.horsesWithTripTrouble.forEach((h) => {
@@ -292,21 +320,21 @@ export function combineMultiBotResults(
     'PaceScenario bot:',
     paceScenario
       ? `SUCCESS - pace=${paceScenario.paceProjection}, loneSpeedException=${paceScenario.loneSpeedException}, speedDuel=${paceScenario.speedDuelLikely}`
-      : 'FAILED (null)'
+      : 'FAILED (see error above)'
   );
 
   console.log(
     'VulnerableFavorite bot:',
     vulnerableFavorite
       ? `SUCCESS - isVulnerable=${vulnerableFavorite.isVulnerable}, confidence=${vulnerableFavorite.confidence}, reasons=[${vulnerableFavorite.reasons.join(', ')}]`
-      : 'FAILED (null)'
+      : 'FAILED (see error above)'
   );
 
   console.log(
     'FieldSpread bot:',
     fieldSpread
       ? `SUCCESS - fieldType=${fieldSpread.fieldType}, topTierCount=${fieldSpread.topTierCount}, spread=${fieldSpread.recommendedSpread}`
-      : 'FAILED (null)'
+      : 'FAILED (see error above)'
   );
 
   // Get non-scratched horses sorted by algorithm rank
@@ -566,26 +594,33 @@ export function combineMultiBotResults(
   //
   // CONSERVATIVE: Maximum ±1 position change
   // A horse can only move 1 position up OR 1 position down, never more
+  //
+  // MATH:
+  // - adj=+1 (boost) → adjustedRank = algorithmRank - 1 (move UP in rankings)
+  // - adj=-1 (penalize) → adjustedRank = algorithmRank + 1 (move DOWN in rankings)
   // ============================================================================
+
+  const fieldSize = rankedScores.length;
 
   // Cap ALL adjustments at ±1 (conservative - surgical precision)
   for (const adj of horseAdjustments) {
     adj.adjustment = Math.max(-1, Math.min(1, adj.adjustment));
   }
 
-  // Calculate adjusted ranks
+  // Calculate adjusted ranks with bounds capping
   // Positive adjustment = move up = lower rank number
+  // Negative adjustment = move down = higher rank number
   for (const adj of horseAdjustments) {
-    adj.adjustedRank = adj.algorithmRank - adj.adjustment;
+    const rawAdjustedRank = adj.algorithmRank - adj.adjustment;
+    // Cap to valid range: minimum 1, maximum field size
+    adj.adjustedRank = Math.max(1, Math.min(fieldSize, rawAdjustedRank));
   }
 
   // ============================================================================
-  // PART 5B: Preserve algorithm strength in exotic ordering
+  // PART 5B: Re-sort all horses by adjustedRank to determine final order
   //
-  // Rules:
-  // - Start with algorithm's exact order
-  // - Only reorder when a +1 boost would move a horse into top 4
-  // - Never push an algorithm top-4 horse out of top 4
+  // SIMPLIFIED: Trust the adjustments. Sort by adjusted rank.
+  // Tiebreaker: preserve algorithm order (lower original rank wins)
   // ============================================================================
 
   // Re-sort by adjusted rank
@@ -596,91 +631,6 @@ export function combineMultiBotResults(
     // Tiebreaker: preserve algorithm order (lower original rank wins)
     return a.algorithmRank - b.algorithmRank;
   });
-
-  // Protect algorithm's top 4 from being pushed out
-  const algorithmTop4 = new Set(
-    rankedScores.slice(0, Math.min(4, rankedScores.length)).map((s) => s.programNumber)
-  );
-
-  // Assign final projected finish positions
-  // But ensure algorithm's top 4 stay in top 4
-  const finalOrder: HorseAdjustment[] = [];
-  const boostedIntoTop4: HorseAdjustment[] = [];
-  const algorithmTop4Horses: HorseAdjustment[] = [];
-  const others: HorseAdjustment[] = [];
-
-  for (const adj of horseAdjustments) {
-    if (algorithmTop4.has(adj.programNumber)) {
-      algorithmTop4Horses.push(adj);
-    } else if (adj.adjustment > 0 && adj.adjustedRank <= 4) {
-      // Boosted horse trying to enter top 4
-      boostedIntoTop4.push(adj);
-    } else {
-      others.push(adj);
-    }
-  }
-
-  // Build final order:
-  // 1. Algorithm's top 4 horses maintain their positions (sorted by adjusted rank)
-  algorithmTop4Horses.sort((a, b) => a.adjustedRank - b.adjustedRank);
-
-  // 2. If a boosted horse would displace an algorithm top-4 horse, don't let it
-  // Instead, the boosted horse goes right after the top 4
-  const top4Count = Math.min(4, rankedScores.length);
-
-  // Interleave boosted horses into position if they don't displace algorithm top-4
-  let algoIdx = 0;
-  let boostIdx = 0;
-
-  for (let pos = 1; pos <= top4Count; pos++) {
-    const algoHorse = algorithmTop4Horses[algoIdx];
-    const boostHorse = boostedIntoTop4[boostIdx];
-
-    if (algoHorse && boostHorse) {
-      // Both available - pick the one with better adjusted rank
-      // But never let boosted horse push algorithm top-4 out entirely
-      if (
-        boostHorse.adjustedRank < algoHorse.adjustedRank &&
-        finalOrder.length < top4Count - (algorithmTop4Horses.length - algoIdx)
-      ) {
-        finalOrder.push(boostHorse);
-        boostIdx++;
-      } else {
-        finalOrder.push(algoHorse);
-        algoIdx++;
-      }
-    } else if (algoHorse) {
-      finalOrder.push(algoHorse);
-      algoIdx++;
-    } else if (boostHorse) {
-      finalOrder.push(boostHorse);
-      boostIdx++;
-    }
-  }
-
-  // Add remaining algorithm top-4 horses
-  while (algoIdx < algorithmTop4Horses.length) {
-    finalOrder.push(algorithmTop4Horses[algoIdx]!);
-    algoIdx++;
-  }
-
-  // Add remaining boosted horses
-  while (boostIdx < boostedIntoTop4.length) {
-    finalOrder.push(boostedIntoTop4[boostIdx]!);
-    boostIdx++;
-  }
-
-  // Add all other horses
-  finalOrder.push(...others);
-
-  // Assign final positions
-  finalOrder.forEach((adj, idx) => {
-    adj.adjustedRank = idx + 1;
-  });
-
-  // Replace horseAdjustments with final order for remaining code
-  horseAdjustments.length = 0;
-  horseAdjustments.push(...finalOrder);
 
   // ============================================================================
   // PART 6: Field Spread Bot Integration (SIMPLIFIED)
@@ -711,9 +661,11 @@ export function combineMultiBotResults(
     console.log('  FieldSpread bot failed - using default contenderCount=4');
   }
 
-  // Log final adjustments per horse
+  // Log final adjustments per horse with before/after ranks
   console.log('--- Final Adjustments ---');
-  for (const adj of horseAdjustments) {
+  horseAdjustments.forEach((adj, idx) => {
+    const projectedFinish = idx + 1;
+    // Show all horses that have adjustments or special flags
     if (
       adj.adjustment !== 0 ||
       adj.isLoneSpeed ||
@@ -721,8 +673,15 @@ export function combineMultiBotResults(
       adj.hasPaceAdvantage ||
       adj.isVulnerableFavoriteHorse
     ) {
+      // Movement direction based on adjustment
+      const movement =
+        adj.adjustment > 0
+          ? '(MOVED UP)'
+          : adj.adjustment < 0
+            ? '(MOVED DOWN)'
+            : '';
       console.log(
-        `  #${adj.programNumber} ${adj.horseName}: algoRank=${adj.algorithmRank}, adj=${adj.adjustment > 0 ? '+' : ''}${adj.adjustment}, finalRank=${adj.adjustedRank}, flags=[${[
+        `  #${adj.programNumber} ${adj.horseName}: algoRank=${adj.algorithmRank}, adj=${adj.adjustment > 0 ? '+' : ''}${adj.adjustment}, finalRank=${adj.adjustedRank}, projectedFinish=${projectedFinish} ${movement} flags=[${[
           adj.hasTripTroubleBoost ? 'tripTrouble' : '',
           adj.isLoneSpeed ? 'loneSpeed' : '',
           adj.hasPaceAdvantage ? 'paceAdv' : '',
@@ -732,7 +691,7 @@ export function combineMultiBotResults(
           .join(', ')}]`
       );
     }
-  }
+  });
 
   // ============================================================================
   // PART 7: Determine top pick, value play, and tracking (STRICT VALUEPLAY)
