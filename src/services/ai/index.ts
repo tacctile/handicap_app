@@ -10,6 +10,9 @@ import type { ParsedRace } from '../../types/drf';
 import type { RaceScoringResult } from '../../types/scoring';
 import type { AIRaceAnalysis, AIServiceStatus } from './types';
 
+// Type declaration for Node.js process (available in test/CI environments)
+declare const process: { env?: Record<string, string | undefined> } | undefined;
+
 // Re-export types for consumers
 export type {
   AIRaceAnalysis,
