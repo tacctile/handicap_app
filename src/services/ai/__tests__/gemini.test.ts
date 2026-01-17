@@ -94,7 +94,8 @@ describe('parseGeminiResponse', () => {
       const jsonText = JSON.stringify(validResponse);
       const result = parseGeminiResponse(jsonText, 5, 1500);
 
-      const firstHorse = result.horseInsights[0];
+      expect(result.horseInsights.length).toBeGreaterThan(0);
+      const firstHorse = result.horseInsights[0]!;
       expect(firstHorse.programNumber).toBe(1);
       expect(firstHorse.horseName).toBe('Fast Runner');
       expect(firstHorse.projectedFinish).toBe(1);

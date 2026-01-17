@@ -5,6 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildRaceAnalysisPrompt } from '../prompt';
 import type { ParsedRace, RaceHeader, HorseEntry, PastPerformance } from '../../../types/drf';
+import { createDefaultTrainerCategoryStats } from '../../../types/drf';
 import type { RaceScoringResult, HorseScoreForAI, RaceAnalysis } from '../../../types/scoring';
 
 // ============================================================================
@@ -15,13 +16,13 @@ function createMockPastPerformance(overrides: Partial<PastPerformance> = {}): Pa
   return {
     date: '2024-01-15',
     track: 'SA',
-    trackCondition: 'Fast',
+    trackCondition: 'fast',
     distance: '6f',
     distanceYards: 1320,
-    surface: 'Dirt',
+    surface: 'dirt',
     raceNumber: 5,
     raceType: 'ALW',
-    classification: 'AOC',
+    classification: 'allowance',
     purse: 75000,
     fieldSize: 8,
     postPosition: 3,
@@ -31,9 +32,16 @@ function createMockPastPerformance(overrides: Partial<PastPerformance> = {}): Pa
     stretchPosition: 2,
     finishPosition: 1,
     beatenLengths: 0,
-    speedFigures: { beyer: 85 },
+    speedFigures: {
+      beyer: 85,
+      timeformUS: null,
+      equibase: null,
+      trackVariant: null,
+      dirtVariant: null,
+      turfVariant: null,
+    },
     tripComment: 'Stalked pace, drew clear',
-    finalTime: '1:10.45',
+    finalTime: 70.45,
     winner: 'Test Horse',
     ...overrides,
   };
@@ -53,8 +61,12 @@ function createMockHorseEntry(overrides: Partial<HorseEntry> = {}): HorseEntry {
     color: 'dk b',
     breeding: {
       sire: 'Sire Name',
+      sireOfSire: 'Grandsire Name',
       dam: 'Dam Name',
       damSire: 'Dam Sire',
+      breeder: 'Test Breeder',
+      whereBred: 'KY',
+      studFee: null,
     },
     jockeyStats: '15% win',
     trainerStats: '20% win',
@@ -83,7 +95,21 @@ function createMockHorseEntry(overrides: Partial<HorseEntry> = {}): HorseEntry {
       shows: 1,
       earnings: 75000,
     },
-    equipment: [],
+    equipment: {
+      blinkers: false,
+      blinkersOff: false,
+      frontBandages: false,
+      rearBandages: false,
+      barShoes: false,
+      mudCaulks: false,
+      tongueTie: false,
+      nasalStrip: false,
+      shadowRoll: false,
+      cheekPieces: false,
+      firstTimeEquipment: [],
+      equipmentChanges: [],
+      raw: '',
+    },
     medications: [],
     claimingPrice: null,
     trackRecord: { starts: 2, wins: 1, places: 1, shows: 0 },
@@ -91,7 +117,7 @@ function createMockHorseEntry(overrides: Partial<HorseEntry> = {}): HorseEntry {
     surfaceRecord: { starts: 8, wins: 3, places: 1, shows: 2 },
     wetTrackRecord: { starts: 1, wins: 0, places: 0, shows: 0 },
     turfRecord: { starts: 2, wins: 0, places: 1, shows: 0 },
-    trainerCategoryStats: {},
+    trainerCategoryStats: createDefaultTrainerCategoryStats(),
     ...overrides,
   };
 }
@@ -104,10 +130,10 @@ function createMockRaceHeader(overrides: Partial<RaceHeader> = {}): RaceHeader {
     raceNumber: 5,
     distance: '6 Furlongs',
     distanceFurlongs: 6,
-    surface: 'Dirt',
-    trackCondition: 'Fast',
+    surface: 'dirt',
+    trackCondition: 'fast',
     raceType: 'CLM',
-    classification: 'CLM $25,000',
+    classification: 'claiming',
     purse: 35000,
     purseFormatted: '$35,000',
     ageRestriction: '4+',
@@ -127,6 +153,8 @@ function createMockParsedRace(overrides: Partial<ParsedRace> = {}): ParsedRace {
       createMockHorseEntry({ programNumber: 2, horseName: 'Steady Eddie' }),
       createMockHorseEntry({ programNumber: 3, horseName: 'Longshot Larry' }),
     ],
+    warnings: [],
+    errors: [],
     ...overrides,
   };
 }
@@ -211,9 +239,9 @@ describe('buildRaceAnalysisPrompt', () => {
         trackCode: 'SA',
         raceNumber: 5,
         distance: '6 Furlongs',
-        surface: 'Dirt',
-        trackCondition: 'Fast',
-        classification: 'CLM $25,000',
+        surface: 'dirt',
+        trackCondition: 'fast',
+        classification: 'claiming',
         purseFormatted: '$35,000',
       }),
     });
@@ -225,9 +253,9 @@ describe('buildRaceAnalysisPrompt', () => {
     expect(prompt).toContain('SA');
     expect(prompt).toContain('Race 5');
     expect(prompt).toContain('6 Furlongs');
-    expect(prompt).toContain('Dirt');
-    expect(prompt).toContain('Fast');
-    expect(prompt).toContain('CLM $25,000');
+    expect(prompt).toContain('dirt');
+    expect(prompt).toContain('fast');
+    expect(prompt).toContain('claiming');
     expect(prompt).toContain('$35,000');
   });
 
