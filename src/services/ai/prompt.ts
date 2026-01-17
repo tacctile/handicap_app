@@ -27,43 +27,65 @@ export function buildRaceAnalysisPrompt(
 
   const horseSummaries = rankedScores.map((s) => formatHorseForPrompt(s, race.horses)).join('\n\n');
 
-  return `You are an expert horse racing handicapper. The algorithm has scored each horse using 331 data points. Your job is to VALIDATE or OVERRIDE the algorithm's rankings — not reflexively disagree.
+  return `You are an expert horse racing handicapper validating algorithm predictions. The algorithm scored each horse using 331 data points. Your role: CONFIRM good picks, OVERRIDE bad ones with HIGH CONVICTION only.
 
-IMPORTANT GUIDELINES:
+CORE PRINCIPLES:
 
-1. DEFAULT TO ALGORITHM: The algorithm is correct 60-70% of the time. Only override when you have STRONG evidence, not mild preference. If the algorithm's top pick looks solid, confirm it.
+1. TRUST THE ALGORITHM BY DEFAULT
+   The algorithm is right more often than not. Your job is quality control, not reinvention.
+   - If algorithm's #1 has solid speed figures, good form, and favorable pace setup → CONFIRM IT
+   - Only override when you see something the algorithm structurally cannot evaluate
 
-2. OVERRIDE CRITERIA - Only override the algorithm's #1 pick when you see:
-   - Clear trip trouble in last race that masked true ability (blocked, checked, wide trip)
-   - Trainer pattern indicating intent (class drop + equipment change + jockey upgrade)
-   - Pace scenario that STRONGLY disadvantages the algorithm's pick (lone closer in speed-favoring race, or speed in pace meltdown setup)
-   - False form: algorithm's pick benefited from weak field or perfect trip unlikely to repeat
+2. OVERRIDE ONLY WITH HIGH CONVICTION
+   Ask yourself: "Would I bet my own money on this override?"
+   Override ONLY when you identify:
+   - Trip trouble the algorithm can't see (buried in trip comments: "blocked", "checked", "steadied", "wide trip", "no room")
+   - Trainer intent signals (class drop + equipment change + jockey switch = horse is meant to win TODAY)
+   - Pace mismatch the algorithm underweights (lone speed with no pressure, or lone closer when speed will collapse)
+   - False form in algorithm's pick (won against weak field, perfect trip won't repeat, benefited from track bias)
 
-3. VULNERABLE FAVORITE - Only flag when favorite has 2+ of these:
-   - Stepping up significantly in class
-   - Poor post position for running style
-   - Coming off career-best that may not repeat
-   - Facing pace pressure it hasn't handled before
-   - Trainer/jockey negative pattern in this situation
+3. WHEN YOU AGREE, BE CRITICAL
+   Before confirming algorithm's pick, check for red flags:
+   - Is this horse stepping up in class?
+   - Was last race a career best that may not repeat?
+   - Does pace scenario actually favor this running style?
+   - Any equipment changes or trainer patterns suggesting problems?
+   If red flags exist, dig deeper before confirming.
 
-4. LIKELY UPSET - BE VERY SELECTIVE. Only flag when ALL of these are true:
-   - A specific non-favorite has clear, articulable edge
-   - The favorite has identifiable vulnerability (not just "anything can happen")
-   - Pace scenario or track bias specifically favors the upset candidate
-   - You would bet this horse yourself with confidence
+4. VULNERABLE FAVORITE — HIGH BAR
+   Only flag when favorite has 3+ of these (not just 2):
+   - Significant class rise
+   - Poor post for running style at this track
+   - Coming off unsustainable career-best
+   - Facing new pace pressure
+   - Negative trainer pattern in this exact situation
+   - Equipment change suggesting issues
 
-5. VALUE LABELS - Use these precisely:
-   - BEST BET: Your top pick AND you have high conviction (use sparingly, 1-2 per card)
-   - PRIME VALUE: Strong contender at fair or better odds
-   - SOLID PLAY: Legitimate chance, no major concerns
-   - FAIR PRICE: Reasonable but not compelling
-   - WATCH ONLY: Interesting but not bettable today
-   - TOO SHORT: Good horse but odds don't justify risk
-   - NO VALUE: Outclassed or compromised
-   - SKIP: Not competitive
-   - NO CHANCE: Eliminate from exotics
+5. LIKELY UPSET — EXTREME SELECTIVITY
+   This flag has been too loose. Only use when ALL conditions met:
+   - You have identified a SPECIFIC horse (not just "someone could upset")
+   - That horse has a CLEAR, CONCRETE advantage (not vibes)
+   - The favorite has MULTIPLE vulnerabilities (not just one)
+   - Pace/bias/trip setup SPECIFICALLY favors your upset pick
+   - You would make this bet at current odds without hesitation
+   If any doubt, DO NOT flag likely upset. Let rankings speak instead.
 
-6. AGREEMENT IS OKAY: If the algorithm's analysis is sound, say so. Confirming good analysis is valuable. Aim to agree with algorithm's #1 pick 40-50% of the time, not 15%.
+6. VALUE LABELS — BE PRECISE
+   - BEST BET: Maximum conviction. Would bet significant units. Use 0-1 times per race.
+   - PRIME VALUE: Strong play at the odds. Clear edge identified.
+   - SOLID PLAY: Contender with path to win. No major red flags.
+   - FAIR PRICE: Chance to hit board, odds are about right.
+   - WATCH ONLY: Interesting angle but not bettable today.
+   - TOO SHORT: Good horse, bad price. Pass.
+   - NO VALUE: Compromised or outclassed.
+   - SKIP: Not competitive in this field.
+   - NO CHANCE: Eliminate from all wagers.
+
+7. ONE-LINERS MUST BE SPECIFIC
+   Bad: "Good horse, should run well"
+   Good: "Lone speed from rail, figures say wire-to-wire if clean break"
+   Bad: "Interesting longshot"
+   Good: "Only closer in speed-heavy field, 2-back Beyer fits if pace melts"
 
 RACE INFORMATION:
 - Track: ${header.trackName} (${header.trackCode})
@@ -76,21 +98,15 @@ ALGORITHM ANALYSIS:
 - Likely Leader: #${raceAnalysis.paceScenario.likelyLeader || 'None clear'}
 - Speed Duel Probability: ${Math.round(raceAnalysis.paceScenario.speedDuelProbability * 100)}%
 - Field Strength: ${raceAnalysis.fieldStrength}
-- Algorithm's Vulnerable Favorite Flag: ${raceAnalysis.vulnerableFavorite ? 'YES' : 'No'}
-- Pace Collapse Likely: ${raceAnalysis.likelyPaceCollapse ? 'YES' : 'No'}
+- Algorithm flags vulnerable favorite: ${raceAnalysis.vulnerableFavorite ? 'YES' : 'No'}
+- Pace collapse likely: ${raceAnalysis.likelyPaceCollapse ? 'YES' : 'No'}
 
-HORSES (ranked by algorithm score):
+HORSES (algorithm ranking):
 ${horseSummaries}
 
-YOUR TASK:
-1. Review algorithm's rankings and analysis
-2. Validate OR override based on criteria above
-3. Be selective — strong conviction overrides only
-4. Provide clear, specific reasoning in one-liners
-
-RESPOND WITH VALID JSON ONLY (no markdown, no explanation outside JSON):
+RESPOND WITH VALID JSON ONLY:
 {
-  "raceNarrative": "2-3 sentences on how you see this race. State if you agree or disagree with algorithm and why.",
+  "raceNarrative": "2-3 sentences. State whether you CONFIRM or OVERRIDE algorithm's top pick and give specific reason.",
   "confidence": "HIGH" | "MEDIUM" | "LOW",
   "bettableRace": true | false,
   "horseInsights": [
@@ -99,7 +115,7 @@ RESPOND WITH VALID JSON ONLY (no markdown, no explanation outside JSON):
       "horseName": "string",
       "projectedFinish": number,
       "valueLabel": "BEST BET" | "PRIME VALUE" | "SOLID PLAY" | "FAIR PRICE" | "WATCH ONLY" | "TOO SHORT" | "NO VALUE" | "SKIP" | "NO CHANCE",
-      "oneLiner": "Specific insight - not generic. Why THIS horse in THIS race.",
+      "oneLiner": "Specific, concrete insight for THIS horse in THIS race",
       "keyStrength": "Primary edge" | null,
       "keyWeakness": "Primary concern" | null,
       "isContender": true | false,

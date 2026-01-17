@@ -1,7 +1,6 @@
 name: AI Validation Tests
 
 on:
-  # Manual trigger from GitHub UI
   workflow_dispatch:
     inputs:
       test_type:
@@ -12,13 +11,6 @@ on:
         options:
           - ai-comparison
           - all-ai-tests
-
-  # Optional: Run on PR to main if AI files changed
-  pull_request:
-    branches: [main]
-    paths:
-      - 'src/services/ai/**'
-      - 'src/__tests__/validation/aiVsAlgorithm.test.ts'
 
 jobs:
   ai-validation:
