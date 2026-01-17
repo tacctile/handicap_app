@@ -24,6 +24,15 @@ import type { AIRaceAnalysis } from '../../services/ai/types';
 import type { RaceScoringResult, HorseScoreForAI, RaceAnalysis } from '../../types/scoring';
 import type { ScoredHorse } from '../../lib/scoring';
 import type { TrackCondition } from '../../hooks/useRaceState';
+import {
+  type DetailedRaceResult,
+  type DisagreementResults,
+  type ValidationResultsFile,
+  getTierFromScore,
+  getTopCategories,
+  determineOutcome,
+  getDisagreements,
+} from './types';
 
 // ============================================================================
 // PARALLEL EXECUTION CONFIGURATION
@@ -101,6 +110,7 @@ async function launchWithStagger<T>(index: number, task: () => Promise<T>): Prom
 interface RaceProcessingResult {
   success: boolean;
   comparison?: RaceComparison;
+  detailed?: DetailedRaceResult;
   error?: string;
   trackCode: string;
   raceNumber: number;
@@ -699,6 +709,10 @@ async function processRace(
           };
 
     // Build comparison
+    const algorithmCorrect = algorithmPick === actualWinner;
+    const aiCorrect = aiPick === actualWinner;
+    const agreedOnWinner = algorithmPick === aiPick;
+
     const comparison: RaceComparison = {
       trackCode,
       raceNumber: race.header.raceNumber,
@@ -709,19 +723,19 @@ async function processRace(
 
       algorithmPick,
       algorithmTop3,
-      algorithmCorrect: algorithmPick === actualWinner,
+      algorithmCorrect,
       algorithmInTop3: checkTop3Contains(algorithmTop3, actualWinner),
       algorithmExactaHit: checkExactaHit(algorithmTop3, actualExacta),
       algorithmTrifectaHit: checkTrifectaHit(algorithmTop3, actualTrifecta),
 
       aiPick,
       aiTop3,
-      aiCorrect: aiPick === actualWinner,
+      aiCorrect,
       aiInTop3: aiTop3.length > 0 ? checkTop3Contains(aiTop3, actualWinner) : false,
       aiExactaHit: aiTop3.length > 0 ? checkExactaHit(aiTop3, actualExacta) : false,
       aiTrifectaHit: aiTop3.length > 0 ? checkTrifectaHit(aiTop3, actualTrifecta) : false,
 
-      agreedOnWinner: algorithmPick === aiPick,
+      agreedOnWinner,
       aiDisagreedAndWon: aiPick !== null && aiPick !== algorithmPick && aiPick === actualWinner,
       aiDisagreedAndLost:
         aiPick !== null &&
@@ -738,9 +752,142 @@ async function processRace(
       aiExotics,
     };
 
+    // ========================================================================
+    // BUILD DETAILED RACE RESULT (for pattern analysis)
+    // ========================================================================
+
+    // Get algorithm's top pick data
+    const algoTopHorse = algorithmRanked[0];
+    const algoSecondHorse = algorithmRanked[1];
+    const algoTopScore = algoTopHorse?.score.total || 0;
+    const algoScoreMargin = algoTopScore - (algoSecondHorse?.score.total || 0);
+
+    // Get AI's pick data from algorithm scores
+    const aiPickHorse = aiPick
+      ? algorithmRanked.find((h) => h.horse.postPosition === aiPick)
+      : null;
+    const aiTopInsight = aiAnalysis?.horseInsights?.find(
+      (h) => h.programNumber === aiPick
+    );
+
+    // Get winner data from algorithm scores
+    const winnerInAlgo = algorithmRanked.find(
+      (h) => h.horse.postPosition === actualWinner
+    );
+    const winnerName = raceResult.positions[0]?.horseName || 'Unknown';
+    const winnerOdds =
+      race.horses.find((h) => h.postPosition === actualWinner)?.morningLineOdds || 'N/A';
+
+    // Determine override type
+    let overrideType: 'CONFIRM' | 'OVERRIDE' | 'PASS' = 'PASS';
+    if (aiAnalysis && aiPick !== null) {
+      overrideType = aiPick === algorithmPick ? 'CONFIRM' : 'OVERRIDE';
+    }
+
+    // Extract top scoring categories from algorithm pick
+    const breakdown = algoTopHorse?.score.breakdown;
+    const topCategories = breakdown
+      ? getTopCategories({
+          speedScore: breakdown.speedClass.speedScore,
+          classScore: breakdown.speedClass.classScore,
+          formScore: breakdown.form.total,
+          paceScore: breakdown.pace.total,
+          connectionScore: breakdown.connections.total,
+        })
+      : [];
+
+    // Build detailed result
+    const detailed: DetailedRaceResult = {
+      // Race identification
+      trackCode,
+      trackName: race.header.trackName || trackCode,
+      raceNumber: race.header.raceNumber,
+      date: race.header.raceDate || '',
+      surface: race.header.surface || 'dirt',
+      distance: race.header.distance || '',
+      distanceFurlongs: race.header.distanceFurlongs || 0,
+      fieldSize: algorithmRanked.length,
+      raceClass: race.header.raceType || 'unknown',
+
+      // Algorithm pick details
+      algorithmPick: {
+        postPosition: algorithmPick,
+        horseName: algoTopHorse?.horse.horseName || 'Unknown',
+        score: algoTopScore,
+        tier: getTierFromScore(algoTopScore),
+        confidence: (algoTopHorse?.score.confidenceLevel?.toUpperCase() as 'HIGH' | 'MEDIUM' | 'LOW') || 'MEDIUM',
+        topCategories,
+        scoreMargin: algoScoreMargin,
+      },
+
+      // AI pick details
+      aiPick: {
+        postPosition: aiPick,
+        horseName: aiPickHorse?.horse.horseName || aiTopInsight?.horseName || null,
+        algorithmScore: aiPickHorse?.score.total || null,
+        algorithmRank: aiPickHorse?.rank || null,
+        tier: aiPickHorse ? getTierFromScore(aiPickHorse.score.total) : 0,
+        reasoning: aiAnalysis?.raceNarrative || 'AI did not run',
+        overrideType,
+        topPickOneLiner: aiTopInsight?.oneLiner || null,
+        keyStrength: aiTopInsight?.keyStrength || null,
+        keyWeakness: aiTopInsight?.keyWeakness || null,
+      },
+
+      // Actual result
+      winner: {
+        postPosition: actualWinner,
+        horseName: winnerName,
+        algorithmScore: winnerInAlgo?.score.total || 0,
+        algorithmRank: winnerInAlgo?.rank || 99,
+        algorithmTier: winnerInAlgo ? getTierFromScore(winnerInAlgo.score.total) : 0,
+        odds: winnerOdds,
+        wasAlgorithmPick: algorithmCorrect,
+        wasAiPick: aiCorrect,
+      },
+
+      // Analysis flags
+      agreement: agreedOnWinner || aiPick === null,
+      outcome: determineOutcome(algorithmCorrect, aiCorrect, agreedOnWinner || aiPick === null),
+
+      // Multi-bot signals (extracted from AI narrative and flags)
+      botSignals: {
+        tripTrouble: aiAnalysis?.raceNarrative?.includes('trip trouble') ? 'detected' : null,
+        tripTroubleHorses: [], // Would need multi-bot raw results to populate
+        paceProjection: aiAnalysis?.raceNarrative?.includes('HOT')
+          ? 'HOT'
+          : aiAnalysis?.raceNarrative?.includes('SLOW')
+            ? 'SLOW'
+            : aiAnalysis?.raceNarrative?.includes('speed duel')
+              ? 'HOT'
+              : null,
+        loneSpeedException: aiAnalysis?.raceNarrative?.includes('Lone speed') || false,
+        speedDuelLikely: aiAnalysis?.raceNarrative?.includes('Speed duel') || false,
+        vulnerableFavorite: aiAnalysis?.vulnerableFavorite || false,
+        vulnerableFavoriteReasons: aiAnalysis?.vulnerableFavorite
+          ? [aiAnalysis.raceNarrative?.match(/Vulnerable favorite: ([^.]+)/)?.[1] || 'flagged'].filter(Boolean)
+          : [],
+        fieldType: aiAnalysis?.raceNarrative?.includes('TIGHT')
+          ? 'TIGHT'
+          : aiAnalysis?.raceNarrative?.includes('SEPARATED')
+            ? 'SEPARATED'
+            : null,
+        topTierCount: null, // Would need multi-bot raw results
+      },
+
+      // Timing
+      aiProcessingMs,
+
+      // AI confidence
+      aiConfidence: aiAnalysis?.confidence || null,
+      aiFlaggedVulnerableFavorite: aiAnalysis?.vulnerableFavorite || false,
+      aiFlaggedLikelyUpset: aiAnalysis?.likelyUpset || false,
+    };
+
     return {
       success: true,
       comparison,
+      detailed,
       trackCode,
       raceNumber: race.header.raceNumber,
       aiProcessingMs,
@@ -763,6 +910,7 @@ async function processRace(
 describe('AI vs Algorithm Validation', () => {
   const testFiles = discoverTestFiles();
   const allComparisons: RaceComparison[] = [];
+  const allDetailedResults: DetailedRaceResult[] = [];
   let totalAITime = 0;
   let aiSkippedCount = 0;
   const failedRaces: { trackCode: string; raceNumber: number; error: string }[] = [];
@@ -868,6 +1016,11 @@ describe('AI vs Algorithm Validation', () => {
               // Track AI skips
               if (result.comparison.aiPick === null) {
                 aiSkippedCount++;
+              }
+
+              // Collect detailed results for pattern analysis
+              if (result.detailed) {
+                allDetailedResults.push(result.detailed);
               }
             } else {
               failCount++;
@@ -1195,10 +1348,40 @@ describe('AI vs Algorithm Validation', () => {
 
       console.log('\n' + '='.repeat(70) + '\n');
 
-      // Save detailed results to file
-      const outputPath = path.join(__dirname, '../../data/ai_comparison_results.json');
+      // ======================================================================
+      // SAVE DETAILED RESULTS (Enhanced logging for pattern analysis)
+      // ======================================================================
+
+      // Create results directory if it doesn't exist
+      const resultsDir = path.join(__dirname, 'results');
+      if (!fs.existsSync(resultsDir)) {
+        fs.mkdirSync(resultsDir, { recursive: true });
+      }
+
+      // Get disagreement results
+      const disagreements = getDisagreements(allDetailedResults);
+
+      // Build complete validation results file
+      const validationResults: ValidationResultsFile = {
+        generatedAt: new Date().toISOString(),
+        version: '2.0.0', // Enhanced with detailed results
+        summary,
+        detailedResults: allDetailedResults,
+        disagreements,
+      };
+
+      // Save to new location with detailed results
+      const detailedOutputPath = path.join(resultsDir, 'ai_comparison_results.json');
+      fs.writeFileSync(detailedOutputPath, JSON.stringify(validationResults, null, 2));
+      console.log(`Detailed results saved to: ${detailedOutputPath}`);
+      console.log(`  - Total races: ${allDetailedResults.length}`);
+      console.log(`  - AI disagreed and won: ${disagreements.aiDisagreedAndWon.length}`);
+      console.log(`  - AI disagreed and lost: ${disagreements.aiDisagreedAndLost.length}`);
+
+      // Also save legacy format for backwards compatibility
+      const legacyOutputPath = path.join(__dirname, '../../data/ai_comparison_results.json');
       fs.writeFileSync(
-        outputPath,
+        legacyOutputPath,
         JSON.stringify(
           {
             summary,
@@ -1209,7 +1392,7 @@ describe('AI vs Algorithm Validation', () => {
           2
         )
       );
-      console.log(`Detailed results saved to: ${outputPath}\n`);
+      console.log(`Legacy results saved to: ${legacyOutputPath}\n`);
 
       expect(totalRaces).toBeGreaterThan(0);
     }, 10000);
