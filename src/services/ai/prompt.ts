@@ -230,7 +230,7 @@ export function buildPaceScenarioPrompt(
         name: score.horseName,
         post: horse.postPosition,
         style: horse.runningStyle || 'Unknown',
-        earlySpeed: lastPP?.earlyPace ?? 'N/A',
+        earlySpeed: lastPP?.earlyPace1 ?? 'N/A',
       };
     })
     .filter(Boolean);
@@ -277,6 +277,20 @@ export function buildVulnerableFavoritePrompt(
     .sort((a, b) => a.rank - b.rank);
 
   // Find the favorite (lowest ML odds or #1 ranked if no ML)
+  // Handle empty array case
+  if (rankedScores.length === 0) {
+    return `VULNERABLE FAVORITE ANALYSIS BOT
+
+No horses available for analysis.
+
+RESPOND WITH JSON ONLY:
+{
+  "isVulnerable": false,
+  "reasons": [],
+  "confidence": "LOW"
+}`;
+  }
+
   const favorite = rankedScores.reduce((fav, curr) => {
     const favHorse = race.horses.find((h) => h.programNumber === fav.programNumber);
     const currHorse = race.horses.find((h) => h.programNumber === curr.programNumber);
@@ -325,11 +339,14 @@ RESPOND WITH JSON ONLY:
  * Analyzes scores and ranking gaps to assess field separation.
  * Focus: How tight is this field? How many real contenders?
  *
- * @param race - Parsed race data
+ * @param _race - Parsed race data (unused, kept for API consistency)
  * @param scoringResult - Algorithm scoring results
  * @returns Prompt string (400-600 tokens input, requests 50-150 tokens output)
  */
-export function buildFieldSpreadPrompt(race: ParsedRace, scoringResult: RaceScoringResult): string {
+export function buildFieldSpreadPrompt(
+  _race: ParsedRace,
+  scoringResult: RaceScoringResult
+): string {
   const rankedScores = [...scoringResult.scores]
     .filter((s) => !s.isScratched)
     .sort((a, b) => a.rank - b.rank);

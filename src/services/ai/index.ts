@@ -282,23 +282,23 @@ export function combineMultiBotResults(
 
     // Determine value label based on tier and insights
     let valueLabel: AIRaceAnalysis['horseInsights'][0]['valueLabel'] = 'FAIR PRICE';
-    if (score.confidenceTier === 'Tier 1') {
+    if (score.confidenceTier === 'high') {
       valueLabel = score.rank === 1 ? 'SOLID PLAY' : 'PRIME VALUE';
-    } else if (score.confidenceTier === 'Tier 2') {
+    } else if (score.confidenceTier === 'medium') {
       valueLabel = 'FAIR PRICE';
-    } else if (score.confidenceTier === 'Tier 3') {
+    } else if (score.confidenceTier === 'low') {
       valueLabel = 'WATCH ONLY';
     } else {
       valueLabel = score.rank <= rankedScores.length / 2 ? 'NO VALUE' : 'SKIP';
     }
 
     // Build one-liner from available insights
-    let oneLiner = '';
+    let oneLiner: string;
     if (tripIssue?.maskedAbility) {
       oneLiner = `Trip trouble: ${tripIssue.issue}`;
-    } else if (score.positiveFactors.length > 0) {
+    } else if (score.positiveFactors.length > 0 && score.positiveFactors[0]) {
       oneLiner = score.positiveFactors[0];
-    } else if (score.negativeFactors.length > 0) {
+    } else if (score.negativeFactors.length > 0 && score.negativeFactors[0]) {
       oneLiner = `Concern: ${score.negativeFactors[0]}`;
     } else {
       oneLiner = `Ranked #${score.rank} by algorithm`;
@@ -322,8 +322,8 @@ export function combineMultiBotResults(
       oneLiner,
       keyStrength: score.positiveFactors[0] || null,
       keyWeakness: score.negativeFactors[0] || null,
-      isContender: score.confidenceTier === 'Tier 1' || score.confidenceTier === 'Tier 2',
-      avoidFlag: score.confidenceTier === 'Pass' || score.negativeFactors.length >= 3,
+      isContender: score.confidenceTier === 'high' || score.confidenceTier === 'medium',
+      avoidFlag: score.confidenceTier === 'low' && score.negativeFactors.length >= 3,
     };
   });
 
@@ -396,7 +396,7 @@ export function combineMultiBotResults(
 
   // Build avoid list from horses with multiple negatives
   const avoidList = rankedScores
-    .filter((s) => s.negativeFactors.length >= 3 || s.confidenceTier === 'Pass')
+    .filter((s) => s.negativeFactors.length >= 3 || s.confidenceTier === 'low')
     .map((s) => s.programNumber);
 
   return {
@@ -411,8 +411,8 @@ export function combineMultiBotResults(
     topPick,
     valuePlay,
     avoidList,
-    vulnerableFavorite: isVulnerableFavorite,
-    likelyUpset: isLikelyUpset,
-    chaoticRace: isChaoticRace,
+    vulnerableFavorite: isVulnerableFavorite ?? false,
+    likelyUpset: isLikelyUpset ?? false,
+    chaoticRace: isChaoticRace ?? false,
   };
 }
