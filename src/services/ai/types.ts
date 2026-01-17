@@ -135,3 +135,86 @@ export interface AIServiceError {
   /** When the error occurred */
   timestamp: string;
 }
+
+// ============================================================================
+// MULTI-BOT ARCHITECTURE TYPES
+// ============================================================================
+
+/**
+ * Trip Trouble Bot - Identifies horses with masked ability due to trip issues
+ */
+export interface TripTroubleAnalysis {
+  /** Horses identified with trip trouble in recent races */
+  horsesWithTripTrouble: Array<{
+    /** Program number */
+    programNumber: number;
+    /** Horse name */
+    horseName: string;
+    /** Description of the trip issue (e.g., "blocked 5-wide on turn") */
+    issue: string;
+    /** Whether the issue likely masked true ability */
+    maskedAbility: boolean;
+  }>;
+}
+
+/**
+ * Pace Scenario Bot - Analyzes pace dynamics and running style advantages
+ */
+export interface PaceScenarioAnalysis {
+  /** Running styles that benefit from the pace scenario */
+  advantagedStyles: string[];
+  /** Running styles that are disadvantaged */
+  disadvantagedStyles: string[];
+  /** Overall pace projection for the race */
+  paceProjection: 'HOT' | 'MODERATE' | 'SLOW';
+  /** Whether there's a lone speed with no pressure */
+  loneSpeedException: boolean;
+  /** Whether a speed duel between 2+ horses is likely */
+  speedDuelLikely: boolean;
+}
+
+/**
+ * Vulnerable Favorite Bot - Evaluates whether the favorite can be beaten
+ */
+export interface VulnerableFavoriteAnalysis {
+  /** Whether the favorite appears vulnerable */
+  isVulnerable: boolean;
+  /** Specific reasons for vulnerability */
+  reasons: string[];
+  /** Confidence level in the vulnerability assessment */
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
+/**
+ * Field Spread Bot - Assesses competitive separation in the field
+ */
+export interface FieldSpreadAnalysis {
+  /** Type of field composition */
+  fieldType: 'TIGHT' | 'SEPARATED' | 'MIXED';
+  /** Number of legitimate contenders */
+  topTierCount: number;
+  /** Recommended spread for exotic betting */
+  recommendedSpread: 'NARROW' | 'MEDIUM' | 'WIDE';
+}
+
+/**
+ * Combined raw results from all 4 multi-bot analyses
+ */
+export interface MultiBotRawResults {
+  /** Trip trouble analysis (null if bot failed) */
+  tripTrouble: TripTroubleAnalysis | null;
+  /** Pace scenario analysis (null if bot failed) */
+  paceScenario: PaceScenarioAnalysis | null;
+  /** Vulnerable favorite analysis (null if bot failed) */
+  vulnerableFavorite: VulnerableFavoriteAnalysis | null;
+  /** Field spread analysis (null if bot failed) */
+  fieldSpread: FieldSpreadAnalysis | null;
+}
+
+/**
+ * Configuration for AI service mode
+ */
+export interface AIServiceConfig {
+  /** Use multi-bot parallel architecture instead of single-bot */
+  useMultiBot: boolean;
+}
