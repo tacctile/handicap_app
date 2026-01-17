@@ -1,4 +1,4 @@
-#!/usr/bin/env npx ts-node
+#!/usr/bin/env npx tsx
 /**
  * Validation Results Analyzer
  *
@@ -6,13 +6,14 @@
  * Loads results from the JSON file and outputs disagreement patterns.
  *
  * Usage:
- *   npx ts-node src/__tests__/validation/analyzeResults.ts
- *   npx ts-node src/__tests__/validation/analyzeResults.ts --json
- *   npx ts-node src/__tests__/validation/analyzeResults.ts --disagreements-only
+ *   npx tsx src/__tests__/validation/analyzeResults.ts
+ *   npx tsx src/__tests__/validation/analyzeResults.ts --json
+ *   npx tsx src/__tests__/validation/analyzeResults.ts --disagreements-only
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import {
   type DetailedRaceResult,
   type ValidationResultsFile,
@@ -27,6 +28,10 @@ import {
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
+
+// ES module compatible __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const RESULTS_PATH = path.join(__dirname, 'results/ai_comparison_results.json');
 
@@ -74,9 +79,7 @@ function analyzeByGroups(races: DetailedRaceResult[]): AnalysisByGroup {
     bySurface: groupBy(races, (r) => r.surface),
     byDistance: groupBy(races, (r) => categorizeDistance(r.distanceFurlongs)),
     byConfidence: groupBy(races, (r) => r.aiConfidence || 'N/A'),
-    byScoreDifferential: groupBy(races, (r) =>
-      categorizeScoreDiff(r.algorithmPick.scoreMargin)
-    ),
+    byScoreDifferential: groupBy(races, (r) => categorizeScoreDiff(r.algorithmPick.scoreMargin)),
     byFieldSize: groupBy(races, (r) => categorizeFieldSize(r.fieldSize)),
     byOverrideType: groupBy(races, (r) => r.aiPick.overrideType),
   };
@@ -109,14 +112,22 @@ function printDisagreementRace(race: DetailedRaceResult, index: number): void {
 
   console.log(`Surface: ${race.surface} | Distance: ${race.distance} | Field: ${race.fieldSize}`);
 
-  console.log(`\nAlgorithm Pick: #${race.algorithmPick.postPosition} ${race.algorithmPick.horseName}`);
-  console.log(`  Score: ${race.algorithmPick.score} | Tier: ${race.algorithmPick.tier} | Margin: +${race.algorithmPick.scoreMargin}`);
+  console.log(
+    `\nAlgorithm Pick: #${race.algorithmPick.postPosition} ${race.algorithmPick.horseName}`
+  );
+  console.log(
+    `  Score: ${race.algorithmPick.score} | Tier: ${race.algorithmPick.tier} | Margin: +${race.algorithmPick.scoreMargin}`
+  );
   console.log(`  Top categories: ${race.algorithmPick.topCategories.join(', ')}`);
 
-  console.log(`\nAI Pick: ${race.aiPick.postPosition ? `#${race.aiPick.postPosition} ${race.aiPick.horseName}` : 'PASS'}`);
+  console.log(
+    `\nAI Pick: ${race.aiPick.postPosition ? `#${race.aiPick.postPosition} ${race.aiPick.horseName}` : 'PASS'}`
+  );
   console.log(`  Override type: ${race.aiPick.overrideType}`);
   if (race.aiPick.algorithmScore) {
-    console.log(`  Algorithm score: ${race.aiPick.algorithmScore} (rank #${race.aiPick.algorithmRank})`);
+    console.log(
+      `  Algorithm score: ${race.aiPick.algorithmScore} (rank #${race.aiPick.algorithmRank})`
+    );
   }
   console.log(`  Reasoning: ${race.aiPick.reasoning || 'N/A'}`);
   if (race.aiPick.topPickOneLiner) {
@@ -124,7 +135,9 @@ function printDisagreementRace(race: DetailedRaceResult, index: number): void {
   }
 
   console.log(`\nActual Winner: #${race.winner.postPosition} ${race.winner.horseName}`);
-  console.log(`  Odds: ${race.winner.odds} | Algorithm score: ${race.winner.algorithmScore} (rank #${race.winner.algorithmRank})`);
+  console.log(
+    `  Odds: ${race.winner.odds} | Algorithm score: ${race.winner.algorithmScore} (rank #${race.winner.algorithmRank})`
+  );
   console.log(`  Was algorithm pick: ${race.winner.wasAlgorithmPick ? 'YES' : 'NO'}`);
   console.log(`  Was AI pick: ${race.winner.wasAiPick ? 'YES' : 'NO'}`);
 
@@ -164,24 +177,16 @@ function analyzeDisagreementPatterns(
     console.log(`Average score difference (algo - AI pick): ${avgScoreDiff.toFixed(1)}`);
 
     // Tier analysis
-    const tierDrops = aiLosses.filter(
-      (r) => r.aiPick.tier > r.algorithmPick.tier
-    ).length;
+    const tierDrops = aiLosses.filter((r) => r.aiPick.tier > r.algorithmPick.tier).length;
     console.log(`AI picked lower tier than algorithm: ${tierDrops}/${aiLosses.length}`);
 
     // Confidence analysis
-    const lowConfOverrides = aiLosses.filter(
-      (r) => r.algorithmPick.confidence === 'HIGH'
-    ).length;
+    const lowConfOverrides = aiLosses.filter((r) => r.algorithmPick.confidence === 'HIGH').length;
     console.log(`Overrode HIGH confidence algorithm picks: ${lowConfOverrides}/${aiLosses.length}`);
 
     // Bot signals that led to bad overrides
-    const tripTroubleOverrides = aiLosses.filter(
-      (r) => r.botSignals.tripTrouble
-    ).length;
-    const vulnFavOverrides = aiLosses.filter(
-      (r) => r.botSignals.vulnerableFavorite
-    ).length;
+    const tripTroubleOverrides = aiLosses.filter((r) => r.botSignals.tripTrouble).length;
+    const vulnFavOverrides = aiLosses.filter((r) => r.botSignals.vulnerableFavorite).length;
     console.log(`Trip trouble signal present: ${tripTroubleOverrides}/${aiLosses.length}`);
     console.log(`Vulnerable favorite signal present: ${vulnFavOverrides}/${aiLosses.length}`);
 
@@ -200,18 +205,10 @@ function analyzeDisagreementPatterns(
 
   if (algoLosses.length > 0) {
     // What signals did AI catch?
-    const tripTroubleWins = algoLosses.filter(
-      (r) => r.botSignals.tripTrouble
-    ).length;
-    const vulnFavWins = algoLosses.filter(
-      (r) => r.botSignals.vulnerableFavorite
-    ).length;
-    const loneSpeedException = algoLosses.filter(
-      (r) => r.botSignals.loneSpeedException
-    ).length;
-    const speedDuelWins = algoLosses.filter(
-      (r) => r.botSignals.speedDuelLikely
-    ).length;
+    const tripTroubleWins = algoLosses.filter((r) => r.botSignals.tripTrouble).length;
+    const vulnFavWins = algoLosses.filter((r) => r.botSignals.vulnerableFavorite).length;
+    const loneSpeedException = algoLosses.filter((r) => r.botSignals.loneSpeedException).length;
+    const speedDuelWins = algoLosses.filter((r) => r.botSignals.speedDuelLikely).length;
 
     console.log(`Trip trouble signal present: ${tripTroubleWins}/${algoLosses.length}`);
     console.log(`Vulnerable favorite signal present: ${vulnFavWins}/${algoLosses.length}`);
@@ -219,19 +216,13 @@ function analyzeDisagreementPatterns(
     console.log(`Speed duel signal: ${speedDuelWins}/${algoLosses.length}`);
 
     // Algorithm confidence when AI was right to override
-    const lowConfAlgo = algoLosses.filter(
-      (r) => r.algorithmPick.confidence === 'LOW'
-    ).length;
-    const medConfAlgo = algoLosses.filter(
-      (r) => r.algorithmPick.confidence === 'MEDIUM'
-    ).length;
+    const lowConfAlgo = algoLosses.filter((r) => r.algorithmPick.confidence === 'LOW').length;
+    const medConfAlgo = algoLosses.filter((r) => r.algorithmPick.confidence === 'MEDIUM').length;
     console.log(`Algorithm was LOW confidence: ${lowConfAlgo}/${algoLosses.length}`);
     console.log(`Algorithm was MEDIUM confidence: ${medConfAlgo}/${algoLosses.length}`);
 
     // Tight margins
-    const tightMargins = algoLosses.filter(
-      (r) => r.algorithmPick.scoreMargin < 10
-    ).length;
+    const tightMargins = algoLosses.filter((r) => r.algorithmPick.scoreMargin < 10).length;
     console.log(`Tight score margin (<10): ${tightMargins}/${algoLosses.length}`);
   }
 }
@@ -251,9 +242,7 @@ function generateRecommendations(
 
   // Analyze AI loss patterns
   if (aiLosses.length > 0) {
-    const highConfOverrides = aiLosses.filter(
-      (r) => r.algorithmPick.confidence === 'HIGH'
-    ).length;
+    const highConfOverrides = aiLosses.filter((r) => r.algorithmPick.confidence === 'HIGH').length;
     if (highConfOverrides / aiLosses.length > 0.5) {
       recommendations.push(
         'CAUTION: AI is overriding HIGH confidence algorithm picks and losing. Consider adding guardrail to require stronger signals before overriding high confidence picks.'
@@ -269,9 +258,7 @@ function generateRecommendations(
       );
     }
 
-    const vulnFavFalsePositives = aiLosses.filter(
-      (r) => r.botSignals.vulnerableFavorite
-    ).length;
+    const vulnFavFalsePositives = aiLosses.filter((r) => r.botSignals.vulnerableFavorite).length;
     if (vulnFavFalsePositives / aiLosses.length > 0.3) {
       recommendations.push(
         'ISSUE: Vulnerable favorite signal is generating false positives. Consider tightening criteria or requiring additional confirmation.'
@@ -290,9 +277,7 @@ function generateRecommendations(
       );
     }
 
-    const tightMarginWins = algoLosses.filter(
-      (r) => r.algorithmPick.scoreMargin < 10
-    ).length;
+    const tightMarginWins = algoLosses.filter((r) => r.algorithmPick.scoreMargin < 10).length;
     if (tightMarginWins / algoLosses.length > 0.5) {
       recommendations.push(
         'POSITIVE: AI adds value in tight races (score margin <10). Consider giving AI more weight in close calls.'
@@ -312,7 +297,9 @@ function generateRecommendations(
   }
 
   if (recommendations.length === 0) {
-    recommendations.push('Insufficient data for specific recommendations. Run more validation races.');
+    recommendations.push(
+      'Insufficient data for specific recommendations. Run more validation races.'
+    );
   }
 
   for (let i = 0; i < recommendations.length; i++) {
@@ -396,16 +383,10 @@ function main(): void {
   }
 
   // Pattern analysis
-  analyzeDisagreementPatterns(
-    disagreements.aiDisagreedAndLost,
-    disagreements.aiDisagreedAndWon
-  );
+  analyzeDisagreementPatterns(disagreements.aiDisagreedAndLost, disagreements.aiDisagreedAndWon);
 
   // Generate recommendations
-  generateRecommendations(
-    disagreements.aiDisagreedAndLost,
-    disagreements.aiDisagreedAndWon
-  );
+  generateRecommendations(disagreements.aiDisagreedAndLost, disagreements.aiDisagreedAndWon);
 
   console.log('\n' + '═'.repeat(70) + '\n');
 }
