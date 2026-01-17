@@ -100,31 +100,21 @@ export function clearAnalysisCache(): void {
  * @returns Current service status
  */
 export function checkAIServiceStatus(): AIServiceStatus {
-  // Check for Vite environment variable
-  let hasApiKey = false;
-  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) {
-    hasApiKey = true;
-  }
-
-  // Also check Node.js environment
-  if (!hasApiKey) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const nodeProcess = (globalThis as any).process;
-      if (nodeProcess?.env?.VITE_GEMINI_API_KEY) {
-        hasApiKey = true;
-      }
-    } catch {
-      // Not in Node.js environment
-    }
-  }
+  // Check for API key in both Vite (browser) and Node (test/CI) environments
+  const hasApiKey =
+    (typeof import.meta !== 'undefined' && !!import.meta.env?.VITE_GEMINI_API_KEY) ||
+    (typeof process !== 'undefined' && !!process.env?.VITE_GEMINI_API_KEY);
 
   if (!hasApiKey) {
     return 'offline';
   }
 
-  // Check network connectivity (browser only)
-  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+  // In Node environment (tests), skip navigator check
+  if (typeof navigator === 'undefined') {
+    return 'ready';
+  }
+
+  if (!navigator.onLine) {
     return 'offline';
   }
 

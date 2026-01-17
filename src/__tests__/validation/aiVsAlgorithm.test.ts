@@ -359,9 +359,17 @@ describe('AI vs Algorithm Validation', () => {
   let aiSkippedCount = 0;
 
   beforeAll(() => {
+    // Debug: Log environment status
+    console.log('\n=== AI SERVICE ENVIRONMENT CHECK ===');
+    console.log('process.env.VITE_GEMINI_API_KEY exists:', !!process.env.VITE_GEMINI_API_KEY);
+    console.log('API key length:', process.env.VITE_GEMINI_API_KEY?.length || 0);
+
     const status = checkAIServiceStatus();
+    console.log('AI Service Status:', status);
+    console.log('=====================================\n');
+
     if (status === 'offline') {
-      console.warn('\n\u26A0\uFE0F  AI SERVICE IS OFFLINE - AI predictions will be skipped\n');
+      console.warn('\n⚠️  AI SERVICE IS OFFLINE - AI predictions will be skipped\n');
     }
   });
 
