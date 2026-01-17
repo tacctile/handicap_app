@@ -24,9 +24,9 @@ function createMockRace(
       trackName: 'Test Track',
       trackCode: 'TST',
       distance: '6 Furlongs',
-      surface: 'Dirt',
-      trackCondition: 'Fast',
-      classification: 'Maiden Claiming',
+      surface: 'dirt',
+      trackCondition: 'fast',
+      classification: 'maiden-claiming',
       purseFormatted: '$25,000',
       purse: 25000,
       condition: 'fast',
@@ -59,8 +59,8 @@ function createMockRace(
       equipment: '',
       breeder: 'Test Breeder',
       whereFrom: 'KY',
-    })) as ParsedRace['horses'],
-  };
+    })) as unknown as ParsedRace['horses'],
+  } as ParsedRace;
 }
 
 function createMockScoringResult(
