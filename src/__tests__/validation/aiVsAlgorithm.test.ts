@@ -30,7 +30,7 @@ import type { TrackCondition } from '../../hooks/useRaceState';
 // ============================================================================
 
 // Throttle API calls to avoid rate limits
-const DELAY_BETWEEN_CALLS_MS = 1500; // 1.5 seconds between calls
+const DELAY_BETWEEN_CALLS_MS = 100; // 100ms = 10 req/sec = 600 RPM (15% of 4000 RPM limit)
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
