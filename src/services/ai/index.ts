@@ -247,8 +247,13 @@ export async function getMultiBotAnalysis(
 /**
  * Combine multi-bot results into the standard AIRaceAnalysis format
  *
- * Maps 4 bot outputs into existing AIRaceAnalysis format.
- * Applies bot insights as adjustments to algorithm's base rankings.
+ * CONSERVATIVE COMBINER - Trust the algorithm, only override with HIGH confidence signals.
+ *
+ * Philosophy:
+ * - Default behavior: Trust the algorithm's ranking order
+ * - Only override when a bot provides HIGH confidence signal on a SPECIFIC horse
+ * - Maximum adjustment: ±1 position (surgical precision, not wholesale reordering)
+ * - When in doubt, do NOT adjust
  *
  * @param rawResults - Raw results from all 4 bots
  * @param race - Parsed race data
@@ -263,7 +268,7 @@ export function combineMultiBotResults(
   processingTimeMs: number
 ): AIRaceAnalysis {
   const { tripTrouble, paceScenario, vulnerableFavorite, fieldSpread } = rawResults;
-  const { scores, raceAnalysis } = scoringResult;
+  const { scores } = scoringResult;
 
   // Get non-scratched horses sorted by algorithm rank
   const rankedScores = [...scores].filter((s) => !s.isScratched).sort((a, b) => a.rank - b.rank);
@@ -285,7 +290,7 @@ export function combineMultiBotResults(
     programNumber: number;
     horseName: string;
     algorithmRank: number;
-    adjustment: number; // Positive = move up, negative = move down
+    adjustment: number; // Positive = move up, negative = move down (CAPPED AT ±1)
     adjustedRank: number;
     oneLiner: string;
     keyStrength: string | null;
@@ -295,7 +300,7 @@ export function combineMultiBotResults(
     hasPaceDisadvantage: boolean;
     isLoneSpeed: boolean;
     isVulnerableFavoriteHorse: boolean;
-    tripTroubleConfidence: 'HIGH' | 'MEDIUM' | null;
+    tripTroubleNote: string | null; // Note for oneLiner when not boosted
   }
 
   const horseAdjustments: HorseAdjustment[] = rankedScores.map((score) => ({
@@ -312,106 +317,134 @@ export function combineMultiBotResults(
     hasPaceDisadvantage: false,
     isLoneSpeed: false,
     isVulnerableFavoriteHorse: false,
-    tripTroubleConfidence: null,
+    tripTroubleNote: null,
   }));
 
   // ============================================================================
-  // PART 2: Trip Trouble Bot Integration
+  // PART 2: Trip Trouble Bot Integration (TIGHTENED)
+  //
+  // Only apply trip trouble boost when ALL criteria met:
+  // - maskedAbility = true
+  // - Horse had trouble in MOST RECENT race (issue must mention "last race" or similar)
+  // - Horse finished 4th or worse in that troubled race
+  //
+  // If criteria not met but trip trouble exists, add note to oneLiner only
   // ============================================================================
 
   if (tripTrouble) {
     for (const tripHorse of tripTrouble.horsesWithTripTrouble) {
       const adj = horseAdjustments.find((h) => h.programNumber === tripHorse.programNumber);
-      if (adj && tripHorse.maskedAbility) {
-        // Count troubled trips to determine confidence
-        // HIGH confidence = 2+ troubled trips = boost by 2
-        // MEDIUM confidence = 1 troubled trip = boost by 1
-        const troubledTripCount = tripTrouble.horsesWithTripTrouble.filter(
-          (h) => h.programNumber === tripHorse.programNumber && h.maskedAbility
-        ).length;
+      if (!adj) continue;
 
-        // For simplicity, we'll check if issue mentions "multiple" or assume HIGH if maskedAbility
-        const isHighConfidence =
-          tripHorse.issue.toLowerCase().includes('multiple') ||
-          tripHorse.issue.toLowerCase().includes('last 2') ||
-          tripHorse.issue.toLowerCase().includes('last 3') ||
-          troubledTripCount >= 2;
+      // Check if this is MOST RECENT race trouble (not just any of last 3)
+      const issueLower = tripHorse.issue.toLowerCase();
+      const isMostRecentRaceTrouble =
+        issueLower.includes('last race') ||
+        issueLower.includes('last start') ||
+        issueLower.includes('most recent') ||
+        issueLower.includes('last out') ||
+        // If issue doesn't specify which race, assume it's about the most recent
+        (!issueLower.includes('last 2') &&
+          !issueLower.includes('last 3') &&
+          !issueLower.includes('2 back') &&
+          !issueLower.includes('3 back'));
 
-        if (isHighConfidence) {
-          adj.adjustment += 2; // Boost by 2 positions for HIGH confidence
-          adj.tripTroubleConfidence = 'HIGH';
-          adj.oneLiner = 'Trip trouble masked true ability';
-        } else {
-          adj.adjustment += 1; // Boost by 1 position for MEDIUM confidence
-          adj.tripTroubleConfidence = 'MEDIUM';
-          adj.oneLiner = 'Recent trip trouble - better than last shows';
-        }
+      // Check for 4th or worse finish indicator in the issue
+      const hadPoorFinish =
+        issueLower.includes('4th') ||
+        issueLower.includes('5th') ||
+        issueLower.includes('6th') ||
+        issueLower.includes('7th') ||
+        issueLower.includes('8th') ||
+        issueLower.includes('finished off') ||
+        issueLower.includes('finished behind') ||
+        issueLower.includes('out of the money') ||
+        issueLower.includes('well beaten') ||
+        // If maskedAbility is true, bot believes ability was masked - trust that
+        tripHorse.maskedAbility;
+
+      if (tripHorse.maskedAbility && isMostRecentRaceTrouble && hadPoorFinish) {
+        // Strict criteria met - apply +1 boost (max adjustment is ±1)
+        adj.adjustment = 1;
         adj.hasTripTroubleBoost = true;
+        adj.oneLiner = 'Trip trouble masked true ability in last start';
+      } else {
+        // Criteria not fully met - add note but NO ranking adjustment
+        adj.tripTroubleNote = tripHorse.maskedAbility
+          ? 'Has trip trouble history - watch for improvement'
+          : `Trip note: ${tripHorse.issue}`;
       }
     }
   }
 
   // ============================================================================
-  // PART 3: Pace Scenario Bot Integration
+  // PART 3: Pace Scenario Bot Integration (TIGHTENED)
+  //
+  // Only apply pace adjustment when:
+  // - loneSpeedException = true → boost the lone speed by +1
+  // - speedDuelLikely = true AND horse is a closer → boost closer by +1
+  //
+  // Do NOT adjust for general "advantaged/disadvantaged styles" - too noisy
+  // Remove disadvantaged style penalties entirely - only boost, never penalize
   // ============================================================================
 
-  // Find lone speed horse if applicable
   let loneSpeedHorse: number | null = null;
 
   if (paceScenario) {
-    // Identify the lone speed horse (front-runner with no pressure)
+    // CASE 1: Lone speed exception - find and boost the lone speed horse
     if (paceScenario.loneSpeedException) {
-      // Find the E or E/P running style horse with best position
+      // Find the E or E/P running style horse (the lone speed)
       const speedHorses = rankedScores.filter((score) => {
         const horse = race.horses.find((h) => h.programNumber === score.programNumber);
         const style = horse?.runningStyle?.toLowerCase() || '';
         return style === 'e' || style === 'e/p' || style.includes('early');
       });
-      if (speedHorses.length > 0 && speedHorses[0]) {
+
+      // Only boost if there's exactly one early speed horse (truly "lone")
+      if (speedHorses.length === 1 && speedHorses[0]) {
         loneSpeedHorse = speedHorses[0].programNumber;
-      }
-    }
-
-    for (const adj of horseAdjustments) {
-      const horse = race.horses.find((h) => h.programNumber === adj.programNumber);
-      const style = horse?.runningStyle?.toLowerCase() || '';
-
-      // Check if this is the lone speed horse - major advantage (+2)
-      if (loneSpeedHorse === adj.programNumber) {
-        adj.adjustment += 2;
-        adj.isLoneSpeed = true;
-        adj.keyStrength = 'Lone speed - major advantage';
-      } else {
-        // Check advantaged styles (+1)
-        const isAdvantaged = paceScenario.advantagedStyles.some(
-          (advStyle) =>
-            style.includes(advStyle.toLowerCase()) || advStyle.toLowerCase().includes(style)
-        );
-
-        // Check disadvantaged styles (-1)
-        const isDisadvantaged = paceScenario.disadvantagedStyles.some(
-          (disStyle) =>
-            style.includes(disStyle.toLowerCase()) || disStyle.toLowerCase().includes(style)
-        );
-
-        if (isAdvantaged && !isDisadvantaged) {
-          adj.adjustment += 1;
-          adj.hasPaceAdvantage = true;
-          // Always set pace-related keyStrength when pace is a factor
-          adj.keyStrength = 'Pace scenario favors running style';
-        } else if (isDisadvantaged && !isAdvantaged) {
-          adj.adjustment -= 1;
-          adj.hasPaceDisadvantage = true;
-          if (!adj.keyWeakness) {
-            adj.keyWeakness = 'Pace scenario works against running style';
-          }
+        const adj = horseAdjustments.find((h) => h.programNumber === loneSpeedHorse);
+        if (adj && adj.adjustment === 0) {
+          // Only apply if no other adjustment already made
+          adj.adjustment = 1; // +1 boost (max)
+          adj.isLoneSpeed = true;
+          adj.keyStrength = 'Lone speed - clear tactical advantage';
         }
       }
     }
+
+    // CASE 2: Speed duel likely - boost closers only
+    if (paceScenario.speedDuelLikely && !paceScenario.loneSpeedException) {
+      for (const adj of horseAdjustments) {
+        const horse = race.horses.find((h) => h.programNumber === adj.programNumber);
+        const style = horse?.runningStyle?.toLowerCase() || '';
+
+        // Check if this horse is a closer (S, S/P, or similar)
+        const isCloser =
+          style === 's' || style === 's/p' || style.includes('closer') || style.includes('stalker');
+
+        if (isCloser && adj.adjustment === 0) {
+          // Only apply if no other adjustment already made
+          adj.adjustment = 1; // +1 boost (max)
+          adj.hasPaceAdvantage = true;
+          adj.keyStrength = 'Speed duel sets up for closing style';
+        }
+      }
+    }
+
+    // NOTE: We do NOT penalize any horse based on pace (removed disadvantage logic)
+    // NOTE: We do NOT boost for general "advantaged styles" - too noisy
   }
 
   // ============================================================================
-  // PART 4: Vulnerable Favorite Bot Integration
+  // PART 4: Vulnerable Favorite Bot Integration (TIGHTENED)
+  //
+  // Only apply when: isVulnerable = true AND confidence = "HIGH"
+  //
+  // When triggered:
+  // - Do NOT drop favorite's ranking position
+  // - Only change valueLabel to "FAIR PRICE" and add keyWeakness
+  // - The vulnerable favorite flag is for bet sizing guidance, not pick changes
   // ============================================================================
 
   // Find the favorite (lowest ML odds or #1 algorithm rank)
@@ -424,62 +457,152 @@ export function combineMultiBotResults(
   }, rankedScores[0]!);
 
   const favoriteProgram = favoriteScore.programNumber;
-  const isVulnerableFavoriteFlag =
-    vulnerableFavorite?.isVulnerable ?? raceAnalysis.vulnerableFavorite;
 
-  if (vulnerableFavorite?.isVulnerable) {
+  // Only flag as vulnerable if HIGH confidence (3+ factors)
+  const isVulnerableFavoriteFlag =
+    vulnerableFavorite?.isVulnerable && vulnerableFavorite?.confidence === 'HIGH';
+
+  if (vulnerableFavorite?.isVulnerable && vulnerableFavorite?.confidence === 'HIGH') {
     const favAdj = horseAdjustments.find((h) => h.programNumber === favoriteProgram);
     if (favAdj) {
       favAdj.isVulnerableFavoriteHorse = true;
-
-      if (vulnerableFavorite.confidence === 'HIGH') {
-        // Drop favorite's ranking by 1 position
-        favAdj.adjustment -= 1;
-        // Set keyWeakness from bot's reasons
-        if (vulnerableFavorite.reasons.length > 0) {
-          favAdj.keyWeakness = vulnerableFavorite.reasons[0] || null;
-        }
-      } else if (vulnerableFavorite.confidence === 'MEDIUM') {
-        // Keep ranking but add keyWeakness
-        if (vulnerableFavorite.reasons.length > 0) {
-          favAdj.keyWeakness = vulnerableFavorite.reasons[0] || null;
-        }
+      // NO ranking adjustment - only metadata for bet sizing
+      // Set keyWeakness from bot's reasons for UI display
+      if (vulnerableFavorite.reasons.length > 0) {
+        favAdj.keyWeakness = vulnerableFavorite.reasons[0] || null;
       }
     }
   }
 
   // ============================================================================
-  // PART 5: Apply adjustment caps and re-sort
+  // PART 5: Apply adjustment caps (±1 MAX) and calculate adjusted ranks
+  //
+  // CONSERVATIVE: Maximum ±1 position change
+  // A horse can only move 1 position up OR 1 position down, never more
   // ============================================================================
 
-  // Cap adjustments at ±3 positions
+  // Cap ALL adjustments at ±1 (conservative - surgical precision)
   for (const adj of horseAdjustments) {
-    adj.adjustment = Math.max(-3, Math.min(3, adj.adjustment));
+    adj.adjustment = Math.max(-1, Math.min(1, adj.adjustment));
   }
 
-  // Calculate adjusted ranks (lower adjustment number = better position)
-  // We use algorithm rank minus adjustment (positive adjustment = lower rank number = better)
+  // Calculate adjusted ranks
+  // Positive adjustment = move up = lower rank number
   for (const adj of horseAdjustments) {
     adj.adjustedRank = adj.algorithmRank - adj.adjustment;
   }
 
-  // Re-sort by adjusted rank, using adjustment as tiebreaker
-  // When adjusted ranks are equal, the horse with higher adjustment comes first
+  // ============================================================================
+  // PART 5B: Preserve algorithm strength in exotic ordering
+  //
+  // Rules:
+  // - Start with algorithm's exact order
+  // - Only reorder when a +1 boost would move a horse into top 4
+  // - Never push an algorithm top-4 horse out of top 4
+  // ============================================================================
+
+  // Re-sort by adjusted rank
   horseAdjustments.sort((a, b) => {
     if (a.adjustedRank !== b.adjustedRank) {
       return a.adjustedRank - b.adjustedRank;
     }
-    // Tiebreaker: higher adjustment (more improvement) wins
-    return b.adjustment - a.adjustment;
+    // Tiebreaker: preserve algorithm order (lower original rank wins)
+    return a.algorithmRank - b.algorithmRank;
   });
 
-  // Assign final projected finish positions (1, 2, 3, etc.)
-  horseAdjustments.forEach((adj, idx) => {
+  // Protect algorithm's top 4 from being pushed out
+  const algorithmTop4 = new Set(
+    rankedScores.slice(0, Math.min(4, rankedScores.length)).map((s) => s.programNumber)
+  );
+
+  // Assign final projected finish positions
+  // But ensure algorithm's top 4 stay in top 4
+  const finalOrder: HorseAdjustment[] = [];
+  const boostedIntoTop4: HorseAdjustment[] = [];
+  const algorithmTop4Horses: HorseAdjustment[] = [];
+  const others: HorseAdjustment[] = [];
+
+  for (const adj of horseAdjustments) {
+    if (algorithmTop4.has(adj.programNumber)) {
+      algorithmTop4Horses.push(adj);
+    } else if (adj.adjustment > 0 && adj.adjustedRank <= 4) {
+      // Boosted horse trying to enter top 4
+      boostedIntoTop4.push(adj);
+    } else {
+      others.push(adj);
+    }
+  }
+
+  // Build final order:
+  // 1. Algorithm's top 4 horses maintain their positions (sorted by adjusted rank)
+  algorithmTop4Horses.sort((a, b) => a.adjustedRank - b.adjustedRank);
+
+  // 2. If a boosted horse would displace an algorithm top-4 horse, don't let it
+  // Instead, the boosted horse goes right after the top 4
+  const top4Count = Math.min(4, rankedScores.length);
+
+  // Interleave boosted horses into position if they don't displace algorithm top-4
+  let algoIdx = 0;
+  let boostIdx = 0;
+
+  for (let pos = 1; pos <= top4Count; pos++) {
+    const algoHorse = algorithmTop4Horses[algoIdx];
+    const boostHorse = boostedIntoTop4[boostIdx];
+
+    if (algoHorse && boostHorse) {
+      // Both available - pick the one with better adjusted rank
+      // But never let boosted horse push algorithm top-4 out entirely
+      if (
+        boostHorse.adjustedRank < algoHorse.adjustedRank &&
+        finalOrder.length < top4Count - (algorithmTop4Horses.length - algoIdx)
+      ) {
+        finalOrder.push(boostHorse);
+        boostIdx++;
+      } else {
+        finalOrder.push(algoHorse);
+        algoIdx++;
+      }
+    } else if (algoHorse) {
+      finalOrder.push(algoHorse);
+      algoIdx++;
+    } else if (boostHorse) {
+      finalOrder.push(boostHorse);
+      boostIdx++;
+    }
+  }
+
+  // Add remaining algorithm top-4 horses
+  while (algoIdx < algorithmTop4Horses.length) {
+    finalOrder.push(algorithmTop4Horses[algoIdx]!);
+    algoIdx++;
+  }
+
+  // Add remaining boosted horses
+  while (boostIdx < boostedIntoTop4.length) {
+    finalOrder.push(boostedIntoTop4[boostIdx]!);
+    boostIdx++;
+  }
+
+  // Add all other horses
+  finalOrder.push(...others);
+
+  // Assign final positions
+  finalOrder.forEach((adj, idx) => {
     adj.adjustedRank = idx + 1;
   });
 
+  // Replace horseAdjustments with final order for remaining code
+  horseAdjustments.length = 0;
+  horseAdjustments.push(...finalOrder);
+
   // ============================================================================
-  // PART 6: Field Spread Bot Integration (contender count)
+  // PART 6: Field Spread Bot Integration (SIMPLIFIED)
+  //
+  // Do NOT use field spread to change rankings
+  // Only use field spread to set isContender flags:
+  // - NARROW: top 3 are contenders
+  // - MEDIUM: top 4 are contenders
+  // - WIDE: top 5 are contenders
   // ============================================================================
 
   let contenderCount = 4; // Default to MEDIUM spread
@@ -492,33 +615,59 @@ export function combineMultiBotResults(
         contenderCount = Math.min(4, rankedScores.length);
         break;
       case 'WIDE':
-        contenderCount = Math.min(6, rankedScores.length);
+        contenderCount = Math.min(5, rankedScores.length); // Changed from 6 to 5
         break;
     }
   }
 
   // ============================================================================
-  // PART 7: Determine top pick, value play, and tracking
+  // PART 7: Determine top pick, value play, and tracking (STRICT VALUEPLAY)
+  //
+  // valuePlay should be a horse ranked 3rd-5th by ALGORITHM that has:
+  // - Trip trouble with maskedAbility = true, OR
+  // - Is the lone speed in a slow pace scenario
+  //
+  // If no horse qualifies, valuePlay = null (don't force it)
   // ============================================================================
 
   const algorithmTopPick = rankedScores[0]?.programNumber ?? null;
   const aiTopPick = horseAdjustments[0]?.programNumber ?? null;
   const aiPickDiffersFromAlgo = algorithmTopPick !== aiTopPick;
 
-  // Value play: horse that moved up most from algorithm rank (at least +2 positions)
+  // Value play: strict criteria
   let valuePlay: number | null = null;
-  let maxImprovement = 0;
 
-  for (const adj of horseAdjustments) {
-    const improvement = adj.algorithmRank - adj.adjustedRank;
-    if (improvement >= 2 && improvement > maxImprovement && adj.adjustedRank !== 1) {
-      maxImprovement = improvement;
-      valuePlay = adj.programNumber;
+  // Check horses ranked 3rd-5th by algorithm
+  const valuePlayCandidates = rankedScores.filter((s) => s.rank >= 3 && s.rank <= 5);
+
+  for (const candidate of valuePlayCandidates) {
+    const adj = horseAdjustments.find((h) => h.programNumber === candidate.programNumber);
+    if (!adj) continue;
+
+    // Criteria 1: Trip trouble with maskedAbility
+    if (adj.hasTripTroubleBoost) {
+      valuePlay = candidate.programNumber;
+      break;
+    }
+
+    // Criteria 2: Lone speed in slow pace scenario
+    if (adj.isLoneSpeed && paceScenario?.paceProjection === 'SLOW') {
+      valuePlay = candidate.programNumber;
+      break;
     }
   }
 
+  // If no horse qualifies, valuePlay stays null (don't force it)
+
   // ============================================================================
   // PART 8: Build value labels for each horse
+  //
+  // Value label logic (conservative):
+  // - Vulnerable favorite (HIGH confidence): "FAIR PRICE" (not TOO SHORT - for bet sizing only)
+  // - Top pick: "PRIME VALUE" or "SOLID PLAY" based on bot insights
+  // - Rank 2-3: "SOLID PLAY" or "PRIME VALUE" if has specific edge
+  // - Rank 4-5: "WATCH ONLY" (conservative - no +2 adjustments possible now)
+  // - Bottom third: "SKIP" or "NO CHANCE"
   // ============================================================================
 
   const horseInsights = horseAdjustments.map((adj, idx) => {
@@ -529,9 +678,10 @@ export function combineMultiBotResults(
     // Determine value label based on requirements
     let valueLabel: AIRaceAnalysis['horseInsights'][0]['valueLabel'];
 
-    if (adj.isVulnerableFavoriteHorse && vulnerableFavorite?.isVulnerable) {
-      // Vulnerable favorite gets "TOO SHORT" or "FAIR PRICE"
-      valueLabel = vulnerableFavorite.confidence === 'HIGH' ? 'TOO SHORT' : 'FAIR PRICE';
+    if (adj.isVulnerableFavoriteHorse) {
+      // Vulnerable favorite (HIGH confidence only per PART 4)
+      // Label as "FAIR PRICE" for bet sizing guidance - NOT a ranking change
+      valueLabel = 'FAIR PRICE';
     } else if (isBottomThird) {
       // Bottom third of field
       valueLabel = score.negativeFactors.length >= 3 ? 'NO CHANCE' : 'SKIP';
@@ -552,13 +702,9 @@ export function combineMultiBotResults(
         valueLabel = 'SOLID PLAY';
       }
     } else if (finalRank <= 5) {
-      // Rank 4-5
-      if (adj.adjustment >= 2) {
-        // Strong bot boost - potential value play
-        valueLabel = 'FAIR PRICE';
-      } else {
-        valueLabel = 'WATCH ONLY';
-      }
+      // Rank 4-5 - conservative: just "WATCH ONLY"
+      // (Max adjustment is ±1, so no "strong bot boost" scenario)
+      valueLabel = 'WATCH ONLY';
     } else {
       valueLabel = 'NO VALUE';
     }
@@ -569,36 +715,32 @@ export function combineMultiBotResults(
       if (adj.isLoneSpeed) {
         oneLiner = 'Lone speed - should wire field if clean break';
       } else if (adj.hasTripTroubleBoost) {
-        oneLiner =
-          adj.tripTroubleConfidence === 'HIGH'
-            ? 'Trip trouble masked true ability'
-            : 'Recent trip trouble - better than last shows';
+        oneLiner = 'Trip trouble masked true ability in last start';
+      } else if (adj.tripTroubleNote) {
+        // Trip trouble noted but not boosted - add informational note
+        oneLiner = adj.tripTroubleNote;
       } else if (adj.hasPaceAdvantage) {
-        oneLiner = 'Pace scenario sets up perfectly for running style';
-      } else if (adj.hasPaceDisadvantage) {
-        oneLiner = 'Pace dynamics work against this runner';
+        oneLiner = 'Speed duel sets up for closing style';
       } else if (score.positiveFactors[0]) {
         oneLiner = score.positiveFactors[0];
       } else if (score.negativeFactors[0]) {
         oneLiner = `Concern: ${score.negativeFactors[0]}`;
       } else {
-        oneLiner = `Ranked #${finalRank} after bot analysis`;
+        oneLiner = `Ranked #${finalRank} by algorithm`;
       }
     }
 
     // Update keyStrength/keyWeakness if we have bot-derived insights
     let keyStrength = adj.keyStrength;
-    let keyWeakness = adj.keyWeakness;
+    const keyWeakness = adj.keyWeakness;
 
     if (adj.isLoneSpeed && !keyStrength) {
-      keyStrength = 'Lone speed - major advantage';
+      keyStrength = 'Lone speed - clear tactical advantage';
     }
     if (adj.hasPaceAdvantage && !keyStrength) {
-      keyStrength = 'Pace scenario favors running style';
+      keyStrength = 'Speed duel sets up for closing style';
     }
-    if (adj.hasPaceDisadvantage && !keyWeakness) {
-      keyWeakness = 'Pace scenario works against running style';
-    }
+    // NOTE: No pace disadvantage penalties in conservative model
 
     return {
       programNumber: adj.programNumber,
@@ -615,23 +757,26 @@ export function combineMultiBotResults(
 
   // ============================================================================
   // PART 9: Build race narrative with OVERRIDE/CONFIRM
+  //
+  // Conservative narrative: Only report OVERRIDE when there's a HIGH confidence
+  // specific signal. Most races should be CONFIRM.
   // ============================================================================
 
   const narrativeParts: string[] = [];
 
   // Start with OVERRIDE or CONFIRM
   if (aiPickDiffersFromAlgo) {
-    // Find why we overrode
+    // Find why we overrode (should be rare with conservative approach)
     const newTopAdj = horseAdjustments[0];
-    let overrideReason = 'bot insights suggest different selection';
+    let overrideReason = 'specific bot insight on this horse';
 
     if (newTopAdj) {
       if (newTopAdj.isLoneSpeed) {
-        overrideReason = 'lone speed scenario gives clear edge';
-      } else if (newTopAdj.hasTripTroubleBoost && newTopAdj.tripTroubleConfidence === 'HIGH') {
-        overrideReason = 'masked ability from trip trouble';
+        overrideReason = 'lone speed scenario gives clear tactical edge';
+      } else if (newTopAdj.hasTripTroubleBoost) {
+        overrideReason = 'masked ability from trip trouble in last start';
       } else if (newTopAdj.hasPaceAdvantage) {
-        overrideReason = 'pace scenario strongly favors running style';
+        overrideReason = 'speed duel sets up perfectly for closing style';
       }
     }
 
@@ -642,20 +787,20 @@ export function combineMultiBotResults(
     );
   } else {
     const topHorse = horseAdjustments[0];
-    let confirmReason = 'analysis confirms algorithm selection';
+    let confirmReason = 'bot analysis confirms algorithm selection';
 
     if (topHorse) {
       if (topHorse.isLoneSpeed) {
-        confirmReason = 'lone speed advantage';
+        confirmReason = 'lone speed advantage reinforces pick';
       } else if (topHorse.hasPaceAdvantage) {
-        confirmReason = 'favorable pace setup';
+        confirmReason = 'favorable pace setup for closing style';
       } else if (fieldSpread?.fieldType === 'SEPARATED') {
         confirmReason = 'clear separation from field';
       }
     }
 
     narrativeParts.push(
-      `CONFIRM: Algorithm pick ${topHorse?.horseName || 'top choice'} supported by ${confirmReason}.`
+      `CONFIRM: Algorithm pick ${topHorse?.horseName || 'top choice'} supported - ${confirmReason}.`
     );
   }
 
