@@ -100,7 +100,7 @@ export async function analyzeRaceWithGemini(
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
-          temperature: 0.3,
+          temperature: 0.2, // Lower from 0.3 for more consistency
           topP: 0.8,
           maxOutputTokens: 2048,
         },
