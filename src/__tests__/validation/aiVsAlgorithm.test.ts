@@ -26,14 +26,23 @@ import type { ScoredHorse } from '../../lib/scoring';
 import type { TrackCondition } from '../../hooks/useRaceState';
 
 // ============================================================================
-// THROTTLING UTILITIES
+// PARALLEL EXECUTION CONFIGURATION
 // ============================================================================
 
-// Throttle API calls to avoid rate limits
-const DELAY_BETWEEN_CALLS_MS = 100; // 100ms = 10 req/sec = 600 RPM (15% of 4000 RPM limit)
+/**
+ * STAGGER_MS: Delay between launching each parallel request
+ *
+ * Rate Limit Math:
+ * - Gemini Paid Tier 1: 4,000 RPM / 4M TPM
+ * - 100ms stagger = 10 requests/second = 600 RPM
+ * - 600 RPM = 15% of 4,000 RPM limit (safe margin)
+ * - 112 races × 100ms = 11.2 seconds to launch all requests
+ * - Expected total completion: ~15-20 seconds (11s launch + ~3-5s for final responses)
+ */
+const STAGGER_MS = 100;
 
 function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -47,16 +56,20 @@ async function callAIWithRetry(
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await getAIAnalysis(race, scoringResult, { forceRefresh: true });
-    } catch (err: any) {
-      const errorMessage = err?.message || '';
-      const isRateLimit = errorMessage.includes('429') ||
-                          errorMessage.includes('RATE_LIMIT') ||
-                          errorMessage.includes('Too Many Requests') ||
-                          err?.code === 'RATE_LIMIT';
+    } catch (err: unknown) {
+      const error = err as { message?: string; code?: string };
+      const errorMessage = error?.message || '';
+      const isRateLimit =
+        errorMessage.includes('429') ||
+        errorMessage.includes('RATE_LIMIT') ||
+        errorMessage.includes('Too Many Requests') ||
+        error?.code === 'RATE_LIMIT';
 
       if (isRateLimit && attempt < maxRetries) {
         const backoffMs = attempt * 5000; // 5s, 10s, 15s
-        console.log(`    ⚠️ Rate limited. Waiting ${backoffMs/1000}s before retry ${attempt + 1}/${maxRetries}...`);
+        console.log(
+          `    ⚠️ Rate limited. Waiting ${backoffMs / 1000}s before retry ${attempt + 1}/${maxRetries}...`
+        );
         await delay(backoffMs);
       } else {
         throw err;
@@ -66,9 +79,33 @@ async function callAIWithRetry(
   return null;
 }
 
+/**
+ * Launch a task after a staggered delay based on index
+ * Used to spread out parallel requests to avoid rate limits
+ */
+async function launchWithStagger<T>(index: number, task: () => Promise<T>): Promise<T> {
+  const staggerDelay = index * STAGGER_MS;
+  if (staggerDelay > 0) {
+    await delay(staggerDelay);
+  }
+  return task();
+}
+
 // ============================================================================
 // TYPES
 // ============================================================================
+
+/**
+ * Result of processing a single race (used for parallel execution)
+ */
+interface RaceProcessingResult {
+  success: boolean;
+  comparison?: RaceComparison;
+  error?: string;
+  trackCode: string;
+  raceNumber: number;
+  aiProcessingMs: number;
+}
 
 interface RaceResult {
   raceNumber: number;
@@ -78,23 +115,23 @@ interface RaceResult {
 
 interface ExoticBetResults {
   // Exacta variants
-  exactaStraight: number;      // #1-#2 exact order
-  exactaBox2: number;          // Top 2 in any order
-  exactaBox3: number;          // Win + any of top 3 for place
-  exactaBox4: number;          // Win + any of top 4 for place
+  exactaStraight: number; // #1-#2 exact order
+  exactaBox2: number; // Top 2 in any order
+  exactaBox3: number; // Win + any of top 3 for place
+  exactaBox4: number; // Win + any of top 4 for place
 
   // Trifecta variants
-  trifectaStraight: number;    // #1-#2-#3 exact order
-  trifectaBox3: number;        // Top 3 in any order
-  trifectaBox4: number;        // Top 4, any 3 in order
-  trifectaBox5: number;        // Top 5, any 3 in order
-  trifectaKey: number;         // #1 over top 4 for 2nd/3rd
+  trifectaStraight: number; // #1-#2-#3 exact order
+  trifectaBox3: number; // Top 3 in any order
+  trifectaBox4: number; // Top 4, any 3 in order
+  trifectaBox5: number; // Top 5, any 3 in order
+  trifectaKey: number; // #1 over top 4 for 2nd/3rd
 
   // Superfecta variants
-  superfectaStraight: number;  // #1-#2-#3-#4 exact order
-  superfectaBox4: number;      // Top 4 in any order
-  superfectaBox5: number;      // Top 5, any 4 in order
-  superfectaKey: number;       // #1 over top 5 for 2nd/3rd/4th
+  superfectaStraight: number; // #1-#2-#3-#4 exact order
+  superfectaBox4: number; // Top 4 in any order
+  superfectaBox5: number; // Top 5, any 4 in order
+  superfectaKey: number; // #1 over top 5 for 2nd/3rd/4th
 }
 
 interface RaceComparison {
@@ -423,35 +460,300 @@ function checkTop3Contains(predicted: number[], actualWinner: number): boolean {
 }
 
 // Check exacta box: top N picks contain the actual 1-2
-function checkExactaBox(predictedTop: number[], actual1st: number, actual2nd: number, boxSize: number): boolean {
+function checkExactaBox(
+  predictedTop: number[],
+  actual1st: number,
+  actual2nd: number,
+  boxSize: number
+): boolean {
   const topN = new Set(predictedTop.slice(0, boxSize));
   return topN.has(actual1st) && topN.has(actual2nd);
 }
 
 // Check trifecta box: top N picks contain the actual 1-2-3
-function checkTrifectaBox(predictedTop: number[], actual: [number, number, number], boxSize: number): boolean {
+function checkTrifectaBox(
+  predictedTop: number[],
+  actual: [number, number, number],
+  boxSize: number
+): boolean {
   const topN = new Set(predictedTop.slice(0, boxSize));
-  return actual.every(pos => topN.has(pos));
+  return actual.every((pos) => topN.has(pos));
 }
 
 // Check trifecta key: #1 pick wins, any of top N fill 2nd and 3rd
-function checkTrifectaKey(predictedTop: number[], actual: [number, number, number], keyOverSize: number): boolean {
+function checkTrifectaKey(
+  predictedTop: number[],
+  actual: [number, number, number],
+  keyOverSize: number
+): boolean {
   if (predictedTop[0] !== actual[0]) return false; // Key horse must win
   const others = new Set(predictedTop.slice(1, keyOverSize));
   return others.has(actual[1]) && others.has(actual[2]);
 }
 
 // Check superfecta box: top N picks contain actual 1-2-3-4
-function checkSuperfectaBox(predictedTop: number[], actual: [number, number, number, number], boxSize: number): boolean {
+function checkSuperfectaBox(
+  predictedTop: number[],
+  actual: [number, number, number, number],
+  boxSize: number
+): boolean {
   const topN = new Set(predictedTop.slice(0, boxSize));
-  return actual.every(pos => topN.has(pos));
+  return actual.every((pos) => topN.has(pos));
 }
 
 // Check superfecta key: #1 pick wins, any of top N fill 2nd/3rd/4th
-function checkSuperfectaKey(predictedTop: number[], actual: [number, number, number, number], keyOverSize: number): boolean {
+function checkSuperfectaKey(
+  predictedTop: number[],
+  actual: [number, number, number, number],
+  keyOverSize: number
+): boolean {
   if (predictedTop[0] !== actual[0]) return false;
   const others = new Set(predictedTop.slice(1, keyOverSize));
   return others.has(actual[1]) && others.has(actual[2]) && others.has(actual[3]);
+}
+
+// ============================================================================
+// SINGLE RACE PROCESSOR
+// ============================================================================
+
+/**
+ * Process a single race and return comparison result
+ * Extracted to enable parallel execution
+ */
+async function processRace(
+  race: ParsedRace,
+  raceResult: RaceResult,
+  trackCode: string
+): Promise<RaceProcessingResult> {
+  const startTime = Date.now();
+
+  try {
+    // Apply scratches
+    const scratchedPosts = new Set(raceResult.scratches.map((s) => s.post));
+    for (const entry of race.horses) {
+      if (scratchedPosts.has(entry.postPosition)) {
+        entry.isScratched = true;
+      }
+    }
+
+    // Get actual results
+    const actualWinner = raceResult.positions[0]?.post || 0;
+    const actualExacta: [number, number] = [
+      raceResult.positions[0]?.post || 0,
+      raceResult.positions[1]?.post || 0,
+    ];
+    const actualTrifecta: [number, number, number] = [
+      raceResult.positions[0]?.post || 0,
+      raceResult.positions[1]?.post || 0,
+      raceResult.positions[2]?.post || 0,
+    ];
+
+    // Set up scoring parameters
+    const trackCondition: TrackCondition = {
+      surface: race.header.surface,
+      condition: race.header.condition || 'fast',
+      variant: 0,
+    };
+
+    const getOdds = (index: number, originalOdds: string) => {
+      return originalOdds || race.horses[index]?.morningLineOdds || '5-1';
+    };
+
+    const isScratched = (index: number) => {
+      const horse = race.horses[index];
+      if (!horse) return false;
+      return scratchedPosts.has(horse.postPosition);
+    };
+
+    // Run algorithm
+    const scoredHorses = calculateRaceScores(
+      race.horses,
+      race.header,
+      getOdds,
+      isScratched,
+      trackCondition
+    );
+
+    const algorithmRanked = [...scoredHorses]
+      .filter((s) => !s.score.isScratched)
+      .sort((a, b) => a.rank - b.rank);
+
+    const algorithmPick = algorithmRanked[0]?.horse.postPosition || 0;
+    const algorithmTop3 = algorithmRanked.slice(0, 3).map((s) => s.horse.postPosition);
+
+    // Run AI
+    let aiAnalysis: AIRaceAnalysis | null = null;
+    let aiProcessingMs = 0;
+
+    const aiStatus = checkAIServiceStatus();
+    if (aiStatus === 'ready') {
+      const aiStartTime = Date.now();
+
+      // Convert to RaceScoringResult format
+      const scoringResult = convertToRaceScoringResult(scoredHorses, race.horses);
+
+      // Call AI service with retry logic for rate limits
+      aiAnalysis = await callAIWithRetry(race, scoringResult);
+
+      aiProcessingMs = Date.now() - aiStartTime;
+    }
+
+    // Extract AI predictions
+    let aiPick: number | null = null;
+    let aiTop3: number[] = [];
+
+    if (aiAnalysis) {
+      aiPick = aiAnalysis.topPick;
+      aiTop3 = aiAnalysis.horseInsights
+        .sort((a, b) => a.projectedFinish - b.projectedFinish)
+        .slice(0, 3)
+        .map((h) => h.programNumber);
+    }
+
+    // Get actual top 4 (for superfecta)
+    const actual4th = raceResult.positions[3]?.post || 0;
+    const actualSuperfecta: [number, number, number, number] = [
+      actualWinner,
+      actualExacta[1],
+      actualTrifecta[2],
+      actual4th,
+    ];
+
+    // Calculate algorithm exotic hits
+    const algoTop5 = algorithmRanked.slice(0, 5).map((s) => s.horse.postPosition);
+    const algorithmExotics: ExoticBetResults = {
+      exactaStraight: checkExactaHit(algorithmTop3, actualExacta) ? 1 : 0,
+      exactaBox2: checkExactaBox(algoTop5, actualWinner, actualExacta[1], 2) ? 1 : 0,
+      exactaBox3: checkExactaBox(algoTop5, actualWinner, actualExacta[1], 3) ? 1 : 0,
+      exactaBox4: checkExactaBox(algoTop5, actualWinner, actualExacta[1], 4) ? 1 : 0,
+      trifectaStraight: checkTrifectaHit(algorithmTop3, actualTrifecta) ? 1 : 0,
+      trifectaBox3: checkTrifectaBox(algoTop5, actualTrifecta, 3) ? 1 : 0,
+      trifectaBox4: checkTrifectaBox(algoTop5, actualTrifecta, 4) ? 1 : 0,
+      trifectaBox5: checkTrifectaBox(algoTop5, actualTrifecta, 5) ? 1 : 0,
+      trifectaKey: checkTrifectaKey(algoTop5, actualTrifecta, 5) ? 1 : 0,
+      superfectaStraight:
+        actual4th > 0 &&
+        algoTop5[0] === actualWinner &&
+        algoTop5[1] === actualExacta[1] &&
+        algoTop5[2] === actualTrifecta[2] &&
+        algoTop5[3] === actual4th
+          ? 1
+          : 0,
+      superfectaBox4:
+        actual4th > 0 ? (checkSuperfectaBox(algoTop5, actualSuperfecta, 4) ? 1 : 0) : 0,
+      superfectaBox5:
+        actual4th > 0 ? (checkSuperfectaBox(algoTop5, actualSuperfecta, 5) ? 1 : 0) : 0,
+      superfectaKey:
+        actual4th > 0 ? (checkSuperfectaKey(algoTop5, actualSuperfecta, 6) ? 1 : 0) : 0,
+    };
+
+    // Calculate AI exotic hits
+    const aiTop5 = aiAnalysis
+      ? aiAnalysis.horseInsights
+          .sort((a, b) => a.projectedFinish - b.projectedFinish)
+          .slice(0, 5)
+          .map((h) => h.programNumber)
+      : [];
+
+    const aiExotics: ExoticBetResults =
+      aiTop5.length >= 5
+        ? {
+            exactaStraight: checkExactaHit(aiTop3, actualExacta) ? 1 : 0,
+            exactaBox2: checkExactaBox(aiTop5, actualWinner, actualExacta[1], 2) ? 1 : 0,
+            exactaBox3: checkExactaBox(aiTop5, actualWinner, actualExacta[1], 3) ? 1 : 0,
+            exactaBox4: checkExactaBox(aiTop5, actualWinner, actualExacta[1], 4) ? 1 : 0,
+            trifectaStraight: checkTrifectaHit(aiTop3, actualTrifecta) ? 1 : 0,
+            trifectaBox3: checkTrifectaBox(aiTop5, actualTrifecta, 3) ? 1 : 0,
+            trifectaBox4: checkTrifectaBox(aiTop5, actualTrifecta, 4) ? 1 : 0,
+            trifectaBox5: checkTrifectaBox(aiTop5, actualTrifecta, 5) ? 1 : 0,
+            trifectaKey: checkTrifectaKey(aiTop5, actualTrifecta, 5) ? 1 : 0,
+            superfectaStraight:
+              actual4th > 0 &&
+              aiTop5[0] === actualWinner &&
+              aiTop5[1] === actualExacta[1] &&
+              aiTop5[2] === actualTrifecta[2] &&
+              aiTop5[3] === actual4th
+                ? 1
+                : 0,
+            superfectaBox4:
+              actual4th > 0 ? (checkSuperfectaBox(aiTop5, actualSuperfecta, 4) ? 1 : 0) : 0,
+            superfectaBox5:
+              actual4th > 0 ? (checkSuperfectaBox(aiTop5, actualSuperfecta, 5) ? 1 : 0) : 0,
+            superfectaKey:
+              actual4th > 0 ? (checkSuperfectaKey(aiTop5, actualSuperfecta, 6) ? 1 : 0) : 0,
+          }
+        : {
+            exactaStraight: 0,
+            exactaBox2: 0,
+            exactaBox3: 0,
+            exactaBox4: 0,
+            trifectaStraight: 0,
+            trifectaBox3: 0,
+            trifectaBox4: 0,
+            trifectaBox5: 0,
+            trifectaKey: 0,
+            superfectaStraight: 0,
+            superfectaBox4: 0,
+            superfectaBox5: 0,
+            superfectaKey: 0,
+          };
+
+    // Build comparison
+    const comparison: RaceComparison = {
+      trackCode,
+      raceNumber: race.header.raceNumber,
+
+      actualWinner,
+      actualExacta,
+      actualTrifecta,
+
+      algorithmPick,
+      algorithmTop3,
+      algorithmCorrect: algorithmPick === actualWinner,
+      algorithmInTop3: checkTop3Contains(algorithmTop3, actualWinner),
+      algorithmExactaHit: checkExactaHit(algorithmTop3, actualExacta),
+      algorithmTrifectaHit: checkTrifectaHit(algorithmTop3, actualTrifecta),
+
+      aiPick,
+      aiTop3,
+      aiCorrect: aiPick === actualWinner,
+      aiInTop3: aiTop3.length > 0 ? checkTop3Contains(aiTop3, actualWinner) : false,
+      aiExactaHit: aiTop3.length > 0 ? checkExactaHit(aiTop3, actualExacta) : false,
+      aiTrifectaHit: aiTop3.length > 0 ? checkTrifectaHit(aiTop3, actualTrifecta) : false,
+
+      agreedOnWinner: algorithmPick === aiPick,
+      aiDisagreedAndWon: aiPick !== null && aiPick !== algorithmPick && aiPick === actualWinner,
+      aiDisagreedAndLost:
+        aiPick !== null &&
+        aiPick !== algorithmPick &&
+        aiPick !== actualWinner &&
+        algorithmPick === actualWinner,
+
+      aiProcessingMs,
+      aiConfidence: aiAnalysis?.confidence || 'N/A',
+      aiFlaggedVulnerableFavorite: aiAnalysis?.vulnerableFavorite || false,
+      aiFlaggedLikelyUpset: aiAnalysis?.likelyUpset || false,
+
+      algorithmExotics,
+      aiExotics,
+    };
+
+    return {
+      success: true,
+      comparison,
+      trackCode,
+      raceNumber: race.header.raceNumber,
+      aiProcessingMs,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : String(err),
+      trackCode,
+      raceNumber: race.header.raceNumber,
+      aiProcessingMs: Date.now() - startTime,
+    };
+  }
 }
 
 // ============================================================================
@@ -463,7 +765,7 @@ describe('AI vs Algorithm Validation', () => {
   const allComparisons: RaceComparison[] = [];
   let totalAITime = 0;
   let aiSkippedCount = 0;
-  let totalRacesToProcess = 0; // Set during test execution for ETA calculation
+  const failedRaces: { trackCode: string; raceNumber: number; error: string }[] = [];
 
   beforeAll(() => {
     // Debug: Log environment status
@@ -483,7 +785,9 @@ describe('AI vs Algorithm Validation', () => {
   // Process each track file
   for (const { drfPath, resultsPath, trackCode } of testFiles) {
     describe(`Track: ${trackCode}`, () => {
-      it(`should compare algorithm vs AI for all races`, async () => {
+      it(`should compare algorithm vs AI for all races (PARALLEL)`, async () => {
+        const testStartTime = Date.now();
+
         // Parse DRF
         const drfContent = fs.readFileSync(drfPath, 'utf-8');
         const parsed = parseDRFFile(drfContent, path.basename(drfPath));
@@ -491,223 +795,110 @@ describe('AI vs Algorithm Validation', () => {
         // Parse results
         const results = parseResultsFile(resultsPath);
 
-        // Calculate total races for ETA (only races with valid results)
-        const racesWithResults = parsed.races.filter(race => {
-          const raceResult = results.find((r) => r.raceNumber === race.header.raceNumber);
-          return raceResult && raceResult.positions.length >= 3;
-        });
-        totalRacesToProcess = racesWithResults.length;
-
-        console.log(`  Processing ${totalRacesToProcess} races from ${trackCode}...`);
-
-        // Process each race
-        for (const race of parsed.races) {
-          const raceResult = results.find((r) => r.raceNumber === race.header.raceNumber);
-          if (!raceResult || raceResult.positions.length < 3) {
-            continue; // Skip races without results
-          }
-
-          // Apply scratches
-          const scratchedPosts = new Set(raceResult.scratches.map((s) => s.post));
-          for (const entry of race.horses) {
-            if (scratchedPosts.has(entry.postPosition)) {
-              entry.isScratched = true;
+        // Filter to races with valid results
+        const racesWithResults = parsed.races
+          .map((race) => {
+            const raceResult = results.find((r) => r.raceNumber === race.header.raceNumber);
+            if (!raceResult || raceResult.positions.length < 3) {
+              return null;
             }
-          }
+            return { race, raceResult };
+          })
+          .filter((r): r is { race: ParsedRace; raceResult: RaceResult } => r !== null);
 
-          // Get actual results
-          const actualWinner = raceResult.positions[0]?.post || 0;
-          const actualExacta: [number, number] = [
-            raceResult.positions[0]?.post || 0,
-            raceResult.positions[1]?.post || 0,
-          ];
-          const actualTrifecta: [number, number, number] = [
-            raceResult.positions[0]?.post || 0,
-            raceResult.positions[1]?.post || 0,
-            raceResult.positions[2]?.post || 0,
-          ];
+        const totalRaces = racesWithResults.length;
+        const expectedLaunchTime = (totalRaces * STAGGER_MS) / 1000;
 
-          // Set up scoring parameters
-          const trackCondition: TrackCondition = {
-            surface: race.header.surface,
-            condition: race.header.condition || 'fast',
-            variant: 0,
-          };
+        console.log(`\n  === PARALLEL EXECUTION: ${trackCode} ===`);
+        console.log(`  Total races: ${totalRaces}`);
+        console.log(`  Stagger delay: ${STAGGER_MS}ms per request`);
+        console.log(`  Expected launch time: ~${expectedLaunchTime.toFixed(1)}s`);
+        console.log(
+          `  Expected completion: ~${expectedLaunchTime + 5}s (launch + AI processing)\n`
+        );
 
-          const getOdds = (index: number, originalOdds: string) => {
-            return originalOdds || race.horses[index]?.morningLineOdds || '5-1';
-          };
-
-          const isScratched = (index: number) => {
-            const horse = race.horses[index];
-            if (!horse) return false;
-            return scratchedPosts.has(horse.postPosition);
-          };
-
-          // Run algorithm
-          const scoredHorses = calculateRaceScores(
-            race.horses,
-            race.header,
-            getOdds,
-            isScratched,
-            trackCondition
+        // Track completion in real-time
+        let completedCount = 0;
+        const logCompletion = (result: RaceProcessingResult) => {
+          completedCount++;
+          const elapsed = ((Date.now() - testStartTime) / 1000).toFixed(1);
+          const status = result.success ? '\u2713' : '\u2717';
+          const aiStatus = result.comparison?.aiPick ? `AI=${result.comparison.aiPick}` : 'AI=skip';
+          const algoStatus = result.comparison
+            ? `Algo=${result.comparison.algorithmPick}`
+            : 'Algo=N/A';
+          console.log(
+            `  [${completedCount}/${totalRaces}] ${result.trackCode} R${result.raceNumber}: ${algoStatus} ${aiStatus} ${status} (${elapsed}s)`
           );
+        };
 
-          const algorithmRanked = [...scoredHorses]
-            .filter((s) => !s.score.isScratched)
-            .sort((a, b) => a.rank - b.rank);
+        // Launch all requests in parallel with staggered starts
+        console.log(
+          `  Launching ${totalRaces} parallel requests with ${STAGGER_MS}ms stagger...\n`
+        );
 
-          const algorithmPick = algorithmRanked[0]?.horse.postPosition || 0;
-          const algorithmTop3 = algorithmRanked.slice(0, 3).map((s) => s.horse.postPosition);
+        const processingPromises = racesWithResults.map(({ race, raceResult }, index) => {
+          return launchWithStagger(index, async () => {
+            const result = await processRace(race, raceResult, trackCode);
+            logCompletion(result);
+            return result;
+          });
+        });
 
-          // Run AI
-          let aiAnalysis: AIRaceAnalysis | null = null;
-          let aiProcessingMs = 0;
+        // Wait for all to complete (Promise.allSettled allows partial success)
+        const settledResults = await Promise.allSettled(processingPromises);
 
-          const aiStatus = checkAIServiceStatus();
-          if (aiStatus === 'ready') {
-            try {
-              const startTime = Date.now();
+        // Process results
+        let successCount = 0;
+        let failCount = 0;
 
-              // Convert to RaceScoringResult format
-              const scoringResult = convertToRaceScoringResult(scoredHorses, race.horses);
+        for (const settled of settledResults) {
+          if (settled.status === 'fulfilled') {
+            const result = settled.value;
+            if (result.success && result.comparison) {
+              allComparisons.push(result.comparison);
+              totalAITime += result.aiProcessingMs;
+              successCount++;
 
-              // Call AI service with retry logic for rate limits
-              aiAnalysis = await callAIWithRetry(race, scoringResult);
-
-              aiProcessingMs = Date.now() - startTime;
-              totalAITime += aiProcessingMs;
-
-              // Throttle to avoid rate limits
-              await delay(DELAY_BETWEEN_CALLS_MS);
-            } catch (err) {
-              console.warn(`AI failed for ${trackCode} R${race.header.raceNumber}:`, err);
-              aiSkippedCount++;
+              // Track AI skips
+              if (result.comparison.aiPick === null) {
+                aiSkippedCount++;
+              }
+            } else {
+              failCount++;
+              failedRaces.push({
+                trackCode: result.trackCode,
+                raceNumber: result.raceNumber,
+                error: result.error || 'Unknown error',
+              });
             }
           } else {
-            aiSkippedCount++;
+            // Promise rejected (shouldn't happen with our error handling)
+            failCount++;
+            failedRaces.push({
+              trackCode,
+              raceNumber: 0,
+              error: settled.reason?.message || 'Promise rejected',
+            });
           }
-
-          // Extract AI predictions
-          let aiPick: number | null = null;
-          let aiTop3: number[] = [];
-
-          if (aiAnalysis) {
-            aiPick = aiAnalysis.topPick;
-            aiTop3 = aiAnalysis.horseInsights
-              .sort((a, b) => a.projectedFinish - b.projectedFinish)
-              .slice(0, 3)
-              .map((h) => h.programNumber);
-          }
-
-          // Get actual top 4 (for superfecta)
-          const actual4th = raceResult.positions[3]?.post || 0;
-          const actualSuperfecta: [number, number, number, number] = [
-            actualWinner, actualExacta[1], actualTrifecta[2], actual4th
-          ];
-
-          // Calculate algorithm exotic hits
-          const algoTop5 = algorithmRanked.slice(0, 5).map(s => s.horse.postPosition);
-          const algorithmExotics: ExoticBetResults = {
-            exactaStraight: checkExactaHit(algorithmTop3, actualExacta) ? 1 : 0,
-            exactaBox2: checkExactaBox(algoTop5, actualWinner, actualExacta[1], 2) ? 1 : 0,
-            exactaBox3: checkExactaBox(algoTop5, actualWinner, actualExacta[1], 3) ? 1 : 0,
-            exactaBox4: checkExactaBox(algoTop5, actualWinner, actualExacta[1], 4) ? 1 : 0,
-            trifectaStraight: checkTrifectaHit(algorithmTop3, actualTrifecta) ? 1 : 0,
-            trifectaBox3: checkTrifectaBox(algoTop5, actualTrifecta, 3) ? 1 : 0,
-            trifectaBox4: checkTrifectaBox(algoTop5, actualTrifecta, 4) ? 1 : 0,
-            trifectaBox5: checkTrifectaBox(algoTop5, actualTrifecta, 5) ? 1 : 0,
-            trifectaKey: checkTrifectaKey(algoTop5, actualTrifecta, 5) ? 1 : 0,
-            superfectaStraight: actual4th > 0 && algoTop5[0] === actualWinner && algoTop5[1] === actualExacta[1] && algoTop5[2] === actualTrifecta[2] && algoTop5[3] === actual4th ? 1 : 0,
-            superfectaBox4: actual4th > 0 ? (checkSuperfectaBox(algoTop5, actualSuperfecta, 4) ? 1 : 0) : 0,
-            superfectaBox5: actual4th > 0 ? (checkSuperfectaBox(algoTop5, actualSuperfecta, 5) ? 1 : 0) : 0,
-            superfectaKey: actual4th > 0 ? (checkSuperfectaKey(algoTop5, actualSuperfecta, 6) ? 1 : 0) : 0,
-          };
-
-          // Calculate AI exotic hits
-          const aiTop5 = aiAnalysis
-            ? aiAnalysis.horseInsights
-                .sort((a, b) => a.projectedFinish - b.projectedFinish)
-                .slice(0, 5)
-                .map(h => h.programNumber)
-            : [];
-
-          const aiExotics: ExoticBetResults = aiTop5.length >= 5 ? {
-            exactaStraight: checkExactaHit(aiTop3, actualExacta) ? 1 : 0,
-            exactaBox2: checkExactaBox(aiTop5, actualWinner, actualExacta[1], 2) ? 1 : 0,
-            exactaBox3: checkExactaBox(aiTop5, actualWinner, actualExacta[1], 3) ? 1 : 0,
-            exactaBox4: checkExactaBox(aiTop5, actualWinner, actualExacta[1], 4) ? 1 : 0,
-            trifectaStraight: checkTrifectaHit(aiTop3, actualTrifecta) ? 1 : 0,
-            trifectaBox3: checkTrifectaBox(aiTop5, actualTrifecta, 3) ? 1 : 0,
-            trifectaBox4: checkTrifectaBox(aiTop5, actualTrifecta, 4) ? 1 : 0,
-            trifectaBox5: checkTrifectaBox(aiTop5, actualTrifecta, 5) ? 1 : 0,
-            trifectaKey: checkTrifectaKey(aiTop5, actualTrifecta, 5) ? 1 : 0,
-            superfectaStraight: actual4th > 0 && aiTop5[0] === actualWinner && aiTop5[1] === actualExacta[1] && aiTop5[2] === actualTrifecta[2] && aiTop5[3] === actual4th ? 1 : 0,
-            superfectaBox4: actual4th > 0 ? (checkSuperfectaBox(aiTop5, actualSuperfecta, 4) ? 1 : 0) : 0,
-            superfectaBox5: actual4th > 0 ? (checkSuperfectaBox(aiTop5, actualSuperfecta, 5) ? 1 : 0) : 0,
-            superfectaKey: actual4th > 0 ? (checkSuperfectaKey(aiTop5, actualSuperfecta, 6) ? 1 : 0) : 0,
-          } : {
-            exactaStraight: 0, exactaBox2: 0, exactaBox3: 0, exactaBox4: 0,
-            trifectaStraight: 0, trifectaBox3: 0, trifectaBox4: 0, trifectaBox5: 0, trifectaKey: 0,
-            superfectaStraight: 0, superfectaBox4: 0, superfectaBox5: 0, superfectaKey: 0,
-          };
-
-          // Build comparison
-          const comparison: RaceComparison = {
-            trackCode,
-            raceNumber: race.header.raceNumber,
-
-            actualWinner,
-            actualExacta,
-            actualTrifecta,
-
-            algorithmPick,
-            algorithmTop3,
-            algorithmCorrect: algorithmPick === actualWinner,
-            algorithmInTop3: checkTop3Contains(algorithmTop3, actualWinner),
-            algorithmExactaHit: checkExactaHit(algorithmTop3, actualExacta),
-            algorithmTrifectaHit: checkTrifectaHit(algorithmTop3, actualTrifecta),
-
-            aiPick,
-            aiTop3,
-            aiCorrect: aiPick === actualWinner,
-            aiInTop3: aiTop3.length > 0 ? checkTop3Contains(aiTop3, actualWinner) : false,
-            aiExactaHit: aiTop3.length > 0 ? checkExactaHit(aiTop3, actualExacta) : false,
-            aiTrifectaHit: aiTop3.length > 0 ? checkTrifectaHit(aiTop3, actualTrifecta) : false,
-
-            agreedOnWinner: algorithmPick === aiPick,
-            aiDisagreedAndWon:
-              aiPick !== null && aiPick !== algorithmPick && aiPick === actualWinner,
-            aiDisagreedAndLost:
-              aiPick !== null &&
-              aiPick !== algorithmPick &&
-              aiPick !== actualWinner &&
-              algorithmPick === actualWinner,
-
-            aiProcessingMs,
-            aiConfidence: aiAnalysis?.confidence || 'N/A',
-            aiFlaggedVulnerableFavorite: aiAnalysis?.vulnerableFavorite || false,
-            aiFlaggedLikelyUpset: aiAnalysis?.likelyUpset || false,
-
-            algorithmExotics,
-            aiExotics,
-          };
-
-          allComparisons.push(comparison);
-
-          // Log progress with ETA
-          const racesProcessed = allComparisons.length;
-          const estimatedRemainingMs = (totalRacesToProcess - racesProcessed) * (DELAY_BETWEEN_CALLS_MS + 3000);
-          const estimatedRemainingMin = Math.ceil(estimatedRemainingMs / 60000);
-          const algoResult = comparison.algorithmCorrect ? '\u2713' : '\u2717';
-          const aiResult = comparison.aiCorrect ? '\u2713' : '\u2717';
-          console.log(
-            `  [${racesProcessed}/${totalRacesToProcess}] ${trackCode} R${race.header.raceNumber}: Algo=${algorithmPick} AI=${aiPick || 'skip'} Actual=${actualWinner} ${algoResult}/${aiResult} | ETA: ~${estimatedRemainingMin}min`
-          );
         }
 
-        expect(true).toBe(true); // Test passes if we get here
-      }, 600000); // 10 minute timeout per track (throttled execution)
+        const totalTestTime = ((Date.now() - testStartTime) / 1000).toFixed(1);
+
+        // Summary for this track
+        console.log(`\n  === ${trackCode} COMPLETE ===`);
+        console.log(`  Total time: ${totalTestTime}s`);
+        console.log(`  Successful: ${successCount}/${totalRaces}`);
+        if (failCount > 0) {
+          console.log(`  Failed: ${failCount}`);
+          for (const fail of failedRaces.filter((f) => f.trackCode === trackCode)) {
+            console.log(`    - R${fail.raceNumber}: ${fail.error}`);
+          }
+        }
+        console.log('');
+
+        expect(successCount).toBeGreaterThan(0);
+      }, 120000); // 2 minute timeout (parallel should complete in ~20s)
     });
   }
 
@@ -750,18 +941,33 @@ describe('AI vs Algorithm Validation', () => {
 
       // Aggregate exotic results
       const algoExoticTotals: ExoticBetResults = {
-        exactaStraight: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.exactaStraight, 0),
+        exactaStraight: allComparisons.reduce(
+          (sum, c) => sum + c.algorithmExotics.exactaStraight,
+          0
+        ),
         exactaBox2: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.exactaBox2, 0),
         exactaBox3: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.exactaBox3, 0),
         exactaBox4: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.exactaBox4, 0),
-        trifectaStraight: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.trifectaStraight, 0),
+        trifectaStraight: allComparisons.reduce(
+          (sum, c) => sum + c.algorithmExotics.trifectaStraight,
+          0
+        ),
         trifectaBox3: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.trifectaBox3, 0),
         trifectaBox4: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.trifectaBox4, 0),
         trifectaBox5: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.trifectaBox5, 0),
         trifectaKey: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.trifectaKey, 0),
-        superfectaStraight: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.superfectaStraight, 0),
-        superfectaBox4: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.superfectaBox4, 0),
-        superfectaBox5: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.superfectaBox5, 0),
+        superfectaStraight: allComparisons.reduce(
+          (sum, c) => sum + c.algorithmExotics.superfectaStraight,
+          0
+        ),
+        superfectaBox4: allComparisons.reduce(
+          (sum, c) => sum + c.algorithmExotics.superfectaBox4,
+          0
+        ),
+        superfectaBox5: allComparisons.reduce(
+          (sum, c) => sum + c.algorithmExotics.superfectaBox5,
+          0
+        ),
         superfectaKey: allComparisons.reduce((sum, c) => sum + c.algorithmExotics.superfectaKey, 0),
       };
 
@@ -775,7 +981,10 @@ describe('AI vs Algorithm Validation', () => {
         trifectaBox4: allComparisons.reduce((sum, c) => sum + c.aiExotics.trifectaBox4, 0),
         trifectaBox5: allComparisons.reduce((sum, c) => sum + c.aiExotics.trifectaBox5, 0),
         trifectaKey: allComparisons.reduce((sum, c) => sum + c.aiExotics.trifectaKey, 0),
-        superfectaStraight: allComparisons.reduce((sum, c) => sum + c.aiExotics.superfectaStraight, 0),
+        superfectaStraight: allComparisons.reduce(
+          (sum, c) => sum + c.aiExotics.superfectaStraight,
+          0
+        ),
         superfectaBox4: allComparisons.reduce((sum, c) => sum + c.aiExotics.superfectaBox4, 0),
         superfectaBox5: allComparisons.reduce((sum, c) => sum + c.aiExotics.superfectaBox5, 0),
         superfectaKey: allComparisons.reduce((sum, c) => sum + c.aiExotics.superfectaKey, 0),
@@ -836,8 +1045,23 @@ describe('AI vs Algorithm Validation', () => {
       console.log('                    AI vs ALGORITHM COMPARISON REPORT');
       console.log('='.repeat(70));
 
-      console.log(`\nTOTAL RACES: ${summary.totalRaces}`);
-      console.log(`TOTAL AI PROCESSING TIME: ${(summary.totalProcessingTimeMs / 1000).toFixed(1)}s`);
+      // Success/Failure Summary (PART 4 requirement)
+      const totalAttempted = totalRaces + failedRaces.length;
+      console.log(`\n${'='.repeat(70)}`);
+      console.log(`                    PARALLEL EXECUTION SUMMARY`);
+      console.log(`${'='.repeat(70)}`);
+      console.log(`RACES COMPLETED SUCCESSFULLY: ${totalRaces}/${totalAttempted}`);
+      if (failedRaces.length > 0) {
+        console.log(`RACES FAILED: ${failedRaces.length}`);
+        for (const fail of failedRaces) {
+          console.log(`  - ${fail.trackCode} R${fail.raceNumber}: ${fail.error}`);
+        }
+      }
+
+      console.log(`\nTOTAL RACES ANALYZED: ${summary.totalRaces}`);
+      console.log(
+        `TOTAL AI PROCESSING TIME: ${(summary.totalProcessingTimeMs / 1000).toFixed(1)}s`
+      );
       console.log(`AVERAGE AI TIME PER RACE: ${summary.averageProcessingTimeMs}ms`);
       if (summary.ai.skippedRaces > 0) {
         console.log(`AI SKIPPED RACES: ${summary.ai.skippedRaces}`);
@@ -848,16 +1072,16 @@ describe('AI vs Algorithm Validation', () => {
       console.log('-'.repeat(70));
       console.log(`                    ALGORITHM        AI           DIFF`);
       console.log(
-        `Win Rate:           ${summary.algorithm.winRate.toFixed(1)}%           ${summary.ai.winRate.toFixed(1)}%         ${(summary.ai.winRate - summary.algorithm.winRate) >= 0 ? '+' : ''}${(summary.ai.winRate - summary.algorithm.winRate).toFixed(1)}%`
+        `Win Rate:           ${summary.algorithm.winRate.toFixed(1)}%           ${summary.ai.winRate.toFixed(1)}%         ${summary.ai.winRate - summary.algorithm.winRate >= 0 ? '+' : ''}${(summary.ai.winRate - summary.algorithm.winRate).toFixed(1)}%`
       );
       console.log(
-        `Top 3 Rate:         ${summary.algorithm.top3Rate.toFixed(1)}%           ${summary.ai.top3Rate.toFixed(1)}%         ${(summary.ai.top3Rate - summary.algorithm.top3Rate) >= 0 ? '+' : ''}${(summary.ai.top3Rate - summary.algorithm.top3Rate).toFixed(1)}%`
+        `Top 3 Rate:         ${summary.algorithm.top3Rate.toFixed(1)}%           ${summary.ai.top3Rate.toFixed(1)}%         ${summary.ai.top3Rate - summary.algorithm.top3Rate >= 0 ? '+' : ''}${(summary.ai.top3Rate - summary.algorithm.top3Rate).toFixed(1)}%`
       );
       console.log(
-        `Exacta Rate:        ${summary.algorithm.exactaRate.toFixed(1)}%            ${summary.ai.exactaRate.toFixed(1)}%          ${(summary.ai.exactaRate - summary.algorithm.exactaRate) >= 0 ? '+' : ''}${(summary.ai.exactaRate - summary.algorithm.exactaRate).toFixed(1)}%`
+        `Exacta Rate:        ${summary.algorithm.exactaRate.toFixed(1)}%            ${summary.ai.exactaRate.toFixed(1)}%          ${summary.ai.exactaRate - summary.algorithm.exactaRate >= 0 ? '+' : ''}${(summary.ai.exactaRate - summary.algorithm.exactaRate).toFixed(1)}%`
       );
       console.log(
-        `Trifecta Rate:      ${summary.algorithm.trifectaRate.toFixed(1)}%            ${summary.ai.trifectaRate.toFixed(1)}%          ${(summary.ai.trifectaRate - summary.algorithm.trifectaRate) >= 0 ? '+' : ''}${(summary.ai.trifectaRate - summary.algorithm.trifectaRate).toFixed(1)}%`
+        `Trifecta Rate:      ${summary.algorithm.trifectaRate.toFixed(1)}%            ${summary.ai.trifectaRate.toFixed(1)}%          ${summary.ai.trifectaRate - summary.algorithm.trifectaRate >= 0 ? '+' : ''}${(summary.ai.trifectaRate - summary.algorithm.trifectaRate).toFixed(1)}%`
       );
 
       console.log('\n' + '-'.repeat(70));
@@ -893,21 +1117,47 @@ describe('AI vs Algorithm Validation', () => {
       console.log('-'.repeat(70));
       console.log(`                        ALGORITHM    AI       DIFF`);
       console.log(`EXACTA:`);
-      console.log(`  Straight (#1-#2):      ${algoExoticTotals.exactaStraight}/${totalRaces}        ${aiExoticTotals.exactaStraight}/${totalRaces}     ${aiExoticTotals.exactaStraight - algoExoticTotals.exactaStraight >= 0 ? '+' : ''}${aiExoticTotals.exactaStraight - algoExoticTotals.exactaStraight}`);
-      console.log(`  Box 2 (top 2):         ${algoExoticTotals.exactaBox2}/${totalRaces}        ${aiExoticTotals.exactaBox2}/${totalRaces}     ${aiExoticTotals.exactaBox2 - algoExoticTotals.exactaBox2 >= 0 ? '+' : ''}${aiExoticTotals.exactaBox2 - algoExoticTotals.exactaBox2}`);
-      console.log(`  Box 3 (top 3):         ${algoExoticTotals.exactaBox3}/${totalRaces}        ${aiExoticTotals.exactaBox3}/${totalRaces}     ${aiExoticTotals.exactaBox3 - algoExoticTotals.exactaBox3 >= 0 ? '+' : ''}${aiExoticTotals.exactaBox3 - algoExoticTotals.exactaBox3}`);
-      console.log(`  Box 4 (top 4):         ${algoExoticTotals.exactaBox4}/${totalRaces}        ${aiExoticTotals.exactaBox4}/${totalRaces}     ${aiExoticTotals.exactaBox4 - algoExoticTotals.exactaBox4 >= 0 ? '+' : ''}${aiExoticTotals.exactaBox4 - algoExoticTotals.exactaBox4}`);
+      console.log(
+        `  Straight (#1-#2):      ${algoExoticTotals.exactaStraight}/${totalRaces}        ${aiExoticTotals.exactaStraight}/${totalRaces}     ${aiExoticTotals.exactaStraight - algoExoticTotals.exactaStraight >= 0 ? '+' : ''}${aiExoticTotals.exactaStraight - algoExoticTotals.exactaStraight}`
+      );
+      console.log(
+        `  Box 2 (top 2):         ${algoExoticTotals.exactaBox2}/${totalRaces}        ${aiExoticTotals.exactaBox2}/${totalRaces}     ${aiExoticTotals.exactaBox2 - algoExoticTotals.exactaBox2 >= 0 ? '+' : ''}${aiExoticTotals.exactaBox2 - algoExoticTotals.exactaBox2}`
+      );
+      console.log(
+        `  Box 3 (top 3):         ${algoExoticTotals.exactaBox3}/${totalRaces}        ${aiExoticTotals.exactaBox3}/${totalRaces}     ${aiExoticTotals.exactaBox3 - algoExoticTotals.exactaBox3 >= 0 ? '+' : ''}${aiExoticTotals.exactaBox3 - algoExoticTotals.exactaBox3}`
+      );
+      console.log(
+        `  Box 4 (top 4):         ${algoExoticTotals.exactaBox4}/${totalRaces}        ${aiExoticTotals.exactaBox4}/${totalRaces}     ${aiExoticTotals.exactaBox4 - algoExoticTotals.exactaBox4 >= 0 ? '+' : ''}${aiExoticTotals.exactaBox4 - algoExoticTotals.exactaBox4}`
+      );
       console.log(`TRIFECTA:`);
-      console.log(`  Straight (#1-#2-#3):   ${algoExoticTotals.trifectaStraight}/${totalRaces}        ${aiExoticTotals.trifectaStraight}/${totalRaces}     ${aiExoticTotals.trifectaStraight - algoExoticTotals.trifectaStraight >= 0 ? '+' : ''}${aiExoticTotals.trifectaStraight - algoExoticTotals.trifectaStraight}`);
-      console.log(`  Box 3 (top 3):         ${algoExoticTotals.trifectaBox3}/${totalRaces}        ${aiExoticTotals.trifectaBox3}/${totalRaces}     ${aiExoticTotals.trifectaBox3 - algoExoticTotals.trifectaBox3 >= 0 ? '+' : ''}${aiExoticTotals.trifectaBox3 - algoExoticTotals.trifectaBox3}`);
-      console.log(`  Box 4 (top 4):         ${algoExoticTotals.trifectaBox4}/${totalRaces}        ${aiExoticTotals.trifectaBox4}/${totalRaces}     ${aiExoticTotals.trifectaBox4 - algoExoticTotals.trifectaBox4 >= 0 ? '+' : ''}${aiExoticTotals.trifectaBox4 - algoExoticTotals.trifectaBox4}`);
-      console.log(`  Box 5 (top 5):         ${algoExoticTotals.trifectaBox5}/${totalRaces}        ${aiExoticTotals.trifectaBox5}/${totalRaces}     ${aiExoticTotals.trifectaBox5 - algoExoticTotals.trifectaBox5 >= 0 ? '+' : ''}${aiExoticTotals.trifectaBox5 - algoExoticTotals.trifectaBox5}`);
-      console.log(`  Key (#1 over 4):       ${algoExoticTotals.trifectaKey}/${totalRaces}        ${aiExoticTotals.trifectaKey}/${totalRaces}     ${aiExoticTotals.trifectaKey - algoExoticTotals.trifectaKey >= 0 ? '+' : ''}${aiExoticTotals.trifectaKey - algoExoticTotals.trifectaKey}`);
+      console.log(
+        `  Straight (#1-#2-#3):   ${algoExoticTotals.trifectaStraight}/${totalRaces}        ${aiExoticTotals.trifectaStraight}/${totalRaces}     ${aiExoticTotals.trifectaStraight - algoExoticTotals.trifectaStraight >= 0 ? '+' : ''}${aiExoticTotals.trifectaStraight - algoExoticTotals.trifectaStraight}`
+      );
+      console.log(
+        `  Box 3 (top 3):         ${algoExoticTotals.trifectaBox3}/${totalRaces}        ${aiExoticTotals.trifectaBox3}/${totalRaces}     ${aiExoticTotals.trifectaBox3 - algoExoticTotals.trifectaBox3 >= 0 ? '+' : ''}${aiExoticTotals.trifectaBox3 - algoExoticTotals.trifectaBox3}`
+      );
+      console.log(
+        `  Box 4 (top 4):         ${algoExoticTotals.trifectaBox4}/${totalRaces}        ${aiExoticTotals.trifectaBox4}/${totalRaces}     ${aiExoticTotals.trifectaBox4 - algoExoticTotals.trifectaBox4 >= 0 ? '+' : ''}${aiExoticTotals.trifectaBox4 - algoExoticTotals.trifectaBox4}`
+      );
+      console.log(
+        `  Box 5 (top 5):         ${algoExoticTotals.trifectaBox5}/${totalRaces}        ${aiExoticTotals.trifectaBox5}/${totalRaces}     ${aiExoticTotals.trifectaBox5 - algoExoticTotals.trifectaBox5 >= 0 ? '+' : ''}${aiExoticTotals.trifectaBox5 - algoExoticTotals.trifectaBox5}`
+      );
+      console.log(
+        `  Key (#1 over 4):       ${algoExoticTotals.trifectaKey}/${totalRaces}        ${aiExoticTotals.trifectaKey}/${totalRaces}     ${aiExoticTotals.trifectaKey - algoExoticTotals.trifectaKey >= 0 ? '+' : ''}${aiExoticTotals.trifectaKey - algoExoticTotals.trifectaKey}`
+      );
       console.log(`SUPERFECTA:`);
-      console.log(`  Straight (#1-#2-#3-#4): ${algoExoticTotals.superfectaStraight}/${totalRaces}        ${aiExoticTotals.superfectaStraight}/${totalRaces}     ${aiExoticTotals.superfectaStraight - algoExoticTotals.superfectaStraight >= 0 ? '+' : ''}${aiExoticTotals.superfectaStraight - algoExoticTotals.superfectaStraight}`);
-      console.log(`  Box 4 (top 4):         ${algoExoticTotals.superfectaBox4}/${totalRaces}        ${aiExoticTotals.superfectaBox4}/${totalRaces}     ${aiExoticTotals.superfectaBox4 - algoExoticTotals.superfectaBox4 >= 0 ? '+' : ''}${aiExoticTotals.superfectaBox4 - algoExoticTotals.superfectaBox4}`);
-      console.log(`  Box 5 (top 5):         ${algoExoticTotals.superfectaBox5}/${totalRaces}        ${aiExoticTotals.superfectaBox5}/${totalRaces}     ${aiExoticTotals.superfectaBox5 - algoExoticTotals.superfectaBox5 >= 0 ? '+' : ''}${aiExoticTotals.superfectaBox5 - algoExoticTotals.superfectaBox5}`);
-      console.log(`  Key (#1 over 5):       ${algoExoticTotals.superfectaKey}/${totalRaces}        ${aiExoticTotals.superfectaKey}/${totalRaces}     ${aiExoticTotals.superfectaKey - algoExoticTotals.superfectaKey >= 0 ? '+' : ''}${aiExoticTotals.superfectaKey - algoExoticTotals.superfectaKey}`);
+      console.log(
+        `  Straight (#1-#2-#3-#4): ${algoExoticTotals.superfectaStraight}/${totalRaces}        ${aiExoticTotals.superfectaStraight}/${totalRaces}     ${aiExoticTotals.superfectaStraight - algoExoticTotals.superfectaStraight >= 0 ? '+' : ''}${aiExoticTotals.superfectaStraight - algoExoticTotals.superfectaStraight}`
+      );
+      console.log(
+        `  Box 4 (top 4):         ${algoExoticTotals.superfectaBox4}/${totalRaces}        ${aiExoticTotals.superfectaBox4}/${totalRaces}     ${aiExoticTotals.superfectaBox4 - algoExoticTotals.superfectaBox4 >= 0 ? '+' : ''}${aiExoticTotals.superfectaBox4 - algoExoticTotals.superfectaBox4}`
+      );
+      console.log(
+        `  Box 5 (top 5):         ${algoExoticTotals.superfectaBox5}/${totalRaces}        ${aiExoticTotals.superfectaBox5}/${totalRaces}     ${aiExoticTotals.superfectaBox5 - algoExoticTotals.superfectaBox5 >= 0 ? '+' : ''}${aiExoticTotals.superfectaBox5 - algoExoticTotals.superfectaBox5}`
+      );
+      console.log(
+        `  Key (#1 over 5):       ${algoExoticTotals.superfectaKey}/${totalRaces}        ${aiExoticTotals.superfectaKey}/${totalRaces}     ${aiExoticTotals.superfectaKey - algoExoticTotals.superfectaKey >= 0 ? '+' : ''}${aiExoticTotals.superfectaKey - algoExoticTotals.superfectaKey}`
+      );
 
       console.log('\n' + '='.repeat(70));
       console.log('                              VERDICT');
