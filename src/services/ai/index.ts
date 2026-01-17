@@ -450,7 +450,7 @@ export function combineMultiBotResults(
         .map((score) => {
           const horse = race.horses.find((h) => h.programNumber === score.programNumber);
           // Get early speed from past performances if available
-          const earlySpeed = horse?.pastPerformances?.[0]?.earlyPaceFigure || 0;
+          const earlySpeed = horse?.pastPerformances?.[0]?.earlyPace1 || 0;
           return { programNumber: score.programNumber, earlySpeed };
         });
 
