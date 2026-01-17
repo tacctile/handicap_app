@@ -423,7 +423,7 @@ describe('buildRaceAnalysisPrompt', () => {
     expect(prompt).toContain('#1');
     expect(prompt).toContain('75%');
     expect(prompt).toContain('strong');
-    expect(prompt).toContain('Vulnerable Favorite: YES');
+    expect(prompt).toContain('Vulnerable Favorite (algo): YES');
     expect(prompt).toContain('Pace Collapse Likely: YES');
   });
 
@@ -451,7 +451,7 @@ describe('buildRaceAnalysisPrompt', () => {
     const prompt = buildRaceAnalysisPrompt(race, scoringResult);
 
     expect(prompt).toContain('Algorithm Rank: 1');
-    expect(prompt).toContain('Score: 185/290');
+    expect(prompt).toContain('Score: 185/368');
     expect(prompt).toContain('Tier: high');
     expect(prompt).toContain('Speed 52/60');
     expect(prompt).toContain('Class 40/48');

@@ -3,10 +3,19 @@
  *
  * Builds prompts for the single-bot AI race analysis system.
  * The algorithm calculates scores; AI interprets them for insights.
+ *
+ * Algorithm context is injected from ALGORITHM_REFERENCE.md via algorithmContext.ts
  */
 
 import type { ParsedRace, HorseEntry } from '../../types/drf';
 import type { RaceScoringResult, HorseScoreForAI } from '../../types/scoring';
+import {
+  ALGORITHM_CONTEXT,
+  PACE_CONTEXT,
+  TRIP_TROUBLE_CONTEXT,
+  FIELD_SPREAD_CONTEXT,
+  VULNERABLE_FAVORITE_CONTEXT,
+} from './algorithmContext';
 
 /**
  * Build the main race analysis prompt for Gemini
@@ -27,7 +36,11 @@ export function buildRaceAnalysisPrompt(
 
   const horseSummaries = rankedScores.map((s) => formatHorseForPrompt(s, race.horses)).join('\n\n');
 
-  return `You are an expert horse racing handicapper working alongside an algorithm. The algorithm scored each horse using 331 data points. You add the human element — reading between the lines, catching what pure math misses.
+  return `${ALGORITHM_CONTEXT}
+
+---
+
+You are an expert horse racing handicapper working alongside an algorithm. The algorithm scored each horse using 328 data points across 15 categories (see reference above). You add the human element — reading between the lines, catching what pure math misses.
 
 YOUR ROLE: Strategic second opinion. Not a yes-man, not a contrarian. Add value where you see it.
 
@@ -179,7 +192,11 @@ export function buildTripTroublePrompt(race: ParsedRace, scoringResult: RaceScor
     })
     .filter(Boolean);
 
-  return `You are a trip trouble specialist analyzing race replays via trip comments.
+  return `${TRIP_TROUBLE_CONTEXT}
+
+---
+
+You are a trip trouble specialist analyzing race replays via trip comments.
 
 YOUR ONE JOB: Identify horses whose recent races don't reflect true ability due to trip trouble.
 
@@ -240,7 +257,11 @@ export function buildPaceScenarioPrompt(
 
   const { paceScenario } = scoringResult.raceAnalysis;
 
-  return `You are a pace analyst determining which running styles win today.
+  return `${PACE_CONTEXT}
+
+---
+
+You are a pace analyst determining which running styles win today.
 
 YOUR ONE JOB: Determine which running styles are advantaged/disadvantaged by the likely pace scenario.
 
@@ -317,7 +338,11 @@ RESPOND WITH JSON ONLY:
   const fieldSize = rankedScores.length;
   const topContenders = rankedScores.filter((s) => s.finalScore >= favorite.finalScore - 15).length;
 
-  return `You are a favorite vulnerability analyst evaluating chalk horses.
+  return `${VULNERABLE_FAVORITE_CONTEXT}
+
+---
+
+You are a favorite vulnerability analyst evaluating chalk horses.
 
 YOUR ONE JOB: Evaluate ONLY whether the favorite can be beaten today - not who will beat them.
 
@@ -389,7 +414,11 @@ export function buildFieldSpreadPrompt(
   const bottomScore = rankedScores[rankedScores.length - 1]?.finalScore || 0;
   const spread = topScore - bottomScore;
 
-  return `You are a field separation analyst guiding bet spread strategy.
+  return `${FIELD_SPREAD_CONTEXT}
+
+---
+
+You are a field separation analyst guiding bet spread strategy.
 
 YOUR ONE JOB: Assess how separated the contenders are to guide bet spread width.
 
@@ -437,7 +466,7 @@ function formatHorseForPrompt(score: HorseScoreForAI, horses: HorseEntry[]): str
 
   if (!horse) {
     return `#${score.programNumber} ${score.horseName}
-Algorithm Rank: ${score.rank} | Score: ${score.finalScore}/290 | Tier: ${score.confidenceTier}
+Algorithm Rank: ${score.rank} | Score: ${score.finalScore}/368 | Tier: ${score.confidenceTier}
 [Horse data not found]`;
   }
 
@@ -452,7 +481,7 @@ Algorithm Rank: ${score.rank} | Score: ${score.finalScore}/290 | Tier: ${score.c
       .join('; ') || 'No recent races';
 
   return `#${score.programNumber} ${score.horseName} (ML ${horse.morningLineOdds})
-Algorithm Rank: ${score.rank} | Score: ${score.finalScore}/290 | Tier: ${score.confidenceTier}
+Algorithm Rank: ${score.rank} | Score: ${score.finalScore}/368 | Tier: ${score.confidenceTier}
 Breakdown: Speed ${score.breakdown.speedScore}/60, Class ${score.breakdown.classScore}/48, Form ${score.breakdown.formScore}/36, Pace ${score.breakdown.paceScore}/36, Connections ${score.breakdown.connectionScore}/30
 Running Style: ${horse.runningStyle || 'Unknown'} | Days Off: ${horse.daysSinceLastRace ?? 'First start'}
 Trainer: ${horse.trainerName} (${horse.trainerStats || 'N/A'}) | Jockey: ${horse.jockeyName} (${horse.jockeyStats || 'N/A'})
