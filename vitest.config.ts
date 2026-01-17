@@ -1,61 +1,72 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig, loadEnv } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-export default defineConfig({
-  plugins: [react()],
-  test: {
-    // Environment for component tests
-    environment: 'jsdom',
+export default defineConfig(({ mode }) => {
+  // Load env file based on mode (default to 'test')
+  // This allows tests to access VITE_GEMINI_API_KEY from .env.local
+  const env = loadEnv(mode, process.cwd(), '')
 
-    // Setup files for testing-library matchers
-    setupFiles: ['./src/__tests__/setup.ts'],
+  return {
+    plugins: [react()],
+    test: {
+      // Environment for component tests
+      environment: 'jsdom',
 
-    // Enable globals for cleaner test syntax
-    globals: true,
+      // Setup files for testing-library matchers
+      setupFiles: ['./src/__tests__/setup.ts'],
 
-    // Include patterns
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+      // Pass environment variables to test environment
+      env: {
+        ...env,
+      },
 
-    // Coverage configuration
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'text-summary', 'json', 'html'],
-      reportsDirectory: './coverage',
-      include: [
-        'src/lib/scoring/**/*.ts',
-        'src/lib/drfParser.ts',
-        'src/lib/betting/**/*.ts',
-      ],
-      exclude: [
-        'src/**/*.d.ts',
-        'src/**/*.test.ts',
-        'src/**/*.test.tsx',
-        'src/__tests__/**',
-      ],
-      thresholds: {
-        // Global thresholds
-        statements: 75,
-        branches: 65,
-        functions: 80,
-        lines: 75,
+      // Enable globals for cleaner test syntax
+      globals: true,
+
+      // Include patterns
+      include: ['src/**/*.{test,spec}.{ts,tsx}'],
+
+      // Coverage configuration
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'text-summary', 'json', 'html'],
+        reportsDirectory: './coverage',
+        include: [
+          'src/lib/scoring/**/*.ts',
+          'src/lib/drfParser.ts',
+          'src/lib/betting/**/*.ts',
+        ],
+        exclude: [
+          'src/**/*.d.ts',
+          'src/**/*.test.ts',
+          'src/**/*.test.tsx',
+          'src/__tests__/**',
+        ],
+        thresholds: {
+          // Global thresholds
+          statements: 75,
+          branches: 65,
+          functions: 80,
+          lines: 75,
+        },
+      },
+
+      // Test timeout
+      testTimeout: 10000,
+
+      // Clear mocks between tests
+      clearMocks: true,
+
+      // Don't watch by default in CI
+      watch: false,
+    },
+
+    // Path aliases matching any potential vite config
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
       },
     },
-
-    // Test timeout
-    testTimeout: 10000,
-
-    // Clear mocks between tests
-    clearMocks: true,
-
-    // Don't watch by default in CI
-    watch: false,
-  },
-
-  // Path aliases matching any potential vite config
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
+  }
 })
