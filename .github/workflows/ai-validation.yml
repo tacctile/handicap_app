@@ -48,6 +48,13 @@ jobs:
         env:
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
         run: |
+          echo "Checking if secret is set..."
+          if [ -z "$VITE_GEMINI_API_KEY" ]; then
+            echo "ERROR: VITE_GEMINI_API_KEY secret is not set!"
+            exit 1
+          fi
+          echo "Secret is set (length: ${#VITE_GEMINI_API_KEY})"
+
           if [ "${{ github.event.inputs.test_type }}" = "all-ai-tests" ]; then
             pnpm test -- --run src/__tests__/validation/aiVsAlgorithm.test.ts src/__tests__/**/ai*.test.ts --reporter=verbose
           else

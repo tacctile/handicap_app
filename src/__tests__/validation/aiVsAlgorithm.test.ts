@@ -10,6 +10,9 @@
  * Run with: npm test -- --run src/__tests__/validation/aiVsAlgorithm.test.ts
  */
 
+// Load environment variables first
+import 'dotenv/config';
+
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
