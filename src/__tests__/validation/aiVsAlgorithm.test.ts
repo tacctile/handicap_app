@@ -26,7 +26,6 @@ import type { ScoredHorse } from '../../lib/scoring';
 import type { TrackCondition } from '../../hooks/useRaceState';
 import {
   type DetailedRaceResult,
-  type DisagreementResults,
   type ValidationResultsFile,
   getTierFromScore,
   getTopCategories,
@@ -766,14 +765,10 @@ async function processRace(
     const aiPickHorse = aiPick
       ? algorithmRanked.find((h) => h.horse.postPosition === aiPick)
       : null;
-    const aiTopInsight = aiAnalysis?.horseInsights?.find(
-      (h) => h.programNumber === aiPick
-    );
+    const aiTopInsight = aiAnalysis?.horseInsights?.find((h) => h.programNumber === aiPick);
 
     // Get winner data from algorithm scores
-    const winnerInAlgo = algorithmRanked.find(
-      (h) => h.horse.postPosition === actualWinner
-    );
+    const winnerInAlgo = algorithmRanked.find((h) => h.horse.postPosition === actualWinner);
     const winnerName = raceResult.positions[0]?.horseName || 'Unknown';
     const winnerOdds =
       race.horses.find((h) => h.postPosition === actualWinner)?.morningLineOdds || 'N/A';
@@ -815,7 +810,9 @@ async function processRace(
         horseName: algoTopHorse?.horse.horseName || 'Unknown',
         score: algoTopScore,
         tier: getTierFromScore(algoTopScore),
-        confidence: (algoTopHorse?.score.confidenceLevel?.toUpperCase() as 'HIGH' | 'MEDIUM' | 'LOW') || 'MEDIUM',
+        confidence:
+          (algoTopHorse?.score.confidenceLevel?.toUpperCase() as 'HIGH' | 'MEDIUM' | 'LOW') ||
+          'MEDIUM',
         topCategories,
         scoreMargin: algoScoreMargin,
       },
@@ -846,9 +843,9 @@ async function processRace(
         wasAiPick: aiCorrect,
       },
 
-      // Analysis flags
-      agreement: agreedOnWinner || aiPick === null,
-      outcome: determineOutcome(algorithmCorrect, aiCorrect, agreedOnWinner || aiPick === null),
+      // Analysis flags - use same logic as summary: only true agreement when AI ran AND picked same
+      agreement: aiPick !== null && agreedOnWinner,
+      outcome: determineOutcome(algorithmCorrect, aiCorrect, aiPick !== null && agreedOnWinner),
 
       // Multi-bot signals (extracted from AI narrative and flags)
       botSignals: {
@@ -865,7 +862,9 @@ async function processRace(
         speedDuelLikely: aiAnalysis?.raceNarrative?.includes('Speed duel') || false,
         vulnerableFavorite: aiAnalysis?.vulnerableFavorite || false,
         vulnerableFavoriteReasons: aiAnalysis?.vulnerableFavorite
-          ? [aiAnalysis.raceNarrative?.match(/Vulnerable favorite: ([^.]+)/)?.[1] || 'flagged'].filter(Boolean)
+          ? [
+              aiAnalysis.raceNarrative?.match(/Vulnerable favorite: ([^.]+)/)?.[1] || 'flagged',
+            ].filter(Boolean)
           : [],
         fieldType: aiAnalysis?.raceNarrative?.includes('TIGHT')
           ? 'TIGHT'

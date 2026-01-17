@@ -254,13 +254,15 @@ export function determineOutcome(
 
 /**
  * Filter results for disagreements
+ * Uses same logic as summary: aiPick !== null && aiPick !== algorithmPick && (outcome check)
  */
 export function getDisagreements(results: DetailedRaceResult[]): DisagreementResults {
+  // Must check aiPick.postPosition !== null to match summary's explicit aiPick !== null check
   const aiDisagreedAndWon = results.filter(
-    (r) => !r.agreement && r.outcome === 'AI_CORRECT'
+    (r) => r.aiPick.postPosition !== null && !r.agreement && r.outcome === 'AI_CORRECT'
   );
   const aiDisagreedAndLost = results.filter(
-    (r) => !r.agreement && r.outcome === 'ALGO_CORRECT'
+    (r) => r.aiPick.postPosition !== null && !r.agreement && r.outcome === 'ALGO_CORRECT'
   );
 
   return {
