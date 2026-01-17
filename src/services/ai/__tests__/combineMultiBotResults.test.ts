@@ -60,7 +60,9 @@ function createMockRace(
       breeder: 'Test Breeder',
       whereFrom: 'KY',
     })) as unknown as ParsedRace['horses'],
-  } as ParsedRace;
+    warnings: [],
+    errors: [],
+  } as unknown as ParsedRace;
 }
 
 function createMockScoringResult(
