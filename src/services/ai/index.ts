@@ -111,7 +111,7 @@ export function checkAIServiceStatus(): AIServiceStatus {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const nodeProcess = (globalThis as any).process;
-      if (nodeProcess?.env?.GEMINI_API_KEY) {
+      if (nodeProcess?.env?.VITE_GEMINI_API_KEY) {
         hasApiKey = true;
       }
     } catch {

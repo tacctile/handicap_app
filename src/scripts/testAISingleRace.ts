@@ -9,36 +9,13 @@
  * - No runtime errors
  */
 
+// Load environment variables from .env.local for Node.js context
+import 'dotenv/config';
+
 import { getAIAnalysis, checkAIServiceStatus } from '../services/ai';
 import { createDefaultTrainerCategoryStats } from '../types/drf';
 import type { ParsedRace, RaceHeader, HorseEntry, PastPerformance } from '../types/drf';
 import type { RaceScoringResult, HorseScoreForAI, RaceAnalysis } from '../types/scoring';
-
-// Load environment variables from .env.local for Node.js context
-// Note: dotenv is loaded dynamically if available, otherwise user must export GEMINI_API_KEY
-async function loadEnv() {
-  try {
-    const fs = await import('fs');
-    const envPath = '.env.local';
-    if (fs.existsSync(envPath)) {
-      const content = fs.readFileSync(envPath, 'utf-8');
-      content.split('\n').forEach((line) => {
-        const [key, ...valueParts] = line.split('=');
-        if (key && valueParts.length > 0) {
-          const value = valueParts.join('=').trim();
-          if (!process.env[key.trim()]) {
-            process.env[key.trim()] = value;
-          }
-        }
-      });
-    }
-  } catch {
-    // .env.local not found or unreadable - that's OK if env var is already set
-  }
-}
-
-// Load env vars before running
-await loadEnv();
 
 // ============================================================================
 // MOCK DATA FACTORIES
@@ -408,11 +385,11 @@ async function runTest() {
 
   if (status === 'offline') {
     console.log('\n❌ AI service is offline. Check:');
-    console.log('   - GEMINI_API_KEY is set in .env.local');
+    console.log('   - VITE_GEMINI_API_KEY is set in .env.local');
     console.log('   - You have internet connectivity');
     console.log('\n   To set up:');
     console.log('   1. Create .env.local file in project root');
-    console.log('   2. Add: GEMINI_API_KEY=your_api_key_here');
+    console.log('   2. Add: VITE_GEMINI_API_KEY=your_api_key_here');
     process.exit(1);
   }
 

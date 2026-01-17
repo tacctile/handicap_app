@@ -35,8 +35,8 @@ function getApiKey(): string {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const nodeProcess = (globalThis as any).process;
-    if (nodeProcess?.env?.GEMINI_API_KEY) {
-      return nodeProcess.env.GEMINI_API_KEY as string;
+    if (nodeProcess?.env?.VITE_GEMINI_API_KEY) {
+      return nodeProcess.env.VITE_GEMINI_API_KEY as string;
     }
   } catch {
     // Not in Node.js environment
