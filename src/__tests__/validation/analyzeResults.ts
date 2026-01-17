@@ -13,6 +13,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import {
   type DetailedRaceResult,
   type ValidationResultsFile,
@@ -22,12 +23,14 @@ import {
   categorizeDistance,
   categorizeFieldSize,
   categorizeScoreDiff,
-} from './types';
+} from './types.js';
 
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const RESULTS_PATH = path.join(__dirname, 'results/ai_comparison_results.json');
 
 // ============================================================================
