@@ -10,6 +10,9 @@ import type { RaceScoringResult } from '../../types/scoring';
 import type { AIRaceAnalysis, AIServiceError, AIServiceErrorCode } from './types';
 import { buildRaceAnalysisPrompt } from './prompt';
 
+// Type declaration for Node.js process (available in test/CI environments)
+declare const process: { env?: Record<string, string | undefined> } | undefined;
+
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
