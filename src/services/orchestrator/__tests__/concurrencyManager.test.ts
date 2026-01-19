@@ -192,7 +192,8 @@ describe('ConcurrencyManager', () => {
 
   describe('Adaptive Throttling', () => {
     it('should reduce max slots after errors', async () => {
-      const _initialSlots = manager.getAvailableApiSlots();
+      // Initial state - just verify we can get available slots
+      expect(manager.getAvailableApiSlots()).toBeGreaterThan(0);
 
       // Record multiple errors
       for (let i = 0; i < 10; i++) {
@@ -284,7 +285,7 @@ describe('Slot Release Behavior', () => {
 
   it('should process queue in FIFO order', async () => {
     // Fill all API slots
-    const _initialSlots = await Promise.all([
+    const initialSlots = await Promise.all([
       manager.acquireApiSlot(),
       manager.acquireApiSlot(),
       manager.acquireApiSlot(),
