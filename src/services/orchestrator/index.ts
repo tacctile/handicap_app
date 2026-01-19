@@ -16,7 +16,7 @@
 
 import type { ParsedRace } from '../../types/drf';
 import type { RaceScoringResult, HorseScoreForAI, RaceAnalysis } from '../../types/scoring';
-import { calculateAllScores } from '../../lib/scoring';
+import { calculateRaceScores } from '../../lib/scoring';
 import {
   resetConcurrencyManager,
   createConcurrencyManager,
@@ -24,7 +24,7 @@ import {
 } from './concurrencyManager';
 import { createProgressEmitter, type ProgressEmitter } from './progressEmitter';
 import { createTrackProcessor } from './trackProcessor';
-import { createResultAggregator } from './resultAggregator';
+import { createResultAggregator, type ResultAggregator } from './resultAggregator';
 import type {
   TrackJob,
   TrackResult,
@@ -89,7 +89,6 @@ export class Orchestrator {
   private progressEmitter: ProgressEmitter | null = null;
   private status: ProcessingStatus;
   private abortController: AbortController | null = null;
-  private currentJobId: string | null = null;
 
   constructor(config?: Partial<OrchestratorConfig>) {
     this.config = {
@@ -138,7 +137,6 @@ export class Orchestrator {
   ): Promise<MultiTrackResult> {
     // Generate job ID
     const jobId = this.generateJobId();
-    this.currentJobId = jobId;
 
     // Create progress emitter
     this.progressEmitter = createProgressEmitter(jobId);
@@ -249,7 +247,6 @@ export class Orchestrator {
       return aggregator.getResult();
     } finally {
       this.abortController = null;
-      this.currentJobId = null;
     }
   }
 
@@ -374,26 +371,43 @@ export class Orchestrator {
    */
   private getScoringResult(race: ParsedRace): RaceScoringResult {
     // Calculate scores using existing algorithm
-    const scores = calculateAllScores(race);
+    const getOdds = (_i: number, odds: string) => odds;
+    const isScratched = () => false;
+    const scoredHorses = calculateRaceScores(
+      race.horses,
+      race.header,
+      getOdds,
+      isScratched,
+      'fast'
+    );
 
     // Convert to HorseScoreForAI format
-    const horseScores: HorseScoreForAI[] = scores.map((score, index) => ({
-      programNumber: score.programNumber,
-      horseName: score.horseName,
-      rank: index + 1,
-      finalScore: score.finalScore,
-      confidenceTier: this.mapConfidenceTier(score.dataCompleteness?.overallGrade),
-      breakdown: {
-        speedScore: score.speedScore ?? 0,
-        classScore: score.classScore ?? 0,
-        formScore: score.formScore ?? 0,
-        paceScore: score.paceScore ?? 0,
-        connectionScore: score.connectionsScore ?? 0,
-      },
-      positiveFactors: score.positiveFactors ?? [],
-      negativeFactors: score.negativeFactors ?? [],
-      isScratched: score.isScratched ?? false,
-    }));
+    const horseScores: HorseScoreForAI[] = scoredHorses.map((scored, index) => {
+      // Extract breakdown values from the score
+      const breakdown = scored.score.breakdown;
+      const classScoreValue =
+        typeof scored.score.classScore === 'number'
+          ? scored.score.classScore
+          : (scored.score.classScore?.total ?? breakdown.speedClass.classScore);
+
+      return {
+        programNumber: scored.horse.programNumber,
+        horseName: scored.horse.horseName,
+        rank: scored.rank || index + 1,
+        finalScore: scored.score.total,
+        confidenceTier: this.mapConfidenceTier(scored.score.dataCompleteness?.overallGrade),
+        breakdown: {
+          speedScore: breakdown.speedClass.speedScore,
+          classScore: classScoreValue,
+          formScore: breakdown.form.total,
+          paceScore: breakdown.pace.total,
+          connectionScore: breakdown.connections.total,
+        },
+        positiveFactors: [],
+        negativeFactors: [],
+        isScratched: scored.score.isScratched ?? false,
+      };
+    });
 
     // Create race analysis
     const raceAnalysis: RaceAnalysis = {

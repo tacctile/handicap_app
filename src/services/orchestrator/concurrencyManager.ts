@@ -366,7 +366,7 @@ export class ConcurrencyManager {
   private queueRequest(
     type: 'track' | 'api',
     slotId: string,
-    trackCode?: string,
+    _trackCode?: string,
     timeoutMs = 30000
   ): Promise<SlotAcquisitionResult> {
     return new Promise((resolve, reject) => {
