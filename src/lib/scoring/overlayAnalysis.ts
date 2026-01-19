@@ -2,14 +2,26 @@
  * Overlay Detection and Expected Value (EV) Calculations
  *
  * This module provides comprehensive value betting analysis:
- * - Score to win probability conversion
+ * - Score to win probability conversion (using softmax)
  * - Fair odds calculation from win probability
  * - Overlay/underlay detection and classification
  * - Expected Value (EV) calculations
  * - Value classification for betting decisions
  *
  * This is the foundation for Kelly Criterion betting (Phase 3).
+ *
+ * NOTE: As of v3.7, probability conversion uses softmax function
+ * instead of linear division for better probability coherence.
  */
+
+import {
+  softmaxProbabilities,
+  probabilityToFairOdds as softmaxProbabilityToFairOdds,
+  SOFTMAX_CONFIG,
+} from './probabilityConversion';
+
+// Re-export SOFTMAX_CONFIG for external configuration access
+export { SOFTMAX_CONFIG } from './probabilityConversion';
 
 // ============================================================================
 // TYPES
@@ -144,49 +156,61 @@ export const VALUE_LABELS: Record<ValueClassification, string> = {
 // ============================================================================
 
 /**
- * Calculate field-relative win probability
+ * Calculate field-relative win probability using softmax
  *
- * This is the CORRECT way to calculate win probability:
- * Win% = Horse's Base Score / Sum of All Field Base Scores
+ * UPDATED (v3.7): Now uses softmax for better probability coherence.
  *
- * This ensures:
- * - Probabilities are relative to the actual field
- * - All horses' probabilities sum to ~100%
- * - A strong horse in a weak field has higher probability
- * - A strong horse in an elite field has lower probability
+ * Softmax provides:
+ * - Probabilities that naturally sum to 1.0
+ * - Smoother probability distributions
+ * - Better handling of score outliers (extreme favorites/longshots)
+ * - Configurable temperature for probability spread tuning
  *
- * Example (6-horse field):
- * - Horse A: 250 pts → 250/1200 = 20.8%
- * - Horse B: 230 pts → 230/1200 = 19.2%
- * - Horse C: 200 pts → 200/1200 = 16.7%
- * - Horse D: 190 pts → 190/1200 = 15.8%
- * - Horse E: 170 pts → 170/1200 = 14.2%
- * - Horse F: 160 pts → 160/1200 = 13.3%
- * Total: 1200 pts → 100%
+ * The softmax formula (with numerical stability):
+ * P(i) = e^((score_i - max_score) / temperature) / Σ e^((score_j - max_score) / temperature)
  *
- * @param horseBaseScore - This horse's base score (0-323)
+ * Example (6-horse field with temperature=1.0):
+ * Scores: [250, 230, 200, 190, 170, 160]
+ * Softmax produces probabilities that sum to 100% with larger
+ * gaps between high/low scorers than linear division.
+ *
+ * @param horseBaseScore - This horse's base score (0-328)
  * @param allFieldBaseScores - Array of all non-scratched horses' base scores
+ * @param temperature - Optional temperature parameter (default from SOFTMAX_CONFIG)
  * @returns Win probability as percentage (0-100)
  */
 export function calculateFieldRelativeWinProbability(
   horseBaseScore: number,
-  allFieldBaseScores: number[]
+  allFieldBaseScores: number[],
+  temperature: number = SOFTMAX_CONFIG.temperature
 ): number {
   // Handle invalid inputs
   if (!Number.isFinite(horseBaseScore) || horseBaseScore <= 0) return 2;
   if (!allFieldBaseScores || allFieldBaseScores.length === 0) return 2;
 
-  // Sum all field scores
-  const totalFieldScore = allFieldBaseScores.reduce((sum, score) => sum + (score || 0), 0);
+  // Find this horse's index in the field
+  const index = allFieldBaseScores.indexOf(horseBaseScore);
 
-  // Avoid division by zero
-  if (totalFieldScore <= 0) return 2;
+  // If horse not in field array, calculate with extended field
+  const scoresToUse = index >= 0 ? allFieldBaseScores : [...allFieldBaseScores, horseBaseScore];
+  const scoreIndex = index >= 0 ? index : scoresToUse.length - 1;
 
-  // Calculate win probability
-  const winProbability = (horseBaseScore / totalFieldScore) * 100;
+  // Calculate softmax probabilities for entire field
+  const probabilities = softmaxProbabilities(scoresToUse, temperature);
+
+  // Get this horse's probability
+  const probability = probabilities[scoreIndex];
+
+  // Handle edge cases
+  if (probability === undefined || !Number.isFinite(probability)) {
+    return 2; // Minimum probability fallback
+  }
+
+  // Convert to percentage
+  const winProbability = probability * 100;
 
   // Clamp to realistic bounds (2% to 85%)
-  // Even worst horse has some chance, best horse rarely over 85%
+  // Post-softmax safety clamp for display consistency
   return Math.max(2, Math.min(85, winProbability));
 }
 
@@ -219,6 +243,10 @@ export function scoreToWinProbability(score: number): number {
  * Convert win probability to fair decimal odds
  * Formula: Fair Odds = 1 / Win Probability (as decimal)
  *
+ * NOTE: This function takes probability as percentage (0-100).
+ * For probability as decimal (0-1), use probabilityToFairOdds from
+ * probabilityConversion module.
+ *
  * Examples:
  * - 50% probability → 2.0 (even money, 1-1)
  * - 25% probability → 4.0 (3-1)
@@ -232,16 +260,8 @@ export function probabilityToDecimalOdds(probability: number): number {
   // Probability as decimal (e.g., 25% → 0.25)
   const probDecimal = probability / 100;
 
-  // Fair decimal odds = 1 / probability
-  if (probDecimal <= 0) return 100; // Cap at 99-1
-  if (probDecimal >= 1) return 1.01; // Near even money
-
-  const result = Math.round((1 / probDecimal) * 100) / 100;
-
-  // Final NaN check on result
-  if (!Number.isFinite(result)) return 50; // Default to 49-1
-
-  return result;
+  // Use softmax module's helper for consistency
+  return softmaxProbabilityToFairOdds(probDecimal);
 }
 
 /**
