@@ -39,8 +39,23 @@ export const SOFTMAX_CONFIG = {
 
 /**
  * Debug flag - set DEBUG_PROBABILITY env var to enable logging
+ * Safe for browser environments where process is not defined
  */
-const DEBUG_ENABLED = typeof process !== 'undefined' && process.env?.DEBUG_PROBABILITY === 'true';
+const DEBUG_ENABLED =
+  typeof globalThis !== 'undefined' &&
+  typeof (globalThis as { process?: { env?: Record<string, string> } }).process !== 'undefined' &&
+  (globalThis as { process?: { env?: Record<string, string> } }).process?.env?.DEBUG_PROBABILITY ===
+    'true';
+
+/**
+ * Type for softmax configuration values (allows number types for overrides)
+ */
+export type SoftmaxConfigType = {
+  temperature: number;
+  minProbability: number;
+  maxProbability: number;
+  scoreScale: number;
+};
 
 // ============================================================================
 // CORE SOFTMAX FUNCTIONS
@@ -444,9 +459,7 @@ export function getSoftmaxConfig(): typeof SOFTMAX_CONFIG {
  * @param overrides - Values to override
  * @returns New config object
  */
-export function createSoftmaxConfig(
-  overrides: Partial<typeof SOFTMAX_CONFIG>
-): typeof SOFTMAX_CONFIG {
+export function createSoftmaxConfig(overrides: Partial<SoftmaxConfigType>): SoftmaxConfigType {
   return {
     ...SOFTMAX_CONFIG,
     ...overrides,

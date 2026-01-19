@@ -106,8 +106,10 @@ describe('Softmax Integration with Overlay Analysis', () => {
       // Higher temperature = flatter distribution
       const probHighTemp = calculateFieldRelativeWinProbability(200, scores, 2.0);
 
-      // Default temperature should work
-      const _probDefault = calculateFieldRelativeWinProbability(200, scores);
+      // Default temperature should work and produce valid result
+      const probDefault = calculateFieldRelativeWinProbability(200, scores);
+      expect(probDefault).toBeGreaterThanOrEqual(2);
+      expect(probDefault).toBeLessThanOrEqual(85);
 
       // Low temp should give higher probability to favorite than high temp
       // (After clamping, this relationship should still generally hold)
