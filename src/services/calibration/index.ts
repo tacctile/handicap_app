@@ -31,6 +31,19 @@
  *   // Dataset management
  *   isCalibrationReady,
  *   getEntriesByProbabilityBucket,
+ *
+ *   // Platt scaling calibration (NEW)
+ *   calibrationManager,
+ *   type PlattParameters,
+ *   fitPlattParameters,
+ *   calibrateProbability,
+ *   calibrateField,
+ *
+ *   // Calibration metrics (NEW)
+ *   calculateBrierScore,
+ *   calculateLogLoss,
+ *   calculateCalibrationError,
+ *   generateReliabilityDiagram,
  * } from '@/services/calibration';
  * ```
  */
@@ -203,3 +216,67 @@ export {
   CALIBRATION_THRESHOLD,
   MINIMUM_CALIBRATION_RACES,
 } from './datasetManager';
+
+// ============================================================================
+// PLATT SCALING CALIBRATION
+// ============================================================================
+
+export {
+  // Core Platt scaling
+  type PlattParameters,
+  type StorablePlattParameters,
+  logit,
+  sigmoid,
+  calibrateProbability,
+  calibrateField,
+  createIdentityParameters,
+  isIdentityParameters,
+  serializePlattParameters,
+  deserializePlattParameters,
+  validatePlattParameters,
+  getCalibrationBounds,
+} from './plattScaling';
+
+export {
+  // Parameter fitting
+  type FittingConfig,
+  type FittingResult,
+  type CrossValidationResult,
+  DEFAULT_FITTING_CONFIG as DEFAULT_PLATT_FITTING_CONFIG,
+  calculateGradients,
+  fitPlattGradientDescent,
+  fitPlattParameters,
+  crossValidatePlatt,
+  fitPlattGridSearch,
+  evaluateUncalibrated,
+} from './plattFitter';
+
+export {
+  // Calibration metrics
+  calculateBrierScore,
+  calculateBrierSkillScore,
+  calculateLogLoss,
+  calculateCalibrationError,
+  calculateMaxCalibrationError,
+  type ReliabilityDiagramPoint,
+  generateReliabilityDiagram,
+  type ComprehensiveMetrics,
+  calculateAllMetrics,
+  calculateCalibrationImprovement,
+  BRIER_SCORE_REFERENCE,
+  interpretBrierScore,
+  interpretCalibrationError,
+} from './metrics';
+
+export {
+  // Calibration manager
+  CalibrationManager,
+  calibrationManager,
+  type CalibrationManagerConfig,
+  type CalibrationStatus,
+  type CalibrationHistoryEntry,
+  DEFAULT_CALIBRATION_CONFIG,
+  savePlattParameters,
+  getPlattParameters,
+  saveCalibrationHistory,
+} from './calibrationManager';
