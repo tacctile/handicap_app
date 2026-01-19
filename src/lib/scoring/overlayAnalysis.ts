@@ -7,11 +7,15 @@
  * - Overlay/underlay detection and classification
  * - Expected Value (EV) calculations
  * - Value classification for betting decisions
+ * - Market probability normalization (removes takeout/overround)
  *
  * This is the foundation for Kelly Criterion betting (Phase 3).
  *
  * NOTE: As of v3.7, probability conversion uses softmax function
  * instead of linear division for better probability coherence.
+ *
+ * NOTE: As of v3.8, market probability normalization removes ~17% takeout
+ * from odds-implied probabilities for accurate overlay detection.
  */
 
 import {
@@ -20,8 +24,20 @@ import {
   SOFTMAX_CONFIG,
 } from './probabilityConversion';
 
+import {
+  MARKET_CONFIG,
+  oddsToImpliedProbability,
+  normalizeMarketProbabilities,
+  calculateOverround,
+} from './marketNormalization';
+
+import { parseOddsString } from './oddsParser';
+
 // Re-export SOFTMAX_CONFIG for external configuration access
 export { SOFTMAX_CONFIG } from './probabilityConversion';
+
+// Re-export MARKET_CONFIG for external configuration access
+export { MARKET_CONFIG } from './marketNormalization';
 
 // ============================================================================
 // TYPES
@@ -52,6 +68,20 @@ export interface OverlayAnalysis {
   overlayDescription: string;
   /** Betting recommendation based on value */
   recommendation: BettingRecommendation;
+
+  // New fields for normalized overlay (v3.8)
+  /** Normalized market probability (with takeout removed, sums to 1.0) */
+  normalizedMarketProb?: number;
+  /** Raw implied probability from odds (includes takeout) */
+  rawImpliedProb?: number;
+  /** Field overround (sum of implied probs, typically 1.15-1.25) */
+  overround?: number;
+  /** True overlay using normalized market prob (new primary metric) */
+  trueOverlayPercent?: number;
+  /** Raw overlay using implied prob (old method, kept for comparison) */
+  rawOverlayPercent?: number;
+  /** Value classification based on normalized overlay */
+  valueClassification?: NormalizedValueClass;
 }
 
 export type ValueClassification =
@@ -61,6 +91,20 @@ export type ValueClassification =
   | 'slight_overlay' // 10-24% overlay - playable
   | 'fair_price' // -10% to +9% - no edge
   | 'underlay'; // <-10% - avoid
+
+/**
+ * Normalized value classification (with takeout removed)
+ *
+ * Thresholds are tighter because we've removed the ~17% vig inflation.
+ * These map to the same semantic categories as ValueClassification
+ * but use different numeric thresholds.
+ */
+export type NormalizedValueClass =
+  | 'STRONG_VALUE' // 15%+ true overlay - strong betting opportunity
+  | 'MODERATE_VALUE' // 8-14% true overlay - good value
+  | 'SLIGHT_VALUE' // 3-7% true overlay - playable
+  | 'NEUTRAL' // -3% to +2% - fair price
+  | 'UNDERLAY'; // < -3% - avoid
 
 export interface BettingRecommendation {
   action: 'bet_heavily' | 'bet_standard' | 'bet_small' | 'pass' | 'avoid';
@@ -101,6 +145,26 @@ export const VALUE_THRESHOLDS = {
   slightOverlay: 10, // 10-19% overlay - marginal edge
   fairPrice: -20, // -20% to +19% is FAIR (within tolerance)
   // Below -20% is UNDERLAY (bad value)
+} as const;
+
+/**
+ * Normalized value thresholds (with takeout removed)
+ *
+ * With normalized overlay, thresholds are tighter because we've
+ * removed the ~17% vig inflation from the market probabilities.
+ *
+ * Old (raw) → New (normalized):
+ * - Strong: 20% → 15%
+ * - Moderate: 10% → 8%
+ * - Slight: 5% → 3%
+ */
+export const NORMALIZED_VALUE_THRESHOLDS = {
+  strongOverlay: 15, // 15%+ true overlay - strong betting opportunity
+  moderateOverlay: 8, // 8-14% true overlay - good value
+  slightOverlay: 3, // 3-7% true overlay - playable
+  neutralMin: -3, // -3% to +2% - fair price
+  neutralMax: 3, // upper bound of neutral zone
+  // Below -3% is UNDERLAY (avoid)
 } as const;
 
 /**
@@ -422,6 +486,63 @@ export function calculateOverlayPercent(fairOdds: number, actualOdds: number): n
 }
 
 /**
+ * Calculate TRUE overlay percentage using normalized market probabilities.
+ *
+ * This removes the takeout/overround from the market probability before
+ * comparing to our model probability, giving a more accurate overlay.
+ *
+ * Formula: trueOverlay = (modelProb - normalizedMarketProb) / normalizedMarketProb × 100
+ *
+ * @param modelProb - Our model's win probability (0-1)
+ * @param normalizedMarketProb - Market probability with takeout removed (0-1)
+ * @returns True overlay percentage
+ *
+ * @example
+ * // Model says 25%, normalized market says 17%
+ * calculateTrueOverlayPercent(0.25, 0.17)  // Returns 47.1%
+ *
+ * // Model says 20%, normalized market says 25%
+ * calculateTrueOverlayPercent(0.20, 0.25)  // Returns -20% (underlay)
+ */
+export function calculateTrueOverlayPercent(
+  modelProb: number,
+  normalizedMarketProb: number
+): number {
+  if (!Number.isFinite(modelProb) || !Number.isFinite(normalizedMarketProb)) {
+    return 0;
+  }
+
+  if (normalizedMarketProb <= 0.001) {
+    return 0; // Avoid division by zero
+  }
+
+  const trueOverlay = ((modelProb - normalizedMarketProb) / normalizedMarketProb) * 100;
+  return Math.round(trueOverlay * 10) / 10;
+}
+
+/**
+ * Calculate RAW overlay percentage using implied probability (includes takeout).
+ *
+ * This is the old method, kept for comparison and backward compatibility.
+ *
+ * @param modelProb - Our model's win probability (0-1)
+ * @param impliedProb - Raw implied probability from odds (0-1)
+ * @returns Raw overlay percentage
+ */
+export function calculateRawOverlayPercent(modelProb: number, impliedProb: number): number {
+  if (!Number.isFinite(modelProb) || !Number.isFinite(impliedProb)) {
+    return 0;
+  }
+
+  if (impliedProb <= 0.001) {
+    return 0; // Avoid division by zero
+  }
+
+  const rawOverlay = ((modelProb - impliedProb) / impliedProb) * 100;
+  return Math.round(rawOverlay * 10) / 10;
+}
+
+/**
  * Classify value based on overlay percentage
  */
 export function classifyValue(overlayPercent: number): ValueClassification {
@@ -431,6 +552,42 @@ export function classifyValue(overlayPercent: number): ValueClassification {
   if (overlayPercent >= VALUE_THRESHOLDS.slightOverlay) return 'slight_overlay';
   if (overlayPercent >= VALUE_THRESHOLDS.fairPrice) return 'fair_price';
   return 'underlay';
+}
+
+/**
+ * Classify value based on TRUE overlay (normalized, takeout removed)
+ *
+ * Uses tighter thresholds because the ~17% vig has been removed
+ * from the market probability denominator.
+ *
+ * @param trueOverlay - True overlay percentage (model prob vs normalized market prob)
+ * @returns NormalizedValueClass classification
+ *
+ * @example
+ * classifyNormalizedValue(18)   // Returns 'STRONG_VALUE'
+ * classifyNormalizedValue(10)   // Returns 'MODERATE_VALUE'
+ * classifyNormalizedValue(5)    // Returns 'SLIGHT_VALUE'
+ * classifyNormalizedValue(0)    // Returns 'NEUTRAL'
+ * classifyNormalizedValue(-5)   // Returns 'UNDERLAY'
+ */
+export function classifyNormalizedValue(trueOverlay: number): NormalizedValueClass {
+  if (!Number.isFinite(trueOverlay)) {
+    return 'NEUTRAL';
+  }
+
+  if (trueOverlay >= NORMALIZED_VALUE_THRESHOLDS.strongOverlay) {
+    return 'STRONG_VALUE';
+  }
+  if (trueOverlay >= NORMALIZED_VALUE_THRESHOLDS.moderateOverlay) {
+    return 'MODERATE_VALUE';
+  }
+  if (trueOverlay >= NORMALIZED_VALUE_THRESHOLDS.slightOverlay) {
+    return 'SLIGHT_VALUE';
+  }
+  if (trueOverlay >= NORMALIZED_VALUE_THRESHOLDS.neutralMin) {
+    return 'NEUTRAL';
+  }
+  return 'UNDERLAY';
 }
 
 /**
@@ -555,17 +712,22 @@ export function generateOverlayDescription(
  * 3. Compare fair odds to actual odds
  * 4. Classify: Overlay (>20%), Fair (±20%), Underlay (<-20%)
  *
+ * NEW (v3.8): Also calculates normalized overlay using market probability
+ * with takeout removed for more accurate value detection.
+ *
  * @param horseBaseScore - Horse's base score (0-328)
  * @param allFieldBaseScores - Array of all non-scratched horses' base scores
  * @param actualOdds - Current odds string (e.g., "5-1", "8-1")
- * @returns Complete overlay analysis
+ * @param fieldOdds - Optional array of all field odds for normalization
+ * @returns Complete overlay analysis with normalized metrics
  */
 export function analyzeOverlayWithField(
   horseBaseScore: number,
   allFieldBaseScores: number[],
-  actualOdds: string
+  actualOdds: string,
+  fieldOdds?: string[]
 ): OverlayAnalysis {
-  // Step 1: Calculate field-relative win probability
+  // Step 1: Calculate field-relative win probability (our model)
   const winProbability = calculateFieldRelativeWinProbability(horseBaseScore, allFieldBaseScores);
 
   // Step 2: Calculate fair odds from probability
@@ -574,12 +736,12 @@ export function analyzeOverlayWithField(
   const fairOddsMoneyline = decimalToMoneyline(fairOddsDecimal);
 
   // Step 3: Parse actual odds
-  const actualOddsDecimal = parseOddsToDecimal(actualOdds);
+  const actualOddsDecimal = parseOddsString(actualOdds);
 
-  // Step 4: Calculate overlay percentage
+  // Step 4: Calculate overlay percentage (legacy method)
   const overlayPercent = calculateOverlayPercent(fairOddsDecimal, actualOddsDecimal);
 
-  // Step 5: Classify value
+  // Step 5: Classify value (legacy)
   const valueClass = classifyValue(overlayPercent);
 
   // Step 6: Calculate expected value
@@ -597,19 +759,81 @@ export function analyzeOverlayWithField(
     actualOdds
   );
 
+  // NEW (v3.8): Calculate normalized overlay metrics
+  // Convert model probability from percentage to decimal (0-1)
+  const modelProbDecimal = winProbability / 100;
+
+  // Calculate raw implied probability from this horse's odds
+  const rawImpliedProb = oddsToImpliedProbability(actualOddsDecimal);
+
+  // Calculate normalized market probability (if field odds provided)
+  let normalizedMarketProb = rawImpliedProb;
+  let overround = 1.0;
+  let trueOverlayPercent = overlayPercent;
+  let rawOverlayPercent = overlayPercent;
+
+  if (fieldOdds && fieldOdds.length > 0 && MARKET_CONFIG.useNormalizedOverlay) {
+    // Parse all field odds to decimal
+    const fieldDecimalOdds = fieldOdds.map(parseOddsString);
+
+    // Calculate implied probabilities for all horses
+    const fieldImpliedProbs = fieldDecimalOdds.map(oddsToImpliedProbability);
+
+    // Calculate overround
+    overround = calculateOverround(fieldImpliedProbs);
+
+    // Normalize probabilities (removes takeout)
+    const normalizedProbs = normalizeMarketProbabilities(fieldImpliedProbs);
+
+    // Find this horse's index (by matching odds)
+    const horseIndex = fieldOdds.indexOf(actualOdds);
+
+    if (horseIndex >= 0 && normalizedProbs[horseIndex] !== undefined) {
+      normalizedMarketProb = normalizedProbs[horseIndex];
+    } else {
+      // Fallback: normalize this horse's implied prob by the overround
+      normalizedMarketProb = overround > 0 ? rawImpliedProb / overround : rawImpliedProb;
+    }
+
+    // Calculate true overlay (using normalized market prob)
+    trueOverlayPercent = calculateTrueOverlayPercent(modelProbDecimal, normalizedMarketProb);
+
+    // Calculate raw overlay (for comparison)
+    rawOverlayPercent = calculateRawOverlayPercent(modelProbDecimal, rawImpliedProb);
+  } else {
+    // No field odds provided - estimate using this horse's odds only
+    // Use default takeout to approximate normalization
+    const estimatedOverround = 1 + MARKET_CONFIG.defaultTakeout;
+    normalizedMarketProb = rawImpliedProb / estimatedOverround;
+    overround = estimatedOverround;
+    trueOverlayPercent = calculateTrueOverlayPercent(modelProbDecimal, normalizedMarketProb);
+    rawOverlayPercent = calculateRawOverlayPercent(modelProbDecimal, rawImpliedProb);
+  }
+
+  // Classify using normalized overlay
+  const valueClassification = classifyNormalizedValue(trueOverlayPercent);
+
   return {
     fairOddsDecimal,
     fairOddsDisplay,
     fairOddsMoneyline,
     winProbability,
     actualOddsDecimal,
-    overlayPercent,
+    // For backward compatibility, overlayPercent uses trueOverlay when normalized
+    overlayPercent: MARKET_CONFIG.useNormalizedOverlay ? trueOverlayPercent : overlayPercent,
     valueClass,
     evPerDollar,
     evPercent,
     isPositiveEV: evPerDollar > 0,
     overlayDescription,
     recommendation,
+    // New normalized fields
+    normalizedMarketProb,
+    rawImpliedProb,
+    overround,
+    trueOverlayPercent,
+    rawOverlayPercent,
+    valueClassification,
   };
 }
 
@@ -632,8 +856,8 @@ export function analyzeOverlay(score: number, actualOdds: string): OverlayAnalys
   const fairOddsDisplay = decimalToFractionalOdds(fairOddsDecimal);
   const fairOddsMoneyline = decimalToMoneyline(fairOddsDecimal);
 
-  // Step 3: Parse actual odds
-  const actualOddsDecimal = parseOddsToDecimal(actualOdds);
+  // Step 3: Parse actual odds (use new oddsParser module)
+  const actualOddsDecimal = parseOddsString(actualOdds);
 
   // Step 4: Calculate overlay percentage
   const overlayPercent = calculateOverlayPercent(fairOddsDecimal, actualOddsDecimal);
