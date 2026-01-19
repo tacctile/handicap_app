@@ -29,7 +29,7 @@ import {
   VALUE_CLASS_COLORS,
   VALUE_CLASS_ICONS,
   EV_CLASS_LABELS,
-  type ValueClassification,
+  type PipelineValueClass,
   type EVClassification,
 } from './overlayConfig';
 import type { HorseScore } from './index';
@@ -103,7 +103,7 @@ export interface OverlayHorseOutput {
 
   // Value classification
   /** Value classification based on normalized overlay */
-  valueClassification: ValueClassification;
+  valueClassification: PipelineValueClass;
   /** Human-readable label for value class */
   valueLabel: string;
   /** Color for value class display */
@@ -244,7 +244,7 @@ export function classifyEV(ev: number): EVClassification {
  * classifyTrueOverlay(0)    // Returns 'NEUTRAL'
  * classifyTrueOverlay(-5)   // Returns 'UNDERLAY'
  */
-export function classifyTrueOverlay(trueOverlay: number): ValueClassification {
+export function classifyTrueOverlay(trueOverlay: number): PipelineValueClass {
   if (!Number.isFinite(trueOverlay)) {
     return 'NEUTRAL';
   }
@@ -813,7 +813,7 @@ export interface CalibrationPrediction {
   /** Tier classification */
   tier: string;
   /** Value classification */
-  valueClassification: ValueClassification;
+  valueClassification: PipelineValueClass;
   /** True overlay percentage */
   trueOverlayPercent: number;
   /** Expected value */
@@ -891,7 +891,7 @@ export async function logForCalibration(
 /**
  * Get value classification details
  */
-export function getValueClassDetails(classification: ValueClassification): {
+export function getValueClassDetails(classification: PipelineValueClass): {
   label: string;
   color: string;
   icon: string;

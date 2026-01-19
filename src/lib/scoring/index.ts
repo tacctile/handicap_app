@@ -1962,7 +1962,7 @@ export {
   validateOverlayConfig,
   // Types
   type OverlayConfigType,
-  type ValueClassification,
+  type PipelineValueClass,
   type EVClassification,
 } from './overlayConfig';
 

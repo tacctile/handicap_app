@@ -232,9 +232,9 @@ export const EV_CLASS_COLORS = {
 export type OverlayConfigType = typeof OVERLAY_CONFIG;
 
 /**
- * Value classification types
+ * Pipeline value classification types (distinct from overlayAnalysis.ValueClassification)
  */
-export type ValueClassification =
+export type PipelineValueClass =
   | 'STRONG_VALUE'
   | 'MODERATE_VALUE'
   | 'SLIGHT_VALUE'
