@@ -382,23 +382,32 @@ export class Orchestrator {
     );
 
     // Convert to HorseScoreForAI format
-    const horseScores: HorseScoreForAI[] = scoredHorses.map((scored, index) => ({
-      programNumber: scored.horse.programNumber,
-      horseName: scored.horse.horseName,
-      rank: scored.rank || index + 1,
-      finalScore: scored.score.total,
-      confidenceTier: this.mapConfidenceTier(scored.score.dataCompleteness?.overallGrade),
-      breakdown: {
-        speedScore: scored.score.speedScore ?? 0,
-        classScore: scored.score.classScore ?? 0,
-        formScore: scored.score.formScore ?? 0,
-        paceScore: scored.score.paceScore ?? 0,
-        connectionScore: scored.score.connectionsScore ?? 0,
-      },
-      positiveFactors: scored.score.positiveFactors ?? [],
-      negativeFactors: scored.score.negativeFactors ?? [],
-      isScratched: scored.score.isScratched ?? false,
-    }));
+    const horseScores: HorseScoreForAI[] = scoredHorses.map((scored, index) => {
+      // Extract breakdown values from the score
+      const breakdown = scored.score.breakdown;
+      const classScoreValue =
+        typeof scored.score.classScore === 'number'
+          ? scored.score.classScore
+          : (scored.score.classScore?.total ?? breakdown.speedClass.classScore);
+
+      return {
+        programNumber: scored.horse.programNumber,
+        horseName: scored.horse.horseName,
+        rank: scored.rank || index + 1,
+        finalScore: scored.score.total,
+        confidenceTier: this.mapConfidenceTier(scored.score.dataCompleteness?.overallGrade),
+        breakdown: {
+          speedScore: breakdown.speedClass.speedScore,
+          classScore: classScoreValue,
+          formScore: breakdown.form.total,
+          paceScore: breakdown.pace.total,
+          connectionScore: breakdown.connections.total,
+        },
+        positiveFactors: [],
+        negativeFactors: [],
+        isScratched: scored.score.isScratched ?? false,
+      };
+    });
 
     // Create race analysis
     const raceAnalysis: RaceAnalysis = {
