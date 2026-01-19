@@ -1941,3 +1941,62 @@ export {
   type KeyRaceMatch,
   type HorseRanking,
 } from './keyRaceIndex';
+
+// Overlay Configuration exports (unified config for overlay pipeline)
+export {
+  // Main config
+  OVERLAY_CONFIG,
+  // Derived constants
+  MAX_OVERLAY_ADJUSTMENT_POSITIVE,
+  MAX_OVERLAY_ADJUSTMENT_NEGATIVE,
+  TOTAL_OVERLAY_CAP,
+  // Labels and colors
+  VALUE_CLASS_LABELS,
+  VALUE_CLASS_COLORS,
+  VALUE_CLASS_ICONS,
+  EV_CLASS_LABELS,
+  EV_CLASS_COLORS,
+  // Utility functions
+  getOverlayConfig,
+  createOverlayConfig,
+  validateOverlayConfig,
+  // Types
+  type OverlayConfigType,
+  type ValueClassification,
+  type EVClassification,
+} from './overlayConfig';
+
+// Overlay Pipeline exports (unified overlay calculation pipeline)
+export {
+  // Main pipeline function
+  calculateOverlayPipeline,
+  // Integration with scoring engine
+  enhanceScoringWithOverlay,
+  // EV calculation
+  calculateExpectedValue,
+  classifyEV,
+  // Value classification (renamed to avoid conflict with overlayAnalysis.classifyValue)
+  classifyTrueOverlay,
+  // Overlay adjustment
+  calculateOverlayAdjustment,
+  // Overlay calculations
+  calculateTrueOverlay,
+  calculateRawOverlay,
+  // Calibration logging
+  createCalibrationRecords,
+  logForCalibration,
+  // Utility functions
+  getValueClassDetails,
+  getEVClassDetails,
+  formatOverlayPercent as formatTrueOverlayPercent,
+  formatExpectedValue,
+  isValueBet,
+  isUnderlay,
+  // Types
+  type OverlayPipelineInput,
+  type OverlayHorseInput,
+  type OverlayHorseOutput,
+  type OverlayPipelineOutput,
+  type EnhancedScoringResult,
+  type CalibrationPrediction,
+} from './overlayPipeline';
