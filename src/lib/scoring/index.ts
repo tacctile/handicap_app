@@ -2000,3 +2000,58 @@ export {
   type EnhancedScoringResult,
   type CalibrationPrediction,
 } from './overlayPipeline';
+
+// Probability Conversion exports (softmax-based probability calculation)
+export {
+  // Core softmax functions
+  softmaxProbabilities,
+  scoreToProbability as softmaxScoreToProbability,
+  probabilityToFairOdds,
+  fairOddsToImpliedProbability,
+  // Field context probability
+  calculateWinProbabilitySoftmax,
+  // Validation
+  validateProbabilities,
+  // Calibration integration
+  setCalibrationManagerGetter,
+  isCalibrationActive,
+  // Config utilities
+  getSoftmaxConfig,
+  createSoftmaxConfig,
+  // Constants
+  SOFTMAX_CONFIG,
+  // Types
+  type SoftmaxConfigType,
+} from './probabilityConversion';
+
+// Market Normalization exports (odds and market probability utilities)
+export {
+  // Odds conversion
+  fractionalToDecimalOdds,
+  americanToDecimalOdds,
+  decimalToFractional,
+  decimalToAmerican,
+  // Implied probability
+  oddsToImpliedProbability,
+  calculateOverround,
+  calculateTakeoutPercent,
+  // Normalization
+  normalizeMarketProbabilities,
+  oddsArrayToNormalizedProbabilities,
+  normalizeFieldOdds,
+  // Validation
+  validateMarketOdds,
+  // Morning line / tote parsing
+  parseMorningLineOdds,
+  parseToteOdds,
+  // Config utilities
+  getMarketConfig,
+  createMarketConfig,
+  // Constants
+  MARKET_CONFIG,
+  // Types
+  type MarketConfigType,
+  type NormalizedFieldResult,
+  type OddsWithSource,
+  type OddsSource,
+} from './marketNormalization';

@@ -280,3 +280,17 @@ export {
   getPlattParameters,
   saveCalibrationHistory,
 } from './calibrationManager';
+
+// ============================================================================
+// AUTO-LOGGING (Background calibration data collection)
+// ============================================================================
+
+export {
+  // Main functions
+  autoLogCalibrationData,
+  scheduleAutoLog,
+  getCalibrationProgress,
+  // Types
+  type AutoLogResult,
+  type AutoLogOptions,
+} from './autoLogger';
