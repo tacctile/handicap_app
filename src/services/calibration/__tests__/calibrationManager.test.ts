@@ -56,8 +56,9 @@ describe('CalibrationManager', () => {
     vi.mocked(getDatasetStats).mockResolvedValue({
       totalRaces: 100,
       totalEntries: 800,
-      completedRaces: 100,
-      pendingRaces: 0,
+      dateRange: { start: '2025-01-01', end: '2025-06-01' },
+      trackCodes: ['SAR', 'AQU'],
+      lastUpdated: new Date(),
     });
 
     // Mock openDatabase to reject (tests will skip storage operations)
@@ -127,8 +128,9 @@ describe('CalibrationManager', () => {
       vi.mocked(getDatasetStats).mockResolvedValue({
         totalRaces: 250,
         totalEntries: 2000,
-        completedRaces: 250,
-        pendingRaces: 0,
+        dateRange: { start: '2025-01-01', end: '2025-06-01' },
+        trackCodes: ['SAR', 'AQU'],
+        lastUpdated: new Date(),
       });
 
       const status = await manager.getStatus();
@@ -145,8 +147,9 @@ describe('CalibrationManager', () => {
       vi.mocked(getDatasetStats).mockResolvedValue({
         totalRaces: 1000,
         totalEntries: 8000,
-        completedRaces: 1000,
-        pendingRaces: 0,
+        dateRange: { start: '2025-01-01', end: '2025-12-01' },
+        trackCodes: ['SAR', 'AQU', 'BEL'],
+        lastUpdated: new Date(),
       });
 
       const status = await manager.getStatus();
@@ -245,19 +248,27 @@ describe('CalibrationManager', () => {
 
 /**
  * Generate mock historical entries for testing
+ * Returns HistoricalEntry-compatible objects
  */
-function generateMockEntries(count: number): Array<{
-  id: string;
-  predictedProbability: number;
-  wasWinner: boolean;
-}> {
+function generateMockEntries(count: number) {
   const entries = [];
   for (let i = 0; i < count; i++) {
     const prob = Math.random() * 0.8 + 0.1; // 0.1 to 0.9
+    const isWinner = Math.random() < prob + 0.05; // Slightly biased
+    const finishPosition = isWinner ? 1 : Math.floor(Math.random() * 10) + 2;
     entries.push({
-      id: `entry-${i}`,
+      programNumber: (i % 12) + 1,
+      finishPosition,
       predictedProbability: prob,
-      wasWinner: Math.random() < prob + 0.05, // Slightly biased
+      impliedProbability: prob * 0.9, // Slightly different
+      finalOdds: 1 / prob - 1,
+      baseScore: Math.floor(prob * 300),
+      finalScore: Math.floor(prob * 328),
+      tier: prob > 0.5 ? 1 : prob > 0.3 ? 2 : 3,
+      wasWinner: isWinner,
+      wasPlace: finishPosition <= 2,
+      wasShow: finishPosition <= 3,
+      horseName: `Horse ${i}`,
     });
   }
   return entries;

@@ -438,9 +438,11 @@ export class CalibrationManager {
     const needsRecalibration =
       this.isReady &&
       (newRacesSinceCalibration >= this.config.recalibrationThreshold ||
-        (this.params &&
+        Boolean(
+          this.params &&
           Date.now() - this.params.fittedAt.getTime() >
-            this.config.maxRecalibrationAgeDays * 24 * 60 * 60 * 1000));
+            this.config.maxRecalibrationAgeDays * 24 * 60 * 60 * 1000
+        ));
 
     return {
       isReady: this.isReady,
@@ -552,8 +554,8 @@ export class CalibrationManager {
       const store = tx.objectStore(STORES.CALIBRATION_META);
 
       await new Promise<void>((resolve, reject) => {
-        const _request1 = store.delete(STORAGE_KEY_PARAMETERS);
-        const _request2 = store.delete(STORAGE_KEY_LAST_RACE_COUNT);
+        store.delete(STORAGE_KEY_PARAMETERS);
+        store.delete(STORAGE_KEY_LAST_RACE_COUNT);
 
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
