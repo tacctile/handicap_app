@@ -21,37 +21,64 @@ vi.mock('../../scoring/probabilityConversion', () => ({
 
 describe('betRecommender', () => {
   // Create mock pipeline output for testing
-  function createMockPipelineOutput(horses: Partial<OverlayHorseOutput>[]): OverlayPipelineOutput {
-    const mockHorses = horses.map((h, i) => ({
-      programNumber: h.programNumber ?? i + 1,
-      horseName: h.horseName ?? `Horse ${i + 1}`,
-      baseScore: h.baseScore ?? 160,
-      modelProbability: h.modelProbability ?? 0.2,
-      actualOdds: h.actualOdds ?? 5.0,
-      expectedValue: h.expectedValue ?? 0.1,
-      trueOverlayPercent: h.trueOverlayPercent ?? 10,
-      tier: h.tier ?? 'TIER_2',
-      calibratedProbability: h.calibratedProbability ?? 0.2,
-      betRating: h.betRating ?? 'VALUE',
-      impliedOdds: h.impliedOdds ?? 5.0,
-      edgeAnalysis: h.edgeAnalysis ?? {
-        hasPositiveEdge: true,
-        edgePercent: 10,
-        edgeSource: 'Model',
-        confidence: 'MEDIUM',
-      },
-    })) as OverlayHorseOutput[];
+  function createMockPipelineOutput(
+    horses: Array<{
+      programNumber?: number;
+      horseName?: string;
+      baseScore?: number;
+      modelProbability?: number;
+      actualOdds?: number;
+      expectedValue?: number;
+      trueOverlayPercent?: number;
+    }>
+  ): OverlayPipelineOutput {
+    const mockHorses = horses.map((h, i) => {
+      const modelProb = h.modelProbability ?? 0.2;
+      const actualOdds = h.actualOdds ?? 5.0;
+      const expectedValue = h.expectedValue ?? 0.1;
+      const trueOverlay = h.trueOverlayPercent ?? 10;
+
+      return {
+        programNumber: h.programNumber ?? i + 1,
+        horseName: h.horseName ?? `Horse ${i + 1}`,
+        baseScore: h.baseScore ?? 160,
+        modelProbability: modelProb,
+        rawImpliedProbability: 1 / actualOdds,
+        normalizedMarketProbability: 1 / actualOdds / 1.2,
+        trueOverlayPercent: trueOverlay,
+        rawOverlayPercent: trueOverlay * 0.8,
+        fairOdds: 1 / modelProb,
+        fairOddsDisplay: `${Math.round(1 / modelProb - 1)}-1`,
+        actualOdds,
+        actualOddsDisplay: `${Math.round(actualOdds - 1)}-1`,
+        valueClassification: 'VALUE' as const,
+        valueLabel: 'Value',
+        valueColor: 'green',
+        valueIcon: '✓',
+        expectedValue,
+        evPercent: expectedValue * 100,
+        evClassification: 'POSITIVE' as const,
+        evLabel: 'Positive EV',
+        isPositiveEV: expectedValue > 0,
+        overlayAdjustment: Math.min(40, Math.max(-40, trueOverlay)),
+        adjustmentReasoning: 'Test adjustment',
+      } as OverlayHorseOutput;
+    });
 
     return {
       horses: mockHorses,
       fieldMetrics: {
         fieldSize: mockHorses.length,
-        averageOdds: 5.0,
-        fieldStrength: 'NORMAL' as const,
-        competitiveIndex: 0.5,
-        bestValueHorse: mockHorses[0]?.programNumber ?? 1,
-        overlayCount: mockHorses.filter((h) => h.trueOverlayPercent > 0).length,
-        totalExpectedValue: mockHorses.reduce((sum, h) => sum + h.expectedValue, 0),
+        overround: 1.2,
+        takeoutPercent: 16.7,
+        averageModelProb: 1 / mockHorses.length,
+        probsValidated: true,
+        bestValueHorse: mockHorses[0]?.programNumber ?? null,
+        bestOverlayPercent: Math.max(...mockHorses.map((h) => h.trueOverlayPercent)),
+      },
+      config: {
+        temperature: 1.0,
+        useNormalization: true,
       },
       calibrationApplied: true,
     };

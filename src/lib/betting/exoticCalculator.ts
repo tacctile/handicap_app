@@ -316,7 +316,7 @@ export function calculateSuperfectaKey(
  */
 export function recommendExoticKeys(
   pipelineOutput: OverlayPipelineOutput,
-  bankroll: number,
+  _bankroll: number,
   maxExoticBudget: number = 20
 ): ExoticRecommendations {
   const fieldSize = pipelineOutput.fieldMetrics.fieldSize;

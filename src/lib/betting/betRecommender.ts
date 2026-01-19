@@ -377,7 +377,7 @@ function determineConfidence(
  */
 function generateReasoning(
   horse: OverlayHorseOutput,
-  kelly: KellyOutput,
+  _kelly: KellyOutput,
   tier: 'TIER_1' | 'TIER_2' | 'TIER_3',
   calibrationApplied: boolean
 ): string {
@@ -449,9 +449,9 @@ function generatePlaceShowRecommendations(
   horse: OverlayHorseOutput,
   bankroll: number,
   config: BetSizingConfig,
-  filters: RecommendationFilters,
+  _filters: RecommendationFilters,
   tier: 'TIER_1' | 'TIER_2' | 'TIER_3',
-  calibrationApplied: boolean,
+  _calibrationApplied: boolean,
   fieldSize: number
 ): BetRecommendation[] {
   const recommendations: BetRecommendation[] = [];
