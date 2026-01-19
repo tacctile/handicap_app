@@ -15,7 +15,11 @@
  * @module scoring/overlayPipeline
  */
 
-import { softmaxProbabilities, probabilityToFairOdds } from './probabilityConversion';
+import {
+  softmaxProbabilities,
+  probabilityToFairOdds,
+  isCalibrationActive,
+} from './probabilityConversion';
 import {
   oddsToImpliedProbability,
   normalizeMarketProbabilities,
@@ -163,6 +167,17 @@ export interface OverlayPipelineOutput {
   config: {
     temperature: number;
     useNormalization: boolean;
+  };
+  /** Whether Platt scaling calibration was applied to model probabilities */
+  calibrationApplied: boolean;
+  /** Calibration metrics (only present if calibration was applied) */
+  calibrationMetrics?: {
+    /** Brier score of the calibration model */
+    brierScore: number;
+    /** Number of races used to fit the calibration */
+    racesUsed: number;
+    /** When the calibration parameters were fitted */
+    fittedAt: Date;
   };
 }
 
@@ -516,6 +531,7 @@ export function calculateOverlayPipeline(input: OverlayPipelineInput): OverlayPi
         bestOverlayPercent: 0,
       },
       config: { temperature, useNormalization },
+      calibrationApplied: false,
     };
   }
 
@@ -634,7 +650,11 @@ export function calculateOverlayPipeline(input: OverlayPipelineInput): OverlayPi
   // Calculate average model probability
   const averageModelProb = modelProbs.reduce((sum, p) => sum + p, 0) / modelProbs.length;
 
-  return {
+  // Check if calibration was applied (softmaxProbabilities applies it automatically when ready)
+  const calibrationApplied = isCalibrationActive();
+
+  // Build result with calibration info
+  const result: OverlayPipelineOutput = {
     horses: horseOutputs,
     fieldMetrics: {
       overround: Math.round(overround * 1000) / 1000,
@@ -646,7 +666,20 @@ export function calculateOverlayPipeline(input: OverlayPipelineInput): OverlayPi
       bestOverlayPercent: Math.round(bestOverlayPercent * 10) / 10,
     },
     config: { temperature, useNormalization },
+    calibrationApplied,
   };
+
+  // Add calibration metrics if calibration was applied
+  // Note: Calibration metrics are retrieved lazily to avoid circular dependencies
+  // The calibrationManager getter will be set up during initialization
+  if (calibrationApplied) {
+    // Calibration metrics are stored in the calibrationManager
+    // These can be retrieved via the getCalibrationMetrics function
+    // For now, we indicate that calibration was applied; detailed metrics
+    // can be fetched separately via calibrationManager.getMetrics()
+  }
+
+  return result;
 }
 
 // ============================================================================

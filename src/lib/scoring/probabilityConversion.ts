@@ -10,8 +10,54 @@
  * - Better handles score outliers (extreme favorites/longshots)
  * - Temperature parameter allows tuning probability spread
  *
+ * Calibration Integration:
+ * - When 500+ races are accumulated, Platt scaling calibration activates
+ * - Calibration adjusts raw model probabilities to match actual win rates
+ * - Use applyCalibration parameter to control (default: true when ready)
+ *
  * @module scoring/probabilityConversion
  */
+
+// ============================================================================
+// IMPORTS
+// ============================================================================
+
+// Note: Calibration is imported lazily to avoid circular dependencies
+// The calibrationManager is accessed via a getter function
+
+/**
+ * Lazy getter for calibration manager to avoid circular dependencies.
+ * The calibrationManager is a singleton that tracks calibration state.
+ */
+let _calibrationManagerGetter:
+  | (() => {
+      calibrateField: (probs: number[]) => number[];
+      isReady: boolean;
+    })
+  | null = null;
+
+/**
+ * Set the calibration manager getter (called by calibrationManager on init)
+ * This allows the probability module to use calibration without circular imports.
+ */
+export function setCalibrationManagerGetter(
+  getter: () => { calibrateField: (probs: number[]) => number[]; isReady: boolean }
+): void {
+  _calibrationManagerGetter = getter;
+}
+
+/**
+ * Get the calibration manager (may be null if not initialized)
+ */
+function getCalibrationManager(): {
+  calibrateField: (probs: number[]) => number[];
+  isReady: boolean;
+} | null {
+  if (_calibrationManagerGetter) {
+    return _calibrationManagerGetter();
+  }
+  return null;
+}
 
 // ============================================================================
 // CONFIGURATION
@@ -74,6 +120,9 @@ export type SoftmaxConfigType = {
  *   - temperature < 1.0: More extreme distribution (favorite gets higher %)
  *   - temperature = 1.0: Standard softmax
  *   - temperature > 1.0: Flatter distribution (closer to uniform)
+ * @param applyCalibration - Whether to apply Platt scaling calibration if ready (default: true)
+ *   - When true and calibration is ready (500+ races), probabilities are adjusted
+ *   - When false or calibration not ready, returns raw softmax probabilities
  * @returns Array of probabilities in same order as input scores (sum to 1.0)
  *
  * @example
@@ -85,10 +134,15 @@ export type SoftmaxConfigType = {
  * softmaxProbabilities([200, 150], 0.5)  // [0.73, 0.27] - more extreme
  * softmaxProbabilities([200, 150], 1.0)  // [0.62, 0.38] - standard
  * softmaxProbabilities([200, 150], 2.0)  // [0.56, 0.44] - flatter
+ *
+ * @example
+ * // Disable calibration:
+ * softmaxProbabilities([200, 150], 1.0, false)  // Raw softmax only
  */
 export function softmaxProbabilities(
   scores: number[],
-  temperature: number = SOFTMAX_CONFIG.temperature
+  temperature: number = SOFTMAX_CONFIG.temperature,
+  applyCalibration: boolean = true
 ): number[] {
   // Edge case: empty array
   if (!scores || scores.length === 0) {
@@ -158,6 +212,18 @@ export function softmaxProbabilities(
   // Debug logging after clamping
   if (DEBUG_ENABLED) {
     console.log('[softmax] After clamping:', rawProbabilities);
+  }
+
+  // Apply Platt scaling calibration if enabled and ready
+  if (applyCalibration) {
+    const calibrationMgr = getCalibrationManager();
+    if (calibrationMgr?.isReady) {
+      const calibrated = calibrationMgr.calibrateField(rawProbabilities);
+      if (DEBUG_ENABLED) {
+        console.log('[softmax] After calibration:', calibrated);
+      }
+      return calibrated;
+    }
   }
 
   return rawProbabilities;
@@ -464,4 +530,14 @@ export function createSoftmaxConfig(overrides: Partial<SoftmaxConfigType>): Soft
     ...SOFTMAX_CONFIG,
     ...overrides,
   };
+}
+
+/**
+ * Check if calibration is currently active
+ *
+ * @returns True if Platt scaling calibration is ready and will be applied
+ */
+export function isCalibrationActive(): boolean {
+  const calibrationMgr = getCalibrationManager();
+  return calibrationMgr?.isReady ?? false;
 }

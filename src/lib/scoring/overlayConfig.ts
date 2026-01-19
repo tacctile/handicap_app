@@ -52,6 +52,35 @@ export const OVERLAY_CONFIG = {
   },
 
   // -------------------------------------------------------------------------
+  // Calibration Settings (Platt Scaling)
+  // -------------------------------------------------------------------------
+  calibration: {
+    /** Minimum races required before activating calibration (default: 500) */
+    minRacesRequired: 500,
+
+    /** Number of new races that trigger automatic recalibration (default: 50) */
+    recalibrationThreshold: 50,
+
+    /** Maximum days before forcing recalibration (default: 7) */
+    maxRecalibrationAge: 7,
+
+    /** Fitting algorithm configuration */
+    fittingConfig: {
+      /** Learning rate for gradient descent */
+      learningRate: 0.01,
+      /** Maximum iterations before stopping */
+      maxIterations: 1000,
+      /** Convergence threshold - stop when gradient magnitude is below this */
+      convergenceThreshold: 1e-6,
+      /** L2 regularization strength to prevent extreme parameters */
+      regularization: 0.001,
+    },
+
+    /** Whether to apply calibration when ready (can be disabled for testing) */
+    enabled: true,
+  },
+
+  // -------------------------------------------------------------------------
   // Market Settings
   // -------------------------------------------------------------------------
   market: {
@@ -277,6 +306,7 @@ export function getOverlayConfig(): typeof OVERLAY_CONFIG {
 export function createOverlayConfig(
   overrides: Partial<{
     softmax?: Partial<(typeof OVERLAY_CONFIG)['softmax']>;
+    calibration?: Partial<(typeof OVERLAY_CONFIG)['calibration']>;
     market?: Partial<(typeof OVERLAY_CONFIG)['market']>;
     value?: Partial<(typeof OVERLAY_CONFIG)['value']>;
     ev?: Partial<(typeof OVERLAY_CONFIG)['ev']>;
@@ -286,6 +316,16 @@ export function createOverlayConfig(
 ): typeof OVERLAY_CONFIG {
   return {
     softmax: { ...OVERLAY_CONFIG.softmax, ...overrides.softmax },
+    calibration: {
+      ...OVERLAY_CONFIG.calibration,
+      ...overrides.calibration,
+      fittingConfig: {
+        ...OVERLAY_CONFIG.calibration.fittingConfig,
+        ...(overrides.calibration?.fittingConfig as
+          | Partial<(typeof OVERLAY_CONFIG)['calibration']['fittingConfig']>
+          | undefined),
+      },
+    },
     market: { ...OVERLAY_CONFIG.market, ...overrides.market },
     value: { ...OVERLAY_CONFIG.value, ...overrides.value },
     ev: { ...OVERLAY_CONFIG.ev, ...overrides.ev },
@@ -347,6 +387,25 @@ export function validateOverlayConfig(): string[] {
   }
   if (config.adjustments.maxNegative >= 0) {
     warnings.push('Adjustment maxNegative should be negative');
+  }
+
+  // Calibration validation
+  if (config.calibration.minRacesRequired < 100) {
+    warnings.push(
+      'Calibration minRacesRequired should be at least 100 for statistical significance'
+    );
+  }
+  if (config.calibration.recalibrationThreshold < 10) {
+    warnings.push('Calibration recalibrationThreshold should be at least 10');
+  }
+  if (
+    config.calibration.fittingConfig.learningRate <= 0 ||
+    config.calibration.fittingConfig.learningRate > 1
+  ) {
+    warnings.push('Calibration learningRate should be between 0 and 1');
+  }
+  if (config.calibration.fittingConfig.maxIterations < 100) {
+    warnings.push('Calibration maxIterations should be at least 100');
   }
 
   return warnings;
