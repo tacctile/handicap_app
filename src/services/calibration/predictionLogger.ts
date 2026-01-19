@@ -105,7 +105,12 @@ export function normalizeProbabilities(probabilities: number[]): number[] {
  * Determine betting tier from score
  * Based on scoring thresholds and relative ranking
  */
-export function determineTier(score: number, rank: number, topScore: number, odds: number): number {
+export function determineTier(
+  score: number,
+  rank: number,
+  _topScore: number,
+  odds: number
+): number {
   // Tier 1 (Chalk): Top-ranked horse with strong score and not longshot odds
   if (rank === 1 && score >= 200 && odds < 10) {
     return 1;

@@ -94,7 +94,6 @@ export async function recordRaceResult(
 
   // Update entries with results
   let entriesUpdated = 0;
-  let winner: RecordResultOutcome['winner'] = null;
 
   const updatedEntries: HistoricalEntry[] = race.entries.map((entry) => {
     const result = resultsMap.get(entry.programNumber);
@@ -102,7 +101,7 @@ export async function recordRaceResult(
     if (result) {
       entriesUpdated++;
 
-      const updatedEntry: HistoricalEntry = {
+      return {
         ...entry,
         finishPosition: result.finishPosition,
         finalOdds: result.finalOdds,
@@ -111,20 +110,6 @@ export async function recordRaceResult(
         wasPlace: result.finishPosition <= 2,
         wasShow: result.finishPosition <= 3,
       };
-
-      // Track winner
-      if (result.finishPosition === 1) {
-        const wasCorrectPick = entry.tier === 1 || entry.baseScore >= 180;
-        winner = {
-          programNumber: entry.programNumber,
-          horseName: entry.horseName,
-          finalOdds: result.finalOdds,
-          wasCorrectPick,
-          predictedProbability: entry.predictedProbability,
-        };
-      }
-
-      return updatedEntry;
     }
 
     // Entry not in results - might be a scratch
@@ -142,6 +127,21 @@ export async function recordRaceResult(
       wasShow: false,
     };
   });
+
+  // Find the winner from updated entries
+  const winnerEntry = updatedEntries.find((e) => e.wasWinner);
+  const winnerResult = results.find((r) => r.finishPosition === 1);
+
+  const winner: RecordResultOutcome['winner'] =
+    winnerEntry && winnerResult
+      ? {
+          programNumber: winnerEntry.programNumber,
+          horseName: winnerEntry.horseName,
+          finalOdds: winnerResult.finalOdds,
+          wasCorrectPick: winnerEntry.tier === 1 || winnerEntry.baseScore >= 180,
+          predictedProbability: winnerEntry.predictedProbability,
+        }
+      : null;
 
   // Update the race record
   const updated = await updateHistoricalRace(raceId, {
@@ -163,7 +163,7 @@ export async function recordRaceResult(
   logger.logInfo('[Results Recorder] Recorded results', {
     raceId,
     entriesUpdated,
-    winner: winner?.programNumber,
+    winnerProgram: winner?.programNumber ?? null,
   });
 
   return {

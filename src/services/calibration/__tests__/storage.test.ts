@@ -346,11 +346,12 @@ describe('Storage Integration Scenarios (Documentation)', () => {
     // 3. Retrieve race - should have updated data
     // 4. Count should still be 1
 
-    const _id = generateRaceId('SAR', '2024-08-15', 5);
     const race1 = createMockHistoricalRace({ notes: 'First version' });
     const race2 = createMockHistoricalRace({ notes: 'Updated version' });
 
+    // Both races should have the same ID since they use same track/date/race
     expect(race1.id).toBe(race2.id);
+    expect(race1.id).toBe('SAR-2024-08-15-R5');
     // In actual storage, second save would update, not create duplicate
   });
 });
