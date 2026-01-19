@@ -13,13 +13,16 @@ import type { ParsedDRFFile } from '../../types/drf';
 
 // Database configuration
 const DB_NAME = 'furlong-offline-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Incremented for calibration stores
 
 // Store names
 const STORES = {
   RACE_DATA: 'race-data',
   PREFERENCES: 'preferences',
   CALCULATIONS: 'calculations',
+  // Calibration stores (added in v2)
+  HISTORICAL_RACES: 'historical-races', // No expiration - persists indefinitely
+  CALIBRATION_META: 'calibration-meta', // Dataset statistics
 } as const;
 
 // Default cache expiration time: 7 days
@@ -99,6 +102,21 @@ function openDatabase(): Promise<IDBDatabase> {
         const calcStore = db.createObjectStore(STORES.CALCULATIONS, { keyPath: 'id' });
         calcStore.createIndex('raceId', 'raceId', { unique: false });
         calcStore.createIndex('calculatedAt', 'calculatedAt', { unique: false });
+      }
+
+      // Historical races store - for calibration data (no expiration)
+      if (!db.objectStoreNames.contains(STORES.HISTORICAL_RACES)) {
+        const historicalStore = db.createObjectStore(STORES.HISTORICAL_RACES, { keyPath: 'id' });
+        historicalStore.createIndex('trackCode', 'trackCode', { unique: false });
+        historicalStore.createIndex('raceDate', 'raceDate', { unique: false });
+        historicalStore.createIndex('recordedAt', 'recordedAt', { unique: false });
+        historicalStore.createIndex('source', 'source', { unique: false });
+        historicalStore.createIndex('status', 'status', { unique: false });
+      }
+
+      // Calibration meta store - for dataset statistics
+      if (!db.objectStoreNames.contains(STORES.CALIBRATION_META)) {
+        db.createObjectStore(STORES.CALIBRATION_META, { keyPath: 'key' });
       }
     };
   });
@@ -481,6 +499,12 @@ export async function isStoragePersistent(): Promise<boolean> {
 
 // Export utility for generating IDs
 export { generateRaceDataId };
+
+// Export store names for use by calibration service
+export { STORES };
+
+// Export database opener for shared access
+export { openDatabase };
 
 // ============================================================================
 // SECURITY FUNCTIONS
