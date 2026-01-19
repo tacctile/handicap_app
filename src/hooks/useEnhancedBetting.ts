@@ -289,7 +289,7 @@ export function useEnhancedBetting(input: UseEnhancedBettingInput): UseEnhancedB
           programNumber: sh.horse.programNumber,
           horseName: sh.horse.horseName,
           baseScore: sh.score.baseScore,
-          finalScore: sh.score.totalScore || sh.score.baseScore,
+          finalScore: sh.score.total || sh.score.baseScore,
           morningLineOdds: getOdds(sh.index, sh.horse.morningLineOdds),
         })),
       };

@@ -10,8 +10,8 @@
 import type { ParsedDRFFile, ParsedRace } from '../../types/drf';
 import type { ScoredHorse } from '../../lib/scoring';
 import { extractHistoricalRaces, type ExtractionResult } from './drfExtractor';
-import { logPredictions, type PredictionLogResult } from './predictionLogger';
-import { getHistoricalRaceCount } from './storage';
+import { logPredictions, type RaceScoringResult } from './predictionLogger';
+import { saveHistoricalRaces, getHistoricalRaceCount } from './storage';
 import { isCalibrationReady } from './datasetManager';
 import { calibrationManager } from './calibrationManager';
 import { logger } from '../logging';
@@ -112,27 +112,29 @@ export async function autoLogCalibrationData(
     try {
       opts.onProgress?.('Extracting historical race data from past performances...');
 
-      const extractionResult: ExtractionResult = await extractHistoricalRaces(parsedData, {
-        minRacesPerHorse: 1,
-        maxPPsToAnalyze: 10,
-        saveToStorage: true,
+      const extractionResult: ExtractionResult = extractHistoricalRaces(parsedData, {
+        maxPPsPerHorse: 10,
+        minFieldSize: 4,
       });
 
-      historicalRacesExtracted = extractionResult.racesExtracted;
-
-      if (extractionResult.errors.length > 0) {
-        errors.push(...extractionResult.errors.map((e) => `Extraction: ${e}`));
+      // Save extracted races to storage
+      if (extractionResult.races.length > 0) {
+        await saveHistoricalRaces(extractionResult.races);
+        historicalRacesExtracted = extractionResult.races.length;
       }
 
       logger.logInfo('Historical races extracted for calibration', {
         component: 'autoLogger',
         racesExtracted: historicalRacesExtracted,
+        stats: extractionResult.stats,
         filename: parsedData.filename,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown extraction error';
       errors.push(`Historical extraction failed: ${message}`);
-      logger.logError('Historical extraction failed', { error });
+      logger.logError(error instanceof Error ? error : new Error(message), {
+        component: 'autoLogger',
+      });
     }
   }
 
@@ -143,21 +145,17 @@ export async function autoLogCalibrationData(
 
       for (const { race, scoredHorses } of scoredRaces) {
         try {
-          const logResult: PredictionLogResult = await logPredictions(
-            race,
-            scoredHorses.map((sh) => ({
-              programNumber: sh.horse.programNumber,
-              horseName: sh.horse.horseName,
-              score: sh.score.baseScore,
-              probability: sh.score.baseScore / 323, // Approximate, will be recalculated
-            })),
-            {
-              saveToPersistence: true,
-              overwriteExisting: false,
-            }
-          );
+          // Create RaceScoringResult from scored horses
+          const scoringResult: RaceScoringResult = {
+            scoredHorses,
+          };
 
-          if (logResult.success) {
+          const logResult = await logPredictions(race, scoringResult, {
+            overwriteExisting: false,
+          });
+
+          // Check if predictions were logged (entriesLogged > 0 means success)
+          if (logResult.entriesLogged > 0) {
             predictionsLogged++;
           }
         } catch (error) {
@@ -174,7 +172,9 @@ export async function autoLogCalibrationData(
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown prediction logging error';
       errors.push(`Prediction logging failed: ${message}`);
-      logger.logError('Prediction logging failed', { error });
+      logger.logError(error instanceof Error ? error : new Error(message), {
+        component: 'autoLogger',
+      });
     }
   }
 
@@ -191,11 +191,13 @@ export async function autoLogCalibrationData(
     try {
       opts.onProgress?.('Checking if recalibration is needed...');
 
-      const status = calibrationManager.checkReadiness();
+      // checkReadiness returns Promise<boolean>
+      const isReady = await calibrationManager.checkReadiness();
 
-      if (status.shouldRecalibrate) {
+      if (isReady) {
         opts.onProgress?.('Triggering model recalibration...');
-        await calibrationManager.calibrate();
+        // Use recalibrate() for forcing recalibration
+        await calibrationManager.recalibrate();
 
         logger.logInfo('Calibration triggered after auto-logging', {
           component: 'autoLogger',
@@ -253,7 +255,9 @@ export function scheduleAutoLog(
 
   schedule(() => {
     autoLogCalibrationData(parsedData, undefined, options).catch((error) => {
-      logger.logError('Scheduled auto-logging failed', { error });
+      logger.logError(error instanceof Error ? error : new Error(String(error)), {
+        component: 'autoLogger.scheduleAutoLog',
+      });
     });
   });
 }
