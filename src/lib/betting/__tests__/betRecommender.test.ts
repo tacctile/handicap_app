@@ -38,10 +38,12 @@ describe('betRecommender', () => {
       const expectedValue = h.expectedValue ?? 0.1;
       const trueOverlay = h.trueOverlayPercent ?? 10;
 
+      const baseScore = h.baseScore ?? 160;
       return {
         programNumber: h.programNumber ?? i + 1,
         horseName: h.horseName ?? `Horse ${i + 1}`,
-        baseScore: h.baseScore ?? 160,
+        baseScore,
+        finalScore: baseScore + Math.min(40, Math.max(-40, trueOverlay)),
         modelProbability: modelProb,
         rawImpliedProbability: 1 / actualOdds,
         normalizedMarketProbability: 1 / actualOdds / 1.2,
