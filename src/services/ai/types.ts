@@ -122,7 +122,8 @@ export type AIServiceErrorCode =
   | 'API_ERROR'
   | 'PARSE_ERROR'
   | 'TIMEOUT'
-  | 'NETWORK_ERROR';
+  | 'NETWORK_ERROR'
+  | 'RATE_LIMITED';
 
 /**
  * Error from AI service

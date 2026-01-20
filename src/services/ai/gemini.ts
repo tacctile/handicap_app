@@ -32,33 +32,37 @@ import {
 // CONFIGURATION
 // ============================================================================
 
-const GEMINI_MODEL = 'gemini-2.0-flash-lite';
-const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const TIMEOUT_MS = 30000;
+const MULTI_BOT_TIMEOUT_MS = 15000;
+
+// Serverless endpoint - all API calls go through this
+const SERVERLESS_ENDPOINT = '/api/gemini';
+
+// Debug logging - only in development
+const DEBUG = typeof process !== 'undefined' ? process.env?.NODE_ENV !== 'production' : true;
+const debugLog = (...args: unknown[]): void => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args: unknown[]): void => {
+  if (DEBUG) console.error(...args);
+};
 
 // ============================================================================
-// API KEY MANAGEMENT
+// SERVERLESS RESPONSE TYPES
 // ============================================================================
 
-/**
- * Get the Gemini API key from environment variables
- * Works in both browser (Vite) and server (Node.js) environments
- */
-function getApiKey(): string {
-  // Check Node environment first (serverless functions, tests, CI)
-  // This works because Vercel injects env vars as process.env
-  if (typeof process !== 'undefined' && process.env?.VITE_GEMINI_API_KEY) {
-    return process.env.VITE_GEMINI_API_KEY;
-  }
-  // Also check for GEMINI_API_KEY without VITE_ prefix (server-side convention)
-  if (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) {
-    return process.env.GEMINI_API_KEY;
-  }
-  // Check Vite environment (browser)
-  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) {
-    return import.meta.env.VITE_GEMINI_API_KEY;
-  }
-  return '';
+interface ServerlessResponse {
+  text: string;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  model: string;
+  processingTimeMs: number;
+}
+
+interface ServerlessErrorResponse {
+  error: string;
+  code: string;
 }
 
 // ============================================================================
@@ -90,6 +94,7 @@ function isAIServiceError(error: unknown): error is AIServiceError {
 /**
  * Analyze a race using Gemini AI
  *
+ * Routes through the /api/gemini serverless endpoint for secure API key handling.
  * Takes the parsed race data and algorithm scoring results,
  * sends them to Gemini, and returns structured AI analysis.
  *
@@ -103,11 +108,6 @@ export async function analyzeRaceWithGemini(
   scoringResult: RaceScoringResult
 ): Promise<AIRaceAnalysis> {
   const startTime = Date.now();
-  const apiKey = getApiKey();
-
-  if (!apiKey) {
-    throw createError('API_KEY_MISSING', 'Gemini API key not configured');
-  }
 
   const prompt = buildRaceAnalysisPrompt(race, scoringResult);
 
@@ -115,16 +115,14 @@ export async function analyzeRaceWithGemini(
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${API_ENDPOINT}?key=${apiKey}`, {
+    const response = await fetch(SERVERLESS_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.25, // Balance between consistency (0.15) and creativity (0.3)
-          topP: 0.85,
-          maxOutputTokens: 2048,
-        },
+        systemPrompt: 'You are a horse racing analysis AI. Return JSON only.',
+        userContent: prompt,
+        temperature: 0.25,
+        maxOutputTokens: 2048,
       }),
       signal: controller.signal,
     });
@@ -132,12 +130,27 @@ export async function analyzeRaceWithGemini(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw createError('API_ERROR', `Gemini API error: ${response.status} - ${errorText}`);
+      // Parse serverless error response
+      let errorCode: AIServiceErrorCode = 'API_ERROR';
+      let errorMessage = `API error: ${response.status}`;
+
+      try {
+        const errorData: ServerlessErrorResponse = await response.json();
+        errorCode = mapServerlessErrorCode(errorData.code);
+        errorMessage = errorData.error || errorMessage;
+
+        if (errorData.code === 'RATE_LIMITED') {
+          errorMessage = 'AI rate limited, try again later';
+        }
+      } catch {
+        // If we can't parse the error, use default message
+      }
+
+      throw createError(errorCode, errorMessage);
     }
 
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const data: ServerlessResponse = await response.json();
+    const text = data.text;
 
     if (!text) {
       throw createError('PARSE_ERROR', 'No content in Gemini response');
@@ -236,15 +249,34 @@ export function parseGeminiResponse(
  */
 const MULTI_BOT_CONFIG = {
   temperature: 0.2, // Lower for more consistent specialized outputs
-  topP: 0.8,
   maxOutputTokens: 256, // Smaller output for focused bot responses
-  timeoutMs: 15000, // Shorter timeout for individual bots
 };
+
+/**
+ * Map serverless error codes to AIServiceError codes
+ */
+function mapServerlessErrorCode(code: string): AIServiceErrorCode {
+  switch (code) {
+    case 'RATE_LIMITED':
+      return 'RATE_LIMITED';
+    case 'API_KEY_MISSING':
+    case 'API_KEY_INVALID':
+      return 'API_KEY_MISSING';
+    case 'INVALID_REQUEST':
+      return 'PARSE_ERROR';
+    case 'NETWORK_ERROR':
+      return 'NETWORK_ERROR';
+    case 'PARSE_ERROR':
+      return 'PARSE_ERROR';
+    default:
+      return 'API_ERROR';
+  }
+}
 
 /**
  * Generic Gemini API caller with custom response parser
  *
- * Reuses existing fetch logic, timeout, and error handling.
+ * Routes through the /api/gemini serverless endpoint for secure API key handling.
  * Allows any bot to call Gemini with a custom parser for their specific output format.
  *
  * @param prompt - The prompt to send to Gemini
@@ -256,26 +288,18 @@ export async function callGeminiWithSchema<T>(
   prompt: string,
   parseResponse: (text: string) => T
 ): Promise<T> {
-  const apiKey = getApiKey();
-
-  if (!apiKey) {
-    throw createError('API_KEY_MISSING', 'Gemini API key not configured');
-  }
-
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), MULTI_BOT_CONFIG.timeoutMs);
+  const timeoutId = setTimeout(() => controller.abort(), MULTI_BOT_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${API_ENDPOINT}?key=${apiKey}`, {
+    const response = await fetch(SERVERLESS_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: MULTI_BOT_CONFIG.temperature,
-          topP: MULTI_BOT_CONFIG.topP,
-          maxOutputTokens: MULTI_BOT_CONFIG.maxOutputTokens,
-        },
+        systemPrompt: 'You are a horse racing analysis AI. Return JSON only.',
+        userContent: prompt,
+        temperature: MULTI_BOT_CONFIG.temperature,
+        maxOutputTokens: MULTI_BOT_CONFIG.maxOutputTokens,
       }),
       signal: controller.signal,
     });
@@ -283,32 +307,47 @@ export async function callGeminiWithSchema<T>(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw createError('API_ERROR', `Gemini API error: ${response.status} - ${errorText}`);
+      // Parse serverless error response
+      let errorCode: AIServiceErrorCode = 'API_ERROR';
+      let errorMessage = `API error: ${response.status}`;
+
+      try {
+        const errorData: ServerlessErrorResponse = await response.json();
+        errorCode = mapServerlessErrorCode(errorData.code);
+        errorMessage = errorData.error || errorMessage;
+
+        if (errorData.code === 'RATE_LIMITED') {
+          errorMessage = 'AI rate limited, try again later';
+        }
+      } catch {
+        // If we can't parse the error, use default message
+      }
+
+      throw createError(errorCode, errorMessage);
     }
 
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const data: ServerlessResponse = await response.json();
+    const text = data.text;
 
     if (!text) {
       throw createError('PARSE_ERROR', 'No content in Gemini response');
     }
 
-    // Log raw response text for debugging parsing issues
-    console.log('[Gemini Bot] Raw response text (first 500 chars):', text.substring(0, 500));
+    // Log raw response text for debugging parsing issues (dev only)
+    debugLog('[Gemini Bot] Raw response text (first 500 chars):', text.substring(0, 500));
 
     try {
       return parseResponse(text);
     } catch (parseErr) {
-      // Log full response on parse failure for debugging
-      console.error('[Gemini Bot] Parse error. Full raw response:', text);
+      // Log full response on parse failure for debugging (dev only)
+      debugError('[Gemini Bot] Parse error. Full raw response:', text);
       throw parseErr;
     }
   } catch (error) {
     clearTimeout(timeoutId);
 
     if (error instanceof Error && error.name === 'AbortError') {
-      throw createError('TIMEOUT', `Request timed out after ${MULTI_BOT_CONFIG.timeoutMs}ms`);
+      throw createError('TIMEOUT', `Request timed out after ${MULTI_BOT_TIMEOUT_MS}ms`);
     }
 
     if (isAIServiceError(error)) {

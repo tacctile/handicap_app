@@ -17,9 +17,18 @@ import type { ParsedRace } from '../../types/drf';
 import type { RaceScoringResult } from '../../types/scoring';
 import type { AIRaceAnalysis, AIServiceStatus, AIServiceConfig, MultiBotRawResults } from './types';
 
-// Environment detection for isomorphic code (browser + Node.js serverless)
-// Note: process.env is available in Node.js environments (serverless, tests)
-// import.meta.env is available in Vite browser environments
+// ============================================================================
+// DEBUG LOGGING (production-safe)
+// ============================================================================
+
+// Debug logging - only in development
+const DEBUG = typeof process !== 'undefined' ? process.env?.NODE_ENV !== 'production' : true;
+const debugLog = (...args: unknown[]): void => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args: unknown[]): void => {
+  if (DEBUG) console.error(...args);
+};
 
 // Re-export types for consumers
 export type {
@@ -101,9 +110,10 @@ const analysisCache = new Map<string, AIRaceAnalysis>();
 
 /**
  * Generate cache key for a race analysis
+ * Includes trackCode to prevent cache collisions across different tracks
  */
-function getCacheKey(raceNumber: number, scoringVersion: number): string {
-  return `${raceNumber}-${scoringVersion}`;
+function getCacheKey(raceNumber: number, trackCode: string, scoringVersion: number): string {
+  return `${trackCode}-${raceNumber}-${scoringVersion}`;
 }
 
 /**
@@ -119,7 +129,11 @@ export async function getAIAnalysis(
   scoringResult: RaceScoringResult,
   options?: { forceRefresh?: boolean; scoringVersion?: number }
 ): Promise<AIRaceAnalysis> {
-  const cacheKey = getCacheKey(race.header.raceNumber, options?.scoringVersion ?? 0);
+  const cacheKey = getCacheKey(
+    race.header.raceNumber,
+    race.header.trackCode,
+    options?.scoringVersion ?? 0
+  );
 
   // Return cached if available and not forcing refresh
   if (!options?.forceRefresh && analysisCache.has(cacheKey)) {
@@ -163,30 +177,19 @@ export function clearAnalysisCache(): void {
 /**
  * Check if AI service is available
  *
+ * The serverless function at /api/gemini handles the API key securely server-side.
+ * Client only needs to check network connectivity.
+ *
  * @returns Current service status
  */
 export function checkAIServiceStatus(): AIServiceStatus {
-  // Check for API key in both Vite (browser) and Node (serverless/test) environments
-  const hasApiKey =
-    // Node.js environment (serverless functions, tests, CI)
-    (typeof process !== 'undefined' &&
-      !!(process.env?.VITE_GEMINI_API_KEY || process.env?.GEMINI_API_KEY)) ||
-    // Vite browser environment
-    (typeof import.meta !== 'undefined' && !!import.meta.env?.VITE_GEMINI_API_KEY);
-
-  if (!hasApiKey) {
+  // Check browser network status if available
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
     return 'offline';
   }
 
-  // In Node environment (serverless/tests), skip navigator check
-  if (typeof navigator === 'undefined') {
-    return 'ready';
-  }
-
-  if (!navigator.onLine) {
-    return 'offline';
-  }
-
+  // Serverless function handles API key - assume ready
+  // Actual errors will be caught when calls are made
   return 'ready';
 }
 
@@ -216,7 +219,7 @@ export async function getMultiBotAnalysis(
   options?: { forceRefresh?: boolean; scoringVersion?: number }
 ): Promise<AIRaceAnalysis> {
   const startTime = Date.now();
-  const cacheKey = `multi-${race.header.raceNumber}-${options?.scoringVersion ?? 0}`;
+  const cacheKey = `multi-${race.header.trackCode}-${race.header.raceNumber}-${options?.scoringVersion ?? 0}`;
 
   // Return cached if available and not forcing refresh
   if (!options?.forceRefresh && analysisCache.has(cacheKey)) {
@@ -227,19 +230,19 @@ export async function getMultiBotAnalysis(
   // Wrap each in try/catch with detailed error logging
   const [tripResult, paceResult, favoriteResult, spreadResult] = await Promise.allSettled([
     analyzeTripTrouble(race, scoringResult).catch((err) => {
-      console.error(`TripTrouble bot error:`, err?.message || err);
+      debugError(`TripTrouble bot error:`, err?.message || err);
       throw err;
     }),
     analyzePaceScenario(race, scoringResult).catch((err) => {
-      console.error(`PaceScenario bot error:`, err?.message || err);
+      debugError(`PaceScenario bot error:`, err?.message || err);
       throw err;
     }),
     analyzeVulnerableFavorite(race, scoringResult).catch((err) => {
-      console.error(`VulnerableFavorite bot error:`, err?.message || err);
+      debugError(`VulnerableFavorite bot error:`, err?.message || err);
       throw err;
     }),
     analyzeFieldSpread(race, scoringResult).catch((err) => {
-      console.error(`FieldSpread bot error:`, err?.message || err);
+      debugError(`FieldSpread bot error:`, err?.message || err);
       throw err;
     }),
   ]);
@@ -252,27 +255,24 @@ export async function getMultiBotAnalysis(
     fieldSpread: spreadResult.status === 'fulfilled' ? spreadResult.value : null,
   };
 
-  // Log detailed failure information
+  // Log detailed failure information (dev only)
   if (tripResult.status === 'rejected') {
-    console.error(
-      `TripTrouble bot FAILED - Reason:`,
-      tripResult.reason?.message || tripResult.reason
-    );
+    debugError(`TripTrouble bot FAILED - Reason:`, tripResult.reason?.message || tripResult.reason);
   }
   if (paceResult.status === 'rejected') {
-    console.error(
+    debugError(
       `PaceScenario bot FAILED - Reason:`,
       paceResult.reason?.message || paceResult.reason
     );
   }
   if (favoriteResult.status === 'rejected') {
-    console.error(
+    debugError(
       `VulnerableFavorite bot FAILED - Reason:`,
       favoriteResult.reason?.message || favoriteResult.reason
     );
   }
   if (spreadResult.status === 'rejected') {
-    console.error(
+    debugError(
       `FieldSpread bot FAILED - Reason:`,
       spreadResult.reason?.message || spreadResult.reason
     );
@@ -317,8 +317,8 @@ export function combineMultiBotResults(
   // DEBUG LOGGING: Show each bot's raw output (or "bot failed" if null)
   // Note: Detailed error messages are logged in getMultiBotAnalysis before this
   // ============================================================================
-  console.log(`\n=== COMBINER DEBUG: Race ${race.header.raceNumber} ===`);
-  console.log(
+  debugLog(`\n=== COMBINER DEBUG: Race ${race.header.raceNumber} ===`);
+  debugLog(
     'TripTrouble bot:',
     tripTrouble
       ? `SUCCESS - ${tripTrouble.horsesWithTripTrouble.length} horses with trip trouble`
@@ -326,27 +326,27 @@ export function combineMultiBotResults(
   );
   if (tripTrouble) {
     tripTrouble.horsesWithTripTrouble.forEach((h) => {
-      console.log(
+      debugLog(
         `  - #${h.programNumber} ${h.horseName}: ${h.issue} (maskedAbility=${h.maskedAbility})`
       );
     });
   }
 
-  console.log(
+  debugLog(
     'PaceScenario bot:',
     paceScenario
       ? `SUCCESS - pace=${paceScenario.paceProjection}, loneSpeedException=${paceScenario.loneSpeedException}, speedDuel=${paceScenario.speedDuelLikely}`
       : 'FAILED (see error above)'
   );
 
-  console.log(
+  debugLog(
     'VulnerableFavorite bot:',
     vulnerableFavorite
       ? `SUCCESS - isVulnerable=${vulnerableFavorite.isVulnerable}, confidence=${vulnerableFavorite.confidence}, reasons=[${vulnerableFavorite.reasons.join(', ')}]`
       : 'FAILED (see error above)'
   );
 
-  console.log(
+  debugLog(
     'FieldSpread bot:',
     fieldSpread
       ? `SUCCESS - fieldType=${fieldSpread.fieldType}, topTierCount=${fieldSpread.topTierCount}, spread=${fieldSpread.recommendedSpread}`
@@ -420,13 +420,13 @@ export function combineMultiBotResults(
   // If criteria not met but trip trouble exists, add note to oneLiner only
   // ============================================================================
 
-  console.log('--- Evaluating Trip Trouble triggers ---');
+  debugLog('--- Evaluating Trip Trouble triggers ---');
 
   if (tripTrouble) {
     for (const tripHorse of tripTrouble.horsesWithTripTrouble) {
       const adj = horseAdjustments.find((h) => h.programNumber === tripHorse.programNumber);
       if (!adj) {
-        console.log(`  #${tripHorse.programNumber}: horse not found in adjustments`);
+        debugLog(`  #${tripHorse.programNumber}: horse not found in adjustments`);
         continue;
       }
 
@@ -471,7 +471,7 @@ export function combineMultiBotResults(
         tripHorse.maskedAbility && hasTwoOrMoreTroubledRaces && hadPoorFinish;
       const isMediumConfidence = tripHorse.maskedAbility && hadPoorFinish && !isHighConfidence;
 
-      console.log(
+      debugLog(
         `  #${tripHorse.programNumber} ${tripHorse.horseName}: maskedAbility=${tripHorse.maskedAbility}, hadPoorFinish=${hadPoorFinish}, hasTwoOrMore=${hasTwoOrMoreTroubledRaces}, confidence=${isHighConfidence ? 'HIGH' : isMediumConfidence ? 'MEDIUM' : 'LOW'}`
       );
 
@@ -480,7 +480,7 @@ export function combineMultiBotResults(
         adj.adjustment = 2;
         adj.hasTripTroubleBoost = true;
         adj.oneLiner = 'Trip trouble masked true ability - multiple troubled races';
-        console.log(
+        debugLog(
           `    Trip Trouble: #${tripHorse.programNumber} HIGH confidence (2+ troubled) - BOOST +2`
         );
       } else if (isMediumConfidence) {
@@ -488,7 +488,7 @@ export function combineMultiBotResults(
         adj.adjustment = 1;
         adj.hasTripTroubleBoost = true;
         adj.oneLiner = 'Trip trouble masked true ability';
-        console.log(
+        debugLog(
           `    Trip Trouble: #${tripHorse.programNumber} MEDIUM confidence (1 troubled) - BOOST +1`
         );
       } else {
@@ -496,11 +496,11 @@ export function combineMultiBotResults(
         adj.tripTroubleNote = tripHorse.maskedAbility
           ? 'Has trip trouble history - watch for improvement'
           : `Trip note: ${tripHorse.issue}`;
-        console.log(`    → Note added (no boost): ${adj.tripTroubleNote}`);
+        debugLog(`    → Note added (no boost): ${adj.tripTroubleNote}`);
       }
     }
   } else {
-    console.log('  TripTrouble bot failed - skipping');
+    debugLog('  TripTrouble bot failed - skipping');
   }
 
   // ============================================================================
@@ -516,11 +516,11 @@ export function combineMultiBotResults(
 
   let loneSpeedHorse: number | null = null;
 
-  console.log('--- Evaluating Pace Scenario triggers ---');
+  debugLog('--- Evaluating Pace Scenario triggers ---');
   if (paceScenario) {
     // CASE 1: Lone speed exception - find the E or E/P horse with highest early speed
     if (paceScenario.loneSpeedException) {
-      console.log('  loneSpeedException = true, looking for E or E/P horse');
+      debugLog('  loneSpeedException = true, looking for E or E/P horse');
 
       // Find all E or E/P running style horses
       const speedHorses = rankedScores
@@ -536,7 +536,7 @@ export function combineMultiBotResults(
           return { programNumber: score.programNumber, earlySpeed };
         });
 
-      console.log(
+      debugLog(
         `  Found ${speedHorses.length} speed horses: ${speedHorses.map((h) => `#${h.programNumber}`).join(', ')}`
       );
 
@@ -549,16 +549,16 @@ export function combineMultiBotResults(
           adj.adjustment = 1; // +1 boost (max)
           adj.isLoneSpeed = true;
           adj.keyStrength = 'Lone speed - clear tactical advantage';
-          console.log(`    → BOOST +1 applied to #${loneSpeedHorse}`);
+          debugLog(`    → BOOST +1 applied to #${loneSpeedHorse}`);
         }
       } else {
-        console.log('  No E or E/P horses found');
+        debugLog('  No E or E/P horses found');
       }
     }
 
     // CASE 2: Speed duel likely AND HOT pace - boost closers only
     if (paceScenario.speedDuelLikely && paceScenario.paceProjection === 'HOT') {
-      console.log('  speedDuelLikely = true AND paceProjection = HOT, boosting closers');
+      debugLog('  speedDuelLikely = true AND paceProjection = HOT, boosting closers');
 
       for (const adj of horseAdjustments) {
         const horse = race.horses.find((h) => h.programNumber === adj.programNumber);
@@ -572,18 +572,18 @@ export function combineMultiBotResults(
           adj.adjustment = 1; // +1 boost (max, cap even if both conditions met)
           adj.hasPaceAdvantage = true;
           adj.keyStrength = 'Speed duel sets up for closing style';
-          console.log(`    → BOOST +1 applied to #${adj.programNumber} (closer)`);
+          debugLog(`    → BOOST +1 applied to #${adj.programNumber} (closer)`);
         }
       }
     } else if (paceScenario.speedDuelLikely) {
-      console.log(
+      debugLog(
         `  speedDuelLikely = true BUT paceProjection = ${paceScenario.paceProjection} (not HOT) - no closer boost`
       );
     }
 
     // NOTE: We do NOT penalize any horse based on pace (removed disadvantage logic)
   } else {
-    console.log('  PaceScenario bot failed - skipping');
+    debugLog('  PaceScenario bot failed - skipping');
   }
 
   // ============================================================================
@@ -600,7 +600,7 @@ export function combineMultiBotResults(
   // The vulnerable favorite flag is for bet sizing guidance
   // ============================================================================
 
-  console.log('--- Evaluating Vulnerable Favorite trigger ---');
+  debugLog('--- Evaluating Vulnerable Favorite trigger ---');
 
   // Find the favorite (lowest ML odds or #1 algorithm rank)
   const favoriteScore = rankedScores.reduce((fav, curr) => {
@@ -612,14 +612,14 @@ export function combineMultiBotResults(
   }, rankedScores[0]!);
 
   const favoriteProgram = favoriteScore.programNumber;
-  console.log(`  Favorite identified: #${favoriteProgram} ${favoriteScore.horseName}`);
+  debugLog(`  Favorite identified: #${favoriteProgram} ${favoriteScore.horseName}`);
 
   // Set flag for MEDIUM or HIGH confidence
   const isVulnerableFavoriteFlag =
     vulnerableFavorite?.isVulnerable === true &&
     (vulnerableFavorite?.confidence === 'HIGH' || vulnerableFavorite?.confidence === 'MEDIUM');
 
-  console.log(
+  debugLog(
     `  VulnerableFavorite check: isVulnerable=${vulnerableFavorite?.isVulnerable}, confidence=${vulnerableFavorite?.confidence}, flagSet=${isVulnerableFavoriteFlag}`
   );
 
@@ -632,31 +632,31 @@ export function combineMultiBotResults(
       // Set the internal flag for MEDIUM or HIGH confidence
       if (vulnerableFavorite.confidence === 'HIGH' || vulnerableFavorite.confidence === 'MEDIUM') {
         favAdj.isVulnerableFavoriteHorse = true;
-        console.log(`    → Flag set on #${favoriteProgram}`);
+        debugLog(`    → Flag set on #${favoriteProgram}`);
       }
 
       // Set keyWeakness from bot's reasons for UI display
       if (vulnerableFavorite.reasons.length > 0) {
         favAdj.keyWeakness = vulnerableFavorite.reasons[0] || null;
-        console.log(`    → keyWeakness set: ${favAdj.keyWeakness}`);
+        debugLog(`    → keyWeakness set: ${favAdj.keyWeakness}`);
       }
 
       // HIGH confidence: Apply -1 adjustment to drop favorite in rankings
       if (vulnerableFavorite.confidence === 'HIGH' && favAdj.algorithmRank === 1) {
         favAdj.adjustment = -1; // Negative = move down in rankings
         vulnerableFavoriteOverride = true;
-        console.log(
+        debugLog(
           `    Vulnerable Favorite: HIGH confidence - dropping #${favoriteProgram} from rank 1 to rank 2`
         );
       } else if (vulnerableFavorite.confidence === 'MEDIUM') {
         // MEDIUM confidence: Flag only, no ranking change
-        console.log(`    → MEDIUM confidence - flag only, no ranking change`);
+        debugLog(`    → MEDIUM confidence - flag only, no ranking change`);
       }
     }
   } else if (vulnerableFavorite === null) {
-    console.log('  VulnerableFavorite bot failed - skipping');
+    debugLog('  VulnerableFavorite bot failed - skipping');
   } else {
-    console.log('  Favorite is NOT vulnerable');
+    debugLog('  Favorite is NOT vulnerable');
   }
 
   // ============================================================================
@@ -725,21 +725,21 @@ export function combineMultiBotResults(
   // but it does NOT change contender flags anymore.
   // ============================================================================
 
-  console.log('--- Evaluating Field Spread ---');
+  debugLog('--- Evaluating Field Spread ---');
   // ALWAYS use top 4 as contenders - field spread no longer influences this
   const contenderCount = Math.min(4, rankedScores.length);
   if (fieldSpread) {
     // Log field spread for narrative purposes only
-    console.log(
+    debugLog(
       `  FieldSpread: fieldType=${fieldSpread.fieldType}, topTierCount=${fieldSpread.topTierCount}, spread=${fieldSpread.recommendedSpread}`
     );
-    console.log(`  → Contender count FIXED at ${contenderCount} (ignoring spread recommendation)`);
+    debugLog(`  → Contender count FIXED at ${contenderCount} (ignoring spread recommendation)`);
   } else {
-    console.log('  FieldSpread bot failed - using default contenderCount=4');
+    debugLog('  FieldSpread bot failed - using default contenderCount=4');
   }
 
   // Log final adjustments per horse with before/after ranks
-  console.log('--- Final Adjustments ---');
+  debugLog('--- Final Adjustments ---');
   horseAdjustments.forEach((adj, idx) => {
     const projectedFinish = idx + 1;
     // Show all horses that have adjustments or special flags
@@ -752,7 +752,7 @@ export function combineMultiBotResults(
     ) {
       // Movement direction based on adjustment
       const movement = adj.adjustment > 0 ? '(MOVED UP)' : adj.adjustment < 0 ? '(MOVED DOWN)' : '';
-      console.log(
+      debugLog(
         `  #${adj.programNumber} ${adj.horseName}: algoRank=${adj.algorithmRank}, adj=${adj.adjustment > 0 ? '+' : ''}${adj.adjustment}, finalRank=${adj.adjustedRank}, projectedFinish=${projectedFinish} ${movement} flags=[${[
           adj.hasTripTroubleBoost ? 'tripTrouble' : '',
           adj.isLoneSpeed ? 'loneSpeed' : '',
