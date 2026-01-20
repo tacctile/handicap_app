@@ -42,8 +42,12 @@ import {
  */
 function isNodeEnvironment(): boolean {
   // Primary check: process.versions.node is Node.js-specific and not polyfilled by jsdom
-  if (typeof process !== 'undefined' && typeof process.versions?.node === 'string') {
-    return true;
+  // Cast to unknown first to avoid TypeScript errors (Vite's process type doesn't include versions)
+  if (typeof process !== 'undefined') {
+    const nodeProcess = process as unknown as { versions?: { node?: string } };
+    if (typeof nodeProcess.versions?.node === 'string') {
+      return true;
+    }
   }
 
   // Fallback: window undefined check (for non-jsdom Node.js environments)
@@ -69,7 +73,7 @@ console.log('=== [GEMINI] ENVIRONMENT DETECTION ===');
 console.log(`[GEMINI] typeof window: ${typeof window}`);
 console.log(`[GEMINI] typeof process: ${typeof process}`);
 console.log(
-  `[GEMINI] process.versions?.node: ${typeof process !== 'undefined' ? process.versions?.node : 'N/A'}`
+  `[GEMINI] process.versions?.node: ${typeof process !== 'undefined' ? (process as unknown as { versions?: { node?: string } }).versions?.node : 'N/A'}`
 );
 console.log(`[GEMINI] isNodeEnvironment(): ${_isNode}`);
 if (_isNode) {
