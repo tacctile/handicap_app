@@ -1,0 +1,599 @@
+/* ============================================
+   AI ANALYSIS PANEL
+   Displays AI race analysis results
+   ============================================ */
+
+.ai-panel {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--gap-container);
+  overflow: hidden;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.ai-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-elevated);
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--transition-fast);
+}
+
+.ai-panel__header:hover {
+  background: var(--color-border);
+}
+
+.ai-panel__header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ai-panel__header-right {
+  display: flex;
+  align-items: center;
+}
+
+.ai-panel__icon {
+  font-size: 20px;
+  color: var(--color-primary);
+}
+
+.ai-panel__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.ai-panel__confidence {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.ai-panel__confidence--high {
+  background: var(--color-tier-elite-bg);
+  color: var(--color-tier-elite);
+}
+
+.ai-panel__confidence--medium {
+  background: var(--color-tier-fair-bg);
+  color: var(--color-tier-fair);
+}
+
+.ai-panel__confidence--low {
+  background: var(--color-tier-bad-bg);
+  color: var(--color-tier-bad);
+}
+
+.ai-panel__bettable {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ai-panel__bettable--yes {
+  background: var(--color-tier-elite-bg);
+  color: var(--color-tier-elite);
+}
+
+.ai-panel__bettable--no {
+  background: var(--color-tier-bad-bg);
+  color: var(--color-tier-bad);
+}
+
+.ai-panel__updating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.ai-panel__updating .material-icons {
+  font-size: 14px;
+}
+
+.ai-panel__collapse-icon {
+  font-size: 20px;
+  color: var(--color-text-tertiary);
+  transition: transform var(--transition-fast);
+}
+
+/* Collapsed state */
+.ai-panel--collapsed .ai-panel__header {
+  border-bottom: none;
+}
+
+/* ============================================
+   CONTENT
+   ============================================ */
+
+.ai-panel__content {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ============================================
+   NARRATIVE
+   ============================================ */
+
+.ai-panel__narrative {
+  padding: var(--space-3);
+  background: var(--color-base);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-primary);
+}
+
+.ai-panel__narrative p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+}
+
+/* ============================================
+   FLAGS
+   ============================================ */
+
+.ai-panel__flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.ai-panel__flag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ai-panel__flag .material-icons {
+  font-size: 16px;
+}
+
+.ai-panel__flag--warning {
+  background: var(--color-tier-fair-bg);
+  color: var(--color-tier-fair);
+}
+
+.ai-panel__flag--danger {
+  background: var(--color-tier-bad-bg);
+  color: var(--color-tier-bad);
+}
+
+.ai-panel__flag--info {
+  background: var(--color-primary-muted);
+  color: var(--color-primary);
+}
+
+/* ============================================
+   PICKS SECTION (Top Pick, Value Play, Avoid)
+   ============================================ */
+
+.ai-panel__picks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3);
+}
+
+.ai-panel__pick-card {
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-base);
+}
+
+.ai-panel__pick-card--top {
+  border-color: var(--color-tier-elite);
+  background: var(--color-tier-elite-bg);
+}
+
+.ai-panel__pick-card--value {
+  border-color: var(--color-tier-good);
+  background: var(--color-tier-good-bg);
+}
+
+.ai-panel__pick-card--avoid {
+  border-color: var(--color-tier-bad);
+  background: var(--color-tier-bad-bg);
+}
+
+.ai-panel__pick-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--space-2);
+}
+
+.ai-panel__pick-card--top .ai-panel__pick-header {
+  color: var(--color-tier-elite);
+}
+
+.ai-panel__pick-card--value .ai-panel__pick-header {
+  color: var(--color-tier-good);
+}
+
+.ai-panel__pick-card--avoid .ai-panel__pick-header {
+  color: var(--color-tier-bad);
+}
+
+.ai-panel__pick-header .material-icons {
+  font-size: 16px;
+}
+
+.ai-panel__pick-horse {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: var(--space-2);
+}
+
+.ai-panel__pick-number {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.ai-panel__pick-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.ai-panel__pick-reason {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.ai-panel__avoid-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.ai-panel__avoid-horse {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================
+   HORSE INSIGHTS
+   ============================================ */
+
+.ai-panel__insights-section {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+}
+
+.ai-panel__insights-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.ai-panel__insights-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ai-panel__show-all-btn {
+  padding: 4px 10px;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.ai-panel__show-all-btn:hover {
+  background: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.ai-panel__insights-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ai-panel__horse-insight {
+  padding: var(--space-3);
+  background: var(--color-base);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition-fast);
+}
+
+.ai-panel__horse-insight--top-pick {
+  border-color: var(--color-tier-elite);
+}
+
+.ai-panel__horse-insight--value-play {
+  border-color: var(--color-tier-good);
+}
+
+.ai-panel__horse-insight-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.ai-panel__horse-number {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  min-width: 28px;
+}
+
+.ai-panel__horse-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+.ai-panel__horse-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ai-panel__horse-badge--top {
+  background: var(--color-tier-elite-bg);
+  color: var(--color-tier-elite);
+}
+
+.ai-panel__horse-badge--value {
+  background: var(--color-tier-good-bg);
+  color: var(--color-tier-good);
+}
+
+.ai-panel__value-label {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.ai-panel__value-label--elite {
+  background: var(--color-tier-elite-bg);
+  color: var(--color-tier-elite);
+}
+
+.ai-panel__value-label--good {
+  background: var(--color-tier-good-bg);
+  color: var(--color-tier-good);
+}
+
+.ai-panel__value-label--fair {
+  background: var(--color-tier-fair-bg);
+  color: var(--color-tier-fair);
+}
+
+.ai-panel__value-label--neutral {
+  background: var(--color-tier-neutral-bg);
+  color: var(--color-tier-neutral);
+}
+
+.ai-panel__value-label--bad {
+  background: var(--color-tier-bad-bg);
+  color: var(--color-tier-bad);
+}
+
+.ai-panel__horse-insight-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.ai-panel__one-liner {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.ai-panel__key-factor {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.ai-panel__key-factor .material-icons {
+  font-size: 14px;
+}
+
+.ai-panel__key-factor--positive {
+  color: var(--color-tier-good);
+}
+
+.ai-panel__key-factor--negative {
+  color: var(--color-tier-bad);
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+.ai-panel__footer {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-3);
+}
+
+.ai-panel__timestamp {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+
+.ai-panel__loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.ai-panel__loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-panel__loading-spinner .material-icons {
+  font-size: 24px;
+  color: var(--color-primary);
+}
+
+.ai-panel__loading-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ai-panel__loading-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.ai-panel__loading-subtitle {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+/* ============================================
+   ERROR STATE
+   ============================================ */
+
+.ai-panel__error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-tier-bad-bg);
+  border-radius: var(--radius-sm);
+  margin: var(--space-4);
+}
+
+.ai-panel__error-icon {
+  font-size: 24px;
+  color: var(--color-tier-bad);
+  flex-shrink: 0;
+}
+
+.ai-panel__error-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-panel__error-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.ai-panel__error-message {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.ai-panel__error-link {
+  font-size: 12px;
+  color: var(--color-primary);
+  text-decoration: none;
+  margin-top: 4px;
+}
+
+.ai-panel__error-link:hover {
+  text-decoration: underline;
+}
+
+.ai-panel__retry-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.ai-panel__retry-btn:hover {
+  background: var(--color-border);
+}
+
+.ai-panel__retry-btn .material-icons {
+  font-size: 16px;
+}
+
+/* ============================================
+   ANIMATION
+   ============================================ */
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
