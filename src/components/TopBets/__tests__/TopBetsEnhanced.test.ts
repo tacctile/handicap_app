@@ -206,11 +206,13 @@ vi.mock('../../../hooks/useEnhancedBetting', () => ({
   useEnhancedBetting: vi.fn(() => mockEnhancedBettingResult),
 }));
 
-// Create mock scored horses
+// Create mock scored horses (minimal properties for unit tests)
 function createMockScoredHorses(): ScoredHorse[] {
+  // Using 'as unknown as' to satisfy TypeScript since tests only need subset of properties
   return [
     {
       index: 0,
+      rank: 1,
       horse: {
         programNumber: 1,
         horseName: 'Test Horse 1',
@@ -230,6 +232,7 @@ function createMockScoredHorses(): ScoredHorse[] {
     },
     {
       index: 1,
+      rank: 2,
       horse: {
         programNumber: 2,
         horseName: 'Test Horse 2',
@@ -249,6 +252,7 @@ function createMockScoredHorses(): ScoredHorse[] {
     },
     {
       index: 2,
+      rank: 3,
       horse: {
         programNumber: 3,
         horseName: 'Test Horse 3',
@@ -268,6 +272,7 @@ function createMockScoredHorses(): ScoredHorse[] {
     },
     {
       index: 3,
+      rank: 4,
       horse: {
         programNumber: 4,
         horseName: 'Test Horse 4',
@@ -287,6 +292,7 @@ function createMockScoredHorses(): ScoredHorse[] {
     },
     {
       index: 4,
+      rank: 5,
       horse: {
         programNumber: 5,
         horseName: 'Test Horse 5',
@@ -304,23 +310,29 @@ function createMockScoredHorses(): ScoredHorse[] {
         breakdown: {},
       },
     },
-  ] as ScoredHorse[];
+  ] as unknown as ScoredHorse[];
 }
 
+// Create mock race header (minimal properties for unit tests)
 function createMockRaceHeader(): RaceHeader {
+  // Using 'as unknown as' to satisfy TypeScript since tests only need subset of properties
   return {
     trackCode: 'CD',
+    trackName: 'Churchill Downs',
+    trackLocation: 'Louisville, KY',
     raceNumber: 1,
     raceDate: '2024-01-15',
     raceDateRaw: '20240115',
     distance: '6 Furlongs',
+    distanceFurlongs: 6,
+    distanceExact: 6.0,
     surface: 'Dirt',
     raceType: 'Claiming',
     purse: '50000',
     conditions: 'For 3 year olds and upward',
     postTime: '1:00 PM',
     raceClassification: 'CLM',
-  } as RaceHeader;
+  } as unknown as RaceHeader;
 }
 
 describe('TopBetsView Enhanced Integration', () => {
