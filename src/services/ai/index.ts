@@ -177,8 +177,9 @@ export function clearAnalysisCache(): void {
 /**
  * Check if AI service is available
  *
- * The serverless function at /api/gemini handles the API key securely server-side.
- * Client only needs to check network connectivity.
+ * Environment-aware status check:
+ * - Browser: Checks network connectivity, serverless handles API key
+ * - Node.js/Tests: Checks for direct API key in environment
  *
  * @returns Current service status
  */
@@ -188,7 +189,20 @@ export function checkAIServiceStatus(): AIServiceStatus {
     return 'offline';
   }
 
-  // Serverless function handles API key - assume ready
+  // Node.js environment: check for direct API key
+  if (typeof window === 'undefined' && typeof process !== 'undefined') {
+    const hasKey = !!(process.env?.VITE_GEMINI_API_KEY || process.env?.GEMINI_API_KEY);
+    debugLog('[AI] Node.js environment detected');
+    debugLog('[AI] Direct API key available:', hasKey);
+    if (!hasKey) {
+      debugError(
+        '[AI] No API key found. Set VITE_GEMINI_API_KEY or GEMINI_API_KEY environment variable.'
+      );
+    }
+    return hasKey ? 'ready' : 'offline';
+  }
+
+  // Browser with serverless: assume ready
   // Actual errors will be caught when calls are made
   return 'ready';
 }

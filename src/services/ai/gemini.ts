@@ -24,9 +24,38 @@ import {
   buildFieldSpreadPrompt,
 } from './prompt';
 
-// Environment detection helpers for isomorphic code (browser + Node.js serverless)
-// Note: process.env is available in Node.js environments (serverless, tests)
-// import.meta.env is available in Vite browser environments
+// ============================================================================
+// ENVIRONMENT DETECTION
+// ============================================================================
+
+/**
+ * Detect if running in Node.js environment (tests, serverless) vs Browser
+ *
+ * In Node.js: window is undefined, process is defined
+ * In Browser: window is defined, process may be polyfilled but process.env won't have real env vars
+ */
+function isNodeEnvironment(): boolean {
+  return typeof window === 'undefined' && typeof process !== 'undefined';
+}
+
+/**
+ * Get Gemini API key directly from environment (for Node.js/test environments)
+ *
+ * Checks both VITE_GEMINI_API_KEY (Vite convention) and GEMINI_API_KEY (standard)
+ * Returns null if not in Node.js environment or key not found
+ */
+function getDirectApiKey(): string | null {
+  if (typeof process !== 'undefined' && process.env) {
+    return process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || null;
+  }
+  return null;
+}
+
+// Log environment detection at module load (helps debug test runs)
+if (isNodeEnvironment()) {
+  console.log('[AI/Gemini] Running in Node.js environment');
+  console.log('[AI/Gemini] Direct API key available:', !!getDirectApiKey());
+}
 
 // ============================================================================
 // CONFIGURATION
@@ -35,8 +64,18 @@ import {
 const TIMEOUT_MS = 30000;
 const MULTI_BOT_TIMEOUT_MS = 15000;
 
-// Serverless endpoint - all API calls go through this
+// Serverless endpoint - browser calls go through this
 const SERVERLESS_ENDPOINT = '/api/gemini';
+
+// Direct API configuration (for Node.js/test environments)
+const GEMINI_MODEL = 'gemini-2.0-flash-lite';
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const DIRECT_API_CONFIG = {
+  temperature: 0.7,
+  maxOutputTokens: 2048,
+  topP: 0.95,
+  topK: 40,
+};
 
 // Debug logging - only in development
 const DEBUG = typeof process !== 'undefined' ? process.env?.NODE_ENV !== 'production' : true;
@@ -63,6 +102,194 @@ interface ServerlessResponse {
 interface ServerlessErrorResponse {
   error: string;
   code: string;
+}
+
+// Direct API response type (matches Gemini API)
+interface GeminiDirectAPIResponse {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{ text?: string }>;
+    };
+  }>;
+  usageMetadata?: {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+  };
+  error?: {
+    message?: string;
+    code?: number;
+  };
+}
+
+// ============================================================================
+// DIRECT API CALL (Node.js/Test Environment)
+// ============================================================================
+
+/**
+ * Call Gemini API directly (bypassing serverless endpoint)
+ *
+ * Used in Node.js/test environments where /api/gemini endpoint doesn't exist.
+ * Mirrors the logic in api/gemini.ts serverless function.
+ *
+ * @param systemPrompt - System instruction for the AI
+ * @param userContent - User content/prompt
+ * @param config - Optional configuration overrides
+ * @returns ServerlessResponse-compatible object
+ * @throws Error on API failure
+ */
+async function callGeminiDirect(
+  systemPrompt: string,
+  userContent: string,
+  config?: { temperature?: number; maxOutputTokens?: number }
+): Promise<ServerlessResponse> {
+  const apiKey = getDirectApiKey();
+  if (!apiKey) {
+    const errorMsg =
+      '[AI/Gemini] GEMINI_API_KEY not found in environment. Set VITE_GEMINI_API_KEY or GEMINI_API_KEY.';
+    console.error(errorMsg);
+    throw new Error(errorMsg);
+  }
+
+  const url = `${GEMINI_API_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+
+  const payload = {
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: userContent }],
+      },
+    ],
+    systemInstruction: {
+      parts: [{ text: systemPrompt }],
+    },
+    generationConfig: {
+      temperature: config?.temperature ?? DIRECT_API_CONFIG.temperature,
+      maxOutputTokens: config?.maxOutputTokens ?? DIRECT_API_CONFIG.maxOutputTokens,
+      topP: DIRECT_API_CONFIG.topP,
+      topK: DIRECT_API_CONFIG.topK,
+    },
+  };
+
+  const startTime = Date.now();
+
+  debugLog('[AI/Gemini] Direct API call starting...');
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const processingTimeMs = Date.now() - startTime;
+  const responseText = await response.text();
+
+  if (!response.ok) {
+    let errorMessage = `Gemini API error: ${response.status}`;
+    try {
+      const errorData = JSON.parse(responseText);
+      errorMessage = errorData.error?.message || responseText;
+    } catch {
+      errorMessage = responseText || errorMessage;
+    }
+
+    console.error(`[AI/Gemini] Direct API error ${response.status}: ${errorMessage}`);
+    throw new Error(`Gemini API error: ${response.status} - ${errorMessage}`);
+  }
+
+  const data: GeminiDirectAPIResponse = JSON.parse(responseText);
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  if (!text) {
+    const errorMsg = '[AI/Gemini] No text in Gemini response';
+    console.error(errorMsg, JSON.stringify(data).slice(0, 500));
+    throw new Error(errorMsg);
+  }
+
+  debugLog(`[AI/Gemini] Direct API call completed in ${processingTimeMs}ms`);
+
+  return {
+    text,
+    promptTokens: data.usageMetadata?.promptTokenCount || 0,
+    completionTokens: data.usageMetadata?.candidatesTokenCount || 0,
+    totalTokens: data.usageMetadata?.totalTokenCount || 0,
+    model: GEMINI_MODEL,
+    processingTimeMs,
+  };
+}
+
+/**
+ * Call Gemini via serverless endpoint (browser environment)
+ *
+ * @param systemPrompt - System instruction for the AI
+ * @param userContent - User content/prompt
+ * @param config - Optional configuration overrides
+ * @param signal - Optional abort signal for timeout
+ * @returns ServerlessResponse
+ * @throws Error on API failure
+ */
+async function callGeminiServerless(
+  systemPrompt: string,
+  userContent: string,
+  config?: { temperature?: number; maxOutputTokens?: number },
+  signal?: AbortSignal
+): Promise<ServerlessResponse> {
+  const response = await fetch(SERVERLESS_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      systemPrompt,
+      userContent,
+      temperature: config?.temperature ?? DIRECT_API_CONFIG.temperature,
+      maxOutputTokens: config?.maxOutputTokens ?? DIRECT_API_CONFIG.maxOutputTokens,
+    }),
+    signal,
+  });
+
+  if (!response.ok) {
+    let errorCode: AIServiceErrorCode = 'API_ERROR';
+    let errorMessage = `API error: ${response.status}`;
+
+    try {
+      const errorData: ServerlessErrorResponse = await response.json();
+      errorCode = mapServerlessErrorCode(errorData.code);
+      errorMessage = errorData.error || errorMessage;
+    } catch {
+      // If we can't parse the error, use default message
+    }
+
+    throw createError(errorCode, errorMessage);
+  }
+
+  return response.json();
+}
+
+/**
+ * Unified Gemini API caller - routes to direct or serverless based on environment
+ *
+ * @param systemPrompt - System instruction for the AI
+ * @param userContent - User content/prompt
+ * @param config - Optional configuration overrides
+ * @param signal - Optional abort signal for timeout (only used in browser)
+ * @returns ServerlessResponse
+ */
+async function callGeminiAPI(
+  systemPrompt: string,
+  userContent: string,
+  config?: { temperature?: number; maxOutputTokens?: number },
+  signal?: AbortSignal
+): Promise<ServerlessResponse> {
+  if (isNodeEnvironment()) {
+    // Direct API call for Node.js/tests
+    debugLog('[AI/Gemini] Using direct API path (Node.js environment)');
+    return callGeminiDirect(systemPrompt, userContent, config);
+  } else {
+    // Serverless proxy for browser
+    debugLog('[AI/Gemini] Using serverless path (browser environment)');
+    return callGeminiServerless(systemPrompt, userContent, config, signal);
+  }
 }
 
 // ============================================================================
@@ -94,7 +321,10 @@ function isAIServiceError(error: unknown): error is AIServiceError {
 /**
  * Analyze a race using Gemini AI
  *
- * Routes through the /api/gemini serverless endpoint for secure API key handling.
+ * Routes through either:
+ * - /api/gemini serverless endpoint (browser) for secure API key handling
+ * - Direct Gemini API (Node.js/tests) when serverless endpoint unavailable
+ *
  * Takes the parsed race data and algorithm scoring results,
  * sends them to Gemini, and returns structured AI analysis.
  *
@@ -110,46 +340,21 @@ export async function analyzeRaceWithGemini(
   const startTime = Date.now();
 
   const prompt = buildRaceAnalysisPrompt(race, scoringResult);
+  const systemPrompt = 'You are a horse racing analysis AI. Return JSON only.';
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const response = await fetch(SERVERLESS_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemPrompt: 'You are a horse racing analysis AI. Return JSON only.',
-        userContent: prompt,
-        temperature: 0.25,
-        maxOutputTokens: 2048,
-      }),
-      signal: controller.signal,
-    });
+    const data = await callGeminiAPI(
+      systemPrompt,
+      prompt,
+      { temperature: 0.25, maxOutputTokens: 2048 },
+      controller.signal
+    );
 
     clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      // Parse serverless error response
-      let errorCode: AIServiceErrorCode = 'API_ERROR';
-      let errorMessage = `API error: ${response.status}`;
-
-      try {
-        const errorData: ServerlessErrorResponse = await response.json();
-        errorCode = mapServerlessErrorCode(errorData.code);
-        errorMessage = errorData.error || errorMessage;
-
-        if (errorData.code === 'RATE_LIMITED') {
-          errorMessage = 'AI rate limited, try again later';
-        }
-      } catch {
-        // If we can't parse the error, use default message
-      }
-
-      throw createError(errorCode, errorMessage);
-    }
-
-    const data: ServerlessResponse = await response.json();
     const text = data.text;
 
     if (!text) {
@@ -276,7 +481,10 @@ function mapServerlessErrorCode(code: string): AIServiceErrorCode {
 /**
  * Generic Gemini API caller with custom response parser
  *
- * Routes through the /api/gemini serverless endpoint for secure API key handling.
+ * Routes through either:
+ * - /api/gemini serverless endpoint (browser) for secure API key handling
+ * - Direct Gemini API (Node.js/tests) when serverless endpoint unavailable
+ *
  * Allows any bot to call Gemini with a custom parser for their specific output format.
  *
  * @param prompt - The prompt to send to Gemini
@@ -290,43 +498,21 @@ export async function callGeminiWithSchema<T>(
 ): Promise<T> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), MULTI_BOT_TIMEOUT_MS);
+  const systemPrompt = 'You are a horse racing analysis AI. Return JSON only.';
 
   try {
-    const response = await fetch(SERVERLESS_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemPrompt: 'You are a horse racing analysis AI. Return JSON only.',
-        userContent: prompt,
+    const data = await callGeminiAPI(
+      systemPrompt,
+      prompt,
+      {
         temperature: MULTI_BOT_CONFIG.temperature,
         maxOutputTokens: MULTI_BOT_CONFIG.maxOutputTokens,
-      }),
-      signal: controller.signal,
-    });
+      },
+      controller.signal
+    );
 
     clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      // Parse serverless error response
-      let errorCode: AIServiceErrorCode = 'API_ERROR';
-      let errorMessage = `API error: ${response.status}`;
-
-      try {
-        const errorData: ServerlessErrorResponse = await response.json();
-        errorCode = mapServerlessErrorCode(errorData.code);
-        errorMessage = errorData.error || errorMessage;
-
-        if (errorData.code === 'RATE_LIMITED') {
-          errorMessage = 'AI rate limited, try again later';
-        }
-      } catch {
-        // If we can't parse the error, use default message
-      }
-
-      throw createError(errorCode, errorMessage);
-    }
-
-    const data: ServerlessResponse = await response.json();
     const text = data.text;
 
     if (!text) {
