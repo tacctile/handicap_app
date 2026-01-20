@@ -17,8 +17,9 @@ import type { ParsedRace } from '../../types/drf';
 import type { RaceScoringResult } from '../../types/scoring';
 import type { AIRaceAnalysis, AIServiceStatus, AIServiceConfig, MultiBotRawResults } from './types';
 
-// Type declaration for Node.js process (available in test/CI environments)
-declare const process: { env?: Record<string, string | undefined> } | undefined;
+// Environment detection for isomorphic code (browser + Node.js serverless)
+// Note: process.env is available in Node.js environments (serverless, tests)
+// import.meta.env is available in Vite browser environments
 
 // Re-export types for consumers
 export type {
@@ -165,16 +166,19 @@ export function clearAnalysisCache(): void {
  * @returns Current service status
  */
 export function checkAIServiceStatus(): AIServiceStatus {
-  // Check for API key in both Vite (browser) and Node (test/CI) environments
+  // Check for API key in both Vite (browser) and Node (serverless/test) environments
   const hasApiKey =
-    (typeof import.meta !== 'undefined' && !!import.meta.env?.VITE_GEMINI_API_KEY) ||
-    (typeof process !== 'undefined' && !!process.env?.VITE_GEMINI_API_KEY);
+    // Node.js environment (serverless functions, tests, CI)
+    (typeof process !== 'undefined' &&
+      !!(process.env?.VITE_GEMINI_API_KEY || process.env?.GEMINI_API_KEY)) ||
+    // Vite browser environment
+    (typeof import.meta !== 'undefined' && !!import.meta.env?.VITE_GEMINI_API_KEY);
 
   if (!hasApiKey) {
     return 'offline';
   }
 
-  // In Node environment (tests), skip navigator check
+  // In Node environment (serverless/tests), skip navigator check
   if (typeof navigator === 'undefined') {
     return 'ready';
   }

@@ -24,8 +24,9 @@ import {
   buildFieldSpreadPrompt,
 } from './prompt';
 
-// Type declaration for Node.js process (available in test/CI environments)
-declare const process: { env?: Record<string, string | undefined> } | undefined;
+// Environment detection helpers for isomorphic code (browser + Node.js serverless)
+// Note: process.env is available in Node.js environments (serverless, tests)
+// import.meta.env is available in Vite browser environments
 
 // ============================================================================
 // CONFIGURATION
@@ -41,15 +42,21 @@ const TIMEOUT_MS = 30000;
 
 /**
  * Get the Gemini API key from environment variables
+ * Works in both browser (Vite) and server (Node.js) environments
  */
 function getApiKey(): string {
+  // Check Node environment first (serverless functions, tests, CI)
+  // This works because Vercel injects env vars as process.env
+  if (typeof process !== 'undefined' && process.env?.VITE_GEMINI_API_KEY) {
+    return process.env.VITE_GEMINI_API_KEY;
+  }
+  // Also check for GEMINI_API_KEY without VITE_ prefix (server-side convention)
+  if (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) {
+    return process.env.GEMINI_API_KEY;
+  }
   // Check Vite environment (browser)
   if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) {
     return import.meta.env.VITE_GEMINI_API_KEY;
-  }
-  // Check Node environment (test/CI)
-  if (typeof process !== 'undefined' && process.env?.VITE_GEMINI_API_KEY) {
-    return process.env.VITE_GEMINI_API_KEY;
   }
   return '';
 }
