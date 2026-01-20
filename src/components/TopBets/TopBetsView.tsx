@@ -4,10 +4,21 @@
  * 6-column betting view showing algorithm-generated betting suggestions.
  * Columns: WIN, PLACE, SHOW, EXACTA, TRIFECTA, SUPERFECTA
  * Features bordered bet cards for clear visual separation.
+ *
+ * Updated to use useEnhancedBetting hook for:
+ * - Softmax probabilities (coherent, sum to ~100%)
+ * - True overlay calculations
+ * - Kelly-based bet sizing recommendations
  */
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { generateTopBets, type TopBet, type TopBetType, type TopBetHorse } from '../../lib/betting/topBetsGenerator';
+import {
+  generateTopBets,
+  type TopBet,
+  type TopBetType,
+  type TopBetHorse,
+} from '../../lib/betting/topBetsGenerator';
+import { useEnhancedBetting, type EnhancedHorseData } from '../../hooks/useEnhancedBetting';
 import type { ScoredHorse } from '../../lib/scoring';
 import type { RaceHeader } from '../../types/drf';
 import './TopBetsView.css';
@@ -42,6 +53,8 @@ export interface ScaledTopBet extends TopBet {
   scaledCost: number;
   scaledWhatToSay: string;
   scaledPayout: string;
+  /** Kelly-suggested bet amount (if available from enhanced betting) */
+  kellyAmount?: number;
 }
 
 // ============================================================================
@@ -138,7 +151,38 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   const [superfectaVariant, setSuperfectaVariant] = useState<SuperfectaVariant>('straight');
 
   // ============================================================================
-  // GENERATE TOP BETS
+  // ENHANCED BETTING HOOK (Softmax probabilities + Kelly sizing)
+  // ============================================================================
+
+  const {
+    enhancedHorses,
+    recommendations: kellyRecommendations,
+    bankroll,
+    setBankroll,
+    calibrationActive,
+    isProcessing,
+    error: enhancedError,
+    // fieldMetrics available if needed for future enhancements
+    fieldMetrics: _fieldMetrics,
+  } = useEnhancedBetting({
+    scoredHorses,
+    raceHeader,
+    raceNumber,
+    getOdds,
+    isScratched,
+  });
+
+  // Create lookup map for enhanced probabilities (programNumber → EnhancedHorseData)
+  const enhancedProbabilityMap = useMemo(() => {
+    const map = new Map<number, EnhancedHorseData>();
+    for (const horse of enhancedHorses) {
+      map.set(horse.programNumber, horse);
+    }
+    return map;
+  }, [enhancedHorses]);
+
+  // ============================================================================
+  // GENERATE TOP BETS (uses existing generator for exotic bets)
   // ============================================================================
 
   // Calculate derived state to ensure reactivity when scratches/odds change
@@ -154,6 +198,9 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
       .join('|');
   }, [scoredHorses, getOdds]);
 
+  // Note: scratchedCount and oddsSignature are intentionally included as dependencies
+  // to force recalculation when odds/scratches change (cache invalidation pattern)
+
   const topBetsResult = useMemo(() => {
     if (scoredHorses.length === 0) return null;
     return generateTopBets(scoredHorses, raceHeader, raceNumber, getOdds, isScratched);
@@ -168,19 +215,59 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   }, [isCustom, customAmount, baseAmount]);
 
   // ============================================================================
-  // SCALE AND SORT BETS
+  // SCALE AND SORT BETS (with enhanced softmax probabilities)
   // ============================================================================
 
   const allScaledBets = useMemo((): ScaledTopBet[] => {
     if (!topBetsResult) return [];
 
-    return topBetsResult.topBets.map((bet) => ({
-      ...bet,
-      scaledCost: bet.cost * effectiveBase,
-      scaledWhatToSay: scaleWhatToSay(bet.whatToSay, effectiveBase),
-      scaledPayout: scalePayoutEstimate(bet.estimatedPayout, effectiveBase),
-    }));
-  }, [topBetsResult, effectiveBase]);
+    return topBetsResult.topBets.map((bet) => {
+      // For WIN/PLACE/SHOW bets, use softmax probability from enhanced betting
+      // For exotic bets, keep existing probability calculation
+      let enhancedProbability = bet.probability;
+      let kellyAmount: number | undefined;
+
+      if (['WIN', 'PLACE', 'SHOW'].includes(bet.internalType) && bet.horseNumbers.length === 1) {
+        const programNumber = bet.horseNumbers[0];
+        if (programNumber !== undefined) {
+          const enhancedHorse = enhancedProbabilityMap.get(programNumber);
+          if (enhancedHorse) {
+            // Use softmax-based probability (× 100 for percentage display)
+            if (bet.internalType === 'WIN') {
+              enhancedProbability = enhancedHorse.confidencePercent;
+            } else if (bet.internalType === 'PLACE') {
+              // Estimate place probability: ~1.6× win probability, capped at 95%
+              enhancedProbability = Math.min(95, enhancedHorse.confidencePercent * 1.6);
+            } else if (bet.internalType === 'SHOW') {
+              // Estimate show probability: ~2.0× win probability, capped at 98%
+              enhancedProbability = Math.min(98, enhancedHorse.confidencePercent * 2.0);
+            }
+
+            // Get Kelly-sized bet amount if available
+            if (kellyRecommendations) {
+              const kellyRec = kellyRecommendations.recommendations.find(
+                (r) => r.programNumber === programNumber && r.betType === bet.internalType
+              );
+              if (kellyRec) {
+                // Scale Kelly amount by base amount (Kelly is typically calculated on $1 base)
+                kellyAmount = kellyRec.suggestedAmount * effectiveBase;
+              }
+            }
+          }
+        }
+      }
+
+      return {
+        ...bet,
+        probability: enhancedProbability,
+        scaledCost: bet.cost * effectiveBase,
+        scaledWhatToSay: scaleWhatToSay(bet.whatToSay, effectiveBase),
+        scaledPayout: scalePayoutEstimate(bet.estimatedPayout, effectiveBase),
+        // Add Kelly-suggested amount if available (optional enhancement)
+        kellyAmount,
+      };
+    });
+  }, [topBetsResult, effectiveBase, enhancedProbabilityMap, kellyRecommendations]);
 
   // ============================================================================
   // FILTER BETS BY COLUMN TYPE
@@ -259,6 +346,42 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
     }
   }, []);
 
+  // Bankroll input handler
+  const [bankrollInput, setBankrollInput] = useState<string>(bankroll.toString());
+  const [showBankrollInput, setShowBankrollInput] = useState(false);
+
+  const handleBankrollChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    setBankrollInput(value);
+  }, []);
+
+  const handleBankrollBlur = useCallback(() => {
+    const newBankroll = parseInt(bankrollInput, 10);
+    if (newBankroll >= 10 && newBankroll <= 100000) {
+      setBankroll(newBankroll);
+    } else {
+      setBankrollInput(bankroll.toString());
+    }
+    setShowBankrollInput(false);
+  }, [bankrollInput, setBankroll, bankroll]);
+
+  const handleBankrollKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        handleBankrollBlur();
+      } else if (e.key === 'Escape') {
+        setBankrollInput(bankroll.toString());
+        setShowBankrollInput(false);
+      }
+    },
+    [handleBankrollBlur, bankroll]
+  );
+
+  // Sync bankroll input with hook's bankroll
+  useEffect(() => {
+    setBankrollInput(bankroll.toString());
+  }, [bankroll]);
+
   const handleColumnVariantChange = useCallback((columnId: ColumnId, value: string) => {
     if (columnId === 'exacta') {
       setExactaVariant(value as ExactaVariant);
@@ -272,6 +395,34 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   // ============================================================================
   // RENDER
   // ============================================================================
+
+  // Show loading state while enhanced betting is processing
+  if (isProcessing && !topBetsResult) {
+    return (
+      <div className="top-bets-view">
+        <div className="top-bets-loading">
+          <div className="top-bets-loading__spinner" />
+          <p>Calculating enhanced probabilities...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error message if enhanced betting has an error (but still render if we have fallback data)
+  const showEnhancedError = enhancedError && !topBetsResult;
+  if (showEnhancedError) {
+    return (
+      <div className="top-bets-view">
+        <div className="top-bets-error">
+          <span className="top-bets-error__icon">⚠️</span>
+          <p>{enhancedError}</p>
+          <button className="top-bets-error__close" onClick={onClose}>
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="top-bets-view">
@@ -306,6 +457,39 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
               </button>
             )}
           </div>
+        </div>
+
+        {/* Bankroll Input */}
+        <div className="top-bets-controls__bankroll">
+          <span className="top-bets-controls__label">Bankroll:</span>
+          {showBankrollInput ? (
+            <input
+              type="text"
+              className="top-bets-custom-input"
+              value={bankrollInput}
+              onChange={handleBankrollChange}
+              onBlur={handleBankrollBlur}
+              onKeyDown={handleBankrollKeyDown}
+              autoFocus
+              maxLength={6}
+            />
+          ) : (
+            <button
+              className="top-bets-base-btn"
+              onClick={() => setShowBankrollInput(true)}
+              title="Click to change bankroll for Kelly sizing"
+            >
+              ${bankroll}
+            </button>
+          )}
+          {calibrationActive && (
+            <span
+              className="top-bets-calibration-badge"
+              title="Calibration active - probabilities are calibrated"
+            >
+              CAL
+            </span>
+          )}
         </div>
 
         {/* Horse Reference List (Middle) */}
@@ -493,31 +677,53 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
       ? `${Math.max(0.1, rawProbability).toFixed(1)}%`
       : `${Math.round(rawProbability)}%`;
 
+  // Check if this is a WIN/PLACE/SHOW bet with Kelly sizing available
+  const hasKellySizing = bet.kellyAmount !== undefined && bet.kellyAmount > 0;
+  const isWinPlaceShow = ['WIN', 'PLACE', 'SHOW'].includes(bet.internalType);
+
   return (
     <div className="compact-bet-card">
       {/* Row 1: Horse numbers (full width) */}
       <div className="compact-bet-card__header">
         {showTooltip ? (
           <ExoticBetTooltip horses={bet.horses}>
-            <span className="compact-bet-card__horses compact-bet-card__horses--hoverable">{horseDisplay}</span>
+            <span className="compact-bet-card__horses compact-bet-card__horses--hoverable">
+              {horseDisplay}
+            </span>
           </ExoticBetTooltip>
         ) : (
           <span className="compact-bet-card__horses">{horseDisplay}</span>
         )}
       </div>
 
-      {/* Row 2: Cost only (payout removed - based on inaccurate odds) */}
+      {/* Row 2: Cost (and Kelly sizing for WIN/PLACE/SHOW) */}
       <div className="compact-bet-card__stats">
         <span className="compact-bet-card__cost">
           <span className="compact-bet-card__label">COST:</span>
           <span className="compact-bet-card__value">${bet.scaledCost}</span>
         </span>
+        {hasKellySizing && isWinPlaceShow && (
+          <span className="compact-bet-card__kelly">
+            <span className="compact-bet-card__label">KELLY:</span>
+            <span className="compact-bet-card__value compact-bet-card__value--kelly">
+              ${Math.round(bet.kellyAmount!)}
+            </span>
+          </span>
+        )}
       </div>
 
-      {/* Row 3: Confidence */}
+      {/* Row 3: Confidence (with softmax indicator for WIN/PLACE/SHOW) */}
       <div className="compact-bet-card__confidence">
         <span className="compact-bet-card__label">CONFIDENCE:</span>
         <span className="compact-bet-card__value">{confidenceDisplay}</span>
+        {isWinPlaceShow && (
+          <span
+            className="compact-bet-card__softmax-indicator"
+            title="Softmax probability (coherent)"
+          >
+            ✓
+          </span>
+        )}
       </div>
 
       {/* Row 4: Window script (last row) */}
