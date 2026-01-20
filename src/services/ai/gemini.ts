@@ -31,10 +31,22 @@ import {
 /**
  * Detect if running in Node.js environment (tests, serverless) vs Browser
  *
- * In Node.js: window is undefined, process is defined
- * In Browser: window is defined, process may be polyfilled but process.env won't have real env vars
+ * IMPORTANT: Vitest uses jsdom which defines `window`, so we can't rely solely on
+ * `typeof window === 'undefined'`. Instead, we check for Node.js-specific indicators:
+ *
+ * 1. process.versions.node - Only exists in real Node.js, not jsdom polyfills
+ * 2. window is undefined AND process exists - Fallback for edge cases
+ *
+ * In Node.js: process.versions.node exists (even in jsdom test environments)
+ * In Browser: process.versions.node is undefined (even if process is polyfilled)
  */
 function isNodeEnvironment(): boolean {
+  // Primary check: process.versions.node is Node.js-specific and not polyfilled by jsdom
+  if (typeof process !== 'undefined' && typeof process.versions?.node === 'string') {
+    return true;
+  }
+
+  // Fallback: window undefined check (for non-jsdom Node.js environments)
   return typeof window === 'undefined' && typeof process !== 'undefined';
 }
 
@@ -52,10 +64,21 @@ function getDirectApiKey(): string | null {
 }
 
 // Log environment detection at module load (helps debug test runs)
-if (isNodeEnvironment()) {
-  console.log('[AI/Gemini] Running in Node.js environment');
-  console.log('[AI/Gemini] Direct API key available:', !!getDirectApiKey());
+const _isNode = isNodeEnvironment();
+console.log('=== [GEMINI] ENVIRONMENT DETECTION ===');
+console.log(`[GEMINI] typeof window: ${typeof window}`);
+console.log(`[GEMINI] typeof process: ${typeof process}`);
+console.log(
+  `[GEMINI] process.versions?.node: ${typeof process !== 'undefined' ? process.versions?.node : 'N/A'}`
+);
+console.log(`[GEMINI] isNodeEnvironment(): ${_isNode}`);
+if (_isNode) {
+  console.log('=== [GEMINI] Environment: Node.js, will use DIRECT API ===');
+  console.log('[GEMINI] Direct API key available:', !!getDirectApiKey());
+} else {
+  console.log('=== [GEMINI] Environment: Browser, will use SERVERLESS ===');
 }
+console.log('======================================');
 
 // ============================================================================
 // CONFIGURATION
@@ -173,7 +196,8 @@ async function callGeminiDirect(
 
   const startTime = Date.now();
 
-  debugLog('[AI/Gemini] Direct API call starting...');
+  console.log('=== [GEMINI] Direct API call starting... ===');
+  console.log(`[GEMINI] Target URL: ${GEMINI_API_BASE}/${GEMINI_MODEL}:generateContent`);
 
   const response = await fetch(url, {
     method: 'POST',
@@ -236,6 +260,9 @@ async function callGeminiServerless(
   config?: { temperature?: number; maxOutputTokens?: number },
   signal?: AbortSignal
 ): Promise<ServerlessResponse> {
+  console.log('=== [GEMINI] Serverless API call starting... ===');
+  console.log(`[GEMINI] Target URL: ${SERVERLESS_ENDPOINT}`);
+
   const response = await fetch(SERVERLESS_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -281,13 +308,16 @@ async function callGeminiAPI(
   config?: { temperature?: number; maxOutputTokens?: number },
   signal?: AbortSignal
 ): Promise<ServerlessResponse> {
-  if (isNodeEnvironment()) {
+  const isNode = isNodeEnvironment();
+  console.log(`=== [GEMINI] callGeminiAPI() routing decision: isNode=${isNode} ===`);
+
+  if (isNode) {
     // Direct API call for Node.js/tests
-    debugLog('[AI/Gemini] Using direct API path (Node.js environment)');
+    console.log('=== [GEMINI] ROUTING TO: callGeminiDirect() (Node.js) ===');
     return callGeminiDirect(systemPrompt, userContent, config);
   } else {
     // Serverless proxy for browser
-    debugLog('[AI/Gemini] Using serverless path (browser environment)');
+    console.log('=== [GEMINI] ROUTING TO: callGeminiServerless() (Browser) ===');
     return callGeminiServerless(systemPrompt, userContent, config, signal);
   }
 }
