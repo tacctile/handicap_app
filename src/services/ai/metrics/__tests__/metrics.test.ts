@@ -109,7 +109,7 @@ function createMockScoringResult(): RaceScoringResult {
         isScratched: false,
         positiveFactors: ['Top speed figure'],
         negativeFactors: [],
-      } as HorseScoreForAI,
+      } as unknown as HorseScoreForAI,
       {
         programNumber: 1,
         horseName: 'Horse A',
@@ -118,7 +118,7 @@ function createMockScoringResult(): RaceScoringResult {
         isScratched: false,
         positiveFactors: ['Good form'],
         negativeFactors: [],
-      } as HorseScoreForAI,
+      } as unknown as HorseScoreForAI,
       {
         programNumber: 5,
         horseName: 'Horse E',
@@ -127,7 +127,7 @@ function createMockScoringResult(): RaceScoringResult {
         isScratched: false,
         positiveFactors: ['Class edge'],
         negativeFactors: [],
-      } as HorseScoreForAI,
+      } as unknown as HorseScoreForAI,
       {
         programNumber: 2,
         horseName: 'Horse B',
@@ -136,7 +136,7 @@ function createMockScoringResult(): RaceScoringResult {
         isScratched: false,
         positiveFactors: [],
         negativeFactors: ['Dropping in class'],
-      } as HorseScoreForAI,
+      } as unknown as HorseScoreForAI,
       {
         programNumber: 4,
         horseName: 'Horse D',
@@ -145,7 +145,7 @@ function createMockScoringResult(): RaceScoringResult {
         isScratched: false,
         positiveFactors: [],
         negativeFactors: ['Poor recent form'],
-      } as HorseScoreForAI,
+      } as unknown as HorseScoreForAI,
     ],
     confidence: 'HIGH',
   } as unknown as RaceScoringResult;
