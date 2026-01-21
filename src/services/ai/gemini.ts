@@ -104,6 +104,42 @@ const DIRECT_API_CONFIG = {
   topK: 40,
 };
 
+// Proxy support for Node.js environments
+let proxyAgent: unknown = null;
+let proxyChecked = false;
+
+/**
+ * Get or create a proxy agent for HTTP requests in Node.js
+ * Uses undici's ProxyAgent when HTTPS_PROXY is set
+ */
+async function getProxyAgent(): Promise<unknown> {
+  // Only works in Node.js environment
+  if (!isNodeEnvironment()) return null;
+
+  // Return cached result if already checked
+  if (proxyChecked) return proxyAgent;
+  proxyChecked = true;
+
+  // Safely access process.env
+  const proc = typeof process !== 'undefined' ? process : null;
+  const proxyUrl = proc?.env?.HTTPS_PROXY || proc?.env?.HTTP_PROXY;
+  if (!proxyUrl) {
+    return null;
+  }
+
+  try {
+    // Dynamic import undici for proxy support (Node.js only)
+    // This will fail in browser builds, which is expected
+    const undiciModule = await (Function('return import("undici")')() as Promise<{ ProxyAgent: new (url: string) => unknown }>);
+    proxyAgent = new undiciModule.ProxyAgent(proxyUrl);
+    console.log('[GEMINI] Using proxy agent for HTTPS requests');
+    return proxyAgent;
+  } catch (_e) {
+    console.warn('[GEMINI] Could not create proxy agent - undici not available');
+    return null;
+  }
+}
+
 // Debug logging - only in development
 const DEBUG = typeof process !== 'undefined' ? process.env?.NODE_ENV !== 'production' : true;
 const debugLog = (...args: unknown[]): void => {
@@ -112,6 +148,72 @@ const debugLog = (...args: unknown[]): void => {
 const debugError = (...args: unknown[]): void => {
   if (DEBUG) console.error(...args);
 };
+
+// ============================================================================
+// RAW RESPONSE DEBUG LOGGING
+// ============================================================================
+
+// Store raw responses for debugging (in-memory for browser, file for Node.js)
+const rawResponseLog: Array<{
+  timestamp: string;
+  botName: string;
+  rawText: string;
+  parseSuccess: boolean;
+  parseError?: string;
+}> = [];
+
+// Current bot name for logging context
+let currentBotName = 'unknown';
+
+/**
+ * Set the current bot name for logging context
+ */
+export function setCurrentBotName(name: string): void {
+  currentBotName = name;
+}
+
+/**
+ * Log raw API response for debugging
+ */
+function logRawResponse(rawText: string, parseSuccess: boolean, parseError?: string): void {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    botName: currentBotName,
+    rawText: rawText.substring(0, 2000), // First 2000 chars
+    parseSuccess,
+    parseError,
+  };
+
+  rawResponseLog.push(entry);
+
+  // Console log for immediate visibility
+  console.log(`\n=== [RAW RESPONSE] ${currentBotName} ===`);
+  console.log(`Timestamp: ${entry.timestamp}`);
+  console.log(`Parse Success: ${parseSuccess}`);
+  if (parseError) {
+    console.log(`Parse Error: ${parseError}`);
+  }
+  console.log(`Raw Text (first 2000 chars):`);
+  console.log(rawText.substring(0, 2000));
+  console.log(`=== [END RAW RESPONSE] ===\n`);
+
+  // File logging is handled by the test scripts that import this module
+  // Console logging above is sufficient for debugging in all environments
+}
+
+/**
+ * Get all logged raw responses (for testing/debugging)
+ */
+export function getRawResponseLog(): typeof rawResponseLog {
+  return [...rawResponseLog];
+}
+
+/**
+ * Clear raw response log
+ */
+export function clearRawResponseLog(): void {
+  rawResponseLog.length = 0;
+}
 
 // ============================================================================
 // SERVERLESS RESPONSE TYPES
@@ -203,13 +305,33 @@ async function callGeminiDirect(
   console.log('=== [GEMINI] Direct API call starting... ===');
   console.log(`[GEMINI] Target URL: ${GEMINI_API_BASE}/${GEMINI_MODEL}:generateContent`);
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  // Get proxy agent if available
+  const agent = await getProxyAgent();
+
+  // Use undici's fetch if we have a proxy agent, otherwise use native fetch
+  let response: Response;
+  if (agent) {
+    console.log('[GEMINI] Making request through proxy...');
+    // Dynamic import undici (Node.js only, will be tree-shaken in browser)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const undiciModule = await (Function('return import("undici")')() as Promise<{ fetch: (url: string, options: any) => Promise<Response> }>);
+    response = await undiciModule.fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      dispatcher: agent,
+    });
+  } else {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  }
 
   const processingTimeMs = Date.now() - startTime;
   const responseText = await response.text();
@@ -553,13 +675,18 @@ export async function callGeminiWithSchema<T>(
       throw createError('PARSE_ERROR', 'No content in Gemini response');
     }
 
-    // Log raw response text for debugging parsing issues (dev only)
+    // Log raw response text for debugging parsing issues
     debugLog('[Gemini Bot] Raw response text (first 500 chars):', text.substring(0, 500));
 
     try {
-      return parseResponse(text);
+      const result = parseResponse(text);
+      // Log successful parse
+      logRawResponse(text, true);
+      return result;
     } catch (parseErr) {
-      // Log full response on parse failure for debugging (dev only)
+      // Log full response on parse failure with error details
+      const errorMsg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+      logRawResponse(text, false, errorMsg);
       debugError('[Gemini Bot] Parse error. Full raw response:', text);
       throw parseErr;
     }
@@ -625,6 +752,36 @@ function extractJson(text: string): string {
 }
 
 /**
+ * Convert snake_case keys to camelCase recursively
+ * Handles objects, arrays, and nested structures
+ */
+function snakeToCamel(str: string): string {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+function normalizeKeys(obj: unknown): unknown {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(normalizeKeys);
+  }
+
+  if (typeof obj === 'object') {
+    const normalized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      // Convert snake_case to camelCase
+      const normalizedKey = snakeToCamel(key);
+      normalized[normalizedKey] = normalizeKeys(value);
+    }
+    return normalized;
+  }
+
+  return obj;
+}
+
+/**
  * Parse Trip Trouble Bot response
  *
  * @param text - Raw text response from Gemini
@@ -635,7 +792,9 @@ export function parseTripTroubleResponse(text: string): TripTroubleAnalysis {
   const jsonStr = extractJson(text);
 
   try {
-    const parsed = JSON.parse(jsonStr);
+    const rawParsed = JSON.parse(jsonStr);
+    // Normalize keys to handle both camelCase and snake_case from Gemini
+    const parsed = normalizeKeys(rawParsed) as Record<string, unknown>;
 
     // Handle both field names: prompt uses "troubledHorses", types use "horsesWithTripTrouble"
     const horsesArray = parsed.troubledHorses || parsed.horsesWithTripTrouble;
@@ -697,7 +856,9 @@ export function parsePaceScenarioResponse(text: string): PaceScenarioAnalysis {
   const jsonStr = extractJson(text);
 
   try {
-    const parsed = JSON.parse(jsonStr);
+    const rawParsed = JSON.parse(jsonStr);
+    // Normalize keys to handle both camelCase and snake_case from Gemini
+    const parsed = normalizeKeys(rawParsed) as Record<string, unknown>;
 
     // Map prompt's pace projection values to parser expected values
     // Prompt outputs: "LONE_SPEED" | "SPEED_DUEL" | "MODERATE" | "SLOW"
@@ -775,7 +936,10 @@ export function parseVulnerableFavoriteResponse(text: string): VulnerableFavorit
   const jsonStr = extractJson(text);
 
   try {
-    const parsed = JSON.parse(jsonStr);
+    const rawParsed = JSON.parse(jsonStr);
+    // Normalize keys to handle both camelCase and snake_case from Gemini
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const parsed = normalizeKeys(rawParsed) as any;
 
     // Validate and normalize confidence (at root level in prompt output)
     const validConfidence = ['HIGH', 'MEDIUM', 'LOW'];
@@ -805,7 +969,7 @@ export function parseVulnerableFavoriteResponse(text: string): VulnerableFavorit
     } else if (Array.isArray(parsed.reasons)) {
       reasons = parsed.reasons;
     } else if (typeof parsed.reasoning === 'string' && parsed.reasoning.length > 0) {
-      reasons = [parsed.reasoning];
+      reasons = [parsed.reasoning as string];
     } else if (
       typeof favoriteAnalysis.overallAssessment === 'string' &&
       favoriteAnalysis.overallAssessment.length > 0
@@ -836,7 +1000,10 @@ export function parseFieldSpreadResponse(text: string): FieldSpreadAnalysis {
   const jsonStr = extractJson(text);
 
   try {
-    const parsed = JSON.parse(jsonStr);
+    const rawParsed = JSON.parse(jsonStr);
+    // Normalize keys to handle both camelCase and snake_case from Gemini
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const parsed = normalizeKeys(rawParsed) as any;
 
     // Handle nested structure from prompt output
     // Prompt outputs: { fieldAssessment: { fieldType, topTierCount, ... }, horseClassifications, ... }
@@ -959,6 +1126,7 @@ export async function analyzeTripTrouble(
   race: ParsedRace,
   scoringResult: RaceScoringResult
 ): Promise<TripTroubleAnalysis> {
+  setCurrentBotName('TripTrouble');
   const prompt = buildTripTroublePrompt(race, scoringResult);
   return callGeminiWithSchema(prompt, parseTripTroubleResponse);
 }
@@ -974,6 +1142,7 @@ export async function analyzePaceScenario(
   race: ParsedRace,
   scoringResult: RaceScoringResult
 ): Promise<PaceScenarioAnalysis> {
+  setCurrentBotName('PaceScenario');
   const prompt = buildPaceScenarioPrompt(race, scoringResult);
   return callGeminiWithSchema(prompt, parsePaceScenarioResponse);
 }
@@ -989,6 +1158,7 @@ export async function analyzeVulnerableFavorite(
   race: ParsedRace,
   scoringResult: RaceScoringResult
 ): Promise<VulnerableFavoriteAnalysis> {
+  setCurrentBotName('VulnerableFavorite');
   const prompt = buildVulnerableFavoritePrompt(race, scoringResult);
   return callGeminiWithSchema(prompt, parseVulnerableFavoriteResponse);
 }
@@ -1004,6 +1174,7 @@ export async function analyzeFieldSpread(
   race: ParsedRace,
   scoringResult: RaceScoringResult
 ): Promise<FieldSpreadAnalysis> {
+  setCurrentBotName('FieldSpread');
   const prompt = buildFieldSpreadPrompt(race, scoringResult);
   return callGeminiWithSchema(prompt, parseFieldSpreadResponse);
 }

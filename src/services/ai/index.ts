@@ -78,6 +78,10 @@ export {
   parsePaceScenarioResponse,
   parseVulnerableFavoriteResponse,
   parseFieldSpreadResponse,
+  // Debug logging exports
+  setCurrentBotName,
+  getRawResponseLog,
+  clearRawResponseLog,
 } from './gemini';
 
 // Re-export prompt builders for testing
