@@ -943,10 +943,10 @@ export function combineMultiBotResults(
     const topSignal = reorderedSignals[0];
     const confirmReasons: string[] = [];
 
-    if (topSignal?.tripTroubleBoost === 0 && topSignal?.paceAdvantage >= 0) {
+    if (topSignal?.tripTroubleBoost === 0 && (topSignal?.paceAdvantage ?? -1) >= 0) {
       confirmReasons.push('no hidden concerns');
     }
-    if (paceScenario && topSignal?.paceAdvantage >= 0) {
+    if (paceScenario && (topSignal?.paceAdvantage ?? -1) >= 0) {
       confirmReasons.push('pace scenario favorable');
     }
     if (fieldSpread?.fieldType === 'SEPARATED' || fieldSpread?.fieldType === 'DOMINANT') {
