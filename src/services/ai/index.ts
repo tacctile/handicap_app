@@ -27,6 +27,7 @@ import type {
   VulnerableFavoriteAnalysis,
   FieldSpreadAnalysis,
 } from './types';
+import { recordAIDecision } from './metrics/recorder';
 
 // ============================================================================
 // DEBUG LOGGING (production-safe)
@@ -247,7 +248,7 @@ export function checkAIServiceStatus(): AIServiceStatus {
 export async function getMultiBotAnalysis(
   race: ParsedRace,
   scoringResult: RaceScoringResult,
-  options?: { forceRefresh?: boolean; scoringVersion?: number }
+  options?: { forceRefresh?: boolean; scoringVersion?: number; recordMetrics?: boolean }
 ): Promise<AIRaceAnalysis> {
   const startTime = Date.now();
   const cacheKey = `multi-${race.header.trackCode}-${race.header.raceNumber}-${options?.scoringVersion ?? 0}`;
@@ -314,6 +315,18 @@ export async function getMultiBotAnalysis(
 
   // Cache it
   analysisCache.set(cacheKey, analysis);
+
+  // Record metrics if enabled (default: true)
+  const shouldRecordMetrics = options?.recordMetrics !== false;
+  if (shouldRecordMetrics) {
+    try {
+      const recordId = await recordAIDecision(analysis, scoringResult, race, rawResults);
+      debugLog(`[Metrics] Recorded decision: ${recordId}`);
+    } catch (error) {
+      debugError('[Metrics] Failed to record decision:', error);
+      // Don't fail the analysis if metrics recording fails
+    }
+  }
 
   return analysis;
 }
