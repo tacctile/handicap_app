@@ -16,7 +16,7 @@ import type {
   TrackIntelligenceForAI,
   TrainerCategoryStatForAI,
 } from '../../types/scoring';
-import { ALGORITHM_CONTEXT, FIELD_SPREAD_CONTEXT } from './algorithmContext';
+import { ALGORITHM_CONTEXT } from './algorithmContext';
 
 // ============================================================================
 // TRACK INTELLIGENCE FORMATTING
@@ -1596,73 +1596,412 @@ OUTPUT FORMAT - Return JSON only:
 }`;
 }
 
+// ============================================================================
+// FIELD SPREAD HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Field type classification for bet structure decisions
+ */
+export type FieldType = 'DOMINANT' | 'SEPARATED' | 'COMPETITIVE' | 'WIDE_OPEN';
+
+/**
+ * Result of field separation analysis
+ */
+export interface FieldSeparationResult {
+  /** Classification of field competitiveness */
+  fieldType: FieldType;
+  /** Score gaps between consecutive ranks (1-2, 2-3, 3-4, 4-5) */
+  scoreGaps: number[];
+  /** How many horses are in Tier 1 (high confidence) */
+  topTierCount: number;
+  /** How many horses have Score >= 140 */
+  contenderCount: number;
+  /** Whether there's a natural cutoff in scoring */
+  clearSeparation: boolean;
+}
+
+/**
+ * Calculate field separation analysis from ranked scores
+ *
+ * Analyzes score gaps between ranked horses to classify field type.
+ *
+ * @param rankedScores - Scores sorted by rank (non-scratched)
+ * @returns Field separation analysis object
+ */
+export function calculateFieldSeparation(rankedScores: HorseScoreForAI[]): FieldSeparationResult {
+  if (rankedScores.length === 0) {
+    return {
+      fieldType: 'WIDE_OPEN',
+      scoreGaps: [],
+      topTierCount: 0,
+      contenderCount: 0,
+      clearSeparation: false,
+    };
+  }
+
+  // Calculate score gaps between consecutive ranks (1-2, 2-3, 3-4, 4-5)
+  const scoreGaps: number[] = [];
+  for (let i = 0; i < Math.min(4, rankedScores.length - 1); i++) {
+    const current = rankedScores[i];
+    const next = rankedScores[i + 1];
+    if (current && next) {
+      scoreGaps.push(current.finalScore - next.finalScore);
+    }
+  }
+
+  // Count horses in Tier 1 (high confidence)
+  const topTierCount = rankedScores.filter((s) => s.confidenceTier === 'high').length;
+
+  // Count contenders (Score >= 140)
+  const contenderCount = rankedScores.filter((s) => s.finalScore >= 140).length;
+
+  // Get gap between rank 1 and rank 2
+  const gap1to2 = scoreGaps[0] || 0;
+
+  // Get top score and check spread
+  const topScore = rankedScores[0]?.finalScore || 0;
+  const top4Score = rankedScores[3]?.finalScore || 0;
+  const top6Score = rankedScores[5]?.finalScore || 0;
+  const top4Spread = topScore - top4Score;
+  const top6Spread = topScore - top6Score;
+
+  // Classify field type based on score gaps
+  // For smaller fields, adjust thresholds proportionally
+  const fieldSize = rankedScores.length;
+  const adjustFactor = fieldSize < 5 ? 0.7 : 1;
+
+  let fieldType: FieldType;
+
+  // DOMINANT: Rank 1 leads by 30+ points
+  if (gap1to2 >= 30 * adjustFactor) {
+    fieldType = 'DOMINANT';
+  }
+  // SEPARATED: Clear tiers with 15+ point gaps
+  else if (gap1to2 >= 15 * adjustFactor || scoreGaps.some((gap) => gap >= 15 * adjustFactor)) {
+    fieldType = 'SEPARATED';
+  }
+  // WIDE_OPEN: Top 6 within 30 points, no standout
+  else if (fieldSize >= 6 && top6Spread <= 30) {
+    fieldType = 'WIDE_OPEN';
+  }
+  // COMPETITIVE: Top 4 within 25 points
+  else if (fieldSize >= 4 && top4Spread <= 25) {
+    fieldType = 'COMPETITIVE';
+  }
+  // WIDE_OPEN as fallback for very tight fields
+  else if (gap1to2 < 10 && scoreGaps.every((gap) => gap < 10)) {
+    fieldType = 'WIDE_OPEN';
+  }
+  // Default to COMPETITIVE
+  else {
+    fieldType = 'COMPETITIVE';
+  }
+
+  // Check for clear separation (natural cutoff)
+  const clearSeparation = scoreGaps.some((gap) => gap >= 15);
+
+  return {
+    fieldType,
+    scoreGaps,
+    topTierCount,
+    contenderCount,
+    clearSeparation,
+  };
+}
+
+/**
+ * Parse morning line odds to decimal odds
+ *
+ * @param mlOdds - Morning line odds string (e.g., "5-1", "3-2", "9-5")
+ * @returns Decimal odds (e.g., 5.0, 1.5, 1.8) or null if unparseable
+ */
+export function parseMorningLineOdds(mlOdds: string): number | null {
+  if (!mlOdds) return null;
+
+  // Handle "X-Y" format (e.g., "5-1", "3-2", "9-5")
+  const match = mlOdds.match(/^(\d+)-(\d+)$/);
+  if (match && match[1] && match[2]) {
+    const numerator = parseInt(match[1], 10);
+    const denominator = parseInt(match[2], 10);
+    if (denominator > 0) {
+      return numerator / denominator;
+    }
+  }
+
+  // Handle "even" or "evn"
+  if (mlOdds.toLowerCase().includes('even') || mlOdds.toLowerCase() === 'evn') {
+    return 1.0;
+  }
+
+  return null;
+}
+
+/**
+ * Calculate implied win probability from decimal odds
+ *
+ * @param decimalOdds - Decimal odds (e.g., 5.0 for 5-1)
+ * @returns Implied win probability as percentage (e.g., 16.7 for 5-1)
+ */
+export function calculateImpliedProbability(decimalOdds: number): number {
+  // Formula: probability = 1 / (decimalOdds + 1)
+  // Convert to percentage
+  return (1 / (decimalOdds + 1)) * 100;
+}
+
+/**
+ * Format a single horse's data for the Field Spread bot
+ * Emphasizes contender separation for bet structure decisions
+ *
+ * @param score - Horse score data from algorithm
+ * @returns Formatted string for prompt
+ */
+export function formatHorseForFieldSpread(score: HorseScoreForAI): string {
+  const lines: string[] = [];
+
+  // -------------------------------------------------------------------------
+  // HEADER: Program number, name, rank, score, tier
+  // -------------------------------------------------------------------------
+  lines.push(
+    `#${score.programNumber} ${score.horseName} | Rank: ${score.rank} | Score: ${score.finalScore} | Tier: ${score.confidenceTier}`
+  );
+
+  // -------------------------------------------------------------------------
+  // CONTENDER CREDENTIALS: Beyer figures and win rates
+  // -------------------------------------------------------------------------
+  const form = score.formIndicators;
+  const bestBeyer = form.bestBeyer !== null ? form.bestBeyer : 'N/A';
+  const lastBeyer = form.lastBeyer !== null ? form.lastBeyer : 'N/A';
+  const avgBeyer = form.averageBeyer !== null ? form.averageBeyer : 'N/A';
+  lines.push(`Best Beyer: ${bestBeyer} | Last Beyer: ${lastBeyer} | Avg: ${avgBeyer}`);
+
+  // Calculate ITM (In The Money) rate from lifetime stats
+  const lifetimeWinRate = form.lifetimeStarts > 0 ? (form.lifetimeWinRate * 100).toFixed(0) : 'N/A';
+
+  // ITM = (wins + places + shows) / starts
+  // We need to calculate this - we have lifetimeWins but not places/shows directly
+  // For now, use a rough estimate based on the data we have from distanceSurfaceStats
+  // The scoring type only has win rate, so we'll show that
+  lines.push(`Win Rate: ${lifetimeWinRate}% (${form.lifetimeWins}/${form.lifetimeStarts})`);
+
+  // -------------------------------------------------------------------------
+  // KEY POSITIVES (up to 3)
+  // -------------------------------------------------------------------------
+  const positives = score.positiveFactors.slice(0, 3);
+  if (positives.length > 0) {
+    lines.push(`Key Positives: ${positives.join(', ')}`);
+  }
+
+  // -------------------------------------------------------------------------
+  // KEY NEGATIVES (up to 3)
+  // -------------------------------------------------------------------------
+  const negatives = score.negativeFactors.slice(0, 3);
+  if (negatives.length > 0) {
+    lines.push(`Key Negatives: ${negatives.join(', ')}`);
+  }
+
+  // -------------------------------------------------------------------------
+  // VALUE INDICATOR: ML odds vs rank position
+  // -------------------------------------------------------------------------
+  lines.push(`Morning Line: ${score.morningLineOdds}`);
+
+  // Parse ML to calculate implied probability
+  const decimalOdds = parseMorningLineOdds(score.morningLineOdds);
+  if (decimalOdds !== null) {
+    const impliedProb = calculateImpliedProbability(decimalOdds);
+    lines.push(`ML Implied Win%: ${impliedProb.toFixed(1)}%`);
+
+    // Compare to rank position - flag value if ranked higher than ML implies
+    // If horse is rank 1 (first) but ML implies only 15%, that's not value
+    // If horse is rank 3 but ML implies 10%, that could be value if rank 3 is usually better
+    // Rough heuristic: if implied probability rank is worse than actual rank
+    // A rough mapping: rank 1 ~ 33%+, rank 2 ~ 20-33%, rank 3 ~ 12-20%, rank 4-5 ~ 8-12%
+    const rankImpliedFloor: Record<number, number> = {
+      1: 25, // Rank 1 should be at least 25% implied
+      2: 18, // Rank 2 should be at least 18% implied
+      3: 12, // Rank 3 should be at least 12% implied
+      4: 8, // Rank 4 should be at least 8% implied
+      5: 6, // Rank 5 should be at least 6% implied
+    };
+
+    const expectedFloor = rankImpliedFloor[score.rank] || 5;
+    if (impliedProb < expectedFloor && score.rank <= 5) {
+      lines.push('*** POTENTIAL VALUE ***');
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // KNOCKOUT FACTORS: Reasons to EXCLUDE from tickets
+  // -------------------------------------------------------------------------
+  const excludeReasons: string[] = [];
+
+  // Score < 100
+  if (score.finalScore < 100) {
+    excludeReasons.push('Score below 100');
+  }
+
+  // No Beyer figures available
+  if (form.bestBeyer === null && form.lastBeyer === null && form.averageBeyer === null) {
+    excludeReasons.push('No Beyer figures');
+  }
+
+  // 0 wins in 10+ starts
+  if (form.lifetimeWins === 0 && form.lifetimeStarts >= 10) {
+    excludeReasons.push(`0 wins in ${form.lifetimeStarts} starts`);
+  }
+
+  // Scratched (should already be filtered, but safety check)
+  if (score.isScratched) {
+    excludeReasons.push('Scratched');
+  }
+
+  if (excludeReasons.length > 0) {
+    lines.push(`❌ EXCLUDE: ${excludeReasons.join(', ')}`);
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Format abbreviated horse data for Field Spread (for horses ranked 8+)
+ * Single line format for token optimization
+ *
+ * @param score - Horse score data from algorithm
+ * @returns Abbreviated formatted string
+ */
+export function formatHorseForFieldSpreadAbbreviated(score: HorseScoreForAI): string {
+  return `#${score.programNumber} ${score.horseName} | Score: ${score.finalScore} | ❌ EXCLUDE: Below contention`;
+}
+
 /**
  * Build prompt for Field Spread Bot
  *
- * Analyzes scores and ranking gaps to assess field separation.
- * Focus: How tight is this field? How many real contenders?
+ * Analyzes field separation to determine bet structure - which horses belong
+ * on tickets and how to construct exacta/trifecta keys and boxes.
  *
- * @param _race - Parsed race data (unused, kept for API consistency)
+ * Token Budget: 600-800 input tokens, 300-400 output tokens
+ *
+ * @param race - Parsed race data
  * @param scoringResult - Algorithm scoring results
- * @returns Prompt string (400-600 tokens input, requests 50-150 tokens output)
+ * @returns Prompt string for AI analysis
  */
-export function buildFieldSpreadPrompt(
-  _race: ParsedRace,
-  scoringResult: RaceScoringResult
-): string {
+export function buildFieldSpreadPrompt(race: ParsedRace, scoringResult: RaceScoringResult): string {
   const rankedScores = [...scoringResult.scores]
     .filter((s) => !s.isScratched)
     .sort((a, b) => a.rank - b.rank);
 
-  // Calculate score gaps
-  const scoreData = rankedScores.map((score, idx) => {
-    const prevScore = idx > 0 ? rankedScores[idx - 1] : null;
-    const gap = prevScore ? prevScore.finalScore - score.finalScore : 0;
-    return {
-      rank: score.rank,
-      num: score.programNumber,
-      name: score.horseName,
-      score: score.finalScore,
-      tier: score.confidenceTier,
-      gapFromAbove: gap,
-    };
-  });
+  // Calculate field separation
+  const separation = calculateFieldSeparation(rankedScores);
 
-  const topScore = rankedScores[0]?.finalScore || 0;
-  const bottomScore = rankedScores[rankedScores.length - 1]?.finalScore || 0;
-  const spread = topScore - bottomScore;
+  // Format each horse - full format for ranks 1-7, abbreviated for 8+
+  const horseSummaries = rankedScores
+    .map((score) => {
+      if (score.rank <= 7) {
+        return formatHorseForFieldSpread(score);
+      } else {
+        return formatHorseForFieldSpreadAbbreviated(score);
+      }
+    })
+    .join('\n\n');
 
-  return `${FIELD_SPREAD_CONTEXT}
+  // Get vulnerable favorite flag from race analysis if available
+  const vulnerableFavoriteFlag = scoringResult.raceAnalysis.vulnerableFavorite
+    ? 'YES - Algorithm detected potential vulnerability'
+    : 'No';
+
+  return `You are a horse racing bet structuring specialist. Determine optimal ticket construction. Return JSON only.
 
 ---
 
-You are a field separation analyst guiding bet spread strategy.
+FIELD SPREAD & BET STRUCTURE ANALYSIS
 
-YOUR ONE JOB: Assess how separated the contenders are to guide bet spread width.
+Your job: Determine which horses belong on tickets and how to structure bets for maximum ROI.
+THIS IS ABOUT BET CONSTRUCTION, NOT PICKING WINNERS.
 
-WHAT TO LOOK FOR - Analyze algorithm score gaps:
-- SEPARATED field (go NARROW with picks):
-  * Top horse has 15+ point lead over #2
-  * Clear top 2 with 10+ point gap to #3
-  * One dominant horse stands out
-- TIGHT field (go WIDE with picks):
-  * Top 4 horses within 10 points of each other
-  * No clear separation in top tier
-  * Multiple horses with similar profiles
-- MIXED field (go MEDIUM with picks):
-  * Clear top 2-3, then a gap, then bunched middle tier
+FIELD SEPARATION ANALYSIS:
+Field Type: ${separation.fieldType}
+Score Gaps (1-2, 2-3, 3-4, 4-5): ${separation.scoreGaps.length > 0 ? separation.scoreGaps.join(', ') : 'N/A'}
+Top Tier Count (high confidence): ${separation.topTierCount}
+Contender Count (Score >= 140): ${separation.contenderCount}
+Clear Separation: ${separation.clearSeparation ? 'YES' : 'NO'}
 
-TOP TIER COUNT: How many horses are legitimate win contenders (within 12 points of top score)
+FIELD TYPE IMPLICATIONS:
+- DOMINANT: Key the standout, spread underneath. Exacta/Tri keys.
+- SEPARATED: Clear A/B/C tiers. Box the A tier, key A over B.
+- COMPETITIVE: Dangerous for singles. Wider boxes, smaller unit size.
+- WIDE_OPEN: Maximum spread or pass. High volatility.
 
-RANKINGS:
-${scoreData.map((h) => `${h.rank}. #${h.num} ${h.name} Score:${h.score} Tier:${h.tier} Gap:${h.gapFromAbove > 0 ? '-' + h.gapFromAbove : '—'}`).join('\n')}
+CONTENDER CLASSIFICATION:
+- "A" CONTENDERS: Score 180+, legitimate win threats
+- "B" CONTENDERS: Score 160-179, capable of hitting board
+- "C" CONTENDERS: Score 140-159, need pace/trip help
+- ELIMINATE: Score <140, need miracle
 
-SPREAD: Top ${topScore} to Bottom ${bottomScore} = ${spread} pt range
+BET STRUCTURE RECOMMENDATIONS:
+For EXACTA:
+- Key horse + 3-4 underneath = 3-4 combinations
+- Box 2 (if 2 clear standouts) = 2 combinations
+- Box 3 (competitive) = 6 combinations
+- Box 4 (wide open) = 12 combinations
+
+For TRIFECTA:
+- Key 1 over 3-4 for 2nd/3rd = 6-12 combinations
+- Key 2 over 3-4 = 12-24 combinations
+- Box 3 = 6 combinations
+- Box 4 = 24 combinations
+- Box 5 = 60 combinations (max recommended)
+
+EXCLUDE CRITERIA (never put on tickets):
+- Score below 120 (Pass tier)
+- Zero wins lifetime with 10+ starts
+- No recent form (layoff >180 days, no works)
+- Clearly outclassed (class level mismatch)
+
+VALUE HUNTING IN STRUCTURE:
+- If vulnerable favorite identified: Key challengers OVER favorite
+- If lone speed exists: Must be on all tickets
+- If hidden trip trouble horse: Include in spread positions
+
+---
+
+RACE CONTEXT:
+Track: ${race.header.trackName} (${race.header.trackCode})
+Race ${race.header.raceNumber}: ${race.header.distance} on ${race.header.surface}
+Field Size: ${rankedScores.length} horses
+Vulnerable Favorite: ${vulnerableFavoriteFlag}
+
+HORSES (by algorithm rank):
+${horseSummaries}
+
+---
 
 OUTPUT FORMAT - Return JSON only:
 {
-  "fieldType": "TIGHT" | "SEPARATED" | "MIXED",
-  "topTierCount": number,
-  "recommendedSpread": "NARROW" | "MEDIUM" | "WIDE"
+  "fieldAssessment": {
+    "fieldType": "DOMINANT" | "SEPARATED" | "COMPETITIVE" | "WIDE_OPEN",
+    "topTierCount": number,
+    "contenderCount": number,
+    "isBettableRace": boolean,
+    "passReason": string | null
+  },
+  "horseClassifications": [
+    {
+      "programNumber": number,
+      "horseName": "string",
+      "classification": "A" | "B" | "C" | "EXCLUDE",
+      "includeOnTickets": boolean,
+      "keyCandidate": boolean,
+      "spreadOnly": boolean,
+      "reason": "string"
+    }
+  ],
+  "betStructure": {
+    "primaryRecommendation": "string",
+    "exactaSuggestion": "string",
+    "trifectaSuggestion": "string",
+    "ticketCost": "string"
+  },
+  "confidence": "HIGH" | "MEDIUM" | "LOW",
+  "reasoning": "string"
 }`;
 }
