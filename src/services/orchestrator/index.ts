@@ -555,6 +555,7 @@ export class Orchestrator {
       fieldStrength: this.classifyFieldStrength(horseScores),
       vulnerableFavorite: false,
       likelyPaceCollapse: false,
+      trackIntelligence: null,
     };
 
     return {

@@ -167,6 +167,7 @@ function createMockScoringResult(
       fieldStrength: 'average',
       vulnerableFavorite: false,
       likelyPaceCollapse: false,
+      trackIntelligence: null,
     },
   };
 }

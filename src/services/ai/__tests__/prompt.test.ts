@@ -354,6 +354,7 @@ function createMockRaceAnalysis(overrides: Partial<RaceAnalysis> = {}): RaceAnal
     fieldStrength: 'average',
     vulnerableFavorite: false,
     likelyPaceCollapse: false,
+    trackIntelligence: null,
     ...overrides,
   };
 }

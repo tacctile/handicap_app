@@ -503,7 +503,14 @@ function transformToRaceScoringResult(
   const surface = raceHeader.surface ?? 'dirt';
   const distanceFurlongs = raceHeader.distanceFurlongs ?? 6;
   // Use race date if available, otherwise use current date
-  const raceDate = raceHeader.date ? new Date(raceHeader.date) : new Date();
+  // raceDateRaw is in YYYYMMDD format
+  const raceDate = raceHeader.raceDateRaw
+    ? new Date(
+        parseInt(raceHeader.raceDateRaw.slice(0, 4)),
+        parseInt(raceHeader.raceDateRaw.slice(4, 6)) - 1,
+        parseInt(raceHeader.raceDateRaw.slice(6, 8))
+      )
+    : new Date();
   const trackIntelligence = getTrackIntelligenceForAI(
     trackCode,
     surface,

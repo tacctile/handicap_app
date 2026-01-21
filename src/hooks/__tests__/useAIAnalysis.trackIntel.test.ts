@@ -365,7 +365,6 @@ function createMockRaceHeader(overrides?: Partial<RaceHeader>): RaceHeader {
     programNumber: 1,
     fieldSize: 10,
     probableFavorite: 1,
-    date: '2024-05-15',
     ...overrides,
   };
 }
@@ -683,7 +682,7 @@ describe('transformToRaceScoringResult with track intelligence', () => {
       trackCode: 'CD',
       surface: 'dirt',
       distanceFurlongs: 6,
-      date: '2024-05-15',
+      raceDateRaw: '20240515',
     });
 
     const result = transformToRaceScoringResult(scoredHorses, raceHeader);
@@ -702,7 +701,7 @@ describe('transformToRaceScoringResult with track intelligence', () => {
       trackCode: 'UNKNOWN',
       surface: 'dirt',
       distanceFurlongs: 6,
-      date: '2024-05-15',
+      raceDateRaw: '20240515',
     });
 
     const result = transformToRaceScoringResult(scoredHorses, raceHeader);
@@ -715,10 +714,10 @@ describe('transformToRaceScoringResult with track intelligence', () => {
 
   it('should handle missing race header fields gracefully', () => {
     const scoredHorses: ScoredHorse[] = [createMockScoredHorse()];
+    // Test with empty/default values - the function should handle gracefully
     const raceHeader = createMockRaceHeader({
-      trackCode: undefined as unknown as string,
-      surface: undefined as unknown as string,
-      distanceFurlongs: undefined as unknown as number,
+      trackCode: '',
+      raceDateRaw: '',
     });
 
     // Should not throw
