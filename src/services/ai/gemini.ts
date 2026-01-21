@@ -104,6 +104,38 @@ const DIRECT_API_CONFIG = {
   topK: 40,
 };
 
+// Proxy support for Node.js environments
+let proxyAgent: unknown = null;
+
+/**
+ * Get or create a proxy agent for HTTP requests in Node.js
+ * Uses undici's ProxyAgent when HTTPS_PROXY is set
+ */
+async function getProxyAgent(): Promise<unknown> {
+  if (!isNodeEnvironment()) return null;
+
+  // Return cached agent if available
+  if (proxyAgent !== null) return proxyAgent;
+
+  const proxyUrl = process.env?.HTTPS_PROXY || process.env?.HTTP_PROXY;
+  if (!proxyUrl) {
+    proxyAgent = undefined; // Mark as checked, no proxy
+    return null;
+  }
+
+  try {
+    // Dynamic import undici for proxy support
+    const { ProxyAgent } = await import('undici');
+    proxyAgent = new ProxyAgent(proxyUrl);
+    console.log('[GEMINI] Using proxy agent for HTTPS requests');
+    return proxyAgent;
+  } catch (e) {
+    console.warn('[GEMINI] Could not create proxy agent:', e);
+    proxyAgent = undefined;
+    return null;
+  }
+}
+
 // Debug logging - only in development
 const DEBUG = typeof process !== 'undefined' ? process.env?.NODE_ENV !== 'production' : true;
 const debugLog = (...args: unknown[]): void => {
@@ -112,6 +144,103 @@ const debugLog = (...args: unknown[]): void => {
 const debugError = (...args: unknown[]): void => {
   if (DEBUG) console.error(...args);
 };
+
+// ============================================================================
+// RAW RESPONSE DEBUG LOGGING
+// ============================================================================
+
+// Store raw responses for debugging (in-memory for browser, file for Node.js)
+const rawResponseLog: Array<{
+  timestamp: string;
+  botName: string;
+  rawText: string;
+  parseSuccess: boolean;
+  parseError?: string;
+}> = [];
+
+// Current bot name for logging context
+let currentBotName = 'unknown';
+
+/**
+ * Set the current bot name for logging context
+ */
+export function setCurrentBotName(name: string): void {
+  currentBotName = name;
+}
+
+/**
+ * Log raw API response for debugging
+ */
+function logRawResponse(rawText: string, parseSuccess: boolean, parseError?: string): void {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    botName: currentBotName,
+    rawText: rawText.substring(0, 2000), // First 2000 chars
+    parseSuccess,
+    parseError,
+  };
+
+  rawResponseLog.push(entry);
+
+  // Console log for immediate visibility
+  console.log(`\n=== [RAW RESPONSE] ${currentBotName} ===`);
+  console.log(`Timestamp: ${entry.timestamp}`);
+  console.log(`Parse Success: ${parseSuccess}`);
+  if (parseError) {
+    console.log(`Parse Error: ${parseError}`);
+  }
+  console.log(`Raw Text (first 2000 chars):`);
+  console.log(rawText.substring(0, 2000));
+  console.log(`=== [END RAW RESPONSE] ===\n`);
+
+  // In Node.js, also write to file
+  if (isNodeEnvironment()) {
+    (async () => {
+      try {
+        // Dynamic import for fs/path to avoid browser issues
+        const fs = await import('fs');
+        const path = await import('path');
+        const logDir = path.join(__dirname, '../../__tests__/validation/results');
+        const logFile = path.join(logDir, 'api_response_debug.log');
+
+        // Ensure directory exists
+        if (!fs.existsSync(logDir)) {
+          fs.mkdirSync(logDir, { recursive: true });
+        }
+
+        // Append to log file
+        const logEntry = `
+================================================================================
+BOT: ${currentBotName}
+TIMESTAMP: ${entry.timestamp}
+PARSE SUCCESS: ${parseSuccess}
+${parseError ? `PARSE ERROR: ${parseError}` : ''}
+--------------------------------------------------------------------------------
+RAW RESPONSE (first 2000 chars):
+${rawText.substring(0, 2000)}
+================================================================================
+`;
+        fs.appendFileSync(logFile, logEntry);
+      } catch (_e) {
+        // Ignore file write errors in browser
+      }
+    })();
+  }
+}
+
+/**
+ * Get all logged raw responses (for testing/debugging)
+ */
+export function getRawResponseLog(): typeof rawResponseLog {
+  return [...rawResponseLog];
+}
+
+/**
+ * Clear raw response log
+ */
+export function clearRawResponseLog(): void {
+  rawResponseLog.length = 0;
+}
 
 // ============================================================================
 // SERVERLESS RESPONSE TYPES
@@ -203,13 +332,31 @@ async function callGeminiDirect(
   console.log('=== [GEMINI] Direct API call starting... ===');
   console.log(`[GEMINI] Target URL: ${GEMINI_API_BASE}/${GEMINI_MODEL}:generateContent`);
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  // Get proxy agent if available
+  const agent = await getProxyAgent();
+
+  // Use undici's fetch if we have a proxy agent, otherwise use native fetch
+  let response: Response;
+  if (agent) {
+    console.log('[GEMINI] Making request through proxy...');
+    const { fetch: undiciFetch } = await import('undici');
+    response = await undiciFetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      dispatcher: agent as import('undici').Dispatcher,
+    }) as unknown as Response;
+  } else {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  }
 
   const processingTimeMs = Date.now() - startTime;
   const responseText = await response.text();
@@ -553,13 +700,18 @@ export async function callGeminiWithSchema<T>(
       throw createError('PARSE_ERROR', 'No content in Gemini response');
     }
 
-    // Log raw response text for debugging parsing issues (dev only)
+    // Log raw response text for debugging parsing issues
     debugLog('[Gemini Bot] Raw response text (first 500 chars):', text.substring(0, 500));
 
     try {
-      return parseResponse(text);
+      const result = parseResponse(text);
+      // Log successful parse
+      logRawResponse(text, true);
+      return result;
     } catch (parseErr) {
-      // Log full response on parse failure for debugging (dev only)
+      // Log full response on parse failure with error details
+      const errorMsg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+      logRawResponse(text, false, errorMsg);
       debugError('[Gemini Bot] Parse error. Full raw response:', text);
       throw parseErr;
     }
@@ -625,6 +777,36 @@ function extractJson(text: string): string {
 }
 
 /**
+ * Convert snake_case keys to camelCase recursively
+ * Handles objects, arrays, and nested structures
+ */
+function snakeToCamel(str: string): string {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+function normalizeKeys(obj: unknown): unknown {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(normalizeKeys);
+  }
+
+  if (typeof obj === 'object') {
+    const normalized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      // Convert snake_case to camelCase
+      const normalizedKey = snakeToCamel(key);
+      normalized[normalizedKey] = normalizeKeys(value);
+    }
+    return normalized;
+  }
+
+  return obj;
+}
+
+/**
  * Parse Trip Trouble Bot response
  *
  * @param text - Raw text response from Gemini
@@ -635,7 +817,9 @@ export function parseTripTroubleResponse(text: string): TripTroubleAnalysis {
   const jsonStr = extractJson(text);
 
   try {
-    const parsed = JSON.parse(jsonStr);
+    const rawParsed = JSON.parse(jsonStr);
+    // Normalize keys to handle both camelCase and snake_case from Gemini
+    const parsed = normalizeKeys(rawParsed) as Record<string, unknown>;
 
     // Handle both field names: prompt uses "troubledHorses", types use "horsesWithTripTrouble"
     const horsesArray = parsed.troubledHorses || parsed.horsesWithTripTrouble;
@@ -697,7 +881,9 @@ export function parsePaceScenarioResponse(text: string): PaceScenarioAnalysis {
   const jsonStr = extractJson(text);
 
   try {
-    const parsed = JSON.parse(jsonStr);
+    const rawParsed = JSON.parse(jsonStr);
+    // Normalize keys to handle both camelCase and snake_case from Gemini
+    const parsed = normalizeKeys(rawParsed) as Record<string, unknown>;
 
     // Map prompt's pace projection values to parser expected values
     // Prompt outputs: "LONE_SPEED" | "SPEED_DUEL" | "MODERATE" | "SLOW"
@@ -775,7 +961,9 @@ export function parseVulnerableFavoriteResponse(text: string): VulnerableFavorit
   const jsonStr = extractJson(text);
 
   try {
-    const parsed = JSON.parse(jsonStr);
+    const rawParsed = JSON.parse(jsonStr);
+    // Normalize keys to handle both camelCase and snake_case from Gemini
+    const parsed = normalizeKeys(rawParsed) as Record<string, unknown>;
 
     // Validate and normalize confidence (at root level in prompt output)
     const validConfidence = ['HIGH', 'MEDIUM', 'LOW'];
@@ -836,7 +1024,9 @@ export function parseFieldSpreadResponse(text: string): FieldSpreadAnalysis {
   const jsonStr = extractJson(text);
 
   try {
-    const parsed = JSON.parse(jsonStr);
+    const rawParsed = JSON.parse(jsonStr);
+    // Normalize keys to handle both camelCase and snake_case from Gemini
+    const parsed = normalizeKeys(rawParsed) as Record<string, unknown>;
 
     // Handle nested structure from prompt output
     // Prompt outputs: { fieldAssessment: { fieldType, topTierCount, ... }, horseClassifications, ... }
@@ -959,6 +1149,7 @@ export async function analyzeTripTrouble(
   race: ParsedRace,
   scoringResult: RaceScoringResult
 ): Promise<TripTroubleAnalysis> {
+  setCurrentBotName('TripTrouble');
   const prompt = buildTripTroublePrompt(race, scoringResult);
   return callGeminiWithSchema(prompt, parseTripTroubleResponse);
 }
@@ -974,6 +1165,7 @@ export async function analyzePaceScenario(
   race: ParsedRace,
   scoringResult: RaceScoringResult
 ): Promise<PaceScenarioAnalysis> {
+  setCurrentBotName('PaceScenario');
   const prompt = buildPaceScenarioPrompt(race, scoringResult);
   return callGeminiWithSchema(prompt, parsePaceScenarioResponse);
 }
@@ -989,6 +1181,7 @@ export async function analyzeVulnerableFavorite(
   race: ParsedRace,
   scoringResult: RaceScoringResult
 ): Promise<VulnerableFavoriteAnalysis> {
+  setCurrentBotName('VulnerableFavorite');
   const prompt = buildVulnerableFavoritePrompt(race, scoringResult);
   return callGeminiWithSchema(prompt, parseVulnerableFavoriteResponse);
 }
@@ -1004,6 +1197,7 @@ export async function analyzeFieldSpread(
   race: ParsedRace,
   scoringResult: RaceScoringResult
 ): Promise<FieldSpreadAnalysis> {
+  setCurrentBotName('FieldSpread');
   const prompt = buildFieldSpreadPrompt(race, scoringResult);
   return callGeminiWithSchema(prompt, parseFieldSpreadResponse);
 }
