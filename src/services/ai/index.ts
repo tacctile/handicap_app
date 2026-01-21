@@ -203,7 +203,9 @@ export function clearAnalysisCache(): void {
  */
 export function checkAIServiceStatus(): AIServiceStatus {
   // Check browser network status if available
-  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+  // Note: navigator.onLine must be explicitly false (not undefined) to be offline
+  // Node.js 21+ has a navigator global but onLine is undefined
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     return 'offline';
   }
 
