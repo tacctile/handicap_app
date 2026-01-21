@@ -16,11 +16,7 @@ import type {
   TrackIntelligenceForAI,
   TrainerCategoryStatForAI,
 } from '../../types/scoring';
-import {
-  ALGORITHM_CONTEXT,
-  FIELD_SPREAD_CONTEXT,
-  VULNERABLE_FAVORITE_CONTEXT,
-} from './algorithmContext';
+import { ALGORITHM_CONTEXT, FIELD_SPREAD_CONTEXT } from './algorithmContext';
 
 // ============================================================================
 // TRACK INTELLIGENCE FORMATTING
@@ -1092,15 +1088,380 @@ OUTPUT FORMAT - Return JSON only:
 }`;
 }
 
+// ============================================================================
+// VULNERABLE FAVORITE HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Keywords indicating a "perfect trip" that may have flattered performance
+ */
+const FLATTERING_TRIP_KEYWORDS = [
+  'perfect trip',
+  'rail trip',
+  'saved ground',
+  'ideal trip',
+  'dream trip',
+  'golden trip',
+  'textbook trip',
+  'no traffic',
+  'clear sailing',
+  'easy lead',
+  'uncontested lead',
+  'all alone',
+  'wire to wire',
+];
+
+/**
+ * Check if a trip comment indicates a flattered performance
+ *
+ * @param comment - Trip comment to analyze
+ * @returns Whether the comment suggests a flattering trip
+ */
+export function hasFlatteningTripKeyword(comment: string): boolean {
+  if (!comment) return false;
+  const lowerComment = comment.toLowerCase();
+  return FLATTERING_TRIP_KEYWORDS.some((keyword) => lowerComment.includes(keyword.toLowerCase()));
+}
+
+/**
+ * Check if Beyer figures are declining (each lower than previous)
+ *
+ * @param beyers - Array of Beyer figures (most recent first)
+ * @returns Whether figures are declining
+ */
+export function isDecliningBeyers(beyers: (number | null)[]): boolean {
+  const validBeyers = beyers.filter((b): b is number => b !== null);
+  if (validBeyers.length < 2) return false;
+
+  // Check if each Beyer is lower than the previous (older) one
+  // Array is most recent first, so validBeyers[0] is most recent
+  for (let i = 0; i < validBeyers.length - 1; i++) {
+    const current = validBeyers[i];
+    const previous = validBeyers[i + 1];
+    if (current === undefined || previous === undefined) return false;
+    if (current >= previous) return false;
+  }
+  return true;
+}
+
+/**
+ * Check if running style mismatches track bias
+ *
+ * @param runningStyle - Horse's running style (E, E/P, P, S)
+ * @param trackFavoredStyle - Track's favored style
+ * @returns Whether there's a mismatch
+ */
+export function hasStyleMismatch(
+  runningStyle: string | null,
+  trackFavoredStyle: string | null
+): boolean {
+  if (!runningStyle || !trackFavoredStyle || trackFavoredStyle === 'neutral') return false;
+
+  const isCloser = runningStyle === 'S' || runningStyle === 'PS';
+  const isSpeed = runningStyle === 'E' || runningStyle === 'E/P';
+
+  const trackFavorsSpeed = trackFavoredStyle === 'E' || trackFavoredStyle === 'E/P';
+  const trackFavorsClosers = trackFavoredStyle === 'S' || trackFavoredStyle === 'P';
+
+  // Mismatch if closer on speed-favoring track or speed on closer-favoring track
+  if (isCloser && trackFavorsSpeed) return true;
+  if (isSpeed && trackFavorsClosers) return true;
+
+  return false;
+}
+
+/**
+ * Format the favorite's data for vulnerability analysis
+ * Emphasizes weaknesses and vulnerability flags
+ *
+ * @param favorite - The favorite horse's score data
+ * @param horse - Optional horse entry from race data for running style
+ * @param trackIntel - Track intelligence data (null if unavailable)
+ * @param raceClassification - Today's race classification
+ * @returns Formatted string with vulnerability flags
+ */
+export function formatFavoriteForAnalysis(
+  favorite: HorseScoreForAI,
+  horse: { postPosition: number; runningStyle: string | null } | undefined,
+  trackIntel: TrackIntelligenceForAI | null,
+  raceClassification: string
+): string {
+  const lines: string[] = [];
+  const flags: string[] = [];
+
+  // -------------------------------------------------------------------------
+  // HEADER
+  // -------------------------------------------------------------------------
+  lines.push(`FAVORITE ANALYSIS: #${favorite.programNumber} ${favorite.horseName}`);
+  lines.push(
+    `Algorithm Rank: ${favorite.rank} | Score: ${favorite.finalScore}/368 | Tier: ${favorite.confidenceTier}`
+  );
+  lines.push(`Morning Line: ${favorite.morningLineOdds}`);
+
+  const pps = favorite.pastPerformances.slice(0, 3);
+
+  // Check for limited form data
+  if (pps.length < 2) {
+    lines.push('');
+    lines.push('LIMITED FORM DATA - cannot fully assess');
+    return lines.join('\n');
+  }
+
+  // -------------------------------------------------------------------------
+  // RECENT FORM DEEP DIVE
+  // -------------------------------------------------------------------------
+  lines.push('');
+  lines.push('--- RECENT FORM ---');
+
+  // Last 3 results
+  const resultsStr = pps.map((pp) => `${pp.finishPosition}/${pp.fieldSize}`).join(', ');
+  lines.push(`Last 3 Results: ${resultsStr}`);
+
+  // Beyer trend
+  const beyers = pps.map((pp) => pp.beyer);
+  const beyerStr = beyers.map((b) => (b !== null ? String(b) : 'N/A')).join(' -> ');
+  lines.push(`Beyer Trend: ${beyerStr}`);
+
+  // Check for declining figures
+  if (isDecliningBeyers(beyers)) {
+    flags.push('DECLINING FIGURES');
+    lines.push('⚠️ DECLINING FIGURES');
+  }
+
+  // Days since last race / layoff risk
+  const daysSinceLastRace = favorite.formIndicators.daysSinceLastRace;
+  lines.push(`Days Since Last Race: ${daysSinceLastRace !== null ? daysSinceLastRace : 'N/A'}`);
+  if (daysSinceLastRace !== null && daysSinceLastRace > 60) {
+    flags.push('LAYOFF RISK');
+    lines.push('⚠️ LAYOFF RISK');
+  }
+
+  // -------------------------------------------------------------------------
+  // TRIP QUALITY ASSESSMENT
+  // -------------------------------------------------------------------------
+  lines.push('');
+  lines.push('--- TRIP QUALITY ---');
+
+  // List all 3 trip comments
+  pps.forEach((pp, idx) => {
+    const comment = pp.tripComment || 'No comment';
+    lines.push(`Race ${idx + 1}: "${comment}"`);
+  });
+
+  // Check for flattering trips (look at winning races)
+  const winningWithFlattering = pps.filter(
+    (pp) => pp.finishPosition === 1 && hasFlatteningTripKeyword(pp.tripComment)
+  );
+  if (winningWithFlattering.length > 0) {
+    flags.push('FLATTERED BY TRIP');
+    lines.push('⚠️ FLATTERED BY TRIP');
+  }
+
+  // Check if closer won when pace was likely hot (won as closer from far back)
+  const isCloser = horse?.runningStyle === 'S' || horse?.runningStyle === 'PS';
+  const wonFromFarBack = pps.find(
+    (pp) =>
+      pp.finishPosition === 1 &&
+      pp.runningLine.start !== null &&
+      pp.runningLine.start >= 5 &&
+      pp.runningLine.finish === 1
+  );
+  if (isCloser && wonFromFarBack) {
+    flags.push('BENEFITED FROM PACE COLLAPSE');
+    lines.push('⚠️ BENEFITED FROM PACE COLLAPSE');
+  }
+
+  // -------------------------------------------------------------------------
+  // CLASS ANALYSIS
+  // -------------------------------------------------------------------------
+  lines.push('');
+  lines.push('--- CLASS ANALYSIS ---');
+  lines.push(`Today's Class: ${raceClassification}`);
+
+  // List last 3 class levels from PPs (we use track conditions as proxy if no class field)
+  const classLevels = pps.map((pp) => pp.trackCondition || 'Unknown');
+  lines.push(`Last 3 Conditions: ${classLevels.join(', ')}`);
+
+  // Check for class rise - if today's class appears higher (simple heuristic)
+  const todayLower = raceClassification.toLowerCase();
+  const isStakesOrGraded =
+    todayLower.includes('stakes') ||
+    todayLower.includes('grade') ||
+    todayLower.includes('g1') ||
+    todayLower.includes('g2') ||
+    todayLower.includes('g3');
+  const lastWasLower = pps.some(
+    (pp) =>
+      pp.finishPosition <= 3 &&
+      !pp.trackCondition?.toLowerCase().includes('stakes') &&
+      !pp.trackCondition?.toLowerCase().includes('grade')
+  );
+  if (isStakesOrGraded && lastWasLower) {
+    flags.push('CLASS RISE');
+    lines.push('⚠️ CLASS RISE');
+  }
+
+  // Check if beaten at this level recently (lost at same or lower class)
+  const beatenRecently = pps.filter((pp) => pp.finishPosition > 3);
+  if (beatenRecently.length >= 2) {
+    flags.push('BEATEN AT THIS LEVEL');
+    lines.push('⚠️ BEATEN AT THIS LEVEL');
+  }
+
+  // -------------------------------------------------------------------------
+  // TRACK/DISTANCE/SURFACE FIT
+  // -------------------------------------------------------------------------
+  lines.push('');
+  lines.push('--- TRACK/DISTANCE/SURFACE FIT ---');
+
+  const stats = favorite.distanceSurfaceStats;
+  const distWinRate = (stats.distanceWinRate * 100).toFixed(0);
+  const surfWinRate = (stats.surfaceWinRate * 100).toFixed(0);
+
+  lines.push(`Distance Record: ${stats.distanceWins}/${stats.distanceStarts} (${distWinRate}%)`);
+  lines.push(`Surface Record: ${stats.surfaceWins}/${stats.surfaceStarts} (${surfWinRate}%)`);
+
+  // Unproven at distance flag
+  if (stats.distanceStarts < 2) {
+    flags.push('UNPROVEN AT DISTANCE');
+    lines.push('⚠️ UNPROVEN AT DISTANCE');
+  }
+
+  // Poor surface record flag
+  if (stats.surfaceStarts >= 3 && stats.surfaceWinRate < 0.15) {
+    flags.push('POOR SURFACE RECORD');
+    lines.push('⚠️ POOR SURFACE RECORD');
+  }
+
+  // -------------------------------------------------------------------------
+  // PACE FIT VS TRACK
+  // -------------------------------------------------------------------------
+  if (trackIntel) {
+    lines.push('');
+    lines.push('--- PACE FIT VS TRACK ---');
+
+    const runningStyle = horse?.runningStyle || 'Unknown';
+    lines.push(`Running Style: ${runningStyle}`);
+    lines.push(`Track Favors: ${trackIntel.speedBias.favoredStyle}`);
+
+    if (hasStyleMismatch(horse?.runningStyle || null, trackIntel.speedBias.favoredStyle)) {
+      flags.push('STYLE MISMATCH');
+      lines.push('⚠️ STYLE MISMATCH');
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // CONNECTIONS CHECK
+  // -------------------------------------------------------------------------
+  lines.push('');
+  lines.push('--- CONNECTIONS CHECK ---');
+
+  // Check trainer patterns for concerning stats
+  const trainerPatterns = favorite.trainerPatterns;
+  const concerningPatterns: string[] = [];
+
+  const patternCategories: [keyof typeof trainerPatterns, string][] = [
+    ['days31to60', 'Days 31-60'],
+    ['days61to90', 'Days 61-90'],
+    ['days91to180', 'Days 91-180'],
+    ['days181plus', 'Days 181+'],
+    ['dirtSprint', 'Dirt Sprint'],
+    ['dirtRoute', 'Dirt Route'],
+    ['turfSprint', 'Turf Sprint'],
+    ['turfRoute', 'Turf Route'],
+    ['wetTrack', 'Wet Track'],
+  ];
+
+  for (const [key, name] of patternCategories) {
+    const stat = trainerPatterns[key];
+    if (stat && stat.starts >= 10 && stat.winPercent < 10) {
+      concerningPatterns.push(`${name}: ${stat.wins}/${stat.starts} (${stat.winPercent}%)`);
+    }
+  }
+
+  if (concerningPatterns.length > 0) {
+    lines.push('Trainer Relevant Patterns:');
+    concerningPatterns.forEach((p) => lines.push(`  ${p}`));
+    flags.push('POOR TRAINER PATTERN');
+    lines.push('⚠️ POOR TRAINER PATTERN');
+  } else {
+    lines.push('Trainer Patterns: No concerning patterns');
+  }
+
+  // -------------------------------------------------------------------------
+  // VULNERABILITY FLAGS SUMMARY
+  // -------------------------------------------------------------------------
+  lines.push('');
+  lines.push(`VULNERABILITY FLAGS: ${flags.length > 0 ? flags.join(', ') : 'None'}`);
+
+  return lines.join('\n');
+}
+
+/**
+ * Format challengers (ranks 2-4) in abbreviated format
+ *
+ * @param challengers - Array of challenger scores (should be ranks 2-4)
+ * @param favorite - The favorite to compare against
+ * @returns Formatted string for challengers
+ */
+export function formatChallengers(
+  challengers: HorseScoreForAI[],
+  favorite: HorseScoreForAI
+): string {
+  if (challengers.length === 0) {
+    return 'CHALLENGERS: None available';
+  }
+
+  const lines: string[] = [];
+  lines.push('CHALLENGERS (Ranks 2-4):');
+
+  challengers.slice(0, 3).forEach((challenger) => {
+    lines.push('');
+    lines.push(
+      `#${challenger.programNumber} ${challenger.horseName} (Rank ${challenger.rank}, Score ${challenger.finalScore})`
+    );
+
+    // Key strength - first positive factor or inferred from data
+    const keyStrength =
+      challenger.positiveFactors.length > 0
+        ? challenger.positiveFactors[0]
+        : challenger.finalScore >= favorite.finalScore - 5
+          ? 'Close to favorite in algorithm score'
+          : 'Competitive at this class';
+    lines.push(`Key Strength: ${keyStrength}`);
+
+    // Key angle - why they could beat favorite
+    let keyAngle = 'Could upset if favorite regresses';
+
+    // Check for specific angles
+    const pps = challenger.pastPerformances.slice(0, 3);
+    const troubledTrips = pps.filter((pp) => hasTroubleKeyword(pp.tripComment));
+    if (troubledTrips.length >= 2) {
+      keyAngle = 'Hidden form due to troubled trips';
+    } else if (challenger.formIndicators.lastBeyer && favorite.formIndicators.lastBeyer) {
+      if (challenger.formIndicators.lastBeyer >= favorite.formIndicators.lastBeyer) {
+        keyAngle = 'Matching or better recent Beyer figure';
+      }
+    }
+
+    lines.push(`Key Angle: ${keyAngle}`);
+  });
+
+  return lines.join('\n');
+}
+
 /**
  * Build prompt for Vulnerable Favorite Bot
  *
- * Analyzes the favorite's data against field context.
- * Focus: Is the chalk beatable today?
+ * Analyzes the algorithm's top pick to identify if it's a false favorite worth betting against.
+ * Focus: Finding when the top-ranked horse is a false favorite based on trip dependency,
+ * declining form, class issues, or style mismatches.
+ *
+ * Token Budget: ~500-650 input tokens, 200-250 output tokens
  *
  * @param race - Parsed race data
  * @param scoringResult - Algorithm scoring results
- * @returns Prompt string (400-600 tokens input, requests 50-150 tokens output)
+ * @returns Prompt string for AI analysis
  */
 export function buildVulnerableFavoritePrompt(
   race: ParsedRace,
@@ -1110,75 +1471,128 @@ export function buildVulnerableFavoritePrompt(
     .filter((s) => !s.isScratched)
     .sort((a, b) => a.rank - b.rank);
 
-  // Find the favorite (lowest ML odds or #1 ranked if no ML)
   // Handle empty array case
   if (rankedScores.length === 0) {
-    return `VULNERABLE FAVORITE ANALYSIS BOT
+    return `You are a horse racing contrarian analyst. Identify vulnerable favorites. Return JSON only.
 
 No horses available for analysis.
 
 RESPOND WITH JSON ONLY:
 {
-  "isVulnerable": false,
-  "reasons": [],
-  "confidence": "LOW"
+  "favoriteAnalysis": {
+    "programNumber": 0,
+    "horseName": "N/A",
+    "isVulnerable": false,
+    "vulnerabilityFlags": [],
+    "solidFoundation": [],
+    "overallAssessment": "No horses available for analysis"
+  },
+  "confidence": "LOW",
+  "recommendedAction": "NEUTRAL",
+  "beneficiaries": [],
+  "reasoning": "No horses available for analysis"
 }`;
   }
 
-  // We know rankedScores[0] exists because of the length check above
-  const firstScore = rankedScores[0]!;
-  const favorite = rankedScores.reduce((fav, curr) => {
-    const favHorse = race.horses.find((h) => h.programNumber === fav.programNumber);
-    const currHorse = race.horses.find((h) => h.programNumber === curr.programNumber);
-    const favOdds = parseFloat(favHorse?.morningLineOdds?.replace('-', '.') || '99');
-    const currOdds = parseFloat(currHorse?.morningLineOdds?.replace('-', '.') || '99');
-    return currOdds < favOdds ? curr : fav;
-  }, firstScore);
+  // Find the favorite (algorithm rank 1 - the top-ranked horse)
+  const favorite = rankedScores[0]!;
 
+  // Get challengers (ranks 2-4)
+  const challengers = rankedScores.slice(1, 4);
+
+  // Get horse data for running style
   const favHorse = race.horses.find((h) => h.programNumber === favorite.programNumber);
-  const favPPs = favHorse?.pastPerformances.slice(0, 3) || [];
+  const horseData = favHorse
+    ? { postPosition: favHorse.postPosition, runningStyle: favHorse.runningStyle }
+    : undefined;
 
-  // Field context
-  const fieldSize = rankedScores.length;
-  const topContenders = rankedScores.filter((s) => s.finalScore >= favorite.finalScore - 15).length;
+  // Get track intelligence
+  const trackIntel = scoringResult.raceAnalysis.trackIntelligence;
 
-  return `${VULNERABLE_FAVORITE_CONTEXT}
+  // Format favorite analysis
+  const favoriteSection = formatFavoriteForAnalysis(
+    favorite,
+    horseData,
+    trackIntel,
+    race.header.classification
+  );
+
+  // Format challengers
+  const challengersSection = formatChallengers(challengers, favorite);
+
+  // Format track intelligence
+  const trackIntelSection = formatTrackIntelligence(trackIntel);
+
+  return `You are a horse racing contrarian analyst. Identify vulnerable favorites. Return JSON only.
 
 ---
 
-You are a favorite vulnerability analyst evaluating chalk horses.
+VULNERABLE FAVORITE ANALYSIS
 
-YOUR ONE JOB: Evaluate ONLY whether the favorite can be beaten today - not who will beat them.
+Your job: Determine if the algorithm's top pick is a FALSE FAVORITE worth betting against.
 
-WHAT TO LOOK FOR - Check for vulnerability factors:
-- Class rise: Moving up in class from last win
-- Pace exposure: Front runner facing more speed than usual
-- Form regression: Last race was peak effort (career best Beyer) that may not repeat
-- Distance question: Trying new distance without pedigree support
-- Connections cold: Trainer or jockey in losing streak
-- Post position: Outside post for speed horse, inside post for closer
+A favorite is VULNERABLE when their ranking is based on:
+- Inflated figures from perfect trips they won't repeat
+- Winning at lower class than today
+- Form that's declining, not improving
+- Style that doesn't fit today's track bias
+- Layoff with questionable fitness indicators
 
-VULNERABILITY THRESHOLD:
-- Require 2+ factors to flag as vulnerable
-- Confidence HIGH = 3+ factors, MEDIUM = 2 factors, LOW = 1 factor (don't flag)
+VULNERABILITY CHECKLIST:
+□ TRIP DEPENDENCY - Won with "perfect trip", "rail trip", "no traffic" - unlikely to repeat
+□ PACE DEPENDENCY - Won as closer when pace collapsed - need same setup
+□ CLASS INFLATION - Beat weaker, now facing better
+□ DECLINING FIGURES - Beyers trending down, not up
+□ FITNESS DOUBT - Long layoff, no bullet works, last race dull
+□ TRACK/STYLE MISMATCH - Running style doesn't suit track bias
+□ FALSE FAVORITE SYNDROME - Short odds based on name/connections, not current form
 
-FAVORITE:
-#${favorite.programNumber} ${favorite.horseName} (ML ${favHorse?.morningLineOdds || 'N/A'})
-Algo Rank: ${favorite.rank}, Score: ${favorite.finalScore}
-Style: ${favHorse?.runningStyle || 'Unknown'}, Post: ${favHorse?.postPosition}
-Last 3: ${favPPs.map((pp) => `${pp.finishPosition}/${pp.fieldSize} Beyer:${pp.speedFigures.beyer ?? 'N/A'}`).join(', ')}
-Positives: ${favorite.positiveFactors.slice(0, 3).join(', ') || 'None'}
-Negatives: ${favorite.negativeFactors.slice(0, 3).join(', ') || 'None'}
+WHAT MAKES A FAVORITE "SOLID" (NOT vulnerable):
+- Won with figures, not just trips
+- Proven at today's class or higher
+- Improving or consistent Beyer pattern
+- Style matches track bias
+- Distance/surface proven
+- Sharp recent work pattern
 
-FIELD CONTEXT:
-${fieldSize} runners, ${topContenders} within 15 pts of favorite
-Class: ${race.header.classification}
+CONFIDENCE LEVELS:
+- HIGH: 3+ vulnerability flags, clear reason to oppose
+- MEDIUM: 1-2 flags, some concern but could still win
+- LOW: Minor concerns only, favorite is likely solid
+
+IF VULNERABLE - WHO BENEFITS?
+- Identify which challengers gain most from favorite's weakness
+- A vulnerable closer-favorite on speed-favoring track = speed horses benefit
+- A vulnerable class-riser = proven class horses benefit
+
+---
+
+${trackIntelSection}
+
+---
+
+${favoriteSection}
+
+---
+
+${challengersSection}
+
+---
 
 OUTPUT FORMAT - Return JSON only:
 {
-  "isVulnerable": true|false,
-  "reasons": ["specific reason 1", "specific reason 2"],
-  "confidence": "HIGH" | "MEDIUM" | "LOW"
+  "favoriteAnalysis": {
+    "programNumber": number,
+    "horseName": "string",
+    "isVulnerable": boolean,
+    "vulnerabilityFlags": ["TRIP DEPENDENCY", "CLASS RISE", etc.],
+    "solidFoundation": ["What IS working for them"],
+    "overallAssessment": "1 sentence summary"
+  },
+  "confidence": "HIGH" | "MEDIUM" | "LOW",
+  "recommendedAction": "FADE" | "RESPECT" | "NEUTRAL",
+  "beneficiaries": [program numbers who benefit if favorite fails],
+  "reasoning": "2-3 sentences on vulnerability case"
 }`;
 }
 
