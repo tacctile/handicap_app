@@ -637,23 +637,42 @@ export function parseTripTroubleResponse(text: string): TripTroubleAnalysis {
   try {
     const parsed = JSON.parse(jsonStr);
 
-    // Validate required field
-    if (!Array.isArray(parsed.horsesWithTripTrouble)) {
-      throw new Error('Missing horsesWithTripTrouble array');
+    // Handle both field names: prompt uses "troubledHorses", types use "horsesWithTripTrouble"
+    const horsesArray = parsed.troubledHorses || parsed.horsesWithTripTrouble;
+
+    if (!Array.isArray(horsesArray)) {
+      // Return empty array if no horses found (valid case for races with no trip trouble)
+      return { horsesWithTripTrouble: [] };
     }
 
     // Validate each entry has required fields
-    const validatedHorses = parsed.horsesWithTripTrouble.map(
+    // Prompt outputs: programNumber, horseName, troubledRaceCount, hiddenAbilityEstimate, tripIssues, recommendation
+    // Parser expects: programNumber, horseName, issue, maskedAbility
+    const validatedHorses = horsesArray.map(
       (h: {
         programNumber?: number;
         horseName?: string;
         issue?: string;
         maskedAbility?: boolean;
+        // Prompt's actual output fields:
+        hiddenAbilityEstimate?: string;
+        tripIssues?: Array<{ race: string; issue: string }>;
+        recommendation?: string;
       }) => ({
         programNumber: typeof h.programNumber === 'number' ? h.programNumber : 0,
         horseName: typeof h.horseName === 'string' ? h.horseName : '',
-        issue: typeof h.issue === 'string' ? h.issue : '',
-        maskedAbility: typeof h.maskedAbility === 'boolean' ? h.maskedAbility : false,
+        // Map from prompt output: use tripIssues or recommendation as issue description
+        issue:
+          typeof h.issue === 'string'
+            ? h.issue
+            : h.tripIssues && h.tripIssues.length > 0
+              ? h.tripIssues.map((t) => t.issue).join('; ')
+              : h.recommendation || '',
+        // Map from prompt output: hiddenAbilityEstimate indicates masked ability
+        maskedAbility:
+          typeof h.maskedAbility === 'boolean'
+            ? h.maskedAbility
+            : typeof h.hiddenAbilityEstimate === 'string' && h.hiddenAbilityEstimate.length > 0,
       })
     );
 
@@ -680,21 +699,63 @@ export function parsePaceScenarioResponse(text: string): PaceScenarioAnalysis {
   try {
     const parsed = JSON.parse(jsonStr);
 
-    // Validate and normalize pace projection
-    const validPaceProjections = ['HOT', 'MODERATE', 'SLOW'];
-    const paceProjection = validPaceProjections.includes(parsed.paceProjection)
-      ? (parsed.paceProjection as 'HOT' | 'MODERATE' | 'SLOW')
-      : 'MODERATE';
+    // Map prompt's pace projection values to parser expected values
+    // Prompt outputs: "LONE_SPEED" | "SPEED_DUEL" | "MODERATE" | "SLOW"
+    // Parser expects: "HOT" | "MODERATE" | "SLOW"
+    let paceProjection: 'HOT' | 'MODERATE' | 'SLOW' = 'MODERATE';
+    const rawPaceProjection = parsed.paceProjection;
+    if (
+      rawPaceProjection === 'LONE_SPEED' ||
+      rawPaceProjection === 'SPEED_DUEL' ||
+      rawPaceProjection === 'HOT'
+    ) {
+      paceProjection = 'HOT';
+    } else if (rawPaceProjection === 'SLOW') {
+      paceProjection = 'SLOW';
+    } else if (rawPaceProjection === 'MODERATE') {
+      paceProjection = 'MODERATE';
+    }
+
+    // Derive advantagedStyles from beneficiaries array (prompt output)
+    // Prompt outputs: beneficiaries: [{programNumber, horseName, advantage, edgeStrength}]
+    const beneficiaries = Array.isArray(parsed.beneficiaries) ? parsed.beneficiaries : [];
+    const advantagedStyles = beneficiaries
+      .map((b: { advantage?: string }) => (typeof b.advantage === 'string' ? b.advantage : ''))
+      .filter((s: string) => s.length > 0);
+
+    // Derive disadvantagedStyles from pace context
+    // If pace is HOT, early speed gets hurt; if SLOW, closers get hurt
+    let disadvantagedStyles: string[] = [];
+    if (paceProjection === 'HOT') {
+      disadvantagedStyles = ['early speed', 'frontrunners'];
+    } else if (paceProjection === 'SLOW') {
+      disadvantagedStyles = ['closers', 'deep closers'];
+    }
+
+    // Check for lone speed exception
+    // Prompt outputs "LONE_SPEED" as paceProjection, or has explicit loneSpeedException field
+    const loneSpeedException =
+      rawPaceProjection === 'LONE_SPEED' ||
+      (typeof parsed.loneSpeedException === 'boolean' ? parsed.loneSpeedException : false);
+
+    // Check for speed duel
+    const speedDuelLikely =
+      rawPaceProjection === 'SPEED_DUEL' ||
+      (typeof parsed.speedDuelLikely === 'boolean' ? parsed.speedDuelLikely : false);
 
     return {
-      advantagedStyles: Array.isArray(parsed.advantagedStyles) ? parsed.advantagedStyles : [],
+      advantagedStyles:
+        advantagedStyles.length > 0
+          ? advantagedStyles
+          : Array.isArray(parsed.advantagedStyles)
+            ? parsed.advantagedStyles
+            : [],
       disadvantagedStyles: Array.isArray(parsed.disadvantagedStyles)
         ? parsed.disadvantagedStyles
-        : [],
+        : disadvantagedStyles,
       paceProjection,
-      loneSpeedException:
-        typeof parsed.loneSpeedException === 'boolean' ? parsed.loneSpeedException : false,
-      speedDuelLikely: typeof parsed.speedDuelLikely === 'boolean' ? parsed.speedDuelLikely : false,
+      loneSpeedException,
+      speedDuelLikely,
     };
   } catch (e) {
     throw new Error(
@@ -716,15 +777,45 @@ export function parseVulnerableFavoriteResponse(text: string): VulnerableFavorit
   try {
     const parsed = JSON.parse(jsonStr);
 
-    // Validate and normalize confidence
+    // Validate and normalize confidence (at root level in prompt output)
     const validConfidence = ['HIGH', 'MEDIUM', 'LOW'];
     const confidence = validConfidence.includes(parsed.confidence)
       ? (parsed.confidence as 'HIGH' | 'MEDIUM' | 'LOW')
       : 'MEDIUM';
 
+    // Handle nested structure from prompt output
+    // Prompt outputs: { favoriteAnalysis: { isVulnerable, vulnerabilityFlags, ... }, confidence, ... }
+    // Parser expects: { isVulnerable, reasons, confidence }
+    const favoriteAnalysis = parsed.favoriteAnalysis || {};
+
+    // Get isVulnerable from nested favoriteAnalysis or root (for backwards compatibility)
+    const isVulnerable =
+      typeof favoriteAnalysis.isVulnerable === 'boolean'
+        ? favoriteAnalysis.isVulnerable
+        : typeof parsed.isVulnerable === 'boolean'
+          ? parsed.isVulnerable
+          : false;
+
+    // Get reasons from vulnerabilityFlags (prompt) or reasons (legacy) or beneficiaries reasoning
+    let reasons: string[] = [];
+    if (Array.isArray(favoriteAnalysis.vulnerabilityFlags)) {
+      reasons = favoriteAnalysis.vulnerabilityFlags;
+    } else if (Array.isArray(parsed.vulnerabilityFlags)) {
+      reasons = parsed.vulnerabilityFlags;
+    } else if (Array.isArray(parsed.reasons)) {
+      reasons = parsed.reasons;
+    } else if (typeof parsed.reasoning === 'string' && parsed.reasoning.length > 0) {
+      reasons = [parsed.reasoning];
+    } else if (
+      typeof favoriteAnalysis.overallAssessment === 'string' &&
+      favoriteAnalysis.overallAssessment.length > 0
+    ) {
+      reasons = [favoriteAnalysis.overallAssessment];
+    }
+
     return {
-      isVulnerable: typeof parsed.isVulnerable === 'boolean' ? parsed.isVulnerable : false,
-      reasons: Array.isArray(parsed.reasons) ? parsed.reasons : [],
+      isVulnerable,
+      reasons,
       confidence,
     };
   } catch (e) {
@@ -747,22 +838,104 @@ export function parseFieldSpreadResponse(text: string): FieldSpreadAnalysis {
   try {
     const parsed = JSON.parse(jsonStr);
 
-    // Validate and normalize field type
-    const validFieldTypes = ['TIGHT', 'SEPARATED', 'MIXED'];
-    const fieldType = validFieldTypes.includes(parsed.fieldType)
-      ? (parsed.fieldType as 'TIGHT' | 'SEPARATED' | 'MIXED')
-      : 'MIXED';
+    // Handle nested structure from prompt output
+    // Prompt outputs: { fieldAssessment: { fieldType, topTierCount, ... }, horseClassifications, ... }
+    // Parser expects: { fieldType, topTierCount, recommendedSpread, horseClassifications? }
+    const fieldAssessment = parsed.fieldAssessment || {};
 
-    // Validate and normalize recommended spread
+    // Get raw field type from nested or root
+    const rawFieldType = fieldAssessment.fieldType || parsed.fieldType;
+
+    // Map prompt's field type values to parser expected values
+    // Prompt outputs: "DOMINANT" | "SEPARATED" | "COMPETITIVE" | "WIDE_OPEN"
+    // Parser/types expect: "TIGHT" | "SEPARATED" | "MIXED" | "DOMINANT" | "COMPETITIVE" | "WIDE_OPEN"
+    // Note: types.ts actually accepts DOMINANT, COMPETITIVE, WIDE_OPEN too
+    type FieldTypeValue =
+      | 'TIGHT'
+      | 'SEPARATED'
+      | 'MIXED'
+      | 'DOMINANT'
+      | 'COMPETITIVE'
+      | 'WIDE_OPEN';
+    const validFieldTypes: FieldTypeValue[] = [
+      'TIGHT',
+      'SEPARATED',
+      'MIXED',
+      'DOMINANT',
+      'COMPETITIVE',
+      'WIDE_OPEN',
+    ];
+    let fieldType: FieldTypeValue = 'MIXED';
+    if (validFieldTypes.includes(rawFieldType as FieldTypeValue)) {
+      fieldType = rawFieldType as FieldTypeValue;
+    }
+
+    // Get topTierCount from nested or root
+    const topTierCount =
+      typeof fieldAssessment.topTierCount === 'number'
+        ? fieldAssessment.topTierCount
+        : typeof parsed.topTierCount === 'number'
+          ? parsed.topTierCount
+          : 0;
+
+    // Derive recommendedSpread from betStructure or field type if not provided
+    // Prompt outputs betStructure: { recommendedApproach, ... }
+    let recommendedSpread: 'NARROW' | 'MEDIUM' | 'WIDE' = 'MEDIUM';
     const validSpreads = ['NARROW', 'MEDIUM', 'WIDE'];
-    const recommendedSpread = validSpreads.includes(parsed.recommendedSpread)
-      ? (parsed.recommendedSpread as 'NARROW' | 'MEDIUM' | 'WIDE')
-      : 'MEDIUM';
+
+    // Check for explicit recommendedSpread
+    if (validSpreads.includes(parsed.recommendedSpread)) {
+      recommendedSpread = parsed.recommendedSpread as 'NARROW' | 'MEDIUM' | 'WIDE';
+    } else if (parsed.betStructure?.recommendedApproach) {
+      // Derive from betStructure.recommendedApproach
+      const approach = parsed.betStructure.recommendedApproach.toLowerCase();
+      if (approach.includes('narrow') || approach.includes('key')) {
+        recommendedSpread = 'NARROW';
+      } else if (approach.includes('wide') || approach.includes('spread')) {
+        recommendedSpread = 'WIDE';
+      }
+    } else {
+      // Derive from field type
+      if (fieldType === 'DOMINANT' || fieldType === 'SEPARATED') {
+        recommendedSpread = 'NARROW';
+      } else if (fieldType === 'WIDE_OPEN') {
+        recommendedSpread = 'WIDE';
+      } else if (fieldType === 'COMPETITIVE' || fieldType === 'MIXED') {
+        recommendedSpread = 'MEDIUM';
+      }
+    }
+
+    // Parse horse classifications if present
+    const rawClassifications = parsed.horseClassifications || fieldAssessment.horseClassifications;
+    const horseClassifications = Array.isArray(rawClassifications)
+      ? rawClassifications.map(
+          (h: {
+            programNumber?: number;
+            horseName?: string;
+            classification?: string;
+            keyCandidate?: boolean;
+            spreadOnly?: boolean;
+            includeOnTickets?: boolean;
+            reason?: string;
+          }) => ({
+            programNumber: typeof h.programNumber === 'number' ? h.programNumber : 0,
+            horseName: typeof h.horseName === 'string' ? h.horseName : '',
+            classification: ['A', 'B', 'C', 'EXCLUDE'].includes(h.classification || '')
+              ? (h.classification as 'A' | 'B' | 'C' | 'EXCLUDE')
+              : 'C',
+            keyCandidate:
+              typeof h.keyCandidate === 'boolean' ? h.keyCandidate : h.includeOnTickets === true,
+            spreadOnly: typeof h.spreadOnly === 'boolean' ? h.spreadOnly : false,
+            reason: typeof h.reason === 'string' ? h.reason : '',
+          })
+        )
+      : undefined;
 
     return {
       fieldType,
-      topTierCount: typeof parsed.topTierCount === 'number' ? parsed.topTierCount : 0,
+      topTierCount,
       recommendedSpread,
+      horseClassifications,
     };
   } catch (e) {
     throw new Error(
