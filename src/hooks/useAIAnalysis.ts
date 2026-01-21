@@ -7,9 +7,30 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { getMultiBotAnalysis, checkAIServiceStatus, type AIRaceAnalysis } from '../services/ai';
-import type { ParsedRace, RaceHeader } from '../types/drf';
-import type { RaceScoringResult, HorseScoreForAI } from '../types/scoring';
+import type {
+  ParsedRace,
+  RaceHeader,
+  HorseEntry,
+  PastPerformance,
+  Workout,
+  TrainerCategoryStats,
+  TrainerCategoryStat,
+} from '../types/drf';
+import type {
+  RaceScoringResult,
+  HorseScoreForAI,
+  PastPerformanceForAI,
+  WorkoutForAI,
+  TrainerPatternsForAI,
+  TrainerCategoryStatForAI,
+  EquipmentForAI,
+  BreedingForAI,
+  DistanceSurfaceStatsForAI,
+  FormIndicatorsForAI,
+  RunningLineForAI,
+} from '../types/scoring';
 import type { ScoredHorse } from '../lib/scoring';
+import { createDefaultTrainerCategoryStats } from '../types/drf';
 
 // ============================================================================
 // TYPES
@@ -49,6 +70,224 @@ const CACHE_TTL = 30 * 60 * 1000;
 // ============================================================================
 
 /**
+ * Safely calculate win rate, returning 0 for division by zero
+ */
+function safeWinRate(wins: number, starts: number): number {
+  if (starts === 0 || !Number.isFinite(starts)) return 0;
+  const rate = wins / starts;
+  return Number.isFinite(rate) ? rate : 0;
+}
+
+/**
+ * Transform a TrainerCategoryStat to TrainerCategoryStatForAI
+ */
+function transformTrainerCategoryStat(
+  stat: TrainerCategoryStat | undefined
+): TrainerCategoryStatForAI {
+  if (!stat) {
+    return { starts: 0, wins: 0, winPercent: 0, roi: 0 };
+  }
+  return {
+    starts: stat.starts ?? 0,
+    wins: stat.wins ?? 0,
+    winPercent: stat.winPercent ?? 0,
+    roi: stat.roi ?? 0,
+  };
+}
+
+/**
+ * Transform TrainerCategoryStats to TrainerPatternsForAI
+ */
+function transformTrainerPatterns(
+  trainerStats: TrainerCategoryStats | undefined
+): TrainerPatternsForAI {
+  const defaultStats = createDefaultTrainerCategoryStats();
+  const stats = trainerStats ?? defaultStats;
+
+  return {
+    firstTimeLasix: transformTrainerCategoryStat(stats.firstTimeLasix),
+    firstTimeBlinkers: transformTrainerCategoryStat(stats.firstTimeBlinkers),
+    blinkersOff: transformTrainerCategoryStat(stats.blinkersOff),
+    secondOffLayoff: transformTrainerCategoryStat(stats.secondOffLayoff),
+    days31to60: transformTrainerCategoryStat(stats.days31to60),
+    days61to90: transformTrainerCategoryStat(stats.days61to90),
+    days91to180: transformTrainerCategoryStat(stats.days91to180),
+    days181plus: transformTrainerCategoryStat(stats.days181plus),
+    sprintToRoute: transformTrainerCategoryStat(stats.sprintToRoute),
+    routeToSprint: transformTrainerCategoryStat(stats.routeToSprint),
+    turfSprint: transformTrainerCategoryStat(stats.turfSprint),
+    turfRoute: transformTrainerCategoryStat(stats.turfRoute),
+    wetTrack: transformTrainerCategoryStat(stats.wetTrack),
+    dirtSprint: transformTrainerCategoryStat(stats.dirtSprint),
+    dirtRoute: transformTrainerCategoryStat(stats.dirtRoute),
+    maidenClaiming: transformTrainerCategoryStat(stats.maidenClaiming),
+    stakes: transformTrainerCategoryStat(stats.stakes),
+    firstStartTrainer: transformTrainerCategoryStat(stats.firstStartTrainer),
+    afterClaim: transformTrainerCategoryStat(stats.afterClaim),
+  };
+}
+
+/**
+ * Transform a single PastPerformance to PastPerformanceForAI
+ */
+function transformPastPerformance(pp: PastPerformance): PastPerformanceForAI {
+  const runningLine: RunningLineForAI = {
+    start: pp.runningLine?.start ?? null,
+    stretch: pp.runningLine?.stretch ?? null,
+    finish: pp.runningLine?.finish ?? null,
+  };
+
+  return {
+    date: pp.date ?? '',
+    track: pp.track ?? '',
+    distance: pp.distanceFurlongs ?? 0,
+    surface: pp.surface ?? 'dirt',
+    trackCondition: pp.trackCondition ?? 'fast',
+    finishPosition: pp.finishPosition ?? 0,
+    fieldSize: pp.fieldSize ?? 0,
+    lengthsBehind: pp.lengthsBehind ?? 0,
+    beyer: pp.speedFigures?.beyer ?? null,
+    earlyPace1: pp.earlyPace1 ?? null,
+    latePace: pp.latePace ?? null,
+    tripComment: pp.tripComment ?? '',
+    odds: pp.odds ?? null,
+    favoriteRank: pp.favoriteRank ?? null,
+    runningLine,
+  };
+}
+
+/**
+ * Transform last 3 past performances for AI consumption
+ */
+function transformPastPerformances(
+  pastPerformances: PastPerformance[] | undefined
+): PastPerformanceForAI[] {
+  if (!pastPerformances || pastPerformances.length === 0) {
+    return [];
+  }
+  return pastPerformances.slice(0, 3).map(transformPastPerformance);
+}
+
+/**
+ * Transform a single Workout to WorkoutForAI
+ */
+function transformWorkout(workout: Workout): WorkoutForAI {
+  return {
+    date: workout.date ?? '',
+    track: workout.track ?? '',
+    distanceFurlongs: workout.distanceFurlongs ?? 0,
+    timeSeconds: workout.timeSeconds ?? 0,
+    type: workout.type ?? 'unknown',
+    isBullet: workout.isBullet ?? false,
+    rankNumber: workout.rankNumber ?? null,
+    totalWorks: workout.totalWorks ?? null,
+  };
+}
+
+/**
+ * Transform last 3 workouts for AI consumption
+ */
+function transformWorkouts(workouts: Workout[] | undefined): WorkoutForAI[] {
+  if (!workouts || workouts.length === 0) {
+    return [];
+  }
+  return workouts.slice(0, 3).map(transformWorkout);
+}
+
+/**
+ * Transform equipment data for AI consumption
+ */
+function transformEquipment(horse: HorseEntry): EquipmentForAI {
+  const equipment = horse.equipment;
+  if (!equipment) {
+    return {
+      blinkers: false,
+      blinkersOff: false,
+      frontBandages: false,
+      tongueTie: false,
+      nasalStrip: false,
+      shadowRoll: false,
+      barShoes: false,
+      mudCaulks: false,
+      firstTimeEquipment: [],
+      equipmentChanges: [],
+    };
+  }
+
+  return {
+    blinkers: equipment.blinkers ?? false,
+    blinkersOff: equipment.blinkersOff ?? false,
+    frontBandages: equipment.frontBandages ?? false,
+    tongueTie: equipment.tongueTie ?? false,
+    nasalStrip: equipment.nasalStrip ?? false,
+    shadowRoll: equipment.shadowRoll ?? false,
+    barShoes: equipment.barShoes ?? false,
+    mudCaulks: equipment.mudCaulks ?? false,
+    firstTimeEquipment: equipment.firstTimeEquipment ?? [],
+    equipmentChanges: equipment.equipmentChanges ?? [],
+  };
+}
+
+/**
+ * Transform breeding data for AI consumption
+ */
+function transformBreeding(horse: HorseEntry): BreedingForAI {
+  const breeding = horse.breeding;
+  if (!breeding) {
+    return {
+      sire: '',
+      damSire: '',
+      whereBred: '',
+    };
+  }
+
+  return {
+    sire: breeding.sire ?? '',
+    damSire: breeding.damSire ?? '',
+    whereBred: breeding.whereBred ?? '',
+  };
+}
+
+/**
+ * Transform distance/surface stats for AI consumption
+ */
+function transformDistanceSurfaceStats(horse: HorseEntry): DistanceSurfaceStatsForAI {
+  return {
+    distanceStarts: horse.distanceStarts ?? 0,
+    distanceWins: horse.distanceWins ?? 0,
+    distanceWinRate: safeWinRate(horse.distanceWins ?? 0, horse.distanceStarts ?? 0),
+    surfaceStarts: horse.surfaceStarts ?? 0,
+    surfaceWins: horse.surfaceWins ?? 0,
+    surfaceWinRate: safeWinRate(horse.surfaceWins ?? 0, horse.surfaceStarts ?? 0),
+    turfStarts: horse.turfStarts ?? 0,
+    turfWins: horse.turfWins ?? 0,
+    turfWinRate: safeWinRate(horse.turfWins ?? 0, horse.turfStarts ?? 0),
+    wetStarts: horse.wetStarts ?? 0,
+    wetWins: horse.wetWins ?? 0,
+    wetWinRate: safeWinRate(horse.wetWins ?? 0, horse.wetStarts ?? 0),
+  };
+}
+
+/**
+ * Transform form indicators for AI consumption
+ */
+function transformFormIndicators(horse: HorseEntry): FormIndicatorsForAI {
+  const lifetimeStarts = horse.lifetimeStarts ?? 0;
+  const lifetimeWins = horse.lifetimeWins ?? 0;
+
+  return {
+    daysSinceLastRace: horse.daysSinceLastRace ?? null,
+    averageBeyer: horse.averageBeyer ?? null,
+    bestBeyer: horse.bestBeyer ?? null,
+    lastBeyer: horse.lastBeyer ?? null,
+    earlySpeedRating: horse.earlySpeedRating ?? null,
+    lifetimeStarts,
+    lifetimeWins,
+    lifetimeWinRate: safeWinRate(lifetimeWins, lifetimeStarts),
+  };
+}
+
+/**
  * Transform ScoredHorse[] to RaceScoringResult format for AI service
  */
 function transformToRaceScoringResult(
@@ -60,6 +299,8 @@ function transformToRaceScoringResult(
     .filter((sh) => !sh.score.isScratched)
     .sort((a, b) => a.rank - b.rank)
     .map((sh) => {
+      const horse = sh.horse;
+
       // Derive positive/negative factors from breakdown data
       const positiveFactors: string[] = [];
       const negativeFactors: string[] = [];
@@ -87,9 +328,33 @@ function transformToRaceScoringResult(
       const paceScore = sh.score.breakdown.pace?.total ?? 0;
       if (paceScore >= 15) positiveFactors.push('Pace advantage');
 
+      // Additional factors based on new data
+      if (horse.equipment?.firstTimeEquipment && horse.equipment.firstTimeEquipment.length > 0) {
+        positiveFactors.push(`First-time ${horse.equipment.firstTimeEquipment.join(', ')}`);
+      }
+
+      // Layoff factor
+      if (horse.daysSinceLastRace !== null) {
+        if (horse.daysSinceLastRace > 180) {
+          negativeFactors.push('Extended layoff (180+ days)');
+        } else if (horse.daysSinceLastRace > 60 && horse.daysSinceLastRace <= 90) {
+          // Neutral to positive for freshened horses
+        }
+      }
+
+      // Distance/surface experience
+      const distanceSurfaceStats = transformDistanceSurfaceStats(horse);
+      if (distanceSurfaceStats.distanceWinRate > 0.25 && distanceSurfaceStats.distanceStarts >= 3) {
+        positiveFactors.push('Proven at distance');
+      }
+      if (distanceSurfaceStats.surfaceWinRate > 0.25 && distanceSurfaceStats.surfaceStarts >= 3) {
+        positiveFactors.push('Proven on surface');
+      }
+
       return {
-        programNumber: sh.horse.programNumber,
-        horseName: sh.horse.horseName,
+        // Core identification (original fields)
+        programNumber: horse.programNumber,
+        horseName: horse.horseName,
         rank: sh.rank,
         finalScore: sh.score.total,
         confidenceTier: sh.score.confidenceLevel,
@@ -103,6 +368,31 @@ function transformToRaceScoringResult(
         positiveFactors,
         negativeFactors,
         isScratched: sh.score.isScratched,
+
+        // Past performances (last 3)
+        pastPerformances: transformPastPerformances(horse.pastPerformances),
+
+        // Workouts (last 3)
+        workouts: transformWorkouts(horse.workouts),
+
+        // Trainer patterns (all 19 categories)
+        trainerPatterns: transformTrainerPatterns(horse.trainerCategoryStats),
+
+        // Equipment
+        equipment: transformEquipment(horse),
+
+        // Breeding
+        breeding: transformBreeding(horse),
+
+        // Distance/surface stats
+        distanceSurfaceStats,
+
+        // Form indicators
+        formIndicators: transformFormIndicators(horse),
+
+        // Odds
+        morningLineOdds: horse.morningLineOdds ?? '',
+        morningLineDecimal: horse.morningLineDecimal ?? 0,
       };
     });
 
@@ -418,3 +708,19 @@ export function useAIAnalysis(
 }
 
 export default useAIAnalysis;
+
+// ============================================================================
+// EXPORTED TRANSFORMATION FUNCTIONS (for testing)
+// ============================================================================
+
+export {
+  transformToRaceScoringResult,
+  transformPastPerformances,
+  transformWorkouts,
+  transformTrainerPatterns,
+  transformEquipment,
+  transformBreeding,
+  transformDistanceSurfaceStats,
+  transformFormIndicators,
+  safeWinRate,
+};
