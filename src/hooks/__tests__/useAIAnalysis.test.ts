@@ -521,9 +521,9 @@ describe('transformPastPerformances', () => {
     const result = transformPastPerformances(pps);
 
     expect(result.length).toBe(3);
-    expect(result[0].finishPosition).toBe(1);
-    expect(result[1].finishPosition).toBe(2);
-    expect(result[2].finishPosition).toBe(3);
+    expect(result[0]!.finishPosition).toBe(1);
+    expect(result[1]!.finishPosition).toBe(2);
+    expect(result[2]!.finishPosition).toBe(3);
   });
 
   it('should correctly extract beyer from speedFigures', () => {
@@ -542,7 +542,7 @@ describe('transformPastPerformances', () => {
 
     const result = transformPastPerformances(pps);
 
-    expect(result[0].beyer).toBe(95);
+    expect(result[0]!.beyer).toBe(95);
   });
 
   it('should handle null beyer figure', () => {
@@ -561,7 +561,7 @@ describe('transformPastPerformances', () => {
 
     const result = transformPastPerformances(pps);
 
-    expect(result[0].beyer).toBeNull();
+    expect(result[0]!.beyer).toBeNull();
   });
 
   it('should extract running line positions correctly', () => {
@@ -569,9 +569,9 @@ describe('transformPastPerformances', () => {
 
     const result = transformPastPerformances(pps);
 
-    expect(result[0].runningLine.start).toBe(5);
-    expect(result[0].runningLine.stretch).toBe(3);
-    expect(result[0].runningLine.finish).toBe(3);
+    expect(result[0]!.runningLine.start).toBe(5);
+    expect(result[0]!.runningLine.stretch).toBe(3);
+    expect(result[0]!.runningLine.finish).toBe(3);
   });
 
   it('should extract earlyPace1 and latePace', () => {
@@ -579,8 +579,8 @@ describe('transformPastPerformances', () => {
 
     const result = transformPastPerformances(pps);
 
-    expect(result[0].earlyPace1).toBe(92);
-    expect(result[0].latePace).toBe(88);
+    expect(result[0]!.earlyPace1).toBe(92);
+    expect(result[0]!.latePace).toBe(88);
   });
 
   it('should extract tripComment', () => {
@@ -588,7 +588,7 @@ describe('transformPastPerformances', () => {
 
     const result = transformPastPerformances(pps);
 
-    expect(result[0].tripComment).toBe('Wide throughout');
+    expect(result[0]!.tripComment).toBe('Wide throughout');
   });
 });
 
@@ -618,9 +618,9 @@ describe('transformWorkouts', () => {
     const result = transformWorkouts(workouts);
 
     expect(result.length).toBe(3);
-    expect(result[0].date).toBe('20240115');
-    expect(result[1].date).toBe('20240108');
-    expect(result[2].date).toBe('20240101');
+    expect(result[0]!.date).toBe('20240115');
+    expect(result[1]!.date).toBe('20240108');
+    expect(result[2]!.date).toBe('20240101');
   });
 
   it('should correctly extract workout fields', () => {
@@ -637,12 +637,12 @@ describe('transformWorkouts', () => {
 
     const result = transformWorkouts(workouts);
 
-    expect(result[0].distanceFurlongs).toBe(4);
-    expect(result[0].timeSeconds).toBe(48.5);
-    expect(result[0].type).toBe('breeze');
-    expect(result[0].isBullet).toBe(true);
-    expect(result[0].rankNumber).toBe(1);
-    expect(result[0].totalWorks).toBe(50);
+    expect(result[0]!.distanceFurlongs).toBe(4);
+    expect(result[0]!.timeSeconds).toBe(48.5);
+    expect(result[0]!.type).toBe('breeze');
+    expect(result[0]!.isBullet).toBe(true);
+    expect(result[0]!.rankNumber).toBe(1);
+    expect(result[0]!.totalWorks).toBe(50);
   });
 });
 
@@ -918,7 +918,7 @@ describe('transformToRaceScoringResult', () => {
 
     expect(result.scores.length).toBe(1);
 
-    const transformed = result.scores[0];
+    const transformed = result.scores[0]!;
 
     // Core fields
     expect(transformed.programNumber).toBe(1);
@@ -930,11 +930,11 @@ describe('transformToRaceScoringResult', () => {
 
     // Past performances
     expect(transformed.pastPerformances.length).toBe(3);
-    expect(transformed.pastPerformances[0].finishPosition).toBe(1);
+    expect(transformed.pastPerformances[0]!.finishPosition).toBe(1);
 
     // Workouts
     expect(transformed.workouts.length).toBe(3);
-    expect(transformed.workouts[0].isBullet).toBe(true);
+    expect(transformed.workouts[0]!.isBullet).toBe(true);
 
     // Trainer patterns
     expect(transformed.trainerPatterns.firstTimeBlinkers.starts).toBe(10);
@@ -972,7 +972,7 @@ describe('transformToRaceScoringResult', () => {
 
     const result = transformToRaceScoringResult(scoredHorses, createMockRaceHeader());
 
-    expect(result.scores[0].pastPerformances).toEqual([]);
+    expect(result.scores[0]!.pastPerformances).toEqual([]);
   });
 
   it('should handle horse with missing workouts', () => {
@@ -984,7 +984,7 @@ describe('transformToRaceScoringResult', () => {
 
     const result = transformToRaceScoringResult(scoredHorses, createMockRaceHeader());
 
-    expect(result.scores[0].workouts).toEqual([]);
+    expect(result.scores[0]!.workouts).toEqual([]);
   });
 
   it('should filter out scratched horses', () => {
@@ -1000,7 +1000,7 @@ describe('transformToRaceScoringResult', () => {
     const result = transformToRaceScoringResult(scoredHorses, createMockRaceHeader());
 
     expect(result.scores.length).toBe(1);
-    expect(result.scores[0].programNumber).toBe(1);
+    expect(result.scores[0]!.programNumber).toBe(1);
   });
 
   it('should sort horses by rank', () => {
@@ -1021,9 +1021,9 @@ describe('transformToRaceScoringResult', () => {
 
     const result = transformToRaceScoringResult(scoredHorses, createMockRaceHeader());
 
-    expect(result.scores[0].rank).toBe(1);
-    expect(result.scores[1].rank).toBe(2);
-    expect(result.scores[2].rank).toBe(3);
+    expect(result.scores[0]!.rank).toBe(1);
+    expect(result.scores[1]!.rank).toBe(2);
+    expect(result.scores[2]!.rank).toBe(3);
   });
 
   it('should derive positive factors correctly', () => {
@@ -1063,10 +1063,10 @@ describe('transformToRaceScoringResult', () => {
 
     const result = transformToRaceScoringResult(scoredHorses, createMockRaceHeader());
 
-    expect(result.scores[0].positiveFactors).toContain('Strong speed figures');
-    expect(result.scores[0].positiveFactors).toContain('Class advantage');
-    expect(result.scores[0].positiveFactors).toContain('Strong recent form');
-    expect(result.scores[0].positiveFactors).toContain('Elite connections');
+    expect(result.scores[0]!.positiveFactors).toContain('Strong speed figures');
+    expect(result.scores[0]!.positiveFactors).toContain('Class advantage');
+    expect(result.scores[0]!.positiveFactors).toContain('Strong recent form');
+    expect(result.scores[0]!.positiveFactors).toContain('Elite connections');
   });
 
   it('should derive negative factors correctly', () => {
@@ -1099,9 +1099,9 @@ describe('transformToRaceScoringResult', () => {
 
     const result = transformToRaceScoringResult(scoredHorses, createMockRaceHeader());
 
-    expect(result.scores[0].negativeFactors).toContain('Weak speed figures');
-    expect(result.scores[0].negativeFactors).toContain('Class disadvantage');
-    expect(result.scores[0].negativeFactors).toContain('Poor recent form');
+    expect(result.scores[0]!.negativeFactors).toContain('Weak speed figures');
+    expect(result.scores[0]!.negativeFactors).toContain('Class disadvantage');
+    expect(result.scores[0]!.negativeFactors).toContain('Poor recent form');
   });
 
   it('should calculate race analysis correctly', () => {
@@ -1195,7 +1195,7 @@ describe('Edge Cases', () => {
     const scoredHorses: ScoredHorse[] = [createMockScoredHorse({ horse })];
     const result = transformToRaceScoringResult(scoredHorses, createMockRaceHeader());
 
-    const transformed = result.scores[0];
+    const transformed = result.scores[0]!;
 
     // Check all win rates are valid numbers
     expect(Number.isNaN(transformed.distanceSurfaceStats.distanceWinRate)).toBe(false);

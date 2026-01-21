@@ -251,6 +251,34 @@ function createMockParsedRace(overrides: Partial<ParsedRace> = {}): ParsedRace {
   };
 }
 
+/**
+ * Create default empty trainer patterns for AI
+ */
+function createDefaultTrainerPatternsForAI() {
+  const defaultStat = { starts: 0, wins: 0, winPercent: 0, roi: 0 };
+  return {
+    firstTimeLasix: defaultStat,
+    firstTimeBlinkers: defaultStat,
+    blinkersOff: defaultStat,
+    secondOffLayoff: defaultStat,
+    days31to60: defaultStat,
+    days61to90: defaultStat,
+    days91to180: defaultStat,
+    days181plus: defaultStat,
+    sprintToRoute: defaultStat,
+    routeToSprint: defaultStat,
+    turfSprint: defaultStat,
+    turfRoute: defaultStat,
+    wetTrack: defaultStat,
+    dirtSprint: defaultStat,
+    dirtRoute: defaultStat,
+    maidenClaiming: defaultStat,
+    stakes: defaultStat,
+    firstStartTrainer: defaultStat,
+    afterClaim: defaultStat,
+  };
+}
+
 function createMockHorseScore(overrides: Partial<HorseScoreForAI> = {}): HorseScoreForAI {
   return {
     programNumber: 1,
@@ -268,6 +296,49 @@ function createMockHorseScore(overrides: Partial<HorseScoreForAI> = {}): HorseSc
     positiveFactors: ['Top Beyer figure', 'Strong trainer stats'],
     negativeFactors: [],
     isScratched: false,
+    // New required fields
+    pastPerformances: [],
+    workouts: [],
+    trainerPatterns: createDefaultTrainerPatternsForAI(),
+    equipment: {
+      blinkers: false,
+      blinkersOff: false,
+      frontBandages: false,
+      tongueTie: false,
+      nasalStrip: false,
+      shadowRoll: false,
+      barShoes: false,
+      mudCaulks: false,
+      firstTimeEquipment: [],
+      equipmentChanges: [],
+    },
+    breeding: { sire: '', damSire: '', whereBred: '' },
+    distanceSurfaceStats: {
+      distanceStarts: 0,
+      distanceWins: 0,
+      distanceWinRate: 0,
+      surfaceStarts: 0,
+      surfaceWins: 0,
+      surfaceWinRate: 0,
+      turfStarts: 0,
+      turfWins: 0,
+      turfWinRate: 0,
+      wetStarts: 0,
+      wetWins: 0,
+      wetWinRate: 0,
+    },
+    formIndicators: {
+      daysSinceLastRace: null,
+      averageBeyer: null,
+      bestBeyer: null,
+      lastBeyer: null,
+      earlySpeedRating: null,
+      lifetimeStarts: 0,
+      lifetimeWins: 0,
+      lifetimeWinRate: 0,
+    },
+    morningLineOdds: '5-1',
+    morningLineDecimal: 5.0,
     ...overrides,
   };
 }
