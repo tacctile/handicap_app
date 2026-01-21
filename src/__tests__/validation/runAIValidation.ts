@@ -19,7 +19,12 @@
 import 'dotenv/config';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import { parseDRFFile } from '../../lib/drfParser';
+
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { calculateRaceScores, analyzePaceScenario } from '../../lib/scoring';
 import { getMultiBotAnalysis, checkAIServiceStatus } from '../../services/ai';
 import {
