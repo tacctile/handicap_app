@@ -313,16 +313,16 @@ async function callGeminiDirect(
   if (agent) {
     console.log('[GEMINI] Making request through proxy...');
     // Dynamic import undici (Node.js only, will be tree-shaken in browser)
-    const undiciModule = await (Function('return import("undici")')() as Promise<{ fetch: typeof fetch }>);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const undiciModule = await (Function('return import("undici")')() as Promise<{ fetch: (url: string, options: any) => Promise<Response> }>);
     response = await undiciModule.fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      dispatcher: agent as any,
-    }) as unknown as Response;
+      dispatcher: agent,
+    });
   } else {
     response = await fetch(url, {
       method: 'POST',
