@@ -36,10 +36,10 @@ describe('Parser Fixes - Handling Actual Prompt Output', () => {
       const result = parseTripTroubleResponse(promptOutput);
 
       expect(result.horsesWithTripTrouble).toHaveLength(1);
-      expect(result.horsesWithTripTrouble[0].programNumber).toBe(3);
-      expect(result.horsesWithTripTrouble[0].horseName).toBe('BODEGAS');
-      expect(result.horsesWithTripTrouble[0].maskedAbility).toBe(true);
-      expect(result.horsesWithTripTrouble[0].issue).toContain('Blocked 5-wide on turn');
+      expect(result.horsesWithTripTrouble[0]!.programNumber).toBe(3);
+      expect(result.horsesWithTripTrouble[0]!.horseName).toBe('BODEGAS');
+      expect(result.horsesWithTripTrouble[0]!.maskedAbility).toBe(true);
+      expect(result.horsesWithTripTrouble[0]!.issue).toContain('Blocked 5-wide on turn');
     });
 
     it('should handle empty troubledHorses array', () => {
@@ -67,8 +67,8 @@ describe('Parser Fixes - Handling Actual Prompt Output', () => {
       const result = parseTripTroubleResponse(legacyOutput);
 
       expect(result.horsesWithTripTrouble).toHaveLength(1);
-      expect(result.horsesWithTripTrouble[0].programNumber).toBe(5);
-      expect(result.horsesWithTripTrouble[0].issue).toBe('Blocked on rail');
+      expect(result.horsesWithTripTrouble[0]!.programNumber).toBe(5);
+      expect(result.horsesWithTripTrouble[0]!.issue).toBe('Blocked on rail');
     });
 
     it('should return empty array if no horses field present', () => {
@@ -272,7 +272,7 @@ describe('Parser Fixes - Handling Actual Prompt Output', () => {
       expect(result.topTierCount).toBe(3);
       expect(result.recommendedSpread).toBe('MEDIUM'); // COMPETITIVE defaults to MEDIUM
       expect(result.horseClassifications).toHaveLength(3);
-      expect(result.horseClassifications![0].classification).toBe('A');
+      expect(result.horseClassifications![0]!.classification).toBe('A');
     });
 
     it('should derive NARROW from betStructure with key approach', () => {
