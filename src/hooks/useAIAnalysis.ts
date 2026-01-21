@@ -28,9 +28,15 @@ import type {
   DistanceSurfaceStatsForAI,
   FormIndicatorsForAI,
   RunningLineForAI,
+  TrackIntelligenceForAI,
+  PostPositionBiasForAI,
+  SpeedBiasForAI,
+  TrackCharacteristicsForAI,
+  SeasonalContextForAI,
 } from '../types/scoring';
 import type { ScoredHorse } from '../lib/scoring';
 import { createDefaultTrainerCategoryStats } from '../types/drf';
+import { getTrackData } from '../data/tracks';
 
 // ============================================================================
 // TYPES
@@ -288,12 +294,222 @@ function transformFormIndicators(horse: HorseEntry): FormIndicatorsForAI {
 }
 
 /**
+ * Get current season from a date
+ * Dec-Feb = winter, Mar-May = spring, Jun-Aug = summer, Sep-Nov = fall
+ */
+function getSeasonFromDate(date: Date): 'winter' | 'spring' | 'summer' | 'fall' {
+  const month = date.getMonth() + 1; // getMonth() is 0-indexed
+  if (month >= 12 || month <= 2) return 'winter';
+  if (month >= 3 && month <= 5) return 'spring';
+  if (month >= 6 && month <= 8) return 'summer';
+  return 'fall';
+}
+
+/**
+ * Derive bias strength from pace advantage rating
+ * 8-10 = 'strong', 6-7 = 'moderate', 4-5 = 'weak', 1-3 = 'neutral'
+ */
+function deriveBiasStrength(
+  paceAdvantageRating: number
+): 'strong' | 'moderate' | 'weak' | 'neutral' {
+  if (paceAdvantageRating >= 8) return 'strong';
+  if (paceAdvantageRating >= 6) return 'moderate';
+  if (paceAdvantageRating >= 4) return 'weak';
+  return 'neutral';
+}
+
+/**
+ * Derive favored style from early speed win rate
+ * > 55% = 'E', > 50% = 'E/P', > 45% = 'P', <= 45% = 'S', no data = 'neutral'
+ */
+function deriveFavoredStyle(
+  earlySpeedWinRate: number | undefined
+): 'E' | 'E/P' | 'P' | 'S' | 'neutral' {
+  if (earlySpeedWinRate === undefined) return 'neutral';
+  if (earlySpeedWinRate > 55) return 'E';
+  if (earlySpeedWinRate > 50) return 'E/P';
+  if (earlySpeedWinRate > 45) return 'P';
+  return 'S';
+}
+
+/**
+ * Get track intelligence data formatted for AI consumption
+ *
+ * @param trackCode - Standard track code (e.g., "CD", "SAR")
+ * @param surface - Surface type ("dirt", "turf", etc.)
+ * @param distanceFurlongs - Race distance in furlongs
+ * @param raceDate - Date of the race (for seasonal context)
+ * @returns TrackIntelligenceForAI or null if track not found
+ */
+function getTrackIntelligenceForAI(
+  trackCode: string,
+  surface: string,
+  distanceFurlongs: number,
+  raceDate: Date
+): TrackIntelligenceForAI | null {
+  // Lookup track data
+  const trackData = getTrackData(trackCode);
+
+  if (!trackData) {
+    // Track not found - return null for graceful fallback
+    return null;
+  }
+
+  // Determine sprint vs route (< 8 furlongs = sprint)
+  const isSprintOrRoute: 'sprint' | 'route' = distanceFurlongs < 8 ? 'sprint' : 'route';
+
+  // Normalize surface to match our types
+  const normalizedSurface: 'dirt' | 'turf' | 'synthetic' | 'all-weather' =
+    surface.toLowerCase() === 'turf'
+      ? 'turf'
+      : surface.toLowerCase() === 'synthetic' || surface.toLowerCase() === 'all-weather'
+        ? 'synthetic'
+        : 'dirt';
+
+  // Select correct post position bias based on surface and distance
+  const postBiasArray =
+    normalizedSurface === 'turf' && trackData.postPositionBias.turf
+      ? trackData.postPositionBias.turf
+      : trackData.postPositionBias.dirt;
+
+  // Find matching distance range, or use closest match
+  let selectedPostBias = postBiasArray.find(
+    (pb) => distanceFurlongs >= pb.minFurlongs && distanceFurlongs <= pb.maxFurlongs
+  );
+
+  // If no exact match, find closest
+  if (!selectedPostBias && postBiasArray.length > 0) {
+    selectedPostBias = postBiasArray.reduce((closest, current) => {
+      const closestMidpoint = (closest.minFurlongs + closest.maxFurlongs) / 2;
+      const currentMidpoint = (current.minFurlongs + current.maxFurlongs) / 2;
+      const closestDiff = Math.abs(distanceFurlongs - closestMidpoint);
+      const currentDiff = Math.abs(distanceFurlongs - currentMidpoint);
+      return currentDiff < closestDiff ? current : closest;
+    });
+  }
+
+  // Select speed bias for surface
+  const speedBiasData = trackData.speedBias.find((sb) => sb.surface === normalizedSurface);
+  const fallbackSpeedBias = trackData.speedBias[0]; // Use first available if no match
+
+  const activeSpeedBias = speedBiasData || fallbackSpeedBias;
+
+  // Get surface characteristics
+  const surfaceCharacteristics = trackData.surfaces.find(
+    (s) =>
+      s.baseType === normalizedSurface ||
+      (normalizedSurface === 'synthetic' && s.baseType === 'dirt')
+  );
+
+  // Get track measurements for surface
+  const measurements =
+    normalizedSurface === 'turf' && trackData.measurements.turf
+      ? trackData.measurements.turf
+      : trackData.measurements.dirt;
+
+  // Calculate current season from race date
+  const currentSeason = getSeasonFromDate(raceDate);
+  const currentMonth = raceDate.getMonth() + 1;
+
+  // Find matching seasonal pattern
+  const seasonalPattern = trackData.seasonalPatterns.find(
+    (sp) => sp.season === currentSeason || sp.months.includes(currentMonth)
+  );
+
+  // Build post position bias for AI
+  const postPositionBias: PostPositionBiasForAI = selectedPostBias
+    ? {
+        winPercentByPost: selectedPostBias.winPercentByPost,
+        favoredPosts: selectedPostBias.favoredPosts,
+        biasStrength: deriveBiasStrength(activeSpeedBias?.paceAdvantageRating ?? 5),
+        biasDescription: selectedPostBias.biasDescription,
+      }
+    : {
+        winPercentByPost: [],
+        favoredPosts: [],
+        biasStrength: 'neutral',
+        biasDescription: 'No post position data available',
+      };
+
+  // Build speed bias for AI
+  const speedBias: SpeedBiasForAI = activeSpeedBias
+    ? {
+        earlySpeedWinRate: activeSpeedBias.earlySpeedWinRate,
+        paceAdvantageRating: activeSpeedBias.paceAdvantageRating,
+        favoredStyle: deriveFavoredStyle(activeSpeedBias.earlySpeedWinRate),
+        biasDescription: activeSpeedBias.description,
+      }
+    : {
+        earlySpeedWinRate: 50,
+        paceAdvantageRating: 5,
+        favoredStyle: 'neutral',
+        biasDescription: 'No speed bias data available',
+      };
+
+  // Build track characteristics for AI
+  const trackCharacteristics: TrackCharacteristicsForAI = {
+    circumference: measurements.circumference,
+    stretchLength: measurements.stretchLength,
+    playingStyle: surfaceCharacteristics?.playingStyle ?? 'fair',
+    drainage: surfaceCharacteristics?.drainage ?? 'good',
+  };
+
+  // Build seasonal context for AI
+  let seasonalContext: SeasonalContextForAI | null = null;
+  if (seasonalPattern) {
+    // Map track's favoredStyle (E/P/C) to AI format (E/P/S)
+    let favoredStyle: 'E' | 'P' | 'S' | null = null;
+    if (seasonalPattern.favoredStyle === 'E') {
+      favoredStyle = 'E';
+    } else if (seasonalPattern.favoredStyle === 'P') {
+      favoredStyle = 'P';
+    } else if (seasonalPattern.favoredStyle === 'C') {
+      // 'C' (closer) maps to 'S' (stalker/closer)
+      favoredStyle = 'S';
+    }
+
+    seasonalContext = {
+      currentSeason: seasonalPattern.season,
+      typicalCondition: seasonalPattern.typicalCondition,
+      speedAdjustment: seasonalPattern.speedAdjustment,
+      favoredStyle,
+      notes: seasonalPattern.notes,
+    };
+  }
+
+  return {
+    trackCode: trackData.code,
+    trackName: trackData.name,
+    surface: normalizedSurface,
+    distance: distanceFurlongs,
+    isSprintOrRoute,
+    postPositionBias,
+    speedBias,
+    trackCharacteristics,
+    seasonalContext,
+    dataQuality: trackData.dataQuality,
+  };
+}
+
+/**
  * Transform ScoredHorse[] to RaceScoringResult format for AI service
  */
 function transformToRaceScoringResult(
   scoredHorses: ScoredHorse[],
-  _raceHeader: RaceHeader // Reserved for future use
+  raceHeader: RaceHeader
 ): RaceScoringResult {
+  // Get track intelligence for AI
+  const trackCode = raceHeader.trackCode ?? '';
+  const surface = raceHeader.surface ?? 'dirt';
+  const distanceFurlongs = raceHeader.distanceFurlongs ?? 6;
+  // Use race date if available, otherwise use current date
+  const raceDate = raceHeader.date ? new Date(raceHeader.date) : new Date();
+  const trackIntelligence = getTrackIntelligenceForAI(
+    trackCode,
+    surface,
+    distanceFurlongs,
+    raceDate
+  );
   // Transform scored horses to HorseScoreForAI format
   const scores: HorseScoreForAI[] = scoredHorses
     .filter((sh) => !sh.score.isScratched)
@@ -451,6 +667,7 @@ function transformToRaceScoringResult(
     fieldStrength,
     vulnerableFavorite,
     likelyPaceCollapse: expectedPace === 'hot',
+    trackIntelligence,
   };
 
   return { scores, raceAnalysis };
@@ -723,4 +940,8 @@ export {
   transformDistanceSurfaceStats,
   transformFormIndicators,
   safeWinRate,
+  getTrackIntelligenceForAI,
+  getSeasonFromDate,
+  deriveBiasStrength,
+  deriveFavoredStyle,
 };
