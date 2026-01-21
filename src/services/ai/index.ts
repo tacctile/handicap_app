@@ -26,6 +26,7 @@ import type {
   PaceScenarioAnalysis,
   VulnerableFavoriteAnalysis,
   FieldSpreadAnalysis,
+  BotStatusDebugInfo,
 } from './types';
 import { recordAIDecision } from './metrics/recorder';
 
@@ -62,6 +63,8 @@ export type {
   BetRecommendation,
   BetStructureType,
   RankChange,
+  BotStatusInfo,
+  BotStatusDebugInfo,
 } from './types';
 
 // Re-export the analyzeRaceWithGemini function for direct access (single-bot)
@@ -1157,8 +1160,100 @@ export function combineMultiBotResults(
   const avoidList = horseInsights.filter((h) => h.avoidFlag).map((h) => h.programNumber);
 
   // ============================================================================
-  // FINAL DEBUG SUMMARY
+  // BUILD BOT STATUS DEBUG INFO
   // ============================================================================
+  const botDebugInfo: BotStatusDebugInfo = {
+    tripTrouble: {
+      name: 'Trip Trouble Bot',
+      success: tripTrouble !== null,
+      summary: tripTrouble
+        ? `${tripTrouble.horsesWithTripTrouble.length} horse(s) flagged with trip issues`
+        : 'FAILED - No data returned',
+      count: tripTrouble?.horsesWithTripTrouble.length ?? 0,
+    },
+    paceScenario: {
+      name: 'Pace Scenario Bot',
+      success: paceScenario !== null,
+      summary: paceScenario
+        ? `Pace=${paceScenario.paceProjection}, LoneSpeed=${paceScenario.loneSpeedException ? 'YES' : 'NO'}, SpeedDuel=${paceScenario.speedDuelLikely ? 'YES' : 'NO'}`
+        : 'FAILED - No data returned',
+    },
+    vulnerableFavorite: {
+      name: 'Vulnerable Favorite Bot',
+      success: vulnerableFavorite !== null,
+      summary: vulnerableFavorite
+        ? `Vulnerable=${vulnerableFavorite.isVulnerable ? 'YES' : 'NO'}, Confidence=${vulnerableFavorite.confidence}${vulnerableFavorite.reasons[0] ? ', Reason: ' + vulnerableFavorite.reasons[0] : ''}`
+        : 'FAILED - No data returned',
+    },
+    fieldSpread: {
+      name: 'Field Spread Bot',
+      success: fieldSpread !== null,
+      summary: fieldSpread
+        ? `FieldType=${fieldSpread.fieldType}, TopTier=${fieldSpread.topTierCount}, Spread=${fieldSpread.recommendedSpread}`
+        : 'FAILED - No data returned',
+    },
+    successCount: botSuccessCount,
+    totalBots: 4,
+    hasOverride: isOverride,
+    signalSummary: (() => {
+      const horsesWithBoosts = aggregatedSignals.filter((s) => s.totalAdjustment !== 0);
+      if (horsesWithBoosts.length === 0) return 'No signal adjustments applied';
+      return `${horsesWithBoosts.length} horse(s) with adjustments: ${horsesWithBoosts.map((s) => `#${s.programNumber}(${s.totalAdjustment > 0 ? '+' : ''}${s.totalAdjustment})`).join(', ')}`;
+    })(),
+  };
+
+  // ============================================================================
+  // FINAL DEBUG SUMMARY - Enhanced console logging (always visible)
+  // ============================================================================
+  // Use console.log directly so it ALWAYS appears in browser console
+  console.log(
+    `%c[AI BOTS] Race ${race.header.raceNumber} Analysis Summary`,
+    'color: #19abb5; font-weight: bold; font-size: 14px'
+  );
+  console.log('%c┌─────────────────────────────────────────────────────────┐', 'color: #888');
+  console.log(
+    `%c│ BOT STATUS: ${botSuccessCount}/4 bots returned data`,
+    botSuccessCount === 4 ? 'color: #10b981' : 'color: #f59e0b'
+  );
+  console.log(
+    `%c│ • Trip Trouble:      ${tripTrouble ? '✅ SUCCESS' : '❌ FAILED'} ${tripTrouble ? `(${tripTrouble.horsesWithTripTrouble.length} flagged)` : ''}`,
+    tripTrouble ? 'color: #10b981' : 'color: #ef4444'
+  );
+  console.log(
+    `%c│ • Pace Scenario:     ${paceScenario ? '✅ SUCCESS' : '❌ FAILED'} ${paceScenario ? `(${paceScenario.paceProjection})` : ''}`,
+    paceScenario ? 'color: #10b981' : 'color: #ef4444'
+  );
+  console.log(
+    `%c│ • Vulnerable Fav:    ${vulnerableFavorite ? '✅ SUCCESS' : '❌ FAILED'} ${vulnerableFavorite ? `(${vulnerableFavorite.isVulnerable ? 'VULNERABLE' : 'SOLID'})` : ''}`,
+    vulnerableFavorite ? 'color: #10b981' : 'color: #ef4444'
+  );
+  console.log(
+    `%c│ • Field Spread:      ${fieldSpread ? '✅ SUCCESS' : '❌ FAILED'} ${fieldSpread ? `(${fieldSpread.fieldType})` : ''}`,
+    fieldSpread ? 'color: #10b981' : 'color: #ef4444'
+  );
+  console.log('%c├─────────────────────────────────────────────────────────┤', 'color: #888');
+  console.log(`%c│ SIGNAL AGGREGATION: ${botDebugInfo.signalSummary}`, 'color: #b4b4b6');
+  console.log(
+    `%c│ OVERRIDE: ${isOverride ? '⚠️ YES - AI changed top pick' : '✓ NO - Confirms algorithm'}`,
+    isOverride ? 'color: #f59e0b' : 'color: #10b981'
+  );
+  console.log('%c├─────────────────────────────────────────────────────────┤', 'color: #888');
+  console.log(`%c│ TOP PICK: #${aiTopPick}`, 'color: #36d1da; font-weight: bold');
+  console.log(
+    `%c│ VALUE PLAY: ${valuePlay ? `#${valuePlay}` : 'None identified'}`,
+    'color: #b4b4b6'
+  );
+  console.log(
+    `%c│ CONFIDENCE: ${confidence}`,
+    confidence === 'HIGH'
+      ? 'color: #10b981'
+      : confidence === 'LOW'
+        ? 'color: #ef4444'
+        : 'color: #f59e0b'
+  );
+  console.log('%c└─────────────────────────────────────────────────────────┘', 'color: #888');
+
+  // Also output the internal debug logs for detailed analysis
   debugLog('\n--- FINAL SUMMARY ---');
   debugLog(`Top Pick: #${aiTopPick} (${isOverride ? 'OVERRIDE' : 'CONFIRM'})`);
   debugLog(`Value Play: ${valuePlay ? `#${valuePlay}` : 'None'}`);
@@ -1182,6 +1277,7 @@ export function combineMultiBotResults(
     vulnerableFavorite: isVulnerableFavoriteFlag ?? false,
     likelyUpset: isLikelyUpset ?? false,
     chaoticRace: isChaoticRace ?? false,
+    botDebugInfo,
   };
 }
 
