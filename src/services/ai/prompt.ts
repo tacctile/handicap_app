@@ -18,7 +18,6 @@ import type {
 } from '../../types/scoring';
 import {
   ALGORITHM_CONTEXT,
-  PACE_CONTEXT,
   FIELD_SPREAD_CONTEXT,
   VULNERABLE_FAVORITE_CONTEXT,
 } from './algorithmContext';
@@ -773,71 +772,323 @@ OUTPUT FORMAT - Return JSON only:
 Only include horses with clear trip trouble. Empty troubledHorses array if none found.`;
 }
 
+// ============================================================================
+// PACE SCENARIO HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Calculate average of an array of numbers, ignoring nulls
+ *
+ * @param values - Array of numbers or nulls
+ * @returns Average value or null if no valid values
+ */
+export function calculatePaceAverage(values: (number | null)[]): number | null {
+  const validValues = values.filter((v): v is number => v !== null);
+  if (validValues.length === 0) return null;
+  return Math.round(validValues.reduce((sum, v) => sum + v, 0) / validValues.length);
+}
+
+/**
+ * Classify speed profile based on EP1 vs LP ratio
+ *
+ * @param avgEP1 - Average early pace 1 figure
+ * @param avgLP - Average late pace figure
+ * @returns Speed profile classification
+ */
+export function classifySpeedProfile(
+  avgEP1: number | null,
+  avgLP: number | null
+): 'Early Burner' | 'Presser' | 'Mid-Pack' | 'Closer' | 'Unknown' {
+  if (avgEP1 === null || avgLP === null) return 'Unknown';
+
+  const diff = avgEP1 - avgLP;
+
+  if (diff >= 5) return 'Early Burner'; // Strong early, weaker late
+  if (diff >= 0) return 'Presser'; // Balanced or slight early
+  if (diff >= -5) return 'Mid-Pack'; // Slight late pace
+  return 'Closer'; // Strong late pace
+}
+
+/**
+ * Analyze pace tendencies from past performances
+ *
+ * @param pastPerformances - Array of past performances (last 3)
+ * @returns Object with pace tendency flags
+ */
+export function analyzePaceTendencies(pastPerformances: HorseScoreForAI['pastPerformances']): {
+  confirmedEarlySpeed: boolean;
+  confirmedCloser: boolean;
+  strongLateKick: boolean;
+  fadesLate: boolean;
+} {
+  const pps = pastPerformances.slice(0, 3);
+
+  if (pps.length < 2) {
+    return {
+      confirmedEarlySpeed: false,
+      confirmedCloser: false,
+      strongLateKick: false,
+      fadesLate: false,
+    };
+  }
+
+  // Count races where horse started in positions 1-2
+  const startedFast = pps.filter(
+    (pp) => pp.runningLine.start !== null && pp.runningLine.start <= 2
+  ).length;
+
+  // Count races where horse started 6+ and finished 1-3
+  const closedWell = pps.filter(
+    (pp) => pp.runningLine.start !== null && pp.runningLine.start >= 6 && pp.finishPosition <= 3
+  ).length;
+
+  // Count races where position improved 3+ spots from start to finish
+  const gainedGround = pps.filter((pp) => {
+    if (pp.runningLine.start === null || pp.runningLine.finish === null) return false;
+    return pp.runningLine.start - pp.runningLine.finish >= 3;
+  }).length;
+
+  // Count races where position dropped 3+ spots from start to finish
+  const lostGround = pps.filter((pp) => {
+    if (pp.runningLine.start === null || pp.runningLine.finish === null) return false;
+    return pp.runningLine.finish - pp.runningLine.start >= 3;
+  }).length;
+
+  return {
+    confirmedEarlySpeed: startedFast >= 2, // Started 1-2 in 2+ of last 3
+    confirmedCloser: closedWell >= 2, // Started 6+ and finished 1-3 in 2+ races
+    strongLateKick: gainedGround >= 2, // Improved 3+ spots consistently
+    fadesLate: lostGround >= 2, // Dropped 3+ spots consistently
+  };
+}
+
+/**
+ * Format a single horse's data for the Pace Scenario bot
+ * Emphasizes pace-relevant data for identifying pace advantages
+ *
+ * @param score - Horse score data from algorithm
+ * @param horse - Horse entry from race data
+ * @returns Formatted string for prompt
+ */
+export function formatHorseForPaceScenario(
+  score: HorseScoreForAI,
+  horse: { postPosition: number; runningStyle: string | null } | undefined
+): string {
+  const lines: string[] = [];
+  const runningStyle =
+    horse?.runningStyle || score.formIndicators.earlySpeedRating
+      ? score.formIndicators.earlySpeedRating && score.formIndicators.earlySpeedRating >= 90
+        ? 'E/P'
+        : 'S'
+      : 'Unknown';
+  const postPosition = horse?.postPosition ?? 'N/A';
+
+  // Header
+  lines.push(
+    `#${score.programNumber} ${score.horseName} | Style: ${horse?.runningStyle || runningStyle} | Rank: ${score.rank}`
+  );
+
+  // Get last 3 past performances
+  const pps = score.pastPerformances.slice(0, 3);
+
+  // Calculate averages
+  const ep1Values = pps.map((pp) => pp.earlyPace1);
+  const lpValues = pps.map((pp) => pp.latePace);
+  const avgEP1 = calculatePaceAverage(ep1Values);
+  const avgLP = calculatePaceAverage(lpValues);
+
+  // Pace profile section
+  const earlySpeedRating = score.formIndicators.earlySpeedRating;
+  lines.push(`Early Speed Rating: ${earlySpeedRating !== null ? earlySpeedRating : 'N/A'}`);
+
+  if (avgEP1 !== null || avgLP !== null) {
+    lines.push(
+      `Avg EP1: ${avgEP1 !== null ? avgEP1 : 'N/A'} | Avg LP: ${avgLP !== null ? avgLP : 'N/A'}`
+    );
+    const speedProfile = classifySpeedProfile(avgEP1, avgLP);
+    lines.push(`SPEED PROFILE: ${speedProfile}`);
+  } else {
+    lines.push('Pace figures: UNAVAILABLE');
+  }
+
+  // Past performances with pace data
+  if (pps.length > 0) {
+    pps.forEach((pp) => {
+      const ep1Str = pp.earlyPace1 !== null ? pp.earlyPace1 : 'N/A';
+      const lpStr = pp.latePace !== null ? pp.latePace : 'N/A';
+      lines.push(`${pp.track} ${pp.distance}f: EP1 ${ep1Str} / LP ${lpStr}`);
+
+      // Position flow
+      const start = pp.runningLine.start !== null ? pp.runningLine.start : '?';
+      const stretch = pp.runningLine.stretch !== null ? pp.runningLine.stretch : '?';
+      const finish = pp.runningLine.finish !== null ? pp.runningLine.finish : '?';
+      lines.push(`Start: ${start} -> Stretch: ${stretch} -> Finish: ${finish}`);
+      lines.push(`Final Position: ${pp.finishPosition}/${pp.fieldSize}`);
+    });
+  }
+
+  // Pace tendency flags
+  const tendencies = analyzePaceTendencies(pps);
+  const tendencyFlags: string[] = [];
+
+  if (tendencies.confirmedEarlySpeed) tendencyFlags.push('CONFIRMED EARLY SPEED');
+  if (tendencies.confirmedCloser) tendencyFlags.push('CONFIRMED CLOSER');
+  if (tendencies.strongLateKick) tendencyFlags.push('STRONG LATE KICK');
+  if (tendencies.fadesLate) tendencyFlags.push('FADES LATE');
+
+  if (tendencyFlags.length > 0) {
+    tendencyFlags.forEach((flag) => lines.push(flag));
+  }
+
+  // Post position
+  lines.push(`Post: ${postPosition}`);
+
+  return lines.join('\n');
+}
+
+/**
+ * Format abbreviated horse data for Pace Scenario (for horses ranked 7+)
+ * Token-optimized format showing only essential pace info
+ *
+ * @param score - Horse score data from algorithm
+ * @param horse - Horse entry from race data
+ * @returns Abbreviated formatted string
+ */
+export function formatHorseForPaceScenarioAbbreviated(
+  score: HorseScoreForAI,
+  horse: { postPosition: number; runningStyle: string | null } | undefined
+): string {
+  const pps = score.pastPerformances.slice(0, 3);
+  const ep1Values = pps.map((pp) => pp.earlyPace1);
+  const avgEP1 = calculatePaceAverage(ep1Values);
+  const runningStyle = horse?.runningStyle || 'Unknown';
+
+  return `#${score.programNumber} ${score.horseName} | Style: ${runningStyle} | EP1 Avg: ${avgEP1 !== null ? avgEP1 : 'N/A'}`;
+}
+
 /**
  * Build prompt for Pace Scenario Bot
  *
- * Analyzes running styles, early speed figures, and post positions.
- * Focus: Pace dynamics and which styles benefit.
+ * Analyzes running styles, early speed figures, track bias, and post positions.
+ * Focus: Pace dynamics and which horses benefit from today's specific matchup.
+ *
+ * Token Budget: 500-700 input tokens, 200-250 output tokens
  *
  * @param race - Parsed race data
  * @param scoringResult - Algorithm scoring results
- * @returns Prompt string (400-600 tokens input, requests 50-150 tokens output)
+ * @returns Prompt string for AI analysis
  */
 export function buildPaceScenarioPrompt(
   race: ParsedRace,
   scoringResult: RaceScoringResult
 ): string {
+  const { header } = race;
   const rankedScores = [...scoringResult.scores]
     .filter((s) => !s.isScratched)
     .sort((a, b) => a.rank - b.rank);
 
-  // Extract only pace-relevant data
-  const paceData = rankedScores
+  const { paceScenario, trackIntelligence } = scoringResult.raceAnalysis;
+
+  // Format track intelligence section
+  const trackIntelSection = formatTrackIntelligence(trackIntelligence);
+
+  // Format horses - full format for ranks 1-6, abbreviated for 7+
+  const horseSummaries = rankedScores
     .map((score) => {
       const horse = race.horses.find((h) => h.programNumber === score.programNumber);
-      if (!horse) return null;
+      const horseData = horse
+        ? { postPosition: horse.postPosition, runningStyle: horse.runningStyle }
+        : undefined;
 
-      const lastPP = horse.pastPerformances[0];
-      return {
-        num: score.programNumber,
-        name: score.horseName,
-        post: horse.postPosition,
-        style: horse.runningStyle || 'Unknown',
-        earlySpeed: lastPP?.earlyPace1 ?? 'N/A',
-      };
+      if (score.rank <= 6) {
+        return formatHorseForPaceScenario(score, horseData);
+      } else {
+        return formatHorseForPaceScenarioAbbreviated(score, horseData);
+      }
     })
-    .filter(Boolean);
+    .join('\n\n');
 
-  const { paceScenario } = scoringResult.raceAnalysis;
+  // Count early speed horses
+  const earlySpeedCount = paceScenario.earlySpeedCount;
 
-  return `${PACE_CONTEXT}
+  return `You are a horse racing pace analyst. Identify pace scenario advantages. Return JSON only.
 
 ---
 
-You are a pace analyst determining which running styles win today.
+PACE SCENARIO ANALYSIS
 
-YOUR ONE JOB: Determine which running styles are advantaged/disadvantaged by the likely pace scenario.
+Your job: Determine how today's pace will unfold and who benefits.
 
-WHAT TO LOOK FOR:
-- Count confirmed speed horses (E or E/P running style with early speed figures > 90)
-- 0-1 speed horses = SLOW pace, advantages: E, E/P (lone speed scenario)
-- 2 speed horses = MODERATE pace, advantages: E/P, S (stalkers sit the trip)
-- 3+ speed horses = HOT pace, advantages: S, C (closers inherit the race)
-- Post position matters: inside speed with outside speed = duel likely
-- Flag lone speed exceptions explicitly - a single front runner with no pressure is a major advantage regardless of other factors
+TRACK BIAS CONTEXT:
+${trackIntelSection}
 
-Algorithm's pace read: ${paceScenario.expectedPace}, Speed duel prob: ${Math.round(paceScenario.speedDuelProbability * 100)}%
+USE TRACK BIAS TO INFORM ANALYSIS:
+- If speed bias >55%: Early speed horses have structural edge
+- If speed bias <45%: Closers have structural edge
+- If stretch >1100ft: Closers get more room to rally
+- If stretch <990ft: Speed holds better, closers need perfect trip
+- Seasonal patterns may shift bias (check SEASONAL section)
+
+PACE SCENARIO CLASSIFICATION:
+- LONE_SPEED - One E-style horse, no pressure = HUGE EDGE (win rate 35-40%)
+- SPEED_DUEL - 2+ E-style horses, both with EP1 >90 = CLOSER ADVANTAGE
+- MODERATE - 1-2 pressers, honest pace = FAIR FOR ALL
+- SLOW - All closers/stalkers, slow pace = FIRST MOVE WINS
+
+HOW TO IDENTIFY:
+- Count horses with "CONFIRMED EARLY SPEED" flag
+- Cross-reference with Early Speed Rating and EP1 averages
+- EP1 >92 = wants the lead
+- EP1 85-92 = can press
+- EP1 <85 = closer/stalker
+
+PACE COLLAPSE WARNING:
+- 3+ confirmed speed horses = likely pace collapse
+- EP1 spread <5 points among top 3 = they'll fight for lead
+- Historical: pace collapses favor horses 4+ lengths off pace at half
+
+GOLDEN SCENARIOS:
+- Lone speed + speed-favoring track = BEST BET territory
+- Speed duel + deep closer + long stretch = CLOSER VALUE
+- No speed + confirmed presser = CONTROLS PACE
+
+POST POSITION INTEGRATION:
+- Check favoredPosts from track intelligence
+- Inside speed has advantage if no other speed inside
+- Outside closer needs racing room, longer stretch helps
+
+---
+
+RACE CONTEXT:
+Track: ${header.trackName} (${header.trackCode})
+Distance: ${header.distanceFurlongs}f ${header.surface}
+Field Size: ${rankedScores.length} horses
+Algorithm Early Speed Count: ${earlySpeedCount}
+Algorithm Speed Duel Probability: ${Math.round(paceScenario.speedDuelProbability * 100)}%
 
 HORSES:
-${paceData.map((h) => `#${h!.num} ${h!.name} PP${h!.post} Style:${h!.style} EarlySpeed:${h!.earlySpeed}`).join('\n')}
+${horseSummaries}
+
+---
 
 OUTPUT FORMAT - Return JSON only:
 {
-  "advantagedStyles": ["E", "E/P", "S", "C"],
-  "disadvantagedStyles": ["E", "E/P", "S", "C"],
-  "paceProjection": "HOT" | "MODERATE" | "SLOW",
-  "loneSpeedException": true|false,
-  "speedDuelLikely": true|false
+  "paceProjection": "LONE_SPEED" | "SPEED_DUEL" | "MODERATE" | "SLOW",
+  "earlySpeedHorses": [number],
+  "likelyLeader": number | null,
+  "speedDuelLikely": boolean,
+  "paceCollapseRisk": "HIGH" | "MEDIUM" | "LOW",
+  "beneficiaries": [
+    {
+      "programNumber": number,
+      "horseName": "string",
+      "advantage": "string",
+      "edgeStrength": "STRONG" | "MODERATE" | "SLIGHT"
+    }
+  ],
+  "loneSpeedException": boolean,
+  "confidence": "HIGH" | "MEDIUM" | "LOW",
+  "reasoning": "string"
 }`;
 }
 
