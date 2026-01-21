@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-01-21T07:17:58.734Z",
+  "generatedAt": "2026-01-21T10:04:25.375Z",
   "summary": {
     "totalRaces": 111,
     "processedRaces": 111,
     "errorRaces": 0,
-    "startTime": "2026-01-21T07:14:17.056Z",
-    "endTime": "2026-01-21T07:17:58.731Z",
-    "totalTimeMs": 221675
+    "startTime": "2026-01-21T10:00:31.577Z",
+    "endTime": "2026-01-21T10:04:25.371Z",
+    "totalTimeMs": 233794
   },
   "metrics": {
     "totalRaces": 111,
@@ -136,8 +136,8 @@
         5,
         1
       ],
-      "processingTimeMs": 72,
-      "timestamp": "2026-01-21T07:14:17.160Z",
+      "processingTimeMs": 499,
+      "timestamp": "2026-01-21T10:00:32.112Z",
       "actualWinner": 3,
       "actualExacta": [
         3,
@@ -232,8 +232,8 @@
         6,
         4
       ],
-      "processingTimeMs": 10,
-      "timestamp": "2026-01-21T07:14:19.189Z",
+      "processingTimeMs": 139,
+      "timestamp": "2026-01-21T10:00:34.271Z",
       "actualWinner": 7,
       "actualExacta": [
         7,
@@ -318,8 +318,8 @@
         1,
         2
       ],
-      "processingTimeMs": 10,
-      "timestamp": "2026-01-21T07:14:21.207Z",
+      "processingTimeMs": 116,
+      "timestamp": "2026-01-21T10:00:36.398Z",
       "actualWinner": 7,
       "actualExacta": [
         7,
@@ -409,8 +409,8 @@
         6,
         4
       ],
-      "processingTimeMs": 8,
-      "timestamp": "2026-01-21T07:14:23.223Z",
+      "processingTimeMs": 114,
+      "timestamp": "2026-01-21T10:00:38.522Z",
       "actualWinner": 1,
       "actualExacta": [
         1,
@@ -500,8 +500,8 @@
         2,
         7
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:14:25.238Z",
+      "processingTimeMs": 115,
+      "timestamp": "2026-01-21T10:00:40.644Z",
       "actualWinner": 5,
       "actualExacta": [
         5,
@@ -581,8 +581,8 @@
         4,
         2
       ],
-      "processingTimeMs": 8,
-      "timestamp": "2026-01-21T07:14:27.250Z",
+      "processingTimeMs": 114,
+      "timestamp": "2026-01-21T10:00:42.764Z",
       "actualWinner": 6,
       "actualExacta": [
         6,
@@ -677,8 +677,8 @@
         2,
         1
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:14:29.267Z",
+      "processingTimeMs": 115,
+      "timestamp": "2026-01-21T10:00:44.890Z",
       "actualWinner": 6,
       "actualExacta": [
         6,
@@ -768,8 +768,8 @@
         7,
         3
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:14:31.284Z",
+      "processingTimeMs": 115,
+      "timestamp": "2026-01-21T10:00:47.021Z",
       "actualWinner": 5,
       "actualExacta": [
         5,
@@ -877,8 +877,8 @@
         5,
         10
       ],
-      "processingTimeMs": 10,
-      "timestamp": "2026-01-21T07:14:33.308Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:00:49.151Z",
       "actualWinner": 2,
       "actualExacta": [
         2,
@@ -978,8 +978,8 @@
         3,
         9
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:14:35.328Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:00:51.276Z",
       "actualWinner": 10,
       "actualExacta": [
         10,
@@ -1072,8 +1072,8 @@
         7,
         1
       ],
-      "processingTimeMs": 8,
-      "timestamp": "2026-01-21T07:14:37.343Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:00:53.398Z",
       "actualWinner": 1,
       "actualExacta": [
         1,
@@ -1158,8 +1158,8 @@
         1,
         7
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:14:39.356Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:00:55.518Z",
       "actualWinner": 3,
       "actualExacta": [
         3,
@@ -1267,8 +1267,8 @@
         6,
         8
       ],
-      "processingTimeMs": 9,
-      "timestamp": "2026-01-21T07:14:41.382Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:00:57.643Z",
       "actualWinner": 4,
       "actualExacta": [
         4,
@@ -1355,8 +1355,8 @@
         1,
         3
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:14:43.394Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:00:59.762Z",
       "actualWinner": 7,
       "actualExacta": [
         7,
@@ -1453,8 +1453,8 @@
         9,
         3
       ],
-      "processingTimeMs": 8,
-      "timestamp": "2026-01-21T07:14:45.411Z",
+      "processingTimeMs": 115,
+      "timestamp": "2026-01-21T10:01:01.885Z",
       "actualWinner": 8,
       "actualExacta": [
         8,
@@ -1552,8 +1552,8 @@
         1,
         8
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:14:47.429Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:01:04.006Z",
       "actualWinner": 2,
       "actualExacta": [
         2,
@@ -1638,8 +1638,8 @@
         8,
         6
       ],
-      "processingTimeMs": 5,
-      "timestamp": "2026-01-21T07:14:49.443Z",
+      "processingTimeMs": 114,
+      "timestamp": "2026-01-21T10:01:06.126Z",
       "actualWinner": 2,
       "actualExacta": [
         2,
@@ -1732,8 +1732,8 @@
         5,
         1
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:14:51.455Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:01:08.248Z",
       "actualWinner": 6,
       "actualExacta": [
         6,
@@ -1841,8 +1841,8 @@
         6,
         4
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:14:53.471Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:01:10.371Z",
       "actualWinner": 10,
       "actualExacta": [
         10,
@@ -1937,8 +1937,8 @@
         2,
         3
       ],
-      "processingTimeMs": 8,
-      "timestamp": "2026-01-21T07:14:55.488Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:01:12.490Z",
       "actualWinner": 7,
       "actualExacta": [
         7,
@@ -2028,8 +2028,8 @@
         4,
         7
       ],
-      "processingTimeMs": 9,
-      "timestamp": "2026-01-21T07:14:57.504Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:01:14.608Z",
       "actualWinner": 2,
       "actualExacta": [
         2,
@@ -2124,8 +2124,8 @@
         8,
         5
       ],
-      "processingTimeMs": 8,
-      "timestamp": "2026-01-21T07:14:59.520Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:01:16.728Z",
       "actualWinner": 8,
       "actualExacta": [
         8,
@@ -2222,8 +2222,8 @@
         2,
         4
       ],
-      "processingTimeMs": 9,
-      "timestamp": "2026-01-21T07:15:01.536Z",
+      "processingTimeMs": 111,
+      "timestamp": "2026-01-21T10:01:18.846Z",
       "actualWinner": 8,
       "actualExacta": [
         8,
@@ -2323,8 +2323,8 @@
         7,
         1
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:15:03.551Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:01:20.966Z",
       "actualWinner": 4,
       "actualExacta": [
         4,
@@ -2414,8 +2414,8 @@
         3,
         8
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:15:05.563Z",
+      "processingTimeMs": 111,
+      "timestamp": "2026-01-21T10:01:23.083Z",
       "actualWinner": 5,
       "actualExacta": [
         5,
@@ -2510,8 +2510,8 @@
         5,
         10
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:15:07.578Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:01:25.203Z",
       "actualWinner": 6,
       "actualExacta": [
         6,
@@ -2608,8 +2608,8 @@
         7,
         10
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:15:09.592Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:01:27.322Z",
       "actualWinner": 6,
       "actualExacta": [
         6,
@@ -2711,8 +2711,8 @@
         2,
         11
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:15:11.607Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:01:29.444Z",
       "actualWinner": 11,
       "actualExacta": [
         11,
@@ -2802,8 +2802,8 @@
         3,
         2
       ],
-      "processingTimeMs": 9,
-      "timestamp": "2026-01-21T07:15:13.621Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:01:31.568Z",
       "actualWinner": 8,
       "actualExacta": [
         8,
@@ -2888,8 +2888,8 @@
         2,
         1
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:15:15.632Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:01:33.685Z",
       "actualWinner": 7,
       "actualExacta": [
         7,
@@ -2981,8 +2981,8 @@
         7,
         4
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:15:17.647Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:01:35.805Z",
       "actualWinner": 2,
       "actualExacta": [
         2,
@@ -3074,8 +3074,8 @@
         6,
         4
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:15:19.661Z",
+      "processingTimeMs": 114,
+      "timestamp": "2026-01-21T10:01:37.927Z",
       "actualWinner": 5,
       "actualExacta": [
         5,
@@ -3165,8 +3165,8 @@
         6,
         1
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:15:21.673Z",
+      "processingTimeMs": 115,
+      "timestamp": "2026-01-21T10:01:40.048Z",
       "actualWinner": 1,
       "actualExacta": [
         1,
@@ -3259,8 +3259,8 @@
         3,
         7
       ],
-      "processingTimeMs": 8,
-      "timestamp": "2026-01-21T07:15:23.692Z",
+      "processingTimeMs": 117,
+      "timestamp": "2026-01-21T10:01:42.173Z",
       "actualWinner": 8,
       "actualExacta": [
         8,
@@ -3350,8 +3350,8 @@
         4,
         6
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:15:25.708Z",
+      "processingTimeMs": 114,
+      "timestamp": "2026-01-21T10:01:44.293Z",
       "actualWinner": 6,
       "actualExacta": [
         6,
@@ -3446,8 +3446,8 @@
         5,
         7
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:15:27.724Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:01:46.414Z",
       "actualWinner": 5,
       "actualExacta": [
         5,
@@ -3560,8 +3560,8 @@
         13,
         10
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:15:29.741Z",
+      "processingTimeMs": 117,
+      "timestamp": "2026-01-21T10:01:48.540Z",
       "actualWinner": 1,
       "actualExacta": [
         1,
@@ -3656,8 +3656,8 @@
         10,
         4
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:15:31.758Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:01:50.662Z",
       "actualWinner": 1,
       "actualExacta": [
         1,
@@ -3749,8 +3749,8 @@
         3,
         7
       ],
-      "processingTimeMs": 8,
-      "timestamp": "2026-01-21T07:15:33.773Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:01:52.780Z",
       "actualWinner": 3,
       "actualExacta": [
         3,
@@ -3840,8 +3840,8 @@
         7,
         5
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:15:35.786Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:01:54.897Z",
       "actualWinner": 3,
       "actualExacta": [
         3,
@@ -3946,8 +3946,8 @@
         6,
         10
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:15:37.799Z",
+      "processingTimeMs": 111,
+      "timestamp": "2026-01-21T10:01:57.015Z",
       "actualWinner": 10,
       "actualExacta": [
         10,
@@ -4027,8 +4027,8 @@
         5,
         3
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:15:39.809Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:01:59.131Z",
       "actualWinner": 3,
       "actualExacta": [
         3,
@@ -4128,8 +4128,8 @@
         3,
         12
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:15:41.824Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:02:01.253Z",
       "actualWinner": 7,
       "actualExacta": [
         7,
@@ -4224,8 +4224,8 @@
         8,
         5
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:15:43.839Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:02:03.371Z",
       "actualWinner": 4,
       "actualExacta": [
         4,
@@ -4315,8 +4315,8 @@
         5,
         8
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:15:45.851Z",
+      "processingTimeMs": 118,
+      "timestamp": "2026-01-21T10:02:05.496Z",
       "actualWinner": 8,
       "actualExacta": [
         8,
@@ -4406,8 +4406,8 @@
         6,
         4
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:15:47.862Z",
+      "processingTimeMs": 111,
+      "timestamp": "2026-01-21T10:02:07.612Z",
       "actualWinner": 2,
       "actualExacta": [
         2,
@@ -4509,8 +4509,8 @@
         8,
         9
       ],
-      "processingTimeMs": 8,
-      "timestamp": "2026-01-21T07:15:49.879Z",
+      "processingTimeMs": 117,
+      "timestamp": "2026-01-21T10:02:09.736Z",
       "actualWinner": 8,
       "actualExacta": [
         8,
@@ -4585,8 +4585,8 @@
         2,
         6
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:15:51.891Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:02:11.851Z",
       "actualWinner": 6,
       "actualExacta": [
         6,
@@ -4683,8 +4683,8 @@
         3,
         7
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:15:53.907Z",
+      "processingTimeMs": 111,
+      "timestamp": "2026-01-21T10:02:13.970Z",
       "actualWinner": 2,
       "actualExacta": [
         2,
@@ -4759,8 +4759,8 @@
         5,
         4
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:15:55.916Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:02:16.086Z",
       "actualWinner": 4,
       "actualExacta": [
         4,
@@ -4828,8 +4828,8 @@
         6,
         1
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:15:57.927Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:02:18.202Z",
       "actualWinner": 1,
       "actualExacta": [
         1,
@@ -4914,8 +4914,8 @@
         1,
         2
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:15:59.938Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:02:20.317Z",
       "actualWinner": 3,
       "actualExacta": [
         3,
@@ -5005,8 +5005,8 @@
         3,
         1
       ],
-      "processingTimeMs": 9,
-      "timestamp": "2026-01-21T07:16:01.952Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:02:22.436Z",
       "actualWinner": 6,
       "actualExacta": [
         6,
@@ -5086,8 +5086,8 @@
         3,
         4
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:16:03.964Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:02:24.552Z",
       "actualWinner": 6,
       "actualExacta": [
         6,
@@ -5174,8 +5174,8 @@
         5,
         1
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:16:05.977Z",
+      "processingTimeMs": 110,
+      "timestamp": "2026-01-21T10:02:26.668Z",
       "actualWinner": 6,
       "actualExacta": [
         6,
@@ -5283,8 +5283,8 @@
         12,
         4
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:16:07.995Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:02:28.788Z",
       "actualWinner": 9,
       "actualExacta": [
         9,
@@ -5369,8 +5369,8 @@
         3,
         1
       ],
-      "processingTimeMs": 5,
-      "timestamp": "2026-01-21T07:16:10.006Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:02:30.905Z",
       "actualWinner": 7,
       "actualExacta": [
         7,
@@ -5450,8 +5450,8 @@
         3,
         6
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:16:12.018Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:02:33.021Z",
       "actualWinner": 6,
       "actualExacta": [
         6,
@@ -5541,8 +5541,8 @@
         2,
         8
       ],
-      "processingTimeMs": 9,
-      "timestamp": "2026-01-21T07:16:14.034Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:02:35.137Z",
       "actualWinner": 5,
       "actualExacta": [
         5,
@@ -5627,8 +5627,8 @@
         3,
         6
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:16:16.045Z",
+      "processingTimeMs": 117,
+      "timestamp": "2026-01-21T10:02:37.258Z",
       "actualWinner": 7,
       "actualExacta": [
         7,
@@ -5708,8 +5708,8 @@
         1,
         6
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:16:18.056Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:02:39.375Z",
       "actualWinner": 3,
       "actualExacta": [
         3,
@@ -5789,8 +5789,8 @@
         4,
         5
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:16:20.069Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:02:41.491Z",
       "actualWinner": 2,
       "actualExacta": [
         2,
@@ -5882,8 +5882,8 @@
         5,
         3
       ],
-      "processingTimeMs": 8,
-      "timestamp": "2026-01-21T07:16:22.084Z",
+      "processingTimeMs": 111,
+      "timestamp": "2026-01-21T10:02:43.608Z",
       "actualWinner": 7,
       "actualExacta": [
         7,
@@ -6002,8 +6002,8 @@
         2,
         11
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:16:24.106Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:02:45.733Z",
       "actualWinner": 1,
       "actualExacta": [
         1,
@@ -6105,8 +6105,8 @@
         1,
         4
       ],
-      "processingTimeMs": 9,
-      "timestamp": "2026-01-21T07:16:26.125Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:02:47.856Z",
       "actualWinner": 2,
       "actualExacta": [
         2,
@@ -6196,8 +6196,8 @@
         5,
         3
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:16:28.138Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:02:49.975Z",
       "actualWinner": 4,
       "actualExacta": [
         4,
@@ -6289,8 +6289,8 @@
         3,
         1
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:16:30.150Z",
+      "processingTimeMs": 114,
+      "timestamp": "2026-01-21T10:02:52.097Z",
       "actualWinner": 2,
       "actualExacta": [
         2,
@@ -6390,8 +6390,8 @@
         7,
         8
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:16:32.161Z",
+      "processingTimeMs": 114,
+      "timestamp": "2026-01-21T10:02:54.218Z",
       "actualWinner": 9,
       "actualExacta": [
         9,
@@ -6493,8 +6493,8 @@
         2,
         3
       ],
-      "processingTimeMs": 10,
-      "timestamp": "2026-01-21T07:16:34.181Z",
+      "processingTimeMs": 121,
+      "timestamp": "2026-01-21T10:02:56.351Z",
       "actualWinner": 2,
       "actualExacta": [
         2,
@@ -6599,8 +6599,8 @@
         4,
         10
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:16:36.194Z",
+      "processingTimeMs": 111,
+      "timestamp": "2026-01-21T10:02:58.473Z",
       "actualWinner": 9,
       "actualExacta": [
         9,
@@ -6685,8 +6685,8 @@
         4,
         2
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:16:38.205Z",
+      "processingTimeMs": 114,
+      "timestamp": "2026-01-21T10:03:00.591Z",
       "actualWinner": 6,
       "actualExacta": [
         6,
@@ -6798,8 +6798,8 @@
         12,
         10
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:16:40.220Z",
+      "processingTimeMs": 114,
+      "timestamp": "2026-01-21T10:03:02.713Z",
       "actualWinner": 10,
       "actualExacta": [
         10,
@@ -6918,8 +6918,8 @@
         11,
         2
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:16:42.236Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:03:04.837Z",
       "actualWinner": 3,
       "actualExacta": [
         3,
@@ -7023,8 +7023,8 @@
         3,
         1
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:16:44.251Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:03:06.955Z",
       "actualWinner": 3,
       "actualExacta": [
         3,
@@ -7127,8 +7127,8 @@
         2,
         8
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:16:46.265Z",
+      "processingTimeMs": 116,
+      "timestamp": "2026-01-21T10:03:09.080Z",
       "actualWinner": 7,
       "actualExacta": [
         7,
@@ -7218,8 +7218,8 @@
         9,
         4
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:16:48.278Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:03:11.198Z",
       "actualWinner": 9,
       "actualExacta": [
         9,
@@ -7317,8 +7317,8 @@
         4,
         6
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:16:50.290Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:03:13.316Z",
       "actualWinner": 5,
       "actualExacta": [
         5,
@@ -7420,8 +7420,8 @@
         6,
         8
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:16:52.305Z",
+      "processingTimeMs": 111,
+      "timestamp": "2026-01-21T10:03:15.433Z",
       "actualWinner": 4,
       "actualExacta": [
         4,
@@ -7508,8 +7508,8 @@
         5,
         6
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:16:54.316Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:03:17.550Z",
       "actualWinner": 2,
       "actualExacta": [
         2,
@@ -7606,8 +7606,8 @@
         5,
         3
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:16:56.330Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:03:19.669Z",
       "actualWinner": 10,
       "actualExacta": [
         10,
@@ -7675,8 +7675,8 @@
         1,
         7
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:16:58.340Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:03:21.785Z",
       "actualWinner": 1,
       "actualExacta": [
         1,
@@ -7766,8 +7766,8 @@
         2,
         8
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:17:00.351Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:03:23.903Z",
       "actualWinner": 3,
       "actualExacta": [
         3,
@@ -7874,8 +7874,8 @@
         7,
         10
       ],
-      "processingTimeMs": 9,
-      "timestamp": "2026-01-21T07:17:02.367Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:03:26.021Z",
       "actualWinner": 5,
       "actualExacta": [
         5,
@@ -7993,8 +7993,8 @@
         12,
         2
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:17:04.382Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:03:28.141Z",
       "actualWinner": 12,
       "actualExacta": [
         12,
@@ -8081,8 +8081,8 @@
         3,
         5
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:17:06.394Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:03:30.258Z",
       "actualWinner": 3,
       "actualExacta": [
         3,
@@ -8200,8 +8200,8 @@
         6,
         4
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:17:08.409Z",
+      "processingTimeMs": 114,
+      "timestamp": "2026-01-21T10:03:32.383Z",
       "actualWinner": 10,
       "actualExacta": [
         10,
@@ -8324,8 +8324,8 @@
         13,
         2
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:17:10.427Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:03:34.505Z",
       "actualWinner": 13,
       "actualExacta": [
         13,
@@ -8410,8 +8410,8 @@
         3,
         6
       ],
-      "processingTimeMs": 5,
-      "timestamp": "2026-01-21T07:17:12.436Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:03:36.622Z",
       "actualWinner": 1,
       "actualExacta": [
         1,
@@ -8498,8 +8498,8 @@
         3,
         2
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:17:14.447Z",
+      "processingTimeMs": 111,
+      "timestamp": "2026-01-21T10:03:38.739Z",
       "actualWinner": 1,
       "actualExacta": [
         1,
@@ -8616,8 +8616,8 @@
         9,
         3
       ],
-      "processingTimeMs": 5,
-      "timestamp": "2026-01-21T07:17:16.463Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:03:40.861Z",
       "actualWinner": 4,
       "actualExacta": [
         4,
@@ -8722,8 +8722,8 @@
         3,
         4
       ],
-      "processingTimeMs": 5,
-      "timestamp": "2026-01-21T07:17:18.477Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:03:42.981Z",
       "actualWinner": 5,
       "actualExacta": [
         5,
@@ -8836,8 +8836,8 @@
         3,
         9
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:17:20.492Z",
+      "processingTimeMs": 115,
+      "timestamp": "2026-01-21T10:03:45.104Z",
       "actualWinner": 9,
       "actualExacta": [
         9,
@@ -8927,8 +8927,8 @@
         5,
         10
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:17:22.505Z",
+      "processingTimeMs": 120,
+      "timestamp": "2026-01-21T10:03:47.229Z",
       "actualWinner": 10,
       "actualExacta": [
         10,
@@ -9041,8 +9041,8 @@
         2,
         7
       ],
-      "processingTimeMs": 8,
-      "timestamp": "2026-01-21T07:17:24.524Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:03:49.350Z",
       "actualWinner": 4,
       "actualExacta": [
         4,
@@ -9137,8 +9137,8 @@
         7,
         6
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:17:26.535Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:03:51.469Z",
       "actualWinner": 7,
       "actualExacta": [
         7,
@@ -9223,8 +9223,8 @@
         6,
         1
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:17:28.545Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:03:53.585Z",
       "actualWinner": 7,
       "actualExacta": [
         7,
@@ -9309,8 +9309,8 @@
         5,
         1
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:17:30.559Z",
+      "processingTimeMs": 119,
+      "timestamp": "2026-01-21T10:03:55.708Z",
       "actualWinner": 4,
       "actualExacta": [
         4,
@@ -9397,8 +9397,8 @@
         2,
         6
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:17:32.568Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:03:57.824Z",
       "actualWinner": 8,
       "actualExacta": [
         8,
@@ -9493,8 +9493,8 @@
         7,
         4
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:17:34.580Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:03:59.943Z",
       "actualWinner": 4,
       "actualExacta": [
         4,
@@ -9584,8 +9584,8 @@
         2,
         5
       ],
-      "processingTimeMs": 9,
-      "timestamp": "2026-01-21T07:17:36.595Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:04:02.062Z",
       "actualWinner": 4,
       "actualExacta": [
         4,
@@ -9690,8 +9690,8 @@
         10,
         5
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:17:38.608Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:04:04.183Z",
       "actualWinner": 9,
       "actualExacta": [
         9,
@@ -9796,8 +9796,8 @@
         9,
         7
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:17:40.621Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:04:06.303Z",
       "actualWinner": 7,
       "actualExacta": [
         7,
@@ -9902,8 +9902,8 @@
         2,
         11
       ],
-      "processingTimeMs": 5,
-      "timestamp": "2026-01-21T07:17:42.632Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:04:08.422Z",
       "actualWinner": 11,
       "actualExacta": [
         11,
@@ -9991,8 +9991,8 @@
         2,
         7
       ],
-      "processingTimeMs": 5,
-      "timestamp": "2026-01-21T07:17:44.641Z",
+      "processingTimeMs": 114,
+      "timestamp": "2026-01-21T10:04:10.539Z",
       "actualWinner": 3,
       "actualExacta": [
         3,
@@ -10100,8 +10100,8 @@
         4,
         9
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:17:46.655Z",
+      "processingTimeMs": 114,
+      "timestamp": "2026-01-21T10:04:12.656Z",
       "actualWinner": 7,
       "actualExacta": [
         7,
@@ -10198,8 +10198,8 @@
         2,
         8
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:17:48.666Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:04:14.774Z",
       "actualWinner": 8,
       "actualExacta": [
         8,
@@ -10296,8 +10296,8 @@
         5,
         3
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:17:50.678Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:04:16.892Z",
       "actualWinner": 8,
       "actualExacta": [
         8,
@@ -10377,8 +10377,8 @@
         6,
         5
       ],
-      "processingTimeMs": 7,
-      "timestamp": "2026-01-21T07:17:52.689Z",
+      "processingTimeMs": 113,
+      "timestamp": "2026-01-21T10:04:19.009Z",
       "actualWinner": 6,
       "actualExacta": [
         6,
@@ -10498,8 +10498,8 @@
         4,
         6
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:17:54.704Z",
+      "processingTimeMs": 114,
+      "timestamp": "2026-01-21T10:04:21.133Z",
       "actualWinner": 8,
       "actualExacta": [
         8,
@@ -10606,8 +10606,8 @@
         2,
         7
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:17:56.716Z",
+      "processingTimeMs": 112,
+      "timestamp": "2026-01-21T10:04:23.253Z",
       "actualWinner": 6,
       "actualExacta": [
         6,
@@ -10712,8 +10712,8 @@
         1,
         7
       ],
-      "processingTimeMs": 6,
-      "timestamp": "2026-01-21T07:17:58.730Z",
+      "processingTimeMs": 111,
+      "timestamp": "2026-01-21T10:04:25.371Z",
       "actualWinner": 12,
       "actualExacta": [
         12,
