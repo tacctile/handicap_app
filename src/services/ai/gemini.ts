@@ -130,7 +130,9 @@ async function getProxyAgent(): Promise<unknown> {
   try {
     // Dynamic import undici for proxy support (Node.js only)
     // This will fail in browser builds, which is expected
-    const undiciModule = await (Function('return import("undici")')() as Promise<{ ProxyAgent: new (url: string) => unknown }>);
+    const undiciModule = await (Function('return import("undici")')() as Promise<{
+      ProxyAgent: new (url: string) => unknown;
+    }>);
     proxyAgent = new undiciModule.ProxyAgent(proxyUrl);
     console.log('[GEMINI] Using proxy agent for HTTPS requests');
     return proxyAgent;
@@ -313,8 +315,10 @@ async function callGeminiDirect(
   if (agent) {
     console.log('[GEMINI] Making request through proxy...');
     // Dynamic import undici (Node.js only, will be tree-shaken in browser)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const undiciModule = await (Function('return import("undici")')() as Promise<{ fetch: (url: string, options: any) => Promise<Response> }>);
+    const undiciModule = await (Function('return import("undici")')() as Promise<{
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      fetch: (url: string, options: any) => Promise<Response>;
+    }>);
     response = await undiciModule.fetch(url, {
       method: 'POST',
       headers: {
@@ -635,6 +639,16 @@ function mapServerlessErrorCode(code: string): AIServiceErrorCode {
 }
 
 /**
+ * Configuration options for callGeminiWithSchema
+ */
+interface GeminiSchemaConfig {
+  /** Override max output tokens (default: 256 from MULTI_BOT_CONFIG) */
+  maxOutputTokens?: number;
+  /** Override temperature (default: 0.2 from MULTI_BOT_CONFIG) */
+  temperature?: number;
+}
+
+/**
  * Generic Gemini API caller with custom response parser
  *
  * Routes through either:
@@ -645,12 +659,14 @@ function mapServerlessErrorCode(code: string): AIServiceErrorCode {
  *
  * @param prompt - The prompt to send to Gemini
  * @param parseResponse - Function to parse the text response into type T
+ * @param config - Optional configuration overrides (maxOutputTokens, temperature)
  * @returns Parsed response of type T
  * @throws AIServiceError on failure
  */
 export async function callGeminiWithSchema<T>(
   prompt: string,
-  parseResponse: (text: string) => T
+  parseResponse: (text: string) => T,
+  config?: GeminiSchemaConfig
 ): Promise<T> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), MULTI_BOT_TIMEOUT_MS);
@@ -661,8 +677,8 @@ export async function callGeminiWithSchema<T>(
       systemPrompt,
       prompt,
       {
-        temperature: MULTI_BOT_CONFIG.temperature,
-        maxOutputTokens: MULTI_BOT_CONFIG.maxOutputTokens,
+        temperature: config?.temperature ?? MULTI_BOT_CONFIG.temperature,
+        maxOutputTokens: config?.maxOutputTokens ?? MULTI_BOT_CONFIG.maxOutputTokens,
       },
       controller.signal
     );
@@ -713,7 +729,86 @@ export async function callGeminiWithSchema<T>(
 // ============================================================================
 
 /**
+ * Attempt to repair truncated JSON by closing unclosed brackets and strings
+ *
+ * @param jsonStr - Potentially truncated JSON string
+ * @returns Repaired JSON string (best effort)
+ */
+function repairTruncatedJson(jsonStr: string): string {
+  if (!jsonStr) return jsonStr;
+
+  let repaired = jsonStr.trim();
+
+  // Track open brackets/braces and string state
+  const stack: string[] = [];
+  let inString = false;
+  let escapeNext = false;
+
+  for (let i = 0; i < repaired.length; i++) {
+    const char = repaired[i];
+
+    if (escapeNext) {
+      escapeNext = false;
+      continue;
+    }
+
+    if (char === '\\' && inString) {
+      escapeNext = true;
+      continue;
+    }
+
+    if (char === '"' && !escapeNext) {
+      inString = !inString;
+      continue;
+    }
+
+    if (!inString) {
+      if (char === '{' || char === '[') {
+        stack.push(char);
+      } else if (char === '}') {
+        if (stack.length > 0 && stack[stack.length - 1] === '{') {
+          stack.pop();
+        }
+      } else if (char === ']') {
+        if (stack.length > 0 && stack[stack.length - 1] === '[') {
+          stack.pop();
+        }
+      }
+    }
+  }
+
+  // If we're in a string, close it first
+  if (inString) {
+    repaired += '"';
+    debugLog('[JSON Repair] Closed unterminated string');
+  }
+
+  // Close any remaining open brackets/braces in reverse order
+  while (stack.length > 0) {
+    const open = stack.pop();
+    if (open === '{') {
+      repaired += '}';
+      debugLog('[JSON Repair] Added closing brace }');
+    } else if (open === '[') {
+      repaired += ']';
+      debugLog('[JSON Repair] Added closing bracket ]');
+    }
+  }
+
+  // Handle common truncation patterns - remove trailing incomplete elements
+  // Pattern: ..."key": (value is missing)
+  repaired = repaired.replace(/,\s*"[^"]*":\s*$/, '');
+  // Pattern: ...{ "key": "val (truncated mid-value in object)
+  repaired = repaired.replace(/,\s*\{[^}]*$/, '');
+  // Pattern: ..., (trailing comma before we added closing bracket)
+  repaired = repaired.replace(/,\s*([}\]])$/, '$1');
+
+  return repaired;
+}
+
+/**
  * Extract JSON from response text (handles markdown wrapping)
+ * Includes repair logic for truncated responses
  */
 function extractJson(text: string): string {
   if (!text || typeof text !== 'string') {
@@ -748,7 +843,31 @@ function extractJson(text: string): string {
     throw new Error('No JSON content found in response');
   }
 
-  return jsonStr;
+  // Try to parse as-is first
+  try {
+    JSON.parse(jsonStr);
+    return jsonStr; // Valid JSON, no repair needed
+  } catch (initialError) {
+    // JSON is invalid - attempt repair
+    debugLog('[JSON Repair] Initial parse failed, attempting repair...');
+    debugLog(
+      '[JSON Repair] Error:',
+      initialError instanceof Error ? initialError.message : String(initialError)
+    );
+
+    const repaired = repairTruncatedJson(jsonStr);
+
+    // Try to parse repaired JSON
+    try {
+      JSON.parse(repaired);
+      debugLog('[JSON Repair] Successfully repaired truncated JSON');
+      return repaired;
+    } catch (_repairError) {
+      // Repair didn't work - return original and let caller handle the error
+      debugLog('[JSON Repair] Repair attempt failed, returning original');
+      return jsonStr;
+    }
+  }
 }
 
 /**
@@ -1144,7 +1263,8 @@ export async function analyzePaceScenario(
 ): Promise<PaceScenarioAnalysis> {
   setCurrentBotName('PaceScenario');
   const prompt = buildPaceScenarioPrompt(race, scoringResult);
-  return callGeminiWithSchema(prompt, parsePaceScenarioResponse);
+  // Pace scenario has complex output with beneficiaries array - needs more tokens
+  return callGeminiWithSchema(prompt, parsePaceScenarioResponse, { maxOutputTokens: 512 });
 }
 
 /**
@@ -1176,5 +1296,6 @@ export async function analyzeFieldSpread(
 ): Promise<FieldSpreadAnalysis> {
   setCurrentBotName('FieldSpread');
   const prompt = buildFieldSpreadPrompt(race, scoringResult);
-  return callGeminiWithSchema(prompt, parseFieldSpreadResponse);
+  // Field spread has very large output with horseClassifications array - needs more tokens
+  return callGeminiWithSchema(prompt, parseFieldSpreadResponse, { maxOutputTokens: 512 });
 }
