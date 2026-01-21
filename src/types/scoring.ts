@@ -288,6 +288,8 @@ export interface RaceAnalysis {
   vulnerableFavorite: boolean;
   /** Whether pace is likely to collapse (benefits closers) */
   likelyPaceCollapse: boolean;
+  /** Track intelligence data (null if track not found) */
+  trackIntelligence: TrackIntelligenceForAI | null;
 }
 
 // ============================================================================
@@ -636,6 +638,104 @@ export interface HorseScoreForAI {
   morningLineOdds: string;
   /** Morning line odds as decimal (e.g., 5.0) */
   morningLineDecimal: number;
+}
+
+// ============================================================================
+// TRACK INTELLIGENCE FOR AI
+// ============================================================================
+
+/**
+ * Post position bias data for AI consumption
+ * Provides insight into track geometry effects on race outcomes
+ */
+export interface PostPositionBiasForAI {
+  /** Win percentage by post (index 0 = post 1) */
+  winPercentByPost: number[];
+  /** 1-indexed posts with statistical advantage */
+  favoredPosts: number[];
+  /** Strength of the bias pattern */
+  biasStrength: 'strong' | 'moderate' | 'weak' | 'neutral';
+  /** Human-readable description of the bias */
+  biasDescription: string;
+}
+
+/**
+ * Speed/pace bias data for AI consumption
+ * Indicates how early speed performs at this track/surface
+ */
+export interface SpeedBiasForAI {
+  /** Percentage of races won by early speed horses */
+  earlySpeedWinRate: number;
+  /** Rating from 1-10 indicating pace advantage */
+  paceAdvantageRating: number;
+  /** Running style most favored by track */
+  favoredStyle: 'E' | 'E/P' | 'P' | 'S' | 'neutral';
+  /** Human-readable description of speed bias */
+  biasDescription: string;
+}
+
+/**
+ * Physical track characteristics for AI consumption
+ * Helps AI understand track layout and playing style
+ */
+export interface TrackCharacteristicsForAI {
+  /** Main track circumference in miles */
+  circumference: number;
+  /** Stretch length in feet */
+  stretchLength: number;
+  /** How the surface typically plays */
+  playingStyle: 'speed-favoring' | 'fair' | 'tiring' | 'deep';
+  /** Drainage quality affecting off-track conditions */
+  drainage: 'excellent' | 'good' | 'fair' | 'poor';
+}
+
+/**
+ * Seasonal context for current racing conditions
+ * Provides AI with time-of-year adjustments
+ */
+export interface SeasonalContextForAI {
+  /** Current season */
+  currentSeason: 'winter' | 'spring' | 'summer' | 'fall';
+  /** Expected typical track condition */
+  typicalCondition: string;
+  /** Speed figure adjustment (positive = faster times expected) */
+  speedAdjustment: number;
+  /** Running style favored this season (null if none) */
+  favoredStyle: 'E' | 'P' | 'S' | null;
+  /** Notes about seasonal impact */
+  notes: string;
+}
+
+/**
+ * Complete track intelligence data for AI consumption
+ * Provides all available track-specific data to inform AI analysis
+ */
+export interface TrackIntelligenceForAI {
+  /** Track code (e.g., "CD", "SAR") */
+  trackCode: string;
+  /** Full track name */
+  trackName: string;
+  /** Surface type for this race */
+  surface: 'dirt' | 'turf' | 'synthetic' | 'all-weather';
+  /** Distance in furlongs */
+  distance: number;
+  /** Whether this is a sprint or route */
+  isSprintOrRoute: 'sprint' | 'route';
+
+  /** Post position bias analysis */
+  postPositionBias: PostPositionBiasForAI;
+
+  /** Speed/pace bias analysis */
+  speedBias: SpeedBiasForAI;
+
+  /** Physical track characteristics */
+  trackCharacteristics: TrackCharacteristicsForAI;
+
+  /** Seasonal context (null if no pattern for current month) */
+  seasonalContext: SeasonalContextForAI | null;
+
+  /** Data quality indicator */
+  dataQuality: 'verified' | 'preliminary' | 'estimated' | 'unknown';
 }
 
 /**
