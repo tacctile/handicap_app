@@ -19,7 +19,6 @@ import type {
 import {
   ALGORITHM_CONTEXT,
   PACE_CONTEXT,
-  TRIP_TROUBLE_CONTEXT,
   FIELD_SPREAD_CONTEXT,
   VULNERABLE_FAVORITE_CONTEXT,
 } from './algorithmContext';
@@ -454,67 +453,324 @@ RESPOND WITH VALID JSON ONLY:
 // MULTI-BOT SPECIALIZED PROMPT BUILDERS
 // ============================================================================
 
+// ============================================================================
+// TRIP TROUBLE HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Trouble keywords that indicate racing interference/issues
+ */
+const TROUBLE_KEYWORDS = {
+  traffic: ['blocked', 'boxed', 'no room', 'tight', 'shuffled'],
+  contact: ['bumped', 'checked', 'steadied', 'impeded'],
+  path: ['wide', '5-wide', '6-wide', 'parked out'],
+  start: ['broke slow', 'broke poorly', 'stumbled', 'dwelt'],
+  late: ['no late room', "couldn't get out", 'blocked stretch'],
+};
+
+/**
+ * All trouble keywords flattened for matching
+ */
+const ALL_TROUBLE_KEYWORDS = Object.values(TROUBLE_KEYWORDS).flat();
+
+/**
+ * Check if a trip comment contains any trouble keywords
+ *
+ * @param comment - Trip comment to analyze
+ * @returns Whether the comment indicates trouble
+ */
+export function hasTroubleKeyword(comment: string): boolean {
+  if (!comment) return false;
+  const lowerComment = comment.toLowerCase();
+  return ALL_TROUBLE_KEYWORDS.some((keyword) => lowerComment.includes(keyword.toLowerCase()));
+}
+
+/**
+ * Count races with trouble keywords in past performances
+ *
+ * @param pastPerformances - Array of past performances (max 3)
+ * @returns Count of troubled races
+ */
+export function countTroubledRaces(pastPerformances: HorseScoreForAI['pastPerformances']): number {
+  return pastPerformances.slice(0, 3).filter((pp) => hasTroubleKeyword(pp.tripComment)).length;
+}
+
+/**
+ * Analyze position flow to detect if horse lost or gained position
+ *
+ * @param runningLine - Position flow data (start, stretch, finish)
+ * @param hasTrouble - Whether the race had trouble
+ * @returns Object with flags for LOST_POSITION and RALLIED_THROUGH_TROUBLE
+ */
+export function analyzePositionFlow(
+  runningLine: { start: number | null; stretch: number | null; finish: number | null },
+  hasTrouble: boolean
+): { lostPosition: boolean; ralliedThroughTrouble: boolean } {
+  const { start, finish } = runningLine;
+
+  // Need valid data to analyze
+  if (start === null || finish === null) {
+    return { lostPosition: false, ralliedThroughTrouble: false };
+  }
+
+  // Lost position: started better than finished (lower number = better position)
+  const lostPosition = finish > start;
+
+  // Rallied through trouble: gained ground (improved position) despite trouble
+  const ralliedThroughTrouble = hasTrouble && finish < start;
+
+  return { lostPosition, ralliedThroughTrouble };
+}
+
+/**
+ * Analyze Beyer trajectory to detect suppressed figures
+ *
+ * @param pastPerformances - Array of past performances (max 3)
+ * @returns Object with trajectory string and suppressed flag
+ */
+export function analyzeBeyerTrajectory(pastPerformances: HorseScoreForAI['pastPerformances']): {
+  trajectory: string;
+  isSuppressed: boolean;
+} {
+  const pps = pastPerformances.slice(0, 3);
+
+  if (pps.length === 0) {
+    return { trajectory: 'N/A', isSuppressed: false };
+  }
+
+  // Get Beyer figures (most recent first in array)
+  const beyers = pps.map((pp) => (pp.beyer !== null ? pp.beyer : null));
+
+  // Build trajectory string
+  const trajectoryParts = beyers.map((b) => (b !== null ? String(b) : 'N/A'));
+  const trajectory = trajectoryParts.join(' -> ');
+
+  // Check if most recent is lowest and had trouble
+  const validBeyers = beyers.filter((b): b is number => b !== null);
+  if (validBeyers.length < 2) {
+    return { trajectory, isSuppressed: false };
+  }
+
+  const mostRecent = beyers[0];
+  if (mostRecent === null || mostRecent === undefined) {
+    return { trajectory, isSuppressed: false };
+  }
+
+  // Most recent is lowest among valid Beyers
+  const isLowest = validBeyers.every((b) => mostRecent <= b);
+
+  // Most recent race had trouble
+  const mostRecentHadTrouble = pps[0] ? hasTroubleKeyword(pps[0].tripComment) : false;
+
+  const isSuppressed = isLowest && mostRecentHadTrouble;
+
+  return { trajectory, isSuppressed };
+}
+
+/**
+ * Format a single horse's data for the Trip Trouble bot
+ * Emphasizes trip-relevant data for identifying masked ability
+ *
+ * @param score - Horse score data from algorithm
+ * @returns Formatted string for prompt
+ */
+export function formatHorseForTripTrouble(score: HorseScoreForAI): string {
+  const lines: string[] = [];
+
+  // Header
+  lines.push(
+    `#${score.programNumber} ${score.horseName} (Rank: ${score.rank}, Score: ${score.finalScore})`
+  );
+
+  // Past Performances with trip-relevant data
+  const pps = score.pastPerformances.slice(0, 3);
+
+  if (pps.length === 0) {
+    lines.push('No past performances available');
+    return lines.join('\n');
+  }
+
+  // Track trouble indicators
+  let troubledRaceCount = 0;
+  const positionFlags: string[] = [];
+
+  pps.forEach((pp, idx) => {
+    const raceNum = idx + 1;
+
+    // Race details
+    lines.push(
+      `Race ${raceNum}: ${pp.track} ${pp.distance}f ${pp.surface} - Finish: ${pp.finishPosition}/${pp.fieldSize}`
+    );
+
+    // TRIP comment (prominent, uppercase label)
+    const tripComment = pp.tripComment || 'No comment recorded';
+    lines.push(`TRIP: ${tripComment}`);
+
+    // Check for trouble in this race
+    const hasTrouble = hasTroubleKeyword(pp.tripComment);
+    if (hasTrouble) {
+      troubledRaceCount++;
+    }
+
+    // Pace figures
+    const beyer = pp.beyer !== null ? pp.beyer : 'N/A';
+    const ep1 = pp.earlyPace1 !== null ? pp.earlyPace1 : 'N/A';
+    const lp = pp.latePace !== null ? pp.latePace : 'N/A';
+    lines.push(`Beyer: ${beyer} | EP1: ${ep1} | LP: ${lp}`);
+
+    // Position flow (only if we have the data)
+    const start = pp.runningLine.start;
+    const stretch = pp.runningLine.stretch;
+    const finish = pp.runningLine.finish;
+
+    if (start !== null || stretch !== null || finish !== null) {
+      const startStr = start !== null ? start : '?';
+      const stretchStr = stretch !== null ? stretch : '?';
+      const finishStr = finish !== null ? finish : '?';
+      lines.push(
+        `Position Flow: Started ${startStr} -> Stretch ${stretchStr} -> Finish ${finishStr}`
+      );
+
+      // Analyze position flow for flags
+      const flowAnalysis = analyzePositionFlow(pp.runningLine, hasTrouble);
+      if (flowAnalysis.lostPosition) {
+        positionFlags.push(`Race ${raceNum}: LOST POSITION`);
+      }
+      if (flowAnalysis.ralliedThroughTrouble) {
+        positionFlags.push(`Race ${raceNum}: RALLIED THROUGH TROUBLE`);
+      }
+    }
+
+    // Odds info
+    const odds = pp.odds !== null ? pp.odds.toFixed(1) : 'N/A';
+    const favRank = pp.favoriteRank !== null ? pp.favoriteRank : 'N/A';
+    lines.push(`Lengths Behind: ${pp.lengthsBehind}L | Odds: ${odds} (Fav: ${favRank})`);
+  });
+
+  // Trouble indicators summary
+  lines.push(`Troubled Races: ${troubledRaceCount}/3`);
+
+  // Position flow flags
+  if (positionFlags.length > 0) {
+    positionFlags.forEach((flag) => lines.push(flag));
+  }
+
+  // Beyer trajectory
+  const beyerAnalysis = analyzeBeyerTrajectory(pps);
+  lines.push(`Beyer Trend: ${beyerAnalysis.trajectory}`);
+  if (beyerAnalysis.isSuppressed) {
+    lines.push('FIGURE SUPPRESSED');
+  }
+
+  return lines.join('\n');
+}
+
 /**
  * Build prompt for Trip Trouble Bot
  *
  * Analyzes trip comments and recent PPs to identify horses with masked ability.
  * Focus: Recent trip trouble that hides true form.
  *
+ * Token Budget: 400-600 input tokens, 150-200 output tokens
+ *
  * @param race - Parsed race data
  * @param scoringResult - Algorithm scoring results
- * @returns Prompt string (400-600 tokens input, requests 50-150 tokens output)
+ * @returns Prompt string for AI analysis
  */
 export function buildTripTroublePrompt(race: ParsedRace, scoringResult: RaceScoringResult): string {
+  const { header } = race;
+
   const rankedScores = [...scoringResult.scores]
     .filter((s) => !s.isScratched)
     .sort((a, b) => a.rank - b.rank);
 
-  // Extract only trip-relevant data
-  const tripData = rankedScores
-    .map((score) => {
-      const horse = race.horses.find((h) => h.programNumber === score.programNumber);
-      if (!horse) return null;
+  // Token optimization: Only include horses ranked 2nd-8th
+  // Skip heavy favorite (rank 1) - not looking for trip trouble on chalk
+  // Skip longshots ranked 9+ - too thin to matter
+  const eligibleHorses = rankedScores.filter((s) => s.rank >= 2 && s.rank <= 8);
 
-      const recentTrips = horse.pastPerformances.slice(0, 3).map((pp) => ({
-        date: pp.date,
-        finish: `${pp.finishPosition}/${pp.fieldSize}`,
-        comment: pp.tripComment || 'none',
-      }));
+  // Skip horses with fewer than 2 past performances (not enough data)
+  const horsesWithData = eligibleHorses.filter((s) => s.pastPerformances.length >= 2);
 
-      return {
-        num: score.programNumber,
-        name: score.horseName,
-        trips: recentTrips,
-      };
-    })
-    .filter(Boolean);
+  // Format each horse using the trip trouble helper
+  const horseSummaries = horsesWithData.map((s) => formatHorseForTripTrouble(s)).join('\n\n');
 
-  return `${TRIP_TROUBLE_CONTEXT}
+  // Race context
+  const fieldSize = rankedScores.length;
+  const paceScenario = scoringResult.raceAnalysis.paceScenario.expectedPace;
+
+  return `You are a horse racing trip analysis specialist. Identify horses with masked ability. Return JSON only.
 
 ---
 
-You are a trip trouble specialist analyzing race replays via trip comments.
+TRIP TROUBLE ANALYSIS
 
-YOUR ONE JOB: Identify horses whose recent races don't reflect true ability due to trip trouble.
+Your job: Find horses whose LAST 3 RACES hide true ability due to racing trouble.
 
-WHAT TO LOOK FOR:
-- Scan trip comments for: "blocked", "checked", "steadied", "bumped", "wide trip", "no room", "broke slow", "stumbled", "squeezed", "forced wide", "lost position"
-- Flag horses with 2+ troubled trips in last 3 races as HIGH masked ability
-- Flag horses with 1 troubled trip in last race as MEDIUM masked ability
-- Ignore vague comments like "no excuses" or "raced well"
-- A horse that finished 4th+ but had clear trouble is more interesting than a horse that finished 2nd with a clean trip
+TROUBLE KEYWORDS TO SCAN:
 
-HORSES:
-${tripData.map((h) => `#${h!.num} ${h!.name}: ${h!.trips.map((t) => `${t.date} ${t.finish} "${t.comment}"`).join(' | ')}`).join('\n')}
+Traffic: "blocked", "boxed", "no room", "tight", "shuffled"
+Contact: "bumped", "checked", "steadied", "impeded"
+Path: "wide", "5-wide", "6-wide", "parked out"
+Start: "broke slow", "broke poorly", "stumbled", "dwelt"
+Late: "no late room", "couldn't get out", "blocked stretch"
+
+FIGURE ADJUSTMENT LOGIC:
+
+1 troubled race with clear trouble = +3-5 Beyer hidden
+2 troubled races = +5-8 Beyer hidden
+Wide trip (4+ wide) = +2-3 Beyer hidden
+Blocked in stretch with late pace figure still strong = HIGH confidence masked ability
+
+WHAT MAKES A HORSE "LIVE":
+
+Multiple troubled trips AND still hitting the board
+Position flow shows horse closing despite trouble
+EP1 or LP figures strong despite poor finish position
+Beyer dropped but trouble explains it (not declining form)
+
+WHAT TO IGNORE:
+
+Generic comments like "no mishap" or "clear trip"
+Trouble that horse caused (lugged in, bore out)
+Trouble in races 4+ back (too old)
+
+CONFIDENCE LEVELS:
+
+HIGH: 2+ races with clear traffic trouble, strong underlying pace figures
+MEDIUM: 1 race with definite trouble, other races clean
+LOW: Possible trouble but comments ambiguous
+
+---
+
+RACE CONTEXT:
+Track: ${header.trackName} (${header.trackCode})
+Distance: ${header.distanceFurlongs}f ${header.surface}
+Field Size: ${fieldSize} horses
+Expected Pace: ${paceScenario}
+
+HORSES (Ranked 2nd-8th with 2+ PPs):
+${horseSummaries || 'No eligible horses for trip trouble analysis'}
+
+---
 
 OUTPUT FORMAT - Return JSON only:
 {
-  "horsesWithTripTrouble": [
-    { "programNumber": number, "horseName": "string", "issue": "specific trip problem", "maskedAbility": true|false }
-  ]
+  "troubledHorses": [
+    {
+      "programNumber": number,
+      "horseName": "string",
+      "troubledRaceCount": number,
+      "hiddenAbilityEstimate": "string",
+      "keyTroubleRace": "string",
+      "confidence": "HIGH" | "MEDIUM" | "LOW"
+    }
+  ],
+  "confidence": "HIGH" | "MEDIUM" | "LOW",
+  "reasoning": "string"
 }
 
-Only include horses with clear trip trouble. Empty array if none found.`;
+Only include horses with clear trip trouble. Empty troubledHorses array if none found.`;
 }
 
 /**
