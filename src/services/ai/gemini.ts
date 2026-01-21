@@ -106,32 +106,36 @@ const DIRECT_API_CONFIG = {
 
 // Proxy support for Node.js environments
 let proxyAgent: unknown = null;
+let proxyChecked = false;
 
 /**
  * Get or create a proxy agent for HTTP requests in Node.js
  * Uses undici's ProxyAgent when HTTPS_PROXY is set
  */
 async function getProxyAgent(): Promise<unknown> {
+  // Only works in Node.js environment
   if (!isNodeEnvironment()) return null;
 
-  // Return cached agent if available
-  if (proxyAgent !== null) return proxyAgent;
+  // Return cached result if already checked
+  if (proxyChecked) return proxyAgent;
+  proxyChecked = true;
 
-  const proxyUrl = process.env?.HTTPS_PROXY || process.env?.HTTP_PROXY;
+  // Safely access process.env
+  const proc = typeof process !== 'undefined' ? process : null;
+  const proxyUrl = proc?.env?.HTTPS_PROXY || proc?.env?.HTTP_PROXY;
   if (!proxyUrl) {
-    proxyAgent = undefined; // Mark as checked, no proxy
     return null;
   }
 
   try {
-    // Dynamic import undici for proxy support
-    const { ProxyAgent } = await import('undici');
-    proxyAgent = new ProxyAgent(proxyUrl);
+    // Dynamic import undici for proxy support (Node.js only)
+    // This will fail in browser builds, which is expected
+    const undiciModule = await (Function('return import("undici")')() as Promise<{ ProxyAgent: new (url: string) => unknown }>);
+    proxyAgent = new undiciModule.ProxyAgent(proxyUrl);
     console.log('[GEMINI] Using proxy agent for HTTPS requests');
     return proxyAgent;
-  } catch (e) {
-    console.warn('[GEMINI] Could not create proxy agent:', e);
-    proxyAgent = undefined;
+  } catch (_e) {
+    console.warn('[GEMINI] Could not create proxy agent - undici not available');
     return null;
   }
 }
@@ -193,39 +197,8 @@ function logRawResponse(rawText: string, parseSuccess: boolean, parseError?: str
   console.log(rawText.substring(0, 2000));
   console.log(`=== [END RAW RESPONSE] ===\n`);
 
-  // In Node.js, also write to file
-  if (isNodeEnvironment()) {
-    (async () => {
-      try {
-        // Dynamic import for fs/path to avoid browser issues
-        const fs = await import('fs');
-        const path = await import('path');
-        const logDir = path.join(__dirname, '../../__tests__/validation/results');
-        const logFile = path.join(logDir, 'api_response_debug.log');
-
-        // Ensure directory exists
-        if (!fs.existsSync(logDir)) {
-          fs.mkdirSync(logDir, { recursive: true });
-        }
-
-        // Append to log file
-        const logEntry = `
-================================================================================
-BOT: ${currentBotName}
-TIMESTAMP: ${entry.timestamp}
-PARSE SUCCESS: ${parseSuccess}
-${parseError ? `PARSE ERROR: ${parseError}` : ''}
---------------------------------------------------------------------------------
-RAW RESPONSE (first 2000 chars):
-${rawText.substring(0, 2000)}
-================================================================================
-`;
-        fs.appendFileSync(logFile, logEntry);
-      } catch (_e) {
-        // Ignore file write errors in browser
-      }
-    })();
-  }
+  // File logging is handled by the test scripts that import this module
+  // Console logging above is sufficient for debugging in all environments
 }
 
 /**
@@ -339,14 +312,16 @@ async function callGeminiDirect(
   let response: Response;
   if (agent) {
     console.log('[GEMINI] Making request through proxy...');
-    const { fetch: undiciFetch } = await import('undici');
-    response = await undiciFetch(url, {
+    // Dynamic import undici (Node.js only, will be tree-shaken in browser)
+    const undiciModule = await (Function('return import("undici")')() as Promise<{ fetch: typeof fetch }>);
+    response = await undiciModule.fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
-      dispatcher: agent as import('undici').Dispatcher,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dispatcher: agent as any,
     }) as unknown as Response;
   } else {
     response = await fetch(url, {
@@ -963,7 +938,8 @@ export function parseVulnerableFavoriteResponse(text: string): VulnerableFavorit
   try {
     const rawParsed = JSON.parse(jsonStr);
     // Normalize keys to handle both camelCase and snake_case from Gemini
-    const parsed = normalizeKeys(rawParsed) as Record<string, unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const parsed = normalizeKeys(rawParsed) as any;
 
     // Validate and normalize confidence (at root level in prompt output)
     const validConfidence = ['HIGH', 'MEDIUM', 'LOW'];
@@ -993,7 +969,7 @@ export function parseVulnerableFavoriteResponse(text: string): VulnerableFavorit
     } else if (Array.isArray(parsed.reasons)) {
       reasons = parsed.reasons;
     } else if (typeof parsed.reasoning === 'string' && parsed.reasoning.length > 0) {
-      reasons = [parsed.reasoning];
+      reasons = [parsed.reasoning as string];
     } else if (
       typeof favoriteAnalysis.overallAssessment === 'string' &&
       favoriteAnalysis.overallAssessment.length > 0
@@ -1026,7 +1002,8 @@ export function parseFieldSpreadResponse(text: string): FieldSpreadAnalysis {
   try {
     const rawParsed = JSON.parse(jsonStr);
     // Normalize keys to handle both camelCase and snake_case from Gemini
-    const parsed = normalizeKeys(rawParsed) as Record<string, unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const parsed = normalizeKeys(rawParsed) as any;
 
     // Handle nested structure from prompt output
     // Prompt outputs: { fieldAssessment: { fieldType, topTierCount, ... }, horseClassifications, ... }
