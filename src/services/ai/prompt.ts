@@ -552,7 +552,7 @@ export function analyzeBeyerTrajectory(pastPerformances: HorseScoreForAI['pastPe
   }
 
   const mostRecent = beyers[0];
-  if (mostRecent === null) {
+  if (mostRecent === null || mostRecent === undefined) {
     return { trajectory, isSuppressed: false };
   }
 
