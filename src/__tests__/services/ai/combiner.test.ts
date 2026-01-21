@@ -134,10 +134,10 @@ describe('combineMultiBotResults', () => {
       // Algorithm's #1 pick (Favorite Horse) should be dropped, #2 should be new top pick
       expect(result.topPick).toBe(2);
       expect(result.raceNarrative).toContain('OVERRIDE');
-      expect(result.raceNarrative).toContain('Favorite vulnerable (HIGH)');
+      expect(result.raceNarrative).toContain('Vulnerable favorite:');
     });
 
-    it('should NOT drop favorite when MEDIUM confidence vulnerable (flag only)', () => {
+    it('should also drop favorite when MEDIUM confidence vulnerable (all vulnerable favorites get penalty)', () => {
       const race = createTestRace(1, [
         { programNumber: 1, horseName: 'Favorite Horse', morningLineOdds: '2-1' },
         { programNumber: 2, horseName: 'Second Horse', morningLineOdds: '5-1' },
@@ -164,7 +164,7 @@ describe('combineMultiBotResults', () => {
         vulnerableFavorite: {
           isVulnerable: true,
           reasons: ['Some concern'],
-          confidence: 'MEDIUM', // MEDIUM confidence - no ranking change
+          confidence: 'MEDIUM', // All vulnerable favorites get penalty now
         },
         fieldSpread: {
           fieldType: 'MIXED',
@@ -175,10 +175,10 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // Algorithm's #1 pick should remain top pick (MEDIUM = flag only)
-      expect(result.topPick).toBe(1);
-      expect(result.vulnerableFavorite).toBe(true); // Flag should still be set
-      expect(result.raceNarrative).toContain('CONFIRM');
+      // All vulnerable favorites now get penalty applied, regardless of confidence
+      expect(result.topPick).toBe(2);
+      expect(result.vulnerableFavorite).toBe(true);
+      expect(result.raceNarrative).toContain('OVERRIDE');
     });
   });
 
@@ -234,7 +234,7 @@ describe('combineMultiBotResults', () => {
       // Horse #3 with +2 boost should move from rank 3 to rank 1
       expect(result.topPick).toBe(3);
       expect(result.raceNarrative).toContain('OVERRIDE');
-      expect(result.raceNarrative).toContain('masked ability');
+      expect(result.raceNarrative).toContain('trip trouble');
     });
 
     it('should apply +1 boost for MEDIUM confidence trip trouble (1 troubled race)', () => {

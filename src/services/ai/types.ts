@@ -187,15 +187,41 @@ export interface VulnerableFavoriteAnalysis {
 }
 
 /**
+ * Horse classification from Field Spread Bot
+ * Determines how each horse should be used in bet construction
+ */
+export type HorseClassification = 'A' | 'B' | 'C' | 'EXCLUDE';
+
+/**
+ * Per-horse classification data from Field Spread Bot
+ */
+export interface HorseClassificationData {
+  /** Program number */
+  programNumber: number;
+  /** Horse name */
+  horseName: string;
+  /** Classification tier */
+  classification: HorseClassification;
+  /** Whether horse should be used as a key in exotics */
+  keyCandidate: boolean;
+  /** Whether horse should only be used in spread positions (not to win) */
+  spreadOnly: boolean;
+  /** Reason for classification */
+  reason: string;
+}
+
+/**
  * Field Spread Bot - Assesses competitive separation in the field
  */
 export interface FieldSpreadAnalysis {
   /** Type of field composition */
-  fieldType: 'TIGHT' | 'SEPARATED' | 'MIXED';
+  fieldType: 'TIGHT' | 'SEPARATED' | 'MIXED' | 'DOMINANT' | 'COMPETITIVE' | 'WIDE_OPEN';
   /** Number of legitimate contenders */
   topTierCount: number;
   /** Recommended spread for exotic betting */
   recommendedSpread: 'NARROW' | 'MEDIUM' | 'WIDE';
+  /** Per-horse classifications (optional for backwards compatibility) */
+  horseClassifications?: HorseClassificationData[];
 }
 
 /**
@@ -218,4 +244,108 @@ export interface MultiBotRawResults {
 export interface AIServiceConfig {
   /** Use multi-bot parallel architecture instead of single-bot */
   useMultiBot: boolean;
+}
+
+// ============================================================================
+// SIGNAL AGGREGATION TYPES (for smart combiner)
+// ============================================================================
+
+/**
+ * Aggregated signals from all 4 bots for a single horse
+ * Used by the combiner to make intelligent synthesis decisions
+ */
+export interface AggregatedSignals {
+  /** Program number (saddle cloth) */
+  programNumber: number;
+  /** Horse name */
+  horseName: string;
+  /** Original algorithm rank (1 = best) */
+  algorithmRank: number;
+  /** Original algorithm score */
+  algorithmScore: number;
+
+  // Trip Trouble signals
+  /** Trip trouble boost: 0, +1 (MEDIUM), or +2 (HIGH) */
+  tripTroubleBoost: number;
+  /** Description of hidden ability if masked (e.g., "+5-8 Beyer masked") */
+  hiddenAbility: string | null;
+
+  // Pace Scenario signals
+  /** Pace advantage: -1 (hurt), 0 (neutral), +1 (MODERATE), or +2 (STRONG) */
+  paceAdvantage: number;
+  /** Reason for pace edge (e.g., "Lone speed on speed-favoring track") */
+  paceEdgeReason: string | null;
+
+  // Vulnerable Favorite signals (only applies to rank 1 / betting favorite)
+  /** Whether this horse is flagged as vulnerable favorite */
+  isVulnerable: boolean;
+  /** List of vulnerability flags/reasons */
+  vulnerabilityFlags: string[];
+
+  // Field Spread signals
+  /** Horse classification from field spread */
+  classification: HorseClassification;
+  /** Whether horse is a key candidate for exotics */
+  keyCandidate: boolean;
+  /** Whether horse should only be used in spread positions */
+  spreadOnly: boolean;
+
+  // Aggregated totals
+  /** Sum of all adjustments (capped at ±3) */
+  totalAdjustment: number;
+  /** Algorithm rank after adjustments applied */
+  adjustedRank: number;
+  /** Number of bots that flagged this horse with a signal */
+  signalCount: number;
+  /** Whether bots disagree about this horse */
+  conflictingSignals: boolean;
+}
+
+// ============================================================================
+// BET RECOMMENDATION TYPES
+// ============================================================================
+
+/**
+ * Type of bet structure recommendation
+ */
+export type BetStructureType = 'KEY' | 'BOX' | 'WHEEL' | 'PASS';
+
+/**
+ * Synthesized bet recommendation from all bot outputs
+ */
+export interface BetRecommendation {
+  /** Type of bet structure */
+  type: BetStructureType;
+  /** Exacta construction suggestion (e.g., "#3 over #1,#5,#7" or "Box #1,#3,#5") */
+  exacta: string;
+  /** Trifecta construction suggestion (e.g., "#3 with #1,#5,#7") */
+  trifecta: string;
+  /** Program number of primary play (key horse / top pick) */
+  primaryPlay: number;
+  /** All program numbers to include in exotics */
+  includeList: number[];
+  /** Program numbers to leave off tickets */
+  excludeList: number[];
+  /** Confidence in this bet structure */
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  /** Reasoning for the recommendation */
+  reasoning: string;
+}
+
+/**
+ * Rank change tracking for narrative generation
+ */
+export interface RankChange {
+  /** Program number */
+  programNumber: number;
+  /** Horse name */
+  horseName: string;
+  /** Original algorithm rank */
+  fromRank: number;
+  /** New adjusted rank */
+  toRank: number;
+  /** Reason for the change */
+  reason: string;
+  /** Direction of change */
+  direction: 'UPGRADED' | 'DOWNGRADED' | 'UNCHANGED';
 }
