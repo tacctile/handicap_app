@@ -1,22 +1,99 @@
-name: AI Validation Tests
+name: AI Validation
 
 on:
   workflow_dispatch:
     inputs:
-      test_type:
-        description: 'Test to run'
+      run_type:
+        description: 'Validation type to run'
         required: true
-        default: 'ai-comparison'
+        default: 'full-validation'
         type: choice
         options:
-          - ai-comparison
-          - all-ai-tests
+          - full-validation
+          - ai-comparison-test
 
 jobs:
-  ai-validation:
-    name: AI vs Algorithm Comparison
+  # Full AI validation - runs all 111 races with fresh start
+  full-validation:
+    name: Full AI Validation (111 races)
+    if: ${{ github.event.inputs.run_type == 'full-validation' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 60  # Allow 1 hour for throttled execution
+    timeout-minutes: 30  # 111 races × ~10 seconds each
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify API key is configured
+        run: |
+          if [ -z "${{ secrets.VITE_GEMINI_API_KEY }}" ]; then
+            echo "::error::VITE_GEMINI_API_KEY secret is not configured"
+            echo "Please add the Gemini API key to repository secrets"
+            exit 1
+          fi
+          echo "API key is configured"
+
+      - name: Run AI Validation
+        env:
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+        run: npm run validate:ai -- --fresh
+
+      - name: Upload validation report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ai-validation-report
+          path: src/__tests__/validation/results/ai_validation_report.md
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Upload validation metrics
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ai-validation-metrics
+          path: src/__tests__/validation/results/ai_validation_metrics.json
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Post summary to job
+        if: always()
+        run: |
+          echo "## AI Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f src/__tests__/validation/results/ai_validation_report.md ]; then
+            echo "### Report Generated Successfully" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            # Extract key metrics from report
+            head -50 src/__tests__/validation/results/ai_validation_report.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### Warning: No report file generated" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f src/__tests__/validation/results/ai_validation_metrics.json ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Quick Metrics" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat src/__tests__/validation/results/ai_validation_metrics.json | jq '.metrics | {aiWinRate, algorithmWins, aiWins, overrideRate, totalRaces}' 2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "Could not parse metrics" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # Quick AI comparison test (runs vitest)
+  ai-comparison-test:
+    name: AI Comparison Test
+    if: ${{ github.event.inputs.run_type == 'ai-comparison-test' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
       - name: Checkout code
@@ -40,18 +117,11 @@ jobs:
         env:
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
         run: |
-          echo "Checking if secret is set..."
           if [ -z "$VITE_GEMINI_API_KEY" ]; then
             echo "ERROR: VITE_GEMINI_API_KEY secret is not set!"
             exit 1
           fi
-          echo "Secret is set (length: ${#VITE_GEMINI_API_KEY})"
-
-          if [ "${{ github.event.inputs.test_type }}" = "all-ai-tests" ]; then
-            pnpm test -- --run src/__tests__/validation/aiVsAlgorithm.test.ts src/__tests__/**/ai*.test.ts --reporter=verbose
-          else
-            pnpm test -- --run src/__tests__/validation/aiVsAlgorithm.test.ts --reporter=verbose
-          fi
+          pnpm test -- --run src/__tests__/validation/aiVsAlgorithm.test.ts --reporter=verbose
 
       - name: Upload results artifact
         uses: actions/upload-artifact@v4
@@ -60,16 +130,4 @@ jobs:
           name: ai-comparison-results
           path: src/data/ai_comparison_results.json
           retention-days: 90
-
-      - name: Post summary to job
-        if: always()
-        run: |
-          if [ -f src/data/ai_comparison_results.json ]; then
-            echo "## AI vs Algorithm Comparison Results" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo '```json' >> $GITHUB_STEP_SUMMARY
-            cat src/data/ai_comparison_results.json | jq '.summary' >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          else
-            echo "## Warning: No results file generated" >> $GITHUB_STEP_SUMMARY
-          fi
+          if-no-files-found: warn
