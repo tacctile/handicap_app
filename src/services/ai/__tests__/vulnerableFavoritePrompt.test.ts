@@ -1419,7 +1419,7 @@ describe('Vulnerable Favorite Prompt - Scenario Tests', () => {
   it('Full prompt includes all vulnerability flags for vulnerable favorite', () => {
     const race = createMockParsedRace({
       header: createMockRaceHeader({
-        classification: 'Stakes - Grade 2',
+        classification: 'stakes-graded-2',
       }),
       horses: [
         createMockHorseEntry({
