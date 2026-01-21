@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import type { AIRaceAnalysis, HorseInsight } from '../services/ai/types';
+import type { AIRaceAnalysis, HorseInsight, BotStatusDebugInfo } from '../services/ai/types';
 import './AIAnalysisPanel.css';
 
 // ============================================================================
@@ -208,6 +208,82 @@ const HorseInsightRow: React.FC<{
           </span>
         )}
       </div>
+    </div>
+  );
+};
+
+/**
+ * Bot Status Debug section component
+ * Shows success/failure status for each bot with data summaries
+ */
+const BotStatusDebugSection: React.FC<{ debugInfo: BotStatusDebugInfo }> = ({ debugInfo }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  const botStatuses = [
+    debugInfo.tripTrouble,
+    debugInfo.paceScenario,
+    debugInfo.vulnerableFavorite,
+    debugInfo.fieldSpread,
+  ];
+
+  return (
+    <div className="ai-panel__debug-section">
+      <div
+        className="ai-panel__debug-header"
+        onClick={() => setIsExpanded((prev) => !prev)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && setIsExpanded((prev) => !prev)}
+      >
+        <span className="material-icons ai-panel__debug-icon">bug_report</span>
+        <span className="ai-panel__debug-title">Bot Status Debug</span>
+        <span
+          className={`ai-panel__debug-status ${debugInfo.successCount === 4 ? 'ai-panel__debug-status--success' : 'ai-panel__debug-status--warning'}`}
+        >
+          {debugInfo.successCount}/{debugInfo.totalBots} bots OK
+        </span>
+        <span className="material-icons ai-panel__debug-chevron">
+          {isExpanded ? 'expand_less' : 'expand_more'}
+        </span>
+      </div>
+      {isExpanded && (
+        <div className="ai-panel__debug-content">
+          <div className="ai-panel__debug-bots">
+            {botStatuses.map((bot) => (
+              <div key={bot.name} className="ai-panel__debug-bot">
+                <div className="ai-panel__debug-bot-header">
+                  <span
+                    className={`ai-panel__debug-bot-indicator ${bot.success ? 'ai-panel__debug-bot-indicator--success' : 'ai-panel__debug-bot-indicator--fail'}`}
+                  >
+                    {bot.success ? '✓' : '✗'}
+                  </span>
+                  <span className="ai-panel__debug-bot-name">{bot.name}</span>
+                  <span
+                    className={`ai-panel__debug-bot-status ${bot.success ? 'ai-panel__debug-bot-status--success' : 'ai-panel__debug-bot-status--fail'}`}
+                  >
+                    {bot.success ? 'SUCCESS' : 'FAILED'}
+                  </span>
+                </div>
+                <div className="ai-panel__debug-bot-summary">{bot.summary}</div>
+              </div>
+            ))}
+          </div>
+          <div className="ai-panel__debug-signals">
+            <div className="ai-panel__debug-signal-row">
+              <span className="ai-panel__debug-signal-label">Signal Aggregation:</span>
+              <span className="ai-panel__debug-signal-value">{debugInfo.signalSummary}</span>
+            </div>
+            <div className="ai-panel__debug-signal-row">
+              <span className="ai-panel__debug-signal-label">Override Triggered:</span>
+              <span
+                className={`ai-panel__debug-signal-value ${debugInfo.hasOverride ? 'ai-panel__debug-signal-value--override' : ''}`}
+              >
+                {debugInfo.hasOverride ? 'YES - AI changed top pick' : 'NO - Confirms algorithm'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -432,6 +508,9 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
               ))}
             </div>
           </div>
+
+          {/* Bot Status Debug Info - Shows bot success/failure and data summaries */}
+          {aiAnalysis.botDebugInfo && <BotStatusDebugSection debugInfo={aiAnalysis.botDebugInfo} />}
 
           {/* Processing Time */}
           <div className="ai-panel__footer">

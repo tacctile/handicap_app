@@ -99,6 +99,10 @@ export interface AIRaceAnalysis {
   likelyUpset: boolean;
   /** Whether race is too unpredictable to bet confidently */
   chaoticRace: boolean;
+
+  // Debug info (optional, only present in multi-bot mode)
+  /** Bot status debug information for troubleshooting */
+  botDebugInfo?: BotStatusDebugInfo;
 }
 
 // ============================================================================
@@ -348,4 +352,44 @@ export interface RankChange {
   reason: string;
   /** Direction of change */
   direction: 'UPGRADED' | 'DOWNGRADED' | 'UNCHANGED';
+}
+
+// ============================================================================
+// BOT STATUS DEBUG TYPES
+// ============================================================================
+
+/**
+ * Status summary for a single bot
+ */
+export interface BotStatusInfo {
+  /** Bot name */
+  name: string;
+  /** Whether the bot returned data successfully */
+  success: boolean;
+  /** Summary of what the bot found */
+  summary: string;
+  /** Count of items flagged (for trip trouble) */
+  count?: number;
+}
+
+/**
+ * Debug info for all bots - included in AIRaceAnalysis for debugging
+ */
+export interface BotStatusDebugInfo {
+  /** Trip Trouble Bot status */
+  tripTrouble: BotStatusInfo;
+  /** Pace Scenario Bot status */
+  paceScenario: BotStatusInfo;
+  /** Vulnerable Favorite Bot status */
+  vulnerableFavorite: BotStatusInfo;
+  /** Field Spread Bot status */
+  fieldSpread: BotStatusInfo;
+  /** Total number of bots that succeeded */
+  successCount: number;
+  /** Total number of bots */
+  totalBots: number;
+  /** Whether any rank overrides were triggered */
+  hasOverride: boolean;
+  /** Signal aggregation summary */
+  signalSummary: string;
 }
