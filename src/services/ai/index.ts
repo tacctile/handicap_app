@@ -2606,7 +2606,7 @@ export function combineMultiBotResults(
     processingTimeMs,
     raceNarrative,
     confidence,
-    bettableRace: !isChaoticRace && confidence !== 'LOW' && confidence !== 'MINIMAL',
+    bettableRace: !isChaoticRace,
     horseInsights,
     topPick,
     avoidList,
