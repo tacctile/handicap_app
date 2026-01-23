@@ -49,11 +49,6 @@ function createMockAggregatedSignals(
     classification: 'A',
     keyCandidate: h.algorithmRank === 1,
     spreadOnly: false,
-    classDropBoost: 0,
-    classDropFlagged: false,
-    classDropReason: null,
-    classDropPercentage: 0,
-    classDropType: null,
     totalAdjustment: (h.tripTroubleBoost ?? 0) + (h.paceAdvantage ?? 0),
     adjustedRank: h.algorithmRank,
     signalCount: ((h.tripTroubleBoost ?? 0) > 0 ? 1 : 0) + ((h.paceAdvantage ?? 0) > 0 ? 1 : 0),
@@ -109,7 +104,6 @@ function createMockRawResults(options: {
           recommendedSpread: 'NARROW' as 'NARROW' | 'MEDIUM' | 'WIDE',
         }
       : null,
-    classDrop: null,
   };
 }
 

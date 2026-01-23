@@ -13,7 +13,6 @@ import {
   analyzeVulnerableFavorite,
   analyzeFieldSpread,
 } from './gemini';
-import { analyzeClassDropsLocal } from './prompt';
 import type { ParsedRace } from '../../types/drf';
 import type { RaceScoringResult } from '../../types/scoring';
 import type {
@@ -46,8 +45,6 @@ import type {
   SizingRecommendation,
   SizingRecommendationType,
   RaceVerdict,
-  // Class Drop Bot types
-  ClassDropAnalysis,
 } from './types';
 import { recordAIDecision } from './metrics/recorder';
 
@@ -102,13 +99,6 @@ export type {
   SizingRecommendation,
   SizingRecommendationType,
   RaceVerdict,
-  // Class Drop Bot types
-  ClassDropAnalysis,
-  ClassDropHorse,
-  ClassDropBotResult,
-  ClassDropType,
-  ClassIndicators,
-  FieldClassLevel,
   // Legacy types (deprecated)
   BetConstructionGuidance,
   ExactaStrategy,
@@ -135,9 +125,6 @@ export {
   clearRawResponseLog,
 } from './gemini';
 
-// Import formatClassAmount for internal use
-import { formatClassAmount } from './prompt';
-
 // Re-export prompt builders for testing
 export {
   buildRaceAnalysisPrompt,
@@ -145,11 +132,6 @@ export {
   buildPaceScenarioPrompt,
   buildVulnerableFavoritePrompt,
   buildFieldSpreadPrompt,
-  buildClassDropPrompt,
-  analyzeClassDropsLocal,
-  calculateClassDrop,
-  extractClassData,
-  formatClassAmount,
 } from './prompt';
 
 // ============================================================================
@@ -296,61 +278,13 @@ export function checkAIServiceStatus(): AIServiceStatus {
 // ============================================================================
 
 /**
- * Analyze class drops for a race (local calculation, no AI call)
- *
- * This bot identifies horses dropping significantly in class, which is a
- * primary indicator of value. A horse dropping from $25,000 claimers to
- * $10,000 claimers has been competing against better horses. The public
- * often misses this because recent finishes look bad (losses against
- * better competition). This creates value.
- *
- * @param race - Parsed race data from DRF file
- * @param _scoringResult - Algorithm scoring results (unused but kept for consistency)
- * @returns ClassDropAnalysis with class drop data for all horses
- */
-export function analyzeClassDrops(
-  race: ParsedRace,
-  _scoringResult: RaceScoringResult
-): ClassDropAnalysis {
-  // Prepare horse data in the format expected by the local analyzer
-  const horses = race.horses
-    .filter((h) => !h.isScratched)
-    .map((horse) => ({
-      programNumber: horse.programNumber,
-      horseName: horse.horseName,
-      pastPerformances: horse.pastPerformances.map((pp) => ({
-        purse: pp.purse,
-        claimingPrice: pp.claimingPrice,
-        classification: pp.classification,
-      })),
-    }));
-
-  // Prepare race header data
-  const raceHeader = {
-    purse: race.header.purse,
-    claimingPriceMin: race.header.claimingPriceMin,
-    classification: race.header.classification,
-  };
-
-  // Run the local analysis
-  const result = analyzeClassDropsLocal(horses, raceHeader);
-
-  debugLog(
-    `[ClassDrop] Analyzed ${horses.length} horses, found ${result.analysis.classDroppers} droppers`
-  );
-
-  return result.analysis;
-}
-
-/**
  * Get AI analysis using multi-bot parallel architecture
  *
- * Launches 5 specialized bots in parallel:
+ * Launches 4 specialized bots in parallel:
  * 1. Trip Trouble Bot - Identifies horses with masked ability
  * 2. Pace Scenario Bot - Analyzes pace dynamics
  * 3. Vulnerable Favorite Bot - Evaluates if favorite is beatable
  * 4. Field Spread Bot - Assesses competitive separation
- * 5. Class Drop Bot - Identifies horses dropping in class (value indicator)
  *
  * Results are combined into the standard AIRaceAnalysis format.
  *
@@ -370,15 +304,6 @@ export async function getMultiBotAnalysis(
   // Return cached if available and not forcing refresh
   if (!options?.forceRefresh && analysisCache.has(cacheKey)) {
     return analysisCache.get(cacheKey)!;
-  }
-
-  // Run Class Drop Bot synchronously (local calculation, no AI call)
-  // This is fast and doesn't need to be in the Promise.allSettled
-  let classDropResult: ClassDropAnalysis | null = null;
-  try {
-    classDropResult = analyzeClassDrops(race, scoringResult);
-  } catch (err) {
-    debugError(`ClassDrop bot error:`, (err as Error)?.message || err);
   }
 
   // Launch the 4 AI bots in parallel with Promise.allSettled
@@ -408,7 +333,6 @@ export async function getMultiBotAnalysis(
     paceScenario: paceResult.status === 'fulfilled' ? paceResult.value : null,
     vulnerableFavorite: favoriteResult.status === 'fulfilled' ? favoriteResult.value : null,
     fieldSpread: spreadResult.status === 'fulfilled' ? spreadResult.value : null,
-    classDrop: classDropResult,
   };
 
   // Log detailed failure information (dev only)
@@ -489,7 +413,7 @@ export function aggregateHorseSignals(
   race: ParsedRace,
   options?: { conservativeMode?: boolean }
 ): AggregatedSignals {
-  const { tripTrouble, paceScenario, vulnerableFavorite, fieldSpread, classDrop } = rawResults;
+  const { tripTrouble, paceScenario, vulnerableFavorite, fieldSpread } = rawResults;
   const conservativeMode = options?.conservativeMode ?? currentConfig.conservativeMode ?? true;
 
   // Initialize signals with defaults
@@ -509,11 +433,6 @@ export function aggregateHorseSignals(
     classification: 'B', // Default to B if no field spread data
     keyCandidate: false,
     spreadOnly: false,
-    classDropBoost: 0,
-    classDropFlagged: false,
-    classDropReason: null,
-    classDropPercentage: 0,
-    classDropType: null,
     totalAdjustment: 0,
     adjustedRank: algorithmRank,
     signalCount: 0,
@@ -715,47 +634,6 @@ export function aggregateHorseSignals(
   }
 
   // =========================================================================
-  // CLASS DROP SIGNALS
-  // =========================================================================
-  if (classDrop) {
-    // Find this horse's class drop data
-    const horseClassDrop = classDrop.horsesWithClassDrop.find(
-      (h) => h.programNumber === programNumber
-    );
-
-    if (horseClassDrop) {
-      signals.classDropPercentage = horseClassDrop.dropPercentage;
-      signals.classDropType = horseClassDrop.dropType;
-
-      // Check if horse is a value candidate due to class drop
-      if (horseClassDrop.isValueCandidate) {
-        signals.classDropFlagged = true;
-        signals.classDropReason = horseClassDrop.dropReason;
-        signals.signalCount++;
-
-        // Determine boost based on drop severity
-        // MAJOR drop (40%+) = +2 boost (strong value signal)
-        // MODERATE drop (25-39%) = +1 boost (good value signal)
-        if (horseClassDrop.dropType === 'MAJOR') {
-          signals.classDropBoost = 2;
-          signals.overrideReasons.push({
-            signal: 'classDrop',
-            confidence: 'HIGH',
-            description: `MAJOR class drop ${horseClassDrop.dropPercentage.toFixed(0)}%: ${horseClassDrop.dropReason}`,
-          });
-        } else if (horseClassDrop.dropType === 'MODERATE') {
-          signals.classDropBoost = 1;
-          signals.overrideReasons.push({
-            signal: 'classDrop',
-            confidence: 'MEDIUM',
-            description: `MODERATE class drop ${horseClassDrop.dropPercentage.toFixed(0)}%: stepping down in class`,
-          });
-        }
-      }
-    }
-  }
-
-  // =========================================================================
   // CALCULATE TOTAL ADJUSTMENT (capped at ±3)
   // =========================================================================
 
@@ -764,9 +642,6 @@ export function aggregateHorseSignals(
 
   // Pace advantage: +1 (STRONG only in conservative mode), -1 if pace hurts
   totalAdj += signals.paceAdvantage;
-
-  // Class drop: +2 (MAJOR) or +1 (MODERATE)
-  totalAdj += signals.classDropBoost;
 
   // Vulnerable favorite penalty
   // CONSERVATIVE: HIGH + 2+ flags = -2, HIGH + 1 flag = -1, MEDIUM = flag only
@@ -946,7 +821,6 @@ export function reorderByAdjustedRank(
       if (signal.tripTroubleBoost > 0) reasons.push('trip trouble');
       if (signal.paceAdvantage > 0) reasons.push('pace advantage');
       if (signal.paceAdvantage < 0) reasons.push('pace disadvantage');
-      if (signal.classDropBoost > 0) reasons.push('class drop');
       if (signal.isVulnerable) reasons.push('vulnerable favorite');
 
       if (reasons.length > 0) {
@@ -1088,11 +962,7 @@ export function synthesizeBetStructure(
   }
   // WIDE_OPEN or TIGHT = WIDE spread or PASS
   else if (fieldType === 'WIDE_OPEN' || fieldType === 'TIGHT') {
-    if (
-      reorderedSignals.some(
-        (s) => s.tripTroubleBoost > 0 || s.paceAdvantage >= 2 || s.classDropBoost > 0
-      )
-    ) {
+    if (reorderedSignals.some((s) => s.tripTroubleBoost > 0 || s.paceAdvantage >= 2)) {
       type = 'WHEEL';
       confidence = 'LOW';
       reasoning = 'Wide-open field but specific angles present - wheel with key horse';
@@ -1627,12 +1497,7 @@ export function identifyValueHorse(
 
     // Also check rank 3 if it has other positive signals
     const rank3Horse = aggregatedSignals.find((s) => s.algorithmRank === 3);
-    if (
-      rank3Horse &&
-      (rank3Horse.tripTroubleBoost > 0 ||
-        rank3Horse.paceAdvantage > 0 ||
-        rank3Horse.classDropBoost > 0)
-    ) {
+    if (rank3Horse && (rank3Horse.tripTroubleBoost > 0 || rank3Horse.paceAdvantage > 0)) {
       const strengthBonus = 15;
       const angle = 'Secondary beneficiary of vulnerable favorite with supporting signals';
       addCandidate(
@@ -1659,48 +1524,6 @@ export function identifyValueHorse(
           angle,
           strengthBonus
         );
-      }
-    }
-  }
-
-  // 5. CLASS DROP: Identify horses dropping significantly in class
-  // Class drops are one of the most reliable value indicators in handicapping
-  const { classDrop } = rawResults;
-  if (classDrop?.horsesWithClassDrop) {
-    for (const horseClassDrop of classDrop.horsesWithClassDrop) {
-      if (horseClassDrop.isValueCandidate) {
-        // Find the corresponding aggregated signal to check algorithm rank
-        const signal = aggregatedSignals.find(
-          (s) => s.programNumber === horseClassDrop.programNumber
-        );
-
-        // Class droppers are most valuable when they're not already the favorite (rank 2-6)
-        const isUnderestimated = signal && signal.algorithmRank >= 2 && signal.algorithmRank <= 6;
-
-        // MAJOR drop (40%+) = strong value signal
-        if (horseClassDrop.dropType === 'MAJOR') {
-          const strengthBonus = isUnderestimated ? 35 : 25;
-          const angle = `MAJOR class drop: ${horseClassDrop.dropPercentage.toFixed(0)}% - was racing at ${formatClassAmount(horseClassDrop.averagePastClass)}, now at ${formatClassAmount(horseClassDrop.todayClass)}`;
-          addCandidate(
-            horseClassDrop.programNumber,
-            horseClassDrop.horseName,
-            'CLASS_DROP',
-            angle,
-            strengthBonus
-          );
-        }
-        // MODERATE drop (25-39%) = good value signal
-        else if (horseClassDrop.dropType === 'MODERATE') {
-          const strengthBonus = isUnderestimated ? 25 : 15;
-          const angle = `MODERATE class drop: ${horseClassDrop.dropPercentage.toFixed(0)}% - stepping down in class`;
-          addCandidate(
-            horseClassDrop.programNumber,
-            horseClassDrop.horseName,
-            'CLASS_DROP',
-            angle,
-            strengthBonus
-          );
-        }
       }
     }
   }

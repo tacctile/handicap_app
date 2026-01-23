@@ -211,7 +211,6 @@ describe('aggregateHorseSignals', () => {
       paceScenario: null,
       vulnerableFavorite: null,
       fieldSpread: null,
-      classDrop: null,
     };
 
     const signals = aggregateHorseSignals(1, 'Horse A', 1, 200, rawResults, race);
@@ -239,7 +238,6 @@ describe('aggregateHorseSignals', () => {
       paceScenario: null,
       vulnerableFavorite: null,
       fieldSpread: null,
-      classDrop: null,
     };
 
     // Conservative mode: MEDIUM confidence (1 race) gives +1 boost
@@ -272,7 +270,6 @@ describe('aggregateHorseSignals', () => {
       paceScenario: null,
       vulnerableFavorite: null,
       fieldSpread: null,
-      classDrop: null,
     };
 
     // Non-conservative mode - MEDIUM confidence gives +1
@@ -300,7 +297,6 @@ describe('aggregateHorseSignals', () => {
       },
       vulnerableFavorite: null,
       fieldSpread: null,
-      classDrop: null,
     };
 
     // Lone speed is STRONG advantage - gives +2 in both modes
@@ -329,7 +325,6 @@ describe('aggregateHorseSignals', () => {
       },
       vulnerableFavorite: null,
       fieldSpread: null,
-      classDrop: null,
     };
 
     // Non-conservative mode: lone speed gives +2
@@ -357,7 +352,6 @@ describe('aggregateHorseSignals', () => {
       },
       vulnerableFavorite: null,
       fieldSpread: null,
-      classDrop: null,
     };
 
     const signals = aggregateHorseSignals(1, 'Horse A', 1, 200, rawResults, race);
@@ -391,7 +385,6 @@ describe('aggregateHorseSignals', () => {
       },
       vulnerableFavorite: null,
       fieldSpread: null,
-      classDrop: null,
     };
 
     const signals = aggregateHorseSignals(1, 'Horse A', 3, 160, rawResults, race);
@@ -420,7 +413,6 @@ describe('aggregateHorseSignals', () => {
         confidence: 'HIGH',
       },
       fieldSpread: null,
-      classDrop: null,
     };
 
     const signals = aggregateHorseSignals(1, 'Favorite', 1, 200, rawResults, race);
@@ -462,7 +454,6 @@ describe('aggregateHorseSignals', () => {
           },
         ],
       },
-      classDrop: null,
     };
 
     // CONSERVATIVE: MEDIUM confidence trip trouble (1 race) gets +1 boost
@@ -511,7 +502,6 @@ describe('aggregateHorseSignals', () => {
           },
         ],
       },
-      classDrop: null,
     };
 
     // NON-CONSERVATIVE: MEDIUM confidence trip trouble (1 race) = +1 boost
@@ -554,11 +544,6 @@ describe('reorderByAdjustedRank', () => {
         signalCount: 1,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 2,
@@ -581,11 +566,6 @@ describe('reorderByAdjustedRank', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 3,
@@ -608,11 +588,6 @@ describe('reorderByAdjustedRank', () => {
         signalCount: 1,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
     ];
 
@@ -660,11 +635,6 @@ describe('reorderByAdjustedRank', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 2,
@@ -687,11 +657,6 @@ describe('reorderByAdjustedRank', () => {
         signalCount: 1,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
     ];
 
@@ -725,11 +690,6 @@ describe('reorderByAdjustedRank', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 2,
@@ -752,11 +712,6 @@ describe('reorderByAdjustedRank', () => {
         signalCount: 1,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
     ];
 
@@ -795,11 +750,6 @@ describe('reorderByAdjustedRank', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 2,
@@ -822,11 +772,6 @@ describe('reorderByAdjustedRank', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 3,
@@ -849,11 +794,6 @@ describe('reorderByAdjustedRank', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 4,
@@ -876,11 +816,6 @@ describe('reorderByAdjustedRank', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 5,
@@ -903,11 +838,6 @@ describe('reorderByAdjustedRank', () => {
         signalCount: 1,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
     ];
 
@@ -949,11 +879,6 @@ describe('isCompetitiveField', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 2,
@@ -976,11 +901,6 @@ describe('isCompetitiveField', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 3,
@@ -1003,11 +923,6 @@ describe('isCompetitiveField', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 4,
@@ -1030,11 +945,6 @@ describe('isCompetitiveField', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
     ];
 
@@ -1065,11 +975,6 @@ describe('isCompetitiveField', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 2,
@@ -1092,11 +997,6 @@ describe('isCompetitiveField', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 3,
@@ -1119,11 +1019,6 @@ describe('isCompetitiveField', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 4,
@@ -1146,11 +1041,6 @@ describe('isCompetitiveField', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
     ];
 
@@ -1181,11 +1071,6 @@ describe('isCompetitiveField', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 2,
@@ -1208,11 +1093,6 @@ describe('isCompetitiveField', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 3,
@@ -1235,11 +1115,6 @@ describe('isCompetitiveField', () => {
         signalCount: 1,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 4,
@@ -1262,11 +1137,6 @@ describe('isCompetitiveField', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
     ];
 
@@ -1315,11 +1185,6 @@ describe('identifyValuePlay', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 2,
@@ -1342,11 +1207,6 @@ describe('identifyValuePlay', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 3,
@@ -1369,11 +1229,6 @@ describe('identifyValuePlay', () => {
         signalCount: 1,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
     ];
 
@@ -1423,11 +1278,6 @@ describe('identifyValuePlay', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 2,
@@ -1450,11 +1300,6 @@ describe('identifyValuePlay', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 3,
@@ -1477,11 +1322,6 @@ describe('identifyValuePlay', () => {
         signalCount: 1,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
     ];
 
@@ -1522,11 +1362,6 @@ describe('identifyValuePlay', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 2,
@@ -1549,11 +1384,6 @@ describe('identifyValuePlay', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
     ];
 
@@ -1602,11 +1432,6 @@ describe('synthesizeBetStructure', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 2,
@@ -1629,11 +1454,6 @@ describe('synthesizeBetStructure', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
     ];
 
@@ -1673,11 +1493,6 @@ describe('synthesizeBetStructure', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 2,
@@ -1700,11 +1515,6 @@ describe('synthesizeBetStructure', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
     ];
 
@@ -1744,11 +1554,6 @@ describe('synthesizeBetStructure', () => {
         signalCount: 1,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
       {
         programNumber: 2,
@@ -1771,11 +1576,6 @@ describe('synthesizeBetStructure', () => {
         signalCount: 0,
         conflictingSignals: false,
         overrideReasons: [],
-        classDropBoost: 0,
-        classDropFlagged: false,
-        classDropReason: null,
-        classDropPercentage: 0,
-        classDropType: null,
       },
     ];
 
@@ -1825,7 +1625,6 @@ describe('combineMultiBotResults', () => {
           confidence: 'HIGH',
         },
         fieldSpread: null,
-        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -1862,7 +1661,6 @@ describe('combineMultiBotResults', () => {
           topTierCount: 1,
           recommendedSpread: 'NARROW',
         },
-        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -1919,7 +1717,6 @@ describe('combineMultiBotResults', () => {
         paceScenario: null,
         vulnerableFavorite: null, // SOLID favorite
         fieldSpread: null,
-        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -1975,7 +1772,6 @@ describe('combineMultiBotResults', () => {
         },
         vulnerableFavorite: null, // SOLID favorite
         fieldSpread: null,
-        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -2024,7 +1820,6 @@ describe('combineMultiBotResults', () => {
         paceScenario: null,
         vulnerableFavorite: null,
         fieldSpread: null,
-        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -2069,7 +1864,6 @@ describe('combineMultiBotResults', () => {
           topTierCount: 1,
           recommendedSpread: 'NARROW',
         },
-        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -2108,7 +1902,6 @@ describe('combineMultiBotResults', () => {
           topTierCount: 5,
           recommendedSpread: 'WIDE',
         },
-        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -2143,7 +1936,6 @@ describe('combineMultiBotResults', () => {
           confidence: 'HIGH',
         },
         fieldSpread: null,
-        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -2186,7 +1978,6 @@ describe('combineMultiBotResults', () => {
         paceScenario: null,
         vulnerableFavorite: null,
         fieldSpread: null,
-        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -2226,7 +2017,6 @@ describe('combineMultiBotResults', () => {
         paceScenario: null,
         vulnerableFavorite: null,
         fieldSpread: null,
-        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
