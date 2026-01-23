@@ -37,6 +37,10 @@ import type {
   FavoriteStatus,
   ExactaConstruction,
   TrifectaConstruction,
+  // Sizing and verdict types
+  SizingRecommendation,
+  SizingRecommendationType,
+  RaceVerdict,
 } from './types';
 import { recordAIDecision } from './metrics/recorder';
 
@@ -83,6 +87,10 @@ export type {
   FavoriteStatus,
   ExactaConstruction,
   TrifectaConstruction,
+  // Sizing and verdict types
+  SizingRecommendation,
+  SizingRecommendationType,
+  RaceVerdict,
   // Legacy types (deprecated)
   BetConstructionGuidance,
   ExactaStrategy,
@@ -1584,6 +1592,159 @@ export function calculateConfidenceScore(
 }
 
 /**
+ * Calculate sizing recommendation based on confidence score and template
+ *
+ * Sizing Logic:
+ * - Confidence 80-100 + Template A → MAX (2.0x): "High confidence, solid favorite, bet aggressively"
+ * - Confidence 80-100 + Template B → STRONG (1.5x): "High confidence fade, vulnerable favorite clearly identified"
+ * - Confidence 60-79 + Template A → STRONG (1.5x): "Good confidence, solid favorite"
+ * - Confidence 60-79 + Template B → STANDARD (1.0x): "Moderate confidence fade"
+ * - Confidence 40-59 + any template → HALF (0.5x): "Low confidence, reduce exposure"
+ * - Confidence < 40 → PASS (0x): "Insufficient confidence, skip this race"
+ * - Template C override → Always HALF (0.5x) max: "Chaotic field, reduce exposure"
+ *
+ * @param confidenceScore - Confidence score 0-100
+ * @param template - Template type (A, B, or C)
+ * @param exactaCombinations - Number of exacta combinations
+ * @param trifectaCombinations - Number of trifecta combinations
+ * @returns SizingRecommendation object
+ */
+export function calculateSizing(
+  confidenceScore: number,
+  template: TicketTemplate,
+  exactaCombinations: number,
+  trifectaCombinations: number
+): SizingRecommendation {
+  // Handle undefined/null confidenceScore - default to 50 (HALF sizing)
+  const effectiveConfidence = confidenceScore ?? 50;
+
+  // Handle undefined template - default to 'C' (conservative)
+  const effectiveTemplate = template ?? 'C';
+
+  let multiplier: number;
+  let recommendation: SizingRecommendationType;
+  let reasoning: string;
+
+  // Template C override: Always HALF (0.5x) maximum regardless of confidence
+  if (effectiveTemplate === 'C') {
+    multiplier = 0.5;
+    recommendation = 'HALF';
+    reasoning = 'Chaotic field, reduce exposure';
+  }
+  // Confidence < 40: PASS
+  else if (effectiveConfidence < 40) {
+    multiplier = 0;
+    recommendation = 'PASS';
+    reasoning = 'Insufficient confidence, skip this race';
+  }
+  // Confidence 40-59: HALF
+  else if (effectiveConfidence < 60) {
+    multiplier = 0.5;
+    recommendation = 'HALF';
+    reasoning = 'Low confidence, reduce exposure';
+  }
+  // Confidence 60-79
+  else if (effectiveConfidence < 80) {
+    if (effectiveTemplate === 'A') {
+      multiplier = 1.5;
+      recommendation = 'STRONG';
+      reasoning = 'Good confidence, solid favorite';
+    } else {
+      // Template B
+      multiplier = 1.0;
+      recommendation = 'STANDARD';
+      reasoning = 'Moderate confidence fade';
+    }
+  }
+  // Confidence 80-100
+  else {
+    if (effectiveTemplate === 'A') {
+      multiplier = 2.0;
+      recommendation = 'MAX';
+      reasoning = 'High confidence, solid favorite, bet aggressively';
+    } else {
+      // Template B
+      multiplier = 1.5;
+      recommendation = 'STRONG';
+      reasoning = 'High confidence fade, vulnerable favorite clearly identified';
+    }
+  }
+
+  // Calculate suggested units
+  // Base: $2 for exacta, $1 for trifecta
+  const suggestedExactaUnit = 2 * multiplier;
+  const suggestedTrifectaUnit = 1 * multiplier;
+
+  // Calculate total investment
+  const totalInvestment =
+    exactaCombinations * suggestedExactaUnit + trifectaCombinations * suggestedTrifectaUnit;
+
+  return {
+    multiplier,
+    recommendation,
+    reasoning,
+    suggestedExactaUnit,
+    suggestedTrifectaUnit,
+    totalInvestment,
+  };
+}
+
+/**
+ * Build race verdict based on sizing recommendation and template
+ *
+ * Verdict Logic:
+ * - If sizing.recommendation === 'PASS' → action: 'PASS', summary: "Skip - confidence too low"
+ * - Else → action: 'BET', summary based on template:
+ *   - Template A: "Bet {recommendation} - Solid favorite, key #{topPick}"
+ *   - Template B: "Bet {recommendation} - Fade favorite, key #{algorithmTop4[1]}"
+ *   - Template C: "Bet {recommendation} - Wide open, box top 4-5"
+ *
+ * @param sizing - Sizing recommendation
+ * @param template - Template type (A, B, or C)
+ * @param algorithmTop4 - Algorithm's top 4 horses (program numbers)
+ * @returns RaceVerdict object
+ */
+export function buildRaceVerdict(
+  sizing: SizingRecommendation,
+  template: TicketTemplate,
+  algorithmTop4: number[]
+): RaceVerdict {
+  // If PASS recommendation, skip the race
+  if (sizing.recommendation === 'PASS') {
+    return {
+      action: 'PASS',
+      summary: 'Skip - confidence too low',
+    };
+  }
+
+  // Build summary based on template
+  let summary: string;
+  const recommendation = sizing.recommendation;
+
+  switch (template) {
+    case 'A':
+      // Solid favorite - key the top pick
+      summary = `Bet ${recommendation} - Solid favorite, key #${algorithmTop4[0] ?? '?'}`;
+      break;
+    case 'B':
+      // Vulnerable favorite - key the second choice
+      summary = `Bet ${recommendation} - Fade favorite, key #${algorithmTop4[1] ?? '?'}`;
+      break;
+    case 'C':
+      // Wide open - box top 4-5
+      summary = `Bet ${recommendation} - Wide open, box top 4-5`;
+      break;
+    default:
+      summary = `Bet ${recommendation}`;
+  }
+
+  return {
+    action: 'BET',
+    summary,
+  };
+}
+
+/**
  * Build ticket construction using the three-template system
  *
  * Philosophy:
@@ -1616,12 +1777,34 @@ export function buildTicketConstruction(
   // Select template
   const [template, templateReason] = selectTemplate(raceType, favoriteStatus, vulnerableFavorite);
 
-  // Build tickets
-  const exacta = buildExactaTicket(template, algorithmTop4);
-  const trifecta = buildTrifectaTicket(template, algorithmTop4, algorithmTop5);
+  // Build tickets (with base costs)
+  const exactaBase = buildExactaTicket(template, algorithmTop4);
+  const trifectaBase = buildTrifectaTicket(template, algorithmTop4, algorithmTop5);
 
   // Calculate confidence score
   const confidenceScore = calculateConfidenceScore(raceType, vulnerableFavorite, aggregatedSignals);
+
+  // Calculate sizing based on confidence and template
+  const sizing = calculateSizing(
+    confidenceScore,
+    template,
+    exactaBase.combinations,
+    trifectaBase.combinations
+  );
+
+  // Update estimated costs to use sizing multiplier
+  const exacta: ExactaConstruction = {
+    ...exactaBase,
+    estimatedCost: exactaBase.combinations * sizing.suggestedExactaUnit,
+  };
+
+  const trifecta: TrifectaConstruction = {
+    ...trifectaBase,
+    estimatedCost: trifectaBase.combinations * sizing.suggestedTrifectaUnit,
+  };
+
+  // Build verdict
+  const verdict = buildRaceVerdict(sizing, template, algorithmTop4);
 
   return {
     template,
@@ -1633,6 +1816,8 @@ export function buildTicketConstruction(
     trifecta,
     raceType,
     confidenceScore,
+    sizing,
+    verdict,
   };
 }
 
@@ -1841,6 +2026,14 @@ export function combineMultiBotResults(
   }
   debugLog(`Race Type: ${ticketConstruction.raceType}`);
   debugLog(`Confidence Score: ${ticketConstruction.confidenceScore}`);
+  debugLog(
+    `Sizing: ${ticketConstruction.sizing.recommendation} (${ticketConstruction.sizing.multiplier}x) - ${ticketConstruction.sizing.reasoning}`
+  );
+  debugLog(
+    `Suggested Units: Exacta $${ticketConstruction.sizing.suggestedExactaUnit}, Trifecta $${ticketConstruction.sizing.suggestedTrifectaUnit}`
+  );
+  debugLog(`Total Investment: $${ticketConstruction.sizing.totalInvestment}`);
+  debugLog(`Verdict: ${ticketConstruction.verdict.action} - ${ticketConstruction.verdict.summary}`);
 
   // ============================================================================
   // STEP 3: Determine top pick based on template
@@ -2182,6 +2375,34 @@ export function combineMultiBotResults(
         ? 'color: #f59e0b'
         : 'color: #ef4444'
   );
+  console.log('%c├─────────────────────────────────────────────────────────┤', 'color: #888');
+  console.log(
+    `%c│ SIZING: ${ticketConstruction.sizing.recommendation} (${ticketConstruction.sizing.multiplier}x)`,
+    ticketConstruction.sizing.recommendation === 'PASS'
+      ? 'color: #ef4444; font-weight: bold'
+      : ticketConstruction.sizing.recommendation === 'MAX'
+        ? 'color: #10b981; font-weight: bold'
+        : ticketConstruction.sizing.recommendation === 'STRONG'
+          ? 'color: #36d1da; font-weight: bold'
+          : 'color: #f59e0b; font-weight: bold'
+  );
+  console.log(`%c│ ${ticketConstruction.sizing.reasoning}`, 'color: #b4b4b6');
+  console.log(
+    `%c│ Units: Exacta $${ticketConstruction.sizing.suggestedExactaUnit}, Trifecta $${ticketConstruction.sizing.suggestedTrifectaUnit}`,
+    'color: #888'
+  );
+  console.log(
+    `%c│ TOTAL INVESTMENT: $${ticketConstruction.sizing.totalInvestment}`,
+    'color: #36d1da; font-weight: bold'
+  );
+  console.log('%c├─────────────────────────────────────────────────────────┤', 'color: #888');
+  console.log(
+    `%c│ VERDICT: ${ticketConstruction.verdict.action}`,
+    ticketConstruction.verdict.action === 'BET'
+      ? 'color: #10b981; font-weight: bold'
+      : 'color: #ef4444; font-weight: bold'
+  );
+  console.log(`%c│ ${ticketConstruction.verdict.summary}`, 'color: #b4b4b6');
   console.log('%c├─────────────────────────────────────────────────────────┤', 'color: #888');
   console.log(
     `%c│ EXACTA: Win=[${ticketConstruction.exacta.winPosition.join(',')}] Place=[${ticketConstruction.exacta.placePosition.join(',')}]`,

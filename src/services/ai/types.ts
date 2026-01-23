@@ -506,8 +506,63 @@ export interface TicketConstruction {
   /** Race classification from Field Spread bot */
   raceType: RaceType;
 
-  /** Confidence score 0-100, used for sizing in next prompt */
+  /** Confidence score 0-100, used for sizing */
   confidenceScore: number;
+
+  /** Sizing recommendations based on confidence and template */
+  sizing: SizingRecommendation;
+
+  /** Race verdict - BET or PASS with summary */
+  verdict: RaceVerdict;
+}
+
+// ============================================================================
+// SIZING RECOMMENDATIONS
+// ============================================================================
+
+/**
+ * Sizing recommendation type
+ * Based on confidence score and template selection
+ */
+export type SizingRecommendationType = 'PASS' | 'HALF' | 'STANDARD' | 'STRONG' | 'MAX';
+
+/**
+ * Sizing recommendation for bet sizing
+ *
+ * Philosophy:
+ * - High confidence + solid favorite = bet aggressively (MAX)
+ * - High confidence + vulnerable favorite = bet strong (STRONG)
+ * - Moderate confidence = standard or half sizing
+ * - Low confidence = half or pass
+ * - Template C (wide open) = always capped at HALF
+ */
+export interface SizingRecommendation {
+  /** Multiplier for bet sizing: 0, 0.5, 1.0, 1.5, or 2.0 */
+  multiplier: number;
+  /** Recommendation level */
+  recommendation: SizingRecommendationType;
+  /** Reasoning for the sizing recommendation */
+  reasoning: string;
+  /** Suggested exacta unit ($2 base × multiplier) */
+  suggestedExactaUnit: number;
+  /** Suggested trifecta unit ($1 base × multiplier) */
+  suggestedTrifectaUnit: number;
+  /** Total investment at suggested units */
+  totalInvestment: number;
+}
+
+// ============================================================================
+// RACE VERDICT
+// ============================================================================
+
+/**
+ * Race verdict - final decision on whether to bet this race
+ */
+export interface RaceVerdict {
+  /** Action to take: BET or PASS */
+  action: 'BET' | 'PASS';
+  /** One-line summary for UI display */
+  summary: string;
 }
 
 // ============================================================================
