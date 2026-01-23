@@ -633,7 +633,7 @@ describe('formatHorseForPrompt', () => {
     // Core header
     expect(result).toContain('#5 Value Hunter');
     expect(result).toContain('Algorithm Rank: 1');
-    expect(result).toContain('Score: 185/368');
+    expect(result).toContain('Score: 185/371');
 
     // Form indicators
     expect(result).toContain('Days Off: 14');
@@ -940,13 +940,13 @@ describe('buildRaceAnalysisPrompt', () => {
     const prompt = buildRaceAnalysisPrompt(race, scoringResult);
 
     expect(prompt).toContain('Algorithm Rank: 1');
-    expect(prompt).toContain('Score: 185/368');
+    expect(prompt).toContain('Score: 185/371');
     expect(prompt).toContain('Tier: high');
-    expect(prompt).toContain('Speed 52/60');
-    expect(prompt).toContain('Class 40/48');
-    expect(prompt).toContain('Form 30/36');
-    expect(prompt).toContain('Pace 28/36');
-    expect(prompt).toContain('Connections 25/30');
+    expect(prompt).toContain('Speed 52/105');
+    expect(prompt).toContain('Class 40/35');
+    expect(prompt).toContain('Form 30/50');
+    expect(prompt).toContain('Pace 28/35');
+    expect(prompt).toContain('Connections 25/23');
   });
 
   it('includes positive and negative factors', () => {

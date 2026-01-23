@@ -141,10 +141,10 @@ export function formatHorseForPrompt(score: HorseScoreForAI): string {
   // -------------------------------------------------------------------------
   lines.push(`#${score.programNumber} ${score.horseName} (ML ${score.morningLineOdds})`);
   lines.push(
-    `Algorithm Rank: ${score.rank} | Score: ${score.finalScore}/368 | Tier: ${score.confidenceTier}`
+    `Algorithm Rank: ${score.rank} | Score: ${score.finalScore}/371 | Tier: ${score.confidenceTier}`
   );
   lines.push(
-    `Breakdown: Speed ${score.breakdown.speedScore}/60, Class ${score.breakdown.classScore}/48, Form ${score.breakdown.formScore}/36, Pace ${score.breakdown.paceScore}/36, Connections ${score.breakdown.connectionScore}/30`
+    `Breakdown: Speed ${score.breakdown.speedScore}/105, Class ${score.breakdown.classScore}/35, Form ${score.breakdown.formScore}/50, Pace ${score.breakdown.paceScore}/35, Connections ${score.breakdown.connectionScore}/23`
   );
 
   // -------------------------------------------------------------------------
@@ -330,7 +330,7 @@ export function buildRaceAnalysisPrompt(
 
 ---
 
-You are an expert horse racing handicapper working alongside an algorithm. The algorithm scored each horse using 328 data points across 15 categories (see reference above). You add the human element — reading between the lines, catching what pure math misses.
+You are an expert horse racing handicapper working alongside an algorithm. The algorithm scored each horse using 331 data points across 15 categories (see reference above). You add the human element — reading between the lines, catching what pure math misses.
 
 YOUR ROLE: Find VALUE, not just winners. A horse the algorithm ranks 4th at 8-1 who should be 4-1 is more valuable than confirming the obvious favorite.
 
@@ -1194,7 +1194,7 @@ export function formatFavoriteForAnalysis(
   // -------------------------------------------------------------------------
   lines.push(`FAVORITE ANALYSIS: #${favorite.programNumber} ${favorite.horseName}`);
   lines.push(
-    `Algorithm Rank: ${favorite.rank} | Score: ${favorite.finalScore}/368 | Tier: ${favorite.confidenceTier}`
+    `Algorithm Rank: ${favorite.rank} | Score: ${favorite.finalScore}/371 | Tier: ${favorite.confidenceTier}`
   );
   lines.push(`Morning Line: ${favorite.morningLineOdds}`);
 
