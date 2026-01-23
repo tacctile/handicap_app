@@ -103,6 +103,10 @@ export interface AIRaceAnalysis {
   // Debug info (optional, only present in multi-bot mode)
   /** Bot status debug information for troubleshooting */
   botDebugInfo?: BotStatusDebugInfo;
+
+  // Bet construction guidance (optional, only present in multi-bot mode with expansion/contraction model)
+  /** Bet construction guidance using expansion/contraction model */
+  betConstruction?: BetConstructionGuidance;
 }
 
 // ============================================================================
@@ -411,5 +415,75 @@ export interface BotStatusDebugInfo {
   /** Whether any rank overrides were triggered */
   hasOverride: boolean;
   /** Signal aggregation summary */
+  signalSummary: string;
+}
+
+// ============================================================================
+// BET CONSTRUCTION GUIDANCE (Expansion/Contraction Model)
+// ============================================================================
+
+/**
+ * Exacta ticket strategy
+ */
+export interface ExactaStrategy {
+  /** Type of exacta construction */
+  type: 'KEY' | 'BOX' | 'PART_WHEEL';
+  /** Key horse program number (only if type = KEY or PART_WHEEL) */
+  keyHorse: number | null;
+  /** Horses to include in box or wheel */
+  includeHorses: number[];
+  /** Vulnerable favorite to exclude from top positions */
+  excludeFromTop: number | null;
+}
+
+/**
+ * Trifecta ticket strategy
+ */
+export interface TrifectaStrategy {
+  /** Type of trifecta construction */
+  type: 'KEY' | 'BOX' | 'PART_WHEEL';
+  /** Key horse program number (only if type = KEY) */
+  keyHorse: number | null;
+  /** A horses - win contenders */
+  aHorses: number[];
+  /** B horses - place/show contenders */
+  bHorses: number[];
+  /** Vulnerable favorite to exclude from top positions */
+  excludeFromTop: number | null;
+}
+
+/**
+ * Bet Construction Guidance - New expansion/contraction model
+ *
+ * Philosophy:
+ * - Algorithm top 4 are SACRED — never demoted by AI
+ * - AI signals EXPAND boxes (add sleepers) or CONTRACT them (fade vulnerable favorites)
+ * - No more rank shuffling — preserves exotic ticket construction
+ */
+export interface BetConstructionGuidance {
+  // Core ticket construction
+  /** Program numbers of algorithm's top 4 (never modified by AI) */
+  algorithmTop4: number[];
+  /** AI-identified sleepers to ADD to boxes (algorithm rank 5-10, odds >= 4-1) */
+  expansionHorses: number[];
+  /** Vulnerable favorite to EXCLUDE from key spots (algorithm rank 1 only) */
+  contractionTarget: number | null;
+
+  // Ticket recommendations
+  /** Exacta construction strategy */
+  exactaStrategy: ExactaStrategy;
+  /** Trifecta construction strategy */
+  trifectaStrategy: TrifectaStrategy;
+
+  // Flags
+  /** Race classification for betting approach */
+  raceClassification: 'BETTABLE' | 'SPREAD_WIDE' | 'PASS';
+  /** Whether a vulnerable favorite was detected (HIGH confidence) */
+  vulnerableFavoriteDetected: boolean;
+  /** Whether a sleeper was identified for expansion */
+  sleeperIdentified: boolean;
+
+  // Debug
+  /** Summary of signals that influenced construction */
   signalSummary: string;
 }
