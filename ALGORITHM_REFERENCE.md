@@ -20,19 +20,19 @@
 
 | Component          | Points                     |
 | ------------------ | -------------------------- |
-| Base Score         | 0-328                      |
+| Base Score         | 0-331                      |
 | Overlay Adjustment | ±40 (capped)               |
-| **Final Score**    | **0-368** (floor at 0)     |
+| **Final Score**    | **0-371** (floor at 0)     |
 
-### Base Score Categories (328 pts total)
+### Base Score Categories (331 pts total)
 
 | Category              | Points | % of Base |
 |-----------------------|--------|-----------|
-| Speed Figures         | 90     | 27.4%     |
-| Form                  | 50     | 15.2%     |
-| Pace                  | 45     | 13.7%     |
-| Class                 | 32     | 9.8%      |
-| Connections           | 27     | 8.2%      |
+| Speed Figures         | 105    | 31.7%     |
+| Form                  | 50     | 15.1%     |
+| Pace                  | 35     | 10.6%     |
+| Class                 | 35     | 10.6%     |
+| Connections           | 23     | 6.9%      |
 | Distance/Surface      | 20     | 6.1%      |
 | Odds Factor           | 15     | 4.6%      |
 | Post Position         | 12     | 3.7%      |
@@ -43,7 +43,7 @@
 | Combo Patterns        | 4      | 1.2%      |
 | P3 Refinements        | 2      | 0.6%      |
 | Weight                | 1      | 0.3%      |
-| **TOTAL**             | **328**| **100%**  |
+| **TOTAL**             | **331**| **100%**  |
 
 **Verification:** 90+50+45+32+27+20+15+12+10+8+6+6+4+2+1 = 328 ✓
 
