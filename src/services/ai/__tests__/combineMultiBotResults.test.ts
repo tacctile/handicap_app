@@ -505,129 +505,606 @@ describe('calculateTrifectaCombinations', () => {
 });
 
 describe('calculateConfidenceScore', () => {
+  // Base signals with algorithm scores for margin testing
   const baseSignals: AggregatedSignals[] = [
     {
       programNumber: 1,
       algorithmRank: 1,
+      algorithmScore: 200,
       tripTroubleFlagged: false,
       paceAdvantageFlagged: false,
     } as AggregatedSignals,
     {
       programNumber: 2,
       algorithmRank: 2,
+      algorithmScore: 195,
       tripTroubleFlagged: false,
       paceAdvantageFlagged: false,
     } as AggregatedSignals,
     {
       programNumber: 3,
       algorithmRank: 3,
+      algorithmScore: 190,
       tripTroubleFlagged: false,
       paceAdvantageFlagged: false,
     } as AggregatedSignals,
     {
       programNumber: 4,
       algorithmRank: 4,
+      algorithmScore: 185,
       tripTroubleFlagged: false,
       paceAdvantageFlagged: false,
     } as AggregatedSignals,
   ];
 
-  it('should start with base of 50', () => {
+  // ============================================================================
+  // BASE SCORE TESTS
+  // ============================================================================
+
+  it('should start with base of 65 for COMPETITIVE with no signals', () => {
+    // Base 65 + Bot Agreement (3/4 = +10) = 75
+    // (4 positives: no trip trouble on rank 1, NO pace advantage, solid favorite, COMPETITIVE race type)
+    // Actually only 3: no trip trouble, solid favorite, competitive. No pace advantage means NOT flagged.
     const score = calculateConfidenceScore('COMPETITIVE', null, baseSignals);
-    expect(score).toBe(50);
+    // Base 65, no penalties, 3/4 agreement (no trip trouble, solid favorite, competitive) = +10
+    // Clean favorite bonus: solid, competitive, no trip/pace on 2-4 = +10
+    expect(score).toBe(85); // 65 + 10 (3/4 agreement) + 10 (clean favorite)
   });
 
-  it('should add +20 for CHALK field type', () => {
+  // ============================================================================
+  // PENALTY TESTS
+  // ============================================================================
+
+  it('should apply -10 penalty for CHALK race type', () => {
+    // CHALK is -10, but counts as positive for field spread (3/4 agreement total)
+    // No pace advantage on rank 1, so only 3/4 agreement
+    // Base 65 - 10 (CHALK) + 10 (3/4 agreement) + 10 (clean favorite) = 75
     const score = calculateConfidenceScore('CHALK', null, baseSignals);
-    expect(score).toBe(70);
+    expect(score).toBe(75); // 65 - 10 + 10 + 10
   });
 
-  it('should subtract -20 for WIDE_OPEN field type', () => {
+  it('should apply -15 penalty for WIDE_OPEN race type', () => {
+    // Base 65 - 15 (WIDE_OPEN) + 0 (2/4 agreement) + 0 (no clean bonus) = 50
     const score = calculateConfidenceScore('WIDE_OPEN', null, baseSignals);
-    expect(score).toBe(30);
+    expect(score).toBe(50); // 65 - 15 + 0 + 0
   });
 
-  it('should subtract -15 for vulnerable favorite HIGH confidence', () => {
+  it('should apply -15 penalty for vulnerable favorite with 3+ flags', () => {
     const vulnFav: VulnerableFavoriteAnalysis = {
       isVulnerable: true,
-      reasons: ['Flag 1'],
+      reasons: ['Flag 1', 'Flag 2', 'Flag 3'],
+      confidence: 'HIGH',
+    };
+    // Base 65 - 15 (vulnerable) + 0 (2/4 agreement) + 0 (no clean bonus) = 50
+    const score = calculateConfidenceScore('COMPETITIVE', vulnFav, baseSignals);
+    expect(score).toBe(50); // 65 - 15 + 0 + 0
+  });
+
+  it('should apply -15 penalty for vulnerable favorite with 2 flags and HIGH confidence', () => {
+    const vulnFav: VulnerableFavoriteAnalysis = {
+      isVulnerable: true,
+      reasons: ['Flag 1', 'Flag 2'],
       confidence: 'HIGH',
     };
     const score = calculateConfidenceScore('COMPETITIVE', vulnFav, baseSignals);
-    expect(score).toBe(35);
+    expect(score).toBe(50); // 65 - 15 + 0 + 0
   });
 
-  it('should subtract -10 for vulnerable favorite MEDIUM confidence', () => {
+  it('should NOT apply penalty for vulnerable favorite with 2 flags and MEDIUM confidence', () => {
     const vulnFav: VulnerableFavoriteAnalysis = {
       isVulnerable: true,
-      reasons: ['Flag 1'],
+      reasons: ['Flag 1', 'Flag 2'],
       confidence: 'MEDIUM',
     };
+    // Still isVulnerable = true, so bot agreement only gets 2/4 (no solid favorite, no WIDE_OPEN bonus)
+    // Base 65 + 0 (2/4 agreement) + 0 (no clean - vulnerable) = 65
     const score = calculateConfidenceScore('COMPETITIVE', vulnFav, baseSignals);
-    expect(score).toBe(40);
+    expect(score).toBe(65); // 65 + 0 + 0 (no penalty but also no bonuses due to vulnerable)
   });
 
-  it('should add +5 per trip trouble signal on rank 2-4 (max +15)', () => {
+  it('should apply -5 per trip trouble signal on rank 2-4 (max -15)', () => {
     const signalsWithTrip: AggregatedSignals[] = [
       {
         programNumber: 1,
         algorithmRank: 1,
+        algorithmScore: 200,
         tripTroubleFlagged: false,
         paceAdvantageFlagged: false,
       } as AggregatedSignals,
       {
         programNumber: 2,
         algorithmRank: 2,
+        algorithmScore: 195,
         tripTroubleFlagged: true,
         paceAdvantageFlagged: false,
       } as AggregatedSignals,
       {
         programNumber: 3,
         algorithmRank: 3,
+        algorithmScore: 190,
         tripTroubleFlagged: true,
         paceAdvantageFlagged: false,
       } as AggregatedSignals,
       {
         programNumber: 4,
         algorithmRank: 4,
+        algorithmScore: 185,
         tripTroubleFlagged: true,
         paceAdvantageFlagged: false,
       } as AggregatedSignals,
     ];
+    // Base 65 - 15 (3 trip troubles) + 10 (3/4 agreement) + 0 (no clean - has trip trouble) = 60
     const score = calculateConfidenceScore('COMPETITIVE', null, signalsWithTrip);
-    expect(score).toBe(65); // 50 + 15 (max trip bonus)
+    expect(score).toBe(60);
   });
 
-  it('should cap at 0-100', () => {
-    // CHALK (+20) + trip bonus (+15) + pace bonus (+15) = 100
-    const signalsWithBoth: AggregatedSignals[] = [
+  it('should apply -5 per pace advantage signal on rank 2-4 (max -15)', () => {
+    const signalsWithPace: AggregatedSignals[] = [
       {
         programNumber: 1,
         algorithmRank: 1,
+        algorithmScore: 200,
         tripTroubleFlagged: false,
         paceAdvantageFlagged: false,
       } as AggregatedSignals,
       {
         programNumber: 2,
         algorithmRank: 2,
+        algorithmScore: 195,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: true,
+      } as AggregatedSignals,
+      {
+        programNumber: 3,
+        algorithmRank: 3,
+        algorithmScore: 190,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: true,
+      } as AggregatedSignals,
+      {
+        programNumber: 4,
+        algorithmRank: 4,
+        algorithmScore: 185,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: true,
+      } as AggregatedSignals,
+    ];
+    // Base 65 - 15 (3 pace advantages) + 10 (3/4 agreement) + 0 (no clean - has pace advantage) = 60
+    const score = calculateConfidenceScore('COMPETITIVE', null, signalsWithPace);
+    expect(score).toBe(60);
+  });
+
+  // ============================================================================
+  // BOT AGREEMENT BONUS TESTS
+  // ============================================================================
+
+  it('should add +20 for 4/4 bot agreement (all positive signals)', () => {
+    // 4/4 = no trip trouble on rank 1, pace advantage on rank 1, solid favorite, CHALK/COMPETITIVE
+    const signalsWithPaceOnTop: AggregatedSignals[] = [
+      {
+        programNumber: 1,
+        algorithmRank: 1,
+        algorithmScore: 200,
+        tripTroubleFlagged: false, // positive
+        paceAdvantageFlagged: true, // positive
+      } as AggregatedSignals,
+      {
+        programNumber: 2,
+        algorithmRank: 2,
+        algorithmScore: 195,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 3,
+        algorithmRank: 3,
+        algorithmScore: 190,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 4,
+        algorithmRank: 4,
+        algorithmScore: 185,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+    ];
+    // Base 65 + 20 (4/4 agreement) + 10 (clean favorite) = 95
+    const score = calculateConfidenceScore('COMPETITIVE', null, signalsWithPaceOnTop);
+    expect(score).toBe(95);
+  });
+
+  it('should add +10 for 3/4 bot agreement', () => {
+    // 3/4 = no trip trouble on rank 1, NO pace advantage on rank 1, solid favorite, COMPETITIVE
+    // Base 65 + 10 (3/4 agreement) + 10 (clean favorite) = 85
+    const score = calculateConfidenceScore('COMPETITIVE', null, baseSignals);
+    expect(score).toBe(85);
+  });
+
+  it('should add +0 for 2/4 or fewer bot agreement', () => {
+    // WIDE_OPEN removes one positive signal (field type), and if vulnerable favorite removes another
+    const vulnFav: VulnerableFavoriteAnalysis = {
+      isVulnerable: true,
+      reasons: ['Flag 1', 'Flag 2', 'Flag 3'],
+      confidence: 'HIGH',
+    };
+    // 2/4 = no trip trouble on rank 1, NO pace advantage on rank 1, VULNERABLE favorite, WIDE_OPEN
+    // Base 65 - 15 (vulnerable) - 15 (WIDE_OPEN) + 0 (2/4 agreement) + 0 (no clean) = 35
+    const score = calculateConfidenceScore('WIDE_OPEN', vulnFav, baseSignals);
+    expect(score).toBe(35);
+  });
+
+  // ============================================================================
+  // ALGORITHM MARGIN BONUS TESTS
+  // ============================================================================
+
+  it('should add +15 for 20+ point margin', () => {
+    const signalsWithLargeMargin: AggregatedSignals[] = [
+      {
+        programNumber: 1,
+        algorithmRank: 1,
+        algorithmScore: 220,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 2,
+        algorithmRank: 2,
+        algorithmScore: 195,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 3,
+        algorithmRank: 3,
+        algorithmScore: 190,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 4,
+        algorithmRank: 4,
+        algorithmScore: 185,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+    ];
+    // Base 65 + 10 (3/4 agreement) + 15 (25pt margin) + 10 (clean favorite) = 100
+    const score = calculateConfidenceScore('COMPETITIVE', null, signalsWithLargeMargin);
+    expect(score).toBe(100);
+  });
+
+  it('should add +10 for 15-19 point margin', () => {
+    const signalsWithMediumMargin: AggregatedSignals[] = [
+      {
+        programNumber: 1,
+        algorithmRank: 1,
+        algorithmScore: 210,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 2,
+        algorithmRank: 2,
+        algorithmScore: 195,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 3,
+        algorithmRank: 3,
+        algorithmScore: 190,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 4,
+        algorithmRank: 4,
+        algorithmScore: 185,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+    ];
+    // Base 65 + 10 (3/4 agreement) + 10 (15pt margin) + 10 (clean favorite) = 95
+    const score = calculateConfidenceScore('COMPETITIVE', null, signalsWithMediumMargin);
+    expect(score).toBe(95);
+  });
+
+  it('should add +5 for 10-14 point margin', () => {
+    const signalsWithSmallMargin: AggregatedSignals[] = [
+      {
+        programNumber: 1,
+        algorithmRank: 1,
+        algorithmScore: 205,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 2,
+        algorithmRank: 2,
+        algorithmScore: 195,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 3,
+        algorithmRank: 3,
+        algorithmScore: 190,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 4,
+        algorithmRank: 4,
+        algorithmScore: 185,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+    ];
+    // Base 65 + 10 (3/4 agreement) + 5 (10pt margin) + 10 (clean favorite) = 90
+    const score = calculateConfidenceScore('COMPETITIVE', null, signalsWithSmallMargin);
+    expect(score).toBe(90);
+  });
+
+  // ============================================================================
+  // CLEAN FAVORITE BONUS TESTS
+  // ============================================================================
+
+  it('should add +10 for clean favorite (solid, good race type, no danger signals)', () => {
+    // Already tested in base case - baseSignals with COMPETITIVE gives +10 clean bonus
+    const score = calculateConfidenceScore('COMPETITIVE', null, baseSignals);
+    expect(score).toBe(85); // 65 + 10 (agreement) + 10 (clean)
+  });
+
+  it('should NOT give clean favorite bonus if favorite is vulnerable', () => {
+    const vulnFav: VulnerableFavoriteAnalysis = {
+      isVulnerable: true,
+      reasons: ['Flag 1', 'Flag 2'],
+      confidence: 'MEDIUM',
+    };
+    // Base 65 + 0 (2/4 agreement) + 0 (no clean - vulnerable) = 65
+    const score = calculateConfidenceScore('COMPETITIVE', vulnFav, baseSignals);
+    expect(score).toBe(65);
+  });
+
+  it('should NOT give clean favorite bonus if race type is WIDE_OPEN', () => {
+    // Base 65 - 15 (WIDE_OPEN) + 0 (2/4 agreement) + 0 (no clean) = 50
+    const score = calculateConfidenceScore('WIDE_OPEN', null, baseSignals);
+    expect(score).toBe(50);
+  });
+
+  it('should NOT give clean favorite bonus if trip trouble on rank 2-4', () => {
+    const signalsWithTrip: AggregatedSignals[] = [
+      {
+        programNumber: 1,
+        algorithmRank: 1,
+        algorithmScore: 200,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 2,
+        algorithmRank: 2,
+        algorithmScore: 195,
+        tripTroubleFlagged: true,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 3,
+        algorithmRank: 3,
+        algorithmScore: 190,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 4,
+        algorithmRank: 4,
+        algorithmScore: 185,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+    ];
+    // Base 65 - 5 (1 trip trouble) + 10 (3/4 agreement) + 0 (no clean) = 70
+    const score = calculateConfidenceScore('COMPETITIVE', null, signalsWithTrip);
+    expect(score).toBe(70);
+  });
+
+  // ============================================================================
+  // SCORE CAPPING TESTS
+  // ============================================================================
+
+  it('should cap at 100 when bonuses exceed maximum', () => {
+    // Perfect race: 4/4 agreement + 20pt margin + clean favorite
+    const perfectSignals: AggregatedSignals[] = [
+      {
+        programNumber: 1,
+        algorithmRank: 1,
+        algorithmScore: 220,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: true, // pace advantage on top horse
+      } as AggregatedSignals,
+      {
+        programNumber: 2,
+        algorithmRank: 2,
+        algorithmScore: 195,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 3,
+        algorithmRank: 3,
+        algorithmScore: 190,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 4,
+        algorithmRank: 4,
+        algorithmScore: 185,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+    ];
+    // Base 65 + 20 (4/4 agreement) + 15 (25pt margin) + 10 (clean) = 110 -> capped at 100
+    const score = calculateConfidenceScore('COMPETITIVE', null, perfectSignals);
+    expect(score).toBe(100);
+  });
+
+  it('should floor at 0 when penalties exceed minimum', () => {
+    // Worst case: WIDE_OPEN + vulnerable + max trip trouble + max pace advantage
+    const vulnFav: VulnerableFavoriteAnalysis = {
+      isVulnerable: true,
+      reasons: ['Flag 1', 'Flag 2', 'Flag 3'],
+      confidence: 'HIGH',
+    };
+    const terribleSignals: AggregatedSignals[] = [
+      {
+        programNumber: 1,
+        algorithmRank: 1,
+        algorithmScore: 200,
+        tripTroubleFlagged: true, // trip trouble on rank 1 (doesn't cause penalty but prevents clean)
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 2,
+        algorithmRank: 2,
+        algorithmScore: 195,
         tripTroubleFlagged: true,
         paceAdvantageFlagged: true,
       } as AggregatedSignals,
       {
         programNumber: 3,
         algorithmRank: 3,
+        algorithmScore: 190,
         tripTroubleFlagged: true,
         paceAdvantageFlagged: true,
       } as AggregatedSignals,
       {
         programNumber: 4,
         algorithmRank: 4,
+        algorithmScore: 185,
         tripTroubleFlagged: true,
         paceAdvantageFlagged: true,
       } as AggregatedSignals,
     ];
-    const score = calculateConfidenceScore('CHALK', null, signalsWithBoth);
-    expect(score).toBe(100);
+    // Base 65 - 15 (vulnerable) - 15 (WIDE_OPEN) - 15 (trip) - 15 (pace) + 0 (1/4 agreement) = 5
+    const score = calculateConfidenceScore('WIDE_OPEN', vulnFav, terribleSignals);
+    expect(score).toBe(5);
+  });
+
+  // ============================================================================
+  // INTEGRATION TESTS - EXPECTED SCORE EXAMPLES FROM TASK
+  // ============================================================================
+
+  it('should score 100 for perfect race (4/4 agreement, 20+ margin, clean favorite)', () => {
+    const perfectSignals: AggregatedSignals[] = [
+      {
+        programNumber: 1,
+        algorithmRank: 1,
+        algorithmScore: 220,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: true,
+      } as AggregatedSignals,
+      {
+        programNumber: 2,
+        algorithmRank: 2,
+        algorithmScore: 195,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 3,
+        algorithmRank: 3,
+        algorithmScore: 190,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 4,
+        algorithmRank: 4,
+        algorithmScore: 185,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+    ];
+    // 65 + 20 + 15 + 10 = 110 -> 100
+    expect(calculateConfidenceScore('COMPETITIVE', null, perfectSignals)).toBe(100);
+  });
+
+  it('should score ~85 for good race (3/4 agreement, 15pt margin, no clean bonus)', () => {
+    const goodSignals: AggregatedSignals[] = [
+      {
+        programNumber: 1,
+        algorithmRank: 1,
+        algorithmScore: 210,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 2,
+        algorithmRank: 2,
+        algorithmScore: 195,
+        tripTroubleFlagged: true, // one trip trouble removes clean bonus
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 3,
+        algorithmRank: 3,
+        algorithmScore: 190,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 4,
+        algorithmRank: 4,
+        algorithmScore: 185,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+    ];
+    // 65 - 5 (trip) + 10 (3/4) + 10 (margin) + 0 (no clean) = 80
+    expect(calculateConfidenceScore('COMPETITIVE', null, goodSignals)).toBe(80);
+  });
+
+  it('should score 65 for average race (2/4 agreement, 8pt margin)', () => {
+    const vulnFav: VulnerableFavoriteAnalysis = {
+      isVulnerable: true,
+      reasons: ['Flag 1', 'Flag 2'],
+      confidence: 'MEDIUM',
+    };
+    const avgSignals: AggregatedSignals[] = [
+      {
+        programNumber: 1,
+        algorithmRank: 1,
+        algorithmScore: 200,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 2,
+        algorithmRank: 2,
+        algorithmScore: 192,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 3,
+        algorithmRank: 3,
+        algorithmScore: 190,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+      {
+        programNumber: 4,
+        algorithmRank: 4,
+        algorithmScore: 185,
+        tripTroubleFlagged: false,
+        paceAdvantageFlagged: false,
+      } as AggregatedSignals,
+    ];
+    // 65 + 0 (2/4 agreement) + 0 (8pt margin) + 0 (no clean - vulnerable) = 65
+    expect(calculateConfidenceScore('COMPETITIVE', vulnFav, avgSignals)).toBe(65);
   });
 });
 

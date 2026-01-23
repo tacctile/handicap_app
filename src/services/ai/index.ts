@@ -1581,54 +1581,195 @@ export function calculateConfidenceScore(
 ): number {
   let score = 65; // Base (rebalanced after penalties added)
 
+  // Track bonus/penalty breakdown for debug logging
+  const bonusBreakdown: { name: string; value: number }[] = [];
+
+  // ============================================================================
+  // PENALTIES (existing logic)
+  // ============================================================================
+
   // STRICTER: Only penalize confidence when TRULY vulnerable (2+ flags, HIGH confidence)
   // This aligns with determineFavoriteStatus() stricter criteria
+  let vulnerablePenalty = 0;
   if (vulnerableFavorite?.isVulnerable) {
     const flagCount = vulnerableFavorite.reasons?.length ?? 0;
 
     // Only penalize if meeting stricter vulnerable threshold
     if (flagCount >= 3) {
       // 3+ flags: full penalty regardless of confidence
-      score -= 15;
+      vulnerablePenalty = -15;
     } else if (flagCount === 2 && vulnerableFavorite.confidence === 'HIGH') {
       // 2 flags with HIGH confidence: full penalty
-      score -= 15;
+      vulnerablePenalty = -15;
     }
     // 0-1 flags or 2 flags with non-HIGH: no penalty (not truly vulnerable)
+  }
+  if (vulnerablePenalty !== 0) {
+    score += vulnerablePenalty;
+    bonusBreakdown.push({ name: 'Vulnerable Favorite', value: vulnerablePenalty });
   }
 
   // Field type adjustment
   // CHALK = low value (chalk races favor favorites, less upside) → reduce confidence
   // COMPETITIVE = neutral
   // WIDE_OPEN = uncertain but can have value → moderate penalty
+  let raceTypePenalty = 0;
   switch (raceType) {
     case 'CHALK':
-      score -= 10; // Chalk races = low value, reduce confidence
+      raceTypePenalty = -10; // Chalk races = low value, reduce confidence
       break;
     case 'COMPETITIVE':
       // +0 (no adjustment)
       break;
     case 'WIDE_OPEN':
-      score -= 15; // Uncertain but not as penalized - these can have value
+      raceTypePenalty = -15; // Uncertain but not as penalized - these can have value
       break;
+  }
+  if (raceTypePenalty !== 0) {
+    score += raceTypePenalty;
+    bonusBreakdown.push({ name: 'Race Type', value: raceTypePenalty });
   }
 
   // Trip Trouble signals on rank 2-4: -5 each (cap at -15)
   // Underdogs with upside = more uncertainty, LOWER confidence
-  const tripTroublePenalty = aggregatedSignals.filter(
+  const tripTroubleCount = aggregatedSignals.filter(
     (s) => s.algorithmRank >= 2 && s.algorithmRank <= 4 && s.tripTroubleFlagged
   ).length;
-  score -= Math.min(tripTroublePenalty * 5, 15);
+  const tripTroublePenalty = -Math.min(tripTroubleCount * 5, 15);
+  if (tripTroublePenalty !== 0) {
+    score += tripTroublePenalty;
+    bonusBreakdown.push({ name: 'Trip Trouble (rank 2-4)', value: tripTroublePenalty });
+  }
 
   // Pace Advantage signals on rank 2-4: -5 each (cap at -15)
   // Underdogs with pace advantage = more uncertainty, LOWER confidence
-  const paceAdvantagePenalty = aggregatedSignals.filter(
+  const paceAdvantageCount = aggregatedSignals.filter(
     (s) => s.algorithmRank >= 2 && s.algorithmRank <= 4 && s.paceAdvantageFlagged
   ).length;
-  score -= Math.min(paceAdvantagePenalty * 5, 15);
+  const paceAdvantagePenalty = -Math.min(paceAdvantageCount * 5, 15);
+  if (paceAdvantagePenalty !== 0) {
+    score += paceAdvantagePenalty;
+    bonusBreakdown.push({ name: 'Pace Advantage (rank 2-4)', value: paceAdvantagePenalty });
+  }
+
+  // ============================================================================
+  // BONUSES (new positive signal logic)
+  // ============================================================================
+
+  // Get the top-ranked horse (rank 1)
+  const topHorse = aggregatedSignals.find((s) => s.algorithmRank === 1);
+  const secondHorse = aggregatedSignals.find((s) => s.algorithmRank === 2);
+
+  // --- PART 1: Bot Agreement Bonus ---
+  // Count how many of the 4 bot signals are "positive" for the top-ranked horse
+  let positiveSignalCount = 0;
+
+  if (topHorse) {
+    // 1. Trip Trouble bot: top horse has NO trip trouble flags (clean)
+    if (!topHorse.tripTroubleFlagged) {
+      positiveSignalCount++;
+    }
+
+    // 2. Pace Scenario bot: top horse has pace advantage flag
+    if (topHorse.paceAdvantageFlagged) {
+      positiveSignalCount++;
+    }
+  }
+
+  // 3. Vulnerable Favorite bot: favorite is NOT vulnerable (solid)
+  if (!vulnerableFavorite?.isVulnerable) {
+    positiveSignalCount++;
+  }
+
+  // 4. Field Spread bot: race type is CHALK or COMPETITIVE (not WIDE_OPEN)
+  if (raceType === 'CHALK' || raceType === 'COMPETITIVE') {
+    positiveSignalCount++;
+  }
+
+  // Apply bot agreement bonus
+  let botAgreementBonus = 0;
+  if (positiveSignalCount === 4) {
+    botAgreementBonus = 20;
+  } else if (positiveSignalCount === 3) {
+    botAgreementBonus = 10;
+  }
+  // 2 or fewer: +0
+
+  if (botAgreementBonus > 0) {
+    score += botAgreementBonus;
+    bonusBreakdown.push({
+      name: `Bot Agreement (${positiveSignalCount}/4)`,
+      value: botAgreementBonus,
+    });
+  }
+
+  // --- PART 2: Algorithm Margin Bonus ---
+  // Check the point margin between rank 1 and rank 2 horses
+  let marginBonus = 0;
+  if (topHorse && secondHorse) {
+    const margin = topHorse.algorithmScore - secondHorse.algorithmScore;
+
+    if (margin >= 20) {
+      marginBonus = 15;
+    } else if (margin >= 15) {
+      marginBonus = 10;
+    } else if (margin >= 10) {
+      marginBonus = 5;
+    }
+    // Under 10: +0
+
+    if (marginBonus > 0) {
+      score += marginBonus;
+      bonusBreakdown.push({ name: `Algorithm Margin (+${margin}pts)`, value: marginBonus });
+    }
+  }
+
+  // --- PART 3: Clean Favorite Bonus ---
+  // If ALL of these are true, add +10:
+  // - Favorite status is SOLID (not VULNERABLE)
+  // - Race type is CHALK or COMPETITIVE (not WIDE_OPEN)
+  // - No trip trouble flags on rank 2-4 horses
+  // - No pace advantage flags on rank 2-4 horses
+  const isSolidFavorite = !vulnerableFavorite?.isVulnerable;
+  const isGoodRaceType = raceType === 'CHALK' || raceType === 'COMPETITIVE';
+  const noTripTroubleOnContenders = tripTroubleCount === 0;
+  const noPaceAdvantageOnContenders = paceAdvantageCount === 0;
+
+  let cleanFavoriteBonus = 0;
+  if (
+    isSolidFavorite &&
+    isGoodRaceType &&
+    noTripTroubleOnContenders &&
+    noPaceAdvantageOnContenders
+  ) {
+    cleanFavoriteBonus = 10;
+    score += cleanFavoriteBonus;
+    bonusBreakdown.push({ name: 'Clean Favorite', value: cleanFavoriteBonus });
+  }
+
+  // ============================================================================
+  // DEBUG LOGGING
+  // ============================================================================
+  if (bonusBreakdown.length > 0) {
+    debugLog('[Confidence] Score calculation breakdown:');
+    debugLog(`  Base: 65`);
+    for (const item of bonusBreakdown) {
+      const sign = item.value > 0 ? '+' : '';
+      debugLog(`  ${item.name}: ${sign}${item.value}`);
+    }
+    debugLog(`  Final (before cap): ${score}`);
+  }
 
   // Cap at 0-100
-  return Math.max(0, Math.min(100, score));
+  // Max possible: 65 + 20 (agreement) + 15 (margin) + 10 (clean) = 110, capped at 100
+  // Min possible: 65 - 15 - 15 - 15 - 15 = 5, but can go to 0 in extreme cases
+  const finalScore = Math.max(0, Math.min(100, score));
+
+  if (finalScore !== score) {
+    debugLog(`  Final (after cap): ${finalScore}`);
+  }
+
+  return finalScore;
 }
 
 /**
