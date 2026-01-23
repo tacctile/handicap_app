@@ -1668,7 +1668,14 @@ describe('combineMultiBotResults', () => {
   });
 
   describe('Scenario C - Value Play Identification', () => {
-    it('should identify value play for algorithm rank 4 with HIGH confidence trip trouble and good odds', () => {
+    // ========================================================================
+    // UPDATED: For SOLID favorites, single-bot signals are NOT enough
+    // to identify a value horse. Requires 2+ bots OR strength >= 50.
+    // ========================================================================
+
+    it('should NOT identify value play for SOLID favorite with only 1 bot signal (trip trouble)', () => {
+      // This tests the critical fix: single-bot signals should NOT identify
+      // a value horse for SOLID favorites, even with HIGH confidence.
       const race = createMockRace([
         { programNumber: 1, name: 'Top Pick', runningStyle: 'E', mlOdds: '2-1' },
         { programNumber: 2, name: 'Horse B', runningStyle: 'S', mlOdds: '5-1' },
@@ -1696,23 +1703,79 @@ describe('combineMultiBotResults', () => {
             {
               programNumber: 4,
               horseName: 'Value Horse',
-              // HIGH confidence - needs "2 of" or similar indicator for 2+ troubled races
+              // HIGH confidence trip trouble, but only 1 bot
               issue: 'Blocked in 2 of last 3 races - multiple troubled trips',
               maskedAbility: true,
             },
           ],
         },
         paceScenario: null,
-        vulnerableFavorite: null,
+        vulnerableFavorite: null, // SOLID favorite
         fieldSpread: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
       // valuePlay is deprecated - always null now
-      // Value horse identification is in ticketConstruction.valueHorse
       expect(result.valuePlay).toBeNull();
+      // SOLID favorite with only 1 bot signal → value horse NOT identified
+      expect(result.ticketConstruction?.valueHorse.identified).toBe(false);
+      expect(result.ticketConstruction?.template).toBe('PASS');
+    });
+
+    it('should identify value play when 2+ bots converge on same horse for SOLID favorite', () => {
+      // This tests that value IS identified when strong evidence exists (2+ bots)
+      const race = createMockRace([
+        { programNumber: 1, name: 'Top Pick', runningStyle: 'E', mlOdds: '2-1' },
+        { programNumber: 2, name: 'Horse B', runningStyle: 'S', mlOdds: '5-1' },
+        { programNumber: 3, name: 'Horse C', runningStyle: 'S', mlOdds: '6-1' },
+        { programNumber: 4, name: 'Value Horse', runningStyle: 'C', mlOdds: '8-1' },
+      ]);
+
+      const scoring = createMockScoringResult([
+        { programNumber: 1, name: 'Top Pick', rank: 1, score: 200, tier: 'high', mlDecimal: 2 },
+        { programNumber: 2, name: 'Horse B', rank: 2, score: 180, tier: 'high', mlDecimal: 5 },
+        { programNumber: 3, name: 'Horse C', rank: 3, score: 160, tier: 'medium', mlDecimal: 6 },
+        {
+          programNumber: 4,
+          name: 'Value Horse',
+          rank: 4,
+          score: 140,
+          tier: 'medium',
+          mlDecimal: 8,
+        },
+      ]);
+
+      const rawResults: MultiBotRawResults = {
+        tripTrouble: {
+          horsesWithTripTrouble: [
+            {
+              programNumber: 4,
+              horseName: 'Value Horse',
+              issue: 'Blocked in 2 of last 3 races - multiple troubled trips',
+              maskedAbility: true,
+            },
+          ],
+        },
+        // Add pace advantage as 2nd bot signal
+        paceScenario: {
+          advantagedStyles: ['C'],
+          disadvantagedStyles: ['E'],
+          paceProjection: 'HOT',
+          loneSpeedException: false,
+          speedDuelLikely: true,
+        },
+        vulnerableFavorite: null, // SOLID favorite
+        fieldSpread: null,
+      };
+
+      const result = combineMultiBotResults(rawResults, race, scoring, 100);
+
+      // valuePlay is deprecated - always null now
+      expect(result.valuePlay).toBeNull();
+      // 2 bots converge (trip trouble + pace) → value horse IS identified
       expect(result.ticketConstruction?.valueHorse.identified).toBe(true);
+      expect(result.ticketConstruction?.valueHorse.botConvergenceCount).toBeGreaterThanOrEqual(2);
     });
 
     it('should NOT identify value play for MEDIUM confidence trip trouble in conservative mode', () => {
