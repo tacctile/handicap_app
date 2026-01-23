@@ -866,3 +866,211 @@
 .exotic-bet-tooltip__horse:last-child {
   padding-bottom: 0;
 }
+
+/* ============================================
+   VALUE HORSE FILTER TOGGLE
+   ============================================ */
+
+.top-bets-controls__value-filter {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.top-bets-value-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 6px 12px;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.top-bets-value-toggle:hover {
+  border-color: var(--color-border-prominent);
+  background: var(--color-card);
+}
+
+.top-bets-value-toggle input[type='checkbox'] {
+  display: none;
+}
+
+.top-bets-value-toggle input[type='checkbox']:checked + .top-bets-value-toggle__label {
+  color: var(--color-primary);
+}
+
+.top-bets-value-toggle
+  input[type='checkbox']:checked
+  + .top-bets-value-toggle__label
+  .top-bets-value-toggle__icon {
+  color: var(--color-primary);
+}
+
+.top-bets-value-toggle__label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  transition: color var(--transition-fast);
+}
+
+.top-bets-value-toggle__icon {
+  font-size: 14px;
+  color: var(--color-text-tertiary);
+  transition: color var(--transition-fast);
+}
+
+/* ============================================
+   COMPACT BET CARD - BADGES ROW
+   ============================================ */
+
+.compact-bet-card__badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  min-height: 24px;
+  position: relative;
+}
+
+.compact-bet-card__best-badge {
+  padding: 2px 6px;
+  background: var(--color-primary);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.compact-bet-card__value-badge {
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.compact-bet-card__help-icon {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.compact-bet-card__help-icon:hover {
+  background: var(--color-card);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* ============================================
+   WHY THIS BET TOOLTIP
+   ============================================ */
+
+.compact-bet-card__why-tooltip {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 10px;
+  z-index: 100;
+  max-width: 220px;
+  padding: 10px 12px;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border-prominent);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  animation: tooltipFadeIn 150ms ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   BEST BET CARD HIGHLIGHT
+   ============================================ */
+
+.compact-bet-card--best {
+  border-color: rgba(25, 171, 181, 0.3);
+  background: rgba(25, 171, 181, 0.03);
+}
+
+.compact-bet-card--best:hover {
+  border-color: rgba(25, 171, 181, 0.5);
+  background: rgba(25, 171, 181, 0.06);
+}
+
+/* ============================================
+   RESPONSIVE: TABLET
+   ============================================ */
+
+@media (max-width: 1023px) {
+  .top-bets-controls__value-filter {
+    order: -1;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .compact-bet-card__badges {
+    padding: 4px 8px;
+  }
+
+  .compact-bet-card__best-badge {
+    font-size: 8px;
+    padding: 2px 4px;
+  }
+
+  .compact-bet-card__why-tooltip {
+    max-width: 180px;
+    right: 6px;
+  }
+}
+
+/* ============================================
+   RESPONSIVE: MOBILE
+   ============================================ */
+
+@media (max-width: 540px) {
+  .top-bets-value-toggle {
+    padding: 5px 10px;
+  }
+
+  .top-bets-value-toggle__label {
+    font-size: 11px;
+  }
+
+  .compact-bet-card__badges {
+    padding: 6px 12px;
+  }
+
+  .compact-bet-card__why-tooltip {
+    max-width: 200px;
+    right: 12px;
+  }
+}

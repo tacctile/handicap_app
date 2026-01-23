@@ -27,10 +27,17 @@ import './TopBetsView.css';
 // TYPES
 // ============================================================================
 
-export type SortOption = 'confidence' | 'payout' | 'price_low' | 'price_high';
-export type ExactaVariant = 'straight' | 'box';
-export type TrifectaVariant = 'straight' | 'box' | 'key';
-export type SuperfectaVariant = 'straight' | 'box' | 'key';
+export type SortOption =
+  | 'confidence'
+  | 'roi'
+  | 'itm'
+  | 'ev'
+  | 'payout'
+  | 'price_low'
+  | 'price_high';
+export type ExactaVariant = 'straight' | 'box' | 'wheel';
+export type TrifectaVariant = 'straight' | 'box' | 'key' | 'wheel';
+export type SuperfectaVariant = 'straight' | 'box' | 'key' | 'wheel';
 
 export interface TopBetsViewProps {
   /** Race number (1-indexed) */
@@ -47,6 +54,8 @@ export interface TopBetsViewProps {
   isScratched?: (index: number) => boolean;
   /** Callback to close the view */
   onClose: () => void;
+  /** Value horse program number (from AI analysis) - optional until wired */
+  valueHorseNumber?: number | null;
 }
 
 export interface ScaledTopBet extends TopBet {
@@ -55,6 +64,10 @@ export interface ScaledTopBet extends TopBet {
   scaledPayout: string;
   /** Kelly-suggested bet amount (if available from enhanced betting) */
   kellyAmount?: number;
+  /** Historical ROI from validation data (to be wired in future) */
+  historicalROI?: number;
+  /** Historical hit rate / ITM% from validation data (to be wired in future) */
+  historicalHitRate?: number;
 }
 
 // ============================================================================
@@ -64,18 +77,63 @@ export interface ScaledTopBet extends TopBet {
 const BASE_AMOUNTS = [1, 2, 5, 10];
 const DEFAULT_BASE = 1;
 
-// Bet types per column
+// Bet types per column - All box depths and wheel types
 const WIN_TYPES: TopBetType[] = ['WIN'];
 const PLACE_TYPES: TopBetType[] = ['PLACE'];
 const SHOW_TYPES: TopBetType[] = ['SHOW'];
+
+// Exacta types
 const EXACTA_STRAIGHT_TYPES: TopBetType[] = ['EXACTA_STRAIGHT'];
-const EXACTA_BOX_TYPES: TopBetType[] = ['EXACTA_BOX_2', 'EXACTA_BOX_3'];
+const EXACTA_BOX_TYPES: TopBetType[] = [
+  'EXACTA_BOX_2',
+  'EXACTA_BOX_3',
+  'EXACTA_BOX_4',
+  'EXACTA_BOX_5',
+  'EXACTA_BOX_6',
+];
+const EXACTA_WHEEL_TYPES: TopBetType[] = ['EXACTA_WHEEL'];
+
+// Trifecta types
 const TRIFECTA_STRAIGHT_TYPES: TopBetType[] = ['TRIFECTA_STRAIGHT'];
-const TRIFECTA_BOX_TYPES: TopBetType[] = ['TRIFECTA_BOX_3', 'TRIFECTA_BOX_4'];
+const TRIFECTA_BOX_TYPES: TopBetType[] = [
+  'TRIFECTA_BOX_3',
+  'TRIFECTA_BOX_4',
+  'TRIFECTA_BOX_5',
+  'TRIFECTA_BOX_6',
+];
 const TRIFECTA_KEY_TYPES: TopBetType[] = ['TRIFECTA_KEY'];
+const TRIFECTA_WHEEL_TYPES: TopBetType[] = ['TRIFECTA_WHEEL'];
+
+// Superfecta types
 const SUPERFECTA_STRAIGHT_TYPES: TopBetType[] = ['SUPERFECTA_STRAIGHT'];
-const SUPERFECTA_BOX_TYPES: TopBetType[] = ['SUPERFECTA_BOX_4', 'SUPERFECTA_BOX_5'];
+const SUPERFECTA_BOX_TYPES: TopBetType[] = [
+  'SUPERFECTA_BOX_4',
+  'SUPERFECTA_BOX_5',
+  'SUPERFECTA_BOX_6',
+];
 const SUPERFECTA_KEY_TYPES: TopBetType[] = ['SUPERFECTA_KEY'];
+const SUPERFECTA_WHEEL_TYPES: TopBetType[] = ['SUPERFECTA_WHEEL'];
+
+// Depth requirements for field size filtering
+const DEPTH_REQUIREMENTS: Record<string, number> = {
+  EXACTA_BOX_2: 2,
+  EXACTA_BOX_3: 3,
+  EXACTA_BOX_4: 4,
+  EXACTA_BOX_5: 5,
+  EXACTA_BOX_6: 6,
+  EXACTA_WHEEL: 3,
+  TRIFECTA_BOX_3: 3,
+  TRIFECTA_BOX_4: 4,
+  TRIFECTA_BOX_5: 5,
+  TRIFECTA_BOX_6: 6,
+  TRIFECTA_KEY: 4,
+  TRIFECTA_WHEEL: 4,
+  SUPERFECTA_BOX_4: 4,
+  SUPERFECTA_BOX_5: 5,
+  SUPERFECTA_BOX_6: 6,
+  SUPERFECTA_KEY: 5,
+  SUPERFECTA_WHEEL: 5,
+};
 
 // Column configuration
 type ColumnId = 'win' | 'place' | 'show' | 'exacta' | 'trifecta' | 'superfecta';
@@ -99,6 +157,7 @@ const COLUMNS: ColumnConfig[] = [
     dropdownOptions: [
       { value: 'straight', label: 'Straight' },
       { value: 'box', label: 'Box' },
+      { value: 'wheel', label: 'Wheel' },
     ],
     defaultVariant: 'straight',
   },
@@ -110,6 +169,7 @@ const COLUMNS: ColumnConfig[] = [
       { value: 'straight', label: 'Straight' },
       { value: 'box', label: 'Box' },
       { value: 'key', label: 'Key' },
+      { value: 'wheel', label: 'Wheel' },
     ],
     defaultVariant: 'straight',
   },
@@ -121,6 +181,7 @@ const COLUMNS: ColumnConfig[] = [
       { value: 'straight', label: 'Straight' },
       { value: 'box', label: 'Box' },
       { value: 'key', label: 'Key' },
+      { value: 'wheel', label: 'Wheel' },
     ],
     defaultVariant: 'straight',
   },
@@ -137,6 +198,7 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   getOdds = (_index, defaultOdds) => defaultOdds,
   isScratched = () => false,
   onClose,
+  valueHorseNumber = null,
 }) => {
   // ============================================================================
   // STATE
@@ -149,6 +211,7 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   const [exactaVariant, setExactaVariant] = useState<ExactaVariant>('straight');
   const [trifectaVariant, setTrifectaVariant] = useState<TrifectaVariant>('straight');
   const [superfectaVariant, setSuperfectaVariant] = useState<SuperfectaVariant>('straight');
+  const [showValueHorseOnly, setShowValueHorseOnly] = useState(false);
 
   // ============================================================================
   // ENHANCED BETTING HOOK (Softmax probabilities + Kelly sizing)
@@ -273,6 +336,11 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   // FILTER BETS BY COLUMN TYPE
   // ============================================================================
 
+  // Get field size from active horses
+  const fieldSize = useMemo(() => {
+    return scoredHorses.filter((h) => !isScratched(h.index) && !h.score.isScratched).length;
+  }, [scoredHorses, isScratched]);
+
   const getBetsForColumn = useCallback(
     (columnId: ColumnId): ScaledTopBet[] => {
       let typesToInclude: TopBetType[];
@@ -290,15 +358,23 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
           typesToInclude = SHOW_TYPES;
           break;
         case 'exacta':
-          typesToInclude = exactaVariant === 'straight' ? EXACTA_STRAIGHT_TYPES : EXACTA_BOX_TYPES;
+          if (exactaVariant === 'straight') {
+            typesToInclude = EXACTA_STRAIGHT_TYPES;
+          } else if (exactaVariant === 'box') {
+            typesToInclude = EXACTA_BOX_TYPES;
+          } else {
+            typesToInclude = EXACTA_WHEEL_TYPES;
+          }
           break;
         case 'trifecta':
           if (trifectaVariant === 'straight') {
             typesToInclude = TRIFECTA_STRAIGHT_TYPES;
           } else if (trifectaVariant === 'box') {
             typesToInclude = TRIFECTA_BOX_TYPES;
-          } else {
+          } else if (trifectaVariant === 'key') {
             typesToInclude = TRIFECTA_KEY_TYPES;
+          } else {
+            typesToInclude = TRIFECTA_WHEEL_TYPES;
           }
           break;
         case 'superfecta':
@@ -306,8 +382,10 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
             typesToInclude = SUPERFECTA_STRAIGHT_TYPES;
           } else if (superfectaVariant === 'box') {
             typesToInclude = SUPERFECTA_BOX_TYPES;
-          } else {
+          } else if (superfectaVariant === 'key') {
             typesToInclude = SUPERFECTA_KEY_TYPES;
+          } else {
+            typesToInclude = SUPERFECTA_WHEEL_TYPES;
           }
           break;
         default:
@@ -317,13 +395,33 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
       // Filter bets by type
       let filtered = allScaledBets.filter((bet) => typesToInclude.includes(bet.internalType));
 
+      // Filter by field size - exclude bets that require more horses than available
+      filtered = filtered.filter((bet) => {
+        const requiredHorses = DEPTH_REQUIREMENTS[bet.internalType] ?? 0;
+        return fieldSize >= requiredHorses;
+      });
+
+      // Filter by value horse if toggle is enabled
+      if (showValueHorseOnly && valueHorseNumber !== null) {
+        filtered = filtered.filter((bet) => bet.horseNumbers.includes(valueHorseNumber));
+      }
+
       // Apply sorting
       filtered = sortBets(filtered, sortBy);
 
       // WIN/PLACE/SHOW show ALL horses, exotic bets limited to 6
       return isWinPlaceShow ? filtered : filtered.slice(0, 6);
     },
-    [allScaledBets, exactaVariant, trifectaVariant, superfectaVariant, sortBy]
+    [
+      allScaledBets,
+      exactaVariant,
+      trifectaVariant,
+      superfectaVariant,
+      sortBy,
+      fieldSize,
+      showValueHorseOnly,
+      valueHorseNumber,
+    ]
   );
 
   // ============================================================================
@@ -505,6 +603,23 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
             ))}
         </div>
 
+        {/* Value Horse Filter Toggle */}
+        {valueHorseNumber !== null && (
+          <div className="top-bets-controls__value-filter">
+            <label className="top-bets-value-toggle">
+              <input
+                type="checkbox"
+                checked={showValueHorseOnly}
+                onChange={(e) => setShowValueHorseOnly(e.target.checked)}
+              />
+              <span className="top-bets-value-toggle__label">
+                <span className="top-bets-value-toggle__icon">◆</span>
+                Value Only
+              </span>
+            </label>
+          </div>
+        )}
+
         {/* Sort Dropdown (Right) */}
         <div className="top-bets-controls__sort">
           <label htmlFor="sort-select" className="top-bets-controls__label">
@@ -517,6 +632,9 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
             onChange={(e) => setSortBy(e.target.value as SortOption)}
           >
             <option value="confidence">Confidence</option>
+            <option value="ev">Expected Value</option>
+            <option value="roi">ROI</option>
+            <option value="itm">ITM %</option>
             <option value="payout">Biggest Payout</option>
             <option value="price_low">Price: Low to High</option>
             <option value="price_high">Price: High to Low</option>
@@ -569,6 +687,10 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
                     <CompactBetCard
                       key={`${bet.internalType}-${bet.horseNumbers.join('-')}-${index}`}
                       bet={bet}
+                      isBestBet={index === 0}
+                      includesValueHorse={
+                        valueHorseNumber !== null && bet.horseNumbers.includes(valueHorseNumber)
+                      }
                     />
                   ))
                 ) : (
@@ -662,9 +784,19 @@ const ExoticBetTooltip: React.FC<ExoticBetTooltipProps> = ({ horses, children })
 
 interface CompactBetCardProps {
   bet: ScaledTopBet;
+  isBestBet?: boolean;
+  includesValueHorse?: boolean;
 }
 
-const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
+const CompactBetCard: React.FC<CompactBetCardProps> = ({
+  bet,
+  isBestBet = false,
+  includesValueHorse = false,
+}) => {
+  // State for whyThisBet tooltip
+  const [showWhyTooltip, setShowWhyTooltip] = useState(false);
+  const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Format horse display based on bet type
   const horseDisplay = formatHorseDisplay(bet);
   const showTooltip = isExoticBet(bet.internalType);
@@ -681,8 +813,63 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
   const hasKellySizing = bet.kellyAmount !== undefined && bet.kellyAmount > 0;
   const isWinPlaceShow = ['WIN', 'PLACE', 'SHOW'].includes(bet.internalType);
 
+  // Handle tooltip show/hide with delay
+  const handleTooltipEnter = useCallback(() => {
+    tooltipTimeoutRef.current = setTimeout(() => {
+      setShowWhyTooltip(true);
+    }, 300);
+  }, []);
+
+  const handleTooltipLeave = useCallback(() => {
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+      tooltipTimeoutRef.current = null;
+    }
+    setShowWhyTooltip(false);
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (tooltipTimeoutRef.current) {
+        clearTimeout(tooltipTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Get simplified explanation
+  const explanation = simplifyExplanation(bet.whyThisBet);
+
   return (
-    <div className="compact-bet-card">
+    <div className={`compact-bet-card ${isBestBet ? 'compact-bet-card--best' : ''}`}>
+      {/* Badges Row */}
+      <div className="compact-bet-card__badges">
+        {isBestBet && (
+          <span className="compact-bet-card__best-badge" title="Best bet in this category">
+            BEST
+          </span>
+        )}
+        {includesValueHorse && (
+          <span className="compact-bet-card__value-badge" title="Includes value horse">
+            ◆
+          </span>
+        )}
+        {/* Help icon for tooltip */}
+        <span
+          className="compact-bet-card__help-icon"
+          onMouseEnter={handleTooltipEnter}
+          onMouseLeave={handleTooltipLeave}
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowWhyTooltip(!showWhyTooltip);
+          }}
+        >
+          ?
+        </span>
+        {/* Tooltip */}
+        {showWhyTooltip && <div className="compact-bet-card__why-tooltip">{explanation}</div>}
+      </div>
+
       {/* Row 1: Horse numbers (full width) */}
       <div className="compact-bet-card__header">
         {showTooltip ? (
@@ -732,6 +919,23 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({ bet }) => {
   );
 };
 
+/**
+ * Simplify the explanation to ensure it's easy to understand
+ */
+function simplifyExplanation(explanation: string | undefined): string {
+  if (!explanation) {
+    return "This bet has good value based on today's race.";
+  }
+
+  // Keep it under 2 sentences
+  const sentences = explanation.split('. ');
+  if (sentences.length > 2) {
+    return sentences.slice(0, 2).join('. ') + '.';
+  }
+
+  return explanation;
+}
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
@@ -760,6 +964,16 @@ function formatHorseDisplay(bet: ScaledTopBet): string {
   // For superfecta straight - hyphenated numbers
   if (bet.internalType === 'SUPERFECTA_STRAIGHT') {
     return bet.horses.map((h) => `#${h.programNumber}`).join('-');
+  }
+
+  // For wheel bets - key horse with "WITH ALL"
+  if (
+    bet.internalType === 'EXACTA_WHEEL' ||
+    bet.internalType === 'TRIFECTA_WHEEL' ||
+    bet.internalType === 'SUPERFECTA_WHEEL'
+  ) {
+    const keyHorse = bet.horses[0];
+    return `#${keyHorse?.programNumber} WITH ALL`;
   }
 
   // For key bets (trifecta and superfecta)
@@ -813,6 +1027,20 @@ function sortBets(bets: ScaledTopBet[], sortBy: SortOption): ScaledTopBet[] {
     case 'confidence':
       // Sort by probability (confidence) descending
       sorted.sort((a, b) => b.probability - a.probability);
+      break;
+    case 'roi':
+      // Sort by historical ROI descending (placeholder - shows N/A for now)
+      // Historical data to be wired in future prompt
+      sorted.sort((a, b) => (b.historicalROI ?? 0) - (a.historicalROI ?? 0));
+      break;
+    case 'itm':
+      // Sort by historical hit rate (ITM%) descending
+      // Historical data to be wired in future prompt
+      sorted.sort((a, b) => (b.historicalHitRate ?? 0) - (a.historicalHitRate ?? 0));
+      break;
+    case 'ev':
+      // Sort by expected value descending
+      sorted.sort((a, b) => b.expectedValue - a.expectedValue);
       break;
     case 'payout':
       // Sort by max potential payout (descending)
