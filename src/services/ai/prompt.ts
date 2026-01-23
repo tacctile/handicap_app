@@ -2224,7 +2224,7 @@ export function calculateClassDrop(
  * @returns FieldClassLevel assessment
  */
 export function determineFieldClassLevel(
-  horses: ClassDropHorse[],
+  _horses: ClassDropHorse[],
   todayPurse: number
 ): FieldClassLevel {
   // Use purse as primary indicator
