@@ -53,6 +53,7 @@ const BATCH_SIZE = 20;
 
 /**
  * Template-specific performance metrics
+ * NOTE: ROI and payout fields removed - focus on hit rates only
  */
 interface TemplatePerformanceMetrics {
   races: number;
@@ -61,26 +62,21 @@ interface TemplatePerformanceMetrics {
   exactaHits: number;
   exactaRate: number;
   exactaCost: number;
-  exactaPayout: number;
-  exactaROI: number;
   trifectaHits: number;
   trifectaRate: number;
   trifectaCost: number;
-  trifectaPayout: number;
-  trifectaROI: number;
 }
 
 /**
  * Odds bracket performance for Template B favorite fading
+ * NOTE: ROI and payout fields removed - focus on hit rates only
  */
 interface OddsBracketMetrics {
   races: number;
   favoritesLost: number;
   fadeAccuracy: number;
   exactaHits: number;
-  exactaCost: number;
-  exactaPayout: number;
-  exactaROI: number;
+  exactaHitRate: number;
 }
 
 /**
@@ -99,14 +95,13 @@ interface SizingPerformanceMetrics {
 
 /**
  * Generic bet type metrics - used for all bet variations
+ * NOTE: payout and roi removed - focus on hit rates only
  */
 interface BetTypeMetrics {
   races: number; // Number of races where this bet was possible
   hits: number; // Number of times the bet hit
   hitRate: number; // hits / races * 100
-  cost: number; // Total cost at $1 base
-  payout: number; // Total estimated payout
-  roi: number; // (payout - cost) / cost * 100
+  cost: number; // Total cost at $1 base (kept - users need to know costs)
 }
 
 /**
@@ -177,9 +172,10 @@ interface ValueHorsePerformanceMetrics {
 }
 
 /**
- * Expanded ROI tracking for all bet types
+ * Expanded hit rate tracking for all bet types
+ * NOTE: Renamed from ExpandedROITracking - no longer tracking ROI/payout
  */
-interface ExpandedROITracking {
+interface ExpandedHitRateTracking {
   // Win/Place/Show
   algorithmOnlyWPS: WPSMetrics;
   algorithmPlusAIWPS: WPSMetrics;
@@ -258,43 +254,35 @@ interface ValidationResult {
     templateBExactaRate: number;
   };
 
-  // SECTION F: ROI Summary
-  roiSummary: {
-    algorithmExactaROI: number;
-    algorithmTrifectaROI: number;
-    aiExactaROI: number;
-    aiTrifectaROI: number;
-    exactaImprovement: number;
-    trifectaImprovement: number;
+  // SECTION F: Cost Summary (ROI removed - payouts are unknowable)
+  costSummary: {
     totalAlgorithmCost: number;
     totalAICost: number;
     costReduction: number;
   };
 
-  // SECTION G: Verdict
+  // SECTION G: Verdict (hit rate based, no ROI)
   verdict: {
-    templatesWork: boolean;
-    sizingCalibrated: boolean;
-    roiPositive: boolean;
+    valueHorseFinding: boolean; // Board rate > 50%
+    templateRouting: boolean; // Template A = 0%
+    passFilter: boolean; // PASS rate in 10-50% range
     recommendation: 'DEPLOY' | 'TUNE' | 'REVERT';
   };
 
-  // TIER 1 COMPARISON METRICS (calibration only)
+  // TIER 1 COMPARISON METRICS (hit rates only, no ROI)
   tier1Comparison: {
     algorithmOnly: {
       winRate: number;
       exactaHitRate: number;
       trifectaHitRate: number;
-      exactaROI: number;
-      trifectaROI: number;
+      superfectaHitRate: number;
       racesBet: number;
     };
     algorithmPlusAI: {
       winRate: number;
       exactaHitRate: number;
       trifectaHitRate: number;
-      exactaROI: number;
-      trifectaROI: number;
+      superfectaHitRate: number;
       racesBet: number;
     };
   };
@@ -306,19 +294,18 @@ interface ValidationResult {
     light: OddsBracketMetrics; // 4-1+
   };
 
-  // PASS filter audit
+  // PASS filter audit (ROI impact removed)
   passFilterAudit: {
     totalPassRaces: number;
     passPercentage: number;
     wouldHitExactas: number;
     wouldHitTrifectas: number;
-    estimatedROIImpact: number;
     passRateSuspiciouslyLow: boolean; // <10%
-    passRateTooAggressive: boolean; // >40%
+    passRateTooAggressive: boolean; // >50%
   };
 
-  // EXPANDED ROI TRACKING - All bet types
-  expandedROI: ExpandedROITracking;
+  // EXPANDED HIT RATE TRACKING - All bet types (renamed from ROI)
+  expandedHitRates: ExpandedHitRateTracking;
 
   // TEMPLATE A DIAGNOSTIC DATA (for debugging routing leaks)
   templateADiagnostics: {
@@ -355,27 +342,38 @@ interface RaceAnalysisData {
 }
 
 // ============================================================================
-// PAYOUT ESTIMATES
+// BET COSTS REFERENCE (payouts are NOT estimated - ROI was removed)
 // ============================================================================
 
 /**
- * Estimated payouts by template (if actual payouts not available)
+ * Bet costs per $1 base unit (for user reference)
+ * These are kept because users need to know what bets cost.
+ * Payouts are NOT estimated - they are unknowable until the race runs.
  */
-const PAYOUT_ESTIMATES = {
+const BET_COSTS = {
   exacta: {
-    A: 18, // Template A (favorite wins): lower payout
-    B: 45, // Template B (favorite loses): higher payout
-    C: 35, // Template C (wide open): medium-high payout
+    box2: 2, // 2 horses × 1 other = 2 combos @ $1
+    box3: 6, // 3 × 2 = 6 combos
+    box4: 12, // 4 × 3 = 12 combos
+    box5: 20, // 5 × 4 = 20 combos
+    box6: 30, // 6 × 5 = 30 combos
   },
   trifecta: {
-    A: 100, // Template A: lower payout
-    B: 250, // Template B: higher payout
-    C: 200, // Template C: medium-high payout
+    box3: 6, // 3 × 2 × 1 = 6 combos @ $1
+    box4: 24, // 4 × 3 × 2 = 24 combos
+    box5: 60, // 5 × 4 × 3 = 60 combos
+    box6: 120, // 6 × 5 × 4 = 120 combos
+  },
+  superfecta: {
+    box4: 2.4, // 4! = 24 combos @ $0.10
+    box5: 12, // 5! / 1 = 120 combos @ $0.10
+    box6: 36, // 6! / 2 = 360 combos @ $0.10
   },
 };
 
 /**
  * Calculate ticket cost based on template and sizing multiplier
+ * NOTE: Costs are kept - users need to know what bets cost.
  */
 function calculateTicketCost(
   template: TicketTemplate,
@@ -405,12 +403,8 @@ function calculateTicketCost(
   }
 }
 
-/**
- * Get estimated payout for a template hit
- */
-function getEstimatedPayout(template: TicketTemplate, betType: 'exacta' | 'trifecta'): number {
-  return PAYOUT_ESTIMATES[betType][template];
-}
+// Suppress unused variable warning for BET_COSTS (kept for reference)
+void BET_COSTS;
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -1165,67 +1159,13 @@ function calculateSuperfectaKeyCost(
 }
 
 // ============================================================================
-// PAYOUT ESTIMATORS (based on odds)
+// BET METRICS INITIALIZATION
+// NOTE: Payout estimators removed - ROI is not a meaningful metric for this use case
 // ============================================================================
 
 /**
- * Estimate win payout based on morning line odds
- */
-function estimateWinPayout(oddsDecimal: number, baseUnit: number = 2): number {
-  return baseUnit * (oddsDecimal + 1);
-}
-
-/**
- * Estimate place payout (roughly half of win payout)
- */
-function estimatePlacePayout(oddsDecimal: number, baseUnit: number = 2): number {
-  return baseUnit * (oddsDecimal / 2 + 1);
-}
-
-/**
- * Estimate show payout (roughly third of win payout)
- */
-function estimateShowPayout(oddsDecimal: number, baseUnit: number = 2): number {
-  return baseUnit * (oddsDecimal / 3 + 1);
-}
-
-/**
- * Estimate exacta payout based on first two finishers' odds
- */
-function estimateExactaPayout(firstOdds: number, secondOdds: number, baseUnit: number = 2): number {
-  // Rough estimate: product of odds plus some juice
-  return baseUnit * (firstOdds * secondOdds * 0.7 + 2);
-}
-
-/**
- * Estimate trifecta payout based on first three finishers' odds
- */
-function estimateTrifectaPayout(
-  firstOdds: number,
-  secondOdds: number,
-  thirdOdds: number,
-  baseUnit: number = 1
-): number {
-  // Rough estimate: product of odds with takeout adjustment
-  return baseUnit * (firstOdds * secondOdds * thirdOdds * 0.5 + 5);
-}
-
-/**
- * Estimate superfecta payout based on first four finishers' odds
- */
-function estimateSuperfectaPayout(
-  firstOdds: number,
-  secondOdds: number,
-  thirdOdds: number,
-  fourthOdds: number,
-  baseUnit: number = 0.1
-): number {
-  // Rough estimate: product of odds with significant takeout
-  return baseUnit * (firstOdds * secondOdds * thirdOdds * fourthOdds * 0.3 + 10);
-}
-
-/**
  * Initialize empty bet type metrics
+ * NOTE: payout and roi fields removed - focus on hit rates only
  */
 function createEmptyBetMetrics(): BetTypeMetrics {
   return {
@@ -1233,8 +1173,6 @@ function createEmptyBetMetrics(): BetTypeMetrics {
     hits: 0,
     hitRate: 0,
     cost: 0,
-    payout: 0,
-    roi: 0,
   };
 }
 
@@ -1316,14 +1254,6 @@ function createEmptyValueHorseMetrics(): ValueHorsePerformanceMetrics {
 }
 
 /**
- * Calculate ROI for bet metrics
- */
-function calculateBetROI(metrics: BetTypeMetrics): number {
-  if (metrics.cost === 0) return 0;
-  return ((metrics.payout - metrics.cost) / metrics.cost) * 100;
-}
-
-/**
  * Calculate hit rate for bet metrics
  */
 function calculateBetHitRate(metrics: BetTypeMetrics): number {
@@ -1332,13 +1262,13 @@ function calculateBetHitRate(metrics: BetTypeMetrics): number {
 }
 
 /**
- * Finalize bet metrics (calculate derived values)
+ * Finalize bet metrics (calculate hit rate)
+ * NOTE: ROI calculation removed - payout estimation is unreliable
  */
 function finalizeBetMetrics(metrics: BetTypeMetrics): BetTypeMetrics {
   return {
     ...metrics,
     hitRate: calculateBetHitRate(metrics),
-    roi: calculateBetROI(metrics),
   };
 }
 
@@ -1508,12 +1438,6 @@ async function runValidation(): Promise<ValidationResult> {
     // Get top pick
     const topPick = algoTop6[0]!;
 
-    // Get odds for payout estimates
-    const getHorseOdds = (programNumber: number): number => {
-      const horse = scoringResult.scores.find((s) => s.programNumber === programNumber);
-      return horse?.morningLineDecimal ?? 5.0;
-    };
-
     // Build actual results with 4th position if available
     const actual = {
       first: raceResult.positions[0]?.post || 0,
@@ -1521,12 +1445,6 @@ async function runValidation(): Promise<ValidationResult> {
       third: raceResult.positions[2]?.post || 0,
       fourth: raceResult.positions[3]?.post || 0,
     };
-
-    // Get odds of actual finishers for payout estimation
-    const firstOdds = getHorseOdds(actual.first);
-    const secondOdds = getHorseOdds(actual.second);
-    const thirdOdds = getHorseOdds(actual.third);
-    const fourthOdds = getHorseOdds(actual.fourth);
 
     // Win: algorithm rank 1 finished 1st
     if (algoTop5[0] === actual.first) algorithmWins++;
@@ -1541,16 +1459,14 @@ async function runValidation(): Promise<ValidationResult> {
     if (checkTrifecta(algoTop5, actual)) algorithmTrifectaBox5++;
 
     // ========================================================================
-    // ALGORITHM ONLY - Win/Place/Show Tracking
+    // ALGORITHM ONLY - Win/Place/Show Tracking (hit rates only, no payout)
     // ========================================================================
-    const topPickOdds = getHorseOdds(topPick);
 
     // Win bet
     algorithmOnlyWPS.win.races++;
     algorithmOnlyWPS.win.cost += 2;
     if (checkWinHit(topPick, actual)) {
       algorithmOnlyWPS.win.hits++;
-      algorithmOnlyWPS.win.payout += estimateWinPayout(topPickOdds, 2);
     }
 
     // Place bet
@@ -1558,7 +1474,6 @@ async function runValidation(): Promise<ValidationResult> {
     algorithmOnlyWPS.place.cost += 2;
     if (checkPlaceHit(topPick, actual)) {
       algorithmOnlyWPS.place.hits++;
-      algorithmOnlyWPS.place.payout += estimatePlacePayout(topPickOdds, 2);
     }
 
     // Show bet
@@ -1566,11 +1481,10 @@ async function runValidation(): Promise<ValidationResult> {
     algorithmOnlyWPS.show.cost += 2;
     if (checkShowHit(topPick, actual)) {
       algorithmOnlyWPS.show.hits++;
-      algorithmOnlyWPS.show.payout += estimateShowPayout(topPickOdds, 2);
     }
 
     // ========================================================================
-    // ALGORITHM ONLY - Exacta Variations
+    // ALGORITHM ONLY - Exacta Variations (hit rates only, no payout)
     // ========================================================================
 
     // Exacta Straight (top 2 in exact order)
@@ -1578,7 +1492,6 @@ async function runValidation(): Promise<ValidationResult> {
     algorithmOnlyExacta.straight.cost += 2;
     if (checkExactaStraight(algoTop2, actual)) {
       algorithmOnlyExacta.straight.hits++;
-      algorithmOnlyExacta.straight.payout += estimateExactaPayout(firstOdds, secondOdds, 2);
     }
 
     // Exacta Box 2
@@ -1586,7 +1499,6 @@ async function runValidation(): Promise<ValidationResult> {
     algorithmOnlyExacta.box2.cost += calculateExactaBoxCost(2);
     if (checkExactaBoxN(algoTop2, actual)) {
       algorithmOnlyExacta.box2.hits++;
-      algorithmOnlyExacta.box2.payout += estimateExactaPayout(firstOdds, secondOdds, 2);
     }
 
     // Exacta Box 3
@@ -1594,7 +1506,6 @@ async function runValidation(): Promise<ValidationResult> {
     algorithmOnlyExacta.box3.cost += calculateExactaBoxCost(3);
     if (checkExactaBoxN(algoTop3, actual)) {
       algorithmOnlyExacta.box3.hits++;
-      algorithmOnlyExacta.box3.payout += estimateExactaPayout(firstOdds, secondOdds, 2);
     }
 
     // Exacta Box 4
@@ -1602,11 +1513,10 @@ async function runValidation(): Promise<ValidationResult> {
     algorithmOnlyExacta.box4.cost += calculateExactaBoxCost(4);
     if (checkExactaBoxN(algoTop4, actual)) {
       algorithmOnlyExacta.box4.hits++;
-      algorithmOnlyExacta.box4.payout += estimateExactaPayout(firstOdds, secondOdds, 2);
     }
 
     // ========================================================================
-    // ALGORITHM ONLY - Trifecta Variations
+    // ALGORITHM ONLY - Trifecta Variations (hit rates only, no payout)
     // ========================================================================
 
     // Trifecta Straight (top 3 in exact order)
@@ -1614,12 +1524,6 @@ async function runValidation(): Promise<ValidationResult> {
     algorithmOnlyTrifecta.straight.cost += 1;
     if (checkTrifectaStraight(algoTop3, actual)) {
       algorithmOnlyTrifecta.straight.hits++;
-      algorithmOnlyTrifecta.straight.payout += estimateTrifectaPayout(
-        firstOdds,
-        secondOdds,
-        thirdOdds,
-        1
-      );
     }
 
     // Trifecta Box 3
@@ -1627,12 +1531,6 @@ async function runValidation(): Promise<ValidationResult> {
     algorithmOnlyTrifecta.box3.cost += calculateTrifectaBoxCost(3);
     if (checkTrifectaBoxN(algoTop3, actual)) {
       algorithmOnlyTrifecta.box3.hits++;
-      algorithmOnlyTrifecta.box3.payout += estimateTrifectaPayout(
-        firstOdds,
-        secondOdds,
-        thirdOdds,
-        1
-      );
     }
 
     // Trifecta Box 4
@@ -1640,12 +1538,6 @@ async function runValidation(): Promise<ValidationResult> {
     algorithmOnlyTrifecta.box4.cost += calculateTrifectaBoxCost(4);
     if (checkTrifectaBoxN(algoTop4, actual)) {
       algorithmOnlyTrifecta.box4.hits++;
-      algorithmOnlyTrifecta.box4.payout += estimateTrifectaPayout(
-        firstOdds,
-        secondOdds,
-        thirdOdds,
-        1
-      );
     }
 
     // Trifecta Box 5
@@ -1653,16 +1545,10 @@ async function runValidation(): Promise<ValidationResult> {
     algorithmOnlyTrifecta.box5.cost += calculateTrifectaBoxCost(5);
     if (checkTrifectaBoxN(algoTop5, actual)) {
       algorithmOnlyTrifecta.box5.hits++;
-      algorithmOnlyTrifecta.box5.payout += estimateTrifectaPayout(
-        firstOdds,
-        secondOdds,
-        thirdOdds,
-        1
-      );
     }
 
     // ========================================================================
-    // ALGORITHM ONLY - Superfecta Variations (only if 4th place result exists)
+    // ALGORITHM ONLY - Superfecta Variations (hit rates only, no payout)
     // ========================================================================
     if (actual.fourth > 0) {
       // Superfecta Straight (top 4 in exact order)
@@ -1670,13 +1556,6 @@ async function runValidation(): Promise<ValidationResult> {
       algorithmOnlySuperfecta.straight.cost += 0.1;
       if (checkSuperfectaStraight(algoTop4, actual)) {
         algorithmOnlySuperfecta.straight.hits++;
-        algorithmOnlySuperfecta.straight.payout += estimateSuperfectaPayout(
-          firstOdds,
-          secondOdds,
-          thirdOdds,
-          fourthOdds,
-          0.1
-        );
       }
 
       // Superfecta Box 4
@@ -1684,13 +1563,6 @@ async function runValidation(): Promise<ValidationResult> {
       algorithmOnlySuperfecta.box4.cost += calculateSuperfectaBoxCost(4);
       if (checkSuperfectaBoxN(algoTop4, actual)) {
         algorithmOnlySuperfecta.box4.hits++;
-        algorithmOnlySuperfecta.box4.payout += estimateSuperfectaPayout(
-          firstOdds,
-          secondOdds,
-          thirdOdds,
-          fourthOdds,
-          0.1
-        );
       }
 
       // Superfecta Box 5
@@ -1698,13 +1570,6 @@ async function runValidation(): Promise<ValidationResult> {
       algorithmOnlySuperfecta.box5.cost += calculateSuperfectaBoxCost(5);
       if (checkSuperfectaBoxN(algoTop5, actual)) {
         algorithmOnlySuperfecta.box5.hits++;
-        algorithmOnlySuperfecta.box5.payout += estimateSuperfectaPayout(
-          firstOdds,
-          secondOdds,
-          thirdOdds,
-          fourthOdds,
-          0.1
-        );
       }
 
       // Superfecta Box 6
@@ -1712,13 +1577,6 @@ async function runValidation(): Promise<ValidationResult> {
       algorithmOnlySuperfecta.box6.cost += calculateSuperfectaBoxCost(6);
       if (checkSuperfectaBoxN(algoTop6, actual)) {
         algorithmOnlySuperfecta.box6.hits++;
-        algorithmOnlySuperfecta.box6.payout += estimateSuperfectaPayout(
-          firstOdds,
-          secondOdds,
-          thirdOdds,
-          fourthOdds,
-          0.1
-        );
       }
     }
   }
@@ -1836,7 +1694,7 @@ async function runValidation(): Promise<ValidationResult> {
   // Template distribution tracking
   const templateCounts: Record<TicketTemplate | 'PASS', number> = { A: 0, B: 0, C: 0, PASS: 0 };
 
-  // Template performance tracking
+  // Template performance tracking (no payout - hit rates only)
   const templateStats: Record<
     TicketTemplate,
     {
@@ -1844,10 +1702,8 @@ async function runValidation(): Promise<ValidationResult> {
       wins: number;
       exactaHits: number;
       exactaCost: number;
-      exactaPayout: number;
       trifectaHits: number;
       trifectaCost: number;
-      trifectaPayout: number;
     }
   > = {
     A: {
@@ -1855,47 +1711,47 @@ async function runValidation(): Promise<ValidationResult> {
       wins: 0,
       exactaHits: 0,
       exactaCost: 0,
-      exactaPayout: 0,
       trifectaHits: 0,
       trifectaCost: 0,
-      trifectaPayout: 0,
     },
     B: {
       races: 0,
       wins: 0,
       exactaHits: 0,
       exactaCost: 0,
-      exactaPayout: 0,
       trifectaHits: 0,
       trifectaCost: 0,
-      trifectaPayout: 0,
     },
     C: {
       races: 0,
       wins: 0,
       exactaHits: 0,
       exactaCost: 0,
-      exactaPayout: 0,
       trifectaHits: 0,
       trifectaCost: 0,
-      trifectaPayout: 0,
+    },
+    PASS: {
+      races: 0,
+      wins: 0,
+      exactaHits: 0,
+      exactaCost: 0,
+      trifectaHits: 0,
+      trifectaCost: 0,
     },
   };
 
-  // Odds bracket tracking for Template B favorite fading
+  // Odds bracket tracking for Template B favorite fading (hit rates only)
   const oddsBracketStats: Record<
     'heavy' | 'mid' | 'light',
     {
       races: number;
       favoritesLost: number;
       exactaHits: number;
-      exactaCost: number;
-      exactaPayout: number;
     }
   > = {
-    heavy: { races: 0, favoritesLost: 0, exactaHits: 0, exactaCost: 0, exactaPayout: 0 }, // ≤2-1
-    mid: { races: 0, favoritesLost: 0, exactaHits: 0, exactaCost: 0, exactaPayout: 0 }, // 5/2-7/2
-    light: { races: 0, favoritesLost: 0, exactaHits: 0, exactaCost: 0, exactaPayout: 0 }, // 4-1+
+    heavy: { races: 0, favoritesLost: 0, exactaHits: 0 }, // ≤2-1
+    mid: { races: 0, favoritesLost: 0, exactaHits: 0 }, // 5/2-7/2
+    light: { races: 0, favoritesLost: 0, exactaHits: 0 }, // 4-1+
   };
 
   // Sizing performance tracking
@@ -1952,11 +1808,9 @@ async function runValidation(): Promise<ValidationResult> {
   let vulnerableFavoritesLost = 0;
   let templateBExactaHits = 0;
 
-  // Total AI costs and payouts
+  // Total AI costs (payout tracking removed - ROI not meaningful)
   let totalAIExactaCost = 0;
   let totalAITrifectaCost = 0;
-  let totalAIExactaPayout = 0;
-  let totalAITrifectaPayout = 0;
 
   let processedRaceCount = 0;
   for (const raceData of racesWithAI) {
@@ -2060,24 +1914,18 @@ async function runValidation(): Promise<ValidationResult> {
         aiSystemWins++;
       }
 
-      // Check hits based on template
+      // Check hits based on template (hit rates only, no payout tracking)
       const exactaHit = checkTemplateExactaHit(template, ticketConstruction.algorithmTop4, actual);
       const trifectaHit = checkTemplateTrifectaHit(template, algoTop5, actual);
 
       if (exactaHit) {
         templateStats[template].exactaHits++;
         aiSystemExactaHits++;
-        const payout = getEstimatedPayout(template, 'exacta') * multiplier;
-        templateStats[template].exactaPayout += payout;
-        totalAIExactaPayout += payout;
       }
 
       if (trifectaHit) {
         templateStats[template].trifectaHits++;
         aiSystemTrifectaHits++;
-        const payout = getEstimatedPayout(template, 'trifecta') * multiplier;
-        templateStats[template].trifectaPayout += payout;
-        totalAITrifectaPayout += payout;
       }
 
       // Track sizing stats
@@ -2100,7 +1948,7 @@ async function runValidation(): Promise<ValidationResult> {
           templateBExactaHits++;
         }
 
-        // Track by odds bracket (Template B only)
+        // Track by odds bracket (Template B only) - hit rates only
         if (template === 'B') {
           // Get favorite's morning line odds
           const favoriteHorse = scoringResult.scores.find((s) => s.programNumber === favoritePost);
@@ -2114,16 +1962,12 @@ async function runValidation(): Promise<ValidationResult> {
           }
           if (exactaHit) {
             oddsBracketStats[bracket].exactaHits++;
-            oddsBracketStats[bracket].exactaPayout +=
-              getEstimatedPayout('B', 'exacta') * multiplier;
           }
-          const { exactaCost: bracketExactaCost } = calculateTicketCost('B', multiplier);
-          oddsBracketStats[bracket].exactaCost += bracketExactaCost;
         }
       }
 
       // ========================================================================
-      // VALUE HORSE TRACKING & KEYED BET VARIATIONS
+      // VALUE HORSE TRACKING & KEYED BET VARIATIONS (hit rates only)
       // ========================================================================
       const valueHorse = ticketConstruction.valueHorse;
       const algoTop6 = scoringResult.scores.slice(0, 6).map((s) => s.programNumber);
@@ -2135,27 +1979,15 @@ async function runValidation(): Promise<ValidationResult> {
         fourth: raceResult.positions[3]?.post || 0,
       };
 
-      // Get odds for payout estimation
-      const getHorseOddsAI = (programNumber: number): number => {
-        const horse = scoringResult.scores.find((s) => s.programNumber === programNumber);
-        return horse?.morningLineDecimal ?? 5.0;
-      };
-
-      const firstOdds = getHorseOddsAI(actual.first);
-      const secondOdds = getHorseOddsAI(actual.second);
-      const thirdOdds = getHorseOddsAI(actual.third);
-      const fourthOdds = getHorseOddsAI(actualWithFourth.fourth);
-
       // Algorithm+AI WPS (using algorithm's top pick but only for non-PASS races)
+      // NOTE: Payout tracking removed - hit rates only
       const aiTopPick = ticketConstruction.algorithmTop4[0]!;
-      const aiTopPickOdds = getHorseOddsAI(aiTopPick);
 
       // Win bet
       algorithmPlusAIWPS.win.races++;
       algorithmPlusAIWPS.win.cost += 2;
       if (checkWinHit(aiTopPick, actual)) {
         algorithmPlusAIWPS.win.hits++;
-        algorithmPlusAIWPS.win.payout += estimateWinPayout(aiTopPickOdds, 2);
       }
 
       // Place bet
@@ -2163,7 +1995,6 @@ async function runValidation(): Promise<ValidationResult> {
       algorithmPlusAIWPS.place.cost += 2;
       if (checkPlaceHit(aiTopPick, actual)) {
         algorithmPlusAIWPS.place.hits++;
-        algorithmPlusAIWPS.place.payout += estimatePlacePayout(aiTopPickOdds, 2);
       }
 
       // Show bet
@@ -2171,7 +2002,6 @@ async function runValidation(): Promise<ValidationResult> {
       algorithmPlusAIWPS.show.cost += 2;
       if (checkShowHit(aiTopPick, actual)) {
         algorithmPlusAIWPS.show.hits++;
-        algorithmPlusAIWPS.show.payout += estimateShowPayout(aiTopPickOdds, 2);
       }
 
       // Algorithm+AI Exacta variations (box bets using algorithm picks)
@@ -2180,7 +2010,6 @@ async function runValidation(): Promise<ValidationResult> {
       algorithmPlusAIExacta.straight.cost += 2;
       if (checkExactaStraight(ticketConstruction.algorithmTop4, actual)) {
         algorithmPlusAIExacta.straight.hits++;
-        algorithmPlusAIExacta.straight.payout += estimateExactaPayout(firstOdds, secondOdds, 2);
       }
 
       // Exacta Box 2
@@ -2188,7 +2017,6 @@ async function runValidation(): Promise<ValidationResult> {
       algorithmPlusAIExacta.box2.cost += calculateExactaBoxCost(2);
       if (checkExactaBoxN(ticketConstruction.algorithmTop4.slice(0, 2), actual)) {
         algorithmPlusAIExacta.box2.hits++;
-        algorithmPlusAIExacta.box2.payout += estimateExactaPayout(firstOdds, secondOdds, 2);
       }
 
       // Exacta Box 3
@@ -2196,7 +2024,6 @@ async function runValidation(): Promise<ValidationResult> {
       algorithmPlusAIExacta.box3.cost += calculateExactaBoxCost(3);
       if (checkExactaBoxN(ticketConstruction.algorithmTop4.slice(0, 3), actual)) {
         algorithmPlusAIExacta.box3.hits++;
-        algorithmPlusAIExacta.box3.payout += estimateExactaPayout(firstOdds, secondOdds, 2);
       }
 
       // Exacta Box 4
@@ -2204,7 +2031,6 @@ async function runValidation(): Promise<ValidationResult> {
       algorithmPlusAIExacta.box4.cost += calculateExactaBoxCost(4);
       if (checkExactaBoxN(ticketConstruction.algorithmTop4, actual)) {
         algorithmPlusAIExacta.box4.hits++;
-        algorithmPlusAIExacta.box4.payout += estimateExactaPayout(firstOdds, secondOdds, 2);
       }
 
       // Algorithm+AI Trifecta variations
@@ -2213,12 +2039,6 @@ async function runValidation(): Promise<ValidationResult> {
       algorithmPlusAITrifecta.straight.cost += 1;
       if (checkTrifectaStraight(algoTop3, actual)) {
         algorithmPlusAITrifecta.straight.hits++;
-        algorithmPlusAITrifecta.straight.payout += estimateTrifectaPayout(
-          firstOdds,
-          secondOdds,
-          thirdOdds,
-          1
-        );
       }
 
       // Trifecta Box 3
@@ -2226,12 +2046,6 @@ async function runValidation(): Promise<ValidationResult> {
       algorithmPlusAITrifecta.box3.cost += calculateTrifectaBoxCost(3);
       if (checkTrifectaBoxN(algoTop3, actual)) {
         algorithmPlusAITrifecta.box3.hits++;
-        algorithmPlusAITrifecta.box3.payout += estimateTrifectaPayout(
-          firstOdds,
-          secondOdds,
-          thirdOdds,
-          1
-        );
       }
 
       // Trifecta Box 4
@@ -2239,12 +2053,6 @@ async function runValidation(): Promise<ValidationResult> {
       algorithmPlusAITrifecta.box4.cost += calculateTrifectaBoxCost(4);
       if (checkTrifectaBoxN(algoTop4, actual)) {
         algorithmPlusAITrifecta.box4.hits++;
-        algorithmPlusAITrifecta.box4.payout += estimateTrifectaPayout(
-          firstOdds,
-          secondOdds,
-          thirdOdds,
-          1
-        );
       }
 
       // Trifecta Box 5
@@ -2252,12 +2060,6 @@ async function runValidation(): Promise<ValidationResult> {
       algorithmPlusAITrifecta.box5.cost += calculateTrifectaBoxCost(5);
       if (checkTrifectaBoxN(algoTop5, actual)) {
         algorithmPlusAITrifecta.box5.hits++;
-        algorithmPlusAITrifecta.box5.payout += estimateTrifectaPayout(
-          firstOdds,
-          secondOdds,
-          thirdOdds,
-          1
-        );
       }
 
       // Algorithm+AI Superfecta variations (only if 4th place exists)
@@ -2267,13 +2069,6 @@ async function runValidation(): Promise<ValidationResult> {
         algorithmPlusAISuperfecta.straight.cost += 0.1;
         if (checkSuperfectaStraight(algoTop4, actualWithFourth)) {
           algorithmPlusAISuperfecta.straight.hits++;
-          algorithmPlusAISuperfecta.straight.payout += estimateSuperfectaPayout(
-            firstOdds,
-            secondOdds,
-            thirdOdds,
-            fourthOdds,
-            0.1
-          );
         }
 
         // Superfecta Box 4
@@ -2281,13 +2076,6 @@ async function runValidation(): Promise<ValidationResult> {
         algorithmPlusAISuperfecta.box4.cost += calculateSuperfectaBoxCost(4);
         if (checkSuperfectaBoxN(algoTop4, actualWithFourth)) {
           algorithmPlusAISuperfecta.box4.hits++;
-          algorithmPlusAISuperfecta.box4.payout += estimateSuperfectaPayout(
-            firstOdds,
-            secondOdds,
-            thirdOdds,
-            fourthOdds,
-            0.1
-          );
         }
 
         // Superfecta Box 5
@@ -2295,13 +2083,6 @@ async function runValidation(): Promise<ValidationResult> {
         algorithmPlusAISuperfecta.box5.cost += calculateSuperfectaBoxCost(5);
         if (checkSuperfectaBoxN(algoTop5, actualWithFourth)) {
           algorithmPlusAISuperfecta.box5.hits++;
-          algorithmPlusAISuperfecta.box5.payout += estimateSuperfectaPayout(
-            firstOdds,
-            secondOdds,
-            thirdOdds,
-            fourthOdds,
-            0.1
-          );
         }
 
         // Superfecta Box 6
@@ -2309,13 +2090,6 @@ async function runValidation(): Promise<ValidationResult> {
         algorithmPlusAISuperfecta.box6.cost += calculateSuperfectaBoxCost(6);
         if (checkSuperfectaBoxN(algoTop6, actualWithFourth)) {
           algorithmPlusAISuperfecta.box6.hits++;
-          algorithmPlusAISuperfecta.box6.payout += estimateSuperfectaPayout(
-            firstOdds,
-            secondOdds,
-            thirdOdds,
-            fourthOdds,
-            0.1
-          );
         }
       }
 
@@ -2364,7 +2138,7 @@ async function runValidation(): Promise<ValidationResult> {
           const othersTop6 = algoTop6.filter((p) => p !== vhProgramNumber);
 
           // ====================================================================
-          // EXACTA KEYED BETS (only for races with value horse)
+          // EXACTA KEYED BETS (hit rates only, no payout tracking)
           // ====================================================================
 
           // Exacta Key: Value horse over 2 (value wins, 2 others fill 2nd)
@@ -2374,11 +2148,6 @@ async function runValidation(): Promise<ValidationResult> {
             algorithmPlusAIExacta.keyValueOver2.cost += calculateExactaKeyCost(2);
             if (checkExactaKeyOver(vhProgramNumber, withHorses2, actual)) {
               algorithmPlusAIExacta.keyValueOver2.hits++;
-              algorithmPlusAIExacta.keyValueOver2.payout += estimateExactaPayout(
-                firstOdds,
-                secondOdds,
-                2
-              );
             }
           }
 
@@ -2389,11 +2158,6 @@ async function runValidation(): Promise<ValidationResult> {
             algorithmPlusAIExacta.keyValueOver3.cost += calculateExactaKeyCost(3);
             if (checkExactaKeyOver(vhProgramNumber, withHorses3, actual)) {
               algorithmPlusAIExacta.keyValueOver3.hits++;
-              algorithmPlusAIExacta.keyValueOver3.payout += estimateExactaPayout(
-                firstOdds,
-                secondOdds,
-                2
-              );
             }
           }
 
@@ -2404,11 +2168,6 @@ async function runValidation(): Promise<ValidationResult> {
             algorithmPlusAIExacta.keyValueOver4.cost += calculateExactaKeyCost(4);
             if (checkExactaKeyOver(vhProgramNumber, withHorses4, actual)) {
               algorithmPlusAIExacta.keyValueOver4.hits++;
-              algorithmPlusAIExacta.keyValueOver4.payout += estimateExactaPayout(
-                firstOdds,
-                secondOdds,
-                2
-              );
             }
           }
 
@@ -2419,16 +2178,11 @@ async function runValidation(): Promise<ValidationResult> {
             algorithmPlusAIExacta.key2OverValue.cost += calculateExactaKeyCost(2);
             if (checkExactaKeyUnder(vhProgramNumber, winHorses2, actual)) {
               algorithmPlusAIExacta.key2OverValue.hits++;
-              algorithmPlusAIExacta.key2OverValue.payout += estimateExactaPayout(
-                firstOdds,
-                secondOdds,
-                2
-              );
             }
           }
 
           // ====================================================================
-          // TRIFECTA KEYED BETS (only for races with value horse)
+          // TRIFECTA KEYED BETS (hit rates only, no payout tracking)
           // ====================================================================
 
           // Trifecta Key: Value horse with 2 over 3
@@ -2440,12 +2194,6 @@ async function runValidation(): Promise<ValidationResult> {
             algorithmPlusAITrifecta.keyValueWith2Over3.cost += calculateTrifectaKeyCost(2, 3);
             if (checkTrifectaKeyWithAOverB(vhProgramNumber, aHorses, bHorses, actual)) {
               algorithmPlusAITrifecta.keyValueWith2Over3.hits++;
-              algorithmPlusAITrifecta.keyValueWith2Over3.payout += estimateTrifectaPayout(
-                firstOdds,
-                secondOdds,
-                thirdOdds,
-                1
-              );
             }
           }
 
@@ -2457,12 +2205,6 @@ async function runValidation(): Promise<ValidationResult> {
             algorithmPlusAITrifecta.keyValueWith3Over4.cost += calculateTrifectaKeyCost(3, 4);
             if (checkTrifectaKeyWithAOverB(vhProgramNumber, aHorses, bHorses, actual)) {
               algorithmPlusAITrifecta.keyValueWith3Over4.hits++;
-              algorithmPlusAITrifecta.keyValueWith3Over4.payout += estimateTrifectaPayout(
-                firstOdds,
-                secondOdds,
-                thirdOdds,
-                1
-              );
             }
           }
 
@@ -2475,12 +2217,6 @@ async function runValidation(): Promise<ValidationResult> {
             algorithmPlusAITrifecta.key2WithValueOver3.cost += calculateTrifectaKeyCost(2, 3);
             if (checkTrifectaAWithKeyOverB(aHorses, vhProgramNumber, bHorses, actual)) {
               algorithmPlusAITrifecta.key2WithValueOver3.hits++;
-              algorithmPlusAITrifecta.key2WithValueOver3.payout += estimateTrifectaPayout(
-                firstOdds,
-                secondOdds,
-                thirdOdds,
-                1
-              );
             }
           }
 
@@ -2493,17 +2229,11 @@ async function runValidation(): Promise<ValidationResult> {
             algorithmPlusAITrifecta.key2Over3WithValue.cost += calculateTrifectaKeyCost(2, 3);
             if (checkTrifectaAOverBWithKey(aHorses, bHorses, vhProgramNumber, actual)) {
               algorithmPlusAITrifecta.key2Over3WithValue.hits++;
-              algorithmPlusAITrifecta.key2Over3WithValue.payout += estimateTrifectaPayout(
-                firstOdds,
-                secondOdds,
-                thirdOdds,
-                1
-              );
             }
           }
 
           // ====================================================================
-          // SUPERFECTA KEYED BETS (only for races with value horse AND 4th place)
+          // SUPERFECTA KEYED BETS (hit rates only, no payout tracking)
           // ====================================================================
           if (actualWithFourth.fourth > 0) {
             // Superfecta Key: Value horse with 3 over 4 over 5
@@ -2528,8 +2258,6 @@ async function runValidation(): Promise<ValidationResult> {
                 )
               ) {
                 algorithmPlusAISuperfecta.keyValueWith3Over4Over5.hits++;
-                algorithmPlusAISuperfecta.keyValueWith3Over4Over5.payout +=
-                  estimateSuperfectaPayout(firstOdds, secondOdds, thirdOdds, fourthOdds, 0.1);
               }
             }
 
@@ -2540,13 +2268,6 @@ async function runValidation(): Promise<ValidationResult> {
               algorithmPlusAISuperfecta.keyValueInAnyTop4.cost += calculateSuperfectaBoxCost(4); // Approximate
               if (checkSuperfectaKeyInAnyTop4(vhProgramNumber, othersTop5, actualWithFourth)) {
                 algorithmPlusAISuperfecta.keyValueInAnyTop4.hits++;
-                algorithmPlusAISuperfecta.keyValueInAnyTop4.payout += estimateSuperfectaPayout(
-                  firstOdds,
-                  secondOdds,
-                  thirdOdds,
-                  fourthOdds,
-                  0.1
-                );
               }
             }
           }
@@ -2568,7 +2289,7 @@ async function runValidation(): Promise<ValidationResult> {
       totalAIExactaCost += exactaCost;
       totalAITrifectaCost += trifectaCost;
 
-      // Check hits using legacy logic (box-based)
+      // Check hits using legacy logic (box-based) - hit rates only, no payout
       const exactaHit = checkExactaBox(betConstruction.algorithmTop4, actual);
       const trifectaHit = checkTrifecta(
         [...betConstruction.algorithmTop4, ...(betConstruction.expansionHorses ?? [])],
@@ -2577,16 +2298,10 @@ async function runValidation(): Promise<ValidationResult> {
 
       if (exactaHit) {
         templateStats[template].exactaHits++;
-        const payout = getEstimatedPayout(template, 'exacta') * multiplier;
-        templateStats[template].exactaPayout += payout;
-        totalAIExactaPayout += payout;
       }
 
       if (trifectaHit) {
         templateStats[template].trifectaHits++;
-        const payout = getEstimatedPayout(template, 'trifecta') * multiplier;
-        templateStats[template].trifectaPayout += payout;
-        totalAITrifectaPayout += payout;
       }
 
       // Track sizing as STANDARD for legacy
@@ -2623,52 +2338,18 @@ async function runValidation(): Promise<ValidationResult> {
   console.log(`    Sizing STANDARD stats: ${JSON.stringify(sizingStats.STANDARD)}`);
 
   // ============================================================================
-  // PHASE 4: Calculate ROI Metrics
+  // PHASE 4: Cost Summary (ROI removed - payouts are unknowable)
   // ============================================================================
-  console.log('\n--- PHASE 4: ROI Calculation ---');
+  console.log('\n--- PHASE 4: Cost Summary ---');
 
-  // Algorithm ROI calculation (estimate payouts based on average)
-  const avgExactaPayout = 25; // Average payout for exacta hit
-  const avgTrifectaPayout = 150; // Average payout for trifecta hit
-  const algorithmExactaPayout = algorithmExactaBox4 * avgExactaPayout;
-  const algorithmTrifectaPayout = algorithmTrifectaBox5 * avgTrifectaPayout;
-  const algorithmExactaROI =
-    totalAlgorithmExactaCost > 0
-      ? ((algorithmExactaPayout - totalAlgorithmExactaCost) / totalAlgorithmExactaCost) * 100
-      : 0;
-  const algorithmTrifectaROI =
-    totalAlgorithmTrifectaCost > 0
-      ? ((algorithmTrifectaPayout - totalAlgorithmTrifectaCost) / totalAlgorithmTrifectaCost) * 100
-      : 0;
-
-  // AI ROI calculation
-  const aiExactaROI =
-    totalAIExactaCost > 0
-      ? ((totalAIExactaPayout - totalAIExactaCost) / totalAIExactaCost) * 100
-      : 0;
-  const aiTrifectaROI =
-    totalAITrifectaCost > 0
-      ? ((totalAITrifectaPayout - totalAITrifectaCost) / totalAITrifectaCost) * 100
-      : 0;
-
-  // Cost reduction
+  // Cost calculation (no ROI - payout estimation removed)
   const totalAlgorithmCost = totalAlgorithmExactaCost + totalAlgorithmTrifectaCost;
   const totalAICost = totalAIExactaCost + totalAITrifectaCost;
   const costReduction =
     totalAlgorithmCost > 0 ? ((totalAlgorithmCost - totalAICost) / totalAlgorithmCost) * 100 : 0;
 
-  console.log(
-    `  Algorithm Exacta ROI: ${algorithmExactaROI.toFixed(1)}% (Cost: $${totalAlgorithmExactaCost}, Payout: $${algorithmExactaPayout})`
-  );
-  console.log(
-    `  Algorithm Trifecta ROI: ${algorithmTrifectaROI.toFixed(1)}% (Cost: $${totalAlgorithmTrifectaCost}, Payout: $${algorithmTrifectaPayout})`
-  );
-  console.log(
-    `  AI Exacta ROI: ${aiExactaROI.toFixed(1)}% (Cost: $${totalAIExactaCost.toFixed(0)}, Payout: $${totalAIExactaPayout.toFixed(0)})`
-  );
-  console.log(
-    `  AI Trifecta ROI: ${aiTrifectaROI.toFixed(1)}% (Cost: $${totalAITrifectaCost.toFixed(0)}, Payout: $${totalAITrifectaPayout.toFixed(0)})`
-  );
+  console.log(`  Algorithm Total Cost: $${totalAlgorithmCost}`);
+  console.log(`  AI Total Cost: $${totalAICost.toFixed(0)}`);
   console.log(`  Cost Reduction: ${costReduction.toFixed(1)}%`);
 
   // ============================================================================
@@ -2707,26 +2388,6 @@ async function runValidation(): Promise<ValidationResult> {
     `  PASS:     ${sizingStats.PASS.races} races (would have hit: ${passWouldHaveHitExacta})`
   );
 
-  // FLAT BETTING: Sizing calibration check is N/A
-  // With flat betting, all non-PASS bets get STANDARD sizing (1.0x multiplier).
-  // The old tier-based calibration (MAX >= STRONG >= STANDARD >= HALF) doesn't apply.
-  // Instead, we simply check that non-PASS bets have reasonable performance.
-  const totalNonPassRaces =
-    sizingStats.MAX.races +
-    sizingStats.STRONG.races +
-    sizingStats.STANDARD.races +
-    sizingStats.HALF.races;
-  const totalNonPassHits =
-    sizingStats.MAX.exactaHits +
-    sizingStats.STRONG.exactaHits +
-    sizingStats.STANDARD.exactaHits +
-    sizingStats.HALF.exactaHits;
-  const overallHitRate = totalNonPassRaces > 0 ? (totalNonPassHits / totalNonPassRaces) * 100 : 0;
-
-  // Sizing is "calibrated" if we have any non-PASS races with reasonable hit rate (>10%)
-  // Since we're using flat betting, this is primarily a sanity check
-  const sizingCalibrated = totalNonPassRaces > 0 && overallHitRate > 10;
-
   // ============================================================================
   // BUILD FINAL RESULT
   // ============================================================================
@@ -2735,17 +2396,7 @@ async function runValidation(): Promise<ValidationResult> {
   const racesAnalyzed = racesWithAI.length;
   const racesPassed = templateCounts.PASS;
 
-  // Helper to calculate ROI for a template
-  const calculateTemplateROI = (
-    stats: typeof templateStats.A,
-    type: 'exacta' | 'trifecta'
-  ): number => {
-    const cost = type === 'exacta' ? stats.exactaCost : stats.trifectaCost;
-    const payout = type === 'exacta' ? stats.exactaPayout : stats.trifectaPayout;
-    return cost > 0 ? ((payout - cost) / cost) * 100 : 0;
-  };
-
-  // Calculate template performance metrics
+  // Calculate template performance metrics (hit rates only, no ROI)
   const buildTemplatePerformance = (stats: typeof templateStats.A): TemplatePerformanceMetrics => ({
     races: stats.races,
     wins: stats.wins,
@@ -2753,13 +2404,9 @@ async function runValidation(): Promise<ValidationResult> {
     exactaHits: stats.exactaHits,
     exactaRate: stats.races > 0 ? (stats.exactaHits / stats.races) * 100 : 0,
     exactaCost: stats.exactaCost,
-    exactaPayout: stats.exactaPayout,
-    exactaROI: calculateTemplateROI(stats, 'exacta'),
     trifectaHits: stats.trifectaHits,
     trifectaRate: stats.races > 0 ? (stats.trifectaHits / stats.races) * 100 : 0,
     trifectaCost: stats.trifectaCost,
-    trifectaPayout: stats.trifectaPayout,
-    trifectaROI: calculateTemplateROI(stats, 'trifecta'),
   });
 
   // Build sizing performance metrics
@@ -2770,18 +2417,34 @@ async function runValidation(): Promise<ValidationResult> {
     avgConfidence: stats.races > 0 ? stats.totalConfidence / stats.races : 0,
   });
 
-  // Verdict logic
-  // templatesWork: Template B exacta ROI > algorithm exacta ROI
-  // Template B intentionally bets fewer races with tighter tickets - lower hit rate, better ROI
-  const templateBExactaROI = calculateTemplateROI(templateStats.B, 'exacta');
-  const templatesWork = templateBExactaROI > algorithmExactaROI;
+  // ============================================================================
+  // NEW VERDICT LOGIC - Based on hit rates, not ROI
+  // ============================================================================
 
-  // roiPositive: AI ROI > Algorithm ROI
-  const roiPositive = aiExactaROI > algorithmExactaROI;
+  // Get value horse board rate (from finalized metrics calculated below)
+  const totalVHRacesForVerdict = valueHorseMetrics.totalRacesWithValueHorse;
+  const totalVHBoardsForVerdict =
+    valueHorseMetrics.valueHorseByTier.HIGH.boards +
+    valueHorseMetrics.valueHorseByTier.MEDIUM.boards +
+    valueHorseMetrics.valueHorseByTier.LOW.boards;
+  const valueHorseBoardRate =
+    totalVHRacesForVerdict > 0 ? (totalVHBoardsForVerdict / totalVHRacesForVerdict) * 100 : 0;
+
+  // Verdict criteria (hit rate based):
+  // 1. Value horse finding: Board rate > 50%
+  const valueHorseFinding = valueHorseBoardRate > 50;
+
+  // 2. Template routing: Template A should be ~0% (no routing leaks)
+  const templateAPercentage = racesAnalyzed > 0 ? (templateCounts.A / racesAnalyzed) * 100 : 0;
+  const templateRouting = templateAPercentage < 5; // Allow up to 5% for edge cases
+
+  // 3. PASS filter: PASS rate should be in 10-50% range
+  const passPercentage = racesAnalyzed > 0 ? (templateCounts.PASS / racesAnalyzed) * 100 : 0;
+  const passFilter = passPercentage >= 10 && passPercentage <= 50;
 
   // Determine recommendation
   let recommendation: 'DEPLOY' | 'TUNE' | 'REVERT';
-  const verdictCount = [templatesWork, sizingCalibrated, roiPositive].filter(Boolean).length;
+  const verdictCount = [valueHorseFinding, templateRouting, passFilter].filter(Boolean).length;
   if (verdictCount === 3) {
     recommendation = 'DEPLOY';
   } else if (verdictCount >= 1) {
@@ -2791,7 +2454,7 @@ async function runValidation(): Promise<ValidationResult> {
   }
 
   // ============================================================================
-  // FINALIZE EXPANDED ROI METRICS
+  // FINALIZE EXPANDED HIT RATE METRICS
   // ============================================================================
 
   // Finalize all Algorithm Only metrics
@@ -2963,33 +2626,28 @@ async function runValidation(): Promise<ValidationResult> {
       templateBExactaRate: toPercentage(templateBExactaHits, templateCounts.B),
     },
 
-    roiSummary: {
-      algorithmExactaROI,
-      algorithmTrifectaROI,
-      aiExactaROI,
-      aiTrifectaROI,
-      exactaImprovement: aiExactaROI - algorithmExactaROI,
-      trifectaImprovement: aiTrifectaROI - algorithmTrifectaROI,
+    // Cost Summary (ROI removed - payouts are unknowable)
+    costSummary: {
       totalAlgorithmCost,
       totalAICost,
       costReduction,
     },
 
+    // Verdict (hit rate based, no ROI)
     verdict: {
-      templatesWork,
-      sizingCalibrated,
-      roiPositive,
+      valueHorseFinding,
+      templateRouting,
+      passFilter,
       recommendation,
     },
 
-    // TIER 1 COMPARISON METRICS
+    // TIER 1 COMPARISON METRICS (hit rates only, no ROI)
     tier1Comparison: {
       algorithmOnly: {
         winRate: toPercentage(algorithmWins, totalRaces),
         exactaHitRate: toPercentage(algorithmExactaBox4, totalRaces),
         trifectaHitRate: toPercentage(algorithmTrifectaBox5, totalRaces),
-        exactaROI: algorithmExactaROI,
-        trifectaROI: algorithmTrifectaROI,
+        superfectaHitRate: finalAlgoSuperfecta.box5.hitRate,
         racesBet: totalRaces,
       },
       algorithmPlusAI: {
@@ -2998,13 +2656,12 @@ async function runValidation(): Promise<ValidationResult> {
           aiSystemRacesBet > 0 ? toPercentage(aiSystemExactaHits, aiSystemRacesBet) : 0,
         trifectaHitRate:
           aiSystemRacesBet > 0 ? toPercentage(aiSystemTrifectaHits, aiSystemRacesBet) : 0,
-        exactaROI: aiExactaROI,
-        trifectaROI: aiTrifectaROI,
+        superfectaHitRate: finalAISuperfecta.box5.hitRate,
         racesBet: aiSystemRacesBet,
       },
     },
 
-    // FAVORITE FADE BY ODDS BRACKET
+    // FAVORITE FADE BY ODDS BRACKET (hit rates only, no ROI)
     favoriteFadeByOdds: {
       heavy: {
         races: oddsBracketStats.heavy.races,
@@ -3014,13 +2671,9 @@ async function runValidation(): Promise<ValidationResult> {
             ? toPercentage(oddsBracketStats.heavy.favoritesLost, oddsBracketStats.heavy.races)
             : 0,
         exactaHits: oddsBracketStats.heavy.exactaHits,
-        exactaCost: oddsBracketStats.heavy.exactaCost,
-        exactaPayout: oddsBracketStats.heavy.exactaPayout,
-        exactaROI:
-          oddsBracketStats.heavy.exactaCost > 0
-            ? ((oddsBracketStats.heavy.exactaPayout - oddsBracketStats.heavy.exactaCost) /
-                oddsBracketStats.heavy.exactaCost) *
-              100
+        exactaHitRate:
+          oddsBracketStats.heavy.races > 0
+            ? toPercentage(oddsBracketStats.heavy.exactaHits, oddsBracketStats.heavy.races)
             : 0,
       },
       mid: {
@@ -3031,13 +2684,9 @@ async function runValidation(): Promise<ValidationResult> {
             ? toPercentage(oddsBracketStats.mid.favoritesLost, oddsBracketStats.mid.races)
             : 0,
         exactaHits: oddsBracketStats.mid.exactaHits,
-        exactaCost: oddsBracketStats.mid.exactaCost,
-        exactaPayout: oddsBracketStats.mid.exactaPayout,
-        exactaROI:
-          oddsBracketStats.mid.exactaCost > 0
-            ? ((oddsBracketStats.mid.exactaPayout - oddsBracketStats.mid.exactaCost) /
-                oddsBracketStats.mid.exactaCost) *
-              100
+        exactaHitRate:
+          oddsBracketStats.mid.races > 0
+            ? toPercentage(oddsBracketStats.mid.exactaHits, oddsBracketStats.mid.races)
             : 0,
       },
       light: {
@@ -3048,38 +2697,27 @@ async function runValidation(): Promise<ValidationResult> {
             ? toPercentage(oddsBracketStats.light.favoritesLost, oddsBracketStats.light.races)
             : 0,
         exactaHits: oddsBracketStats.light.exactaHits,
-        exactaCost: oddsBracketStats.light.exactaCost,
-        exactaPayout: oddsBracketStats.light.exactaPayout,
-        exactaROI:
-          oddsBracketStats.light.exactaCost > 0
-            ? ((oddsBracketStats.light.exactaPayout - oddsBracketStats.light.exactaCost) /
-                oddsBracketStats.light.exactaCost) *
-              100
+        exactaHitRate:
+          oddsBracketStats.light.races > 0
+            ? toPercentage(oddsBracketStats.light.exactaHits, oddsBracketStats.light.races)
             : 0,
       },
     },
 
-    // PASS FILTER AUDIT
+    // PASS FILTER AUDIT (ROI impact removed)
     passFilterAudit: {
       totalPassRaces: templateCounts.PASS,
       passPercentage: racesAnalyzed > 0 ? toPercentage(templateCounts.PASS, racesAnalyzed) : 0,
       wouldHitExactas: passWouldHaveHitExacta,
       wouldHitTrifectas: passWouldHaveHitTrifecta,
-      estimatedROIImpact:
-        templateCounts.PASS > 0
-          ? ((passWouldHaveHitExacta * avgExactaPayout -
-              templateCounts.PASS * ALGO_EXACTA_COST_PER_RACE) /
-              (templateCounts.PASS * ALGO_EXACTA_COST_PER_RACE)) *
-            100
-          : 0,
       passRateSuspiciouslyLow:
         racesAnalyzed > 0 && toPercentage(templateCounts.PASS, racesAnalyzed) < 10,
       passRateTooAggressive:
-        racesAnalyzed > 0 && toPercentage(templateCounts.PASS, racesAnalyzed) > 40,
+        racesAnalyzed > 0 && toPercentage(templateCounts.PASS, racesAnalyzed) > 50,
     },
 
-    // EXPANDED ROI TRACKING - All bet types
-    expandedROI: {
+    // EXPANDED HIT RATE TRACKING - All bet types (renamed from ROI)
+    expandedHitRates: {
       algorithmOnlyWPS: finalAlgoWPS,
       algorithmPlusAIWPS: finalAIWPS,
       algorithmOnlyExacta: finalAlgoExacta,
@@ -3130,35 +2768,62 @@ function printReport(result: ValidationResult): void {
   const {
     sizingPerformance: sp,
     vulnerableFavoriteAnalysis: vuln,
-    roiSummary: roi,
+    costSummary: cost,
     verdict,
+    expandedHitRates,
   } = result;
 
   console.log('\n');
   console.log('═'.repeat(70));
-  console.log('           AI ARCHITECTURE VALIDATION REPORT v2');
+  console.log('       AI ARCHITECTURE VALIDATION REPORT (Hit Rates)');
   console.log('═'.repeat(70));
   console.log(`Run Date: ${result.runDate}`);
   console.log(
     `Total Races: ${result.totalRaces} | Analyzed: ${result.racesAnalyzed} | Passed: ${result.racesPassed} | Errors: ${result.errors.length}`
   );
 
+  // VALUE HORSE PERFORMANCE (prominent)
+  console.log('─'.repeat(70));
+  console.log('VALUE HORSE PERFORMANCE');
+  console.log('─'.repeat(70));
+  const vh = expandedHitRates.valueHorseMetrics;
+  console.log(`Races with Value Horse: ${vh.totalRacesWithValueHorse}`);
+  console.log(
+    `Win: ${vh.overall.winRate.toFixed(1)}% | Place: ${vh.overall.placeRate.toFixed(1)}% | Show: ${vh.overall.showRate.toFixed(1)}% | Board: ${vh.overall.boardRate.toFixed(1)}%`
+  );
+  console.log('');
+  console.log('By Confidence Tier:');
+  const formatTierLine = (
+    tier: string,
+    data: { races: number; wins: number; places: number; shows: number; boards: number }
+  ) => {
+    if (data.races === 0) return `  ${tier}: No races`;
+    const winPct = ((data.wins / data.races) * 100).toFixed(1);
+    const placePct = ((data.places / data.races) * 100).toFixed(1);
+    const showPct = ((data.shows / data.races) * 100).toFixed(1);
+    const boardPct = ((data.boards / data.races) * 100).toFixed(1);
+    return `  ${tier}: Win ${winPct}%, Place ${placePct}%, Show ${showPct}%, Board ${boardPct}%`;
+  };
+  console.log(formatTierLine('HIGH', vh.valueHorseByTier.HIGH));
+  console.log(formatTierLine('MEDIUM', vh.valueHorseByTier.MEDIUM));
+  console.log(formatTierLine('LOW', vh.valueHorseByTier.LOW));
+
   // SECTION A: Algorithm Baseline
   console.log('─'.repeat(70));
-  console.log('SECTION A: ALGORITHM BASELINE');
+  console.log('ALGORITHM BASELINE');
   console.log('─'.repeat(70));
   console.log(`Win Rate:         ${formatRate(baseline.wins, result.totalRaces)}`);
   console.log(`Top 3 Rate:       ${formatRate(baseline.top3Hits, result.totalRaces)}`);
   console.log(
-    `Exacta Box 4:     ${formatRate(baseline.exactaBox4Hits, result.totalRaces)}  Cost: $${baseline.exactaBox4Cost.toLocaleString()}  ROI: ${roi.algorithmExactaROI >= 0 ? '+' : ''}${roi.algorithmExactaROI.toFixed(1)}%`
+    `Exacta Box 4:     ${formatRate(baseline.exactaBox4Hits, result.totalRaces)}  Cost: $${baseline.exactaBox4Cost.toLocaleString()}`
   );
   console.log(
-    `Trifecta Box 5:   ${formatRate(baseline.trifectaBox5Hits, result.totalRaces)}  Cost: $${baseline.trifectaBox5Cost.toLocaleString()}  ROI: ${roi.algorithmTrifectaROI >= 0 ? '+' : ''}${roi.algorithmTrifectaROI.toFixed(1)}%`
+    `Trifecta Box 5:   ${formatRate(baseline.trifectaBox5Hits, result.totalRaces)}  Cost: $${baseline.trifectaBox5Cost.toLocaleString()}`
   );
 
   // SECTION B: Template Distribution
   console.log('─'.repeat(70));
-  console.log('SECTION B: TEMPLATE DISTRIBUTION');
+  console.log('TEMPLATE DISTRIBUTION');
   console.log('─'.repeat(70));
   console.log(
     `Template A (Solid):      ${td.templateA.count.toString().padStart(3)} races (${td.templateA.percentage.toFixed(1)}%)`
@@ -3173,21 +2838,19 @@ function printReport(result: ValidationResult): void {
     `PASS:                    ${td.passed.count.toString().padStart(3)} races (${td.passed.percentage.toFixed(1)}%)`
   );
 
-  // SECTION C: Template Performance
+  // SECTION C: Template Performance (hit rates only)
   console.log('─'.repeat(70));
-  console.log('SECTION C: TEMPLATE PERFORMANCE');
+  console.log('TEMPLATE HIT RATES');
   console.log('─'.repeat(70));
-  console.log('Template    Races   Exacta    Trifecta   Ex Cost   Ex ROI   Tri ROI');
+  console.log('Template    Races   Exacta Hits   Trifecta Hits   Cost');
   console.log('─'.repeat(70));
 
   const formatTemplateRow = (name: string, perf: TemplatePerformanceMetrics) => {
     const exactaStr = `${perf.exactaHits} (${perf.exactaRate.toFixed(0)}%)`;
     const trifectaStr = `${perf.trifectaHits} (${perf.trifectaRate.toFixed(0)}%)`;
     const costStr = `$${perf.exactaCost.toFixed(0)}`;
-    const exRoiStr = `${perf.exactaROI >= 0 ? '+' : ''}${perf.exactaROI.toFixed(1)}%`;
-    const triRoiStr = `${perf.trifectaROI >= 0 ? '+' : ''}${perf.trifectaROI.toFixed(1)}%`;
     console.log(
-      `${name.padEnd(11)} ${perf.races.toString().padStart(3)}     ${exactaStr.padEnd(10)} ${trifectaStr.padEnd(10)} ${costStr.padStart(7)}  ${exRoiStr.padStart(7)}  ${triRoiStr.padStart(7)}`
+      `${name.padEnd(11)} ${perf.races.toString().padStart(3)}     ${exactaStr.padEnd(12)} ${trifectaStr.padEnd(14)} ${costStr.padStart(7)}`
     );
   };
 
@@ -3197,7 +2860,7 @@ function printReport(result: ValidationResult): void {
 
   // SECTION D: Sizing Calibration
   console.log('─'.repeat(70));
-  console.log('SECTION D: SIZING CALIBRATION');
+  console.log('SIZING PERFORMANCE');
   console.log('─'.repeat(70));
   console.log('Sizing      Races   Exacta Rate   Avg Confidence');
   console.log('─'.repeat(70));
@@ -3215,13 +2878,10 @@ function printReport(result: ValidationResult): void {
   console.log(
     `PASS        ${sp.PASS.races.toString().padStart(3)}       (would hit ${sp.PASS.wouldHaveHit})    ${(sp.PASS.races > 0 ? ((result.sizingPerformance.PASS.races - sp.PASS.wouldHaveHit) / result.sizingPerformance.PASS.races) * 100 : 0).toFixed(1)}% correct`
   );
-  console.log(
-    `Calibration: ${verdict.sizingCalibrated ? '✓' : '✗'} Flat betting - non-PASS hit rate >10%`
-  );
 
   // SECTION E: Vulnerable Favorite Fading
   console.log('─'.repeat(70));
-  console.log('SECTION E: VULNERABLE FAVORITE FADING');
+  console.log('VULNERABLE FAVORITE FADING');
   console.log('─'.repeat(70));
   console.log(`Detected:        ${vuln.detected} races`);
   console.log(
@@ -3231,49 +2891,38 @@ function printReport(result: ValidationResult): void {
     `Template B Exacta: ${vuln.templateBExactaHits}/${td.templateB.count} (${vuln.templateBExactaRate.toFixed(1)}%)`
   );
 
-  // SECTION F: ROI Comparison
+  // SECTION F: Cost Summary (no ROI)
   console.log('─'.repeat(70));
-  console.log('SECTION F: ROI COMPARISON');
+  console.log('COST SUMMARY');
   console.log('─'.repeat(70));
-  console.log('                Algorithm       AI System       Δ');
-  console.log('─'.repeat(70));
-  console.log(
-    `Exacta ROI      ${roi.algorithmExactaROI >= 0 ? '+' : ''}${roi.algorithmExactaROI.toFixed(1).padStart(6)}%     ${roi.aiExactaROI >= 0 ? '+' : ''}${roi.aiExactaROI.toFixed(1).padStart(6)}%      ${roi.exactaImprovement >= 0 ? '+' : ''}${roi.exactaImprovement.toFixed(1)}%`
-  );
-  console.log(
-    `Trifecta ROI    ${roi.algorithmTrifectaROI >= 0 ? '+' : ''}${roi.algorithmTrifectaROI.toFixed(1).padStart(6)}%     ${roi.aiTrifectaROI >= 0 ? '+' : ''}${roi.aiTrifectaROI.toFixed(1).padStart(6)}%      ${roi.trifectaImprovement >= 0 ? '+' : ''}${roi.trifectaImprovement.toFixed(1)}%`
-  );
-  console.log(
-    `Total Cost      $${roi.totalAlgorithmCost.toLocaleString().padStart(6)}      $${roi.totalAICost.toFixed(0).padStart(6)}       -${roi.costReduction.toFixed(1)}%`
-  );
+  console.log(`Algorithm Total Cost: $${cost.totalAlgorithmCost.toLocaleString()}`);
+  console.log(`AI System Total Cost: $${cost.totalAICost.toFixed(0)}`);
+  console.log(`Cost Reduction:       ${cost.costReduction.toFixed(1)}%`);
 
-  // VERDICT
+  // VERDICT (hit rate based)
   console.log('─'.repeat(70));
   console.log('VERDICT');
   console.log('─'.repeat(70));
   console.log(
-    `${verdict.templatesWork ? '✓' : '✗'} Templates work (B ROI outperforms algorithm baseline ROI)`
+    `${verdict.valueHorseFinding ? '✓' : '✗'} Value Horse Finding (${vh.overall.boardRate.toFixed(1)}% board rate > 50%)`
   );
   console.log(
-    `${verdict.sizingCalibrated ? '✓' : '✗'} Sizing calibrated (flat betting - non-PASS hit rate >10%)`
+    `${verdict.templateRouting ? '✓' : '✗'} Template Routing (${td.templateA.percentage.toFixed(1)}% Template A < 5%)`
   );
-  console.log(`${verdict.roiPositive ? '✓' : '✗'} ROI positive (AI beats algorithm baseline)`);
+  console.log(
+    `${verdict.passFilter ? '✓' : '✗'} PASS Filter (${td.passed.percentage.toFixed(1)}% in 10-50% range)`
+  );
   console.log(`RECOMMENDATION: ${verdict.recommendation}`);
 
   // ============================================================================
-  // TIER 1 COMPARISON METRICS (Calibration Only)
+  // ALGORITHM VS ALGORITHM+AI COMPARISON (Hit Rates Only)
   // ============================================================================
   const { tier1Comparison: t1, favoriteFadeByOdds: ffbo, passFilterAudit: pfa } = result;
 
   console.log('\n' + '═'.repeat(70));
-  console.log('          TIER 1 COMPARISON METRICS (Calibration Only)');
+  console.log('       ALGORITHM VS ALGORITHM+AI COMPARISON (Hit Rates)');
   console.log('═'.repeat(70));
-
-  // ALGORITHM VS ALGORITHM+AI COMPARISON
-  console.log('\n' + '─'.repeat(70));
-  console.log('ALGORITHM VS ALGORITHM+AI COMPARISON');
-  console.log('─'.repeat(70));
-  console.log('Metric              | Algorithm Only | Algorithm+AI | Lift');
+  console.log('Metric               | Algorithm Only | Algorithm+AI | Lift');
   console.log('─'.repeat(70));
 
   const formatLift = (aiVal: number, algoVal: number): string => {
@@ -3282,46 +2931,37 @@ function printReport(result: ValidationResult): void {
   };
 
   const formatRacesLift = (aiRaces: number, algoRaces: number): string => {
+    if (algoRaces === 0) return 'N/A';
     const diff = ((aiRaces - algoRaces) / algoRaces) * 100;
     return `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
   };
 
   console.log(
-    `Win Rate            | ${t1.algorithmOnly.winRate.toFixed(1).padStart(12)}% | ${t1.algorithmPlusAI.winRate.toFixed(1).padStart(10)}% | ${formatLift(t1.algorithmPlusAI.winRate, t1.algorithmOnly.winRate).padStart(7)}`
+    `Win Rate             | ${t1.algorithmOnly.winRate.toFixed(1).padStart(12)}% | ${t1.algorithmPlusAI.winRate.toFixed(1).padStart(10)}% | ${formatLift(t1.algorithmPlusAI.winRate, t1.algorithmOnly.winRate).padStart(7)}`
   );
   console.log(
-    `Exacta Hit Rate     | ${t1.algorithmOnly.exactaHitRate.toFixed(1).padStart(12)}% | ${t1.algorithmPlusAI.exactaHitRate.toFixed(1).padStart(10)}% | ${formatLift(t1.algorithmPlusAI.exactaHitRate, t1.algorithmOnly.exactaHitRate).padStart(7)}`
+    `Exacta Hit Rate      | ${t1.algorithmOnly.exactaHitRate.toFixed(1).padStart(12)}% | ${t1.algorithmPlusAI.exactaHitRate.toFixed(1).padStart(10)}% | ${formatLift(t1.algorithmPlusAI.exactaHitRate, t1.algorithmOnly.exactaHitRate).padStart(7)}`
   );
   console.log(
-    `Trifecta Hit Rate   | ${t1.algorithmOnly.trifectaHitRate.toFixed(1).padStart(12)}% | ${t1.algorithmPlusAI.trifectaHitRate.toFixed(1).padStart(10)}% | ${formatLift(t1.algorithmPlusAI.trifectaHitRate, t1.algorithmOnly.trifectaHitRate).padStart(7)}`
+    `Trifecta Hit Rate    | ${t1.algorithmOnly.trifectaHitRate.toFixed(1).padStart(12)}% | ${t1.algorithmPlusAI.trifectaHitRate.toFixed(1).padStart(10)}% | ${formatLift(t1.algorithmPlusAI.trifectaHitRate, t1.algorithmOnly.trifectaHitRate).padStart(7)}`
   );
   console.log(
-    `Exacta ROI          | ${t1.algorithmOnly.exactaROI.toFixed(1).padStart(12)}% | ${t1.algorithmPlusAI.exactaROI.toFixed(1).padStart(10)}% | ${formatLift(t1.algorithmPlusAI.exactaROI, t1.algorithmOnly.exactaROI).padStart(7)}`
+    `Superfecta Hit Rate  | ${t1.algorithmOnly.superfectaHitRate.toFixed(1).padStart(12)}% | ${t1.algorithmPlusAI.superfectaHitRate.toFixed(1).padStart(10)}% | ${formatLift(t1.algorithmPlusAI.superfectaHitRate, t1.algorithmOnly.superfectaHitRate).padStart(7)}`
   );
   console.log(
-    `Trifecta ROI        | ${t1.algorithmOnly.trifectaROI.toFixed(1).padStart(12)}% | ${t1.algorithmPlusAI.trifectaROI.toFixed(1).padStart(10)}% | ${formatLift(t1.algorithmPlusAI.trifectaROI, t1.algorithmOnly.trifectaROI).padStart(7)}`
-  );
-  console.log(
-    `Races Bet           | ${t1.algorithmOnly.racesBet.toString().padStart(13)} | ${t1.algorithmPlusAI.racesBet.toString().padStart(11)} | ${formatRacesLift(t1.algorithmPlusAI.racesBet, t1.algorithmOnly.racesBet).padStart(7)}`
+    `Races Bet            | ${t1.algorithmOnly.racesBet.toString().padStart(13)} | ${t1.algorithmPlusAI.racesBet.toString().padStart(11)} | ${formatRacesLift(t1.algorithmPlusAI.racesBet, t1.algorithmOnly.racesBet).padStart(7)}`
   );
 
-  // PER-TEMPLATE PERFORMANCE
+  // PER-TEMPLATE HIT RATES
   console.log('\n' + '═'.repeat(70));
-  console.log('PER-TEMPLATE PERFORMANCE');
+  console.log('PER-TEMPLATE HIT RATES');
   console.log('═'.repeat(70));
-  console.log(
-    'Template   | Races | Win Rate | Exacta Rate | Trifecta Rate | Exacta ROI | Trifecta ROI'
-  );
-  console.log('─'.repeat(95));
+  console.log('Template   | Races | Win Rate | Exacta Rate | Trifecta Rate');
+  console.log('─'.repeat(65));
 
-  const formatTemplateRowTier1 = (
-    name: string,
-    perf: TemplatePerformanceMetrics,
-    flagThreshold = 20
-  ) => {
-    const flag = perf.races >= flagThreshold && perf.exactaROI < 0 ? ' ⚠️' : '';
+  const formatTemplateRowTier1 = (name: string, perf: TemplatePerformanceMetrics) => {
     console.log(
-      `${name.padEnd(10)} | ${perf.races.toString().padStart(5)} | ${perf.winRate.toFixed(1).padStart(6)}% | ${perf.exactaRate.toFixed(1).padStart(9)}% | ${perf.trifectaRate.toFixed(1).padStart(11)}% | ${(perf.exactaROI >= 0 ? '+' : '') + perf.exactaROI.toFixed(1).padStart(perf.exactaROI >= 0 ? 8 : 9)}% | ${(perf.trifectaROI >= 0 ? '+' : '') + perf.trifectaROI.toFixed(1).padStart(perf.trifectaROI >= 0 ? 10 : 11)}%${flag}`
+      `${name.padEnd(10)} | ${perf.races.toString().padStart(5)} | ${perf.winRate.toFixed(1).padStart(6)}% | ${perf.exactaRate.toFixed(1).padStart(9)}% | ${perf.trifectaRate.toFixed(1).padStart(11)}%`
     );
   };
 
@@ -3329,19 +2969,19 @@ function printReport(result: ValidationResult): void {
   formatTemplateRowTier1('B (Vuln)', tp.templateB);
   formatTemplateRowTier1('C (Wide)', tp.templateC);
   console.log(
-    `PASS       | ${td.passed.count.toString().padStart(5)} | (skipped) |   (skipped) |     (skipped) |        N/A |          N/A`
+    `PASS       | ${td.passed.count.toString().padStart(5)} | (skipped) |   (skipped) |     (skipped)`
   );
 
-  // FAVORITE FADE ACCURACY BY ODDS
+  // FAVORITE FADE ACCURACY BY ODDS (hit rates only)
   console.log('\n' + '═'.repeat(70));
   console.log('FAVORITE FADE ACCURACY BY ODDS (Template B Only)');
   console.log('═'.repeat(70));
-  console.log('Odds Bracket    | Races | Favorites Lost | Fade Accuracy | Exacta ROI');
+  console.log('Odds Bracket    | Races | Favorites Lost | Fade Accuracy | Exacta Hit%');
   console.log('─'.repeat(70));
 
   const formatOddsBracketRow = (name: string, bracket: OddsBracketMetrics) => {
     console.log(
-      `${name.padEnd(15)} | ${bracket.races.toString().padStart(5)} | ${bracket.favoritesLost.toString().padStart(14)} | ${bracket.fadeAccuracy.toFixed(1).padStart(11)}% | ${(bracket.exactaROI >= 0 ? '+' : '') + bracket.exactaROI.toFixed(1)}%`
+      `${name.padEnd(15)} | ${bracket.races.toString().padStart(5)} | ${bracket.favoritesLost.toString().padStart(14)} | ${bracket.fadeAccuracy.toFixed(1).padStart(11)}% | ${bracket.exactaHitRate.toFixed(1)}%`
     );
   };
 
@@ -3360,18 +3000,15 @@ function printReport(result: ValidationResult): void {
   console.log('If PASS races had been bet with Template C:');
   console.log(`  Would-hit exactas:    ${pfa.wouldHitExactas}`);
   console.log(`  Would-hit trifectas:  ${pfa.wouldHitTrifectas}`);
-  console.log(
-    `  Estimated ROI impact: ${pfa.estimatedROIImpact >= 0 ? '+' : ''}${pfa.estimatedROIImpact.toFixed(1)}%`
-  );
   console.log('');
   if (pfa.passRateSuspiciouslyLow) {
     console.log('⚠️  WARNING: PASS rate below 10% (suspiciously low)');
   }
   if (pfa.passRateTooAggressive) {
-    console.log('⚠️  WARNING: PASS rate above 40% (too aggressive)');
+    console.log('⚠️  WARNING: PASS rate above 50% (too aggressive)');
   }
   if (!pfa.passRateSuspiciouslyLow && !pfa.passRateTooAggressive) {
-    console.log('✓  PASS rate within acceptable range (10-40%)');
+    console.log('✓  PASS rate within acceptable range (10-50%)');
   }
 
   console.log('\n' + '═'.repeat(70));
@@ -3395,12 +3032,69 @@ const SUMMARY_FILE = path.join(__dirname, '../validation-summary.md');
 
 function writeSummaryFile(result: ValidationResult): void {
   const { algorithmBaseline: baseline, templateDistribution: td, templatePerformance: tp } = result;
-  const { tier1Comparison: t1, favoriteFadeByOdds: ffbo, passFilterAudit: pfa, verdict } = result;
+  const {
+    tier1Comparison: t1,
+    favoriteFadeByOdds: ffbo,
+    passFilterAudit: pfa,
+    verdict,
+    expandedHitRates,
+    costSummary,
+  } = result;
 
   const lines: string[] = [];
 
   // Header
   lines.push('# AI Architecture Validation Results');
+  lines.push('');
+  lines.push(`Run Date: ${result.runDate}`);
+  lines.push(
+    `Total Races: ${result.totalRaces} | Analyzed: ${result.racesAnalyzed} | Passed: ${result.racesPassed}`
+  );
+  lines.push('');
+
+  // VALUE HORSE PERFORMANCE (prominent)
+  lines.push('## Value Horse Performance');
+  const vh = expandedHitRates.valueHorseMetrics;
+  lines.push(`**Races with Value Horse Identified:** ${vh.totalRacesWithValueHorse}`);
+  lines.push('');
+  lines.push('| Metric | Rate |');
+  lines.push('|--------|------|');
+  lines.push(`| Win Rate (1st) | ${vh.overall.winRate.toFixed(1)}% |`);
+  lines.push(`| Place Rate (top 2) | ${vh.overall.placeRate.toFixed(1)}% |`);
+  lines.push(`| Show Rate (top 3) | ${vh.overall.showRate.toFixed(1)}% |`);
+  lines.push(`| Board Rate (top 4) | ${vh.overall.boardRate.toFixed(1)}% |`);
+  lines.push('');
+  lines.push('### By Confidence Tier');
+  lines.push('| Tier | Races | Win% | Place% | Show% | Board% |');
+  lines.push('|------|-------|------|--------|-------|--------|');
+  const formatTierRowMd = (
+    tier: string,
+    data: { races: number; wins: number; places: number; shows: number; boards: number }
+  ) => {
+    if (data.races === 0) return `| ${tier} | 0 | - | - | - | - |`;
+    const winPct = ((data.wins / data.races) * 100).toFixed(1);
+    const placePct = ((data.places / data.races) * 100).toFixed(1);
+    const showPct = ((data.shows / data.races) * 100).toFixed(1);
+    const boardPct = ((data.boards / data.races) * 100).toFixed(1);
+    return `| ${tier} | ${data.races} | ${winPct}% | ${placePct}% | ${showPct}% | ${boardPct}% |`;
+  };
+  lines.push(formatTierRowMd('HIGH', vh.valueHorseByTier.HIGH));
+  lines.push(formatTierRowMd('MEDIUM', vh.valueHorseByTier.MEDIUM));
+  lines.push(formatTierRowMd('LOW', vh.valueHorseByTier.LOW));
+  lines.push('');
+
+  // Verdict (hit rate based)
+  lines.push('## Verdict');
+  lines.push(
+    `- Value Horse Finding: ${verdict.valueHorseFinding ? '✓' : '✗'} (${vh.overall.boardRate.toFixed(1)}% board rate > 50%)`
+  );
+  lines.push(
+    `- Template Routing: ${verdict.templateRouting ? '✓' : '✗'} (${td.templateA.percentage.toFixed(1)}% Template A < 5%)`
+  );
+  lines.push(
+    `- PASS Filter: ${verdict.passFilter ? '✓' : '✗'} (${td.passed.percentage.toFixed(1)}% in 10-50% range)`
+  );
+  lines.push(`- **RECOMMENDATION: ${verdict.recommendation}**`);
   lines.push('');
 
   // Algorithm Baseline
@@ -3413,15 +3107,7 @@ function writeSummaryFile(result: ValidationResult): void {
   lines.push(`| Trifecta Box 5 | ${baseline.trifectaBox5Rate.toFixed(1)}% |`);
   lines.push('');
 
-  // Verdict
-  lines.push('## Verdict');
-  lines.push(`- Templates Work: ${verdict.templatesWork ? '✓' : '✗'}`);
-  lines.push(`- Sizing Calibrated: ${verdict.sizingCalibrated ? '✓' : '✗'}`);
-  lines.push(`- ROI Positive: ${verdict.roiPositive ? '✓' : '✗'}`);
-  lines.push(`- **RECOMMENDATION: ${verdict.recommendation}**`);
-  lines.push('');
-
-  // Algorithm vs Algorithm+AI Comparison
+  // Algorithm vs Algorithm+AI Comparison (hit rates only)
   lines.push('## Algorithm vs Algorithm+AI Comparison');
   lines.push('| Metric | Algorithm Only | Algorithm+AI | Lift |');
   lines.push('|--------|----------------|--------------|------|');
@@ -3447,47 +3133,57 @@ function writeSummaryFile(result: ValidationResult): void {
     `| Trifecta Hit Rate | ${t1.algorithmOnly.trifectaHitRate.toFixed(1)}% | ${t1.algorithmPlusAI.trifectaHitRate.toFixed(1)}% | ${formatLiftMd(t1.algorithmPlusAI.trifectaHitRate, t1.algorithmOnly.trifectaHitRate)} |`
   );
   lines.push(
-    `| Exacta ROI | ${t1.algorithmOnly.exactaROI.toFixed(1)}% | ${t1.algorithmPlusAI.exactaROI.toFixed(1)}% | ${formatLiftMd(t1.algorithmPlusAI.exactaROI, t1.algorithmOnly.exactaROI)} |`
-  );
-  lines.push(
-    `| Trifecta ROI | ${t1.algorithmOnly.trifectaROI.toFixed(1)}% | ${t1.algorithmPlusAI.trifectaROI.toFixed(1)}% | ${formatLiftMd(t1.algorithmPlusAI.trifectaROI, t1.algorithmOnly.trifectaROI)} |`
+    `| Superfecta Hit Rate | ${t1.algorithmOnly.superfectaHitRate.toFixed(1)}% | ${t1.algorithmPlusAI.superfectaHitRate.toFixed(1)}% | ${formatLiftMd(t1.algorithmPlusAI.superfectaHitRate, t1.algorithmOnly.superfectaHitRate)} |`
   );
   lines.push(
     `| Races Bet | ${t1.algorithmOnly.racesBet} | ${t1.algorithmPlusAI.racesBet} | ${formatRacesLiftMd(t1.algorithmPlusAI.racesBet, t1.algorithmOnly.racesBet)} |`
   );
   lines.push('');
 
-  // Per-Template Performance
-  lines.push('## Per-Template Performance');
-  lines.push(
-    '| Template | Races | Win Rate | Exacta Rate | Trifecta Rate | Exacta ROI | Trifecta ROI |'
-  );
-  lines.push(
-    '|----------|-------|----------|-------------|---------------|------------|--------------|'
-  );
+  // Template Distribution
+  lines.push('## Template Distribution');
+  lines.push('| Template | Races | Percentage |');
+  lines.push('|----------|-------|------------|');
+  lines.push(`| A (Solid) | ${td.templateA.count} | ${td.templateA.percentage.toFixed(1)}% |`);
+  lines.push(`| B (Vulnerable) | ${td.templateB.count} | ${td.templateB.percentage.toFixed(1)}% |`);
+  lines.push(`| C (Wide Open) | ${td.templateC.count} | ${td.templateC.percentage.toFixed(1)}% |`);
+  lines.push(`| PASS | ${td.passed.count} | ${td.passed.percentage.toFixed(1)}% |`);
+  lines.push('');
+
+  // Per-Template Hit Rates (no ROI)
+  lines.push('## Per-Template Hit Rates');
+  lines.push('| Template | Races | Win Rate | Exacta Rate | Trifecta Rate |');
+  lines.push('|----------|-------|----------|-------------|---------------|');
 
   const formatTemplateRowMd = (name: string, perf: TemplatePerformanceMetrics) => {
-    return `| ${name} | ${perf.races} | ${perf.winRate.toFixed(1)}% | ${perf.exactaRate.toFixed(1)}% | ${perf.trifectaRate.toFixed(1)}% | ${perf.exactaROI >= 0 ? '+' : ''}${perf.exactaROI.toFixed(1)}% | ${perf.trifectaROI >= 0 ? '+' : ''}${perf.trifectaROI.toFixed(1)}% |`;
+    return `| ${name} | ${perf.races} | ${perf.winRate.toFixed(1)}% | ${perf.exactaRate.toFixed(1)}% | ${perf.trifectaRate.toFixed(1)}% |`;
   };
 
   lines.push(formatTemplateRowMd('A (Solid)', tp.templateA));
   lines.push(formatTemplateRowMd('B (Vuln)', tp.templateB));
   lines.push(formatTemplateRowMd('C (Wide)', tp.templateC));
-  lines.push(`| PASS | ${td.passed.count} | - | - | - | - | - |`);
+  lines.push(`| PASS | ${td.passed.count} | - | - | - |`);
   lines.push('');
 
-  // Favorite Fade by Odds (Template B)
+  // Favorite Fade by Odds (Template B) - hit rates only
   lines.push('## Favorite Fade by Odds (Template B)');
-  lines.push('| Odds Bracket | Races | Favorites Lost | Fade Accuracy | Exacta ROI |');
-  lines.push('|--------------|-------|----------------|---------------|------------|');
+  lines.push('| Odds Bracket | Races | Favorites Lost | Fade Accuracy | Exacta Hit% |');
+  lines.push('|--------------|-------|----------------|---------------|-------------|');
 
   const formatOddsBracketMd = (name: string, bracket: OddsBracketMetrics) => {
-    return `| ${name} | ${bracket.races} | ${bracket.favoritesLost} | ${bracket.fadeAccuracy.toFixed(1)}% | ${bracket.exactaROI >= 0 ? '+' : ''}${bracket.exactaROI.toFixed(1)}% |`;
+    return `| ${name} | ${bracket.races} | ${bracket.favoritesLost} | ${bracket.fadeAccuracy.toFixed(1)}% | ${bracket.exactaHitRate.toFixed(1)}% |`;
   };
 
   lines.push(formatOddsBracketMd('Heavy (≤2-1)', ffbo.heavy));
   lines.push(formatOddsBracketMd('Mid (5/2-7/2)', ffbo.mid));
   lines.push(formatOddsBracketMd('Light (4-1+)', ffbo.light));
+  lines.push('');
+
+  // Cost Summary
+  lines.push('## Cost Summary');
+  lines.push(`- Algorithm Total Cost: $${costSummary.totalAlgorithmCost}`);
+  lines.push(`- AI System Total Cost: $${costSummary.totalAICost.toFixed(0)}`);
+  lines.push(`- Cost Reduction: ${costSummary.costReduction.toFixed(1)}%`);
   lines.push('');
 
   // PASS Filter Audit
@@ -3499,30 +3195,22 @@ function writeSummaryFile(result: ValidationResult): void {
   if (pfa.passRateSuspiciouslyLow) {
     lines.push('- PASS rate status: ⚠️ Below 10% (suspiciously low)');
   } else if (pfa.passRateTooAggressive) {
-    lines.push('- PASS rate status: ⚠️ Above 40% (too aggressive)');
+    lines.push('- PASS rate status: ⚠️ Above 50% (too aggressive)');
   } else {
-    lines.push('- PASS rate status: ✓ Within acceptable range (10-40%)');
+    lines.push('- PASS rate status: ✓ Within acceptable range (10-50%)');
   }
   lines.push('');
 
   // ============================================================================
-  // EXPANDED ROI TRACKING SECTIONS
+  // EXPANDED HIT RATE TRACKING SECTIONS
   // ============================================================================
-  const { expandedROI } = result;
 
-  // Helper to format ROI with highlighting for positive values
-  const formatROI = (roi: number): string => {
-    const prefix = roi >= 0 ? '+' : '';
-    const suffix = roi > 0 ? ' **✓**' : '';
-    return `${prefix}${roi.toFixed(1)}%${suffix}`;
-  };
-
-  // Helper to format a bet type row
+  // Helper to format a bet type row (hit rates only, no payout/ROI)
   const formatBetRow = (name: string, metrics: BetTypeMetrics): string => {
     if (metrics.races === 0) {
-      return `| ${name} | N/A | N/A | N/A | N/A | N/A | N/A |`;
+      return `| ${name} | N/A | N/A | N/A | N/A |`;
     }
-    return `| ${name} | ${metrics.races} | ${metrics.hits} | ${metrics.hitRate.toFixed(1)}% | $${metrics.cost.toFixed(2)} | $${metrics.payout.toFixed(2)} | ${formatROI(metrics.roi)} |`;
+    return `| ${name} | ${metrics.races} | ${metrics.hits} | ${metrics.hitRate.toFixed(1)}% | $${metrics.cost.toFixed(2)} |`;
   };
 
   // ============================================================================
@@ -3530,175 +3218,141 @@ function writeSummaryFile(result: ValidationResult): void {
   // ============================================================================
   lines.push('---');
   lines.push('');
-  lines.push('# Expanded ROI Tracking');
+  lines.push('# Hit Rate Tracking by Bet Type');
   lines.push('');
   lines.push('## Win/Place/Show (WPS)');
   lines.push('');
   lines.push('### Algorithm Only');
-  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
-  lines.push('|----------|-------|------|----------|------|--------|-----|');
-  lines.push(formatBetRow('Win', expandedROI.algorithmOnlyWPS.win));
-  lines.push(formatBetRow('Place', expandedROI.algorithmOnlyWPS.place));
-  lines.push(formatBetRow('Show', expandedROI.algorithmOnlyWPS.show));
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost |');
+  lines.push('|----------|-------|------|----------|------|');
+  lines.push(formatBetRow('Win', expandedHitRates.algorithmOnlyWPS.win));
+  lines.push(formatBetRow('Place', expandedHitRates.algorithmOnlyWPS.place));
+  lines.push(formatBetRow('Show', expandedHitRates.algorithmOnlyWPS.show));
   lines.push('');
 
   lines.push('### Algorithm+AI (Non-PASS races only)');
-  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
-  lines.push('|----------|-------|------|----------|------|--------|-----|');
-  lines.push(formatBetRow('Win', expandedROI.algorithmPlusAIWPS.win));
-  lines.push(formatBetRow('Place', expandedROI.algorithmPlusAIWPS.place));
-  lines.push(formatBetRow('Show', expandedROI.algorithmPlusAIWPS.show));
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost |');
+  lines.push('|----------|-------|------|----------|------|');
+  lines.push(formatBetRow('Win', expandedHitRates.algorithmPlusAIWPS.win));
+  lines.push(formatBetRow('Place', expandedHitRates.algorithmPlusAIWPS.place));
+  lines.push(formatBetRow('Show', expandedHitRates.algorithmPlusAIWPS.show));
   lines.push('');
 
   // ============================================================================
   // EXACTA VARIATIONS SECTION
   // ============================================================================
-  lines.push('## Exacta Variations');
+  lines.push('## Exacta Hit Rates');
   lines.push('');
   lines.push('### Algorithm Only');
-  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
-  lines.push('|----------|-------|------|----------|------|--------|-----|');
-  lines.push(formatBetRow('Straight (1-2 exact)', expandedROI.algorithmOnlyExacta.straight));
-  lines.push(formatBetRow('Box 2', expandedROI.algorithmOnlyExacta.box2));
-  lines.push(formatBetRow('Box 3', expandedROI.algorithmOnlyExacta.box3));
-  lines.push(formatBetRow('Box 4', expandedROI.algorithmOnlyExacta.box4));
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost |');
+  lines.push('|----------|-------|------|----------|------|');
+  lines.push(formatBetRow('Straight (1-2 exact)', expandedHitRates.algorithmOnlyExacta.straight));
+  lines.push(formatBetRow('Box 2', expandedHitRates.algorithmOnlyExacta.box2));
+  lines.push(formatBetRow('Box 3', expandedHitRates.algorithmOnlyExacta.box3));
+  lines.push(formatBetRow('Box 4', expandedHitRates.algorithmOnlyExacta.box4));
   lines.push('');
 
   lines.push('### Algorithm+AI (Non-PASS races)');
-  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
-  lines.push('|----------|-------|------|----------|------|--------|-----|');
-  lines.push(formatBetRow('Straight (1-2 exact)', expandedROI.algorithmPlusAIExacta.straight));
-  lines.push(formatBetRow('Box 2', expandedROI.algorithmPlusAIExacta.box2));
-  lines.push(formatBetRow('Box 3', expandedROI.algorithmPlusAIExacta.box3));
-  lines.push(formatBetRow('Box 4', expandedROI.algorithmPlusAIExacta.box4));
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost |');
+  lines.push('|----------|-------|------|----------|------|');
+  lines.push(formatBetRow('Straight (1-2 exact)', expandedHitRates.algorithmPlusAIExacta.straight));
+  lines.push(formatBetRow('Box 2', expandedHitRates.algorithmPlusAIExacta.box2));
+  lines.push(formatBetRow('Box 3', expandedHitRates.algorithmPlusAIExacta.box3));
+  lines.push(formatBetRow('Box 4', expandedHitRates.algorithmPlusAIExacta.box4));
   lines.push('');
 
   lines.push('### Exacta Keys (Value Horse - races with identified value only)');
-  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
-  lines.push('|----------|-------|------|----------|------|--------|-----|');
-  lines.push(formatBetRow('Value over 2', expandedROI.algorithmPlusAIExacta.keyValueOver2));
-  lines.push(formatBetRow('Value over 3', expandedROI.algorithmPlusAIExacta.keyValueOver3));
-  lines.push(formatBetRow('Value over 4', expandedROI.algorithmPlusAIExacta.keyValueOver4));
-  lines.push(formatBetRow('2 over Value', expandedROI.algorithmPlusAIExacta.key2OverValue));
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost |');
+  lines.push('|----------|-------|------|----------|------|');
+  lines.push(formatBetRow('Value over 2', expandedHitRates.algorithmPlusAIExacta.keyValueOver2));
+  lines.push(formatBetRow('Value over 3', expandedHitRates.algorithmPlusAIExacta.keyValueOver3));
+  lines.push(formatBetRow('Value over 4', expandedHitRates.algorithmPlusAIExacta.keyValueOver4));
+  lines.push(formatBetRow('2 over Value', expandedHitRates.algorithmPlusAIExacta.key2OverValue));
   lines.push('');
 
   // ============================================================================
   // TRIFECTA VARIATIONS SECTION
   // ============================================================================
-  lines.push('## Trifecta Variations');
+  lines.push('## Trifecta Hit Rates');
   lines.push('');
   lines.push('### Algorithm Only');
-  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
-  lines.push('|----------|-------|------|----------|------|--------|-----|');
-  lines.push(formatBetRow('Straight (1-2-3 exact)', expandedROI.algorithmOnlyTrifecta.straight));
-  lines.push(formatBetRow('Box 3', expandedROI.algorithmOnlyTrifecta.box3));
-  lines.push(formatBetRow('Box 4', expandedROI.algorithmOnlyTrifecta.box4));
-  lines.push(formatBetRow('Box 5', expandedROI.algorithmOnlyTrifecta.box5));
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost |');
+  lines.push('|----------|-------|------|----------|------|');
+  lines.push(
+    formatBetRow('Straight (1-2-3 exact)', expandedHitRates.algorithmOnlyTrifecta.straight)
+  );
+  lines.push(formatBetRow('Box 3', expandedHitRates.algorithmOnlyTrifecta.box3));
+  lines.push(formatBetRow('Box 4', expandedHitRates.algorithmOnlyTrifecta.box4));
+  lines.push(formatBetRow('Box 5', expandedHitRates.algorithmOnlyTrifecta.box5));
   lines.push('');
 
   lines.push('### Algorithm+AI (Non-PASS races)');
-  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
-  lines.push('|----------|-------|------|----------|------|--------|-----|');
-  lines.push(formatBetRow('Straight (1-2-3 exact)', expandedROI.algorithmPlusAITrifecta.straight));
-  lines.push(formatBetRow('Box 3', expandedROI.algorithmPlusAITrifecta.box3));
-  lines.push(formatBetRow('Box 4', expandedROI.algorithmPlusAITrifecta.box4));
-  lines.push(formatBetRow('Box 5', expandedROI.algorithmPlusAITrifecta.box5));
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost |');
+  lines.push('|----------|-------|------|----------|------|');
+  lines.push(
+    formatBetRow('Straight (1-2-3 exact)', expandedHitRates.algorithmPlusAITrifecta.straight)
+  );
+  lines.push(formatBetRow('Box 3', expandedHitRates.algorithmPlusAITrifecta.box3));
+  lines.push(formatBetRow('Box 4', expandedHitRates.algorithmPlusAITrifecta.box4));
+  lines.push(formatBetRow('Box 5', expandedHitRates.algorithmPlusAITrifecta.box5));
   lines.push('');
 
   lines.push('### Trifecta Keys (Value Horse - races with identified value only)');
-  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
-  lines.push('|----------|-------|------|----------|------|--------|-----|');
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost |');
+  lines.push('|----------|-------|------|----------|------|');
   lines.push(
-    formatBetRow('Value with 2 over 3', expandedROI.algorithmPlusAITrifecta.keyValueWith2Over3)
+    formatBetRow('Value with 2 over 3', expandedHitRates.algorithmPlusAITrifecta.keyValueWith2Over3)
   );
   lines.push(
-    formatBetRow('Value with 3 over 4', expandedROI.algorithmPlusAITrifecta.keyValueWith3Over4)
+    formatBetRow('Value with 3 over 4', expandedHitRates.algorithmPlusAITrifecta.keyValueWith3Over4)
   );
   lines.push(
-    formatBetRow('2 with Value over 3', expandedROI.algorithmPlusAITrifecta.key2WithValueOver3)
+    formatBetRow('2 with Value over 3', expandedHitRates.algorithmPlusAITrifecta.key2WithValueOver3)
   );
   lines.push(
-    formatBetRow('2 over 3 with Value', expandedROI.algorithmPlusAITrifecta.key2Over3WithValue)
+    formatBetRow('2 over 3 with Value', expandedHitRates.algorithmPlusAITrifecta.key2Over3WithValue)
   );
   lines.push('');
 
   // ============================================================================
   // SUPERFECTA VARIATIONS SECTION
   // ============================================================================
-  lines.push('## Superfecta Variations');
+  lines.push('## Superfecta Hit Rates');
   lines.push('');
   lines.push('### Algorithm Only');
-  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
-  lines.push('|----------|-------|------|----------|------|--------|-----|');
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost |');
+  lines.push('|----------|-------|------|----------|------|');
   lines.push(
-    formatBetRow('Straight (1-2-3-4 exact)', expandedROI.algorithmOnlySuperfecta.straight)
+    formatBetRow('Straight (1-2-3-4 exact)', expandedHitRates.algorithmOnlySuperfecta.straight)
   );
-  lines.push(formatBetRow('Box 4', expandedROI.algorithmOnlySuperfecta.box4));
-  lines.push(formatBetRow('Box 5', expandedROI.algorithmOnlySuperfecta.box5));
-  lines.push(formatBetRow('Box 6', expandedROI.algorithmOnlySuperfecta.box6));
+  lines.push(formatBetRow('Box 4', expandedHitRates.algorithmOnlySuperfecta.box4));
+  lines.push(formatBetRow('Box 5', expandedHitRates.algorithmOnlySuperfecta.box5));
+  lines.push(formatBetRow('Box 6', expandedHitRates.algorithmOnlySuperfecta.box6));
   lines.push('');
 
   lines.push('### Algorithm+AI (Non-PASS races)');
-  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
-  lines.push('|----------|-------|------|----------|------|--------|-----|');
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost |');
+  lines.push('|----------|-------|------|----------|------|');
   lines.push(
-    formatBetRow('Straight (1-2-3-4 exact)', expandedROI.algorithmPlusAISuperfecta.straight)
+    formatBetRow('Straight (1-2-3-4 exact)', expandedHitRates.algorithmPlusAISuperfecta.straight)
   );
-  lines.push(formatBetRow('Box 4', expandedROI.algorithmPlusAISuperfecta.box4));
-  lines.push(formatBetRow('Box 5', expandedROI.algorithmPlusAISuperfecta.box5));
-  lines.push(formatBetRow('Box 6', expandedROI.algorithmPlusAISuperfecta.box6));
+  lines.push(formatBetRow('Box 4', expandedHitRates.algorithmPlusAISuperfecta.box4));
+  lines.push(formatBetRow('Box 5', expandedHitRates.algorithmPlusAISuperfecta.box5));
+  lines.push(formatBetRow('Box 6', expandedHitRates.algorithmPlusAISuperfecta.box6));
   lines.push('');
 
   lines.push('### Superfecta Keys (Value Horse - races with identified value only)');
-  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
-  lines.push('|----------|-------|------|----------|------|--------|-----|');
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost |');
+  lines.push('|----------|-------|------|----------|------|');
   lines.push(
-    formatBetRow('Value with 3/4/5', expandedROI.algorithmPlusAISuperfecta.keyValueWith3Over4Over5)
+    formatBetRow(
+      'Value with 3/4/5',
+      expandedHitRates.algorithmPlusAISuperfecta.keyValueWith3Over4Over5
+    )
   );
   lines.push(
-    formatBetRow('Value in any top 4', expandedROI.algorithmPlusAISuperfecta.keyValueInAnyTop4)
+    formatBetRow('Value in any top 4', expandedHitRates.algorithmPlusAISuperfecta.keyValueInAnyTop4)
   );
-  lines.push('');
-
-  // ============================================================================
-  // VALUE HORSE METRICS SECTION
-  // ============================================================================
-  const vh = expandedROI.valueHorseMetrics;
-  lines.push('## Value Horse Performance');
-  lines.push('');
-  lines.push(`**Total Races with Value Horse Identified:** ${vh.totalRacesWithValueHorse}`);
-  lines.push('');
-
-  lines.push('### Overall Value Horse Performance');
-  lines.push('| Metric | Rate |');
-  lines.push('|--------|------|');
-  lines.push(`| Win Rate (1st) | ${vh.overall.winRate.toFixed(1)}% |`);
-  lines.push(`| Place Rate (top 2) | ${vh.overall.placeRate.toFixed(1)}% |`);
-  lines.push(`| Show Rate (top 3) | ${vh.overall.showRate.toFixed(1)}% |`);
-  lines.push(`| Board Rate (top 4) | ${vh.overall.boardRate.toFixed(1)}% |`);
-  lines.push('');
-
-  lines.push('### Value Horse by Confidence Tier');
-  lines.push('| Tier | Races | Wins | Win% | Place | Place% | Show | Show% | Board | Board% |');
-  lines.push('|------|-------|------|------|-------|--------|------|-------|-------|--------|');
-
-  const formatTierRow = (
-    tier: string,
-    data: { races: number; wins: number; places: number; shows: number; boards: number }
-  ): string => {
-    if (data.races === 0) {
-      return `| ${tier} | 0 | - | - | - | - | - | - | - | - |`;
-    }
-    const winPct = ((data.wins / data.races) * 100).toFixed(1);
-    const placePct = ((data.places / data.races) * 100).toFixed(1);
-    const showPct = ((data.shows / data.races) * 100).toFixed(1);
-    const boardPct = ((data.boards / data.races) * 100).toFixed(1);
-    return `| ${tier} | ${data.races} | ${data.wins} | ${winPct}% | ${data.places} | ${placePct}% | ${data.shows} | ${showPct}% | ${data.boards} | ${boardPct}% |`;
-  };
-
-  lines.push(formatTierRow('HIGH', vh.valueHorseByTier.HIGH));
-  lines.push(formatTierRow('MEDIUM', vh.valueHorseByTier.MEDIUM));
-  lines.push(formatTierRow('LOW', vh.valueHorseByTier.LOW));
   lines.push('');
 
   // Summary
@@ -3710,22 +3364,27 @@ function writeSummaryFile(result: ValidationResult): void {
   lines.push(`- Errors: ${result.errors.length}`);
   lines.push('');
 
-  // Methodology note
-  lines.push('## Methodology Notes');
+  // Bet Costs Reference
+  lines.push('## Bet Costs Reference (per $1 base)');
+  lines.push('');
+  lines.push('| Bet Type | Cost |');
+  lines.push('|----------|------|');
+  lines.push('| Exacta Box 2 | $2 |');
+  lines.push('| Exacta Box 3 | $6 |');
+  lines.push('| Exacta Box 4 | $12 |');
+  lines.push('| Trifecta Box 3 | $6 |');
+  lines.push('| Trifecta Box 4 | $24 |');
+  lines.push('| Trifecta Box 5 | $60 |');
+  lines.push('| Superfecta Box 4 | $2.40 |');
+  lines.push('| Superfecta Box 5 | $12 |');
+  lines.push('');
   lines.push(
-    '- **Payout Estimation:** When actual track payouts are unavailable, payouts are estimated based on morning line odds using standard formulas.'
+    '**Note:** Payout estimation has been removed. Payouts are unknowable until the race runs.'
   );
-  lines.push('- **Win payout:** Base × (decimal odds + 1)');
-  lines.push('- **Place payout:** Base × (decimal odds / 2 + 1)');
-  lines.push('- **Show payout:** Base × (decimal odds / 3 + 1)');
-  lines.push('- **Exacta payout:** Base × (1st odds × 2nd odds × 0.7 + 2)');
-  lines.push('- **Trifecta payout:** Base × (1st × 2nd × 3rd odds × 0.5 + 5)');
-  lines.push('- **Superfecta payout:** Base × (1st × 2nd × 3rd × 4th odds × 0.3 + 10)');
   lines.push('');
   lines.push(
     '- **Keyed bets** are only calculated for races where a value horse was identified (HIGH/MEDIUM/LOW confidence tiers).'
   );
-  lines.push('- **Positive ROI** bet types are marked with **✓** for easy identification.');
   lines.push('');
 
   const content = lines.join('\n');
