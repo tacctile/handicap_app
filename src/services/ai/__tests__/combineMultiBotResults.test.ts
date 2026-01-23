@@ -202,8 +202,8 @@ function createMockScoringResult(
 // ============================================================================
 
 describe('Three-Template Ticket Construction System', () => {
-  describe('Scenario A - Solid Favorite (Template A)', () => {
-    it('should select Template A when favorite is NOT vulnerable', () => {
+  describe('Scenario A - Solid Favorite WITHOUT Value Horse (PASS → MINIMAL)', () => {
+    it('should select PASS template when favorite is NOT vulnerable and NO value horse identified', () => {
       const race = createMockRace([
         { programNumber: 1, name: 'Solid Fav', runningStyle: 'E', mlOdds: '2-1' },
         { programNumber: 2, name: 'Horse B', runningStyle: 'S', mlOdds: '5-1' },
@@ -218,7 +218,7 @@ describe('Three-Template Ticket Construction System', () => {
         { programNumber: 4, name: 'Horse D', rank: 4, score: 140, tier: 'medium' },
       ]);
 
-      // Vulnerable Favorite bot returns NOT vulnerable
+      // Vulnerable Favorite bot returns NOT vulnerable, no other value signals
       const rawResults: MultiBotRawResults = {
         tripTrouble: null,
         paceScenario: null,
@@ -236,25 +236,28 @@ describe('Three-Template Ticket Construction System', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // Template A selected
-      expect(result.ticketConstruction?.template).toBe('A');
-      expect(result.ticketConstruction?.templateReason).toContain('Solid favorite');
+      // NEW: PASS template selected (routes to MINIMAL tier)
+      // "Solid favorite" = "Market is right" = No value edge
+      expect(result.ticketConstruction?.template).toBe('PASS');
+      expect(result.ticketConstruction?.templateReason).toContain('no identified value horse');
 
-      // Exacta: 1 WITH 2,3,4 (3 combinations, $6)
-      expect(result.ticketConstruction?.exacta.winPosition).toEqual([1]);
-      expect(result.ticketConstruction?.exacta.placePosition).toEqual([2, 3, 4]);
-      expect(result.ticketConstruction?.exacta.combinations).toBe(3);
-      expect(result.ticketConstruction?.exacta.estimatedCost).toBe(6);
+      // PASS template = empty tickets (algorithm picks only)
+      expect(result.ticketConstruction?.exacta.winPosition).toEqual([]);
+      expect(result.ticketConstruction?.exacta.combinations).toBe(0);
+      expect(result.ticketConstruction?.exacta.estimatedCost).toBe(0);
 
-      // Trifecta: 1 WITH 2,3,4 WITH 2,3,4 (6 combinations, $6)
-      expect(result.ticketConstruction?.trifecta.winPosition).toEqual([1]);
-      expect(result.ticketConstruction?.trifecta.placePosition).toEqual([2, 3, 4]);
-      expect(result.ticketConstruction?.trifecta.showPosition).toEqual([2, 3, 4]);
-      expect(result.ticketConstruction?.trifecta.combinations).toBe(6);
-      expect(result.ticketConstruction?.trifecta.estimatedCost).toBe(6);
+      expect(result.ticketConstruction?.trifecta.winPosition).toEqual([]);
+      expect(result.ticketConstruction?.trifecta.combinations).toBe(0);
+      expect(result.ticketConstruction?.trifecta.estimatedCost).toBe(0);
 
-      // topPick = rank 1
+      // topPick = rank 1 (algorithm pick still shown)
       expect(result.topPick).toBe(1);
+
+      // Confidence should be MINIMAL
+      expect(result.confidence).toBe('MINIMAL');
+
+      // Not bettable (MINIMAL tier)
+      expect(result.bettableRace).toBe(false);
     });
   });
 
@@ -374,6 +377,19 @@ describe('Three-Template Ticket Construction System', () => {
 // ============================================================================
 
 describe('selectTemplate', () => {
+  // Helper to create a value horse identification object
+  const createValueHorse = (identified: boolean, programNumber?: number) => ({
+    identified,
+    programNumber: programNumber ?? null,
+    horseName: identified ? 'Value Horse' : null,
+    sources: identified ? (['TRIP_TROUBLE'] as const) : [],
+    signalStrength: identified ? ('STRONG' as const) : ('NONE' as const),
+    angle: identified ? 'Trip trouble - hidden ability' : null,
+    valueOdds: null,
+    botConvergenceCount: identified ? 1 : 0,
+    reasoning: identified ? 'Value horse detected' : 'No value horse',
+  });
+
   it('should return Template C for WIDE_OPEN regardless of favorite status', () => {
     const [template, reason] = selectTemplate('WIDE_OPEN', 'SOLID', null);
     expect(template).toBe('C');
@@ -391,10 +407,18 @@ describe('selectTemplate', () => {
     expect(reason).toContain('Vulnerable favorite');
   });
 
-  it('should return Template A for SOLID favorite', () => {
-    const [template, reason] = selectTemplate('CHALK', 'SOLID', null);
+  it('should return PASS for SOLID favorite without value horse identified', () => {
+    // NEW BEHAVIOR: SOLID favorite without value horse routes to MINIMAL tier (PASS template)
+    const [template, reason] = selectTemplate('CHALK', 'SOLID', null, createValueHorse(false));
+    expect(template).toBe('PASS');
+    expect(reason).toContain('no identified value horse');
+  });
+
+  it('should return Template A for SOLID favorite WITH value horse identified', () => {
+    // When value horse is identified, SOLID favorite can still get Template A
+    const [template, reason] = selectTemplate('CHALK', 'SOLID', null, createValueHorse(true, 3));
     expect(template).toBe('A');
-    expect(reason).toContain('Solid favorite');
+    expect(reason).toContain('value horse');
   });
 
   it('should prioritize WIDE_OPEN over VULNERABLE favorite', () => {
@@ -504,7 +528,10 @@ describe('calculateTrifectaCombinations', () => {
   });
 });
 
-describe('calculateConfidenceScore', () => {
+// NOTE: calculateConfidenceScore has been rewired to use value-based logic.
+// The new behavior is tested in confidenceTier.test.ts.
+// These tests are for the OLD scoring formula and are now skipped.
+describe.skip('calculateConfidenceScore (OLD FORMULA - DEPRECATED)', () => {
   // Base signals with algorithm scores for margin testing
   const baseSignals: AggregatedSignals[] = [
     {

@@ -1244,12 +1244,10 @@ describe('identifyValuePlay', () => {
 
     const valuePlay = identifyValuePlay(reorderedSignals, null, scores);
 
-    // Horse 3 is at index 0 (top pick) after reordering
-    // identifyValuePlay looks at indices 1-4 (adjusted ranks 2-5)
-    // So Horse 3 at index 0 is NOT in candidates
-    // Neither Horse 1 nor Horse 2 have trip trouble
-    // Therefore, value play should be null
-    expect(valuePlay).toBeNull();
+    // identifyValuePlay filters by ALGORITHM rank (2-6), not adjusted rank
+    // Horse 3 has algorithmRank: 3 and tripTroubleBoost > 0
+    // So Horse 3 IS a candidate and gets identified as value play
+    expect(valuePlay).toBe(3);
   });
 
   it('should return horse ranked 3-5 with trip trouble boost', () => {
@@ -1626,15 +1624,15 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // Trip Trouble with +2 boost should become rank 1
-      // Vulnerable favorite with -2 penalty should drop
-      expect(result.topPick).toBe(3); // Trip Trouble
-      expect(result.raceNarrative).toContain('OVERRIDE');
+      // With vulnerable favorite + trip trouble horse identified, should be Template B
+      // topPick will be algorithm rank 2 (not rank 3) because Template B keys rank 2
+      expect(result.topPick).toBe(2); // Template B: key #2 when favorite vulnerable
+      expect(result.raceNarrative).toContain('TEMPLATE B');
     });
   });
 
-  describe('Scenario B - Confirm Algorithm', () => {
-    it('should confirm when algorithm rank 1 is solid', () => {
+  describe('Scenario B - Solid Favorite Routes to MINIMAL', () => {
+    it('should route to MINIMAL tier when algorithm rank 1 is solid with no value horse', () => {
       const race = createMockRace([
         { programNumber: 1, name: 'Solid Pick', runningStyle: 'S', mlOdds: '3-1' },
         { programNumber: 2, name: 'Horse B', runningStyle: 'S', mlOdds: '5-1' },
@@ -1663,7 +1661,9 @@ describe('combineMultiBotResults', () => {
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
       expect(result.topPick).toBe(1);
-      expect(result.raceNarrative).toContain('CONFIRM');
+      // NEW: Solid favorite without value horse routes to MINIMAL tier
+      expect(result.raceNarrative).toContain('MINIMAL TIER');
+      expect(result.bettableRace).toBe(false); // MINIMAL tier = not bettable
     });
   });
 
@@ -1709,8 +1709,10 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // Value Horse has HIGH confidence trip trouble boost and is rank 4 (within 3-5 range)
-      expect(result.valuePlay).toBe(4);
+      // valuePlay is deprecated - always null now
+      // Value horse identification is in ticketConstruction.valueHorse
+      expect(result.valuePlay).toBeNull();
+      expect(result.ticketConstruction.valueHorse.identified).toBe(true);
     });
 
     it('should NOT identify value play for MEDIUM confidence trip trouble in conservative mode', () => {
@@ -1799,13 +1801,14 @@ describe('combineMultiBotResults', () => {
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
       expect(result.topPick).toBe(1);
-      // With DOMINANT field and 4 bots, should be HIGH confidence
-      expect(result.confidence).toBe('HIGH');
+      // NEW: Solid favorite without identified value horse routes to MINIMAL tier
+      // Even with DOMINANT field, no value horse = MINIMAL
+      expect(result.confidence).toBe('MINIMAL');
     });
   });
 
   describe('Scenario E - Bet Structure Wide Open', () => {
-    it('should set LOW confidence for WIDE_OPEN field', () => {
+    it('should set MINIMAL confidence for WIDE_OPEN field without value horse', () => {
       const race = createMockRace([
         { programNumber: 1, name: 'Horse A', runningStyle: 'E', mlOdds: '4-1' },
         { programNumber: 2, name: 'Horse B', runningStyle: 'S', mlOdds: '5-1' },
@@ -1835,7 +1838,8 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      expect(result.confidence).toBe('LOW');
+      // NEW: WIDE_OPEN without value horse routes to MINIMAL tier
+      expect(result.confidence).toBe('MINIMAL');
       // WIDE_OPEN typically means chaotic or not bettable
       expect(result.chaoticRace).toBe(true);
     });
@@ -1910,16 +1914,17 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // Trip Horse with +2 boost should move up significantly
+      // NEW: Algorithm ranks are SACRED - projectedFinish doesn't change
+      // Trip Horse keeps its algorithm rank (3)
       const tripHorse = result.horseInsights.find((h) => h.programNumber === 3);
-      expect(tripHorse?.projectedFinish).toBeLessThanOrEqual(2);
+      expect(tripHorse?.projectedFinish).toBe(3); // Unchanged
       // The oneLiner should contain something about hidden ability or beyer
       expect(tripHorse?.oneLiner).toMatch(/Hidden|Beyer|trip|ability/i);
     });
   });
 
   describe('Narrative Generation', () => {
-    it('should start with OVERRIDE: when ranks change', () => {
+    it('should include template in narrative', () => {
       const race = createMockRace([
         { programNumber: 1, name: 'Horse A', runningStyle: 'E', mlOdds: '2-1' },
         { programNumber: 2, name: 'Trip Horse', runningStyle: 'S', mlOdds: '5-1' },
@@ -1948,10 +1953,8 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // Trip Horse with +2 boost on rank 2 should become rank 1
-      if (result.topPick === 2) {
-        expect(result.raceNarrative).toMatch(/^OVERRIDE:/);
-      }
+      // NEW: Narrative should include TEMPLATE or MINIMAL TIER
+      expect(result.raceNarrative).toMatch(/TEMPLATE|MINIMAL TIER/);
     });
   });
 });
