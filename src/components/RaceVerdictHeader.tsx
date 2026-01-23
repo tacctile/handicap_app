@@ -59,7 +59,7 @@ function getVerdictLabel(verdict: RaceVerdict): string {
 /**
  * Get confidence label formatted for display
  */
-function getConfidenceLabel(confidence: 'HIGH' | 'MEDIUM' | 'LOW'): string {
+function getConfidenceLabel(confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'MINIMAL'): string {
   switch (confidence) {
     case 'HIGH':
       return 'High Confidence';
@@ -67,6 +67,8 @@ function getConfidenceLabel(confidence: 'HIGH' | 'MEDIUM' | 'LOW'): string {
       return 'Moderate Confidence';
     case 'LOW':
       return 'Low Confidence';
+    case 'MINIMAL':
+      return 'No Clear Edge';
   }
 }
 

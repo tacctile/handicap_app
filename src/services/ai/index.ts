@@ -2417,15 +2417,17 @@ export function combineMultiBotResults(
   // STEP 7: Determine overall confidence and flags
   // ============================================================================
 
-  // Map confidence score to HIGH/MEDIUM/LOW
-  // 70+: HIGH, 40-69: MEDIUM, <40: LOW
-  let confidence: 'HIGH' | 'MEDIUM' | 'LOW';
-  if (ticketConstruction.confidenceScore >= 70) {
+  // Map confidence score to 4-tier system
+  // 80+: HIGH, 60-79: MEDIUM, 40-59: LOW, <40: MINIMAL
+  let confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'MINIMAL';
+  if (ticketConstruction.confidenceScore >= 80) {
     confidence = 'HIGH';
-  } else if (ticketConstruction.confidenceScore >= 40) {
+  } else if (ticketConstruction.confidenceScore >= 60) {
     confidence = 'MEDIUM';
-  } else {
+  } else if (ticketConstruction.confidenceScore >= 40) {
     confidence = 'LOW';
+  } else {
+    confidence = 'MINIMAL';
   }
 
   // Flags based on template
@@ -2544,7 +2546,9 @@ export function combineMultiBotResults(
       ? 'color: #10b981'
       : confidence === 'MEDIUM'
         ? 'color: #f59e0b'
-        : 'color: #ef4444'
+        : confidence === 'LOW'
+          ? 'color: #ef4444'
+          : 'color: #6b7280'
   );
   console.log('%c├─────────────────────────────────────────────────────────┤', 'color: #888');
   console.log(
@@ -2602,7 +2606,7 @@ export function combineMultiBotResults(
     processingTimeMs,
     raceNarrative,
     confidence,
-    bettableRace: !isChaoticRace && confidence !== 'LOW',
+    bettableRace: !isChaoticRace && confidence !== 'LOW' && confidence !== 'MINIMAL',
     horseInsights,
     topPick,
     avoidList,

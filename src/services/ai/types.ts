@@ -7,6 +7,19 @@
  */
 
 // ============================================================================
+// AI CONFIDENCE TIERS
+// ============================================================================
+
+/**
+ * AI confidence tier for race-level analysis
+ * - HIGH: Confidence score 80-100
+ * - MEDIUM: Confidence score 60-79
+ * - LOW: Confidence score 40-59
+ * - MINIMAL: Confidence score 0-39 (no clear edge, but picks still shown)
+ */
+export type AIConfidenceTier = 'HIGH' | 'MEDIUM' | 'LOW' | 'MINIMAL';
+
+// ============================================================================
 // VALUE LABELS
 // ============================================================================
 
@@ -76,7 +89,7 @@ export interface AIRaceAnalysis {
   /** 2-3 sentences summarizing the race */
   raceNarrative: string;
   /** Confidence in the analysis */
-  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'MINIMAL';
   /** Whether this race is worth betting */
   bettableRace: boolean;
 

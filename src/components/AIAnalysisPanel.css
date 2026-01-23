@@ -81,6 +81,11 @@
   color: var(--color-tier-bad);
 }
 
+.ai-panel__confidence--minimal {
+  background: var(--color-tier-neutral-bg);
+  color: var(--color-tier-neutral);
+}
+
 .ai-panel__bettable {
   font-size: 10px;
   font-weight: 700;

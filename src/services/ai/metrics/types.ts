@@ -48,7 +48,7 @@ export interface AIDecisionRecord {
   /** AI's avoid list (program numbers) */
   aiAvoidList: number[];
   /** AI's confidence level */
-  aiConfidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  aiConfidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'MINIMAL';
 
   // Override tracking
   /** Whether AI top pick differs from algorithm top pick */
