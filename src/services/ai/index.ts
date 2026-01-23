@@ -1801,8 +1801,9 @@ export function calculateSizing(
   // Handle undefined/null confidenceScore - default to 50
   const effectiveConfidence = confidenceScore ?? 50;
 
-  // Handle undefined template - default to 'C' (conservative)
-  const effectiveTemplate = template ?? 'C';
+  // Note: template parameter kept for API compatibility but not used in flat betting
+  // (previously used for tier selection, now all non-PASS bets get STANDARD)
+  void template;
 
   let multiplier: number;
   let recommendation: SizingRecommendationType;
