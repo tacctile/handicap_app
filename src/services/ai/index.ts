@@ -350,10 +350,13 @@ export async function getMultiBotAnalysis(
  * Aggregate all bot signals for a single horse
  * Collects signals from all 4 bots and calculates total adjustment
  *
- * CONSERVATIVE MODE (default):
- * - Trip trouble: Only +2 for HIGH confidence (2+ troubled races), MEDIUM gives flag only
- * - Pace advantage: Only +1 for STRONG (lone speed), MODERATE gives flag only
- * - Vulnerable favorite: Only -2 if HIGH confidence AND 2+ vulnerability flags
+ * CONSERVATIVE MODE (default) - TUNED THRESHOLDS:
+ * - Trip trouble: +2 for HIGH confidence (2+ troubled races), +1 for MEDIUM
+ * - Pace advantage: +2 for STRONG (lone speed), +1 for MODERATE
+ * - Vulnerable favorite: -2 if HIGH + 2+ flags, -1 if HIGH + 1 flag, MEDIUM = flag only
+ * - Competitive field: reduce adjustments by 25% (not 50%)
+ * - Minimum for rank change: ±2
+ * - Max position movement: 2 positions
  *
  * @param programNumber - Horse's program number
  * @param horseName - Horse name
@@ -431,7 +434,7 @@ export function aggregateHorseSignals(
         signals.signalCount++;
 
         if (conservativeMode) {
-          // CONSERVATIVE: Only HIGH confidence (2+ troubled races) gets +2, MEDIUM gets flag only
+          // CONSERVATIVE: HIGH confidence (2+ troubled races) gets +2, MEDIUM gets +1
           if (hasTwoOrMoreTroubledRaces) {
             signals.tripTroubleBoost = 2;
             signals.hiddenAbility = `+5-8 Beyer masked - ${tripHorse.issue}`;
@@ -441,9 +444,14 @@ export function aggregateHorseSignals(
               description: `Trip trouble HIGH: ${tripHorse.issue}`,
             });
           } else {
-            // MEDIUM confidence: Flag only, no boost
-            signals.tripTroubleBoost = 0;
-            signals.hiddenAbility = `Flagged: ${tripHorse.issue} (MEDIUM confidence - no boost)`;
+            // MEDIUM confidence: +1 boost
+            signals.tripTroubleBoost = 1;
+            signals.hiddenAbility = tripHorse.issue;
+            signals.overrideReasons.push({
+              signal: 'tripTrouble',
+              confidence: 'MEDIUM',
+              description: `Trip trouble MEDIUM: ${tripHorse.issue}`,
+            });
           }
         } else {
           // NON-CONSERVATIVE: Original behavior
@@ -479,12 +487,8 @@ export function aggregateHorseSignals(
     // Lone speed exception - STRONG advantage
     if (paceScenario.loneSpeedException && isEarlySpeed) {
       signals.paceAdvantageFlagged = true;
-      if (conservativeMode) {
-        // CONSERVATIVE: STRONG gives +1 (was +2)
-        signals.paceAdvantage = 1;
-      } else {
-        signals.paceAdvantage = 2;
-      }
+      // STRONG gives +2 in both modes
+      signals.paceAdvantage = 2;
       signals.paceEdgeReason = 'Lone speed on speed-favoring track';
       signals.signalCount++;
       signals.overrideReasons.push({
@@ -497,18 +501,14 @@ export function aggregateHorseSignals(
     else if (paceScenario.speedDuelLikely && paceScenario.paceProjection === 'HOT' && isCloser) {
       signals.paceAdvantageFlagged = true;
       signals.paceEdgeReason = 'Speed duel sets up for closing kick';
-      if (conservativeMode) {
-        // CONSERVATIVE: MODERATE gives flag only, no boost
-        signals.paceAdvantage = 0;
-      } else {
-        signals.paceAdvantage = 1;
-        signals.signalCount++;
-        signals.overrideReasons.push({
-          signal: 'paceAdvantage',
-          confidence: 'MEDIUM',
-          description: 'Speed duel benefits closer - MODERATE pace advantage',
-        });
-      }
+      // MODERATE gives +1 in both modes
+      signals.paceAdvantage = 1;
+      signals.signalCount++;
+      signals.overrideReasons.push({
+        signal: 'paceAdvantage',
+        confidence: 'MEDIUM',
+        description: 'Speed duel benefits closer - MODERATE pace advantage',
+      });
     }
     // Speed duel + HOT pace HURTS early speed (-1) - always apply
     else if (
@@ -534,18 +534,14 @@ export function aggregateHorseSignals(
     ) {
       signals.paceAdvantageFlagged = true;
       signals.paceEdgeReason = 'Slow pace favors pressing style';
-      if (conservativeMode) {
-        // CONSERVATIVE: MODERATE gives flag only, no boost
-        signals.paceAdvantage = 0;
-      } else {
-        signals.paceAdvantage = 1;
-        signals.signalCount++;
-        signals.overrideReasons.push({
-          signal: 'paceAdvantage',
-          confidence: 'MEDIUM',
-          description: 'Slow pace favors stalker - MODERATE pace advantage',
-        });
-      }
+      // MODERATE gives +1 in both modes
+      signals.paceAdvantage = 1;
+      signals.signalCount++;
+      signals.overrideReasons.push({
+        signal: 'paceAdvantage',
+        confidence: 'MEDIUM',
+        description: 'Slow pace favors stalker - MODERATE pace advantage',
+      });
     }
   }
 
@@ -611,22 +607,32 @@ export function aggregateHorseSignals(
   totalAdj += signals.paceAdvantage;
 
   // Vulnerable favorite penalty
-  // CONSERVATIVE: Only -2 if HIGH confidence AND 2+ vulnerability flags
+  // CONSERVATIVE: HIGH + 2+ flags = -2, HIGH + 1 flag = -1, MEDIUM = flag only
   // NON-CONSERVATIVE: -2 (HIGH) or -1 (MEDIUM)
   if (signals.isVulnerable && vulnerableFavorite) {
     const flagCount = signals.vulnerabilityFlags.length;
 
     if (conservativeMode) {
-      // CONSERVATIVE: Only apply -2 if HIGH confidence AND 2+ vulnerability flags
-      if (vulnerableFavorite.confidence === 'HIGH' && flagCount >= 2) {
-        totalAdj -= 2;
-        signals.overrideReasons.push({
-          signal: 'vulnerableFavorite',
-          confidence: 'HIGH',
-          description: `Vulnerable favorite HIGH with ${flagCount} flags: ${signals.vulnerabilityFlags.slice(0, 2).join(', ')}`,
-        });
+      // CONSERVATIVE: HIGH + 2+ flags = -2, HIGH + 1 flag = -1, MEDIUM = flag only
+      if (vulnerableFavorite.confidence === 'HIGH') {
+        if (flagCount >= 2) {
+          totalAdj -= 2;
+          signals.overrideReasons.push({
+            signal: 'vulnerableFavorite',
+            confidence: 'HIGH',
+            description: `Vulnerable favorite HIGH with ${flagCount} flags: ${signals.vulnerabilityFlags.slice(0, 2).join(', ')}`,
+          });
+        } else {
+          // HIGH + 1 flag = -1
+          totalAdj -= 1;
+          signals.overrideReasons.push({
+            signal: 'vulnerableFavorite',
+            confidence: 'HIGH',
+            description: `Vulnerable favorite HIGH: ${signals.vulnerabilityFlags[0] || 'Unknown'}`,
+          });
+        }
       }
-      // Otherwise: flag only, no penalty
+      // MEDIUM: flag only, no penalty
     } else {
       // NON-CONSERVATIVE: Original behavior
       if (vulnerableFavorite.confidence === 'HIGH') {
@@ -695,7 +701,7 @@ export function isCompetitiveField(signals: AggregatedSignals[]): boolean {
  * CONSERVATIVE MODE PROTECTIONS:
  * - Only adjustments of ±2 or greater trigger rank changes
  * - Never move a horse more than 2 rank positions from algorithm rank
- * - If competitive field (top 4 within 20 points), reduce adjustments by 50%
+ * - If competitive field (top 4 within 20 points), reduce adjustments by 25%
  *
  * @param aggregatedSignals - Array of aggregated signals for all horses
  * @param options - Optional configuration for conservative mode
@@ -723,10 +729,10 @@ export function reorderByAdjustedRank(
     let effectiveAdjustment = signal.totalAdjustment;
 
     if (conservativeMode) {
-      // PROTECTION 1: If competitive field, reduce adjustments by 50% (round down)
+      // PROTECTION 1: If competitive field, reduce adjustments by 25% (round down)
       if (competitiveFieldDetected) {
         effectiveAdjustment =
-          Math.sign(effectiveAdjustment) * Math.floor(Math.abs(effectiveAdjustment) / 2);
+          Math.sign(effectiveAdjustment) * Math.floor(Math.abs(effectiveAdjustment) * 0.75);
       }
 
       // PROTECTION 2: Only adjustments of ±2 or greater trigger rank changes
@@ -801,6 +807,11 @@ export function reorderByAdjustedRank(
  * Identify value play based on strict criteria
  * Value play must NOT be the top pick (adjusted rank 1)
  *
+ * NEW CRITERIA (relaxed):
+ * - Horse has any positive signal (tripTroubleFlagged OR paceAdvantageFlagged)
+ * - Horse is ranked 2-6 by ALGORITHM (not adjusted rank)
+ * - Horse has morning line odds >= 3-1
+ *
  * @param reorderedSignals - Signals sorted by adjusted rank
  * @param paceScenario - Pace scenario analysis (for slow pace check)
  * @param scores - Original scoring results for ML odds
@@ -811,31 +822,35 @@ export function identifyValuePlay(
   paceScenario: PaceScenarioAnalysis | null,
   scores: RaceScoringResult['scores']
 ): number | null {
-  // Value play must be adjusted rank 2-5
-  const candidates = reorderedSignals.filter((_, idx) => idx >= 1 && idx <= 4);
+  // Value play must be algorithm rank 2-6 (not adjusted rank)
+  const candidates = reorderedSignals.filter(
+    (s) => s.algorithmRank >= 2 && s.algorithmRank <= 6 && s.classification !== 'EXCLUDE'
+  );
 
   for (const candidate of candidates) {
     const score = scores.find((s) => s.programNumber === candidate.programNumber);
 
-    // Check morning line odds > 4-1
+    // Check morning line odds >= 3-1
     const mlDecimal = score?.morningLineDecimal ?? 0;
-    const hasGoodOdds = mlDecimal > 4;
+    const hasGoodOdds = mlDecimal >= 3;
 
-    // Prioritize horses with trip trouble boost (hidden ability)
-    if (candidate.tripTroubleBoost > 0 && candidate.classification !== 'EXCLUDE') {
+    // Value play if horse has any positive signal flag AND good odds
+    const hasPositiveSignal = candidate.tripTroubleFlagged || candidate.paceAdvantageFlagged;
+
+    if (hasPositiveSignal && hasGoodOdds) {
       return candidate.programNumber;
     }
+  }
 
-    // Positive total adjustment + classification A or B + good odds
-    if (
-      candidate.totalAdjustment > 0 &&
-      (candidate.classification === 'A' || candidate.classification === 'B') &&
-      hasGoodOdds
-    ) {
+  // Secondary criteria: any horse with trip trouble boost (hidden ability) even at shorter odds
+  for (const candidate of candidates) {
+    if (candidate.tripTroubleBoost > 0) {
       return candidate.programNumber;
     }
+  }
 
-    // Lone speed in slow pace scenario
+  // Tertiary: Lone speed in slow pace scenario
+  for (const candidate of candidates) {
     if (candidate.paceAdvantage >= 2 && paceScenario?.paceProjection === 'SLOW') {
       return candidate.programNumber;
     }
@@ -1069,7 +1084,7 @@ export function combineMultiBotResults(
 
   if (competitiveFieldDetected) {
     debugLog(
-      'COMPETITIVE FIELD DETECTED: Top 4 horses within 20 points - adjustments reduced by 50%'
+      'COMPETITIVE FIELD DETECTED: Top 4 horses within 20 points - adjustments reduced by 25%'
     );
   }
 
