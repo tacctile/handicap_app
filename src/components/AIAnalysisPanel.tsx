@@ -11,7 +11,14 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import type { AIRaceAnalysis, HorseInsight, BotStatusDebugInfo } from '../services/ai/types';
+import type {
+  AIRaceAnalysis,
+  HorseInsight,
+  BotStatusDebugInfo,
+  BetConstructionGuidance,
+  ExactaStrategy,
+  TrifectaStrategy,
+} from '../services/ai/types';
 import './AIAnalysisPanel.css';
 
 // ============================================================================
@@ -289,6 +296,236 @@ const BotStatusDebugSection: React.FC<{ debugInfo: BotStatusDebugInfo }> = ({ de
 };
 
 // ============================================================================
+// TICKET CONSTRUCTION SECTION
+// ============================================================================
+
+interface TicketConstructionSectionProps {
+  betConstruction: BetConstructionGuidance;
+  getHorseName: (programNumber: number) => string;
+}
+
+/**
+ * Ticket Construction Section component
+ * Displays bet construction guidance using expansion/contraction model
+ */
+const TicketConstructionSection: React.FC<TicketConstructionSectionProps> = ({
+  betConstruction,
+  getHorseName,
+}) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  // Calculate exacta ticket cost
+  const calculateExactaCost = (strategy: ExactaStrategy): number => {
+    const horses = strategy.includeHorses.length;
+    switch (strategy.type) {
+      case 'KEY':
+        // Key horse over N horses = N combinations × $2
+        return horses * 2;
+      case 'BOX':
+        // Box of N horses = N × (N-1) combinations × $1
+        return horses * (horses - 1);
+      case 'PART_WHEEL':
+        // Wheel key over N horses = N combinations × $2
+        return horses * 2;
+      default:
+        return 0;
+    }
+  };
+
+  // Calculate trifecta ticket cost
+  const calculateTrifectaCost = (strategy: TrifectaStrategy): number => {
+    const aCount = strategy.aHorses.length;
+    const bCount = strategy.bHorses.length;
+    switch (strategy.type) {
+      case 'KEY':
+        // Key horse over A and B = A × B × $1
+        return aCount * bCount;
+      case 'BOX':
+        // Full box of A horses = A × (A-1) × (A-2) × $0.50
+        return Math.round(aCount * (aCount - 1) * (aCount - 2) * 0.5);
+      case 'PART_WHEEL':
+        // A horses / B horses / B horses (part wheel)
+        // A count × B count × (B count - 1) × $1
+        return aCount * bCount * Math.max(bCount - 1, 1);
+      default:
+        return 0;
+    }
+  };
+
+  // Format exacta strategy display
+  const formatExactaStrategy = (strategy: ExactaStrategy): string => {
+    const horses = strategy.includeHorses.map((n) => `#${n}`).join(', ');
+    switch (strategy.type) {
+      case 'KEY':
+        return `EXACTA KEY: #${strategy.keyHorse} over ${horses}`;
+      case 'BOX':
+        return `EXACTA BOX: ${horses}`;
+      case 'PART_WHEEL':
+        return `EXACTA WHEEL: #${strategy.keyHorse} over ${horses}`;
+      default:
+        return 'EXACTA: None';
+    }
+  };
+
+  // Format trifecta strategy display
+  const formatTrifectaStrategy = (strategy: TrifectaStrategy): string => {
+    const aHorses = strategy.aHorses.map((n) => `#${n}`).join(', ');
+    const bHorses = strategy.bHorses.map((n) => `#${n}`).join(', ');
+    return `TRIFECTA: A horses ${aHorses} / B horses ${bHorses}`;
+  };
+
+  // Get race classification badge styling
+  const getClassificationBadgeClass = (
+    classification: 'BETTABLE' | 'SPREAD_WIDE' | 'PASS'
+  ): string => {
+    switch (classification) {
+      case 'BETTABLE':
+        return 'ai-panel__ticket-badge--bettable';
+      case 'SPREAD_WIDE':
+        return 'ai-panel__ticket-badge--spread';
+      case 'PASS':
+        return 'ai-panel__ticket-badge--pass';
+      default:
+        return '';
+    }
+  };
+
+  // Get race classification label
+  const getClassificationLabel = (classification: 'BETTABLE' | 'SPREAD_WIDE' | 'PASS'): string => {
+    switch (classification) {
+      case 'BETTABLE':
+        return 'BETTABLE';
+      case 'SPREAD_WIDE':
+        return 'SPREAD REQUIRED';
+      case 'PASS':
+        return 'PASS';
+      default:
+        return classification;
+    }
+  };
+
+  const exactaCost = calculateExactaCost(betConstruction.exactaStrategy);
+  const trifectaCost = calculateTrifectaCost(betConstruction.trifectaStrategy);
+
+  return (
+    <div className="ai-panel__ticket-section">
+      <div
+        className="ai-panel__ticket-header"
+        onClick={() => setIsExpanded((prev) => !prev)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && setIsExpanded((prev) => !prev)}
+      >
+        <span className="material-icons ai-panel__ticket-icon">confirmation_number</span>
+        <span className="ai-panel__ticket-title">Ticket Construction</span>
+        <span
+          className={`ai-panel__ticket-badge ${getClassificationBadgeClass(betConstruction.raceClassification)}`}
+        >
+          {getClassificationLabel(betConstruction.raceClassification)}
+        </span>
+        <span className="material-icons ai-panel__ticket-chevron">
+          {isExpanded ? 'expand_less' : 'expand_more'}
+        </span>
+      </div>
+
+      {isExpanded && (
+        <div className="ai-panel__ticket-content">
+          {/* Vulnerable Favorite Alert or Solid Indicator */}
+          {betConstruction.contractionTarget !== null ? (
+            <div className="ai-panel__ticket-alert ai-panel__ticket-alert--warning">
+              <span className="ai-panel__ticket-alert-icon">⚠️</span>
+              <div className="ai-panel__ticket-alert-content">
+                <span className="ai-panel__ticket-alert-title">
+                  VULNERABLE FAVORITE: #{betConstruction.contractionTarget} excluded from key
+                  positions
+                </span>
+                {betConstruction.signalSummary && (
+                  <span className="ai-panel__ticket-alert-detail">
+                    {betConstruction.signalSummary}
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="ai-panel__ticket-alert ai-panel__ticket-alert--success">
+              <span className="ai-panel__ticket-alert-icon">✓</span>
+              <span className="ai-panel__ticket-alert-title">Favorite appears solid</span>
+            </div>
+          )}
+
+          {/* Expansion Horses (Sleepers) - Only show if present */}
+          {betConstruction.expansionHorses.length > 0 && (
+            <div className="ai-panel__ticket-sleepers">
+              <div className="ai-panel__ticket-sleepers-header">
+                <span className="material-icons">trending_up</span>
+                <span>SLEEPERS ADDED TO TICKETS</span>
+              </div>
+              <div className="ai-panel__ticket-sleepers-list">
+                {betConstruction.expansionHorses.map((programNumber) => (
+                  <div key={programNumber} className="ai-panel__ticket-sleeper">
+                    <span className="ai-panel__ticket-sleeper-number">#{programNumber}</span>
+                    <span className="ai-panel__ticket-sleeper-name">
+                      {getHorseName(programNumber)}
+                    </span>
+                    <span className="ai-panel__ticket-sleeper-signal">
+                      Trip Trouble / Pace Advantage
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Exacta Strategy */}
+          <div className="ai-panel__ticket-strategy">
+            <div className="ai-panel__ticket-strategy-row">
+              <span className="ai-panel__ticket-strategy-label">
+                {formatExactaStrategy(betConstruction.exactaStrategy)}
+              </span>
+              {betConstruction.exactaStrategy.excludeFromTop && (
+                <span className="ai-panel__ticket-strategy-exclude">
+                  (#{betConstruction.exactaStrategy.excludeFromTop} excluded)
+                </span>
+              )}
+            </div>
+            <div className="ai-panel__ticket-strategy-cost">
+              <span className="ai-panel__ticket-cost-label">Est. Cost:</span>
+              <span className="ai-panel__ticket-cost-value">${exactaCost}</span>
+            </div>
+          </div>
+
+          {/* Trifecta Strategy */}
+          <div className="ai-panel__ticket-strategy">
+            <div className="ai-panel__ticket-strategy-row">
+              <span className="ai-panel__ticket-strategy-label">
+                {formatTrifectaStrategy(betConstruction.trifectaStrategy)}
+              </span>
+              {betConstruction.trifectaStrategy.excludeFromTop && (
+                <span className="ai-panel__ticket-strategy-exclude">
+                  (#{betConstruction.trifectaStrategy.excludeFromTop} excluded from win spot)
+                </span>
+              )}
+            </div>
+            <div className="ai-panel__ticket-strategy-cost">
+              <span className="ai-panel__ticket-cost-label">Est. Cost:</span>
+              <span className="ai-panel__ticket-cost-value">${trifectaCost}</span>
+            </div>
+          </div>
+
+          {/* Pass Reason (only if PASS) */}
+          {betConstruction.raceClassification === 'PASS' && betConstruction.signalSummary && (
+            <div className="ai-panel__ticket-pass-reason">
+              <span className="material-icons">info</span>
+              <span>{betConstruction.signalSummary}</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -438,6 +675,14 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
               variant="danger"
             />
           </div>
+
+          {/* Ticket Construction Section (only if betConstruction data exists) */}
+          {aiAnalysis.betConstruction && (
+            <TicketConstructionSection
+              betConstruction={aiAnalysis.betConstruction}
+              getHorseName={getHorseNameDisplay}
+            />
+          )}
 
           {/* Top Pick & Value Play */}
           <div className="ai-panel__picks">
