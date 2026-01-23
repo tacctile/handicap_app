@@ -249,8 +249,102 @@ export interface FieldSpreadAnalysis {
   horseClassifications?: HorseClassificationData[];
 }
 
+// ============================================================================
+// CLASS DROP BOT TYPES
+// ============================================================================
+
 /**
- * Combined raw results from all 4 multi-bot analyses
+ * Class drop severity classification
+ * Based on percentage drop from average past class to today's class
+ */
+export type ClassDropType = 'MAJOR' | 'MODERATE' | 'MINOR' | 'NONE' | 'RISING' | 'UNKNOWN';
+
+/**
+ * Class indicators extracted from DRF data
+ * Used to calculate class drops
+ */
+export interface ClassIndicators {
+  /** Today's purse amount */
+  purseToday: number;
+  /** Average purse from last 3 races */
+  purseAvgPast3: number | null;
+  /** Today's claiming price (null if not claiming race) */
+  claimingToday: number | null;
+  /** Average claiming price from last 3 races (null if no claiming races) */
+  claimingAvgPast3: number | null;
+  /** Today's race type classification */
+  raceTypeToday: string;
+  /** Past race types from last 3 races */
+  raceTypePast: string[];
+}
+
+/**
+ * Per-horse class drop analysis
+ * Contains detailed class movement data for a single horse
+ */
+export interface ClassDropHorse {
+  /** Program number (saddle cloth) */
+  programNumber: number;
+  /** Horse name */
+  horseName: string;
+  /** Today's class level (claiming price if available, else purse) */
+  todayClass: number;
+  /** Average class level from last 3 races */
+  averagePastClass: number;
+  /** Drop percentage: positive = dropping, negative = rising */
+  dropPercentage: number;
+  /** Classification of drop severity */
+  dropType: ClassDropType;
+  /** Raw class indicators from DRF data */
+  classIndicators: ClassIndicators;
+  /** Whether this horse is a value candidate due to class drop */
+  isValueCandidate: boolean;
+  /** Human-readable explanation of class drop */
+  dropReason: string;
+}
+
+/**
+ * Field class level assessment
+ * Overall quality level of today's race
+ */
+export type FieldClassLevel = 'HIGH' | 'MEDIUM' | 'LOW';
+
+/**
+ * Class Drop Bot analysis result
+ * Identifies horses dropping significantly in class - a primary value indicator
+ */
+export interface ClassDropAnalysis {
+  /** Class drop data for all horses in the race */
+  horsesWithClassDrop: ClassDropHorse[];
+  /** Overall field class level */
+  fieldClassLevel: FieldClassLevel;
+  /** Horse with the biggest class drop (if any significant drops exist) */
+  biggestDrop: {
+    programNumber: number;
+    horseName: string;
+    dropPercentage: number;
+    fromClass: string;
+    toClass: string;
+  } | null;
+  /** Number of horses with significant class drops (MAJOR or MODERATE) */
+  classDroppers: number;
+}
+
+/**
+ * Class Drop Bot Result
+ * Return type from analyzeClassDrops function
+ */
+export interface ClassDropBotResult {
+  /** Class drop analysis data */
+  analysis: ClassDropAnalysis;
+  /** Confidence in the analysis (based on data completeness) */
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  /** Raw response from AI (for debugging) */
+  rawResponse?: string;
+}
+
+/**
+ * Combined raw results from all 5 multi-bot analyses
  */
 export interface MultiBotRawResults {
   /** Trip trouble analysis (null if bot failed) */
@@ -261,6 +355,8 @@ export interface MultiBotRawResults {
   vulnerableFavorite: VulnerableFavoriteAnalysis | null;
   /** Field spread analysis (null if bot failed) */
   fieldSpread: FieldSpreadAnalysis | null;
+  /** Class drop analysis (null if bot failed) */
+  classDrop: ClassDropAnalysis | null;
 }
 
 /**
@@ -282,7 +378,7 @@ export interface AIServiceConfig {
  */
 export interface OverrideReason {
   /** Type of signal that triggered the override */
-  signal: 'tripTrouble' | 'paceAdvantage' | 'vulnerableFavorite' | 'combined';
+  signal: 'tripTrouble' | 'paceAdvantage' | 'vulnerableFavorite' | 'classDrop' | 'combined';
   /** Confidence level of the signal */
   confidence: 'HIGH' | 'MEDIUM' | 'LOW';
   /** Human-readable description */
@@ -332,6 +428,18 @@ export interface AggregatedSignals {
   keyCandidate: boolean;
   /** Whether horse should only be used in spread positions */
   spreadOnly: boolean;
+
+  // Class Drop signals
+  /** Class drop boost: 0 (none), +1 (MODERATE 25-39%), +2 (MAJOR 40%+) */
+  classDropBoost: number;
+  /** Whether class drop was flagged (MAJOR or MODERATE) */
+  classDropFlagged: boolean;
+  /** Description of class drop if significant */
+  classDropReason: string | null;
+  /** Class drop percentage (positive = dropping, negative = rising) */
+  classDropPercentage: number;
+  /** Class drop type classification */
+  classDropType: ClassDropType | null;
 
   // Aggregated totals
   /** Sum of all adjustments (capped at ±3) */
@@ -448,6 +556,7 @@ export type ValueHorseSource =
   | 'PACE_ADVANTAGE' // Horse has clear pace tactical advantage
   | 'VULNERABLE_FAVORITE' // Opportunity created by weak favorite
   | 'FIELD_SPREAD' // Wide open field with no deserving favorite
+  | 'CLASS_DROP' // Horse dropping significantly in class - value indicator
   | 'MULTIPLE'; // Multiple bots converge on same horse
 
 /**
