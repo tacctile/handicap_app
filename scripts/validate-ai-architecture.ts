@@ -93,6 +93,113 @@ interface SizingPerformanceMetrics {
   avgConfidence: number;
 }
 
+// ============================================================================
+// EXPANDED BET TYPE TRACKING TYPES
+// ============================================================================
+
+/**
+ * Generic bet type metrics - used for all bet variations
+ */
+interface BetTypeMetrics {
+  races: number; // Number of races where this bet was possible
+  hits: number; // Number of times the bet hit
+  hitRate: number; // hits / races * 100
+  cost: number; // Total cost at $1 base
+  payout: number; // Total estimated payout
+  roi: number; // (payout - cost) / cost * 100
+}
+
+/**
+ * Win/Place/Show metrics for both Algorithm Only and Algorithm+AI
+ */
+interface WPSMetrics {
+  win: BetTypeMetrics;
+  place: BetTypeMetrics;
+  show: BetTypeMetrics;
+}
+
+/**
+ * All exacta variations
+ */
+interface ExactaVariationMetrics {
+  straight: BetTypeMetrics; // Exact 1-2 order
+  box2: BetTypeMetrics; // Top 2, any order
+  box3: BetTypeMetrics; // Top 3, any order
+  box4: BetTypeMetrics; // Top 4, any order (already tracked)
+  keyValueOver2: BetTypeMetrics; // Value horse over 2 others
+  keyValueOver3: BetTypeMetrics; // Value horse over 3 others
+  keyValueOver4: BetTypeMetrics; // Value horse over 4 others
+  key2OverValue: BetTypeMetrics; // 2 others over value horse
+}
+
+/**
+ * All trifecta variations
+ */
+interface TrifectaVariationMetrics {
+  straight: BetTypeMetrics; // Exact 1-2-3 order
+  box3: BetTypeMetrics; // Top 3, any order
+  box4: BetTypeMetrics; // Top 4, any order
+  box5: BetTypeMetrics; // Top 5, any order (already tracked)
+  keyValueWith2Over3: BetTypeMetrics; // Value 1st, 2 for 2nd, 3 for 3rd
+  keyValueWith3Over4: BetTypeMetrics; // Value 1st, 3 for 2nd, 4 for 3rd
+  key2WithValueOver3: BetTypeMetrics; // 2 for 1st, value 2nd, 3 for 3rd
+  key2Over3WithValue: BetTypeMetrics; // 2 for 1st, 3 for 2nd, value 3rd
+}
+
+/**
+ * All superfecta variations
+ */
+interface SuperfectaVariationMetrics {
+  straight: BetTypeMetrics; // Exact 1-2-3-4 order
+  box4: BetTypeMetrics; // Top 4, any order
+  box5: BetTypeMetrics; // Top 5, any order
+  box6: BetTypeMetrics; // Top 6, any order
+  keyValueWith3Over4Over5: BetTypeMetrics; // Value 1st, 3 for 2nd, 4 for 3rd, 5 for 4th
+  keyValueInAnyTop4: BetTypeMetrics; // Value somewhere in 1-2-3-4
+}
+
+/**
+ * Value horse specific performance metrics
+ */
+interface ValueHorsePerformanceMetrics {
+  totalRacesWithValueHorse: number;
+  valueHorseByTier: {
+    HIGH: { races: number; wins: number; places: number; shows: number; boards: number };
+    MEDIUM: { races: number; wins: number; places: number; shows: number; boards: number };
+    LOW: { races: number; wins: number; places: number; shows: number; boards: number };
+  };
+  overall: {
+    winRate: number;
+    placeRate: number;
+    showRate: number;
+    boardRate: number;
+  };
+}
+
+/**
+ * Expanded ROI tracking for all bet types
+ */
+interface ExpandedROITracking {
+  // Win/Place/Show
+  algorithmOnlyWPS: WPSMetrics;
+  algorithmPlusAIWPS: WPSMetrics;
+
+  // Exacta variations
+  algorithmOnlyExacta: ExactaVariationMetrics;
+  algorithmPlusAIExacta: ExactaVariationMetrics;
+
+  // Trifecta variations
+  algorithmOnlyTrifecta: TrifectaVariationMetrics;
+  algorithmPlusAITrifecta: TrifectaVariationMetrics;
+
+  // Superfecta variations
+  algorithmOnlySuperfecta: SuperfectaVariationMetrics;
+  algorithmPlusAISuperfecta: SuperfectaVariationMetrics;
+
+  // Value horse specific metrics
+  valueHorseMetrics: ValueHorsePerformanceMetrics;
+}
+
 /**
  * ValidationResult - ROI-focused structure for template/sizing system
  */
@@ -209,6 +316,9 @@ interface ValidationResult {
     passRateSuspiciouslyLow: boolean; // <10%
     passRateTooAggressive: boolean; // >40%
   };
+
+  // EXPANDED ROI TRACKING - All bet types
+  expandedROI: ExpandedROITracking;
 }
 
 interface RaceResult {
@@ -781,6 +891,459 @@ function checkTemplateTrifectaHit(
 }
 
 // ============================================================================
+// EXPANDED BET TYPE HIT CHECKERS
+// ============================================================================
+
+/**
+ * Check Win bet hit - top pick wins
+ */
+function checkWinHit(topPick: number, actual: { first: number }): boolean {
+  return topPick === actual.first;
+}
+
+/**
+ * Check Place bet hit - top pick finishes 1st or 2nd
+ */
+function checkPlaceHit(topPick: number, actual: { first: number; second: number }): boolean {
+  return topPick === actual.first || topPick === actual.second;
+}
+
+/**
+ * Check Show bet hit - top pick finishes 1st, 2nd, or 3rd
+ */
+function checkShowHit(
+  topPick: number,
+  actual: { first: number; second: number; third: number }
+): boolean {
+  return topPick === actual.first || topPick === actual.second || topPick === actual.third;
+}
+
+/**
+ * Check Exacta Straight hit - exact 1-2 order
+ */
+function checkExactaStraight(picks: number[], actual: { first: number; second: number }): boolean {
+  return picks[0] === actual.first && picks[1] === actual.second;
+}
+
+/**
+ * Check Exacta Box hit - any order within candidates
+ */
+function checkExactaBoxN(candidates: number[], actual: { first: number; second: number }): boolean {
+  return candidates.includes(actual.first) && candidates.includes(actual.second);
+}
+
+/**
+ * Check Exacta Key Over - key horse wins, any of the with horses fill 2nd
+ * @param keyHorse The horse keyed to win
+ * @param withHorses The horses that can finish 2nd
+ */
+function checkExactaKeyOver(
+  keyHorse: number,
+  withHorses: number[],
+  actual: { first: number; second: number }
+): boolean {
+  return keyHorse === actual.first && withHorses.includes(actual.second);
+}
+
+/**
+ * Check Exacta Key Under - any of the with horses win, key horse finishes 2nd
+ * @param keyHorse The horse keyed to finish 2nd
+ * @param withHorses The horses that can win
+ */
+function checkExactaKeyUnder(
+  keyHorse: number,
+  withHorses: number[],
+  actual: { first: number; second: number }
+): boolean {
+  return withHorses.includes(actual.first) && keyHorse === actual.second;
+}
+
+/**
+ * Check Trifecta Straight hit - exact 1-2-3 order
+ */
+function checkTrifectaStraight(
+  picks: number[],
+  actual: { first: number; second: number; third: number }
+): boolean {
+  return picks[0] === actual.first && picks[1] === actual.second && picks[2] === actual.third;
+}
+
+/**
+ * Check Trifecta Box hit - any order within candidates
+ */
+function checkTrifectaBoxN(
+  candidates: number[],
+  actual: { first: number; second: number; third: number }
+): boolean {
+  return (
+    candidates.includes(actual.first) &&
+    candidates.includes(actual.second) &&
+    candidates.includes(actual.third)
+  );
+}
+
+/**
+ * Check Trifecta Key with A over B - key horse wins, A horses for 2nd, B horses for 3rd
+ * @param keyHorse The horse keyed to win
+ * @param aHorses Horses that can finish 2nd
+ * @param bHorses Horses that can finish 3rd
+ */
+function checkTrifectaKeyWithAOverB(
+  keyHorse: number,
+  aHorses: number[],
+  bHorses: number[],
+  actual: { first: number; second: number; third: number }
+): boolean {
+  return (
+    keyHorse === actual.first && aHorses.includes(actual.second) && bHorses.includes(actual.third)
+  );
+}
+
+/**
+ * Check Trifecta A with Key over B - A horses win, key horse 2nd, B horses 3rd
+ */
+function checkTrifectaAWithKeyOverB(
+  aHorses: number[],
+  keyHorse: number,
+  bHorses: number[],
+  actual: { first: number; second: number; third: number }
+): boolean {
+  return (
+    aHorses.includes(actual.first) && keyHorse === actual.second && bHorses.includes(actual.third)
+  );
+}
+
+/**
+ * Check Trifecta A over B with Key - A horses win, B horses 2nd, key horse 3rd
+ */
+function checkTrifectaAOverBWithKey(
+  aHorses: number[],
+  bHorses: number[],
+  keyHorse: number,
+  actual: { first: number; second: number; third: number }
+): boolean {
+  return (
+    aHorses.includes(actual.first) && bHorses.includes(actual.second) && keyHorse === actual.third
+  );
+}
+
+/**
+ * Check Superfecta Straight hit - exact 1-2-3-4 order
+ */
+function checkSuperfectaStraight(
+  picks: number[],
+  actual: { first: number; second: number; third: number; fourth: number }
+): boolean {
+  return (
+    picks[0] === actual.first &&
+    picks[1] === actual.second &&
+    picks[2] === actual.third &&
+    picks[3] === actual.fourth
+  );
+}
+
+/**
+ * Check Superfecta Box hit - any order within candidates
+ */
+function checkSuperfectaBoxN(
+  candidates: number[],
+  actual: { first: number; second: number; third: number; fourth: number }
+): boolean {
+  return (
+    candidates.includes(actual.first) &&
+    candidates.includes(actual.second) &&
+    candidates.includes(actual.third) &&
+    candidates.includes(actual.fourth)
+  );
+}
+
+/**
+ * Check Superfecta Key with A over B over C
+ * Key horse wins, A for 2nd, B for 3rd, C for 4th
+ */
+function checkSuperfectaKeyWithAOverBOverC(
+  keyHorse: number,
+  aHorses: number[],
+  bHorses: number[],
+  cHorses: number[],
+  actual: { first: number; second: number; third: number; fourth: number }
+): boolean {
+  return (
+    keyHorse === actual.first &&
+    aHorses.includes(actual.second) &&
+    bHorses.includes(actual.third) &&
+    cHorses.includes(actual.fourth)
+  );
+}
+
+/**
+ * Check if key horse is in any of the top 4 positions
+ */
+function checkSuperfectaKeyInAnyTop4(
+  keyHorse: number,
+  otherCandidates: number[],
+  actual: { first: number; second: number; third: number; fourth: number }
+): boolean {
+  const actualTop4 = [actual.first, actual.second, actual.third, actual.fourth];
+  // Key horse must be somewhere in 1-2-3-4
+  if (!actualTop4.includes(keyHorse)) return false;
+  // Other 3 positions must be filled by other candidates
+  const otherActual = actualTop4.filter((p) => p !== keyHorse);
+  return otherActual.every((p) => otherCandidates.includes(p));
+}
+
+// ============================================================================
+// BET COST CALCULATORS
+// ============================================================================
+
+/**
+ * Calculate exacta box cost: n * (n-1) combinations at $2 base
+ */
+function calculateExactaBoxCost(numHorses: number): number {
+  return numHorses * (numHorses - 1) * 2;
+}
+
+/**
+ * Calculate exacta key cost: n with-horses at $2 base
+ */
+function calculateExactaKeyCost(numWithHorses: number): number {
+  return numWithHorses * 2;
+}
+
+/**
+ * Calculate trifecta box cost: n * (n-1) * (n-2) combinations at $1 base
+ */
+function calculateTrifectaBoxCost(numHorses: number): number {
+  return numHorses * (numHorses - 1) * (numHorses - 2) * 1;
+}
+
+/**
+ * Calculate trifecta key cost: key with A over B
+ * Combinations = |A| * |B| at $1 base
+ */
+function calculateTrifectaKeyCost(numAHorses: number, numBHorses: number): number {
+  return numAHorses * numBHorses * 1;
+}
+
+/**
+ * Calculate superfecta box cost: n * (n-1) * (n-2) * (n-3) combinations at $0.10 base
+ */
+function calculateSuperfectaBoxCost(numHorses: number): number {
+  if (numHorses < 4) return 0;
+  return numHorses * (numHorses - 1) * (numHorses - 2) * (numHorses - 3) * 0.1;
+}
+
+/**
+ * Calculate superfecta key cost: key with A over B over C
+ * Combinations = |A| * |B| * |C| at $0.10 base
+ */
+function calculateSuperfectaKeyCost(
+  numAHorses: number,
+  numBHorses: number,
+  numCHorses: number
+): number {
+  return numAHorses * numBHorses * numCHorses * 0.1;
+}
+
+// ============================================================================
+// PAYOUT ESTIMATORS (based on odds)
+// ============================================================================
+
+/**
+ * Estimate win payout based on morning line odds
+ */
+function estimateWinPayout(oddsDecimal: number, baseUnit: number = 2): number {
+  return baseUnit * (oddsDecimal + 1);
+}
+
+/**
+ * Estimate place payout (roughly half of win payout)
+ */
+function estimatePlacePayout(oddsDecimal: number, baseUnit: number = 2): number {
+  return baseUnit * (oddsDecimal / 2 + 1);
+}
+
+/**
+ * Estimate show payout (roughly third of win payout)
+ */
+function estimateShowPayout(oddsDecimal: number, baseUnit: number = 2): number {
+  return baseUnit * (oddsDecimal / 3 + 1);
+}
+
+/**
+ * Estimate exacta payout based on first two finishers' odds
+ */
+function estimateExactaPayout(firstOdds: number, secondOdds: number, baseUnit: number = 2): number {
+  // Rough estimate: product of odds plus some juice
+  return baseUnit * (firstOdds * secondOdds * 0.7 + 2);
+}
+
+/**
+ * Estimate trifecta payout based on first three finishers' odds
+ */
+function estimateTrifectaPayout(
+  firstOdds: number,
+  secondOdds: number,
+  thirdOdds: number,
+  baseUnit: number = 1
+): number {
+  // Rough estimate: product of odds with takeout adjustment
+  return baseUnit * (firstOdds * secondOdds * thirdOdds * 0.5 + 5);
+}
+
+/**
+ * Estimate superfecta payout based on first four finishers' odds
+ */
+function estimateSuperfectaPayout(
+  firstOdds: number,
+  secondOdds: number,
+  thirdOdds: number,
+  fourthOdds: number,
+  baseUnit: number = 0.1
+): number {
+  // Rough estimate: product of odds with significant takeout
+  return baseUnit * (firstOdds * secondOdds * thirdOdds * fourthOdds * 0.3 + 10);
+}
+
+/**
+ * Initialize empty bet type metrics
+ */
+function createEmptyBetMetrics(): BetTypeMetrics {
+  return {
+    races: 0,
+    hits: 0,
+    hitRate: 0,
+    cost: 0,
+    payout: 0,
+    roi: 0,
+  };
+}
+
+/**
+ * Initialize empty WPS metrics
+ */
+function createEmptyWPSMetrics(): WPSMetrics {
+  return {
+    win: createEmptyBetMetrics(),
+    place: createEmptyBetMetrics(),
+    show: createEmptyBetMetrics(),
+  };
+}
+
+/**
+ * Initialize empty exacta variation metrics
+ */
+function createEmptyExactaMetrics(): ExactaVariationMetrics {
+  return {
+    straight: createEmptyBetMetrics(),
+    box2: createEmptyBetMetrics(),
+    box3: createEmptyBetMetrics(),
+    box4: createEmptyBetMetrics(),
+    keyValueOver2: createEmptyBetMetrics(),
+    keyValueOver3: createEmptyBetMetrics(),
+    keyValueOver4: createEmptyBetMetrics(),
+    key2OverValue: createEmptyBetMetrics(),
+  };
+}
+
+/**
+ * Initialize empty trifecta variation metrics
+ */
+function createEmptyTrifectaMetrics(): TrifectaVariationMetrics {
+  return {
+    straight: createEmptyBetMetrics(),
+    box3: createEmptyBetMetrics(),
+    box4: createEmptyBetMetrics(),
+    box5: createEmptyBetMetrics(),
+    keyValueWith2Over3: createEmptyBetMetrics(),
+    keyValueWith3Over4: createEmptyBetMetrics(),
+    key2WithValueOver3: createEmptyBetMetrics(),
+    key2Over3WithValue: createEmptyBetMetrics(),
+  };
+}
+
+/**
+ * Initialize empty superfecta variation metrics
+ */
+function createEmptySuperfectaMetrics(): SuperfectaVariationMetrics {
+  return {
+    straight: createEmptyBetMetrics(),
+    box4: createEmptyBetMetrics(),
+    box5: createEmptyBetMetrics(),
+    box6: createEmptyBetMetrics(),
+    keyValueWith3Over4Over5: createEmptyBetMetrics(),
+    keyValueInAnyTop4: createEmptyBetMetrics(),
+  };
+}
+
+/**
+ * Initialize empty value horse performance metrics
+ */
+function createEmptyValueHorseMetrics(): ValueHorsePerformanceMetrics {
+  return {
+    totalRacesWithValueHorse: 0,
+    valueHorseByTier: {
+      HIGH: { races: 0, wins: 0, places: 0, shows: 0, boards: 0 },
+      MEDIUM: { races: 0, wins: 0, places: 0, shows: 0, boards: 0 },
+      LOW: { races: 0, wins: 0, places: 0, shows: 0, boards: 0 },
+    },
+    overall: {
+      winRate: 0,
+      placeRate: 0,
+      showRate: 0,
+      boardRate: 0,
+    },
+  };
+}
+
+/**
+ * Calculate ROI for bet metrics
+ */
+function calculateBetROI(metrics: BetTypeMetrics): number {
+  if (metrics.cost === 0) return 0;
+  return ((metrics.payout - metrics.cost) / metrics.cost) * 100;
+}
+
+/**
+ * Calculate hit rate for bet metrics
+ */
+function calculateBetHitRate(metrics: BetTypeMetrics): number {
+  if (metrics.races === 0) return 0;
+  return (metrics.hits / metrics.races) * 100;
+}
+
+/**
+ * Finalize bet metrics (calculate derived values)
+ */
+function finalizeBetMetrics(metrics: BetTypeMetrics): BetTypeMetrics {
+  return {
+    ...metrics,
+    hitRate: calculateBetHitRate(metrics),
+    roi: calculateBetROI(metrics),
+  };
+}
+
+/**
+ * Map value horse signal strength to confidence tier
+ */
+function mapSignalStrengthToTier(
+  strength: 'VERY_STRONG' | 'STRONG' | 'MODERATE' | 'WEAK' | 'NONE'
+): 'HIGH' | 'MEDIUM' | 'LOW' | null {
+  switch (strength) {
+    case 'VERY_STRONG':
+    case 'STRONG':
+      return 'HIGH';
+    case 'MODERATE':
+      return 'MEDIUM';
+    case 'WEAK':
+      return 'LOW';
+    case 'NONE':
+    default:
+      return null;
+  }
+}
+
+// ============================================================================
 // MAIN VALIDATION RUNNER
 // ============================================================================
 
@@ -892,16 +1455,59 @@ async function runValidation(): Promise<ValidationResult> {
   const ALGO_EXACTA_COST_PER_RACE = 12 * 2; // 12 combos @ $2 = $24
   const ALGO_TRIFECTA_COST_PER_RACE = 60 * 1; // 60 combos @ $1 = $60
 
+  // ============================================================================
+  // EXPANDED ROI TRACKING INITIALIZATION
+  // ============================================================================
+  const algorithmOnlyWPS = createEmptyWPSMetrics();
+  const algorithmPlusAIWPS = createEmptyWPSMetrics();
+  const algorithmOnlyExacta = createEmptyExactaMetrics();
+  const algorithmPlusAIExacta = createEmptyExactaMetrics();
+  const algorithmOnlyTrifecta = createEmptyTrifectaMetrics();
+  const algorithmPlusAITrifecta = createEmptyTrifectaMetrics();
+  const algorithmOnlySuperfecta = createEmptySuperfectaMetrics();
+  const algorithmPlusAISuperfecta = createEmptySuperfectaMetrics();
+  const valueHorseMetrics = createEmptyValueHorseMetrics();
+
+  // Average payout estimates by bet type (used when actual payouts unavailable)
+  // Note: These are unused currently as we use odds-based estimation instead
+  const _AVG_EXACTA_PAYOUT = 25;
+  const _AVG_TRIFECTA_PAYOUT = 150;
+  const _AVG_SUPERFECTA_PAYOUT = 500;
+  // Suppress unused variable warnings
+  void _AVG_EXACTA_PAYOUT;
+  void _AVG_TRIFECTA_PAYOUT;
+  void _AVG_SUPERFECTA_PAYOUT;
+
   for (const raceData of allRaces) {
     const { scoringResult, raceResult } = raceData;
-    const algoTop5 = scoringResult.scores.slice(0, 5).map((s) => s.programNumber);
-    const algoTop4 = algoTop5.slice(0, 4);
+    const algoTop6 = scoringResult.scores.slice(0, 6).map((s) => s.programNumber);
+    const algoTop5 = algoTop6.slice(0, 5);
+    const algoTop4 = algoTop6.slice(0, 4);
+    const algoTop3 = algoTop6.slice(0, 3);
+    const algoTop2 = algoTop6.slice(0, 2);
 
+    // Get top pick
+    const topPick = algoTop6[0]!;
+
+    // Get odds for payout estimates
+    const getHorseOdds = (programNumber: number): number => {
+      const horse = scoringResult.scores.find((s) => s.programNumber === programNumber);
+      return horse?.morningLineDecimal ?? 5.0;
+    };
+
+    // Build actual results with 4th position if available
     const actual = {
       first: raceResult.positions[0]?.post || 0,
       second: raceResult.positions[1]?.post || 0,
       third: raceResult.positions[2]?.post || 0,
+      fourth: raceResult.positions[3]?.post || 0,
     };
+
+    // Get odds of actual finishers for payout estimation
+    const firstOdds = getHorseOdds(actual.first);
+    const secondOdds = getHorseOdds(actual.second);
+    const thirdOdds = getHorseOdds(actual.third);
+    const fourthOdds = getHorseOdds(actual.fourth);
 
     // Win: algorithm rank 1 finished 1st
     if (algoTop5[0] === actual.first) algorithmWins++;
@@ -914,6 +1520,188 @@ async function runValidation(): Promise<ValidationResult> {
 
     // Trifecta Box 5: algorithm ranks 1-5 contain actual 1st, 2nd, and 3rd
     if (checkTrifecta(algoTop5, actual)) algorithmTrifectaBox5++;
+
+    // ========================================================================
+    // ALGORITHM ONLY - Win/Place/Show Tracking
+    // ========================================================================
+    const topPickOdds = getHorseOdds(topPick);
+
+    // Win bet
+    algorithmOnlyWPS.win.races++;
+    algorithmOnlyWPS.win.cost += 2;
+    if (checkWinHit(topPick, actual)) {
+      algorithmOnlyWPS.win.hits++;
+      algorithmOnlyWPS.win.payout += estimateWinPayout(topPickOdds, 2);
+    }
+
+    // Place bet
+    algorithmOnlyWPS.place.races++;
+    algorithmOnlyWPS.place.cost += 2;
+    if (checkPlaceHit(topPick, actual)) {
+      algorithmOnlyWPS.place.hits++;
+      algorithmOnlyWPS.place.payout += estimatePlacePayout(topPickOdds, 2);
+    }
+
+    // Show bet
+    algorithmOnlyWPS.show.races++;
+    algorithmOnlyWPS.show.cost += 2;
+    if (checkShowHit(topPick, actual)) {
+      algorithmOnlyWPS.show.hits++;
+      algorithmOnlyWPS.show.payout += estimateShowPayout(topPickOdds, 2);
+    }
+
+    // ========================================================================
+    // ALGORITHM ONLY - Exacta Variations
+    // ========================================================================
+
+    // Exacta Straight (top 2 in exact order)
+    algorithmOnlyExacta.straight.races++;
+    algorithmOnlyExacta.straight.cost += 2;
+    if (checkExactaStraight(algoTop2, actual)) {
+      algorithmOnlyExacta.straight.hits++;
+      algorithmOnlyExacta.straight.payout += estimateExactaPayout(firstOdds, secondOdds, 2);
+    }
+
+    // Exacta Box 2
+    algorithmOnlyExacta.box2.races++;
+    algorithmOnlyExacta.box2.cost += calculateExactaBoxCost(2);
+    if (checkExactaBoxN(algoTop2, actual)) {
+      algorithmOnlyExacta.box2.hits++;
+      algorithmOnlyExacta.box2.payout += estimateExactaPayout(firstOdds, secondOdds, 2);
+    }
+
+    // Exacta Box 3
+    algorithmOnlyExacta.box3.races++;
+    algorithmOnlyExacta.box3.cost += calculateExactaBoxCost(3);
+    if (checkExactaBoxN(algoTop3, actual)) {
+      algorithmOnlyExacta.box3.hits++;
+      algorithmOnlyExacta.box3.payout += estimateExactaPayout(firstOdds, secondOdds, 2);
+    }
+
+    // Exacta Box 4
+    algorithmOnlyExacta.box4.races++;
+    algorithmOnlyExacta.box4.cost += calculateExactaBoxCost(4);
+    if (checkExactaBoxN(algoTop4, actual)) {
+      algorithmOnlyExacta.box4.hits++;
+      algorithmOnlyExacta.box4.payout += estimateExactaPayout(firstOdds, secondOdds, 2);
+    }
+
+    // ========================================================================
+    // ALGORITHM ONLY - Trifecta Variations
+    // ========================================================================
+
+    // Trifecta Straight (top 3 in exact order)
+    algorithmOnlyTrifecta.straight.races++;
+    algorithmOnlyTrifecta.straight.cost += 1;
+    if (checkTrifectaStraight(algoTop3, actual)) {
+      algorithmOnlyTrifecta.straight.hits++;
+      algorithmOnlyTrifecta.straight.payout += estimateTrifectaPayout(
+        firstOdds,
+        secondOdds,
+        thirdOdds,
+        1
+      );
+    }
+
+    // Trifecta Box 3
+    algorithmOnlyTrifecta.box3.races++;
+    algorithmOnlyTrifecta.box3.cost += calculateTrifectaBoxCost(3);
+    if (checkTrifectaBoxN(algoTop3, actual)) {
+      algorithmOnlyTrifecta.box3.hits++;
+      algorithmOnlyTrifecta.box3.payout += estimateTrifectaPayout(
+        firstOdds,
+        secondOdds,
+        thirdOdds,
+        1
+      );
+    }
+
+    // Trifecta Box 4
+    algorithmOnlyTrifecta.box4.races++;
+    algorithmOnlyTrifecta.box4.cost += calculateTrifectaBoxCost(4);
+    if (checkTrifectaBoxN(algoTop4, actual)) {
+      algorithmOnlyTrifecta.box4.hits++;
+      algorithmOnlyTrifecta.box4.payout += estimateTrifectaPayout(
+        firstOdds,
+        secondOdds,
+        thirdOdds,
+        1
+      );
+    }
+
+    // Trifecta Box 5
+    algorithmOnlyTrifecta.box5.races++;
+    algorithmOnlyTrifecta.box5.cost += calculateTrifectaBoxCost(5);
+    if (checkTrifectaBoxN(algoTop5, actual)) {
+      algorithmOnlyTrifecta.box5.hits++;
+      algorithmOnlyTrifecta.box5.payout += estimateTrifectaPayout(
+        firstOdds,
+        secondOdds,
+        thirdOdds,
+        1
+      );
+    }
+
+    // ========================================================================
+    // ALGORITHM ONLY - Superfecta Variations (only if 4th place result exists)
+    // ========================================================================
+    if (actual.fourth > 0) {
+      // Superfecta Straight (top 4 in exact order)
+      algorithmOnlySuperfecta.straight.races++;
+      algorithmOnlySuperfecta.straight.cost += 0.1;
+      if (checkSuperfectaStraight(algoTop4, actual)) {
+        algorithmOnlySuperfecta.straight.hits++;
+        algorithmOnlySuperfecta.straight.payout += estimateSuperfectaPayout(
+          firstOdds,
+          secondOdds,
+          thirdOdds,
+          fourthOdds,
+          0.1
+        );
+      }
+
+      // Superfecta Box 4
+      algorithmOnlySuperfecta.box4.races++;
+      algorithmOnlySuperfecta.box4.cost += calculateSuperfectaBoxCost(4);
+      if (checkSuperfectaBoxN(algoTop4, actual)) {
+        algorithmOnlySuperfecta.box4.hits++;
+        algorithmOnlySuperfecta.box4.payout += estimateSuperfectaPayout(
+          firstOdds,
+          secondOdds,
+          thirdOdds,
+          fourthOdds,
+          0.1
+        );
+      }
+
+      // Superfecta Box 5
+      algorithmOnlySuperfecta.box5.races++;
+      algorithmOnlySuperfecta.box5.cost += calculateSuperfectaBoxCost(5);
+      if (checkSuperfectaBoxN(algoTop5, actual)) {
+        algorithmOnlySuperfecta.box5.hits++;
+        algorithmOnlySuperfecta.box5.payout += estimateSuperfectaPayout(
+          firstOdds,
+          secondOdds,
+          thirdOdds,
+          fourthOdds,
+          0.1
+        );
+      }
+
+      // Superfecta Box 6
+      algorithmOnlySuperfecta.box6.races++;
+      algorithmOnlySuperfecta.box6.cost += calculateSuperfectaBoxCost(6);
+      if (checkSuperfectaBoxN(algoTop6, actual)) {
+        algorithmOnlySuperfecta.box6.hits++;
+        algorithmOnlySuperfecta.box6.payout += estimateSuperfectaPayout(
+          firstOdds,
+          secondOdds,
+          thirdOdds,
+          fourthOdds,
+          0.1
+        );
+      }
+    }
   }
 
   // Calculate algorithm costs
@@ -1249,9 +2037,7 @@ async function runValidation(): Promise<ValidationResult> {
         // Track by odds bracket (Template B only)
         if (template === 'B') {
           // Get favorite's morning line odds
-          const favoriteHorse = scoringResult.scores.find(
-            (s) => s.programNumber === favoritePost
-          );
+          const favoriteHorse = scoringResult.scores.find((s) => s.programNumber === favoritePost);
           const favoriteOdds = favoriteHorse?.morningLineOdds || '5-1';
           const decimalOdds = parseOddsToDecimal(favoriteOdds);
           const bracket = getOddsBracket(decimalOdds);
@@ -1262,10 +2048,442 @@ async function runValidation(): Promise<ValidationResult> {
           }
           if (exactaHit) {
             oddsBracketStats[bracket].exactaHits++;
-            oddsBracketStats[bracket].exactaPayout += getEstimatedPayout('B', 'exacta') * multiplier;
+            oddsBracketStats[bracket].exactaPayout +=
+              getEstimatedPayout('B', 'exacta') * multiplier;
           }
           const { exactaCost: bracketExactaCost } = calculateTicketCost('B', multiplier);
           oddsBracketStats[bracket].exactaCost += bracketExactaCost;
+        }
+      }
+
+      // ========================================================================
+      // VALUE HORSE TRACKING & KEYED BET VARIATIONS
+      // ========================================================================
+      const valueHorse = ticketConstruction.valueHorse;
+      const algoTop6 = scoringResult.scores.slice(0, 6).map((s) => s.programNumber);
+      const algoTop3 = algoTop5.slice(0, 3);
+
+      // Get 4th position for superfecta tracking
+      const actualWithFourth = {
+        ...actual,
+        fourth: raceResult.positions[3]?.post || 0,
+      };
+
+      // Get odds for payout estimation
+      const getHorseOddsAI = (programNumber: number): number => {
+        const horse = scoringResult.scores.find((s) => s.programNumber === programNumber);
+        return horse?.morningLineDecimal ?? 5.0;
+      };
+
+      const firstOdds = getHorseOddsAI(actual.first);
+      const secondOdds = getHorseOddsAI(actual.second);
+      const thirdOdds = getHorseOddsAI(actual.third);
+      const fourthOdds = getHorseOddsAI(actualWithFourth.fourth);
+
+      // Algorithm+AI WPS (using algorithm's top pick but only for non-PASS races)
+      const aiTopPick = ticketConstruction.algorithmTop4[0]!;
+      const aiTopPickOdds = getHorseOddsAI(aiTopPick);
+
+      // Win bet
+      algorithmPlusAIWPS.win.races++;
+      algorithmPlusAIWPS.win.cost += 2;
+      if (checkWinHit(aiTopPick, actual)) {
+        algorithmPlusAIWPS.win.hits++;
+        algorithmPlusAIWPS.win.payout += estimateWinPayout(aiTopPickOdds, 2);
+      }
+
+      // Place bet
+      algorithmPlusAIWPS.place.races++;
+      algorithmPlusAIWPS.place.cost += 2;
+      if (checkPlaceHit(aiTopPick, actual)) {
+        algorithmPlusAIWPS.place.hits++;
+        algorithmPlusAIWPS.place.payout += estimatePlacePayout(aiTopPickOdds, 2);
+      }
+
+      // Show bet
+      algorithmPlusAIWPS.show.races++;
+      algorithmPlusAIWPS.show.cost += 2;
+      if (checkShowHit(aiTopPick, actual)) {
+        algorithmPlusAIWPS.show.hits++;
+        algorithmPlusAIWPS.show.payout += estimateShowPayout(aiTopPickOdds, 2);
+      }
+
+      // Algorithm+AI Exacta variations (box bets using algorithm picks)
+      // Exacta Straight
+      algorithmPlusAIExacta.straight.races++;
+      algorithmPlusAIExacta.straight.cost += 2;
+      if (checkExactaStraight(ticketConstruction.algorithmTop4, actual)) {
+        algorithmPlusAIExacta.straight.hits++;
+        algorithmPlusAIExacta.straight.payout += estimateExactaPayout(firstOdds, secondOdds, 2);
+      }
+
+      // Exacta Box 2
+      algorithmPlusAIExacta.box2.races++;
+      algorithmPlusAIExacta.box2.cost += calculateExactaBoxCost(2);
+      if (checkExactaBoxN(ticketConstruction.algorithmTop4.slice(0, 2), actual)) {
+        algorithmPlusAIExacta.box2.hits++;
+        algorithmPlusAIExacta.box2.payout += estimateExactaPayout(firstOdds, secondOdds, 2);
+      }
+
+      // Exacta Box 3
+      algorithmPlusAIExacta.box3.races++;
+      algorithmPlusAIExacta.box3.cost += calculateExactaBoxCost(3);
+      if (checkExactaBoxN(ticketConstruction.algorithmTop4.slice(0, 3), actual)) {
+        algorithmPlusAIExacta.box3.hits++;
+        algorithmPlusAIExacta.box3.payout += estimateExactaPayout(firstOdds, secondOdds, 2);
+      }
+
+      // Exacta Box 4
+      algorithmPlusAIExacta.box4.races++;
+      algorithmPlusAIExacta.box4.cost += calculateExactaBoxCost(4);
+      if (checkExactaBoxN(ticketConstruction.algorithmTop4, actual)) {
+        algorithmPlusAIExacta.box4.hits++;
+        algorithmPlusAIExacta.box4.payout += estimateExactaPayout(firstOdds, secondOdds, 2);
+      }
+
+      // Algorithm+AI Trifecta variations
+      // Trifecta Straight
+      algorithmPlusAITrifecta.straight.races++;
+      algorithmPlusAITrifecta.straight.cost += 1;
+      if (checkTrifectaStraight(algoTop3, actual)) {
+        algorithmPlusAITrifecta.straight.hits++;
+        algorithmPlusAITrifecta.straight.payout += estimateTrifectaPayout(
+          firstOdds,
+          secondOdds,
+          thirdOdds,
+          1
+        );
+      }
+
+      // Trifecta Box 3
+      algorithmPlusAITrifecta.box3.races++;
+      algorithmPlusAITrifecta.box3.cost += calculateTrifectaBoxCost(3);
+      if (checkTrifectaBoxN(algoTop3, actual)) {
+        algorithmPlusAITrifecta.box3.hits++;
+        algorithmPlusAITrifecta.box3.payout += estimateTrifectaPayout(
+          firstOdds,
+          secondOdds,
+          thirdOdds,
+          1
+        );
+      }
+
+      // Trifecta Box 4
+      algorithmPlusAITrifecta.box4.races++;
+      algorithmPlusAITrifecta.box4.cost += calculateTrifectaBoxCost(4);
+      if (checkTrifectaBoxN(algoTop4, actual)) {
+        algorithmPlusAITrifecta.box4.hits++;
+        algorithmPlusAITrifecta.box4.payout += estimateTrifectaPayout(
+          firstOdds,
+          secondOdds,
+          thirdOdds,
+          1
+        );
+      }
+
+      // Trifecta Box 5
+      algorithmPlusAITrifecta.box5.races++;
+      algorithmPlusAITrifecta.box5.cost += calculateTrifectaBoxCost(5);
+      if (checkTrifectaBoxN(algoTop5, actual)) {
+        algorithmPlusAITrifecta.box5.hits++;
+        algorithmPlusAITrifecta.box5.payout += estimateTrifectaPayout(
+          firstOdds,
+          secondOdds,
+          thirdOdds,
+          1
+        );
+      }
+
+      // Algorithm+AI Superfecta variations (only if 4th place exists)
+      if (actualWithFourth.fourth > 0) {
+        // Superfecta Straight
+        algorithmPlusAISuperfecta.straight.races++;
+        algorithmPlusAISuperfecta.straight.cost += 0.1;
+        if (checkSuperfectaStraight(algoTop4, actualWithFourth)) {
+          algorithmPlusAISuperfecta.straight.hits++;
+          algorithmPlusAISuperfecta.straight.payout += estimateSuperfectaPayout(
+            firstOdds,
+            secondOdds,
+            thirdOdds,
+            fourthOdds,
+            0.1
+          );
+        }
+
+        // Superfecta Box 4
+        algorithmPlusAISuperfecta.box4.races++;
+        algorithmPlusAISuperfecta.box4.cost += calculateSuperfectaBoxCost(4);
+        if (checkSuperfectaBoxN(algoTop4, actualWithFourth)) {
+          algorithmPlusAISuperfecta.box4.hits++;
+          algorithmPlusAISuperfecta.box4.payout += estimateSuperfectaPayout(
+            firstOdds,
+            secondOdds,
+            thirdOdds,
+            fourthOdds,
+            0.1
+          );
+        }
+
+        // Superfecta Box 5
+        algorithmPlusAISuperfecta.box5.races++;
+        algorithmPlusAISuperfecta.box5.cost += calculateSuperfectaBoxCost(5);
+        if (checkSuperfectaBoxN(algoTop5, actualWithFourth)) {
+          algorithmPlusAISuperfecta.box5.hits++;
+          algorithmPlusAISuperfecta.box5.payout += estimateSuperfectaPayout(
+            firstOdds,
+            secondOdds,
+            thirdOdds,
+            fourthOdds,
+            0.1
+          );
+        }
+
+        // Superfecta Box 6
+        algorithmPlusAISuperfecta.box6.races++;
+        algorithmPlusAISuperfecta.box6.cost += calculateSuperfectaBoxCost(6);
+        if (checkSuperfectaBoxN(algoTop6, actualWithFourth)) {
+          algorithmPlusAISuperfecta.box6.hits++;
+          algorithmPlusAISuperfecta.box6.payout += estimateSuperfectaPayout(
+            firstOdds,
+            secondOdds,
+            thirdOdds,
+            fourthOdds,
+            0.1
+          );
+        }
+      }
+
+      // ========================================================================
+      // VALUE HORSE SPECIFIC TRACKING
+      // Only track for races where a value horse was identified (HIGH/MEDIUM/LOW)
+      // ========================================================================
+      if (valueHorse.identified && valueHorse.programNumber !== null) {
+        const vhProgramNumber = valueHorse.programNumber;
+        const vhTier = mapSignalStrengthToTier(valueHorse.signalStrength);
+
+        if (vhTier) {
+          valueHorseMetrics.totalRacesWithValueHorse++;
+          valueHorseMetrics.valueHorseByTier[vhTier].races++;
+
+          // Win: value horse finishes 1st
+          if (vhProgramNumber === actual.first) {
+            valueHorseMetrics.valueHorseByTier[vhTier].wins++;
+          }
+          // Place: value horse finishes 1st or 2nd
+          if (vhProgramNumber === actual.first || vhProgramNumber === actual.second) {
+            valueHorseMetrics.valueHorseByTier[vhTier].places++;
+          }
+          // Show: value horse finishes 1st, 2nd, or 3rd
+          if (
+            vhProgramNumber === actual.first ||
+            vhProgramNumber === actual.second ||
+            vhProgramNumber === actual.third
+          ) {
+            valueHorseMetrics.valueHorseByTier[vhTier].shows++;
+          }
+          // Board: value horse finishes in top 4
+          if (
+            actualWithFourth.fourth > 0 &&
+            (vhProgramNumber === actual.first ||
+              vhProgramNumber === actual.second ||
+              vhProgramNumber === actual.third ||
+              vhProgramNumber === actualWithFourth.fourth)
+          ) {
+            valueHorseMetrics.valueHorseByTier[vhTier].boards++;
+          }
+
+          // Get horses OTHER than the value horse for keyed bets
+          const othersTop4 = ticketConstruction.algorithmTop4.filter((p) => p !== vhProgramNumber);
+          const othersTop5 = algoTop5.filter((p) => p !== vhProgramNumber);
+          const othersTop6 = algoTop6.filter((p) => p !== vhProgramNumber);
+
+          // ====================================================================
+          // EXACTA KEYED BETS (only for races with value horse)
+          // ====================================================================
+
+          // Exacta Key: Value horse over 2 (value wins, 2 others fill 2nd)
+          if (othersTop4.length >= 2) {
+            const withHorses2 = othersTop4.slice(0, 2);
+            algorithmPlusAIExacta.keyValueOver2.races++;
+            algorithmPlusAIExacta.keyValueOver2.cost += calculateExactaKeyCost(2);
+            if (checkExactaKeyOver(vhProgramNumber, withHorses2, actual)) {
+              algorithmPlusAIExacta.keyValueOver2.hits++;
+              algorithmPlusAIExacta.keyValueOver2.payout += estimateExactaPayout(
+                firstOdds,
+                secondOdds,
+                2
+              );
+            }
+          }
+
+          // Exacta Key: Value horse over 3
+          if (othersTop4.length >= 3) {
+            const withHorses3 = othersTop4.slice(0, 3);
+            algorithmPlusAIExacta.keyValueOver3.races++;
+            algorithmPlusAIExacta.keyValueOver3.cost += calculateExactaKeyCost(3);
+            if (checkExactaKeyOver(vhProgramNumber, withHorses3, actual)) {
+              algorithmPlusAIExacta.keyValueOver3.hits++;
+              algorithmPlusAIExacta.keyValueOver3.payout += estimateExactaPayout(
+                firstOdds,
+                secondOdds,
+                2
+              );
+            }
+          }
+
+          // Exacta Key: Value horse over 4
+          if (othersTop5.length >= 4) {
+            const withHorses4 = othersTop5.slice(0, 4);
+            algorithmPlusAIExacta.keyValueOver4.races++;
+            algorithmPlusAIExacta.keyValueOver4.cost += calculateExactaKeyCost(4);
+            if (checkExactaKeyOver(vhProgramNumber, withHorses4, actual)) {
+              algorithmPlusAIExacta.keyValueOver4.hits++;
+              algorithmPlusAIExacta.keyValueOver4.payout += estimateExactaPayout(
+                firstOdds,
+                secondOdds,
+                2
+              );
+            }
+          }
+
+          // Exacta Key: 2 over value horse (2 others win, value finishes 2nd)
+          if (othersTop4.length >= 2) {
+            const winHorses2 = othersTop4.slice(0, 2);
+            algorithmPlusAIExacta.key2OverValue.races++;
+            algorithmPlusAIExacta.key2OverValue.cost += calculateExactaKeyCost(2);
+            if (checkExactaKeyUnder(vhProgramNumber, winHorses2, actual)) {
+              algorithmPlusAIExacta.key2OverValue.hits++;
+              algorithmPlusAIExacta.key2OverValue.payout += estimateExactaPayout(
+                firstOdds,
+                secondOdds,
+                2
+              );
+            }
+          }
+
+          // ====================================================================
+          // TRIFECTA KEYED BETS (only for races with value horse)
+          // ====================================================================
+
+          // Trifecta Key: Value horse with 2 over 3
+          // Value 1st, top 2 others for 2nd, top 3 others for 3rd
+          if (othersTop4.length >= 3) {
+            const aHorses = othersTop4.slice(0, 2);
+            const bHorses = othersTop4.slice(0, 3);
+            algorithmPlusAITrifecta.keyValueWith2Over3.races++;
+            algorithmPlusAITrifecta.keyValueWith2Over3.cost += calculateTrifectaKeyCost(2, 3);
+            if (checkTrifectaKeyWithAOverB(vhProgramNumber, aHorses, bHorses, actual)) {
+              algorithmPlusAITrifecta.keyValueWith2Over3.hits++;
+              algorithmPlusAITrifecta.keyValueWith2Over3.payout += estimateTrifectaPayout(
+                firstOdds,
+                secondOdds,
+                thirdOdds,
+                1
+              );
+            }
+          }
+
+          // Trifecta Key: Value horse with 3 over 4
+          if (othersTop5.length >= 4) {
+            const aHorses = othersTop5.slice(0, 3);
+            const bHorses = othersTop5.slice(0, 4);
+            algorithmPlusAITrifecta.keyValueWith3Over4.races++;
+            algorithmPlusAITrifecta.keyValueWith3Over4.cost += calculateTrifectaKeyCost(3, 4);
+            if (checkTrifectaKeyWithAOverB(vhProgramNumber, aHorses, bHorses, actual)) {
+              algorithmPlusAITrifecta.keyValueWith3Over4.hits++;
+              algorithmPlusAITrifecta.keyValueWith3Over4.payout += estimateTrifectaPayout(
+                firstOdds,
+                secondOdds,
+                thirdOdds,
+                1
+              );
+            }
+          }
+
+          // Trifecta Key: 2 with value horse over 3
+          // 2 others for 1st, value 2nd, 3 others for 3rd
+          if (othersTop4.length >= 3) {
+            const aHorses = othersTop4.slice(0, 2);
+            const bHorses = othersTop4.slice(0, 3);
+            algorithmPlusAITrifecta.key2WithValueOver3.races++;
+            algorithmPlusAITrifecta.key2WithValueOver3.cost += calculateTrifectaKeyCost(2, 3);
+            if (checkTrifectaAWithKeyOverB(aHorses, vhProgramNumber, bHorses, actual)) {
+              algorithmPlusAITrifecta.key2WithValueOver3.hits++;
+              algorithmPlusAITrifecta.key2WithValueOver3.payout += estimateTrifectaPayout(
+                firstOdds,
+                secondOdds,
+                thirdOdds,
+                1
+              );
+            }
+          }
+
+          // Trifecta Key: 2 over 3 with value horse
+          // 2 others for 1st, 3 others for 2nd, value 3rd
+          if (othersTop4.length >= 3) {
+            const aHorses = othersTop4.slice(0, 2);
+            const bHorses = othersTop4.slice(0, 3);
+            algorithmPlusAITrifecta.key2Over3WithValue.races++;
+            algorithmPlusAITrifecta.key2Over3WithValue.cost += calculateTrifectaKeyCost(2, 3);
+            if (checkTrifectaAOverBWithKey(aHorses, bHorses, vhProgramNumber, actual)) {
+              algorithmPlusAITrifecta.key2Over3WithValue.hits++;
+              algorithmPlusAITrifecta.key2Over3WithValue.payout += estimateTrifectaPayout(
+                firstOdds,
+                secondOdds,
+                thirdOdds,
+                1
+              );
+            }
+          }
+
+          // ====================================================================
+          // SUPERFECTA KEYED BETS (only for races with value horse AND 4th place)
+          // ====================================================================
+          if (actualWithFourth.fourth > 0) {
+            // Superfecta Key: Value horse with 3 over 4 over 5
+            // Value 1st, 3 others for 2nd, 4 others for 3rd, 5 others for 4th
+            if (othersTop6.length >= 5) {
+              const aHorses = othersTop6.slice(0, 3);
+              const bHorses = othersTop6.slice(0, 4);
+              const cHorses = othersTop6.slice(0, 5);
+              algorithmPlusAISuperfecta.keyValueWith3Over4Over5.races++;
+              algorithmPlusAISuperfecta.keyValueWith3Over4Over5.cost += calculateSuperfectaKeyCost(
+                3,
+                4,
+                5
+              );
+              if (
+                checkSuperfectaKeyWithAOverBOverC(
+                  vhProgramNumber,
+                  aHorses,
+                  bHorses,
+                  cHorses,
+                  actualWithFourth
+                )
+              ) {
+                algorithmPlusAISuperfecta.keyValueWith3Over4Over5.hits++;
+                algorithmPlusAISuperfecta.keyValueWith3Over4Over5.payout +=
+                  estimateSuperfectaPayout(firstOdds, secondOdds, thirdOdds, fourthOdds, 0.1);
+              }
+            }
+
+            // Superfecta Key: Value horse in any top 4 position
+            // Value somewhere in 1-2-3-4 combined with top 5 others
+            if (othersTop5.length >= 3) {
+              algorithmPlusAISuperfecta.keyValueInAnyTop4.races++;
+              algorithmPlusAISuperfecta.keyValueInAnyTop4.cost += calculateSuperfectaBoxCost(4); // Approximate
+              if (checkSuperfectaKeyInAnyTop4(vhProgramNumber, othersTop5, actualWithFourth)) {
+                algorithmPlusAISuperfecta.keyValueInAnyTop4.hits++;
+                algorithmPlusAISuperfecta.keyValueInAnyTop4.payout += estimateSuperfectaPayout(
+                  firstOdds,
+                  secondOdds,
+                  thirdOdds,
+                  fourthOdds,
+                  0.1
+                );
+              }
+            }
+          }
         }
       }
     }
@@ -1506,6 +2724,108 @@ async function runValidation(): Promise<ValidationResult> {
     recommendation = 'REVERT';
   }
 
+  // ============================================================================
+  // FINALIZE EXPANDED ROI METRICS
+  // ============================================================================
+
+  // Finalize all Algorithm Only metrics
+  const finalAlgoWPS: WPSMetrics = {
+    win: finalizeBetMetrics(algorithmOnlyWPS.win),
+    place: finalizeBetMetrics(algorithmOnlyWPS.place),
+    show: finalizeBetMetrics(algorithmOnlyWPS.show),
+  };
+
+  const finalAlgoExacta: ExactaVariationMetrics = {
+    straight: finalizeBetMetrics(algorithmOnlyExacta.straight),
+    box2: finalizeBetMetrics(algorithmOnlyExacta.box2),
+    box3: finalizeBetMetrics(algorithmOnlyExacta.box3),
+    box4: finalizeBetMetrics(algorithmOnlyExacta.box4),
+    keyValueOver2: finalizeBetMetrics(algorithmOnlyExacta.keyValueOver2),
+    keyValueOver3: finalizeBetMetrics(algorithmOnlyExacta.keyValueOver3),
+    keyValueOver4: finalizeBetMetrics(algorithmOnlyExacta.keyValueOver4),
+    key2OverValue: finalizeBetMetrics(algorithmOnlyExacta.key2OverValue),
+  };
+
+  const finalAlgoTrifecta: TrifectaVariationMetrics = {
+    straight: finalizeBetMetrics(algorithmOnlyTrifecta.straight),
+    box3: finalizeBetMetrics(algorithmOnlyTrifecta.box3),
+    box4: finalizeBetMetrics(algorithmOnlyTrifecta.box4),
+    box5: finalizeBetMetrics(algorithmOnlyTrifecta.box5),
+    keyValueWith2Over3: finalizeBetMetrics(algorithmOnlyTrifecta.keyValueWith2Over3),
+    keyValueWith3Over4: finalizeBetMetrics(algorithmOnlyTrifecta.keyValueWith3Over4),
+    key2WithValueOver3: finalizeBetMetrics(algorithmOnlyTrifecta.key2WithValueOver3),
+    key2Over3WithValue: finalizeBetMetrics(algorithmOnlyTrifecta.key2Over3WithValue),
+  };
+
+  const finalAlgoSuperfecta: SuperfectaVariationMetrics = {
+    straight: finalizeBetMetrics(algorithmOnlySuperfecta.straight),
+    box4: finalizeBetMetrics(algorithmOnlySuperfecta.box4),
+    box5: finalizeBetMetrics(algorithmOnlySuperfecta.box5),
+    box6: finalizeBetMetrics(algorithmOnlySuperfecta.box6),
+    keyValueWith3Over4Over5: finalizeBetMetrics(algorithmOnlySuperfecta.keyValueWith3Over4Over5),
+    keyValueInAnyTop4: finalizeBetMetrics(algorithmOnlySuperfecta.keyValueInAnyTop4),
+  };
+
+  // Finalize all Algorithm+AI metrics
+  const finalAIWPS: WPSMetrics = {
+    win: finalizeBetMetrics(algorithmPlusAIWPS.win),
+    place: finalizeBetMetrics(algorithmPlusAIWPS.place),
+    show: finalizeBetMetrics(algorithmPlusAIWPS.show),
+  };
+
+  const finalAIExacta: ExactaVariationMetrics = {
+    straight: finalizeBetMetrics(algorithmPlusAIExacta.straight),
+    box2: finalizeBetMetrics(algorithmPlusAIExacta.box2),
+    box3: finalizeBetMetrics(algorithmPlusAIExacta.box3),
+    box4: finalizeBetMetrics(algorithmPlusAIExacta.box4),
+    keyValueOver2: finalizeBetMetrics(algorithmPlusAIExacta.keyValueOver2),
+    keyValueOver3: finalizeBetMetrics(algorithmPlusAIExacta.keyValueOver3),
+    keyValueOver4: finalizeBetMetrics(algorithmPlusAIExacta.keyValueOver4),
+    key2OverValue: finalizeBetMetrics(algorithmPlusAIExacta.key2OverValue),
+  };
+
+  const finalAITrifecta: TrifectaVariationMetrics = {
+    straight: finalizeBetMetrics(algorithmPlusAITrifecta.straight),
+    box3: finalizeBetMetrics(algorithmPlusAITrifecta.box3),
+    box4: finalizeBetMetrics(algorithmPlusAITrifecta.box4),
+    box5: finalizeBetMetrics(algorithmPlusAITrifecta.box5),
+    keyValueWith2Over3: finalizeBetMetrics(algorithmPlusAITrifecta.keyValueWith2Over3),
+    keyValueWith3Over4: finalizeBetMetrics(algorithmPlusAITrifecta.keyValueWith3Over4),
+    key2WithValueOver3: finalizeBetMetrics(algorithmPlusAITrifecta.key2WithValueOver3),
+    key2Over3WithValue: finalizeBetMetrics(algorithmPlusAITrifecta.key2Over3WithValue),
+  };
+
+  const finalAISuperfecta: SuperfectaVariationMetrics = {
+    straight: finalizeBetMetrics(algorithmPlusAISuperfecta.straight),
+    box4: finalizeBetMetrics(algorithmPlusAISuperfecta.box4),
+    box5: finalizeBetMetrics(algorithmPlusAISuperfecta.box5),
+    box6: finalizeBetMetrics(algorithmPlusAISuperfecta.box6),
+    keyValueWith3Over4Over5: finalizeBetMetrics(algorithmPlusAISuperfecta.keyValueWith3Over4Over5),
+    keyValueInAnyTop4: finalizeBetMetrics(algorithmPlusAISuperfecta.keyValueInAnyTop4),
+  };
+
+  // Finalize value horse metrics
+  const totalVHRaces = valueHorseMetrics.totalRacesWithValueHorse;
+  const vhHigh = valueHorseMetrics.valueHorseByTier.HIGH;
+  const vhMedium = valueHorseMetrics.valueHorseByTier.MEDIUM;
+  const vhLow = valueHorseMetrics.valueHorseByTier.LOW;
+
+  const totalVHWins = vhHigh.wins + vhMedium.wins + vhLow.wins;
+  const totalVHPlaces = vhHigh.places + vhMedium.places + vhLow.places;
+  const totalVHShows = vhHigh.shows + vhMedium.shows + vhLow.shows;
+  const totalVHBoards = vhHigh.boards + vhMedium.boards + vhLow.boards;
+
+  const finalValueHorseMetrics: ValueHorsePerformanceMetrics = {
+    totalRacesWithValueHorse: totalVHRaces,
+    valueHorseByTier: valueHorseMetrics.valueHorseByTier,
+    overall: {
+      winRate: totalVHRaces > 0 ? (totalVHWins / totalVHRaces) * 100 : 0,
+      placeRate: totalVHRaces > 0 ? (totalVHPlaces / totalVHRaces) * 100 : 0,
+      showRate: totalVHRaces > 0 ? (totalVHShows / totalVHRaces) * 100 : 0,
+      boardRate: totalVHRaces > 0 ? (totalVHBoards / totalVHRaces) * 100 : 0,
+    },
+  };
+
   const result: ValidationResult = {
     runDate: new Date().toISOString(),
     totalRaces,
@@ -1608,7 +2928,8 @@ async function runValidation(): Promise<ValidationResult> {
       },
       algorithmPlusAI: {
         winRate: aiSystemRacesBet > 0 ? toPercentage(aiSystemWins, aiSystemRacesBet) : 0,
-        exactaHitRate: aiSystemRacesBet > 0 ? toPercentage(aiSystemExactaHits, aiSystemRacesBet) : 0,
+        exactaHitRate:
+          aiSystemRacesBet > 0 ? toPercentage(aiSystemExactaHits, aiSystemRacesBet) : 0,
         trifectaHitRate:
           aiSystemRacesBet > 0 ? toPercentage(aiSystemTrifectaHits, aiSystemRacesBet) : 0,
         exactaROI: aiExactaROI,
@@ -1685,8 +3006,23 @@ async function runValidation(): Promise<ValidationResult> {
               (templateCounts.PASS * ALGO_EXACTA_COST_PER_RACE)) *
             100
           : 0,
-      passRateSuspiciouslyLow: racesAnalyzed > 0 && toPercentage(templateCounts.PASS, racesAnalyzed) < 10,
-      passRateTooAggressive: racesAnalyzed > 0 && toPercentage(templateCounts.PASS, racesAnalyzed) > 40,
+      passRateSuspiciouslyLow:
+        racesAnalyzed > 0 && toPercentage(templateCounts.PASS, racesAnalyzed) < 10,
+      passRateTooAggressive:
+        racesAnalyzed > 0 && toPercentage(templateCounts.PASS, racesAnalyzed) > 40,
+    },
+
+    // EXPANDED ROI TRACKING - All bet types
+    expandedROI: {
+      algorithmOnlyWPS: finalAlgoWPS,
+      algorithmPlusAIWPS: finalAIWPS,
+      algorithmOnlyExacta: finalAlgoExacta,
+      algorithmPlusAIExacta: finalAIExacta,
+      algorithmOnlyTrifecta: finalAlgoTrifecta,
+      algorithmPlusAITrifecta: finalAITrifecta,
+      algorithmOnlySuperfecta: finalAlgoSuperfecta,
+      algorithmPlusAISuperfecta: finalAISuperfecta,
+      valueHorseMetrics: finalValueHorseMetrics,
     },
   };
 
@@ -1852,9 +3188,7 @@ function printReport(result: ValidationResult): void {
   console.log('\n' + '─'.repeat(70));
   console.log('ALGORITHM VS ALGORITHM+AI COMPARISON');
   console.log('─'.repeat(70));
-  console.log(
-    'Metric              | Algorithm Only | Algorithm+AI | Lift'
-  );
+  console.log('Metric              | Algorithm Only | Algorithm+AI | Lift');
   console.log('─'.repeat(70));
 
   const formatLift = (aiVal: number, algoVal: number): string => {
@@ -1934,12 +3268,16 @@ function printReport(result: ValidationResult): void {
   console.log('\n' + '═'.repeat(70));
   console.log('PASS FILTER AUDIT');
   console.log('═'.repeat(70));
-  console.log(`Total PASS races: ${pfa.totalPassRaces} (${pfa.passPercentage.toFixed(1)}% of total)`);
+  console.log(
+    `Total PASS races: ${pfa.totalPassRaces} (${pfa.passPercentage.toFixed(1)}% of total)`
+  );
   console.log('');
   console.log('If PASS races had been bet with Template C:');
   console.log(`  Would-hit exactas:    ${pfa.wouldHitExactas}`);
   console.log(`  Would-hit trifectas:  ${pfa.wouldHitTrifectas}`);
-  console.log(`  Estimated ROI impact: ${pfa.estimatedROIImpact >= 0 ? '+' : ''}${pfa.estimatedROIImpact.toFixed(1)}%`);
+  console.log(
+    `  Estimated ROI impact: ${pfa.estimatedROIImpact >= 0 ? '+' : ''}${pfa.estimatedROIImpact.toFixed(1)}%`
+  );
   console.log('');
   if (pfa.passRateSuspiciouslyLow) {
     console.log('⚠️  WARNING: PASS rate below 10% (suspiciously low)');
@@ -2082,11 +3420,227 @@ function writeSummaryFile(result: ValidationResult): void {
   }
   lines.push('');
 
+  // ============================================================================
+  // EXPANDED ROI TRACKING SECTIONS
+  // ============================================================================
+  const { expandedROI } = result;
+
+  // Helper to format ROI with highlighting for positive values
+  const formatROI = (roi: number): string => {
+    const prefix = roi >= 0 ? '+' : '';
+    const suffix = roi > 0 ? ' **✓**' : '';
+    return `${prefix}${roi.toFixed(1)}%${suffix}`;
+  };
+
+  // Helper to format a bet type row
+  const formatBetRow = (name: string, metrics: BetTypeMetrics): string => {
+    if (metrics.races === 0) {
+      return `| ${name} | N/A | N/A | N/A | N/A | N/A | N/A |`;
+    }
+    return `| ${name} | ${metrics.races} | ${metrics.hits} | ${metrics.hitRate.toFixed(1)}% | $${metrics.cost.toFixed(2)} | $${metrics.payout.toFixed(2)} | ${formatROI(metrics.roi)} |`;
+  };
+
+  // ============================================================================
+  // WIN/PLACE/SHOW SECTION
+  // ============================================================================
+  lines.push('---');
+  lines.push('');
+  lines.push('# Expanded ROI Tracking');
+  lines.push('');
+  lines.push('## Win/Place/Show (WPS)');
+  lines.push('');
+  lines.push('### Algorithm Only');
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
+  lines.push('|----------|-------|------|----------|------|--------|-----|');
+  lines.push(formatBetRow('Win', expandedROI.algorithmOnlyWPS.win));
+  lines.push(formatBetRow('Place', expandedROI.algorithmOnlyWPS.place));
+  lines.push(formatBetRow('Show', expandedROI.algorithmOnlyWPS.show));
+  lines.push('');
+
+  lines.push('### Algorithm+AI (Non-PASS races only)');
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
+  lines.push('|----------|-------|------|----------|------|--------|-----|');
+  lines.push(formatBetRow('Win', expandedROI.algorithmPlusAIWPS.win));
+  lines.push(formatBetRow('Place', expandedROI.algorithmPlusAIWPS.place));
+  lines.push(formatBetRow('Show', expandedROI.algorithmPlusAIWPS.show));
+  lines.push('');
+
+  // ============================================================================
+  // EXACTA VARIATIONS SECTION
+  // ============================================================================
+  lines.push('## Exacta Variations');
+  lines.push('');
+  lines.push('### Algorithm Only');
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
+  lines.push('|----------|-------|------|----------|------|--------|-----|');
+  lines.push(formatBetRow('Straight (1-2 exact)', expandedROI.algorithmOnlyExacta.straight));
+  lines.push(formatBetRow('Box 2', expandedROI.algorithmOnlyExacta.box2));
+  lines.push(formatBetRow('Box 3', expandedROI.algorithmOnlyExacta.box3));
+  lines.push(formatBetRow('Box 4', expandedROI.algorithmOnlyExacta.box4));
+  lines.push('');
+
+  lines.push('### Algorithm+AI (Non-PASS races)');
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
+  lines.push('|----------|-------|------|----------|------|--------|-----|');
+  lines.push(formatBetRow('Straight (1-2 exact)', expandedROI.algorithmPlusAIExacta.straight));
+  lines.push(formatBetRow('Box 2', expandedROI.algorithmPlusAIExacta.box2));
+  lines.push(formatBetRow('Box 3', expandedROI.algorithmPlusAIExacta.box3));
+  lines.push(formatBetRow('Box 4', expandedROI.algorithmPlusAIExacta.box4));
+  lines.push('');
+
+  lines.push('### Exacta Keys (Value Horse - races with identified value only)');
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
+  lines.push('|----------|-------|------|----------|------|--------|-----|');
+  lines.push(formatBetRow('Value over 2', expandedROI.algorithmPlusAIExacta.keyValueOver2));
+  lines.push(formatBetRow('Value over 3', expandedROI.algorithmPlusAIExacta.keyValueOver3));
+  lines.push(formatBetRow('Value over 4', expandedROI.algorithmPlusAIExacta.keyValueOver4));
+  lines.push(formatBetRow('2 over Value', expandedROI.algorithmPlusAIExacta.key2OverValue));
+  lines.push('');
+
+  // ============================================================================
+  // TRIFECTA VARIATIONS SECTION
+  // ============================================================================
+  lines.push('## Trifecta Variations');
+  lines.push('');
+  lines.push('### Algorithm Only');
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
+  lines.push('|----------|-------|------|----------|------|--------|-----|');
+  lines.push(formatBetRow('Straight (1-2-3 exact)', expandedROI.algorithmOnlyTrifecta.straight));
+  lines.push(formatBetRow('Box 3', expandedROI.algorithmOnlyTrifecta.box3));
+  lines.push(formatBetRow('Box 4', expandedROI.algorithmOnlyTrifecta.box4));
+  lines.push(formatBetRow('Box 5', expandedROI.algorithmOnlyTrifecta.box5));
+  lines.push('');
+
+  lines.push('### Algorithm+AI (Non-PASS races)');
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
+  lines.push('|----------|-------|------|----------|------|--------|-----|');
+  lines.push(formatBetRow('Straight (1-2-3 exact)', expandedROI.algorithmPlusAITrifecta.straight));
+  lines.push(formatBetRow('Box 3', expandedROI.algorithmPlusAITrifecta.box3));
+  lines.push(formatBetRow('Box 4', expandedROI.algorithmPlusAITrifecta.box4));
+  lines.push(formatBetRow('Box 5', expandedROI.algorithmPlusAITrifecta.box5));
+  lines.push('');
+
+  lines.push('### Trifecta Keys (Value Horse - races with identified value only)');
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
+  lines.push('|----------|-------|------|----------|------|--------|-----|');
+  lines.push(
+    formatBetRow('Value with 2 over 3', expandedROI.algorithmPlusAITrifecta.keyValueWith2Over3)
+  );
+  lines.push(
+    formatBetRow('Value with 3 over 4', expandedROI.algorithmPlusAITrifecta.keyValueWith3Over4)
+  );
+  lines.push(
+    formatBetRow('2 with Value over 3', expandedROI.algorithmPlusAITrifecta.key2WithValueOver3)
+  );
+  lines.push(
+    formatBetRow('2 over 3 with Value', expandedROI.algorithmPlusAITrifecta.key2Over3WithValue)
+  );
+  lines.push('');
+
+  // ============================================================================
+  // SUPERFECTA VARIATIONS SECTION
+  // ============================================================================
+  lines.push('## Superfecta Variations');
+  lines.push('');
+  lines.push('### Algorithm Only');
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
+  lines.push('|----------|-------|------|----------|------|--------|-----|');
+  lines.push(
+    formatBetRow('Straight (1-2-3-4 exact)', expandedROI.algorithmOnlySuperfecta.straight)
+  );
+  lines.push(formatBetRow('Box 4', expandedROI.algorithmOnlySuperfecta.box4));
+  lines.push(formatBetRow('Box 5', expandedROI.algorithmOnlySuperfecta.box5));
+  lines.push(formatBetRow('Box 6', expandedROI.algorithmOnlySuperfecta.box6));
+  lines.push('');
+
+  lines.push('### Algorithm+AI (Non-PASS races)');
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
+  lines.push('|----------|-------|------|----------|------|--------|-----|');
+  lines.push(
+    formatBetRow('Straight (1-2-3-4 exact)', expandedROI.algorithmPlusAISuperfecta.straight)
+  );
+  lines.push(formatBetRow('Box 4', expandedROI.algorithmPlusAISuperfecta.box4));
+  lines.push(formatBetRow('Box 5', expandedROI.algorithmPlusAISuperfecta.box5));
+  lines.push(formatBetRow('Box 6', expandedROI.algorithmPlusAISuperfecta.box6));
+  lines.push('');
+
+  lines.push('### Superfecta Keys (Value Horse - races with identified value only)');
+  lines.push('| Bet Type | Races | Hits | Hit Rate | Cost | Return | ROI |');
+  lines.push('|----------|-------|------|----------|------|--------|-----|');
+  lines.push(
+    formatBetRow('Value with 3/4/5', expandedROI.algorithmPlusAISuperfecta.keyValueWith3Over4Over5)
+  );
+  lines.push(
+    formatBetRow('Value in any top 4', expandedROI.algorithmPlusAISuperfecta.keyValueInAnyTop4)
+  );
+  lines.push('');
+
+  // ============================================================================
+  // VALUE HORSE METRICS SECTION
+  // ============================================================================
+  const vh = expandedROI.valueHorseMetrics;
+  lines.push('## Value Horse Performance');
+  lines.push('');
+  lines.push(`**Total Races with Value Horse Identified:** ${vh.totalRacesWithValueHorse}`);
+  lines.push('');
+
+  lines.push('### Overall Value Horse Performance');
+  lines.push('| Metric | Rate |');
+  lines.push('|--------|------|');
+  lines.push(`| Win Rate (1st) | ${vh.overall.winRate.toFixed(1)}% |`);
+  lines.push(`| Place Rate (top 2) | ${vh.overall.placeRate.toFixed(1)}% |`);
+  lines.push(`| Show Rate (top 3) | ${vh.overall.showRate.toFixed(1)}% |`);
+  lines.push(`| Board Rate (top 4) | ${vh.overall.boardRate.toFixed(1)}% |`);
+  lines.push('');
+
+  lines.push('### Value Horse by Confidence Tier');
+  lines.push('| Tier | Races | Wins | Win% | Place | Place% | Show | Show% | Board | Board% |');
+  lines.push('|------|-------|------|------|-------|--------|------|-------|-------|--------|');
+
+  const formatTierRow = (
+    tier: string,
+    data: { races: number; wins: number; places: number; shows: number; boards: number }
+  ): string => {
+    if (data.races === 0) {
+      return `| ${tier} | 0 | - | - | - | - | - | - | - | - |`;
+    }
+    const winPct = ((data.wins / data.races) * 100).toFixed(1);
+    const placePct = ((data.places / data.races) * 100).toFixed(1);
+    const showPct = ((data.shows / data.races) * 100).toFixed(1);
+    const boardPct = ((data.boards / data.races) * 100).toFixed(1);
+    return `| ${tier} | ${data.races} | ${data.wins} | ${winPct}% | ${data.places} | ${placePct}% | ${data.shows} | ${showPct}% | ${data.boards} | ${boardPct}% |`;
+  };
+
+  lines.push(formatTierRow('HIGH', vh.valueHorseByTier.HIGH));
+  lines.push(formatTierRow('MEDIUM', vh.valueHorseByTier.MEDIUM));
+  lines.push(formatTierRow('LOW', vh.valueHorseByTier.LOW));
+  lines.push('');
+
   // Summary
+  lines.push('---');
+  lines.push('');
   lines.push('## Summary');
   lines.push(`- Total Races: ${result.totalRaces}`);
   lines.push(`- Races Analyzed: ${result.racesAnalyzed}`);
   lines.push(`- Errors: ${result.errors.length}`);
+  lines.push('');
+
+  // Methodology note
+  lines.push('## Methodology Notes');
+  lines.push(
+    '- **Payout Estimation:** When actual track payouts are unavailable, payouts are estimated based on morning line odds using standard formulas.'
+  );
+  lines.push('- **Win payout:** Base × (decimal odds + 1)');
+  lines.push('- **Place payout:** Base × (decimal odds / 2 + 1)');
+  lines.push('- **Show payout:** Base × (decimal odds / 3 + 1)');
+  lines.push('- **Exacta payout:** Base × (1st odds × 2nd odds × 0.7 + 2)');
+  lines.push('- **Trifecta payout:** Base × (1st × 2nd × 3rd odds × 0.5 + 5)');
+  lines.push('- **Superfecta payout:** Base × (1st × 2nd × 3rd × 4th odds × 0.3 + 10)');
+  lines.push('');
+  lines.push(
+    '- **Keyed bets** are only calculated for races where a value horse was identified (HIGH/MEDIUM/LOW confidence tiers).'
+  );
+  lines.push('- **Positive ROI** bet types are marked with **✓** for easy identification.');
   lines.push('');
 
   const content = lines.join('\n');
