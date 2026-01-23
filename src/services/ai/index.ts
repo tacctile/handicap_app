@@ -1570,6 +1570,49 @@ export function identifyValueHorse(
     };
   }
 
+  // ============================================================================
+  // CRITICAL FIX: For SOLID favorites, require stronger evidence to identify value horse
+  // Single-bot signals (trip trouble alone OR pace advantage alone) are NOT enough
+  // to justify Template A for solid favorites.
+  //
+  // RULE: SOLID favorite + no value horse = PASS (→ MINIMAL tier)
+  // Template A should only trigger when there's STRONG evidence of value:
+  // - 2+ bots converge on the same horse, OR
+  // - Single bot with very strong signal (50+ strength), e.g., dominant lone speed
+  //
+  // This prevents the "leak" where weak single-bot signals cause Template A routing
+  // when the race should be PASS.
+  // ============================================================================
+  if (favoriteStatus === 'SOLID') {
+    const requiresStrongerEvidence =
+      bestCandidate.botCount < 2 && bestCandidate.signalStrength < 50;
+
+    if (requiresStrongerEvidence) {
+      console.log(
+        `[VALUE] SOLID favorite filter: Rejecting weak value horse identification. ` +
+          `Horse #${bestCandidate.programNumber} ${bestCandidate.horseName} ` +
+          `(botCount=${bestCandidate.botCount}, strength=${bestCandidate.signalStrength}). ` +
+          `Requires 2+ bots OR strength >= 50 for SOLID favorites.`
+      );
+      return {
+        identified: false,
+        programNumber: null,
+        horseName: null,
+        sources: [],
+        signalStrength: 'NONE',
+        angle: null,
+        valueOdds: null,
+        botConvergenceCount: 0,
+        reasoning: `SOLID favorite: Weak value signal rejected (${bestCandidate.botCount} bot(s), strength ${bestCandidate.signalStrength}). Requires 2+ bots OR strength >= 50.`,
+      };
+    }
+
+    console.log(
+      `[VALUE] SOLID favorite filter: Accepting value horse #${bestCandidate.programNumber} ` +
+        `(botCount=${bestCandidate.botCount}, strength=${bestCandidate.signalStrength}) - meets threshold.`
+    );
+  }
+
   // Determine signal strength based on cutoffs from requirements
   // HIGH (80-100): 3+ bots OR 2 bots with strong data OR dominant pace (15+ point edge)
   // MEDIUM (60-79): 2 bots OR 1 bot with strong signal + supporting algorithm data
@@ -2264,6 +2307,29 @@ export function buildTicketConstruction(
   );
 
   console.log(`[TEMPLATE] ${template}: ${templateReason}`);
+
+  // ============================================================================
+  // DIAGNOSTIC: Log Template A decisions for debugging
+  // Template A should only occur when:
+  // 1. Favorite is SOLID (not VULNERABLE, not WIDE_OPEN)
+  // 2. Value horse IS identified (2+ bots converge OR strong single signal)
+  // If Template A is occurring too often, the value horse identification is too loose.
+  // ============================================================================
+  if (template === 'A') {
+    console.log(
+      `[TEMPLATE_A_DIAGNOSTIC] ========================================\n` +
+        `  Race Type: ${raceType}\n` +
+        `  Favorite Status: ${favoriteStatus}\n` +
+        `  Value Horse Identified: ${valueHorse.identified}\n` +
+        `  Value Horse: #${valueHorse.programNumber} ${valueHorse.horseName}\n` +
+        `  Value Signal Strength: ${valueHorse.signalStrength}\n` +
+        `  Bot Convergence Count: ${valueHorse.botConvergenceCount}\n` +
+        `  Sources: ${valueHorse.sources.join(', ')}\n` +
+        `  Angle: ${valueHorse.angle}\n` +
+        `  Reasoning: ${valueHorse.reasoning}\n` +
+        `========================================`
+    );
+  }
 
   // Build tickets (with base costs) - PASS template gets empty tickets
   let exactaBase: ExactaConstruction;

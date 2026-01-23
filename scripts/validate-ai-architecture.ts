@@ -319,6 +319,25 @@ interface ValidationResult {
 
   // EXPANDED ROI TRACKING - All bet types
   expandedROI: ExpandedROITracking;
+
+  // TEMPLATE A DIAGNOSTIC DATA (for debugging routing leaks)
+  templateADiagnostics: {
+    raceId: string;
+    trackCode: string;
+    raceNumber: number;
+    favoriteStatus: string;
+    valueHorse: {
+      identified: boolean;
+      programNumber: number | null;
+      horseName: string | null;
+      signalStrength: string;
+      botConvergenceCount: number;
+      sources: string[];
+      angle: string | null;
+      reasoning: string;
+    };
+    templateReason: string;
+  }[];
 }
 
 interface RaceResult {
@@ -1899,6 +1918,29 @@ async function runValidation(): Promise<ValidationResult> {
   let passWouldHaveHitExacta = 0;
   let passWouldHaveHitTrifecta = 0;
 
+  // ============================================================================
+  // DIAGNOSTIC: Track Template A races for debugging routing leaks
+  // If Template A is > 5%, this data helps identify why races are leaking
+  // ============================================================================
+  interface TemplateADiagnostic {
+    raceId: string;
+    trackCode: string;
+    raceNumber: number;
+    favoriteStatus: string;
+    valueHorse: {
+      identified: boolean;
+      programNumber: number | null;
+      horseName: string | null;
+      signalStrength: string;
+      botConvergenceCount: number;
+      sources: string[];
+      angle: string | null;
+      reasoning: string;
+    };
+    templateReason: string;
+  }
+  const templateADiagnostics: TemplateADiagnostic[] = [];
+
   // AI system win tracking (for comparison metrics)
   let aiSystemWins = 0;
   let aiSystemExactaHits = 0;
@@ -1975,6 +2017,30 @@ async function runValidation(): Promise<ValidationResult> {
 
       // Count template distribution
       templateCounts[template]++;
+
+      // ========================================================================
+      // DIAGNOSTIC: Capture Template A races for debugging
+      // ========================================================================
+      if (template === 'A') {
+        const valueHorse = ticketConstruction.valueHorse;
+        templateADiagnostics.push({
+          raceId: `${raceData.race.header.trackCode}-R${raceData.race.header.raceNumber}`,
+          trackCode: raceData.race.header.trackCode ?? 'UNKNOWN',
+          raceNumber: raceData.race.header.raceNumber,
+          favoriteStatus: ticketConstruction.favoriteStatus,
+          valueHorse: {
+            identified: valueHorse.identified,
+            programNumber: valueHorse.programNumber,
+            horseName: valueHorse.horseName,
+            signalStrength: valueHorse.signalStrength,
+            botConvergenceCount: valueHorse.botConvergenceCount,
+            sources: valueHorse.sources,
+            angle: valueHorse.angle,
+            reasoning: valueHorse.reasoning,
+          },
+          templateReason: ticketConstruction.templateReason,
+        });
+      }
 
       // Track template stats
       templateStats[template].races++;
@@ -3024,7 +3090,26 @@ async function runValidation(): Promise<ValidationResult> {
       algorithmPlusAISuperfecta: finalAISuperfecta,
       valueHorseMetrics: finalValueHorseMetrics,
     },
+
+    // TEMPLATE A DIAGNOSTIC DATA
+    // Helps debug routing leaks when Template A is higher than expected (>5%)
+    templateADiagnostics,
   };
+
+  // Log Template A diagnostic summary
+  if (templateADiagnostics.length > 0) {
+    console.log(`\n--- TEMPLATE A DIAGNOSTIC SUMMARY ---`);
+    console.log(`Template A races: ${templateADiagnostics.length}`);
+    const byBotCount: Record<number, number> = {};
+    for (const diag of templateADiagnostics) {
+      const count = diag.valueHorse.botConvergenceCount;
+      byBotCount[count] = (byBotCount[count] ?? 0) + 1;
+    }
+    console.log(`By bot convergence count:`);
+    for (const [count, races] of Object.entries(byBotCount).sort()) {
+      console.log(`  ${count} bot(s): ${races} races`);
+    }
+  }
 
   const totalElapsedSeconds = (Date.now() - validationStartTime) / 1000;
   const minutes = Math.floor(totalElapsedSeconds / 60);
@@ -3665,6 +3750,18 @@ async function main(): Promise<void> {
     // Save full result as JSON
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(result, null, 2));
     console.log(`\nFull results saved to: ${OUTPUT_FILE}`);
+
+    // Write Template A diagnostic file if any Template A races exist
+    // This helps debug routing leaks when Template A is higher than expected
+    const diagnosticFile = path.join(__dirname, '../template-a-diagnostic.json');
+    const templateAData =
+      (result as { templateADiagnostics?: unknown[] }).templateADiagnostics ?? [];
+    if (Array.isArray(templateAData) && templateAData.length > 0) {
+      fs.writeFileSync(diagnosticFile, JSON.stringify(templateAData, null, 2));
+      console.log(`\nTemplate A diagnostic data saved to: ${diagnosticFile}`);
+      console.log(`  ${templateAData.length} Template A races captured for analysis.`);
+      console.log(`  Review this file to identify why races are routing to Template A.`);
+    }
 
     // Write condensed summary file for GitHub Actions
     writeSummaryFile(result);

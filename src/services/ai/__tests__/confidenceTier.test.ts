@@ -127,7 +127,14 @@ describe('identifyValueHorse', () => {
     expect(result.signalStrength).toBe('NONE');
   });
 
-  it('should identify trip trouble horse as value play', () => {
+  // ============================================================================
+  // CRITICAL FIX TESTS: For SOLID favorites, require 2+ bots OR strength >= 50
+  // Single-bot weak signals should NOT identify a value horse
+  // ============================================================================
+
+  it('should REJECT single-bot trip trouble for SOLID favorite (weak signal)', () => {
+    // This test verifies the critical fix: single-bot signals should NOT
+    // identify a value horse for SOLID favorites.
     const signals = createMockAggregatedSignals([
       { programNumber: 1, horseName: 'Favorite', algorithmRank: 1, algorithmScore: 200 },
       {
@@ -152,13 +159,49 @@ describe('identifyValueHorse', () => {
 
     const result = identifyValueHorse(signals, rawResults, 'SOLID');
 
+    // For SOLID favorites, single-bot signals (strength 30) are REJECTED
+    expect(result.identified).toBe(false);
+    expect(result.programNumber).toBeNull();
+    expect(result.reasoning).toContain('SOLID favorite');
+    expect(result.reasoning).toContain('Weak value signal rejected');
+  });
+
+  it('should ACCEPT trip trouble for VULNERABLE favorite (any signal is fine)', () => {
+    // For VULNERABLE favorites, single-bot signals ARE accepted because
+    // the favorite is already in question
+    const signals = createMockAggregatedSignals([
+      { programNumber: 1, horseName: 'Favorite', algorithmRank: 1, algorithmScore: 200 },
+      {
+        programNumber: 2,
+        horseName: 'Trip Horse',
+        algorithmRank: 2,
+        algorithmScore: 180,
+        tripTroubleBoost: 2,
+      },
+    ]);
+
+    const rawResults = createMockRawResults({
+      tripTroubleHorses: [
+        {
+          programNumber: 2,
+          horseName: 'Trip Horse',
+          issue: 'Blocked in last 2 races - multiple troubled trips',
+          maskedAbility: true,
+        },
+      ],
+    });
+
+    const result = identifyValueHorse(signals, rawResults, 'VULNERABLE');
+
+    // For VULNERABLE favorites, trip trouble IS identified
     expect(result.identified).toBe(true);
     expect(result.programNumber).toBe(2);
     expect(result.horseName).toBe('Trip Horse');
     expect(result.sources).toContain('TRIP_TROUBLE');
   });
 
-  it('should identify lone speed as very strong value signal', () => {
+  it('should REJECT lone speed for SOLID favorite (single bot, strength 35 < 50)', () => {
+    // Lone speed has strength 35, which is below the 50 threshold for SOLID favorites
     const signals = createMockAggregatedSignals([
       { programNumber: 1, horseName: 'Favorite', algorithmRank: 1, algorithmScore: 200 },
       {
@@ -181,8 +224,77 @@ describe('identifyValueHorse', () => {
 
     const result = identifyValueHorse(signals, rawResults, 'SOLID');
 
+    // Single bot (pace advantage) with strength 35 < 50 threshold - REJECTED
+    expect(result.identified).toBe(false);
+    expect(result.reasoning).toContain('SOLID favorite');
+  });
+
+  it('should ACCEPT lone speed for VULNERABLE favorite', () => {
+    const signals = createMockAggregatedSignals([
+      { programNumber: 1, horseName: 'Favorite', algorithmRank: 1, algorithmScore: 200 },
+      {
+        programNumber: 2,
+        horseName: 'Lone Speed',
+        algorithmRank: 2,
+        algorithmScore: 180,
+        paceAdvantage: 2,
+        paceEdgeReason: 'Lone speed with no pressure',
+      },
+    ]);
+
+    const rawResults = createMockRawResults({
+      paceScenario: {
+        paceProjection: 'SLOW',
+        loneSpeedException: true,
+        speedDuelLikely: false,
+      },
+    });
+
+    const result = identifyValueHorse(signals, rawResults, 'VULNERABLE');
+
+    // For VULNERABLE favorites, single-bot signals ARE accepted
     expect(result.identified).toBe(true);
     expect(result.sources).toContain('PACE_ADVANTAGE');
+  });
+
+  it('should ACCEPT value horse for SOLID favorite when 2+ bots converge', () => {
+    // This tests the "strong evidence" case: 2+ bots converge on same horse
+    const signals = createMockAggregatedSignals([
+      { programNumber: 1, horseName: 'Favorite', algorithmRank: 1, algorithmScore: 200 },
+      {
+        programNumber: 2,
+        horseName: 'Value Horse',
+        algorithmRank: 2,
+        algorithmScore: 180,
+        tripTroubleBoost: 2,
+        paceAdvantage: 2,
+        paceEdgeReason: 'Lone speed advantage',
+      },
+    ]);
+
+    const rawResults = createMockRawResults({
+      tripTroubleHorses: [
+        {
+          programNumber: 2,
+          horseName: 'Value Horse',
+          issue: 'Blocked in last 2 races - multiple troubled trips',
+          maskedAbility: true,
+        },
+      ],
+      paceScenario: {
+        paceProjection: 'SLOW',
+        loneSpeedException: true,
+        speedDuelLikely: false,
+      },
+    });
+
+    const result = identifyValueHorse(signals, rawResults, 'SOLID');
+
+    // 2+ bots converge on #2 → value horse IS identified even for SOLID favorite
+    expect(result.identified).toBe(true);
+    expect(result.programNumber).toBe(2);
+    expect(result.botConvergenceCount).toBeGreaterThanOrEqual(2);
+    expect(['STRONG', 'VERY_STRONG']).toContain(result.signalStrength);
   });
 
   it('should identify algorithm rank 2 as value when favorite is vulnerable', () => {
