@@ -92,8 +92,8 @@ function createTestScoringResult(
 }
 
 describe('combineMultiBotResults', () => {
-  describe('PART 1: Vulnerable Favorite Ranking Drop', () => {
-    it('should drop favorite by 1 position when HIGH confidence vulnerable', () => {
+  describe('PART 1: Vulnerable Favorite Ranking Drop (Conservative Mode)', () => {
+    it('should drop favorite when HIGH confidence vulnerable AND 2+ vulnerability flags', () => {
       const race = createTestRace(1, [
         { programNumber: 1, horseName: 'Favorite Horse', morningLineOdds: '2-1' },
         { programNumber: 2, horseName: 'Second Horse', morningLineOdds: '5-1' },
@@ -119,7 +119,8 @@ describe('combineMultiBotResults', () => {
         },
         vulnerableFavorite: {
           isVulnerable: true,
-          reasons: ['Poor track record at this distance'],
+          // CONSERVATIVE: Needs 2+ flags AND HIGH confidence for penalty
+          reasons: ['Poor track record at this distance', 'Class drop concern'],
           confidence: 'HIGH',
         },
         fieldSpread: {
@@ -137,7 +138,7 @@ describe('combineMultiBotResults', () => {
       expect(result.raceNarrative).toContain('Vulnerable favorite:');
     });
 
-    it('should also drop favorite when MEDIUM confidence vulnerable (all vulnerable favorites get penalty)', () => {
+    it('should NOT drop favorite when HIGH confidence but only 1 flag (conservative mode)', () => {
       const race = createTestRace(1, [
         { programNumber: 1, horseName: 'Favorite Horse', morningLineOdds: '2-1' },
         { programNumber: 2, horseName: 'Second Horse', morningLineOdds: '5-1' },
@@ -163,8 +164,9 @@ describe('combineMultiBotResults', () => {
         },
         vulnerableFavorite: {
           isVulnerable: true,
-          reasons: ['Some concern'],
-          confidence: 'MEDIUM', // All vulnerable favorites get penalty now
+          // CONSERVATIVE: Only 1 flag = no penalty, just flagged
+          reasons: ['Poor track record at this distance'],
+          confidence: 'HIGH',
         },
         fieldSpread: {
           fieldType: 'MIXED',
@@ -175,14 +177,57 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // All vulnerable favorites now get penalty applied, regardless of confidence
-      expect(result.topPick).toBe(2);
-      expect(result.vulnerableFavorite).toBe(true);
-      expect(result.raceNarrative).toContain('OVERRIDE');
+      // CONSERVATIVE: HIGH confidence with 1 flag = flag only, no rank change
+      expect(result.topPick).toBe(1);
+      expect(result.vulnerableFavorite).toBe(true); // Still flagged
+      expect(result.raceNarrative).toContain('CONFIRM'); // No override with weak signal
+    });
+
+    it('should NOT drop favorite when MEDIUM confidence (conservative mode)', () => {
+      const race = createTestRace(1, [
+        { programNumber: 1, horseName: 'Favorite Horse', morningLineOdds: '2-1' },
+        { programNumber: 2, horseName: 'Second Horse', morningLineOdds: '5-1' },
+        { programNumber: 3, horseName: 'Third Horse', morningLineOdds: '8-1' },
+        { programNumber: 4, horseName: 'Fourth Horse', morningLineOdds: '10-1' },
+      ]);
+
+      const scoring = createTestScoringResult([
+        { programNumber: 1, horseName: 'Favorite Horse', rank: 1, score: 220 },
+        { programNumber: 2, horseName: 'Second Horse', rank: 2, score: 200 },
+        { programNumber: 3, horseName: 'Third Horse', rank: 3, score: 180 },
+        { programNumber: 4, horseName: 'Fourth Horse', rank: 4, score: 160 },
+      ]);
+
+      const rawResults: MultiBotRawResults = {
+        tripTrouble: { horsesWithTripTrouble: [] },
+        paceScenario: {
+          advantagedStyles: [],
+          disadvantagedStyles: [],
+          paceProjection: 'MODERATE',
+          loneSpeedException: false,
+          speedDuelLikely: false,
+        },
+        vulnerableFavorite: {
+          isVulnerable: true,
+          reasons: ['Some concern', 'Another concern'],
+          confidence: 'MEDIUM', // CONSERVATIVE: MEDIUM confidence = no penalty
+        },
+        fieldSpread: {
+          fieldType: 'MIXED',
+          topTierCount: 4,
+          recommendedSpread: 'MEDIUM',
+        },
+      };
+
+      const result = combineMultiBotResults(rawResults, race, scoring, 100);
+
+      // CONSERVATIVE: MEDIUM confidence = flag only, no rank change
+      expect(result.topPick).toBe(1);
+      expect(result.vulnerableFavorite).toBe(true); // Still flagged
     });
   });
 
-  describe('PART 2: Trip Trouble HIGH/MEDIUM Confidence', () => {
+  describe('PART 2: Trip Trouble HIGH/MEDIUM Confidence (Conservative Mode)', () => {
     it('should apply +2 boost for HIGH confidence trip trouble (2+ troubled races)', () => {
       const race = createTestRace(1, [
         { programNumber: 1, horseName: 'Top Horse', morningLineOdds: '2-1' },
@@ -204,7 +249,7 @@ describe('combineMultiBotResults', () => {
             {
               programNumber: 3,
               horseName: 'Trip Trouble Horse',
-              // Issue indicates 2+ troubled races
+              // Issue indicates 2+ troubled races - HIGH confidence
               issue: 'Blocked in 2 of last 3 races, finished 5th both times despite clear ability',
               maskedAbility: true,
             },
@@ -237,7 +282,7 @@ describe('combineMultiBotResults', () => {
       expect(result.raceNarrative).toContain('trip trouble');
     });
 
-    it('should apply +1 boost for MEDIUM confidence trip trouble (1 troubled race)', () => {
+    it('should NOT apply boost for MEDIUM confidence trip trouble (1 troubled race) in conservative mode', () => {
       const race = createTestRace(1, [
         { programNumber: 1, horseName: 'Top Horse', morningLineOdds: '2-1' },
         { programNumber: 2, horseName: 'Trip Trouble Horse', morningLineOdds: '5-1' },
@@ -285,8 +330,9 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // Horse #2 with +1 boost moves from rank 2 to rank 1
-      expect(result.topPick).toBe(2);
+      // CONSERVATIVE: MEDIUM confidence trip trouble = flag only, no boost
+      // Horse #1 stays as top pick
+      expect(result.topPick).toBe(1);
     });
   });
 

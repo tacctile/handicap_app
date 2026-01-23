@@ -248,11 +248,25 @@ export interface MultiBotRawResults {
 export interface AIServiceConfig {
   /** Use multi-bot parallel architecture instead of single-bot */
   useMultiBot: boolean;
+  /** Conservative mode - higher thresholds for overrides (default: true) */
+  conservativeMode?: boolean;
 }
 
 // ============================================================================
 // SIGNAL AGGREGATION TYPES (for smart combiner)
 // ============================================================================
+
+/**
+ * Override reason tracking - logs which signals triggered rank changes
+ */
+export interface OverrideReason {
+  /** Type of signal that triggered the override */
+  signal: 'tripTrouble' | 'paceAdvantage' | 'vulnerableFavorite' | 'combined';
+  /** Confidence level of the signal */
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  /** Human-readable description */
+  description: string;
+}
 
 /**
  * Aggregated signals from all 4 bots for a single horse
@@ -269,16 +283,20 @@ export interface AggregatedSignals {
   algorithmScore: number;
 
   // Trip Trouble signals
-  /** Trip trouble boost: 0, +1 (MEDIUM), or +2 (HIGH) */
+  /** Trip trouble boost: 0 (none/MEDIUM), or +2 (HIGH only in conservative mode) */
   tripTroubleBoost: number;
   /** Description of hidden ability if masked (e.g., "+5-8 Beyer masked") */
   hiddenAbility: string | null;
+  /** Whether trip trouble was flagged (even if no boost applied) */
+  tripTroubleFlagged: boolean;
 
   // Pace Scenario signals
-  /** Pace advantage: -1 (hurt), 0 (neutral), +1 (MODERATE), or +2 (STRONG) */
+  /** Pace advantage: -1 (hurt), 0 (neutral/MODERATE), or +1 (STRONG only in conservative mode) */
   paceAdvantage: number;
   /** Reason for pace edge (e.g., "Lone speed on speed-favoring track") */
   paceEdgeReason: string | null;
+  /** Whether pace advantage was flagged (even if no boost applied) */
+  paceAdvantageFlagged: boolean;
 
   // Vulnerable Favorite signals (only applies to rank 1 / betting favorite)
   /** Whether this horse is flagged as vulnerable favorite */
@@ -303,6 +321,8 @@ export interface AggregatedSignals {
   signalCount: number;
   /** Whether bots disagree about this horse */
   conflictingSignals: boolean;
+  /** Override reasons for tracking (why this horse's rank changed) */
+  overrideReasons: OverrideReason[];
 }
 
 // ============================================================================

@@ -13,6 +13,7 @@ import { describe, it, expect } from 'vitest';
 import {
   aggregateHorseSignals,
   reorderByAdjustedRank,
+  isCompetitiveField,
   identifyValuePlay,
   synthesizeBetStructure,
   combineMultiBotResults,
@@ -218,7 +219,7 @@ describe('aggregateHorseSignals', () => {
     expect(signals.signalCount).toBeGreaterThanOrEqual(1);
   });
 
-  it('should correctly sum trip trouble boost (+1 for MEDIUM)', () => {
+  it('should NOT boost for MEDIUM trip trouble confidence in conservative mode (flag only)', () => {
     const race = createMockRace([
       { programNumber: 1, name: 'Horse A', runningStyle: 'E', mlOdds: '2-1' },
     ]);
@@ -239,12 +240,47 @@ describe('aggregateHorseSignals', () => {
       fieldSpread: null,
     };
 
-    const signals = aggregateHorseSignals(1, 'Horse A', 1, 200, rawResults, race);
+    // Conservative mode (default) - MEDIUM confidence gives +0 (flag only)
+    const signals = aggregateHorseSignals(1, 'Horse A', 1, 200, rawResults, race, {
+      conservativeMode: true,
+    });
 
-    expect(signals.tripTroubleBoost).toBe(1);
+    expect(signals.tripTroubleBoost).toBe(0);
+    expect(signals.tripTroubleFlagged).toBe(true);
+    expect(signals.hiddenAbility).toContain('MEDIUM confidence');
   });
 
-  it('should apply pace advantage (+2 for lone speed)', () => {
+  it('should boost +1 for MEDIUM trip trouble confidence in non-conservative mode', () => {
+    const race = createMockRace([
+      { programNumber: 1, name: 'Horse A', runningStyle: 'E', mlOdds: '2-1' },
+    ]);
+
+    const rawResults: MultiBotRawResults = {
+      tripTrouble: {
+        horsesWithTripTrouble: [
+          {
+            programNumber: 1,
+            horseName: 'Horse A',
+            issue: 'Blocked in last race',
+            maskedAbility: true,
+          },
+        ],
+      },
+      paceScenario: null,
+      vulnerableFavorite: null,
+      fieldSpread: null,
+    };
+
+    // Non-conservative mode - MEDIUM confidence gives +1
+    const signals = aggregateHorseSignals(1, 'Horse A', 1, 200, rawResults, race, {
+      conservativeMode: false,
+    });
+
+    expect(signals.tripTroubleBoost).toBe(1);
+    expect(signals.tripTroubleFlagged).toBe(true);
+  });
+
+  it('should apply pace advantage (+1 for lone speed in conservative mode)', () => {
     const race = createMockRace([
       { programNumber: 1, name: 'Horse A', runningStyle: 'E', mlOdds: '5-1' },
     ]);
@@ -262,7 +298,38 @@ describe('aggregateHorseSignals', () => {
       fieldSpread: null,
     };
 
-    const signals = aggregateHorseSignals(1, 'Horse A', 2, 180, rawResults, race);
+    // Conservative mode: lone speed gives +1 (STRONG -> +1)
+    const signals = aggregateHorseSignals(1, 'Horse A', 2, 180, rawResults, race, {
+      conservativeMode: true,
+    });
+
+    expect(signals.paceAdvantage).toBe(1);
+    expect(signals.paceEdgeReason).toContain('Lone speed');
+    expect(signals.paceAdvantageFlagged).toBe(true);
+  });
+
+  it('should apply pace advantage (+2 for lone speed in non-conservative mode)', () => {
+    const race = createMockRace([
+      { programNumber: 1, name: 'Horse A', runningStyle: 'E', mlOdds: '5-1' },
+    ]);
+
+    const rawResults: MultiBotRawResults = {
+      tripTrouble: null,
+      paceScenario: {
+        advantagedStyles: ['E'],
+        disadvantagedStyles: ['C'],
+        paceProjection: 'SLOW',
+        loneSpeedException: true,
+        speedDuelLikely: false,
+      },
+      vulnerableFavorite: null,
+      fieldSpread: null,
+    };
+
+    // Non-conservative mode: lone speed gives +2
+    const signals = aggregateHorseSignals(1, 'Horse A', 2, 180, rawResults, race, {
+      conservativeMode: false,
+    });
 
     expect(signals.paceAdvantage).toBe(2);
     expect(signals.paceEdgeReason).toContain('Lone speed');
@@ -352,7 +419,7 @@ describe('aggregateHorseSignals', () => {
     expect(signals.totalAdjustment).toBe(-3); // Capped at -3
   });
 
-  it('should detect conflicting signals', () => {
+  it('should detect conflicting signals (conservative mode)', () => {
     const race = createMockRace([
       { programNumber: 1, name: 'Horse A', runningStyle: 'E', mlOdds: '5-1' },
     ]);
@@ -388,12 +455,61 @@ describe('aggregateHorseSignals', () => {
       },
     };
 
-    const signals = aggregateHorseSignals(1, 'Horse A', 5, 100, rawResults, race);
+    // CONSERVATIVE: MEDIUM confidence trip trouble (1 race) = flag only, no boost
+    const signals = aggregateHorseSignals(1, 'Horse A', 5, 100, rawResults, race, {
+      conservativeMode: true,
+    });
+
+    // Trip trouble flagged but no boost in conservative mode (MEDIUM confidence)
+    expect(signals.tripTroubleBoost).toBe(0);
+    expect(signals.tripTroubleFlagged).toBe(true);
+    expect(signals.classification).toBe('EXCLUDE');
+  });
+
+  it('should detect conflicting signals (non-conservative mode)', () => {
+    const race = createMockRace([
+      { programNumber: 1, name: 'Horse A', runningStyle: 'E', mlOdds: '5-1' },
+    ]);
+
+    // Trip trouble boost but EXCLUDE classification
+    const rawResults: MultiBotRawResults = {
+      tripTrouble: {
+        horsesWithTripTrouble: [
+          {
+            programNumber: 1,
+            horseName: 'Horse A',
+            issue: 'Blocked in last race',
+            maskedAbility: true,
+          },
+        ],
+      },
+      paceScenario: null,
+      vulnerableFavorite: null,
+      fieldSpread: {
+        fieldType: 'SEPARATED',
+        topTierCount: 2,
+        recommendedSpread: 'NARROW',
+        horseClassifications: [
+          {
+            programNumber: 1,
+            horseName: 'Horse A',
+            classification: 'EXCLUDE',
+            keyCandidate: false,
+            spreadOnly: false,
+            reason: 'Poor form',
+          },
+        ],
+      },
+    };
+
+    // NON-CONSERVATIVE: MEDIUM confidence trip trouble (1 race) = +1 boost
+    const signals = aggregateHorseSignals(1, 'Horse A', 5, 100, rawResults, race, {
+      conservativeMode: false,
+    });
 
     // Trip trouble + EXCLUDE = conflicting
-    // Note: This depends on how trip trouble boost interacts with EXCLUDE
-    // Trip trouble boost is +1 (maskedAbility without multiple races)
     expect(signals.tripTroubleBoost).toBe(1);
+    expect(signals.tripTroubleFlagged).toBe(true);
     expect(signals.classification).toBe('EXCLUDE');
   });
 });
@@ -403,7 +519,7 @@ describe('aggregateHorseSignals', () => {
 // ============================================================================
 
 describe('reorderByAdjustedRank', () => {
-  it('should change order when adjustments warrant', () => {
+  it('should change order when adjustments warrant (non-conservative mode)', () => {
     const signals: AggregatedSignals[] = [
       {
         programNumber: 1,
@@ -412,8 +528,10 @@ describe('reorderByAdjustedRank', () => {
         algorithmScore: 200,
         tripTroubleBoost: 0,
         hiddenAbility: null,
+        tripTroubleFlagged: false,
         paceAdvantage: -2, // Vulnerable, drops
         paceEdgeReason: null,
+        paceAdvantageFlagged: true,
         isVulnerable: true,
         vulnerabilityFlags: ['Class rise'],
         classification: 'A',
@@ -423,6 +541,7 @@ describe('reorderByAdjustedRank', () => {
         adjustedRank: 1,
         signalCount: 1,
         conflictingSignals: false,
+        overrideReasons: [],
       },
       {
         programNumber: 2,
@@ -431,8 +550,10 @@ describe('reorderByAdjustedRank', () => {
         algorithmScore: 180,
         tripTroubleBoost: 0,
         hiddenAbility: null,
+        tripTroubleFlagged: false,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'A',
@@ -442,6 +563,7 @@ describe('reorderByAdjustedRank', () => {
         adjustedRank: 2,
         signalCount: 0,
         conflictingSignals: false,
+        overrideReasons: [],
       },
       {
         programNumber: 3,
@@ -450,8 +572,10 @@ describe('reorderByAdjustedRank', () => {
         algorithmScore: 160,
         tripTroubleBoost: 2, // Trip trouble boosts
         hiddenAbility: 'Blocked last 2 races',
+        tripTroubleFlagged: true,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'B',
@@ -461,10 +585,14 @@ describe('reorderByAdjustedRank', () => {
         adjustedRank: 3,
         signalCount: 1,
         conflictingSignals: false,
+        overrideReasons: [],
       },
     ];
 
-    const { reorderedSignals, rankChanges } = reorderByAdjustedRank(signals);
+    // Use non-conservative mode to allow full adjustments
+    const { reorderedSignals, rankChanges } = reorderByAdjustedRank(signals, {
+      conservativeMode: false,
+    });
 
     // Horse C (+2) should move from rank 3 to rank 1
     // Horse B (0) should stay at rank 2
@@ -491,8 +619,10 @@ describe('reorderByAdjustedRank', () => {
         algorithmScore: 200,
         tripTroubleBoost: 0,
         hiddenAbility: null,
+        tripTroubleFlagged: false,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'A',
@@ -502,33 +632,521 @@ describe('reorderByAdjustedRank', () => {
         adjustedRank: 1,
         signalCount: 0,
         conflictingSignals: false,
+        overrideReasons: [],
       },
       {
         programNumber: 2,
         horseName: 'Horse B',
         algorithmRank: 2,
         algorithmScore: 190, // Lower score
-        tripTroubleBoost: 1,
+        tripTroubleBoost: 2, // Need +2 for conservative mode to trigger rank change
         hiddenAbility: null,
+        tripTroubleFlagged: true,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'A',
         keyCandidate: false,
         spreadOnly: false,
-        totalAdjustment: 1, // +1 = adjusted rank 1
+        totalAdjustment: 2, // +2 = adjusted rank 0 -> clamped to 1
         adjustedRank: 2,
         signalCount: 1,
         conflictingSignals: false,
+        overrideReasons: [],
       },
     ];
 
-    const { reorderedSignals } = reorderByAdjustedRank(signals);
+    const { reorderedSignals } = reorderByAdjustedRank(signals, { conservativeMode: true });
 
-    // Both have adjusted rank 1, but Horse B has higher adjustment (+1 vs 0)
+    // Both have adjusted rank 1, but Horse B has higher adjustment (+2 vs 0)
     // So Horse B should be first
     expect(reorderedSignals[0]?.programNumber).toBe(2);
+  });
+
+  it('should NOT change ranks for adjustments less than ±2 in conservative mode', () => {
+    const signals: AggregatedSignals[] = [
+      {
+        programNumber: 1,
+        horseName: 'Horse A',
+        algorithmRank: 1,
+        algorithmScore: 200,
+        tripTroubleBoost: 0,
+        hiddenAbility: null,
+        tripTroubleFlagged: false,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'A',
+        keyCandidate: true,
+        spreadOnly: false,
+        totalAdjustment: 0,
+        adjustedRank: 1,
+        signalCount: 0,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+      {
+        programNumber: 2,
+        horseName: 'Horse B',
+        algorithmRank: 2,
+        algorithmScore: 180,
+        tripTroubleBoost: 1, // Only +1 adjustment
+        hiddenAbility: null,
+        tripTroubleFlagged: true,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'A',
+        keyCandidate: false,
+        spreadOnly: false,
+        totalAdjustment: 1, // +1 is not enough in conservative mode
+        adjustedRank: 2,
+        signalCount: 1,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+    ];
+
+    const { reorderedSignals, rankChanges } = reorderByAdjustedRank(signals, {
+      conservativeMode: true,
+    });
+
+    // In conservative mode, +1 adjustment is ignored
+    // Ranks should stay the same
+    expect(reorderedSignals[0]?.programNumber).toBe(1); // Horse A stays rank 1
+    expect(reorderedSignals[1]?.programNumber).toBe(2); // Horse B stays rank 2
+    expect(rankChanges).toHaveLength(0); // No rank changes
+  });
+
+  it('should never move a horse more than 2 positions from algorithm rank', () => {
+    const signals: AggregatedSignals[] = [
+      {
+        programNumber: 1,
+        horseName: 'Horse A',
+        algorithmRank: 1,
+        algorithmScore: 200,
+        tripTroubleBoost: 0,
+        hiddenAbility: null,
+        tripTroubleFlagged: false,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'A',
+        keyCandidate: true,
+        spreadOnly: false,
+        totalAdjustment: 0,
+        adjustedRank: 1,
+        signalCount: 0,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+      {
+        programNumber: 2,
+        horseName: 'Horse B',
+        algorithmRank: 2,
+        algorithmScore: 180,
+        tripTroubleBoost: 0,
+        hiddenAbility: null,
+        tripTroubleFlagged: false,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'A',
+        keyCandidate: false,
+        spreadOnly: false,
+        totalAdjustment: 0,
+        adjustedRank: 2,
+        signalCount: 0,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+      {
+        programNumber: 3,
+        horseName: 'Horse C',
+        algorithmRank: 3,
+        algorithmScore: 160,
+        tripTroubleBoost: 0,
+        hiddenAbility: null,
+        tripTroubleFlagged: false,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'B',
+        keyCandidate: false,
+        spreadOnly: false,
+        totalAdjustment: 0,
+        adjustedRank: 3,
+        signalCount: 0,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+      {
+        programNumber: 4,
+        horseName: 'Horse D',
+        algorithmRank: 4,
+        algorithmScore: 140,
+        tripTroubleBoost: 0,
+        hiddenAbility: null,
+        tripTroubleFlagged: false,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'B',
+        keyCandidate: false,
+        spreadOnly: false,
+        totalAdjustment: 0,
+        adjustedRank: 4,
+        signalCount: 0,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+      {
+        programNumber: 5,
+        horseName: 'Trip Horse',
+        algorithmRank: 5,
+        algorithmScore: 120,
+        tripTroubleBoost: 3, // Huge boost
+        hiddenAbility: 'Multiple troubled trips',
+        tripTroubleFlagged: true,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'B',
+        keyCandidate: false,
+        spreadOnly: false,
+        totalAdjustment: 3, // Would normally move from rank 5 to rank 2
+        adjustedRank: 5,
+        signalCount: 1,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+    ];
+
+    const { reorderedSignals } = reorderByAdjustedRank(signals, { conservativeMode: true });
+
+    // Horse at algorithm rank 5 with +3 adjustment
+    // In conservative mode, max movement is 2 positions
+    // So can only move to rank 3 (not rank 2)
+    const tripHorseNewRank = reorderedSignals.findIndex((s) => s.programNumber === 5) + 1;
+    expect(tripHorseNewRank).toBeGreaterThanOrEqual(3); // Can't go above rank 3 (5 - 2 = 3)
+  });
+});
+
+// ============================================================================
+// TEST: isCompetitiveField
+// ============================================================================
+
+describe('isCompetitiveField', () => {
+  it('should return true when top 4 horses are within 20 points', () => {
+    const signals: AggregatedSignals[] = [
+      {
+        programNumber: 1,
+        horseName: 'A',
+        algorithmRank: 1,
+        algorithmScore: 200,
+        tripTroubleBoost: 0,
+        hiddenAbility: null,
+        tripTroubleFlagged: false,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'A',
+        keyCandidate: true,
+        spreadOnly: false,
+        totalAdjustment: 0,
+        adjustedRank: 1,
+        signalCount: 0,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+      {
+        programNumber: 2,
+        horseName: 'B',
+        algorithmRank: 2,
+        algorithmScore: 195,
+        tripTroubleBoost: 0,
+        hiddenAbility: null,
+        tripTroubleFlagged: false,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'A',
+        keyCandidate: false,
+        spreadOnly: false,
+        totalAdjustment: 0,
+        adjustedRank: 2,
+        signalCount: 0,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+      {
+        programNumber: 3,
+        horseName: 'C',
+        algorithmRank: 3,
+        algorithmScore: 190,
+        tripTroubleBoost: 0,
+        hiddenAbility: null,
+        tripTroubleFlagged: false,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'B',
+        keyCandidate: false,
+        spreadOnly: false,
+        totalAdjustment: 0,
+        adjustedRank: 3,
+        signalCount: 0,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+      {
+        programNumber: 4,
+        horseName: 'D',
+        algorithmRank: 4,
+        algorithmScore: 185,
+        tripTroubleBoost: 0,
+        hiddenAbility: null,
+        tripTroubleFlagged: false,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'B',
+        keyCandidate: false,
+        spreadOnly: false,
+        totalAdjustment: 0,
+        adjustedRank: 4,
+        signalCount: 0,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+    ];
+
+    // 200 - 185 = 15 points spread, which is <= 20
+    expect(isCompetitiveField(signals)).toBe(true);
+  });
+
+  it('should return false when top 4 horses are more than 20 points apart', () => {
+    const signals: AggregatedSignals[] = [
+      {
+        programNumber: 1,
+        horseName: 'A',
+        algorithmRank: 1,
+        algorithmScore: 220,
+        tripTroubleBoost: 0,
+        hiddenAbility: null,
+        tripTroubleFlagged: false,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'A',
+        keyCandidate: true,
+        spreadOnly: false,
+        totalAdjustment: 0,
+        adjustedRank: 1,
+        signalCount: 0,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+      {
+        programNumber: 2,
+        horseName: 'B',
+        algorithmRank: 2,
+        algorithmScore: 195,
+        tripTroubleBoost: 0,
+        hiddenAbility: null,
+        tripTroubleFlagged: false,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'A',
+        keyCandidate: false,
+        spreadOnly: false,
+        totalAdjustment: 0,
+        adjustedRank: 2,
+        signalCount: 0,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+      {
+        programNumber: 3,
+        horseName: 'C',
+        algorithmRank: 3,
+        algorithmScore: 180,
+        tripTroubleBoost: 0,
+        hiddenAbility: null,
+        tripTroubleFlagged: false,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'B',
+        keyCandidate: false,
+        spreadOnly: false,
+        totalAdjustment: 0,
+        adjustedRank: 3,
+        signalCount: 0,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+      {
+        programNumber: 4,
+        horseName: 'D',
+        algorithmRank: 4,
+        algorithmScore: 160,
+        tripTroubleBoost: 0,
+        hiddenAbility: null,
+        tripTroubleFlagged: false,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'B',
+        keyCandidate: false,
+        spreadOnly: false,
+        totalAdjustment: 0,
+        adjustedRank: 4,
+        signalCount: 0,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+    ];
+
+    // 220 - 160 = 60 points spread, which is > 20
+    expect(isCompetitiveField(signals)).toBe(false);
+  });
+
+  it('should reduce adjustments by 50% in competitive field', () => {
+    const signals: AggregatedSignals[] = [
+      {
+        programNumber: 1,
+        horseName: 'A',
+        algorithmRank: 1,
+        algorithmScore: 200,
+        tripTroubleBoost: 0,
+        hiddenAbility: null,
+        tripTroubleFlagged: false,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'A',
+        keyCandidate: true,
+        spreadOnly: false,
+        totalAdjustment: 0,
+        adjustedRank: 1,
+        signalCount: 0,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+      {
+        programNumber: 2,
+        horseName: 'B',
+        algorithmRank: 2,
+        algorithmScore: 195,
+        tripTroubleBoost: 0,
+        hiddenAbility: null,
+        tripTroubleFlagged: false,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'A',
+        keyCandidate: false,
+        spreadOnly: false,
+        totalAdjustment: 0,
+        adjustedRank: 2,
+        signalCount: 0,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+      {
+        programNumber: 3,
+        horseName: 'C',
+        algorithmRank: 3,
+        algorithmScore: 190,
+        tripTroubleBoost: 2,
+        hiddenAbility: 'Trip trouble',
+        tripTroubleFlagged: true,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'B',
+        keyCandidate: false,
+        spreadOnly: false,
+        totalAdjustment: 2,
+        adjustedRank: 3,
+        signalCount: 1,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+      {
+        programNumber: 4,
+        horseName: 'D',
+        algorithmRank: 4,
+        algorithmScore: 185,
+        tripTroubleBoost: 0,
+        hiddenAbility: null,
+        tripTroubleFlagged: false,
+        paceAdvantage: 0,
+        paceEdgeReason: null,
+        paceAdvantageFlagged: false,
+        isVulnerable: false,
+        vulnerabilityFlags: [],
+        classification: 'B',
+        keyCandidate: false,
+        spreadOnly: false,
+        totalAdjustment: 0,
+        adjustedRank: 4,
+        signalCount: 0,
+        conflictingSignals: false,
+        overrideReasons: [],
+      },
+    ];
+
+    const { competitiveFieldDetected, rankChanges } = reorderByAdjustedRank(signals, {
+      conservativeMode: true,
+    });
+
+    // Competitive field detected (200 - 185 = 15 points)
+    expect(competitiveFieldDetected).toBe(true);
+
+    // Horse C has +2 adjustment, but in competitive field it's reduced to +1 (50%)
+    // And +1 is less than threshold of ±2, so no rank change
+    expect(rankChanges).toHaveLength(0);
   });
 });
 
@@ -548,8 +1166,10 @@ describe('identifyValuePlay', () => {
         algorithmScore: 200,
         tripTroubleBoost: 0,
         hiddenAbility: null,
+        tripTroubleFlagged: false,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'A',
@@ -559,6 +1179,7 @@ describe('identifyValuePlay', () => {
         adjustedRank: 1,
         signalCount: 0,
         conflictingSignals: false,
+        overrideReasons: [],
       },
       {
         programNumber: 2,
@@ -567,8 +1188,10 @@ describe('identifyValuePlay', () => {
         algorithmScore: 180,
         tripTroubleBoost: 0,
         hiddenAbility: null,
+        tripTroubleFlagged: false,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'A',
@@ -578,6 +1201,7 @@ describe('identifyValuePlay', () => {
         adjustedRank: 2,
         signalCount: 0,
         conflictingSignals: false,
+        overrideReasons: [],
       },
       {
         programNumber: 3,
@@ -586,8 +1210,10 @@ describe('identifyValuePlay', () => {
         algorithmScore: 160,
         tripTroubleBoost: 2,
         hiddenAbility: 'Blocked last 2',
+        tripTroubleFlagged: true,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'B',
@@ -597,6 +1223,7 @@ describe('identifyValuePlay', () => {
         adjustedRank: 1, // After reorder, this becomes rank 1
         signalCount: 1,
         conflictingSignals: false,
+        overrideReasons: [],
       },
     ];
 
@@ -634,8 +1261,10 @@ describe('identifyValuePlay', () => {
         algorithmScore: 200,
         tripTroubleBoost: 0,
         hiddenAbility: null,
+        tripTroubleFlagged: false,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'A',
@@ -645,6 +1274,7 @@ describe('identifyValuePlay', () => {
         adjustedRank: 1,
         signalCount: 0,
         conflictingSignals: false,
+        overrideReasons: [],
       },
       {
         programNumber: 2,
@@ -653,8 +1283,10 @@ describe('identifyValuePlay', () => {
         algorithmScore: 180,
         tripTroubleBoost: 0,
         hiddenAbility: null,
+        tripTroubleFlagged: false,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'A',
@@ -664,6 +1296,7 @@ describe('identifyValuePlay', () => {
         adjustedRank: 2,
         signalCount: 0,
         conflictingSignals: false,
+        overrideReasons: [],
       },
       {
         programNumber: 3,
@@ -672,8 +1305,10 @@ describe('identifyValuePlay', () => {
         algorithmScore: 160,
         tripTroubleBoost: 1,
         hiddenAbility: 'Blocked last race',
+        tripTroubleFlagged: true,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'B',
@@ -683,6 +1318,7 @@ describe('identifyValuePlay', () => {
         adjustedRank: 2, // Moved up but still not rank 1
         signalCount: 1,
         conflictingSignals: false,
+        overrideReasons: [],
       },
     ];
 
@@ -709,8 +1345,10 @@ describe('identifyValuePlay', () => {
         algorithmScore: 200,
         tripTroubleBoost: 0,
         hiddenAbility: null,
+        tripTroubleFlagged: false,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'A',
@@ -720,6 +1358,7 @@ describe('identifyValuePlay', () => {
         adjustedRank: 1,
         signalCount: 0,
         conflictingSignals: false,
+        overrideReasons: [],
       },
       {
         programNumber: 2,
@@ -728,8 +1367,10 @@ describe('identifyValuePlay', () => {
         algorithmScore: 180,
         tripTroubleBoost: 0,
         hiddenAbility: null,
+        tripTroubleFlagged: false,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'B',
@@ -739,6 +1380,7 @@ describe('identifyValuePlay', () => {
         adjustedRank: 2,
         signalCount: 0,
         conflictingSignals: false,
+        overrideReasons: [],
       },
     ];
 
@@ -773,8 +1415,10 @@ describe('synthesizeBetStructure', () => {
         algorithmScore: 220,
         tripTroubleBoost: 0,
         hiddenAbility: null,
+        tripTroubleFlagged: false,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'A',
@@ -784,6 +1428,7 @@ describe('synthesizeBetStructure', () => {
         adjustedRank: 1,
         signalCount: 0,
         conflictingSignals: false,
+        overrideReasons: [],
       },
       {
         programNumber: 2,
@@ -792,8 +1437,10 @@ describe('synthesizeBetStructure', () => {
         algorithmScore: 180,
         tripTroubleBoost: 0,
         hiddenAbility: null,
+        tripTroubleFlagged: false,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'B',
@@ -803,6 +1450,7 @@ describe('synthesizeBetStructure', () => {
         adjustedRank: 2,
         signalCount: 0,
         conflictingSignals: false,
+        overrideReasons: [],
       },
     ];
 
@@ -828,8 +1476,10 @@ describe('synthesizeBetStructure', () => {
         algorithmScore: 175,
         tripTroubleBoost: 0,
         hiddenAbility: null,
+        tripTroubleFlagged: false,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'A',
@@ -839,6 +1489,7 @@ describe('synthesizeBetStructure', () => {
         adjustedRank: 1,
         signalCount: 0,
         conflictingSignals: false,
+        overrideReasons: [],
       },
       {
         programNumber: 2,
@@ -847,8 +1498,10 @@ describe('synthesizeBetStructure', () => {
         algorithmScore: 172,
         tripTroubleBoost: 0,
         hiddenAbility: null,
+        tripTroubleFlagged: false,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'A',
@@ -858,6 +1511,7 @@ describe('synthesizeBetStructure', () => {
         adjustedRank: 2,
         signalCount: 0,
         conflictingSignals: false,
+        overrideReasons: [],
       },
     ];
 
@@ -883,8 +1537,10 @@ describe('synthesizeBetStructure', () => {
         algorithmScore: 175,
         tripTroubleBoost: 2, // Has trip trouble
         hiddenAbility: 'Blocked last 2',
+        tripTroubleFlagged: true,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'A',
@@ -894,6 +1550,7 @@ describe('synthesizeBetStructure', () => {
         adjustedRank: 1,
         signalCount: 1,
         conflictingSignals: false,
+        overrideReasons: [],
       },
       {
         programNumber: 2,
@@ -902,8 +1559,10 @@ describe('synthesizeBetStructure', () => {
         algorithmScore: 172,
         tripTroubleBoost: 0,
         hiddenAbility: null,
+        tripTroubleFlagged: false,
         paceAdvantage: 0,
         paceEdgeReason: null,
+        paceAdvantageFlagged: false,
         isVulnerable: false,
         vulnerabilityFlags: [],
         classification: 'A',
@@ -913,6 +1572,7 @@ describe('synthesizeBetStructure', () => {
         adjustedRank: 2,
         signalCount: 0,
         conflictingSignals: false,
+        overrideReasons: [],
       },
     ];
 
@@ -1008,7 +1668,7 @@ describe('combineMultiBotResults', () => {
   });
 
   describe('Scenario C - Value Play Identification', () => {
-    it('should identify value play for algorithm rank 4 with trip trouble and good odds', () => {
+    it('should identify value play for algorithm rank 4 with HIGH confidence trip trouble and good odds', () => {
       const race = createMockRace([
         { programNumber: 1, name: 'Top Pick', runningStyle: 'E', mlOdds: '2-1' },
         { programNumber: 2, name: 'Horse B', runningStyle: 'S', mlOdds: '5-1' },
@@ -1036,6 +1696,52 @@ describe('combineMultiBotResults', () => {
             {
               programNumber: 4,
               horseName: 'Value Horse',
+              // HIGH confidence - needs "2 of" or similar indicator for 2+ troubled races
+              issue: 'Blocked in 2 of last 3 races - multiple troubled trips',
+              maskedAbility: true,
+            },
+          ],
+        },
+        paceScenario: null,
+        vulnerableFavorite: null,
+        fieldSpread: null,
+      };
+
+      const result = combineMultiBotResults(rawResults, race, scoring, 100);
+
+      // Value Horse has HIGH confidence trip trouble boost and is rank 4 (within 3-5 range)
+      expect(result.valuePlay).toBe(4);
+    });
+
+    it('should NOT identify value play for MEDIUM confidence trip trouble in conservative mode', () => {
+      const race = createMockRace([
+        { programNumber: 1, name: 'Top Pick', runningStyle: 'E', mlOdds: '2-1' },
+        { programNumber: 2, name: 'Horse B', runningStyle: 'S', mlOdds: '5-1' },
+        { programNumber: 3, name: 'Horse C', runningStyle: 'S', mlOdds: '6-1' },
+        { programNumber: 4, name: 'Value Horse', runningStyle: 'C', mlOdds: '8-1' },
+      ]);
+
+      const scoring = createMockScoringResult([
+        { programNumber: 1, name: 'Top Pick', rank: 1, score: 200, tier: 'high', mlDecimal: 2 },
+        { programNumber: 2, name: 'Horse B', rank: 2, score: 180, tier: 'high', mlDecimal: 5 },
+        { programNumber: 3, name: 'Horse C', rank: 3, score: 160, tier: 'medium', mlDecimal: 6 },
+        {
+          programNumber: 4,
+          name: 'Value Horse',
+          rank: 4,
+          score: 140,
+          tier: 'medium',
+          mlDecimal: 8,
+        },
+      ]);
+
+      const rawResults: MultiBotRawResults = {
+        tripTrouble: {
+          horsesWithTripTrouble: [
+            {
+              programNumber: 4,
+              horseName: 'Value Horse',
+              // MEDIUM confidence - only 1 troubled race
               issue: 'Blocked in last race',
               maskedAbility: true,
             },
@@ -1048,8 +1754,9 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // Value Horse has trip trouble boost and is rank 4 (within 3-5 range)
-      expect(result.valuePlay).toBe(4);
+      // MEDIUM confidence trip trouble doesn't get boost in conservative mode
+      // No value play identified since horse doesn't have tripTroubleBoost > 0
+      expect(result.valuePlay).toBeNull();
     });
   });
 
