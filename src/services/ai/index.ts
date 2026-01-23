@@ -30,6 +30,13 @@ import type {
   BetConstructionGuidance,
   ExactaStrategy,
   TrifectaStrategy,
+  // New three-template system types
+  TicketConstruction,
+  TicketTemplate,
+  RaceType,
+  FavoriteStatus,
+  ExactaConstruction,
+  TrifectaConstruction,
 } from './types';
 import { recordAIDecision } from './metrics/recorder';
 
@@ -69,7 +76,14 @@ export type {
   BotStatusInfo,
   BotStatusDebugInfo,
   OverrideReason,
-  // New expansion/contraction model types
+  // New three-template system types
+  TicketConstruction,
+  TicketTemplate,
+  RaceType,
+  FavoriteStatus,
+  ExactaConstruction,
+  TrifectaConstruction,
+  // Legacy types (deprecated)
   BetConstructionGuidance,
   ExactaStrategy,
   TrifectaStrategy,
@@ -979,49 +993,25 @@ export function synthesizeBetStructure(
 }
 
 // ============================================================================
-// EXPANSION/CONTRACTION BET CONSTRUCTION MODEL
+// DEPRECATED: EXPANSION/CONTRACTION BET CONSTRUCTION MODEL
 // ============================================================================
 
 /**
- * Identify expansion horses (sleepers) based on AI signals
+ * @deprecated This function is no longer used. Expansion horses (rank 5-10) were not
+ * hitting the board according to six-model analysis. Use buildTicketConstruction() instead.
  *
- * Criteria:
- * - Must be algorithm rank 5-10
- * - Must have Trip Trouble HIGH or Pace Advantage STRONG
- * - Must have morning line odds >= 4-1
- * - Maximum 2 expansion horses per race
+ * Always returns an empty array for backward compatibility.
  *
- * @param aggregatedSignals - Signals for all horses
- * @param scores - Original scoring results for ML odds
- * @returns Array of program numbers for expansion horses
+ * @param _aggregatedSignals - Unused
+ * @param _scores - Unused
+ * @returns Empty array (expansion horses removed)
  */
 export function identifyExpansionHorses(
-  aggregatedSignals: AggregatedSignals[],
-  scores: RaceScoringResult['scores']
+  _aggregatedSignals: AggregatedSignals[],
+  _scores: RaceScoringResult['scores']
 ): number[] {
-  const candidates = aggregatedSignals.filter((signal) => {
-    // Must be algorithm rank 5-10
-    if (signal.algorithmRank < 5 || signal.algorithmRank > 10) return false;
-
-    // Must have Trip Trouble HIGH (2+ troubled races = boost of 2) or Pace Advantage STRONG (boost of 2)
-    const hasTripTroubleHigh = signal.tripTroubleBoost >= 2;
-    const hasPaceAdvantageStrong = signal.paceAdvantage >= 2;
-
-    if (!hasTripTroubleHigh && !hasPaceAdvantageStrong) return false;
-
-    // Must have morning line odds >= 4-1
-    const score = scores.find((s) => s.programNumber === signal.programNumber);
-    const mlDecimal = score?.morningLineDecimal ?? 0;
-    if (mlDecimal < 4) return false;
-
-    return true;
-  });
-
-  // Sort by total adjustment descending, take max 2
-  return candidates
-    .sort((a, b) => b.totalAdjustment - a.totalAdjustment)
-    .slice(0, 2)
-    .map((s) => s.programNumber);
+  // Expansion horses are no longer identified - they weren't hitting the board
+  return [];
 }
 
 /**
@@ -1225,23 +1215,443 @@ export function determineTrifectaStrategy(
   };
 }
 
+// ============================================================================
+// THREE-TEMPLATE TICKET CONSTRUCTION SYSTEM
+// ============================================================================
+
 /**
- * Build bet construction guidance using expansion/contraction model
+ * Derive race type from field spread analysis or score gaps
+ *
+ * If Field Spread bot returns WIDE_OPEN, use that directly.
+ * Otherwise, derive from score gaps: top 6 within 30 points = WIDE_OPEN
+ *
+ * @param fieldSpread - Field spread analysis from bot
+ * @param aggregatedSignals - Signals for all horses (for score gap fallback)
+ * @returns Race type classification
+ */
+export function deriveRaceType(
+  fieldSpread: FieldSpreadAnalysis | null,
+  aggregatedSignals: AggregatedSignals[]
+): RaceType {
+  // Direct mapping from field spread bot
+  if (fieldSpread?.fieldType === 'WIDE_OPEN') {
+    return 'WIDE_OPEN';
+  }
+
+  if (fieldSpread?.fieldType === 'DOMINANT' || fieldSpread?.fieldType === 'SEPARATED') {
+    return 'CHALK';
+  }
+
+  if (fieldSpread?.fieldType === 'COMPETITIVE' || fieldSpread?.fieldType === 'MIXED') {
+    return 'COMPETITIVE';
+  }
+
+  // Fallback: derive from score gaps
+  // Sort by algorithm score descending
+  const sortedByScore = [...aggregatedSignals].sort((a, b) => b.algorithmScore - a.algorithmScore);
+  const top6 = sortedByScore.slice(0, 6);
+
+  if (top6.length >= 6) {
+    const maxScore = top6[0]?.algorithmScore ?? 0;
+    const minScore = top6[5]?.algorithmScore ?? 0;
+
+    // Top 6 within 30 points = WIDE_OPEN
+    if (maxScore - minScore <= 30) {
+      return 'WIDE_OPEN';
+    }
+  }
+
+  // Check for clear separation (top horse 20+ points ahead of #2)
+  if (sortedByScore.length >= 2) {
+    const topScore = sortedByScore[0]?.algorithmScore ?? 0;
+    const secondScore = sortedByScore[1]?.algorithmScore ?? 0;
+
+    if (topScore - secondScore >= 20) {
+      return 'CHALK';
+    }
+  }
+
+  return 'COMPETITIVE';
+}
+
+/**
+ * Determine favorite status from vulnerable favorite analysis
+ *
+ * @param vulnerableFavorite - Vulnerable favorite analysis from bot
+ * @returns Tuple of [status, flags]
+ */
+export function determineFavoriteStatus(
+  vulnerableFavorite: VulnerableFavoriteAnalysis | null
+): [FavoriteStatus, string[]] {
+  if (!vulnerableFavorite) {
+    return ['SOLID', []];
+  }
+
+  // VULNERABLE if: bot returns vulnerable with HIGH or MEDIUM confidence
+  if (
+    vulnerableFavorite.isVulnerable &&
+    (vulnerableFavorite.confidence === 'HIGH' || vulnerableFavorite.confidence === 'MEDIUM')
+  ) {
+    return ['VULNERABLE', vulnerableFavorite.reasons];
+  }
+
+  // SOLID if: not vulnerable OR LOW confidence
+  return ['SOLID', []];
+}
+
+/**
+ * Select template based on race type and favorite status
+ *
+ * Priority:
+ * 1. If WIDE_OPEN → Template C (regardless of favorite status)
+ * 2. Else if VULNERABLE favorite → Template B
+ * 3. Else → Template A
+ *
+ * @param raceType - Race classification
+ * @param favoriteStatus - Favorite status
+ * @param vulnerableFavorite - Vulnerable favorite analysis (for confidence check)
+ * @returns Tuple of [template, reason]
+ */
+export function selectTemplate(
+  raceType: RaceType,
+  favoriteStatus: FavoriteStatus,
+  vulnerableFavorite: VulnerableFavoriteAnalysis | null
+): [TicketTemplate, string] {
+  // Priority 1: WIDE_OPEN field → Template C
+  if (raceType === 'WIDE_OPEN') {
+    return ['C', 'Wide open field - full box recommended'];
+  }
+
+  // Priority 2: VULNERABLE favorite with HIGH/MEDIUM confidence → Template B
+  if (favoriteStatus === 'VULNERABLE') {
+    const confidence = vulnerableFavorite?.confidence ?? 'MEDIUM';
+    const flagCount = vulnerableFavorite?.reasons?.length ?? 0;
+    return [
+      'B',
+      `Vulnerable favorite (${confidence} confidence, ${flagCount} flags) - demote from win position`,
+    ];
+  }
+
+  // Priority 3: Default → Template A (solid favorite)
+  return ['A', 'Solid favorite - standard key approach'];
+}
+
+/**
+ * Calculate valid exacta combinations
+ * Exacta: win × place minus same-horse combos
+ *
+ * @param winPosition - Horses in win position
+ * @param placePosition - Horses in place position
+ * @returns Number of valid combinations
+ */
+export function calculateExactaCombinations(
+  winPosition: number[],
+  placePosition: number[]
+): number {
+  let combinations = 0;
+
+  for (const win of winPosition) {
+    for (const place of placePosition) {
+      // Can't have same horse in both positions
+      if (win !== place) {
+        combinations++;
+      }
+    }
+  }
+
+  return combinations;
+}
+
+/**
+ * Calculate valid trifecta combinations
+ * Trifecta: win × place × show minus invalid combos where same horse appears twice
+ *
+ * @param winPosition - Horses in win position
+ * @param placePosition - Horses in place position
+ * @param showPosition - Horses in show position
+ * @returns Number of valid combinations
+ */
+export function calculateTrifectaCombinations(
+  winPosition: number[],
+  placePosition: number[],
+  showPosition: number[]
+): number {
+  let combinations = 0;
+
+  for (const win of winPosition) {
+    for (const place of placePosition) {
+      if (win === place) continue; // Same horse can't be in win and place
+
+      for (const show of showPosition) {
+        // Same horse can't appear in multiple positions
+        if (show !== win && show !== place) {
+          combinations++;
+        }
+      }
+    }
+  }
+
+  return combinations;
+}
+
+/**
+ * Build exacta ticket based on template
+ *
+ * Template A: winPosition = [1], placePosition = [2,3,4]
+ * Template B: winPosition = [2,3,4], placePosition = [1,2,3,4]
+ * Template C: winPosition = [1,2,3,4], placePosition = [1,2,3,4]
+ *
+ * @param template - Selected template (A, B, or C)
+ * @param algorithmTop4 - Algorithm's top 4 horses (program numbers in rank order)
+ * @returns ExactaConstruction object
+ */
+export function buildExactaTicket(
+  template: TicketTemplate,
+  algorithmTop4: number[]
+): ExactaConstruction {
+  const [rank1, rank2, rank3, rank4] = algorithmTop4;
+
+  let winPosition: number[];
+  let placePosition: number[];
+
+  switch (template) {
+    case 'A':
+      // Solid Favorite: 1 WITH 2,3,4 (3 combinations)
+      winPosition = rank1 !== undefined ? [rank1] : [];
+      placePosition = [rank2, rank3, rank4].filter((n): n is number => n !== undefined);
+      break;
+
+    case 'B':
+      // Vulnerable Favorite: 2,3,4 WITH 1,2,3,4 (9 combinations)
+      // Favorite demoted to place only
+      winPosition = [rank2, rank3, rank4].filter((n): n is number => n !== undefined);
+      placePosition = [rank1, rank2, rank3, rank4].filter((n): n is number => n !== undefined);
+      break;
+
+    case 'C':
+      // Wide Open: Box 1,2,3,4 (12 combinations)
+      winPosition = [rank1, rank2, rank3, rank4].filter((n): n is number => n !== undefined);
+      placePosition = [rank1, rank2, rank3, rank4].filter((n): n is number => n !== undefined);
+      break;
+
+    default:
+      winPosition = [];
+      placePosition = [];
+  }
+
+  const combinations = calculateExactaCombinations(winPosition, placePosition);
+  const estimatedCost = combinations * 2; // $2 base
+
+  return {
+    winPosition,
+    placePosition,
+    combinations,
+    estimatedCost,
+  };
+}
+
+/**
+ * Build trifecta ticket based on template
+ *
+ * Template A: win = [1], place = [2,3,4], show = [2,3,4]
+ * Template B: win = [2,3,4], place = [1,2,3,4], show = [1,2,3,4]
+ * Template C: win = [1,2,3,4,5], place = [1,2,3,4,5], show = [1,2,3,4,5]
+ *
+ * @param template - Selected template (A, B, or C)
+ * @param algorithmTop4 - Algorithm's top 4 horses (program numbers in rank order)
+ * @param algorithmTop5 - Algorithm's top 5 horses (for Template C)
+ * @returns TrifectaConstruction object
+ */
+export function buildTrifectaTicket(
+  template: TicketTemplate,
+  algorithmTop4: number[],
+  algorithmTop5: number[]
+): TrifectaConstruction {
+  const [rank1, rank2, rank3, rank4] = algorithmTop4;
+  const rank5 = algorithmTop5[4];
+
+  let winPosition: number[];
+  let placePosition: number[];
+  let showPosition: number[];
+
+  switch (template) {
+    case 'A':
+      // Solid Favorite: 1 WITH 2,3,4 WITH 2,3,4 (6 combinations)
+      winPosition = rank1 !== undefined ? [rank1] : [];
+      placePosition = [rank2, rank3, rank4].filter((n): n is number => n !== undefined);
+      showPosition = [rank2, rank3, rank4].filter((n): n is number => n !== undefined);
+      break;
+
+    case 'B':
+      // Vulnerable Favorite: 2,3,4 WITH 1,2,3,4 WITH 1,2,3,4 (18 combinations)
+      winPosition = [rank2, rank3, rank4].filter((n): n is number => n !== undefined);
+      placePosition = [rank1, rank2, rank3, rank4].filter((n): n is number => n !== undefined);
+      showPosition = [rank1, rank2, rank3, rank4].filter((n): n is number => n !== undefined);
+      break;
+
+    case 'C':
+      // Wide Open: Box 1,2,3,4,5 (60 combinations)
+      winPosition = [rank1, rank2, rank3, rank4, rank5].filter((n): n is number => n !== undefined);
+      placePosition = [rank1, rank2, rank3, rank4, rank5].filter(
+        (n): n is number => n !== undefined
+      );
+      showPosition = [rank1, rank2, rank3, rank4, rank5].filter(
+        (n): n is number => n !== undefined
+      );
+      break;
+
+    default:
+      winPosition = [];
+      placePosition = [];
+      showPosition = [];
+  }
+
+  const combinations = calculateTrifectaCombinations(winPosition, placePosition, showPosition);
+  const estimatedCost = combinations * 1; // $1 base
+
+  return {
+    winPosition,
+    placePosition,
+    showPosition,
+    combinations,
+    estimatedCost,
+  };
+}
+
+/**
+ * Calculate confidence score for the race
+ *
+ * Base: 50
+ * Vulnerable Favorite HIGH confidence: -15
+ * Vulnerable Favorite MEDIUM confidence: -10
+ * Vulnerable Favorite LOW/none: +0
+ * Field type CHALK (clear separation): +20
+ * Field type COMPETITIVE: +0
+ * Field type WIDE_OPEN: -20
+ * Trip Trouble signals on rank 2-4: +5 each (max +15)
+ * Pace Advantage signals on rank 2-4: +5 each (max +15)
+ * Cap at 0-100
+ *
+ * @param raceType - Race classification
+ * @param vulnerableFavorite - Vulnerable favorite analysis
+ * @param aggregatedSignals - Signals for all horses
+ * @returns Confidence score 0-100
+ */
+export function calculateConfidenceScore(
+  raceType: RaceType,
+  vulnerableFavorite: VulnerableFavoriteAnalysis | null,
+  aggregatedSignals: AggregatedSignals[]
+): number {
+  let score = 50; // Base
+
+  // Vulnerable Favorite adjustment
+  if (vulnerableFavorite?.isVulnerable) {
+    if (vulnerableFavorite.confidence === 'HIGH') {
+      score -= 15;
+    } else if (vulnerableFavorite.confidence === 'MEDIUM') {
+      score -= 10;
+    }
+    // LOW/none: +0 (no adjustment)
+  }
+
+  // Field type adjustment
+  switch (raceType) {
+    case 'CHALK':
+      score += 20;
+      break;
+    case 'COMPETITIVE':
+      // +0 (no adjustment)
+      break;
+    case 'WIDE_OPEN':
+      score -= 20;
+      break;
+  }
+
+  // Trip Trouble signals on rank 2-4: +5 each (max +15)
+  const tripTroubleBonus = aggregatedSignals.filter(
+    (s) => s.algorithmRank >= 2 && s.algorithmRank <= 4 && s.tripTroubleFlagged
+  ).length;
+  score += Math.min(tripTroubleBonus * 5, 15);
+
+  // Pace Advantage signals on rank 2-4: +5 each (max +15)
+  const paceAdvantageBonus = aggregatedSignals.filter(
+    (s) => s.algorithmRank >= 2 && s.algorithmRank <= 4 && s.paceAdvantageFlagged
+  ).length;
+  score += Math.min(paceAdvantageBonus * 5, 15);
+
+  // Cap at 0-100
+  return Math.max(0, Math.min(100, score));
+}
+
+/**
+ * Build ticket construction using the three-template system
  *
  * Philosophy:
  * - Algorithm top 4 are SACRED — never demoted by AI
- * - AI signals EXPAND boxes (add sleepers) or CONTRACT them (fade vulnerable favorites)
- * - No rank shuffling — preserves exotic ticket construction
+ * - Template selection based on favorite vulnerability and field type
+ * - No more expansion horses — they weren't hitting the board
+ * - Vulnerable favorites stay on tickets but demoted from win position
  *
  * @param aggregatedSignals - Signals for all horses
- * @param scores - Original scoring results
  * @param vulnerableFavorite - Vulnerable favorite analysis
  * @param fieldSpread - Field spread analysis
- * @returns BetConstructionGuidance object
+ * @returns TicketConstruction object
+ */
+export function buildTicketConstruction(
+  aggregatedSignals: AggregatedSignals[],
+  vulnerableFavorite: VulnerableFavoriteAnalysis | null,
+  fieldSpread: FieldSpreadAnalysis | null
+): TicketConstruction {
+  // Get algorithm top 4 and top 5 (program numbers in rank order)
+  const sortedByAlgoRank = [...aggregatedSignals].sort((a, b) => a.algorithmRank - b.algorithmRank);
+  const algorithmTop4 = sortedByAlgoRank.slice(0, 4).map((s) => s.programNumber);
+  const algorithmTop5 = sortedByAlgoRank.slice(0, 5).map((s) => s.programNumber);
+
+  // Derive race type
+  const raceType = deriveRaceType(fieldSpread, aggregatedSignals);
+
+  // Determine favorite status
+  const [favoriteStatus, favoriteVulnerabilityFlags] = determineFavoriteStatus(vulnerableFavorite);
+
+  // Select template
+  const [template, templateReason] = selectTemplate(raceType, favoriteStatus, vulnerableFavorite);
+
+  // Build tickets
+  const exacta = buildExactaTicket(template, algorithmTop4);
+  const trifecta = buildTrifectaTicket(template, algorithmTop4, algorithmTop5);
+
+  // Calculate confidence score
+  const confidenceScore = calculateConfidenceScore(raceType, vulnerableFavorite, aggregatedSignals);
+
+  return {
+    template,
+    templateReason,
+    algorithmTop4,
+    favoriteStatus,
+    favoriteVulnerabilityFlags,
+    exacta,
+    trifecta,
+    raceType,
+    confidenceScore,
+  };
+}
+
+/**
+ * @deprecated Use buildTicketConstruction instead.
+ * Build bet construction guidance using expansion/contraction model (legacy)
+ *
+ * Note: Expansion horses are no longer identified as they weren't hitting the board.
+ * This function is kept for backward compatibility only.
+ *
+ * @param aggregatedSignals - Signals for all horses
+ * @param _scores - Unused (expansion horses removed)
+ * @param vulnerableFavorite - Vulnerable favorite analysis
+ * @param fieldSpread - Field spread analysis
+ * @returns BetConstructionGuidance object (legacy format)
  */
 export function buildBetConstructionGuidance(
   aggregatedSignals: AggregatedSignals[],
-  scores: RaceScoringResult['scores'],
+  _scores: RaceScoringResult['scores'],
   vulnerableFavorite: VulnerableFavoriteAnalysis | null,
   fieldSpread: FieldSpreadAnalysis | null
 ): BetConstructionGuidance {
@@ -1250,13 +1660,13 @@ export function buildBetConstructionGuidance(
   const algorithmTop4 = sortedByAlgoRank.slice(0, 4).map((s) => s.programNumber);
   const algorithmTop5 = sortedByAlgoRank.slice(0, 5).map((s) => s.programNumber);
 
-  // Identify expansion horses (sleepers)
-  const expansionHorses = identifyExpansionHorses(aggregatedSignals, scores);
+  // Expansion horses are no longer identified (they weren't hitting the board)
+  const expansionHorses: number[] = [];
 
   // Detect contraction target (vulnerable favorite)
   const contractionTarget = detectContractionTarget(aggregatedSignals, vulnerableFavorite);
 
-  // Determine strategies
+  // Determine strategies (legacy format)
   const exactaStrategy = determineExactaStrategy(algorithmTop4, expansionHorses, contractionTarget);
   const trifectaStrategy = determineTrifectaStrategy(
     algorithmTop4,
@@ -1283,22 +1693,17 @@ export function buildBetConstructionGuidance(
   if (contractionTarget !== null) {
     summaryParts.push(`Contraction: #${contractionTarget} (vulnerable favorite)`);
   }
-  if (expansionHorses.length > 0) {
-    summaryParts.push(`Expansion: #${expansionHorses.join(', #')} (sleepers added)`);
-  }
-  if (summaryParts.length === 0) {
-    summaryParts.push('No AI modifications — algorithm top 4 intact');
-  }
+  summaryParts.push('Expansion horses removed - use buildTicketConstruction() instead');
 
   return {
     algorithmTop4,
-    expansionHorses,
+    expansionHorses, // Always empty now
     contractionTarget,
     exactaStrategy,
     trifectaStrategy,
     raceClassification,
     vulnerableFavoriteDetected: contractionTarget !== null,
-    sleeperIdentified: expansionHorses.length > 0,
+    sleeperIdentified: false, // Always false now
     signalSummary: summaryParts.join('; '),
   };
 }
@@ -1306,18 +1711,23 @@ export function buildBetConstructionGuidance(
 /**
  * Combine multi-bot results into the standard AIRaceAnalysis format
  *
- * SMART COMBINER (v2) - EXPANSION/CONTRACTION MODEL
+ * SMART COMBINER (v3) - THREE-TEMPLATE TICKET CONSTRUCTION SYSTEM
  *
  * Philosophy:
  * - Algorithm top 4 are SACRED — never demoted by AI
- * - AI signals EXPAND boxes (add sleepers) or CONTRACT them (fade vulnerable favorites)
- * - No rank shuffling — preserves exotic ticket construction
+ * - Template selection based on favorite vulnerability and field type
+ * - No more expansion horses — they weren't hitting the board
+ * - Vulnerable favorites stay on tickets but demoted from win position
  *
- * Key changes from v1:
- * - Removed rank reordering
- * - topPick = algorithm rank 1 UNLESS vulnerable favorite HIGH confidence → algorithm rank 2
- * - valuePlay = first horse in expansionHorses, or null
- * - projectedFinish in horseInsights reflects algorithm rank
+ * Templates:
+ * - Template A (Solid Favorite): 1 WITH 2,3,4
+ * - Template B (Vulnerable Favorite): 2,3,4 WITH 1,2,3,4 (favorite demoted)
+ * - Template C (Wide Open/Chaos): Box 1,2,3,4,5
+ *
+ * Top Pick Logic:
+ * - Template A: topPick = algorithm rank 1
+ * - Template B: topPick = algorithm rank 2
+ * - Template C: topPick = algorithm rank 1
  *
  * @param rawResults - Raw results from all 4 bots
  * @param race - Parsed race data
@@ -1337,7 +1747,7 @@ export function combineMultiBotResults(
   // ============================================================================
   // DEBUG LOGGING: Bot status summary
   // ============================================================================
-  debugLog(`\n=== SMART COMBINER v2 (Expansion/Contraction): Race ${race.header.raceNumber} ===`);
+  debugLog(`\n=== SMART COMBINER v3 (Three-Template System): Race ${race.header.raceNumber} ===`);
   debugLog(
     'TripTrouble:',
     tripTrouble ? `SUCCESS - ${tripTrouble.horsesWithTripTrouble.length} horses flagged` : 'FAILED'
@@ -1413,10 +1823,67 @@ export function combineMultiBotResults(
   });
 
   // ============================================================================
-  // STEP 2: Build bet construction guidance (EXPANSION/CONTRACTION MODEL)
+  // STEP 2: Build ticket construction (THREE-TEMPLATE SYSTEM)
   // ============================================================================
-  debugLog('\n--- BET CONSTRUCTION (Expansion/Contraction Model) ---');
+  debugLog('\n--- TICKET CONSTRUCTION (Three-Template System) ---');
 
+  const ticketConstruction = buildTicketConstruction(
+    aggregatedSignals,
+    vulnerableFavorite,
+    fieldSpread
+  );
+
+  debugLog(`Template: ${ticketConstruction.template} - ${ticketConstruction.templateReason}`);
+  debugLog(`Algorithm Top 4: #${ticketConstruction.algorithmTop4.join(', #')}`);
+  debugLog(`Favorite Status: ${ticketConstruction.favoriteStatus}`);
+  if (ticketConstruction.favoriteVulnerabilityFlags.length > 0) {
+    debugLog(`Vulnerability Flags: ${ticketConstruction.favoriteVulnerabilityFlags.join(', ')}`);
+  }
+  debugLog(`Race Type: ${ticketConstruction.raceType}`);
+  debugLog(`Confidence Score: ${ticketConstruction.confidenceScore}`);
+
+  // ============================================================================
+  // STEP 3: Determine top pick based on template
+  // ============================================================================
+  debugLog('\n--- TOP PICK (Template-Based) ---');
+
+  const algorithmRank1 = rankedScores[0]?.programNumber ?? null;
+  const algorithmRank2 = rankedScores[1]?.programNumber ?? null;
+
+  // Top pick logic based on template:
+  // - Template A: topPick = algorithm rank 1
+  // - Template B: topPick = algorithm rank 2 (favorite demoted)
+  // - Template C: topPick = algorithm rank 1
+  let topPick: number | null;
+  if (ticketConstruction.template === 'B') {
+    topPick = algorithmRank2;
+    debugLog(
+      `Top pick = Algorithm #2 (#${algorithmRank2}) - Template B (vulnerable favorite demoted)`
+    );
+  } else {
+    topPick = algorithmRank1;
+    debugLog(
+      `Top pick = Algorithm #1 (#${algorithmRank1}) - Template ${ticketConstruction.template}`
+    );
+  }
+
+  // Note: valuePlay is no longer used (expansion horses removed)
+  debugLog('Value play = Removed (expansion horses no longer identified)');
+
+  // ============================================================================
+  // STEP 4: Log ticket details
+  // ============================================================================
+  debugLog('\n--- TICKET DETAILS ---');
+  debugLog(
+    `Exacta: Win=[${ticketConstruction.exacta.winPosition.join(',')}] Place=[${ticketConstruction.exacta.placePosition.join(',')}] ` +
+      `(${ticketConstruction.exacta.combinations} combos, $${ticketConstruction.exacta.estimatedCost})`
+  );
+  debugLog(
+    `Trifecta: Win=[${ticketConstruction.trifecta.winPosition.join(',')}] Place=[${ticketConstruction.trifecta.placePosition.join(',')}] Show=[${ticketConstruction.trifecta.showPosition.join(',')}] ` +
+      `(${ticketConstruction.trifecta.combinations} combos, $${ticketConstruction.trifecta.estimatedCost})`
+  );
+
+  // Build legacy betConstruction for backward compatibility
   const betConstruction = buildBetConstructionGuidance(
     aggregatedSignals,
     scores,
@@ -1424,101 +1891,34 @@ export function combineMultiBotResults(
     fieldSpread
   );
 
-  debugLog(`Algorithm Top 4: #${betConstruction.algorithmTop4.join(', #')}`);
-  debugLog(
-    `Expansion Horses: ${betConstruction.expansionHorses.length > 0 ? '#' + betConstruction.expansionHorses.join(', #') : 'None'}`
-  );
-  debugLog(
-    `Contraction Target: ${betConstruction.contractionTarget !== null ? '#' + betConstruction.contractionTarget : 'None'}`
-  );
-  debugLog(`Race Classification: ${betConstruction.raceClassification}`);
-  debugLog(`Signal Summary: ${betConstruction.signalSummary}`);
-
   // ============================================================================
-  // STEP 3: Determine top pick and value play
-  // ============================================================================
-  debugLog('\n--- TOP PICK & VALUE PLAY ---');
-
-  const algorithmRank1 = rankedScores[0]?.programNumber ?? null;
-  const algorithmRank2 = rankedScores[1]?.programNumber ?? null;
-
-  // Top pick: algorithm rank 1 UNLESS vulnerable favorite with HIGH confidence + 2+ flags
-  let topPick: number | null;
-  if (
-    betConstruction.vulnerableFavoriteDetected &&
-    vulnerableFavorite?.confidence === 'HIGH' &&
-    vulnerableFavorite.reasons.length >= 2
-  ) {
-    topPick = algorithmRank2;
-    debugLog(
-      `Top pick = Algorithm #2 (#${algorithmRank2}) due to vulnerable favorite HIGH with ${vulnerableFavorite.reasons.length} flags`
-    );
-  } else {
-    topPick = algorithmRank1;
-    debugLog(`Top pick = Algorithm #1 (#${algorithmRank1})`);
-  }
-
-  // Value play: first horse in expansionHorses, or null
-  const valuePlay =
-    betConstruction.expansionHorses.length > 0 ? betConstruction.expansionHorses[0] ?? null : null;
-
-  if (valuePlay) {
-    const valueSignal = aggregatedSignals.find((s) => s.programNumber === valuePlay);
-    debugLog(
-      `Value play = #${valuePlay} (expansion horse, algo rank ${valueSignal?.algorithmRank})`
-    );
-  } else {
-    debugLog('Value play = None (no expansion horses identified)');
-  }
-
-  // ============================================================================
-  // STEP 4: Synthesize bet structure (legacy format for backward compatibility)
-  // ============================================================================
-  debugLog('\n--- LEGACY BET STRUCTURE ---');
-
-  // Use legacy synthesize function for backward compatibility
-  const betRecommendation = synthesizeBetStructure(
-    fieldSpread,
-    aggregatedSignals, // Use algorithm-ordered signals
-    vulnerableFavorite
-  );
-
-  debugLog(`Legacy Bet type: ${betRecommendation.type}`);
-  debugLog(`Exacta Strategy: ${betConstruction.exactaStrategy.type}`);
-  debugLog(`Trifecta Strategy: ${betConstruction.trifectaStrategy.type}`);
-
-  // ============================================================================
-  // STEP 5: Build race narrative (updated for expansion/contraction model)
+  // STEP 5: Build race narrative (updated for three-template system)
   // ============================================================================
   const narrativeParts: string[] = [];
 
-  // Start with algorithm confirmation or expansion/contraction note
-  if (betConstruction.vulnerableFavoriteDetected && betConstruction.contractionTarget !== null) {
-    const rank1Horse = rankedScores[0];
-    narrativeParts.push(
-      `CONTRACT: Algorithm #1 (#${rank1Horse?.programNumber} ${rank1Horse?.horseName}) flagged vulnerable - fade in key spots.`
-    );
-  } else {
-    const rank1Horse = rankedScores[0];
-    narrativeParts.push(
-      `CONFIRM: Algorithm top pick #${rank1Horse?.programNumber} ${rank1Horse?.horseName} supported by bot analysis.`
-    );
-  }
+  // Start with template-based narrative
+  const rank1Horse = rankedScores[0];
+  const rank2Horse = rankedScores[1];
 
-  // Add expansion note
-  if (betConstruction.sleeperIdentified && betConstruction.expansionHorses.length > 0) {
-    const sleepers = betConstruction.expansionHorses
-      .map((pn) => {
-        const signal = aggregatedSignals.find((s) => s.programNumber === pn);
-        return `#${pn} (rank ${signal?.algorithmRank})`;
-      })
-      .join(', ');
-    narrativeParts.push(`EXPAND: Add sleeper(s) ${sleepers} to exotic tickets.`);
-  }
-
-  // Add vulnerable favorite note
-  if (vulnerableFavorite?.isVulnerable && vulnerableFavorite.reasons[0]) {
-    narrativeParts.push(`Vulnerable favorite: ${vulnerableFavorite.reasons[0]}.`);
+  switch (ticketConstruction.template) {
+    case 'A':
+      narrativeParts.push(
+        `TEMPLATE A (Solid Favorite): Key #${rank1Horse?.programNumber} ${rank1Horse?.horseName} in win position.`
+      );
+      break;
+    case 'B':
+      narrativeParts.push(
+        `TEMPLATE B (Vulnerable Favorite): Demote #${rank1Horse?.programNumber} to place only. Key #${rank2Horse?.programNumber} ${rank2Horse?.horseName} in win position.`
+      );
+      if (ticketConstruction.favoriteVulnerabilityFlags[0]) {
+        narrativeParts.push(`Vulnerability: ${ticketConstruction.favoriteVulnerabilityFlags[0]}.`);
+      }
+      break;
+    case 'C':
+      narrativeParts.push(
+        `TEMPLATE C (Wide Open): Full box top 4-5. No clear standout - spread your picks.`
+      );
+      break;
   }
 
   // Add pace scenario summary
@@ -1530,14 +1930,18 @@ export function combineMultiBotResults(
     }
   }
 
-  // Add field type note
-  if (fieldSpread) {
-    if (fieldSpread.fieldType === 'WIDE_OPEN' || fieldSpread.fieldType === 'TIGHT') {
-      narrativeParts.push(`${fieldSpread.fieldType} field - spread picks recommended.`);
-    } else if (fieldSpread.fieldType === 'DOMINANT' || fieldSpread.fieldType === 'SEPARATED') {
-      narrativeParts.push('Top choice stands out from field.');
-    }
+  // Add race type note
+  if (ticketConstruction.raceType === 'CHALK') {
+    narrativeParts.push('Clear separation in field - narrow approach recommended.');
+  } else if (ticketConstruction.raceType === 'WIDE_OPEN') {
+    narrativeParts.push('Wide open field - spread picks recommended.');
   }
+
+  // Add cost summary
+  narrativeParts.push(
+    `Exacta: ${ticketConstruction.exacta.combinations} combos ($${ticketConstruction.exacta.estimatedCost}). ` +
+      `Trifecta: ${ticketConstruction.trifecta.combinations} combos ($${ticketConstruction.trifecta.estimatedCost}).`
+  );
 
   const raceNarrative = narrativeParts.join(' ');
 
@@ -1550,36 +1954,32 @@ export function combineMultiBotResults(
     const algorithmRank = signal.algorithmRank;
     const isBottomThird = algorithmRank > Math.ceil((aggregatedSignals.length * 2) / 3);
 
-    // Check if this horse is an expansion horse
-    const isExpansionHorse = betConstruction.expansionHorses.includes(signal.programNumber);
-
-    // Determine value label per requirements
+    // Determine value label based on template and position
     let valueLabel: AIRaceAnalysis['horseInsights'][0]['valueLabel'];
 
     if (signal.classification === 'EXCLUDE') {
       valueLabel = 'NO CHANCE';
-    } else if (
-      signal.isVulnerable &&
-      vulnerableFavorite?.confidence === 'HIGH' &&
-      vulnerableFavorite.reasons.length >= 2
-    ) {
-      valueLabel = 'FAIR PRICE'; // False favorite
-    } else if (isBottomThird && !isExpansionHorse) {
+    } else if (signal.isVulnerable && ticketConstruction.favoriteStatus === 'VULNERABLE') {
+      valueLabel = 'FAIR PRICE'; // False favorite - demoted in tickets
+    } else if (isBottomThird) {
       valueLabel = signal.classification === 'C' ? 'NO VALUE' : 'SKIP';
-    } else if (algorithmRank === 1 && !betConstruction.vulnerableFavoriteDetected) {
-      valueLabel = betConstruction.raceClassification === 'BETTABLE' ? 'BEST BET' : 'PRIME VALUE';
-    } else if (algorithmRank === 2 && betConstruction.vulnerableFavoriteDetected) {
+    } else if (algorithmRank === 1 && ticketConstruction.template === 'A') {
+      valueLabel = 'BEST BET'; // Solid favorite keyed in win
+    } else if (algorithmRank === 1 && ticketConstruction.template === 'B') {
+      valueLabel = 'FAIR PRICE'; // Vulnerable favorite - demoted
+    } else if (algorithmRank === 2 && ticketConstruction.template === 'B') {
       valueLabel = 'BEST BET'; // Promoted due to vulnerable favorite
     } else if (algorithmRank <= 3 && signal.totalAdjustment > 0) {
       valueLabel = 'SOLID PLAY';
-    } else if (isExpansionHorse) {
-      valueLabel = 'PRIME VALUE'; // Sleeper horse
     } else if (signal.classification === 'A' && !signal.keyCandidate) {
       valueLabel = 'FAIR PRICE';
     } else if (signal.classification === 'B') {
       valueLabel = 'WATCH ONLY';
-    } else if (algorithmRank <= 5) {
-      valueLabel = 'SOLID PLAY';
+    } else if (algorithmRank <= 4) {
+      // In top 4 but no strong signals
+      valueLabel = ticketConstruction.template === 'C' ? 'SOLID PLAY' : 'PRIME VALUE';
+    } else if (algorithmRank === 5 && ticketConstruction.template === 'C') {
+      valueLabel = 'SOLID PLAY'; // Template C includes rank 5 in trifecta
     } else {
       valueLabel = 'NO VALUE';
     }
@@ -1599,11 +1999,9 @@ export function combineMultiBotResults(
     } else if (signal.paceAdvantage === 1) {
       oneLiner = signal.paceEdgeReason || 'Pace scenario favorable';
     } else if (signal.isVulnerable) {
-      oneLiner = `False favorite, ${signal.vulnerabilityFlags[0] || 'concerns present'}, fade in exotics`;
+      oneLiner = `Vulnerable favorite, ${signal.vulnerabilityFlags[0] || 'concerns present'}, demoted from win position`;
     } else if (signal.paceAdvantage < 0) {
       oneLiner = `${signal.paceEdgeReason || 'Pace works against'} - use underneath only`;
-    } else if (isExpansionHorse) {
-      oneLiner = 'AI-identified sleeper - add to exotic tickets';
     } else if (score.positiveFactors[0]) {
       oneLiner = score.positiveFactors[0];
     } else if (score.negativeFactors[0]) {
@@ -1634,7 +2032,8 @@ export function combineMultiBotResults(
       keyWeakness = score.negativeFactors[0];
     }
 
-    const contenderCount = Math.min(4, aggregatedSignals.length);
+    // Contenders based on template
+    const contenderCount = ticketConstruction.template === 'C' ? 5 : 4;
 
     return {
       programNumber: signal.programNumber,
@@ -1644,10 +2043,9 @@ export function combineMultiBotResults(
       oneLiner,
       keyStrength,
       keyWeakness,
-      isContender: algorithmRank <= contenderCount || isExpansionHorse,
+      isContender: algorithmRank <= contenderCount,
       avoidFlag:
-        signal.classification === 'EXCLUDE' ||
-        (isBottomThird && score.negativeFactors.length >= 2 && !isExpansionHorse),
+        signal.classification === 'EXCLUDE' || (isBottomThird && score.negativeFactors.length >= 2),
     };
   });
 
@@ -1655,42 +2053,27 @@ export function combineMultiBotResults(
   // STEP 7: Determine overall confidence and flags
   // ============================================================================
 
-  // HIGH: 3+ bots agree, fieldType DOMINANT or SEPARATED, no conflicts
-  // LOW: Bots conflict, fieldType WIDE_OPEN, or vulnerable favorite with trip trouble
-  // MEDIUM: Default
-  let confidence: 'HIGH' | 'MEDIUM' | 'LOW' = 'MEDIUM';
-
-  const hasConflicts = aggregatedSignals.some((s) => s.conflictingSignals);
-
-  if (
-    botSuccessCount >= 3 &&
-    (fieldSpread?.fieldType === 'DOMINANT' || fieldSpread?.fieldType === 'SEPARATED') &&
-    !hasConflicts
-  ) {
+  // Map confidence score to HIGH/MEDIUM/LOW
+  // 70+: HIGH, 40-69: MEDIUM, <40: LOW
+  let confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  if (ticketConstruction.confidenceScore >= 70) {
     confidence = 'HIGH';
-  } else if (
-    hasConflicts ||
-    fieldSpread?.fieldType === 'WIDE_OPEN' ||
-    betConstruction.raceClassification === 'PASS'
-  ) {
+  } else if (ticketConstruction.confidenceScore >= 40) {
+    confidence = 'MEDIUM';
+  } else {
     confidence = 'LOW';
   }
 
-  // Flags
-  const isVulnerableFavoriteFlag = betConstruction.vulnerableFavoriteDetected;
+  // Flags based on template
+  const isVulnerableFavoriteFlag = ticketConstruction.favoriteStatus === 'VULNERABLE';
 
   const isLikelyUpset =
-    isVulnerableFavoriteFlag &&
+    ticketConstruction.template === 'B' &&
     vulnerableFavorite?.confidence === 'HIGH' &&
-    vulnerableFavorite?.reasons?.length >= 2 &&
-    fieldSpread?.fieldType !== 'SEPARATED' &&
-    fieldSpread?.fieldType !== 'DOMINANT';
+    vulnerableFavorite?.reasons?.length >= 2;
 
   const isChaoticRace =
-    betConstruction.raceClassification === 'PASS' ||
-    fieldSpread?.fieldType === 'WIDE_OPEN' ||
-    (fieldSpread?.fieldType === 'TIGHT' && (fieldSpread?.topTierCount ?? 0) >= 5) ||
-    aggregatedSignals.filter((s) => s.conflictingSignals).length >= 3;
+    ticketConstruction.template === 'C' || ticketConstruction.raceType === 'WIDE_OPEN';
 
   // Build avoid list
   const avoidList = horseInsights.filter((h) => h.avoidFlag).map((h) => h.programNumber);
@@ -1730,15 +2113,15 @@ export function combineMultiBotResults(
     },
     successCount: botSuccessCount,
     totalBots: 4,
-    hasOverride: betConstruction.vulnerableFavoriteDetected || betConstruction.sleeperIdentified,
-    signalSummary: betConstruction.signalSummary,
+    hasOverride: ticketConstruction.template !== 'A', // Template B or C means we modified from default
+    signalSummary: `Template ${ticketConstruction.template}: ${ticketConstruction.templateReason}`,
   };
 
   // ============================================================================
   // FINAL DEBUG SUMMARY - Enhanced console logging (always visible)
   // ============================================================================
   console.log(
-    `%c[AI BOTS v2] Race ${race.header.raceNumber} Analysis Summary (Expansion/Contraction Model)`,
+    `%c[AI BOTS v3] Race ${race.header.raceNumber} Analysis Summary (Three-Template System)`,
     'color: #19abb5; font-weight: bold; font-size: 14px'
   );
   console.log('%c┌─────────────────────────────────────────────────────────┐', 'color: #888');
@@ -1764,50 +2147,61 @@ export function combineMultiBotResults(
   );
   console.log('%c├─────────────────────────────────────────────────────────┤', 'color: #888');
   console.log(
-    `%c│ ALGORITHM TOP 4: #${betConstruction.algorithmTop4.join(', #')}`,
+    `%c│ TEMPLATE: ${ticketConstruction.template}`,
+    ticketConstruction.template === 'A'
+      ? 'color: #10b981; font-weight: bold'
+      : ticketConstruction.template === 'B'
+        ? 'color: #f59e0b; font-weight: bold'
+        : 'color: #ef4444; font-weight: bold'
+  );
+  console.log(`%c│ ${ticketConstruction.templateReason}`, 'color: #b4b4b6');
+  console.log('%c├─────────────────────────────────────────────────────────┤', 'color: #888');
+  console.log(
+    `%c│ ALGORITHM TOP 4: #${ticketConstruction.algorithmTop4.join(', #')}`,
     'color: #36d1da; font-weight: bold'
   );
   console.log(
-    `%c│ EXPANSION: ${betConstruction.expansionHorses.length > 0 ? '#' + betConstruction.expansionHorses.join(', #') + ' (sleepers added)' : 'None'}`,
-    betConstruction.expansionHorses.length > 0 ? 'color: #10b981' : 'color: #888'
+    `%c│ FAVORITE STATUS: ${ticketConstruction.favoriteStatus}`,
+    ticketConstruction.favoriteStatus === 'SOLID' ? 'color: #10b981' : 'color: #f59e0b'
   );
   console.log(
-    `%c│ CONTRACTION: ${betConstruction.contractionTarget !== null ? '#' + betConstruction.contractionTarget + ' (vulnerable fav excluded)' : 'None'}`,
-    betConstruction.contractionTarget !== null ? 'color: #f59e0b' : 'color: #888'
+    `%c│ RACE TYPE: ${ticketConstruction.raceType}`,
+    ticketConstruction.raceType === 'CHALK'
+      ? 'color: #10b981'
+      : ticketConstruction.raceType === 'COMPETITIVE'
+        ? 'color: #f59e0b'
+        : 'color: #ef4444'
   );
   console.log('%c├─────────────────────────────────────────────────────────┤', 'color: #888');
   console.log(`%c│ TOP PICK: #${topPick}`, 'color: #36d1da; font-weight: bold');
   console.log(
-    `%c│ VALUE PLAY: ${valuePlay ? `#${valuePlay}` : 'None identified'}`,
-    valuePlay ? 'color: #10b981' : 'color: #b4b4b6'
-  );
-  console.log(
-    `%c│ RACE CLASSIFICATION: ${betConstruction.raceClassification}`,
-    betConstruction.raceClassification === 'BETTABLE'
-      ? 'color: #10b981'
-      : betConstruction.raceClassification === 'PASS'
-        ? 'color: #ef4444'
-        : 'color: #f59e0b'
-  );
-  console.log(
-    `%c│ CONFIDENCE: ${confidence}`,
+    `%c│ CONFIDENCE SCORE: ${ticketConstruction.confidenceScore}/100 (${confidence})`,
     confidence === 'HIGH'
       ? 'color: #10b981'
-      : confidence === 'LOW'
-        ? 'color: #ef4444'
-        : 'color: #f59e0b'
+      : confidence === 'MEDIUM'
+        ? 'color: #f59e0b'
+        : 'color: #ef4444'
+  );
+  console.log('%c├─────────────────────────────────────────────────────────┤', 'color: #888');
+  console.log(
+    `%c│ EXACTA: Win=[${ticketConstruction.exacta.winPosition.join(',')}] Place=[${ticketConstruction.exacta.placePosition.join(',')}]`,
+    'color: #b4b4b6'
+  );
+  console.log(
+    `%c│         ${ticketConstruction.exacta.combinations} combos, $${ticketConstruction.exacta.estimatedCost}`,
+    'color: #888'
+  );
+  console.log(
+    `%c│ TRIFECTA: Win=[${ticketConstruction.trifecta.winPosition.join(',')}] Place=[${ticketConstruction.trifecta.placePosition.join(',')}] Show=[${ticketConstruction.trifecta.showPosition.join(',')}]`,
+    'color: #b4b4b6'
+  );
+  console.log(
+    `%c│          ${ticketConstruction.trifecta.combinations} combos, $${ticketConstruction.trifecta.estimatedCost}`,
+    'color: #888'
   );
   console.log('%c└─────────────────────────────────────────────────────────┘', 'color: #888');
 
-  // Log exacta/trifecta strategies
-  debugLog('\n--- TICKET STRATEGIES ---');
-  debugLog(
-    `Exacta: ${betConstruction.exactaStrategy.type} - Key: ${betConstruction.exactaStrategy.keyHorse ?? 'N/A'}, Include: #${betConstruction.exactaStrategy.includeHorses.join(', #')}`
-  );
-  debugLog(
-    `Trifecta: ${betConstruction.trifectaStrategy.type} - A: #${betConstruction.trifectaStrategy.aHorses.join(', #')}, B: #${betConstruction.trifectaStrategy.bHorses.join(', #')}`
-  );
-  debugLog('=== END SMART COMBINER v2 ===\n');
+  debugLog('=== END SMART COMBINER v3 ===\n');
 
   return {
     raceId: `race-${race.header.raceNumber}`,
@@ -1819,13 +2213,16 @@ export function combineMultiBotResults(
     bettableRace: !isChaoticRace && confidence !== 'LOW',
     horseInsights,
     topPick,
-    valuePlay,
     avoidList,
     vulnerableFavorite: isVulnerableFavoriteFlag,
     likelyUpset: isLikelyUpset ?? false,
     chaoticRace: isChaoticRace ?? false,
     botDebugInfo,
-    betConstruction, // NEW: Include bet construction guidance
+    // New three-template ticket construction
+    ticketConstruction,
+    // Legacy fields for backward compatibility
+    betConstruction,
+    valuePlay: null, // Deprecated - expansion horses removed
   };
 }
 
@@ -1843,7 +2240,6 @@ function createEmptyAnalysis(raceNumber: number, processingTimeMs: number): AIRa
     bettableRace: false,
     horseInsights: [],
     topPick: null,
-    valuePlay: null,
     avoidList: [],
     vulnerableFavorite: false,
     likelyUpset: false,
