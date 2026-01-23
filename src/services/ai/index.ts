@@ -355,7 +355,7 @@ export async function getMultiBotAnalysis(
  * - Pace advantage: +2 for STRONG (lone speed), +1 for MODERATE
  * - Vulnerable favorite: -2 if HIGH + 2+ flags, -1 if HIGH + 1 flag, MEDIUM = flag only
  * - Competitive field: reduce adjustments by 25% (not 50%)
- * - Minimum for rank change: ±2
+ * - Minimum for rank change: ±1
  * - Max position movement: 2 positions
  *
  * @param programNumber - Horse's program number
@@ -699,7 +699,7 @@ export function isCompetitiveField(signals: AggregatedSignals[]): boolean {
  * Reorder horses by adjusted rank and track rank changes
  *
  * CONSERVATIVE MODE PROTECTIONS:
- * - Only adjustments of ±2 or greater trigger rank changes
+ * - Only adjustments of ±1 or greater trigger rank changes
  * - Never move a horse more than 2 rank positions from algorithm rank
  * - If competitive field (top 4 within 20 points), reduce adjustments by 25%
  *
@@ -735,8 +735,8 @@ export function reorderByAdjustedRank(
           Math.sign(effectiveAdjustment) * Math.floor(Math.abs(effectiveAdjustment) * 0.75);
       }
 
-      // PROTECTION 2: Only adjustments of ±2 or greater trigger rank changes
-      if (Math.abs(effectiveAdjustment) < 2) {
+      // PROTECTION 2: Only adjustments of ±1 or greater trigger rank changes
+      if (Math.abs(effectiveAdjustment) < 1) {
         effectiveAdjustment = 0;
       }
     }
