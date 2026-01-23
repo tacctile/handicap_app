@@ -12,124 +12,248 @@
 
 import { describe, it, expect } from 'vitest';
 import { generateTopBets } from '../topBetsGenerator';
-import type { ScoredHorse } from '../../scoring';
-import type { RaceHeader } from '../../../types/drf';
+import type { ScoredHorse, HorseScore, ScoreBreakdown } from '../../scoring';
+import type { HorseEntry, RaceHeader } from '../../../types/drf';
 
-// Helper to create mock scored horses
+// ============================================================================
+// TEST DATA FACTORIES (aligned with betGenerator.test.ts patterns)
+// ============================================================================
+
+function createMockHorse(overrides: Partial<HorseEntry> = {}): HorseEntry {
+  return {
+    programNumber: 1,
+    horseName: 'Test Horse',
+    postPosition: 1,
+    morningLineOdds: '5-1',
+    trainerName: 'Test Trainer',
+    jockeyName: 'Test Jockey',
+    weight: 122,
+    equipment: { raw: '', firstTimeEquipment: [], changes: [] },
+    medication: { lasix: false, bute: false },
+    breeding: { sire: 'Test Sire', dam: 'Test Dam', damSire: 'Test Damsire' },
+    pastPerformances: [],
+    workouts: [],
+    bestBeyer: 85,
+    averageBeyer: 80,
+    runningStyle: 'E',
+    earlySpeedRating: 90,
+    lifetimeStarts: 10,
+    isScratched: false,
+    ...overrides,
+  } as HorseEntry;
+}
+
+function createMockScoreBreakdown(overrides: Partial<ScoreBreakdown> = {}): ScoreBreakdown {
+  return {
+    connections: {
+      total: 30,
+      trainer: 20,
+      jockey: 8,
+      partnershipBonus: 2,
+      reasoning: 'Good connections',
+    },
+    postPosition: {
+      total: 25,
+      trackBiasApplied: false,
+      isGoldenPost: false,
+      reasoning: 'Good post',
+    },
+    speedClass: {
+      total: 35,
+      speedScore: 20,
+      classScore: 15,
+      bestFigure: 85,
+      classMovement: 'lateral',
+      reasoning: 'Solid speed',
+    },
+    form: {
+      total: 20,
+      recentFormScore: 15,
+      layoffScore: 5,
+      consistencyBonus: 0,
+      formTrend: 'consistent',
+      reasoning: 'Good form',
+      wonLastOut: false,
+      won2OfLast3: false,
+    },
+    equipment: { total: 10, hasChanges: false, reasoning: 'Standard equipment' },
+    pace: { total: 30, runningStyle: 'Stalker', paceFit: 'favorable', reasoning: 'Good pace fit' },
+    odds: {
+      total: 7,
+      oddsValue: 5.0,
+      oddsSource: 'morning_line' as const,
+      tier: 'Live Price',
+      reasoning: '5-1 morning line',
+    },
+    distanceSurface: {
+      total: 0,
+      turfScore: 0,
+      wetScore: 0,
+      distanceScore: 0,
+      turfWinRate: 0,
+      wetWinRate: 0,
+      distanceWinRate: 0,
+      reasoning: ['No distance/surface bonus'],
+    },
+    trainerPatterns: {
+      total: 0,
+      matchedPatterns: [],
+      reasoning: ['No trainer pattern bonus'],
+    },
+    comboPatterns: {
+      total: 0,
+      detectedCombos: [],
+      intentScore: 0,
+      reasoning: [],
+    },
+    trackSpecialist: {
+      total: 0,
+      trackWinRate: 0,
+      trackITMRate: 0,
+      isSpecialist: false,
+      reasoning: 'First time at track',
+    },
+    trainerSurfaceDistance: {
+      total: 0,
+      matchedCategory: null,
+      trainerWinPercent: 0,
+      wetTrackWinPercent: 0,
+      wetBonusApplied: false,
+      reasoning: 'No trainer surface/distance data',
+    },
+    weightAnalysis: {
+      total: 0,
+      currentWeight: 120,
+      lastRaceWeight: null,
+      weightChange: null,
+      significantDrop: false,
+      significantGain: false,
+      showWeightGainFlag: false,
+      reasoning: 'No weight history available',
+    },
+    sexAnalysis: {
+      total: 0,
+      horseSex: 'c',
+      isFemale: false,
+      isRestrictedRace: false,
+      isMixedRace: false,
+      isFirstTimeFacingMales: false,
+      flags: [],
+      reasoning: 'Colt in open race - baseline',
+    },
+    ...overrides,
+  };
+}
+
+function createMockHorseScore(total: number, overrides: Partial<HorseScore> = {}): HorseScore {
+  return {
+    total,
+    baseScore: total,
+    overlayScore: 0,
+    oddsScore: 7,
+    breakdown: createMockScoreBreakdown(overrides.breakdown),
+    isScratched: false,
+    confidenceLevel: total >= 180 ? 'high' : total >= 160 ? 'medium' : 'low',
+    dataQuality: 80,
+    dataCompleteness: {
+      overallScore: 85,
+      overallGrade: 'B',
+      criticalComplete: 100,
+      highComplete: 80,
+      mediumComplete: 75,
+      lowComplete: 50,
+      hasSpeedFigures: true,
+      hasPastPerformances: true,
+      hasTrainerStats: true,
+      hasJockeyStats: true,
+      hasRunningStyle: true,
+      hasPaceFigures: true,
+      missingCritical: [],
+      missingHigh: [],
+      isLowConfidence: false,
+      confidenceReason: null,
+    },
+    lowConfidencePenaltyApplied: false,
+    lowConfidencePenaltyAmount: 0,
+    paperTigerPenaltyApplied: false,
+    paperTigerPenaltyAmount: 0,
+    keyRaceIndexBonus: 0,
+    ...overrides,
+  };
+}
+
+function createMockScoredHorse(
+  programNumber: number,
+  total: number,
+  odds: string = '5-1'
+): ScoredHorse {
+  return {
+    horse: createMockHorse({
+      programNumber,
+      horseName: `Horse ${programNumber}`,
+      morningLineOdds: odds,
+      postPosition: programNumber,
+    }),
+    index: programNumber - 1,
+    score: createMockHorseScore(total),
+    rank: programNumber,
+  };
+}
+
+// Helper to create mock scored horses for tests
 function createMockScoredHorses(count: number): ScoredHorse[] {
   const horses: ScoredHorse[] = [];
   for (let i = 0; i < count; i++) {
-    horses.push({
-      index: i,
-      horse: {
-        programNumber: i + 1,
-        horseName: `Horse ${i + 1}`,
-        morningLineOdds: `${5 + i}-1`,
-        trainerName: `Trainer ${i + 1}`,
-        jockeyName: `Jockey ${i + 1}`,
-        postPosition: i + 1,
-        weight: 120,
-        medication: '',
-        equipment: '',
-        claimingPrice: 0,
-        daysSinceLast: 14,
-        starts: 10,
-        wins: 2,
-        places: 3,
-        shows: 2,
-        earnings: 50000,
-        bestSpeedFigure: 80 - i * 2,
-        averageSpeedFigure: 75 - i * 2,
-        lastSpeedFigure: 78 - i * 2,
-        runningStyle: 'E',
-        earlyPaceFigure: 90 - i,
-        latePaceFigure: 85 - i,
-        pastPerformances: [],
-        workouts: [],
-        sireName: `Sire ${i + 1}`,
-        damName: `Dam ${i + 1}`,
-        damSireName: `DamSire ${i + 1}`,
-        color: 'Bay',
-        sex: 'c',
-        age: 4,
-        ownerName: `Owner ${i + 1}`,
-        breederName: `Breeder ${i + 1}`,
-        state: 'KY',
-      },
-      score: {
-        baseScore: 200 - i * 10,
-        overlayAdjustment: 0,
-        finalScore: 200 - i * 10,
-        confidence: 'HIGH' as const,
-        breakdown: {
-          speedClass: {
-            total: 80 - i,
-            avgSpeedFigure: 80 - i,
-            bestSpeedFigure: 85 - i,
-            formCycle: 5,
-          },
-          form: { total: 40 - i, daysSinceLast: 5, formCycle: 5, lastRaceFinish: 5 },
-          pace: { total: 35 - i, earlyPace: 20, latePace: 15 - i, paceScenario: 5 },
-          class: { total: 25 - i, classLevel: 10, classMovement: 5, consistency: 5 },
-          connections: {
-            total: 20 - i,
-            trainerScore: 10,
-            jockeyScore: 5,
-            comboScore: 5,
-            trainerWinPct: 15,
-            jockeyWinPct: 18,
-            meetWins: 3,
-          },
-          distanceSurface: {
-            total: 15 - i,
-            distanceScore: 8,
-            surfaceScore: 5,
-            routeSprintScore: 2,
-          },
-          oddsFactor: { total: 12 - i, overlayScore: 5, valueScore: 5, kellyScore: 2 },
-          postPosition: {
-            total: 10 - i,
-            positionalScore: 5,
-            biasScore: 3,
-            goldenPostScore: 2,
-            isGoldenPost: false,
-          },
-          trainerPatterns: { total: 8 - i, patternScore: 4, angleScore: 2, situationalScore: 2 },
-          equipment: {
-            total: 6 - i,
-            equipmentScore: 3,
-            changeScore: 2,
-            blinkerScore: 1,
-            hasChanges: false,
-          },
-          trackSpecialist: { total: 4 - i, trackScore: 2, specialistScore: 2 },
-          trainerSurfaceDist: { total: 3, surfaceScore: 1, distScore: 1, comboScore: 1 },
-          comboPatterns: { total: 2, patternScore: 1, synergy: 1 },
-          p3Refinements: { total: 1, refinementScore: 1 },
-          weight: { total: 1, weightScore: 1 },
-        },
-        tier: 'tier1' as const,
-        tierLabel: 'Tier 1',
-        isScratched: false,
-      },
-    });
+    horses.push(createMockScoredHorse(i + 1, 200 - i * 10, `${5 + i}-1`));
   }
   return horses;
 }
 
-const mockRaceHeader: RaceHeader = {
-  trackCode: 'TEST',
-  raceDate: '2025-01-01',
-  raceNumber: 1,
-  distance: 6,
-  surface: 'dirt',
-  purse: 50000,
-  raceType: 'CLM',
-  claimingPrice: 25000,
-  ageRestriction: '3UP',
-  sexRestriction: '',
-  raceConditions: 'TEST CONDITIONS',
-};
+function createMockRaceHeader(): RaceHeader {
+  return {
+    trackCode: 'CD',
+    trackName: 'Churchill Downs',
+    trackLocation: 'Louisville, KY',
+    raceNumber: 5,
+    raceDate: 'January 15, 2024',
+    raceDateRaw: '20240115',
+    postTime: '2:30 PM',
+    distanceFurlongs: 6,
+    distance: '6 furlongs',
+    distanceExact: '6f',
+    surface: 'dirt',
+    trackCondition: 'fast',
+    classification: 'claiming',
+    raceType: 'Claiming',
+    purse: 25000,
+    purseFormatted: '$25,000',
+    ageRestriction: '3&UP',
+    sexRestriction: '',
+    weightConditions: '124 lbs',
+    stateBred: null,
+    claimingPriceMin: 25000,
+    claimingPriceMax: 25000,
+    allowedWeight: null,
+    conditions: 'For 3 year olds and upward',
+    raceName: null,
+    grade: null,
+    isListed: false,
+    isAbout: false,
+    tempRail: null,
+    turfCourseType: null,
+    chuteStart: false,
+    hasReplay: false,
+    programNumber: 5,
+    fieldSize: 8,
+    probableFavorite: 1,
+  };
+}
+
+const mockRaceHeader = createMockRaceHeader();
+
+// ============================================================================
+// TEST SUITES
+// ============================================================================
 
 describe('topBetsGenerator - New Bet Types', () => {
   describe('Exacta Box Extended Depths', () => {
