@@ -41,8 +41,8 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
         run: |
-          # Run validation and capture full output for job summary
-          npx tsx scripts/validate-ai-architecture.ts 2>&1 | tee validation-output.txt
+          # Run validation - full output goes to job logs, summary file written separately
+          npx tsx scripts/validate-ai-architecture.ts
 
       - name: Upload Results
         uses: actions/upload-artifact@v4
@@ -56,46 +56,19 @@ jobs:
       - name: Post summary to job
         if: always()
         run: |
-          echo "## AI Architecture Validation Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          if [ -f validation-results.json ]; then
-            echo "### Validation Complete" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-
-            # Extract key metrics using jq for quick reference
-            echo "#### Quick Reference" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            cat validation-results.json | jq -r '.algorithmBaseline | "Algorithm Baseline:\n  Win Rate: \(.winRate | tostring | .[0:5])%\n  Top 3 Rate: \(.top3Rate | tostring | .[0:5])%\n  Exacta Box 4: \(.exactaBox4Rate | tostring | .[0:5])%\n  Trifecta Box 5: \(.trifectaBox5Rate | tostring | .[0:5])%"' 2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "Could not parse baseline metrics" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            cat validation-results.json | jq -r '.verdict | "Verdict:\n  Templates Work: \(.templatesWork)\n  Sizing Calibrated: \(.sizingCalibrated)\n  ROI Positive: \(.roiPositive)\n  RECOMMENDATION: \(.recommendation)"' 2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "Could not parse verdict" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            cat validation-results.json | jq -r '"Summary Stats:\n  Total Races: \(.totalRaces)\n  Races Analyzed: \(.racesAnalyzed)\n  Errors: \(.errors | length)"' 2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "Could not parse summary" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-
-            # Full validation report with all Tier 1 metrics
-            echo "---" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### Full Validation Report" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Includes: Algorithm Baseline, Template Distribution, Template Performance, Sizing Calibration, Vulnerable Favorite Fading, ROI Comparison, Verdict, **Algorithm vs Algorithm+AI Comparison**, **Per-Template Performance**, **Favorite Fade Accuracy by Odds**, and **PASS Filter Audit**." >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            if [ -f validation-output.txt ]; then
-              cat validation-output.txt >> $GITHUB_STEP_SUMMARY
-            else
-              echo "Validation output file not found" >> $GITHUB_STEP_SUMMARY
-            fi
-            echo '```' >> $GITHUB_STEP_SUMMARY
+          # Use condensed summary file (under 50KB) instead of full console output
+          if [ -f validation-summary.md ]; then
+            cat validation-summary.md >> $GITHUB_STEP_SUMMARY
           else
-            echo "### Warning: No results file generated" >> $GITHUB_STEP_SUMMARY
+            echo "## AI Architecture Validation Results" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            # Still try to show validation output if available
-            if [ -f validation-output.txt ]; then
-              echo "### Validation Output" >> $GITHUB_STEP_SUMMARY
+            echo "### Warning: Summary file not generated" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            # Fallback: extract key metrics from JSON if available
+            if [ -f validation-results.json ]; then
+              echo "#### Quick Reference (from JSON)" >> $GITHUB_STEP_SUMMARY
               echo '```' >> $GITHUB_STEP_SUMMARY
-              cat validation-output.txt >> $GITHUB_STEP_SUMMARY
+              cat validation-results.json | jq -r '.verdict | "Verdict:\n  Templates Work: \(.templatesWork)\n  Sizing Calibrated: \(.sizingCalibrated)\n  ROI Positive: \(.roiPositive)\n  RECOMMENDATION: \(.recommendation)"' 2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "Could not parse verdict" >> $GITHUB_STEP_SUMMARY
               echo '```' >> $GITHUB_STEP_SUMMARY
             fi
           fi

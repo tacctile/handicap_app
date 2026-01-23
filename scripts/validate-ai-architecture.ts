@@ -1965,6 +1965,139 @@ function printReport(result: ValidationResult): void {
 }
 
 // ============================================================================
+// SUMMARY FILE GENERATION (for GitHub Actions)
+// ============================================================================
+
+const SUMMARY_FILE = path.join(__dirname, '../validation-summary.md');
+
+function writeSummaryFile(result: ValidationResult): void {
+  const { algorithmBaseline: baseline, templateDistribution: td, templatePerformance: tp } = result;
+  const { tier1Comparison: t1, favoriteFadeByOdds: ffbo, passFilterAudit: pfa, verdict } = result;
+
+  const lines: string[] = [];
+
+  // Header
+  lines.push('# AI Architecture Validation Results');
+  lines.push('');
+
+  // Algorithm Baseline
+  lines.push('## Algorithm Baseline');
+  lines.push('| Metric | Value |');
+  lines.push('|--------|-------|');
+  lines.push(`| Win Rate | ${baseline.winRate.toFixed(1)}% |`);
+  lines.push(`| Top 3 Rate | ${baseline.top3Rate.toFixed(1)}% |`);
+  lines.push(`| Exacta Box 4 | ${baseline.exactaBox4Rate.toFixed(1)}% |`);
+  lines.push(`| Trifecta Box 5 | ${baseline.trifectaBox5Rate.toFixed(1)}% |`);
+  lines.push('');
+
+  // Verdict
+  lines.push('## Verdict');
+  lines.push(`- Templates Work: ${verdict.templatesWork ? '✓' : '✗'}`);
+  lines.push(`- Sizing Calibrated: ${verdict.sizingCalibrated ? '✓' : '✗'}`);
+  lines.push(`- ROI Positive: ${verdict.roiPositive ? '✓' : '✗'}`);
+  lines.push(`- **RECOMMENDATION: ${verdict.recommendation}**`);
+  lines.push('');
+
+  // Algorithm vs Algorithm+AI Comparison
+  lines.push('## Algorithm vs Algorithm+AI Comparison');
+  lines.push('| Metric | Algorithm Only | Algorithm+AI | Lift |');
+  lines.push('|--------|----------------|--------------|------|');
+
+  const formatLiftMd = (aiVal: number, algoVal: number): string => {
+    const diff = aiVal - algoVal;
+    return `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
+  };
+
+  const formatRacesLiftMd = (aiRaces: number, algoRaces: number): string => {
+    if (algoRaces === 0) return 'N/A';
+    const diff = ((aiRaces - algoRaces) / algoRaces) * 100;
+    return `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
+  };
+
+  lines.push(
+    `| Win Rate | ${t1.algorithmOnly.winRate.toFixed(1)}% | ${t1.algorithmPlusAI.winRate.toFixed(1)}% | ${formatLiftMd(t1.algorithmPlusAI.winRate, t1.algorithmOnly.winRate)} |`
+  );
+  lines.push(
+    `| Exacta Hit Rate | ${t1.algorithmOnly.exactaHitRate.toFixed(1)}% | ${t1.algorithmPlusAI.exactaHitRate.toFixed(1)}% | ${formatLiftMd(t1.algorithmPlusAI.exactaHitRate, t1.algorithmOnly.exactaHitRate)} |`
+  );
+  lines.push(
+    `| Trifecta Hit Rate | ${t1.algorithmOnly.trifectaHitRate.toFixed(1)}% | ${t1.algorithmPlusAI.trifectaHitRate.toFixed(1)}% | ${formatLiftMd(t1.algorithmPlusAI.trifectaHitRate, t1.algorithmOnly.trifectaHitRate)} |`
+  );
+  lines.push(
+    `| Exacta ROI | ${t1.algorithmOnly.exactaROI.toFixed(1)}% | ${t1.algorithmPlusAI.exactaROI.toFixed(1)}% | ${formatLiftMd(t1.algorithmPlusAI.exactaROI, t1.algorithmOnly.exactaROI)} |`
+  );
+  lines.push(
+    `| Trifecta ROI | ${t1.algorithmOnly.trifectaROI.toFixed(1)}% | ${t1.algorithmPlusAI.trifectaROI.toFixed(1)}% | ${formatLiftMd(t1.algorithmPlusAI.trifectaROI, t1.algorithmOnly.trifectaROI)} |`
+  );
+  lines.push(
+    `| Races Bet | ${t1.algorithmOnly.racesBet} | ${t1.algorithmPlusAI.racesBet} | ${formatRacesLiftMd(t1.algorithmPlusAI.racesBet, t1.algorithmOnly.racesBet)} |`
+  );
+  lines.push('');
+
+  // Per-Template Performance
+  lines.push('## Per-Template Performance');
+  lines.push(
+    '| Template | Races | Win Rate | Exacta Rate | Trifecta Rate | Exacta ROI | Trifecta ROI |'
+  );
+  lines.push(
+    '|----------|-------|----------|-------------|---------------|------------|--------------|'
+  );
+
+  const formatTemplateRowMd = (name: string, perf: TemplatePerformanceMetrics) => {
+    return `| ${name} | ${perf.races} | ${perf.winRate.toFixed(1)}% | ${perf.exactaRate.toFixed(1)}% | ${perf.trifectaRate.toFixed(1)}% | ${perf.exactaROI >= 0 ? '+' : ''}${perf.exactaROI.toFixed(1)}% | ${perf.trifectaROI >= 0 ? '+' : ''}${perf.trifectaROI.toFixed(1)}% |`;
+  };
+
+  lines.push(formatTemplateRowMd('A (Solid)', tp.templateA));
+  lines.push(formatTemplateRowMd('B (Vuln)', tp.templateB));
+  lines.push(formatTemplateRowMd('C (Wide)', tp.templateC));
+  lines.push(`| PASS | ${td.passed.count} | - | - | - | - | - |`);
+  lines.push('');
+
+  // Favorite Fade by Odds (Template B)
+  lines.push('## Favorite Fade by Odds (Template B)');
+  lines.push('| Odds Bracket | Races | Favorites Lost | Fade Accuracy | Exacta ROI |');
+  lines.push('|--------------|-------|----------------|---------------|------------|');
+
+  const formatOddsBracketMd = (name: string, bracket: OddsBracketMetrics) => {
+    return `| ${name} | ${bracket.races} | ${bracket.favoritesLost} | ${bracket.fadeAccuracy.toFixed(1)}% | ${bracket.exactaROI >= 0 ? '+' : ''}${bracket.exactaROI.toFixed(1)}% |`;
+  };
+
+  lines.push(formatOddsBracketMd('Heavy (≤2-1)', ffbo.heavy));
+  lines.push(formatOddsBracketMd('Mid (5/2-7/2)', ffbo.mid));
+  lines.push(formatOddsBracketMd('Light (4-1+)', ffbo.light));
+  lines.push('');
+
+  // PASS Filter Audit
+  lines.push('## PASS Filter Audit');
+  lines.push(`- Total PASS races: ${pfa.totalPassRaces} (${pfa.passPercentage.toFixed(1)}%)`);
+  lines.push(`- Would-hit exactas if bet: ${pfa.wouldHitExactas}`);
+  lines.push(`- Would-hit trifectas if bet: ${pfa.wouldHitTrifectas}`);
+
+  if (pfa.passRateSuspiciouslyLow) {
+    lines.push('- PASS rate status: ⚠️ Below 10% (suspiciously low)');
+  } else if (pfa.passRateTooAggressive) {
+    lines.push('- PASS rate status: ⚠️ Above 40% (too aggressive)');
+  } else {
+    lines.push('- PASS rate status: ✓ Within acceptable range (10-40%)');
+  }
+  lines.push('');
+
+  // Summary
+  lines.push('## Summary');
+  lines.push(`- Total Races: ${result.totalRaces}`);
+  lines.push(`- Races Analyzed: ${result.racesAnalyzed}`);
+  lines.push(`- Errors: ${result.errors.length}`);
+  lines.push('');
+
+  const content = lines.join('\n');
+  fs.writeFileSync(SUMMARY_FILE, content);
+
+  // Log file size for verification
+  const fileSizeKB = (Buffer.byteLength(content, 'utf8') / 1024).toFixed(2);
+  console.log(`\nSummary file written to: ${SUMMARY_FILE} (${fileSizeKB} KB)`);
+}
+
+// ============================================================================
 // MAIN ENTRY POINT
 // ============================================================================
 
@@ -1978,6 +2111,9 @@ async function main(): Promise<void> {
     // Save full result as JSON
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(result, null, 2));
     console.log(`\nFull results saved to: ${OUTPUT_FILE}`);
+
+    // Write condensed summary file for GitHub Actions
+    writeSummaryFile(result);
 
     // Exit with appropriate code
     if (result.verdict.recommendation === 'REVERT') {
