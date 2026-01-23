@@ -1,24 +1,18 @@
-name: AI Validation
+name: AI Architecture Validation
 
 on:
   workflow_dispatch:
-    inputs:
-      run_type:
-        description: 'Validation type to run'
-        required: true
-        default: 'full-validation'
-        type: choice
-        options:
-          - full-validation
-          - ai-comparison-test
+  push:
+    branches: [main]
+    paths:
+      - 'src/services/ai/**'
+      - 'src/lib/scoring/**'
 
 jobs:
-  # Full AI validation - runs all 111 races with fresh start
-  full-validation:
-    name: Full AI Validation (111 races)
-    if: ${{ github.event.inputs.run_type == 'full-validation' }}
+  validate:
+    name: AI Architecture Validation
     runs-on: ubuntu-latest
-    timeout-minutes: 30  # 111 races × ~10 seconds each
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
@@ -42,92 +36,48 @@ jobs:
           fi
           echo "API key is configured"
 
-      - name: Run AI Validation
+      - name: Run AI Architecture Validation
         env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
-        run: npm run validate:ai -- --fresh
+        run: npx tsx scripts/validate-ai-architecture.ts
 
-      - name: Upload validation report
+      - name: Upload Results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ai-validation-report
-          path: src/__tests__/validation/results/ai_validation_report.md
-          retention-days: 90
-          if-no-files-found: warn
-
-      - name: Upload validation metrics
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: ai-validation-metrics
-          path: src/__tests__/validation/results/ai_validation_metrics.json
+          name: ai-validation-results
+          path: validation-results.json
           retention-days: 90
           if-no-files-found: warn
 
       - name: Post summary to job
         if: always()
         run: |
-          echo "## AI Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "## AI Architecture Validation Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [ -f src/__tests__/validation/results/ai_validation_report.md ]; then
-            echo "### Report Generated Successfully" >> $GITHUB_STEP_SUMMARY
+          if [ -f validation-results.json ]; then
+            echo "### Validation Complete" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            # Extract key metrics from report
-            head -50 src/__tests__/validation/results/ai_validation_report.md >> $GITHUB_STEP_SUMMARY
-          else
-            echo "### Warning: No report file generated" >> $GITHUB_STEP_SUMMARY
-          fi
 
-          if [ -f src/__tests__/validation/results/ai_validation_metrics.json ]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### Quick Metrics" >> $GITHUB_STEP_SUMMARY
-            echo '```json' >> $GITHUB_STEP_SUMMARY
-            cat src/__tests__/validation/results/ai_validation_metrics.json | jq '.metrics | {aiWinRate, algorithmWins, aiWins, overrideRate, totalRaces}' 2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "Could not parse metrics" >> $GITHUB_STEP_SUMMARY
+            # Extract key metrics using jq
+            echo "#### Algorithm Baseline" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
+            cat validation-results.json | jq -r '.algorithmBaseline | "Win Rate: \(.winRate | tostring | .[0:5])%\nTop 3 Rate: \(.top3Rate | tostring | .[0:5])%\nExacta Box 4: \(.exactaBox4Rate | tostring | .[0:5])%\nTrifecta Box 5: \(.trifectaBox5Rate | tostring | .[0:5])%"' 2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "Could not parse baseline metrics" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "#### Verdict" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat validation-results.json | jq -r '.verdict | "Expansion Horses Add Value: \(.expansionHorsesAddValue)\nVulnerable Detection Works: \(.vulnerableDetectionWorks)\nTicket Strategies Improve: \(.ticketStrategiesImprove)\n\nRECOMMENDATION: \(.overallRecommendation)"' 2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "Could not parse verdict" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "#### Summary Stats" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat validation-results.json | jq -r '"Total Races: \(.totalRaces)\nRaces Analyzed: \(.racesAnalyzed)\nErrors: \(.errors | length)"' 2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "Could not parse summary" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### Warning: No results file generated" >> $GITHUB_STEP_SUMMARY
           fi
-
-  # Quick AI comparison test (runs vitest)
-  ai-comparison-test:
-    name: AI Comparison Test
-    if: ${{ github.event.inputs.run_type == 'ai-comparison-test' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run AI Comparison Test
-        env:
-          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
-        run: |
-          if [ -z "$VITE_GEMINI_API_KEY" ]; then
-            echo "ERROR: VITE_GEMINI_API_KEY secret is not set!"
-            exit 1
-          fi
-          pnpm test -- --run src/__tests__/validation/aiVsAlgorithm.test.ts --reporter=verbose
-
-      - name: Upload results artifact
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: ai-comparison-results
-          path: src/data/ai_comparison_results.json
-          retention-days: 90
-          if-no-files-found: warn

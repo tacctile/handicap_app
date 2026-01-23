@@ -24,8 +24,7 @@
     "validate:bulk": "npx tsx scripts/run-bulk-validation.ts",
     "value:detect": "npx tsx scripts/value-detector.ts",
     "test:ai": "npx tsx src/scripts/testAISingleRace.ts",
-    "test:ai-comparison": "vitest run src/__tests__/validation/aiVsAlgorithm.test.ts --reporter=verbose",
-    "validate:ai": "npx tsx src/__tests__/validation/runAIValidation.ts"
+    "validate:ai": "npx tsx scripts/validate-ai-architecture.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",
