@@ -21,14 +21,14 @@ describe('ALGORITHM_CONTEXT', () => {
       expect(ALGORITHM_CONTEXT).toContain('v3.6');
     });
 
-    it('should contain correct base score total of 328', () => {
-      expect(ALGORITHM_CONTEXT).toContain('328');
+    it('should contain correct base score total of 331', () => {
+      expect(ALGORITHM_CONTEXT).toContain('331');
       // Should NOT contain the old incorrect value
-      expect(ALGORITHM_CONTEXT).not.toContain('331');
+      expect(ALGORITHM_CONTEXT).not.toContain('328');
     });
 
-    it('should contain correct max final score of 368', () => {
-      expect(ALGORITHM_CONTEXT).toContain('368');
+    it('should contain correct max final score of 371', () => {
+      expect(ALGORITHM_CONTEXT).toContain('371');
     });
 
     it('should contain overlay cap of ±40', () => {
@@ -139,8 +139,8 @@ describe('ALGORITHM_CONTEXT', () => {
 });
 
 describe('ALGORITHM_CONTEXT_COMPACT', () => {
-  it('should contain base score 328', () => {
-    expect(ALGORITHM_CONTEXT_COMPACT).toContain('328');
+  it('should contain base score 331', () => {
+    expect(ALGORITHM_CONTEXT_COMPACT).toContain('331');
   });
 
   it('should contain all tier thresholds', () => {

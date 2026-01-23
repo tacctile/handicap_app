@@ -615,7 +615,7 @@ describe('formatFavoriteForAnalysis', () => {
     const result = formatFavoriteForAnalysis(favorite, horseData, null, 'claiming');
 
     expect(result).toContain('FAVORITE ANALYSIS: #5 Vulnerable Chalk');
-    expect(result).toContain('Algorithm Rank: 1 | Score: 195/368 | Tier: high');
+    expect(result).toContain('Algorithm Rank: 1 | Score: 195/371 | Tier: high');
     expect(result).toContain('Morning Line: 3-2');
   });
 

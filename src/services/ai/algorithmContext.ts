@@ -15,11 +15,11 @@
 export const ALGORITHM_CONTEXT = `## ALGORITHM v3.6 REFERENCE
 
 ### Scoring Structure
-- Base Score: 0-328 pts (15 categories)
+- Base Score: 0-331 pts (15 categories)
 - Overlay Adjustment: ±40 pts (capped)
-- Final Score: 0-368 pts (floor at 0)
+- Final Score: 0-371 pts (floor at 0)
 
-### Base Score Categories (328 pts total)
+### Base Score Categories (331 pts total)
 | Category | Points | Weight |
 |----------|--------|--------|
 | Speed Figures | 90 | 27.4% |
@@ -76,7 +76,7 @@ export const ALGORITHM_CONTEXT = `## ALGORITHM v3.6 REFERENCE
  * Focused on tier thresholds and confidence.
  */
 export const ALGORITHM_CONTEXT_COMPACT = `## ALGORITHM v3.6 QUICK REF
-- Base Score: 0-328 pts | Overlay: ±40 | Final: 0-368
+- Base Score: 0-331 pts | Overlay: ±40 | Final: 0-371
 - Tier 1: 180+ | Tier 2: 160-179 | Tier 3: 140-159 | Diamond: 120-139 | Pass: <120
 - Confidence: HIGH (80%+), MEDIUM (60-79%), LOW (<60% = 15% penalty)`;
 
