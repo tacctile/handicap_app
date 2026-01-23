@@ -1285,6 +1285,11 @@ export function deriveRaceType(
 /**
  * Determine favorite status from vulnerable favorite analysis
  *
+ * STRICTER CRITERIA (targeting 30-40% vulnerable rate):
+ * - 0-1 flags → SOLID (regardless of bot output)
+ * - 2 flags → VULNERABLE only if confidence is HIGH
+ * - 3+ flags → VULNERABLE regardless of confidence
+ *
  * @param vulnerableFavorite - Vulnerable favorite analysis from bot
  * @returns Tuple of [status, flags]
  */
@@ -1295,16 +1300,40 @@ export function determineFavoriteStatus(
     return ['SOLID', []];
   }
 
-  // VULNERABLE if: bot returns vulnerable with HIGH or MEDIUM confidence
-  if (
-    vulnerableFavorite.isVulnerable &&
-    (vulnerableFavorite.confidence === 'HIGH' || vulnerableFavorite.confidence === 'MEDIUM')
-  ) {
-    return ['VULNERABLE', vulnerableFavorite.reasons];
+  // Not vulnerable according to bot - SOLID
+  if (!vulnerableFavorite.isVulnerable) {
+    return ['SOLID', []];
   }
 
-  // SOLID if: not vulnerable OR LOW confidence
-  return ['SOLID', []];
+  // Count vulnerability flags
+  const flagCount = vulnerableFavorite.reasons?.length ?? 0;
+
+  // STRICTER: 0-1 flags → SOLID (regardless of bot output)
+  if (flagCount <= 1) {
+    console.log(`[VULN] SOLID: Only ${flagCount} flag(s), requires 2+ for vulnerable status`);
+    return ['SOLID', []];
+  }
+
+  // STRICTER: 2 flags → VULNERABLE only if confidence is HIGH
+  if (flagCount === 2) {
+    if (vulnerableFavorite.confidence === 'HIGH') {
+      console.log(
+        `[VULN] VULNERABLE: 2 flags with HIGH confidence - ${vulnerableFavorite.reasons.join(', ')}`
+      );
+      return ['VULNERABLE', vulnerableFavorite.reasons];
+    } else {
+      console.log(
+        `[VULN] SOLID: 2 flags but confidence is ${vulnerableFavorite.confidence}, requires HIGH`
+      );
+      return ['SOLID', []];
+    }
+  }
+
+  // STRICTER: 3+ flags → VULNERABLE regardless of confidence
+  console.log(
+    `[VULN] VULNERABLE: ${flagCount} flags (3+) - ${vulnerableFavorite.reasons.join(', ')}`
+  );
+  return ['VULNERABLE', vulnerableFavorite.reasons];
 }
 
 /**
@@ -1552,14 +1581,20 @@ export function calculateConfidenceScore(
 ): number {
   let score = 50; // Base
 
-  // Vulnerable Favorite adjustment
+  // STRICTER: Only penalize confidence when TRULY vulnerable (2+ flags, HIGH confidence)
+  // This aligns with determineFavoriteStatus() stricter criteria
   if (vulnerableFavorite?.isVulnerable) {
-    if (vulnerableFavorite.confidence === 'HIGH') {
+    const flagCount = vulnerableFavorite.reasons?.length ?? 0;
+
+    // Only penalize if meeting stricter vulnerable threshold
+    if (flagCount >= 3) {
+      // 3+ flags: full penalty regardless of confidence
       score -= 15;
-    } else if (vulnerableFavorite.confidence === 'MEDIUM') {
-      score -= 10;
+    } else if (flagCount === 2 && vulnerableFavorite.confidence === 'HIGH') {
+      // 2 flags with HIGH confidence: full penalty
+      score -= 15;
     }
-    // LOW/none: +0 (no adjustment)
+    // 0-1 flags or 2 flags with non-HIGH: no penalty (not truly vulnerable)
   }
 
   // Field type adjustment
@@ -1773,6 +1808,14 @@ export function buildTicketConstruction(
 
   // Determine favorite status
   const [favoriteStatus, favoriteVulnerabilityFlags] = determineFavoriteStatus(vulnerableFavorite);
+
+  // Debug logging for vulnerability decisions
+  const flagCount = vulnerableFavorite?.reasons?.length ?? 0;
+  const botConfidence = vulnerableFavorite?.confidence ?? 'N/A';
+  const botVulnerable = vulnerableFavorite?.isVulnerable ?? false;
+  console.log(
+    `[VULN] Flags: ${flagCount}, BotConfidence: ${botConfidence}, BotVulnerable: ${botVulnerable}, FinalStatus: ${favoriteStatus}`
+  );
 
   // Select template
   const [template, templateReason] = selectTemplate(raceType, favoriteStatus, vulnerableFavorite);

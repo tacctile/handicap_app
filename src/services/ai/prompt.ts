@@ -1529,36 +1529,51 @@ RESPOND WITH JSON ONLY:
 
 VULNERABLE FAVORITE ANALYSIS
 
+CRITICAL: You must be HIGHLY SELECTIVE. Only 30-40% of favorites are truly vulnerable.
+A favorite is NOT vulnerable just because they COULD lose — every horse could lose.
+A favorite IS vulnerable when there are SPECIFIC, CONCRETE red flags that make them likely to underperform their odds.
+DEFAULT ASSUMPTION: The favorite is SOLID unless you find compelling evidence otherwise.
+
 Your job: Determine if the algorithm's top pick is a FALSE FAVORITE worth betting against.
 
-A favorite is VULNERABLE when their ranking is based on:
-- Inflated figures from perfect trips they won't repeat
-- Winning at lower class than today
-- Form that's declining, not improving
-- Style that doesn't fit today's track bias
-- Layoff with questionable fitness indicators
+VULNERABILITY REQUIRES 2+ FLAGS FROM DIFFERENT CATEGORIES:
 
-VULNERABILITY CHECKLIST:
-□ TRIP DEPENDENCY - Won with "perfect trip", "rail trip", "no traffic" - unlikely to repeat
-□ PACE DEPENDENCY - Won as closer when pace collapsed - need same setup
-□ CLASS INFLATION - Beat weaker, now facing better
-□ DECLINING FIGURES - Beyers trending down, not up
-□ FITNESS DOUBT - Long layoff, no bullet works, last race dull
-□ TRACK/STYLE MISMATCH - Running style doesn't suit track bias
-□ FALSE FAVORITE SYNDROME - Short odds based on name/connections, not current form
+CATEGORY A - FORM CONCERNS (pick max 1):
+□ Beyers declining 3+ races in a row (each lower than previous)
+□ Last race was a poor effort (beaten 10+ lengths, no excuse)
+□ Returning from 60+ day layoff with no bullet work
 
-WHAT MAKES A FAVORITE "SOLID" (NOT vulnerable):
-- Won with figures, not just trips
-- Proven at today's class or higher
-- Improving or consistent Beyer pattern
-- Style matches track bias
-- Distance/surface proven
-- Sharp recent work pattern
+CATEGORY B - CLASS/CONDITIONS MISMATCH (pick max 1):
+□ Stepping up in class AND has never won at this level
+□ First time on this surface with no breeding indicators
+□ Distance outside proven range (no wins within 1 furlong)
+
+CATEGORY C - PACE/TRIP VULNERABILITY (pick max 1):
+□ Speed horse facing 2+ other confirmed speed horses (speed duel)
+□ Deep closer on a track with strong speed bias (>60% early speed wins)
+□ Won last race with "perfect trip" comments AND similar trip unlikely today
+
+CATEGORY D - FALSE FORM (pick max 1):
+□ Recent win came against weak field (beaten favorites, low Beyers)
+□ Best Beyer is an outlier (10+ points above their average)
+□ Won as heavy favorite but struggled to put away weaker horses
+
+TO BE VULNERABLE: Must have at least 1 flag from 2 DIFFERENT categories.
+Single-category concerns are noted but NOT enough to mark vulnerable.
+
+FAVORITE IS SOLID (NOT vulnerable) when:
+✓ Beyers steady or improving over last 3 races
+✓ Has won at this class level before
+✓ Running style fits track bias
+✓ Clean trips in recent races (not dependent on luck)
+✓ Distance/surface proven
+✓ No major equipment or jockey changes
+If 4+ of these are true, favorite is almost certainly SOLID.
 
 CONFIDENCE LEVELS:
-- HIGH: 3+ vulnerability flags, clear reason to oppose
-- MEDIUM: 1-2 flags, some concern but could still win
-- LOW: Minor concerns only, favorite is likely solid
+- HIGH: 3+ vulnerability flags from 2+ different categories, clear reason to oppose
+- MEDIUM: 2 flags from 2 different categories, some concern
+- LOW: Single concern in one category only — DEFAULT TO SOLID
 
 IF VULNERABLE - WHO BENEFITS?
 - Identify which challengers gain most from favorite's weakness
@@ -1576,6 +1591,15 @@ ${favoriteSection}
 ---
 
 ${challengersSection}
+
+---
+
+CALIBRATION CHECK: In a typical 10-race card, expect:
+- 6-7 races: Favorite is SOLID (no significant concerns)
+- 2-3 races: Favorite is VULNERABLE (multiple red flags from different categories)
+- 0-1 races: Uncertain (single minor concern, lean SOLID)
+
+If you're marking more than 4/10 favorites as vulnerable, you're being too aggressive.
 
 ---
 
