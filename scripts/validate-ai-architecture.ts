@@ -56,6 +56,8 @@ const BATCH_SIZE = 20;
  */
 interface TemplatePerformanceMetrics {
   races: number;
+  wins: number;
+  winRate: number;
   exactaHits: number;
   exactaRate: number;
   exactaCost: number;
@@ -66,6 +68,19 @@ interface TemplatePerformanceMetrics {
   trifectaCost: number;
   trifectaPayout: number;
   trifectaROI: number;
+}
+
+/**
+ * Odds bracket performance for Template B favorite fading
+ */
+interface OddsBracketMetrics {
+  races: number;
+  favoritesLost: number;
+  fadeAccuracy: number;
+  exactaHits: number;
+  exactaCost: number;
+  exactaPayout: number;
+  exactaROI: number;
 }
 
 /**
@@ -155,6 +170,44 @@ interface ValidationResult {
     sizingCalibrated: boolean;
     roiPositive: boolean;
     recommendation: 'DEPLOY' | 'TUNE' | 'REVERT';
+  };
+
+  // TIER 1 COMPARISON METRICS (calibration only)
+  tier1Comparison: {
+    algorithmOnly: {
+      winRate: number;
+      exactaHitRate: number;
+      trifectaHitRate: number;
+      exactaROI: number;
+      trifectaROI: number;
+      racesBet: number;
+    };
+    algorithmPlusAI: {
+      winRate: number;
+      exactaHitRate: number;
+      trifectaHitRate: number;
+      exactaROI: number;
+      trifectaROI: number;
+      racesBet: number;
+    };
+  };
+
+  // Favorite fade by odds bracket (Template B only)
+  favoriteFadeByOdds: {
+    heavy: OddsBracketMetrics; // ≤2-1
+    mid: OddsBracketMetrics; // 5/2-7/2
+    light: OddsBracketMetrics; // 4-1+
+  };
+
+  // PASS filter audit
+  passFilterAudit: {
+    totalPassRaces: number;
+    passPercentage: number;
+    wouldHitExactas: number;
+    wouldHitTrifectas: number;
+    estimatedROIImpact: number;
+    passRateSuspiciouslyLow: boolean; // <10%
+    passRateTooAggressive: boolean; // >40%
   };
 }
 
@@ -246,6 +299,33 @@ function toPercentage(num: number, denom: number): number {
 function formatRate(hits: number, total: number): string {
   const rate = toPercentage(hits, total);
   return `${hits}/${total} (${rate.toFixed(1)}%)`;
+}
+
+/**
+ * Parse morning line odds string to decimal odds
+ * e.g., "3-1" -> 3.0, "5-2" -> 2.5, "7-2" -> 3.5, "1-1" -> 1.0
+ */
+function parseOddsToDecimal(oddsStr: string): number {
+  if (!oddsStr) return 5.0; // Default to 5-1
+  const cleaned = oddsStr.trim().replace(/\s+/g, '');
+  const match = cleaned.match(/^(\d+)-(\d+)$/);
+  if (!match) return 5.0;
+  const numerator = parseInt(match[1], 10);
+  const denominator = parseInt(match[2], 10);
+  if (denominator === 0) return 5.0;
+  return numerator / denominator;
+}
+
+/**
+ * Determine odds bracket for Template B favorite fade analysis
+ * Heavy: ≤2-1 (decimal ≤2.0)
+ * Mid: 5/2-7/2 (decimal 2.5-3.5)
+ * Light: 4-1+ (decimal ≥4.0)
+ */
+function getOddsBracket(decimalOdds: number): 'heavy' | 'mid' | 'light' {
+  if (decimalOdds <= 2.0) return 'heavy';
+  if (decimalOdds >= 4.0) return 'light';
+  return 'mid';
 }
 
 // ============================================================================
@@ -954,6 +1034,7 @@ async function runValidation(): Promise<ValidationResult> {
     TicketTemplate,
     {
       races: number;
+      wins: number;
       exactaHits: number;
       exactaCost: number;
       exactaPayout: number;
@@ -964,6 +1045,7 @@ async function runValidation(): Promise<ValidationResult> {
   > = {
     A: {
       races: 0,
+      wins: 0,
       exactaHits: 0,
       exactaCost: 0,
       exactaPayout: 0,
@@ -973,6 +1055,7 @@ async function runValidation(): Promise<ValidationResult> {
     },
     B: {
       races: 0,
+      wins: 0,
       exactaHits: 0,
       exactaCost: 0,
       exactaPayout: 0,
@@ -982,6 +1065,7 @@ async function runValidation(): Promise<ValidationResult> {
     },
     C: {
       races: 0,
+      wins: 0,
       exactaHits: 0,
       exactaCost: 0,
       exactaPayout: 0,
@@ -989,6 +1073,22 @@ async function runValidation(): Promise<ValidationResult> {
       trifectaCost: 0,
       trifectaPayout: 0,
     },
+  };
+
+  // Odds bracket tracking for Template B favorite fading
+  const oddsBracketStats: Record<
+    'heavy' | 'mid' | 'light',
+    {
+      races: number;
+      favoritesLost: number;
+      exactaHits: number;
+      exactaCost: number;
+      exactaPayout: number;
+    }
+  > = {
+    heavy: { races: 0, favoritesLost: 0, exactaHits: 0, exactaCost: 0, exactaPayout: 0 }, // ≤2-1
+    mid: { races: 0, favoritesLost: 0, exactaHits: 0, exactaCost: 0, exactaPayout: 0 }, // 5/2-7/2
+    light: { races: 0, favoritesLost: 0, exactaHits: 0, exactaCost: 0, exactaPayout: 0 }, // 4-1+
   };
 
   // Sizing performance tracking
@@ -1009,6 +1109,13 @@ async function runValidation(): Promise<ValidationResult> {
 
   // Track PASS races - would have hit?
   let passWouldHaveHitExacta = 0;
+  let passWouldHaveHitTrifecta = 0;
+
+  // AI system win tracking (for comparison metrics)
+  let aiSystemWins = 0;
+  let aiSystemExactaHits = 0;
+  let aiSystemTrifectaHits = 0;
+  let aiSystemRacesBet = 0;
 
   // Vulnerable favorite tracking
   let vulnerableFavoritesDetected = 0;
@@ -1069,8 +1176,14 @@ async function runValidation(): Promise<ValidationResult> {
         if (checkExactaBox(algoTop4, actual)) {
           passWouldHaveHitExacta++;
         }
+        if (checkTrifecta(algoTop5, actual)) {
+          passWouldHaveHitTrifecta++;
+        }
         continue;
       }
+
+      // Track AI system bet (non-PASS)
+      aiSystemRacesBet++;
 
       // Count template distribution
       templateCounts[template]++;
@@ -1085,12 +1198,21 @@ async function runValidation(): Promise<ValidationResult> {
       totalAIExactaCost += exactaCost;
       totalAITrifectaCost += trifectaCost;
 
+      // Check win (algorithm rank 1 wins)
+      const algoRank1 = ticketConstruction.algorithmTop4[0];
+      const win = algoRank1 === actual.first;
+      if (win) {
+        templateStats[template].wins++;
+        aiSystemWins++;
+      }
+
       // Check hits based on template
       const exactaHit = checkTemplateExactaHit(template, ticketConstruction.algorithmTop4, actual);
       const trifectaHit = checkTemplateTrifectaHit(template, algoTop5, actual);
 
       if (exactaHit) {
         templateStats[template].exactaHits++;
+        aiSystemExactaHits++;
         const payout = getEstimatedPayout(template, 'exacta') * multiplier;
         templateStats[template].exactaPayout += payout;
         totalAIExactaPayout += payout;
@@ -1098,6 +1220,7 @@ async function runValidation(): Promise<ValidationResult> {
 
       if (trifectaHit) {
         templateStats[template].trifectaHits++;
+        aiSystemTrifectaHits++;
         const payout = getEstimatedPayout(template, 'trifecta') * multiplier;
         templateStats[template].trifectaPayout += payout;
         totalAITrifectaPayout += payout;
@@ -1115,11 +1238,34 @@ async function runValidation(): Promise<ValidationResult> {
         vulnerableFavoritesDetected++;
         // Check if favorite actually lost (didn't win)
         const favoritePost = ticketConstruction.algorithmTop4[0];
-        if (favoritePost !== actual.first) {
+        const favoriteLost = favoritePost !== actual.first;
+        if (favoriteLost) {
           vulnerableFavoritesLost++;
         }
         if (exactaHit) {
           templateBExactaHits++;
+        }
+
+        // Track by odds bracket (Template B only)
+        if (template === 'B') {
+          // Get favorite's morning line odds
+          const favoriteHorse = scoringResult.scores.find(
+            (s) => s.programNumber === favoritePost
+          );
+          const favoriteOdds = favoriteHorse?.morningLineOdds || '5-1';
+          const decimalOdds = parseOddsToDecimal(favoriteOdds);
+          const bracket = getOddsBracket(decimalOdds);
+
+          oddsBracketStats[bracket].races++;
+          if (favoriteLost) {
+            oddsBracketStats[bracket].favoritesLost++;
+          }
+          if (exactaHit) {
+            oddsBracketStats[bracket].exactaHits++;
+            oddsBracketStats[bracket].exactaPayout += getEstimatedPayout('B', 'exacta') * multiplier;
+          }
+          const { exactaCost: bracketExactaCost } = calculateTicketCost('B', multiplier);
+          oddsBracketStats[bracket].exactaCost += bracketExactaCost;
         }
       }
     }
@@ -1318,6 +1464,8 @@ async function runValidation(): Promise<ValidationResult> {
   // Calculate template performance metrics
   const buildTemplatePerformance = (stats: typeof templateStats.A): TemplatePerformanceMetrics => ({
     races: stats.races,
+    wins: stats.wins,
+    winRate: stats.races > 0 ? (stats.wins / stats.races) * 100 : 0,
     exactaHits: stats.exactaHits,
     exactaRate: stats.races > 0 ? (stats.exactaHits / stats.races) * 100 : 0,
     exactaCost: stats.exactaCost,
@@ -1446,6 +1594,99 @@ async function runValidation(): Promise<ValidationResult> {
       sizingCalibrated,
       roiPositive,
       recommendation,
+    },
+
+    // TIER 1 COMPARISON METRICS
+    tier1Comparison: {
+      algorithmOnly: {
+        winRate: toPercentage(algorithmWins, totalRaces),
+        exactaHitRate: toPercentage(algorithmExactaBox4, totalRaces),
+        trifectaHitRate: toPercentage(algorithmTrifectaBox5, totalRaces),
+        exactaROI: algorithmExactaROI,
+        trifectaROI: algorithmTrifectaROI,
+        racesBet: totalRaces,
+      },
+      algorithmPlusAI: {
+        winRate: aiSystemRacesBet > 0 ? toPercentage(aiSystemWins, aiSystemRacesBet) : 0,
+        exactaHitRate: aiSystemRacesBet > 0 ? toPercentage(aiSystemExactaHits, aiSystemRacesBet) : 0,
+        trifectaHitRate:
+          aiSystemRacesBet > 0 ? toPercentage(aiSystemTrifectaHits, aiSystemRacesBet) : 0,
+        exactaROI: aiExactaROI,
+        trifectaROI: aiTrifectaROI,
+        racesBet: aiSystemRacesBet,
+      },
+    },
+
+    // FAVORITE FADE BY ODDS BRACKET
+    favoriteFadeByOdds: {
+      heavy: {
+        races: oddsBracketStats.heavy.races,
+        favoritesLost: oddsBracketStats.heavy.favoritesLost,
+        fadeAccuracy:
+          oddsBracketStats.heavy.races > 0
+            ? toPercentage(oddsBracketStats.heavy.favoritesLost, oddsBracketStats.heavy.races)
+            : 0,
+        exactaHits: oddsBracketStats.heavy.exactaHits,
+        exactaCost: oddsBracketStats.heavy.exactaCost,
+        exactaPayout: oddsBracketStats.heavy.exactaPayout,
+        exactaROI:
+          oddsBracketStats.heavy.exactaCost > 0
+            ? ((oddsBracketStats.heavy.exactaPayout - oddsBracketStats.heavy.exactaCost) /
+                oddsBracketStats.heavy.exactaCost) *
+              100
+            : 0,
+      },
+      mid: {
+        races: oddsBracketStats.mid.races,
+        favoritesLost: oddsBracketStats.mid.favoritesLost,
+        fadeAccuracy:
+          oddsBracketStats.mid.races > 0
+            ? toPercentage(oddsBracketStats.mid.favoritesLost, oddsBracketStats.mid.races)
+            : 0,
+        exactaHits: oddsBracketStats.mid.exactaHits,
+        exactaCost: oddsBracketStats.mid.exactaCost,
+        exactaPayout: oddsBracketStats.mid.exactaPayout,
+        exactaROI:
+          oddsBracketStats.mid.exactaCost > 0
+            ? ((oddsBracketStats.mid.exactaPayout - oddsBracketStats.mid.exactaCost) /
+                oddsBracketStats.mid.exactaCost) *
+              100
+            : 0,
+      },
+      light: {
+        races: oddsBracketStats.light.races,
+        favoritesLost: oddsBracketStats.light.favoritesLost,
+        fadeAccuracy:
+          oddsBracketStats.light.races > 0
+            ? toPercentage(oddsBracketStats.light.favoritesLost, oddsBracketStats.light.races)
+            : 0,
+        exactaHits: oddsBracketStats.light.exactaHits,
+        exactaCost: oddsBracketStats.light.exactaCost,
+        exactaPayout: oddsBracketStats.light.exactaPayout,
+        exactaROI:
+          oddsBracketStats.light.exactaCost > 0
+            ? ((oddsBracketStats.light.exactaPayout - oddsBracketStats.light.exactaCost) /
+                oddsBracketStats.light.exactaCost) *
+              100
+            : 0,
+      },
+    },
+
+    // PASS FILTER AUDIT
+    passFilterAudit: {
+      totalPassRaces: templateCounts.PASS,
+      passPercentage: racesAnalyzed > 0 ? toPercentage(templateCounts.PASS, racesAnalyzed) : 0,
+      wouldHitExactas: passWouldHaveHitExacta,
+      wouldHitTrifectas: passWouldHaveHitTrifecta,
+      estimatedROIImpact:
+        templateCounts.PASS > 0
+          ? ((passWouldHaveHitExacta * avgExactaPayout -
+              templateCounts.PASS * ALGO_EXACTA_COST_PER_RACE) /
+              (templateCounts.PASS * ALGO_EXACTA_COST_PER_RACE)) *
+            100
+          : 0,
+      passRateSuspiciouslyLow: racesAnalyzed > 0 && toPercentage(templateCounts.PASS, racesAnalyzed) < 10,
+      passRateTooAggressive: racesAnalyzed > 0 && toPercentage(templateCounts.PASS, racesAnalyzed) > 40,
     },
   };
 
@@ -1597,7 +1838,120 @@ function printReport(result: ValidationResult): void {
   );
   console.log(`${verdict.roiPositive ? '✓' : '✗'} ROI positive (AI beats algorithm baseline)`);
   console.log(`RECOMMENDATION: ${verdict.recommendation}`);
+
+  // ============================================================================
+  // TIER 1 COMPARISON METRICS (Calibration Only)
+  // ============================================================================
+  const { tier1Comparison: t1, favoriteFadeByOdds: ffbo, passFilterAudit: pfa } = result;
+
+  console.log('\n' + '═'.repeat(70));
+  console.log('          TIER 1 COMPARISON METRICS (Calibration Only)');
   console.log('═'.repeat(70));
+
+  // ALGORITHM VS ALGORITHM+AI COMPARISON
+  console.log('\n' + '─'.repeat(70));
+  console.log('ALGORITHM VS ALGORITHM+AI COMPARISON');
+  console.log('─'.repeat(70));
+  console.log(
+    'Metric              | Algorithm Only | Algorithm+AI | Lift'
+  );
+  console.log('─'.repeat(70));
+
+  const formatLift = (aiVal: number, algoVal: number): string => {
+    const diff = aiVal - algoVal;
+    return `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
+  };
+
+  const formatRacesLift = (aiRaces: number, algoRaces: number): string => {
+    const diff = ((aiRaces - algoRaces) / algoRaces) * 100;
+    return `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
+  };
+
+  console.log(
+    `Win Rate            | ${t1.algorithmOnly.winRate.toFixed(1).padStart(12)}% | ${t1.algorithmPlusAI.winRate.toFixed(1).padStart(10)}% | ${formatLift(t1.algorithmPlusAI.winRate, t1.algorithmOnly.winRate).padStart(7)}`
+  );
+  console.log(
+    `Exacta Hit Rate     | ${t1.algorithmOnly.exactaHitRate.toFixed(1).padStart(12)}% | ${t1.algorithmPlusAI.exactaHitRate.toFixed(1).padStart(10)}% | ${formatLift(t1.algorithmPlusAI.exactaHitRate, t1.algorithmOnly.exactaHitRate).padStart(7)}`
+  );
+  console.log(
+    `Trifecta Hit Rate   | ${t1.algorithmOnly.trifectaHitRate.toFixed(1).padStart(12)}% | ${t1.algorithmPlusAI.trifectaHitRate.toFixed(1).padStart(10)}% | ${formatLift(t1.algorithmPlusAI.trifectaHitRate, t1.algorithmOnly.trifectaHitRate).padStart(7)}`
+  );
+  console.log(
+    `Exacta ROI          | ${t1.algorithmOnly.exactaROI.toFixed(1).padStart(12)}% | ${t1.algorithmPlusAI.exactaROI.toFixed(1).padStart(10)}% | ${formatLift(t1.algorithmPlusAI.exactaROI, t1.algorithmOnly.exactaROI).padStart(7)}`
+  );
+  console.log(
+    `Trifecta ROI        | ${t1.algorithmOnly.trifectaROI.toFixed(1).padStart(12)}% | ${t1.algorithmPlusAI.trifectaROI.toFixed(1).padStart(10)}% | ${formatLift(t1.algorithmPlusAI.trifectaROI, t1.algorithmOnly.trifectaROI).padStart(7)}`
+  );
+  console.log(
+    `Races Bet           | ${t1.algorithmOnly.racesBet.toString().padStart(13)} | ${t1.algorithmPlusAI.racesBet.toString().padStart(11)} | ${formatRacesLift(t1.algorithmPlusAI.racesBet, t1.algorithmOnly.racesBet).padStart(7)}`
+  );
+
+  // PER-TEMPLATE PERFORMANCE
+  console.log('\n' + '═'.repeat(70));
+  console.log('PER-TEMPLATE PERFORMANCE');
+  console.log('═'.repeat(70));
+  console.log(
+    'Template   | Races | Win Rate | Exacta Rate | Trifecta Rate | Exacta ROI | Trifecta ROI'
+  );
+  console.log('─'.repeat(95));
+
+  const formatTemplateRowTier1 = (
+    name: string,
+    perf: TemplatePerformanceMetrics,
+    flagThreshold = 20
+  ) => {
+    const flag = perf.races >= flagThreshold && perf.exactaROI < 0 ? ' ⚠️' : '';
+    console.log(
+      `${name.padEnd(10)} | ${perf.races.toString().padStart(5)} | ${perf.winRate.toFixed(1).padStart(6)}% | ${perf.exactaRate.toFixed(1).padStart(9)}% | ${perf.trifectaRate.toFixed(1).padStart(11)}% | ${(perf.exactaROI >= 0 ? '+' : '') + perf.exactaROI.toFixed(1).padStart(perf.exactaROI >= 0 ? 8 : 9)}% | ${(perf.trifectaROI >= 0 ? '+' : '') + perf.trifectaROI.toFixed(1).padStart(perf.trifectaROI >= 0 ? 10 : 11)}%${flag}`
+    );
+  };
+
+  formatTemplateRowTier1('A (Solid)', tp.templateA);
+  formatTemplateRowTier1('B (Vuln)', tp.templateB);
+  formatTemplateRowTier1('C (Wide)', tp.templateC);
+  console.log(
+    `PASS       | ${td.passed.count.toString().padStart(5)} | (skipped) |   (skipped) |     (skipped) |        N/A |          N/A`
+  );
+
+  // FAVORITE FADE ACCURACY BY ODDS
+  console.log('\n' + '═'.repeat(70));
+  console.log('FAVORITE FADE ACCURACY BY ODDS (Template B Only)');
+  console.log('═'.repeat(70));
+  console.log('Odds Bracket    | Races | Favorites Lost | Fade Accuracy | Exacta ROI');
+  console.log('─'.repeat(70));
+
+  const formatOddsBracketRow = (name: string, bracket: OddsBracketMetrics) => {
+    console.log(
+      `${name.padEnd(15)} | ${bracket.races.toString().padStart(5)} | ${bracket.favoritesLost.toString().padStart(14)} | ${bracket.fadeAccuracy.toFixed(1).padStart(11)}% | ${(bracket.exactaROI >= 0 ? '+' : '') + bracket.exactaROI.toFixed(1)}%`
+    );
+  };
+
+  formatOddsBracketRow('Heavy (≤2-1)', ffbo.heavy);
+  formatOddsBracketRow('Mid (5/2-7/2)', ffbo.mid);
+  formatOddsBracketRow('Light (4-1+)', ffbo.light);
+
+  // PASS FILTER AUDIT
+  console.log('\n' + '═'.repeat(70));
+  console.log('PASS FILTER AUDIT');
+  console.log('═'.repeat(70));
+  console.log(`Total PASS races: ${pfa.totalPassRaces} (${pfa.passPercentage.toFixed(1)}% of total)`);
+  console.log('');
+  console.log('If PASS races had been bet with Template C:');
+  console.log(`  Would-hit exactas:    ${pfa.wouldHitExactas}`);
+  console.log(`  Would-hit trifectas:  ${pfa.wouldHitTrifectas}`);
+  console.log(`  Estimated ROI impact: ${pfa.estimatedROIImpact >= 0 ? '+' : ''}${pfa.estimatedROIImpact.toFixed(1)}%`);
+  console.log('');
+  if (pfa.passRateSuspiciouslyLow) {
+    console.log('⚠️  WARNING: PASS rate below 10% (suspiciously low)');
+  }
+  if (pfa.passRateTooAggressive) {
+    console.log('⚠️  WARNING: PASS rate above 40% (too aggressive)');
+  }
+  if (!pfa.passRateSuspiciouslyLow && !pfa.passRateTooAggressive) {
+    console.log('✓  PASS rate within acceptable range (10-40%)');
+  }
+
+  console.log('\n' + '═'.repeat(70));
 
   if (result.errors.length > 0) {
     console.log('\nERRORS:');
