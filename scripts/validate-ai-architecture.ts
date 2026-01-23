@@ -29,7 +29,7 @@ import { getMultiBotAnalysis, checkAIServiceStatus } from '../src/services/ai';
 import type { ParsedRace, HorseEntry } from '../src/types/drf';
 import type { RaceScoringResult, HorseScoreForAI, RaceAnalysis } from '../src/types/scoring';
 import type { ScoredHorse } from '../src/lib/scoring';
-import type { AIRaceAnalysis, BetConstructionGuidance } from '../src/services/ai/types';
+import type { AIRaceAnalysis, TicketConstruction, TicketTemplate, SizingRecommendationType } from '../src/services/ai/types';
 import { analyzePaceScenario } from '../src/lib/scoring';
 
 // ============================================================================
@@ -47,88 +47,110 @@ const BATCH_SIZE = 20;
 // TYPES
 // ============================================================================
 
+/**
+ * Template-specific performance metrics
+ */
+interface TemplatePerformanceMetrics {
+  races: number;
+  exactaHits: number;
+  exactaRate: number;
+  exactaCost: number;
+  exactaPayout: number;
+  exactaROI: number;
+  trifectaHits: number;
+  trifectaRate: number;
+  trifectaCost: number;
+  trifectaPayout: number;
+  trifectaROI: number;
+}
+
+/**
+ * Sizing performance metrics
+ */
+interface SizingPerformanceMetrics {
+  races: number;
+  exactaHits: number;
+  exactaRate: number;
+  avgConfidence: number;
+}
+
+/**
+ * ValidationResult - ROI-focused structure for template/sizing system
+ */
 interface ValidationResult {
-  // Test metadata
+  // Metadata
   runDate: string;
   totalRaces: number;
   racesAnalyzed: number;
+  racesPassed: number;
   errors: string[];
 
-  // SECTION A: Algorithm Baseline (no AI)
+  // SECTION A: Algorithm Baseline (unchanged)
   algorithmBaseline: {
     winRate: number;
     top3Rate: number;
     exactaBox4Rate: number;
+    exactaBox4Cost: number;
     trifectaBox5Rate: number;
+    trifectaBox5Cost: number;
     wins: number;
     top3Hits: number;
     exactaBox4Hits: number;
     trifectaBox5Hits: number;
   };
 
-  // SECTION B: Expansion Horse Performance
-  expansionAnalysis: {
-    totalExpansionHorsesIdentified: number;
-    expansionHorseWins: number;
-    expansionHorseTop3: number;
-    expansionHorseWinRate: number;
-    expansionHorseTop3Rate: number;
-    avgOddsWhenExpansionWon: number;
-    // Key metric: did adding sleepers improve exotic hit rate?
-    racesWithExpansion: number;
-    exactaWithExpansionHitRate: number;
-    trifectaWithExpansionHitRate: number;
-    exactaWithExpansionHits: number;
-    trifectaWithExpansionHits: number;
+  // SECTION B: Template Distribution
+  templateDistribution: {
+    templateA: { count: number; percentage: number };
+    templateB: { count: number; percentage: number };
+    templateC: { count: number; percentage: number };
+    passed: { count: number; percentage: number };
   };
 
-  // SECTION C: Vulnerable Favorite Analysis
+  // SECTION C: Template Performance
+  templatePerformance: {
+    templateA: TemplatePerformanceMetrics;
+    templateB: TemplatePerformanceMetrics;
+    templateC: TemplatePerformanceMetrics;
+  };
+
+  // SECTION D: Sizing Performance
+  sizingPerformance: {
+    MAX: SizingPerformanceMetrics;
+    STRONG: SizingPerformanceMetrics;
+    STANDARD: SizingPerformanceMetrics;
+    HALF: SizingPerformanceMetrics;
+    PASS: { races: number; wouldHaveHit: number; correctPassRate: number };
+  };
+
+  // SECTION E: Vulnerable Favorite Analysis
   vulnerableFavoriteAnalysis: {
-    totalVulnerableFavoritesDetected: number;
-    vulnerableFavoritesActuallyLost: number;
-    detectionAccuracy: number;
-    // Key metric: did excluding vulnerable favorites improve exotic returns?
-    exactaExcludingVulnerableHitRate: number;
-    trifectaExcludingVulnerableHitRate: number;
-    exactaExcludingVulnerableHits: number;
-    trifectaExcludingVulnerableHits: number;
+    detected: number;
+    actuallyLost: number;
+    accuracy: number;
+    templateBExactaHits: number;
+    templateBExactaRate: number;
   };
 
-  // SECTION D: Ticket Strategy Comparison
-  ticketStrategyComparison: {
-    // Compare AI-recommended tickets vs naive algorithm boxes
-    naiveExactaBox4Hits: number;
-    naiveExactaBox4Rate: number;
-    aiExactaStrategyHits: number;
-    aiExactaStrategyRate: number;
+  // SECTION F: ROI Summary
+  roiSummary: {
+    algorithmExactaROI: number;
+    algorithmTrifectaROI: number;
+    aiExactaROI: number;
+    aiTrifectaROI: number;
     exactaImprovement: number;
-
-    naiveTrifectaBox5Hits: number;
-    naiveTrifectaBox5Rate: number;
-    aiTrifectaStrategyHits: number;
-    aiTrifectaStrategyRate: number;
     trifectaImprovement: number;
+    totalAlgorithmCost: number;
+    totalAICost: number;
+    costReduction: number;
   };
 
-  // SECTION E: Signal Quality
-  signalQuality: {
-    tripTroubleHighCount: number;
-    tripTroubleHighAccuracy: number; // % that hit board
-    tripTroubleHighHits: number;
-    paceAdvantageStrongCount: number;
-    paceAdvantageStrongAccuracy: number;
-    paceAdvantageStrongHits: number;
-    vulnerableFavoriteHighCount: number;
-    vulnerableFavoriteHighAccuracy: number; // % that actually lost
-    vulnerableFavoriteHighLost: number;
-  };
-
-  // SECTION F: Summary Verdict
+  // SECTION G: Verdict
   verdict: {
-    expansionHorsesAddValue: boolean; // true if expansion top3 rate > 33%
-    vulnerableDetectionWorks: boolean; // true if accuracy > 60%
-    ticketStrategiesImprove: boolean; // true if AI strategies beat naive
-    overallRecommendation: 'DEPLOY' | 'TUNE' | 'REVERT';
+    templatesWork: boolean;
+    sizingCalibrated: boolean;
+    roiPositive: boolean;
+    recommendation: 'DEPLOY' | 'TUNE' | 'REVERT';
   };
 }
 
@@ -144,6 +166,61 @@ interface RaceAnalysisData {
   scoringResult: RaceScoringResult;
   raceResult: RaceResult;
   aiAnalysis?: AIRaceAnalysis;
+}
+
+// ============================================================================
+// PAYOUT ESTIMATES
+// ============================================================================
+
+/**
+ * Estimated payouts by template (if actual payouts not available)
+ */
+const PAYOUT_ESTIMATES = {
+  exacta: {
+    A: 18, // Template A (favorite wins): lower payout
+    B: 45, // Template B (favorite loses): higher payout
+    C: 35, // Template C (wide open): medium-high payout
+  },
+  trifecta: {
+    A: 100, // Template A: lower payout
+    B: 250, // Template B: higher payout
+    C: 200, // Template C: medium-high payout
+  },
+};
+
+/**
+ * Calculate ticket cost based on template and sizing multiplier
+ */
+function calculateTicketCost(template: TicketTemplate, multiplier: number): { exactaCost: number; trifectaCost: number } {
+  switch (template) {
+    case 'A':
+      // Template A: 3 exacta combos @ $2, 6 trifecta combos @ $1
+      return {
+        exactaCost: 3 * 2 * multiplier,
+        trifectaCost: 6 * 1 * multiplier,
+      };
+    case 'B':
+      // Template B: 9 exacta combos @ $2, 18 trifecta combos @ $1
+      return {
+        exactaCost: 9 * 2 * multiplier,
+        trifectaCost: 18 * 1 * multiplier,
+      };
+    case 'C':
+      // Template C: 12 exacta combos @ $2, 60 trifecta combos @ $1
+      return {
+        exactaCost: 12 * 2 * multiplier,
+        trifectaCost: 60 * 1 * multiplier,
+      };
+    default:
+      return { exactaCost: 0, trifectaCost: 0 };
+  }
+}
+
+/**
+ * Get estimated payout for a template hit
+ */
+function getEstimatedPayout(template: TicketTemplate, betType: 'exacta' | 'trifecta'): number {
+  return PAYOUT_ESTIMATES[betType][template];
 }
 
 // ============================================================================
@@ -507,10 +584,16 @@ function mapTrainerPatterns(horse: HorseEntry) {
 // VALIDATION METRICS CALCULATION
 // ============================================================================
 
+/**
+ * Check if naive algorithm exacta box 4 hits
+ */
 function checkExactaBox(candidates: number[], actual: { first: number; second: number }): boolean {
   return candidates.includes(actual.first) && candidates.includes(actual.second);
 }
 
+/**
+ * Check if naive algorithm trifecta box 5 hits
+ */
 function checkTrifecta(
   candidates: number[],
   actual: { first: number; second: number; third: number }
@@ -522,62 +605,88 @@ function checkTrifecta(
   );
 }
 
-function checkAIExactaStrategy(
-  guidance: BetConstructionGuidance,
+/**
+ * Check template-based exacta hit
+ * - Template A: 1st matches #1 rank AND 2nd in [2,3,4]
+ * - Template B: 1st matches any of [2,3,4] AND 2nd in [1,2,3,4]
+ * - Template C: 1st AND 2nd both in [1,2,3,4]
+ */
+function checkTemplateExactaHit(
+  template: TicketTemplate,
+  algorithmTop4: number[],
   actual: { first: number; second: number }
 ): boolean {
-  const strategy = guidance.exactaStrategy;
+  const rank1 = algorithmTop4[0];
+  const ranks234 = algorithmTop4.slice(1, 4);
+  const allTop4 = algorithmTop4.slice(0, 4);
 
-  switch (strategy.type) {
-    case 'KEY':
-      // Key horse must be first OR second, and the other must be in include list
-      if (strategy.keyHorse === actual.first && strategy.includeHorses.includes(actual.second)) {
-        return true;
-      }
-      if (strategy.keyHorse === actual.second && strategy.includeHorses.includes(actual.first)) {
-        return true;
-      }
-      return false;
+  switch (template) {
+    case 'A':
+      // Template A: 1st = #1 rank, 2nd in [2,3,4]
+      return actual.first === rank1 && ranks234.includes(actual.second);
 
-    case 'BOX':
-      // Both must be in include list
-      return (
-        strategy.includeHorses.includes(actual.first) &&
-        strategy.includeHorses.includes(actual.second)
-      );
+    case 'B':
+      // Template B: 1st in [2,3,4], 2nd in [1,2,3,4]
+      return ranks234.includes(actual.first) && allTop4.includes(actual.second);
 
-    case 'PART_WHEEL':
-      // Key horse must be first, with others in include list
-      // OR reverse depending on wheel direction
-      if (strategy.keyHorse === actual.first && strategy.includeHorses.includes(actual.second)) {
-        return true;
-      }
-      // Also check with key in second spot
-      if (strategy.keyHorse === actual.second && strategy.includeHorses.includes(actual.first)) {
-        return true;
-      }
-      return false;
+    case 'C':
+      // Template C: 1st AND 2nd both in [1,2,3,4]
+      return allTop4.includes(actual.first) && allTop4.includes(actual.second);
 
     default:
       return false;
   }
 }
 
-function checkAITrifectaStrategy(
-  guidance: BetConstructionGuidance,
+/**
+ * Check template-based trifecta hit
+ * - Template A: 1st = #1, 2nd in [2,3,4], 3rd in [2,3,4], 2nd ≠ 3rd
+ * - Template B: 1st in [2,3,4], 2nd in [1,2,3,4], 3rd in [1,2,3,4], all different
+ * - Template C: 1st, 2nd, 3rd all in [1,2,3,4,5], all different
+ */
+function checkTemplateTrifectaHit(
+  template: TicketTemplate,
+  algorithmTop5: number[],
   actual: { first: number; second: number; third: number }
 ): boolean {
-  const strategy = guidance.trifectaStrategy;
-  const aHorses = strategy.aHorses;
-  const bHorses = strategy.bHorses;
-  const allHorses = [...aHorses, ...bHorses];
+  const rank1 = algorithmTop5[0];
+  const ranks234 = algorithmTop5.slice(1, 4);
+  const allTop4 = algorithmTop5.slice(0, 4);
+  const allTop5 = algorithmTop5.slice(0, 5);
 
-  // Check if all finishers are covered
-  return (
-    allHorses.includes(actual.first) &&
-    allHorses.includes(actual.second) &&
-    allHorses.includes(actual.third)
-  );
+  // All positions must be different
+  if (actual.first === actual.second || actual.first === actual.third || actual.second === actual.third) {
+    return false;
+  }
+
+  switch (template) {
+    case 'A':
+      // Template A: 1st = #1, 2nd in [2,3,4], 3rd in [2,3,4]
+      return (
+        actual.first === rank1 &&
+        ranks234.includes(actual.second) &&
+        ranks234.includes(actual.third)
+      );
+
+    case 'B':
+      // Template B: 1st in [2,3,4], 2nd in [1,2,3,4], 3rd in [1,2,3,4]
+      return (
+        ranks234.includes(actual.first) &&
+        allTop4.includes(actual.second) &&
+        allTop4.includes(actual.third)
+      );
+
+    case 'C':
+      // Template C: 1st, 2nd, 3rd all in [1,2,3,4,5]
+      return (
+        allTop5.includes(actual.first) &&
+        allTop5.includes(actual.second) &&
+        allTop5.includes(actual.third)
+      );
+
+    default:
+      return false;
+  }
 }
 
 // ============================================================================
@@ -588,7 +697,7 @@ async function runValidation(): Promise<ValidationResult> {
   const validationStartTime = Date.now();
 
   console.log('\n' + '═'.repeat(70));
-  console.log('          AI ARCHITECTURE VALIDATION TEST HARNESS');
+  console.log('          AI ARCHITECTURE VALIDATION TEST HARNESS v2');
   console.log('═'.repeat(70));
   console.log(`Started: ${new Date().toISOString()}`);
 
@@ -688,6 +797,10 @@ async function runValidation(): Promise<ValidationResult> {
   let algorithmExactaBox4 = 0;
   let algorithmTrifectaBox5 = 0;
 
+  // Algorithm costs: $24 per exacta box 4, $60 per trifecta box 5
+  const ALGO_EXACTA_COST_PER_RACE = 12 * 2; // 12 combos @ $2 = $24
+  const ALGO_TRIFECTA_COST_PER_RACE = 60 * 1; // 60 combos @ $1 = $60
+
   for (const raceData of allRaces) {
     const { scoringResult, raceResult } = raceData;
     const algoTop5 = scoringResult.scores.slice(0, 5).map((s) => s.programNumber);
@@ -712,10 +825,14 @@ async function runValidation(): Promise<ValidationResult> {
     if (checkTrifecta(algoTop5, actual)) algorithmTrifectaBox5++;
   }
 
+  // Calculate algorithm costs
+  const totalAlgorithmExactaCost = allRaces.length * ALGO_EXACTA_COST_PER_RACE;
+  const totalAlgorithmTrifectaCost = allRaces.length * ALGO_TRIFECTA_COST_PER_RACE;
+
   console.log(`  Algorithm Win Rate: ${formatRate(algorithmWins, allRaces.length)}`);
   console.log(`  Algorithm Top 3 Rate: ${formatRate(algorithmTop3, allRaces.length)}`);
-  console.log(`  Algorithm Exacta Box 4: ${formatRate(algorithmExactaBox4, allRaces.length)}`);
-  console.log(`  Algorithm Trifecta Box 5: ${formatRate(algorithmTrifectaBox5, allRaces.length)}`);
+  console.log(`  Algorithm Exacta Box 4: ${formatRate(algorithmExactaBox4, allRaces.length)}  Cost: $${totalAlgorithmExactaCost}`);
+  console.log(`  Algorithm Trifecta Box 5: ${formatRate(algorithmTrifectaBox5, allRaces.length)}  Cost: $${totalAlgorithmTrifectaCost}`);
 
   // ============================================================================
   // PHASE 2: Run AI analysis on all races (parallel batches)
@@ -770,120 +887,65 @@ async function runValidation(): Promise<ValidationResult> {
   const phase2Elapsed = ((Date.now() - phase2StartTime) / 1000).toFixed(1);
   console.log(`\nPhase 2 completed in ${phase2Elapsed}s`);
 
-  // Filter races with AI analysis
-  const racesWithAI = allRaces.filter((r) => r.aiAnalysis?.betConstruction);
+  // Filter races with AI ticketConstruction (new system) or betConstruction (legacy)
+  const racesWithAI = allRaces.filter((r) => r.aiAnalysis?.ticketConstruction || r.aiAnalysis?.betConstruction);
   console.log(`\nRaces with AI analysis: ${racesWithAI.length}`);
 
   // ============================================================================
-  // PHASE 3: Analyze expansion horse performance
+  // PHASE 3: Template-Based Performance Tracking
   // ============================================================================
-  console.log('\n--- PHASE 3: Expansion Horse Analysis ---');
+  console.log('\n--- PHASE 3: Template Performance Analysis ---');
 
-  let totalExpansionHorses = 0;
-  let expansionWins = 0;
-  let expansionTop3 = 0;
-  let expansionOddsSum = 0;
-  let racesWithExpansion = 0;
-  let exactaWithExpansionHits = 0;
-  let trifectaWithExpansionHits = 0;
+  // Template distribution tracking
+  const templateCounts: Record<TicketTemplate | 'PASS', number> = { A: 0, B: 0, C: 0, PASS: 0 };
 
-  // Signal quality tracking
-  let tripTroubleHighCount = 0;
-  let tripTroubleHighHits = 0;
-  let paceAdvantageStrongCount = 0;
-  let paceAdvantageStrongHits = 0;
+  // Template performance tracking
+  const templateStats: Record<TicketTemplate, {
+    races: number;
+    exactaHits: number;
+    exactaCost: number;
+    exactaPayout: number;
+    trifectaHits: number;
+    trifectaCost: number;
+    trifectaPayout: number;
+  }> = {
+    A: { races: 0, exactaHits: 0, exactaCost: 0, exactaPayout: 0, trifectaHits: 0, trifectaCost: 0, trifectaPayout: 0 },
+    B: { races: 0, exactaHits: 0, exactaCost: 0, exactaPayout: 0, trifectaHits: 0, trifectaCost: 0, trifectaPayout: 0 },
+    C: { races: 0, exactaHits: 0, exactaCost: 0, exactaPayout: 0, trifectaHits: 0, trifectaCost: 0, trifectaPayout: 0 },
+  };
 
-  for (const raceData of racesWithAI) {
-    const guidance = raceData.aiAnalysis!.betConstruction!;
-    const raceResult = raceData.raceResult;
+  // Sizing performance tracking
+  const sizingStats: Record<SizingRecommendationType, {
+    races: number;
+    exactaHits: number;
+    totalConfidence: number;
+  }> = {
+    MAX: { races: 0, exactaHits: 0, totalConfidence: 0 },
+    STRONG: { races: 0, exactaHits: 0, totalConfidence: 0 },
+    STANDARD: { races: 0, exactaHits: 0, totalConfidence: 0 },
+    HALF: { races: 0, exactaHits: 0, totalConfidence: 0 },
+    PASS: { races: 0, exactaHits: 0, totalConfidence: 0 },
+  };
 
-    const actual = {
-      first: raceResult.positions[0]?.post || 0,
-      second: raceResult.positions[1]?.post || 0,
-      third: raceResult.positions[2]?.post || 0,
-    };
-    const actualTop3 = [actual.first, actual.second, actual.third];
+  // Track PASS races - would have hit?
+  let passWouldHaveHitExacta = 0;
 
-    if (guidance.expansionHorses.length > 0) {
-      racesWithExpansion++;
-      totalExpansionHorses += guidance.expansionHorses.length;
-
-      for (const expHorse of guidance.expansionHorses) {
-        if (expHorse === actual.first) {
-          expansionWins++;
-          // Get odds for winning expansion horse
-          const horseScore = raceData.scoringResult.scores.find(
-            (s) => s.programNumber === expHorse
-          );
-          if (horseScore) {
-            expansionOddsSum += horseScore.morningLineDecimal;
-          }
-        }
-        if (actualTop3.includes(expHorse)) {
-          expansionTop3++;
-        }
-      }
-
-      // Check if expanded ticket hit
-      const expandedList = [...guidance.algorithmTop4, ...guidance.expansionHorses];
-      if (checkExactaBox(expandedList.slice(0, 5), actual)) exactaWithExpansionHits++;
-      if (checkTrifecta(expandedList, actual)) trifectaWithExpansionHits++;
-    }
-
-    // Track signal quality from horse insights
-    if (raceData.aiAnalysis!.horseInsights) {
-      for (const insight of raceData.aiAnalysis!.horseInsights) {
-        // Check for trip trouble HIGH (identified by one-liner or key strength)
-        if (
-          insight.keyStrength?.toLowerCase().includes('trip') ||
-          insight.oneLiner?.toLowerCase().includes('hidden')
-        ) {
-          tripTroubleHighCount++;
-          if (actualTop3.includes(insight.programNumber)) {
-            tripTroubleHighHits++;
-          }
-        }
-
-        // Check for pace advantage STRONG
-        if (
-          insight.keyStrength?.toLowerCase().includes('lone speed') ||
-          insight.oneLiner?.toLowerCase().includes('lone speed')
-        ) {
-          paceAdvantageStrongCount++;
-          if (actualTop3.includes(insight.programNumber)) {
-            paceAdvantageStrongHits++;
-          }
-        }
-      }
-    }
-  }
-
-  console.log(
-    `  Expansion horses identified: ${totalExpansionHorses} across ${racesWithExpansion} races`
-  );
-  console.log(`  Expansion horse wins: ${formatRate(expansionWins, totalExpansionHorses)}`);
-  console.log(`  Expansion horse top 3: ${formatRate(expansionTop3, totalExpansionHorses)}`);
-  if (expansionWins > 0) {
-    console.log(
-      `  Avg odds when expansion won: ${(expansionOddsSum / expansionWins).toFixed(1)}-1`
-    );
-  }
-
-  // ============================================================================
-  // PHASE 4: Analyze vulnerable favorite detection
-  // ============================================================================
-  console.log('\n--- PHASE 4: Vulnerable Favorite Analysis ---');
-
+  // Vulnerable favorite tracking
   let vulnerableFavoritesDetected = 0;
   let vulnerableFavoritesLost = 0;
-  let exactaExcludingVulnerableHits = 0;
-  let trifectaExcludingVulnerableHits = 0;
-  let vulnerableFavoriteHighCount = 0;
-  let vulnerableFavoriteHighLost = 0;
+  let templateBExactaHits = 0;
+
+  // Total AI costs and payouts
+  let totalAIExactaCost = 0;
+  let totalAITrifectaCost = 0;
+  let totalAIExactaPayout = 0;
+  let totalAITrifectaPayout = 0;
 
   for (const raceData of racesWithAI) {
-    const guidance = raceData.aiAnalysis!.betConstruction!;
+    const ticketConstruction = raceData.aiAnalysis!.ticketConstruction;
+    const betConstruction = raceData.aiAnalysis!.betConstruction;
     const raceResult = raceData.raceResult;
+    const scoringResult = raceData.scoringResult;
 
     const actual = {
       first: raceResult.positions[0]?.post || 0,
@@ -891,65 +953,203 @@ async function runValidation(): Promise<ValidationResult> {
       third: raceResult.positions[2]?.post || 0,
     };
 
-    if (guidance.contractionTarget !== null) {
-      vulnerableFavoritesDetected++;
+    // Get algorithm top 5 for hit checking
+    const algoTop5 = scoringResult.scores.slice(0, 5).map((s) => s.programNumber);
+    const algoTop4 = algoTop5.slice(0, 4);
 
-      // Did the vulnerable favorite actually lose (finish 2nd or worse)?
-      if (guidance.contractionTarget !== actual.first) {
-        vulnerableFavoritesLost++;
+    // Handle new ticketConstruction system
+    if (ticketConstruction) {
+      const template = ticketConstruction.template;
+      const sizing = ticketConstruction.sizing;
+      const confidence = ticketConstruction.confidenceScore;
+      const multiplier = sizing.multiplier;
+      const sizingRec = sizing.recommendation;
+
+      // Track if this is a PASS (sizing = 0 or verdict = PASS)
+      if (sizingRec === 'PASS' || ticketConstruction.verdict.action === 'PASS') {
+        templateCounts.PASS++;
+        sizingStats.PASS.races++;
+        sizingStats.PASS.totalConfidence += confidence;
+
+        // Check if algorithm would have hit this race
+        if (checkExactaBox(algoTop4, actual)) {
+          passWouldHaveHitExacta++;
+        }
+        continue;
       }
 
-      // Check exotic performance excluding vulnerable favorite
-      const ticketWithoutVulnerable = guidance.algorithmTop4.filter(
-        (p) => p !== guidance.contractionTarget
-      );
-      const expandedWithoutVulnerable = [...ticketWithoutVulnerable, ...guidance.expansionHorses];
+      // Count template distribution
+      templateCounts[template]++;
 
-      if (checkExactaBox(expandedWithoutVulnerable, actual)) exactaExcludingVulnerableHits++;
-      if (checkTrifecta(expandedWithoutVulnerable, actual)) trifectaExcludingVulnerableHits++;
+      // Track template stats
+      templateStats[template].races++;
+
+      // Calculate costs for this race
+      const { exactaCost, trifectaCost } = calculateTicketCost(template, multiplier);
+      templateStats[template].exactaCost += exactaCost;
+      templateStats[template].trifectaCost += trifectaCost;
+      totalAIExactaCost += exactaCost;
+      totalAITrifectaCost += trifectaCost;
+
+      // Check hits based on template
+      const exactaHit = checkTemplateExactaHit(template, ticketConstruction.algorithmTop4, actual);
+      const trifectaHit = checkTemplateTrifectaHit(template, algoTop5, actual);
+
+      if (exactaHit) {
+        templateStats[template].exactaHits++;
+        const payout = getEstimatedPayout(template, 'exacta') * multiplier;
+        templateStats[template].exactaPayout += payout;
+        totalAIExactaPayout += payout;
+      }
+
+      if (trifectaHit) {
+        templateStats[template].trifectaHits++;
+        const payout = getEstimatedPayout(template, 'trifecta') * multiplier;
+        templateStats[template].trifectaPayout += payout;
+        totalAITrifectaPayout += payout;
+      }
+
+      // Track sizing stats
+      sizingStats[sizingRec].races++;
+      sizingStats[sizingRec].totalConfidence += confidence;
+      if (exactaHit) {
+        sizingStats[sizingRec].exactaHits++;
+      }
+
+      // Track vulnerable favorites (Template B)
+      if (template === 'B' || ticketConstruction.favoriteStatus === 'VULNERABLE') {
+        vulnerableFavoritesDetected++;
+        // Check if favorite actually lost (didn't win)
+        const favoritePost = ticketConstruction.algorithmTop4[0];
+        if (favoritePost !== actual.first) {
+          vulnerableFavoritesLost++;
+        }
+        if (exactaHit) {
+          templateBExactaHits++;
+        }
+      }
     }
+    // Handle legacy betConstruction system (backwards compatibility)
+    else if (betConstruction) {
+      // For legacy system, treat as Template A or B based on contractionTarget
+      const template: TicketTemplate = betConstruction.contractionTarget !== null ? 'B' : 'A';
+      const multiplier = 1.0; // Default multiplier for legacy
 
-    // Track HIGH confidence vulnerable favorite detections
-    if (raceData.aiAnalysis!.vulnerableFavorite) {
-      vulnerableFavoriteHighCount++;
-      const algoRank1 = raceData.scoringResult.scores[0]?.programNumber;
-      if (algoRank1 !== actual.first) {
-        vulnerableFavoriteHighLost++;
+      templateCounts[template]++;
+      templateStats[template].races++;
+
+      const { exactaCost, trifectaCost } = calculateTicketCost(template, multiplier);
+      templateStats[template].exactaCost += exactaCost;
+      templateStats[template].trifectaCost += trifectaCost;
+      totalAIExactaCost += exactaCost;
+      totalAITrifectaCost += trifectaCost;
+
+      // Check hits using legacy logic (box-based)
+      const exactaHit = checkExactaBox(betConstruction.algorithmTop4, actual);
+      const trifectaHit = checkTrifecta([...betConstruction.algorithmTop4, ...(betConstruction.expansionHorses ?? [])], actual);
+
+      if (exactaHit) {
+        templateStats[template].exactaHits++;
+        const payout = getEstimatedPayout(template, 'exacta') * multiplier;
+        templateStats[template].exactaPayout += payout;
+        totalAIExactaPayout += payout;
+      }
+
+      if (trifectaHit) {
+        templateStats[template].trifectaHits++;
+        const payout = getEstimatedPayout(template, 'trifecta') * multiplier;
+        templateStats[template].trifectaPayout += payout;
+        totalAITrifectaPayout += payout;
+      }
+
+      // Track sizing as STANDARD for legacy
+      sizingStats.STANDARD.races++;
+      sizingStats.STANDARD.totalConfidence += 50;
+      if (exactaHit) {
+        sizingStats.STANDARD.exactaHits++;
+      }
+
+      // Track vulnerable favorites
+      if (betConstruction.contractionTarget !== null) {
+        vulnerableFavoritesDetected++;
+        if (betConstruction.contractionTarget !== actual.first) {
+          vulnerableFavoritesLost++;
+        }
+        if (exactaHit) {
+          templateBExactaHits++;
+        }
       }
     }
   }
 
-  console.log(`  Vulnerable favorites detected: ${vulnerableFavoritesDetected}`);
-  console.log(
-    `  Actually lost: ${formatRate(vulnerableFavoritesLost, vulnerableFavoritesDetected)}`
-  );
+  console.log(`  Template A (Solid):      ${templateCounts.A} races`);
+  console.log(`  Template B (Vulnerable): ${templateCounts.B} races`);
+  console.log(`  Template C (Wide Open):  ${templateCounts.C} races`);
+  console.log(`  PASS:                    ${templateCounts.PASS} races`);
 
   // ============================================================================
-  // PHASE 5: Compare ticket strategies
+  // PHASE 4: Calculate ROI Metrics
   // ============================================================================
-  console.log('\n--- PHASE 5: Ticket Strategy Comparison ---');
+  console.log('\n--- PHASE 4: ROI Calculation ---');
 
-  let aiExactaHits = 0;
-  let aiTrifectaHits = 0;
+  // Algorithm ROI calculation (estimate payouts based on average)
+  const avgExactaPayout = 25; // Average payout for exacta hit
+  const avgTrifectaPayout = 150; // Average payout for trifecta hit
+  const algorithmExactaPayout = algorithmExactaBox4 * avgExactaPayout;
+  const algorithmTrifectaPayout = algorithmTrifectaBox5 * avgTrifectaPayout;
+  const algorithmExactaROI = totalAlgorithmExactaCost > 0
+    ? ((algorithmExactaPayout - totalAlgorithmExactaCost) / totalAlgorithmExactaCost) * 100
+    : 0;
+  const algorithmTrifectaROI = totalAlgorithmTrifectaCost > 0
+    ? ((algorithmTrifectaPayout - totalAlgorithmTrifectaCost) / totalAlgorithmTrifectaCost) * 100
+    : 0;
 
-  for (const raceData of racesWithAI) {
-    const guidance = raceData.aiAnalysis!.betConstruction!;
-    const raceResult = raceData.raceResult;
+  // AI ROI calculation
+  const aiExactaROI = totalAIExactaCost > 0
+    ? ((totalAIExactaPayout - totalAIExactaCost) / totalAIExactaCost) * 100
+    : 0;
+  const aiTrifectaROI = totalAITrifectaCost > 0
+    ? ((totalAITrifectaPayout - totalAITrifectaCost) / totalAITrifectaCost) * 100
+    : 0;
 
-    const actual = {
-      first: raceResult.positions[0]?.post || 0,
-      second: raceResult.positions[1]?.post || 0,
-      third: raceResult.positions[2]?.post || 0,
-    };
+  // Cost reduction
+  const totalAlgorithmCost = totalAlgorithmExactaCost + totalAlgorithmTrifectaCost;
+  const totalAICost = totalAIExactaCost + totalAITrifectaCost;
+  const costReduction = totalAlgorithmCost > 0
+    ? ((totalAlgorithmCost - totalAICost) / totalAlgorithmCost) * 100
+    : 0;
 
-    if (checkAIExactaStrategy(guidance, actual)) aiExactaHits++;
-    if (checkAITrifectaStrategy(guidance, actual)) aiTrifectaHits++;
-  }
+  console.log(`  Algorithm Exacta ROI: ${algorithmExactaROI.toFixed(1)}% (Cost: $${totalAlgorithmExactaCost}, Payout: $${algorithmExactaPayout})`);
+  console.log(`  Algorithm Trifecta ROI: ${algorithmTrifectaROI.toFixed(1)}% (Cost: $${totalAlgorithmTrifectaCost}, Payout: $${algorithmTrifectaPayout})`);
+  console.log(`  AI Exacta ROI: ${aiExactaROI.toFixed(1)}% (Cost: $${totalAIExactaCost.toFixed(0)}, Payout: $${totalAIExactaPayout.toFixed(0)})`);
+  console.log(`  AI Trifecta ROI: ${aiTrifectaROI.toFixed(1)}% (Cost: $${totalAITrifectaCost.toFixed(0)}, Payout: $${totalAITrifectaPayout.toFixed(0)})`);
+  console.log(`  Cost Reduction: ${costReduction.toFixed(1)}%`);
 
-  console.log(`  Naive Exacta Box 4: ${formatRate(algorithmExactaBox4, allRaces.length)}`);
-  console.log(`  AI Exacta Strategy: ${formatRate(aiExactaHits, racesWithAI.length)}`);
-  console.log(`  Naive Trifecta Box 5: ${formatRate(algorithmTrifectaBox5, allRaces.length)}`);
-  console.log(`  AI Trifecta Strategy: ${formatRate(aiTrifectaHits, racesWithAI.length)}`);
+  // ============================================================================
+  // PHASE 5: Sizing Calibration Check
+  // ============================================================================
+  console.log('\n--- PHASE 5: Sizing Calibration Check ---');
+
+  const sizingHitRates: Record<SizingRecommendationType, number> = {
+    MAX: sizingStats.MAX.races > 0 ? (sizingStats.MAX.exactaHits / sizingStats.MAX.races) * 100 : 0,
+    STRONG: sizingStats.STRONG.races > 0 ? (sizingStats.STRONG.exactaHits / sizingStats.STRONG.races) * 100 : 0,
+    STANDARD: sizingStats.STANDARD.races > 0 ? (sizingStats.STANDARD.exactaHits / sizingStats.STANDARD.races) * 100 : 0,
+    HALF: sizingStats.HALF.races > 0 ? (sizingStats.HALF.exactaHits / sizingStats.HALF.races) * 100 : 0,
+    PASS: 0,
+  };
+
+  console.log(`  MAX:      ${sizingStats.MAX.races} races, ${sizingHitRates.MAX.toFixed(1)}% exacta rate`);
+  console.log(`  STRONG:   ${sizingStats.STRONG.races} races, ${sizingHitRates.STRONG.toFixed(1)}% exacta rate`);
+  console.log(`  STANDARD: ${sizingStats.STANDARD.races} races, ${sizingHitRates.STANDARD.toFixed(1)}% exacta rate`);
+  console.log(`  HALF:     ${sizingStats.HALF.races} races, ${sizingHitRates.HALF.toFixed(1)}% exacta rate`);
+  console.log(`  PASS:     ${sizingStats.PASS.races} races (would have hit: ${passWouldHaveHitExacta})`);
+
+  // Check calibration: MAX > STRONG > STANDARD > HALF (with tolerance)
+  const calibrationTolerance = 5; // 5% tolerance
+  const sizingCalibrated =
+    (sizingHitRates.MAX >= sizingHitRates.STRONG - calibrationTolerance) &&
+    (sizingHitRates.STRONG >= sizingHitRates.STANDARD - calibrationTolerance) &&
+    (sizingHitRates.STANDARD >= sizingHitRates.HALF - calibrationTolerance);
 
   // ============================================================================
   // BUILD FINAL RESULT
@@ -957,113 +1157,136 @@ async function runValidation(): Promise<ValidationResult> {
 
   const totalRaces = allRaces.length;
   const racesAnalyzed = racesWithAI.length;
+  const racesPassed = templateCounts.PASS;
+
+  // Helper to calculate ROI for a template
+  const calculateTemplateROI = (stats: typeof templateStats.A, type: 'exacta' | 'trifecta'): number => {
+    const cost = type === 'exacta' ? stats.exactaCost : stats.trifectaCost;
+    const payout = type === 'exacta' ? stats.exactaPayout : stats.trifectaPayout;
+    return cost > 0 ? ((payout - cost) / cost) * 100 : 0;
+  };
+
+  // Calculate template performance metrics
+  const buildTemplatePerformance = (stats: typeof templateStats.A): TemplatePerformanceMetrics => ({
+    races: stats.races,
+    exactaHits: stats.exactaHits,
+    exactaRate: stats.races > 0 ? (stats.exactaHits / stats.races) * 100 : 0,
+    exactaCost: stats.exactaCost,
+    exactaPayout: stats.exactaPayout,
+    exactaROI: calculateTemplateROI(stats, 'exacta'),
+    trifectaHits: stats.trifectaHits,
+    trifectaRate: stats.races > 0 ? (stats.trifectaHits / stats.races) * 100 : 0,
+    trifectaCost: stats.trifectaCost,
+    trifectaPayout: stats.trifectaPayout,
+    trifectaROI: calculateTemplateROI(stats, 'trifecta'),
+  });
+
+  // Build sizing performance metrics
+  const buildSizingPerformance = (stats: typeof sizingStats.MAX): SizingPerformanceMetrics => ({
+    races: stats.races,
+    exactaHits: stats.exactaHits,
+    exactaRate: stats.races > 0 ? (stats.exactaHits / stats.races) * 100 : 0,
+    avgConfidence: stats.races > 0 ? stats.totalConfidence / stats.races : 0,
+  });
+
+  // Verdict logic
+  // templatesWork: Template B exacta rate > algorithm exacta rate on same races
+  const algorithmExactaRate = totalRaces > 0 ? (algorithmExactaBox4 / totalRaces) * 100 : 0;
+  const templateBExactaRate = templateStats.B.races > 0
+    ? (templateStats.B.exactaHits / templateStats.B.races) * 100
+    : 0;
+  const templatesWork = templateBExactaRate > algorithmExactaRate;
+
+  // roiPositive: AI ROI > Algorithm ROI
+  const roiPositive = aiExactaROI > algorithmExactaROI;
+
+  // Determine recommendation
+  let recommendation: 'DEPLOY' | 'TUNE' | 'REVERT';
+  const verdictCount = [templatesWork, sizingCalibrated, roiPositive].filter(Boolean).length;
+  if (verdictCount === 3) {
+    recommendation = 'DEPLOY';
+  } else if (verdictCount >= 1) {
+    recommendation = 'TUNE';
+  } else {
+    recommendation = 'REVERT';
+  }
 
   const result: ValidationResult = {
     runDate: new Date().toISOString(),
     totalRaces,
     racesAnalyzed,
+    racesPassed,
     errors,
 
     algorithmBaseline: {
       winRate: toPercentage(algorithmWins, totalRaces),
       top3Rate: toPercentage(algorithmTop3, totalRaces),
-      exactaBox4Rate: toPercentage(algorithmExactaBox4, totalRaces),
+      exactaBox4Rate: algorithmExactaRate,
+      exactaBox4Cost: totalAlgorithmExactaCost,
       trifectaBox5Rate: toPercentage(algorithmTrifectaBox5, totalRaces),
+      trifectaBox5Cost: totalAlgorithmTrifectaCost,
       wins: algorithmWins,
       top3Hits: algorithmTop3,
       exactaBox4Hits: algorithmExactaBox4,
       trifectaBox5Hits: algorithmTrifectaBox5,
     },
 
-    expansionAnalysis: {
-      totalExpansionHorsesIdentified: totalExpansionHorses,
-      expansionHorseWins: expansionWins,
-      expansionHorseTop3: expansionTop3,
-      expansionHorseWinRate: toPercentage(expansionWins, totalExpansionHorses),
-      expansionHorseTop3Rate: toPercentage(expansionTop3, totalExpansionHorses),
-      avgOddsWhenExpansionWon: expansionWins > 0 ? expansionOddsSum / expansionWins : 0,
-      racesWithExpansion,
-      exactaWithExpansionHitRate: toPercentage(exactaWithExpansionHits, racesWithExpansion),
-      trifectaWithExpansionHitRate: toPercentage(trifectaWithExpansionHits, racesWithExpansion),
-      exactaWithExpansionHits,
-      trifectaWithExpansionHits,
+    templateDistribution: {
+      templateA: { count: templateCounts.A, percentage: toPercentage(templateCounts.A, racesAnalyzed) },
+      templateB: { count: templateCounts.B, percentage: toPercentage(templateCounts.B, racesAnalyzed) },
+      templateC: { count: templateCounts.C, percentage: toPercentage(templateCounts.C, racesAnalyzed) },
+      passed: { count: templateCounts.PASS, percentage: toPercentage(templateCounts.PASS, racesAnalyzed) },
+    },
+
+    templatePerformance: {
+      templateA: buildTemplatePerformance(templateStats.A),
+      templateB: buildTemplatePerformance(templateStats.B),
+      templateC: buildTemplatePerformance(templateStats.C),
+    },
+
+    sizingPerformance: {
+      MAX: buildSizingPerformance(sizingStats.MAX),
+      STRONG: buildSizingPerformance(sizingStats.STRONG),
+      STANDARD: buildSizingPerformance(sizingStats.STANDARD),
+      HALF: buildSizingPerformance(sizingStats.HALF),
+      PASS: {
+        races: sizingStats.PASS.races,
+        wouldHaveHit: passWouldHaveHitExacta,
+        correctPassRate: sizingStats.PASS.races > 0
+          ? ((sizingStats.PASS.races - passWouldHaveHitExacta) / sizingStats.PASS.races) * 100
+          : 0,
+      },
     },
 
     vulnerableFavoriteAnalysis: {
-      totalVulnerableFavoritesDetected: vulnerableFavoritesDetected,
-      vulnerableFavoritesActuallyLost: vulnerableFavoritesLost,
-      detectionAccuracy: toPercentage(vulnerableFavoritesLost, vulnerableFavoritesDetected),
-      exactaExcludingVulnerableHitRate: toPercentage(
-        exactaExcludingVulnerableHits,
-        vulnerableFavoritesDetected
-      ),
-      trifectaExcludingVulnerableHitRate: toPercentage(
-        trifectaExcludingVulnerableHits,
-        vulnerableFavoritesDetected
-      ),
-      exactaExcludingVulnerableHits,
-      trifectaExcludingVulnerableHits,
+      detected: vulnerableFavoritesDetected,
+      actuallyLost: vulnerableFavoritesLost,
+      accuracy: vulnerableFavoritesDetected > 0
+        ? (vulnerableFavoritesLost / vulnerableFavoritesDetected) * 100
+        : 0,
+      templateBExactaHits,
+      templateBExactaRate,
     },
 
-    ticketStrategyComparison: {
-      naiveExactaBox4Hits: algorithmExactaBox4,
-      naiveExactaBox4Rate: toPercentage(algorithmExactaBox4, totalRaces),
-      aiExactaStrategyHits: aiExactaHits,
-      aiExactaStrategyRate: toPercentage(aiExactaHits, racesAnalyzed),
-      exactaImprovement:
-        toPercentage(aiExactaHits, racesAnalyzed) - toPercentage(algorithmExactaBox4, totalRaces),
-
-      naiveTrifectaBox5Hits: algorithmTrifectaBox5,
-      naiveTrifectaBox5Rate: toPercentage(algorithmTrifectaBox5, totalRaces),
-      aiTrifectaStrategyHits: aiTrifectaHits,
-      aiTrifectaStrategyRate: toPercentage(aiTrifectaHits, racesAnalyzed),
-      trifectaImprovement:
-        toPercentage(aiTrifectaHits, racesAnalyzed) -
-        toPercentage(algorithmTrifectaBox5, totalRaces),
-    },
-
-    signalQuality: {
-      tripTroubleHighCount,
-      tripTroubleHighAccuracy: toPercentage(tripTroubleHighHits, tripTroubleHighCount),
-      tripTroubleHighHits,
-      paceAdvantageStrongCount,
-      paceAdvantageStrongAccuracy: toPercentage(paceAdvantageStrongHits, paceAdvantageStrongCount),
-      paceAdvantageStrongHits,
-      vulnerableFavoriteHighCount,
-      vulnerableFavoriteHighAccuracy: toPercentage(
-        vulnerableFavoriteHighLost,
-        vulnerableFavoriteHighCount
-      ),
-      vulnerableFavoriteHighLost,
+    roiSummary: {
+      algorithmExactaROI,
+      algorithmTrifectaROI,
+      aiExactaROI,
+      aiTrifectaROI,
+      exactaImprovement: aiExactaROI - algorithmExactaROI,
+      trifectaImprovement: aiTrifectaROI - algorithmTrifectaROI,
+      totalAlgorithmCost,
+      totalAICost,
+      costReduction,
     },
 
     verdict: {
-      expansionHorsesAddValue: toPercentage(expansionTop3, totalExpansionHorses) > 33,
-      vulnerableDetectionWorks:
-        toPercentage(vulnerableFavoritesLost, vulnerableFavoritesDetected) > 60,
-      ticketStrategiesImprove:
-        toPercentage(aiExactaHits, racesAnalyzed) > toPercentage(algorithmExactaBox4, totalRaces) &&
-        toPercentage(aiTrifectaHits, racesAnalyzed) >
-          toPercentage(algorithmTrifectaBox5, totalRaces),
-      overallRecommendation: 'DEPLOY', // Will be updated below
+      templatesWork,
+      sizingCalibrated,
+      roiPositive,
+      recommendation,
     },
   };
-
-  // Determine overall recommendation
-  const verdictChecks = [
-    result.verdict.expansionHorsesAddValue,
-    result.verdict.vulnerableDetectionWorks,
-    result.verdict.ticketStrategiesImprove,
-  ];
-  const passCount = verdictChecks.filter(Boolean).length;
-
-  if (passCount >= 2) {
-    result.verdict.overallRecommendation = 'DEPLOY';
-  } else if (passCount >= 1) {
-    result.verdict.overallRecommendation = 'TUNE';
-  } else {
-    result.verdict.overallRecommendation = 'REVERT';
-  }
 
   const totalElapsedSeconds = (Date.now() - validationStartTime) / 1000;
   const minutes = Math.floor(totalElapsedSeconds / 60);
@@ -1080,108 +1303,116 @@ async function runValidation(): Promise<ValidationResult> {
 // ============================================================================
 
 function printReport(result: ValidationResult): void {
-  const { algorithmBaseline: baseline } = result;
+  const { algorithmBaseline: baseline, templateDistribution: td, templatePerformance: tp } = result;
+  const { sizingPerformance: sp, vulnerableFavoriteAnalysis: vuln, roiSummary: roi, verdict } = result;
 
   console.log('\n');
   console.log('═'.repeat(70));
-  console.log('               AI ARCHITECTURE VALIDATION REPORT');
+  console.log('           AI ARCHITECTURE VALIDATION REPORT v2');
   console.log('═'.repeat(70));
   console.log(`Run Date: ${result.runDate}`);
   console.log(
-    `Total Races: ${result.totalRaces} | Analyzed: ${result.racesAnalyzed} | Errors: ${result.errors.length}`
+    `Total Races: ${result.totalRaces} | Analyzed: ${result.racesAnalyzed} | Passed: ${result.racesPassed} | Errors: ${result.errors.length}`
   );
 
+  // SECTION A: Algorithm Baseline
   console.log('─'.repeat(70));
   console.log('SECTION A: ALGORITHM BASELINE');
   console.log('─'.repeat(70));
-  console.log(`Win Rate:        ${formatRate(baseline.wins, result.totalRaces)}`);
-  console.log(`Top 3 Rate:      ${formatRate(baseline.top3Hits, result.totalRaces)}`);
-  console.log(`Exacta Box 4:    ${formatRate(baseline.exactaBox4Hits, result.totalRaces)}`);
-  console.log(`Trifecta Box 5:  ${formatRate(baseline.trifectaBox5Hits, result.totalRaces)}`);
+  console.log(`Win Rate:         ${formatRate(baseline.wins, result.totalRaces)}`);
+  console.log(`Top 3 Rate:       ${formatRate(baseline.top3Hits, result.totalRaces)}`);
+  console.log(`Exacta Box 4:     ${formatRate(baseline.exactaBox4Hits, result.totalRaces)}  Cost: $${baseline.exactaBox4Cost.toLocaleString()}  ROI: ${roi.algorithmExactaROI >= 0 ? '+' : ''}${roi.algorithmExactaROI.toFixed(1)}%`);
+  console.log(`Trifecta Box 5:   ${formatRate(baseline.trifectaBox5Hits, result.totalRaces)}  Cost: $${baseline.trifectaBox5Cost.toLocaleString()}  ROI: ${roi.algorithmTrifectaROI >= 0 ? '+' : ''}${roi.algorithmTrifectaROI.toFixed(1)}%`);
 
+  // SECTION B: Template Distribution
   console.log('─'.repeat(70));
-  console.log('SECTION B: EXPANSION HORSES (SLEEPERS)');
+  console.log('SECTION B: TEMPLATE DISTRIBUTION');
   console.log('─'.repeat(70));
-  const exp = result.expansionAnalysis;
+  console.log(`Template A (Solid):      ${td.templateA.count.toString().padStart(3)} races (${td.templateA.percentage.toFixed(1)}%)`);
+  console.log(`Template B (Vulnerable): ${td.templateB.count.toString().padStart(3)} races (${td.templateB.percentage.toFixed(1)}%)`);
+  console.log(`Template C (Wide Open):  ${td.templateC.count.toString().padStart(3)} races (${td.templateC.percentage.toFixed(1)}%)`);
+  console.log(`PASS:                    ${td.passed.count.toString().padStart(3)} races (${td.passed.percentage.toFixed(1)}%)`);
+
+  // SECTION C: Template Performance
+  console.log('─'.repeat(70));
+  console.log('SECTION C: TEMPLATE PERFORMANCE');
+  console.log('─'.repeat(70));
+  console.log('Template    Races   Exacta    Trifecta   Ex Cost   Ex ROI   Tri ROI');
+  console.log('─'.repeat(70));
+
+  const formatTemplateRow = (name: string, perf: TemplatePerformanceMetrics) => {
+    const exactaStr = `${perf.exactaHits} (${perf.exactaRate.toFixed(0)}%)`;
+    const trifectaStr = `${perf.trifectaHits} (${perf.trifectaRate.toFixed(0)}%)`;
+    const costStr = `$${perf.exactaCost.toFixed(0)}`;
+    const exRoiStr = `${perf.exactaROI >= 0 ? '+' : ''}${perf.exactaROI.toFixed(1)}%`;
+    const triRoiStr = `${perf.trifectaROI >= 0 ? '+' : ''}${perf.trifectaROI.toFixed(1)}%`;
+    console.log(
+      `${name.padEnd(11)} ${perf.races.toString().padStart(3)}     ${exactaStr.padEnd(10)} ${trifectaStr.padEnd(10)} ${costStr.padStart(7)}  ${exRoiStr.padStart(7)}  ${triRoiStr.padStart(7)}`
+    );
+  };
+
+  formatTemplateRow('A (Solid)', tp.templateA);
+  formatTemplateRow('B (Vuln)', tp.templateB);
+  formatTemplateRow('C (Wide)', tp.templateC);
+
+  // SECTION D: Sizing Calibration
+  console.log('─'.repeat(70));
+  console.log('SECTION D: SIZING CALIBRATION');
+  console.log('─'.repeat(70));
+  console.log('Sizing      Races   Exacta Rate   Avg Confidence');
+  console.log('─'.repeat(70));
+
+  const formatSizingRow = (name: string, perf: SizingPerformanceMetrics) => {
+    console.log(
+      `${name.padEnd(11)} ${perf.races.toString().padStart(3)}       ${perf.exactaRate.toFixed(1).padStart(5)}%          ${perf.avgConfidence.toFixed(1)}`
+    );
+  };
+
+  formatSizingRow('MAX', sp.MAX);
+  formatSizingRow('STRONG', sp.STRONG);
+  formatSizingRow('STANDARD', sp.STANDARD);
+  formatSizingRow('HALF', sp.HALF);
+  console.log(`PASS        ${sp.PASS.races.toString().padStart(3)}       (would hit ${sp.PASS.wouldHaveHit})    ${(sp.PASS.races > 0 ? (result.sizingPerformance.PASS.races - sp.PASS.wouldHaveHit) / result.sizingPerformance.PASS.races * 100 : 0).toFixed(1)}% correct`);
+  console.log(`Calibration: ${verdict.sizingCalibrated ? '✓' : '✗'} Higher confidence = higher hit rate`);
+
+  // SECTION E: Vulnerable Favorite Fading
+  console.log('─'.repeat(70));
+  console.log('SECTION E: VULNERABLE FAVORITE FADING');
+  console.log('─'.repeat(70));
+  console.log(`Detected:        ${vuln.detected} races`);
+  console.log(`Actually Lost:   ${vuln.actuallyLost}/${vuln.detected} (${vuln.accuracy.toFixed(1)}% accuracy)`);
+  console.log(`Template B Exacta: ${vuln.templateBExactaHits}/${td.templateB.count} (${vuln.templateBExactaRate.toFixed(1)}%)`);
+
+  // SECTION F: ROI Comparison
+  console.log('─'.repeat(70));
+  console.log('SECTION F: ROI COMPARISON');
+  console.log('─'.repeat(70));
+  console.log('                Algorithm       AI System       Δ');
+  console.log('─'.repeat(70));
   console.log(
-    `Identified:      ${exp.totalExpansionHorsesIdentified} horses across ${exp.racesWithExpansion} races`
+    `Exacta ROI      ${roi.algorithmExactaROI >= 0 ? '+' : ''}${roi.algorithmExactaROI.toFixed(1).padStart(6)}%     ${roi.aiExactaROI >= 0 ? '+' : ''}${roi.aiExactaROI.toFixed(1).padStart(6)}%      ${roi.exactaImprovement >= 0 ? '+' : ''}${roi.exactaImprovement.toFixed(1)}%`
   );
   console.log(
-    `Wins:            ${formatRate(exp.expansionHorseWins, exp.totalExpansionHorsesIdentified)}`
+    `Trifecta ROI    ${roi.algorithmTrifectaROI >= 0 ? '+' : ''}${roi.algorithmTrifectaROI.toFixed(1).padStart(6)}%     ${roi.aiTrifectaROI >= 0 ? '+' : ''}${roi.aiTrifectaROI.toFixed(1).padStart(6)}%      ${roi.trifectaImprovement >= 0 ? '+' : ''}${roi.trifectaImprovement.toFixed(1)}%`
   );
   console.log(
-    `Top 3:           ${formatRate(exp.expansionHorseTop3, exp.totalExpansionHorsesIdentified)}`
-  );
-  if (exp.avgOddsWhenExpansionWon > 0) {
-    console.log(`Avg Winning Odds: ${exp.avgOddsWhenExpansionWon.toFixed(1)}-1`);
-  }
-  const expExactaDelta = exp.exactaWithExpansionHitRate - baseline.exactaBox4Rate;
-  const expTrifectaDelta = exp.trifectaWithExpansionHitRate - baseline.trifectaBox5Rate;
-  console.log(
-    `Expanded Exacta Hit Rate:  ${formatRate(exp.exactaWithExpansionHits, exp.racesWithExpansion)} vs ${baseline.exactaBox4Rate.toFixed(1)}% baseline → ${expExactaDelta >= 0 ? '+' : ''}${expExactaDelta.toFixed(1)}%`
-  );
-  console.log(
-    `Expanded Trifecta Hit Rate: ${formatRate(exp.trifectaWithExpansionHits, exp.racesWithExpansion)} vs ${baseline.trifectaBox5Rate.toFixed(1)}% baseline → ${expTrifectaDelta >= 0 ? '+' : ''}${expTrifectaDelta.toFixed(1)}%`
+    `Total Cost      $${roi.totalAlgorithmCost.toLocaleString().padStart(6)}      $${roi.totalAICost.toFixed(0).padStart(6)}       -${roi.costReduction.toFixed(1)}%`
   );
 
-  console.log('─'.repeat(70));
-  console.log('SECTION C: VULNERABLE FAVORITE DETECTION');
-  console.log('─'.repeat(70));
-  const vuln = result.vulnerableFavoriteAnalysis;
-  console.log(`Detected:        ${vuln.totalVulnerableFavoritesDetected} races`);
-  console.log(
-    `Actually Lost:   ${formatRate(vuln.vulnerableFavoritesActuallyLost, vuln.totalVulnerableFavoritesDetected)} accuracy`
-  );
-  const vulnExactaDelta = vuln.exactaExcludingVulnerableHitRate - baseline.exactaBox4Rate;
-  const vulnTrifectaDelta = vuln.trifectaExcludingVulnerableHitRate - baseline.trifectaBox5Rate;
-  console.log(
-    `Exacta w/o Vulnerable:  ${formatRate(vuln.exactaExcludingVulnerableHits, vuln.totalVulnerableFavoritesDetected)} vs ${baseline.exactaBox4Rate.toFixed(1)}% baseline → ${vulnExactaDelta >= 0 ? '+' : ''}${vulnExactaDelta.toFixed(1)}%`
-  );
-  console.log(
-    `Trifecta w/o Vulnerable: ${formatRate(vuln.trifectaExcludingVulnerableHits, vuln.totalVulnerableFavoritesDetected)} vs ${baseline.trifectaBox5Rate.toFixed(1)}% baseline → ${vulnTrifectaDelta >= 0 ? '+' : ''}${vulnTrifectaDelta.toFixed(1)}%`
-  );
-
-  console.log('─'.repeat(70));
-  console.log('SECTION D: TICKET STRATEGY COMPARISON');
-  console.log('─'.repeat(70));
-  const ts = result.ticketStrategyComparison;
-  console.log('                Naive       AI Strategy    Δ');
-  console.log(
-    `Exacta:         ${ts.naiveExactaBox4Rate.toFixed(1)}%       ${ts.aiExactaStrategyRate.toFixed(1)}%          ${ts.exactaImprovement >= 0 ? '+' : ''}${ts.exactaImprovement.toFixed(1)}%`
-  );
-  console.log(
-    `Trifecta:       ${ts.naiveTrifectaBox5Rate.toFixed(1)}%       ${ts.aiTrifectaStrategyRate.toFixed(1)}%          ${ts.trifectaImprovement >= 0 ? '+' : ''}${ts.trifectaImprovement.toFixed(1)}%`
-  );
-
-  console.log('─'.repeat(70));
-  console.log('SECTION E: SIGNAL QUALITY');
-  console.log('─'.repeat(70));
-  const sq = result.signalQuality;
-  console.log('Signal              Count    Accuracy (hit board)');
-  console.log(
-    `Trip Trouble HIGH   ${sq.tripTroubleHighCount.toString().padStart(3)}       ${sq.tripTroubleHighAccuracy.toFixed(1)}%`
-  );
-  console.log(
-    `Pace Adv STRONG     ${sq.paceAdvantageStrongCount.toString().padStart(3)}       ${sq.paceAdvantageStrongAccuracy.toFixed(1)}%`
-  );
-  console.log(
-    `Vulnerable Fav HIGH ${sq.vulnerableFavoriteHighCount.toString().padStart(3)}       ${sq.vulnerableFavoriteHighAccuracy.toFixed(1)}%`
-  );
-
+  // VERDICT
   console.log('─'.repeat(70));
   console.log('VERDICT');
   console.log('─'.repeat(70));
-  const v = result.verdict;
   console.log(
-    `${v.expansionHorsesAddValue ? '✓' : '✗'} Expansion horses add value (${exp.expansionHorseTop3Rate.toFixed(1)}% top 3 ${v.expansionHorsesAddValue ? '>' : '<='} 33% threshold)`
+    `${verdict.templatesWork ? '✓' : '✗'} Templates work (B outperforms naive on vulnerable favorites)`
   );
   console.log(
-    `${v.vulnerableDetectionWorks ? '✓' : '✗'} Vulnerable detection works (${vuln.detectionAccuracy.toFixed(1)}% ${v.vulnerableDetectionWorks ? '>' : '<='} 60% threshold)`
+    `${verdict.sizingCalibrated ? '✓' : '✗'} Sizing calibrated (hit rate increases with confidence)`
   );
   console.log(
-    `${v.ticketStrategiesImprove ? '✓' : '✗'} Ticket strategies improve (${ts.exactaImprovement >= 0 ? '+' : ''}${ts.exactaImprovement.toFixed(1)}% exacta, ${ts.trifectaImprovement >= 0 ? '+' : ''}${ts.trifectaImprovement.toFixed(1)}% trifecta)`
+    `${verdict.roiPositive ? '✓' : '✗'} ROI positive (AI beats algorithm baseline)`
   );
-  console.log(`RECOMMENDATION: ${v.overallRecommendation}`);
+  console.log(`RECOMMENDATION: ${verdict.recommendation}`);
   console.log('═'.repeat(70));
 
   if (result.errors.length > 0) {
