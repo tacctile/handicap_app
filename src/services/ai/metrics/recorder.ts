@@ -262,7 +262,7 @@ export async function recordAIDecision(
 
   // Extract AI decisions
   const aiTopPick = analysis.topPick ?? algorithmTopPick;
-  const aiValuePlay = analysis.valuePlay;
+  const aiValuePlay = analysis.valuePlay ?? null;
 
   // Get AI top 3 from horse insights sorted by projected finish
   const sortedInsights = [...analysis.horseInsights].sort(
@@ -397,7 +397,7 @@ export function buildDecisionRecord(
     algorithmTop3,
     algorithmScores,
     aiTopPick,
-    aiValuePlay: analysis.valuePlay,
+    aiValuePlay: analysis.valuePlay ?? null,
     aiTop3,
     aiAvoidList: analysis.avoidList,
     aiConfidence: analysis.confidence,

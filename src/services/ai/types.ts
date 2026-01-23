@@ -87,8 +87,6 @@ export interface AIRaceAnalysis {
   // Betting guidance
   /** Program number of top pick (null if no clear pick) */
   topPick: number | null;
-  /** Program number of value play if different from top pick */
-  valuePlay: number | null;
   /** Program numbers of horses to avoid */
   avoidList: number[];
 
@@ -104,9 +102,15 @@ export interface AIRaceAnalysis {
   /** Bot status debug information for troubleshooting */
   botDebugInfo?: BotStatusDebugInfo;
 
-  // Bet construction guidance (optional, only present in multi-bot mode with expansion/contraction model)
-  /** Bet construction guidance using expansion/contraction model */
+  // Ticket construction (optional, only present in multi-bot mode)
+  /** Ticket construction using three-template system */
+  ticketConstruction?: TicketConstruction;
+
+  // Legacy fields for backward compatibility
+  /** @deprecated Use ticketConstruction instead */
   betConstruction?: BetConstructionGuidance;
+  /** @deprecated Value play is no longer used - expansion horses removed */
+  valuePlay?: number | null;
 }
 
 // ============================================================================
@@ -419,11 +423,100 @@ export interface BotStatusDebugInfo {
 }
 
 // ============================================================================
-// BET CONSTRUCTION GUIDANCE (Expansion/Contraction Model)
+// TICKET CONSTRUCTION (Three-Template System)
 // ============================================================================
 
 /**
- * Exacta ticket strategy
+ * Template type for ticket construction
+ * - A: Solid Favorite (favorite in win position)
+ * - B: Vulnerable Favorite (favorite demoted to place only)
+ * - C: Wide Open/Chaos (full box)
+ */
+export type TicketTemplate = 'A' | 'B' | 'C';
+
+/**
+ * Race type classification from Field Spread bot
+ */
+export type RaceType = 'CHALK' | 'COMPETITIVE' | 'WIDE_OPEN';
+
+/**
+ * Favorite status determination
+ */
+export type FavoriteStatus = 'SOLID' | 'VULNERABLE';
+
+/**
+ * Exacta ticket construction
+ */
+export interface ExactaConstruction {
+  /** Horses that can win (first position) */
+  winPosition: number[];
+  /** Horses that can place (second position) */
+  placePosition: number[];
+  /** Total combinations */
+  combinations: number;
+  /** Estimated cost at $2 base */
+  estimatedCost: number;
+}
+
+/**
+ * Trifecta ticket construction
+ */
+export interface TrifectaConstruction {
+  /** Horses in win position */
+  winPosition: number[];
+  /** Horses in place position */
+  placePosition: number[];
+  /** Horses in show position */
+  showPosition: number[];
+  /** Total combinations */
+  combinations: number;
+  /** Estimated cost at $1 base */
+  estimatedCost: number;
+}
+
+/**
+ * Ticket Construction - Three-template system
+ *
+ * Philosophy:
+ * - Algorithm top 4 are SACRED — never demoted by AI
+ * - Template selection based on favorite vulnerability and field type
+ * - No more expansion horses — they weren't hitting the board
+ * - Vulnerable favorites stay on tickets but demoted from win position
+ */
+export interface TicketConstruction {
+  /** Template selection: A (solid), B (vulnerable), C (chaos) */
+  template: TicketTemplate;
+  /** Reason for template selection */
+  templateReason: string;
+
+  /** Algorithm's sacred top 4 (program numbers in rank order) */
+  algorithmTop4: number[];
+
+  /** Favorite status determination */
+  favoriteStatus: FavoriteStatus;
+  /** Vulnerability flags (empty if SOLID) */
+  favoriteVulnerabilityFlags: string[];
+
+  /** Exacta construction */
+  exacta: ExactaConstruction;
+
+  /** Trifecta construction */
+  trifecta: TrifectaConstruction;
+
+  /** Race classification from Field Spread bot */
+  raceType: RaceType;
+
+  /** Confidence score 0-100, used for sizing in next prompt */
+  confidenceScore: number;
+}
+
+// ============================================================================
+// DEPRECATED: BET CONSTRUCTION GUIDANCE (Expansion/Contraction Model)
+// ============================================================================
+
+/**
+ * @deprecated Use TicketConstruction instead. This interface is kept for backward compatibility.
+ * Exacta ticket strategy (legacy)
  */
 export interface ExactaStrategy {
   /** Type of exacta construction */
@@ -437,7 +530,8 @@ export interface ExactaStrategy {
 }
 
 /**
- * Trifecta ticket strategy
+ * @deprecated Use TicketConstruction instead. This interface is kept for backward compatibility.
+ * Trifecta ticket strategy (legacy)
  */
 export interface TrifectaStrategy {
   /** Type of trifecta construction */
@@ -453,7 +547,10 @@ export interface TrifectaStrategy {
 }
 
 /**
- * Bet Construction Guidance - New expansion/contraction model
+ * @deprecated Use TicketConstruction instead. This interface is kept for backward compatibility.
+ * The expansion/contraction model has been replaced by the three-template system.
+ *
+ * Bet Construction Guidance - Legacy expansion/contraction model
  *
  * Philosophy:
  * - Algorithm top 4 are SACRED — never demoted by AI
@@ -464,8 +561,8 @@ export interface BetConstructionGuidance {
   // Core ticket construction
   /** Program numbers of algorithm's top 4 (never modified by AI) */
   algorithmTop4: number[];
-  /** AI-identified sleepers to ADD to boxes (algorithm rank 5-10, odds >= 4-1) */
-  expansionHorses: number[];
+  /** @deprecated Expansion horses are no longer used - always empty array */
+  expansionHorses?: number[];
   /** Vulnerable favorite to EXCLUDE from key spots (algorithm rank 1 only) */
   contractionTarget: number | null;
 
@@ -480,8 +577,8 @@ export interface BetConstructionGuidance {
   raceClassification: 'BETTABLE' | 'SPREAD_WIDE' | 'PASS';
   /** Whether a vulnerable favorite was detected (HIGH confidence) */
   vulnerableFavoriteDetected: boolean;
-  /** Whether a sleeper was identified for expansion */
-  sleeperIdentified: boolean;
+  /** @deprecated Sleeper identification is no longer used - always false */
+  sleeperIdentified?: boolean;
 
   // Debug
   /** Summary of signals that influenced construction */
