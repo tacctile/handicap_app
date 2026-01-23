@@ -1355,7 +1355,7 @@ async function runValidation(): Promise<ValidationResult> {
     algorithmBaseline: {
       winRate: toPercentage(algorithmWins, totalRaces),
       top3Rate: toPercentage(algorithmTop3, totalRaces),
-      exactaBox4Rate: algorithmExactaRate,
+      exactaBox4Rate: toPercentage(algorithmExactaBox4, totalRaces),
       exactaBox4Cost: totalAlgorithmExactaCost,
       trifectaBox5Rate: toPercentage(algorithmTrifectaBox5, totalRaces),
       trifectaBox5Cost: totalAlgorithmTrifectaCost,
@@ -1413,7 +1413,7 @@ async function runValidation(): Promise<ValidationResult> {
           ? (vulnerableFavoritesLost / vulnerableFavoritesDetected) * 100
           : 0,
       templateBExactaHits,
-      templateBExactaRate,
+      templateBExactaRate: toPercentage(templateBExactaHits, templateCounts.B),
     },
 
     roiSummary: {
