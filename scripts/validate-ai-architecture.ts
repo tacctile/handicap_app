@@ -1277,12 +1277,25 @@ async function runValidation(): Promise<ValidationResult> {
     `  PASS:     ${sizingStats.PASS.races} races (would have hit: ${passWouldHaveHitExacta})`
   );
 
-  // Check calibration: MAX > STRONG > STANDARD > HALF (with tolerance)
-  const calibrationTolerance = 5; // 5% tolerance
-  const sizingCalibrated =
-    sizingHitRates.MAX >= sizingHitRates.STRONG - calibrationTolerance &&
-    sizingHitRates.STRONG >= sizingHitRates.STANDARD - calibrationTolerance &&
-    sizingHitRates.STANDARD >= sizingHitRates.HALF - calibrationTolerance;
+  // FLAT BETTING: Sizing calibration check is N/A
+  // With flat betting, all non-PASS bets get STANDARD sizing (1.0x multiplier).
+  // The old tier-based calibration (MAX >= STRONG >= STANDARD >= HALF) doesn't apply.
+  // Instead, we simply check that non-PASS bets have reasonable performance.
+  const totalNonPassRaces =
+    sizingStats.MAX.races +
+    sizingStats.STRONG.races +
+    sizingStats.STANDARD.races +
+    sizingStats.HALF.races;
+  const totalNonPassHits =
+    sizingStats.MAX.exactaHits +
+    sizingStats.STRONG.exactaHits +
+    sizingStats.STANDARD.exactaHits +
+    sizingStats.HALF.exactaHits;
+  const overallHitRate = totalNonPassRaces > 0 ? (totalNonPassHits / totalNonPassRaces) * 100 : 0;
+
+  // Sizing is "calibrated" if we have any non-PASS races with reasonable hit rate (>10%)
+  // Since we're using flat betting, this is primarily a sanity check
+  const sizingCalibrated = totalNonPassRaces > 0 && overallHitRate > 10;
 
   // ============================================================================
   // BUILD FINAL RESULT
@@ -1541,7 +1554,7 @@ function printReport(result: ValidationResult): void {
     `PASS        ${sp.PASS.races.toString().padStart(3)}       (would hit ${sp.PASS.wouldHaveHit})    ${(sp.PASS.races > 0 ? ((result.sizingPerformance.PASS.races - sp.PASS.wouldHaveHit) / result.sizingPerformance.PASS.races) * 100 : 0).toFixed(1)}% correct`
   );
   console.log(
-    `Calibration: ${verdict.sizingCalibrated ? '✓' : '✗'} Higher confidence = higher hit rate`
+    `Calibration: ${verdict.sizingCalibrated ? '✓' : '✗'} Flat betting - non-PASS hit rate >10%`
   );
 
   // SECTION E: Vulnerable Favorite Fading
@@ -1580,7 +1593,7 @@ function printReport(result: ValidationResult): void {
     `${verdict.templatesWork ? '✓' : '✗'} Templates work (B ROI outperforms algorithm baseline ROI)`
   );
   console.log(
-    `${verdict.sizingCalibrated ? '✓' : '✗'} Sizing calibrated (hit rate increases with confidence)`
+    `${verdict.sizingCalibrated ? '✓' : '✗'} Sizing calibrated (flat betting - non-PASS hit rate >10%)`
   );
   console.log(`${verdict.roiPositive ? '✓' : '✗'} ROI positive (AI beats algorithm baseline)`);
   console.log(`RECOMMENDATION: ${verdict.recommendation}`);
