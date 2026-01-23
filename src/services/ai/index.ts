@@ -37,6 +37,10 @@ import type {
   FavoriteStatus,
   ExactaConstruction,
   TrifectaConstruction,
+  // Value horse identification types
+  ValueHorseIdentification,
+  ValueHorseSource,
+  ValueSignalStrength,
   // Sizing and verdict types
   SizingRecommendation,
   SizingRecommendationType,
@@ -87,6 +91,10 @@ export type {
   FavoriteStatus,
   ExactaConstruction,
   TrifectaConstruction,
+  // Value horse identification types
+  ValueHorseIdentification,
+  ValueHorseSource,
+  ValueSignalStrength,
   // Sizing and verdict types
   SizingRecommendation,
   SizingRecommendationType,
@@ -1337,25 +1345,305 @@ export function determineFavoriteStatus(
 }
 
 /**
- * Select template based on race type and favorite status
+ * Identify value horse from bot outputs
+ *
+ * A race is bettable (HIGH/MEDIUM/LOW) ONLY when bots identify a specific value horse.
+ * The value horse must be explicitly identified with a specific angle:
+ * - Pace advantage (Pace Scenario Bot)
+ * - Troubled trip excuse (Trip Trouble Bot)
+ * - Vulnerable favorite creating opportunity (Vulnerable Favorite Bot)
+ * - Wide open field with no deserving favorite (Field Spread Bot)
+ *
+ * @param aggregatedSignals - Signals for all horses
+ * @param rawResults - Raw bot results
+ * @param favoriteStatus - Whether favorite is SOLID or VULNERABLE
+ * @returns ValueHorseIdentification object
+ */
+export function identifyValueHorse(
+  aggregatedSignals: AggregatedSignals[],
+  rawResults: MultiBotRawResults,
+  favoriteStatus: FavoriteStatus
+): ValueHorseIdentification {
+  const { tripTrouble, paceScenario, vulnerableFavorite, fieldSpread } = rawResults;
+
+  // Track candidates with their sources and signals
+  interface ValueCandidate {
+    programNumber: number;
+    horseName: string;
+    sources: ValueHorseSource[];
+    angles: string[];
+    signalStrength: number; // 0-100
+    botCount: number;
+  }
+
+  const candidates: Map<number, ValueCandidate> = new Map();
+
+  // Helper to add/update a candidate
+  const addCandidate = (
+    programNumber: number,
+    horseName: string,
+    source: ValueHorseSource,
+    angle: string,
+    strengthBonus: number
+  ): void => {
+    const existing = candidates.get(programNumber);
+    if (existing) {
+      if (!existing.sources.includes(source)) {
+        existing.sources.push(source);
+        existing.botCount++;
+      }
+      existing.angles.push(angle);
+      existing.signalStrength += strengthBonus;
+    } else {
+      candidates.set(programNumber, {
+        programNumber,
+        horseName,
+        sources: [source],
+        angles: [angle],
+        signalStrength: strengthBonus,
+        botCount: 1,
+      });
+    }
+  };
+
+  // 1. TRIP TROUBLE: Identify horses with masked ability
+  if (tripTrouble?.horsesWithTripTrouble) {
+    for (const horse of tripTrouble.horsesWithTripTrouble) {
+      if (horse.maskedAbility) {
+        // HIGH confidence: multiple troubled trips
+        const isHighConfidence =
+          horse.issue.includes('last 2') ||
+          horse.issue.includes('last 3') ||
+          horse.issue.includes('multiple') ||
+          horse.issue.includes('consecutive');
+        const strengthBonus = isHighConfidence ? 30 : 15;
+        const angle = `Trip trouble: ${horse.issue}`;
+        addCandidate(horse.programNumber, horse.horseName, 'TRIP_TROUBLE', angle, strengthBonus);
+      }
+    }
+  }
+
+  // 2. PACE ADVANTAGE: Identify horses with tactical edge
+  if (paceScenario) {
+    // Lone speed is a very strong signal
+    if (paceScenario.loneSpeedException) {
+      // Find the lone speed horse from aggregated signals
+      for (const signal of aggregatedSignals) {
+        if (signal.paceAdvantage > 0 && signal.paceEdgeReason?.includes('Lone speed')) {
+          const strengthBonus = 35; // Dominant pace advantage = 15+ point edge
+          const angle = 'Lone speed with no pressure - dominant pace advantage';
+          addCandidate(
+            signal.programNumber,
+            signal.horseName,
+            'PACE_ADVANTAGE',
+            angle,
+            strengthBonus
+          );
+        }
+      }
+    }
+
+    // Speed duel benefits closers
+    if (paceScenario.speedDuelLikely && paceScenario.paceProjection === 'HOT') {
+      for (const signal of aggregatedSignals) {
+        if (signal.paceAdvantage > 0 && !signal.paceEdgeReason?.includes('Lone speed')) {
+          const strengthBonus = 20;
+          const angle = 'Closer benefits from expected speed duel and hot pace';
+          addCandidate(
+            signal.programNumber,
+            signal.horseName,
+            'PACE_ADVANTAGE',
+            angle,
+            strengthBonus
+          );
+        }
+      }
+    }
+
+    // Any horse with pace advantage flagged
+    for (const signal of aggregatedSignals) {
+      if (signal.paceAdvantageFlagged && signal.paceAdvantage > 0 && signal.algorithmRank >= 2) {
+        const existing = candidates.get(signal.programNumber);
+        if (!existing?.sources.includes('PACE_ADVANTAGE')) {
+          const strengthBonus = signal.paceAdvantage >= 2 ? 25 : 15;
+          const angle = signal.paceEdgeReason || 'Pace scenario advantage';
+          addCandidate(
+            signal.programNumber,
+            signal.horseName,
+            'PACE_ADVANTAGE',
+            angle,
+            strengthBonus
+          );
+        }
+      }
+    }
+  }
+
+  // 3. VULNERABLE FAVORITE: When favorite is vulnerable, find the beneficiary
+  if (favoriteStatus === 'VULNERABLE' && vulnerableFavorite?.isVulnerable) {
+    // The algorithm rank 2 horse benefits most from vulnerable favorite
+    const rank2Horse = aggregatedSignals.find((s) => s.algorithmRank === 2);
+    if (rank2Horse) {
+      const strengthBonus = vulnerableFavorite.confidence === 'HIGH' ? 25 : 15;
+      const reasons = vulnerableFavorite.reasons?.slice(0, 2).join(', ') || 'Vulnerable favorite';
+      const angle = `Beneficiary of vulnerable favorite: ${reasons}`;
+      addCandidate(
+        rank2Horse.programNumber,
+        rank2Horse.horseName,
+        'VULNERABLE_FAVORITE',
+        angle,
+        strengthBonus
+      );
+    }
+
+    // Also check rank 3 if it has other positive signals
+    const rank3Horse = aggregatedSignals.find((s) => s.algorithmRank === 3);
+    if (rank3Horse && (rank3Horse.tripTroubleBoost > 0 || rank3Horse.paceAdvantage > 0)) {
+      const strengthBonus = 15;
+      const angle = 'Secondary beneficiary of vulnerable favorite with supporting signals';
+      addCandidate(
+        rank3Horse.programNumber,
+        rank3Horse.horseName,
+        'VULNERABLE_FAVORITE',
+        angle,
+        strengthBonus
+      );
+    }
+  }
+
+  // 4. FIELD SPREAD: Wide open field - check for value horses identified
+  if (fieldSpread?.fieldType === 'WIDE_OPEN' && fieldSpread.horseClassifications) {
+    // In wide open fields, key candidates at good odds are value plays
+    for (const classification of fieldSpread.horseClassifications) {
+      if (classification.keyCandidate && classification.classification === 'A') {
+        const strengthBonus = 15;
+        const angle = `Field spread analysis: ${classification.reason}`;
+        addCandidate(
+          classification.programNumber,
+          classification.horseName,
+          'FIELD_SPREAD',
+          angle,
+          strengthBonus
+        );
+      }
+    }
+  }
+
+  // Find the best candidate
+  if (candidates.size === 0) {
+    // No value horse identified
+    return {
+      identified: false,
+      programNumber: null,
+      horseName: null,
+      sources: [],
+      signalStrength: 'NONE',
+      angle: null,
+      valueOdds: null,
+      botConvergenceCount: 0,
+      reasoning: 'No bots identified a specific value horse with exploitable angle',
+    };
+  }
+
+  // Sort candidates by signal strength (bot convergence is a major factor)
+  const sortedCandidates = Array.from(candidates.values()).sort((a, b) => {
+    // Prioritize bot convergence (multiple bots agreeing)
+    if (a.botCount !== b.botCount) {
+      return b.botCount - a.botCount;
+    }
+    // Then by signal strength
+    return b.signalStrength - a.signalStrength;
+  });
+
+  const bestCandidate = sortedCandidates[0];
+  if (!bestCandidate) {
+    return {
+      identified: false,
+      programNumber: null,
+      horseName: null,
+      sources: [],
+      signalStrength: 'NONE',
+      angle: null,
+      valueOdds: null,
+      botConvergenceCount: 0,
+      reasoning: 'No value horse candidates found',
+    };
+  }
+
+  // Determine signal strength based on cutoffs from requirements
+  // HIGH (80-100): 3+ bots OR 2 bots with strong data OR dominant pace (15+ point edge)
+  // MEDIUM (60-79): 2 bots OR 1 bot with strong signal + supporting algorithm data
+  // LOW (40-59): 1 bot with potential value
+  // MINIMAL (<40): No value horse identified
+  let signalStrength: ValueSignalStrength;
+  if (bestCandidate.botCount >= 3 || bestCandidate.signalStrength >= 80) {
+    signalStrength = 'VERY_STRONG';
+  } else if (bestCandidate.botCount === 2 || bestCandidate.signalStrength >= 50) {
+    signalStrength = 'STRONG';
+  } else if (bestCandidate.signalStrength >= 30) {
+    signalStrength = 'MODERATE';
+  } else {
+    signalStrength = 'WEAK';
+  }
+
+  // Mark as MULTIPLE source if bot count >= 2
+  const sources: ValueHorseSource[] =
+    bestCandidate.botCount >= 2 ? ['MULTIPLE', ...bestCandidate.sources] : bestCandidate.sources;
+
+  // Build reasoning string
+  const reasoning =
+    bestCandidate.botCount >= 3
+      ? `${bestCandidate.botCount} bots converge on #${bestCandidate.programNumber} ${bestCandidate.horseName}`
+      : bestCandidate.botCount === 2
+        ? `2 bots identify #${bestCandidate.programNumber} ${bestCandidate.horseName} as value play`
+        : `Single bot flags #${bestCandidate.programNumber} ${bestCandidate.horseName} with ${bestCandidate.angles[0]}`;
+
+  return {
+    identified: true,
+    programNumber: bestCandidate.programNumber,
+    horseName: bestCandidate.horseName,
+    sources: sources,
+    signalStrength,
+    angle: bestCandidate.angles[0] || null,
+    valueOdds: null, // TODO: Could pull from scoring result if needed
+    botConvergenceCount: bestCandidate.botCount,
+    reasoning,
+  };
+}
+
+/**
+ * Select template based on race type, favorite status, and value horse identification
+ *
+ * CRITICAL CHANGE: Template A (Solid Favorite) now routes to MINIMAL tier because
+ * "solid favorite" means "market is right" which means no value edge exists.
  *
  * Priority:
  * 1. If WIDE_OPEN → Template C (regardless of favorite status)
- * 2. Else if VULNERABLE favorite → Template B
- * 3. Else → Template A
+ * 2. Else if VULNERABLE favorite → Template B (value in fading favorite)
+ * 3. Else if SOLID favorite WITH value horse identified → Template A (algorithm pick)
+ * 4. Else if SOLID favorite WITHOUT value horse → PASS (route to MINIMAL)
  *
  * @param raceType - Race classification
  * @param favoriteStatus - Favorite status
  * @param vulnerableFavorite - Vulnerable favorite analysis (for confidence check)
+ * @param valueHorse - Value horse identification result
  * @returns Tuple of [template, reason]
  */
 export function selectTemplate(
   raceType: RaceType,
   favoriteStatus: FavoriteStatus,
-  vulnerableFavorite: VulnerableFavoriteAnalysis | null
+  vulnerableFavorite: VulnerableFavoriteAnalysis | null,
+  valueHorse?: ValueHorseIdentification
 ): [TicketTemplate, string] {
   // Priority 1: WIDE_OPEN field → Template C
   if (raceType === 'WIDE_OPEN') {
+    // Even in wide open, check if value horse was identified
+    if (valueHorse?.identified) {
+      return [
+        'C',
+        `Wide open field with value horse #${valueHorse.programNumber} identified - spread recommended`,
+      ];
+    }
     return ['C', 'Wide open field - full box recommended'];
   }
 
@@ -1369,8 +1657,22 @@ export function selectTemplate(
     ];
   }
 
-  // Priority 3: Default → Template A (solid favorite)
-  return ['A', 'Solid favorite - standard key approach'];
+  // Priority 3: SOLID favorite - check for value horse
+  // CRITICAL: If no value horse is identified, route to PASS (→ MINIMAL tier)
+  // This is because Template A (solid favorite) historically has -59% trifecta ROI
+  if (!valueHorse?.identified) {
+    return [
+      'PASS',
+      'Solid favorite with no identified value horse - algorithm picks only, no AI bet recommendation',
+    ];
+  }
+
+  // Priority 4: SOLID favorite WITH value horse identified → Template A
+  // This rare case means bots found a value horse despite solid favorite
+  return [
+    'A',
+    `Solid favorite but value horse #${valueHorse.programNumber} identified: ${valueHorse.angle || 'edge detected'}`,
+  ];
 }
 
 /**
@@ -1558,201 +1860,158 @@ export function buildTrifectaTicket(
 /**
  * Calculate confidence score for the race
  *
- * Base: 50
- * Vulnerable Favorite HIGH confidence: -15
- * Vulnerable Favorite MEDIUM confidence: -10
- * Vulnerable Favorite LOW/none: +0
- * Field type CHALK (clear separation): +20
- * Field type COMPETITIVE: +0
- * Field type WIDE_OPEN: -20
- * Trip Trouble signals on rank 2-4: +5 each (max +15)
- * Pace Advantage signals on rank 2-4: +5 each (max +15)
- * Cap at 0-100
+ * NEW VALUE-BASED CUTOFFS (rewired for value horse identification):
+ *
+ * The confidence score now reflects VALUE HORSE SIGNAL STRENGTH:
+ *
+ * HIGH (80-100): Multiple bots converge on same value horse OR single bot with very strong signal
+ *   - 3+ bots identify same horse as value play, OR
+ *   - 2 bots identify same horse with strong supporting data, OR
+ *   - Pace Scenario Bot shows dominant pace advantage (15+ point edge / lone speed)
+ *
+ * MEDIUM (60-79): Clear value horse identified with solid angle
+ *   - 2 bots identify same value horse, OR
+ *   - 1 bot with strong signal + supporting algorithm data (horse ranks top 3 but odds suggest top 6+)
+ *
+ * LOW (40-59): Weak but present value signal
+ *   - 1 bot identifies potential value horse, OR
+ *   - Vulnerable favorite flagged + algorithm suggests specific alternative
+ *
+ * MINIMAL (0-39): No value horse identified
+ *   - Solid favorite (no vulnerability flags), OR
+ *   - Vulnerable favorite but no clear alternative identified, OR
+ *   - Bots return conflicting signals with no consensus
+ *
+ * These cutoffs are DETERMINISTIC — same inputs always produce same tier.
  *
  * @param raceType - Race classification
  * @param vulnerableFavorite - Vulnerable favorite analysis
  * @param aggregatedSignals - Signals for all horses
+ * @param valueHorse - Value horse identification result
+ * @param favoriteStatus - Favorite status (SOLID or VULNERABLE)
  * @returns Confidence score 0-100
  */
 export function calculateConfidenceScore(
   raceType: RaceType,
   vulnerableFavorite: VulnerableFavoriteAnalysis | null,
-  aggregatedSignals: AggregatedSignals[]
+  aggregatedSignals: AggregatedSignals[],
+  valueHorse?: ValueHorseIdentification,
+  favoriteStatus?: FavoriteStatus
 ): number {
-  let score = 65; // Base (rebalanced after penalties added)
-
-  // Track bonus/penalty breakdown for debug logging
+  // Track breakdown for debug logging
   const bonusBreakdown: { name: string; value: number }[] = [];
 
   // ============================================================================
-  // PENALTIES (existing logic)
+  // CRITICAL: If no value horse identified AND solid favorite → MINIMAL tier
+  // This implements the core requirement: Template A races route to MINIMAL
   // ============================================================================
+  const isSolidFavorite = favoriteStatus === 'SOLID' || !vulnerableFavorite?.isVulnerable;
 
-  // STRICTER: Only penalize confidence when TRULY vulnerable (2+ flags, HIGH confidence)
-  // This aligns with determineFavoriteStatus() stricter criteria
-  let vulnerablePenalty = 0;
-  if (vulnerableFavorite?.isVulnerable) {
-    const flagCount = vulnerableFavorite.reasons?.length ?? 0;
-
-    // Only penalize if meeting stricter vulnerable threshold
-    if (flagCount >= 3) {
-      // 3+ flags: full penalty regardless of confidence
-      vulnerablePenalty = -15;
-    } else if (flagCount === 2 && vulnerableFavorite.confidence === 'HIGH') {
-      // 2 flags with HIGH confidence: full penalty
-      vulnerablePenalty = -15;
-    }
-    // 0-1 flags or 2 flags with non-HIGH: no penalty (not truly vulnerable)
-  }
-  if (vulnerablePenalty !== 0) {
-    score += vulnerablePenalty;
-    bonusBreakdown.push({ name: 'Vulnerable Favorite', value: vulnerablePenalty });
-  }
-
-  // Field type adjustment
-  // CHALK = low value (chalk races favor favorites, less upside) → reduce confidence
-  // COMPETITIVE = neutral
-  // WIDE_OPEN = uncertain but can have value → moderate penalty
-  let raceTypePenalty = 0;
-  switch (raceType) {
-    case 'CHALK':
-      raceTypePenalty = -10; // Chalk races = low value, reduce confidence
-      break;
-    case 'COMPETITIVE':
-      // +0 (no adjustment)
-      break;
-    case 'WIDE_OPEN':
-      raceTypePenalty = -15; // Uncertain but not as penalized - these can have value
-      break;
-  }
-  if (raceTypePenalty !== 0) {
-    score += raceTypePenalty;
-    bonusBreakdown.push({ name: 'Race Type', value: raceTypePenalty });
-  }
-
-  // Trip Trouble signals on rank 2-4: -5 each (cap at -15)
-  // Underdogs with upside = more uncertainty, LOWER confidence
-  const tripTroubleCount = aggregatedSignals.filter(
-    (s) => s.algorithmRank >= 2 && s.algorithmRank <= 4 && s.tripTroubleFlagged
-  ).length;
-  const tripTroublePenalty = -Math.min(tripTroubleCount * 5, 15);
-  if (tripTroublePenalty !== 0) {
-    score += tripTroublePenalty;
-    bonusBreakdown.push({ name: 'Trip Trouble (rank 2-4)', value: tripTroublePenalty });
-  }
-
-  // Pace Advantage signals on rank 2-4: -5 each (cap at -15)
-  // Underdogs with pace advantage = more uncertainty, LOWER confidence
-  const paceAdvantageCount = aggregatedSignals.filter(
-    (s) => s.algorithmRank >= 2 && s.algorithmRank <= 4 && s.paceAdvantageFlagged
-  ).length;
-  const paceAdvantagePenalty = -Math.min(paceAdvantageCount * 5, 15);
-  if (paceAdvantagePenalty !== 0) {
-    score += paceAdvantagePenalty;
-    bonusBreakdown.push({ name: 'Pace Advantage (rank 2-4)', value: paceAdvantagePenalty });
+  if (!valueHorse?.identified && isSolidFavorite) {
+    // No value horse + solid favorite = MINIMAL tier (0-39)
+    // Return a score in the MINIMAL range
+    const baseScore = 25; // Middle of MINIMAL range
+    debugLog('[Confidence] MINIMAL tier: Solid favorite with no identified value horse');
+    debugLog(`  Final: ${baseScore} (MINIMAL tier)`);
+    return baseScore;
   }
 
   // ============================================================================
-  // BONUSES (new positive signal logic)
+  // VALUE-BASED CONFIDENCE SCORING
   // ============================================================================
 
-  // Get the top-ranked horse (rank 1)
-  const topHorse = aggregatedSignals.find((s) => s.algorithmRank === 1);
-  const secondHorse = aggregatedSignals.find((s) => s.algorithmRank === 2);
+  let score: number;
 
-  // --- PART 1: Bot Agreement Bonus ---
-  // Count how many of the 4 bot signals are "positive" for the top-ranked horse
-  let positiveSignalCount = 0;
-
-  if (topHorse) {
-    // 1. Trip Trouble bot: top horse has NO trip trouble flags (clean)
-    if (!topHorse.tripTroubleFlagged) {
-      positiveSignalCount++;
+  if (!valueHorse?.identified) {
+    // No value horse but vulnerable favorite - LOW tier (40-59)
+    // At least there's opportunity from vulnerable favorite
+    score = 45;
+    bonusBreakdown.push({ name: 'No value horse (vulnerable fav)', value: 45 });
+  } else {
+    // Value horse identified - score based on signal strength
+    switch (valueHorse.signalStrength) {
+      case 'VERY_STRONG':
+        // HIGH tier (80-100): 3+ bots converge OR dominant signal
+        score = 85;
+        bonusBreakdown.push({
+          name: `Very Strong Signal (${valueHorse.botConvergenceCount} bots)`,
+          value: 85,
+        });
+        break;
+      case 'STRONG':
+        // HIGH tier (80-100): 2 bots with strong data
+        score = 80;
+        bonusBreakdown.push({
+          name: `Strong Signal (${valueHorse.botConvergenceCount} bots)`,
+          value: 80,
+        });
+        break;
+      case 'MODERATE':
+        // MEDIUM tier (60-79): Clear value horse with solid angle
+        score = 70;
+        bonusBreakdown.push({
+          name: `Moderate Signal (${valueHorse.botConvergenceCount} bot)`,
+          value: 70,
+        });
+        break;
+      case 'WEAK':
+        // LOW tier (40-59): Weak but present value signal
+        score = 50;
+        bonusBreakdown.push({ name: 'Weak Signal (1 bot)', value: 50 });
+        break;
+      default:
+        // Fallback - should not reach here
+        score = 45;
+        bonusBreakdown.push({ name: 'Default (no signal)', value: 45 });
     }
-
-    // 2. Pace Scenario bot: top horse has pace advantage flag
-    if (topHorse.paceAdvantageFlagged) {
-      positiveSignalCount++;
-    }
   }
 
-  // 3. Vulnerable Favorite bot: favorite is NOT vulnerable (solid)
-  if (!vulnerableFavorite?.isVulnerable) {
-    positiveSignalCount++;
+  // ============================================================================
+  // ADJUSTMENTS (maintain some existing logic for refinement)
+  // ============================================================================
+
+  // Race type adjustment - wide open is more uncertain
+  if (raceType === 'WIDE_OPEN') {
+    const penalty = -10;
+    score += penalty;
+    bonusBreakdown.push({ name: 'Wide Open Field', value: penalty });
   }
 
-  // 4. Field Spread bot: race type is CHALK or COMPETITIVE (not WIDE_OPEN)
-  if (raceType === 'CHALK' || raceType === 'COMPETITIVE') {
-    positiveSignalCount++;
-  }
-
-  // Apply bot agreement bonus
-  let botAgreementBonus = 0;
-  if (positiveSignalCount === 4) {
-    botAgreementBonus = 20;
-  } else if (positiveSignalCount === 3) {
-    botAgreementBonus = 10;
-  }
-  // 2 or fewer: +0
-
-  if (botAgreementBonus > 0) {
-    score += botAgreementBonus;
+  // Bot convergence bonus - if multiple bots agree on value horse
+  if (valueHorse?.identified && valueHorse.botConvergenceCount >= 3) {
+    const bonus = 10;
+    score += bonus;
     bonusBreakdown.push({
-      name: `Bot Agreement (${positiveSignalCount}/4)`,
-      value: botAgreementBonus,
+      name: `Bot Convergence (${valueHorse.botConvergenceCount} bots)`,
+      value: bonus,
     });
   }
 
-  // --- PART 2: Algorithm Margin Bonus ---
-  // Check the point margin between rank 1 and rank 2 horses
-  let marginBonus = 0;
+  // Algorithm margin bonus - check point separation
+  const topHorse = aggregatedSignals.find((s) => s.algorithmRank === 1);
+  const secondHorse = aggregatedSignals.find((s) => s.algorithmRank === 2);
   if (topHorse && secondHorse) {
     const margin = topHorse.algorithmScore - secondHorse.algorithmScore;
-
     if (margin >= 20) {
-      marginBonus = 15;
-    } else if (margin >= 15) {
-      marginBonus = 10;
-    } else if (margin >= 10) {
-      marginBonus = 5;
-    }
-    // Under 10: +0
-
-    if (marginBonus > 0) {
-      score += marginBonus;
-      bonusBreakdown.push({ name: `Algorithm Margin (+${margin}pts)`, value: marginBonus });
+      const bonus = 5;
+      score += bonus;
+      bonusBreakdown.push({ name: `Strong Algorithm Margin (+${margin}pts)`, value: bonus });
     }
   }
 
-  // --- PART 3: Clean Favorite Bonus ---
-  // If ALL of these are true, add +10:
-  // - Favorite status is SOLID (not VULNERABLE)
-  // - Race type is CHALK or COMPETITIVE (not WIDE_OPEN)
-  // - No trip trouble flags on rank 2-4 horses
-  // - No pace advantage flags on rank 2-4 horses
-  const isSolidFavorite = !vulnerableFavorite?.isVulnerable;
-  const isGoodRaceType = raceType === 'CHALK' || raceType === 'COMPETITIVE';
-  const noTripTroubleOnContenders = tripTroubleCount === 0;
-  const noPaceAdvantageOnContenders = paceAdvantageCount === 0;
-
-  let cleanFavoriteBonus = 0;
-  if (
-    isSolidFavorite &&
-    isGoodRaceType &&
-    noTripTroubleOnContenders &&
-    noPaceAdvantageOnContenders
-  ) {
-    cleanFavoriteBonus = 10;
-    score += cleanFavoriteBonus;
-    bonusBreakdown.push({ name: 'Clean Favorite', value: cleanFavoriteBonus });
+  // Conflicting signals penalty
+  const conflictCount = aggregatedSignals.filter((s) => s.conflictingSignals).length;
+  if (conflictCount >= 2) {
+    const penalty = -10;
+    score += penalty;
+    bonusBreakdown.push({ name: `Conflicting Signals (${conflictCount})`, value: penalty });
   }
 
   // ============================================================================
   // DEBUG LOGGING
   // ============================================================================
   if (bonusBreakdown.length > 0) {
-    debugLog('[Confidence] Score calculation breakdown:');
-    debugLog(`  Base: 65`);
+    debugLog('[Confidence] Value-based score calculation:');
     for (const item of bonusBreakdown) {
       const sign = item.value > 0 ? '+' : '';
       debugLog(`  ${item.name}: ${sign}${item.value}`);
@@ -1761,13 +2020,19 @@ export function calculateConfidenceScore(
   }
 
   // Cap at 0-100
-  // Max possible: 65 + 20 (agreement) + 15 (margin) + 10 (clean) = 110, capped at 100
-  // Min possible: 65 - 15 - 15 - 15 - 15 = 5, but can go to 0 in extreme cases
   const finalScore = Math.max(0, Math.min(100, score));
 
   if (finalScore !== score) {
     debugLog(`  Final (after cap): ${finalScore}`);
   }
+
+  // Tier determination logging
+  let tier: string;
+  if (finalScore >= 80) tier = 'HIGH';
+  else if (finalScore >= 60) tier = 'MEDIUM';
+  else if (finalScore >= 40) tier = 'LOW';
+  else tier = 'MINIMAL';
+  debugLog(`  Tier: ${tier} (${finalScore}/100)`);
 
   return finalScore;
 }
@@ -1801,33 +2066,38 @@ export function calculateSizing(
   // Handle undefined/null confidenceScore - default to 50
   const effectiveConfidence = confidenceScore ?? 50;
 
-  // Note: template parameter kept for API compatibility but not used in flat betting
-  // (previously used for tier selection, now all non-PASS bets get STANDARD)
-  void template;
-
   let multiplier: number;
   let recommendation: SizingRecommendationType;
   let reasoning: string;
 
-  // FLAT BETTING STRATEGY
-  // Confidence scoring is inverted and unfixable with current signals.
-  // Higher confidence correlates with lower hit rates.
-  // But template selection works (+61.3% trifecta ROI).
-  // Solution: flat bet everything that passes template selection.
+  // FLAT BETTING STRATEGY with VALUE HORSE ROUTING
+  //
+  // PASS template = MINIMAL tier = No AI bet recommendation
+  // This is because Template A (solid favorite) has -59% trifecta ROI
+  // while Template B (vulnerable favorite / value horse) has +12% ROI
+  //
+  // The key insight: "solid favorite" = "market is right" = no value edge
+  // Bettable races require an identified value horse
 
-  // PASS threshold: confidence < 25 means skip this race entirely
-  // (This preserves the ability to filter out truly poor races)
-  if (effectiveConfidence < 25) {
+  // PASS template always means PASS sizing (no bet)
+  if (template === 'PASS') {
     multiplier = 0;
     recommendation = 'PASS';
-    reasoning = 'Insufficient confidence, skip this race';
+    reasoning = 'MINIMAL tier - solid favorite with no identified value horse';
+  }
+  // PASS threshold: confidence < 40 means MINIMAL tier (skip this race)
+  // This aligns with the new MINIMAL tier cutoff
+  else if (effectiveConfidence < 40) {
+    multiplier = 0;
+    recommendation = 'PASS';
+    reasoning = 'MINIMAL tier - no actionable value edge identified';
   }
   // All non-PASS bets get STANDARD sizing (1.0x multiplier)
-  // Template selection is the primary edge, not confidence-based sizing
+  // Template selection and value horse identification are the primary edges
   else {
     multiplier = 1.0;
     recommendation = 'STANDARD';
-    reasoning = 'Flat betting - template selection is primary edge';
+    reasoning = 'Flat betting - value horse identified, template selection is primary edge';
   }
 
   // Note: Confidence score is still calculated and logged for future analysis,
@@ -1885,9 +2155,16 @@ export function buildRaceVerdict(
   const recommendation = sizing.recommendation;
 
   switch (template) {
+    case 'PASS':
+      // PASS template - MINIMAL tier, algorithm picks only
+      summary = 'Algorithm picks only - no AI bet recommendation (solid favorite, no value edge)';
+      return {
+        action: 'PASS',
+        summary,
+      };
     case 'A':
-      // Solid favorite - key the top pick
-      summary = `Bet ${recommendation} - Solid favorite, key #${algorithmTop4[0] ?? '?'}`;
+      // Solid favorite with identified value horse - key the top pick
+      summary = `Bet ${recommendation} - Solid favorite with value angle, key #${algorithmTop4[0] ?? '?'}`;
       break;
     case 'B':
       // Vulnerable favorite - key the second choice
@@ -1908,23 +2185,29 @@ export function buildRaceVerdict(
 }
 
 /**
- * Build ticket construction using the three-template system
+ * Build ticket construction using the three-template system with VALUE HORSE ROUTING
+ *
+ * CRITICAL CHANGE: Template A (Solid Favorite) now routes to MINIMAL tier
+ * because "solid favorite" means "market is right" = no value edge.
  *
  * Philosophy:
  * - Algorithm top 4 are SACRED — never demoted by AI
- * - Template selection based on favorite vulnerability and field type
- * - No more expansion horses — they weren't hitting the board
+ * - Template selection based on favorite vulnerability, field type, AND value horse
+ * - Bettable races (HIGH/MEDIUM/LOW) require an identified value horse
+ * - SOLID favorite without value horse → PASS template → MINIMAL tier
  * - Vulnerable favorites stay on tickets but demoted from win position
  *
  * @param aggregatedSignals - Signals for all horses
  * @param vulnerableFavorite - Vulnerable favorite analysis
  * @param fieldSpread - Field spread analysis
+ * @param rawResults - Raw bot results (optional, for value horse identification)
  * @returns TicketConstruction object
  */
 export function buildTicketConstruction(
   aggregatedSignals: AggregatedSignals[],
   vulnerableFavorite: VulnerableFavoriteAnalysis | null,
-  fieldSpread: FieldSpreadAnalysis | null
+  fieldSpread: FieldSpreadAnalysis | null,
+  rawResults?: MultiBotRawResults
 ): TicketConstruction {
   // Get algorithm top 4 and top 5 (program numbers in rank order)
   const sortedByAlgoRank = [...aggregatedSignals].sort((a, b) => a.algorithmRank - b.algorithmRank);
@@ -1945,15 +2228,75 @@ export function buildTicketConstruction(
     `[VULN] Flags: ${flagCount}, BotConfidence: ${botConfidence}, BotVulnerable: ${botVulnerable}, FinalStatus: ${favoriteStatus}`
   );
 
-  // Select template
-  const [template, templateReason] = selectTemplate(raceType, favoriteStatus, vulnerableFavorite);
+  // ============================================================================
+  // NEW: Identify value horse from bot outputs
+  // This is the KEY to the new confidence tier routing
+  // ============================================================================
+  const valueHorse: ValueHorseIdentification = rawResults
+    ? identifyValueHorse(aggregatedSignals, rawResults, favoriteStatus)
+    : {
+        identified: false,
+        programNumber: null,
+        horseName: null,
+        sources: [],
+        signalStrength: 'NONE',
+        angle: null,
+        valueOdds: null,
+        botConvergenceCount: 0,
+        reasoning: 'No raw results available for value horse identification',
+      };
 
-  // Build tickets (with base costs)
-  const exactaBase = buildExactaTicket(template, algorithmTop4);
-  const trifectaBase = buildTrifectaTicket(template, algorithmTop4, algorithmTop5);
+  console.log(
+    `[VALUE] Identified: ${valueHorse.identified}, ` +
+      `Horse: ${valueHorse.identified ? `#${valueHorse.programNumber} ${valueHorse.horseName}` : 'None'}, ` +
+      `Signal: ${valueHorse.signalStrength}, Bots: ${valueHorse.botConvergenceCount}`
+  );
 
-  // Calculate confidence score
-  const confidenceScore = calculateConfidenceScore(raceType, vulnerableFavorite, aggregatedSignals);
+  // ============================================================================
+  // Select template - NOW CONSIDERS VALUE HORSE
+  // Template A (solid favorite) routes to PASS if no value horse identified
+  // ============================================================================
+  const [template, templateReason] = selectTemplate(
+    raceType,
+    favoriteStatus,
+    vulnerableFavorite,
+    valueHorse
+  );
+
+  console.log(`[TEMPLATE] ${template}: ${templateReason}`);
+
+  // Build tickets (with base costs) - PASS template gets empty tickets
+  let exactaBase: ExactaConstruction;
+  let trifectaBase: TrifectaConstruction;
+
+  if (template === 'PASS') {
+    // PASS template: no bet construction (algorithm picks only)
+    exactaBase = {
+      winPosition: [],
+      placePosition: [],
+      combinations: 0,
+      estimatedCost: 0,
+    };
+    trifectaBase = {
+      winPosition: [],
+      placePosition: [],
+      showPosition: [],
+      combinations: 0,
+      estimatedCost: 0,
+    };
+  } else {
+    exactaBase = buildExactaTicket(template, algorithmTop4);
+    trifectaBase = buildTrifectaTicket(template, algorithmTop4, algorithmTop5);
+  }
+
+  // Calculate confidence score - NOW USES VALUE HORSE
+  const confidenceScore = calculateConfidenceScore(
+    raceType,
+    vulnerableFavorite,
+    aggregatedSignals,
+    valueHorse,
+    favoriteStatus
+  );
 
   // Calculate sizing based on confidence and template
   const sizing = calculateSizing(
@@ -1983,6 +2326,7 @@ export function buildTicketConstruction(
     algorithmTop4,
     favoriteStatus,
     favoriteVulnerabilityFlags,
+    valueHorse,
     exacta,
     trifecta,
     raceType,
@@ -2181,12 +2525,13 @@ export function combineMultiBotResults(
   // ============================================================================
   // STEP 2: Build ticket construction (THREE-TEMPLATE SYSTEM)
   // ============================================================================
-  debugLog('\n--- TICKET CONSTRUCTION (Three-Template System) ---');
+  debugLog('\n--- TICKET CONSTRUCTION (Three-Template System with Value Horse) ---');
 
   const ticketConstruction = buildTicketConstruction(
     aggregatedSignals,
     vulnerableFavorite,
-    fieldSpread
+    fieldSpread,
+    rawResults // Pass raw results for value horse identification
   );
 
   debugLog(`Template: ${ticketConstruction.template} - ${ticketConstruction.templateReason}`);
@@ -2265,10 +2610,27 @@ export function combineMultiBotResults(
   const rank2Horse = rankedScores[1];
 
   switch (ticketConstruction.template) {
-    case 'A':
+    case 'PASS':
+      // MINIMAL tier: No AI bet recommendation, algorithm picks only
       narrativeParts.push(
-        `TEMPLATE A (Solid Favorite): Key #${rank1Horse?.programNumber} ${rank1Horse?.horseName} in win position.`
+        `MINIMAL TIER (No Value Edge): Solid favorite with no identified value horse. ` +
+          `Algorithm picks: #${rank1Horse?.programNumber} ${rank1Horse?.horseName} top rated. ` +
+          `No AI bet recommendation - use algorithm projected finishes for reference only.`
       );
+      break;
+    case 'A':
+      // Template A with identified value horse (rare case)
+      if (ticketConstruction.valueHorse?.identified) {
+        narrativeParts.push(
+          `TEMPLATE A (Solid Favorite + Value): Key #${rank1Horse?.programNumber} ${rank1Horse?.horseName} in win position. ` +
+            `Value horse: #${ticketConstruction.valueHorse.programNumber} ${ticketConstruction.valueHorse.horseName} ` +
+            `(${ticketConstruction.valueHorse.angle}).`
+        );
+      } else {
+        narrativeParts.push(
+          `TEMPLATE A (Solid Favorite): Key #${rank1Horse?.programNumber} ${rank1Horse?.horseName} in win position.`
+        );
+      }
       break;
     case 'B':
       narrativeParts.push(
@@ -2277,11 +2639,25 @@ export function combineMultiBotResults(
       if (ticketConstruction.favoriteVulnerabilityFlags[0]) {
         narrativeParts.push(`Vulnerability: ${ticketConstruction.favoriteVulnerabilityFlags[0]}.`);
       }
+      // Include value horse info if identified
+      if (
+        ticketConstruction.valueHorse?.identified &&
+        ticketConstruction.valueHorse.programNumber !== rank2Horse?.programNumber
+      ) {
+        narrativeParts.push(
+          `Value angle: #${ticketConstruction.valueHorse.programNumber} ${ticketConstruction.valueHorse.horseName} (${ticketConstruction.valueHorse.angle}).`
+        );
+      }
       break;
     case 'C':
       narrativeParts.push(
         `TEMPLATE C (Wide Open): Full box top 4-5. No clear standout - spread your picks.`
       );
+      if (ticketConstruction.valueHorse?.identified) {
+        narrativeParts.push(
+          `Value angle: #${ticketConstruction.valueHorse.programNumber} ${ticketConstruction.valueHorse.horseName} (${ticketConstruction.valueHorse.angle}).`
+        );
+      }
       break;
   }
 
@@ -2438,6 +2814,9 @@ export function combineMultiBotResults(
     vulnerableFavorite?.confidence === 'HIGH' &&
     vulnerableFavorite?.reasons?.length >= 2;
 
+  // PASS template or Template C routes to non-bettable
+  // MINIMAL confidence also means not bettable (algorithm picks only)
+  const isMinimalTier = ticketConstruction.template === 'PASS' || confidence === 'MINIMAL';
   const isChaoticRace =
     ticketConstruction.template === 'C' || ticketConstruction.raceType === 'WIDE_OPEN';
 
@@ -2479,7 +2858,8 @@ export function combineMultiBotResults(
     },
     successCount: botSuccessCount,
     totalBots: 4,
-    hasOverride: ticketConstruction.template !== 'A', // Template B or C means we modified from default
+    // Template B, C, or PASS means we modified from default (Template A was formerly default)
+    hasOverride: ticketConstruction.template !== 'A' || !ticketConstruction.valueHorse?.identified,
     signalSummary: `Template ${ticketConstruction.template}: ${ticketConstruction.templateReason}`,
   };
 
@@ -2513,12 +2893,14 @@ export function combineMultiBotResults(
   );
   console.log('%c├─────────────────────────────────────────────────────────┤', 'color: #888');
   console.log(
-    `%c│ TEMPLATE: ${ticketConstruction.template}`,
-    ticketConstruction.template === 'A'
-      ? 'color: #10b981; font-weight: bold'
-      : ticketConstruction.template === 'B'
-        ? 'color: #f59e0b; font-weight: bold'
-        : 'color: #ef4444; font-weight: bold'
+    `%c│ TEMPLATE: ${ticketConstruction.template}${ticketConstruction.template === 'PASS' ? ' (MINIMAL TIER - No AI Bet)' : ''}`,
+    ticketConstruction.template === 'PASS'
+      ? 'color: #6b7280; font-weight: bold' // Gray for PASS/MINIMAL
+      : ticketConstruction.template === 'A'
+        ? 'color: #10b981; font-weight: bold'
+        : ticketConstruction.template === 'B'
+          ? 'color: #f59e0b; font-weight: bold'
+          : 'color: #ef4444; font-weight: bold'
   );
   console.log(`%c│ ${ticketConstruction.templateReason}`, 'color: #b4b4b6');
   console.log('%c├─────────────────────────────────────────────────────────┤', 'color: #888');
@@ -2599,6 +2981,13 @@ export function combineMultiBotResults(
 
   debugLog('=== END SMART COMBINER v3 ===\n');
 
+  // CRITICAL: bettableRace is false for:
+  // 1. PASS template (solid favorite, no value horse → MINIMAL tier)
+  // 2. MINIMAL confidence tier (no identified value edge)
+  // 3. Chaotic races (Template C / wide open)
+  // Top Bets / bet recommendations pull ONLY from HIGH/MEDIUM/LOW races
+  const isBettableRace = !isMinimalTier && !isChaoticRace;
+
   return {
     raceId: `race-${race.header.raceNumber}`,
     raceNumber: race.header.raceNumber,
@@ -2606,7 +2995,7 @@ export function combineMultiBotResults(
     processingTimeMs,
     raceNarrative,
     confidence,
-    bettableRace: !isChaoticRace,
+    bettableRace: isBettableRace,
     horseInsights,
     topPick,
     avoidList,

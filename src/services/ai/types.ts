@@ -436,16 +436,65 @@ export interface BotStatusDebugInfo {
 }
 
 // ============================================================================
+// VALUE HORSE IDENTIFICATION (for confidence tier routing)
+// ============================================================================
+
+/**
+ * Source of value horse identification
+ * Indicates which bot(s) identified the value horse
+ */
+export type ValueHorseSource =
+  | 'TRIP_TROUBLE' // Horse has masked ability due to trip issues
+  | 'PACE_ADVANTAGE' // Horse has clear pace tactical advantage
+  | 'VULNERABLE_FAVORITE' // Opportunity created by weak favorite
+  | 'FIELD_SPREAD' // Wide open field with no deserving favorite
+  | 'MULTIPLE'; // Multiple bots converge on same horse
+
+/**
+ * Strength of value horse signal
+ * Used to determine confidence tier (HIGH/MEDIUM/LOW)
+ */
+export type ValueSignalStrength = 'VERY_STRONG' | 'STRONG' | 'MODERATE' | 'WEAK' | 'NONE';
+
+/**
+ * Value horse identification result
+ *
+ * A race is bettable (HIGH/MEDIUM/LOW) ONLY when bots identify a specific value horse.
+ * If no value horse is identified, the race routes to MINIMAL tier.
+ */
+export interface ValueHorseIdentification {
+  /** Whether a value horse was identified */
+  identified: boolean;
+  /** Program number of identified value horse (null if none) */
+  programNumber: number | null;
+  /** Horse name (null if none) */
+  horseName: string | null;
+  /** Sources that identified this horse as value */
+  sources: ValueHorseSource[];
+  /** Signal strength for confidence tier determination */
+  signalStrength: ValueSignalStrength;
+  /** Specific angle/reason for value (e.g., "Pace advantage at 8-1 odds") */
+  angle: string | null;
+  /** Estimated odds at which this horse offers value */
+  valueOdds: number | null;
+  /** Number of bots that flagged this horse */
+  botConvergenceCount: number;
+  /** Detailed reasoning for value identification */
+  reasoning: string;
+}
+
+// ============================================================================
 // TICKET CONSTRUCTION (Three-Template System)
 // ============================================================================
 
 /**
  * Template type for ticket construction
- * - A: Solid Favorite (favorite in win position)
+ * - A: Solid Favorite (favorite in win position) - NOW ROUTES TO MINIMAL
  * - B: Vulnerable Favorite (favorite demoted to place only)
  * - C: Wide Open/Chaos (full box)
+ * - PASS: No bet recommendation (solid favorite with no value horse)
  */
-export type TicketTemplate = 'A' | 'B' | 'C';
+export type TicketTemplate = 'A' | 'B' | 'C' | 'PASS';
 
 /**
  * Race type classification from Field Spread bot
@@ -495,9 +544,11 @@ export interface TrifectaConstruction {
  * - Template selection based on favorite vulnerability and field type
  * - No more expansion horses — they weren't hitting the board
  * - Vulnerable favorites stay on tickets but demoted from win position
+ * - SOLID favorite (Template A) routes to MINIMAL tier (no value edge)
+ * - Bettable races (HIGH/MEDIUM/LOW) require identified value horse
  */
 export interface TicketConstruction {
-  /** Template selection: A (solid), B (vulnerable), C (chaos) */
+  /** Template selection: A (solid→MINIMAL), B (vulnerable), C (chaos), PASS */
   template: TicketTemplate;
   /** Reason for template selection */
   templateReason: string;
@@ -510,6 +561,9 @@ export interface TicketConstruction {
   /** Vulnerability flags (empty if SOLID) */
   favoriteVulnerabilityFlags: string[];
 
+  /** Value horse identification - required for bettable races */
+  valueHorse: ValueHorseIdentification;
+
   /** Exacta construction */
   exacta: ExactaConstruction;
 
@@ -519,7 +573,7 @@ export interface TicketConstruction {
   /** Race classification from Field Spread bot */
   raceType: RaceType;
 
-  /** Confidence score 0-100, used for sizing */
+  /** Confidence score 0-100, used for sizing and tier assignment */
   confidenceScore: number;
 
   /** Sizing recommendations based on confidence and template */
