@@ -1326,11 +1326,10 @@ async function runValidation(): Promise<ValidationResult> {
   });
 
   // Verdict logic
-  // templatesWork: Template B exacta rate > algorithm exacta rate on same races
-  const algorithmExactaRate = totalRaces > 0 ? (algorithmExactaBox4 / totalRaces) * 100 : 0;
-  const templateBExactaRate =
-    templateStats.B.races > 0 ? (templateStats.B.exactaHits / templateStats.B.races) * 100 : 0;
-  const templatesWork = templateBExactaRate > algorithmExactaRate;
+  // templatesWork: Template B exacta ROI > algorithm exacta ROI
+  // Template B intentionally bets fewer races with tighter tickets - lower hit rate, better ROI
+  const templateBExactaROI = calculateTemplateROI(templateStats.B, 'exacta');
+  const templatesWork = templateBExactaROI > algorithmExactaROI;
 
   // roiPositive: AI ROI > Algorithm ROI
   const roiPositive = aiExactaROI > algorithmExactaROI;
@@ -1578,7 +1577,7 @@ function printReport(result: ValidationResult): void {
   console.log('VERDICT');
   console.log('─'.repeat(70));
   console.log(
-    `${verdict.templatesWork ? '✓' : '✗'} Templates work (B outperforms naive on vulnerable favorites)`
+    `${verdict.templatesWork ? '✓' : '✗'} Templates work (B ROI outperforms algorithm baseline ROI)`
   );
   console.log(
     `${verdict.sizingCalibrated ? '✓' : '✗'} Sizing calibrated (hit rate increases with confidence)`
