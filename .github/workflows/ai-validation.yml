@@ -70,7 +70,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "#### Verdict" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            cat validation-results.json | jq -r '.verdict | "Expansion Horses Add Value: \(.expansionHorsesAddValue)\nVulnerable Detection Works: \(.vulnerableDetectionWorks)\nTicket Strategies Improve: \(.ticketStrategiesImprove)\n\nRECOMMENDATION: \(.overallRecommendation)"' 2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "Could not parse verdict" >> $GITHUB_STEP_SUMMARY
+            cat validation-results.json | jq -r '.verdict | "Templates Work: \(.templatesWork)\nSizing Calibrated: \(.sizingCalibrated)\nROI Positive: \(.roiPositive)\n\nRECOMMENDATION: \(.recommendation)"' 2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "Could not parse verdict" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
 
             echo "" >> $GITHUB_STEP_SUMMARY
