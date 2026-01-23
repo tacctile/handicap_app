@@ -374,11 +374,11 @@ export function filterHighValueRaces(
  * Sort races by confidence level (HIGH first, then MEDIUM, then LOW)
  */
 export function sortByConfidence(races: RaceAnalysisResult[]): RaceAnalysisResult[] {
-  const confidenceOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+  const confidenceOrder = { HIGH: 0, MEDIUM: 1, LOW: 2, MINIMAL: 3 };
 
   return [...races].sort((a, b) => {
-    const aConf = a.analysis?.confidence ?? 'LOW';
-    const bConf = b.analysis?.confidence ?? 'LOW';
+    const aConf = a.analysis?.confidence ?? 'MINIMAL';
+    const bConf = b.analysis?.confidence ?? 'MINIMAL';
     return confidenceOrder[aConf] - confidenceOrder[bConf];
   });
 }
