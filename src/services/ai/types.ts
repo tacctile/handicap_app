@@ -249,8 +249,65 @@ export interface FieldSpreadAnalysis {
   horseClassifications?: HorseClassificationData[];
 }
 
+// ============================================================================
+// CLASS DROP BOT TYPES
+// ============================================================================
+
 /**
- * Combined raw results from all 4 multi-bot analyses
+ * Class drop classification levels
+ * - MAJOR: >= 40% drop (strongest signal)
+ * - MODERATE: 25-39% drop
+ * - MINOR: 20-24% drop
+ * - RISING: >= 20% rise (negative signal / penalty)
+ * - null: < 20% drop (ignored)
+ */
+export type ClassDropClassification = 'MAJOR' | 'MODERATE' | 'MINOR' | 'RISING' | null;
+
+/**
+ * Per-horse class drop analysis
+ */
+export interface ClassDropHorse {
+  /** Program number */
+  programNumber: number;
+  /** Horse name */
+  horseName: string;
+  /** Baseline class (median of last 3 races claiming price or purse) */
+  baselineClass: number;
+  /** Today's class (current race claiming price or purse) */
+  todayClass: number;
+  /** Drop percentage ((baseline - today) / baseline) */
+  dropPercentage: number;
+  /** Classification based on drop percentage */
+  classification: ClassDropClassification;
+  /** Signal boost based on classification (0, 0.5, 1.0, 1.5, or -0.5 for RISING) */
+  signalBoost: number;
+  /** Whether horse is flagged for class drop signal */
+  flagged: boolean;
+  /** Reason for flag or null if not flagged */
+  reason: string | null;
+  /** Safety filters that were applied (e.g., "chronic dropper", "negative form") */
+  safetyFiltersApplied: string[];
+}
+
+/**
+ * Class Drop Bot - Identifies horses dropping significantly in class
+ *
+ * REINFORCEMENT-ONLY ARCHITECTURE:
+ * This bot CANNOT create value candidates alone. It can only strengthen
+ * horses already flagged by other bots (Trip Trouble or Pace Scenario).
+ * This prevents the failure mode where class drop creates too many weak candidates.
+ */
+export interface ClassDropAnalysis {
+  /** Race identifier */
+  raceId: string;
+  /** Per-horse class drop analysis */
+  horses: ClassDropHorse[];
+  /** When analysis was performed */
+  analysisTimestamp: number;
+}
+
+/**
+ * Combined raw results from all 5 multi-bot analyses
  */
 export interface MultiBotRawResults {
   /** Trip trouble analysis (null if bot failed) */
@@ -261,6 +318,8 @@ export interface MultiBotRawResults {
   vulnerableFavorite: VulnerableFavoriteAnalysis | null;
   /** Field spread analysis (null if bot failed) */
   fieldSpread: FieldSpreadAnalysis | null;
+  /** Class drop analysis (null if bot failed) */
+  classDrop: ClassDropAnalysis | null;
 }
 
 /**
@@ -282,7 +341,7 @@ export interface AIServiceConfig {
  */
 export interface OverrideReason {
   /** Type of signal that triggered the override */
-  signal: 'tripTrouble' | 'paceAdvantage' | 'vulnerableFavorite' | 'combined';
+  signal: 'tripTrouble' | 'paceAdvantage' | 'vulnerableFavorite' | 'classDrop' | 'combined';
   /** Confidence level of the signal */
   confidence: 'HIGH' | 'MEDIUM' | 'LOW';
   /** Human-readable description */
@@ -332,6 +391,14 @@ export interface AggregatedSignals {
   keyCandidate: boolean;
   /** Whether horse should only be used in spread positions */
   spreadOnly: boolean;
+
+  // Class Drop signals (REINFORCEMENT-ONLY: only applies if another bot flagged)
+  /** Class drop boost: 0, 0.5, 1.0, or 1.5 (can be negative -0.5 for RISING) */
+  classDropBoost: number;
+  /** Whether class drop was flagged (classification found) */
+  classDropFlagged: boolean;
+  /** Reason for class drop flag or null */
+  classDropReason: string | null;
 
   // Aggregated totals
   /** Sum of all adjustments (capped at ±3) */

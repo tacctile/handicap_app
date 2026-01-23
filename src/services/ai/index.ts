@@ -45,6 +45,10 @@ import type {
   SizingRecommendation,
   SizingRecommendationType,
   RaceVerdict,
+  // Class Drop Bot types
+  ClassDropAnalysis,
+  ClassDropHorse,
+  ClassDropClassification,
 } from './types';
 import { recordAIDecision } from './metrics/recorder';
 
@@ -99,6 +103,10 @@ export type {
   SizingRecommendation,
   SizingRecommendationType,
   RaceVerdict,
+  // Class Drop Bot types
+  ClassDropAnalysis,
+  ClassDropHorse,
+  ClassDropClassification,
   // Legacy types (deprecated)
   BetConstructionGuidance,
   ExactaStrategy,
@@ -274,17 +282,293 @@ export function checkAIServiceStatus(): AIServiceStatus {
 }
 
 // ============================================================================
+// CLASS DROP BOT - LOCAL ANALYSIS (NO API CALL)
+// ============================================================================
+
+/**
+ * Analyze class drop for all horses in a race
+ *
+ * REINFORCEMENT-ONLY ARCHITECTURE:
+ * This bot CANNOT create value candidates alone. It can only strengthen
+ * horses already flagged by other bots (Trip Trouble or Pace Scenario).
+ *
+ * Class drop is calculated by comparing today's class level (claiming price or purse)
+ * against the median of the horse's last 3 races.
+ *
+ * @param race - Parsed race data from DRF file
+ * @param scoringResult - Algorithm scoring results
+ * @returns ClassDropAnalysis with per-horse analysis
+ */
+export function analyzeClassDrop(
+  race: ParsedRace,
+  scoringResult: RaceScoringResult
+): ClassDropAnalysis {
+  const raceId = `${race.header.trackCode}-${race.header.raceNumber}`;
+  const horses: ClassDropHorse[] = [];
+
+  // Get today's class level
+  // Use claiming price if > 0, otherwise use purse
+  const todayClaimingPrice = race.header.claimingPrice ?? 0;
+  const todayPurse = race.header.purse ?? 0;
+  const todayClass = todayClaimingPrice > 0 ? todayClaimingPrice : todayPurse;
+
+  // Determine if today's race is claiming or allowance/stakes
+  const todayRaceType = race.header.classification;
+  const isTodayClaiming = todayRaceType.includes('claiming');
+
+  debugLog(`[ClassDrop] Analyzing race ${raceId} - Today class: $${todayClass} (${todayRaceType})`);
+
+  for (const horse of race.horses) {
+    // Skip scratched horses
+    if (horse.isScratched) continue;
+
+    // Get scoring data for this horse
+    const horseScore = scoringResult.scores.find((s) => s.programNumber === horse.programNumber);
+    if (!horseScore) continue;
+
+    const pastPerformances = horseScore.pastPerformances || [];
+
+    // Edge case: First-time starter (0 past races) - return null (silent)
+    if (pastPerformances.length === 0) {
+      debugLog(
+        `[ClassDrop] #${horse.programNumber} ${horse.horseName}: First-time starter - skipped`
+      );
+      continue;
+    }
+
+    // Edge case: Single past race - return null (insufficient baseline)
+    if (pastPerformances.length === 1) {
+      debugLog(
+        `[ClassDrop] #${horse.programNumber} ${horse.horseName}: Only 1 PP - insufficient baseline`
+      );
+      continue;
+    }
+
+    // Get last 3 races (or 2 if only 2 available)
+    const recentRaces = pastPerformances.slice(0, 3);
+
+    // Determine if we need to handle cross-surface moves or claiming/allowance transitions
+    const pastRaceTypes = recentRaces.map((pp) => pp.classification);
+    const anyPastClaiming = pastRaceTypes.some((t) => t.includes('claiming'));
+    const anyPastAllowance = pastRaceTypes.some(
+      (t) => t === 'allowance' || t === 'allowance-optional-claiming' || t === 'starter-allowance'
+    );
+
+    // Edge case: Claiming to Allowance - return null (cannot cleanly compare)
+    if (
+      anyPastClaiming &&
+      !isTodayClaiming &&
+      (todayRaceType === 'allowance' || todayRaceType.includes('stakes'))
+    ) {
+      debugLog(
+        `[ClassDrop] #${horse.programNumber} ${horse.horseName}: Claiming to Allowance - cannot compare`
+      );
+      continue;
+    }
+
+    // Calculate class values for past races
+    // Edge case: Cross-surface moves - use purse only
+    const crossSurface = recentRaces.some((pp) => pp.surface !== race.header.surface);
+
+    const pastClassValues: number[] = [];
+    for (const pp of recentRaces) {
+      let classValue: number;
+      if (crossSurface) {
+        // Cross-surface: use purse only
+        classValue = pp.purse || 0;
+      } else {
+        // Same surface: use claiming price if > 0, else purse
+        classValue = pp.claimingPrice && pp.claimingPrice > 0 ? pp.claimingPrice : pp.purse || 0;
+      }
+      if (classValue > 0) {
+        pastClassValues.push(classValue);
+      }
+    }
+
+    // If we couldn't get valid class values, skip
+    if (pastClassValues.length === 0) {
+      debugLog(
+        `[ClassDrop] #${horse.programNumber} ${horse.horseName}: No valid class values found`
+      );
+      continue;
+    }
+
+    // Calculate baseline (median of past races)
+    pastClassValues.sort((a, b) => a - b);
+    let baseline: number;
+    if (pastClassValues.length === 1) {
+      baseline = pastClassValues[0]!;
+    } else if (pastClassValues.length === 2) {
+      baseline = (pastClassValues[0]! + pastClassValues[1]!) / 2;
+    } else {
+      // Median of 3
+      baseline = pastClassValues[1]!;
+    }
+
+    // Calculate drop percentage
+    // drop_pct = (baseline - today) / baseline
+    // Positive = dropping, Negative = rising
+    const dropPercentage = (baseline - todayClass) / baseline;
+
+    // Check for Allowance to Claiming transition - automatic MODERATE
+    const wasAllowance = anyPastAllowance && !anyPastClaiming;
+    const isEnteringForSale = wasAllowance && isTodayClaiming;
+
+    // Classify the drop
+    let classification: ClassDropClassification = null;
+    let signalBoost = 0;
+
+    if (isEnteringForSale) {
+      // Automatic MODERATE for Allowance → Claiming
+      classification = 'MODERATE';
+      signalBoost = 1.0;
+      debugLog(
+        `[ClassDrop] #${horse.programNumber} ${horse.horseName}: Allowance to Claiming - auto MODERATE`
+      );
+    } else if (dropPercentage < 0 && Math.abs(dropPercentage) >= 0.2) {
+      // RISING: 20%+ class rise (penalty)
+      classification = 'RISING';
+      signalBoost = -0.5;
+    } else if (dropPercentage >= 0.4) {
+      // MAJOR: 40%+ drop
+      classification = 'MAJOR';
+      signalBoost = 1.5;
+    } else if (dropPercentage >= 0.25) {
+      // MODERATE: 25-39% drop
+      classification = 'MODERATE';
+      signalBoost = 1.0;
+    } else if (dropPercentage >= 0.2) {
+      // MINOR: 20-24% drop
+      classification = 'MINOR';
+      signalBoost = 0.5;
+    }
+    // else: < 20% drop - IGNORE (null classification)
+
+    // If no classification (< 20% change), skip this horse
+    if (classification === null) {
+      debugLog(
+        `[ClassDrop] #${horse.programNumber} ${horse.horseName}: ${(dropPercentage * 100).toFixed(1)}% - below threshold`
+      );
+      continue;
+    }
+
+    // Apply safety filters
+    const safetyFiltersApplied: string[] = [];
+    let reasonOverride: string | null = null;
+
+    // Safety filter 1: Chronic dropper (dropped class in 2+ consecutive starts)
+    if (pastPerformances.length >= 2 && classification !== 'RISING') {
+      const pp1Class =
+        (pastPerformances[0]?.claimingPrice ?? 0) > 0
+          ? pastPerformances[0]?.claimingPrice
+          : pastPerformances[0]?.purse;
+      const pp2Class =
+        (pastPerformances[1]?.claimingPrice ?? 0) > 0
+          ? pastPerformances[1]?.claimingPrice
+          : pastPerformances[1]?.purse;
+      const pp3Class = pastPerformances[2]
+        ? (pastPerformances[2]?.claimingPrice ?? 0) > 0
+          ? pastPerformances[2]?.claimingPrice
+          : pastPerformances[2]?.purse
+        : null;
+
+      // Check if class has been dropping consecutively
+      let consecutiveDrops = 0;
+      if (pp1Class && pp2Class && pp1Class < pp2Class) {
+        consecutiveDrops++;
+        if (pp3Class && pp2Class < pp3Class) {
+          consecutiveDrops++;
+        }
+      }
+
+      if (consecutiveDrops >= 2) {
+        safetyFiltersApplied.push('chronic dropper (2+ consecutive drops)');
+        signalBoost = 0;
+        reasonOverride = 'Chronic dropper - no boost applied';
+        debugLog(`[ClassDrop] #${horse.programNumber}: Chronic dropper filter - boost zeroed`);
+      }
+    }
+
+    // Safety filter 2: Negative form (last 2 speed figures declining)
+    if (signalBoost > 0 && pastPerformances.length >= 2) {
+      const fig1 = pastPerformances[0]?.speedFigures?.beyer ?? null;
+      const fig2 = pastPerformances[1]?.speedFigures?.beyer ?? null;
+
+      if (fig1 !== null && fig2 !== null && fig1 < fig2) {
+        // Speed figures declining
+        const fig3 = pastPerformances[2]?.speedFigures?.beyer ?? null;
+        if (fig3 === null || fig2 < fig3) {
+          // Two consecutive declines
+          safetyFiltersApplied.push('negative form (declining speed figures)');
+          signalBoost = Math.max(0, signalBoost - 0.5);
+          debugLog(
+            `[ClassDrop] #${horse.programNumber}: Negative form filter - boost reduced by 0.5`
+          );
+        }
+      }
+    }
+
+    // Safety filter 3: Long layoff (>180 days since last race AND major drop)
+    if (signalBoost > 0 && classification === 'MAJOR') {
+      const daysSinceLastRace =
+        horse.daysSinceLastRace ?? horseScore.formIndicators?.daysSinceLastRace ?? 0;
+      if (daysSinceLastRace > 180) {
+        safetyFiltersApplied.push('long layoff (>180 days) + major drop');
+        signalBoost = Math.min(1.0, signalBoost);
+        debugLog(`[ClassDrop] #${horse.programNumber}: Long layoff filter - boost capped at 1.0`);
+      }
+    }
+
+    // Apply 0.9x multiplier for 2-race baseline
+    if (pastPerformances.length === 2 && signalBoost > 0) {
+      signalBoost = signalBoost * 0.9;
+      safetyFiltersApplied.push('2-race baseline (0.9x multiplier)');
+    }
+
+    // Build reason string
+    const reason =
+      reasonOverride ||
+      `${classification} class drop: ${(dropPercentage * 100).toFixed(0)}% ` +
+        `(baseline: $${baseline.toLocaleString()}, today: $${todayClass.toLocaleString()})`;
+
+    horses.push({
+      programNumber: horse.programNumber,
+      horseName: horse.horseName,
+      baselineClass: baseline,
+      todayClass,
+      dropPercentage,
+      classification,
+      signalBoost,
+      flagged: classification !== null && signalBoost !== 0,
+      reason,
+      safetyFiltersApplied,
+    });
+
+    debugLog(
+      `[ClassDrop] #${horse.programNumber} ${horse.horseName}: ${classification} ${(dropPercentage * 100).toFixed(1)}% boost=${signalBoost}`
+    );
+  }
+
+  return {
+    raceId,
+    horses,
+    analysisTimestamp: Date.now(),
+  };
+}
+
+// ============================================================================
 // MULTI-BOT PARALLEL ARCHITECTURE
 // ============================================================================
 
 /**
  * Get AI analysis using multi-bot parallel architecture
  *
- * Launches 4 specialized bots in parallel:
+ * Launches 5 specialized bots:
  * 1. Trip Trouble Bot - Identifies horses with masked ability
  * 2. Pace Scenario Bot - Analyzes pace dynamics
  * 3. Vulnerable Favorite Bot - Evaluates if favorite is beatable
  * 4. Field Spread Bot - Assesses competitive separation
+ * 5. Class Drop Bot - Identifies significant class drops (reinforcement-only)
  *
  * Results are combined into the standard AIRaceAnalysis format.
  *
@@ -333,7 +617,18 @@ export async function getMultiBotAnalysis(
     paceScenario: paceResult.status === 'fulfilled' ? paceResult.value : null,
     vulnerableFavorite: favoriteResult.status === 'fulfilled' ? favoriteResult.value : null,
     fieldSpread: spreadResult.status === 'fulfilled' ? spreadResult.value : null,
+    // Class Drop Bot runs synchronously (no API call needed)
+    classDrop: null,
   };
+
+  // Run Class Drop Bot (synchronous - local analysis, no API call)
+  try {
+    rawResults.classDrop = analyzeClassDrop(race, scoringResult);
+    debugLog(`[ClassDrop] Bot completed - ${rawResults.classDrop.horses.length} horses analyzed`);
+  } catch (err) {
+    debugError(`ClassDrop bot error:`, err instanceof Error ? err.message : err);
+    rawResults.classDrop = null;
+  }
 
   // Log detailed failure information (dev only)
   if (tripResult.status === 'rejected') {
@@ -385,12 +680,13 @@ export async function getMultiBotAnalysis(
 
 /**
  * Aggregate all bot signals for a single horse
- * Collects signals from all 4 bots and calculates total adjustment
+ * Collects signals from all 5 bots and calculates total adjustment
  *
  * CONSERVATIVE MODE (default) - TUNED THRESHOLDS:
  * - Trip trouble: +2 for HIGH confidence (2+ troubled races), +1 for MEDIUM
  * - Pace advantage: +2 for STRONG (lone speed), +1 for MODERATE
  * - Vulnerable favorite: -2 if HIGH + 2+ flags, -1 if HIGH + 1 flag, MEDIUM = flag only
+ * - Class drop: REINFORCEMENT-ONLY - only applies if another bot flagged the horse
  * - Competitive field: reduce adjustments by 25% (not 50%)
  * - Minimum for rank change: ±1
  * - Max position movement: 2 positions
@@ -399,7 +695,7 @@ export async function getMultiBotAnalysis(
  * @param horseName - Horse name
  * @param algorithmRank - Original algorithm rank
  * @param algorithmScore - Original algorithm score
- * @param rawResults - Raw results from all 4 bots
+ * @param rawResults - Raw results from all 5 bots
  * @param race - Parsed race data
  * @param options - Optional configuration for conservative mode
  * @returns Aggregated signals for this horse
@@ -413,7 +709,7 @@ export function aggregateHorseSignals(
   race: ParsedRace,
   options?: { conservativeMode?: boolean }
 ): AggregatedSignals {
-  const { tripTrouble, paceScenario, vulnerableFavorite, fieldSpread } = rawResults;
+  const { tripTrouble, paceScenario, vulnerableFavorite, fieldSpread, classDrop } = rawResults;
   const conservativeMode = options?.conservativeMode ?? currentConfig.conservativeMode ?? true;
 
   // Initialize signals with defaults
@@ -433,6 +729,9 @@ export function aggregateHorseSignals(
     classification: 'B', // Default to B if no field spread data
     keyCandidate: false,
     spreadOnly: false,
+    classDropBoost: 0,
+    classDropFlagged: false,
+    classDropReason: null,
     totalAdjustment: 0,
     adjustedRank: algorithmRank,
     signalCount: 0,
@@ -634,6 +933,56 @@ export function aggregateHorseSignals(
   }
 
   // =========================================================================
+  // CLASS DROP SIGNALS (REINFORCEMENT-ONLY)
+  // =========================================================================
+  // CRITICAL: Class Drop can ONLY strengthen horses already flagged by other bots.
+  // It cannot create value candidates on its own. This prevents the failure mode
+  // where class drop creates too many weak candidates.
+  if (classDrop) {
+    const classDropHorse = classDrop.horses.find((h) => h.programNumber === programNumber);
+    if (classDropHorse && classDropHorse.flagged) {
+      // Store the raw class drop data
+      signals.classDropFlagged = true;
+      signals.classDropReason = classDropHorse.reason;
+
+      // REINFORCEMENT-ONLY: Only apply boost if another bot already flagged this horse
+      const hasOtherBotFlag =
+        signals.tripTroubleFlagged || (signals.paceAdvantageFlagged && signals.paceAdvantage > 0);
+
+      if (hasOtherBotFlag) {
+        // Apply the class drop boost
+        signals.classDropBoost = classDropHorse.signalBoost;
+        signals.signalCount++;
+
+        // Determine confidence based on classification
+        let confidence: 'HIGH' | 'MEDIUM' | 'LOW' = 'MEDIUM';
+        if (classDropHorse.classification === 'MAJOR') {
+          confidence = 'HIGH';
+        } else if (
+          classDropHorse.classification === 'MINOR' ||
+          classDropHorse.classification === 'RISING'
+        ) {
+          confidence = 'LOW';
+        }
+
+        signals.overrideReasons.push({
+          signal: 'classDrop',
+          confidence,
+          description: classDropHorse.reason || `Class drop ${classDropHorse.classification}`,
+        });
+
+        debugLog(
+          `[ClassDrop] #${programNumber}: Reinforcement applied - boost=${signals.classDropBoost}`
+        );
+      } else {
+        // REINFORCEMENT-ONLY: No other bot flagged this horse, so classDropBoost = 0
+        signals.classDropBoost = 0;
+        debugLog(`[ClassDrop] #${programNumber}: No reinforcement - not flagged by other bots`);
+      }
+    }
+  }
+
+  // =========================================================================
   // CALCULATE TOTAL ADJUSTMENT (capped at ±3)
   // =========================================================================
 
@@ -689,6 +1038,9 @@ export function aggregateHorseSignals(
       }
     }
   }
+
+  // Class drop boost (reinforcement-only - already filtered above)
+  totalAdj += signals.classDropBoost;
 
   // Cap at ±3
   signals.totalAdjustment = Math.max(-3, Math.min(3, totalAdj));
@@ -1352,6 +1704,7 @@ export function determineFavoriteStatus(
  * - Troubled trip excuse (Trip Trouble Bot)
  * - Vulnerable favorite creating opportunity (Vulnerable Favorite Bot)
  * - Wide open field with no deserving favorite (Field Spread Bot)
+ * - Class Drop Bot (REINFORCEMENT-ONLY: only strengthens existing candidates)
  *
  * @param aggregatedSignals - Signals for all horses
  * @param rawResults - Raw bot results
@@ -1523,6 +1876,43 @@ export function identifyValueHorse(
           'FIELD_SPREAD',
           angle,
           strengthBonus
+        );
+      }
+    }
+  }
+
+  // 5. CLASS DROP REINFORCEMENT (REINFORCEMENT-ONLY)
+  // CRITICAL: Class Drop cannot CREATE new value candidates - it can only STRENGTHEN
+  // existing candidates that were already flagged by other bots.
+  // This is the key to preventing the failure mode where class drop creates weak candidates.
+  const { classDrop } = rawResults;
+  if (classDrop?.horses) {
+    for (const classDropHorse of classDrop.horses) {
+      // Only process horses that were flagged by class drop
+      if (!classDropHorse.flagged || classDropHorse.signalBoost === 0) continue;
+
+      // Check if this horse already exists as a candidate (flagged by another bot)
+      const existingCandidate = candidates.get(classDropHorse.programNumber);
+
+      if (existingCandidate) {
+        // REINFORCEMENT: Horse is already a candidate - strengthen it
+        // Convert signalBoost (0.5, 1.0, 1.5, -0.5) to strengthBonus (scale by 10)
+        const strengthBonus = classDropHorse.signalBoost * 10;
+        existingCandidate.signalStrength += strengthBonus;
+        existingCandidate.botCount++;
+        existingCandidate.angles.push(
+          classDropHorse.reason || `Class drop ${classDropHorse.classification}`
+        );
+
+        debugLog(
+          `[ClassDrop] Reinforced #${classDropHorse.programNumber} ${classDropHorse.horseName}: ` +
+            `+${strengthBonus} strength, botCount now ${existingCandidate.botCount}`
+        );
+      } else {
+        // NOT a candidate - Class Drop does NOT create new candidates
+        debugLog(
+          `[ClassDrop] Skipped #${classDropHorse.programNumber} ${classDropHorse.horseName}: ` +
+            `Not flagged by other bots (reinforcement-only)`
         );
       }
     }
