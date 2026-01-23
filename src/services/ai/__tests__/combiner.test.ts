@@ -1712,7 +1712,7 @@ describe('combineMultiBotResults', () => {
       // valuePlay is deprecated - always null now
       // Value horse identification is in ticketConstruction.valueHorse
       expect(result.valuePlay).toBeNull();
-      expect(result.ticketConstruction.valueHorse.identified).toBe(true);
+      expect(result.ticketConstruction?.valueHorse.identified).toBe(true);
     });
 
     it('should NOT identify value play for MEDIUM confidence trip trouble in conservative mode', () => {

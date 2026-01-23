@@ -65,7 +65,7 @@ function createMockRawResults(options: {
     maskedAbility: boolean;
   }>;
   paceScenario?: {
-    paceProjection: string;
+    paceProjection: 'HOT' | 'MODERATE' | 'SLOW';
     loneSpeedException: boolean;
     speedDuelLikely: boolean;
   };
@@ -101,7 +101,7 @@ function createMockRawResults(options: {
             | 'TIGHT'
             | 'WIDE_OPEN',
           topTierCount: options.fieldSpread.topTierCount,
-          recommendedSpread: 'NARROW' as 'NARROW' | 'MODERATE' | 'WIDE',
+          recommendedSpread: 'NARROW' as 'NARROW' | 'MEDIUM' | 'WIDE',
         }
       : null,
   };

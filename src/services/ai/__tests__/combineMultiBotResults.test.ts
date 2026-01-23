@@ -29,6 +29,7 @@ import type {
   AggregatedSignals,
   VulnerableFavoriteAnalysis,
   FieldSpreadAnalysis,
+  ValueHorseIdentification,
 } from '../types';
 import type { ParsedRace } from '../../../types/drf';
 import type { RaceScoringResult } from '../../../types/scoring';
@@ -378,12 +379,15 @@ describe('Three-Template Ticket Construction System', () => {
 
 describe('selectTemplate', () => {
   // Helper to create a value horse identification object
-  const createValueHorse = (identified: boolean, programNumber?: number) => ({
+  const createValueHorse = (
+    identified: boolean,
+    programNumber?: number
+  ): ValueHorseIdentification => ({
     identified,
     programNumber: programNumber ?? null,
     horseName: identified ? 'Value Horse' : null,
-    sources: identified ? (['TRIP_TROUBLE'] as const) : [],
-    signalStrength: identified ? ('STRONG' as const) : ('NONE' as const),
+    sources: identified ? ['TRIP_TROUBLE'] : [],
+    signalStrength: identified ? 'STRONG' : 'NONE',
     angle: identified ? 'Trip trouble - hidden ability' : null,
     valueOdds: null,
     botConvergenceCount: identified ? 1 : 0,
