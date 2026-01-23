@@ -1579,7 +1579,7 @@ export function calculateConfidenceScore(
   vulnerableFavorite: VulnerableFavoriteAnalysis | null,
   aggregatedSignals: AggregatedSignals[]
 ): number {
-  let score = 50; // Base
+  let score = 65; // Base (rebalanced after penalties added)
 
   // STRICTER: Only penalize confidence when TRULY vulnerable (2+ flags, HIGH confidence)
   // This aligns with determineFavoriteStatus() stricter criteria
@@ -1598,29 +1598,34 @@ export function calculateConfidenceScore(
   }
 
   // Field type adjustment
+  // CHALK = low value (chalk races favor favorites, less upside) → reduce confidence
+  // COMPETITIVE = neutral
+  // WIDE_OPEN = uncertain but can have value → moderate penalty
   switch (raceType) {
     case 'CHALK':
-      score += 20;
+      score -= 10; // Chalk races = low value, reduce confidence
       break;
     case 'COMPETITIVE':
       // +0 (no adjustment)
       break;
     case 'WIDE_OPEN':
-      score -= 20;
+      score -= 15; // Uncertain but not as penalized - these can have value
       break;
   }
 
-  // Trip Trouble signals on rank 2-4: +5 each (max +15)
-  const tripTroubleBonus = aggregatedSignals.filter(
+  // Trip Trouble signals on rank 2-4: -5 each (cap at -15)
+  // Underdogs with upside = more uncertainty, LOWER confidence
+  const tripTroublePenalty = aggregatedSignals.filter(
     (s) => s.algorithmRank >= 2 && s.algorithmRank <= 4 && s.tripTroubleFlagged
   ).length;
-  score += Math.min(tripTroubleBonus * 5, 15);
+  score -= Math.min(tripTroublePenalty * 5, 15);
 
-  // Pace Advantage signals on rank 2-4: +5 each (max +15)
-  const paceAdvantageBonus = aggregatedSignals.filter(
+  // Pace Advantage signals on rank 2-4: -5 each (cap at -15)
+  // Underdogs with pace advantage = more uncertainty, LOWER confidence
+  const paceAdvantagePenalty = aggregatedSignals.filter(
     (s) => s.algorithmRank >= 2 && s.algorithmRank <= 4 && s.paceAdvantageFlagged
   ).length;
-  score += Math.min(paceAdvantageBonus * 5, 15);
+  score -= Math.min(paceAdvantagePenalty * 5, 15);
 
   // Cap at 0-100
   return Math.max(0, Math.min(100, score));
