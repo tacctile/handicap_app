@@ -39,8 +39,9 @@ import { analyzePaceScenario } from '../src/lib/scoring';
 const DATA_DIR = path.join(__dirname, '../src/data');
 const OUTPUT_FILE = path.join(__dirname, '../validation-results.json');
 
-// Delay between API calls to avoid rate limiting
-const API_DELAY_MS = 500;
+// Parallel batch processing configuration
+// Gemini allows 4,000 RPM. With 4 bots per race, 20 races = 80 requests per batch
+const BATCH_SIZE = 20;
 
 // ============================================================================
 // TYPES
@@ -584,6 +585,8 @@ function checkAITrifectaStrategy(
 // ============================================================================
 
 async function runValidation(): Promise<ValidationResult> {
+  const validationStartTime = Date.now();
+
   console.log('\n' + '═'.repeat(70));
   console.log('          AI ARCHITECTURE VALIDATION TEST HARNESS');
   console.log('═'.repeat(70));
@@ -715,38 +718,57 @@ async function runValidation(): Promise<ValidationResult> {
   console.log(`  Algorithm Trifecta Box 5: ${formatRate(algorithmTrifectaBox5, allRaces.length)}`);
 
   // ============================================================================
-  // PHASE 2: Run AI analysis on all races
+  // PHASE 2: Run AI analysis on all races (parallel batches)
   // ============================================================================
   console.log('\n--- PHASE 2: AI Analysis ---');
-  console.log(`Processing ${allRaces.length} races with AI...`);
+  console.log(`Processing ${allRaces.length} races with AI in batches of ${BATCH_SIZE}...`);
 
-  let processedCount = 0;
-  for (const raceData of allRaces) {
-    processedCount++;
-    if (processedCount % 10 === 0 || processedCount === 1) {
-      console.log(`  Processing ${processedCount}/${allRaces.length}...`);
-    }
+  const phase2StartTime = Date.now();
+  const totalBatches = Math.ceil(allRaces.length / BATCH_SIZE);
 
-    try {
-      const aiAnalysis = await getMultiBotAnalysis(raceData.race, raceData.scoringResult, {
-        forceRefresh: true,
-        recordMetrics: false,
-      });
-      raceData.aiAnalysis = aiAnalysis;
-    } catch (error) {
-      const errorMsg = `AI Error R${raceData.race.header.raceNumber}: ${error instanceof Error ? error.message : String(error)}`;
-      errors.push(errorMsg);
+  for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+    const batchStart = batchIndex * BATCH_SIZE;
+    const batchEnd = Math.min(batchStart + BATCH_SIZE, allRaces.length);
+    const batch = allRaces.slice(batchStart, batchEnd);
 
-      // Check for rate limit
-      if (String(error).includes('429') || String(error).includes('RATE_LIMIT')) {
-        console.log(`    Rate limited, waiting 30s...`);
-        await delay(30000);
+    const batchStartTime = Date.now();
+    console.log(`  Batch ${batchIndex + 1}/${totalBatches}: races ${batchStart + 1}-${batchEnd}...`);
+
+    // Process all races in this batch in parallel
+    const batchPromises = batch.map(async (raceData) => {
+      try {
+        const aiAnalysis = await getMultiBotAnalysis(raceData.race, raceData.scoringResult, {
+          forceRefresh: true,
+          recordMetrics: false,
+        });
+        raceData.aiAnalysis = aiAnalysis;
+        return { success: true, raceData };
+      } catch (error) {
+        const errorMsg = `AI Error R${raceData.race.header.raceNumber}: ${error instanceof Error ? error.message : String(error)}`;
+        errors.push(errorMsg);
+        return { success: false, raceData, error };
       }
-    }
+    });
 
-    // Add delay between API calls
-    await delay(API_DELAY_MS);
+    const batchResults = await Promise.all(batchPromises);
+
+    const batchElapsed = ((Date.now() - batchStartTime) / 1000).toFixed(1);
+    const successCount = batchResults.filter((r) => r.success).length;
+    const failCount = batchResults.filter((r) => !r.success).length;
+    console.log(`    Batch ${batchIndex + 1} complete: ${successCount} succeeded, ${failCount} failed (${batchElapsed}s)`);
+
+    // Check if any rate limit errors occurred in this batch
+    const rateLimitErrors = batchResults.filter(
+      (r) => !r.success && (String(r.error).includes('429') || String(r.error).includes('RATE_LIMIT'))
+    );
+    if (rateLimitErrors.length > 0) {
+      console.log(`    Rate limit detected, waiting 30s before next batch...`);
+      await delay(30000);
+    }
   }
+
+  const phase2Elapsed = ((Date.now() - phase2StartTime) / 1000).toFixed(1);
+  console.log(`\nPhase 2 completed in ${phase2Elapsed}s`);
 
   // Filter races with AI analysis
   const racesWithAI = allRaces.filter((r) => r.aiAnalysis?.betConstruction);
@@ -1042,6 +1064,13 @@ async function runValidation(): Promise<ValidationResult> {
   } else {
     result.verdict.overallRecommendation = 'REVERT';
   }
+
+  const totalElapsedSeconds = (Date.now() - validationStartTime) / 1000;
+  const minutes = Math.floor(totalElapsedSeconds / 60);
+  const seconds = (totalElapsedSeconds % 60).toFixed(1);
+  console.log(`\n${'─'.repeat(70)}`);
+  console.log(`TOTAL EXECUTION TIME: ${minutes}m ${seconds}s`);
+  console.log('─'.repeat(70));
 
   return result;
 }
