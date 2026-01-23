@@ -397,7 +397,7 @@ export function buildDecisionRecord(
     algorithmTop3,
     algorithmScores,
     aiTopPick,
-    aiValuePlay: analysis.valuePlay,
+    aiValuePlay: analysis.valuePlay ?? null,
     aiTop3,
     aiAvoidList: analysis.avoidList,
     aiConfidence: analysis.confidence,

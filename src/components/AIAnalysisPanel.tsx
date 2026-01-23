@@ -453,8 +453,8 @@ const TicketConstructionSection: React.FC<TicketConstructionSectionProps> = ({
             </div>
           )}
 
-          {/* Expansion Horses (Sleepers) - Only show if present */}
-          {betConstruction.expansionHorses.length > 0 && (
+          {/* Expansion Horses (Sleepers) - Only show if present (deprecated - always empty now) */}
+          {betConstruction.expansionHorses && betConstruction.expansionHorses.length > 0 && (
             <div className="ai-panel__ticket-sleepers">
               <div className="ai-panel__ticket-sleepers-header">
                 <span className="material-icons">trending_up</span>
