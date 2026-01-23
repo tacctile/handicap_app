@@ -27,6 +27,9 @@ import type {
   VulnerableFavoriteAnalysis,
   FieldSpreadAnalysis,
   BotStatusDebugInfo,
+  BetConstructionGuidance,
+  ExactaStrategy,
+  TrifectaStrategy,
 } from './types';
 import { recordAIDecision } from './metrics/recorder';
 
@@ -66,6 +69,10 @@ export type {
   BotStatusInfo,
   BotStatusDebugInfo,
   OverrideReason,
+  // New expansion/contraction model types
+  BetConstructionGuidance,
+  ExactaStrategy,
+  TrifectaStrategy,
 } from './types';
 
 // Re-export the analyzeRaceWithGemini function for direct access (single-bot)
@@ -696,6 +703,10 @@ export function isCompetitiveField(signals: AggregatedSignals[]): boolean {
 }
 
 /**
+ * @deprecated This function is deprecated as of the expansion/contraction refactor.
+ * Use buildBetConstructionGuidance() instead for bet construction.
+ * Algorithm ranks are now SACRED and never modified by AI signals.
+ *
  * Reorder horses by adjusted rank and track rank changes
  *
  * CONSERVATIVE MODE PROTECTIONS:
@@ -967,19 +978,346 @@ export function synthesizeBetStructure(
   };
 }
 
+// ============================================================================
+// EXPANSION/CONTRACTION BET CONSTRUCTION MODEL
+// ============================================================================
+
+/**
+ * Identify expansion horses (sleepers) based on AI signals
+ *
+ * Criteria:
+ * - Must be algorithm rank 5-10
+ * - Must have Trip Trouble HIGH or Pace Advantage STRONG
+ * - Must have morning line odds >= 4-1
+ * - Maximum 2 expansion horses per race
+ *
+ * @param aggregatedSignals - Signals for all horses
+ * @param scores - Original scoring results for ML odds
+ * @returns Array of program numbers for expansion horses
+ */
+export function identifyExpansionHorses(
+  aggregatedSignals: AggregatedSignals[],
+  scores: RaceScoringResult['scores']
+): number[] {
+  const candidates = aggregatedSignals.filter((signal) => {
+    // Must be algorithm rank 5-10
+    if (signal.algorithmRank < 5 || signal.algorithmRank > 10) return false;
+
+    // Must have Trip Trouble HIGH (2+ troubled races = boost of 2) or Pace Advantage STRONG (boost of 2)
+    const hasTripTroubleHigh = signal.tripTroubleBoost >= 2;
+    const hasPaceAdvantageStrong = signal.paceAdvantage >= 2;
+
+    if (!hasTripTroubleHigh && !hasPaceAdvantageStrong) return false;
+
+    // Must have morning line odds >= 4-1
+    const score = scores.find((s) => s.programNumber === signal.programNumber);
+    const mlDecimal = score?.morningLineDecimal ?? 0;
+    if (mlDecimal < 4) return false;
+
+    return true;
+  });
+
+  // Sort by total adjustment descending, take max 2
+  return candidates
+    .sort((a, b) => b.totalAdjustment - a.totalAdjustment)
+    .slice(0, 2)
+    .map((s) => s.programNumber);
+}
+
+/**
+ * Detect vulnerable favorite for contraction
+ *
+ * Criteria:
+ * - Only algorithm rank 1 qualifies
+ * - Requires HIGH confidence from Vulnerable Favorite bot
+ * - Requires 2+ vulnerability flags
+ *
+ * @param aggregatedSignals - Signals for all horses
+ * @param vulnerableFavorite - Vulnerable favorite analysis from bot
+ * @returns Program number of vulnerable favorite or null
+ */
+export function detectContractionTarget(
+  aggregatedSignals: AggregatedSignals[],
+  vulnerableFavorite: VulnerableFavoriteAnalysis | null
+): number | null {
+  if (!vulnerableFavorite) return null;
+  if (!vulnerableFavorite.isVulnerable) return null;
+  if (vulnerableFavorite.confidence !== 'HIGH') return null;
+  if (vulnerableFavorite.reasons.length < 2) return null;
+
+  // Find algorithm rank 1 horse
+  const rank1Horse = aggregatedSignals.find((s) => s.algorithmRank === 1);
+  if (!rank1Horse) return null;
+
+  // Confirm this horse is marked as vulnerable
+  if (!rank1Horse.isVulnerable) return null;
+
+  return rank1Horse.programNumber;
+}
+
+/**
+ * Determine exacta strategy based on expansion/contraction signals
+ *
+ * Strategy rules:
+ * - If contractionTarget exists AND expansionHorses has entries:
+ *   → PART_WHEEL: Key algorithm #2 over (top 4 minus vulnerable + expansionHorses)
+ *
+ * - If contractionTarget exists AND no expansionHorses:
+ *   → KEY: Key algorithm #2 over algorithm #3-5
+ *
+ * - If no contractionTarget AND expansionHorses has entries:
+ *   → BOX: Algorithm top 4 + expansionHorses (max 5 horses)
+ *
+ * - If no contractionTarget AND no expansionHorses:
+ *   → BOX: Algorithm top 4
+ *
+ * @param algorithmTop4 - Program numbers of algorithm's top 4 horses
+ * @param expansionHorses - Program numbers of AI-identified sleepers
+ * @param contractionTarget - Program number of vulnerable favorite (or null)
+ * @returns ExactaStrategy object
+ */
+export function determineExactaStrategy(
+  algorithmTop4: number[],
+  expansionHorses: number[],
+  contractionTarget: number | null
+): ExactaStrategy {
+  const hasContraction = contractionTarget !== null;
+  const hasExpansion = expansionHorses.length > 0;
+
+  // Get algorithm positions 2-5 (index 1-4)
+  const algoRank2 = algorithmTop4[1] ?? null;
+  const algoRank3to5 = algorithmTop4.slice(2, 5); // May be less than 3 if field is small
+
+  if (hasContraction && hasExpansion) {
+    // PART_WHEEL: Key algorithm #2 over (top 4 minus vulnerable + expansionHorses)
+    const includeHorses = [
+      ...algorithmTop4.filter((pn) => pn !== contractionTarget),
+      ...expansionHorses,
+    ].filter((pn) => pn !== algoRank2); // Remove key horse from include list
+
+    return {
+      type: 'PART_WHEEL',
+      keyHorse: algoRank2,
+      includeHorses: [...new Set(includeHorses)].slice(0, 5),
+      excludeFromTop: contractionTarget,
+    };
+  }
+
+  if (hasContraction && !hasExpansion) {
+    // KEY: Key algorithm #2 over algorithm #3-5
+    return {
+      type: 'KEY',
+      keyHorse: algoRank2,
+      includeHorses: algoRank3to5,
+      excludeFromTop: contractionTarget,
+    };
+  }
+
+  if (!hasContraction && hasExpansion) {
+    // BOX: Algorithm top 4 + expansionHorses (max 5 horses)
+    const boxHorses = [...new Set([...algorithmTop4, ...expansionHorses])].slice(0, 5);
+    return {
+      type: 'BOX',
+      keyHorse: null,
+      includeHorses: boxHorses,
+      excludeFromTop: null,
+    };
+  }
+
+  // Default: BOX: Algorithm top 4
+  return {
+    type: 'BOX',
+    keyHorse: null,
+    includeHorses: algorithmTop4,
+    excludeFromTop: null,
+  };
+}
+
+/**
+ * Determine trifecta strategy based on expansion/contraction signals
+ *
+ * Strategy rules:
+ * - If contractionTarget exists:
+ *   → Exclude vulnerable favorite from A horses
+ *   → A horses = algorithm #2-3
+ *   → B horses = algorithm #4-5 + expansionHorses
+ *
+ * - If expansionHorses identified (no contraction):
+ *   → A horses = algorithm top 3
+ *   → B horses = algorithm #4-5 + expansionHorses
+ *
+ * - Default (no signals):
+ *   → A horses = algorithm top 3
+ *   → B horses = algorithm #4-5
+ *
+ * @param algorithmTop4 - Program numbers of algorithm's top 4 horses
+ * @param algorithmTop5 - Program numbers of algorithm's top 5 horses (for B horses)
+ * @param expansionHorses - Program numbers of AI-identified sleepers
+ * @param contractionTarget - Program number of vulnerable favorite (or null)
+ * @returns TrifectaStrategy object
+ */
+export function determineTrifectaStrategy(
+  algorithmTop4: number[],
+  algorithmTop5: number[],
+  expansionHorses: number[],
+  contractionTarget: number | null
+): TrifectaStrategy {
+  const hasContraction = contractionTarget !== null;
+  const hasExpansion = expansionHorses.length > 0;
+
+  // Get algorithm positions
+  const algoRank1 = algorithmTop4[0] ?? null;
+  const algoRank2 = algorithmTop4[1] ?? null;
+  const algoRank3 = algorithmTop4[2] ?? null;
+  const algoRank4 = algorithmTop4[3] ?? null;
+  const algoRank5 = algorithmTop5[4] ?? null;
+
+  if (hasContraction) {
+    // Exclude vulnerable favorite from A horses
+    // A horses = algorithm #2-3
+    const aHorses = [algoRank2, algoRank3].filter((pn): pn is number => pn !== null);
+
+    // B horses = algorithm #4-5 + expansionHorses
+    const bHorses = [algoRank4, algoRank5, ...expansionHorses].filter(
+      (pn): pn is number => pn !== null
+    );
+
+    return {
+      type: 'PART_WHEEL',
+      keyHorse: algoRank2,
+      aHorses,
+      bHorses: [...new Set(bHorses)],
+      excludeFromTop: contractionTarget,
+    };
+  }
+
+  if (hasExpansion) {
+    // A horses = algorithm top 3
+    const aHorses = [algoRank1, algoRank2, algoRank3].filter((pn): pn is number => pn !== null);
+
+    // B horses = algorithm #4-5 + expansionHorses
+    const bHorses = [algoRank4, algoRank5, ...expansionHorses].filter(
+      (pn): pn is number => pn !== null
+    );
+
+    return {
+      type: 'BOX',
+      keyHorse: null,
+      aHorses,
+      bHorses: [...new Set(bHorses)],
+      excludeFromTop: null,
+    };
+  }
+
+  // Default: no signals
+  // A horses = algorithm top 3
+  const aHorses = [algoRank1, algoRank2, algoRank3].filter((pn): pn is number => pn !== null);
+
+  // B horses = algorithm #4-5
+  const bHorses = [algoRank4, algoRank5].filter((pn): pn is number => pn !== null);
+
+  return {
+    type: 'BOX',
+    keyHorse: null,
+    aHorses,
+    bHorses,
+    excludeFromTop: null,
+  };
+}
+
+/**
+ * Build bet construction guidance using expansion/contraction model
+ *
+ * Philosophy:
+ * - Algorithm top 4 are SACRED — never demoted by AI
+ * - AI signals EXPAND boxes (add sleepers) or CONTRACT them (fade vulnerable favorites)
+ * - No rank shuffling — preserves exotic ticket construction
+ *
+ * @param aggregatedSignals - Signals for all horses
+ * @param scores - Original scoring results
+ * @param vulnerableFavorite - Vulnerable favorite analysis
+ * @param fieldSpread - Field spread analysis
+ * @returns BetConstructionGuidance object
+ */
+export function buildBetConstructionGuidance(
+  aggregatedSignals: AggregatedSignals[],
+  scores: RaceScoringResult['scores'],
+  vulnerableFavorite: VulnerableFavoriteAnalysis | null,
+  fieldSpread: FieldSpreadAnalysis | null
+): BetConstructionGuidance {
+  // Get algorithm top 4 and top 5 (program numbers)
+  const sortedByAlgoRank = [...aggregatedSignals].sort((a, b) => a.algorithmRank - b.algorithmRank);
+  const algorithmTop4 = sortedByAlgoRank.slice(0, 4).map((s) => s.programNumber);
+  const algorithmTop5 = sortedByAlgoRank.slice(0, 5).map((s) => s.programNumber);
+
+  // Identify expansion horses (sleepers)
+  const expansionHorses = identifyExpansionHorses(aggregatedSignals, scores);
+
+  // Detect contraction target (vulnerable favorite)
+  const contractionTarget = detectContractionTarget(aggregatedSignals, vulnerableFavorite);
+
+  // Determine strategies
+  const exactaStrategy = determineExactaStrategy(algorithmTop4, expansionHorses, contractionTarget);
+  const trifectaStrategy = determineTrifectaStrategy(
+    algorithmTop4,
+    algorithmTop5,
+    expansionHorses,
+    contractionTarget
+  );
+
+  // Determine race classification
+  let raceClassification: BetConstructionGuidance['raceClassification'] = 'BETTABLE';
+
+  if (fieldSpread?.fieldType === 'WIDE_OPEN' || fieldSpread?.fieldType === 'TIGHT') {
+    raceClassification = 'SPREAD_WIDE';
+  }
+
+  // If too chaotic (many conflicting signals), suggest PASS
+  const conflictCount = aggregatedSignals.filter((s) => s.conflictingSignals).length;
+  if (conflictCount >= 3 || (fieldSpread?.topTierCount ?? 0) >= 6) {
+    raceClassification = 'PASS';
+  }
+
+  // Build signal summary
+  const summaryParts: string[] = [];
+  if (contractionTarget !== null) {
+    summaryParts.push(`Contraction: #${contractionTarget} (vulnerable favorite)`);
+  }
+  if (expansionHorses.length > 0) {
+    summaryParts.push(`Expansion: #${expansionHorses.join(', #')} (sleepers added)`);
+  }
+  if (summaryParts.length === 0) {
+    summaryParts.push('No AI modifications — algorithm top 4 intact');
+  }
+
+  return {
+    algorithmTop4,
+    expansionHorses,
+    contractionTarget,
+    exactaStrategy,
+    trifectaStrategy,
+    raceClassification,
+    vulnerableFavoriteDetected: contractionTarget !== null,
+    sleeperIdentified: expansionHorses.length > 0,
+    signalSummary: summaryParts.join('; '),
+  };
+}
+
 /**
  * Combine multi-bot results into the standard AIRaceAnalysis format
  *
- * INTELLIGENT COMBINER - Aggregates signals from all 4 bots and synthesizes
- * actionable betting recommendations with proper rank reordering.
+ * SMART COMBINER (v2) - EXPANSION/CONTRACTION MODEL
  *
  * Philosophy:
- * - Aggregate signals per horse from all bots
- * - Apply adjustments with caps (±3 max)
- * - Reorder by adjusted rank
- * - Identify value plays with strict criteria
- * - Synthesize bet structure based on field type
- * - Generate actionable narratives
+ * - Algorithm top 4 are SACRED — never demoted by AI
+ * - AI signals EXPAND boxes (add sleepers) or CONTRACT them (fade vulnerable favorites)
+ * - No rank shuffling — preserves exotic ticket construction
+ *
+ * Key changes from v1:
+ * - Removed rank reordering
+ * - topPick = algorithm rank 1 UNLESS vulnerable favorite HIGH confidence → algorithm rank 2
+ * - valuePlay = first horse in expansionHorses, or null
+ * - projectedFinish in horseInsights reflects algorithm rank
  *
  * @param rawResults - Raw results from all 4 bots
  * @param race - Parsed race data
@@ -999,7 +1337,7 @@ export function combineMultiBotResults(
   // ============================================================================
   // DEBUG LOGGING: Bot status summary
   // ============================================================================
-  debugLog(`\n=== SMART COMBINER: Race ${race.header.raceNumber} ===`);
+  debugLog(`\n=== SMART COMBINER v2 (Expansion/Contraction): Race ${race.header.raceNumber} ===`);
   debugLog(
     'TripTrouble:',
     tripTrouble ? `SUCCESS - ${tripTrouble.horsesWithTripTrouble.length} horses flagged` : 'FAILED'
@@ -1039,10 +1377,12 @@ export function combineMultiBotResults(
   const conservativeMode = currentConfig.conservativeMode ?? true;
 
   // ============================================================================
-  // STEP 1: Aggregate signals for each horse
+  // STEP 1: Aggregate signals for each horse (for insights generation)
+  // Note: We aggregate signals but NO LONGER reorder ranks
   // ============================================================================
   debugLog('\n--- SIGNAL AGGREGATION ---');
   debugLog(`Conservative mode: ${conservativeMode}`);
+  debugLog('NOTE: Algorithm ranks are now SACRED — no reordering applied');
 
   const aggregatedSignals: AggregatedSignals[] = rankedScores.map((score) => {
     const signals = aggregateHorseSignals(
@@ -1058,10 +1398,10 @@ export function combineMultiBotResults(
     // Debug log each horse's signals
     if (signals.totalAdjustment !== 0 || signals.signalCount > 0) {
       debugLog(
-        `Horse #${score.programNumber}: TripBoost=${signals.tripTroubleBoost > 0 ? '+' : ''}${signals.tripTroubleBoost}, ` +
+        `Horse #${score.programNumber} (Algo Rank ${score.rank}): ` +
+          `TripBoost=${signals.tripTroubleBoost > 0 ? '+' : ''}${signals.tripTroubleBoost}, ` +
           `PaceAdv=${signals.paceAdvantage > 0 ? '+' : ''}${signals.paceAdvantage}, ` +
-          `Total=${signals.totalAdjustment > 0 ? '+' : ''}${signals.totalAdjustment}, ` +
-          `Rank ${signals.algorithmRank}→${signals.adjustedRank}` +
+          `Total=${signals.totalAdjustment > 0 ? '+' : ''}${signals.totalAdjustment}` +
           (signals.conflictingSignals ? ' [CONFLICT]' : '') +
           (signals.overrideReasons.length > 0
             ? ` [${signals.overrideReasons.map((r) => r.signal).join(', ')}]`
@@ -1073,123 +1413,112 @@ export function combineMultiBotResults(
   });
 
   // ============================================================================
-  // STEP 2: Reorder by adjusted rank
+  // STEP 2: Build bet construction guidance (EXPANSION/CONTRACTION MODEL)
   // ============================================================================
-  debugLog('\n--- RANK REORDERING ---');
+  debugLog('\n--- BET CONSTRUCTION (Expansion/Contraction Model) ---');
 
-  const { reorderedSignals, rankChanges, competitiveFieldDetected } = reorderByAdjustedRank(
+  const betConstruction = buildBetConstructionGuidance(
     aggregatedSignals,
-    { conservativeMode }
+    scores,
+    vulnerableFavorite,
+    fieldSpread
   );
 
-  if (competitiveFieldDetected) {
-    debugLog(
-      'COMPETITIVE FIELD DETECTED: Top 4 horses within 20 points - adjustments reduced by 25%'
-    );
-  }
-
-  // Log rank changes
-  for (const change of rankChanges) {
-    debugLog(
-      `${change.direction}: #${change.programNumber} moved from rank ${change.fromRank} to rank ${change.toRank} (${change.reason})`
-    );
-  }
-
-  // Check for override
-  const algorithmTopPick = rankedScores[0]?.programNumber ?? null;
-  const aiTopPick = reorderedSignals[0]?.programNumber ?? null;
-  const isOverride = algorithmTopPick !== aiTopPick;
-
-  if (isOverride) {
-    debugLog(`OVERRIDE triggered: #${aiTopPick} overtakes #${algorithmTopPick}`);
-  }
+  debugLog(`Algorithm Top 4: #${betConstruction.algorithmTop4.join(', #')}`);
+  debugLog(
+    `Expansion Horses: ${betConstruction.expansionHorses.length > 0 ? '#' + betConstruction.expansionHorses.join(', #') : 'None'}`
+  );
+  debugLog(
+    `Contraction Target: ${betConstruction.contractionTarget !== null ? '#' + betConstruction.contractionTarget : 'None'}`
+  );
+  debugLog(`Race Classification: ${betConstruction.raceClassification}`);
+  debugLog(`Signal Summary: ${betConstruction.signalSummary}`);
 
   // ============================================================================
-  // STEP 3: Identify value play
+  // STEP 3: Determine top pick and value play
   // ============================================================================
-  debugLog('\n--- VALUE PLAY IDENTIFICATION ---');
+  debugLog('\n--- TOP PICK & VALUE PLAY ---');
 
-  const valuePlay = identifyValuePlay(reorderedSignals, paceScenario, scores);
+  const algorithmRank1 = rankedScores[0]?.programNumber ?? null;
+  const algorithmRank2 = rankedScores[1]?.programNumber ?? null;
+
+  // Top pick: algorithm rank 1 UNLESS vulnerable favorite with HIGH confidence + 2+ flags
+  let topPick: number | null;
+  if (
+    betConstruction.vulnerableFavoriteDetected &&
+    vulnerableFavorite?.confidence === 'HIGH' &&
+    vulnerableFavorite.reasons.length >= 2
+  ) {
+    topPick = algorithmRank2;
+    debugLog(
+      `Top pick = Algorithm #2 (#${algorithmRank2}) due to vulnerable favorite HIGH with ${vulnerableFavorite.reasons.length} flags`
+    );
+  } else {
+    topPick = algorithmRank1;
+    debugLog(`Top pick = Algorithm #1 (#${algorithmRank1})`);
+  }
+
+  // Value play: first horse in expansionHorses, or null
+  const valuePlay =
+    betConstruction.expansionHorses.length > 0 ? betConstruction.expansionHorses[0] ?? null : null;
 
   if (valuePlay) {
-    const valueSignal = reorderedSignals.find((s) => s.programNumber === valuePlay);
-    debugLog(`Value play identified: #${valuePlay} (adj=${valueSignal?.totalAdjustment ?? 0})`);
+    const valueSignal = aggregatedSignals.find((s) => s.programNumber === valuePlay);
+    debugLog(
+      `Value play = #${valuePlay} (expansion horse, algo rank ${valueSignal?.algorithmRank})`
+    );
   } else {
-    debugLog('No clear value play identified');
+    debugLog('Value play = None (no expansion horses identified)');
   }
 
   // ============================================================================
-  // STEP 4: Synthesize bet structure
+  // STEP 4: Synthesize bet structure (legacy format for backward compatibility)
   // ============================================================================
-  debugLog('\n--- BET STRUCTURE SYNTHESIS ---');
+  debugLog('\n--- LEGACY BET STRUCTURE ---');
 
+  // Use legacy synthesize function for backward compatibility
   const betRecommendation = synthesizeBetStructure(
     fieldSpread,
-    reorderedSignals,
+    aggregatedSignals, // Use algorithm-ordered signals
     vulnerableFavorite
   );
 
-  debugLog(`Bet type: ${betRecommendation.type}, Confidence: ${betRecommendation.confidence}`);
-  debugLog(`Exacta: ${betRecommendation.exacta}`);
-  debugLog(`Trifecta: ${betRecommendation.trifecta}`);
+  debugLog(`Legacy Bet type: ${betRecommendation.type}`);
+  debugLog(`Exacta Strategy: ${betConstruction.exactaStrategy.type}`);
+  debugLog(`Trifecta Strategy: ${betConstruction.trifectaStrategy.type}`);
 
   // ============================================================================
-  // STEP 5: Build race narrative
+  // STEP 5: Build race narrative (updated for expansion/contraction model)
   // ============================================================================
   const narrativeParts: string[] = [];
 
-  // Start with OVERRIDE or CONFIRM
-  if (isOverride) {
-    const newTop = reorderedSignals[0];
-    const rankChange = rankChanges.find((c) => c.programNumber === newTop?.programNumber);
-
-    if (rankChange) {
-      narrativeParts.push(
-        `OVERRIDE: #${newTop?.programNumber} ${newTop?.horseName} moved from rank ${rankChange.fromRank} to rank 1 (${rankChange.reason})`
-      );
-    } else if (vulnerableFavorite?.isVulnerable && vulnerableFavorite?.confidence === 'HIGH') {
-      narrativeParts.push(
-        `OVERRIDE: Favorite vulnerable (HIGH) - #${newTop?.programNumber} ${newTop?.horseName} now top pick`
-      );
-    } else {
-      narrativeParts.push(
-        `OVERRIDE: Signal aggregation promotes #${newTop?.programNumber} ${newTop?.horseName} to top pick`
-      );
-    }
-  } else {
-    const topSignal = reorderedSignals[0];
-    const confirmReasons: string[] = [];
-
-    if (topSignal?.tripTroubleBoost === 0 && (topSignal?.paceAdvantage ?? -1) >= 0) {
-      confirmReasons.push('no hidden concerns');
-    }
-    if (paceScenario && (topSignal?.paceAdvantage ?? -1) >= 0) {
-      confirmReasons.push('pace scenario favorable');
-    }
-    if (fieldSpread?.fieldType === 'SEPARATED' || fieldSpread?.fieldType === 'DOMINANT') {
-      confirmReasons.push('clear field separation');
-    }
-
+  // Start with algorithm confirmation or expansion/contraction note
+  if (betConstruction.vulnerableFavoriteDetected && betConstruction.contractionTarget !== null) {
+    const rank1Horse = rankedScores[0];
     narrativeParts.push(
-      `CONFIRM: Algorithm's #${topSignal?.programNumber} ${topSignal?.horseName} supported by ${confirmReasons.length > 0 ? confirmReasons.join(' and ') : 'bot analysis'}`
+      `CONTRACT: Algorithm #1 (#${rank1Horse?.programNumber} ${rank1Horse?.horseName}) flagged vulnerable - fade in key spots.`
     );
+  } else {
+    const rank1Horse = rankedScores[0];
+    narrativeParts.push(
+      `CONFIRM: Algorithm top pick #${rank1Horse?.programNumber} ${rank1Horse?.horseName} supported by bot analysis.`
+    );
+  }
+
+  // Add expansion note
+  if (betConstruction.sleeperIdentified && betConstruction.expansionHorses.length > 0) {
+    const sleepers = betConstruction.expansionHorses
+      .map((pn) => {
+        const signal = aggregatedSignals.find((s) => s.programNumber === pn);
+        return `#${pn} (rank ${signal?.algorithmRank})`;
+      })
+      .join(', ');
+    narrativeParts.push(`EXPAND: Add sleeper(s) ${sleepers} to exotic tickets.`);
   }
 
   // Add vulnerable favorite note
   if (vulnerableFavorite?.isVulnerable && vulnerableFavorite.reasons[0]) {
     narrativeParts.push(`Vulnerable favorite: ${vulnerableFavorite.reasons[0]}.`);
-  }
-
-  // Add value play note if different from top pick
-  if (valuePlay && valuePlay !== aiTopPick) {
-    const valueSignal = reorderedSignals.find((s) => s.programNumber === valuePlay);
-    if (valueSignal?.hiddenAbility) {
-      narrativeParts.push(
-        `Value angle: #${valuePlay} has hidden ability (${valueSignal.hiddenAbility}).`
-      );
-    } else if (valueSignal?.paceEdgeReason) {
-      narrativeParts.push(`Value angle: #${valuePlay} (${valueSignal.paceEdgeReason}).`);
-    }
   }
 
   // Add pace scenario summary
@@ -1213,33 +1542,43 @@ export function combineMultiBotResults(
   const raceNarrative = narrativeParts.join(' ');
 
   // ============================================================================
-  // STEP 6: Build horse insights with value labels
+  // STEP 6: Build horse insights with ALGORITHM RANK for projectedFinish
   // ============================================================================
-  const horseInsights = reorderedSignals.map((signal, idx) => {
+  const horseInsights = aggregatedSignals.map((signal) => {
     const score = rankedScores.find((s) => s.programNumber === signal.programNumber)!;
-    const finalRank = idx + 1;
-    const isBottomThird = finalRank > Math.ceil((reorderedSignals.length * 2) / 3);
+    // Use ALGORITHM rank for projectedFinish (not adjusted rank)
+    const algorithmRank = signal.algorithmRank;
+    const isBottomThird = algorithmRank > Math.ceil((aggregatedSignals.length * 2) / 3);
+
+    // Check if this horse is an expansion horse
+    const isExpansionHorse = betConstruction.expansionHorses.includes(signal.programNumber);
 
     // Determine value label per requirements
     let valueLabel: AIRaceAnalysis['horseInsights'][0]['valueLabel'];
 
     if (signal.classification === 'EXCLUDE') {
       valueLabel = 'NO CHANCE';
-    } else if (signal.isVulnerable && vulnerableFavorite?.confidence === 'HIGH') {
+    } else if (
+      signal.isVulnerable &&
+      vulnerableFavorite?.confidence === 'HIGH' &&
+      vulnerableFavorite.reasons.length >= 2
+    ) {
       valueLabel = 'FAIR PRICE'; // False favorite
-    } else if (isBottomThird) {
+    } else if (isBottomThird && !isExpansionHorse) {
       valueLabel = signal.classification === 'C' ? 'NO VALUE' : 'SKIP';
-    } else if (finalRank === 1 && betRecommendation.confidence === 'HIGH') {
-      valueLabel = 'BEST BET';
-    } else if (finalRank === 1 && betRecommendation.confidence === 'MEDIUM') {
-      valueLabel = 'PRIME VALUE';
-    } else if (finalRank <= 3 && signal.totalAdjustment > 0) {
+    } else if (algorithmRank === 1 && !betConstruction.vulnerableFavoriteDetected) {
+      valueLabel = betConstruction.raceClassification === 'BETTABLE' ? 'BEST BET' : 'PRIME VALUE';
+    } else if (algorithmRank === 2 && betConstruction.vulnerableFavoriteDetected) {
+      valueLabel = 'BEST BET'; // Promoted due to vulnerable favorite
+    } else if (algorithmRank <= 3 && signal.totalAdjustment > 0) {
       valueLabel = 'SOLID PLAY';
+    } else if (isExpansionHorse) {
+      valueLabel = 'PRIME VALUE'; // Sleeper horse
     } else if (signal.classification === 'A' && !signal.keyCandidate) {
       valueLabel = 'FAIR PRICE';
     } else if (signal.classification === 'B') {
       valueLabel = 'WATCH ONLY';
-    } else if (finalRank <= 5) {
+    } else if (algorithmRank <= 5) {
       valueLabel = 'SOLID PLAY';
     } else {
       valueLabel = 'NO VALUE';
@@ -1263,12 +1602,14 @@ export function combineMultiBotResults(
       oneLiner = `False favorite, ${signal.vulnerabilityFlags[0] || 'concerns present'}, fade in exotics`;
     } else if (signal.paceAdvantage < 0) {
       oneLiner = `${signal.paceEdgeReason || 'Pace works against'} - use underneath only`;
+    } else if (isExpansionHorse) {
+      oneLiner = 'AI-identified sleeper - add to exotic tickets';
     } else if (score.positiveFactors[0]) {
       oneLiner = score.positiveFactors[0];
     } else if (score.negativeFactors[0]) {
       oneLiner = `Concern: ${score.negativeFactors[0]}`;
     } else {
-      oneLiner = `Ranked #${finalRank} by combined analysis`;
+      oneLiner = `Algorithm rank #${algorithmRank}`;
     }
 
     // Key strength/weakness
@@ -1293,19 +1634,20 @@ export function combineMultiBotResults(
       keyWeakness = score.negativeFactors[0];
     }
 
-    const contenderCount = Math.min(4, reorderedSignals.length);
+    const contenderCount = Math.min(4, aggregatedSignals.length);
 
     return {
       programNumber: signal.programNumber,
       horseName: signal.horseName,
-      projectedFinish: finalRank,
+      projectedFinish: algorithmRank, // Use algorithm rank, NOT adjusted rank
       valueLabel,
       oneLiner,
       keyStrength,
       keyWeakness,
-      isContender: finalRank <= contenderCount,
+      isContender: algorithmRank <= contenderCount || isExpansionHorse,
       avoidFlag:
-        signal.classification === 'EXCLUDE' || (isBottomThird && score.negativeFactors.length >= 2),
+        signal.classification === 'EXCLUDE' ||
+        (isBottomThird && score.negativeFactors.length >= 2 && !isExpansionHorse),
     };
   });
 
@@ -1318,7 +1660,7 @@ export function combineMultiBotResults(
   // MEDIUM: Default
   let confidence: 'HIGH' | 'MEDIUM' | 'LOW' = 'MEDIUM';
 
-  const hasConflicts = reorderedSignals.some((s) => s.conflictingSignals);
+  const hasConflicts = aggregatedSignals.some((s) => s.conflictingSignals);
 
   if (
     botSuccessCount >= 3 &&
@@ -1329,27 +1671,26 @@ export function combineMultiBotResults(
   } else if (
     hasConflicts ||
     fieldSpread?.fieldType === 'WIDE_OPEN' ||
-    (vulnerableFavorite?.isVulnerable &&
-      aggregatedSignals.some((s) => s.tripTroubleBoost > 0 && s.algorithmRank === 1))
+    betConstruction.raceClassification === 'PASS'
   ) {
     confidence = 'LOW';
   }
 
   // Flags
-  const isVulnerableFavoriteFlag =
-    vulnerableFavorite?.isVulnerable === true &&
-    (vulnerableFavorite?.confidence === 'HIGH' || vulnerableFavorite?.confidence === 'MEDIUM');
+  const isVulnerableFavoriteFlag = betConstruction.vulnerableFavoriteDetected;
 
   const isLikelyUpset =
     isVulnerableFavoriteFlag &&
     vulnerableFavorite?.confidence === 'HIGH' &&
+    vulnerableFavorite?.reasons?.length >= 2 &&
     fieldSpread?.fieldType !== 'SEPARATED' &&
     fieldSpread?.fieldType !== 'DOMINANT';
 
   const isChaoticRace =
+    betConstruction.raceClassification === 'PASS' ||
     fieldSpread?.fieldType === 'WIDE_OPEN' ||
     (fieldSpread?.fieldType === 'TIGHT' && (fieldSpread?.topTierCount ?? 0) >= 5) ||
-    reorderedSignals.filter((s) => s.conflictingSignals).length >= 3;
+    aggregatedSignals.filter((s) => s.conflictingSignals).length >= 3;
 
   // Build avoid list
   const avoidList = horseInsights.filter((h) => h.avoidFlag).map((h) => h.programNumber);
@@ -1389,20 +1730,15 @@ export function combineMultiBotResults(
     },
     successCount: botSuccessCount,
     totalBots: 4,
-    hasOverride: isOverride,
-    signalSummary: (() => {
-      const horsesWithBoosts = aggregatedSignals.filter((s) => s.totalAdjustment !== 0);
-      if (horsesWithBoosts.length === 0) return 'No signal adjustments applied';
-      return `${horsesWithBoosts.length} horse(s) with adjustments: ${horsesWithBoosts.map((s) => `#${s.programNumber}(${s.totalAdjustment > 0 ? '+' : ''}${s.totalAdjustment})`).join(', ')}`;
-    })(),
+    hasOverride: betConstruction.vulnerableFavoriteDetected || betConstruction.sleeperIdentified,
+    signalSummary: betConstruction.signalSummary,
   };
 
   // ============================================================================
   // FINAL DEBUG SUMMARY - Enhanced console logging (always visible)
   // ============================================================================
-  // Use console.log directly so it ALWAYS appears in browser console
   console.log(
-    `%c[AI BOTS] Race ${race.header.raceNumber} Analysis Summary`,
+    `%c[AI BOTS v2] Race ${race.header.raceNumber} Analysis Summary (Expansion/Contraction Model)`,
     'color: #19abb5; font-weight: bold; font-size: 14px'
   );
   console.log('%c┌─────────────────────────────────────────────────────────┐', 'color: #888');
@@ -1427,16 +1763,31 @@ export function combineMultiBotResults(
     fieldSpread ? 'color: #10b981' : 'color: #ef4444'
   );
   console.log('%c├─────────────────────────────────────────────────────────┤', 'color: #888');
-  console.log(`%c│ SIGNAL AGGREGATION: ${botDebugInfo.signalSummary}`, 'color: #b4b4b6');
   console.log(
-    `%c│ OVERRIDE: ${isOverride ? '⚠️ YES - AI changed top pick' : '✓ NO - Confirms algorithm'}`,
-    isOverride ? 'color: #f59e0b' : 'color: #10b981'
+    `%c│ ALGORITHM TOP 4: #${betConstruction.algorithmTop4.join(', #')}`,
+    'color: #36d1da; font-weight: bold'
+  );
+  console.log(
+    `%c│ EXPANSION: ${betConstruction.expansionHorses.length > 0 ? '#' + betConstruction.expansionHorses.join(', #') + ' (sleepers added)' : 'None'}`,
+    betConstruction.expansionHorses.length > 0 ? 'color: #10b981' : 'color: #888'
+  );
+  console.log(
+    `%c│ CONTRACTION: ${betConstruction.contractionTarget !== null ? '#' + betConstruction.contractionTarget + ' (vulnerable fav excluded)' : 'None'}`,
+    betConstruction.contractionTarget !== null ? 'color: #f59e0b' : 'color: #888'
   );
   console.log('%c├─────────────────────────────────────────────────────────┤', 'color: #888');
-  console.log(`%c│ TOP PICK: #${aiTopPick}`, 'color: #36d1da; font-weight: bold');
+  console.log(`%c│ TOP PICK: #${topPick}`, 'color: #36d1da; font-weight: bold');
   console.log(
     `%c│ VALUE PLAY: ${valuePlay ? `#${valuePlay}` : 'None identified'}`,
-    'color: #b4b4b6'
+    valuePlay ? 'color: #10b981' : 'color: #b4b4b6'
+  );
+  console.log(
+    `%c│ RACE CLASSIFICATION: ${betConstruction.raceClassification}`,
+    betConstruction.raceClassification === 'BETTABLE'
+      ? 'color: #10b981'
+      : betConstruction.raceClassification === 'PASS'
+        ? 'color: #ef4444'
+        : 'color: #f59e0b'
   );
   console.log(
     `%c│ CONFIDENCE: ${confidence}`,
@@ -1448,14 +1799,15 @@ export function combineMultiBotResults(
   );
   console.log('%c└─────────────────────────────────────────────────────────┘', 'color: #888');
 
-  // Also output the internal debug logs for detailed analysis
-  debugLog('\n--- FINAL SUMMARY ---');
-  debugLog(`Top Pick: #${aiTopPick} (${isOverride ? 'OVERRIDE' : 'CONFIRM'})`);
-  debugLog(`Value Play: ${valuePlay ? `#${valuePlay}` : 'None'}`);
-  debugLog(`Confidence: ${confidence}`);
-  debugLog(`Bet Type: ${betRecommendation.type}`);
-  debugLog(`Chaotic: ${isChaoticRace}, Likely Upset: ${isLikelyUpset}`);
-  debugLog('=== END SMART COMBINER ===\n');
+  // Log exacta/trifecta strategies
+  debugLog('\n--- TICKET STRATEGIES ---');
+  debugLog(
+    `Exacta: ${betConstruction.exactaStrategy.type} - Key: ${betConstruction.exactaStrategy.keyHorse ?? 'N/A'}, Include: #${betConstruction.exactaStrategy.includeHorses.join(', #')}`
+  );
+  debugLog(
+    `Trifecta: ${betConstruction.trifectaStrategy.type} - A: #${betConstruction.trifectaStrategy.aHorses.join(', #')}, B: #${betConstruction.trifectaStrategy.bHorses.join(', #')}`
+  );
+  debugLog('=== END SMART COMBINER v2 ===\n');
 
   return {
     raceId: `race-${race.header.raceNumber}`,
@@ -1466,13 +1818,14 @@ export function combineMultiBotResults(
     confidence,
     bettableRace: !isChaoticRace && confidence !== 'LOW',
     horseInsights,
-    topPick: aiTopPick,
+    topPick,
     valuePlay,
     avoidList,
-    vulnerableFavorite: isVulnerableFavoriteFlag ?? false,
+    vulnerableFavorite: isVulnerableFavoriteFlag,
     likelyUpset: isLikelyUpset ?? false,
     chaoticRace: isChaoticRace ?? false,
     botDebugInfo,
+    betConstruction, // NEW: Include bet construction guidance
   };
 }
 
