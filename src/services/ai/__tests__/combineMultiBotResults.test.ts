@@ -14,7 +14,6 @@ import {
   detectContractionTarget,
   determineExactaStrategy,
   determineTrifectaStrategy,
-  aggregateHorseSignals,
 } from '../index';
 import type { MultiBotRawResults, AggregatedSignals } from '../types';
 import type { ParsedRace } from '../../../types/drf';
