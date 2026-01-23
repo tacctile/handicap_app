@@ -29,7 +29,11 @@ import { getMultiBotAnalysis, checkAIServiceStatus } from '../src/services/ai';
 import type { ParsedRace, HorseEntry } from '../src/types/drf';
 import type { RaceScoringResult, HorseScoreForAI, RaceAnalysis } from '../src/types/scoring';
 import type { ScoredHorse } from '../src/lib/scoring';
-import type { AIRaceAnalysis, TicketConstruction, TicketTemplate, SizingRecommendationType } from '../src/services/ai/types';
+import type {
+  AIRaceAnalysis,
+  TicketTemplate,
+  SizingRecommendationType,
+} from '../src/services/ai/types';
 import { analyzePaceScenario } from '../src/lib/scoring';
 
 // ============================================================================
@@ -191,7 +195,10 @@ const PAYOUT_ESTIMATES = {
 /**
  * Calculate ticket cost based on template and sizing multiplier
  */
-function calculateTicketCost(template: TicketTemplate, multiplier: number): { exactaCost: number; trifectaCost: number } {
+function calculateTicketCost(
+  template: TicketTemplate,
+  multiplier: number
+): { exactaCost: number; trifectaCost: number } {
   switch (template) {
     case 'A':
       // Template A: 3 exacta combos @ $2, 6 trifecta combos @ $1
@@ -655,7 +662,11 @@ function checkTemplateTrifectaHit(
   const allTop5 = algorithmTop5.slice(0, 5);
 
   // All positions must be different
-  if (actual.first === actual.second || actual.first === actual.third || actual.second === actual.third) {
+  if (
+    actual.first === actual.second ||
+    actual.first === actual.third ||
+    actual.second === actual.third
+  ) {
     return false;
   }
 
@@ -831,8 +842,12 @@ async function runValidation(): Promise<ValidationResult> {
 
   console.log(`  Algorithm Win Rate: ${formatRate(algorithmWins, allRaces.length)}`);
   console.log(`  Algorithm Top 3 Rate: ${formatRate(algorithmTop3, allRaces.length)}`);
-  console.log(`  Algorithm Exacta Box 4: ${formatRate(algorithmExactaBox4, allRaces.length)}  Cost: $${totalAlgorithmExactaCost}`);
-  console.log(`  Algorithm Trifecta Box 5: ${formatRate(algorithmTrifectaBox5, allRaces.length)}  Cost: $${totalAlgorithmTrifectaCost}`);
+  console.log(
+    `  Algorithm Exacta Box 4: ${formatRate(algorithmExactaBox4, allRaces.length)}  Cost: $${totalAlgorithmExactaCost}`
+  );
+  console.log(
+    `  Algorithm Trifecta Box 5: ${formatRate(algorithmTrifectaBox5, allRaces.length)}  Cost: $${totalAlgorithmTrifectaCost}`
+  );
 
   // ============================================================================
   // PHASE 2: Run AI analysis on all races (parallel batches)
@@ -849,7 +864,9 @@ async function runValidation(): Promise<ValidationResult> {
     const batch = allRaces.slice(batchStart, batchEnd);
 
     const batchStartTime = Date.now();
-    console.log(`  Batch ${batchIndex + 1}/${totalBatches}: races ${batchStart + 1}-${batchEnd}...`);
+    console.log(
+      `  Batch ${batchIndex + 1}/${totalBatches}: races ${batchStart + 1}-${batchEnd}...`
+    );
 
     // Process all races in this batch in parallel
     const batchPromises = batch.map(async (raceData) => {
@@ -859,6 +876,26 @@ async function runValidation(): Promise<ValidationResult> {
           recordMetrics: false,
         });
         raceData.aiAnalysis = aiAnalysis;
+
+        // DEBUG: Trace AI output structure
+        if (batchIndex === 0 && raceData === batch[0]) {
+          console.log('\n=== DEBUG: First race AI analysis structure ===');
+          console.log('aiAnalysis keys:', Object.keys(aiAnalysis));
+          console.log('ticketConstruction exists:', aiAnalysis.ticketConstruction !== undefined);
+          console.log('betConstruction exists:', aiAnalysis.betConstruction !== undefined);
+          if (aiAnalysis.ticketConstruction) {
+            console.log('ticketConstruction.template:', aiAnalysis.ticketConstruction.template);
+            console.log(
+              'ticketConstruction.algorithmTop4:',
+              aiAnalysis.ticketConstruction.algorithmTop4
+            );
+            console.log('ticketConstruction.sizing:', aiAnalysis.ticketConstruction.sizing);
+          } else {
+            console.log('>>> ticketConstruction is MISSING! <<<');
+          }
+          console.log('=== END DEBUG ===\n');
+        }
+
         return { success: true, raceData };
       } catch (error) {
         const errorMsg = `AI Error R${raceData.race.header.raceNumber}: ${error instanceof Error ? error.message : String(error)}`;
@@ -872,11 +909,14 @@ async function runValidation(): Promise<ValidationResult> {
     const batchElapsed = ((Date.now() - batchStartTime) / 1000).toFixed(1);
     const successCount = batchResults.filter((r) => r.success).length;
     const failCount = batchResults.filter((r) => !r.success).length;
-    console.log(`    Batch ${batchIndex + 1} complete: ${successCount} succeeded, ${failCount} failed (${batchElapsed}s)`);
+    console.log(
+      `    Batch ${batchIndex + 1} complete: ${successCount} succeeded, ${failCount} failed (${batchElapsed}s)`
+    );
 
     // Check if any rate limit errors occurred in this batch
     const rateLimitErrors = batchResults.filter(
-      (r) => !r.success && (String(r.error).includes('429') || String(r.error).includes('RATE_LIMIT'))
+      (r) =>
+        !r.success && (String(r.error).includes('429') || String(r.error).includes('RATE_LIMIT'))
     );
     if (rateLimitErrors.length > 0) {
       console.log(`    Rate limit detected, waiting 30s before next batch...`);
@@ -888,8 +928,18 @@ async function runValidation(): Promise<ValidationResult> {
   console.log(`\nPhase 2 completed in ${phase2Elapsed}s`);
 
   // Filter races with AI ticketConstruction (new system) or betConstruction (legacy)
-  const racesWithAI = allRaces.filter((r) => r.aiAnalysis?.ticketConstruction || r.aiAnalysis?.betConstruction);
+  const racesWithAI = allRaces.filter(
+    (r) => r.aiAnalysis?.ticketConstruction || r.aiAnalysis?.betConstruction
+  );
   console.log(`\nRaces with AI analysis: ${racesWithAI.length}`);
+
+  // DEBUG: Trace field availability
+  const racesWithTicketConstruction = allRaces.filter((r) => r.aiAnalysis?.ticketConstruction);
+  const racesWithBetConstruction = allRaces.filter((r) => r.aiAnalysis?.betConstruction);
+  const racesWithAiAnalysis = allRaces.filter((r) => r.aiAnalysis);
+  console.log(`  - Races with aiAnalysis: ${racesWithAiAnalysis.length}`);
+  console.log(`  - Races with ticketConstruction: ${racesWithTicketConstruction.length}`);
+  console.log(`  - Races with betConstruction: ${racesWithBetConstruction.length}`);
 
   // ============================================================================
   // PHASE 3: Template-Based Performance Tracking
@@ -900,26 +950,56 @@ async function runValidation(): Promise<ValidationResult> {
   const templateCounts: Record<TicketTemplate | 'PASS', number> = { A: 0, B: 0, C: 0, PASS: 0 };
 
   // Template performance tracking
-  const templateStats: Record<TicketTemplate, {
-    races: number;
-    exactaHits: number;
-    exactaCost: number;
-    exactaPayout: number;
-    trifectaHits: number;
-    trifectaCost: number;
-    trifectaPayout: number;
-  }> = {
-    A: { races: 0, exactaHits: 0, exactaCost: 0, exactaPayout: 0, trifectaHits: 0, trifectaCost: 0, trifectaPayout: 0 },
-    B: { races: 0, exactaHits: 0, exactaCost: 0, exactaPayout: 0, trifectaHits: 0, trifectaCost: 0, trifectaPayout: 0 },
-    C: { races: 0, exactaHits: 0, exactaCost: 0, exactaPayout: 0, trifectaHits: 0, trifectaCost: 0, trifectaPayout: 0 },
+  const templateStats: Record<
+    TicketTemplate,
+    {
+      races: number;
+      exactaHits: number;
+      exactaCost: number;
+      exactaPayout: number;
+      trifectaHits: number;
+      trifectaCost: number;
+      trifectaPayout: number;
+    }
+  > = {
+    A: {
+      races: 0,
+      exactaHits: 0,
+      exactaCost: 0,
+      exactaPayout: 0,
+      trifectaHits: 0,
+      trifectaCost: 0,
+      trifectaPayout: 0,
+    },
+    B: {
+      races: 0,
+      exactaHits: 0,
+      exactaCost: 0,
+      exactaPayout: 0,
+      trifectaHits: 0,
+      trifectaCost: 0,
+      trifectaPayout: 0,
+    },
+    C: {
+      races: 0,
+      exactaHits: 0,
+      exactaCost: 0,
+      exactaPayout: 0,
+      trifectaHits: 0,
+      trifectaCost: 0,
+      trifectaPayout: 0,
+    },
   };
 
   // Sizing performance tracking
-  const sizingStats: Record<SizingRecommendationType, {
-    races: number;
-    exactaHits: number;
-    totalConfidence: number;
-  }> = {
+  const sizingStats: Record<
+    SizingRecommendationType,
+    {
+      races: number;
+      exactaHits: number;
+      totalConfidence: number;
+    }
+  > = {
     MAX: { races: 0, exactaHits: 0, totalConfidence: 0 },
     STRONG: { races: 0, exactaHits: 0, totalConfidence: 0 },
     STANDARD: { races: 0, exactaHits: 0, totalConfidence: 0 },
@@ -941,11 +1021,25 @@ async function runValidation(): Promise<ValidationResult> {
   let totalAIExactaPayout = 0;
   let totalAITrifectaPayout = 0;
 
+  let processedRaceCount = 0;
   for (const raceData of racesWithAI) {
     const ticketConstruction = raceData.aiAnalysis!.ticketConstruction;
     const betConstruction = raceData.aiAnalysis!.betConstruction;
     const raceResult = raceData.raceResult;
     const scoringResult = raceData.scoringResult;
+
+    // DEBUG: First few races
+    if (processedRaceCount < 3) {
+      console.log(
+        `  DEBUG Race ${processedRaceCount + 1}: ticketConstruction=${ticketConstruction ? 'exists' : 'null'}, betConstruction=${betConstruction ? 'exists' : 'null'}`
+      );
+      if (ticketConstruction) {
+        console.log(
+          `    template=${ticketConstruction.template}, sizing=${ticketConstruction.sizing?.recommendation}`
+        );
+      }
+    }
+    processedRaceCount++;
 
     const actual = {
       first: raceResult.positions[0]?.post || 0,
@@ -1046,7 +1140,10 @@ async function runValidation(): Promise<ValidationResult> {
 
       // Check hits using legacy logic (box-based)
       const exactaHit = checkExactaBox(betConstruction.algorithmTop4, actual);
-      const trifectaHit = checkTrifecta([...betConstruction.algorithmTop4, ...(betConstruction.expansionHorses ?? [])], actual);
+      const trifectaHit = checkTrifecta(
+        [...betConstruction.algorithmTop4, ...(betConstruction.expansionHorses ?? [])],
+        actual
+      );
 
       if (exactaHit) {
         templateStats[template].exactaHits++;
@@ -1087,6 +1184,14 @@ async function runValidation(): Promise<ValidationResult> {
   console.log(`  Template C (Wide Open):  ${templateCounts.C} races`);
   console.log(`  PASS:                    ${templateCounts.PASS} races`);
 
+  // DEBUG: Trace template stats
+  console.log('\n  DEBUG Template Stats:');
+  console.log(`    Total racesWithAI processed: ${racesWithAI.length}`);
+  console.log(`    Template A stats: ${JSON.stringify(templateStats.A)}`);
+  console.log(`    Template B stats: ${JSON.stringify(templateStats.B)}`);
+  console.log(`    Sizing MAX stats: ${JSON.stringify(sizingStats.MAX)}`);
+  console.log(`    Sizing STANDARD stats: ${JSON.stringify(sizingStats.STANDARD)}`);
+
   // ============================================================================
   // PHASE 4: Calculate ROI Metrics
   // ============================================================================
@@ -1097,32 +1202,43 @@ async function runValidation(): Promise<ValidationResult> {
   const avgTrifectaPayout = 150; // Average payout for trifecta hit
   const algorithmExactaPayout = algorithmExactaBox4 * avgExactaPayout;
   const algorithmTrifectaPayout = algorithmTrifectaBox5 * avgTrifectaPayout;
-  const algorithmExactaROI = totalAlgorithmExactaCost > 0
-    ? ((algorithmExactaPayout - totalAlgorithmExactaCost) / totalAlgorithmExactaCost) * 100
-    : 0;
-  const algorithmTrifectaROI = totalAlgorithmTrifectaCost > 0
-    ? ((algorithmTrifectaPayout - totalAlgorithmTrifectaCost) / totalAlgorithmTrifectaCost) * 100
-    : 0;
+  const algorithmExactaROI =
+    totalAlgorithmExactaCost > 0
+      ? ((algorithmExactaPayout - totalAlgorithmExactaCost) / totalAlgorithmExactaCost) * 100
+      : 0;
+  const algorithmTrifectaROI =
+    totalAlgorithmTrifectaCost > 0
+      ? ((algorithmTrifectaPayout - totalAlgorithmTrifectaCost) / totalAlgorithmTrifectaCost) * 100
+      : 0;
 
   // AI ROI calculation
-  const aiExactaROI = totalAIExactaCost > 0
-    ? ((totalAIExactaPayout - totalAIExactaCost) / totalAIExactaCost) * 100
-    : 0;
-  const aiTrifectaROI = totalAITrifectaCost > 0
-    ? ((totalAITrifectaPayout - totalAITrifectaCost) / totalAITrifectaCost) * 100
-    : 0;
+  const aiExactaROI =
+    totalAIExactaCost > 0
+      ? ((totalAIExactaPayout - totalAIExactaCost) / totalAIExactaCost) * 100
+      : 0;
+  const aiTrifectaROI =
+    totalAITrifectaCost > 0
+      ? ((totalAITrifectaPayout - totalAITrifectaCost) / totalAITrifectaCost) * 100
+      : 0;
 
   // Cost reduction
   const totalAlgorithmCost = totalAlgorithmExactaCost + totalAlgorithmTrifectaCost;
   const totalAICost = totalAIExactaCost + totalAITrifectaCost;
-  const costReduction = totalAlgorithmCost > 0
-    ? ((totalAlgorithmCost - totalAICost) / totalAlgorithmCost) * 100
-    : 0;
+  const costReduction =
+    totalAlgorithmCost > 0 ? ((totalAlgorithmCost - totalAICost) / totalAlgorithmCost) * 100 : 0;
 
-  console.log(`  Algorithm Exacta ROI: ${algorithmExactaROI.toFixed(1)}% (Cost: $${totalAlgorithmExactaCost}, Payout: $${algorithmExactaPayout})`);
-  console.log(`  Algorithm Trifecta ROI: ${algorithmTrifectaROI.toFixed(1)}% (Cost: $${totalAlgorithmTrifectaCost}, Payout: $${algorithmTrifectaPayout})`);
-  console.log(`  AI Exacta ROI: ${aiExactaROI.toFixed(1)}% (Cost: $${totalAIExactaCost.toFixed(0)}, Payout: $${totalAIExactaPayout.toFixed(0)})`);
-  console.log(`  AI Trifecta ROI: ${aiTrifectaROI.toFixed(1)}% (Cost: $${totalAITrifectaCost.toFixed(0)}, Payout: $${totalAITrifectaPayout.toFixed(0)})`);
+  console.log(
+    `  Algorithm Exacta ROI: ${algorithmExactaROI.toFixed(1)}% (Cost: $${totalAlgorithmExactaCost}, Payout: $${algorithmExactaPayout})`
+  );
+  console.log(
+    `  Algorithm Trifecta ROI: ${algorithmTrifectaROI.toFixed(1)}% (Cost: $${totalAlgorithmTrifectaCost}, Payout: $${algorithmTrifectaPayout})`
+  );
+  console.log(
+    `  AI Exacta ROI: ${aiExactaROI.toFixed(1)}% (Cost: $${totalAIExactaCost.toFixed(0)}, Payout: $${totalAIExactaPayout.toFixed(0)})`
+  );
+  console.log(
+    `  AI Trifecta ROI: ${aiTrifectaROI.toFixed(1)}% (Cost: $${totalAITrifectaCost.toFixed(0)}, Payout: $${totalAITrifectaPayout.toFixed(0)})`
+  );
   console.log(`  Cost Reduction: ${costReduction.toFixed(1)}%`);
 
   // ============================================================================
@@ -1132,24 +1248,41 @@ async function runValidation(): Promise<ValidationResult> {
 
   const sizingHitRates: Record<SizingRecommendationType, number> = {
     MAX: sizingStats.MAX.races > 0 ? (sizingStats.MAX.exactaHits / sizingStats.MAX.races) * 100 : 0,
-    STRONG: sizingStats.STRONG.races > 0 ? (sizingStats.STRONG.exactaHits / sizingStats.STRONG.races) * 100 : 0,
-    STANDARD: sizingStats.STANDARD.races > 0 ? (sizingStats.STANDARD.exactaHits / sizingStats.STANDARD.races) * 100 : 0,
-    HALF: sizingStats.HALF.races > 0 ? (sizingStats.HALF.exactaHits / sizingStats.HALF.races) * 100 : 0,
+    STRONG:
+      sizingStats.STRONG.races > 0
+        ? (sizingStats.STRONG.exactaHits / sizingStats.STRONG.races) * 100
+        : 0,
+    STANDARD:
+      sizingStats.STANDARD.races > 0
+        ? (sizingStats.STANDARD.exactaHits / sizingStats.STANDARD.races) * 100
+        : 0,
+    HALF:
+      sizingStats.HALF.races > 0 ? (sizingStats.HALF.exactaHits / sizingStats.HALF.races) * 100 : 0,
     PASS: 0,
   };
 
-  console.log(`  MAX:      ${sizingStats.MAX.races} races, ${sizingHitRates.MAX.toFixed(1)}% exacta rate`);
-  console.log(`  STRONG:   ${sizingStats.STRONG.races} races, ${sizingHitRates.STRONG.toFixed(1)}% exacta rate`);
-  console.log(`  STANDARD: ${sizingStats.STANDARD.races} races, ${sizingHitRates.STANDARD.toFixed(1)}% exacta rate`);
-  console.log(`  HALF:     ${sizingStats.HALF.races} races, ${sizingHitRates.HALF.toFixed(1)}% exacta rate`);
-  console.log(`  PASS:     ${sizingStats.PASS.races} races (would have hit: ${passWouldHaveHitExacta})`);
+  console.log(
+    `  MAX:      ${sizingStats.MAX.races} races, ${sizingHitRates.MAX.toFixed(1)}% exacta rate`
+  );
+  console.log(
+    `  STRONG:   ${sizingStats.STRONG.races} races, ${sizingHitRates.STRONG.toFixed(1)}% exacta rate`
+  );
+  console.log(
+    `  STANDARD: ${sizingStats.STANDARD.races} races, ${sizingHitRates.STANDARD.toFixed(1)}% exacta rate`
+  );
+  console.log(
+    `  HALF:     ${sizingStats.HALF.races} races, ${sizingHitRates.HALF.toFixed(1)}% exacta rate`
+  );
+  console.log(
+    `  PASS:     ${sizingStats.PASS.races} races (would have hit: ${passWouldHaveHitExacta})`
+  );
 
   // Check calibration: MAX > STRONG > STANDARD > HALF (with tolerance)
   const calibrationTolerance = 5; // 5% tolerance
   const sizingCalibrated =
-    (sizingHitRates.MAX >= sizingHitRates.STRONG - calibrationTolerance) &&
-    (sizingHitRates.STRONG >= sizingHitRates.STANDARD - calibrationTolerance) &&
-    (sizingHitRates.STANDARD >= sizingHitRates.HALF - calibrationTolerance);
+    sizingHitRates.MAX >= sizingHitRates.STRONG - calibrationTolerance &&
+    sizingHitRates.STRONG >= sizingHitRates.STANDARD - calibrationTolerance &&
+    sizingHitRates.STANDARD >= sizingHitRates.HALF - calibrationTolerance;
 
   // ============================================================================
   // BUILD FINAL RESULT
@@ -1160,7 +1293,10 @@ async function runValidation(): Promise<ValidationResult> {
   const racesPassed = templateCounts.PASS;
 
   // Helper to calculate ROI for a template
-  const calculateTemplateROI = (stats: typeof templateStats.A, type: 'exacta' | 'trifecta'): number => {
+  const calculateTemplateROI = (
+    stats: typeof templateStats.A,
+    type: 'exacta' | 'trifecta'
+  ): number => {
     const cost = type === 'exacta' ? stats.exactaCost : stats.trifectaCost;
     const payout = type === 'exacta' ? stats.exactaPayout : stats.trifectaPayout;
     return cost > 0 ? ((payout - cost) / cost) * 100 : 0;
@@ -1192,9 +1328,8 @@ async function runValidation(): Promise<ValidationResult> {
   // Verdict logic
   // templatesWork: Template B exacta rate > algorithm exacta rate on same races
   const algorithmExactaRate = totalRaces > 0 ? (algorithmExactaBox4 / totalRaces) * 100 : 0;
-  const templateBExactaRate = templateStats.B.races > 0
-    ? (templateStats.B.exactaHits / templateStats.B.races) * 100
-    : 0;
+  const templateBExactaRate =
+    templateStats.B.races > 0 ? (templateStats.B.exactaHits / templateStats.B.races) * 100 : 0;
   const templatesWork = templateBExactaRate > algorithmExactaRate;
 
   // roiPositive: AI ROI > Algorithm ROI
@@ -1232,10 +1367,22 @@ async function runValidation(): Promise<ValidationResult> {
     },
 
     templateDistribution: {
-      templateA: { count: templateCounts.A, percentage: toPercentage(templateCounts.A, racesAnalyzed) },
-      templateB: { count: templateCounts.B, percentage: toPercentage(templateCounts.B, racesAnalyzed) },
-      templateC: { count: templateCounts.C, percentage: toPercentage(templateCounts.C, racesAnalyzed) },
-      passed: { count: templateCounts.PASS, percentage: toPercentage(templateCounts.PASS, racesAnalyzed) },
+      templateA: {
+        count: templateCounts.A,
+        percentage: toPercentage(templateCounts.A, racesAnalyzed),
+      },
+      templateB: {
+        count: templateCounts.B,
+        percentage: toPercentage(templateCounts.B, racesAnalyzed),
+      },
+      templateC: {
+        count: templateCounts.C,
+        percentage: toPercentage(templateCounts.C, racesAnalyzed),
+      },
+      passed: {
+        count: templateCounts.PASS,
+        percentage: toPercentage(templateCounts.PASS, racesAnalyzed),
+      },
     },
 
     templatePerformance: {
@@ -1252,18 +1399,20 @@ async function runValidation(): Promise<ValidationResult> {
       PASS: {
         races: sizingStats.PASS.races,
         wouldHaveHit: passWouldHaveHitExacta,
-        correctPassRate: sizingStats.PASS.races > 0
-          ? ((sizingStats.PASS.races - passWouldHaveHitExacta) / sizingStats.PASS.races) * 100
-          : 0,
+        correctPassRate:
+          sizingStats.PASS.races > 0
+            ? ((sizingStats.PASS.races - passWouldHaveHitExacta) / sizingStats.PASS.races) * 100
+            : 0,
       },
     },
 
     vulnerableFavoriteAnalysis: {
       detected: vulnerableFavoritesDetected,
       actuallyLost: vulnerableFavoritesLost,
-      accuracy: vulnerableFavoritesDetected > 0
-        ? (vulnerableFavoritesLost / vulnerableFavoritesDetected) * 100
-        : 0,
+      accuracy:
+        vulnerableFavoritesDetected > 0
+          ? (vulnerableFavoritesLost / vulnerableFavoritesDetected) * 100
+          : 0,
       templateBExactaHits,
       templateBExactaRate,
     },
@@ -1304,7 +1453,12 @@ async function runValidation(): Promise<ValidationResult> {
 
 function printReport(result: ValidationResult): void {
   const { algorithmBaseline: baseline, templateDistribution: td, templatePerformance: tp } = result;
-  const { sizingPerformance: sp, vulnerableFavoriteAnalysis: vuln, roiSummary: roi, verdict } = result;
+  const {
+    sizingPerformance: sp,
+    vulnerableFavoriteAnalysis: vuln,
+    roiSummary: roi,
+    verdict,
+  } = result;
 
   console.log('\n');
   console.log('═'.repeat(70));
@@ -1321,17 +1475,29 @@ function printReport(result: ValidationResult): void {
   console.log('─'.repeat(70));
   console.log(`Win Rate:         ${formatRate(baseline.wins, result.totalRaces)}`);
   console.log(`Top 3 Rate:       ${formatRate(baseline.top3Hits, result.totalRaces)}`);
-  console.log(`Exacta Box 4:     ${formatRate(baseline.exactaBox4Hits, result.totalRaces)}  Cost: $${baseline.exactaBox4Cost.toLocaleString()}  ROI: ${roi.algorithmExactaROI >= 0 ? '+' : ''}${roi.algorithmExactaROI.toFixed(1)}%`);
-  console.log(`Trifecta Box 5:   ${formatRate(baseline.trifectaBox5Hits, result.totalRaces)}  Cost: $${baseline.trifectaBox5Cost.toLocaleString()}  ROI: ${roi.algorithmTrifectaROI >= 0 ? '+' : ''}${roi.algorithmTrifectaROI.toFixed(1)}%`);
+  console.log(
+    `Exacta Box 4:     ${formatRate(baseline.exactaBox4Hits, result.totalRaces)}  Cost: $${baseline.exactaBox4Cost.toLocaleString()}  ROI: ${roi.algorithmExactaROI >= 0 ? '+' : ''}${roi.algorithmExactaROI.toFixed(1)}%`
+  );
+  console.log(
+    `Trifecta Box 5:   ${formatRate(baseline.trifectaBox5Hits, result.totalRaces)}  Cost: $${baseline.trifectaBox5Cost.toLocaleString()}  ROI: ${roi.algorithmTrifectaROI >= 0 ? '+' : ''}${roi.algorithmTrifectaROI.toFixed(1)}%`
+  );
 
   // SECTION B: Template Distribution
   console.log('─'.repeat(70));
   console.log('SECTION B: TEMPLATE DISTRIBUTION');
   console.log('─'.repeat(70));
-  console.log(`Template A (Solid):      ${td.templateA.count.toString().padStart(3)} races (${td.templateA.percentage.toFixed(1)}%)`);
-  console.log(`Template B (Vulnerable): ${td.templateB.count.toString().padStart(3)} races (${td.templateB.percentage.toFixed(1)}%)`);
-  console.log(`Template C (Wide Open):  ${td.templateC.count.toString().padStart(3)} races (${td.templateC.percentage.toFixed(1)}%)`);
-  console.log(`PASS:                    ${td.passed.count.toString().padStart(3)} races (${td.passed.percentage.toFixed(1)}%)`);
+  console.log(
+    `Template A (Solid):      ${td.templateA.count.toString().padStart(3)} races (${td.templateA.percentage.toFixed(1)}%)`
+  );
+  console.log(
+    `Template B (Vulnerable): ${td.templateB.count.toString().padStart(3)} races (${td.templateB.percentage.toFixed(1)}%)`
+  );
+  console.log(
+    `Template C (Wide Open):  ${td.templateC.count.toString().padStart(3)} races (${td.templateC.percentage.toFixed(1)}%)`
+  );
+  console.log(
+    `PASS:                    ${td.passed.count.toString().padStart(3)} races (${td.passed.percentage.toFixed(1)}%)`
+  );
 
   // SECTION C: Template Performance
   console.log('─'.repeat(70));
@@ -1372,16 +1538,24 @@ function printReport(result: ValidationResult): void {
   formatSizingRow('STRONG', sp.STRONG);
   formatSizingRow('STANDARD', sp.STANDARD);
   formatSizingRow('HALF', sp.HALF);
-  console.log(`PASS        ${sp.PASS.races.toString().padStart(3)}       (would hit ${sp.PASS.wouldHaveHit})    ${(sp.PASS.races > 0 ? (result.sizingPerformance.PASS.races - sp.PASS.wouldHaveHit) / result.sizingPerformance.PASS.races * 100 : 0).toFixed(1)}% correct`);
-  console.log(`Calibration: ${verdict.sizingCalibrated ? '✓' : '✗'} Higher confidence = higher hit rate`);
+  console.log(
+    `PASS        ${sp.PASS.races.toString().padStart(3)}       (would hit ${sp.PASS.wouldHaveHit})    ${(sp.PASS.races > 0 ? ((result.sizingPerformance.PASS.races - sp.PASS.wouldHaveHit) / result.sizingPerformance.PASS.races) * 100 : 0).toFixed(1)}% correct`
+  );
+  console.log(
+    `Calibration: ${verdict.sizingCalibrated ? '✓' : '✗'} Higher confidence = higher hit rate`
+  );
 
   // SECTION E: Vulnerable Favorite Fading
   console.log('─'.repeat(70));
   console.log('SECTION E: VULNERABLE FAVORITE FADING');
   console.log('─'.repeat(70));
   console.log(`Detected:        ${vuln.detected} races`);
-  console.log(`Actually Lost:   ${vuln.actuallyLost}/${vuln.detected} (${vuln.accuracy.toFixed(1)}% accuracy)`);
-  console.log(`Template B Exacta: ${vuln.templateBExactaHits}/${td.templateB.count} (${vuln.templateBExactaRate.toFixed(1)}%)`);
+  console.log(
+    `Actually Lost:   ${vuln.actuallyLost}/${vuln.detected} (${vuln.accuracy.toFixed(1)}% accuracy)`
+  );
+  console.log(
+    `Template B Exacta: ${vuln.templateBExactaHits}/${td.templateB.count} (${vuln.templateBExactaRate.toFixed(1)}%)`
+  );
 
   // SECTION F: ROI Comparison
   console.log('─'.repeat(70));
@@ -1409,9 +1583,7 @@ function printReport(result: ValidationResult): void {
   console.log(
     `${verdict.sizingCalibrated ? '✓' : '✗'} Sizing calibrated (hit rate increases with confidence)`
   );
-  console.log(
-    `${verdict.roiPositive ? '✓' : '✗'} ROI positive (AI beats algorithm baseline)`
-  );
+  console.log(`${verdict.roiPositive ? '✓' : '✗'} ROI positive (AI beats algorithm baseline)`);
   console.log(`RECOMMENDATION: ${verdict.recommendation}`);
   console.log('═'.repeat(70));
 
@@ -1442,7 +1614,7 @@ async function main(): Promise<void> {
     console.log(`\nFull results saved to: ${OUTPUT_FILE}`);
 
     // Exit with appropriate code
-    if (result.verdict.overallRecommendation === 'REVERT') {
+    if (result.verdict.recommendation === 'REVERT') {
       process.exit(1);
     }
   } catch (error) {
