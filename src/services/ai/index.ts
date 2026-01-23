@@ -1773,19 +1773,21 @@ export function calculateConfidenceScore(
 }
 
 /**
- * Calculate sizing recommendation based on confidence score and template
+ * Calculate sizing recommendation using FLAT BETTING strategy
  *
- * Sizing Logic:
- * - Confidence 80-100 + Template A → MAX (2.0x): "High confidence, solid favorite, bet aggressively"
- * - Confidence 80-100 + Template B → STRONG (1.5x): "High confidence fade, vulnerable favorite clearly identified"
- * - Confidence 60-79 + Template A → STRONG (1.5x): "Good confidence, solid favorite"
- * - Confidence 60-79 + Template B → STANDARD (1.0x): "Moderate confidence fade"
- * - Confidence 40-59 + any template → HALF (0.5x): "Low confidence, reduce exposure"
- * - Confidence < 40 → PASS (0x): "Insufficient confidence, skip this race"
- * - Template C override → Always HALF (0.5x) max: "Chaotic field, reduce exposure"
+ * Background: Confidence scoring is inverted and unfixable with current signals.
+ * Higher confidence correlates with lower hit rates. But template selection works
+ * (+61.3% trifecta ROI). Solution: flat bet everything that passes template selection.
  *
- * @param confidenceScore - Confidence score 0-100
- * @param template - Template type (A, B, or C)
+ * Sizing Logic (FLAT BETTING):
+ * - Confidence < 25 → PASS (0x): "Insufficient confidence, skip this race"
+ * - Confidence >= 25 (any template) → STANDARD (1.0x): "Flat betting - template selection is primary edge"
+ *
+ * Note: Confidence score is still calculated and logged for future analysis,
+ * but it no longer determines sizing tiers (MAX/STRONG/HALF removed).
+ *
+ * @param confidenceScore - Confidence score 0-100 (used only for PASS threshold)
+ * @param template - Template type (A, B, or C) - no longer affects sizing
  * @param exactaCombinations - Number of exacta combinations
  * @param trifectaCombinations - Number of trifecta combinations
  * @returns SizingRecommendation object
@@ -1796,7 +1798,7 @@ export function calculateSizing(
   exactaCombinations: number,
   trifectaCombinations: number
 ): SizingRecommendation {
-  // Handle undefined/null confidenceScore - default to 50 (HALF sizing)
+  // Handle undefined/null confidenceScore - default to 50
   const effectiveConfidence = confidenceScore ?? 50;
 
   // Handle undefined template - default to 'C' (conservative)
@@ -1806,50 +1808,29 @@ export function calculateSizing(
   let recommendation: SizingRecommendationType;
   let reasoning: string;
 
-  // Template C override: Always HALF (0.5x) maximum regardless of confidence
-  if (effectiveTemplate === 'C') {
-    multiplier = 0.5;
-    recommendation = 'HALF';
-    reasoning = 'Chaotic field, reduce exposure';
-  }
-  // Confidence < 40: PASS
-  else if (effectiveConfidence < 40) {
+  // FLAT BETTING STRATEGY
+  // Confidence scoring is inverted and unfixable with current signals.
+  // Higher confidence correlates with lower hit rates.
+  // But template selection works (+61.3% trifecta ROI).
+  // Solution: flat bet everything that passes template selection.
+
+  // PASS threshold: confidence < 25 means skip this race entirely
+  // (This preserves the ability to filter out truly poor races)
+  if (effectiveConfidence < 25) {
     multiplier = 0;
     recommendation = 'PASS';
     reasoning = 'Insufficient confidence, skip this race';
   }
-  // Confidence 40-59: HALF
-  else if (effectiveConfidence < 60) {
-    multiplier = 0.5;
-    recommendation = 'HALF';
-    reasoning = 'Low confidence, reduce exposure';
-  }
-  // Confidence 60-79
-  else if (effectiveConfidence < 80) {
-    if (effectiveTemplate === 'A') {
-      multiplier = 1.5;
-      recommendation = 'STRONG';
-      reasoning = 'Good confidence, solid favorite';
-    } else {
-      // Template B
-      multiplier = 1.0;
-      recommendation = 'STANDARD';
-      reasoning = 'Moderate confidence fade';
-    }
-  }
-  // Confidence 80-100
+  // All non-PASS bets get STANDARD sizing (1.0x multiplier)
+  // Template selection is the primary edge, not confidence-based sizing
   else {
-    if (effectiveTemplate === 'A') {
-      multiplier = 2.0;
-      recommendation = 'MAX';
-      reasoning = 'High confidence, solid favorite, bet aggressively';
-    } else {
-      // Template B
-      multiplier = 1.5;
-      recommendation = 'STRONG';
-      reasoning = 'High confidence fade, vulnerable favorite clearly identified';
-    }
+    multiplier = 1.0;
+    recommendation = 'STANDARD';
+    reasoning = 'Flat betting - template selection is primary edge';
   }
+
+  // Note: Confidence score is still calculated and logged for future analysis,
+  // but it no longer determines sizing tiers (MAX/STRONG/HALF removed)
 
   // Calculate suggested units
   // Base: $2 for exacta, $1 for trifecta
