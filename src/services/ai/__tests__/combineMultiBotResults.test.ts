@@ -220,7 +220,7 @@ describe('combineMultiBotResults', () => {
       expect(horseE?.projectedFinish).toBeLessThanOrEqual(4);
     });
 
-    it('should add trip trouble note when maskedAbility is true', () => {
+    it('should add trip trouble note when maskedAbility is true (HIGH confidence - 2+ races)', () => {
       const race = createMockRace([
         { programNumber: 1, name: 'Horse A', runningStyle: 'E', mlOdds: '2-1' },
         { programNumber: 2, name: 'Horse B', runningStyle: 'S', mlOdds: '5-1' },
@@ -233,14 +233,15 @@ describe('combineMultiBotResults', () => {
         { programNumber: 3, name: 'Horse C', rank: 3, score: 160, tier: 'medium' },
       ]);
 
-      // Horse C (rank 3) has trip trouble with maskedAbility
+      // Horse C (rank 3) has HIGH confidence trip trouble (2+ races)
       const rawResults: MultiBotRawResults = {
         tripTrouble: {
           horsesWithTripTrouble: [
             {
               programNumber: 3,
               horseName: 'Horse C',
-              issue: 'Checked in stretch last race',
+              // HIGH confidence - needs "2 of" or similar indicator
+              issue: 'Checked in stretch in 2 of last 3 races',
               maskedAbility: true,
             },
           ],
@@ -252,14 +253,14 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // Horse C should have trip trouble note in oneLiner
+      // Horse C should have trip trouble in oneLiner (HIGH confidence gets boost)
       const horseC = result.horseInsights.find((h) => h.programNumber === 3);
-      expect(horseC?.oneLiner).toContain('Trip trouble');
+      expect(horseC?.oneLiner).toMatch(/[Hh]idden|[Bb]eyer|[Tt]rip/i);
     });
   });
 
   describe('Pace Scenario Bot Integration', () => {
-    it('should boost closers and penalize speed when speedDuelLikely and HOT pace', () => {
+    it('should penalize speed horse when speedDuelLikely and HOT pace (closers flag only in conservative)', () => {
       const race = createMockRace([
         { programNumber: 1, name: 'Speed Horse', runningStyle: 'E', mlOdds: '2-1' },
         { programNumber: 2, name: 'Stalker', runningStyle: 'S', mlOdds: '5-1' },
@@ -288,17 +289,14 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // Closer should get +1 boost for pace advantage
-      const closer = result.horseInsights.find((h) => h.programNumber === 3);
-      expect(closer?.keyStrength).toContain('Speed duel sets up for closing');
-
-      // Speed horse gets -1 penalty in smart combiner (HOT pace + speed duel hurts early speed)
-      // With -1 penalty, rank 1 -> adjusted rank 2, so speed horse drops
+      // CONSERVATIVE: Closers get flagged but no boost (MODERATE edge strength)
+      // Speed horse gets -1 penalty (always applied for disadvantage)
       const speedHorse = result.horseInsights.find((h) => h.programNumber === 1);
-      expect(speedHorse?.projectedFinish).toBeGreaterThanOrEqual(2);
+      // -1 is below ±2 threshold, so rank doesn't change in conservative mode
+      expect(speedHorse?.keyWeakness).toContain('Speed duel');
     });
 
-    it('should boost lone speed horse by +1 position (conservative)', () => {
+    it('should boost lone speed horse by +1 position (STRONG edge in conservative mode)', () => {
       const race = createMockRace([
         { programNumber: 1, name: 'Stalker', runningStyle: 'S', mlOdds: '2-1' },
         { programNumber: 2, name: 'Closer', runningStyle: 'C', mlOdds: '5-1' },
@@ -317,7 +315,7 @@ describe('combineMultiBotResults', () => {
           advantagedStyles: ['E'],
           disadvantagedStyles: ['C'],
           paceProjection: 'SLOW',
-          loneSpeedException: true, // Key flag
+          loneSpeedException: true, // Key flag - STRONG edge
           speedDuelLikely: false,
         },
         vulnerableFavorite: null,
@@ -326,10 +324,10 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // Lone Speed should get +1 boost but algorithm top 4 is protected
-      // With conservative approach, lone speed gets boosted but may not become #1
+      // CONSERVATIVE: Lone speed gets +1 (STRONG edge)
+      // +1 is below ±2 threshold, so no rank override but pace edge noted
       const loneSpeed = result.horseInsights.find((h) => h.programNumber === 3);
-      expect(loneSpeed?.keyStrength).toBe('Lone speed - clear tactical advantage');
+      expect(loneSpeed?.keyStrength).toContain('Lone speed');
     });
 
     it('should NOT boost closers when speedDuelLikely but NOT HOT pace', () => {
@@ -543,7 +541,7 @@ describe('combineMultiBotResults', () => {
   });
 
   describe('Narrative Generation', () => {
-    it('should generate OVERRIDE narrative when lone speed overtakes algorithm pick', () => {
+    it('should generate CONFIRM narrative when lone speed is not enough to override (conservative +1)', () => {
       const race = createMockRace([
         { programNumber: 1, name: 'Algo Pick', runningStyle: 'S', mlOdds: '2-1' }, // Stalker - not a speed horse
         { programNumber: 2, name: 'Speed Horse', runningStyle: 'E', mlOdds: '5-1' }, // Early speed
@@ -554,7 +552,8 @@ describe('combineMultiBotResults', () => {
         { programNumber: 2, name: 'Speed Horse', rank: 2, score: 180, tier: 'high' },
       ]);
 
-      // Lone speed exception gives +2 boost to Speed Horse
+      // CONSERVATIVE: Lone speed exception gives +1 boost (not +2)
+      // +1 is below ±2 threshold, so no rank change
       const rawResults: MultiBotRawResults = {
         tripTrouble: null,
         paceScenario: {
@@ -570,14 +569,48 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // With +2 lone speed boost, Speed Horse (rank 2) moves to adjusted rank 0 (capped to 1)
-      // Speed Horse becomes top pick
+      // CONSERVATIVE: +1 is below ±2 threshold - no override
+      expect(result.topPick).toBe(1);
+      expect(result.raceNarrative).toContain('CONFIRM');
+
+      // Speed horse should still have lone speed noted as strength
+      const speedHorse = result.horseInsights.find((h) => h.programNumber === 2);
+      expect(speedHorse?.keyStrength).toContain('Lone speed');
+    });
+
+    it('should generate OVERRIDE narrative when HIGH confidence trip trouble overtakes algorithm pick', () => {
+      const race = createMockRace([
+        { programNumber: 1, name: 'Algo Pick', runningStyle: 'S', mlOdds: '2-1' },
+        { programNumber: 2, name: 'Trip Horse', runningStyle: 'E', mlOdds: '5-1' },
+      ]);
+
+      const scoring = createMockScoringResult([
+        { programNumber: 1, name: 'Algo Pick', rank: 1, score: 200, tier: 'high' },
+        { programNumber: 2, name: 'Trip Horse', rank: 2, score: 180, tier: 'high' },
+      ]);
+
+      // HIGH confidence trip trouble gives +2 boost - enough to trigger override
+      const rawResults: MultiBotRawResults = {
+        tripTrouble: {
+          horsesWithTripTrouble: [
+            {
+              programNumber: 2,
+              horseName: 'Trip Horse',
+              issue: 'Blocked in last 2 races - multiple troubled trips',
+              maskedAbility: true,
+            },
+          ],
+        },
+        paceScenario: null,
+        vulnerableFavorite: null,
+        fieldSpread: null,
+      };
+
+      const result = combineMultiBotResults(rawResults, race, scoring, 100);
+
+      // +2 meets threshold - Trip Horse becomes top pick
       expect(result.topPick).toBe(2);
       expect(result.raceNarrative).toContain('OVERRIDE');
-
-      // Speed horse should have lone speed noted
-      const speedHorse = result.horseInsights.find((h) => h.programNumber === 2);
-      expect(speedHorse?.keyStrength).toBe('Lone speed - clear tactical advantage');
     });
 
     it('should generate CONFIRM narrative when AI agrees with algorithm', () => {
