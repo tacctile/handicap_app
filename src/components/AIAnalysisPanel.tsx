@@ -551,7 +551,7 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
   }, []);
 
   // Get confidence badge variant
-  const getConfidenceVariant = (confidence: 'HIGH' | 'MEDIUM' | 'LOW') => {
+  const getConfidenceVariant = (confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'MINIMAL') => {
     switch (confidence) {
       case 'HIGH':
         return 'ai-panel__confidence--high';
@@ -559,6 +559,8 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
         return 'ai-panel__confidence--medium';
       case 'LOW':
         return 'ai-panel__confidence--low';
+      case 'MINIMAL':
+        return 'ai-panel__confidence--minimal';
     }
   };
 
@@ -625,7 +627,7 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
           <span className="material-icons ai-panel__icon">psychology</span>
           <span className="ai-panel__title">AI Race Analysis</span>
           <span className={`ai-panel__confidence ${getConfidenceVariant(aiAnalysis.confidence)}`}>
-            {aiAnalysis.confidence} CONFIDENCE
+            {aiAnalysis.confidence === 'MINIMAL' ? 'NO CLEAR EDGE' : `${aiAnalysis.confidence} CONFIDENCE`}
           </span>
           {aiAnalysis.bettableRace ? (
             <span className="ai-panel__bettable ai-panel__bettable--yes">BETTABLE</span>

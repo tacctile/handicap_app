@@ -44,7 +44,7 @@ export const VALUE_THRESHOLDS = {
 
 export type RaceVerdict = 'BET' | 'CAUTION' | 'PASS';
 export type BetTypeSuggestion = 'WIN' | 'PLACE' | 'SHOW' | 'TRIFECTA_KEY' | 'PASS';
-export type ConfidenceLevel = 'HIGH' | 'MEDIUM' | 'LOW';
+export type ConfidenceLevel = 'HIGH' | 'MEDIUM' | 'LOW' | 'MINIMAL';
 
 export interface ValuePlay {
   /** Horse name */
@@ -251,15 +251,24 @@ function determineBetType(
 
 /**
  * Determine confidence level for a value play
+ * - HIGH: edge >= 75% AND rank <= 3
+ * - MEDIUM: edge >= 50%
+ * - LOW: edge >= 25% AND rank <= 4
+ * - MINIMAL: edge < 25% OR rank > 4 with weak edge
  */
 function determinePlayConfidence(rank: number, edge: number): ConfidenceLevel {
   if (edge >= VALUE_THRESHOLDS.highConfidenceEdge && rank <= 3) {
     return 'HIGH';
   }
-  if (edge >= VALUE_THRESHOLDS.minEdgePercent || rank > 4) {
+  if (edge >= VALUE_THRESHOLDS.minEdgePercent) {
     return 'MEDIUM';
   }
-  return 'LOW';
+  // Weak edge cases
+  if (edge >= 25 && rank <= 4) {
+    return 'LOW';
+  }
+  // Very weak edge or poor rank
+  return 'MINIMAL';
 }
 
 /**
