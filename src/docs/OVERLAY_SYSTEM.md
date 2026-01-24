@@ -1,6 +1,6 @@
 # OVERLAY SYSTEM
 
-## The ±50 Point Micro-Edge Capture Protocol
+## The ±40 Point Micro-Edge Capture Protocol
 
 > **The Overlay System transforms the static base score into a dynamic, race-specific assessment. Every DRF data point contributes to overlay calculation, capturing micro-edges that accumulate into significant advantages.**
 
@@ -22,9 +22,9 @@
 
 **Adjustment Parameters:**
 
-- Maximum Positive Adjustment: +50 points
-- Maximum Negative Adjustment: -50 points
-- Overflow beyond ±50 recorded as confidence modifier
+- Maximum Positive Adjustment: +40 points
+- Maximum Negative Adjustment: -40 points
+- Overflow beyond ±40 recorded as confidence modifier
 - Minimum threshold for betting consideration: Base + Overlay ≥ 140 points
 
 ### Overlay Section Distribution
@@ -41,7 +41,7 @@
 | H: Market Intelligence              | Confidence modifier only |
 
 **Raw Overlay Range:** -88 to +88 points (before cap)
-**Capped Overlay Range:** -50 to +50 points (applied to score)
+**Capped Overlay Range:** -40 to +40 points (applied to score)
 **Overflow:** Recorded as confidence modifier
 
 ---
@@ -735,9 +735,9 @@ If -50 ≤ Raw Score ≤ +50: Capped Score = Raw Score, Overflow = 0
 ### Final Score Calculation
 
 ```
-Final Score = Base Score (0-328) + Overlay Adjustment (±40)
+Final Score = Base Score (0-331) + Overlay Adjustment (±40)
 
-Theoretical Range: 0 to 368 points
+Theoretical Range: 0 to 371 points
 Practical Range: 50 to 320 points
 Betting Threshold: 140+ points minimum
 Elite Threshold: 200+ points

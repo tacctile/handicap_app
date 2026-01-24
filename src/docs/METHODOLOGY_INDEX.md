@@ -11,7 +11,7 @@
 ```
 src/docs/
 ├── METHODOLOGY_INDEX.md      ← You are here
-├── ALGORITHM_V3_SUMMARY.md   ← Current v3.6 algorithm (328-pt base, form decay)
+├── ALGORITHM_V3_SUMMARY.md   ← Current v3.6 algorithm (331-pt base, form decay)
 ├── SCORING_ENGINE.md         ← Detailed scoring reference (v2.0 legacy + v3.6 notes)
 ├── DRF_FIELD_MAP.md          ← All 1,435 DRF fields mapped
 ├── OVERLAY_SYSTEM.md         ← ±40 point adjustment logic
@@ -43,7 +43,7 @@ src/docs/
          │
          ▼
 ┌─────────────────┐
-│ SCORING ENGINE  │ ← Calculates 0-328 base per ALGORITHM_V3_SUMMARY.md
+│ SCORING ENGINE  │ ← Calculates 0-331 base per ALGORITHM_V3_SUMMARY.md
 └────────┬────────┘
          │
          ▼
@@ -77,7 +77,7 @@ src/docs/
 
 **Key Contents:**
 
-- 328-point base score with 15 categories
+- 331-point base score with 15 categories
 - Category weights: Speed (90), Form (50), Pace (45), Class (32), Connections (27), etc.
 - Phase 1-7 changes documented
 - Form Decay System (Phase 7) - scales winner bonuses by recency
@@ -220,13 +220,13 @@ src/docs/
 ### Final Score Calculation (Algorithm v3.1)
 
 ```
-Final Score = Base Score (0-328) + Overlay Adjustment (±40)
+Final Score = Base Score (0-331) + Overlay Adjustment (±40)
 
-Theoretical Range: 0 to 368
+Theoretical Range: 0 to 371
 Practical Range: 50 to 320
 Betting Threshold: 140+ minimum
 
-Base Score Categories (328 pts total):
+Base Score Categories (331 pts total):
 - Speed/Class: 122 pts (37.2%)
 - Form: 50 pts (15.2%)
 - Pace: 45 pts (13.7%)
@@ -333,7 +333,7 @@ Recommended update frequency:
 | ------- | ------- | ---------------------------------------------------------- |
 | 3.6     | 2026-01 | v3.6 - Form Decay System - Scales winner bonuses by recency|
 | 3.1     | 2025-12 | Algorithm v3.1 (Phase 6): Added ALGORITHM_V3_SUMMARY.md    |
-| 3.0     | 2025-12 | Algorithm rebuild Phases 1-5: 328-pt base, overlay cap ±40 |
+| 3.0     | 2025-12 | Algorithm rebuild Phases 1-5: 331-pt base, overlay cap ±40 |
 | 1.0     | 2024-12 | Initial methodology documentation                          |
 
 ---

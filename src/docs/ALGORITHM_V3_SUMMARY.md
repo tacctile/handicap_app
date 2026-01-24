@@ -13,9 +13,9 @@ The Furlong scoring algorithm v3.6 represents a complete rebuild through Phases 
 
 **Score Ranges:**
 
-- MAX_BASE_SCORE: 328 points
+- MAX_BASE_SCORE: 331 points
 - MAX_OVERLAY: ±40 points
-- MAX_TOTAL: 368 points
+- MAX_TOTAL: 371 points
 - Practical Range: 50 to 320 points
 
 ## Category Weights
@@ -37,7 +37,7 @@ The Furlong scoring algorithm v3.6 represents a complete rebuild through Phases 
 | Combo Patterns   | 4      | 1.2%      | Jockey/trainer combination bonuses            |
 | P3 Refinements   | 2      | 0.6%      | Age factor (±1) + Sire's Sire (±1)            |
 | Weight           | 1      | 0.3%      | Subtle weight change refinement               |
-| **TOTAL**        | 328    | 100%      |                                               |
+| **TOTAL**        | 331    | 100%      |                                               |
 
 ## Key Changes from v2.5
 
@@ -257,7 +257,7 @@ To prevent penalizing active horses with old standout figures:
 
 - **v3.7** (Phase 8): Speed Recency Decay — re-enabled with calibrated tiers and active horse protection
 - **v3.6** (Phase 7): Form Decay System — scales winner bonuses by recency
-- **v3.1** (Phase 6): Added odds factor (+15 pts), base now 328
+- **v3.1** (Phase 6): Added odds factor (+15 pts), base now 331
 - **v3.0** (Phase 3): Speed rebalance, base increased to 313
 - **v2.5**: Overlay system added, cap at ±50
 - **v2.0**: Industry-aligned weights, 240-point base
