@@ -60,12 +60,12 @@ describe('getDefaultCalibration', () => {
   it('should have tiers covering full score range', () => {
     const calibration = getDefaultCalibration();
 
-    // Verify tiers cover 0-240
+    // Verify tiers cover full score range (0-331)
     const minScore = Math.min(...calibration.tiers.map((t) => t.minScore));
     const maxScore = Math.max(...calibration.tiers.map((t) => t.maxScore));
 
     expect(minScore).toBe(0);
-    expect(maxScore).toBeGreaterThanOrEqual(240);
+    expect(maxScore).toBeGreaterThanOrEqual(331);
   });
 });
 

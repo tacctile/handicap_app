@@ -115,7 +115,7 @@ export interface CalibrationSummary {
 
 /** Default score tiers with probabilities */
 export const DEFAULT_TIERS: ScoreTier[] = [
-  { minScore: 200, maxScore: 241, winProbability: 75, label: 'Elite (200+)' },
+  { minScore: 200, maxScore: 332, winProbability: 75, label: 'Elite (200+)' },
   { minScore: 180, maxScore: 200, winProbability: 65, label: 'Strong (180-199)' },
   { minScore: 160, maxScore: 180, winProbability: 55, label: 'Good (160-179)' },
   { minScore: 140, maxScore: 160, winProbability: 45, label: 'Fair (140-159)' },
@@ -159,8 +159,8 @@ export function scoreToWinProbability(
   score: number,
   calibration: CalibrationProfile = getDefaultCalibration()
 ): number {
-  // Validate score
-  const validScore = Math.max(0, Math.min(240, score));
+  // Validate score (331 = max base score)
+  const validScore = Math.max(0, Math.min(331, score));
 
   // Find matching tier
   for (const tier of calibration.tiers) {

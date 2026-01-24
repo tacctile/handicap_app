@@ -212,8 +212,8 @@ export const VALUE_CLASSIFICATION_META: Record<
  * - <100 → 15%
  */
 export function scoreToWinProbability(score: number, calibration?: CalibrationProfile): number {
-  // Validate score
-  const validScore = Math.max(0, Math.min(240, score));
+  // Validate score (331 = max base score)
+  const validScore = Math.max(0, Math.min(331, score));
 
   // Use calibrated probability if profile provided
   if (calibration) {

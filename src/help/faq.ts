@@ -21,7 +21,7 @@ export const FAQ_ITEMS: FAQItem[] = [
     id: 'how-scoring-works',
     question: 'How does the scoring algorithm work?',
     answer:
-      'Our scoring algorithm evaluates horses across 6 key categories: Elite Connections (trainer/jockey), Post Position & Track Bias, Speed Figures & Class, Form Cycle & Conditioning, Equipment & Medication, and Pace & Tactical scenarios. Each category contributes to a base score of 0-240 points. Race-day adjustments (DRF Overlay) can add or subtract up to 50 additional points, resulting in final scores from 0-250+. The algorithm is deterministic—same inputs always produce the same outputs.',
+      'Our scoring algorithm evaluates horses across 6 key categories: Elite Connections (trainer/jockey), Post Position & Track Bias, Speed Figures & Class, Form Cycle & Conditioning, Equipment & Medication, and Pace & Tactical scenarios. Each category contributes to a base score of 0-331 points. Race-day adjustments (DRF Overlay) can add or subtract up to 40 additional points, resulting in final scores from 0-371. The algorithm is deterministic—same inputs always produce the same outputs.',
   },
   {
     id: 'confidence-percentages',

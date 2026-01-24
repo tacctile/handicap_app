@@ -143,7 +143,7 @@ export function ExoticBuilderModal({
           horseName: h.horse.horseName,
           odds,
           oddsDisplay: h.horse.morningLineOdds,
-          confidence: Math.min(100, 40 + (h.score.total / 240) * 60),
+          confidence: Math.min(100, 40 + (h.score.total / 331) * 60),
           tier,
           isSelected: false,
           position: null,

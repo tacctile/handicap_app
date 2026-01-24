@@ -106,11 +106,11 @@ Projects race pace scenarios and identifies horses with tactical advantages—cl
 - **Pace Scenario Fit:** 0-25 points
 - **Tactical Advantages:** 0-15 points
 
-## Base Score Range: 0-240 Points
+## Base Score Range: 0-331 Points
 
 ## DRF Overlay Adjustments
 
-After base scoring, race-day factors can adjust the score by ±50 points:
+After base scoring, race-day factors can adjust the score by ±40 points:
 - Pace dynamics changes
 - Form cycle specifics
 - Trip analysis

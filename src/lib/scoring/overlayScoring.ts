@@ -1,10 +1,10 @@
 /**
  * Overlay Scoring System
  *
- * The ±50 Point Micro-Edge Capture Protocol
+ * The ±40 Point Micro-Edge Capture Protocol
  *
  * This module implements the Overlay System that adds race-specific adjustments
- * on top of the base 240-point score. Each section captures micro-edges that
+ * on top of the base 331-point score. Each section captures micro-edges that
  * accumulate into significant advantages.
  *
  * Overlay Section Distribution:
@@ -18,7 +18,7 @@
  * - Section H: Market Intelligence (confidence modifier only)
  *
  * Raw Overlay Range: -88 to +88 points (before cap)
- * Capped Overlay Range: -50 to +50 points (applied to score)
+ * Capped Overlay Range: -40 to +40 points (applied to score)
  * Overflow: Recorded as confidence modifier
  */
 
