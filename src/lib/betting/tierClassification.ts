@@ -10,6 +10,7 @@ import {
   calculateFieldRelativeScore,
   type FieldContext,
   type FieldRelativeResult,
+  MAX_BASE_SCORE,
 } from '../scoring';
 import { isFieldRelativeScoringEnabled } from '../config/featureFlags';
 
@@ -24,8 +25,8 @@ export interface TierThresholds {
 }
 
 export const TIER_CONFIG: Record<BettingTier, TierThresholds> = {
-  // v3.1: Adjusted minConfidence to be achievable with MAX_BASE_SCORE=328
-  // Confidence formula: 40 + (baseScore/328) * 60
+  // v3.1: Adjusted minConfidence to be achievable with MAX_BASE_SCORE=331
+  // Confidence formula: 40 + (baseScore/331) * 60
   // Score 180 → confidence ~73%, Score 220 → confidence ~80%
   tier1: { minScore: 180, maxScore: 240, minConfidence: 70, maxConfidence: 100 },
   tier2: { minScore: 160, maxScore: 179, minConfidence: 60, maxConfidence: 79 },
@@ -88,11 +89,11 @@ export interface TierGroup {
 
 /**
  * Calculate confidence percentage based on BASE score
- * Max base score is 328, so we scale to 100%
+ * Max base score is 331, so we scale to 100%
  */
 function calculateConfidence(baseScore: number): number {
-  // Base confidence from score (0-328 maps to 40-100%)
-  const baseConfidence = 40 + (baseScore / 328) * 60;
+  // Base confidence from score (0-331 maps to 40-100%)
+  const baseConfidence = 40 + (baseScore / MAX_BASE_SCORE) * 60;
   return Math.min(100, Math.round(baseConfidence));
 }
 
@@ -103,7 +104,7 @@ function calculateConfidence(baseScore: number): number {
  */
 function calculateValueScore(baseScore: number, odds: number): number {
   // Expected odds based on base score (higher score = lower expected odds)
-  const normalizedScore = baseScore / 328; // Use 328-point scale
+  const normalizedScore = baseScore / MAX_BASE_SCORE; // Use MAX_BASE_SCORE (331) scale
   const expectedOdds = 1 / normalizedScore - 1;
 
   // Value = actual odds vs expected odds

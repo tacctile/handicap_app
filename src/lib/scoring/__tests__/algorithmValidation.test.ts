@@ -20,21 +20,21 @@ import { describe, it, expect } from 'vitest';
 
 /**
  * All 15 base scoring categories with exact point values
- * Total: 328 points
+ * Total: 331 points
  * Source: ALGORITHM_REFERENCE.md lines 29-46
  */
 const BASE_SCORING_CATEGORIES = {
-  speedFigures: 90, // 27.4% - ALGORITHM_REFERENCE.md line 31
-  form: 50, // 15.2% - ALGORITHM_REFERENCE.md line 32
-  pace: 45, // 13.7% - ALGORITHM_REFERENCE.md line 33
-  class: 32, // 9.8%  - ALGORITHM_REFERENCE.md line 34
-  connections: 27, // 8.2%  - ALGORITHM_REFERENCE.md line 35
-  distanceSurface: 20, // 6.1%  - ALGORITHM_REFERENCE.md line 36
-  oddsFactor: 15, // 4.6%  - ALGORITHM_REFERENCE.md line 37
-  postPosition: 12, // 3.7%  - ALGORITHM_REFERENCE.md line 38
-  trainerPatterns: 10, // 3.0%  - ALGORITHM_REFERENCE.md line 39
+  speedFigures: 105, // 31.7% - ALGORITHM_REFERENCE.md line 31 (Model B increased)
+  form: 50, // 15.1% - ALGORITHM_REFERENCE.md line 32
+  pace: 35, // 10.6% - ALGORITHM_REFERENCE.md line 33 (Model B reduced)
+  class: 35, // 10.6%  - ALGORITHM_REFERENCE.md line 34 (Model B increased)
+  connections: 23, // 6.9%  - ALGORITHM_REFERENCE.md line 35 (Model B reduced)
+  distanceSurface: 20, // 6.0%  - ALGORITHM_REFERENCE.md line 36
+  oddsFactor: 12, // 3.6%  - ALGORITHM_REFERENCE.md line 37 (Model B reduced)
+  postPosition: 12, // 3.6%  - ALGORITHM_REFERENCE.md line 38
+  trainerPatterns: 8, // 2.4%  - ALGORITHM_REFERENCE.md line 39 (Model B reduced)
   equipment: 8, // 2.4%  - ALGORITHM_REFERENCE.md line 40
-  trackSpecialist: 6, // 1.8%  - ALGORITHM_REFERENCE.md line 41
+  trackSpecialist: 10, // 3.0%  - ALGORITHM_REFERENCE.md line 41 (Model B increased)
   trainerSurfaceDist: 6, // 1.8%  - ALGORITHM_REFERENCE.md line 42
   comboPatterns: 4, // 1.2%  - ALGORITHM_REFERENCE.md line 43
   p3Refinements: 2, // 0.6%  - ALGORITHM_REFERENCE.md line 44
@@ -42,7 +42,7 @@ const BASE_SCORING_CATEGORIES = {
 } as const;
 
 // Base score total - ALGORITHM_REFERENCE.md line 46
-const BASE_SCORE_TOTAL = 328;
+const BASE_SCORE_TOTAL = 331;
 
 // =============================================================================
 // PART 3: OVERLAY CONSTANTS
@@ -182,30 +182,30 @@ function classifyTier(score: number): 'TIER_1' | 'TIER_2' | 'TIER_3' | 'DIAMOND_
 // =============================================================================
 
 describe('Algorithm Validation - Base Scoring Math (PART 2)', () => {
-  it('should have all 15 categories sum to exactly 328 points', () => {
-    // ALGORITHM_REFERENCE.md line 46: Total = 328
+  it('should have all 15 categories sum to exactly 331 points', () => {
+    // ALGORITHM_REFERENCE.md line 46: Total = 331
     const categoryValues = Object.values(BASE_SCORING_CATEGORIES);
     const sum = categoryValues.reduce((acc, val) => acc + val, 0);
 
     expect(categoryValues.length).toBe(15); // 15 categories per ALGORITHM_REFERENCE.md
     expect(sum).toBe(BASE_SCORE_TOTAL);
 
-    // Verification from ALGORITHM_REFERENCE.md line 48:
-    // "90+50+45+32+27+20+15+12+10+8+6+6+4+2+1 = 328 ✓"
-    expect(90 + 50 + 45 + 32 + 27 + 20 + 15 + 12 + 10 + 8 + 6 + 6 + 4 + 2 + 1).toBe(328);
+    // Verification from ALGORITHM_REFERENCE.md (Model B):
+    // "105+50+35+35+23+20+12+12+8+8+10+6+4+2+1 = 331 ✓"
+    expect(105 + 50 + 35 + 35 + 23 + 20 + 12 + 12 + 8 + 8 + 10 + 6 + 4 + 2 + 1).toBe(331);
   });
 
-  it('should have Speed Figures max of 90 points (27.4% of base)', () => {
-    // ALGORITHM_REFERENCE.md line 31: Speed Figures = 90 (27.4%)
-    expect(BASE_SCORING_CATEGORIES.speedFigures).toBe(90);
+  it('should have Speed Figures max of 105 points (31.7% of base)', () => {
+    // ALGORITHM_REFERENCE.md line 31: Speed Figures = 105 (31.7%, Model B)
+    expect(BASE_SCORING_CATEGORIES.speedFigures).toBe(105);
 
-    const percentage = (90 / BASE_SCORE_TOTAL) * 100;
-    expect(percentage).toBeCloseTo(27.4, 1);
+    const percentage = (105 / BASE_SCORE_TOTAL) * 100;
+    expect(percentage).toBeCloseTo(31.7, 1);
   });
 
-  it('should have bottom 5 categories sum to 19 points', () => {
-    // Bottom 5 categories by weight - ALGORITHM_REFERENCE.md lines 41-45:
-    // Track Specialist (6) + Trainer S/D (6) + Combo Patterns (4) + P3 Refinements (2) + Weight (1)
+  it('should have bottom 5 categories sum to 23 points', () => {
+    // Bottom 5 categories by weight - ALGORITHM_REFERENCE.md lines 41-45 (Model B):
+    // Track Specialist (10) + Trainer S/D (6) + Combo Patterns (4) + P3 Refinements (2) + Weight (1)
     const bottom5Sum =
       BASE_SCORING_CATEGORIES.trackSpecialist +
       BASE_SCORING_CATEGORIES.trainerSurfaceDist +
@@ -213,22 +213,22 @@ describe('Algorithm Validation - Base Scoring Math (PART 2)', () => {
       BASE_SCORING_CATEGORIES.p3Refinements +
       BASE_SCORING_CATEGORIES.weight;
 
-    expect(bottom5Sum).toBe(19); // 6 + 6 + 4 + 2 + 1 = 19
+    expect(bottom5Sum).toBe(23); // 10 + 6 + 4 + 2 + 1 = 23
   });
 
   it('should have correct individual category values', () => {
-    // Verify each category - ALGORITHM_REFERENCE.md lines 31-45
-    expect(BASE_SCORING_CATEGORIES.speedFigures).toBe(90);
+    // Verify each category - ALGORITHM_REFERENCE.md lines 31-45 (Model B)
+    expect(BASE_SCORING_CATEGORIES.speedFigures).toBe(105);
     expect(BASE_SCORING_CATEGORIES.form).toBe(50);
-    expect(BASE_SCORING_CATEGORIES.pace).toBe(45);
-    expect(BASE_SCORING_CATEGORIES.class).toBe(32);
-    expect(BASE_SCORING_CATEGORIES.connections).toBe(27);
+    expect(BASE_SCORING_CATEGORIES.pace).toBe(35);
+    expect(BASE_SCORING_CATEGORIES.class).toBe(35);
+    expect(BASE_SCORING_CATEGORIES.connections).toBe(23);
     expect(BASE_SCORING_CATEGORIES.distanceSurface).toBe(20);
-    expect(BASE_SCORING_CATEGORIES.oddsFactor).toBe(15);
+    expect(BASE_SCORING_CATEGORIES.oddsFactor).toBe(12);
     expect(BASE_SCORING_CATEGORIES.postPosition).toBe(12);
-    expect(BASE_SCORING_CATEGORIES.trainerPatterns).toBe(10);
+    expect(BASE_SCORING_CATEGORIES.trainerPatterns).toBe(8);
     expect(BASE_SCORING_CATEGORIES.equipment).toBe(8);
-    expect(BASE_SCORING_CATEGORIES.trackSpecialist).toBe(6);
+    expect(BASE_SCORING_CATEGORIES.trackSpecialist).toBe(10);
     expect(BASE_SCORING_CATEGORIES.trainerSurfaceDist).toBe(6);
     expect(BASE_SCORING_CATEGORIES.comboPatterns).toBe(4);
     expect(BASE_SCORING_CATEGORIES.p3Refinements).toBe(2);
@@ -281,14 +281,14 @@ describe('Algorithm Validation - Overlay Logic (PART 3)', () => {
     expect(extremeResult).toBe(0); // Not -30, floors at 0
   });
 
-  it('should have max possible score of 368 (328 + 40)', () => {
+  it('should have max possible score of 371 (331 + 40)', () => {
     // ALGORITHM_REFERENCE.md lines 20-25:
-    // Base Score: 0-328
+    // Base Score: 0-331
     // Overlay Adjustment: ±40
-    // Final Score: 0-368
+    // Final Score: 0-371
 
     const maxScore = calculateFinalScore(BASE_SCORE_TOTAL, OVERLAY_CAP);
-    expect(maxScore).toBe(368);
+    expect(maxScore).toBe(371);
   });
 
   it('should have correct individual overlay section values', () => {
@@ -364,7 +364,7 @@ describe('Algorithm Validation - Tier Classification (PART 5)', () => {
     // ALGORITHM_REFERENCE.md line 87: Tier 1 (Chalk) = 180+
     expect(classifyTier(180)).toBe('TIER_1');
     expect(classifyTier(200)).toBe('TIER_1');
-    expect(classifyTier(368)).toBe('TIER_1'); // Max possible
+    expect(classifyTier(371)).toBe('TIER_1'); // Max possible
     expect(classifyTier(179)).not.toBe('TIER_1');
   });
 
@@ -483,17 +483,17 @@ describe('Algorithm Validation - Cross-Document Consistency', () => {
   it('should confirm SCORING_ENGINE.md aligns with ALGORITHM_REFERENCE.md', () => {
     // SCORING_ENGINE.md lines 36-52 match ALGORITHM_REFERENCE.md lines 29-46
     // Both documents specify:
-    // - 328-point base score
+    // - 331-point base score
     // - ±40 overlay cap
     // - 15 categories with same point values
 
-    // SCORING_ENGINE.md line 11: "328-point base score"
-    expect(BASE_SCORE_TOTAL).toBe(328);
+    // SCORING_ENGINE.md line 11: "331-point base score"
+    expect(BASE_SCORE_TOTAL).toBe(331);
 
     // SCORING_ENGINE.md line 57: "Overlay Adjustment Range: ±40 points"
     expect(OVERLAY_CAP).toBe(40);
 
-    // SCORING_ENGINE.md line 58: "Final Score Cap: 368 points"
-    expect(BASE_SCORE_TOTAL + OVERLAY_CAP).toBe(368);
+    // SCORING_ENGINE.md line 58: "Final Score Cap: 371 points"
+    expect(BASE_SCORE_TOTAL + OVERLAY_CAP).toBe(371);
   });
 });

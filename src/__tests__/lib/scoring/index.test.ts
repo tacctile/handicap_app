@@ -154,7 +154,7 @@ describe('Main Scoring Engine', () => {
   });
 
   describe('SCORE_LIMITS Enforcement', () => {
-    it('total score is capped at MAX_SCORE (368)', () => {
+    it('total score is capped at MAX_SCORE (371)', () => {
       // Create a horse that would score very high in all categories
       const horse = createHorseEntry({
         postPosition: 4,
@@ -426,7 +426,7 @@ describe('Main Scoring Engine', () => {
     });
 
     /**
-     * getScoreColor tests - based on BASE SCORE (0-328 range)
+     * getScoreColor tests - based on BASE SCORE (0-331 range)
      *
      * Updated thresholds match getScoreTier:
      * 270+ = Elite (Green), 220-269 = Strong (Light Green),
@@ -447,7 +447,7 @@ describe('Main Scoring Engine', () => {
     });
 
     /**
-     * getScoreTier tests - based on BASE SCORE (0-328 range)
+     * getScoreTier tests - based on BASE SCORE (0-331 range)
      *
      * Updated thresholds:
      * | Base Score | Percentage | Rating     |
@@ -460,17 +460,17 @@ describe('Main Scoring Engine', () => {
      */
     describe('getScoreTier', () => {
       it('returns correct tier names based on base score', () => {
-        expect(getScoreTier(280)).toBe('Elite'); // 85% of 328
-        expect(getScoreTier(250)).toBe('Strong'); // 76% of 328
-        expect(getScoreTier(190)).toBe('Contender'); // 58% of 328
-        expect(getScoreTier(145)).toBe('Fair'); // 44% of 328
-        expect(getScoreTier(100)).toBe('Weak'); // 30% of 328
+        expect(getScoreTier(280)).toBe('Elite'); // 85% of 331
+        expect(getScoreTier(250)).toBe('Strong'); // 76% of 331
+        expect(getScoreTier(190)).toBe('Contender'); // 57% of 331
+        expect(getScoreTier(145)).toBe('Fair'); // 44% of 331
+        expect(getScoreTier(100)).toBe('Weak'); // 30% of 331
       });
     });
   });
 
   describe('Score Thresholds', () => {
-    it('thresholds are correctly defined for base score (323 max)', () => {
+    it('thresholds are correctly defined for base score (331 max)', () => {
       expect(SCORE_THRESHOLDS.elite).toBe(265); // 82%+
       expect(SCORE_THRESHOLDS.strong).toBe(216); // 67-81%
       expect(SCORE_THRESHOLDS.contender).toBe(165); // 51-66%

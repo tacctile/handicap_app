@@ -5,8 +5,8 @@
  * work together correctly after the algorithm rebuild (Phases 1-6).
  *
  * Validates:
- * - Category totals sum to 328 pts
- * - Score bounds (0-368 total, 0-328 base, ±40 overlay)
+ * - Category totals sum to 331 pts
+ * - Score bounds (0-371 total, 0-331 base, ±40 overlay)
  * - Favorite advantage (market wisdom incorporated)
  * - Recent winner advantage (+20 pts for WLO)
  * - Missing data penalty (FTS scores lower)
@@ -117,7 +117,7 @@ describe('Algorithm v3.1 - Score Bounds', () => {
     expect(score.baseScore).toBeGreaterThanOrEqual(0);
   });
 
-  it('no horse can score above 368', () => {
+  it('no horse can score above 371', () => {
     // Create best case: proven winner with all advantages
     const horse = createHorseEntry({
       lifetimeStarts: 20,
@@ -143,10 +143,10 @@ describe('Algorithm v3.1 - Score Bounds', () => {
     const score = calculateHorseScore(horse, header, '1-1', 'fast', false);
 
     expect(score.total).toBeLessThanOrEqual(MAX_SCORE);
-    expect(score.total).toBeLessThanOrEqual(368);
+    expect(score.total).toBeLessThanOrEqual(371);
   });
 
-  it('base score is capped at 328', () => {
+  it('base score is capped at 331', () => {
     const horse = createHorseEntry({
       lifetimeStarts: 20,
       lifetimeWins: 10,
@@ -167,7 +167,7 @@ describe('Algorithm v3.1 - Score Bounds', () => {
     const score = calculateHorseScore(horse, header, 'even', 'fast', false);
 
     expect(score.baseScore).toBeLessThanOrEqual(MAX_BASE_SCORE);
-    expect(score.baseScore).toBeLessThanOrEqual(328);
+    expect(score.baseScore).toBeLessThanOrEqual(331);
   });
 
   it('overlay is capped at ±40', () => {

@@ -26,8 +26,8 @@ const SCORE_LIMITS = {
   form: SCORING_LIMITS.form, // 42
   equipment: SCORING_LIMITS.equipment, // 8
   pace: SCORING_LIMITS.pace, // 35
-  base: MAX_BASE_SCORE, // 323 - Max base score before overlay
-  total: MAX_SCORE, // 363 - Max final score (base + overlay)
+  base: MAX_BASE_SCORE, // 331 - Max base score before overlay
+  total: MAX_SCORE, // 371 - Max final score (base + overlay)
 } as const;
 
 // Equipment code mappings
@@ -539,7 +539,9 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   // which is calculated at the Dashboard level using the useRaceBets hook
 
   return (
-    <div className={`horse-expanded ${isVisible ? 'horse-expanded--visible' : ''} horse-expanded--${valueStatus.toLowerCase()}`}>
+    <div
+      className={`horse-expanded ${isVisible ? 'horse-expanded--visible' : ''} horse-expanded--${valueStatus.toLowerCase()}`}
+    >
       {/* ================================================================
           SECTION 1: FURLONG SCORE ANALYSIS (Always Visible)
           Left: Large score with progress bar, base/edge, rating

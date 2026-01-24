@@ -133,7 +133,7 @@ describe('softmaxProbabilities', () => {
     });
 
     it('should handle extreme score differences', () => {
-      const scores = [328, 100, 50, 10];
+      const scores = [331, 100, 50, 10];
       const probs = softmaxProbabilities(scores);
 
       // Should not have NaN or Infinity

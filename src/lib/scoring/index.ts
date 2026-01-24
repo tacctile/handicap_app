@@ -5,7 +5,7 @@
  * All calculations are deterministic - same inputs always produce same scores.
  * Optimized for performance: scoring 12 horses completes in under 100ms.
  *
- * BASE SCORE (0-323 points max) - Model B (Speed-Dominant):
+ * BASE SCORE (0-331 points max) - Model B (Speed-Dominant):
  * ============================================================
  * This model shifts weighting toward Intrinsic Ability (Speed/Class) over
  * Situational Factors (Pace/Connections). Speed figures are the strongest
@@ -16,9 +16,9 @@
  *   Model B: Speed increased to 105 pts (~32% of base, industry standard 30-40%)
  * - Pace: 0-35 points (10.7% - Race shape analysis, reduced from 45)
  * - Form: 0-42 points (12.8% - Recent performance patterns, reduced from 50)
- * - Post Position: 0-12 points (3.7% - unchanged)
+ * - Post Position: 0-12 points (3.6% - unchanged)
  * - Connections (Trainer + Jockey + Partnership): 0-23 points (7.0% - reduced from 27)
- * - Odds Factor: 0-12 points (3.7% - Market wisdom, reduced from 15)
+ * - Odds Factor: 0-12 points (3.6% - Market wisdom, reduced from 15)
  * - Equipment: 0-8 points (2.4% - unchanged)
  *
  * Bonus Categories (40 pts):
@@ -54,7 +54,7 @@
  * - Section G: Head-to-Head & Tactical Matchups: ±6 points
  *
  * Final Score = Base Score + Overlay Adjustment
- * Practical Range: 50 to 363 points
+ * Practical Range: 50 to 371 points
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';

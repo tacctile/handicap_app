@@ -1,10 +1,10 @@
 /**
  * Rank Utility Functions
  *
- * Calculates projected finish order based on base score (X/323)
+ * Calculates projected finish order based on base score (X/331)
  * and provides dynamic gradient coloring based on field size.
  *
- * v3.2 Model B: Updated for 323 base score (from 328)
+ * v3.2 Model B: Updated for 331 base score (from 323)
  *
  * @module scoring/rankUtils
  */
