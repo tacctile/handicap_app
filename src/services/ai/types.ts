@@ -65,6 +65,12 @@ export interface HorseInsight {
   isContender: boolean;
   /** Whether to avoid betting this horse */
   avoidFlag: boolean;
+  /** Whether class drop was detected for this horse */
+  classDropFlagged?: boolean;
+  /** Class drop boost value (0, 0.5, 1.0, 1.5, or -0.5 for RISING) */
+  classDropBoost?: number;
+  /** Reason for class drop flag or null if not flagged */
+  classDropReason?: string | null;
 }
 
 // ============================================================================
@@ -118,12 +124,6 @@ export interface AIRaceAnalysis {
   // Ticket construction (optional, only present in multi-bot mode)
   /** Ticket construction using three-template system */
   ticketConstruction?: TicketConstruction;
-
-  // Legacy fields for backward compatibility
-  /** @deprecated Use ticketConstruction instead */
-  betConstruction?: BetConstructionGuidance;
-  /** @deprecated Value play is no longer used - expansion horses removed */
-  valuePlay?: number | null;
 }
 
 // ============================================================================
@@ -492,6 +492,8 @@ export interface BotStatusDebugInfo {
   vulnerableFavorite: BotStatusInfo;
   /** Field Spread Bot status */
   fieldSpread: BotStatusInfo;
+  /** Class Drop Bot status */
+  classDrop: BotStatusInfo;
   /** Total number of bots that succeeded */
   successCount: number;
   /** Total number of bots */

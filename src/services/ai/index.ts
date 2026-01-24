@@ -2929,10 +2929,15 @@ export function combineMultiBotResults(
     return createEmptyAnalysis(race.header.raceNumber, processingTimeMs);
   }
 
-  // Count successful bots
-  const botSuccessCount = [tripTrouble, paceScenario, vulnerableFavorite, fieldSpread].filter(
-    Boolean
-  ).length;
+  // Count successful bots (now including Class Drop Bot = 5 bots total)
+  const { classDrop } = rawResults;
+  const botSuccessCount = [
+    tripTrouble,
+    paceScenario,
+    vulnerableFavorite,
+    fieldSpread,
+    classDrop,
+  ].filter(Boolean).length;
 
   // Get conservative mode setting
   const conservativeMode = currentConfig.conservativeMode ?? true;
@@ -3041,14 +3046,6 @@ export function combineMultiBotResults(
   debugLog(
     `Trifecta: Win=[${ticketConstruction.trifecta.winPosition.join(',')}] Place=[${ticketConstruction.trifecta.placePosition.join(',')}] Show=[${ticketConstruction.trifecta.showPosition.join(',')}] ` +
       `(${ticketConstruction.trifecta.combinations} combos, $${ticketConstruction.trifecta.estimatedCost})`
-  );
-
-  // Build legacy betConstruction for backward compatibility
-  const betConstruction = buildBetConstructionGuidance(
-    aggregatedSignals,
-    scores,
-    vulnerableFavorite,
-    fieldSpread
   );
 
   // ============================================================================
@@ -3237,6 +3234,10 @@ export function combineMultiBotResults(
       isContender: algorithmRank <= contenderCount,
       avoidFlag:
         signal.classification === 'EXCLUDE' || (isBottomThird && score.negativeFactors.length >= 2),
+      // Class Drop Bot data
+      classDropFlagged: signal.classDropFlagged,
+      classDropBoost: signal.classDropBoost,
+      classDropReason: signal.classDropReason,
     };
   });
 
@@ -3277,6 +3278,7 @@ export function combineMultiBotResults(
   // ============================================================================
   // BUILD BOT STATUS DEBUG INFO
   // ============================================================================
+  const classDropHorsesFlagged = classDrop?.horses.filter((h) => h.flagged).length ?? 0;
   const botDebugInfo: BotStatusDebugInfo = {
     tripTrouble: {
       name: 'Trip Trouble Bot',
@@ -3307,8 +3309,16 @@ export function combineMultiBotResults(
         ? `FieldType=${fieldSpread.fieldType}, TopTier=${fieldSpread.topTierCount}, Spread=${fieldSpread.recommendedSpread}`
         : 'FAILED - No data returned',
     },
+    classDrop: {
+      name: 'Class Drop Bot',
+      success: classDrop !== null,
+      summary: classDrop
+        ? `${classDrop.horses.length} analyzed, ${classDropHorsesFlagged} flagged (reinforcement-only)`
+        : 'FAILED - No data returned',
+      count: classDropHorsesFlagged,
+    },
     successCount: botSuccessCount,
-    totalBots: 4,
+    totalBots: 5,
     // Template B, C, or PASS means we modified from default (Template A was formerly default)
     hasOverride: ticketConstruction.template !== 'A' || !ticketConstruction.valueHorse?.identified,
     signalSummary: `Template ${ticketConstruction.template}: ${ticketConstruction.templateReason}`,
@@ -3323,8 +3333,8 @@ export function combineMultiBotResults(
   );
   console.log('%c┌─────────────────────────────────────────────────────────┐', 'color: #888');
   console.log(
-    `%c│ BOT STATUS: ${botSuccessCount}/4 bots returned data`,
-    botSuccessCount === 4 ? 'color: #10b981' : 'color: #f59e0b'
+    `%c│ BOT STATUS: ${botSuccessCount}/5 bots returned data`,
+    botSuccessCount === 5 ? 'color: #10b981' : 'color: #f59e0b'
   );
   console.log(
     `%c│ • Trip Trouble:      ${tripTrouble ? '✅ SUCCESS' : '❌ FAILED'} ${tripTrouble ? `(${tripTrouble.horsesWithTripTrouble.length} flagged)` : ''}`,
@@ -3341,6 +3351,10 @@ export function combineMultiBotResults(
   console.log(
     `%c│ • Field Spread:      ${fieldSpread ? '✅ SUCCESS' : '❌ FAILED'} ${fieldSpread ? `(${fieldSpread.fieldType})` : ''}`,
     fieldSpread ? 'color: #10b981' : 'color: #ef4444'
+  );
+  console.log(
+    `%c│ • Class Drop:        ${classDrop ? '✅ SUCCESS' : '❌ FAILED'} ${classDrop ? `(${classDropHorsesFlagged} flagged)` : ''}`,
+    classDrop ? 'color: #10b981' : 'color: #ef4444'
   );
   console.log('%c├─────────────────────────────────────────────────────────┤', 'color: #888');
   console.log(
@@ -3454,11 +3468,8 @@ export function combineMultiBotResults(
     likelyUpset: isLikelyUpset ?? false,
     chaoticRace: isChaoticRace ?? false,
     botDebugInfo,
-    // New three-template ticket construction
+    // Three-template ticket construction
     ticketConstruction,
-    // Legacy fields for backward compatibility
-    betConstruction,
-    valuePlay: null, // Deprecated - expansion horses removed
   };
 }
 

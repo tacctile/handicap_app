@@ -1347,35 +1347,8 @@ describe('combineMultiBotResults Output', () => {
 
     const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-    // valuePlay is always null now (expansion horses removed)
-    expect(result.valuePlay).toBeNull();
-  });
-
-  it('should include legacy betConstruction for backward compatibility', () => {
-    const race = createMockRace([
-      { programNumber: 1, name: 'Horse A', runningStyle: 'E', mlOdds: '2-1' },
-      { programNumber: 2, name: 'Horse B', runningStyle: 'S', mlOdds: '5-1' },
-    ]);
-
-    const scoring = createMockScoringResult([
-      { programNumber: 1, name: 'Horse A', rank: 1, score: 200, tier: 'high' },
-      { programNumber: 2, name: 'Horse B', rank: 2, score: 180, tier: 'high' },
-    ]);
-
-    const rawResults: MultiBotRawResults = {
-      tripTrouble: null,
-      paceScenario: null,
-      vulnerableFavorite: null,
-      fieldSpread: null,
-      classDrop: null,
-    };
-
-    const result = combineMultiBotResults(rawResults, race, scoring, 100);
-
-    // Legacy betConstruction still included
-    expect(result.betConstruction).toBeDefined();
-    expect(result.betConstruction?.algorithmTop4).toBeDefined();
-    expect(result.betConstruction?.expansionHorses).toEqual([]); // Always empty now
+    // ticketConstruction is the replacement for deprecated valuePlay/betConstruction
+    expect(result.ticketConstruction).toBeDefined();
   });
 
   it('should use algorithm rank for projectedFinish', () => {
