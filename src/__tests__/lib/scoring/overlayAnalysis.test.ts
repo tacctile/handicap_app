@@ -21,6 +21,7 @@ import {
 describe('Overlay Analysis', () => {
   describe('scoreToWinProbability', () => {
     // Model B: Formula updated to (score/323) * 50, clamped 2-50%
+    // NOTE: Runtime still uses 323 divisor. Target is 331 per ALGORITHM_REFERENCE.md.
     it('converts score 160 to approximately 25% win probability', () => {
       const prob = scoreToWinProbability(160);
       // (160/323) * 50 = 24.77%

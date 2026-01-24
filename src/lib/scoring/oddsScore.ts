@@ -9,7 +9,7 @@
  * horse's chances. Strong favorites (short odds) have more evidence supporting
  * their chance to win. This module gives modest credit for that signal.
  *
- * MAX_ODDS_SCORE = 12 points (3.7% of 323 pt base score)
+ * MAX_ODDS_SCORE = 12 points (3.6% of 331 pt base score)
  *
  * Tier Structure (Model B - 6 tiers):
  * - Heavy favorite (<2-1): 12 pts - Market strongly backs this horse

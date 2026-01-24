@@ -48,7 +48,7 @@ export const MAX_DISPLAY_SCORE = 331;
 // Category maximums (Model B - Speed-Dominant Rebalance)
 export const SCORE_CATEGORY_LIMITS = {
   connections: 23, // Model B: reduced from 27
-  postPosition: 12, // 3.7% - v3.0: reduced from 20
+  postPosition: 12, // 3.6% - v3.0: reduced from 20
   speedClass: 140, // Model B: Speed 105 + Class 35
   form: 42, // Model B: reduced from 50
   equipment: 8, // 2.4% - v3.0: reduced from 12
@@ -283,7 +283,7 @@ export function calculatePaperTigerPenalty(
  * Ensures:
  * - Score is a valid finite number
  * - Score is floored at MIN_SCORE (0)
- * - Score is capped at MAX_FINAL_SCORE (368)
+ * - Score is capped at MAX_FINAL_SCORE (371)
  * - Score is rounded to integer
  *
  * @param score - The raw score to enforce bounds on

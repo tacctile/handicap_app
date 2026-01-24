@@ -231,7 +231,7 @@ function SummaryRowSection() {
         <div className="help-definition">
           <dt className="help-term">SCORE</dt>
           <dd className="help-desc">
-            Our overall Furlong Score out of 328 points. This combines six different factors:
+            Our overall Furlong Score out of 331 points. This combines six different factors:
             connections, post position, speed, form, equipment, and pace. Higher is better.
           </dd>
         </div>

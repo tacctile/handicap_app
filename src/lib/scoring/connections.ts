@@ -12,7 +12,7 @@
  * - Strong partnership (25-29% combo win rate, 5+ starts): 1 pt
  * - Good/Regular/New partnership: 0 pts
  *
- * Total: 0-23 points (7.1% of 323 base)
+ * Total: 0-23 points (6.9% of 331 base)
  *
  * Model B: Connections reduced from 27 to 23 points to weight speed more heavily.
  * Connections are a situational factor; speed figures are intrinsic ability.

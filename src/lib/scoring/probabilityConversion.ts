@@ -70,7 +70,7 @@ function getCalibrationManager(): {
  * - temperature: 1.0 is standard; lower = more extreme distributions; higher = flatter
  * - minProbability: Floor to prevent 0% (every horse has some chance)
  * - maxProbability: Ceiling to prevent unrealistic certainty
- * - scoreScale: Divisor to normalize racing scores (0-328) to softmax-friendly range
+ * - scoreScale: Divisor to normalize racing scores (0-331) to softmax-friendly range
  */
 export const SOFTMAX_CONFIG = {
   /** Temperature parameter for softmax (1.0 = standard) */
