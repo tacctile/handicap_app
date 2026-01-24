@@ -51,7 +51,6 @@ const validResponse = {
     },
   ],
   topPick: 1,
-  valuePlay: null,
   avoidList: [3],
   vulnerableFavorite: false,
   likelyUpset: false,
@@ -76,7 +75,6 @@ describe('parseGeminiResponse', () => {
       expect(result.bettableRace).toBe(true);
       expect(result.horseInsights).toHaveLength(3);
       expect(result.topPick).toBe(1);
-      expect(result.valuePlay).toBeNull();
       expect(result.avoidList).toEqual([3]);
       expect(result.vulnerableFavorite).toBe(false);
       expect(result.likelyUpset).toBe(false);

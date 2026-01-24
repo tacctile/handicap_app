@@ -591,7 +591,6 @@ export function parseGeminiResponse(
       bettableRace: parsed.bettableRace ?? true,
       horseInsights: parsed.horseInsights,
       topPick: parsed.topPick ?? null,
-      valuePlay: parsed.valuePlay ?? null,
       avoidList: parsed.avoidList || [],
       vulnerableFavorite: parsed.vulnerableFavorite ?? false,
       likelyUpset: parsed.likelyUpset ?? false,
