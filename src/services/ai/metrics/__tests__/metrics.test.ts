@@ -218,7 +218,6 @@ function createMockAnalysis(): AIRaceAnalysis {
       },
     ],
     topPick: 3,
-    valuePlay: 5,
     avoidList: [4],
     vulnerableFavorite: false,
     likelyUpset: false,

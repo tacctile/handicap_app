@@ -262,7 +262,10 @@ export async function recordAIDecision(
 
   // Extract AI decisions
   const aiTopPick = analysis.topPick ?? algorithmTopPick;
-  const aiValuePlay = analysis.valuePlay ?? null;
+  // Value play from ticketConstruction (replaces deprecated valuePlay field)
+  const aiValuePlay = analysis.ticketConstruction?.valueHorse?.identified
+    ? analysis.ticketConstruction.valueHorse.programNumber
+    : null;
 
   // Get AI top 3 from horse insights sorted by projected finish
   const sortedInsights = [...analysis.horseInsights].sort(
@@ -376,6 +379,10 @@ export function buildDecisionRecord(
   }));
 
   const aiTopPick = analysis.topPick ?? algorithmTopPick;
+  // Value play from ticketConstruction (replaces deprecated valuePlay field)
+  const aiValuePlay = analysis.ticketConstruction?.valueHorse?.identified
+    ? analysis.ticketConstruction.valueHorse.programNumber
+    : null;
   const sortedInsights = [...analysis.horseInsights].sort(
     (a, b) => a.projectedFinish - b.projectedFinish
   );
@@ -397,7 +404,7 @@ export function buildDecisionRecord(
     algorithmTop3,
     algorithmScores,
     aiTopPick,
-    aiValuePlay: analysis.valuePlay ?? null,
+    aiValuePlay,
     aiTop3,
     aiAvoidList: analysis.avoidList,
     aiConfidence: analysis.confidence,

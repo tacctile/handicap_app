@@ -1848,8 +1848,6 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // valuePlay is deprecated - always null now
-      expect(result.valuePlay).toBeNull();
       // SOLID favorite with only 1 bot signal → value horse NOT identified
       expect(result.ticketConstruction?.valueHorse.identified).toBe(false);
       expect(result.ticketConstruction?.template).toBe('PASS');
@@ -1904,8 +1902,6 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // valuePlay is deprecated - always null now
-      expect(result.valuePlay).toBeNull();
       // 2 bots converge (trip trouble + pace) → value horse IS identified
       expect(result.ticketConstruction?.valueHorse.identified).toBe(true);
       expect(result.ticketConstruction?.valueHorse.botConvergenceCount).toBeGreaterThanOrEqual(2);
@@ -1955,7 +1951,7 @@ describe('combineMultiBotResults', () => {
 
       // MEDIUM confidence trip trouble doesn't get boost in conservative mode
       // No value play identified since horse doesn't have tripTroubleBoost > 0
-      expect(result.valuePlay).toBeNull();
+      expect(result.ticketConstruction?.valueHorse.identified).toBe(false);
     });
   });
 
