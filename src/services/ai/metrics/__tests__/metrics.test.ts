@@ -222,6 +222,48 @@ function createMockAnalysis(): AIRaceAnalysis {
     vulnerableFavorite: false,
     likelyUpset: false,
     chaoticRace: false,
+    ticketConstruction: {
+      template: 'A',
+      templateReason: 'Solid favorite with clear separation',
+      algorithmTop4: [3, 1, 5, 2],
+      favoriteStatus: 'SOLID',
+      favoriteVulnerabilityFlags: [],
+      valueHorse: {
+        identified: true,
+        programNumber: 5,
+        horseName: 'Horse E',
+        sources: ['PACE_ADVANTAGE'],
+        signalStrength: 'MEDIUM',
+        angle: 'Class edge at attractive odds',
+        valueOdds: 8.0,
+        botConvergenceCount: 1,
+        reasoning: 'Value play identified via pace analysis',
+      },
+      exacta: {
+        key: 3,
+        withHorses: [1, 5, 2],
+        boxSize: 4,
+        cost: 24,
+      },
+      trifecta: {
+        key: 3,
+        aHorses: [1, 5],
+        bHorses: [2, 4],
+        boxSize: 5,
+        cost: 60,
+      },
+      raceType: 'SEPARATED',
+      confidenceScore: 75,
+      sizing: {
+        type: 'STANDARD',
+        multiplier: 1.0,
+        reason: 'Standard sizing for solid favorite race',
+      },
+      verdict: {
+        action: 'BET',
+        summary: 'Bettable race with solid favorite',
+      },
+    },
   };
 }
 

@@ -41,20 +41,52 @@ vi.mock('../../ai', () => ({
 
 // Mock the scoring module
 vi.mock('../../../lib/scoring', () => ({
-  calculateAllScores: vi.fn().mockImplementation((race) => {
-    return race.horses.map((horse: HorseEntry, index: number) => ({
-      programNumber: horse.programNumber,
-      horseName: horse.horseName,
-      finalScore: 200 - index * 10,
-      speedScore: 80,
-      classScore: 30,
-      formScore: 45,
-      paceScore: 40,
-      connectionsScore: 25,
-      positiveFactors: ['Good speed figures'],
-      negativeFactors: [],
-      isScratched: false,
-      dataCompleteness: { overallGrade: 'B' },
+  calculateRaceScores: vi.fn().mockImplementation((horses: HorseEntry[]) => {
+    // Return ScoredHorse[] format
+    return horses.map((horse: HorseEntry, index: number) => ({
+      horse,
+      index,
+      score: {
+        total: 200 - index * 10,
+        baseScore: 200 - index * 10,
+        overlayScore: 0,
+        oddsScore: 5,
+        breakdown: {
+          speedClass: { speedScore: 80, classScore: 30, total: 110 },
+          form: { total: 45 },
+          pace: { total: 40 },
+          connections: { total: 25 },
+          equipment: { total: 5 },
+          postPosition: { total: 8 },
+          distanceSurface: { total: 15 },
+          trackSpecialist: { total: 5 },
+          trainerPatterns: { total: 4 },
+          combo: { total: 2 },
+          trainerSurfaceDistance: { total: 3 },
+          weight: { total: 0 },
+          p3Refinements: { total: 0 },
+        },
+        isScratched: false,
+        confidenceLevel: 'high',
+        dataQuality: 85,
+        dataCompleteness: {
+          overallGrade: 'B',
+          overallScore: 85,
+          criticalComplete: 90,
+          highComplete: 80,
+          mediumComplete: 75,
+          lowComplete: 70,
+          missingCritical: [],
+          missingHigh: [],
+          missingMedium: [],
+          missingLow: [],
+        },
+        lowConfidencePenaltyApplied: false,
+        lowConfidencePenaltyAmount: 0,
+        paperTigerPenaltyApplied: false,
+        paperTigerPenaltyAmount: 0,
+      },
+      rank: index + 1,
     }));
   }),
 }));

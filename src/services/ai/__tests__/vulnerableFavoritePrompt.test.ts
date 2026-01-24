@@ -1090,20 +1090,20 @@ describe('buildVulnerableFavoritePrompt', () => {
     expect(prompt).toContain('Return JSON only');
   });
 
-  it('includes vulnerability checklist', () => {
+  it('includes vulnerability categories', () => {
     const race = createMockParsedRace();
     const scoringResult = createMockScoringResult();
 
     const prompt = buildVulnerableFavoritePrompt(race, scoringResult);
 
-    expect(prompt).toContain('VULNERABILITY CHECKLIST:');
-    expect(prompt).toContain('TRIP DEPENDENCY');
-    expect(prompt).toContain('PACE DEPENDENCY');
-    expect(prompt).toContain('CLASS INFLATION');
-    expect(prompt).toContain('DECLINING FIGURES');
-    expect(prompt).toContain('FITNESS DOUBT');
-    expect(prompt).toContain('TRACK/STYLE MISMATCH');
-    expect(prompt).toContain('FALSE FAVORITE SYNDROME');
+    expect(prompt).toContain('VULNERABILITY REQUIRES 2+ FLAGS FROM DIFFERENT CATEGORIES:');
+    expect(prompt).toContain('CATEGORY A - FORM CONCERNS');
+    expect(prompt).toContain('CATEGORY B - CLASS/CONDITIONS MISMATCH');
+    expect(prompt).toContain('CATEGORY C - PACE/TRIP VULNERABILITY');
+    expect(prompt).toContain('CATEGORY D - FALSE FORM');
+    expect(prompt).toContain('Beyers declining');
+    expect(prompt).toContain('Stepping up in class');
+    expect(prompt).toContain('Speed horse facing');
   });
 
   it('includes what makes a favorite solid', () => {
@@ -1112,10 +1112,10 @@ describe('buildVulnerableFavoritePrompt', () => {
 
     const prompt = buildVulnerableFavoritePrompt(race, scoringResult);
 
-    expect(prompt).toContain('WHAT MAKES A FAVORITE "SOLID"');
-    expect(prompt).toContain('Won with figures, not just trips');
-    expect(prompt).toContain("Proven at today's class or higher");
-    expect(prompt).toContain('Improving or consistent Beyer pattern');
+    expect(prompt).toContain('FAVORITE IS SOLID (NOT vulnerable) when:');
+    expect(prompt).toContain('Beyers steady or improving over last 3 races');
+    expect(prompt).toContain('Has won at this class level before');
+    expect(prompt).toContain('Running style fits track bias');
   });
 
   it('includes confidence levels guidance', () => {
@@ -1125,9 +1125,9 @@ describe('buildVulnerableFavoritePrompt', () => {
     const prompt = buildVulnerableFavoritePrompt(race, scoringResult);
 
     expect(prompt).toContain('CONFIDENCE LEVELS:');
-    expect(prompt).toContain('HIGH: 3+ vulnerability flags');
-    expect(prompt).toContain('MEDIUM: 1-2 flags');
-    expect(prompt).toContain('LOW: Minor concerns only');
+    expect(prompt).toContain('HIGH: 3+ vulnerability flags from 2+ different categories');
+    expect(prompt).toContain('MEDIUM: 2 flags from 2 different categories');
+    expect(prompt).toContain('LOW: Single concern in one category only');
   });
 
   it('includes beneficiaries guidance', () => {
