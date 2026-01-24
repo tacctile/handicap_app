@@ -870,7 +870,7 @@ describe('aggregateHorseSignals with Class Drop', () => {
 // ============================================================================
 
 describe('identifyValueHorse with Class Drop', () => {
-  it('should increase botCount and signalStrength when class drop reinforces existing candidate', () => {
+  it('should increase signalStrength but NOT botCount when class drop reinforces existing candidate', () => {
     const classDrop: ClassDropAnalysis = {
       raceId: 'TST-1',
       horses: [
@@ -962,12 +962,12 @@ describe('identifyValueHorse with Class Drop', () => {
 
     const result = identifyValueHorse(aggregatedSignals, rawResults, 'SOLID');
 
-    // Class drop should have reinforced the Trip Trouble candidate
+    // Class drop should have reinforced the Trip Trouble candidate (signalStrength increased)
     expect(result.identified).toBe(true);
     expect(result.programNumber).toBe(2);
     expect(result.horseName).toBe('Value Horse');
-    // Bot count should be 2 (Trip Trouble + Class Drop reinforcement)
-    expect(result.botConvergenceCount).toBe(2);
+    // Bot count should stay 1 (Trip Trouble only - Class Drop is reinforcement-only, doesn't count toward convergence)
+    expect(result.botConvergenceCount).toBe(1);
   });
 
   it('should NOT create new candidate from class drop alone', () => {

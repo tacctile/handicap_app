@@ -1895,14 +1895,14 @@ export function identifyValueHorse(
         // Convert signalBoost (0.5, 1.0, 1.5, -0.5) to strengthBonus (scale by 10)
         const strengthBonus = classDropHorse.signalBoost * 10;
         existingCandidate.signalStrength += strengthBonus;
-        existingCandidate.botCount++;
+        // Class Drop is reinforcement-only - does not count toward bot convergence
         existingCandidate.angles.push(
           classDropHorse.reason || `Class drop ${classDropHorse.classification}`
         );
 
         debugLog(
           `[ClassDrop] Reinforced #${classDropHorse.programNumber} ${classDropHorse.horseName}: ` +
-            `+${strengthBonus} strength, botCount now ${existingCandidate.botCount}`
+            `+${strengthBonus} strength (reinforcement-only, botCount unchanged at ${existingCandidate.botCount})`
         );
       } else {
         // NOT a candidate - Class Drop does NOT create new candidates
