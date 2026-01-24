@@ -10,6 +10,7 @@ import {
   calculateFieldRelativeScore,
   type FieldContext,
   type FieldRelativeResult,
+  MAX_BASE_SCORE,
 } from '../scoring';
 import { isFieldRelativeScoringEnabled } from '../config/featureFlags';
 
@@ -92,7 +93,7 @@ export interface TierGroup {
  */
 function calculateConfidence(baseScore: number): number {
   // Base confidence from score (0-331 maps to 40-100%)
-  const baseConfidence = 40 + (baseScore / 328) * 60;
+  const baseConfidence = 40 + (baseScore / MAX_BASE_SCORE) * 60;
   return Math.min(100, Math.round(baseConfidence));
 }
 
@@ -103,7 +104,7 @@ function calculateConfidence(baseScore: number): number {
  */
 function calculateValueScore(baseScore: number, odds: number): number {
   // Expected odds based on base score (higher score = lower expected odds)
-  const normalizedScore = baseScore / 328; // Use 328-point scale
+  const normalizedScore = baseScore / MAX_BASE_SCORE; // Use MAX_BASE_SCORE (331) scale
   const expectedOdds = 1 / normalizedScore - 1;
 
   // Value = actual odds vs expected odds

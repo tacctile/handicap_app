@@ -20,18 +20,18 @@ import {
 
 describe('Overlay Analysis', () => {
   describe('scoreToWinProbability', () => {
-    // Model B: Formula updated to (score/323) * 50, clamped 2-50%
-    // NOTE: Runtime still uses 323 divisor. Target is 331 per ALGORITHM_REFERENCE.md.
-    it('converts score 160 to approximately 25% win probability', () => {
+    // Model B: Formula updated to (score/MAX_BASE_SCORE) * 50, clamped 2-50%
+    // MAX_BASE_SCORE = 331 per ALGORITHM_REFERENCE.md.
+    it('converts score 160 to approximately 24% win probability', () => {
       const prob = scoreToWinProbability(160);
-      // (160/323) * 50 = 24.77%
-      expect(prob).toBeCloseTo(25, 0);
+      // (160/331) * 50 = 24.17%
+      expect(prob).toBeCloseTo(24, 0);
     });
 
-    it('converts score 200 to approximately 31% win probability', () => {
+    it('converts score 200 to approximately 30% win probability', () => {
       const prob = scoreToWinProbability(200);
-      // (200/323) * 50 = 30.96%
-      expect(prob).toBeCloseTo(31, 0);
+      // (200/331) * 50 = 30.21%
+      expect(prob).toBeCloseTo(30, 0);
     });
 
     it('clamps probability to minimum 2%', () => {

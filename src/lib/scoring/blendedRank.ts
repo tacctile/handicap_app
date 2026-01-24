@@ -17,6 +17,7 @@ import {
   type HorseWithTrend,
   MIN_RACES_FOR_TREND,
 } from './trendAnalysis';
+import { MAX_BASE_SCORE } from './scoringUtils';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -97,8 +98,8 @@ export function calculateBlendedScore(
   trendScore: number,
   weights: BlendWeights = DEFAULT_BLEND_WEIGHTS
 ): number {
-  // Normalize base score to 0-100 scale (331 is max)
-  const normalizedBase = (baseScore / 323) * 100;
+  // Normalize base score to 0-100 scale (MAX_BASE_SCORE is max)
+  const normalizedBase = (baseScore / MAX_BASE_SCORE) * 100;
 
   // Calculate weighted blend
   const blended = normalizedBase * weights.base + trendScore * weights.trend;

@@ -32,6 +32,7 @@ import {
 } from './marketNormalization';
 
 import { parseOddsString } from './oddsParser';
+import { MAX_BASE_SCORE } from './scoringUtils';
 
 // Re-export SOFTMAX_CONFIG for external configuration access
 export { SOFTMAX_CONFIG } from './probabilityConversion';
@@ -279,14 +280,14 @@ export function calculateFieldRelativeWinProbability(
 }
 
 /**
- * Convert a score (0-323 range) to win probability
+ * Convert a score (0-331 range) to win probability
  * LEGACY FUNCTION - use calculateFieldRelativeWinProbability for accurate results
  *
  * This standalone formula is only used when field context is not available.
  * It's less accurate because it doesn't account for field strength.
  *
- * Updated formula for 323-point scale:
- * Win% = (Score / 323) × 50% (normalized to reasonable range)
+ * Updated formula for 331-point scale:
+ * Win% = (Score / MAX_BASE_SCORE) × 50% (normalized to reasonable range)
  * Clamped between 2% and 50% for standalone calculations
  */
 export function scoreToWinProbability(score: number): number {
@@ -295,8 +296,8 @@ export function scoreToWinProbability(score: number): number {
 
   // For standalone calculations without field context,
   // use a conservative formula that doesn't over-inflate probabilities
-  // Score of 323 → 50%, Score of 162 → 25%, Score of 81 → 12.5%
-  const rawProbability = (score / 323) * 50;
+  // Score of 331 → 50%, Score of 165.5 → 25%, Score of 82.75 → 12.5%
+  const rawProbability = (score / MAX_BASE_SCORE) * 50;
 
   // Clamp to realistic bounds (2% to 50%)
   // Without field context, cap at 50% to avoid unrealistic probabilities
