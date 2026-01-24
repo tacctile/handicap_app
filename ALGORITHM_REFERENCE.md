@@ -339,7 +339,7 @@
 ### Confidence Formula
 
 ```
-confidence = 40 + (baseScore / 328) * 60
+confidence = 40 + (baseScore / 331) * 60
 ```
 
 ### Expected Hit Rates

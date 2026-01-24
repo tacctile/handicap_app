@@ -4,7 +4,7 @@
 Combine static ability (Base Rank) with dynamic momentum (Trend Rank) into single actionable ranking.
 
 ## Inputs
-- Base Rank: Current 328-point algorithm (who SHOULD win based on ability)
+- Base Rank: Current 331-point algorithm (who SHOULD win based on ability)
 - Trend Rank: Rolling window analysis (who is PEAKING right now)
 
 ## Formula

@@ -8,7 +8,7 @@
 
 > ⚠️ **IMPORTANT: Algorithm Version Notice**
 >
-> The current implementation uses **Algorithm v3.6** with a **328-point base score** and **±40 overlay adjustment**.
+> The current implementation uses **Algorithm v3.6** with a **331-point base score** and **±40 overlay adjustment**.
 >
 > The detailed category sections below (Categories 1-6) document **v2.0 legacy scoring logic** for historical reference. For current implementation details, see **[ALGORITHM_V3_SUMMARY.md](./ALGORITHM_V3_SUMMARY.md)**.
 >
@@ -20,7 +20,7 @@
 
 ### Mathematical Foundation Principles
 
-**The 328-point base system provides granular precision while maintaining track specificity:**
+**The 331-point base system provides granular precision while maintaining track specificity:**
 
 **Core Philosophy (v3.6 - Phase 7 Algorithm):**
 
@@ -33,7 +33,7 @@
 
 **Weight Distribution Rationale (v3.6):**
 
-| Category         | Points | % of 328 | Rationale                                    |
+| Category         | Points | % of 331 | Rationale                                    |
 | ---------------- | ------ | -------- | -------------------------------------------- |
 | Speed Figures    | 90     | 27.4%    | Most predictive factor per industry research |
 | Form             | 50     | 15.2%    | Form decay system scales winner bonuses      |
@@ -53,9 +53,9 @@
 
 **Scoring Limits:**
 
-- Base Score Maximum: 328 points
+- Base Score Maximum: 331 points
 - Overlay Adjustment Range: ±40 points (Phase 5: reduced from ±50)
-- Final Score Cap: 368 points
+- Final Score Cap: 371 points
 - Minimum Betting Threshold: 140 points
 - Elite Betting Threshold: 200+ points
 
@@ -603,7 +603,7 @@ Maximum possible from decay system: WLO (18) + Won 2/3 (8) + Won 3/5 (4) = 30 pt
 5. Category 1 (Connections): 0-25 points (10.4%)
 6. Category 5 (Equipment/Medication): 0-20 points (8.3%)
 
-**Total Base Score Range: 0-240 points**
+**Total Base Score Range: 0-331 points**
 
 ### Track-Specific Adjustments
 
@@ -721,7 +721,7 @@ The system automatically detects the current month and applies track-specific se
 
 ---
 
-> **NOTE:** The detailed category sections above document the v2.0 scoring logic for reference. The actual implementation uses Algorithm v3.6 (Phases 1-7) as documented in **[ALGORITHM_V3_SUMMARY.md](./ALGORITHM_V3_SUMMARY.md)**, which has a 328-point base with 15 refined categories, form decay system, odds factor integration, and data completeness penalties.
+> **NOTE:** The detailed category sections above document the v2.0 scoring logic for reference. The actual implementation uses Algorithm v3.6 (Phases 1-7) as documented in **[ALGORITHM_V3_SUMMARY.md](./ALGORITHM_V3_SUMMARY.md)**, which has a 331-point base with 15 refined categories, form decay system, odds factor integration, and data completeness penalties.
 
 ---
 
@@ -731,7 +731,7 @@ _Status: Track-Agnostic Universal Scoring Engine_
 _Integration: Requires Track Intelligence Database for track-specific values_
 _Changes in v3.7: Speed Recency Decay — re-enabled with calibrated tiers (Phase 8). Active Horse Protection added._
 _Changes in v3.6: Form Decay System — scales winner bonuses by recency (Phase 7). Form cap 50 pts._
-_Changes in v3.1: Algorithm rebuild with 328-point base. See ALGORITHM_V3_SUMMARY.md for complete category breakdown._
+_Changes in v3.1: Algorithm rebuild with 331-point base. See ALGORITHM_V3_SUMMARY.md for complete category breakdown._
 _Changes in v3.0: Phase 3 speed rebalance (90 pts), base increased to 313._
 _Changes in v2.5: Overlay system added with ±50 cap._
 _Changes in v2.0: Rebalanced category weights to align with industry handicapping research._
