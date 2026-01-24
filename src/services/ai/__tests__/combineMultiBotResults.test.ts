@@ -233,6 +233,7 @@ describe('Three-Template Ticket Construction System', () => {
           topTierCount: 2,
           recommendedSpread: 'NARROW',
         },
+        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -292,6 +293,7 @@ describe('Three-Template Ticket Construction System', () => {
           topTierCount: 3,
           recommendedSpread: 'MEDIUM',
         },
+        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -346,6 +348,7 @@ describe('Three-Template Ticket Construction System', () => {
           topTierCount: 5,
           recommendedSpread: 'WIDE',
         },
+        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -1307,6 +1310,7 @@ describe('combineMultiBotResults Output', () => {
       paceScenario: null,
       vulnerableFavorite: null,
       fieldSpread: null,
+      classDrop: null,
     };
 
     const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -1338,6 +1342,7 @@ describe('combineMultiBotResults Output', () => {
       paceScenario: null,
       vulnerableFavorite: null,
       fieldSpread: null,
+      classDrop: null,
     };
 
     const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -1362,6 +1367,7 @@ describe('combineMultiBotResults Output', () => {
       paceScenario: null,
       vulnerableFavorite: null,
       fieldSpread: null,
+      classDrop: null,
     };
 
     const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -1390,6 +1396,7 @@ describe('combineMultiBotResults Output', () => {
       paceScenario: null,
       vulnerableFavorite: null,
       fieldSpread: null,
+      classDrop: null,
     };
 
     const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -1420,6 +1427,7 @@ describe('combineMultiBotResults Output', () => {
       paceScenario: null,
       vulnerableFavorite: null,
       fieldSpread: null,
+      classDrop: null,
     };
 
     const result = combineMultiBotResults(rawResults, race, scoring, 100);

@@ -211,6 +211,7 @@ describe('aggregateHorseSignals', () => {
       paceScenario: null,
       vulnerableFavorite: null,
       fieldSpread: null,
+      classDrop: null,
     };
 
     const signals = aggregateHorseSignals(1, 'Horse A', 1, 200, rawResults, race);
@@ -238,6 +239,7 @@ describe('aggregateHorseSignals', () => {
       paceScenario: null,
       vulnerableFavorite: null,
       fieldSpread: null,
+      classDrop: null,
     };
 
     // Conservative mode: MEDIUM confidence (1 race) gives +1 boost
@@ -270,6 +272,7 @@ describe('aggregateHorseSignals', () => {
       paceScenario: null,
       vulnerableFavorite: null,
       fieldSpread: null,
+      classDrop: null,
     };
 
     // Non-conservative mode - MEDIUM confidence gives +1
@@ -297,6 +300,7 @@ describe('aggregateHorseSignals', () => {
       },
       vulnerableFavorite: null,
       fieldSpread: null,
+      classDrop: null,
     };
 
     // Lone speed is STRONG advantage - gives +2 in both modes
@@ -325,6 +329,7 @@ describe('aggregateHorseSignals', () => {
       },
       vulnerableFavorite: null,
       fieldSpread: null,
+      classDrop: null,
     };
 
     // Non-conservative mode: lone speed gives +2
@@ -352,6 +357,7 @@ describe('aggregateHorseSignals', () => {
       },
       vulnerableFavorite: null,
       fieldSpread: null,
+      classDrop: null,
     };
 
     const signals = aggregateHorseSignals(1, 'Horse A', 1, 200, rawResults, race);
@@ -385,6 +391,7 @@ describe('aggregateHorseSignals', () => {
       },
       vulnerableFavorite: null,
       fieldSpread: null,
+      classDrop: null,
     };
 
     const signals = aggregateHorseSignals(1, 'Horse A', 3, 160, rawResults, race);
@@ -413,6 +420,7 @@ describe('aggregateHorseSignals', () => {
         confidence: 'HIGH',
       },
       fieldSpread: null,
+      classDrop: null,
     };
 
     const signals = aggregateHorseSignals(1, 'Favorite', 1, 200, rawResults, race);
@@ -454,6 +462,7 @@ describe('aggregateHorseSignals', () => {
           },
         ],
       },
+      classDrop: null,
     };
 
     // CONSERVATIVE: MEDIUM confidence trip trouble (1 race) gets +1 boost
@@ -502,6 +511,7 @@ describe('aggregateHorseSignals', () => {
           },
         ],
       },
+      classDrop: null,
     };
 
     // NON-CONSERVATIVE: MEDIUM confidence trip trouble (1 race) = +1 boost
@@ -539,6 +549,9 @@ describe('reorderByAdjustedRank', () => {
         classification: 'A',
         keyCandidate: true,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: -2,
         adjustedRank: 1,
         signalCount: 1,
@@ -561,6 +574,9 @@ describe('reorderByAdjustedRank', () => {
         classification: 'A',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 2,
         signalCount: 0,
@@ -583,6 +599,9 @@ describe('reorderByAdjustedRank', () => {
         classification: 'B',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 2,
         adjustedRank: 3,
         signalCount: 1,
@@ -630,6 +649,9 @@ describe('reorderByAdjustedRank', () => {
         classification: 'A',
         keyCandidate: true,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 1,
         signalCount: 0,
@@ -652,6 +674,9 @@ describe('reorderByAdjustedRank', () => {
         classification: 'A',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 2, // +2 = adjusted rank 0 -> clamped to 1
         adjustedRank: 2,
         signalCount: 1,
@@ -685,6 +710,9 @@ describe('reorderByAdjustedRank', () => {
         classification: 'A',
         keyCandidate: true,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 1,
         signalCount: 0,
@@ -707,6 +735,9 @@ describe('reorderByAdjustedRank', () => {
         classification: 'A',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 1, // +1 adjustment - threshold is ±1, so this triggers a rank change
         adjustedRank: 2,
         signalCount: 1,
@@ -745,6 +776,9 @@ describe('reorderByAdjustedRank', () => {
         classification: 'A',
         keyCandidate: true,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 1,
         signalCount: 0,
@@ -767,6 +801,9 @@ describe('reorderByAdjustedRank', () => {
         classification: 'A',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 2,
         signalCount: 0,
@@ -789,6 +826,9 @@ describe('reorderByAdjustedRank', () => {
         classification: 'B',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 3,
         signalCount: 0,
@@ -811,6 +851,9 @@ describe('reorderByAdjustedRank', () => {
         classification: 'B',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 4,
         signalCount: 0,
@@ -833,6 +876,9 @@ describe('reorderByAdjustedRank', () => {
         classification: 'B',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 3, // Would normally move from rank 5 to rank 2
         adjustedRank: 5,
         signalCount: 1,
@@ -874,6 +920,9 @@ describe('isCompetitiveField', () => {
         classification: 'A',
         keyCandidate: true,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 1,
         signalCount: 0,
@@ -896,6 +945,9 @@ describe('isCompetitiveField', () => {
         classification: 'A',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 2,
         signalCount: 0,
@@ -918,6 +970,9 @@ describe('isCompetitiveField', () => {
         classification: 'B',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 3,
         signalCount: 0,
@@ -940,6 +995,9 @@ describe('isCompetitiveField', () => {
         classification: 'B',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 4,
         signalCount: 0,
@@ -970,6 +1028,9 @@ describe('isCompetitiveField', () => {
         classification: 'A',
         keyCandidate: true,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 1,
         signalCount: 0,
@@ -992,6 +1053,9 @@ describe('isCompetitiveField', () => {
         classification: 'A',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 2,
         signalCount: 0,
@@ -1014,6 +1078,9 @@ describe('isCompetitiveField', () => {
         classification: 'B',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 3,
         signalCount: 0,
@@ -1036,6 +1103,9 @@ describe('isCompetitiveField', () => {
         classification: 'B',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 4,
         signalCount: 0,
@@ -1066,6 +1136,9 @@ describe('isCompetitiveField', () => {
         classification: 'A',
         keyCandidate: true,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 1,
         signalCount: 0,
@@ -1088,6 +1161,9 @@ describe('isCompetitiveField', () => {
         classification: 'A',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 2,
         signalCount: 0,
@@ -1110,6 +1186,9 @@ describe('isCompetitiveField', () => {
         classification: 'B',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 2,
         adjustedRank: 3,
         signalCount: 1,
@@ -1132,6 +1211,9 @@ describe('isCompetitiveField', () => {
         classification: 'B',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 4,
         signalCount: 0,
@@ -1180,6 +1262,9 @@ describe('identifyValuePlay', () => {
         classification: 'A',
         keyCandidate: true,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 1,
         signalCount: 0,
@@ -1202,6 +1287,9 @@ describe('identifyValuePlay', () => {
         classification: 'A',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 2,
         signalCount: 0,
@@ -1224,6 +1312,9 @@ describe('identifyValuePlay', () => {
         classification: 'B',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 2,
         adjustedRank: 1, // After reorder, this becomes rank 1
         signalCount: 1,
@@ -1273,6 +1364,9 @@ describe('identifyValuePlay', () => {
         classification: 'A',
         keyCandidate: true,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 1,
         signalCount: 0,
@@ -1295,6 +1389,9 @@ describe('identifyValuePlay', () => {
         classification: 'A',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 2,
         signalCount: 0,
@@ -1317,6 +1414,9 @@ describe('identifyValuePlay', () => {
         classification: 'B',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 1,
         adjustedRank: 2, // Moved up but still not rank 1
         signalCount: 1,
@@ -1357,6 +1457,9 @@ describe('identifyValuePlay', () => {
         classification: 'A',
         keyCandidate: true,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 1,
         signalCount: 0,
@@ -1379,6 +1482,9 @@ describe('identifyValuePlay', () => {
         classification: 'B',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 2,
         signalCount: 0,
@@ -1427,6 +1533,9 @@ describe('synthesizeBetStructure', () => {
         classification: 'A',
         keyCandidate: true,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 1,
         signalCount: 0,
@@ -1449,6 +1558,9 @@ describe('synthesizeBetStructure', () => {
         classification: 'B',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 2,
         signalCount: 0,
@@ -1488,6 +1600,9 @@ describe('synthesizeBetStructure', () => {
         classification: 'A',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 1,
         signalCount: 0,
@@ -1510,6 +1625,9 @@ describe('synthesizeBetStructure', () => {
         classification: 'A',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 2,
         signalCount: 0,
@@ -1549,6 +1667,9 @@ describe('synthesizeBetStructure', () => {
         classification: 'A',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 2,
         adjustedRank: 1,
         signalCount: 1,
@@ -1571,6 +1692,9 @@ describe('synthesizeBetStructure', () => {
         classification: 'A',
         keyCandidate: false,
         spreadOnly: false,
+        classDropBoost: 0,
+        classDropFlagged: false,
+        classDropReason: null,
         totalAdjustment: 0,
         adjustedRank: 2,
         signalCount: 0,
@@ -1625,6 +1749,7 @@ describe('combineMultiBotResults', () => {
           confidence: 'HIGH',
         },
         fieldSpread: null,
+        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -1661,6 +1786,7 @@ describe('combineMultiBotResults', () => {
           topTierCount: 1,
           recommendedSpread: 'NARROW',
         },
+        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -1717,6 +1843,7 @@ describe('combineMultiBotResults', () => {
         paceScenario: null,
         vulnerableFavorite: null, // SOLID favorite
         fieldSpread: null,
+        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -1772,6 +1899,7 @@ describe('combineMultiBotResults', () => {
         },
         vulnerableFavorite: null, // SOLID favorite
         fieldSpread: null,
+        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -1820,6 +1948,7 @@ describe('combineMultiBotResults', () => {
         paceScenario: null,
         vulnerableFavorite: null,
         fieldSpread: null,
+        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -1864,6 +1993,7 @@ describe('combineMultiBotResults', () => {
           topTierCount: 1,
           recommendedSpread: 'NARROW',
         },
+        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -1902,6 +2032,7 @@ describe('combineMultiBotResults', () => {
           topTierCount: 5,
           recommendedSpread: 'WIDE',
         },
+        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -1936,6 +2067,7 @@ describe('combineMultiBotResults', () => {
           confidence: 'HIGH',
         },
         fieldSpread: null,
+        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -1978,6 +2110,7 @@ describe('combineMultiBotResults', () => {
         paceScenario: null,
         vulnerableFavorite: null,
         fieldSpread: null,
+        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
@@ -2017,6 +2150,7 @@ describe('combineMultiBotResults', () => {
         paceScenario: null,
         vulnerableFavorite: null,
         fieldSpread: null,
+        classDrop: null,
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);

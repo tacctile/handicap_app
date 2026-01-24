@@ -301,14 +301,14 @@ export function checkAIServiceStatus(): AIServiceStatus {
  */
 export function analyzeClassDrop(
   race: ParsedRace,
-  scoringResult: RaceScoringResult
+  _scoringResult: RaceScoringResult
 ): ClassDropAnalysis {
   const raceId = `${race.header.trackCode}-${race.header.raceNumber}`;
   const horses: ClassDropHorse[] = [];
 
   // Get today's class level
-  // Use claiming price if > 0, otherwise use purse
-  const todayClaimingPrice = race.header.claimingPrice ?? 0;
+  // Use claiming price (max if range) if > 0, otherwise use purse
+  const todayClaimingPrice = race.header.claimingPriceMax ?? race.header.claimingPriceMin ?? 0;
   const todayPurse = race.header.purse ?? 0;
   const todayClass = todayClaimingPrice > 0 ? todayClaimingPrice : todayPurse;
 
@@ -322,11 +322,8 @@ export function analyzeClassDrop(
     // Skip scratched horses
     if (horse.isScratched) continue;
 
-    // Get scoring data for this horse
-    const horseScore = scoringResult.scores.find((s) => s.programNumber === horse.programNumber);
-    if (!horseScore) continue;
-
-    const pastPerformances = horseScore.pastPerformances || [];
+    // Use full PastPerformance data from race.horses (not the simplified PastPerformanceForAI from scoring)
+    const pastPerformances = horse.pastPerformances || [];
 
     // Edge case: First-time starter (0 past races) - return null (silent)
     if (pastPerformances.length === 0) {
@@ -510,8 +507,7 @@ export function analyzeClassDrop(
 
     // Safety filter 3: Long layoff (>180 days since last race AND major drop)
     if (signalBoost > 0 && classification === 'MAJOR') {
-      const daysSinceLastRace =
-        horse.daysSinceLastRace ?? horseScore.formIndicators?.daysSinceLastRace ?? 0;
+      const daysSinceLastRace = horse.daysSinceLastRace ?? 0;
       if (daysSinceLastRace > 180) {
         safetyFiltersApplied.push('long layoff (>180 days) + major drop');
         signalBoost = Math.min(1.0, signalBoost);

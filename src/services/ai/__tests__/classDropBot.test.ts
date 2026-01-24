@@ -13,7 +13,7 @@ import { describe, it, expect } from 'vitest';
 import { analyzeClassDrop, aggregateHorseSignals, identifyValueHorse } from '../index';
 import type { MultiBotRawResults, ClassDropAnalysis } from '../types';
 import type { ParsedRace, PastPerformance, RaceClassification } from '../../../types/drf';
-import type { RaceScoringResult, HorseScore } from '../../../types/scoring';
+import type { RaceScoringResult, HorseScoreForAI } from '../../../types/scoring';
 
 // ============================================================================
 // MOCK DATA BUILDERS
@@ -116,26 +116,54 @@ function createMockRace(
     runningStyle: string;
     mlOdds: string;
     daysSinceLastRace?: number;
+    pastPerformances?: PastPerformance[];
   }>,
-  raceOverrides: Partial<ParsedRace['header']> = {}
+  raceOverrides: {
+    claimingPrice?: number;
+    purse?: number;
+    classification?: RaceClassification;
+    surface?: string;
+  } = {}
 ): ParsedRace {
+  // Convert single claimingPrice to min/max for RaceHeader compatibility
+  const claimingPriceMin = raceOverrides.claimingPrice ?? 15000;
+  const claimingPriceMax = raceOverrides.claimingPrice ?? 15000;
+
   return {
     header: {
       raceNumber: 1,
       trackName: 'Test Track',
       trackCode: 'TST',
       distance: '6 Furlongs',
-      surface: 'dirt',
+      distanceFurlongs: 6,
+      distanceExact: '6f',
+      surface: raceOverrides.surface ?? 'dirt',
       trackCondition: 'fast',
-      classification: 'claiming' as RaceClassification,
-      purseFormatted: '$15,000',
-      purse: 15000,
-      claimingPrice: 15000,
-      condition: 'fast',
+      classification: raceOverrides.classification ?? ('claiming' as RaceClassification),
+      purseFormatted: `$${(raceOverrides.purse ?? 15000).toLocaleString()}`,
+      purse: raceOverrides.purse ?? 15000,
+      claimingPriceMin,
+      claimingPriceMax,
       date: '2024-01-01',
       postTime: '1:00 PM',
       raceType: 'CLM',
-      ...raceOverrides,
+      ageRestriction: '3YO+',
+      sexRestriction: '',
+      weightConditions: '',
+      stateBred: null,
+      allowedWeight: null,
+      conditions: '',
+      raceName: null,
+      grade: null,
+      isListed: false,
+      isAbout: false,
+      tempRail: null,
+      turfCourseType: null,
+      chuteStart: false,
+      hasReplay: false,
+      programNumber: 1,
+      fieldSize: horses.length,
+      probableFavorite: null,
     },
     horses: horses.map((h) => ({
       programNumber: h.programNumber,
@@ -156,7 +184,7 @@ function createMockRace(
       ownerName: 'Test Owner',
       currentOdds: h.mlOdds,
       isScratched: false,
-      pastPerformances: [],
+      pastPerformances: h.pastPerformances ?? [],
       workouts: [],
       medication: '',
       equipment: '',
@@ -175,14 +203,13 @@ function createMockScoringResult(
     rank: number;
     score: number;
     tier?: string;
-    pastPerformances?: PastPerformance[];
     daysSinceLastRace?: number | null;
     averageBeyer?: number | null;
   }>
 ): RaceScoringResult {
   return {
     scores: horses.map(
-      (h): HorseScore => ({
+      (h): HorseScoreForAI => ({
         programNumber: h.programNumber,
         horseName: h.name,
         rank: h.rank,
@@ -198,7 +225,7 @@ function createMockScoringResult(
         positiveFactors: ['Strong speed figures'],
         negativeFactors: [],
         isScratched: false,
-        pastPerformances: h.pastPerformances || [],
+        pastPerformances: [], // Past performances come from race.horses now
         workouts: [],
         trainerPatterns: createDefaultTrainerPatternsForAI(),
         equipment: {
@@ -266,19 +293,27 @@ describe('analyzeClassDrop', () => {
     // Today's race: $15,000 claiming
     // Last 3 races: $25,000, $26,000, $24,000 (median = $25,000)
     // Drop: (25000 - 15000) / 25000 = 40%
-    const race = createMockRace(
-      [{ programNumber: 1, name: 'Big Dropper', runningStyle: 'E', mlOdds: '5-1' }],
-      { claimingPrice: 15000, purse: 15000 }
-    );
-
     const pastPerformances = [
       createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
       createMockPastPerformance({ claimingPrice: 26000, purse: 26000 }),
       createMockPastPerformance({ claimingPrice: 24000, purse: 24000 }),
     ];
 
+    const race = createMockRace(
+      [
+        {
+          programNumber: 1,
+          name: 'Big Dropper',
+          runningStyle: 'E',
+          mlOdds: '5-1',
+          pastPerformances,
+        },
+      ],
+      { claimingPrice: 15000, purse: 15000 }
+    );
+
     const scoringResult = createMockScoringResult([
-      { programNumber: 1, name: 'Big Dropper', rank: 1, score: 200, pastPerformances },
+      { programNumber: 1, name: 'Big Dropper', rank: 1, score: 200 },
     ]);
 
     const result = analyzeClassDrop(race, scoringResult);
@@ -293,19 +328,27 @@ describe('analyzeClassDrop', () => {
   it('should detect MODERATE class drop (25-39%)', () => {
     // Today's race: $18,000 claiming
     // Last 3 races: $25,000 (30% drop)
-    const race = createMockRace(
-      [{ programNumber: 1, name: 'Moderate Dropper', runningStyle: 'E', mlOdds: '5-1' }],
-      { claimingPrice: 18000, purse: 18000 }
-    );
-
     const pastPerformances = [
       createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
       createMockPastPerformance({ claimingPrice: 26000, purse: 26000 }),
       createMockPastPerformance({ claimingPrice: 24000, purse: 24000 }),
     ];
 
+    const race = createMockRace(
+      [
+        {
+          programNumber: 1,
+          name: 'Moderate Dropper',
+          runningStyle: 'E',
+          mlOdds: '5-1',
+          pastPerformances,
+        },
+      ],
+      { claimingPrice: 18000, purse: 18000 }
+    );
+
     const scoringResult = createMockScoringResult([
-      { programNumber: 1, name: 'Moderate Dropper', rank: 1, score: 200, pastPerformances },
+      { programNumber: 1, name: 'Moderate Dropper', rank: 1, score: 200 },
     ]);
 
     const result = analyzeClassDrop(race, scoringResult);
@@ -320,19 +363,27 @@ describe('analyzeClassDrop', () => {
   it('should detect MINOR class drop (20-24%)', () => {
     // Today's race: $20,000 claiming
     // Last 3 races: $25,000 (20% drop)
-    const race = createMockRace(
-      [{ programNumber: 1, name: 'Minor Dropper', runningStyle: 'E', mlOdds: '5-1' }],
-      { claimingPrice: 20000, purse: 20000 }
-    );
-
     const pastPerformances = [
       createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
       createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
       createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
     ];
 
+    const race = createMockRace(
+      [
+        {
+          programNumber: 1,
+          name: 'Minor Dropper',
+          runningStyle: 'E',
+          mlOdds: '5-1',
+          pastPerformances,
+        },
+      ],
+      { claimingPrice: 20000, purse: 20000 }
+    );
+
     const scoringResult = createMockScoringResult([
-      { programNumber: 1, name: 'Minor Dropper', rank: 1, score: 200, pastPerformances },
+      { programNumber: 1, name: 'Minor Dropper', rank: 1, score: 200 },
     ]);
 
     const result = analyzeClassDrop(race, scoringResult);
@@ -347,19 +398,27 @@ describe('analyzeClassDrop', () => {
   it('should detect RISING class (>= 20% rise) with penalty', () => {
     // Today's race: $30,000 claiming
     // Last 3 races: $25,000 (-20% = 20% rise)
-    const race = createMockRace(
-      [{ programNumber: 1, name: 'Rising Star', runningStyle: 'E', mlOdds: '5-1' }],
-      { claimingPrice: 32000, purse: 32000 }
-    );
-
     const pastPerformances = [
       createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
       createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
       createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
     ];
 
+    const race = createMockRace(
+      [
+        {
+          programNumber: 1,
+          name: 'Rising Star',
+          runningStyle: 'E',
+          mlOdds: '5-1',
+          pastPerformances,
+        },
+      ],
+      { claimingPrice: 32000, purse: 32000 }
+    );
+
     const scoringResult = createMockScoringResult([
-      { programNumber: 1, name: 'Rising Star', rank: 1, score: 200, pastPerformances },
+      { programNumber: 1, name: 'Rising Star', rank: 1, score: 200 },
     ]);
 
     const result = analyzeClassDrop(race, scoringResult);
@@ -374,19 +433,27 @@ describe('analyzeClassDrop', () => {
   it('should ignore class changes below 20% threshold', () => {
     // Today's race: $23,000 claiming
     // Last 3 races: $25,000 (only 8% drop)
-    const race = createMockRace(
-      [{ programNumber: 1, name: 'Small Change', runningStyle: 'E', mlOdds: '5-1' }],
-      { claimingPrice: 23000, purse: 23000 }
-    );
-
     const pastPerformances = [
       createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
       createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
       createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
     ];
 
+    const race = createMockRace(
+      [
+        {
+          programNumber: 1,
+          name: 'Small Change',
+          runningStyle: 'E',
+          mlOdds: '5-1',
+          pastPerformances,
+        },
+      ],
+      { claimingPrice: 23000, purse: 23000 }
+    );
+
     const scoringResult = createMockScoringResult([
-      { programNumber: 1, name: 'Small Change', rank: 1, score: 200, pastPerformances },
+      { programNumber: 1, name: 'Small Change', rank: 1, score: 200 },
     ]);
 
     const result = analyzeClassDrop(race, scoringResult);
@@ -397,11 +464,17 @@ describe('analyzeClassDrop', () => {
 
   it('should return null for first-time starter', () => {
     const race = createMockRace([
-      { programNumber: 1, name: 'First Timer', runningStyle: 'E', mlOdds: '5-1' },
+      {
+        programNumber: 1,
+        name: 'First Timer',
+        runningStyle: 'E',
+        mlOdds: '5-1',
+        pastPerformances: [],
+      },
     ]);
 
     const scoringResult = createMockScoringResult([
-      { programNumber: 1, name: 'First Timer', rank: 1, score: 200, pastPerformances: [] },
+      { programNumber: 1, name: 'First Timer', rank: 1, score: 200 },
     ]);
 
     const result = analyzeClassDrop(race, scoringResult);
@@ -410,14 +483,14 @@ describe('analyzeClassDrop', () => {
   });
 
   it('should return null for horse with single past race', () => {
-    const race = createMockRace([
-      { programNumber: 1, name: 'One Start', runningStyle: 'E', mlOdds: '5-1' },
-    ]);
-
     const pastPerformances = [createMockPastPerformance({ claimingPrice: 25000, purse: 25000 })];
 
+    const race = createMockRace([
+      { programNumber: 1, name: 'One Start', runningStyle: 'E', mlOdds: '5-1', pastPerformances },
+    ]);
+
     const scoringResult = createMockScoringResult([
-      { programNumber: 1, name: 'One Start', rank: 1, score: 200, pastPerformances },
+      { programNumber: 1, name: 'One Start', rank: 1, score: 200 },
     ]);
 
     const result = analyzeClassDrop(race, scoringResult);
@@ -428,18 +501,18 @@ describe('analyzeClassDrop', () => {
   it('should apply 0.9x multiplier for 2-race baseline', () => {
     // Today's race: $15,000 claiming
     // Last 2 races: $25,000, $25,000 (40% drop, but only 2 races)
-    const race = createMockRace(
-      [{ programNumber: 1, name: 'Two Timer', runningStyle: 'E', mlOdds: '5-1' }],
-      { claimingPrice: 15000, purse: 15000 }
-    );
-
     const pastPerformances = [
       createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
       createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
     ];
 
+    const race = createMockRace(
+      [{ programNumber: 1, name: 'Two Timer', runningStyle: 'E', mlOdds: '5-1', pastPerformances }],
+      { claimingPrice: 15000, purse: 15000 }
+    );
+
     const scoringResult = createMockScoringResult([
-      { programNumber: 1, name: 'Two Timer', rank: 1, score: 200, pastPerformances },
+      { programNumber: 1, name: 'Two Timer', rank: 1, score: 200 },
     ]);
 
     const result = analyzeClassDrop(race, scoringResult);
@@ -453,19 +526,27 @@ describe('analyzeClassDrop', () => {
   it('should apply chronic dropper filter (2+ consecutive drops)', () => {
     // Today's race: $15,000 claiming
     // Last 3 races: $20,000, $25,000, $30,000 (consecutive drops)
-    const race = createMockRace(
-      [{ programNumber: 1, name: 'Chronic Dropper', runningStyle: 'E', mlOdds: '5-1' }],
-      { claimingPrice: 15000, purse: 15000 }
-    );
-
     const pastPerformances = [
       createMockPastPerformance({ claimingPrice: 20000, purse: 20000 }),
       createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
       createMockPastPerformance({ claimingPrice: 30000, purse: 30000 }),
     ];
 
+    const race = createMockRace(
+      [
+        {
+          programNumber: 1,
+          name: 'Chronic Dropper',
+          runningStyle: 'E',
+          mlOdds: '5-1',
+          pastPerformances,
+        },
+      ],
+      { claimingPrice: 15000, purse: 15000 }
+    );
+
     const scoringResult = createMockScoringResult([
-      { programNumber: 1, name: 'Chronic Dropper', rank: 1, score: 200, pastPerformances },
+      { programNumber: 1, name: 'Chronic Dropper', rank: 1, score: 200 },
     ]);
 
     const result = analyzeClassDrop(race, scoringResult);
@@ -479,11 +560,6 @@ describe('analyzeClassDrop', () => {
 
   it('should apply negative form filter (declining speed figures)', () => {
     // Today's race with dropping class but declining form
-    const race = createMockRace(
-      [{ programNumber: 1, name: 'Declining Form', runningStyle: 'E', mlOdds: '5-1' }],
-      { claimingPrice: 15000, purse: 15000 }
-    );
-
     const pastPerformances = [
       createMockPastPerformance({
         claimingPrice: 25000,
@@ -523,8 +599,21 @@ describe('analyzeClassDrop', () => {
       }),
     ];
 
+    const race = createMockRace(
+      [
+        {
+          programNumber: 1,
+          name: 'Declining Form',
+          runningStyle: 'E',
+          mlOdds: '5-1',
+          pastPerformances,
+        },
+      ],
+      { claimingPrice: 15000, purse: 15000 }
+    );
+
     const scoringResult = createMockScoringResult([
-      { programNumber: 1, name: 'Declining Form', rank: 1, score: 200, pastPerformances },
+      { programNumber: 1, name: 'Declining Form', rank: 1, score: 200 },
     ]);
 
     const result = analyzeClassDrop(race, scoringResult);
@@ -538,6 +627,12 @@ describe('analyzeClassDrop', () => {
   });
 
   it('should cap boost at 1.0 for long layoff + major drop', () => {
+    const pastPerformances = [
+      createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
+      createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
+      createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
+    ];
+
     const race = createMockRace(
       [
         {
@@ -546,16 +641,11 @@ describe('analyzeClassDrop', () => {
           runningStyle: 'E',
           mlOdds: '5-1',
           daysSinceLastRace: 200,
+          pastPerformances,
         },
       ],
       { claimingPrice: 15000, purse: 15000 }
     );
-
-    const pastPerformances = [
-      createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
-      createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
-      createMockPastPerformance({ claimingPrice: 25000, purse: 25000 }),
-    ];
 
     const scoringResult = createMockScoringResult([
       {
@@ -563,7 +653,6 @@ describe('analyzeClassDrop', () => {
         name: 'Long Layoff',
         rank: 1,
         score: 200,
-        pastPerformances,
         daysSinceLastRace: 200,
       },
     ]);
