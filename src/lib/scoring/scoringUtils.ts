@@ -20,14 +20,9 @@ export const MIN_SCORE = 0;
 
 /**
  * Maximum base score before overlay
- * v3.2 Model B (Speed-Dominant): 323 pts
- *
- * Changes:
- * - v3.0: 290 → 313 (Speed Weight Rebalance)
- * - Phase 6: 313 → 328 (Odds Factor +15 pts)
- * - Model B: 328 → 323 (Rebalanced categories)
+ * Audit-verified: 331 points (matches index.ts and ALGORITHM_REFERENCE.md)
  */
-export const MAX_BASE_SCORE = 323;
+export const MAX_BASE_SCORE = 331;
 
 /**
  * Maximum overlay adjustment
@@ -45,10 +40,10 @@ export const MIN_OVERLAY_NEGATIVE = -40;
 export const MAX_PROTOCOL_BONUS = 60;
 
 /** Maximum final score (base + overlay) */
-export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 363
+export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 371
 
 /** Maximum display score (for UI - uses base score) */
-export const MAX_DISPLAY_SCORE = 323;
+export const MAX_DISPLAY_SCORE = 331;
 
 // Category maximums (Model B - Speed-Dominant Rebalance)
 export const SCORE_CATEGORY_LIMITS = {
@@ -367,7 +362,7 @@ export function enforceCategoryBoundaries(score: number, categoryMax: number): n
 
 /**
  * Format score for display
- * Shows "328+" for scores exceeding display max
+ * Shows "331+" for scores exceeding display max
  *
  * @param score - The score to format
  * @returns Formatted score string
