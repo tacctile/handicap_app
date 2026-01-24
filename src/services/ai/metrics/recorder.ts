@@ -379,6 +379,10 @@ export function buildDecisionRecord(
   }));
 
   const aiTopPick = analysis.topPick ?? algorithmTopPick;
+  // Value play from ticketConstruction (replaces deprecated valuePlay field)
+  const aiValuePlay = analysis.ticketConstruction?.valueHorse?.identified
+    ? analysis.ticketConstruction.valueHorse.programNumber
+    : null;
   const sortedInsights = [...analysis.horseInsights].sort(
     (a, b) => a.projectedFinish - b.projectedFinish
   );
