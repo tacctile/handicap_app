@@ -263,7 +263,7 @@ function generateMockEntries(count: number) {
       impliedProbability: prob * 0.9, // Slightly different
       finalOdds: 1 / prob - 1,
       baseScore: Math.floor(prob * 300),
-      finalScore: Math.floor(prob * 328),
+      finalScore: Math.floor(prob * 331),
       tier: prob > 0.5 ? 1 : prob > 0.3 ? 2 : 3,
       wasWinner: isWinner,
       wasPlace: finishPosition <= 2,

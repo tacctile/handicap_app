@@ -867,7 +867,7 @@ export function BettingRecommendations({
         tier,
         winProbability: winProb,
         odds,
-        confidence: Math.min(100, 40 + (h.score.total / 240) * 60),
+        confidence: Math.min(100, 40 + (h.score.total / 331) * 60),
       };
     });
   }, [horses]);
@@ -923,7 +923,7 @@ export function BettingRecommendations({
           horseName: h.horse.horseName,
           morningLineOdds: h.horse.morningLineOdds,
           score: h.score.total,
-          confidence: Math.min(100, 40 + (h.score.total / 240) * 60),
+          confidence: Math.min(100, 40 + (h.score.total / 331) * 60),
           tier,
           estimatedWinProb: undefined,
           overlayPercent: 0,

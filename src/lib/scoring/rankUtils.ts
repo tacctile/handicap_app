@@ -78,7 +78,7 @@ export interface RankInfo {
 }
 
 /**
- * Calculate ranks based on BASE SCORE (X/323) with full tie-breaker chain
+ * Calculate ranks based on BASE SCORE (X/331) with full tie-breaker chain
  *
  * Model B Final: Uses deterministic tie-breaker chain to ensure UNIQUE ranks.
  * No more "1st (tie)" situations - every horse gets a distinct rank.

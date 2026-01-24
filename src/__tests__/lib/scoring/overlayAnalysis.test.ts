@@ -290,14 +290,14 @@ describe('Overlay Analysis', () => {
         expect(result.tierShift).toBe(0);
       });
 
-      it('clamps adjusted score to 0-250 range', () => {
+      it('clamps adjusted score to 0-331 range', () => {
         // Very low score with overlay
         const low = calculateTierAdjustment(10, 10, 160);
         expect(low.adjustedScore).toBe(40); // 10 + 30
 
-        // Very high score with overlay
-        const high = calculateTierAdjustment(240, 240, 160);
-        expect(high.adjustedScore).toBe(250); // Clamped at max
+        // Very high score with overlay (331 = max base score)
+        const high = calculateTierAdjustment(320, 320, 160);
+        expect(high.adjustedScore).toBe(331); // Clamped at max base score
       });
     });
   });

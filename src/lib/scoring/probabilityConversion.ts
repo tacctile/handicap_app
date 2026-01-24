@@ -79,7 +79,7 @@ export const SOFTMAX_CONFIG = {
   minProbability: 0.005,
   /** Maximum probability ceiling (95% = 0.95) */
   maxProbability: 0.95,
-  /** Score scaling factor - divides scores to normalize for softmax (100 works well for 0-328 range) */
+  /** Score scaling factor - divides scores to normalize for softmax (100 works well for 0-331 range) */
   scoreScale: 100,
 } as const;
 
@@ -115,7 +115,7 @@ export type SoftmaxConfigType = {
  *
  * Subtracting max_score before exponentiating prevents overflow for large scores.
  *
- * @param scores - Array of raw scores (0-328 typical range)
+ * @param scores - Array of raw scores (0-331 typical range)
  * @param temperature - Temperature parameter (default: SOFTMAX_CONFIG.temperature)
  *   - temperature < 1.0: More extreme distribution (favorite gets higher %)
  *   - temperature = 1.0: Standard softmax
@@ -180,7 +180,7 @@ export function softmaxProbabilities(
   // Ensure temperature is positive
   const safeTemperature = Math.max(0.001, temperature);
 
-  // Scale scores to softmax-friendly range (racing scores 0-328 → ~0-3.28)
+  // Scale scores to softmax-friendly range (racing scores 0-331 → ~0-3.31)
   // This prevents exponential overflow and produces reasonable probability spreads
   const scaledScores = sanitizedScores.map((s) => s / SOFTMAX_CONFIG.scoreScale);
 

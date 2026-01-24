@@ -69,7 +69,7 @@ export interface PredictionLogOptions {
  * Convert base score to win probability
  * Uses a logistic-style transformation based on empirical ranges
  *
- * Score ranges (323 max base):
+ * Score ranges (331 max base):
  * - 265+ Elite: ~30-50% win prob
  * - 216-264 Strong: ~15-30% win prob
  * - 165-215 Contender: ~8-15% win prob
@@ -77,8 +77,8 @@ export interface PredictionLogOptions {
  * - <116 Weak: ~1-3% win prob
  */
 export function scoreToProbability(baseScore: number, fieldSize: number): number {
-  // Normalize score to 0-1 range (323 max base score)
-  const normalizedScore = Math.min(baseScore, 323) / 323;
+  // Normalize score to 0-1 range (331 max base score)
+  const normalizedScore = Math.min(baseScore, 331) / 331;
 
   // Apply logistic transformation
   // Steeper curve to differentiate top horses

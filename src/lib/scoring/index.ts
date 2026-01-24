@@ -141,7 +141,7 @@ import {
 
 /**
  * Maximum base score (before overlay)
- * Model B (Speed-Dominant): 323 pts
+ * Model B (Speed-Dominant): 331 pts
  *
  * Category breakdown:
  * - Speed & Class: 140 pts (Speed 105 + Class 35)
@@ -201,7 +201,7 @@ export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 371
  * - Age Factor: ±1 pt (peak performance at 4-5yo, declining at 8+)
  * - Sire's Sire: ±1 pt (integrated into breeding for known influential sires)
  *
- * Total: 323 points base score
+ * Total: 331 points base score
  */
 export const SCORE_LIMITS = {
   connections: 23, // Model B: reduced from 27 (partnership 4→2)
@@ -227,22 +227,22 @@ export const SCORE_LIMITS = {
 
 /**
  * Score thresholds for color coding and tier classification
- * Based on BASE SCORE ONLY (323 max), not total score with overlay
+ * Based on BASE SCORE ONLY (331 max), not total score with overlay
  *
  * | Base Score | Percentage | Rating     |
  * |------------|------------|------------|
- * | 265+       | 82%+       | Elite      |
- * | 216-264    | 67-81%     | Strong     |
- * | 165-215    | 51-66%     | Contender  |
- * | 116-164    | 36-50%     | Fair       |
- * | Below 116  | <36%       | Weak       |
+ * | 265+       | 80%+       | Elite      |
+ * | 216-264    | 65-79%     | Strong     |
+ * | 165-215    | 50-64%     | Contender  |
+ * | 116-164    | 35-49%     | Fair       |
+ * | Below 116  | <35%       | Weak       |
  */
 export const SCORE_THRESHOLDS = {
-  elite: 265, // 82%+ of 323 base score
-  strong: 216, // 67-81% of 323 base score
-  contender: 165, // 51-66% of 323 base score
-  fair: 116, // 36-50% of 323 base score
-  weak: 0, // Below 36%
+  elite: 265, // 80%+ of 331 base score
+  strong: 216, // 65-79% of 331 base score
+  contender: 165, // 50-64% of 331 base score
+  fair: 116, // 35-49% of 331 base score
+  weak: 0, // Below 35%
 } as const;
 
 /** Score colors matching thresholds (based on base score) */
@@ -461,7 +461,7 @@ export interface ScoreBreakdown {
 export interface HorseScore {
   /** Final total score (base + overlay) */
   total: number;
-  /** Base score (0-323) before overlay */
+  /** Base score (0-331) before overlay */
   baseScore: number;
   /** Overlay adjustment (±40) */
   overlayScore: number;
@@ -551,9 +551,9 @@ export function parseOdds(oddsStr: string): number {
 
 /**
  * Get the color for a BASE score based on thresholds
- * IMPORTANT: This should be called with baseScore (0-323), NOT total score
+ * IMPORTANT: This should be called with baseScore (0-331), NOT total score
  *
- * @param baseScore - The horse's base score (0-323 range)
+ * @param baseScore - The horse's base score (0-331 range)
  * @param isScratched - Whether the horse is scratched
  */
 export function getScoreColor(baseScore: number, isScratched: boolean): string {
@@ -567,17 +567,17 @@ export function getScoreColor(baseScore: number, isScratched: boolean): string {
 
 /**
  * Get score tier name based on BASE score
- * IMPORTANT: This should be called with baseScore (0-323), NOT total score
+ * IMPORTANT: This should be called with baseScore (0-331), NOT total score
  *
  * | Base Score | Percentage | Rating     |
  * |------------|------------|------------|
- * | 265+       | 82%+       | Elite      |
- * | 216-264    | 67-81%     | Strong     |
- * | 165-215    | 51-66%     | Contender  |
- * | 116-164    | 36-50%     | Fair       |
- * | Below 116  | <36%       | Weak       |
+ * | 265+       | 80%+       | Elite      |
+ * | 216-264    | 65-79%     | Strong     |
+ * | 165-215    | 50-64%     | Contender  |
+ * | 116-164    | 35-49%     | Fair       |
+ * | Below 116  | <35%       | Weak       |
  *
- * @param baseScore - The horse's base score (0-323 range)
+ * @param baseScore - The horse's base score (0-331 range)
  */
 export function getScoreTier(baseScore: number): string {
   if (baseScore >= SCORE_THRESHOLDS.elite) return 'Elite';
@@ -1195,7 +1195,7 @@ function calculateHorseScoreWithContext(
   const overlayScore = enforceOverlayBoundaries(overlayResult.cappedScore);
 
   // Final score = Base + Overlay (with boundary enforcement)
-  // Ensures score is floored at MIN_SCORE (0) and capped at MAX_FINAL_SCORE (363)
+  // Ensures score is floored at MIN_SCORE (0) and capped at MAX_FINAL_SCORE (371)
   const total = enforceScoreBoundaries(baseScore + overlayScore);
 
   // Add overlay to breakdown

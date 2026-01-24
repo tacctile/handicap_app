@@ -31,10 +31,10 @@ export interface HistoricalEntry {
   /** Final decimal odds at post time */
   finalOdds: number;
 
-  /** Our base score (0-328 scale) */
+  /** Our base score (0-331 scale) */
   baseScore: number;
 
-  /** Our final score with overlay (0-368 scale) */
+  /** Our final score with overlay (0-371 scale) */
   finalScore: number;
 
   /** Betting tier classification (1, 2, 3, or 0 for pass) */
