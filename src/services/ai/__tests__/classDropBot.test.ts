@@ -960,7 +960,12 @@ describe('identifyValueHorse with Class Drop', () => {
       },
     ];
 
-    const result = identifyValueHorse(aggregatedSignals, rawResults, 'SOLID');
+    // Note: Using 'VULNERABLE' because SOLID favorites have stricter thresholds
+    // (requires 2+ bots OR strength >= 50). With Trip Trouble alone (30 pts) +
+    // Class Drop reinforcement (+15 pts) = 45, we don't meet SOLID threshold.
+    // This test focuses on verifying class drop REINFORCES (increases strength,
+    // not botCount) rather than testing the SOLID favorite filter.
+    const result = identifyValueHorse(aggregatedSignals, rawResults, 'VULNERABLE');
 
     // Class drop should have reinforced the Trip Trouble candidate (signalStrength increased)
     expect(result.identified).toBe(true);
