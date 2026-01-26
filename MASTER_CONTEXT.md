@@ -226,6 +226,29 @@ _These are foundational constraints. Every decision must respect them._
 
 ---
 
+## Enterprise Quality Standards
+
+**All Code Must:**
+- Have error handling (try/catch with logging)
+- Validate/sanitize external inputs
+- Include corresponding test file for new modules
+- Use logging service, not console.log in production
+- Have explicit TypeScript types (no `any`)
+- Handle async failure states
+- Be wrapped in ErrorBoundary or handle errors gracefully
+- Pass TypeScript strict mode
+- Follow existing codebase patterns
+
+**Pull Request Checklist:**
+- [ ] `npm test` passes (0 failures)
+- [ ] No TypeScript errors (`npm run typecheck`)
+- [ ] No console.log statements (except logging service)
+- [ ] New functions have error handling
+- [ ] New modules have test coverage
+- [ ] Follows existing patterns in codebase
+
+---
+
 ## Design System Constants
 
 ### Color Palette
@@ -374,9 +397,77 @@ COMPLETION REPORT:
 
 ---
 
+## Snapshot Prompt Template
+
+Run this at the start of any Claude Chat session when codebase state is unclear or after significant changes.
+
+```
+TASK:
+Generate a technical snapshot of the current codebase state.
+
+CONTEXT:
+New session needs current codebase state for accurate planning.
+
+REFERENCE FILES TO READ FIRST:
+- MASTER_CONTEXT.md
+- ALGORITHM_REFERENCE.md
+
+DEPENDENCIES:
+- None
+
+---
+
+EXPLICIT REQUIREMENTS:
+
+1. List all directories in src/ with purpose
+2. For src/components/: List key components by category with status (COMPLETE/IN-PROGRESS/STUB)
+3. For src/lib/: List modules with status (FUNCTIONAL/PARTIAL/STUB)
+4. For src/services/: List services with status (WIRED/SCAFFOLDED/NOT STARTED)
+5. For src/hooks/: Count and list all hooks
+6. State management: List contexts, how state flows, recalculation triggers
+7. PWA status: Service worker, manifest, offline capability
+8. Testing status: Framework, file count, CI pipeline status
+9. Known issues or tech debt: TODOs, bugs, incomplete features
+
+---
+
+DO NOT:
+- Modify any files
+- This is READ-ONLY
+
+---
+
+OUTPUT:
+Structured snapshot document for project continuity.
+```
+
+---
+
 ## Methodology Documentation
 
 For detailed methodology, read src/docs/ directly.
+
+---
+
+## Pre-UI-Session Checklist
+
+**Before Starting UI Work:**
+- [ ] `npm test` passes (0 failures)
+- [ ] `npm run typecheck` passes
+- [ ] `npm run dev` starts without errors
+- [ ] Read MASTER_CONTEXT.md and ALGORITHM_REFERENCE.md
+- [ ] Run snapshot prompt if unsure of current state
+- [ ] Identify which components will be modified
+- [ ] Check src/styles/ for existing design tokens
+- [ ] Review related components for patterns to follow
+
+**During UI Work:**
+- [ ] Use design system colors only (see Design System Constants)
+- [ ] Use 8px grid for spacing
+- [ ] Use tabular numbers for data displays
+- [ ] Mobile-first (375px primary target)
+- [ ] 60fps animations (no jank)
+- [ ] Error boundaries on new major components
 
 ---
 
