@@ -1,12 +1,16 @@
 /**
  * Unit tests for the combineMultiBotResults function
  *
- * Tests the targeted aggression changes:
- * 1. Vulnerable favorite HIGH confidence drops ranking by 1
- * 2. Trip trouble HIGH confidence (2+ races) gets +2 boost
- * 3. Field spread doesn't influence contender count (always top 4)
- * 4. Max adjustment is ±2
- * 5. Override/confirm narratives work correctly
+ * Tests the Three-Template System (v3):
+ * 1. Template A: Solid favorite + value horse identified
+ * 2. Template B: Vulnerable favorite (HIGH confidence, 2+ flags)
+ * 3. Template C: Wide open field
+ * 4. PASS: Solid favorite with no value horse (MINIMAL tier)
+ *
+ * Key principles:
+ * - Algorithm ranks are SACRED (never reordered by AI)
+ * - Template selection determines betting strategy
+ * - Narratives use template format (no OVERRIDE/CONFIRM)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -92,8 +96,8 @@ function createTestScoringResult(
 }
 
 describe('combineMultiBotResults', () => {
-  describe('PART 1: Vulnerable Favorite Ranking Drop (Conservative Mode)', () => {
-    it('should drop favorite when HIGH confidence vulnerable AND 2+ vulnerability flags', () => {
+  describe('PART 1: Template Selection Based on Favorite Vulnerability', () => {
+    it('should select Template B when HIGH confidence vulnerable AND 2+ vulnerability flags', () => {
       const race = createTestRace(1, [
         { programNumber: 1, horseName: 'Favorite Horse', morningLineOdds: '2-1' },
         { programNumber: 2, horseName: 'Second Horse', morningLineOdds: '5-1' },
@@ -119,7 +123,7 @@ describe('combineMultiBotResults', () => {
         },
         vulnerableFavorite: {
           isVulnerable: true,
-          // CONSERVATIVE: Needs 2+ flags AND HIGH confidence for penalty
+          // 2+ flags AND HIGH confidence triggers Template B
           reasons: ['Poor track record at this distance', 'Class drop concern'],
           confidence: 'HIGH',
         },
@@ -132,13 +136,15 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // Algorithm's #1 pick (Favorite Horse) should be dropped, #2 should be new top pick
+      // Template B: topPick = algorithm rank 2 (favorite demoted from win position)
       expect(result.topPick).toBe(2);
-      expect(result.raceNarrative).toContain('OVERRIDE');
-      expect(result.raceNarrative).toContain('Vulnerable favorite:');
+      expect(result.ticketConstruction?.template).toBe('B');
+      expect(result.vulnerableFavorite).toBe(true);
+      expect(result.raceNarrative).toContain('TEMPLATE B');
+      expect(result.raceNarrative).toContain('Vulnerable Favorite');
     });
 
-    it('should NOT drop favorite when HIGH confidence but only 1 flag (conservative mode)', () => {
+    it('should select PASS template when HIGH confidence but only 1 vulnerability flag', () => {
       const race = createTestRace(1, [
         { programNumber: 1, horseName: 'Favorite Horse', morningLineOdds: '2-1' },
         { programNumber: 2, horseName: 'Second Horse', morningLineOdds: '5-1' },
@@ -164,7 +170,7 @@ describe('combineMultiBotResults', () => {
         },
         vulnerableFavorite: {
           isVulnerable: true,
-          // CONSERVATIVE: Only 1 flag = no penalty, just flagged
+          // Only 1 flag = favoriteStatus stays SOLID → PASS template (no value horse)
           reasons: ['Poor track record at this distance'],
           confidence: 'HIGH',
         },
@@ -177,13 +183,14 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // CONSERVATIVE: HIGH confidence with 1 flag = flag only, no rank change
+      // PASS template: topPick = algorithm rank 1, favoriteStatus = SOLID
       expect(result.topPick).toBe(1);
-      expect(result.vulnerableFavorite).toBe(true); // Still flagged
-      expect(result.raceNarrative).toContain('CONFIRM'); // No override with weak signal
+      expect(result.ticketConstruction?.template).toBe('PASS');
+      expect(result.vulnerableFavorite).toBe(false); // Not marked as vulnerable (only 1 flag)
+      expect(result.raceNarrative).toContain('MINIMAL TIER');
     });
 
-    it('should NOT drop favorite when MEDIUM confidence (conservative mode)', () => {
+    it('should select PASS template when MEDIUM confidence even with 2 flags', () => {
       const race = createTestRace(1, [
         { programNumber: 1, horseName: 'Favorite Horse', morningLineOdds: '2-1' },
         { programNumber: 2, horseName: 'Second Horse', morningLineOdds: '5-1' },
@@ -210,7 +217,8 @@ describe('combineMultiBotResults', () => {
         vulnerableFavorite: {
           isVulnerable: true,
           reasons: ['Some concern', 'Another concern'],
-          confidence: 'MEDIUM', // CONSERVATIVE: MEDIUM confidence = no penalty
+          // MEDIUM confidence with 2 flags = favoriteStatus stays SOLID
+          confidence: 'MEDIUM',
         },
         fieldSpread: {
           fieldType: 'MIXED',
@@ -221,14 +229,19 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // CONSERVATIVE: MEDIUM confidence = flag only, no rank change
+      // PASS template: 2 flags but MEDIUM confidence = not vulnerable enough
       expect(result.topPick).toBe(1);
-      expect(result.vulnerableFavorite).toBe(true); // Still flagged
+      expect(result.ticketConstruction?.template).toBe('PASS');
+      expect(result.vulnerableFavorite).toBe(false); // Requires HIGH confidence for 2 flags
     });
   });
 
-  describe('PART 2: Trip Trouble HIGH/MEDIUM Confidence (Conservative Mode)', () => {
-    it('should apply +2 boost for HIGH confidence trip trouble (2+ troubled races)', () => {
+  describe('PART 2: Algorithm Ranks Are Sacred', () => {
+    // NOTE: Tests for ranking changes via trip trouble boosts have been REMOVED
+    // because algorithm ranks are now SACRED and never reordered by AI.
+    // Trip trouble flags are captured in horse insights but don't affect rankings.
+
+    it('should preserve algorithm ranks even when trip trouble is detected', () => {
       const race = createTestRace(1, [
         { programNumber: 1, horseName: 'Top Horse', morningLineOdds: '2-1' },
         { programNumber: 2, horseName: 'Second Horse', morningLineOdds: '5-1' },
@@ -249,7 +262,6 @@ describe('combineMultiBotResults', () => {
             {
               programNumber: 3,
               horseName: 'Trip Trouble Horse',
-              // Issue indicates 2+ troubled races - HIGH confidence
               issue: 'Blocked in 2 of last 3 races, finished 5th both times despite clear ability',
               maskedAbility: true,
             },
@@ -276,35 +288,42 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // Horse #3 with +2 boost should move from rank 3 to rank 1
-      expect(result.topPick).toBe(3);
-      expect(result.raceNarrative).toContain('OVERRIDE');
-      expect(result.raceNarrative).toContain('trip trouble');
+      // Algorithm rank 1 stays as top pick (ranks are SACRED)
+      expect(result.topPick).toBe(1);
+
+      // Horse #3's projectedFinish should remain at algorithm rank 3
+      const horse3 = result.horseInsights.find((h) => h.programNumber === 3);
+      expect(horse3?.projectedFinish).toBe(3);
+
+      // Trip trouble info should still be in the one-liner (for insights)
+      expect(horse3?.oneLiner).toBeDefined();
     });
 
-    it('should NOT apply boost for MEDIUM confidence trip trouble (1 troubled race) in conservative mode', () => {
+    it('should preserve algorithm rank in projectedFinish for all horses', () => {
       const race = createTestRace(1, [
-        { programNumber: 1, horseName: 'Top Horse', morningLineOdds: '2-1' },
-        { programNumber: 2, horseName: 'Trip Trouble Horse', morningLineOdds: '5-1' },
-        { programNumber: 3, horseName: 'Third Horse', morningLineOdds: '8-1' },
-        { programNumber: 4, horseName: 'Fourth Horse', morningLineOdds: '10-1' },
+        { programNumber: 1, horseName: 'Horse 1', morningLineOdds: '2-1' },
+        { programNumber: 2, horseName: 'Horse 2', morningLineOdds: '3-1' },
+        { programNumber: 3, horseName: 'Horse 3', morningLineOdds: '5-1' },
+        { programNumber: 4, horseName: 'Horse 4', morningLineOdds: '8-1' },
+        { programNumber: 5, horseName: 'Horse 5', morningLineOdds: '10-1' },
       ]);
 
       const scoring = createTestScoringResult([
-        { programNumber: 1, horseName: 'Top Horse', rank: 1, score: 220 },
-        { programNumber: 2, horseName: 'Trip Trouble Horse', rank: 2, score: 200 },
-        { programNumber: 3, horseName: 'Third Horse', rank: 3, score: 180 },
-        { programNumber: 4, horseName: 'Fourth Horse', rank: 4, score: 160 },
+        { programNumber: 1, horseName: 'Horse 1', rank: 1, score: 220 },
+        { programNumber: 2, horseName: 'Horse 2', rank: 2, score: 210 },
+        { programNumber: 3, horseName: 'Horse 3', rank: 3, score: 200 },
+        { programNumber: 4, horseName: 'Horse 4', rank: 4, score: 190 },
+        { programNumber: 5, horseName: 'Horse 5', rank: 5, score: 180 },
       ]);
 
+      // Trip trouble on horse 5 - should NOT change projectedFinish
       const rawResults: MultiBotRawResults = {
         tripTrouble: {
           horsesWithTripTrouble: [
             {
-              programNumber: 2,
-              horseName: 'Trip Trouble Horse',
-              // Issue indicates only 1 troubled race (MEDIUM confidence)
-              issue: 'Blocked at the quarter pole in last race, finished 4th despite good position',
+              programNumber: 5,
+              horseName: 'Horse 5',
+              issue: 'Blocked in 2 of last 3 races, finished 5th both times',
               maskedAbility: true,
             },
           ],
@@ -330,9 +349,15 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // CONSERVATIVE: MEDIUM confidence trip trouble = flag only, no boost
-      // Horse #1 stays as top pick
-      expect(result.topPick).toBe(1);
+      // ALL horses should have projectedFinish = their algorithm rank
+      const horse5 = result.horseInsights.find((h) => h.programNumber === 5);
+      expect(horse5?.projectedFinish).toBe(5); // Algorithm rank preserved (was 5, stays 5)
+
+      // Verify all horses maintain their algorithm ranks
+      for (let i = 1; i <= 5; i++) {
+        const horse = result.horseInsights.find((h) => h.programNumber === i);
+        expect(horse?.projectedFinish).toBe(i);
+      }
     });
   });
 
@@ -374,7 +399,7 @@ describe('combineMultiBotResults', () => {
         fieldSpread: {
           fieldType: 'SEPARATED',
           topTierCount: 2,
-          recommendedSpread: 'NARROW', // Would normally suggest 3 contenders
+          recommendedSpread: 'NARROW', // Would normally suggest fewer contenders
         },
       };
 
@@ -386,36 +411,28 @@ describe('combineMultiBotResults', () => {
     });
   });
 
-  describe('PART 4: Safeguards', () => {
-    it('should cap maximum adjustment at +2', () => {
+  describe('PART 4: Template C Selection (Wide Open)', () => {
+    it('should select Template C for wide open field and include 5 contenders', () => {
       const race = createTestRace(1, [
-        { programNumber: 1, horseName: 'Horse 1', morningLineOdds: '2-1' },
-        { programNumber: 2, horseName: 'Horse 2', morningLineOdds: '3-1' },
+        { programNumber: 1, horseName: 'Horse 1', morningLineOdds: '4-1' },
+        { programNumber: 2, horseName: 'Horse 2', morningLineOdds: '5-1' },
         { programNumber: 3, horseName: 'Horse 3', morningLineOdds: '5-1' },
-        { programNumber: 4, horseName: 'Horse 4', morningLineOdds: '8-1' },
-        { programNumber: 5, horseName: 'Horse 5', morningLineOdds: '10-1' },
+        { programNumber: 4, horseName: 'Horse 4', morningLineOdds: '6-1' },
+        { programNumber: 5, horseName: 'Horse 5', morningLineOdds: '6-1' },
+        { programNumber: 6, horseName: 'Horse 6', morningLineOdds: '8-1' },
       ]);
 
       const scoring = createTestScoringResult([
-        { programNumber: 1, horseName: 'Horse 1', rank: 1, score: 220 },
-        { programNumber: 2, horseName: 'Horse 2', rank: 2, score: 210 },
-        { programNumber: 3, horseName: 'Horse 3', rank: 3, score: 200 },
+        { programNumber: 1, horseName: 'Horse 1', rank: 1, score: 200 },
+        { programNumber: 2, horseName: 'Horse 2', rank: 2, score: 195 },
+        { programNumber: 3, horseName: 'Horse 3', rank: 3, score: 192 },
         { programNumber: 4, horseName: 'Horse 4', rank: 4, score: 190 },
-        { programNumber: 5, horseName: 'Horse 5', rank: 5, score: 180 },
+        { programNumber: 5, horseName: 'Horse 5', rank: 5, score: 188 },
+        { programNumber: 6, horseName: 'Horse 6', rank: 6, score: 175 },
       ]);
 
-      // Horse at rank 5 with trip trouble - even with +2 boost, can't go below rank 3
       const rawResults: MultiBotRawResults = {
-        tripTrouble: {
-          horsesWithTripTrouble: [
-            {
-              programNumber: 5,
-              horseName: 'Horse 5',
-              issue: 'Blocked in 2 of last 3 races, finished 5th both times',
-              maskedAbility: true,
-            },
-          ],
-        },
+        tripTrouble: { horsesWithTripTrouble: [] },
         paceScenario: {
           advantagedStyles: [],
           disadvantagedStyles: [],
@@ -429,22 +446,30 @@ describe('combineMultiBotResults', () => {
           confidence: 'LOW',
         },
         fieldSpread: {
-          fieldType: 'MIXED',
-          topTierCount: 4,
-          recommendedSpread: 'MEDIUM',
+          fieldType: 'WIDE_OPEN', // Triggers Template C
+          topTierCount: 5,
+          recommendedSpread: 'WIDE',
         },
       };
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // Horse 5 with +2 boost should be at rank 3 (5 - 2 = 3)
-      const horse5 = result.horseInsights.find((h) => h.programNumber === 5);
-      expect(horse5?.projectedFinish).toBe(3);
+      // Template C selected for wide open field
+      expect(result.ticketConstruction?.template).toBe('C');
+      expect(result.raceNarrative).toContain('TEMPLATE C');
+      expect(result.raceNarrative).toContain('Wide Open');
+
+      // Template C includes 5 contenders
+      const contenders = result.horseInsights.filter((h) => h.isContender);
+      expect(contenders.length).toBe(5);
+
+      // topPick is still algorithm rank 1 (Template C uses rank 1)
+      expect(result.topPick).toBe(1);
     });
   });
 
-  describe('PART 5: Override/Confirm Narratives', () => {
-    it('should generate CONFIRM narrative when AI agrees with algorithm', () => {
+  describe('PART 5: Narrative Format (Template-Based)', () => {
+    it('should generate MINIMAL TIER narrative when no value edge identified', () => {
       const race = createTestRace(1, [
         { programNumber: 1, horseName: 'Top Horse', morningLineOdds: '2-1' },
         { programNumber: 2, horseName: 'Second Horse', morningLineOdds: '5-1' },
@@ -459,6 +484,7 @@ describe('combineMultiBotResults', () => {
         { programNumber: 4, horseName: 'Fourth Horse', rank: 4, score: 160 },
       ]);
 
+      // No signals that would identify a value edge
       const rawResults: MultiBotRawResults = {
         tripTrouble: { horsesWithTripTrouble: [] },
         paceScenario: {
@@ -482,8 +508,60 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      expect(result.raceNarrative).toContain('CONFIRM');
-      expect(result.raceNarrative).toContain('Top Horse');
+      // PASS template with MINIMAL TIER narrative
+      expect(result.ticketConstruction?.template).toBe('PASS');
+      expect(result.raceNarrative).toContain('MINIMAL TIER');
+      expect(result.raceNarrative).toContain('Top Horse'); // Algorithm top pick named
+      expect(result.raceNarrative).toContain('No AI bet recommendation');
+
+      // Algorithm rank 1 is still top pick
+      expect(result.topPick).toBe(1);
+    });
+
+    it('should generate Template B narrative with vulnerability info', () => {
+      const race = createTestRace(1, [
+        { programNumber: 1, horseName: 'Vulnerable Fav', morningLineOdds: '2-1' },
+        { programNumber: 2, horseName: 'New Leader', morningLineOdds: '5-1' },
+        { programNumber: 3, horseName: 'Third Horse', morningLineOdds: '8-1' },
+        { programNumber: 4, horseName: 'Fourth Horse', morningLineOdds: '10-1' },
+      ]);
+
+      const scoring = createTestScoringResult([
+        { programNumber: 1, horseName: 'Vulnerable Fav', rank: 1, score: 220 },
+        { programNumber: 2, horseName: 'New Leader', rank: 2, score: 200 },
+        { programNumber: 3, horseName: 'Third Horse', rank: 3, score: 180 },
+        { programNumber: 4, horseName: 'Fourth Horse', rank: 4, score: 160 },
+      ]);
+
+      const rawResults: MultiBotRawResults = {
+        tripTrouble: { horsesWithTripTrouble: [] },
+        paceScenario: {
+          advantagedStyles: [],
+          disadvantagedStyles: [],
+          paceProjection: 'MODERATE',
+          loneSpeedException: false,
+          speedDuelLikely: false,
+        },
+        vulnerableFavorite: {
+          isVulnerable: true,
+          reasons: ['Class drop with poor form', 'Distance concern'],
+          confidence: 'HIGH',
+        },
+        fieldSpread: {
+          fieldType: 'MIXED',
+          topTierCount: 4,
+          recommendedSpread: 'MEDIUM',
+        },
+      };
+
+      const result = combineMultiBotResults(rawResults, race, scoring, 100);
+
+      // Template B narrative format
+      expect(result.ticketConstruction?.template).toBe('B');
+      expect(result.raceNarrative).toContain('TEMPLATE B');
+      expect(result.raceNarrative).toContain('Vulnerable Favorite');
+      expect(result.raceNarrative).toContain('Demote #1');
+      expect(result.raceNarrative).toContain('Key #2');
     });
   });
 });
