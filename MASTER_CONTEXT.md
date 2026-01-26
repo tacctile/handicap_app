@@ -249,6 +249,53 @@ _These are foundational constraints. Every decision must respect them._
 
 ---
 
+## Component Creation Template
+
+When creating new React components, follow this structure:
+
+**File Location:** `src/components/[ComponentName].tsx`
+
+**Standard Structure:**
+```tsx
+import React from 'react';
+import { ErrorBoundary } from './ErrorBoundary';
+
+interface ComponentNameProps {
+  // Explicit prop types, no `any`
+}
+
+/**
+ * Brief description of component purpose.
+ */
+export function ComponentName({ prop1, prop2 }: ComponentNameProps): React.ReactElement {
+  // Implementation
+  return (
+    <div className="component-name">
+      {/* Content */}
+    </div>
+  );
+}
+
+// Wrap in ErrorBoundary for major components
+export function ComponentNameWithBoundary(props: ComponentNameProps): React.ReactElement {
+  return (
+    <ErrorBoundary>
+      <ComponentName {...props} />
+    </ErrorBoundary>
+  );
+}
+```
+
+**Required for New Components:**
+- [ ] Props interface with explicit types
+- [ ] JSDoc comment describing purpose
+- [ ] ErrorBoundary wrapper (major components)
+- [ ] Corresponding test file: `src/components/__tests__/[ComponentName].test.tsx`
+- [ ] Mobile-first styling (375px base)
+- [ ] Uses design system tokens only
+
+---
+
 ## Design System Constants
 
 ### Color Palette
