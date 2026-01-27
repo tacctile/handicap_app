@@ -19,3 +19,9 @@ export type { HorseDetailDrawerProps } from './HorseDetailDrawer';
 
 export { HorseProfile } from './HorseProfile';
 export type { HorseProfileProps } from './HorseProfile';
+
+export { PPRow } from './PPRow';
+export type { PPRowProps } from './PPRow';
+
+export { HorsePastPerformances } from './HorsePastPerformances';
+export type { HorsePastPerformancesProps } from './HorsePastPerformances';
