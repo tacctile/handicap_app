@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { RaceHeader } from './RaceHeader';
 import { HorseList } from './HorseList';
 import { Button } from '../../ui';
+import { HorseDetailDrawer } from '../../horse';
 import type { ParsedRace } from '../../../types/drf';
 import type { ScoredHorse } from '../../../lib/scoring';
 import { MAX_SCORE } from '../../../lib/scoring';
@@ -179,8 +180,28 @@ export function RaceDetail({
   isScratched,
 }: RaceDetailProps): React.ReactElement {
   const [aiExpanded, setAiExpanded] = useState(false);
+  const [selectedHorsePost, setSelectedHorsePost] = useState<number | null>(null);
 
   const header = race.header;
+
+  // Find the selected horse and score for the drawer
+  const selectedHorseData = useMemo(() => {
+    if (selectedHorsePost === null) return null;
+    const scoredHorse = scoredHorses.find((h) => h.horse.postPosition === selectedHorsePost);
+    if (!scoredHorse) return null;
+    return scoredHorse;
+  }, [selectedHorsePost, scoredHorses]);
+
+  // Handle horse row click - open drawer and call external handler
+  const handleSelectHorse = useCallback((postPosition: number) => {
+    setSelectedHorsePost(postPosition);
+    onSelectHorse(postPosition);
+  }, [onSelectHorse]);
+
+  // Close the drawer
+  const handleCloseDrawer = useCallback(() => {
+    setSelectedHorsePost(null);
+  }, []);
 
   // Calculate value analysis for edge display
   const valueAnalysis = useMemo(() => {
@@ -280,13 +301,23 @@ export function RaceDetail({
         <div style={horseListContainerStyles}>
           <HorseList
             horses={scoredHorses}
-            onSelectHorse={onSelectHorse}
+            onSelectHorse={handleSelectHorse}
             bestBetPost={bestBetPost}
             getValueEdge={getValueEdge}
             maxScore={MAX_SCORE}
           />
         </div>
       </div>
+
+      {/* Horse Detail Drawer */}
+      <HorseDetailDrawer
+        isOpen={selectedHorsePost !== null}
+        onClose={handleCloseDrawer}
+        horse={selectedHorseData?.horse ?? null}
+        score={selectedHorseData?.score ?? null}
+        rank={selectedHorseData?.rank ?? 0}
+        valueEdge={selectedHorseData ? getValueEdge(selectedHorseData.index) : undefined}
+      />
 
       {/* Bottom Action Bar */}
       <div style={bottomBarStyles}>
