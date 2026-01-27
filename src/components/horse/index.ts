@@ -25,3 +25,9 @@ export type { PPRowProps } from './PPRow';
 
 export { HorsePastPerformances } from './HorsePastPerformances';
 export type { HorsePastPerformancesProps } from './HorsePastPerformances';
+
+export { WorkoutRow } from './WorkoutRow';
+export type { WorkoutRowProps } from './WorkoutRow';
+
+export { HorseWorkouts } from './HorseWorkouts';
+export type { HorseWorkoutsProps } from './HorseWorkouts';
