@@ -1,117 +1,209 @@
 /* ============================================
    Furlong Design System Tokens
+   Complete unified design token system
    ============================================ */
 
 :root {
-  /* Border radius - balanced, professional */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  /* ===== BACKGROUNDS ===== */
+  --bg-base: #09090B;
+  --bg-card: #111113;
+  --bg-elevated: #1A1A1C;
+  --bg-hover: #232326;
+  --bg-active: #2A2A2E;
 
-  /* Universal dimension - top bar, bottom bar, sidebar collapsed width */
-  --dimension-bar: 64px;
+  /* ===== TEXT ===== */
+  --text-primary: #FAFAFA;
+  --text-secondary: #A1A1A6;
+  --text-tertiary: #6E6E73;
+  --text-inverse: #09090B;
 
-  /* Unified bar height for top bar, verdict bar, column headers */
-  --bar-height: 48px;
+  /* ===== BORDERS ===== */
+  --border-subtle: #232326;
+  --border-default: #2E2E32;
+  --border-prominent: #3A3A3F;
 
-  /* Betting panel width */
-  --betting-panel-width: 400px;
+  /* ===== ACCENT (Teal — Primary Brand) ===== */
+  --accent-primary: #19ABB5;
+  --accent-primary-hover: #1AC2CD;
+  --accent-primary-muted: rgba(25, 171, 181, 0.15);
+  --accent-primary-text: #19ABB5;
 
-  /* Spacing - 8px base grid */
+  /* ===== STATUS ===== */
+  --status-success: #22C55E;
+  --status-success-muted: rgba(34, 197, 94, 0.15);
+  --status-warning: #EAB308;
+  --status-warning-muted: rgba(234, 179, 8, 0.15);
+  --status-error: #EF4444;
+  --status-error-muted: rgba(239, 68, 68, 0.15);
+
+  /* ===== VALUE INDICATORS ===== */
+  --value-positive: #22C55E;
+  --value-negative: #EF4444;
+  --value-neutral: #A1A1A6;
+
+  /* ===== TIER COLORS ===== */
+  --tier-1: #22C55E;
+  --tier-1-muted: rgba(34, 197, 94, 0.15);
+  --tier-2: #3B82F6;
+  --tier-2-muted: rgba(59, 130, 246, 0.15);
+  --tier-3: #EAB308;
+  --tier-3-muted: rgba(234, 179, 8, 0.15);
+  --tier-none: #6E6E73;
+  --tier-none-muted: rgba(110, 110, 115, 0.15);
+
+  /* ===== SPACING (8px grid) ===== */
+  --space-0: 0px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
-  --space-7: 48px;
-  --space-8: 64px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
 
-  /* Universal gaps - THESE ARE THE ONLY VALUES FOR CONTAINER SPACING */
-  --gap-container: 16px; /* Between and inside all cards, panels, sections */
-  --gap-element: 8px; /* Between elements within a card (label to input, icon to text) */
-  --gap-tight: 4px; /* Compact spacing for dense UI elements */
+  /* ===== TYPOGRAPHY ===== */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 
-  /* Colors - matching existing theme */
-  --color-base: #0a0a0b;
-  --color-card: #0f0f10;
-  --color-elevated: #1a1a1c;
-  --color-border: #2a2a2c;
-  --color-border-prominent: #3a3a3c;
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: 17px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 32px;
 
-  --color-primary: #19abb5;
-  --color-primary-hover: #1992a1;
-  --color-primary-muted: rgba(25, 171, 181, 0.15);
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
 
-  --color-text-primary: #eeeff1;
-  --color-text-secondary: #b4b4b6;
-  --color-text-tertiary: #6e6e70;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
 
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
+  /* ===== RADII ===== */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
 
-  /* Status colors - comfortable, not obnoxious */
-  --color-status-normal: #22c55e; /* Forest green */
-  --color-status-warning: #eab308; /* Goldenrod amber */
-  --color-status-critical: #ef4444; /* Soft red */
-  --color-status-final: var(--color-text-tertiary); /* Dimmed for completed */
+  /* ===== SHADOWS ===== */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-drawer: -4px 0 24px rgba(0, 0, 0, 0.7);
 
-  /* ============================================
-     VALUE TIER COLORS (Red to Green Spectrum)
-     ============================================ */
+  /* ===== TRANSITIONS ===== */
+  --transition-fast: 100ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
 
-  /* Tier 5: Elite - Bright Green (+100% or more) */
-  --color-tier-elite: #22c55e;
-  --color-tier-elite-bg: rgba(34, 197, 94, 0.15);
+  /* ===== Z-INDEX ===== */
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-drawer: 250;
+  --z-modal: 300;
+  --z-toast: 400;
+
+  /* ===== TOUCH TARGETS ===== */
+  --touch-target-min: 44px;
+}
+
+/* ===== BASE STYLES ===== */
+
+html {
+  box-sizing: border-box;
+}
+
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   LEGACY TOKENS (preserved for compatibility)
+   These map old token names to new values.
+   Remove these after migrating all components.
+   ============================================ */
+
+:root {
+  /* Legacy background tokens */
+  --color-base: var(--bg-base);
+  --color-card: var(--bg-card);
+  --color-elevated: var(--bg-elevated);
+  --color-background: var(--bg-card);
+  --color-foreground: var(--text-primary);
+  --color-surface: var(--bg-elevated);
+  --color-surface-variant: var(--bg-hover);
+  --color-on-surface: var(--text-primary);
+  --color-on-surface-variant: var(--text-secondary);
+  --color-outline: var(--border-subtle);
+
+  /* Legacy border tokens */
+  --color-border: var(--border-subtle);
+  --color-border-prominent: var(--border-prominent);
+
+  /* Legacy primary/accent tokens */
+  --color-primary: var(--accent-primary);
+  --color-primary-hover: var(--accent-primary-hover);
+  --color-primary-muted: var(--accent-primary-muted);
+
+  /* Legacy text tokens */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+
+  /* Legacy status tokens */
+  --color-success: var(--status-success);
+  --color-warning: var(--status-warning);
+  --color-error: var(--status-error);
+  --color-status-normal: var(--status-success);
+  --color-status-warning: var(--status-warning);
+  --color-status-critical: var(--status-error);
+  --color-status-final: var(--text-tertiary);
+
+  /* Legacy tier tokens (value-based, different from new tier system) */
+  --color-tier-elite: var(--tier-1);
+  --color-tier-elite-bg: var(--tier-1-muted);
   --color-tier-elite-glow: rgba(34, 197, 94, 0.6);
-
-  /* Tier 4: Good - Light Green (+50% to +99%) */
   --color-tier-good: #4ade80;
   --color-tier-good-bg: rgba(74, 222, 128, 0.15);
-
-  /* Tier 3: Fair - Yellow/Amber (+10% to +49%) */
-  --color-tier-fair: #eab308;
-  --color-tier-fair-bg: rgba(234, 179, 8, 0.15);
-
-  /* Tier 2: Neutral - Orange (-10% to +9%) */
+  --color-tier-fair: var(--tier-3);
+  --color-tier-fair-bg: var(--tier-3-muted);
   --color-tier-neutral: #f97316;
   --color-tier-neutral-bg: rgba(249, 115, 22, 0.15);
+  --color-tier-bad: var(--status-error);
+  --color-tier-bad-bg: var(--status-error-muted);
+  --color-tier-scratched: var(--tier-none);
+  --color-tier-scratched-bg: var(--tier-none-muted);
 
-  /* Tier 1: Bad - Red (below -10%) */
-  --color-tier-bad: #ef4444;
-  --color-tier-bad-bg: rgba(239, 68, 68, 0.15);
+  /* Legacy dimension tokens */
+  --dimension-bar: 64px;
+  --bar-height: 48px;
+  --betting-panel-width: 400px;
 
-  /* Scratched state */
-  --color-tier-scratched: #6e6e70;
-  --color-tier-scratched-bg: rgba(110, 110, 112, 0.15);
+  /* Legacy gap tokens (mapped to new spacing) */
+  --gap-container: var(--space-4);
+  --gap-element: var(--space-2);
+  --gap-tight: var(--space-1);
 
-  /* ============================================
-     TRANSITION TIMING
-     Consistent timing for smooth animations
-     ============================================ */
-  --transition-fast: 150ms ease;
-  --transition-normal: 300ms ease;
-  --transition-slow: 500ms ease;
-
-  /* ============================================
-     HORSE LIST GRID COLUMNS
-     Single source of truth for header + rows
-     8 columns: icons | POST | HORSE | ODDS | FAIR | PROJECTED FINISH | VALUE | EDGE
-
-     Left side (horse identity + price): SCR | POST | HORSE | ODDS | FAIR
-     Right side (value analysis): PROJECTED FINISH | VALUE | EDGE
-
-     Chevron column removed - row click handles expand/collapse
-
-     Horse name uses flex to fill remaining space
-     POST: 50px (narrow, just "#1")
-     ODDS: 90px (fits "20-1" + edit hint)
-     FAIR: 80px (fits "20-1")
-     PROJECTED FINISH: 145px (fits "PROJECTED FINISH" header and "#1" data)
-     VALUE: 180px (fixed width for upcoming stacked label implementation)
-     EDGE: 90px (fits "+445%")
-     ============================================ */
-  --horse-list-grid: 70px /* icons/SCR */ 50px /* POST */ 1fr /* horse name - flex */ 90px
-    /* ODDS */ 80px /* FAIR odds */ 145px /* PROJECTED FINISH */ 180px /* VALUE - fixed */ 90px; /* EDGE */
+  /* Legacy horse list grid (preserved as-is for complex layout) */
+  --horse-list-grid: 70px 50px 1fr 90px 80px 145px 180px 90px;
 }
