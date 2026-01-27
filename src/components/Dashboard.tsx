@@ -4,6 +4,26 @@ import { useValueDetection } from '../hooks/useValueDetection';
 import { useRaceBets } from '../hooks/useRaceBets';
 import { useAIAnalysis } from '../hooks/useAIAnalysis';
 import type { UseSessionPersistenceReturn } from '../hooks/useSessionPersistence';
+
+// ============================================================================
+// NAVIGATION INTEGRATION (Phase 0.2)
+// ============================================================================
+// This component currently manages its own viewMode state ('overview' | 'analysis' | 'topBets').
+// A centralized navigation system has been added in:
+//   - src/hooks/useAppNavigation.ts (core hook)
+//   - src/contexts/NavigationContext.tsx (context provider)
+//
+// TODO (Phase 1): When rebuilding Dashboard, replace internal viewMode state
+// with useNavigation() context:
+//   - viewMode === 'overview'  →  navigation.currentView.screen === 'races'
+//   - viewMode === 'analysis'  →  navigation.currentView.screen === 'race-detail'
+//   - viewMode === 'topBets'   →  navigation.currentView.screen === 'top-bets'
+//   - parsedData === null      →  navigation.currentView.screen === 'empty'
+//
+// The App.tsx already syncs race selection with navigation.goToRace() when
+// onRaceSelect is called. Full integration will unify all navigation state.
+// ============================================================================
+
 // Note: BetModeContainer import removed - old BET MODE screen disconnected from navigation
 // File kept at ./BetMode/BetModeContainer.tsx for potential future use
 import { TopBetsView } from './TopBets';

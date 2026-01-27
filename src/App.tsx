@@ -1,8 +1,9 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuthContext } from './contexts/AuthContext';
 import { ToastProvider, useToastContext } from './contexts/ToastContext';
+import { NavigationProvider, useNavigation } from './contexts/NavigationContext';
 import { AuthPage, AccountSettings } from './components/auth';
 import { HelpCenter } from './components/help';
 import { ViewerLayout } from './components/LiveViewer';
@@ -20,13 +21,21 @@ import './styles/dashboard.css';
 import './styles/help.css';
 
 // ============================================================================
-// ROUTE TYPES
+// ROUTE TYPES (LEGACY - will be removed when Dashboard is rebuilt)
 // ============================================================================
 
 type AppRoute = 'dashboard' | 'account' | 'help' | 'live-viewer';
 
-function AppContent() {
-  const [parsedData, setParsedData] = useState<ParsedDRFFile | null>(null);
+// ============================================================================
+// APP CONTENT PROPS
+// ============================================================================
+
+interface AppContentProps {
+  parsedData: ParsedDRFFile | null;
+  setParsedData: React.Dispatch<React.SetStateAction<ParsedDRFFile | null>>;
+}
+
+function AppContent({ parsedData, setParsedData }: AppContentProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [, setValidationWarnings] = useState<string[]>([]);
   const [, setShowWarnings] = useState(true);
@@ -70,20 +79,38 @@ function AppContent() {
   // Track if we should skip saving (during initial load)
   const skipSaveRef = useRef<boolean>(false);
 
-  // Navigation handlers
+  // ============================================================================
+  // NEW CENTRALIZED NAVIGATION (Phase 0.2)
+  // ============================================================================
+  // Access the new navigation context for centralized view state management.
+  // TODO: When Dashboard is rebuilt, it should consume this context directly
+  // instead of managing its own viewMode state.
+  const navigation = useNavigation();
+
+  // Navigation handlers (legacy - will be replaced when Dashboard is rebuilt)
   const navigateToDashboard = useCallback(() => {
     setCurrentRoute('dashboard');
-  }, []);
+    // Sync with new navigation: go to races overview if data exists
+    if (parsedData) {
+      navigation.goToRaces();
+    } else {
+      navigation.goToEmpty();
+    }
+  }, [parsedData, navigation]);
 
   // Handle successful auth (login/signup)
   const handleAuthSuccess = useCallback(() => {
     setCurrentRoute('dashboard');
-  }, []);
+    // Sync with new navigation
+    navigation.goToEmpty();
+  }, [navigation]);
 
   // Handle logout
   const handleLogout = useCallback(() => {
     setCurrentRoute('dashboard');
-  }, []);
+    // Sync with new navigation
+    navigation.goToEmpty();
+  }, [navigation]);
 
   // Session tracking - track start on mount and end on beforeunload
   useEffect(() => {
@@ -217,7 +244,8 @@ function AppContent() {
         skipSaveRef.current = false;
       }, 100);
     },
-    [raceState, sessionPersistence, addToast]
+
+    [raceState, sessionPersistence, addToast, setParsedData]
   );
 
   // Handle reset for current race only
@@ -245,7 +273,30 @@ function AppContent() {
     raceState.resetAll();
     sessionPersistence.clearSession();
     setSelectedRaceIndex(0);
-  }, [raceState, sessionPersistence]);
+    // Sync with new navigation
+    navigation.goToEmpty();
+  }, [raceState, sessionPersistence, navigation, setParsedData]);
+
+  // Handler for exiting help screen back to dashboard
+  const handleExitHelp = useCallback(() => {
+    setCurrentRoute('dashboard');
+    if (parsedData) {
+      navigation.goToRaces();
+    } else {
+      navigation.goToEmpty();
+    }
+  }, [parsedData, navigation]);
+
+  // Handler for race selection that syncs with new navigation
+  // TODO: When Dashboard is rebuilt, this will be the primary way to select races
+  const handleRaceSelect = useCallback(
+    (raceIndex: number) => {
+      setSelectedRaceIndex(raceIndex);
+      // Sync with new navigation (1-indexed race number)
+      navigation.goToRace(raceIndex + 1);
+    },
+    [navigation]
+  );
 
   // Effect: Save race state changes to session persistence
   useEffect(() => {
@@ -361,10 +412,11 @@ function AppContent() {
   }
 
   // Show help center
-  if (currentRoute === 'help') {
+  // TODO: When Dashboard is rebuilt, help will be accessed via navigation.currentView.screen === 'help'
+  if (currentRoute === 'help' || navigation.currentView.screen === 'help') {
     return (
       <ErrorBoundary onReset={handleFullReset}>
-        <HelpCenter onBack={navigateToDashboard} />
+        <HelpCenter onBack={handleExitHelp} />
       </ErrorBoundary>
     );
   }
@@ -378,13 +430,21 @@ function AppContent() {
     );
   }
 
-  // Show dashboard
+  // ============================================================================
+  // MAIN VIEW RENDERING
+  // ============================================================================
+  // Current architecture: Dashboard handles all main views (empty, races, race-detail, top-bets)
+  // TODO: When Dashboard is rebuilt, this switch will render individual screen components:
+  //   - navigation.currentView.screen === 'empty' → EmptyState component
+  //   - navigation.currentView.screen === 'races' → RaceOverview component
+  //   - navigation.currentView.screen === 'race-detail' → RaceDetail component
+  //   - navigation.currentView.screen === 'top-bets' → TopBets component
   return (
     <ErrorBoundary onReset={handleFullReset}>
       <Dashboard
         parsedData={parsedData}
         selectedRaceIndex={selectedRaceIndex}
-        onRaceSelect={setSelectedRaceIndex}
+        onRaceSelect={handleRaceSelect}
         trackCondition={raceState.trackCondition}
         onTrackConditionChange={raceState.setTrackCondition}
         raceState={raceState}
@@ -398,16 +458,44 @@ function AppContent() {
   );
 }
 
+// ============================================================================
+// APP STATE MANAGER
+// ============================================================================
+// This component manages the core data state and provides NavigationProvider.
+// It passes state down to AppContent which handles rendering.
+
+function AppStateManager() {
+  const [parsedData, setParsedData] = useState<ParsedDRFFile | null>(null);
+
+  return (
+    <NavigationProvider
+      hasData={!!parsedData}
+      initialRaceNumber={1}
+      onNavigate={(from, to) => {
+        // Analytics tracking for navigation changes
+        logger.logInfo('Navigation change', {
+          from: from.screen,
+          to: to.screen,
+          raceNumber: to.screen === 'race-detail' ? to.raceNumber : undefined,
+        });
+      }}
+    >
+      <AppContent parsedData={parsedData} setParsedData={setParsedData} />
+    </NavigationProvider>
+  );
+}
+
 /**
  * App component wrapped with providers
  * AuthProvider is always present but auth is controlled by feature flags
  * ToastProvider enables app-wide toast notifications
+ * NavigationProvider provides centralized view state management (Phase 0.2)
  */
 function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <AppContent />
+        <AppStateManager />
       </ToastProvider>
     </AuthProvider>
   );
