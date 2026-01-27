@@ -16,3 +16,6 @@ export type { HorseScoreBreakdownProps } from './HorseScoreBreakdown';
 
 export { HorseDetailDrawer } from './HorseDetailDrawer';
 export type { HorseDetailDrawerProps } from './HorseDetailDrawer';
+
+export { HorseProfile } from './HorseProfile';
+export type { HorseProfileProps } from './HorseProfile';
