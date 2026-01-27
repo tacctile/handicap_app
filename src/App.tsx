@@ -7,7 +7,8 @@ import { NavigationProvider, useNavigation } from './contexts/NavigationContext'
 import { AuthPage, AccountSettings } from './components/auth';
 import { HelpCenter } from './components/help';
 import { ViewerLayout } from './components/LiveViewer';
-import { EmptyState, RaceOverview } from './components/screens';
+import { EmptyState, RaceOverview, RaceDetail } from './components/screens';
+import { analyzeRaceValue } from './hooks/useValueDetection';
 import { calculateRaceScores } from './lib/scoring';
 import { getTrackData } from './data/tracks';
 import { useRaceState } from './hooks/useRaceState';
@@ -523,6 +524,57 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
         />
       </ErrorBoundary>
     );
+  }
+
+  // Show RaceDetail when on the race-detail screen
+  if (navigation.currentView.screen === 'race-detail' && parsedData) {
+    const raceIndex = navigation.currentView.raceNumber - 1;
+    const race = parsedData.races[raceIndex];
+    const scoredHorsesForRace = allScoredHorses[raceIndex] || [];
+
+    // Calculate verdict using value detection
+    const valueAnalysis = analyzeRaceValue(
+      scoredHorsesForRace,
+      (index, original) => {
+        const persistedState = sessionPersistence?.getRaceState(raceIndex);
+        const oddsOverrides = persistedState?.oddsOverrides || {};
+        return oddsOverrides[index] ?? original;
+      },
+      (index) => {
+        const persistedState = sessionPersistence?.getRaceState(raceIndex);
+        const scratches = persistedState?.scratches || [];
+        return scratches.includes(index);
+      }
+    );
+
+    const handleSelectHorseFromRaceDetail = (postPosition: number) => {
+      // For now, just log - horse detail drawer comes in Phase 2
+      console.log('Selected horse at post position:', postPosition);
+    };
+
+    if (race) {
+      return (
+        <ErrorBoundary onReset={handleFullReset}>
+          <RaceDetail
+            race={race}
+            scoredHorses={scoredHorsesForRace}
+            verdict={valueAnalysis.verdict}
+            onBack={() => navigation.goToRaces()}
+            onSelectHorse={handleSelectHorseFromRaceDetail}
+            getOdds={(index, original) => {
+              const persistedState = sessionPersistence?.getRaceState(raceIndex);
+              const oddsOverrides = persistedState?.oddsOverrides || {};
+              return oddsOverrides[index] ?? original;
+            }}
+            isScratched={(index) => {
+              const persistedState = sessionPersistence?.getRaceState(raceIndex);
+              const scratches = persistedState?.scratches || [];
+              return scratches.includes(index);
+            }}
+          />
+        </ErrorBoundary>
+      );
+    }
   }
 
   // Current architecture: Dashboard handles data views (race-detail, top-bets)
