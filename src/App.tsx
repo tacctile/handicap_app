@@ -7,6 +7,7 @@ import { NavigationProvider, useNavigation } from './contexts/NavigationContext'
 import { AuthPage, AccountSettings } from './components/auth';
 import { HelpCenter } from './components/help';
 import { ViewerLayout } from './components/LiveViewer';
+import { EmptyState } from './components/screens';
 import { useRaceState } from './hooks/useRaceState';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -433,9 +434,18 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
   // ============================================================================
   // MAIN VIEW RENDERING
   // ============================================================================
-  // Current architecture: Dashboard handles all main views (empty, races, race-detail, top-bets)
+
+  // Show EmptyState when no data is loaded
+  if (navigation.currentView.screen === 'empty') {
+    return (
+      <ErrorBoundary onReset={handleFullReset}>
+        <EmptyState onParsed={handleParsed} />
+      </ErrorBoundary>
+    );
+  }
+
+  // Current architecture: Dashboard handles data views (races, race-detail, top-bets)
   // TODO: When Dashboard is rebuilt, this switch will render individual screen components:
-  //   - navigation.currentView.screen === 'empty' → EmptyState component
   //   - navigation.currentView.screen === 'races' → RaceOverview component
   //   - navigation.currentView.screen === 'race-detail' → RaceDetail component
   //   - navigation.currentView.screen === 'top-bets' → TopBets component
