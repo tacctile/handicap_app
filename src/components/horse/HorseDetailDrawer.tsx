@@ -3,6 +3,7 @@ import { Drawer } from '../ui';
 import { HorseScoreCard } from './HorseScoreCard';
 import { HorseScoreBreakdown } from './HorseScoreBreakdown';
 import { HorseProfile } from './HorseProfile';
+import { HorsePastPerformances } from './HorsePastPerformances';
 import type { HorseEntry } from '../../types/drf';
 import type { HorseScore } from '../../lib/scoring';
 import { MAX_SCORE, MAX_BASE_SCORE } from '../../lib/scoring';
@@ -36,7 +37,7 @@ interface TabConfig {
 const TABS: TabConfig[] = [
   { id: 'score', label: 'Score', implemented: true },
   { id: 'profile', label: 'Profile', implemented: true },
-  { id: 'pps', label: 'PPs', implemented: false },
+  { id: 'pps', label: 'PPs', implemented: true },
   { id: 'workouts', label: 'Workouts', implemented: false },
 ];
 
@@ -134,7 +135,7 @@ function calculateConfidence(baseScore: number): number {
  * Overlay = total - baseScore
  */
 function calculateOverlay(score: HorseScore): number {
-  return score.overlayScore || (score.total - score.baseScore);
+  return score.overlayScore || score.total - score.baseScore;
 }
 
 // ============================================================================
@@ -191,26 +192,14 @@ export function HorseDetailDrawer({
   // Don't render if no horse data
   if (!horse || !score) {
     return (
-      <Drawer
-        isOpen={isOpen}
-        onClose={onClose}
-        title="Horse Details"
-        width="lg"
-      >
-        <div style={placeholderStyles}>
-          No horse selected
-        </div>
+      <Drawer isOpen={isOpen} onClose={onClose} title="Horse Details" width="lg">
+        <div style={placeholderStyles}>No horse selected</div>
       </Drawer>
     );
   }
 
   return (
-    <Drawer
-      isOpen={isOpen}
-      onClose={onClose}
-      title={horse.horseName}
-      width="lg"
-    >
+    <Drawer isOpen={isOpen} onClose={onClose} title={horse.horseName} width="lg">
       {/* Tab Row */}
       <div style={tabRowStyles}>
         {TABS.map((tab) => (
@@ -246,21 +235,11 @@ export function HorseDetailDrawer({
           </>
         )}
 
-        {activeTab === 'profile' && (
-          <HorseProfile horse={horse} />
-        )}
+        {activeTab === 'profile' && <HorseProfile horse={horse} />}
 
-        {activeTab === 'pps' && (
-          <div style={placeholderStyles}>
-            Coming soon
-          </div>
-        )}
+        {activeTab === 'pps' && <HorsePastPerformances pastPerformances={horse.pastPerformances} />}
 
-        {activeTab === 'workouts' && (
-          <div style={placeholderStyles}>
-            Coming soon
-          </div>
-        )}
+        {activeTab === 'workouts' && <div style={placeholderStyles}>Coming soon</div>}
       </div>
     </Drawer>
   );
