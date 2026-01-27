@@ -3,6 +3,7 @@ import { RaceHeader } from './RaceHeader';
 import { HorseList } from './HorseList';
 import { Button } from '../../ui';
 import { HorseDetailDrawer } from '../../horse';
+import { AIAnalysisContainer } from '../../ai';
 import type { ParsedRace } from '../../../types/drf';
 import type { ScoredHorse } from '../../../lib/scoring';
 import { MAX_SCORE } from '../../../lib/scoring';
@@ -44,30 +45,6 @@ const mainContentStyles: React.CSSProperties = {
   flexDirection: 'column',
   flex: 1,
   overflow: 'hidden',
-};
-
-const aiSummaryBarStyles: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  padding: 'var(--space-2) var(--space-4)',
-  backgroundColor: 'var(--bg-elevated)',
-  borderBottom: '1px solid var(--border-subtle)',
-};
-
-const aiSummaryTextStyles: React.CSSProperties = {
-  fontSize: 'var(--text-sm)',
-  color: 'var(--text-secondary)',
-};
-
-const aiExpandButtonStyles: React.CSSProperties = {
-  fontSize: 'var(--text-xs)',
-  color: 'var(--text-tertiary)',
-  backgroundColor: 'transparent',
-  border: 'none',
-  padding: 'var(--space-1) var(--space-2)',
-  cursor: 'pointer',
-  transition: 'var(--transition-fast)',
 };
 
 const horseListContainerStyles: React.CSSProperties = {
@@ -122,18 +99,18 @@ function formatRaceType(header: ParsedRace['header']): string {
   // Classification/Race type
   if (header.classification) {
     const classMap: Record<string, string> = {
-      'maiden': 'Msw',
+      maiden: 'Msw',
       'maiden-claiming': 'Mcl',
-      'claiming': 'Clm',
-      'allowance': 'Alw',
+      claiming: 'Clm',
+      allowance: 'Alw',
       'allowance-optional-claiming': 'Aoc',
       'starter-allowance': 'Str',
-      'stakes': 'Stk',
+      stakes: 'Stk',
       'stakes-listed': 'LStk',
       'stakes-graded-3': 'G3',
       'stakes-graded-2': 'G2',
       'stakes-graded-1': 'G1',
-      'handicap': 'Hcp',
+      handicap: 'Hcp',
     };
     parts.push(classMap[header.classification] || header.classification);
   }
@@ -179,7 +156,6 @@ export function RaceDetail({
   getOdds,
   isScratched,
 }: RaceDetailProps): React.ReactElement {
-  const [aiExpanded, setAiExpanded] = useState(false);
   const [selectedHorsePost, setSelectedHorsePost] = useState<number | null>(null);
 
   const header = race.header;
@@ -193,10 +169,13 @@ export function RaceDetail({
   }, [selectedHorsePost, scoredHorses]);
 
   // Handle horse row click - open drawer and call external handler
-  const handleSelectHorse = useCallback((postPosition: number) => {
-    setSelectedHorsePost(postPosition);
-    onSelectHorse(postPosition);
-  }, [onSelectHorse]);
+  const handleSelectHorse = useCallback(
+    (postPosition: number) => {
+      setSelectedHorsePost(postPosition);
+      onSelectHorse(postPosition);
+    },
+    [onSelectHorse]
+  );
 
   // Close the drawer
   const handleCloseDrawer = useCallback(() => {
@@ -263,39 +242,12 @@ export function RaceDetail({
 
       {/* Main Content Area */}
       <div style={mainContentStyles}>
-        {/* AI Summary placeholder - collapsed by default */}
-        <div style={aiSummaryBarStyles}>
-          <span style={aiSummaryTextStyles}>
-            {aiExpanded ? 'AI Analysis' : 'AI Analysis available'}
-          </span>
-          <button
-            style={aiExpandButtonStyles}
-            onClick={() => setAiExpanded(!aiExpanded)}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--text-primary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--text-tertiary)';
-            }}
-          >
-            {aiExpanded ? '▲ Collapse' : '▼ Expand'}
-          </button>
-        </div>
-
-        {/* AI Analysis content (placeholder - Phase 3) */}
-        {aiExpanded && (
-          <div
-            style={{
-              padding: 'var(--space-4)',
-              backgroundColor: 'var(--bg-elevated)',
-              borderBottom: '1px solid var(--border-subtle)',
-              color: 'var(--text-secondary)',
-              fontSize: 'var(--text-sm)',
-            }}
-          >
-            AI analysis will be displayed here in Phase 3.
-          </div>
-        )}
+        {/* AI Analysis Summary - Collapsed by default, horses first */}
+        <AIAnalysisContainer
+          race={race}
+          scoredHorses={scoredHorses}
+          raceNumber={header?.raceNumber || 1}
+        />
 
         {/* Horse List - The Hero */}
         <div style={horseListContainerStyles}>
