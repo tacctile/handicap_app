@@ -4,6 +4,9 @@ import { HorseList } from './HorseList';
 import { Button } from '../../ui';
 import { HorseDetailDrawer } from '../../horse';
 import { AIAnalysisContainer } from '../../ai';
+import { TicketDrawer } from '../../ticket';
+import { useAIAnalysis } from '../../../hooks/useAIAnalysis';
+import { useBankroll } from '../../../hooks/useBankroll';
 import type { ParsedRace } from '../../../types/drf';
 import type { ScoredHorse } from '../../../lib/scoring';
 import { MAX_SCORE } from '../../../lib/scoring';
@@ -157,8 +160,38 @@ export function RaceDetail({
   isScratched,
 }: RaceDetailProps): React.ReactElement {
   const [selectedHorsePost, setSelectedHorsePost] = useState<number | null>(null);
+  const [isTicketOpen, setIsTicketOpen] = useState(false);
 
   const header = race.header;
+
+  // Get AI analysis for ticket data
+  const { aiAnalysis } = useAIAnalysis(race, scoredHorses);
+
+  // Get bankroll settings for bet sizing
+  const bankroll = useBankroll();
+
+  // Create map of horse names for ticket display
+  const horseNamesMap = useMemo(() => {
+    const map = new Map<number, string>();
+    scoredHorses.forEach((sh) => {
+      map.set(sh.horse.programNumber, sh.horse.horseName);
+    });
+    return map;
+  }, [scoredHorses]);
+
+  // Handle View Ticket button click
+  const handleViewTicket = useCallback(() => {
+    setIsTicketOpen(true);
+    // Also call external handler if provided
+    if (onViewTicket) {
+      onViewTicket();
+    }
+  }, [onViewTicket]);
+
+  // Handle ticket drawer close
+  const handleCloseTicket = useCallback(() => {
+    setIsTicketOpen(false);
+  }, []);
 
   // Find the selected horse and score for the drawer
   const selectedHorseData = useMemo(() => {
@@ -278,12 +311,24 @@ export function RaceDetail({
             Top Bets
           </Button>
         )}
-        {onViewTicket && (
-          <Button variant="secondary" size="sm" onClick={onViewTicket}>
-            View Ticket
-          </Button>
-        )}
+        <Button variant="secondary" size="sm" onClick={handleViewTicket}>
+          View Ticket
+        </Button>
       </div>
+
+      {/* Ticket Drawer */}
+      <TicketDrawer
+        isOpen={isTicketOpen}
+        onClose={handleCloseTicket}
+        raceNumber={header?.raceNumber || 1}
+        trackCode={header?.trackCode || ''}
+        distance={formatDistance(header?.distanceExact || header?.distance)}
+        surface={header?.surface || 'Dirt'}
+        ticketData={aiAnalysis?.ticketConstruction || null}
+        bankroll={bankroll.settings.totalBankroll}
+        baseBet={bankroll.getUnitSize()}
+        horseNames={horseNamesMap}
+      />
     </div>
   );
 }
