@@ -389,7 +389,10 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
   const scoredHorsesMap = useMemo(() => {
     const map = new Map<number, (typeof allScoredHorses)[0]>();
     for (let i = 0; i < allScoredHorses.length; i++) {
-      map.set(i + 1, allScoredHorses[i]); // Race numbers are 1-indexed
+      const scoredHorse = allScoredHorses[i];
+      if (scoredHorse) {
+        map.set(i + 1, scoredHorse); // Race numbers are 1-indexed
+      }
     }
     return map;
   }, [allScoredHorses]);

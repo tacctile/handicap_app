@@ -32,13 +32,9 @@ export interface TopBetsProps {
 // CONSTANTS
 // ============================================================================
 
-const BET_TYPES: Array<'WIN' | 'PLACE' | 'SHOW' | 'EXACTA' | 'TRIFECTA'> = [
-  'WIN',
-  'PLACE',
-  'SHOW',
-  'EXACTA',
-  'TRIFECTA',
-];
+type BetColumnType = 'WIN' | 'PLACE' | 'SHOW' | 'EXACTA' | 'TRIFECTA';
+
+const BET_TYPES: BetColumnType[] = ['WIN', 'PLACE', 'SHOW', 'EXACTA', 'TRIFECTA'];
 
 const MAX_BETS_PER_COLUMN = 8;
 const MIN_CONFIDENCE_THRESHOLD = 10; // Filter out very low confidence bets
@@ -206,7 +202,7 @@ export function TopBets({
 
   // Organize bets by column type and sort by confidence/EV
   const columnBets = useMemo(() => {
-    const columns: Record<string, BetRecommendation[]> = {
+    const columns: Record<BetColumnType, BetRecommendation[]> = {
       WIN: [],
       PLACE: [],
       SHOW: [],
@@ -221,12 +217,12 @@ export function TopBets({
 
       // Only include bet types we're displaying (skip SUPERFECTA for now)
       if (category in columns) {
-        columns[category].push(recommendation);
+        columns[category as BetColumnType].push(recommendation);
       }
     }
 
     // Sort each column by confidence (descending) and limit
-    for (const key of Object.keys(columns)) {
+    for (const key of BET_TYPES) {
       columns[key] = columns[key]
         .filter((b) => b.confidence >= MIN_CONFIDENCE_THRESHOLD)
         .sort((a, b) => b.confidence - a.confidence)
@@ -241,7 +237,7 @@ export function TopBets({
     let totalInvestment = 0;
     let expectedReturn = 0;
 
-    for (const key of Object.keys(columnBets)) {
+    for (const key of BET_TYPES) {
       for (const bet of columnBets[key]) {
         const adjustedBet = (bet.kellyBet || 1) * baseBet;
         totalInvestment += adjustedBet;
