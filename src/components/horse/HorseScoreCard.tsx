@@ -14,6 +14,7 @@ export interface HorseScoreCardProps {
   overlay: number;         // e.g., +14 or -8
   tier: 1 | 2 | 3 | null;
   confidence: number;      // percentage, e.g., 72
+  rank?: number;           // predicted finish position, e.g., 1, 2, 3
   valueEdge?: number;      // percentage, e.g., +86 or -23
   morningLineOdds: string;
   fairOdds?: string;       // calculated fair odds
@@ -228,6 +229,15 @@ function formatValueEdge(edge: number): string {
   return `${sign}${edge.toFixed(0)}%`;
 }
 
+/**
+ * Convert number to ordinal (1st, 2nd, 3rd, etc.)
+ */
+function toOrdinal(n: number): string {
+  const suffixes = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (suffixes[(v - 20) % 10] ?? suffixes[v] ?? suffixes[0] ?? 'th');
+}
+
 // ============================================================================
 // COMPONENT
 // ============================================================================
@@ -245,6 +255,7 @@ export function HorseScoreCard({
   overlay,
   tier,
   confidence,
+  rank,
   valueEdge,
   morningLineOdds,
   fairOdds,
@@ -290,8 +301,13 @@ export function HorseScoreCard({
           </span>
         </div>
 
-        {/* Stats Row: Tier Badge + Confidence */}
+        {/* Stats Row: Rank + Tier Badge + Confidence */}
         <div style={statsRowStyles}>
+          {rank !== undefined && rank > 0 && (
+            <span style={{ ...confidenceStyles, fontWeight: 'var(--font-semibold)' as unknown as number }}>
+              {toOrdinal(rank)}
+            </span>
+          )}
           <div style={statItemStyles}>
             <span
               style={{

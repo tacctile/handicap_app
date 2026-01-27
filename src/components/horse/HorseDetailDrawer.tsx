@@ -180,11 +180,12 @@ export function HorseDetailDrawer({
       overlay,
       tier,
       confidence,
+      rank,
       valueEdge,
       morningLineOdds: horse.morningLineOdds,
       fairOdds,
     };
-  }, [horse, score, valueEdge, fairOdds]);
+  }, [horse, score, rank, valueEdge, fairOdds]);
 
   // Don't render if no horse data
   if (!horse || !score) {
