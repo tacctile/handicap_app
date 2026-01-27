@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Dashboard } from './components/Dashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuthContext } from './contexts/AuthContext';
 import { ToastProvider, useToastContext } from './contexts/ToastContext';
@@ -25,10 +24,10 @@ import './styles/dashboard.css';
 import './styles/help.css';
 
 // ============================================================================
-// ROUTE TYPES (LEGACY - will be removed when Dashboard is rebuilt)
+// ROUTE TYPES (for special routes not handled by NavigationContext)
 // ============================================================================
 
-type AppRoute = 'dashboard' | 'account' | 'help' | 'live-viewer';
+type AppRoute = 'main' | 'account' | 'live-viewer';
 
 // ============================================================================
 // APP CONTENT PROPS
@@ -40,7 +39,7 @@ interface AppContentProps {
 }
 
 function AppContent({ parsedData, setParsedData }: AppContentProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [_isLoading, setIsLoading] = useState(false);
   const [, setValidationWarnings] = useState<string[]>([]);
   const [, setShowWarnings] = useState(true);
   const [modalOpen] = useState(false);
@@ -56,7 +55,7 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
     return null;
   }, []);
 
-  // Routing state - check URL on initial load
+  // Routing state - check URL on initial load for special routes
   const getInitialRoute = (): AppRoute => {
     // Check for /live/:code route
     if (typeof window !== 'undefined') {
@@ -65,7 +64,7 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
         return 'live-viewer';
       }
     }
-    return 'dashboard';
+    return 'main';
   };
   const [currentRoute, setCurrentRoute] = useState<AppRoute>(getInitialRoute);
 
@@ -84,17 +83,13 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
   const skipSaveRef = useRef<boolean>(false);
 
   // ============================================================================
-  // NEW CENTRALIZED NAVIGATION (Phase 0.2)
+  // CENTRALIZED NAVIGATION
   // ============================================================================
-  // Access the new navigation context for centralized view state management.
-  // TODO: When Dashboard is rebuilt, it should consume this context directly
-  // instead of managing its own viewMode state.
   const navigation = useNavigation();
 
-  // Navigation handlers (legacy - will be replaced when Dashboard is rebuilt)
-  const navigateToDashboard = useCallback(() => {
-    setCurrentRoute('dashboard');
-    // Sync with new navigation: go to races overview if data exists
+  // Navigation handler to return to main app from special routes (account, live-viewer)
+  const navigateToMain = useCallback(() => {
+    setCurrentRoute('main');
     if (parsedData) {
       navigation.goToRaces();
     } else {
@@ -104,15 +99,13 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
 
   // Handle successful auth (login/signup)
   const handleAuthSuccess = useCallback(() => {
-    setCurrentRoute('dashboard');
-    // Sync with new navigation
+    setCurrentRoute('main');
     navigation.goToEmpty();
   }, [navigation]);
 
   // Handle logout
   const handleLogout = useCallback(() => {
-    setCurrentRoute('dashboard');
-    // Sync with new navigation
+    setCurrentRoute('main');
     navigation.goToEmpty();
   }, [navigation]);
 
@@ -261,15 +254,6 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
     }
   }, [raceState, sessionPersistence, selectedRaceIndex]);
 
-  // Handle reset all races
-  const handleResetAllRaces = useCallback(async () => {
-    raceState.resetAll();
-    // Reset all races in session persistence
-    if (sessionPersistence.session) {
-      await sessionPersistence.resetAllRaces();
-    }
-  }, [raceState, sessionPersistence]);
-
   const handleFullReset = useCallback(() => {
     setParsedData(null);
     setValidationWarnings([]);
@@ -281,26 +265,14 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
     navigation.goToEmpty();
   }, [raceState, sessionPersistence, navigation, setParsedData]);
 
-  // Handler for exiting help screen back to dashboard
+  // Handler for exiting help screen back to main app
   const handleExitHelp = useCallback(() => {
-    setCurrentRoute('dashboard');
     if (parsedData) {
       navigation.goToRaces();
     } else {
       navigation.goToEmpty();
     }
   }, [parsedData, navigation]);
-
-  // Handler for race selection that syncs with new navigation
-  // TODO: When Dashboard is rebuilt, this will be the primary way to select races
-  const handleRaceSelect = useCallback(
-    (raceIndex: number) => {
-      setSelectedRaceIndex(raceIndex);
-      // Sync with new navigation (1-indexed race number)
-      navigation.goToRace(raceIndex + 1);
-    },
-    [navigation]
-  );
 
   // Effect: Save race state changes to session persistence
   useEffect(() => {
@@ -492,9 +464,9 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
   // Show live viewer (no auth required for viewers)
   if (currentRoute === 'live-viewer' && liveShareCode) {
     const handleExitViewer = () => {
-      // Clear the URL and go to dashboard
+      // Clear the URL and go to main app
       window.history.pushState({}, '', '/');
-      setCurrentRoute('dashboard');
+      setCurrentRoute('main');
     };
 
     return (
@@ -505,8 +477,7 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
   }
 
   // Show help center
-  // TODO: When Dashboard is rebuilt, help will be accessed via navigation.currentView.screen === 'help'
-  if (currentRoute === 'help' || navigation.currentView.screen === 'help') {
+  if (navigation.currentView.screen === 'help') {
     return (
       <ErrorBoundary onReset={handleFullReset}>
         <HelpCenter onBack={handleExitHelp} />
@@ -518,7 +489,7 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
   if (currentRoute === 'account') {
     return (
       <ErrorBoundary onReset={handleFullReset}>
-        <AccountSettings onLogout={handleLogout} onBack={navigateToDashboard} />
+        <AccountSettings onLogout={handleLogout} onBack={navigateToMain} />
       </ErrorBoundary>
     );
   }
@@ -627,27 +598,10 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
     );
   }
 
-  // Current architecture: Dashboard handles data views (race-detail, top-bets)
-  // TODO: When Dashboard is rebuilt, this switch will render individual screen components:
-  //   - navigation.currentView.screen === 'race-detail' → RaceDetail component
-  //   - navigation.currentView.screen === 'top-bets' → TopBets component
-  return (
-    <ErrorBoundary onReset={handleFullReset}>
-      <Dashboard
-        parsedData={parsedData}
-        selectedRaceIndex={selectedRaceIndex}
-        onRaceSelect={handleRaceSelect}
-        trackCondition={raceState.trackCondition}
-        onTrackConditionChange={raceState.setTrackCondition}
-        raceState={raceState}
-        isLoading={isLoading}
-        onParsed={handleParsed}
-        sessionPersistence={sessionPersistence}
-        onResetRace={handleReset}
-        onResetAllRaces={handleResetAllRaces}
-      />
-    </ErrorBoundary>
-  );
+  // All navigation states should be handled above - this is a safety fallback
+  // If we reach here, navigate to empty state
+  navigation.goToEmpty();
+  return null;
 }
 
 // ============================================================================
