@@ -7,7 +7,9 @@ import { NavigationProvider, useNavigation } from './contexts/NavigationContext'
 import { AuthPage, AccountSettings } from './components/auth';
 import { HelpCenter } from './components/help';
 import { ViewerLayout } from './components/LiveViewer';
-import { EmptyState } from './components/screens';
+import { EmptyState, RaceOverview } from './components/screens';
+import { calculateRaceScores } from './lib/scoring';
+import { getTrackData } from './data/tracks';
 import { useRaceState } from './hooks/useRaceState';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -355,6 +357,70 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
     hasChanges: raceState.hasChanges,
   });
 
+  // Calculate scored horses for all races (for RaceOverview verdict calculation)
+  const allScoredHorses = useMemo(() => {
+    if (!parsedData) return [];
+
+    return parsedData.races.map((race, raceIndex) => {
+      // Get persisted state for this race (if available)
+      const persistedState = sessionPersistence?.getRaceState(raceIndex);
+
+      // Build scratched set from persisted state
+      const scratchedSet = new Set<number>(persistedState?.scratches || []);
+
+      // Build odds override map from persisted state
+      const oddsOverrides = persistedState?.oddsOverrides || {};
+
+      // Use persisted track condition or default to 'fast'
+      const trackConditionForRace = persistedState?.trackCondition || 'fast';
+
+      return calculateRaceScores(
+        race.horses,
+        race.header,
+        (i, originalOdds) => oddsOverrides[i] ?? originalOdds,
+        (i) => scratchedSet.has(i),
+        trackConditionForRace
+      );
+    });
+  }, [parsedData, sessionPersistence]);
+
+  // Get track info for RaceOverview header
+  const trackInfo = useMemo(() => {
+    if (!parsedData?.races?.[0]?.header) {
+      return { trackName: 'Unknown Track', raceDate: '' };
+    }
+
+    const header = parsedData.races[0].header;
+    const trackData = getTrackData(header.trackCode);
+    const trackName = trackData?.name || header.trackName || header.trackCode || 'Unknown Track';
+
+    // Format race date
+    let raceDate = header.raceDate || '';
+    if (header.raceDateRaw && header.raceDateRaw.length === 8) {
+      const year = header.raceDateRaw.substring(0, 4);
+      const monthNum = parseInt(header.raceDateRaw.substring(4, 6), 10);
+      const dayNum = parseInt(header.raceDateRaw.substring(6, 8), 10);
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthName = months[monthNum - 1];
+      if (monthName && !isNaN(dayNum)) {
+        raceDate = `${monthName} ${dayNum}, ${year}`;
+      }
+    }
+
+    return { trackName, raceDate };
+  }, [parsedData]);
+
+  // Handler for selecting a race from RaceOverview
+  const handleSelectRaceFromOverview = useCallback(
+    (raceNumber: number) => {
+      // Convert 1-indexed race number to 0-indexed for selectedRaceIndex
+      setSelectedRaceIndex(raceNumber - 1);
+      // Navigate to race detail
+      navigation.goToRace(raceNumber);
+    },
+    [navigation]
+  );
+
   // Show loading state while checking auth
   if (authEnabled && authLoading) {
     return (
@@ -444,9 +510,23 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
     );
   }
 
-  // Current architecture: Dashboard handles data views (races, race-detail, top-bets)
+  // Show RaceOverview when on the races screen
+  if (navigation.currentView.screen === 'races' && parsedData) {
+    return (
+      <ErrorBoundary onReset={handleFullReset}>
+        <RaceOverview
+          races={parsedData.races}
+          trackName={trackInfo.trackName}
+          raceDate={trackInfo.raceDate}
+          onSelectRace={handleSelectRaceFromOverview}
+          allScoredHorses={allScoredHorses}
+        />
+      </ErrorBoundary>
+    );
+  }
+
+  // Current architecture: Dashboard handles data views (race-detail, top-bets)
   // TODO: When Dashboard is rebuilt, this switch will render individual screen components:
-  //   - navigation.currentView.screen === 'races' → RaceOverview component
   //   - navigation.currentView.screen === 'race-detail' → RaceDetail component
   //   - navigation.currentView.screen === 'top-bets' → TopBets component
   return (
