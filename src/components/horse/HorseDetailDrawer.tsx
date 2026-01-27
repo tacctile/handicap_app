@@ -4,6 +4,7 @@ import { HorseScoreCard } from './HorseScoreCard';
 import { HorseScoreBreakdown } from './HorseScoreBreakdown';
 import { HorseProfile } from './HorseProfile';
 import { HorsePastPerformances } from './HorsePastPerformances';
+import { HorseWorkouts } from './HorseWorkouts';
 import type { HorseEntry } from '../../types/drf';
 import type { HorseScore } from '../../lib/scoring';
 import { MAX_SCORE, MAX_BASE_SCORE } from '../../lib/scoring';
@@ -38,7 +39,7 @@ const TABS: TabConfig[] = [
   { id: 'score', label: 'Score', implemented: true },
   { id: 'profile', label: 'Profile', implemented: true },
   { id: 'pps', label: 'PPs', implemented: true },
-  { id: 'workouts', label: 'Workouts', implemented: false },
+  { id: 'workouts', label: 'Workouts', implemented: true },
 ];
 
 // ============================================================================
@@ -239,7 +240,7 @@ export function HorseDetailDrawer({
 
         {activeTab === 'pps' && <HorsePastPerformances pastPerformances={horse.pastPerformances} />}
 
-        {activeTab === 'workouts' && <div style={placeholderStyles}>Coming soon</div>}
+        {activeTab === 'workouts' && <HorseWorkouts workouts={horse.workouts} />}
       </div>
     </Drawer>
   );
