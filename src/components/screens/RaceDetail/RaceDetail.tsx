@@ -230,7 +230,7 @@ export function RaceDetail({
       <RaceHeader
         raceNumber={header?.raceNumber || 1}
         trackCode={header?.trackCode || ''}
-        distance={formatDistance(header?.distanceText || header?.distance)}
+        distance={formatDistance(header?.distanceExact || header?.distance)}
         surface={header?.surface || 'Dirt'}
         raceType={formatRaceType(header)}
         purse={formatPurse(header?.purse)}

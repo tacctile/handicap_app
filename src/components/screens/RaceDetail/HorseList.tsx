@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { HorseRow } from './HorseRow';
-import type { ScoredHorse, MAX_SCORE } from '../../../lib/scoring';
+import type { ScoredHorse } from '../../../lib/scoring';
 
 // ============================================================================
 // TYPES
