@@ -17,3 +17,12 @@ export type {
   HorseRowProps,
   SortMode,
 } from './RaceDetail';
+
+export { TopBets, TopBetsHeader, BetColumn, BetCard } from './TopBets';
+export type {
+  TopBetsProps,
+  TopBetsHeaderProps,
+  BetColumnProps,
+  BetCardProps,
+  BetRecommendation,
+} from './TopBets';

@@ -7,7 +7,7 @@ import { NavigationProvider, useNavigation } from './contexts/NavigationContext'
 import { AuthPage, AccountSettings } from './components/auth';
 import { HelpCenter } from './components/help';
 import { ViewerLayout } from './components/LiveViewer';
-import { EmptyState, RaceOverview, RaceDetail } from './components/screens';
+import { EmptyState, RaceOverview, RaceDetail, TopBets } from './components/screens';
 import { analyzeRaceValue } from './hooks/useValueDetection';
 import { calculateRaceScores } from './lib/scoring';
 import { getTrackData } from './data/tracks';
@@ -385,6 +385,15 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
     });
   }, [parsedData, sessionPersistence]);
 
+  // Create a Map of scored horses by race number (1-indexed) for TopBets
+  const scoredHorsesMap = useMemo(() => {
+    const map = new Map<number, (typeof allScoredHorses)[0]>();
+    for (let i = 0; i < allScoredHorses.length; i++) {
+      map.set(i + 1, allScoredHorses[i]); // Race numbers are 1-indexed
+    }
+    return map;
+  }, [allScoredHorses]);
+
   // Get track info for RaceOverview header
   const trackInfo = useMemo(() => {
     if (!parsedData?.races?.[0]?.header) {
@@ -401,7 +410,20 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
       const year = header.raceDateRaw.substring(0, 4);
       const monthNum = parseInt(header.raceDateRaw.substring(4, 6), 10);
       const dayNum = parseInt(header.raceDateRaw.substring(6, 8), 10);
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
       const monthName = months[monthNum - 1];
       if (monthName && !isNaN(dayNum)) {
         raceDate = `${monthName} ${dayNum}, ${year}`;
@@ -561,6 +583,7 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
             verdict={valueAnalysis.verdict}
             onBack={() => navigation.goToRaces()}
             onSelectHorse={handleSelectHorseFromRaceDetail}
+            onViewTopBets={() => navigation.goToTopBets()}
             getOdds={(index, original) => {
               const persistedState = sessionPersistence?.getRaceState(raceIndex);
               const oddsOverrides = persistedState?.oddsOverrides || {};
@@ -575,6 +598,30 @@ function AppContent({ parsedData, setParsedData }: AppContentProps) {
         </ErrorBoundary>
       );
     }
+  }
+
+  // Show TopBets screen when on the top-bets view
+  if (navigation.currentView.screen === 'top-bets' && parsedData) {
+    return (
+      <ErrorBoundary onReset={handleFullReset}>
+        <TopBets
+          races={parsedData.races}
+          scoredHorses={scoredHorsesMap}
+          onSelectRace={(raceNumber) => navigation.goToRace(raceNumber)}
+          onBack={() => navigation.goToRaces()}
+          getOdds={(raceNumber, horseIndex, original) => {
+            const persistedState = sessionPersistence?.getRaceState(raceNumber - 1);
+            const oddsOverrides = persistedState?.oddsOverrides || {};
+            return oddsOverrides[horseIndex] ?? original;
+          }}
+          isScratched={(raceNumber, horseIndex) => {
+            const persistedState = sessionPersistence?.getRaceState(raceNumber - 1);
+            const scratches = persistedState?.scratches || [];
+            return scratches.includes(horseIndex);
+          }}
+        />
+      </ErrorBoundary>
+    );
   }
 
   // Current architecture: Dashboard handles data views (race-detail, top-bets)
