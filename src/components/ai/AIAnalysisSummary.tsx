@@ -139,15 +139,9 @@ function generateSummaryText(analysis: AIRaceAnalysis): string {
   if (analysis.vulnerableFavorite) {
     flags.push('vulnerable favorite');
   }
-  if (
-    analysis.ticketConstruction?.paceProjection === 'HOT' ||
-    analysis.botDebugInfo?.paceScenario.summary.toLowerCase().includes('hot')
-  ) {
+  if (analysis.botDebugInfo?.paceScenario.summary.toLowerCase().includes('hot')) {
     flags.push('hot pace');
-  } else if (
-    analysis.ticketConstruction?.paceProjection === 'SLOW' ||
-    analysis.botDebugInfo?.paceScenario.summary.toLowerCase().includes('slow')
-  ) {
+  } else if (analysis.botDebugInfo?.paceScenario.summary.toLowerCase().includes('slow')) {
     flags.push('slow pace');
   }
   if (analysis.chaoticRace) {
