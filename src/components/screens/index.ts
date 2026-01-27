@@ -8,3 +8,12 @@
 export { EmptyState } from './EmptyState';
 export { RaceCard, RaceOverview } from './RaceOverview';
 export type { RaceCardProps, RaceOverviewProps } from './RaceOverview';
+
+export { RaceDetail, RaceHeader, HorseList, HorseRow } from './RaceDetail';
+export type {
+  RaceDetailProps,
+  RaceHeaderProps,
+  HorseListProps,
+  HorseRowProps,
+  SortMode,
+} from './RaceDetail';
