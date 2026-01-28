@@ -136,6 +136,16 @@ import {
 } from './keyRaceIndex';
 import { analyzeTripTrouble, TRIP_TROUBLE_CONFIG } from './tripTrouble';
 import type { TripTroubleConfidence } from '../../types/scoring';
+import {
+  analyzePaceScenario as analyzeFieldPaceScenario,
+  getPaceAdjustmentForHorse,
+  getHorseRunningStyle,
+  logPaceScenarioAnalysis,
+  type PaceScenarioResult,
+  type PaceScenario,
+  type PaceRunningStyle,
+  type PaceScenarioConfidence,
+} from './paceScenario';
 
 // ============================================================================
 // CONSTANTS
@@ -465,6 +475,14 @@ export interface ScoreBreakdown {
     causedTroubleCount: number;
     reason: string;
   };
+  /** Pace Scenario analysis (field-relative tactical adjustments) */
+  paceScenario?: {
+    scenario: PaceScenario;
+    runningStyle: PaceRunningStyle;
+    adjustment: number;
+    confidence: PaceScenarioConfidence;
+    reason: string;
+  };
 }
 
 /** Complete score result for a horse */
@@ -520,6 +538,8 @@ interface RaceScoringContext {
   connectionsDb: ConnectionsDatabase;
   fieldPaceAnalysis: FieldPaceAnalysis;
   activeHorses: HorseEntry[];
+  /** Pace scenario analysis for field-relative tactical adjustments */
+  paceScenarioResult: PaceScenarioResult;
 }
 
 // ============================================================================
@@ -684,12 +704,20 @@ function buildScoringContext(
   // Pre-calculate field pace analysis
   const fieldPaceAnalysis = analyzeFieldPace(activeHorses);
 
+  // Phase 2.6: Pace Scenario Analysis (field-relative tactical adjustments)
+  // Analyzes running style composition to identify lone speed, speed duels, etc.
+  const paceScenarioResult = analyzeFieldPaceScenario(activeHorses);
+
+  // Log pace scenario analysis for debugging
+  logPaceScenarioAnalysis(paceScenarioResult);
+
   return {
     horses,
     raceHeader,
     connectionsDb,
     fieldPaceAnalysis,
     activeHorses,
+    paceScenarioResult,
   };
 }
 
@@ -882,6 +910,22 @@ function calculateHorseScoreWithContext(
   const equipment = calcEquipment(horse);
   const pace = calcPace(horse, context.raceHeader, context.activeHorses, context.fieldPaceAnalysis);
 
+  // Phase 2.6: Get pace scenario adjustment for this horse
+  // Field-relative tactical adjustment based on lone speed, speed duel, etc.
+  const paceScenarioAdjustment = getPaceAdjustmentForHorse(
+    context.paceScenarioResult,
+    horse.programNumber
+  );
+  const horseRunningStyle = getHorseRunningStyle(context.paceScenarioResult, horse.programNumber);
+
+  // Log pace scenario adjustment for debugging if applicable
+  if (paceScenarioAdjustment !== 0) {
+    const sign = paceScenarioAdjustment > 0 ? '+' : '';
+    console.log(
+      `[PACE_SCENARIO] ${horse.horseName}: ${sign}${paceScenarioAdjustment} pts (${horseRunningStyle} in ${context.paceScenarioResult.scenario})`
+    );
+  }
+
   // Calculate odds-based score (0-15 points, Phase 6)
   // Note: _currentOdds parameter can be used for live odds override
   const oddsScore = calcOddsScore(
@@ -1005,10 +1049,14 @@ function calculateHorseScoreWithContext(
       reasoning: equipment.reasoning,
     },
     pace: {
-      total: pace.total,
+      // Add pace scenario adjustment to pace total (field-relative tactical advantage)
+      total: Math.max(0, Math.min(pace.total + paceScenarioAdjustment, SCORE_LIMITS.pace + 8)),
       runningStyle: pace.profile.styleName,
       paceFit: pace.paceFit,
-      reasoning: pace.reasoning,
+      reasoning:
+        paceScenarioAdjustment !== 0
+          ? `${pace.reasoning} | Pace scenario (${context.paceScenarioResult.scenario}): ${paceScenarioAdjustment > 0 ? '+' : ''}${paceScenarioAdjustment} pts`
+          : pace.reasoning,
     },
     odds: {
       total: oddsScore.total,
@@ -1104,6 +1152,14 @@ function calculateHorseScoreWithContext(
       troubledRaceCount: tripTroubleResult.totalTroubledCount,
       causedTroubleCount: tripTroubleResult.causedTroubleCount,
       reason: tripTroubleResult.reason,
+    },
+    // Pace Scenario: field-relative tactical adjustments (-6 to +8 pts)
+    paceScenario: {
+      scenario: context.paceScenarioResult.scenario,
+      runningStyle: horseRunningStyle,
+      adjustment: paceScenarioAdjustment,
+      confidence: context.paceScenarioResult.confidence,
+      reason: context.paceScenarioResult.reason,
     },
   };
 
