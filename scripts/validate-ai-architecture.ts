@@ -242,6 +242,16 @@ interface ValidationResult {
     STRONG: SizingPerformanceMetrics;
     STANDARD: SizingPerformanceMetrics;
     HALF: SizingPerformanceMetrics;
+    ALGORITHM_ONLY: {
+      races: number;
+      wins: number;
+      winRate: number;
+      exactaHits: number;
+      exactaRate: number;
+      trifectaHits: number;
+      trifectaRate: number;
+      avgConfidence: number;
+    };
     PASS: { races: number; wouldHaveHit: number; correctPassRate: number };
   };
 
@@ -1760,19 +1770,27 @@ async function runValidation(): Promise<ValidationResult> {
     {
       races: number;
       exactaHits: number;
+      trifectaHits: number;
+      wins: number;
       totalConfidence: number;
     }
   > = {
-    MAX: { races: 0, exactaHits: 0, totalConfidence: 0 },
-    STRONG: { races: 0, exactaHits: 0, totalConfidence: 0 },
-    STANDARD: { races: 0, exactaHits: 0, totalConfidence: 0 },
-    HALF: { races: 0, exactaHits: 0, totalConfidence: 0 },
-    PASS: { races: 0, exactaHits: 0, totalConfidence: 0 },
+    MAX: { races: 0, exactaHits: 0, trifectaHits: 0, wins: 0, totalConfidence: 0 },
+    STRONG: { races: 0, exactaHits: 0, trifectaHits: 0, wins: 0, totalConfidence: 0 },
+    STANDARD: { races: 0, exactaHits: 0, trifectaHits: 0, wins: 0, totalConfidence: 0 },
+    HALF: { races: 0, exactaHits: 0, trifectaHits: 0, wins: 0, totalConfidence: 0 },
+    ALGORITHM_ONLY: { races: 0, exactaHits: 0, trifectaHits: 0, wins: 0, totalConfidence: 0 },
+    PASS: { races: 0, exactaHits: 0, trifectaHits: 0, wins: 0, totalConfidence: 0 },
   };
 
-  // Track PASS races - would have hit?
+  // Track PASS races (old behavior without algorithm fallback) - would have hit?
   let passWouldHaveHitExacta = 0;
   let passWouldHaveHitTrifecta = 0;
+
+  // Track ALGORITHM_ONLY races (new behavior with algorithm fallback)
+  let algorithmOnlyExactaHits = 0;
+  let algorithmOnlyTrifectaHits = 0;
+  let algorithmOnlyWins = 0;
 
   // ============================================================================
   // DIAGNOSTIC: Track Template A races for debugging routing leaks
@@ -1850,18 +1868,54 @@ async function runValidation(): Promise<ValidationResult> {
       const multiplier = sizing.multiplier;
       const sizingRec = sizing.recommendation;
 
-      // Track if this is a PASS (sizing = 0 or verdict = PASS)
-      if (sizingRec === 'PASS' || ticketConstruction.verdict.action === 'PASS') {
+      // Track PASS template races - handle both old PASS behavior and new ALGORITHM_ONLY fallback
+      // Old behavior: sizingRec === 'PASS', verdict.action === 'PASS', no tickets generated
+      // New behavior: template === 'PASS', isAlgorithmOnly === true, algorithm tickets generated
+      if (
+        template === 'PASS' ||
+        ticketConstruction.isAlgorithmOnly ||
+        sizingRec === 'PASS' ||
+        sizingRec === 'ALGORITHM_ONLY'
+      ) {
         templateCounts.PASS++;
-        sizingStats.PASS.races++;
-        sizingStats.PASS.totalConfidence += confidence;
 
-        // Check if algorithm would have hit this race
-        if (checkExactaBox(algoTop4, actual)) {
-          passWouldHaveHitExacta++;
-        }
-        if (checkTrifecta(algoTop5, actual)) {
-          passWouldHaveHitTrifecta++;
+        // Check if this is the new algorithm-only fallback behavior
+        if (ticketConstruction.isAlgorithmOnly || sizingRec === 'ALGORITHM_ONLY') {
+          // New behavior: ALGORITHM_ONLY fallback - track actual hit rates
+          sizingStats.ALGORITHM_ONLY.races++;
+          sizingStats.ALGORITHM_ONLY.totalConfidence += confidence;
+
+          // Check win (algorithm rank 1 wins)
+          const algoRank1 = algoTop5[0];
+          const win = algoRank1 === actual.first;
+          if (win) {
+            sizingStats.ALGORITHM_ONLY.wins++;
+            algorithmOnlyWins++;
+          }
+
+          // Check exacta hit (algorithm top 4 box)
+          if (checkExactaBox(algoTop4, actual)) {
+            sizingStats.ALGORITHM_ONLY.exactaHits++;
+            algorithmOnlyExactaHits++;
+          }
+
+          // Check trifecta hit (algorithm top 5)
+          if (checkTrifecta(algoTop5, actual)) {
+            sizingStats.ALGORITHM_ONLY.trifectaHits++;
+            algorithmOnlyTrifectaHits++;
+          }
+        } else {
+          // Old behavior: Pure PASS - track what would have hit
+          sizingStats.PASS.races++;
+          sizingStats.PASS.totalConfidence += confidence;
+
+          // Check if algorithm would have hit this race
+          if (checkExactaBox(algoTop4, actual)) {
+            passWouldHaveHitExacta++;
+          }
+          if (checkTrifecta(algoTop5, actual)) {
+            passWouldHaveHitTrifecta++;
+          }
         }
         continue;
       }
@@ -2369,6 +2423,10 @@ async function runValidation(): Promise<ValidationResult> {
         : 0,
     HALF:
       sizingStats.HALF.races > 0 ? (sizingStats.HALF.exactaHits / sizingStats.HALF.races) * 100 : 0,
+    ALGORITHM_ONLY:
+      sizingStats.ALGORITHM_ONLY.races > 0
+        ? (sizingStats.ALGORITHM_ONLY.exactaHits / sizingStats.ALGORITHM_ONLY.races) * 100
+        : 0,
     PASS: 0,
   };
 
@@ -2387,6 +2445,28 @@ async function runValidation(): Promise<ValidationResult> {
   console.log(
     `  PASS:     ${sizingStats.PASS.races} races (would have hit: ${passWouldHaveHitExacta})`
   );
+
+  // Algorithm-Only Fallback Performance section
+  if (sizingStats.ALGORITHM_ONLY.races > 0) {
+    const algoOnlyWinRate =
+      (sizingStats.ALGORITHM_ONLY.wins / sizingStats.ALGORITHM_ONLY.races) * 100;
+    const algoOnlyTrifectaRate =
+      (sizingStats.ALGORITHM_ONLY.trifectaHits / sizingStats.ALGORITHM_ONLY.races) * 100;
+
+    console.log('\n--- Algorithm-Only Fallback Performance ---');
+    console.log(`  Races:        ${sizingStats.ALGORITHM_ONLY.races}`);
+    console.log(`  Win Rate:     ${algoOnlyWinRate.toFixed(1)}%`);
+    console.log(`  Exacta Rate:  ${sizingHitRates.ALGORITHM_ONLY.toFixed(1)}%`);
+    console.log(`  Trifecta Rate: ${algoOnlyTrifectaRate.toFixed(1)}%`);
+
+    // Compare against AI-selected race hit rates
+    const aiSelectedExactaRate =
+      aiSystemRacesBet > 0 ? (aiSystemExactaHits / aiSystemRacesBet) * 100 : 0;
+    const aiSelectedTrifectaRate =
+      aiSystemRacesBet > 0 ? (aiSystemTrifectaHits / aiSystemRacesBet) * 100 : 0;
+    console.log(`  vs AI-Selected Exacta Rate: ${aiSelectedExactaRate.toFixed(1)}%`);
+    console.log(`  vs AI-Selected Trifecta Rate: ${aiSelectedTrifectaRate.toFixed(1)}%`);
+  }
 
   // ============================================================================
   // BUILD FINAL RESULT
@@ -2605,6 +2685,28 @@ async function runValidation(): Promise<ValidationResult> {
       STRONG: buildSizingPerformance(sizingStats.STRONG),
       STANDARD: buildSizingPerformance(sizingStats.STANDARD),
       HALF: buildSizingPerformance(sizingStats.HALF),
+      ALGORITHM_ONLY: {
+        races: sizingStats.ALGORITHM_ONLY.races,
+        wins: sizingStats.ALGORITHM_ONLY.wins,
+        winRate:
+          sizingStats.ALGORITHM_ONLY.races > 0
+            ? (sizingStats.ALGORITHM_ONLY.wins / sizingStats.ALGORITHM_ONLY.races) * 100
+            : 0,
+        exactaHits: sizingStats.ALGORITHM_ONLY.exactaHits,
+        exactaRate:
+          sizingStats.ALGORITHM_ONLY.races > 0
+            ? (sizingStats.ALGORITHM_ONLY.exactaHits / sizingStats.ALGORITHM_ONLY.races) * 100
+            : 0,
+        trifectaHits: sizingStats.ALGORITHM_ONLY.trifectaHits,
+        trifectaRate:
+          sizingStats.ALGORITHM_ONLY.races > 0
+            ? (sizingStats.ALGORITHM_ONLY.trifectaHits / sizingStats.ALGORITHM_ONLY.races) * 100
+            : 0,
+        avgConfidence:
+          sizingStats.ALGORITHM_ONLY.races > 0
+            ? sizingStats.ALGORITHM_ONLY.totalConfidence / sizingStats.ALGORITHM_ONLY.races
+            : 0,
+      },
       PASS: {
         races: sizingStats.PASS.races,
         wouldHaveHit: passWouldHaveHitExacta,
