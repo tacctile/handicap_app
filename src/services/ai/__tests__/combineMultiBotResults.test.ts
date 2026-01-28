@@ -20,6 +20,7 @@ import {
   calculateConfidenceScore,
   deriveRaceType,
   determineFavoriteStatus,
+  countUniqueCategories,
   // Legacy functions (deprecated)
   identifyExpansionHorses,
   detectContractionTarget,
@@ -1205,6 +1206,45 @@ describe('deriveRaceType', () => {
   });
 });
 
+describe('countUniqueCategories', () => {
+  it('should return 0 for empty array', () => {
+    expect(countUniqueCategories([])).toBe(0);
+  });
+
+  it('should return 0 for null/undefined', () => {
+    expect(countUniqueCategories(null as unknown as string[])).toBe(0);
+  });
+
+  it('should count 1 category for single flag', () => {
+    expect(countUniqueCategories(['Class rise'])).toBe(1);
+  });
+
+  it('should count 1 category for multiple flags from same category', () => {
+    // Both are Category A (Form Concerns)
+    expect(countUniqueCategories(['Declining figures', 'Layoff risk'])).toBe(1);
+  });
+
+  it('should count 2 categories for flags from different categories', () => {
+    // Class rise = Category B, Pace issue = Category C
+    expect(countUniqueCategories(['Class rise', 'Pace issue'])).toBe(2);
+  });
+
+  it('should count 3 categories for flags from 3 different categories', () => {
+    // Declining figures = A, Class rise = B, Speed duel = C
+    expect(countUniqueCategories(['Declining figures', 'Class rise', 'Speed duel'])).toBe(3);
+  });
+
+  it('should handle case-insensitive matching', () => {
+    expect(countUniqueCategories(['CLASS RISE', 'pace issue'])).toBe(2);
+  });
+
+  it('should categorize unknown flags using keyword fallback', () => {
+    // "form problems" contains "FORM" -> Category A
+    // "distance concern" contains "DISTANCE" -> Category B
+    expect(countUniqueCategories(['Some form problems', 'Distance concern'])).toBe(2);
+  });
+});
+
 describe('determineFavoriteStatus', () => {
   it('should return SOLID when not vulnerable', () => {
     const vulnFav: VulnerableFavoriteAnalysis = {
@@ -1217,9 +1257,10 @@ describe('determineFavoriteStatus', () => {
     expect(flags).toEqual([]);
   });
 
-  it('should return VULNERABLE when vulnerable with HIGH confidence', () => {
+  it('should return VULNERABLE when vulnerable with HIGH confidence and 2+ flags from 2+ categories', () => {
     const vulnFav: VulnerableFavoriteAnalysis = {
       isVulnerable: true,
+      // Class rise = Category B, Pace issue = Category C (different categories)
       reasons: ['Class rise', 'Pace issue'],
       confidence: 'HIGH',
     };
@@ -1228,23 +1269,46 @@ describe('determineFavoriteStatus', () => {
     expect(flags).toEqual(['Class rise', 'Pace issue']);
   });
 
-  it('should return SOLID when vulnerable with MEDIUM confidence and only 1 flag', () => {
-    // NOTE: Code requires 2+ flags for vulnerability, or 3+ flags for any confidence
-    // 1 flag always returns SOLID regardless of confidence
+  it('should return VULNERABLE when vulnerable with MEDIUM confidence and 2+ flags from 2+ categories', () => {
+    const vulnFav: VulnerableFavoriteAnalysis = {
+      isVulnerable: true,
+      // Declining figures = Category A, Speed duel = Category C (different categories)
+      reasons: ['Declining figures', 'Speed duel'],
+      confidence: 'MEDIUM',
+    };
+    const [status, flags] = determineFavoriteStatus(vulnFav);
+    expect(status).toBe('VULNERABLE');
+    expect(flags).toEqual(['Declining figures', 'Speed duel']);
+  });
+
+  it('should return SOLID when vulnerable with only 1 flag', () => {
+    // Single flag should always return SOLID regardless of confidence
     const vulnFav: VulnerableFavoriteAnalysis = {
       isVulnerable: true,
       reasons: ['One concern'],
-      confidence: 'MEDIUM',
+      confidence: 'HIGH',
     };
     const [status, flags] = determineFavoriteStatus(vulnFav);
     expect(status).toBe('SOLID');
     expect(flags).toEqual([]);
   });
 
-  it('should return SOLID when vulnerable with LOW confidence', () => {
+  it('should return SOLID when 2+ flags from same category', () => {
+    // Both flags are Category A (Form Concerns) - same category should return SOLID
     const vulnFav: VulnerableFavoriteAnalysis = {
       isVulnerable: true,
-      reasons: ['Minor concern'],
+      reasons: ['Declining figures', 'Layoff risk'],
+      confidence: 'HIGH',
+    };
+    const [status, flags] = determineFavoriteStatus(vulnFav);
+    expect(status).toBe('SOLID');
+    expect(flags).toEqual([]);
+  });
+
+  it('should return SOLID when vulnerable with LOW confidence even with 2+ flags from 2+ categories', () => {
+    const vulnFav: VulnerableFavoriteAnalysis = {
+      isVulnerable: true,
+      reasons: ['Class rise', 'Pace issue'],
       confidence: 'LOW',
     };
     const [status, flags] = determineFavoriteStatus(vulnFav);
@@ -1256,6 +1320,18 @@ describe('determineFavoriteStatus', () => {
     const [status, flags] = determineFavoriteStatus(null);
     expect(status).toBe('SOLID');
     expect(flags).toEqual([]);
+  });
+
+  it('should return VULNERABLE when 3+ flags from 2+ categories with HIGH confidence', () => {
+    const vulnFav: VulnerableFavoriteAnalysis = {
+      isVulnerable: true,
+      // Declining figures = A, Class rise = B, Speed duel = C (3 categories)
+      reasons: ['Declining figures', 'Class rise', 'Speed duel'],
+      confidence: 'HIGH',
+    };
+    const [status, flags] = determineFavoriteStatus(vulnFav);
+    expect(status).toBe('VULNERABLE');
+    expect(flags).toEqual(['Declining figures', 'Class rise', 'Speed duel']);
   });
 });
 
@@ -1281,18 +1357,34 @@ describe('identifyExpansionHorses (DEPRECATED)', () => {
 });
 
 describe('detectContractionTarget (still functional)', () => {
-  it('should detect vulnerable favorite with HIGH confidence and 2+ flags', () => {
+  it('should detect vulnerable favorite with HIGH confidence and 2+ flags from 2+ categories', () => {
     const signals: AggregatedSignals[] = [
       { programNumber: 1, algorithmRank: 1, isVulnerable: true } as AggregatedSignals,
     ];
+    // Updated to use flags from different categories (Class rise = B, Pace issue = C)
     const vulnFav = {
       isVulnerable: true,
-      reasons: ['Flag 1', 'Flag 2'],
+      reasons: ['Class rise', 'Pace issue'],
       confidence: 'HIGH' as const,
     };
 
     const result = detectContractionTarget(signals, vulnFav);
     expect(result).toBe(1);
+  });
+
+  it('should return null when flags are from same category', () => {
+    const signals: AggregatedSignals[] = [
+      { programNumber: 1, algorithmRank: 1, isVulnerable: true } as AggregatedSignals,
+    ];
+    // Both flags from Category A (Form Concerns) - should not trigger vulnerability
+    const vulnFav = {
+      isVulnerable: true,
+      reasons: ['Declining figures', 'Layoff risk'],
+      confidence: 'HIGH' as const,
+    };
+
+    const result = detectContractionTarget(signals, vulnFav);
+    expect(result).toBe(null);
   });
 });
 
