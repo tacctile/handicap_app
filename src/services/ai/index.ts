@@ -257,7 +257,7 @@ function permutation(n: number, r: number): number {
  * @returns AlgorithmOnlyTicket with bet recommendations
  */
 export function buildAlgorithmOnlyTicket(
-  race: ParsedRace,
+  _race: ParsedRace,
   scoringResult: RaceScoringResult
 ): AlgorithmOnlyTicket {
   // Get non-scratched horses sorted by algorithm rank
@@ -357,8 +357,6 @@ function buildAlgorithmOnlyAnalysis(
   const horseInsights = rankedScores.map((score) => {
     const rank = score.rank;
     const isTopPick = rank === 1;
-    const inExactaBox = rank <= 4;
-    const inTrifectaBox = rank <= 5;
     const isContender = rank <= 4;
 
     // Determine value label based on algorithm rank
