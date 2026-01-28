@@ -2,8 +2,61 @@
  * Scoring Type Definitions
  *
  * Contains interfaces for scoring-related calculations including
- * data completeness analysis.
+ * data completeness analysis and trip trouble detection.
  */
+
+// ============================================================================
+// TRIP TROUBLE DETECTION TYPES
+// ============================================================================
+
+/**
+ * Confidence level for trip trouble detection
+ */
+export type TripTroubleConfidence = 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
+
+/**
+ * Analysis of a single troubled race
+ */
+export interface TroubledRace {
+  /** Race index (0 = last race, 1 = 2 back, etc.) */
+  raceIndex: number;
+  /** Trouble keywords found in comments */
+  troubleKeywords: string[];
+  /** Confidence level for this race's trouble */
+  confidenceLevel: TripTroubleConfidence;
+  /** Finish position in this race */
+  finishPosition: number;
+  /** Beyer speed figure for this race (null if unavailable) */
+  beyer: number | null;
+}
+
+/**
+ * Complete trip trouble analysis result for a horse
+ */
+export interface TripTroubleResult {
+  /** Program number */
+  programNumber: number;
+  /** Horse name */
+  horseName: string;
+  /** Array of troubled race analyses */
+  troubledRaces: TroubledRace[];
+  /** Total count of troubled races */
+  totalTroubledCount: number;
+  /** Count of high-confidence trouble races */
+  highConfidenceCount: number;
+  /** Count of medium-confidence trouble races */
+  mediumConfidenceCount: number;
+  /** Count of low-confidence trouble races */
+  lowConfidenceCount: number;
+  /** Count of races where horse caused trouble (disqualifying) */
+  causedTroubleCount: number;
+  /** Adjustment points to add to form score (0-8) */
+  adjustment: number;
+  /** Overall confidence level */
+  confidence: TripTroubleConfidence;
+  /** Human-readable reason for the adjustment */
+  reason: string;
+}
 
 // ============================================================================
 // DATA COMPLETENESS TYPES
