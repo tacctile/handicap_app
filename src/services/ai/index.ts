@@ -1957,27 +1957,26 @@ export function identifyValueHorse(
 
   // ============================================================================
   // CRITICAL FIX: For SOLID favorites, require stronger evidence to identify value horse
-  // Single-bot signals (trip trouble alone OR pace advantage alone) are NOT enough
-  // to justify Template A for solid favorites.
+  // Single-bot signals with LOW confidence are NOT enough to justify Template A.
   //
   // RULE: SOLID favorite + no value horse = PASS (→ MINIMAL tier)
-  // Template A should only trigger when there's STRONG evidence of value:
-  // - 2+ bots converge on the same horse, OR
-  // - Single bot with very strong signal (50+ strength), e.g., dominant lone speed
+  // Template A should trigger when there's evidence of value:
+  // - 1+ bots with HIGH confidence signal (30+ strength), OR
+  // - 2+ bots converging on the same horse
   //
-  // This prevents the "leak" where weak single-bot signals cause Template A routing
-  // when the race should be PASS.
+  // Single MEDIUM confidence signals (15-29 strength) are still rejected for SOLID favorites.
+  // This balances capturing HIGH confidence single-bot signals while preventing weak leaks.
   // ============================================================================
   if (favoriteStatus === 'SOLID') {
     const requiresStrongerEvidence =
-      bestCandidate.botCount < 2 && bestCandidate.signalStrength < 50;
+      bestCandidate.botCount < 1 && bestCandidate.signalStrength < 30;
 
     if (requiresStrongerEvidence) {
       console.log(
         `[VALUE] SOLID favorite filter: Rejecting weak value horse identification. ` +
           `Horse #${bestCandidate.programNumber} ${bestCandidate.horseName} ` +
           `(botCount=${bestCandidate.botCount}, strength=${bestCandidate.signalStrength}). ` +
-          `Requires 2+ bots OR strength >= 50 for SOLID favorites.`
+          `Requires 1+ bots with strength >= 30 for SOLID favorites.`
       );
       return {
         identified: false,
@@ -1988,8 +1987,16 @@ export function identifyValueHorse(
         angle: null,
         valueOdds: null,
         botConvergenceCount: 0,
-        reasoning: `SOLID favorite: Weak value signal rejected (${bestCandidate.botCount} bot(s), strength ${bestCandidate.signalStrength}). Requires 2+ bots OR strength >= 50.`,
+        reasoning: `SOLID favorite: Weak value signal rejected (${bestCandidate.botCount} bot(s), strength ${bestCandidate.signalStrength}). Requires 1+ bots with strength >= 30.`,
       };
+    }
+
+    // Log when identified under relaxed threshold (single bot with HIGH confidence 30-49)
+    if (bestCandidate.botCount === 1 && bestCandidate.signalStrength >= 30 && bestCandidate.signalStrength < 50) {
+      console.log(
+        `[VALUE_HORSE] Identified under relaxed threshold: ${bestCandidate.horseName}, ` +
+          `botCount: ${bestCandidate.botCount}, signalStrength: ${bestCandidate.signalStrength}`
+      );
     }
 
     console.log(
