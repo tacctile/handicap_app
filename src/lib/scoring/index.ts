@@ -134,6 +134,8 @@ import {
   type KeyRaceMatch,
   MAX_KEY_RACE_BONUS,
 } from './keyRaceIndex';
+import { analyzeTripTrouble, TRIP_TROUBLE_CONFIG } from './tripTrouble';
+import type { TripTroubleConfidence } from '../../types/scoring';
 
 // ============================================================================
 // CONSTANTS
@@ -454,6 +456,14 @@ export interface ScoreBreakdown {
     matches: KeyRaceMatch[];
     reasoning: string;
     hasMatches: boolean;
+  };
+  /** Trip Trouble adjustment (0-8 pts, masked ability detection) */
+  tripTrouble?: {
+    adjustment: number;
+    confidence: TripTroubleConfidence;
+    troubledRaceCount: number;
+    causedTroubleCount: number;
+    reason: string;
   };
 }
 
@@ -856,6 +866,19 @@ function calculateHorseScoreWithContext(
   const postPosition = calcPostPosition(horse, context.raceHeader);
   const speedClass = calcSpeedClass(horse, context.raceHeader);
   const form = calcForm(horse);
+
+  // Calculate trip trouble adjustment (0-8 pts, adds to form score)
+  // Scans last 3 races for trouble indicators that mask true ability
+  const tripTroubleResult = analyzeTripTrouble(horse);
+  const tripTroubleAdjustment = tripTroubleResult.adjustment;
+
+  // Log trip trouble for debugging if adjustment applied
+  if (tripTroubleAdjustment > 0) {
+    console.log(
+      `[TRIP_TROUBLE] ${horse.horseName}: +${tripTroubleAdjustment} pts (${tripTroubleResult.reason})`
+    );
+  }
+
   const equipment = calcEquipment(horse);
   const pace = calcPace(horse, context.raceHeader, context.activeHorses, context.fieldPaceAnalysis);
 
@@ -960,12 +983,19 @@ function calculateHorseScoreWithContext(
       reasoning: `${speedClass.speedReasoning} | ${speedClass.classReasoning}`,
     },
     form: {
-      total: form.total,
+      // Add trip trouble adjustment to form total (masked ability affects form perception)
+      total: Math.min(
+        form.total + tripTroubleAdjustment,
+        SCORE_LIMITS.form + TRIP_TROUBLE_CONFIG.MAX_ADJUSTMENT
+      ),
       recentFormScore: form.recentFormScore,
       layoffScore: form.layoffScore,
       consistencyBonus: form.consistencyBonus,
       formTrend: form.formTrend,
-      reasoning: form.reasoning,
+      reasoning:
+        tripTroubleAdjustment > 0
+          ? `${form.reasoning} | Trip trouble: +${tripTroubleAdjustment} pts`
+          : form.reasoning,
       wonLastOut: form.wonLastOut,
       won2OfLast3: form.won2OfLast3,
     },
@@ -1067,6 +1097,14 @@ function calculateHorseScoreWithContext(
     },
     breeding: breedingBreakdown,
     classAnalysis: classAnalysisBreakdown,
+    // Trip Trouble: masked ability detection (0-8 pts adjustment to form)
+    tripTrouble: {
+      adjustment: tripTroubleAdjustment,
+      confidence: tripTroubleResult.confidence,
+      troubledRaceCount: tripTroubleResult.totalTroubledCount,
+      causedTroubleCount: tripTroubleResult.causedTroubleCount,
+      reason: tripTroubleResult.reason,
+    },
   };
 
   // Calculate base score (capped at MAX_BASE_SCORE)
@@ -2055,3 +2093,29 @@ export {
   type OddsWithSource,
   type OddsSource,
 } from './marketNormalization';
+
+// Trip Trouble Detection exports (algorithmic trip trouble scoring)
+export {
+  // Main functions
+  analyzeTripTrouble,
+  analyzeRaceTripTrouble,
+  calculateTripAdjustment,
+  // Helper functions
+  findKeywords,
+  extractComments,
+  hasSignificantTrouble,
+  getTripTroubleSummary,
+  getTripTroubleColor,
+  logTripTroubleAnalysis,
+  // Constants
+  TRIP_TROUBLE_CONFIG,
+  HIGH_TROUBLE_KEYWORDS,
+  MEDIUM_TROUBLE_KEYWORDS,
+  LOW_TROUBLE_KEYWORDS,
+  CAUSED_TROUBLE_KEYWORDS,
+  // Types
+  type TripTroubleResult,
+} from './tripTrouble';
+
+// Re-export trip trouble types from types/scoring
+export type { TripTroubleConfidence, TroubledRace } from '../../types/scoring';
