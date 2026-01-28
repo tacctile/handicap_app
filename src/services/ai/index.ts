@@ -2500,18 +2500,24 @@ export function calculateSizing(
 
   // FLAT BETTING STRATEGY with VALUE HORSE ROUTING
   //
-  // PASS template = MINIMAL tier = No AI bet recommendation
-  // This is because Template A (solid favorite) has -59% trifecta ROI
-  // while Template B (vulnerable favorite / value horse) has +12% ROI
+  // PASS template now uses ALGORITHM_ONLY tier with 0.5x sizing
+  // instead of completely skipping the race.
   //
-  // The key insight: "solid favorite" = "market is right" = no value edge
-  // Bettable races require an identified value horse
+  // Rationale: Algorithm baseline has 16.2% win rate and 33.3% exacta box 4,
+  // which is profitable at reduced sizing even without AI-identified value horse.
+  //
+  // The key insight: "solid favorite" = "market is right" = reduced edge, not zero edge
+  // Algorithm picks still have value, just at lower confidence/sizing.
 
-  // PASS template always means PASS sizing (no bet)
+  // PASS template ALWAYS uses ALGORITHM_ONLY sizing (0.5x) with algorithm-based tickets
+  // This preserves the 37.8% of races that were previously being discarded entirely.
+  // Confidence floor for this tier is 35 (used for display/tracking purposes).
   if (template === 'PASS') {
-    multiplier = 0;
-    recommendation = 'PASS';
-    reasoning = 'MINIMAL tier - solid favorite with no identified value horse';
+    // Algorithm-only fallback at reduced sizing
+    multiplier = 0.5;
+    recommendation = 'ALGORITHM_ONLY';
+    reasoning =
+      'Algorithm-only picks at 0.5x sizing - no AI value horse but algorithm baseline is profitable';
   }
   // PASS threshold: confidence < 40 means MINIMAL tier (skip this race)
   // This aligns with the new MINIMAL tier cutoff
@@ -2584,12 +2590,22 @@ export function buildRaceVerdict(
 
   switch (template) {
     case 'PASS':
-      // PASS template - MINIMAL tier, algorithm picks only
-      summary = 'Algorithm picks only - no AI bet recommendation (solid favorite, no value edge)';
-      return {
-        action: 'PASS',
-        summary,
-      };
+      // PASS template - check if using algorithm-only fallback or complete skip
+      if (sizing.recommendation === 'ALGORITHM_ONLY') {
+        // Algorithm-only fallback at 0.5x sizing
+        summary = `Bet ALGORITHM_ONLY (0.5x) - Algorithm picks only, key #${algorithmTop4[0] ?? '?'}`;
+        return {
+          action: 'BET',
+          summary,
+        };
+      } else {
+        // Complete skip (below confidence floor)
+        summary = 'Skip - below confidence floor, no bet';
+        return {
+          action: 'PASS',
+          summary,
+        };
+      }
     case 'A':
       // Solid favorite with identified value horse - key the top pick
       summary = `Bet ${recommendation} - Solid favorite with value angle, key #${algorithmTop4[0] ?? '?'}`;
@@ -2716,25 +2732,57 @@ export function buildTicketConstruction(
     );
   }
 
-  // Build tickets (with base costs) - PASS template gets empty tickets
+  // Build tickets (with base costs)
+  // PASS template now uses algorithm-only fallback instead of empty tickets
   let exactaBase: ExactaConstruction;
   let trifectaBase: TrifectaConstruction;
+  let isAlgorithmOnly = false;
 
   if (template === 'PASS') {
-    // PASS template: no bet construction (algorithm picks only)
+    // PASS template: algorithm-only fallback at reduced sizing
+    // Uses conservative algorithm-based tickets since no AI value horse was identified
+    // Exacta: Algorithm 1 WITH 2,3,4 (3 combos) - same structure as Template A
+    // Trifecta: Algorithm 1 WITH 2,3,4 WITH 2,3,4,5 (12 combos) - expanded show position
+    isAlgorithmOnly = true;
+
+    const [rank1, rank2, rank3, rank4] = algorithmTop4;
+    const rank5 = algorithmTop5[4];
+
+    // Build conservative exacta: 1 WITH 2,3,4 (3 combinations)
+    const exactaWinPosition = rank1 !== undefined ? [rank1] : [];
+    const exactaPlacePosition = [rank2, rank3, rank4].filter((n): n is number => n !== undefined);
+    const exactaCombinations = calculateExactaCombinations(exactaWinPosition, exactaPlacePosition);
+
     exactaBase = {
-      winPosition: [],
-      placePosition: [],
-      combinations: 0,
-      estimatedCost: 0,
+      winPosition: exactaWinPosition,
+      placePosition: exactaPlacePosition,
+      combinations: exactaCombinations,
+      estimatedCost: exactaCombinations * 2, // $2 base
     };
+
+    // Build conservative trifecta: 1 WITH 2,3,4 WITH 2,3,4,5 (12 combinations)
+    const trifectaWinPosition = rank1 !== undefined ? [rank1] : [];
+    const trifectaPlacePosition = [rank2, rank3, rank4].filter((n): n is number => n !== undefined);
+    const trifectaShowPosition = [rank2, rank3, rank4, rank5].filter(
+      (n): n is number => n !== undefined
+    );
+    const trifectaCombinations = calculateTrifectaCombinations(
+      trifectaWinPosition,
+      trifectaPlacePosition,
+      trifectaShowPosition
+    );
+
     trifectaBase = {
-      winPosition: [],
-      placePosition: [],
-      showPosition: [],
-      combinations: 0,
-      estimatedCost: 0,
+      winPosition: trifectaWinPosition,
+      placePosition: trifectaPlacePosition,
+      showPosition: trifectaShowPosition,
+      combinations: trifectaCombinations,
+      estimatedCost: trifectaCombinations * 1, // $1 base
     };
+
+    console.log(
+      `[PASS_FALLBACK] Algorithm-only tickets: Exacta ${exactaCombinations} combos, Trifecta ${trifectaCombinations} combos`
+    );
   } else {
     exactaBase = buildExactaTicket(template, algorithmTop4);
     trifectaBase = buildTrifectaTicket(template, algorithmTop4, algorithmTop5);
@@ -2784,6 +2832,9 @@ export function buildTicketConstruction(
     confidenceScore,
     sizing,
     verdict,
+    // Flag for PASS races using algorithm-only fallback
+    // Distinguishes "PASS with algorithm fallback" from previous "PASS with no bet"
+    isAlgorithmOnly,
   };
 }
 

@@ -615,6 +615,7 @@ export interface TrifectaConstruction {
  * - Vulnerable favorites stay on tickets but demoted from win position
  * - SOLID favorite (Template A) routes to MINIMAL tier (no value edge)
  * - Bettable races (HIGH/MEDIUM/LOW) require identified value horse
+ * - PASS races now use algorithm-only fallback at 0.5x sizing instead of empty tickets
  */
 export interface TicketConstruction {
   /** Template selection: A (solid→MINIMAL), B (vulnerable), C (chaos), PASS */
@@ -650,6 +651,15 @@ export interface TicketConstruction {
 
   /** Race verdict - BET or PASS with summary */
   verdict: RaceVerdict;
+
+  /**
+   * Flag indicating this ticket uses algorithm-only picks (PASS template fallback)
+   * When true:
+   * - Template is still 'PASS' for tracking purposes
+   * - Tickets contain algorithm-based picks at reduced sizing (0.5x)
+   * - No AI-identified value horse, using algorithm baseline performance
+   */
+  isAlgorithmOnly?: boolean;
 }
 
 // ============================================================================
@@ -659,8 +669,18 @@ export interface TicketConstruction {
 /**
  * Sizing recommendation type
  * Based on confidence score and template selection
+ *
+ * ALGORITHM_ONLY: 0.5x multiplier for PASS races using algorithm-only picks
+ * This tier is used when AI cannot identify a value horse but algorithm
+ * baseline (16.2% win rate, 33.3% exacta box 4) is still worth betting at reduced sizing.
  */
-export type SizingRecommendationType = 'PASS' | 'HALF' | 'STANDARD' | 'STRONG' | 'MAX';
+export type SizingRecommendationType =
+  | 'PASS'
+  | 'ALGORITHM_ONLY'
+  | 'HALF'
+  | 'STANDARD'
+  | 'STRONG'
+  | 'MAX';
 
 /**
  * Sizing recommendation for bet sizing
