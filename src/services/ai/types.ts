@@ -899,3 +899,75 @@ export interface ExtendedTicketConstruction extends TicketConstruction {
   /** Consensus-specific fields (only present when architecture = 'CONSENSUS') */
   consensus?: ConsensusTicketResult;
 }
+
+// ============================================================================
+// ALGORITHM-ONLY BET PIPELINE
+// ============================================================================
+
+/**
+ * Algorithm-only confidence tier
+ *
+ * Confidence is determined by score separation between top picks:
+ * - HIGH: 25+ points separation (strong standout)
+ * - MEDIUM: 15-24 points separation (moderate edge)
+ * - LOW: <15 points separation (tight field)
+ */
+export type AlgorithmOnlyConfidence = 'HIGH' | 'MEDIUM' | 'LOW';
+
+/**
+ * Algorithm-Only Ticket Result
+ *
+ * When AI_ENABLED_FOR_BETS = false, this is the ONLY ticket construction used.
+ *
+ * Philosophy:
+ * - Algorithm top 4 = exacta box (PROVEN: 33.3% hit rate)
+ * - Algorithm top 5 = trifecta box (PROVEN: 37.8% hit rate)
+ * - Algorithm top 6 = superfecta box
+ * - NO AI influence on bet decisions
+ * - Confidence based purely on score separation
+ *
+ * As of January 2026:
+ * AI has not proven additive value over algorithm baseline.
+ * Algorithm drives 100% of bet decisions when this mode is active.
+ */
+export interface AlgorithmOnlyTicket {
+  /** Program numbers for exacta box (top 4 by algorithm rank) */
+  exactaBox: number[];
+
+  /** Program numbers for trifecta box (top 5 by algorithm rank) */
+  trifectaBox: number[];
+
+  /** Program numbers for superfecta box (top 6 by algorithm rank) */
+  superfectaBox: number[];
+
+  /** Confidence based on score separation */
+  confidence: AlgorithmOnlyConfidence;
+
+  /** Reason for confidence level */
+  confidenceReason: string;
+
+  /** Top pick details (algorithm rank 1) */
+  topPick: {
+    /** Program number of top pick */
+    programNumber: number;
+    /** Horse name */
+    horseName: string;
+    /** Algorithm score */
+    score: number;
+  };
+
+  /** Score gap between #1 and #4 (used for confidence calculation) */
+  scoreSeparation: number;
+
+  /** Exacta box combinations (4 horses = 12 combos) */
+  exactaCombinations: number;
+
+  /** Trifecta box combinations (5 horses = 60 combos) */
+  trifectaCombinations: number;
+
+  /** Superfecta box combinations (6 horses = 360 combos) */
+  superfectaCombinations: number;
+
+  /** Estimated cost at base units ($2 exacta, $1 tri, $0.50 super) */
+  estimatedCost: number;
+}

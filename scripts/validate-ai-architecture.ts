@@ -29,6 +29,7 @@ import {
   getMultiBotAnalysis,
   checkAIServiceStatus,
   USE_CONSENSUS_ARCHITECTURE,
+  AI_ENABLED_FOR_BETS,
 } from '../src/services/ai';
 import type { ParsedRace, HorseEntry } from '../src/types/drf';
 import type { RaceScoringResult, HorseScoreForAI, RaceAnalysis } from '../src/types/scoring';
@@ -1360,15 +1361,37 @@ async function runValidation(): Promise<ValidationResult> {
   console.log('═'.repeat(70));
   console.log(`Started: ${new Date().toISOString()}`);
 
-  // Check API key
-  const status = checkAIServiceStatus();
-  if (status !== 'ready') {
-    console.error(
-      `\nAI Service Status: ${status}. Set VITE_GEMINI_API_KEY or GEMINI_API_KEY environment variable.`
-    );
-    process.exit(1);
+  // ============================================================================
+  // ALGORITHM-ONLY MODE DETECTION
+  // ============================================================================
+  if (!AI_ENABLED_FOR_BETS) {
+    console.log('');
+    console.log('='.repeat(60));
+    console.log('RUNNING IN ALGORITHM-ONLY MODE');
+    console.log('AI bots are disabled. All bets based on algorithm ranking.');
+    console.log('='.repeat(60));
+    console.log('');
+    console.log('Algorithm-only performance targets:');
+    console.log('  - Win rate (top pick): ~16%');
+    console.log('  - Exacta box 4: 33.3%');
+    console.log('  - Trifecta box 5: 37.8%');
+    console.log('  - Superfecta box 6: tracking');
+    console.log('');
   }
-  console.log('AI Service Status: ready\n');
+
+  // Check API key (only required when AI is enabled)
+  if (AI_ENABLED_FOR_BETS) {
+    const status = checkAIServiceStatus();
+    if (status !== 'ready') {
+      console.error(
+        `\nAI Service Status: ${status}. Set VITE_GEMINI_API_KEY or GEMINI_API_KEY environment variable.`
+      );
+      process.exit(1);
+    }
+    console.log('AI Service Status: ready\n');
+  } else {
+    console.log('AI Service Status: DISABLED (algorithm-only mode)\n');
+  }
 
   // Discover test files
   console.log('Discovering test files...');
@@ -2974,6 +2997,55 @@ function printReport(result: ValidationResult): void {
 
   console.log('\n');
   console.log('═'.repeat(70));
+
+  // ============================================================================
+  // ALGORITHM-ONLY MODE REPORT
+  // ============================================================================
+  if (!AI_ENABLED_FOR_BETS) {
+    console.log('       ALGORITHM-ONLY VALIDATION REPORT');
+    console.log('═'.repeat(70));
+    console.log(`Run Date: ${result.runDate}`);
+    console.log(
+      `Total Races: ${result.totalRaces} | Analyzed: ${result.racesAnalyzed}`
+    );
+    console.log('');
+    console.log('AI bots are DISABLED. All metrics are algorithm-only.');
+    console.log('');
+
+    // Algorithm-only baseline performance
+    console.log('─'.repeat(70));
+    console.log('ALGORITHM-ONLY PERFORMANCE');
+    console.log('─'.repeat(70));
+    console.log(`Win Rate (Top Pick):   ${formatRate(baseline.wins, result.totalRaces)}`);
+    console.log(`Top 3 Rate:            ${formatRate(baseline.top3Hits, result.totalRaces)}`);
+    console.log(
+      `Exacta Box 4:          ${formatRate(baseline.exactaBox4Hits, result.totalRaces)}  (Target: 33.3%)`
+    );
+    console.log(
+      `Trifecta Box 5:        ${formatRate(baseline.trifectaBox5Hits, result.totalRaces)}  (Target: 37.8%)`
+    );
+
+    // Summary
+    console.log('─'.repeat(70));
+    console.log('SUMMARY');
+    console.log('─'.repeat(70));
+    const exactaRate = baseline.exactaBox4Hits / result.totalRaces * 100;
+    const trifectaRate = baseline.trifectaBox5Hits / result.totalRaces * 100;
+    const exactaOnTarget = exactaRate >= 30; // Within 10% of target
+    const trifectaOnTarget = trifectaRate >= 34; // Within 10% of target
+
+    console.log(`Exacta Box 4:   ${exactaOnTarget ? '✓ ON TARGET' : '✗ BELOW TARGET'} (${exactaRate.toFixed(1)}%)`);
+    console.log(`Trifecta Box 5: ${trifectaOnTarget ? '✓ ON TARGET' : '✗ BELOW TARGET'} (${trifectaRate.toFixed(1)}%)`);
+    console.log('');
+    console.log('To re-enable AI bots, set AI_ENABLED_FOR_BETS = true in:');
+    console.log('  src/services/ai/index.ts');
+    console.log('═'.repeat(70));
+    return; // Skip AI-specific sections
+  }
+
+  // ============================================================================
+  // STANDARD AI-ENABLED REPORT
+  // ============================================================================
   console.log('       AI ARCHITECTURE VALIDATION REPORT (Hit Rates)');
   console.log('═'.repeat(70));
   console.log(`Run Date: ${result.runDate}`);
