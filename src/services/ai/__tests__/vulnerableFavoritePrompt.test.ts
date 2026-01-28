@@ -1101,9 +1101,9 @@ describe('buildVulnerableFavoritePrompt', () => {
     expect(prompt).toContain('CATEGORY B - CLASS/CONDITIONS MISMATCH');
     expect(prompt).toContain('CATEGORY C - PACE/TRIP VULNERABILITY');
     expect(prompt).toContain('CATEGORY D - FALSE FORM');
-    expect(prompt).toContain('Beyers declining');
-    expect(prompt).toContain('Stepping up in class');
-    expect(prompt).toContain('Speed horse facing');
+    expect(prompt).toContain('Beyers declining by 5+ points');
+    expect(prompt).toContain('Stepping up 2+ class levels');
+    expect(prompt).toContain('E/EP running style facing');
   });
 
   it('includes what makes a favorite solid', () => {

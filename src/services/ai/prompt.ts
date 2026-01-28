@@ -1529,6 +1529,13 @@ RESPOND WITH JSON ONLY:
 
 VULNERABLE FAVORITE ANALYSIS
 
+DEFAULT ASSUMPTION: The favorite is SOLID unless you find OVERWHELMING evidence otherwise.
+
+Your job is NOT to find reasons the favorite MIGHT lose.
+Your job is to identify favorites with CRITICAL, MULTI-DIMENSIONAL flaws that make them likely to lose.
+
+Most favorites are favorites for good reason. Respect the market.
+
 Evaluate objectively whether the favorite shows vulnerability signals.
 A favorite IS vulnerable when there are SPECIFIC, CONCRETE red flags that make them likely to underperform their odds.
 
@@ -1537,24 +1544,42 @@ Your job: Determine if the algorithm's top pick is a FALSE FAVORITE worth bettin
 VULNERABILITY FLAGS - Check all that apply:
 
 CATEGORY A - FORM CONCERNS (pick max 1):
-□ Beyers declining 3+ races in a row (each lower than previous)
-□ Last race was a poor effort (beaten 10+ lengths, no excuse)
-□ Returning from 60+ day layoff with no bullet work
+□ Beyers declining by 5+ points in each of last 3 races (15+ point total decline)
+□ Last race beaten 15+ lengths with no traffic trouble noted
+□ 90+ day layoff with no published workouts in last 30 days
 
 CATEGORY B - CLASS/CONDITIONS MISMATCH (pick max 1):
-□ Stepping up in class AND has never won at this level
-□ First time on this surface with no breeding indicators
-□ Distance outside proven range (no wins within 1 furlong)
+□ Stepping up 2+ class levels AND has never hit the board at this level
+□ First time on this surface AND pedigree shows <20% surface wins
+□ Distance 2+ furlongs outside any previous win
 
 CATEGORY C - PACE/TRIP VULNERABILITY (pick max 1):
-□ Speed horse facing 2+ other confirmed speed horses (speed duel)
-□ Deep closer on a track with strong speed bias (>60% early speed wins)
-□ Won last race with "perfect trip" comments AND similar trip unlikely today
+□ E/EP running style facing 3+ other E/EP types in same race
+□ Pure closer (no early speed) on track where closers win <25% of routes
+□ Last win had 'rail trip' or 'no traffic' comment AND drawing outside post today
 
 CATEGORY D - FALSE FORM (pick max 1):
-□ Recent win came against weak field (beaten favorites, low Beyers)
-□ Best Beyer is an outlier (10+ points above their average)
-□ Won as heavy favorite but struggled to put away weaker horses
+□ Recent wins came against fields with average Beyer 10+ points below today's field
+□ Best Beyer is 15+ points above their median (clear outlier)
+□ Won by <1 length as 1-5 odds or shorter
+
+CRITICAL VALIDATION BEFORE FLAGGING:
+
+Before marking ANY flag, ask yourself:
+- Is this CONCRETE and SPECIFIC, or am I inferring/guessing?
+- Would a professional handicapper cite this as a major concern?
+- Is this a DEFINITE problem, or just a POSSIBLE concern?
+
+If you cannot point to SPECIFIC data (exact Beyer numbers, exact class levels, exact speed figures) to support the flag, DO NOT FLAG IT.
+
+OVER-FLAGGING PENALTY: If you flag more than 2 categories, you are almost certainly wrong. Re-evaluate and remove the weakest flags until you have at most 2 categories flagged.
+
+OUTPUT RULES:
+- If confidence would be LOW → Return isVulnerable: false (SOLID)
+- If only 1 category flagged → Return isVulnerable: false (SOLID)
+- If 2+ categories flagged with CONCRETE evidence → Return isVulnerable: true
+- When uncertain between SOLID and VULNERABLE → Return SOLID
+- Maximum flags allowed: 4 total across all categories
 
 CALIBRATION TARGET: Only 30-40% of favorites are truly vulnerable.
 In a typical 10-race card, expect 6-7 SOLID favorites and 3-4 VULNERABLE favorites.
