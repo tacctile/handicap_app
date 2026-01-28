@@ -49,7 +49,13 @@ import type {
   ClassDropAnalysis,
   ClassDropHorse,
   ClassDropClassification,
+  // Consensus Architecture types
+  ConsensusSizing,
+  ConsensusTicketResult,
+  ExtendedTicketConstruction,
 } from './types';
+// Import runtime constant separately (not via import type)
+import { CONSENSUS_SIZING_MULTIPLIERS } from './types';
 import { recordAIDecision } from './metrics/recorder';
 
 // ============================================================================
@@ -107,6 +113,11 @@ export type {
   ClassDropAnalysis,
   ClassDropHorse,
   ClassDropClassification,
+  // Consensus Architecture types
+  ConsensusSizing,
+  ConsensusTicketResult,
+  ExtendedTicketConstruction,
+  CONSENSUS_SIZING_MULTIPLIERS,
   // Legacy types (deprecated)
   BetConstructionGuidance,
   ExactaStrategy,
@@ -151,6 +162,19 @@ export {
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
+
+/**
+ * Feature flag for consensus architecture
+ *
+ * When true: Uses new consensus architecture (AI adds horses to boxes)
+ * When false: Uses legacy template system (A/B/C routing)
+ *
+ * Toggle for A/B testing the new architecture.
+ *
+ * Default: false (for backwards compatibility with existing tests)
+ * Set to true to enable the new consensus architecture for production A/B testing.
+ */
+export const USE_CONSENSUS_ARCHITECTURE = false;
 
 /** Default configuration - single-bot mode for backwards compatibility */
 const defaultConfig: AIServiceConfig = {
@@ -2208,6 +2232,9 @@ export function identifyValueHorse(
 }
 
 /**
+ * @deprecated Use buildConsensusTicket instead when USE_CONSENSUS_ARCHITECTURE is true.
+ * The template system (A/B/C) is deprecated in favor of the consensus box inclusion model.
+ *
  * Select template based on race type, favorite status, and value horse identification
  *
  * CRITICAL CHANGE: Template A (Solid Favorite) now routes to MINIMAL tier because
@@ -3006,6 +3033,335 @@ export function buildTicketConstruction(
   };
 }
 
+// ============================================================================
+// CONSENSUS ARCHITECTURE - BOX INCLUSION MODEL
+// ============================================================================
+
+/**
+ * Calculate box combinations
+ * For a box of n horses: n * (n-1) for exacta, n * (n-1) * (n-2) for trifecta
+ */
+function calculateBoxCombinations(
+  horses: number[],
+  betType: 'exacta' | 'trifecta' | 'superfecta'
+): number {
+  const n = horses.length;
+  if (n < 2) return 0;
+
+  switch (betType) {
+    case 'exacta':
+      return n * (n - 1); // n!/(n-2)!
+    case 'trifecta':
+      return n >= 3 ? n * (n - 1) * (n - 2) : 0; // n!/(n-3)!
+    case 'superfecta':
+      return n >= 4 ? n * (n - 1) * (n - 2) * (n - 3) : 0; // n!/(n-4)!
+    default:
+      return 0;
+  }
+}
+
+/**
+ * Build Consensus Ticket - NEW ARCHITECTURE
+ *
+ * CONSENSUS PHILOSOPHY:
+ * - Algorithm baseline (16.2% win, 33.3% exacta box 4) is PROVEN
+ * - AI value horse identification has real signal (57.7% board rate)
+ * - But keying value horses fails (9.3% exacta vs 33.3% box)
+ * - Solution: AI adds horses to boxes, doesn't key them
+ *
+ * ARCHITECTURE:
+ * - Algorithm top 4 = default exacta box (12 combinations)
+ * - Algorithm top 5 = default trifecta/superfecta box (60/120 combinations)
+ * - AI value horse (HIGH confidence + rank 6-10 + not in top 5) → add to box
+ * - AI chaos detection → reduce bet size or sit out
+ * - NO template routing (A/B/C deprecated)
+ *
+ * @param aggregatedSignals - Signals for all horses
+ * @param vulnerableFavorite - Vulnerable favorite analysis
+ * @param fieldSpread - Field spread analysis
+ * @param paceScenario - Pace scenario analysis
+ * @param rawResults - Raw bot results (for value horse identification)
+ * @returns ConsensusTicketResult object
+ */
+export function buildConsensusTicket(
+  aggregatedSignals: AggregatedSignals[],
+  vulnerableFavorite: VulnerableFavoriteAnalysis | null,
+  fieldSpread: FieldSpreadAnalysis | null,
+  paceScenario: PaceScenarioAnalysis | null,
+  rawResults?: MultiBotRawResults
+): ConsensusTicketResult {
+  // Get algorithm rankings (sorted by algorithm rank)
+  const sortedByAlgoRank = [...aggregatedSignals].sort((a, b) => a.algorithmRank - b.algorithmRank);
+  const algorithmTop4 = sortedByAlgoRank.slice(0, 4).map((s) => s.programNumber);
+  const algorithmTop5 = sortedByAlgoRank.slice(0, 5).map((s) => s.programNumber);
+
+  // Track AI additions
+  const aiAdditions: number[] = [];
+
+  // ============================================================================
+  // STEP 1: START WITH ALGORITHM BOXES
+  // ============================================================================
+  const exactaBox = [...algorithmTop4]; // 4 horses = 12 combinations
+  const trifectaBox = [...algorithmTop5]; // 5 horses = 60 combinations
+  const superfectaBox = [...algorithmTop5]; // 5 horses = 120 combinations
+
+  // ============================================================================
+  // STEP 2: IDENTIFY VALUE HORSE (if any)
+  // ============================================================================
+  const [favoriteStatus] = determineFavoriteStatus(vulnerableFavorite);
+  const valueHorse: ValueHorseIdentification | null = rawResults
+    ? identifyValueHorse(aggregatedSignals, rawResults, favoriteStatus)
+    : null;
+
+  // ============================================================================
+  // STEP 3: AI BOX INCLUSION LOGIC
+  //
+  // Only add AI value horse if:
+  // - HIGH confidence (2+ bots agree OR very strong single signal)
+  // - Not already in algorithm top 5
+  // - Algorithm rank 6-10 (not a complete longshot)
+  // ============================================================================
+  if (valueHorse?.identified && valueHorse.programNumber !== null) {
+    const valueHorseSignal = aggregatedSignals.find(
+      (s) => s.programNumber === valueHorse.programNumber
+    );
+
+    if (valueHorseSignal) {
+      const algoRank = valueHorseSignal.algorithmRank;
+      const isHighConfidence =
+        valueHorse.signalStrength === 'VERY_STRONG' ||
+        valueHorse.signalStrength === 'STRONG' ||
+        valueHorse.botConvergenceCount >= 2;
+      const notInTop5 = !trifectaBox.includes(valueHorse.programNumber);
+      const isReasonableRank = algoRank >= 6 && algoRank <= 10;
+
+      if (isHighConfidence && notInTop5 && isReasonableRank) {
+        // Add to trifecta and superfecta boxes (not exacta - keep it tight)
+        trifectaBox.push(valueHorse.programNumber); // Now 6 horses = 120 combinations
+        superfectaBox.push(valueHorse.programNumber); // Now 6 horses = 360 combinations
+        aiAdditions.push(valueHorse.programNumber);
+
+        console.log(
+          `[CONSENSUS] AI addition: #${valueHorse.programNumber} ${valueHorse.horseName} ` +
+            `(rank ${algoRank}, ${valueHorse.signalStrength} signal, ${valueHorse.botConvergenceCount} bots)`
+        );
+      } else {
+        console.log(
+          `[CONSENSUS] AI value horse rejected for box inclusion: #${valueHorse.programNumber} ` +
+            `(rank=${algoRank}, highConf=${isHighConfidence}, notInTop5=${notInTop5}, reasonableRank=${isReasonableRank})`
+        );
+      }
+    }
+  }
+
+  // ============================================================================
+  // STEP 4: SIZING LOGIC - SIT OUT OR REDUCE
+  //
+  // Reduce sizing or sit out if:
+  // - Field Spread = WIDE_OPEN AND pace = chaotic (3+ speed)
+  // - No horse scores above 140 (weak field confidence)
+  // ============================================================================
+  let sizing: ConsensusSizing = 'FULL';
+  let sizingReason = 'Standard bet - algorithm baseline confident';
+
+  // Get top score
+  const topScore = sortedByAlgoRank[0]?.algorithmScore ?? 0;
+
+  // Check for pace collapse risk
+  const paceCollapseRisk =
+    paceScenario?.speedDuelLikely === true && paceScenario?.paceProjection === 'HOT';
+
+  // Sizing rule 1: Wide open with pace collapse risk → REDUCED
+  if (fieldSpread?.fieldType === 'WIDE_OPEN' && paceCollapseRisk) {
+    sizing = 'REDUCED';
+    sizingReason = 'Wide open field with pace collapse risk - reduced sizing';
+  }
+
+  // Sizing rule 2: Top score below 140 → SIT_OUT
+  if (topScore < 140) {
+    sizing = 'SIT_OUT';
+    sizingReason = `No confident contenders (top score ${topScore} below 140 threshold)`;
+  }
+
+  // Sizing rule 3: Too many contenders (6+ in top tier) → REDUCED
+  if ((fieldSpread?.topTierCount ?? 0) >= 6) {
+    if (sizing !== 'SIT_OUT') {
+      sizing = 'REDUCED';
+      sizingReason = `Too many contenders (${fieldSpread?.topTierCount} in top tier) - reduced sizing`;
+    }
+  }
+
+  // ============================================================================
+  // STEP 5: CALCULATE CONFIDENCE SCORE
+  //
+  // Based on:
+  // - Algorithm score separation (higher = more confident)
+  // - AI bot agreement (more bots flagging same horse = higher)
+  // - Field type (DOMINANT/SEPARATED = higher, WIDE_OPEN = lower)
+  // ============================================================================
+  let confidence = 50; // Base confidence
+
+  // Score separation bonus
+  const scoreGap =
+    sortedByAlgoRank.length >= 2
+      ? (sortedByAlgoRank[0]?.algorithmScore ?? 0) - (sortedByAlgoRank[1]?.algorithmScore ?? 0)
+      : 0;
+  if (scoreGap >= 20) confidence += 15;
+  else if (scoreGap >= 10) confidence += 10;
+  else if (scoreGap >= 5) confidence += 5;
+
+  // Field type adjustment
+  if (fieldSpread?.fieldType === 'DOMINANT') confidence += 20;
+  else if (fieldSpread?.fieldType === 'SEPARATED') confidence += 10;
+  else if (fieldSpread?.fieldType === 'WIDE_OPEN') confidence -= 15;
+
+  // AI bot agreement bonus
+  if (valueHorse?.botConvergenceCount && valueHorse.botConvergenceCount >= 3) confidence += 10;
+  else if (valueHorse?.botConvergenceCount && valueHorse.botConvergenceCount >= 2) confidence += 5;
+
+  // Cap confidence at 0-100
+  confidence = Math.max(0, Math.min(100, confidence));
+
+  // ============================================================================
+  // STEP 6: CALCULATE COMBINATIONS AND COST
+  // ============================================================================
+  const exactaCombinations = calculateBoxCombinations(exactaBox, 'exacta');
+  const trifectaCombinations = calculateBoxCombinations(trifectaBox, 'trifecta');
+  const superfectaCombinations = calculateBoxCombinations(superfectaBox, 'superfecta');
+
+  // Cost at base units: $2 exacta, $1 trifecta, $0.50 superfecta
+  const sizingMultiplier = CONSENSUS_SIZING_MULTIPLIERS[sizing];
+  const estimatedCost =
+    (exactaCombinations * 2 + trifectaCombinations * 1 + superfectaCombinations * 0.5) *
+    sizingMultiplier;
+
+  // ============================================================================
+  // STEP 7: LOG CONSENSUS DECISION
+  // ============================================================================
+  console.log('[CONSENSUS]', {
+    algorithmTop4,
+    algorithmTop5,
+    aiAddition: aiAdditions.length > 0 ? aiAdditions : null,
+    exactaBoxSize: exactaBox.length,
+    trifectaBoxSize: trifectaBox.length,
+    sizing,
+    sizingReason,
+    confidence,
+    valueHorseIdentified: valueHorse?.identified ?? false,
+  });
+
+  return {
+    architecture: 'CONSENSUS',
+    exactaBox,
+    trifectaBox,
+    superfectaBox,
+    aiAdditions,
+    sizing,
+    sizingReason,
+    confidence,
+    algorithmTop4,
+    algorithmTop5,
+    valueHorse: valueHorse ?? null,
+    exactaCombinations,
+    trifectaCombinations,
+    superfectaCombinations,
+    estimatedCost,
+  };
+}
+
+/**
+ * Build extended ticket construction that supports both architectures
+ *
+ * When USE_CONSENSUS_ARCHITECTURE = true:
+ * - Uses buildConsensusTicket() for box-based betting
+ * - Returns ExtendedTicketConstruction with consensus field
+ *
+ * When USE_CONSENSUS_ARCHITECTURE = false:
+ * - Uses buildTicketConstruction() for template-based betting
+ * - Returns ExtendedTicketConstruction without consensus field
+ *
+ * @param aggregatedSignals - Signals for all horses
+ * @param vulnerableFavorite - Vulnerable favorite analysis
+ * @param fieldSpread - Field spread analysis
+ * @param paceScenario - Pace scenario analysis
+ * @param rawResults - Raw bot results
+ * @returns ExtendedTicketConstruction object
+ */
+export function buildExtendedTicketConstruction(
+  aggregatedSignals: AggregatedSignals[],
+  vulnerableFavorite: VulnerableFavoriteAnalysis | null,
+  fieldSpread: FieldSpreadAnalysis | null,
+  paceScenario: PaceScenarioAnalysis | null,
+  rawResults?: MultiBotRawResults
+): ExtendedTicketConstruction {
+  if (USE_CONSENSUS_ARCHITECTURE) {
+    // Build consensus ticket
+    const consensus = buildConsensusTicket(
+      aggregatedSignals,
+      vulnerableFavorite,
+      fieldSpread,
+      paceScenario,
+      rawResults
+    );
+
+    // Also build legacy ticket for backwards compatibility fields
+    const legacyTicket = buildTicketConstruction(
+      aggregatedSignals,
+      vulnerableFavorite,
+      fieldSpread,
+      rawResults
+    );
+
+    // Map consensus sizing to legacy sizing
+    const sizingMap: Record<ConsensusSizing, SizingRecommendationType> = {
+      FULL: 'STANDARD',
+      REDUCED: 'HALF',
+      SIT_OUT: 'PASS',
+    };
+
+    return {
+      ...legacyTicket,
+      architecture: 'CONSENSUS',
+      // Override template to indicate consensus
+      template: 'PASS', // Template is deprecated in consensus mode
+      templateReason: `Consensus architecture - ${consensus.sizingReason}`,
+      // Override sizing based on consensus
+      sizing: {
+        ...legacyTicket.sizing,
+        multiplier: CONSENSUS_SIZING_MULTIPLIERS[consensus.sizing],
+        recommendation: sizingMap[consensus.sizing],
+        reasoning: consensus.sizingReason,
+      },
+      // Override verdict
+      verdict: {
+        action: consensus.sizing === 'SIT_OUT' ? 'PASS' : 'BET',
+        summary:
+          consensus.sizing === 'SIT_OUT'
+            ? `SIT OUT - ${consensus.sizingReason}`
+            : `BET ${consensus.sizing} - Box ${consensus.exactaBox.length}/${consensus.trifectaBox.length}` +
+              (consensus.aiAdditions.length > 0
+                ? ` (+AI #${consensus.aiAdditions.join(', #')})`
+                : ''),
+      },
+      // Add consensus-specific data
+      consensus,
+    };
+  } else {
+    // Use legacy template system
+    const legacyTicket = buildTicketConstruction(
+      aggregatedSignals,
+      vulnerableFavorite,
+      fieldSpread,
+      rawResults
+    );
+
+    return {
+      ...legacyTicket,
+      architecture: 'TEMPLATE',
+    };
+  }
+}
+
 /**
  * @deprecated Use buildTicketConstruction instead.
  * Build bet construction guidance using expansion/contraction model (legacy)
@@ -3198,32 +3554,53 @@ export function combineMultiBotResults(
   });
 
   // ============================================================================
-  // STEP 2: Build ticket construction (THREE-TEMPLATE SYSTEM)
+  // STEP 2: Build ticket construction
+  // Uses CONSENSUS architecture (box inclusion) or TEMPLATE architecture (A/B/C routing)
+  // based on USE_CONSENSUS_ARCHITECTURE feature flag
   // ============================================================================
-  debugLog('\n--- TICKET CONSTRUCTION (Three-Template System with Value Horse) ---');
+  if (USE_CONSENSUS_ARCHITECTURE) {
+    debugLog('\n--- TICKET CONSTRUCTION (Consensus Architecture - Box Inclusion) ---');
+  } else {
+    debugLog('\n--- TICKET CONSTRUCTION (Legacy Template System - A/B/C Routing) ---');
+  }
 
-  const ticketConstruction = buildTicketConstruction(
+  const ticketConstruction = buildExtendedTicketConstruction(
     aggregatedSignals,
     vulnerableFavorite,
     fieldSpread,
+    paceScenario,
     rawResults // Pass raw results for value horse identification
   );
 
-  debugLog(`Template: ${ticketConstruction.template} - ${ticketConstruction.templateReason}`);
-  debugLog(`Algorithm Top 4: #${ticketConstruction.algorithmTop4.join(', #')}`);
-  debugLog(`Favorite Status: ${ticketConstruction.favoriteStatus}`);
-  if (ticketConstruction.favoriteVulnerabilityFlags.length > 0) {
-    debugLog(`Vulnerability Flags: ${ticketConstruction.favoriteVulnerabilityFlags.join(', ')}`);
+  // Log architecture-specific details
+  debugLog(`Architecture: ${ticketConstruction.architecture}`);
+  if (ticketConstruction.architecture === 'CONSENSUS' && ticketConstruction.consensus) {
+    const c = ticketConstruction.consensus;
+    debugLog(`Exacta Box: #${c.exactaBox.join(', #')} (${c.exactaCombinations} combos)`);
+    debugLog(`Trifecta Box: #${c.trifectaBox.join(', #')} (${c.trifectaCombinations} combos)`);
+    debugLog(
+      `AI Additions: ${c.aiAdditions.length > 0 ? '#' + c.aiAdditions.join(', #') : 'None'}`
+    );
+    debugLog(`Sizing: ${c.sizing} - ${c.sizingReason}`);
+    debugLog(`Confidence: ${c.confidence}`);
+    debugLog(`Estimated Cost: $${c.estimatedCost.toFixed(2)}`);
+  } else {
+    debugLog(`Template: ${ticketConstruction.template} - ${ticketConstruction.templateReason}`);
+    debugLog(`Algorithm Top 4: #${ticketConstruction.algorithmTop4.join(', #')}`);
+    debugLog(`Favorite Status: ${ticketConstruction.favoriteStatus}`);
+    if (ticketConstruction.favoriteVulnerabilityFlags.length > 0) {
+      debugLog(`Vulnerability Flags: ${ticketConstruction.favoriteVulnerabilityFlags.join(', ')}`);
+    }
+    debugLog(`Race Type: ${ticketConstruction.raceType}`);
+    debugLog(`Confidence Score: ${ticketConstruction.confidenceScore}`);
+    debugLog(
+      `Sizing: ${ticketConstruction.sizing.recommendation} (${ticketConstruction.sizing.multiplier}x) - ${ticketConstruction.sizing.reasoning}`
+    );
+    debugLog(
+      `Suggested Units: Exacta $${ticketConstruction.sizing.suggestedExactaUnit}, Trifecta $${ticketConstruction.sizing.suggestedTrifectaUnit}`
+    );
+    debugLog(`Total Investment: $${ticketConstruction.sizing.totalInvestment}`);
   }
-  debugLog(`Race Type: ${ticketConstruction.raceType}`);
-  debugLog(`Confidence Score: ${ticketConstruction.confidenceScore}`);
-  debugLog(
-    `Sizing: ${ticketConstruction.sizing.recommendation} (${ticketConstruction.sizing.multiplier}x) - ${ticketConstruction.sizing.reasoning}`
-  );
-  debugLog(
-    `Suggested Units: Exacta $${ticketConstruction.sizing.suggestedExactaUnit}, Trifecta $${ticketConstruction.sizing.suggestedTrifectaUnit}`
-  );
-  debugLog(`Total Investment: $${ticketConstruction.sizing.totalInvestment}`);
   debugLog(`Verdict: ${ticketConstruction.verdict.action} - ${ticketConstruction.verdict.summary}`);
 
   // ============================================================================

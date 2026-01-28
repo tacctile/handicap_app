@@ -795,3 +795,107 @@ export interface BetConstructionGuidance {
   /** Summary of signals that influenced construction */
   signalSummary: string;
 }
+
+// ============================================================================
+// CONSENSUS ARCHITECTURE TYPES (Box Inclusion Model)
+// ============================================================================
+
+/**
+ * Consensus sizing tier
+ *
+ * The consensus architecture uses simpler sizing:
+ * - FULL: Standard bet (no concerns)
+ * - REDUCED: Half unit (chaotic race or weak signals)
+ * - SIT_OUT: No bet (no confident contenders)
+ */
+export type ConsensusSizing = 'FULL' | 'REDUCED' | 'SIT_OUT';
+
+/**
+ * Consensus sizing multipliers
+ */
+export const CONSENSUS_SIZING_MULTIPLIERS: Record<ConsensusSizing, number> = {
+  FULL: 1.0,
+  REDUCED: 0.5,
+  SIT_OUT: 0.0,
+};
+
+/**
+ * Consensus Ticket Result
+ *
+ * NEW ARCHITECTURE: AI adds horses to algorithm boxes instead of keying value horses.
+ *
+ * Philosophy:
+ * - Algorithm top 4 = default exacta/trifecta box (PROVEN: 33.3% exacta hit rate)
+ * - AI value horse (if HIGH confidence + rank 6-10) → add to box
+ * - AI chaos detection → reduce bet size or sit out
+ * - NO template routing (A/B/C removed)
+ *
+ * This addresses the core finding: AI value horse identification has signal (57.7% board rate)
+ * but keying them fails (9.3% exacta vs 33.3% box). Solution: add to box, don't key.
+ */
+export interface ConsensusTicketResult {
+  /** Architecture identifier */
+  architecture: 'CONSENSUS';
+
+  /** Program numbers for exacta box (4-5 horses) */
+  exactaBox: number[];
+
+  /** Program numbers for trifecta box (5-6 horses) */
+  trifectaBox: number[];
+
+  /** Program numbers for superfecta box (5-6 horses) */
+  superfectaBox: number[];
+
+  /** Horses AI added to boxes (empty if none) */
+  aiAdditions: number[];
+
+  /** Sizing decision */
+  sizing: ConsensusSizing;
+
+  /** Reason for sizing decision */
+  sizingReason: string;
+
+  /** Confidence score 0-100 based on algorithm separation and AI agreement */
+  confidence: number;
+
+  /** Algorithm's top 4 horses (program numbers in rank order) */
+  algorithmTop4: number[];
+
+  /** Algorithm's top 5 horses (program numbers in rank order) */
+  algorithmTop5: number[];
+
+  /** Value horse identified by AI (if any) */
+  valueHorse: ValueHorseIdentification | null;
+
+  /** Exacta combinations count */
+  exactaCombinations: number;
+
+  /** Trifecta combinations count */
+  trifectaCombinations: number;
+
+  /** Superfecta combinations count */
+  superfectaCombinations: number;
+
+  /** Estimated total cost at base units ($2 exacta, $1 tri, $0.50 super) */
+  estimatedCost: number;
+}
+
+/**
+ * Extended TicketConstruction with consensus architecture support
+ *
+ * When architecture = 'CONSENSUS':
+ * - Uses box-based betting (exactaBox, trifectaBox, superfectaBox)
+ * - AI adds horses to boxes instead of keying
+ * - Template field is deprecated (set to 'PASS' for backwards compatibility)
+ *
+ * When architecture = 'TEMPLATE':
+ * - Uses legacy template system (A/B/C/PASS)
+ * - Maintains backwards compatibility
+ */
+export interface ExtendedTicketConstruction extends TicketConstruction {
+  /** Architecture type: CONSENSUS (new) or TEMPLATE (legacy) */
+  architecture: 'CONSENSUS' | 'TEMPLATE';
+
+  /** Consensus-specific fields (only present when architecture = 'CONSENSUS') */
+  consensus?: ConsensusTicketResult;
+}

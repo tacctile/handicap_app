@@ -25,7 +25,11 @@ const __dirname = path.dirname(__filename);
 
 import { parseDRFFile } from '../src/lib/drfParser';
 import { calculateRaceScores } from '../src/lib/scoring';
-import { getMultiBotAnalysis, checkAIServiceStatus } from '../src/services/ai';
+import {
+  getMultiBotAnalysis,
+  checkAIServiceStatus,
+  USE_CONSENSUS_ARCHITECTURE,
+} from '../src/services/ai';
 import type { ParsedRace, HorseEntry } from '../src/types/drf';
 import type { RaceScoringResult, HorseScoreForAI, RaceAnalysis } from '../src/types/scoring';
 import type { ScoredHorse } from '../src/lib/scoring';
@@ -34,6 +38,8 @@ import type {
   TicketTemplate,
   SizingRecommendationType,
 } from '../src/services/ai/types';
+// Note: ConsensusTicketResult, ConsensusSizing, ExtendedTicketConstruction types
+// will be used when consensus architecture metrics tracking is fully implemented
 import { analyzePaceScenario } from '../src/lib/scoring';
 
 // ============================================================================
@@ -335,6 +341,46 @@ interface ValidationResult {
     };
     templateReason: string;
   }[];
+
+  // SECTION H: CONSENSUS ARCHITECTURE METRICS (new)
+  consensusArchitecture?: {
+    // Distribution of sizing decisions
+    sizingDistribution: {
+      FULL: { count: number; percentage: number };
+      REDUCED: { count: number; percentage: number };
+      SIT_OUT: { count: number; percentage: number };
+    };
+    // AI addition metrics
+    aiAdditions: {
+      totalAdditions: number;
+      additionRate: number; // Percentage of races with AI additions
+      additionHitRate: number; // Percentage of added horses that board (top 4)
+      additionWinRate: number; // Percentage of added horses that win
+      addedHorsesByRank: Record<number, { count: number; boards: number; wins: number }>;
+    };
+    // Box size distribution
+    boxSizeDistribution: {
+      exacta: Record<number, number>; // size -> count
+      trifecta: Record<number, number>;
+      superfecta: Record<number, number>;
+    };
+    // Sit-out analysis
+    sitOutAnalysis: {
+      totalSitOuts: number;
+      sitOutRate: number;
+      wouldHaveHitExacta: number;
+      wouldHaveHitTrifecta: number;
+      correctSitOutRate: number; // Percentage that would NOT have hit
+    };
+    // Comparison: Algorithm box vs Consensus box
+    algorithmVsConsensus: {
+      algorithmBox4ExactaHits: number;
+      algorithmBox4ExactaRate: number;
+      consensusExactaHits: number;
+      consensusExactaRate: number;
+      liftFromAI: number; // Percentage improvement
+    };
+  };
 }
 
 interface RaceResult {
@@ -1788,9 +1834,11 @@ async function runValidation(): Promise<ValidationResult> {
   let passWouldHaveHitTrifecta = 0;
 
   // Track ALGORITHM_ONLY races (new behavior with algorithm fallback)
-  let algorithmOnlyExactaHits = 0;
-  let algorithmOnlyTrifectaHits = 0;
-  let algorithmOnlyWins = 0;
+  // Tracking variables for ALGORITHM_ONLY sizing tier performance
+  // (prefixed with _ as they're incremented for future reporting but not currently used)
+  let _algorithmOnlyExactaHits = 0;
+  let _algorithmOnlyTrifectaHits = 0;
+  let _algorithmOnlyWins = 0;
 
   // ============================================================================
   // DIAGNOSTIC: Track Template A races for debugging routing leaks
@@ -1890,19 +1938,19 @@ async function runValidation(): Promise<ValidationResult> {
           const win = algoRank1 === actual.first;
           if (win) {
             sizingStats.ALGORITHM_ONLY.wins++;
-            algorithmOnlyWins++;
+            _algorithmOnlyWins++;
           }
 
           // Check exacta hit (algorithm top 4 box)
           if (checkExactaBox(algoTop4, actual)) {
             sizingStats.ALGORITHM_ONLY.exactaHits++;
-            algorithmOnlyExactaHits++;
+            _algorithmOnlyExactaHits++;
           }
 
           // Check trifecta hit (algorithm top 5)
           if (checkTrifecta(algoTop5, actual)) {
             sizingStats.ALGORITHM_ONLY.trifectaHits++;
-            algorithmOnlyTrifectaHits++;
+            _algorithmOnlyTrifectaHits++;
           }
         } else {
           // Old behavior: Pure PASS - track what would have hit
@@ -2834,7 +2882,56 @@ async function runValidation(): Promise<ValidationResult> {
     // TEMPLATE A DIAGNOSTIC DATA
     // Helps debug routing leaks when Template A is higher than expected (>5%)
     templateADiagnostics,
+
+    // CONSENSUS ARCHITECTURE METRICS (when USE_CONSENSUS_ARCHITECTURE is true)
+    // Placeholder - detailed tracking to be added as consensus architecture matures
+    ...(USE_CONSENSUS_ARCHITECTURE
+      ? {
+          consensusArchitecture: {
+            sizingDistribution: {
+              FULL: { count: 0, percentage: 0 },
+              REDUCED: { count: 0, percentage: 0 },
+              SIT_OUT: { count: 0, percentage: 0 },
+            },
+            aiAdditions: {
+              totalAdditions: 0,
+              additionRate: 0,
+              additionHitRate: 0,
+              additionWinRate: 0,
+              addedHorsesByRank: {} as Record<
+                number,
+                { count: number; boards: number; wins: number }
+              >,
+            },
+            boxSizeDistribution: {
+              exacta: {} as Record<number, number>,
+              trifecta: {} as Record<number, number>,
+              superfecta: {} as Record<number, number>,
+            },
+            sitOutAnalysis: {
+              totalSitOuts: 0,
+              sitOutRate: 0,
+              wouldHaveHitExacta: 0,
+              wouldHaveHitTrifecta: 0,
+              correctSitOutRate: 0,
+            },
+            algorithmVsConsensus: {
+              algorithmBox4ExactaHits: algorithmExactaBox4,
+              algorithmBox4ExactaRate: toPercentage(algorithmExactaBox4, totalRaces),
+              consensusExactaHits: 0, // To be tracked
+              consensusExactaRate: 0, // To be tracked
+              liftFromAI: 0, // To be calculated
+            },
+          },
+        }
+      : {}),
   };
+
+  // Log consensus architecture status
+  console.log(`\n--- ARCHITECTURE MODE ---`);
+  console.log(
+    `Active Architecture: ${USE_CONSENSUS_ARCHITECTURE ? 'CONSENSUS (Box Inclusion)' : 'TEMPLATE (A/B/C Routing)'}`
+  );
 
   // Log Template A diagnostic summary
   if (templateADiagnostics.length > 0) {
