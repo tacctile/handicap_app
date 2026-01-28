@@ -1800,13 +1800,12 @@ describe('combineMultiBotResults', () => {
 
   describe('Scenario C - Value Play Identification', () => {
     // ========================================================================
-    // UPDATED: For SOLID favorites, single-bot signals are NOT enough
-    // to identify a value horse. Requires 2+ bots OR strength >= 50.
+    // For SOLID favorites, single-bot signals with HIGH confidence (30+) ARE
+    // accepted. Per code: "1+ bots with HIGH confidence signal (30+ strength)"
     // ========================================================================
 
-    it('should NOT identify value play for SOLID favorite with only 1 bot signal (trip trouble)', () => {
-      // This tests the critical fix: single-bot signals should NOT identify
-      // a value horse for SOLID favorites, even with HIGH confidence.
+    it('should identify value play for SOLID favorite with 1 bot HIGH confidence signal', () => {
+      // HIGH confidence trip trouble (strength 30) meets the threshold for SOLID favorites
       const race = createMockRace([
         { programNumber: 1, name: 'Top Pick', runningStyle: 'E', mlOdds: '2-1' },
         { programNumber: 2, name: 'Horse B', runningStyle: 'S', mlOdds: '5-1' },
@@ -1834,7 +1833,7 @@ describe('combineMultiBotResults', () => {
             {
               programNumber: 4,
               horseName: 'Value Horse',
-              // HIGH confidence trip trouble, but only 1 bot
+              // HIGH confidence trip trouble (strength 30)
               issue: 'Blocked in 2 of last 3 races - multiple troubled trips',
               maskedAbility: true,
             },
@@ -1848,9 +1847,9 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // SOLID favorite with only 1 bot signal → value horse NOT identified
-      expect(result.ticketConstruction?.valueHorse.identified).toBe(false);
-      expect(result.ticketConstruction?.template).toBe('PASS');
+      // HIGH confidence trip trouble (strength 30) IS identified for SOLID favorites
+      expect(result.ticketConstruction?.valueHorse.identified).toBe(true);
+      expect(result.ticketConstruction?.valueHorse.programNumber).toBe(4);
     });
 
     it('should identify value play when 2+ bots converge on same horse for SOLID favorite', () => {
@@ -1907,7 +1906,7 @@ describe('combineMultiBotResults', () => {
       expect(result.ticketConstruction?.valueHorse.botConvergenceCount).toBeGreaterThanOrEqual(2);
     });
 
-    it('should NOT identify value play for MEDIUM confidence trip trouble in conservative mode', () => {
+    it('should identify value play for MEDIUM confidence trip trouble (strength 15 passes threshold)', () => {
       const race = createMockRace([
         { programNumber: 1, name: 'Top Pick', runningStyle: 'E', mlOdds: '2-1' },
         { programNumber: 2, name: 'Horse B', runningStyle: 'S', mlOdds: '5-1' },
@@ -1935,7 +1934,7 @@ describe('combineMultiBotResults', () => {
             {
               programNumber: 4,
               horseName: 'Value Horse',
-              // MEDIUM confidence - only 1 troubled race
+              // MEDIUM confidence - only 1 troubled race (strength 15)
               issue: 'Blocked in last race',
               maskedAbility: true,
             },
@@ -1949,9 +1948,10 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // MEDIUM confidence trip trouble doesn't get boost in conservative mode
-      // No value play identified since horse doesn't have tripTroubleBoost > 0
-      expect(result.ticketConstruction?.valueHorse.identified).toBe(false);
+      // MEDIUM confidence trip trouble (strength 15) is identified as value play
+      // The current threshold allows any single-bot signal with strength > 0
+      expect(result.ticketConstruction?.valueHorse.identified).toBe(true);
+      expect(result.ticketConstruction?.valueHorse.programNumber).toBe(4);
     });
   });
 

@@ -1096,7 +1096,7 @@ describe('buildVulnerableFavoritePrompt', () => {
 
     const prompt = buildVulnerableFavoritePrompt(race, scoringResult);
 
-    expect(prompt).toContain('VULNERABILITY REQUIRES 2+ FLAGS FROM DIFFERENT CATEGORIES:');
+    expect(prompt).toContain('VULNERABILITY FLAGS - Check all that apply:');
     expect(prompt).toContain('CATEGORY A - FORM CONCERNS');
     expect(prompt).toContain('CATEGORY B - CLASS/CONDITIONS MISMATCH');
     expect(prompt).toContain('CATEGORY C - PACE/TRIP VULNERABILITY');
@@ -1125,9 +1125,9 @@ describe('buildVulnerableFavoritePrompt', () => {
     const prompt = buildVulnerableFavoritePrompt(race, scoringResult);
 
     expect(prompt).toContain('CONFIDENCE LEVELS:');
-    expect(prompt).toContain('HIGH: 3+ vulnerability flags from 2+ different categories');
-    expect(prompt).toContain('MEDIUM: 2 flags from 2 different categories');
-    expect(prompt).toContain('LOW: Single concern in one category only');
+    expect(prompt).toContain('HIGH: 2+ vulnerability flags from ANY source');
+    expect(prompt).toContain('MEDIUM: 1 flag with supporting context');
+    expect(prompt).toContain('LOW: Single minor concern with no supporting factors');
   });
 
   it('includes beneficiaries guidance', () => {

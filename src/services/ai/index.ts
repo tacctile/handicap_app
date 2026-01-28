@@ -681,7 +681,7 @@ export async function getMultiBotAnalysis(
  * CONSERVATIVE MODE (default) - TUNED THRESHOLDS:
  * - Trip trouble: +2 for HIGH confidence (2+ troubled races), +1 for MEDIUM
  * - Pace advantage: +2 for STRONG (lone speed), +1 for MODERATE
- * - Vulnerable favorite: -2 if HIGH + 2+ flags, -1 if HIGH + 1 flag, MEDIUM = flag only
+ * - Vulnerable favorite: -2 if HIGH confidence, -1 if MEDIUM confidence
  * - Class drop: REINFORCEMENT-ONLY - only applies if another bot flagged the horse
  * - Competitive field: reduce adjustments by 25% (not 50%)
  * - Minimum for rank change: ±1
@@ -989,32 +989,29 @@ export function aggregateHorseSignals(
   totalAdj += signals.paceAdvantage;
 
   // Vulnerable favorite penalty
-  // CONSERVATIVE: HIGH + 2+ flags = -2, HIGH + 1 flag = -1, MEDIUM = flag only
+  // RECALIBRATED: HIGH = -2, MEDIUM = -1
   // NON-CONSERVATIVE: -2 (HIGH) or -1 (MEDIUM)
   if (signals.isVulnerable && vulnerableFavorite) {
     const flagCount = signals.vulnerabilityFlags.length;
 
     if (conservativeMode) {
-      // CONSERVATIVE: HIGH + 2+ flags = -2, HIGH + 1 flag = -1, MEDIUM = flag only
+      // RECALIBRATED: HIGH = -2, MEDIUM = -1
       if (vulnerableFavorite.confidence === 'HIGH') {
-        if (flagCount >= 2) {
-          totalAdj -= 2;
-          signals.overrideReasons.push({
-            signal: 'vulnerableFavorite',
-            confidence: 'HIGH',
-            description: `Vulnerable favorite HIGH with ${flagCount} flags: ${signals.vulnerabilityFlags.slice(0, 2).join(', ')}`,
-          });
-        } else {
-          // HIGH + 1 flag = -1
-          totalAdj -= 1;
-          signals.overrideReasons.push({
-            signal: 'vulnerableFavorite',
-            confidence: 'HIGH',
-            description: `Vulnerable favorite HIGH: ${signals.vulnerabilityFlags[0] || 'Unknown'}`,
-          });
-        }
+        totalAdj -= 2;
+        signals.overrideReasons.push({
+          signal: 'vulnerableFavorite',
+          confidence: 'HIGH',
+          description: `Vulnerable favorite HIGH with ${flagCount} flags: ${signals.vulnerabilityFlags.slice(0, 2).join(', ')}`,
+        });
+      } else if (vulnerableFavorite.confidence === 'MEDIUM') {
+        // MEDIUM confidence: -1 penalty (allows MEDIUM vulnerables to influence template)
+        totalAdj -= 1;
+        signals.overrideReasons.push({
+          signal: 'vulnerableFavorite',
+          confidence: 'MEDIUM',
+          description: `Vulnerable favorite MEDIUM with ${flagCount} flags: ${signals.vulnerabilityFlags.slice(0, 2).join(', ')}`,
+        });
       }
-      // MEDIUM: flag only, no penalty
     } else {
       // NON-CONSERVATIVE: Original behavior
       if (vulnerableFavorite.confidence === 'HIGH') {
@@ -1640,10 +1637,10 @@ export function deriveRaceType(
 /**
  * Determine favorite status from vulnerable favorite analysis
  *
- * STRICTER CRITERIA (targeting 30-40% vulnerable rate):
+ * RECALIBRATED CRITERIA (targeting 40-50% vulnerable rate):
  * - 0-1 flags → SOLID (regardless of bot output)
- * - 2 flags → VULNERABLE only if confidence is HIGH
- * - 3+ flags → VULNERABLE regardless of confidence
+ * - 2+ flags with HIGH or MEDIUM confidence → VULNERABLE
+ * - 2+ flags with LOW confidence → SOLID
  *
  * @param vulnerableFavorite - Vulnerable favorite analysis from bot
  * @returns Tuple of [status, flags]
@@ -1663,32 +1660,23 @@ export function determineFavoriteStatus(
   // Count vulnerability flags
   const flagCount = vulnerableFavorite.reasons?.length ?? 0;
 
-  // STRICTER: 0-1 flags → SOLID (regardless of bot output)
+  // 0-1 flags → SOLID (regardless of bot output)
   if (flagCount <= 1) {
     console.log(`[VULN] SOLID: Only ${flagCount} flag(s), requires 2+ for vulnerable status`);
     return ['SOLID', []];
   }
 
-  // STRICTER: 2 flags → VULNERABLE only if confidence is HIGH
-  if (flagCount === 2) {
-    if (vulnerableFavorite.confidence === 'HIGH') {
-      console.log(
-        `[VULN] VULNERABLE: 2 flags with HIGH confidence - ${vulnerableFavorite.reasons.join(', ')}`
-      );
-      return ['VULNERABLE', vulnerableFavorite.reasons];
-    } else {
-      console.log(
-        `[VULN] SOLID: 2 flags but confidence is ${vulnerableFavorite.confidence}, requires HIGH`
-      );
-      return ['SOLID', []];
-    }
+  // 2+ flags with HIGH or MEDIUM confidence → VULNERABLE
+  if (vulnerableFavorite.confidence === 'HIGH' || vulnerableFavorite.confidence === 'MEDIUM') {
+    console.log(
+      `[VULN] VULNERABLE: ${flagCount} flags with ${vulnerableFavorite.confidence} confidence - ${vulnerableFavorite.reasons.join(', ')}`
+    );
+    return ['VULNERABLE', vulnerableFavorite.reasons];
   }
 
-  // STRICTER: 3+ flags → VULNERABLE regardless of confidence
-  console.log(
-    `[VULN] VULNERABLE: ${flagCount} flags (3+) - ${vulnerableFavorite.reasons.join(', ')}`
-  );
-  return ['VULNERABLE', vulnerableFavorite.reasons];
+  // 2+ flags with LOW confidence → SOLID (not confident enough)
+  console.log(`[VULN] SOLID: ${flagCount} flags but confidence is LOW, requires HIGH or MEDIUM`);
+  return ['SOLID', []];
 }
 
 /**
@@ -1992,7 +1980,11 @@ export function identifyValueHorse(
     }
 
     // Log when identified under relaxed threshold (single bot with HIGH confidence 30-49)
-    if (bestCandidate.botCount === 1 && bestCandidate.signalStrength >= 30 && bestCandidate.signalStrength < 50) {
+    if (
+      bestCandidate.botCount === 1 &&
+      bestCandidate.signalStrength >= 30 &&
+      bestCandidate.signalStrength < 50
+    ) {
       console.log(
         `[VALUE_HORSE] Identified under relaxed threshold: ${bestCandidate.horseName}, ` +
           `botCount: ${bestCandidate.botCount}, signalStrength: ${bestCandidate.signalStrength}`
