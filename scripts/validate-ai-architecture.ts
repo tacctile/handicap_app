@@ -1506,11 +1506,24 @@ async function runValidation(): Promise<ValidationResult> {
   void _AVG_TRIFECTA_PAYOUT;
   void _AVG_SUPERFECTA_PAYOUT;
 
+  // Confidence distribution tracking (based on top horse confidence tier)
+  const confidenceDistribution = { HIGH: 0, MEDIUM: 0, LOW: 0 };
+
   for (const raceData of allRaces) {
     const { scoringResult, raceResult } = raceData;
     const algoTop6 = scoringResult.scores.slice(0, 6).map((s) => s.programNumber);
     const algoTop5 = algoTop6.slice(0, 5);
     const algoTop4 = algoTop6.slice(0, 4);
+
+    // Track confidence distribution based on top horse's confidence tier
+    const topHorseConfidence = scoringResult.scores[0]?.confidenceTier;
+    if (topHorseConfidence === 'high') {
+      confidenceDistribution.HIGH++;
+    } else if (topHorseConfidence === 'medium') {
+      confidenceDistribution.MEDIUM++;
+    } else {
+      confidenceDistribution.LOW++;
+    }
     const algoTop3 = algoTop6.slice(0, 3);
     const algoTop2 = algoTop6.slice(0, 2);
 
@@ -2706,12 +2719,17 @@ async function runValidation(): Promise<ValidationResult> {
     },
   };
 
-  const result: ValidationResult = {
+  const result: ValidationResult & {
+    confidenceDistribution: { HIGH: number; MEDIUM: number; LOW: number };
+  } = {
     runDate: new Date().toISOString(),
     totalRaces,
     racesAnalyzed,
     racesPassed,
     errors,
+
+    // Confidence distribution (for algorithm-only mode reporting)
+    confidenceDistribution,
 
     algorithmBaseline: {
       winRate: toPercentage(algorithmWins, totalRaces),
@@ -3002,44 +3020,141 @@ function printReport(result: ValidationResult): void {
   // ALGORITHM-ONLY MODE REPORT
   // ============================================================================
   if (!AI_ENABLED_FOR_BETS) {
-    console.log('       ALGORITHM-ONLY VALIDATION REPORT');
-    console.log('═'.repeat(70));
+    const algoExacta = expandedHitRates.algorithmOnlyExacta;
+    const algoTrifecta = expandedHitRates.algorithmOnlyTrifecta;
+    const algoSuperfecta = expandedHitRates.algorithmOnlySuperfecta;
+    const algoWPS = expandedHitRates.algorithmOnlyWPS;
+
+    console.log('============================================================');
+    console.log('ALGORITHM-ONLY VALIDATION RESULTS');
+    console.log('============================================================');
     console.log(`Run Date: ${result.runDate}`);
-    console.log(
-      `Total Races: ${result.totalRaces} | Analyzed: ${result.racesAnalyzed}`
-    );
+    console.log(`Total Races: ${result.totalRaces} | Analyzed: ${result.racesAnalyzed}`);
     console.log('');
-    console.log('AI bots are DISABLED. All metrics are algorithm-only.');
+    console.log('AI Status: DISABLED (algorithm drives all bet recommendations)');
     console.log('');
 
-    // Algorithm-only baseline performance
-    console.log('─'.repeat(70));
-    console.log('ALGORITHM-ONLY PERFORMANCE');
-    console.log('─'.repeat(70));
-    console.log(`Win Rate (Top Pick):   ${formatRate(baseline.wins, result.totalRaces)}`);
-    console.log(`Top 3 Rate:            ${formatRate(baseline.top3Hits, result.totalRaces)}`);
+    // ------------------------------------------------------------
+    // ALGORITHM PERFORMANCE
+    // ------------------------------------------------------------
+    console.log('------------------------------------------------------------');
+    console.log('ALGORITHM PERFORMANCE');
+    console.log('------------------------------------------------------------');
+    console.log('');
+
+    // Win/Place/Show
+    console.log('Win/Place/Show:');
     console.log(
-      `Exacta Box 4:          ${formatRate(baseline.exactaBox4Hits, result.totalRaces)}  (Target: 33.3%)`
+      `  Win Rate:       ${algoWPS.win.hitRate.toFixed(1)}% (${algoWPS.win.hits}/${algoWPS.win.races})`
     );
     console.log(
-      `Trifecta Box 5:        ${formatRate(baseline.trifectaBox5Hits, result.totalRaces)}  (Target: 37.8%)`
+      `  Place Rate:     ${algoWPS.place.hitRate.toFixed(1)}% (${algoWPS.place.hits}/${algoWPS.place.races})`
     );
+    console.log(
+      `  Show Rate:      ${algoWPS.show.hitRate.toFixed(1)}% (${algoWPS.show.hits}/${algoWPS.show.races})`
+    );
+    console.log('');
 
-    // Summary
-    console.log('─'.repeat(70));
-    console.log('SUMMARY');
-    console.log('─'.repeat(70));
-    const exactaRate = baseline.exactaBox4Hits / result.totalRaces * 100;
-    const trifectaRate = baseline.trifectaBox5Hits / result.totalRaces * 100;
-    const exactaOnTarget = exactaRate >= 30; // Within 10% of target
-    const trifectaOnTarget = trifectaRate >= 34; // Within 10% of target
+    // Exacta Boxes
+    console.log('Exacta Boxes:');
+    console.log(
+      `  Box 2:          ${algoExacta.box2.hitRate.toFixed(1)}%  (${algoExacta.box2.hits}/${algoExacta.box2.races})`
+    );
+    console.log(
+      `  Box 3:          ${algoExacta.box3.hitRate.toFixed(1)}% (${algoExacta.box3.hits}/${algoExacta.box3.races})`
+    );
+    console.log(
+      `  Box 4:          ${algoExacta.box4.hitRate.toFixed(1)}% (${algoExacta.box4.hits}/${algoExacta.box4.races})  <- PRIMARY METRIC`
+    );
+    console.log('');
 
-    console.log(`Exacta Box 4:   ${exactaOnTarget ? '✓ ON TARGET' : '✗ BELOW TARGET'} (${exactaRate.toFixed(1)}%)`);
-    console.log(`Trifecta Box 5: ${trifectaOnTarget ? '✓ ON TARGET' : '✗ BELOW TARGET'} (${trifectaRate.toFixed(1)}%)`);
+    // Trifecta Boxes
+    console.log('Trifecta Boxes:');
+    console.log(
+      `  Box 3:          ${algoTrifecta.box3.hitRate.toFixed(1)}%  (${algoTrifecta.box3.hits}/${algoTrifecta.box3.races})`
+    );
+    console.log(
+      `  Box 4:          ${algoTrifecta.box4.hitRate.toFixed(1)}% (${algoTrifecta.box4.hits}/${algoTrifecta.box4.races})`
+    );
+    console.log(
+      `  Box 5:          ${algoTrifecta.box5.hitRate.toFixed(1)}% (${algoTrifecta.box5.hits}/${algoTrifecta.box5.races})  <- PRIMARY METRIC`
+    );
+    console.log('');
+
+    // Superfecta Boxes
+    console.log('Superfecta Boxes:');
+    console.log(
+      `  Box 4:          ${algoSuperfecta.box4.hitRate.toFixed(1)}%  (${algoSuperfecta.box4.hits}/${algoSuperfecta.box4.races})`
+    );
+    console.log(
+      `  Box 5:          ${algoSuperfecta.box5.hitRate.toFixed(1)}% (${algoSuperfecta.box5.hits}/${algoSuperfecta.box5.races})`
+    );
+    console.log(
+      `  Box 6:          ${algoSuperfecta.box6.hitRate.toFixed(1)}% (${algoSuperfecta.box6.hits}/${algoSuperfecta.box6.races})  <- PRIMARY METRIC`
+    );
+    console.log('');
+
+    // ------------------------------------------------------------
+    // CONFIDENCE DISTRIBUTION (from race scoring)
+    // Note: This uses race-level data if tracked, otherwise shows N/A
+    // ------------------------------------------------------------
+    console.log('------------------------------------------------------------');
+    console.log('CONFIDENCE DISTRIBUTION');
+    console.log('------------------------------------------------------------');
+    // Confidence distribution is tracked per-race in the result if available
+    const confDist = (
+      result as { confidenceDistribution?: { HIGH: number; MEDIUM: number; LOW: number } }
+    ).confidenceDistribution;
+    if (confDist) {
+      const confTotal = confDist.HIGH + confDist.MEDIUM + confDist.LOW;
+      console.log(
+        `  HIGH:    ${confDist.HIGH} races (${confTotal > 0 ? ((confDist.HIGH / confTotal) * 100).toFixed(1) : 0}%)`
+      );
+      console.log(
+        `  MEDIUM:  ${confDist.MEDIUM} races (${confTotal > 0 ? ((confDist.MEDIUM / confTotal) * 100).toFixed(1) : 0}%)`
+      );
+      console.log(
+        `  LOW:     ${confDist.LOW} races (${confTotal > 0 ? ((confDist.LOW / confTotal) * 100).toFixed(1) : 0}%)`
+      );
+    } else {
+      console.log('  (Confidence distribution tracking not available)');
+    }
+    console.log('');
+
+    // ------------------------------------------------------------
+    // VERDICT
+    // ------------------------------------------------------------
+    console.log('------------------------------------------------------------');
+    console.log('VERDICT');
+    console.log('------------------------------------------------------------');
+
+    // Algorithm-only verdict checks
+    const exactaBox4Rate = algoExacta.box4.hitRate;
+    const trifectaBox5Rate = algoTrifecta.box5.hitRate;
+    const superfectaBox6Rate = algoSuperfecta.box6.hitRate;
+
+    const exactaBox4Pass = exactaBox4Rate >= 30;
+    const trifectaBox5Pass = trifectaBox5Rate >= 35;
+    const superfectaBox6Pass = superfectaBox6Rate >= 40;
+
+    console.log(
+      `Exacta Box 4:    ${exactaBox4Pass ? '✓' : '✗'} ${exactaBox4Rate.toFixed(1)}% (target: >30%)`
+    );
+    console.log(
+      `Trifecta Box 5:  ${trifectaBox5Pass ? '✓' : '✗'} ${trifectaBox5Rate.toFixed(1)}% (target: >35%)`
+    );
+    console.log(
+      `Superfecta Box 6: ${superfectaBox6Pass ? '✓' : '✗'} ${superfectaBox6Rate.toFixed(1)}% (target: >40%)`
+    );
+    console.log('');
+
+    const allPass = exactaBox4Pass && trifectaBox5Pass && superfectaBox6Pass;
+    console.log(`STATUS: ${allPass ? 'ALGORITHM BASELINE VALIDATED' : 'ALGORITHM NEEDS TUNING'}`);
+    console.log('============================================================');
     console.log('');
     console.log('To re-enable AI bots, set AI_ENABLED_FOR_BETS = true in:');
     console.log('  src/services/ai/index.ts');
-    console.log('═'.repeat(70));
+
     return; // Skip AI-specific sections
   }
 
@@ -3677,28 +3792,85 @@ async function main(): Promise<void> {
     // Print human-readable report
     printReport(result);
 
-    // Save full result as JSON
-    fs.writeFileSync(OUTPUT_FILE, JSON.stringify(result, null, 2));
-    console.log(`\nFull results saved to: ${OUTPUT_FILE}`);
+    // Save JSON based on mode (algorithm-only vs AI-enabled)
+    if (!AI_ENABLED_FOR_BETS) {
+      // Algorithm-only mode: simplified JSON structure
+      const algoExacta = result.expandedHitRates.algorithmOnlyExacta;
+      const algoTrifecta = result.expandedHitRates.algorithmOnlyTrifecta;
+      const algoSuperfecta = result.expandedHitRates.algorithmOnlySuperfecta;
+      const algoWPS = result.expandedHitRates.algorithmOnlyWPS;
+      const confDist = (
+        result as { confidenceDistribution: { HIGH: number; MEDIUM: number; LOW: number } }
+      ).confidenceDistribution;
 
-    // Write Template A diagnostic file if any Template A races exist
-    // This helps debug routing leaks when Template A is higher than expected
-    const diagnosticFile = path.join(__dirname, '../template-a-diagnostic.json');
-    const templateAData =
-      (result as { templateADiagnostics?: unknown[] }).templateADiagnostics ?? [];
-    if (Array.isArray(templateAData) && templateAData.length > 0) {
-      fs.writeFileSync(diagnosticFile, JSON.stringify(templateAData, null, 2));
-      console.log(`\nTemplate A diagnostic data saved to: ${diagnosticFile}`);
-      console.log(`  ${templateAData.length} Template A races captured for analysis.`);
-      console.log(`  Review this file to identify why races are routing to Template A.`);
-    }
+      // Calculate verdict
+      const exactaBox4Rate = algoExacta.box4.hitRate;
+      const trifectaBox5Rate = algoTrifecta.box5.hitRate;
+      const superfectaBox6Rate = algoSuperfecta.box6.hitRate;
+      const exactaBox4Pass = exactaBox4Rate >= 30;
+      const trifectaBox5Pass = trifectaBox5Rate >= 35;
+      const superfectaBox6Pass = superfectaBox6Rate >= 40;
+      const allPass = exactaBox4Pass && trifectaBox5Pass && superfectaBox6Pass;
 
-    // Write condensed summary file for GitHub Actions
-    writeSummaryFile(result);
+      const algorithmOnlyResult = {
+        mode: 'ALGORITHM_ONLY',
+        runDate: result.runDate,
+        totalRaces: result.totalRaces,
+        algorithmPerformance: {
+          winRate: algoWPS.win.hitRate / 100,
+          placeRate: algoWPS.place.hitRate / 100,
+          showRate: algoWPS.show.hitRate / 100,
+          exactaBox2: algoExacta.box2.hitRate / 100,
+          exactaBox3: algoExacta.box3.hitRate / 100,
+          exactaBox4: algoExacta.box4.hitRate / 100,
+          trifectaBox3: algoTrifecta.box3.hitRate / 100,
+          trifectaBox4: algoTrifecta.box4.hitRate / 100,
+          trifectaBox5: algoTrifecta.box5.hitRate / 100,
+          superfectaBox4: algoSuperfecta.box4.hitRate / 100,
+          superfectaBox5: algoSuperfecta.box5.hitRate / 100,
+          superfectaBox6: algoSuperfecta.box6.hitRate / 100,
+        },
+        confidenceDistribution: confDist,
+        verdict: {
+          exactaBox4Pass,
+          trifectaBox5Pass,
+          superfectaBox6Pass,
+          status: allPass ? 'VALIDATED' : 'NEEDS_TUNING',
+        },
+      };
 
-    // Exit with appropriate code
-    if (result.verdict.recommendation === 'REVERT') {
-      process.exit(1);
+      fs.writeFileSync(OUTPUT_FILE, JSON.stringify(algorithmOnlyResult, null, 2));
+      console.log(`\nAlgorithm-only results saved to: ${OUTPUT_FILE}`);
+
+      // Exit with appropriate code for algorithm-only mode
+      if (!allPass) {
+        console.log('\nAlgorithm baseline did not meet all targets. Exiting with code 1.');
+        process.exit(1);
+      }
+    } else {
+      // AI-enabled mode: full result JSON
+      fs.writeFileSync(OUTPUT_FILE, JSON.stringify(result, null, 2));
+      console.log(`\nFull results saved to: ${OUTPUT_FILE}`);
+
+      // Write Template A diagnostic file if any Template A races exist
+      // This helps debug routing leaks when Template A is higher than expected
+      const diagnosticFile = path.join(__dirname, '../template-a-diagnostic.json');
+      const templateAData =
+        (result as { templateADiagnostics?: unknown[] }).templateADiagnostics ?? [];
+      if (Array.isArray(templateAData) && templateAData.length > 0) {
+        fs.writeFileSync(diagnosticFile, JSON.stringify(templateAData, null, 2));
+        console.log(`\nTemplate A diagnostic data saved to: ${diagnosticFile}`);
+        console.log(`  ${templateAData.length} Template A races captured for analysis.`);
+        console.log(`  Review this file to identify why races are routing to Template A.`);
+      }
+
+      // Write condensed summary file for GitHub Actions
+      writeSummaryFile(result);
+
+      // Exit with appropriate code
+      if (result.verdict.recommendation === 'REVERT') {
+        process.exit(1);
+      }
     }
   } catch (error) {
     console.error('\nFatal error:', error);
