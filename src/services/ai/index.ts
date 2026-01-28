@@ -1377,10 +1377,10 @@ export function identifyExpansionHorses(
 /**
  * Detect vulnerable favorite for contraction
  *
- * Criteria:
+ * STRICTER CRITERIA (targeting 30-40% vulnerable rate):
  * - Only algorithm rank 1 qualifies
- * - Requires HIGH confidence from Vulnerable Favorite bot
- * - Requires 2+ vulnerability flags
+ * - Requires HIGH or MEDIUM confidence from Vulnerable Favorite bot
+ * - Requires 2+ vulnerability flags from 2+ different categories
  *
  * @param aggregatedSignals - Signals for all horses
  * @param vulnerableFavorite - Vulnerable favorite analysis from bot
@@ -1392,8 +1392,17 @@ export function detectContractionTarget(
 ): number | null {
   if (!vulnerableFavorite) return null;
   if (!vulnerableFavorite.isVulnerable) return null;
-  if (vulnerableFavorite.confidence !== 'HIGH') return null;
+
+  // Require HIGH or MEDIUM confidence
+  if (vulnerableFavorite.confidence !== 'HIGH' && vulnerableFavorite.confidence !== 'MEDIUM')
+    return null;
+
+  // Require 2+ flags
   if (vulnerableFavorite.reasons.length < 2) return null;
+
+  // Require 2+ different categories
+  const categoryCount = countUniqueCategories(vulnerableFavorite.reasons);
+  if (categoryCount < 2) return null;
 
   // Find algorithm rank 1 horse
   const rank1Horse = aggregatedSignals.find((s) => s.algorithmRank === 1);
@@ -1635,12 +1644,145 @@ export function deriveRaceType(
 }
 
 /**
+ * Vulnerability flag category mappings
+ * Maps common vulnerability flags to their category (A, B, C, or D)
+ * - CATEGORY A: Form Concerns
+ * - CATEGORY B: Class/Conditions Mismatch
+ * - CATEGORY C: Pace/Trip Vulnerability
+ * - CATEGORY D: False Form
+ */
+const VULNERABILITY_CATEGORY_MAP: Record<string, 'A' | 'B' | 'C' | 'D'> = {
+  // Category A - Form Concerns
+  'DECLINING FIGURES': 'A',
+  DECLINING_FIGURES: 'A',
+  'DECLINING FORM': 'A',
+  'POOR EFFORT': 'A',
+  'LAYOFF RISK': 'A',
+  LAYOFF: 'A',
+  'NO BULLET WORK': 'A',
+  'FORM CONCERNS': 'A',
+  REGRESSING: 'A',
+
+  // Category B - Class/Conditions Mismatch
+  'CLASS RISE': 'B',
+  CLASS_RISE: 'B',
+  'STEPPING UP': 'B',
+  'NEVER WON AT LEVEL': 'B',
+  'FIRST TIME SURFACE': 'B',
+  'UNPROVEN AT DISTANCE': 'B',
+  'DISTANCE QUESTION': 'B',
+  'SURFACE QUESTION': 'B',
+  'CLASS MISMATCH': 'B',
+  'BEATEN AT THIS LEVEL': 'B',
+  'POOR SURFACE RECORD': 'B',
+
+  // Category C - Pace/Trip Vulnerability
+  'SPEED DUEL': 'C',
+  'PACE ISSUE': 'C',
+  'PACE VULNERABILITY': 'C',
+  'TRIP DEPENDENCY': 'C',
+  'STYLE MISMATCH': 'C',
+  'FLATTERED BY TRIP': 'C',
+  'BENEFITED FROM PACE COLLAPSE': 'C',
+  'PACE COLLAPSE': 'C',
+  'CLOSER ON SPEED TRACK': 'C',
+  'SPEED ON CLOSER TRACK': 'C',
+  'TRACK BIAS': 'C',
+
+  // Category D - False Form
+  'WEAK FIELD': 'D',
+  'FALSE FORM': 'D',
+  'OUTLIER BEYER': 'D',
+  'STRUGGLED TO WIN': 'D',
+  'FLATTERED FORM': 'D',
+  'BEATEN FAVORITES': 'D',
+  'POOR TRAINER PATTERN': 'D',
+};
+
+/**
+ * Count unique vulnerability categories from a list of flags
+ *
+ * Maps each flag to its category (A, B, C, or D) and counts unique categories.
+ * Flags that don't match known patterns are assigned to a best-guess category
+ * based on keyword matching.
+ *
+ * @param flags - Array of vulnerability flag strings
+ * @returns Number of unique categories represented (0-4)
+ */
+export function countUniqueCategories(flags: string[]): number {
+  if (!flags || flags.length === 0) {
+    return 0;
+  }
+
+  const categories = new Set<string>();
+
+  for (const flag of flags) {
+    const upperFlag = flag.toUpperCase();
+
+    // Check direct mapping first
+    const mappedCategory = VULNERABILITY_CATEGORY_MAP[upperFlag];
+    if (mappedCategory) {
+      categories.add(mappedCategory);
+      continue;
+    }
+
+    // Fuzzy matching for partial matches
+    let foundCategory = false;
+    for (const [pattern, category] of Object.entries(VULNERABILITY_CATEGORY_MAP)) {
+      if (upperFlag.includes(pattern) || pattern.includes(upperFlag.replace(/[^A-Z]/g, ' '))) {
+        categories.add(category);
+        foundCategory = true;
+        break;
+      }
+    }
+
+    // Keyword-based fallback categorization
+    if (!foundCategory) {
+      if (
+        upperFlag.includes('FORM') ||
+        upperFlag.includes('BEYER') ||
+        upperFlag.includes('LAYOFF') ||
+        upperFlag.includes('DECLIN')
+      ) {
+        categories.add('A');
+      } else if (
+        upperFlag.includes('CLASS') ||
+        upperFlag.includes('DISTANCE') ||
+        upperFlag.includes('SURFACE') ||
+        upperFlag.includes('LEVEL')
+      ) {
+        categories.add('B');
+      } else if (
+        upperFlag.includes('PACE') ||
+        upperFlag.includes('TRIP') ||
+        upperFlag.includes('SPEED') ||
+        upperFlag.includes('BIAS') ||
+        upperFlag.includes('STYLE')
+      ) {
+        categories.add('C');
+      } else if (
+        upperFlag.includes('WEAK') ||
+        upperFlag.includes('FALSE') ||
+        upperFlag.includes('FLATTER') ||
+        upperFlag.includes('OUTLIER')
+      ) {
+        categories.add('D');
+      }
+      // If no match, don't count it as a category (ambiguous flag)
+    }
+  }
+
+  return categories.size;
+}
+
+/**
  * Determine favorite status from vulnerable favorite analysis
  *
- * RECALIBRATED CRITERIA (targeting 40-50% vulnerable rate):
+ * STRICTER CRITERIA (targeting 30-40% vulnerable rate):
  * - 0-1 flags → SOLID (regardless of bot output)
- * - 2+ flags with HIGH or MEDIUM confidence → VULNERABLE
- * - 2+ flags with LOW confidence → SOLID
+ * - 2+ flags with only 1 category → SOLID (concentrated weakness not enough)
+ * - 2+ flags from 2+ categories with HIGH or MEDIUM confidence → VULNERABLE
+ * - LOW confidence → SOLID (regardless of flag count)
  *
  * @param vulnerableFavorite - Vulnerable favorite analysis from bot
  * @returns Tuple of [status, flags]
@@ -1657,25 +1799,46 @@ export function determineFavoriteStatus(
     return ['SOLID', []];
   }
 
-  // Count vulnerability flags
+  // Count vulnerability flags and unique categories
   const flagCount = vulnerableFavorite.reasons?.length ?? 0;
+  const categoryCount = countUniqueCategories(vulnerableFavorite.reasons ?? []);
 
   // 0-1 flags → SOLID (regardless of bot output)
   if (flagCount <= 1) {
-    console.log(`[VULN] SOLID: Only ${flagCount} flag(s), requires 2+ for vulnerable status`);
+    console.log(
+      `[FAVORITE_STATUS] SOLID: Only ${flagCount} flag(s), requires 2+ for vulnerable status`
+    );
     return ['SOLID', []];
   }
 
-  // 2+ flags with HIGH or MEDIUM confidence → VULNERABLE
+  // 2+ flags but only 1 category → SOLID (concentrated weakness not enough)
+  if (categoryCount < 2) {
+    console.log(
+      `[FAVORITE_STATUS] SOLID: ${flagCount} flags but only ${categoryCount} category - requires 2+ different categories`
+    );
+    return ['SOLID', []];
+  }
+
+  // LOW confidence → SOLID (regardless of flag count or categories)
+  if (vulnerableFavorite.confidence === 'LOW') {
+    console.log(
+      `[FAVORITE_STATUS] SOLID: ${flagCount} flags from ${categoryCount} categories but confidence is LOW - requires HIGH or MEDIUM`
+    );
+    return ['SOLID', []];
+  }
+
+  // 2+ flags from 2+ categories with HIGH or MEDIUM confidence → VULNERABLE
   if (vulnerableFavorite.confidence === 'HIGH' || vulnerableFavorite.confidence === 'MEDIUM') {
     console.log(
-      `[VULN] VULNERABLE: ${flagCount} flags with ${vulnerableFavorite.confidence} confidence - ${vulnerableFavorite.reasons.join(', ')}`
+      `[FAVORITE_STATUS] VULNERABLE: ${flagCount} flags from ${categoryCount} categories with ${vulnerableFavorite.confidence} confidence - ${vulnerableFavorite.reasons.join(', ')}`
     );
     return ['VULNERABLE', vulnerableFavorite.reasons];
   }
 
-  // 2+ flags with LOW confidence → SOLID (not confident enough)
-  console.log(`[VULN] SOLID: ${flagCount} flags but confidence is LOW, requires HIGH or MEDIUM`);
+  // Default fallback - SOLID
+  console.log(
+    `[FAVORITE_STATUS] SOLID: Default fallback - ${flagCount} flags, ${categoryCount} categories, ${vulnerableFavorite.confidence} confidence`
+  );
   return ['SOLID', []];
 }
 

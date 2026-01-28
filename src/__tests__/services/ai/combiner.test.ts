@@ -123,8 +123,9 @@ describe('combineMultiBotResults', () => {
         },
         vulnerableFavorite: {
           isVulnerable: true,
-          // 2+ flags AND HIGH confidence triggers Template B
-          reasons: ['Poor track record at this distance', 'Class drop concern'],
+          // STRICTER CRITERIA: 2+ flags from 2+ different categories AND HIGH confidence triggers Template B
+          // Declining figures = Category A (Form), Speed duel = Category C (Pace/Trip)
+          reasons: ['Declining figures', 'Speed duel'],
           confidence: 'HIGH',
         },
         fieldSpread: {
@@ -216,8 +217,10 @@ describe('combineMultiBotResults', () => {
         },
         vulnerableFavorite: {
           isVulnerable: true,
-          reasons: ['Some concern', 'Another concern'],
-          // RECALIBRATED: MEDIUM confidence with 2+ flags = VULNERABLE
+          // STRICTER CRITERIA: 2+ flags from 2+ different categories required
+          // Class rise = Category B, Pace issue = Category C
+          reasons: ['Class rise', 'Pace issue'],
+          // RECALIBRATED: MEDIUM confidence with 2+ flags from 2+ categories = VULNERABLE
           confidence: 'MEDIUM',
         },
         fieldSpread: {
@@ -229,11 +232,11 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // RECALIBRATED: 2 flags + MEDIUM confidence = VULNERABLE, routes to Template B
+      // STRICTER CRITERIA: 2+ flags from 2+ categories + MEDIUM confidence = VULNERABLE, routes to Template B
       // When template is B, topPick becomes algorithm rank 2 (favorite demoted)
       expect(result.topPick).toBe(2);
       expect(result.ticketConstruction?.template).toBe('B');
-      expect(result.vulnerableFavorite).toBe(true); // MEDIUM confidence accepted with 2+ flags
+      expect(result.vulnerableFavorite).toBe(true); // MEDIUM confidence accepted with 2+ flags from 2+ categories
     });
   });
 

@@ -1125,9 +1125,9 @@ describe('buildVulnerableFavoritePrompt', () => {
     const prompt = buildVulnerableFavoritePrompt(race, scoringResult);
 
     expect(prompt).toContain('CONFIDENCE LEVELS:');
-    expect(prompt).toContain('HIGH: 2+ vulnerability flags from ANY source');
-    expect(prompt).toContain('MEDIUM: 1 flag with supporting context');
-    expect(prompt).toContain('LOW: Single minor concern with no supporting factors');
+    expect(prompt).toContain('HIGH: 3+ flags from 2+ different categories');
+    expect(prompt).toContain('MEDIUM: 2 flags from 2 different categories');
+    expect(prompt).toContain('DO NOT RETURN LOW: Single flags or same-category flags = SOLID');
   });
 
   it('includes beneficiaries guidance', () => {
