@@ -217,7 +217,7 @@ describe('combineMultiBotResults', () => {
         vulnerableFavorite: {
           isVulnerable: true,
           reasons: ['Some concern', 'Another concern'],
-          // MEDIUM confidence with 2 flags = favoriteStatus stays SOLID
+          // RECALIBRATED: MEDIUM confidence with 2+ flags = VULNERABLE
           confidence: 'MEDIUM',
         },
         fieldSpread: {
@@ -229,10 +229,11 @@ describe('combineMultiBotResults', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // PASS template: 2 flags but MEDIUM confidence = not vulnerable enough
-      expect(result.topPick).toBe(1);
-      expect(result.ticketConstruction?.template).toBe('PASS');
-      expect(result.vulnerableFavorite).toBe(false); // Requires HIGH confidence for 2 flags
+      // RECALIBRATED: 2 flags + MEDIUM confidence = VULNERABLE, routes to Template B
+      // When template is B, topPick becomes algorithm rank 2 (favorite demoted)
+      expect(result.topPick).toBe(2);
+      expect(result.ticketConstruction?.template).toBe('B');
+      expect(result.vulnerableFavorite).toBe(true); // MEDIUM confidence accepted with 2+ flags
     });
   });
 

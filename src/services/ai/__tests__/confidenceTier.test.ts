@@ -132,13 +132,13 @@ describe('identifyValueHorse', () => {
   });
 
   // ============================================================================
-  // CRITICAL FIX TESTS: For SOLID favorites, require 2+ bots OR strength >= 50
-  // Single-bot weak signals should NOT identify a value horse
+  // CRITICAL FIX TESTS: For SOLID favorites, require strength >= 30
+  // Single-bot signals with HIGH confidence (30+) ARE accepted
   // ============================================================================
 
-  it('should REJECT single-bot trip trouble for SOLID favorite (weak signal)', () => {
-    // This test verifies the critical fix: single-bot signals should NOT
-    // identify a value horse for SOLID favorites.
+  it('should ACCEPT single-bot trip trouble for SOLID favorite (HIGH confidence strength 30)', () => {
+    // HIGH confidence trip trouble (strength 30) meets the 30 threshold for SOLID favorites.
+    // Per code: "1+ bots with HIGH confidence signal (30+ strength)"
     const signals = createMockAggregatedSignals([
       { programNumber: 1, horseName: 'Favorite', algorithmRank: 1, algorithmScore: 200 },
       {
@@ -163,11 +163,11 @@ describe('identifyValueHorse', () => {
 
     const result = identifyValueHorse(signals, rawResults, 'SOLID');
 
-    // For SOLID favorites, single-bot signals (strength 30) are REJECTED
-    expect(result.identified).toBe(false);
-    expect(result.programNumber).toBeNull();
-    expect(result.reasoning).toContain('SOLID favorite');
-    expect(result.reasoning).toContain('Weak value signal rejected');
+    // HIGH confidence trip trouble (strength 30) meets the 30 threshold
+    expect(result.identified).toBe(true);
+    expect(result.programNumber).toBe(2);
+    expect(result.horseName).toBe('Trip Horse');
+    expect(result.sources).toContain('TRIP_TROUBLE');
   });
 
   it('should ACCEPT trip trouble for VULNERABLE favorite (any signal is fine)', () => {
@@ -204,8 +204,8 @@ describe('identifyValueHorse', () => {
     expect(result.sources).toContain('TRIP_TROUBLE');
   });
 
-  it('should REJECT lone speed for SOLID favorite (single bot, strength 35 < 50)', () => {
-    // Lone speed has strength 35, which is below the 50 threshold for SOLID favorites
+  it('should ACCEPT lone speed for SOLID favorite (single bot, strength 35 >= 30)', () => {
+    // Lone speed has strength 35, which meets the 30 threshold for SOLID favorites
     const signals = createMockAggregatedSignals([
       { programNumber: 1, horseName: 'Favorite', algorithmRank: 1, algorithmScore: 200 },
       {
@@ -228,9 +228,11 @@ describe('identifyValueHorse', () => {
 
     const result = identifyValueHorse(signals, rawResults, 'SOLID');
 
-    // Single bot (pace advantage) with strength 35 < 50 threshold - REJECTED
-    expect(result.identified).toBe(false);
-    expect(result.reasoning).toContain('SOLID favorite');
+    // Lone speed (strength 35) meets the 30 threshold for SOLID favorites
+    expect(result.identified).toBe(true);
+    expect(result.programNumber).toBe(2);
+    expect(result.horseName).toBe('Lone Speed');
+    expect(result.sources).toContain('PACE_ADVANTAGE');
   });
 
   it('should ACCEPT lone speed for VULNERABLE favorite', () => {

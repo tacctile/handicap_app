@@ -1529,14 +1529,12 @@ RESPOND WITH JSON ONLY:
 
 VULNERABLE FAVORITE ANALYSIS
 
-CRITICAL: You must be HIGHLY SELECTIVE. Only 30-40% of favorites are truly vulnerable.
-A favorite is NOT vulnerable just because they COULD lose — every horse could lose.
+Evaluate objectively whether the favorite shows vulnerability signals.
 A favorite IS vulnerable when there are SPECIFIC, CONCRETE red flags that make them likely to underperform their odds.
-DEFAULT ASSUMPTION: The favorite is SOLID unless you find compelling evidence otherwise.
 
 Your job: Determine if the algorithm's top pick is a FALSE FAVORITE worth betting against.
 
-VULNERABILITY REQUIRES 2+ FLAGS FROM DIFFERENT CATEGORIES:
+VULNERABILITY FLAGS - Check all that apply:
 
 CATEGORY A - FORM CONCERNS (pick max 1):
 □ Beyers declining 3+ races in a row (each lower than previous)
@@ -1558,8 +1556,9 @@ CATEGORY D - FALSE FORM (pick max 1):
 □ Best Beyer is an outlier (10+ points above their average)
 □ Won as heavy favorite but struggled to put away weaker horses
 
-TO BE VULNERABLE: Must have at least 1 flag from 2 DIFFERENT categories.
-Single-category concerns are noted but NOT enough to mark vulnerable.
+TO BE VULNERABLE: Either:
+- 1+ flags from 2 different categories, OR
+- 2+ flags from the same category (indicates concentrated weakness)
 
 FAVORITE IS SOLID (NOT vulnerable) when:
 ✓ Beyers steady or improving over last 3 races
@@ -1571,9 +1570,9 @@ FAVORITE IS SOLID (NOT vulnerable) when:
 If 4+ of these are true, favorite is almost certainly SOLID.
 
 CONFIDENCE LEVELS:
-- HIGH: 3+ vulnerability flags from 2+ different categories, clear reason to oppose
-- MEDIUM: 2 flags from 2 different categories, some concern
-- LOW: Single concern in one category only — DEFAULT TO SOLID
+- HIGH: 2+ vulnerability flags from ANY source (same or different categories)
+- MEDIUM: 1 flag with supporting context (e.g., class rise + unfamiliar conditions)
+- LOW: Single minor concern with no supporting factors
 
 IF VULNERABLE - WHO BENEFITS?
 - Identify which challengers gain most from favorite's weakness
@@ -1595,11 +1594,10 @@ ${challengersSection}
 ---
 
 CALIBRATION CHECK: In a typical 10-race card, expect:
-- 6-7 races: Favorite is SOLID (no significant concerns)
-- 2-3 races: Favorite is VULNERABLE (multiple red flags from different categories)
-- 0-1 races: Uncertain (single minor concern, lean SOLID)
+- 5-6 races: Favorite is SOLID (no significant concerns)
+- 4-5 races: Favorite is VULNERABLE (red flags present)
 
-If you're marking more than 4/10 favorites as vulnerable, you're being too aggressive.
+Be objective — don't default to either SOLID or VULNERABLE without evidence.
 
 ---
 
