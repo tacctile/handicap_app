@@ -2113,9 +2113,7 @@ export {
   MEDIUM_TROUBLE_KEYWORDS,
   LOW_TROUBLE_KEYWORDS,
   CAUSED_TROUBLE_KEYWORDS,
-  // Types
-  type TripTroubleResult,
 } from './tripTrouble';
 
 // Re-export trip trouble types from types/scoring
-export type { TripTroubleConfidence, TroubledRace } from '../../types/scoring';
+export type { TripTroubleResult, TripTroubleConfidence, TroubledRace } from '../../types/scoring';
