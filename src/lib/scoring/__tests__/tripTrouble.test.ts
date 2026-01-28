@@ -46,8 +46,8 @@ function createMockPP(
     raceNumber: 1,
     distanceFurlongs: 6,
     distance: '6f',
-    surface: 'D',
-    trackCondition: 'Fast',
+    surface: 'dirt',
+    trackCondition: 'fast',
     classification: 'claiming',
     claimingPrice: 25000,
     purse: 50000,
@@ -59,15 +59,24 @@ function createMockPP(
     finalTimeFormatted: '1:11.50',
     speedFigures: {
       beyer: options.beyer ?? 75,
-      bris: null,
-      jcapper: null,
+      timeformUS: null,
+      equibase: null,
+      trackVariant: null,
+      dirtVariant: null,
+      turfVariant: null,
     },
     runningLine: {
       start: 4,
-      firstCall: 3,
-      secondCall: 3,
+      quarterMile: 3,
+      quarterMileLengths: 2,
+      halfMile: 3,
+      halfMileLengths: 2,
+      threeQuarters: 4,
+      threeQuartersLengths: 3,
       stretch: 4,
+      stretchLengths: 4,
       finish: 5,
+      finishLengths: 5,
     },
     jockey: 'Test Jockey',
     weight: 122,
@@ -144,7 +153,7 @@ function createMockHorse(
     salesPrice: null,
     salesLocation: null,
     siresSire: 'Test Sires Sire',
-  } as HorseEntry;
+  } as unknown as HorseEntry;
 }
 
 // ============================================================================
