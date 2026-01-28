@@ -95,7 +95,7 @@ const MULTI_BOT_TIMEOUT_MS = 15000;
 const SERVERLESS_ENDPOINT = '/api/gemini';
 
 // Direct API configuration (for Node.js/test environments)
-const GEMINI_MODEL = 'gemini-2.0-flash-lite';
+const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash-lite';
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const DIRECT_API_CONFIG = {
   temperature: 0.7,
@@ -103,6 +103,35 @@ const DIRECT_API_CONFIG = {
   topP: 0.95,
   topK: 40,
 };
+
+// ============================================================================
+// PER-BOT MODEL CONFIGURATION
+// ============================================================================
+
+/**
+ * Model configuration per bot type.
+ *
+ * - Trip Trouble and Field Spread use gemini-2.0-flash-lite (simpler tasks)
+ * - Pace Scenario and Vulnerable Favorite use gemini-2.5-flash-lite (better instruction-following)
+ */
+export const BOT_MODEL_CONFIG = {
+  TRIP_TROUBLE: 'gemini-2.0-flash-lite',
+  PACE_SCENARIO: 'gemini-2.5-flash-lite',
+  VULNERABLE_FAVORITE: 'gemini-2.5-flash-lite',
+  FIELD_SPREAD: 'gemini-2.0-flash-lite',
+} as const;
+
+export type BotType = keyof typeof BOT_MODEL_CONFIG;
+
+/**
+ * Get the Gemini model for a specific bot type
+ *
+ * @param botType - The bot type to get the model for
+ * @returns The Gemini model string
+ */
+export function getModelForBot(botType: BotType): string {
+  return BOT_MODEL_CONFIG[botType];
+}
 
 // Proxy support for Node.js environments
 let proxyAgent: unknown = null;
@@ -272,7 +301,7 @@ interface GeminiDirectAPIResponse {
 async function callGeminiDirect(
   systemPrompt: string,
   userContent: string,
-  config?: { temperature?: number; maxOutputTokens?: number }
+  config?: { temperature?: number; maxOutputTokens?: number; model?: string }
 ): Promise<ServerlessResponse> {
   const apiKey = getDirectApiKey();
   if (!apiKey) {
@@ -282,7 +311,8 @@ async function callGeminiDirect(
     throw new Error(errorMsg);
   }
 
-  const url = `${GEMINI_API_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+  const model = config?.model || DEFAULT_GEMINI_MODEL;
+  const url = `${GEMINI_API_BASE}/${model}:generateContent?key=${apiKey}`;
 
   const payload = {
     contents: [
@@ -305,7 +335,8 @@ async function callGeminiDirect(
   const startTime = Date.now();
 
   console.log('=== [GEMINI] Direct API call starting... ===');
-  console.log(`[GEMINI] Target URL: ${GEMINI_API_BASE}/${GEMINI_MODEL}:generateContent`);
+  console.log(`[GEMINI] Using model: ${model}`);
+  console.log(`[GEMINI] Target URL: ${GEMINI_API_BASE}/${model}:generateContent`);
 
   // Get proxy agent if available
   const agent = await getProxyAgent();
@@ -369,7 +400,7 @@ async function callGeminiDirect(
     promptTokens: data.usageMetadata?.promptTokenCount || 0,
     completionTokens: data.usageMetadata?.candidatesTokenCount || 0,
     totalTokens: data.usageMetadata?.totalTokenCount || 0,
-    model: GEMINI_MODEL,
+    model,
     processingTimeMs,
   };
 }
@@ -387,10 +418,12 @@ async function callGeminiDirect(
 async function callGeminiServerless(
   systemPrompt: string,
   userContent: string,
-  config?: { temperature?: number; maxOutputTokens?: number },
+  config?: { temperature?: number; maxOutputTokens?: number; model?: string },
   signal?: AbortSignal
 ): Promise<ServerlessResponse> {
+  const model = config?.model || DEFAULT_GEMINI_MODEL;
   console.log('=== [GEMINI] Serverless API call starting... ===');
+  console.log(`[GEMINI] Using model: ${model}`);
   console.log(`[GEMINI] Target URL: ${SERVERLESS_ENDPOINT}`);
 
   const response = await fetch(SERVERLESS_ENDPOINT, {
@@ -401,6 +434,7 @@ async function callGeminiServerless(
       userContent,
       temperature: config?.temperature ?? DIRECT_API_CONFIG.temperature,
       maxOutputTokens: config?.maxOutputTokens ?? DIRECT_API_CONFIG.maxOutputTokens,
+      model,
     }),
     signal,
   });
@@ -428,14 +462,14 @@ async function callGeminiServerless(
  *
  * @param systemPrompt - System instruction for the AI
  * @param userContent - User content/prompt
- * @param config - Optional configuration overrides
+ * @param config - Optional configuration overrides (includes model selection)
  * @param signal - Optional abort signal for timeout (only used in browser)
  * @returns ServerlessResponse
  */
 async function callGeminiAPI(
   systemPrompt: string,
   userContent: string,
-  config?: { temperature?: number; maxOutputTokens?: number },
+  config?: { temperature?: number; maxOutputTokens?: number; model?: string },
   signal?: AbortSignal
 ): Promise<ServerlessResponse> {
   const isNode = isNodeEnvironment();
@@ -645,6 +679,8 @@ interface GeminiSchemaConfig {
   maxOutputTokens?: number;
   /** Override temperature (default: 0.2 from MULTI_BOT_CONFIG) */
   temperature?: number;
+  /** Specify which Gemini model to use */
+  model?: string;
 }
 
 /**
@@ -678,6 +714,7 @@ export async function callGeminiWithSchema<T>(
       {
         temperature: config?.temperature ?? MULTI_BOT_CONFIG.temperature,
         maxOutputTokens: config?.maxOutputTokens ?? MULTI_BOT_CONFIG.maxOutputTokens,
+        model: config?.model,
       },
       controller.signal
     );
@@ -1245,8 +1282,10 @@ export async function analyzeTripTrouble(
   scoringResult: RaceScoringResult
 ): Promise<TripTroubleAnalysis> {
   setCurrentBotName('TripTrouble');
+  const model = getModelForBot('TRIP_TROUBLE');
+  console.log(`[TRIP_TROUBLE] Using model: ${model}`);
   const prompt = buildTripTroublePrompt(race, scoringResult);
-  return callGeminiWithSchema(prompt, parseTripTroubleResponse);
+  return callGeminiWithSchema(prompt, parseTripTroubleResponse, { model });
 }
 
 /**
@@ -1261,9 +1300,11 @@ export async function analyzePaceScenario(
   scoringResult: RaceScoringResult
 ): Promise<PaceScenarioAnalysis> {
   setCurrentBotName('PaceScenario');
+  const model = getModelForBot('PACE_SCENARIO');
+  console.log(`[PACE_SCENARIO] Using model: ${model}`);
   const prompt = buildPaceScenarioPrompt(race, scoringResult);
   // Pace scenario has complex output with beneficiaries array - needs more tokens
-  return callGeminiWithSchema(prompt, parsePaceScenarioResponse, { maxOutputTokens: 512 });
+  return callGeminiWithSchema(prompt, parsePaceScenarioResponse, { maxOutputTokens: 512, model });
 }
 
 /**
@@ -1278,8 +1319,10 @@ export async function analyzeVulnerableFavorite(
   scoringResult: RaceScoringResult
 ): Promise<VulnerableFavoriteAnalysis> {
   setCurrentBotName('VulnerableFavorite');
+  const model = getModelForBot('VULNERABLE_FAVORITE');
+  console.log(`[VULNERABLE_FAVORITE] Using model: ${model}`);
   const prompt = buildVulnerableFavoritePrompt(race, scoringResult);
-  return callGeminiWithSchema(prompt, parseVulnerableFavoriteResponse);
+  return callGeminiWithSchema(prompt, parseVulnerableFavoriteResponse, { model });
 }
 
 /**
@@ -1294,7 +1337,9 @@ export async function analyzeFieldSpread(
   scoringResult: RaceScoringResult
 ): Promise<FieldSpreadAnalysis> {
   setCurrentBotName('FieldSpread');
+  const model = getModelForBot('FIELD_SPREAD');
+  console.log(`[FIELD_SPREAD] Using model: ${model}`);
   const prompt = buildFieldSpreadPrompt(race, scoringResult);
   // Field spread has very large output with horseClassifications array - needs more tokens
-  return callGeminiWithSchema(prompt, parseFieldSpreadResponse, { maxOutputTokens: 512 });
+  return callGeminiWithSchema(prompt, parseFieldSpreadResponse, { maxOutputTokens: 512, model });
 }
