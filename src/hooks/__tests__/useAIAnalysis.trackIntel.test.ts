@@ -188,6 +188,7 @@ function createMockHorseScore(): HorseScore {
     paperTigerPenaltyApplied: false,
     paperTigerPenaltyAmount: 0,
     keyRaceIndexBonus: 0,
+    fieldSpreadAdjustment: 0,
   };
 }
 

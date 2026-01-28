@@ -131,13 +131,19 @@ export interface FieldSpreadResult {
  * @returns Score gaps object
  */
 function calculateScoreGaps(sorted: RankedHorseInput[]): ScoreGaps {
+  const first = sorted[0];
+  const second = sorted[1];
+  const third = sorted[2];
+  const fourth = sorted[3];
+  const fifth = sorted[4];
+
   return {
-    first_to_second: sorted[0].totalScore - (sorted[1]?.totalScore ?? 0),
-    second_to_third: (sorted[1]?.totalScore ?? 0) - (sorted[2]?.totalScore ?? 0),
-    third_to_fourth: (sorted[2]?.totalScore ?? 0) - (sorted[3]?.totalScore ?? 0),
-    fourth_to_fifth: (sorted[3]?.totalScore ?? 0) - (sorted[4]?.totalScore ?? 0),
-    first_to_fourth: sorted[0].totalScore - (sorted[3]?.totalScore ?? 0),
-    first_to_fifth: sorted[0].totalScore - (sorted[4]?.totalScore ?? 0),
+    first_to_second: (first?.totalScore ?? 0) - (second?.totalScore ?? 0),
+    second_to_third: (second?.totalScore ?? 0) - (third?.totalScore ?? 0),
+    third_to_fourth: (third?.totalScore ?? 0) - (fourth?.totalScore ?? 0),
+    fourth_to_fifth: (fourth?.totalScore ?? 0) - (fifth?.totalScore ?? 0),
+    first_to_fourth: (first?.totalScore ?? 0) - (fourth?.totalScore ?? 0),
+    first_to_fifth: (first?.totalScore ?? 0) - (fifth?.totalScore ?? 0),
   };
 }
 
@@ -164,10 +170,14 @@ function determineFieldType(gaps: ScoreGaps, sorted: RankedHorseInput[]): FieldT
 
   // WIDE_OPEN: Top 6 within 20 points (need at least 6 horses)
   if (sorted.length >= FIELD_SPREAD_CONFIG.WIDE_OPEN_MIN_FIELD_SIZE) {
-    const top6Range =
-      sorted[0].totalScore - (sorted[5]?.totalScore ?? sorted[sorted.length - 1].totalScore);
-    if (top6Range <= FIELD_SPREAD_CONFIG.WIDE_OPEN_RANGE) {
-      return 'WIDE_OPEN';
+    const first = sorted[0];
+    const sixth = sorted[5];
+    const last = sorted[sorted.length - 1];
+    if (first && (sixth || last)) {
+      const top6Range = first.totalScore - (sixth?.totalScore ?? last?.totalScore ?? 0);
+      if (top6Range <= FIELD_SPREAD_CONFIG.WIDE_OPEN_RANGE) {
+        return 'WIDE_OPEN';
+      }
     }
   }
 
@@ -199,7 +209,10 @@ function determineFieldType(gaps: ScoreGaps, sorted: RankedHorseInput[]): FieldT
 function assignTiers(sorted: RankedHorseInput[], _gaps: ScoreGaps): TierAssignments {
   const tiers: TierAssignments = { A: [], B: [], C: [], X: [] };
 
-  const topScore = sorted[0].totalScore;
+  const first = sorted[0];
+  if (!first) return tiers;
+
+  const topScore = first.totalScore;
 
   for (const horse of sorted) {
     const diff = topScore - horse.totalScore;
@@ -272,12 +285,15 @@ function calculateFieldAdjustments(
 ): FieldSpreadAdjustment[] {
   const adjustments: FieldSpreadAdjustment[] = [];
 
+  const first = sorted[0];
+  if (!first) return adjustments;
+
   switch (fieldType) {
     case 'DOMINANT':
       // Boost the dominant leader slightly (confidence premium)
       adjustments.push({
-        programNumber: sorted[0].programNumber,
-        horseName: sorted[0].horseName,
+        programNumber: first.programNumber,
+        horseName: first.horseName,
         adjustment: FIELD_SPREAD_CONFIG.DOMINANT_BOOST,
         reason: 'Dominant leader confidence boost',
       });
@@ -286,8 +302,8 @@ function calculateFieldAdjustments(
     case 'CHALKY':
       // Small boost to top 2
       adjustments.push({
-        programNumber: sorted[0].programNumber,
-        horseName: sorted[0].horseName,
+        programNumber: first.programNumber,
+        horseName: first.horseName,
         adjustment: FIELD_SPREAD_CONFIG.CHALKY_BOOST,
         reason: 'Chalky race top tier boost',
       });
@@ -304,8 +320,8 @@ function calculateFieldAdjustments(
     case 'WIDE_OPEN':
       // Penalize the "leader" - false confidence in wide open field
       adjustments.push({
-        programNumber: sorted[0].programNumber,
-        horseName: sorted[0].horseName,
+        programNumber: first.programNumber,
+        horseName: first.horseName,
         adjustment: FIELD_SPREAD_CONFIG.WIDE_OPEN_LEADER_PENALTY,
         reason: 'Wide open field, reduced confidence in top pick',
       });
@@ -336,8 +352,8 @@ function calculateFieldAdjustments(
       // Boost the clear top tier slightly
       if (gaps.first_to_second >= 20) {
         adjustments.push({
-          programNumber: sorted[0].programNumber,
-          horseName: sorted[0].horseName,
+          programNumber: first.programNumber,
+          horseName: first.horseName,
           adjustment: FIELD_SPREAD_CONFIG.SEPARATED_BOOST,
           reason: 'Clear separation from field',
         });
@@ -404,11 +420,14 @@ function checkSitOutConditions(
   gaps: ScoreGaps,
   sorted: RankedHorseInput[]
 ): { sitOutFlag: boolean; sitOutReason: string | null } {
+  const first = sorted[0];
+  if (!first) return { sitOutFlag: false, sitOutReason: null };
+
   // Sit out if top score is below 140 (no confident contenders)
-  if (sorted[0].totalScore < FIELD_SPREAD_CONFIG.MIN_TOP_SCORE) {
+  if (first.totalScore < FIELD_SPREAD_CONFIG.MIN_TOP_SCORE) {
     return {
       sitOutFlag: true,
-      sitOutReason: `Top score (${sorted[0].totalScore}) below confidence threshold (${FIELD_SPREAD_CONFIG.MIN_TOP_SCORE})`,
+      sitOutReason: `Top score (${first.totalScore}) below confidence threshold (${FIELD_SPREAD_CONFIG.MIN_TOP_SCORE})`,
     };
   }
 
@@ -533,7 +552,7 @@ export function analyzeFieldSpread(rankedHorses: RankedHorseInput[]): FieldSprea
   return {
     fieldType,
     confidence,
-    topScore: sorted[0].totalScore,
+    topScore: sorted[0]?.totalScore ?? 0,
     scoreGaps,
     tiers,
     adjustments,
