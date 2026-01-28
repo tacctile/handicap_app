@@ -146,6 +146,14 @@ import {
   type PaceRunningStyle,
   type PaceScenarioConfidence,
 } from './paceScenario';
+import {
+  analyzeFieldSpread,
+  getFieldSpreadAdjustment,
+  getHorseTier,
+  logFieldSpreadAnalysis,
+  type FieldSpreadResult,
+  type FieldType,
+} from './fieldSpread';
 
 // ============================================================================
 // CONSTANTS
@@ -483,6 +491,13 @@ export interface ScoreBreakdown {
     confidence: PaceScenarioConfidence;
     reason: string;
   };
+  /** Field Spread analysis (score separation and betting confidence) */
+  fieldSpread?: {
+    fieldType: FieldType;
+    tier: 'A' | 'B' | 'C' | 'X';
+    adjustment: number;
+    reason: string;
+  };
 }
 
 /** Complete score result for a horse */
@@ -521,6 +536,10 @@ export interface HorseScore {
   keyRaceIndexBonus: number;
   /** Key Race Index full result */
   keyRaceIndexResult?: KeyRaceIndexResult;
+  /** Field Spread adjustment applied */
+  fieldSpreadAdjustment: number;
+  /** Field Spread full result (stored at race level, referenced here) */
+  fieldSpreadResult?: FieldSpreadResult;
 }
 
 /** Scored horse with index for sorting */
@@ -886,6 +905,8 @@ function calculateHorseScoreWithContext(
       paperTigerPenaltyAmount: 0,
       keyRaceIndexBonus: 0,
       keyRaceIndexResult: undefined,
+      fieldSpreadAdjustment: 0,
+      fieldSpreadResult: undefined,
     };
   }
 
@@ -1333,6 +1354,9 @@ function calculateHorseScoreWithContext(
     // Key Race Index - will be populated in second pass by calculateRaceScores
     keyRaceIndexBonus: 0,
     keyRaceIndexResult: undefined,
+    // Field Spread - will be populated in third pass by calculateRaceScores
+    fieldSpreadAdjustment: 0,
+    fieldSpreadResult: undefined,
   };
 }
 
@@ -1502,6 +1526,72 @@ export function calculateRaceScores(
   // 1. The bonus is small (max +6 pts) and unlikely to change relative ranks
   // 2. Rankings should be stable for UI consistency
   // 3. Key Race Index is informational enhancement, not a ranking factor
+
+  // =========================================================================
+  // PASS 3: Field Spread Analysis (requires all horses scored first)
+  // =========================================================================
+  // Analyzes score separation to determine field competitiveness and betting confidence
+  // This is a race-level analysis that affects individual horse adjustments
+
+  // Build ranked list from current scores for field spread analysis
+  const rankedForSpread = scoredHorses
+    .filter((sh) => !sh.score.isScratched)
+    .map((sh) => ({
+      programNumber: sh.horse.programNumber,
+      horseName: sh.horse.horseName,
+      totalScore: sh.score.baseScore, // Use baseScore for field analysis
+      rank: sh.rank,
+    }))
+    .sort((a, b) => b.totalScore - a.totalScore);
+
+  const fieldSpreadResult = analyzeFieldSpread(rankedForSpread);
+
+  // Log field spread analysis for debugging
+  logFieldSpreadAnalysis(fieldSpreadResult);
+
+  // Apply field spread adjustments to each horse
+  scoredHorses.forEach((sh) => {
+    if (sh.score.isScratched) return;
+
+    // Get adjustment for this horse (can be positive or negative)
+    const fieldAdjustment = getFieldSpreadAdjustment(fieldSpreadResult, sh.horse.programNumber);
+
+    // Get tier assignment for this horse
+    const tier = getHorseTier(fieldSpreadResult, sh.horse.programNumber);
+
+    // Store field spread results
+    sh.score.fieldSpreadAdjustment = fieldAdjustment;
+    sh.score.fieldSpreadResult = fieldSpreadResult;
+
+    // Add field spread to breakdown
+    sh.score.breakdown.fieldSpread = {
+      fieldType: fieldSpreadResult.fieldType,
+      tier: tier ?? 'X',
+      adjustment: fieldAdjustment,
+      reason:
+        fieldAdjustment !== 0
+          ? (fieldSpreadResult.adjustments.find((a) => a.programNumber === sh.horse.programNumber)
+              ?.reason ?? '')
+          : `Tier ${tier ?? 'X'}: ${fieldSpreadResult.reason}`,
+    };
+
+    // Apply field spread adjustment to scores (final confidence modifier)
+    if (fieldAdjustment !== 0) {
+      sh.score.baseScore = Math.max(0, sh.score.baseScore + fieldAdjustment);
+      sh.score.total = enforceScoreBoundaries(sh.score.baseScore + sh.score.overlayScore);
+
+      // Log adjustment
+      const sign = fieldAdjustment > 0 ? '+' : '';
+      console.log(
+        `[FIELD_SPREAD] ${sign}${fieldAdjustment} ${sh.horse.horseName}: ${sh.score.breakdown.fieldSpread.reason}`
+      );
+    }
+  });
+
+  // Note: We don't re-rank after Field Spread because:
+  // 1. Adjustments are small (-2 to +3 pts)
+  // 2. Rankings should be stable for UI consistency
+  // 3. Field spread is a confidence modifier, not a ranking factor
 
   // Sort by post position for display (scratched horses stay in place)
   scoredHorses.sort((a, b) => {
@@ -2173,3 +2263,31 @@ export {
 
 // Re-export trip trouble types from types/scoring
 export type { TripTroubleResult, TripTroubleConfidence, TroubledRace } from '../../types/scoring';
+
+// Field Spread Analysis exports (algorithmic field spread scoring)
+export {
+  // Main functions
+  analyzeFieldSpread,
+  // Utility functions
+  getHorseTier,
+  getFieldSpreadAdjustment,
+  hasSignificantFieldSpread,
+  getFieldTypeDisplayInfo,
+  getConfidenceDisplayInfo,
+  getFieldSpreadColor,
+  getFieldSpreadSummary,
+  logFieldSpreadAnalysis,
+  // Constants
+  FIELD_SPREAD_CONFIG,
+  FIELD_TYPE_DEFINITIONS,
+  BETTING_CONFIDENCE_DEFINITIONS,
+  // Types
+  type FieldSpreadResult,
+  type FieldType,
+  type BettingConfidence,
+  type ScoreGaps,
+  type TierAssignments,
+  type FieldSpreadAdjustment,
+  type BoxSizeRecommendation,
+  type RankedHorseInput,
+} from './fieldSpread';

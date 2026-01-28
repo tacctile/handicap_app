@@ -407,6 +407,7 @@ function createMockHorseScore(overrides?: Partial<HorseScore>): HorseScore {
     paperTigerPenaltyApplied: false,
     paperTigerPenaltyAmount: 0,
     keyRaceIndexBonus: 0,
+    fieldSpreadAdjustment: 0,
     ...overrides,
   };
 }
