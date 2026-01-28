@@ -174,7 +174,7 @@ export {
  * Default: false (for backwards compatibility with existing tests)
  * Set to true to enable the new consensus architecture for production A/B testing.
  */
-export const USE_CONSENSUS_ARCHITECTURE = false;
+export const USE_CONSENSUS_ARCHITECTURE = true;
 
 /** Default configuration - single-bot mode for backwards compatibility */
 const defaultConfig: AIServiceConfig = {
