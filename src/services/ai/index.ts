@@ -6,6 +6,25 @@
  * Supports both single-bot and multi-bot parallel architectures.
  */
 
+// ============================================================================
+// MASTER AI TOGGLE
+// ============================================================================
+
+/**
+ * MASTER AI TOGGLE
+ * When false: Algorithm drives 100% of bet decisions
+ * When true: AI bots participate in analysis (for future use)
+ *
+ * As of January 2026: AI has not proven additive value.
+ * Algorithm baseline outperforms all AI integration attempts.
+ * - Algorithm: 33.3% exacta box 4, 37.8% trifecta box 5
+ * - AI integration: matched or degraded these numbers, never improved them
+ *
+ * Decision: Sideline AI from bet decisions. Algorithm drives everything.
+ * AI code stays intact for future experimentation (Horse Summary Bot, potential reintegration later).
+ */
+export const AI_ENABLED_FOR_BETS = false;
+
 import {
   analyzeRaceWithGemini,
   analyzeTripTrouble,
@@ -53,6 +72,9 @@ import type {
   ConsensusSizing,
   ConsensusTicketResult,
   ExtendedTicketConstruction,
+  // Algorithm-only types
+  AlgorithmOnlyTicket,
+  AlgorithmOnlyConfidence,
 } from './types';
 // Import runtime constant separately (not via import type)
 import { CONSENSUS_SIZING_MULTIPLIERS } from './types';
@@ -118,6 +140,9 @@ export type {
   ConsensusTicketResult,
   ExtendedTicketConstruction,
   CONSENSUS_SIZING_MULTIPLIERS,
+  // Algorithm-only types (when AI_ENABLED_FOR_BETS = false)
+  AlgorithmOnlyTicket,
+  AlgorithmOnlyConfidence,
   // Legacy types (deprecated)
   BetConstructionGuidance,
   ExactaStrategy,
@@ -171,10 +196,10 @@ export {
  *
  * Toggle for A/B testing the new architecture.
  *
- * Default: false (for backwards compatibility with existing tests)
- * Set to true to enable the new consensus architecture for production A/B testing.
+ * NOTE: As of January 2026, this is set to false because AI_ENABLED_FOR_BETS = false.
+ * AI bots are disabled for bet decisions. Algorithm drives 100% of bet recommendations.
  */
-export const USE_CONSENSUS_ARCHITECTURE = true;
+export const USE_CONSENSUS_ARCHITECTURE = false;
 
 /** Default configuration - single-bot mode for backwards compatibility */
 const defaultConfig: AIServiceConfig = {
@@ -201,6 +226,258 @@ export function configureAIService(config: Partial<AIServiceConfig>): void {
  */
 export function getAIServiceConfig(): AIServiceConfig {
   return { ...currentConfig };
+}
+
+// ============================================================================
+// ALGORITHM-ONLY BET PIPELINE
+// ============================================================================
+
+/**
+ * Calculate permutation for n items taken r at a time
+ */
+function permutation(n: number, r: number): number {
+  if (r > n) return 0;
+  let result = 1;
+  for (let i = 0; i < r; i++) {
+    result *= n - i;
+  }
+  return result;
+}
+
+/**
+ * Build algorithm-only ticket recommendations
+ *
+ * When AI_ENABLED_FOR_BETS = false, this function drives 100% of bet decisions.
+ * Uses proven algorithm baseline performance:
+ * - Exacta box 4: 33.3% hit rate
+ * - Trifecta box 5: 37.8% hit rate
+ *
+ * @param race - Parsed race data from DRF file
+ * @param scoringResult - Algorithm scoring results
+ * @returns AlgorithmOnlyTicket with bet recommendations
+ */
+export function buildAlgorithmOnlyTicket(
+  race: ParsedRace,
+  scoringResult: RaceScoringResult
+): AlgorithmOnlyTicket {
+  // Get non-scratched horses sorted by algorithm rank
+  const rankedHorses = scoringResult.scores
+    .filter((s) => !s.isScratched)
+    .sort((a, b) => a.rank - b.rank);
+
+  // Get top horses by algorithm rank
+  const top4 = rankedHorses.slice(0, 4);
+  const top5 = rankedHorses.slice(0, 5);
+  const top6 = rankedHorses.slice(0, 6);
+
+  // Calculate score separation (gap between #1 and #4)
+  const scoreSeparation =
+    top4.length >= 4 ? (top4[0]?.finalScore ?? 0) - (top4[3]?.finalScore ?? 0) : 0;
+
+  // Determine confidence based on score separation
+  let confidence: AlgorithmOnlyConfidence;
+  let confidenceReason: string;
+
+  if (scoreSeparation >= 25) {
+    confidence = 'HIGH';
+    confidenceReason = 'Strong separation between top picks';
+  } else if (scoreSeparation >= 15) {
+    confidence = 'MEDIUM';
+    confidenceReason = 'Moderate separation between top picks';
+  } else {
+    confidence = 'LOW';
+    confidenceReason = 'Tight field, top picks closely matched';
+  }
+
+  // Build ticket
+  const exactaBox = top4.map((h) => h.programNumber);
+  const trifectaBox = top5.map((h) => h.programNumber);
+  const superfectaBox = top6.map((h) => h.programNumber);
+
+  // Calculate combinations
+  const exactaCombinations = permutation(exactaBox.length, 2); // 4P2 = 12
+  const trifectaCombinations = permutation(trifectaBox.length, 3); // 5P3 = 60
+  const superfectaCombinations = permutation(superfectaBox.length, 4); // 6P4 = 360
+
+  // Calculate estimated cost at base units ($2 exacta, $1 tri, $0.50 super)
+  const estimatedCost =
+    exactaCombinations * 2 + trifectaCombinations * 1 + superfectaCombinations * 0.5;
+
+  // Log algorithm-only mode
+  console.log('[ALGORITHM-ONLY] Generating bet recommendations without AI');
+  console.log(`[ALGORITHM-ONLY] Exacta box: #${exactaBox.join(', #')}`);
+  console.log(`[ALGORITHM-ONLY] Trifecta box: #${trifectaBox.join(', #')}`);
+  console.log(`[ALGORITHM-ONLY] Superfecta box: #${superfectaBox.join(', #')}`);
+  console.log(`[ALGORITHM-ONLY] Confidence: ${confidence} - ${confidenceReason}`);
+  console.log(`[ALGORITHM-ONLY] Score separation: ${scoreSeparation.toFixed(1)} points`);
+
+  return {
+    exactaBox,
+    trifectaBox,
+    superfectaBox,
+    confidence,
+    confidenceReason,
+    topPick: {
+      programNumber: top4[0]?.programNumber ?? 0,
+      horseName: top4[0]?.horseName ?? 'Unknown',
+      score: top4[0]?.finalScore ?? 0,
+    },
+    scoreSeparation,
+    exactaCombinations,
+    trifectaCombinations,
+    superfectaCombinations,
+    estimatedCost,
+  };
+}
+
+/**
+ * Build AIRaceAnalysis from algorithm-only ticket
+ *
+ * Converts AlgorithmOnlyTicket to AIRaceAnalysis format for API compatibility.
+ * This allows the UI to work seamlessly whether AI is enabled or disabled.
+ *
+ * @param race - Parsed race data
+ * @param scoringResult - Algorithm scoring results
+ * @param ticket - Algorithm-only ticket
+ * @param processingTimeMs - Processing time in milliseconds
+ * @returns AIRaceAnalysis compatible with existing UI
+ */
+function buildAlgorithmOnlyAnalysis(
+  race: ParsedRace,
+  scoringResult: RaceScoringResult,
+  ticket: AlgorithmOnlyTicket,
+  processingTimeMs: number
+): AIRaceAnalysis {
+  const { scores } = scoringResult;
+
+  // Get non-scratched horses sorted by algorithm rank
+  const rankedScores = [...scores].filter((s) => !s.isScratched).sort((a, b) => a.rank - b.rank);
+
+  // Build horse insights based on algorithm ranking
+  const horseInsights = rankedScores.map((score) => {
+    const rank = score.rank;
+    const isTopPick = rank === 1;
+    const inExactaBox = rank <= 4;
+    const inTrifectaBox = rank <= 5;
+    const isContender = rank <= 4;
+
+    // Determine value label based on algorithm rank
+    let valueLabel: AIRaceAnalysis['horseInsights'][0]['valueLabel'];
+    if (isTopPick) {
+      valueLabel = 'BEST BET';
+    } else if (rank === 2 || rank === 3) {
+      valueLabel = 'SOLID PLAY';
+    } else if (rank === 4 || rank === 5) {
+      valueLabel = 'PRIME VALUE';
+    } else if (rank <= 7) {
+      valueLabel = 'WATCH ONLY';
+    } else {
+      valueLabel = 'NO VALUE';
+    }
+
+    // Build one-liner from algorithm factors
+    let oneLiner = '';
+    if (score.positiveFactors[0]) {
+      oneLiner = score.positiveFactors[0];
+    } else if (score.negativeFactors[0]) {
+      oneLiner = `Concern: ${score.negativeFactors[0]}`;
+    } else {
+      oneLiner = `Algorithm rank #${rank}`;
+    }
+
+    return {
+      programNumber: score.programNumber,
+      horseName: score.horseName,
+      projectedFinish: rank,
+      valueLabel,
+      oneLiner,
+      keyStrength: score.positiveFactors[0] || null,
+      keyWeakness: score.negativeFactors[0] || null,
+      isContender,
+      avoidFlag: rank > 7 && score.negativeFactors.length >= 2,
+    };
+  });
+
+  // Map algorithm confidence to AI confidence tiers
+  const confidenceMap: Record<AlgorithmOnlyConfidence, 'HIGH' | 'MEDIUM' | 'LOW'> = {
+    HIGH: 'HIGH',
+    MEDIUM: 'MEDIUM',
+    LOW: 'LOW',
+  };
+
+  // Build race narrative for algorithm-only mode
+  const topHorse = rankedScores[0];
+  const raceNarrative =
+    `ALGORITHM-ONLY MODE: AI bots disabled. ` +
+    `Top pick: #${topHorse?.programNumber} ${topHorse?.horseName} (score: ${topHorse?.finalScore?.toFixed(1)}). ` +
+    `Exacta box: #${ticket.exactaBox.join(', #')}. ` +
+    `Trifecta box: #${ticket.trifectaBox.join(', #')}. ` +
+    `Confidence: ${ticket.confidence} - ${ticket.confidenceReason}.`;
+
+  return {
+    raceId: `${race.header.trackCode}-${race.header.raceNumber}`,
+    raceNumber: race.header.raceNumber,
+    timestamp: new Date().toISOString(),
+    processingTimeMs,
+    raceNarrative,
+    confidence: confidenceMap[ticket.confidence],
+    bettableRace: true, // Algorithm-only always bettable
+    horseInsights,
+    topPick: ticket.topPick.programNumber,
+    avoidList: rankedScores.filter((s) => s.rank > 7).map((s) => s.programNumber),
+    vulnerableFavorite: false, // No AI vulnerability detection
+    likelyUpset: false, // No AI upset detection
+    chaoticRace: ticket.confidence === 'LOW', // Based on score separation only
+    // No AI bot debug info in algorithm-only mode
+    botDebugInfo: undefined,
+    // Build minimal ticket construction for compatibility
+    ticketConstruction: {
+      template: 'PASS' as const, // No template routing in algorithm-only mode
+      templateReason: 'Algorithm-only mode - AI bots disabled',
+      algorithmTop4: ticket.exactaBox,
+      favoriteStatus: 'SOLID' as const,
+      favoriteVulnerabilityFlags: [],
+      valueHorse: {
+        identified: false,
+        programNumber: null,
+        horseName: null,
+        sources: [],
+        signalStrength: 'NONE' as const,
+        angle: null,
+        valueOdds: null,
+        botConvergenceCount: 0,
+        reasoning: 'AI bots disabled - no value horse identification',
+      },
+      exacta: {
+        winPosition: ticket.exactaBox,
+        placePosition: ticket.exactaBox,
+        combinations: ticket.exactaCombinations,
+        estimatedCost: ticket.exactaCombinations * 2,
+      },
+      trifecta: {
+        winPosition: ticket.trifectaBox,
+        placePosition: ticket.trifectaBox,
+        showPosition: ticket.trifectaBox,
+        combinations: ticket.trifectaCombinations,
+        estimatedCost: ticket.trifectaCombinations * 1,
+      },
+      raceType: 'COMPETITIVE' as const,
+      confidenceScore: ticket.confidence === 'HIGH' ? 80 : ticket.confidence === 'MEDIUM' ? 60 : 40,
+      sizing: {
+        multiplier: 1.0,
+        recommendation: 'ALGORITHM_ONLY' as const,
+        reasoning: 'Algorithm-only mode - standard sizing',
+        suggestedExactaUnit: 2,
+        suggestedTrifectaUnit: 1,
+        totalInvestment: ticket.estimatedCost,
+      },
+      verdict: {
+        action: 'BET' as const,
+        summary: `Algorithm-only: Box top ${ticket.exactaBox.length} in exacta, top ${ticket.trifectaBox.length} in trifecta`,
+      },
+      isAlgorithmOnly: true,
+    },
+  };
 }
 
 // ============================================================================
@@ -585,6 +862,9 @@ export function analyzeClassDrop(
 // ============================================================================
 // MULTI-BOT PARALLEL ARCHITECTURE
 // ============================================================================
+// AI BOT ANALYSIS - CURRENTLY DISABLED
+// Set AI_ENABLED_FOR_BETS = true to re-enable
+// ============================================================================
 
 /**
  * Get AI analysis using multi-bot parallel architecture
@@ -598,10 +878,14 @@ export function analyzeClassDrop(
  *
  * Results are combined into the standard AIRaceAnalysis format.
  *
+ * NOTE: When AI_ENABLED_FOR_BETS = false, this function returns algorithm-only
+ * recommendations WITHOUT making any AI API calls. All AI code is preserved
+ * but bypassed.
+ *
  * @param race - Parsed race data from DRF file
  * @param scoringResult - Algorithm scoring results
  * @param options - Configuration options
- * @returns AIRaceAnalysis with combined multi-bot insights
+ * @returns AIRaceAnalysis with combined multi-bot insights (or algorithm-only if AI disabled)
  */
 export async function getMultiBotAnalysis(
   race: ParsedRace,
@@ -615,6 +899,37 @@ export async function getMultiBotAnalysis(
   if (!options?.forceRefresh && analysisCache.has(cacheKey)) {
     return analysisCache.get(cacheKey)!;
   }
+
+  // ============================================================================
+  // ALGORITHM-ONLY MODE: Early return when AI is disabled
+  // ============================================================================
+  if (!AI_ENABLED_FOR_BETS) {
+    console.log('='.repeat(60));
+    console.log('[ALGORITHM-ONLY] AI bots are DISABLED for bet decisions');
+    console.log('[ALGORITHM-ONLY] All recommendations based on algorithm ranking');
+    console.log('='.repeat(60));
+
+    // Build algorithm-only ticket
+    const algoTicket = buildAlgorithmOnlyTicket(race, scoringResult);
+
+    // Convert to AIRaceAnalysis format for API compatibility
+    const algorithmOnlyAnalysis = buildAlgorithmOnlyAnalysis(
+      race,
+      scoringResult,
+      algoTicket,
+      Date.now() - startTime
+    );
+
+    // Cache it
+    analysisCache.set(cacheKey, algorithmOnlyAnalysis);
+
+    return algorithmOnlyAnalysis;
+  }
+
+  // ============================================================================
+  // AI BOT ANALYSIS - CURRENTLY DISABLED
+  // Set AI_ENABLED_FOR_BETS = true to re-enable the code below
+  // ============================================================================
 
   // Launch the 4 AI bots in parallel with Promise.allSettled
   // Wrap each in try/catch with detailed error logging
