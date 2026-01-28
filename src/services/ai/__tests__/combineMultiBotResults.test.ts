@@ -238,19 +238,26 @@ describe('Three-Template Ticket Construction System', () => {
 
       const result = combineMultiBotResults(rawResults, race, scoring, 100);
 
-      // NEW: PASS template selected (routes to MINIMAL tier)
-      // "Solid favorite" = "Market is right" = No value edge
+      // NEW: PASS template selected but uses algorithm-only fallback
+      // "Solid favorite" = "Market is right" = Reduced edge, bet at 0.5x sizing
       expect(result.ticketConstruction?.template).toBe('PASS');
       expect(result.ticketConstruction?.templateReason).toContain('no identified value horse');
+      expect(result.ticketConstruction?.isAlgorithmOnly).toBe(true);
 
-      // PASS template = empty tickets (algorithm picks only)
-      expect(result.ticketConstruction?.exacta.winPosition).toEqual([]);
-      expect(result.ticketConstruction?.exacta.combinations).toBe(0);
-      expect(result.ticketConstruction?.exacta.estimatedCost).toBe(0);
+      // PASS template now uses algorithm-only fallback tickets (not empty)
+      // Exacta: Algorithm 1 WITH 2,3,4 (3 combinations)
+      expect(result.ticketConstruction?.exacta.winPosition).toEqual([1]);
+      expect(result.ticketConstruction?.exacta.placePosition).toEqual([2, 3, 4]);
+      expect(result.ticketConstruction?.exacta.combinations).toBe(3);
 
-      expect(result.ticketConstruction?.trifecta.winPosition).toEqual([]);
-      expect(result.ticketConstruction?.trifecta.combinations).toBe(0);
-      expect(result.ticketConstruction?.trifecta.estimatedCost).toBe(0);
+      // Trifecta: Algorithm 1 WITH 2,3,4 WITH 2,3,4 (6 combos with 4 horses)
+      expect(result.ticketConstruction?.trifecta.winPosition).toEqual([1]);
+      expect(result.ticketConstruction?.trifecta.placePosition).toEqual([2, 3, 4]);
+      expect(result.ticketConstruction?.trifecta.combinations).toBe(6);
+
+      // Sizing should be ALGORITHM_ONLY with 0.5x multiplier
+      expect(result.ticketConstruction?.sizing.recommendation).toBe('ALGORITHM_ONLY');
+      expect(result.ticketConstruction?.sizing.multiplier).toBe(0.5);
 
       // topPick = rank 1 (algorithm pick still shown)
       expect(result.topPick).toBe(1);
@@ -258,8 +265,8 @@ describe('Three-Template Ticket Construction System', () => {
       // Confidence should be MINIMAL
       expect(result.confidence).toBe('MINIMAL');
 
-      // Not bettable (MINIMAL tier)
-      expect(result.bettableRace).toBe(false);
+      // Now bettable with algorithm-only fallback (action = BET at reduced sizing)
+      expect(result.ticketConstruction?.verdict.action).toBe('BET');
     });
   });
 

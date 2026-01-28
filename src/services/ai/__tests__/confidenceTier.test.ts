@@ -601,7 +601,13 @@ describe('buildTicketConstruction', () => {
     expect(result.favoriteStatus).toBe('SOLID');
     expect(result.valueHorse.identified).toBe(false);
     expect(result.confidenceScore).toBeLessThan(40); // MINIMAL tier
-    expect(result.verdict.action).toBe('PASS');
+
+    // UPDATED: PASS races now use algorithm-only fallback at 0.5x sizing
+    // Instead of skipping entirely, they generate algorithm-based tickets
+    expect(result.isAlgorithmOnly).toBe(true);
+    expect(result.sizing.recommendation).toBe('ALGORITHM_ONLY');
+    expect(result.sizing.multiplier).toBe(0.5);
+    expect(result.verdict.action).toBe('BET'); // Changed from PASS to BET
   });
 
   it('should set template to B for VULNERABLE favorite with value horse (Scenario B)', () => {
@@ -803,7 +809,10 @@ describe('buildTicketConstruction', () => {
     expect(result.algorithmTop4[3]).toBe(4);
   });
 
-  it('should have empty exacta/trifecta for PASS template', () => {
+  it('should have algorithm-only fallback tickets for PASS template', () => {
+    // UPDATED: PASS template now uses algorithm-only fallback at 0.5x sizing
+    // instead of empty tickets. This preserves algorithm baseline performance
+    // (16.2% win rate, 33.3% exacta box 4) at reduced sizing.
     const signals = createMockAggregatedSignals([
       { programNumber: 1, horseName: 'Top Pick', algorithmRank: 1, algorithmScore: 200 },
       { programNumber: 2, horseName: 'Second', algorithmRank: 2, algorithmScore: 180 },
@@ -827,12 +836,23 @@ describe('buildTicketConstruction', () => {
     );
 
     expect(result.template).toBe('PASS');
-    expect(result.exacta.winPosition).toHaveLength(0);
-    expect(result.exacta.placePosition).toHaveLength(0);
-    expect(result.exacta.combinations).toBe(0);
-    expect(result.trifecta.winPosition).toHaveLength(0);
-    expect(result.trifecta.placePosition).toHaveLength(0);
-    expect(result.trifecta.showPosition).toHaveLength(0);
-    expect(result.trifecta.combinations).toBe(0);
+    expect(result.isAlgorithmOnly).toBe(true);
+
+    // Exacta: Algorithm 1 WITH 2,3,4 (3 combinations)
+    expect(result.exacta.winPosition).toEqual([1]);
+    expect(result.exacta.placePosition).toEqual([2, 3, 4]);
+    expect(result.exacta.combinations).toBe(3);
+
+    // Trifecta: Algorithm 1 WITH 2,3,4 WITH 2,3,4 (6 combos with 4 horses)
+    // Note: show position extends to 5th horse if available
+    expect(result.trifecta.winPosition).toEqual([1]);
+    expect(result.trifecta.placePosition).toEqual([2, 3, 4]);
+    // With only 4 horses, show = [2,3,4] (no 5th available)
+    expect(result.trifecta.showPosition).toEqual([2, 3, 4]);
+    expect(result.trifecta.combinations).toBe(6);
+
+    // Sizing should be ALGORITHM_ONLY with 0.5x multiplier
+    expect(result.sizing.recommendation).toBe('ALGORITHM_ONLY');
+    expect(result.sizing.multiplier).toBe(0.5);
   });
 });
