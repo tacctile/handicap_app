@@ -149,3 +149,7 @@ test-results/
 src/data/ai_comparison_results.json
 validation-results.json
 validation-summary.md
+
+# Algorithm validation results (generated)
+algorithm-validation-results.json
+algorithm-validation-summary.md
