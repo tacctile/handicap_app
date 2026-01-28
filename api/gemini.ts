@@ -14,8 +14,11 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 // CONFIGURATION
 // ============================================================================
 
-const GEMINI_MODEL = 'gemini-2.0-flash-lite';
+const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash-lite';
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+
+// Allowed models for security - prevents arbitrary model injection
+const ALLOWED_MODELS = ['gemini-2.0-flash-lite', 'gemini-2.5-flash-lite'] as const;
 
 const DEFAULT_CONFIG = {
   temperature: 0.7,
@@ -38,6 +41,7 @@ interface GeminiRequestBody {
   userContent: string;
   temperature?: number;
   maxOutputTokens?: number;
+  model?: string;
 }
 
 interface GeminiAPIResponse {
@@ -151,7 +155,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const { systemPrompt, userContent, temperature, maxOutputTokens } = req.body;
+  const {
+    systemPrompt,
+    userContent,
+    temperature,
+    maxOutputTokens,
+    model: requestedModel,
+  } = req.body;
+
+  // Validate and select model - use default if not specified or not allowed
+  const model =
+    requestedModel && ALLOWED_MODELS.includes(requestedModel as (typeof ALLOWED_MODELS)[number])
+      ? requestedModel
+      : DEFAULT_GEMINI_MODEL;
+
+  console.log(`[Gemini API] Using model: ${model}`);
 
   // Build Gemini API request
   const payload = {
@@ -172,7 +190,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     },
   };
 
-  const url = `${GEMINI_API_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+  const url = `${GEMINI_API_BASE}/${model}:generateContent?key=${apiKey}`;
 
   try {
     const startTime = Date.now();
@@ -234,7 +252,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       promptTokens: data.usageMetadata?.promptTokenCount || 0,
       completionTokens: data.usageMetadata?.candidatesTokenCount || 0,
       totalTokens: data.usageMetadata?.totalTokenCount || 0,
-      model: GEMINI_MODEL,
+      model,
       processingTimeMs,
     });
   } catch (error) {

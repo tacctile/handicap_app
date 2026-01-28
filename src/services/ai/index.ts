@@ -131,7 +131,13 @@ export {
   setCurrentBotName,
   getRawResponseLog,
   clearRawResponseLog,
+  // Per-bot model configuration
+  BOT_MODEL_CONFIG,
+  getModelForBot,
 } from './gemini';
+
+// Re-export BotType for consumers
+export type { BotType } from './gemini';
 
 // Re-export prompt builders for testing
 export {

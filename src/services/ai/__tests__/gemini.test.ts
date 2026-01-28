@@ -3,7 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { parseGeminiResponse } from '../gemini';
+import { parseGeminiResponse, BOT_MODEL_CONFIG, getModelForBot } from '../gemini';
+import type { BotType } from '../gemini';
 import { checkAIServiceStatus } from '../index';
 import type { AIServiceError } from '../types';
 
@@ -303,5 +304,65 @@ describe('checkAIServiceStatus', () => {
 
     // Browser environments assume ready, actual errors caught at call time
     expect(status).toBe('ready');
+  });
+});
+
+// ============================================================================
+// TESTS: Bot Model Configuration
+// ============================================================================
+
+describe('BOT_MODEL_CONFIG', () => {
+  it('defines all four bot types', () => {
+    expect(BOT_MODEL_CONFIG).toHaveProperty('TRIP_TROUBLE');
+    expect(BOT_MODEL_CONFIG).toHaveProperty('PACE_SCENARIO');
+    expect(BOT_MODEL_CONFIG).toHaveProperty('VULNERABLE_FAVORITE');
+    expect(BOT_MODEL_CONFIG).toHaveProperty('FIELD_SPREAD');
+  });
+
+  it('assigns gemini-2.0-flash-lite to Trip Trouble', () => {
+    expect(BOT_MODEL_CONFIG.TRIP_TROUBLE).toBe('gemini-2.0-flash-lite');
+  });
+
+  it('assigns gemini-2.5-flash-lite to Pace Scenario', () => {
+    expect(BOT_MODEL_CONFIG.PACE_SCENARIO).toBe('gemini-2.5-flash-lite');
+  });
+
+  it('assigns gemini-2.5-flash-lite to Vulnerable Favorite', () => {
+    expect(BOT_MODEL_CONFIG.VULNERABLE_FAVORITE).toBe('gemini-2.5-flash-lite');
+  });
+
+  it('assigns gemini-2.0-flash-lite to Field Spread', () => {
+    expect(BOT_MODEL_CONFIG.FIELD_SPREAD).toBe('gemini-2.0-flash-lite');
+  });
+});
+
+describe('getModelForBot', () => {
+  it('returns correct model for TRIP_TROUBLE', () => {
+    expect(getModelForBot('TRIP_TROUBLE')).toBe('gemini-2.0-flash-lite');
+  });
+
+  it('returns correct model for PACE_SCENARIO', () => {
+    expect(getModelForBot('PACE_SCENARIO')).toBe('gemini-2.5-flash-lite');
+  });
+
+  it('returns correct model for VULNERABLE_FAVORITE', () => {
+    expect(getModelForBot('VULNERABLE_FAVORITE')).toBe('gemini-2.5-flash-lite');
+  });
+
+  it('returns correct model for FIELD_SPREAD', () => {
+    expect(getModelForBot('FIELD_SPREAD')).toBe('gemini-2.0-flash-lite');
+  });
+
+  it('returns model matching BOT_MODEL_CONFIG for each bot type', () => {
+    const botTypes: BotType[] = [
+      'TRIP_TROUBLE',
+      'PACE_SCENARIO',
+      'VULNERABLE_FAVORITE',
+      'FIELD_SPREAD',
+    ];
+
+    botTypes.forEach((botType) => {
+      expect(getModelForBot(botType)).toBe(BOT_MODEL_CONFIG[botType]);
+    });
   });
 });
