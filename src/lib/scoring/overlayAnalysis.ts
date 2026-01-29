@@ -239,7 +239,7 @@ export const VALUE_LABELS: Record<ValueClassification, string> = {
  * Softmax produces probabilities that sum to 100% with larger
  * gaps between high/low scorers than linear division.
  *
- * @param horseBaseScore - This horse's base score (0-331)
+ * @param horseBaseScore - This horse's base score (0-319)
  * @param allFieldBaseScores - Array of all non-scratched horses' base scores
  * @param temperature - Optional temperature parameter (default from SOFTMAX_CONFIG)
  * @returns Win probability as percentage (0-100)
@@ -280,13 +280,13 @@ export function calculateFieldRelativeWinProbability(
 }
 
 /**
- * Convert a score (0-331 range) to win probability
+ * Convert a score (0-319 range) to win probability
  * LEGACY FUNCTION - use calculateFieldRelativeWinProbability for accurate results
  *
  * This standalone formula is only used when field context is not available.
  * It's less accurate because it doesn't account for field strength.
  *
- * Updated formula for 331-point scale:
+ * Updated formula for 319-point scale:
  * Win% = (Score / MAX_BASE_SCORE) × 50% (normalized to reasonable range)
  * Clamped between 2% and 50% for standalone calculations
  */
@@ -296,7 +296,7 @@ export function scoreToWinProbability(score: number): number {
 
   // For standalone calculations without field context,
   // use a conservative formula that doesn't over-inflate probabilities
-  // Score of 331 → 50%, Score of 165.5 → 25%, Score of 82.75 → 12.5%
+  // Score of 319 → 50%, Score of 159.5 → 25%, Score of 79.75 → 12.5%
   const rawProbability = (score / MAX_BASE_SCORE) * 50;
 
   // Clamp to realistic bounds (2% to 50%)
@@ -716,7 +716,7 @@ export function generateOverlayDescription(
  * NEW (v3.8): Also calculates normalized overlay using market probability
  * with takeout removed for more accurate value detection.
  *
- * @param horseBaseScore - Horse's base score (0-331)
+ * @param horseBaseScore - Horse's base score (0-319)
  * @param allFieldBaseScores - Array of all non-scratched horses' base scores
  * @param actualOdds - Current odds string (e.g., "5-1", "8-1")
  * @param fieldOdds - Optional array of all field odds for normalization
@@ -844,7 +844,7 @@ export function analyzeOverlayWithField(
  * NOTE: This function is less accurate because it doesn't consider field strength.
  * Use analyzeOverlayWithField when field context is available.
  *
- * @param score - Horse's total score (0-331)
+ * @param score - Horse's total score (0-319)
  * @param actualOdds - Current odds string (e.g., "5-1", "8-1")
  * @returns Complete overlay analysis
  */
@@ -1067,8 +1067,8 @@ export function calculateTierAdjustment(
     reasoning = `FOOL'S GOLD: Base score ${baseScore} looks good but ${Math.abs(overlayPercent).toFixed(0)}% underlay - overbet public choice`;
   }
 
-  // Clamp adjusted score (331 = max base score)
-  adjustedScore = Math.max(0, Math.min(331, adjustedScore));
+  // Clamp adjusted score (319 = max base score)
+  adjustedScore = Math.max(0, Math.min(319, adjustedScore));
 
   return {
     adjustedScore,

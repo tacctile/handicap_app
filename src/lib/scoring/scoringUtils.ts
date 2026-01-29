@@ -20,9 +20,9 @@ export const MIN_SCORE = 0;
 
 /**
  * Maximum base score before overlay
- * Audit-verified: 331 points (matches index.ts and ALGORITHM_REFERENCE.md)
+ * 319 points (odds factor removed from base scoring)
  */
-export const MAX_BASE_SCORE = 331;
+export const MAX_BASE_SCORE = 319;
 
 /**
  * Maximum overlay adjustment
@@ -40,20 +40,20 @@ export const MIN_OVERLAY_NEGATIVE = -40;
 export const MAX_PROTOCOL_BONUS = 60;
 
 /** Maximum final score (base + overlay) */
-export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 371
+export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 359
 
 /** Maximum display score (for UI - uses base score) */
-export const MAX_DISPLAY_SCORE = 331;
+export const MAX_DISPLAY_SCORE = 319;
 
 // Category maximums (Model B - Speed-Dominant Rebalance)
 export const SCORE_CATEGORY_LIMITS = {
   connections: 23, // Model B: reduced from 27
   postPosition: 12, // 3.6% - v3.0: reduced from 20
   speedClass: 140, // Model B: Speed 105 + Class 35
-  form: 42, // Model B: reduced from 50
+  form: 50, // v3.6: Form Decay System restored to 50
   equipment: 8, // 2.4% - v3.0: reduced from 12
   pace: 35, // Model B: reduced from 45
-  odds: 12, // Model B: reduced from 15
+  // NOTE: odds removed from base scoring (circular logic elimination)
   breeding: 15,
   classHiddenDrops: 10,
   trainerPatterns: 8, // Model B: reduced from 10
@@ -362,7 +362,7 @@ export function enforceCategoryBoundaries(score: number, categoryMax: number): n
 
 /**
  * Format score for display
- * Shows "331+" for scores exceeding display max
+ * Shows "319+" for scores exceeding display max
  *
  * @param score - The score to format
  * @returns Formatted score string

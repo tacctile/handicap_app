@@ -1,15 +1,15 @@
 /**
  * Odds-Based Scoring Module
  *
- * Model B: Incorporates market wisdom into scoring by giving favorites
- * appropriate baseline credit. This is NOT about value betting - it's about
- * incorporating the market signal that professional handicappers use.
+ * NOTE: This module is PRESERVED but REMOVED from base scoring pipeline.
+ * Odds data is still available for overlay calculations and informational purposes.
  *
- * Morning line odds represent the track handicapper's assessment of each
- * horse's chances. Strong favorites (short odds) have more evidence supporting
- * their chance to win. This module gives modest credit for that signal.
+ * Rationale for removal: The odds factor creates circular logic - rewarding
+ * horses for being favorites, then using that score to confirm they're favorites.
+ * This corrupts the model's independence from public opinion and makes true
+ * value detection impossible.
  *
- * MAX_ODDS_SCORE = 12 points (3.6% of 331 pt base score)
+ * MAX_ODDS_SCORE = 12 points (no longer added to base score)
  *
  * Tier Structure (Model B - 6 tiers):
  * - Heavy favorite (<2-1): 12 pts - Market strongly backs this horse

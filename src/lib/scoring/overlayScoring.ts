@@ -4,7 +4,7 @@
  * The ±40 Point Micro-Edge Capture Protocol
  *
  * This module implements the Overlay System that adds race-specific adjustments
- * on top of the base 331-point score. Each section captures micro-edges that
+ * on top of the base 319-point score. Each section captures micro-edges that
  * accumulate into significant advantages.
  *
  * Overlay Section Distribution:

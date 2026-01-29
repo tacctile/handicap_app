@@ -6,7 +6,7 @@
  * - Speed Figure Score: 0-105 points (based on Beyer/TimeformUS figures)
  * - Class Level Score: 0-35 points (based on class movement and success)
  *
- * Total: 0-140 points (42.3% of 331 base)
+ * Total: 0-140 points (43.9% of 319 base)
  *
  * v3.7 CHANGES (Speed Recency Decay Re-enabled):
  * - Re-enabled getRecencyDecayMultiplier() with calibrated tiers

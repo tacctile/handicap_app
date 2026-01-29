@@ -60,7 +60,7 @@ export interface OverlayPipelineInput {
 export interface OverlayHorseInput {
   /** Program number for identification */
   programNumber: number;
-  /** Base score (0-331 before overlay adjustments) */
+  /** Base score (0-319 before overlay adjustments) */
   baseScore: number;
   /** Final score (base + overlay adjustments) */
   finalScore: number;
@@ -714,11 +714,11 @@ export interface EnhancedScoringResult {
  * Based on base score ranges from the scoring engine
  */
 const TIER_THRESHOLDS = {
-  elite: 265, // 80%+ of 331 base score
-  strong: 216, // 65-80% of 331 base score
-  contender: 165, // 50-65% of 331 base score
-  fair: 116, // 35-50% of 331 base score
-  weak: 0, // Below 36%
+  elite: 255, // 80%+ of 319 base score
+  strong: 207, // 65-80% of 319 base score
+  contender: 160, // 50-65% of 319 base score
+  fair: 112, // 35-50% of 319 base score
+  weak: 0, // Below 35%
 } as const;
 
 /**

@@ -46,7 +46,7 @@ export const OVERLAY_CONFIG = {
     maxProbability: 0.95,
 
     /** Score scaling factor
-     *  Divides scores to normalize for softmax (100 works well for 0-331 range)
+     *  Divides scores to normalize for softmax (100 works well for 0-319 range)
      */
     scoreScale: 100,
   },
