@@ -20,9 +20,12 @@ export const MIN_SCORE = 0;
 
 /**
  * Maximum base score before overlay
- * 330 points (connections rebalanced: jockey 5→12, trainer 16→10, net +1)
+ * v4.0: 336 points (combo patterns expanded from 4 to 10)
+ *
+ * Combo patterns expansion: +6 points (was 4, now 10)
+ * Added negative combos: -6 to 0 (16 point total spread)
  */
-export const MAX_BASE_SCORE = 330;
+export const MAX_BASE_SCORE = 336;
 
 /**
  * Maximum overlay adjustment
@@ -40,10 +43,10 @@ export const MIN_OVERLAY_NEGATIVE = -40;
 export const MAX_PROTOCOL_BONUS = 60;
 
 /** Maximum final score (base + overlay) */
-export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 370
+export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 376
 
 /** Maximum display score (for UI - uses base score) */
-export const MAX_DISPLAY_SCORE = 330;
+export const MAX_DISPLAY_SCORE = 336;
 
 // Category maximums (Rebalanced Connections)
 export const SCORE_CATEGORY_LIMITS = {
@@ -56,8 +59,8 @@ export const SCORE_CATEGORY_LIMITS = {
   // NOTE: odds removed from base scoring (circular logic elimination)
   breeding: 15,
   classHiddenDrops: 10,
-  trainerPatterns: 8, // Model B: reduced from 10
-  comboPatterns: 4, // 1.2% - v3.0: reduced from 6
+  trainerPatterns: 8, // Model B: reduced from 10, with sample size discount tiers
+  comboPatterns: 10, // v4.0: expanded from 4, range -6 to +10 (16 pt spread)
 } as const;
 
 // ============================================================================

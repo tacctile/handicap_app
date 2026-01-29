@@ -156,29 +156,31 @@ import {
 
 /**
  * Maximum base score (before overlay)
- * REBALANCED CONNECTIONS: 330 pts (up from 329)
+ * v4.0: Increased from 330 to 336 due to combo pattern expansion
  *
  * Category breakdown:
  * - Speed & Class: 140 pts (Speed 105 + Class 35)
  * - Form: 50 pts (v3.6: Form Decay System)
  * - Pace: 45 pts (CONSOLIDATED: base 35 + scenario ±8, now unified)
- * - Connections: 24 pts (Jockey 12 + Trainer 10 + Partnership 2, rebalanced from 23)
+ * - Connections: 24 pts (Jockey 12 + Trainer 10 + Partnership 2)
  * - Post Position: 12 pts
  * - Equipment: 8 pts
  * - Distance/Surface: 20 pts
  * - Track Specialist: 10 pts
  * - Trainer Patterns: 8 pts
- * - Combo Patterns: 4 pts
+ * - Combo Patterns: 10 pts (v4.0: expanded from 4, range -6 to +10)
  * - Trainer Surface/Distance: 6 pts
  * - Weight: 1 pt
  * - P3 (Age + Sire's Sire): 2 pts
- * Total: 330 pts
+ * Total: 336 pts
  *
- * CONNECTIONS REBALANCE: Jockey increased from 5→12 pts, trainer decreased
- * from 16→10 pts. Academic studies show jockeys account for 8-12% of
- * outcome variance. Elite jockeys provide 6-8 length advantages.
+ * v4.0 CHANGES:
+ * - Combo patterns expanded from 4 to 10 pts max (+6)
+ * - Added negative combo patterns (-6 to 0 pts)
+ * - Net combo range: -6 to +10 (16 point spread)
+ * - Trainer pattern sample size increased to 15 for full credit
  */
-export const MAX_BASE_SCORE = 330;
+export const MAX_BASE_SCORE = 336;
 
 /**
  * Maximum overlay adjustment
@@ -187,7 +189,7 @@ export const MAX_BASE_SCORE = 330;
 export const MAX_OVERLAY = 40;
 
 /** Maximum total score (base + overlay) */
-export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 370
+export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 376
 
 /**
  * Score limits by category
@@ -199,18 +201,18 @@ export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 370
  * at 30-40% weight, with class providing additional context.
  *
  * Core Categories (282 pts):
- * - Speed/Class: 140 pts (42.6%) — Speed 105 pts (~31.9%) + Class 35 pts (~10.6%)
- * - Form: 50 pts (15.2%) — Recent performance patterns (v3.6 Form Decay)
- * - Pace: 45 pts (13.7%) — CONSOLIDATED: base + scenario adjustments unified
- * - Connections: 24 pts (7.3%) — Jockey 12 + Trainer 10 + Partnership 2
+ * - Speed/Class: 140 pts (41.7%) — Speed 105 pts (~31.3%) + Class 35 pts (~10.4%)
+ * - Form: 50 pts (14.9%) — Recent performance patterns (v3.6 Form Decay)
+ * - Pace: 45 pts (13.4%) — CONSOLIDATED: base + scenario adjustments unified
+ * - Connections: 24 pts (7.1%) — Jockey 12 + Trainer 10 + Partnership 2
  * - Post Position: 12 pts (3.6%) — Track-dependent situational factor
  * - Equipment: 8 pts (2.4%) — Speculative, fine-tuning only
  *
- * Bonus Categories (48 pts):
- * - Distance/Surface: 20 pts (6.1%) — Turf (8) + Wet (6) + Distance (6)
+ * Bonus Categories (54 pts):
+ * - Distance/Surface: 20 pts (6.0%) — Turf (8) + Wet (6) + Distance (6)
  * - Track Specialist: 10 pts (3.0%) — Proven success at today's track
- * - Trainer Patterns: 8 pts (2.4%) — Situational patterns
- * - Combo Patterns: 4 pts (1.2%) — Informational combo bonuses
+ * - Trainer Patterns: 8 pts (2.4%) — Situational patterns (with sample size discount)
+ * - Combo Patterns: 10 pts (3.0%) — v4.0: Expanded from 4 pts (range -6 to +10)
  * - Trainer Surface/Distance: 6 pts (1.8%) — Trainer specialization bonus
  *
  * Weight & P3 Refinements (3 pts):
@@ -218,7 +220,7 @@ export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 370
  * - Age Factor: ±1 pt (peak performance at 4-5yo, declining at 8+)
  * - Sire's Sire: ±1 pt (integrated into breeding for known influential sires)
  *
- * Total: 330 points base score
+ * Total: 336 points base score (v4.0: up from 330)
  *
  * NOTE: Pace scenario adjustments (±8 pts) are now integrated into the
  * 45-point pace score, not applied as a separate overlay layer.
@@ -232,36 +234,38 @@ export const SCORE_LIMITS = {
   pace: 45, // CONSOLIDATED: base 35 + scenario ±8 now unified into 0-45
   // NOTE: odds removed from base scoring (circular logic elimination)
   distanceSurface: 20, // Turf (8) + Wet (6) + Distance (6) = 20
-  trainerPatterns: 8, // Model B: reduced from 10
-  comboPatterns: 4,
+  trainerPatterns: 8, // Model B: reduced from 10, with sample size discount tiers
+  comboPatterns: 10, // v4.0: expanded from 4, range -6 to +10
   trackSpecialist: 10, // Model B: increased from 6
   trainerSurfaceDistance: 6, // Trainer surface/distance specialization
   weight: 1, // Weight change scoring (subtle refinement)
   // P3 refinements (subtle, ±1 pt each)
   ageFactor: 1, // Age-based peak performance (+1 for 4-5yo, -1 for 8+)
   siresSire: 1, // Sire's sire breeding influence (±1 integrated into breeding)
-  baseTotal: MAX_BASE_SCORE, // 330
+  baseTotal: MAX_BASE_SCORE, // 336
   overlayMax: MAX_OVERLAY, // 40
-  total: MAX_SCORE, // 370
+  total: MAX_SCORE, // 376
 } as const;
 
 /**
  * Score thresholds for color coding and tier classification
- * Based on BASE SCORE ONLY (330 max), not total score with overlay
+ * Based on BASE SCORE ONLY (336 max), not total score with overlay
+ *
+ * v4.0: Updated for 336 base score (up from 330)
  *
  * | Base Score | Percentage | Rating     |
  * |------------|------------|------------|
- * | 264+       | 80%+       | Elite      |
- * | 215-263    | 65-79%     | Strong     |
- * | 165-214    | 50-64%     | Contender  |
- * | 116-164    | 35-49%     | Fair       |
- * | Below 116  | <35%       | Weak       |
+ * | 269+       | 80%+       | Elite      |
+ * | 218-268    | 65-79%     | Strong     |
+ * | 168-217    | 50-64%     | Contender  |
+ * | 118-167    | 35-49%     | Fair       |
+ * | Below 118  | <35%       | Weak       |
  */
 export const SCORE_THRESHOLDS = {
-  elite: 264, // 80%+ of 330 base score
-  strong: 215, // 65-79% of 330 base score
-  contender: 165, // 50-64% of 330 base score
-  fair: 116, // 35-49% of 330 base score
+  elite: 269, // 80%+ of 336 base score (was 264)
+  strong: 218, // 65-79% of 336 base score (was 215)
+  contender: 168, // 50-64% of 336 base score (was 165)
+  fair: 118, // 35-49% of 336 base score (was 116)
   weak: 0, // Below 35%
 } as const;
 
@@ -594,9 +598,9 @@ export function parseOdds(oddsStr: string): number {
 
 /**
  * Get the color for a BASE score based on thresholds
- * IMPORTANT: This should be called with baseScore (0-330), NOT total score
+ * IMPORTANT: This should be called with baseScore (0-336), NOT total score
  *
- * @param baseScore - The horse's base score (0-330 range)
+ * @param baseScore - The horse's base score (0-336 range)
  * @param isScratched - Whether the horse is scratched
  */
 export function getScoreColor(baseScore: number, isScratched: boolean): string {
@@ -610,17 +614,19 @@ export function getScoreColor(baseScore: number, isScratched: boolean): string {
 
 /**
  * Get score tier name based on BASE score
- * IMPORTANT: This should be called with baseScore (0-319), NOT total score
+ * IMPORTANT: This should be called with baseScore (0-336), NOT total score
+ *
+ * v4.0 thresholds (for 336 base score):
  *
  * | Base Score | Percentage | Rating     |
  * |------------|------------|------------|
- * | 255+       | 80%+       | Elite      |
- * | 207-254    | 65-79%     | Strong     |
- * | 160-206    | 50-64%     | Contender  |
- * | 112-159    | 35-49%     | Fair       |
- * | Below 112  | <35%       | Weak       |
+ * | 269+       | 80%+       | Elite      |
+ * | 218-268    | 65-79%     | Strong     |
+ * | 168-217    | 50-64%     | Contender  |
+ * | 118-167    | 35-49%     | Fair       |
+ * | Below 118  | <35%       | Weak       |
  *
- * @param baseScore - The horse's base score (0-319 range)
+ * @param baseScore - The horse's base score (0-336 range)
  */
 export function getScoreTier(baseScore: number): string {
   if (baseScore >= SCORE_THRESHOLDS.elite) return 'Elite';

@@ -6,6 +6,15 @@
  *
  * Score: 0-8 points (Model B - reduced from 10, stacking multiple patterns, capped)
  *
+ * v4.0 CHANGES (Exacta Separation Enhancement):
+ * - Increased minimum sample size for full credit from 5 to 15 starts
+ * - Added tiered discount for small sample sizes:
+ *   - 15+ starts: 100% credit (full points)
+ *   - 10-14 starts: 70% credit
+ *   - 5-9 starts: 40% credit
+ *   - <5 starts: 0% credit (pattern not reliable)
+ * - This prevents over-crediting patterns with statistically meaningless samples
+ *
  * Model B CHANGES (Speed-Dominant Rebalance):
  * - Reduced from 10 to 8 pts to weight speed more heavily
  * - Scale factor: 0.8 (8/10)
@@ -65,7 +74,25 @@ export interface TrainerPatternResult {
  */
 const MAX_TRAINER_PATTERN_POINTS = 8;
 
-/** Minimum sample size to consider a pattern valid */
+/**
+ * Sample size tiers with credit percentages
+ * v4.0: Tiered discount prevents overvaluing small samples
+ *
+ * | Starts | Credit | Rationale |
+ * |--------|--------|-----------|
+ * | 15+    | 100%   | Statistically meaningful sample |
+ * | 10-14  | 70%    | Moderate confidence |
+ * | 5-9    | 40%    | Low confidence, pattern emerging |
+ * | <5     | 0%     | Not enough data, pattern unreliable |
+ */
+const SAMPLE_SIZE_TIERS = {
+  FULL: { minStarts: 15, credit: 1.0 },
+  MODERATE: { minStarts: 10, credit: 0.7 },
+  LOW: { minStarts: 5, credit: 0.4 },
+  NONE: { minStarts: 0, credit: 0.0 },
+} as const;
+
+/** Legacy constant for backward compatibility */
 const MIN_SAMPLE_SIZE = 5;
 
 /** Win percentage thresholds for equipment patterns */
@@ -115,11 +142,54 @@ const SPRINT_THRESHOLD = 7.5;
 // ============================================================================
 
 /**
- * Check if a pattern stat has enough data to be credible
+ * Check if a pattern stat has enough data to be credible (minimum 5 starts)
  */
 function hasCredibleData(stat: TrainerCategoryStat | undefined): boolean {
   if (!stat) return false;
   return stat.starts >= MIN_SAMPLE_SIZE;
+}
+
+/**
+ * Calculate sample size credit multiplier based on number of starts
+ *
+ * v4.0: Tiered discount to prevent overvaluing small sample sizes
+ *
+ * @param starts - Number of starts for this pattern
+ * @returns Credit multiplier (0.0 to 1.0)
+ *
+ * @example
+ * getSampleSizeCredit(20)  // 1.0 (full credit)
+ * getSampleSizeCredit(12)  // 0.7 (moderate confidence)
+ * getSampleSizeCredit(7)   // 0.4 (low confidence)
+ * getSampleSizeCredit(3)   // 0.0 (no credit - unreliable)
+ */
+function getSampleSizeCredit(starts: number): number {
+  if (starts >= SAMPLE_SIZE_TIERS.FULL.minStarts) {
+    return SAMPLE_SIZE_TIERS.FULL.credit;
+  }
+  if (starts >= SAMPLE_SIZE_TIERS.MODERATE.minStarts) {
+    return SAMPLE_SIZE_TIERS.MODERATE.credit;
+  }
+  if (starts >= SAMPLE_SIZE_TIERS.LOW.minStarts) {
+    return SAMPLE_SIZE_TIERS.LOW.credit;
+  }
+  return SAMPLE_SIZE_TIERS.NONE.credit;
+}
+
+/**
+ * Get sample size tier label for display
+ */
+function getSampleSizeTierLabel(starts: number): string {
+  if (starts >= SAMPLE_SIZE_TIERS.FULL.minStarts) {
+    return 'full';
+  }
+  if (starts >= SAMPLE_SIZE_TIERS.MODERATE.minStarts) {
+    return 'moderate';
+  }
+  if (starts >= SAMPLE_SIZE_TIERS.LOW.minStarts) {
+    return 'low';
+  }
+  return 'insufficient';
 }
 
 /**
@@ -314,7 +384,9 @@ function isWetTrack(raceHeader: RaceHeader): boolean {
 // ============================================================================
 
 /**
- * Score equipment pattern match
+ * Score equipment pattern match with sample size credit
+ *
+ * v4.0: Applies tiered discount for small sample sizes
  */
 function scoreEquipmentPattern(
   stat: TrainerCategoryStat,
@@ -323,30 +395,41 @@ function scoreEquipmentPattern(
 ): MatchedPattern | null {
   if (!hasCredibleData(stat)) return null;
 
-  let points = 0;
+  let basePoints = 0;
   let tier = '';
 
   if (stat.winPercent >= EQUIPMENT_THRESHOLDS.ELITE) {
-    points = maxPoints;
+    basePoints = maxPoints;
     tier = 'elite';
   } else if (stat.winPercent >= EQUIPMENT_THRESHOLDS.GOOD) {
-    points = Math.round(maxPoints * 0.5);
+    basePoints = Math.round(maxPoints * 0.5);
     tier = 'good';
   }
 
+  if (basePoints === 0) return null;
+
+  // v4.0: Apply sample size credit multiplier
+  const sampleCredit = getSampleSizeCredit(stat.starts);
+  const points = Math.round(basePoints * sampleCredit);
+
   if (points === 0) return null;
+
+  const sampleTier = getSampleSizeTierLabel(stat.starts);
+  const creditPct = Math.round(sampleCredit * 100);
 
   return {
     pattern: patternName,
     trainerWinPercent: stat.winPercent,
     trainerROI: stat.roi,
     points,
-    reasoning: `Trainer ${stat.winPercent.toFixed(0)}% (${tier}) with ${patternName} (${stat.starts} starts)`,
+    reasoning: `Trainer ${stat.winPercent.toFixed(0)}% (${tier}) with ${patternName} (${stat.starts} starts, ${creditPct}% credit - ${sampleTier} sample)`,
   };
 }
 
 /**
- * Score layoff pattern match
+ * Score layoff pattern match with sample size credit
+ *
+ * v4.0: Applies tiered discount for small sample sizes
  */
 function scoreLayoffPattern(
   stat: TrainerCategoryStat,
@@ -355,30 +438,41 @@ function scoreLayoffPattern(
 ): MatchedPattern | null {
   if (!hasCredibleData(stat)) return null;
 
-  let points = 0;
+  let basePoints = 0;
   let tier = '';
 
   if (stat.winPercent >= LAYOFF_THRESHOLDS.ELITE) {
-    points = maxPoints;
+    basePoints = maxPoints;
     tier = 'elite';
   } else if (stat.winPercent >= LAYOFF_THRESHOLDS.GOOD) {
-    points = Math.round(maxPoints * 0.5);
+    basePoints = Math.round(maxPoints * 0.5);
     tier = 'good';
   }
 
+  if (basePoints === 0) return null;
+
+  // v4.0: Apply sample size credit multiplier
+  const sampleCredit = getSampleSizeCredit(stat.starts);
+  const points = Math.round(basePoints * sampleCredit);
+
   if (points === 0) return null;
+
+  const sampleTier = getSampleSizeTierLabel(stat.starts);
+  const creditPct = Math.round(sampleCredit * 100);
 
   return {
     pattern: patternName,
     trainerWinPercent: stat.winPercent,
     trainerROI: stat.roi,
     points,
-    reasoning: `Trainer ${stat.winPercent.toFixed(0)}% (${tier}) ${patternName} (${stat.starts} starts)`,
+    reasoning: `Trainer ${stat.winPercent.toFixed(0)}% (${tier}) ${patternName} (${stat.starts} starts, ${creditPct}% credit - ${sampleTier} sample)`,
   };
 }
 
 /**
- * Score distance pattern match
+ * Score distance pattern match with sample size credit
+ *
+ * v4.0: Applies tiered discount for small sample sizes
  */
 function scoreDistancePattern(
   stat: TrainerCategoryStat,
@@ -387,30 +481,41 @@ function scoreDistancePattern(
 ): MatchedPattern | null {
   if (!hasCredibleData(stat)) return null;
 
-  let points = 0;
+  let basePoints = 0;
   let tier = '';
 
   if (stat.winPercent >= DISTANCE_THRESHOLDS.ELITE) {
-    points = maxPoints;
+    basePoints = maxPoints;
     tier = 'elite';
   } else if (stat.winPercent >= DISTANCE_THRESHOLDS.GOOD) {
-    points = Math.round(maxPoints * 0.5);
+    basePoints = Math.round(maxPoints * 0.5);
     tier = 'good';
   }
 
+  if (basePoints === 0) return null;
+
+  // v4.0: Apply sample size credit multiplier
+  const sampleCredit = getSampleSizeCredit(stat.starts);
+  const points = Math.round(basePoints * sampleCredit);
+
   if (points === 0) return null;
+
+  const sampleTier = getSampleSizeTierLabel(stat.starts);
+  const creditPct = Math.round(sampleCredit * 100);
 
   return {
     pattern: patternName,
     trainerWinPercent: stat.winPercent,
     trainerROI: stat.roi,
     points,
-    reasoning: `Trainer ${stat.winPercent.toFixed(0)}% (${tier}) ${patternName} (${stat.starts} starts)`,
+    reasoning: `Trainer ${stat.winPercent.toFixed(0)}% (${tier}) ${patternName} (${stat.starts} starts, ${creditPct}% credit - ${sampleTier} sample)`,
   };
 }
 
 /**
- * Score surface pattern match
+ * Score surface pattern match with sample size credit
+ *
+ * v4.0: Applies tiered discount for small sample sizes
  */
 function scoreSurfacePattern(
   stat: TrainerCategoryStat,
@@ -419,25 +524,36 @@ function scoreSurfacePattern(
 ): MatchedPattern | null {
   if (!hasCredibleData(stat)) return null;
 
-  let points = 0;
+  let basePoints = 0;
 
   if (stat.winPercent >= SURFACE_THRESHOLDS.ELITE) {
-    points = maxPoints;
+    basePoints = maxPoints;
   }
 
+  if (basePoints === 0) return null;
+
+  // v4.0: Apply sample size credit multiplier
+  const sampleCredit = getSampleSizeCredit(stat.starts);
+  const points = Math.round(basePoints * sampleCredit);
+
   if (points === 0) return null;
+
+  const sampleTier = getSampleSizeTierLabel(stat.starts);
+  const creditPct = Math.round(sampleCredit * 100);
 
   return {
     pattern: patternName,
     trainerWinPercent: stat.winPercent,
     trainerROI: stat.roi,
     points,
-    reasoning: `Trainer ${stat.winPercent.toFixed(0)}% on ${patternName} (${stat.starts} starts)`,
+    reasoning: `Trainer ${stat.winPercent.toFixed(0)}% on ${patternName} (${stat.starts} starts, ${creditPct}% credit - ${sampleTier} sample)`,
   };
 }
 
 /**
- * Score class pattern match
+ * Score class pattern match with sample size credit
+ *
+ * v4.0: Applies tiered discount for small sample sizes
  */
 function scoreClassPattern(
   stat: TrainerCategoryStat,
@@ -446,25 +562,36 @@ function scoreClassPattern(
 ): MatchedPattern | null {
   if (!hasCredibleData(stat)) return null;
 
-  let points = 0;
+  let basePoints = 0;
 
   if (stat.winPercent >= CLASS_THRESHOLDS.ELITE) {
-    points = maxPoints;
+    basePoints = maxPoints;
   }
 
+  if (basePoints === 0) return null;
+
+  // v4.0: Apply sample size credit multiplier
+  const sampleCredit = getSampleSizeCredit(stat.starts);
+  const points = Math.round(basePoints * sampleCredit);
+
   if (points === 0) return null;
+
+  const sampleTier = getSampleSizeTierLabel(stat.starts);
+  const creditPct = Math.round(sampleCredit * 100);
 
   return {
     pattern: patternName,
     trainerWinPercent: stat.winPercent,
     trainerROI: stat.roi,
     points,
-    reasoning: `Trainer ${stat.winPercent.toFixed(0)}% in ${patternName} (${stat.starts} starts)`,
+    reasoning: `Trainer ${stat.winPercent.toFixed(0)}% in ${patternName} (${stat.starts} starts, ${creditPct}% credit - ${sampleTier} sample)`,
   };
 }
 
 /**
- * Score acquisition pattern match
+ * Score acquisition pattern match with sample size credit
+ *
+ * v4.0: Applies tiered discount for small sample sizes
  */
 function scoreAcquisitionPattern(
   stat: TrainerCategoryStat,
@@ -473,25 +600,34 @@ function scoreAcquisitionPattern(
 ): MatchedPattern | null {
   if (!hasCredibleData(stat)) return null;
 
-  let points = 0;
+  let basePoints = 0;
   let tier = '';
 
   if (stat.winPercent >= ACQUISITION_THRESHOLDS.ELITE) {
-    points = maxPoints;
+    basePoints = maxPoints;
     tier = 'elite';
   } else if (stat.winPercent >= ACQUISITION_THRESHOLDS.GOOD) {
-    points = Math.round(maxPoints * 0.5);
+    basePoints = Math.round(maxPoints * 0.5);
     tier = 'good';
   }
 
+  if (basePoints === 0) return null;
+
+  // v4.0: Apply sample size credit multiplier
+  const sampleCredit = getSampleSizeCredit(stat.starts);
+  const points = Math.round(basePoints * sampleCredit);
+
   if (points === 0) return null;
+
+  const sampleTier = getSampleSizeTierLabel(stat.starts);
+  const creditPct = Math.round(sampleCredit * 100);
 
   return {
     pattern: patternName,
     trainerWinPercent: stat.winPercent,
     trainerROI: stat.roi,
     points,
-    reasoning: `Trainer ${stat.winPercent.toFixed(0)}% (${tier}) ${patternName} (${stat.starts} starts)`,
+    reasoning: `Trainer ${stat.winPercent.toFixed(0)}% (${tier}) ${patternName} (${stat.starts} starts, ${creditPct}% credit - ${sampleTier} sample)`,
   };
 }
 

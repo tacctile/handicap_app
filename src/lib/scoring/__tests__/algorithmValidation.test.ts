@@ -90,15 +90,17 @@ const LOW_CONFIDENCE_PENALTY = 0.15; // 15% base score penalty
 // Source: ALGORITHM_REFERENCE.md lines 83-91
 // =============================================================================
 
+// v4.0: Tier thresholds updated for 336 base score (up from 330)
+// Percentages: Tier 1 = 54%, Tier 2 = 48%, Tier 3 = 39%
 const TIER_THRESHOLDS = {
-  TIER_1_MIN: 180, // Chalk - ALGORITHM_REFERENCE.md line 87
-  TIER_2_MIN: 160, // Alternatives - ALGORITHM_REFERENCE.md line 88
-  TIER_2_MAX: 179,
-  TIER_3_MIN: 140, // Value - ALGORITHM_REFERENCE.md line 89
-  TIER_3_MAX: 159,
-  DIAMOND_CHECK_MIN: 120, // Special review - ALGORITHM_REFERENCE.md line 90
-  DIAMOND_CHECK_MAX: 139,
-  PASS_MAX: 119, // No bet - ALGORITHM_REFERENCE.md line 91
+  TIER_1_MIN: 181, // Chalk - 54% of 336 (was 180)
+  TIER_2_MIN: 161, // Alternatives - 48% of 336 (was 160)
+  TIER_2_MAX: 180, // (was 179)
+  TIER_3_MIN: 131, // Value - 39% of 336 (was 140)
+  TIER_3_MAX: 160, // (was 159)
+  DIAMOND_CHECK_MIN: 122, // Special review - 36% of 336 (was 120)
+  DIAMOND_CHECK_MAX: 130, // (was 139)
+  PASS_MAX: 121, // No bet (was 119)
 } as const;
 
 // =============================================================================
