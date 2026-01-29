@@ -226,7 +226,7 @@ function validateCategoryTotals(diagnostic: ScoringDiagnostic): boolean {
     diagnostic.paceScore +
     diagnostic.connectionsScore +
     diagnostic.distanceSurfaceScore +
-    diagnostic.oddsScore +
+    // NOTE: oddsScore removed from base scoring (circular logic elimination)
     diagnostic.postPositionScore +
     diagnostic.trainerPatternsScore +
     diagnostic.equipmentScore +
@@ -252,7 +252,7 @@ function hasNoNaNValues(diagnostic: ScoringDiagnostic): boolean {
     diagnostic.paceScore,
     diagnostic.connectionsScore,
     diagnostic.distanceSurfaceScore,
-    diagnostic.oddsScore,
+    // NOTE: oddsScore removed from base scoring (circular logic elimination)
     diagnostic.postPositionScore,
     diagnostic.trainerPatternsScore,
     diagnostic.equipmentScore,
@@ -375,9 +375,9 @@ export function formatDiagnosticTable(result: RaceDiagnosticResult): string {
   lines.push('═'.repeat(100));
   lines.push('');
 
-  // Header row
+  // Header row (ODD removed - odds no longer in base scoring)
   lines.push(
-    'PP  HORSE                    SPD  CLS  FRM  PCE  CON  D/S  ODD  PST  TRP  EQP  TRK  TSD  CMB  P3   WGT  BASE  OVR  TOTAL  RANK'
+    'PP  HORSE                    SPD  CLS  FRM  PCE  CON  D/S  PST  TRP  EQP  TRK  TSD  CMB  P3   WGT  BASE  OVR  TOTAL  RANK'
   );
   lines.push('─'.repeat(120));
 
@@ -392,7 +392,7 @@ export function formatDiagnosticTable(result: RaceDiagnosticResult): string {
       h.paceScore.toString().padStart(4),
       h.connectionsScore.toString().padStart(4),
       h.distanceSurfaceScore.toString().padStart(4),
-      h.oddsScore.toString().padStart(4),
+      // NOTE: oddsScore removed from base scoring (circular logic elimination)
       h.postPositionScore.toString().padStart(4),
       h.trainerPatternsScore.toString().padStart(4),
       h.equipmentScore.toString().padStart(4),
