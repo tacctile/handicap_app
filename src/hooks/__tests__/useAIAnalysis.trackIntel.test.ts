@@ -103,13 +103,7 @@ function createMockScoreBreakdown(): ScoreBreakdown {
       paceFit: 'favorable',
       reasoning: 'Test pace',
     },
-    odds: {
-      total: 8,
-      oddsValue: 5.0,
-      oddsSource: 'morning_line',
-      tier: 'Low',
-      reasoning: 'Test odds',
-    },
+    // NOTE: odds removed from breakdown (circular logic elimination)
     distanceSurface: {
       total: 12,
       turfScore: 0,
@@ -177,7 +171,7 @@ function createMockHorseScore(): HorseScore {
     total: 200,
     baseScore: 180,
     overlayScore: 20,
-    oddsScore: 8,
+    // NOTE: oddsScore removed from base scoring (circular logic elimination)
     breakdown: createMockScoreBreakdown(),
     isScratched: false,
     confidenceLevel: 'high',

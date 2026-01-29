@@ -41,8 +41,7 @@ export interface ScoringDiagnostic {
   connectionsScore: number;
   /** Distance/Surface affinity score (0-20 pts) */
   distanceSurfaceScore: number;
-  /** Odds-based score (0-15 pts) */
-  oddsScore: number;
+  // NOTE: oddsScore removed from base scoring (circular logic elimination)
   /** Post position score (0-12 pts) */
   postPositionScore: number;
   /** Trainer patterns score (0-10 pts) */
@@ -185,7 +184,7 @@ function scoreToDiagnostic(horse: HorseEntry, score: HorseScore, rank: number): 
     paceScore: breakdown.pace?.total ?? 0,
     connectionsScore: breakdown.connections?.total ?? 0,
     distanceSurfaceScore: breakdown.distanceSurface?.total ?? 0,
-    oddsScore: breakdown.odds?.total ?? 0,
+    // NOTE: oddsScore removed from base scoring (circular logic elimination)
     postPositionScore: breakdown.postPosition?.total ?? 0,
     trainerPatternsScore: breakdown.trainerPatterns?.total ?? 0,
     equipmentScore: breakdown.equipment?.total ?? 0,
@@ -227,7 +226,7 @@ function validateCategoryTotals(diagnostic: ScoringDiagnostic): boolean {
     diagnostic.paceScore +
     diagnostic.connectionsScore +
     diagnostic.distanceSurfaceScore +
-    diagnostic.oddsScore +
+    // NOTE: oddsScore removed from base scoring (circular logic elimination)
     diagnostic.postPositionScore +
     diagnostic.trainerPatternsScore +
     diagnostic.equipmentScore +
@@ -253,7 +252,7 @@ function hasNoNaNValues(diagnostic: ScoringDiagnostic): boolean {
     diagnostic.paceScore,
     diagnostic.connectionsScore,
     diagnostic.distanceSurfaceScore,
-    diagnostic.oddsScore,
+    // NOTE: oddsScore removed from base scoring (circular logic elimination)
     diagnostic.postPositionScore,
     diagnostic.trainerPatternsScore,
     diagnostic.equipmentScore,
@@ -376,9 +375,9 @@ export function formatDiagnosticTable(result: RaceDiagnosticResult): string {
   lines.push('═'.repeat(100));
   lines.push('');
 
-  // Header row
+  // Header row (ODD removed - odds no longer in base scoring)
   lines.push(
-    'PP  HORSE                    SPD  CLS  FRM  PCE  CON  D/S  ODD  PST  TRP  EQP  TRK  TSD  CMB  P3   WGT  BASE  OVR  TOTAL  RANK'
+    'PP  HORSE                    SPD  CLS  FRM  PCE  CON  D/S  PST  TRP  EQP  TRK  TSD  CMB  P3   WGT  BASE  OVR  TOTAL  RANK'
   );
   lines.push('─'.repeat(120));
 
@@ -393,7 +392,7 @@ export function formatDiagnosticTable(result: RaceDiagnosticResult): string {
       h.paceScore.toString().padStart(4),
       h.connectionsScore.toString().padStart(4),
       h.distanceSurfaceScore.toString().padStart(4),
-      h.oddsScore.toString().padStart(4),
+      // NOTE: oddsScore removed from base scoring (circular logic elimination)
       h.postPositionScore.toString().padStart(4),
       h.trainerPatternsScore.toString().padStart(4),
       h.equipmentScore.toString().padStart(4),

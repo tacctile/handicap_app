@@ -70,13 +70,7 @@ function createMockHorseScore(overrides: Partial<HorseScore> = {}): HorseScore {
       paceFit: 'favorable',
       reasoning: 'Test pace',
     },
-    odds: {
-      total: 8,
-      oddsValue: 4.0,
-      oddsSource: 'morning_line',
-      tier: 'mid',
-      reasoning: 'Test odds',
-    },
+    // NOTE: odds removed from breakdown (circular logic elimination)
     distanceSurface: {
       total: 12,
       turfScore: 6,
@@ -139,7 +133,7 @@ function createMockHorseScore(overrides: Partial<HorseScore> = {}): HorseScore {
     total: 210,
     baseScore: 200,
     overlayScore: 10,
-    oddsScore: 8,
+    // NOTE: oddsScore removed from base scoring (circular logic elimination)
     breakdown: mockBreakdown,
     isScratched: false,
     confidenceLevel: 'high',
@@ -232,7 +226,7 @@ describe('Overlay Pipeline Integration', () => {
       // Check all original fields are accessible
       expect(enhanced.originalScore.baseScore).toBe(200);
       expect(enhanced.originalScore.overlayScore).toBe(10);
-      expect(enhanced.originalScore.oddsScore).toBe(8);
+      // NOTE: oddsScore removed from base scoring (circular logic elimination)
       expect(enhanced.originalScore.confidenceLevel).toBe('high');
       expect(enhanced.originalScore.dataQuality).toBe(85);
       expect(enhanced.originalScore.breakdown.speedClass.total).toBe(100);

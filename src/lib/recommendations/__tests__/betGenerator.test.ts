@@ -93,13 +93,7 @@ function createMockScoreBreakdown(overrides: Partial<ScoreBreakdown> = {}): Scor
     },
     equipment: { total: 10, hasChanges: false, reasoning: 'Standard equipment' },
     pace: { total: 30, runningStyle: 'Stalker', paceFit: 'favorable', reasoning: 'Good pace fit' },
-    odds: {
-      total: 7,
-      oddsValue: 5.0,
-      oddsSource: 'morning_line' as const,
-      tier: 'Live Price',
-      reasoning: '5-1 morning line',
-    },
+    // NOTE: odds removed from breakdown (circular logic elimination)
     distanceSurface: {
       total: 0,
       turfScore: 0,
@@ -165,7 +159,7 @@ function createMockHorseScore(total: number, overrides: Partial<HorseScore> = {}
     total,
     baseScore: total,
     overlayScore: 0,
-    oddsScore: 7,
+    // NOTE: oddsScore removed from base scoring (circular logic elimination)
     breakdown: createMockScoreBreakdown(overrides.breakdown),
     isScratched: false,
     confidenceLevel: total >= 180 ? 'high' : total >= 160 ? 'medium' : 'low',
