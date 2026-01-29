@@ -1,6 +1,19 @@
 /**
  * PACE SCENARIO DETECTION
  *
+ * @deprecated This module is deprecated as of the Consolidated Pace Module update.
+ * Pace scenario adjustments are now integrated directly into pace.ts (0-45 pts).
+ * This file is kept for backwards compatibility with types and display purposes,
+ * but the getPaceAdjustmentForHorse() function should no longer be used for scoring.
+ *
+ * The adjustment logic is now in:
+ * - pace.ts: calculateIntegratedScenarioAdjustment()
+ * - pace.ts: determineIntegratedScenario()
+ *
+ * Types and analysis functions are still exported for informational display.
+ *
+ * --- ORIGINAL DOCUMENTATION ---
+ *
  * Analyzes field composition to identify pace advantages/disadvantages.
  * This is a field-relative tactical layer that adjusts scores based on
  * who is in today's field, not just individual pace ability.

@@ -1,24 +1,37 @@
 /**
- * Pace Scoring Module
+ * Pace Scoring Module - CONSOLIDATED
  * Analyzes pace scenarios and running style matchups
  *
- * Score Range: 0-35 points (Model B - reduced from 45)
- * 11.0% of 319 base score - High predictive value but reduced vs speed
+ * Score Range: 0-45 points (Consolidated module)
+ * 13.7% of 329 base score - High predictive value
+ *
+ * This module consolidates:
+ * - Base pace tactical scoring (scaled to 0-28 points)
+ * - Pace scenario adjustments (±8 points, integrated within 45-pt cap)
+ * - Track bias adjustments
+ * - Beaten lengths adjustments
+ * - Seasonal adjustments
+ * - Velocity analysis
  *
  * Integrates with paceAnalysis.ts for comprehensive pace detection:
- * - Running Style Classification (E, P, C, S)
+ * - Running Style Classification (E, P, C, S based on EP1 thresholds)
  * - Pace Pressure Index (PPI) calculation
  * - Tactical advantage scoring based on pace scenario
  *
- * Pace Scenario Scoring (from tactical advantage, rescaled by 35/40 = 0.875):
- * - Perfect pace fit (e.g., lone speed in soft pace): 22+ pts base + bonuses
- * - Good pace fit (e.g., presser in hot pace): 16-21 pts
- * - Neutral fit: 11-15 pts
- * - Poor fit (e.g., closer in soft pace): 5-10 pts
- * - Terrible fit: 0-4 pts
+ * Tactical Fit Scoring (base 0-28):
+ * - Perfect pace fit (e.g., lone speed in soft pace): 24+ pts
+ * - Good pace fit (e.g., presser in hot pace): 18-23 pts
+ * - Neutral fit: 12-17 pts
+ * - Poor fit (e.g., closer in soft pace): 6-11 pts
+ * - Terrible fit: 0-5 pts
  *
- * Model B: Pace reduced from 45 to 35 points to weight speed more heavily.
- * Pace is a situational factor; speed figures are intrinsic ability.
+ * Pace Scenario Bonuses/Penalties (within 45-pt cap):
+ * - LONE_SPEED: E +8, S -2
+ * - SPEED_DUEL: E -4, S/P +3
+ * - CHAOTIC (3+ E): E -5, S +4, P +2
+ * - SLOW (0 E, 0-1 EP): EP/P +2, S -3
+ * - CONTESTED: E -2, P/S +1
+ * - HONEST: no adjustments
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
@@ -165,6 +178,10 @@ export interface PaceScoreResult {
   detailedProfile?: RunningStyleProfile;
   tacticalAdvantage?: TacticalAdvantage;
   paceScenarioAnalysis?: PaceScenarioAnalysis;
+  /** Integrated scenario type (LONE_SPEED, SPEED_DUEL, etc.) - for display purposes */
+  integratedScenario?: IntegratedPaceScenario;
+  /** Integrated scenario adjustment applied (within 45-pt cap) */
+  integratedScenarioAdjustment?: number;
   // Pace figure analysis (EP1/LP)
   paceFigures?: PaceFigureAnalysis;
   paceFigureAdjustment?: { points: number; reasoning: string };
@@ -290,6 +307,131 @@ function toExpectedPace(scenario: PaceScenarioType): 'fast' | 'moderate' | 'slow
     case 'unknown':
       return 'moderate';
   }
+}
+
+// ============================================================================
+// INTEGRATED PACE SCENARIO ADJUSTMENTS (within 45-pt cap)
+// ============================================================================
+
+/**
+ * Pace scenario type for integrated adjustments
+ * These map to the scenarios from paceScenario.ts but are calculated inline
+ */
+export type IntegratedPaceScenario =
+  | 'LONE_SPEED' // One E type, huge advantage
+  | 'SPEED_DUEL' // 2 E types, likely pace collapse
+  | 'CONTESTED' // 2+ EP types pressuring
+  | 'HONEST' // Normal pace, fair for all
+  | 'SLOW' // No speed, closers disadvantaged
+  | 'CHAOTIC'; // 3+ speed types, unpredictable
+
+/**
+ * Integrated scenario adjustment constants
+ * These bonuses/penalties are now PART of the 45-point total, not a separate overlay
+ */
+export const INTEGRATED_SCENARIO_ADJUSTMENTS = {
+  // LONE_SPEED: E gets +8, S gets -2
+  LONE_SPEED: { E: 8, EP: 0, P: 0, S: -2, C: -2, U: 0 },
+
+  // SPEED_DUEL: E gets -4, S/P get +3
+  SPEED_DUEL: { E: -4, EP: 0, P: 3, S: 3, C: 3, U: 0 },
+
+  // CHAOTIC (3+ E): E gets -5, S gets +4, P gets +2
+  CHAOTIC: { E: -5, EP: 0, P: 2, S: 4, C: 4, U: 0 },
+
+  // SLOW (0 E, 0-1 EP): EP/P get +2, S gets -3
+  SLOW: { E: 0, EP: 2, P: 2, S: -3, C: -3, U: 0 },
+
+  // CONTESTED: E gets -2, P/S get +1
+  CONTESTED: { E: -2, EP: 0, P: 1, S: 1, C: 1, U: 0 },
+
+  // HONEST: no adjustments
+  HONEST: { E: 0, EP: 0, P: 0, S: 0, C: 0, U: 0 },
+} as const;
+
+/**
+ * Determine the integrated pace scenario from field analysis
+ *
+ * Uses the same logic as paceScenario.ts but operates on the already-analyzed
+ * pace scenario data from paceAnalysis.ts
+ */
+export function determineIntegratedScenario(
+  paceScenario: PaceScenarioAnalysis
+): IntegratedPaceScenario {
+  const earlySpeedCount = paceScenario.styleBreakdown.earlySpeed.length;
+  const presserCount = paceScenario.styleBreakdown.pressers.length;
+
+  // Chaotic: 3+ early speed types
+  if (earlySpeedCount >= 3) {
+    return 'CHAOTIC';
+  }
+
+  // Speed duel: 2 E types
+  if (earlySpeedCount === 2) {
+    return 'SPEED_DUEL';
+  }
+
+  // Lone speed: exactly 1 E type, 0-1 pressers
+  if (earlySpeedCount === 1 && presserCount <= 1) {
+    return 'LONE_SPEED';
+  }
+
+  // Contested: 1 E with 2+ pressers, or 0 E with 3+ pressers
+  if (
+    (earlySpeedCount === 1 && presserCount >= 2) ||
+    (earlySpeedCount === 0 && presserCount >= 3)
+  ) {
+    return 'CONTESTED';
+  }
+
+  // Slow: no E types and 0-1 pressers
+  if (earlySpeedCount === 0 && presserCount <= 1) {
+    return 'SLOW';
+  }
+
+  // Default: honest pace
+  return 'HONEST';
+}
+
+/**
+ * Calculate the integrated scenario adjustment for a horse
+ *
+ * Returns the bonus/penalty points to add to the base pace score.
+ * These adjustments are now part of the 45-point total, not a separate overlay.
+ *
+ * @param runningStyle - The horse's running style (E, EP, P, S, C, U)
+ * @param scenario - The integrated pace scenario
+ * @returns Object with adjustment points and reasoning
+ */
+export function calculateIntegratedScenarioAdjustment(
+  runningStyle: RunningStyleCode | RunningStyle,
+  scenario: IntegratedPaceScenario
+): { adjustment: number; reasoning: string } {
+  // Map RunningStyle 'EP' to 'E' or 'P' for adjustment lookup
+  // EP (Early Presser) gets the EP-specific adjustment
+  const styleKey = runningStyle as keyof (typeof INTEGRATED_SCENARIO_ADJUSTMENTS)['LONE_SPEED'];
+
+  const adjustments = INTEGRATED_SCENARIO_ADJUSTMENTS[scenario];
+  const adjustment = adjustments[styleKey] ?? 0;
+
+  if (adjustment === 0) {
+    return { adjustment: 0, reasoning: '' };
+  }
+
+  const scenarioLabels: Record<IntegratedPaceScenario, string> = {
+    LONE_SPEED: 'Lone speed',
+    SPEED_DUEL: 'Speed duel',
+    CHAOTIC: 'Chaotic pace (3+ E)',
+    SLOW: 'Slow pace',
+    CONTESTED: 'Contested pace',
+    HONEST: 'Honest pace',
+  };
+
+  const sign = adjustment > 0 ? '+' : '';
+  return {
+    adjustment,
+    reasoning: `${scenarioLabels[scenario]}: ${sign}${adjustment} pts`,
+  };
 }
 
 // ============================================================================
@@ -429,41 +571,50 @@ export function calculatePaceScore(
     }
   }
 
-  // Apply track bias adjustments using paceAdvantageRating for granular scoring
-  // Model B: Rescaled from 40 max to 35 max (scale factor: 35/40 = 0.875)
-  let finalScore = Math.round(paceResult.totalScore * 0.875); // Scale base tactical score
+  // CONSOLIDATED PACE MODULE: Scale tactical score (0-40) to base (0-28)
+  // New scale: 28/40 = 0.7, gives room for scenario adjustments within 45-pt cap
+  let finalScore = Math.round(paceResult.totalScore * 0.7); // Scale base tactical score
+
+  // INTEGRATED SCENARIO ADJUSTMENT: Calculate and apply within consolidated score
+  // These adjustments were previously in paceScenario.ts as a separate overlay
+  const integratedScenario = determineIntegratedScenario(paceResult.scenario);
+  const scenarioAdj = calculateIntegratedScenarioAdjustment(
+    toLegacyStyle(detailedProfile.style),
+    integratedScenario
+  );
+  finalScore += scenarioAdj.adjustment;
 
   // Track bias bonus/penalty based on paceAdvantageRating (1-10 scale)
   // Rating 1-3: Closer-friendly, 4-6: Fair, 7-10: Speed-favoring
   if (paceAdvantageRating !== null) {
     if (paceAdvantageRating >= 8 && detailedProfile.style === 'E') {
       // Extreme speed track (8-10) - big bonus for early speed
-      finalScore = Math.min(35, finalScore + 5); // cap at 35
+      finalScore = Math.min(45, finalScore + 5); // cap at 45
     } else if (paceAdvantageRating >= 7 && detailedProfile.style === 'E') {
       // Strong speed track (7) - moderate bonus for early speed
-      finalScore = Math.min(35, finalScore + 2);
+      finalScore = Math.min(45, finalScore + 2);
     } else if (paceAdvantageRating >= 8 && detailedProfile.style === 'C') {
       // Extreme speed track penalizes closers
       finalScore = Math.max(4, finalScore - 2);
     } else if (paceAdvantageRating <= 3 && detailedProfile.style === 'C') {
       // Closer-friendly track (1-3) - bonus for closers
-      finalScore = Math.min(35, finalScore + 4); // cap at 35
+      finalScore = Math.min(45, finalScore + 4); // cap at 45
     } else if (paceAdvantageRating <= 3 && detailedProfile.style === 'E') {
       // Closer-friendly track penalizes pure speed
       finalScore = Math.max(4, finalScore - 2);
     }
     // Pressers and stalkers get smaller adjustments
     if (paceAdvantageRating >= 7 && detailedProfile.style === 'P') {
-      finalScore = Math.min(35, finalScore + 2);
+      finalScore = Math.min(45, finalScore + 2);
     } else if (paceAdvantageRating <= 4 && detailedProfile.style === 'S') {
-      finalScore = Math.min(35, finalScore + 2);
+      finalScore = Math.min(45, finalScore + 2);
     }
   } else if (trackSpeedBias !== null) {
     // Fallback to earlySpeedWinRate if paceAdvantageRating not available
     if (trackSpeedBias >= 55 && detailedProfile.style === 'E') {
-      finalScore = Math.min(35, finalScore + 2);
+      finalScore = Math.min(45, finalScore + 2);
     } else if (trackSpeedBias <= 45 && detailedProfile.style === 'C') {
-      finalScore = Math.min(35, finalScore + 2);
+      finalScore = Math.min(45, finalScore + 2);
     }
   }
 
@@ -543,9 +694,14 @@ export function calculatePaceScore(
     reasoning += ` | ${velocityAnalysisResult.reasoning}`;
   }
 
+  // Add integrated scenario adjustment to reasoning if applicable
+  if (scenarioAdj.adjustment !== 0) {
+    reasoning += ` | ${scenarioAdj.reasoning}`;
+  }
+
   // PHASE 2: Add confidence info to reasoning if penalized
   if (paceConfidenceMultiplier < 1.0) {
-    const maxPossible = Math.round(35 * paceConfidenceMultiplier);
+    const maxPossible = Math.round(45 * paceConfidenceMultiplier);
     const dataStatus =
       !hasEP1LP && !hasRunningStyle
         ? 'no EP1/LP or style'
@@ -570,12 +726,12 @@ export function calculatePaceScore(
     hasEP1LP,
     hasRunningStyle,
     multiplier: paceConfidenceMultiplier,
-    maxPossibleScore: Math.round(35 * paceConfidenceMultiplier),
+    maxPossibleScore: Math.round(45 * paceConfidenceMultiplier),
     penaltyApplied: paceConfidenceMultiplier < 1.0,
   };
 
   return {
-    total: Math.max(4, Math.min(35, finalScore)), // Model B: cap at 35
+    total: Math.max(4, Math.min(45, finalScore)), // Consolidated module: cap at 45
     profile,
     fieldAnalysis,
     paceFit: toLegacyPaceFit(tacticalAdvantage.level),
@@ -585,6 +741,9 @@ export function calculatePaceScore(
     detailedProfile,
     tacticalAdvantage,
     paceScenarioAnalysis: paceResult.scenario,
+    // Integrated scenario info (for display purposes)
+    integratedScenario,
+    integratedScenarioAdjustment: scenarioAdj.adjustment,
     // Pace figure analysis (EP1/LP)
     paceFigures: detailedProfile.paceFigures,
     paceFigureAdjustment,

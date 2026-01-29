@@ -5,26 +5,24 @@
  * All calculations are deterministic - same inputs always produce same scores.
  * Optimized for performance: scoring 12 horses completes in under 100ms.
  *
- * BASE SCORE (0-331 points max) - Model B (Speed-Dominant):
+ * BASE SCORE (0-329 points max) - Consolidated Pace Module:
  * ============================================================
  * This model shifts weighting toward Intrinsic Ability (Speed/Class) over
  * Situational Factors (Pace/Connections). Speed figures are the strongest
  * predictor; situational bonuses add granularity but shouldn't dominate.
  *
- * Core Categories (272 pts):
- * - Speed & Class: 0-140 points (42.7% - Speed 105 + Class 35)
- *   Model B: Speed increased to 105 pts (~32% of base, industry standard 30-40%)
- * - Pace: 0-35 points (10.7% - Race shape analysis, reduced from 45)
- * - Form: 0-42 points (12.8% - Recent performance patterns, reduced from 50)
+ * Core Categories (282 pts):
+ * - Speed & Class: 0-140 points (42.6% - Speed 105 + Class 35)
+ * - Pace: 0-45 points (13.7% - CONSOLIDATED: base + scenario now unified)
+ * - Form: 0-50 points (15.2% - Recent performance patterns, v3.6 Form Decay)
  * - Post Position: 0-12 points (3.6% - unchanged)
- * - Connections (Trainer + Jockey + Partnership): 0-23 points (7.0% - reduced from 27)
- * - Odds Factor: 0-12 points (3.6% - Market wisdom, reduced from 15)
+ * - Connections (Trainer + Jockey + Partnership): 0-23 points (7.0%)
  * - Equipment: 0-8 points (2.4% - unchanged)
  *
- * Bonus Categories (40 pts):
+ * Bonus Categories (48 pts):
  * - Distance/Surface Affinity: 0-20 points (6.1% - Turf/Wet/Distance)
- * - Track Specialist: 0-10 points (3.0% - Proven success at today's track, increased from 6)
- * - Trainer Patterns: 0-8 points (2.4% - Situational trainer patterns, reduced from 10)
+ * - Track Specialist: 0-10 points (3.0% - Proven success at today's track)
+ * - Trainer Patterns: 0-8 points (2.4% - Situational trainer patterns)
  * - Combo Patterns: 0-4 points (1.2% - unchanged)
  * - Trainer Surface/Distance: 0-6 points (1.8% - Trainer specialization)
  * - Weight Change: 0-1 point (0.3% - subtle refinement for weight drops)
@@ -33,16 +31,12 @@
  * - Age Factor: ±1 point (0.3% - Peak performance at 4-5yo, declining at 8+)
  * - Sire's Sire: ±1 point (0.3% - Paternal grandsire influence on breeding)
  *
- * Model B KEY CHANGES (Speed-Dominant Rebalance):
- * - Speed: 90 → 105 pts (+15) - Stronger emphasis on proven speed
- * - Class: 32 → 35 pts (+3) - Slight class emphasis increase
- * - Form: 50 → 42 pts (-8) - Reduce recency over proven ability
- * - Pace: 45 → 35 pts (-10) - Reduce situational factor weight
- * - Connections: 27 → 23 pts (-4) - Reduce partnership bonus from 4 to 2
- * - Odds: 15 → 12 pts (-3) - Slightly reduce market factor
- * - Trainer Patterns: 10 → 8 pts (-2) - Reduce situational patterns
- * - Track Specialist: 6 → 10 pts (+4) - Reward proven track success
- * Net change: +18 - 8 - 10 - 4 - 3 - 2 + 4 = -5 pts offset by +5 in speedClass
+ * CONSOLIDATED PACE MODULE:
+ * The pace scoring now includes integrated scenario adjustments (±8 pts)
+ * within the 45-point total. This eliminates double-counting of pace effects
+ * and restores scoring resolution lost from odds removal.
+ * - Previous: Base pace 35 pts + Scenario overlay ±8 pts = 27-43 range
+ * - Now: Unified pace 0-45 pts with scenario built-in
  *
  * OVERLAY SYSTEM (±40 points on top of base - PHASE 5):
  * - Section A: Pace Dynamics & Bias: ±10 points
@@ -54,7 +48,7 @@
  * - Section G: Head-to-Head & Tactical Matchups: ±6 points
  *
  * Final Score = Base Score + Overlay Adjustment
- * Practical Range: 50 to 371 points
+ * Practical Range: 50 to 369 points
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
@@ -140,7 +134,6 @@ import { analyzeTripTrouble, TRIP_TROUBLE_CONFIG } from './tripTrouble';
 import type { TripTroubleConfidence } from '../../types/scoring';
 import {
   analyzePaceScenario as analyzeFieldPaceScenario,
-  getPaceAdjustmentForHorse,
   getHorseRunningStyle,
   logPaceScenarioAnalysis,
   type PaceScenarioResult,
@@ -163,12 +156,12 @@ import {
 
 /**
  * Maximum base score (before overlay)
- * Model B (Speed-Dominant): 319 pts
+ * CONSOLIDATED PACE MODULE: 329 pts (up from 319)
  *
  * Category breakdown:
  * - Speed & Class: 140 pts (Speed 105 + Class 35)
  * - Form: 50 pts (v3.6: Form Decay System)
- * - Pace: 35 pts
+ * - Pace: 45 pts (CONSOLIDATED: base 35 + scenario ±8, now unified)
  * - Connections: 23 pts
  * - Post Position: 12 pts
  * - Equipment: 8 pts
@@ -179,13 +172,17 @@ import {
  * - Trainer Surface/Distance: 6 pts
  * - Weight: 1 pt
  * - P3 (Age + Sire's Sire): 2 pts
- * Total: 319 pts
+ * Total: 329 pts
  *
  * NOTE: Odds Factor (12 pts) removed from base scoring to eliminate
  * circular logic of rewarding horses for being favorites.
  * Odds data still available for post-scoring overlay calculations.
+ *
+ * PACE CONSOLIDATION: The previous separate pace scenario overlay (±8 pts)
+ * is now integrated into the base pace score (0-45). This eliminates
+ * double-counting of pace effects and restores scoring resolution.
  */
-export const MAX_BASE_SCORE = 319;
+export const MAX_BASE_SCORE = 329;
 
 /**
  * Maximum overlay adjustment
@@ -194,39 +191,41 @@ export const MAX_BASE_SCORE = 319;
 export const MAX_OVERLAY = 40;
 
 /** Maximum total score (base + overlay) */
-export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 359
+export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 369
 
 /**
  * Score limits by category
  *
- * WEIGHT RATIONALE (Model B - Speed-Dominant):
+ * WEIGHT RATIONALE (Consolidated Pace Module):
  * -----------------------------------------------------------------------
  * This model prioritizes Intrinsic Ability (Speed/Class) over Situational
  * Factors (Pace/Connections). Speed figures are the strongest predictor
  * at 30-40% weight, with class providing additional context.
  *
- * Core Categories (272 pts):
- * - Speed/Class: 140 pts (43.3%) — Speed 105 pts (~32.5%) + Class 35 pts (~10.8%)
- * - Form: 42 pts (13.0%) — Recent performance patterns (reduced from 50)
- * - Pace: 35 pts (10.8%) — Race shape analysis (reduced from 45)
- * - Connections: 23 pts (7.1%) — Partnership bonus reduced from 4 to 2
- * - Odds Factor: 12 pts (3.7%) — Market wisdom (reduced from 15)
- * - Post Position: 12 pts (3.7%) — Track-dependent situational factor
- * - Equipment: 8 pts (2.5%) — Speculative, fine-tuning only
+ * Core Categories (282 pts):
+ * - Speed/Class: 140 pts (42.6%) — Speed 105 pts (~31.9%) + Class 35 pts (~10.6%)
+ * - Form: 50 pts (15.2%) — Recent performance patterns (v3.6 Form Decay)
+ * - Pace: 45 pts (13.7%) — CONSOLIDATED: base + scenario adjustments unified
+ * - Connections: 23 pts (7.0%) — Partnership bonus reduced from 4 to 2
+ * - Post Position: 12 pts (3.6%) — Track-dependent situational factor
+ * - Equipment: 8 pts (2.4%) — Speculative, fine-tuning only
  *
  * Bonus Categories (48 pts):
- * - Distance/Surface: 20 pts (6.2%) — Turf (8) + Wet (6) + Distance (6)
- * - Track Specialist: 10 pts (3.1%) — Proven success at today's track (increased from 6)
- * - Trainer Patterns: 8 pts (2.5%) — Situational patterns (reduced from 10)
+ * - Distance/Surface: 20 pts (6.1%) — Turf (8) + Wet (6) + Distance (6)
+ * - Track Specialist: 10 pts (3.0%) — Proven success at today's track
+ * - Trainer Patterns: 8 pts (2.4%) — Situational patterns
  * - Combo Patterns: 4 pts (1.2%) — Informational combo bonuses
- * - Trainer Surface/Distance: 6 pts (1.9%) — Trainer specialization bonus
+ * - Trainer Surface/Distance: 6 pts (1.8%) — Trainer specialization bonus
  *
  * Weight & P3 Refinements (3 pts):
  * - Weight: 1 pt (subtle refinement for weight drops)
  * - Age Factor: ±1 pt (peak performance at 4-5yo, declining at 8+)
  * - Sire's Sire: ±1 pt (integrated into breeding for known influential sires)
  *
- * Total: 331 points base score
+ * Total: 329 points base score
+ *
+ * NOTE: Pace scenario adjustments (±8 pts) are now integrated into the
+ * 45-point pace score, not applied as a separate overlay layer.
  */
 export const SCORE_LIMITS = {
   connections: 23, // Model B: reduced from 27 (partnership 4→2)
@@ -234,7 +233,7 @@ export const SCORE_LIMITS = {
   speedClass: 140, // Model B: increased from 122 (speed 105 + class 35)
   form: 50, // v3.6: Form Decay System restored to 50
   equipment: 8,
-  pace: 35, // Model B: reduced from 45
+  pace: 45, // CONSOLIDATED: base 35 + scenario ±8 now unified into 0-45
   // NOTE: odds removed from base scoring (circular logic elimination)
   distanceSurface: 20, // Turf (8) + Wet (6) + Distance (6) = 20
   trainerPatterns: 8, // Model B: reduced from 10
@@ -245,38 +244,38 @@ export const SCORE_LIMITS = {
   // P3 refinements (subtle, ±1 pt each)
   ageFactor: 1, // Age-based peak performance (+1 for 4-5yo, -1 for 8+)
   siresSire: 1, // Sire's sire breeding influence (±1 integrated into breeding)
-  baseTotal: MAX_BASE_SCORE, // 319
+  baseTotal: MAX_BASE_SCORE, // 329
   overlayMax: MAX_OVERLAY, // 40
-  total: MAX_SCORE, // 359
+  total: MAX_SCORE, // 369
 } as const;
 
 /**
  * Score thresholds for color coding and tier classification
- * Based on BASE SCORE ONLY (319 max), not total score with overlay
+ * Based on BASE SCORE ONLY (329 max), not total score with overlay
  *
  * | Base Score | Percentage | Rating     |
  * |------------|------------|------------|
- * | 255+       | 80%+       | Elite      |
- * | 207-254    | 65-79%     | Strong     |
- * | 160-206    | 50-64%     | Contender  |
- * | 112-159    | 35-49%     | Fair       |
- * | Below 112  | <35%       | Weak       |
+ * | 263+       | 80%+       | Elite      |
+ * | 214-262    | 65-79%     | Strong     |
+ * | 165-213    | 50-64%     | Contender  |
+ * | 115-164    | 35-49%     | Fair       |
+ * | Below 115  | <35%       | Weak       |
  */
 export const SCORE_THRESHOLDS = {
-  elite: 255, // 80%+ of 319 base score
-  strong: 207, // 65-79% of 319 base score
-  contender: 160, // 50-64% of 319 base score
-  fair: 112, // 35-49% of 319 base score
+  elite: 263, // 80%+ of 329 base score
+  strong: 214, // 65-79% of 329 base score
+  contender: 165, // 50-64% of 329 base score
+  fair: 115, // 35-49% of 329 base score
   weak: 0, // Below 35%
 } as const;
 
 /** Score colors matching thresholds (based on base score) */
 export const SCORE_COLORS = {
-  elite: '#22c55e', // Green - Elite (255+, 80%+)
-  strong: '#4ade80', // Light Green - Strong (207-254, 65-79%)
-  contender: '#eab308', // Yellow - Contender (160-206, 50-64%)
-  fair: '#f97316', // Orange - Fair (112-159, 35-49%)
-  weak: '#ef4444', // Red - Weak (<112, <35%)
+  elite: '#22c55e', // Green - Elite (263+, 80%+)
+  strong: '#4ade80', // Light Green - Strong (214-262, 65-79%)
+  contender: '#eab308', // Yellow - Contender (165-213, 50-64%)
+  fair: '#f97316', // Orange - Fair (115-164, 35-49%)
+  weak: '#ef4444', // Red - Weak (<115, <35%)
 } as const;
 
 // ============================================================================
@@ -503,7 +502,7 @@ export interface ScoreBreakdown {
 export interface HorseScore {
   /** Final total score (base + overlay) */
   total: number;
-  /** Base score (0-319) before overlay */
+  /** Base score (0-329) before overlay */
   baseScore: number;
   /** Overlay adjustment (±40) */
   overlayScore: number;
@@ -924,19 +923,15 @@ function calculateHorseScoreWithContext(
   const equipment = calcEquipment(horse);
   const pace = calcPace(horse, context.raceHeader, context.activeHorses, context.fieldPaceAnalysis);
 
-  // Phase 2.6: Get pace scenario adjustment for this horse
-  // Field-relative tactical adjustment based on lone speed, speed duel, etc.
-  const paceScenarioAdjustment = getPaceAdjustmentForHorse(
-    context.paceScenarioResult,
-    horse.programNumber
-  );
+  // CONSOLIDATED: Pace scenario adjustment is now integrated into pace.ts (0-45 pts)
+  // These legacy variables are kept for informational/display purposes only
   const horseRunningStyle = getHorseRunningStyle(context.paceScenarioResult, horse.programNumber);
 
-  // Log pace scenario adjustment for debugging if applicable
-  if (paceScenarioAdjustment !== 0) {
-    const sign = paceScenarioAdjustment > 0 ? '+' : '';
+  // Log consolidated pace scenario for debugging if applicable
+  if (pace.integratedScenarioAdjustment && pace.integratedScenarioAdjustment !== 0) {
+    const sign = pace.integratedScenarioAdjustment > 0 ? '+' : '';
     console.log(
-      `[PACE_SCENARIO] ${horse.horseName}: ${sign}${paceScenarioAdjustment} pts (${horseRunningStyle} in ${context.paceScenarioResult.scenario})`
+      `[PACE_CONSOLIDATED] ${horse.horseName}: ${sign}${pace.integratedScenarioAdjustment} pts scenario adjustment (${pace.integratedScenario} - integrated into ${pace.total} pt pace score)`
     );
   }
 
@@ -1063,14 +1058,12 @@ function calculateHorseScoreWithContext(
       reasoning: equipment.reasoning,
     },
     pace: {
-      // Add pace scenario adjustment to pace total (field-relative tactical advantage)
-      total: Math.max(0, Math.min(pace.total + paceScenarioAdjustment, SCORE_LIMITS.pace + 8)),
+      // CONSOLIDATED: Scenario adjustments now integrated into pace.ts (0-45 pts)
+      // No longer add paceScenarioAdjustment here - it's already in pace.total
+      total: Math.max(0, Math.min(pace.total, SCORE_LIMITS.pace)),
       runningStyle: pace.profile.styleName,
       paceFit: pace.paceFit,
-      reasoning:
-        paceScenarioAdjustment !== 0
-          ? `${pace.reasoning} | Pace scenario (${context.paceScenarioResult.scenario}): ${paceScenarioAdjustment > 0 ? '+' : ''}${paceScenarioAdjustment} pts`
-          : pace.reasoning,
+      reasoning: pace.reasoning,
     },
     // NOTE: odds removed from breakdown (circular logic elimination)
     distanceSurface: {
@@ -1161,13 +1154,14 @@ function calculateHorseScoreWithContext(
       causedTroubleCount: tripTroubleResult.causedTroubleCount,
       reason: tripTroubleResult.reason,
     },
-    // Pace Scenario: field-relative tactical adjustments (-6 to +8 pts)
+    // Pace Scenario: INFORMATIONAL ONLY (adjustment now integrated into pace.ts)
+    // The scenario type and confidence are still available for display
     paceScenario: {
       scenario: context.paceScenarioResult.scenario,
       runningStyle: horseRunningStyle,
-      adjustment: paceScenarioAdjustment,
+      adjustment: 0, // CONSOLIDATED: adjustment now part of pace.total (0-45)
       confidence: context.paceScenarioResult.confidence,
-      reason: context.paceScenarioResult.reason,
+      reason: `Scenario adjustment integrated into pace score (${(pace.integratedScenarioAdjustment ?? 0 > 0) ? '+' : ''}${pace.integratedScenarioAdjustment ?? 0} pts)`,
     },
   };
 

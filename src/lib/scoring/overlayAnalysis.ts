@@ -1067,8 +1067,8 @@ export function calculateTierAdjustment(
     reasoning = `FOOL'S GOLD: Base score ${baseScore} looks good but ${Math.abs(overlayPercent).toFixed(0)}% underlay - overbet public choice`;
   }
 
-  // Clamp adjusted score (319 = max base score)
-  adjustedScore = Math.max(0, Math.min(319, adjustedScore));
+  // Clamp adjusted score to max base score
+  adjustedScore = Math.max(0, Math.min(MAX_BASE_SCORE, adjustedScore));
 
   return {
     adjustedScore,

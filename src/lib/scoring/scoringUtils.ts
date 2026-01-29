@@ -20,9 +20,9 @@ export const MIN_SCORE = 0;
 
 /**
  * Maximum base score before overlay
- * 319 points (odds factor removed from base scoring)
+ * 329 points (consolidated pace module: base 35 + scenario ±8 now unified to 45)
  */
-export const MAX_BASE_SCORE = 319;
+export const MAX_BASE_SCORE = 329;
 
 /**
  * Maximum overlay adjustment
@@ -40,19 +40,19 @@ export const MIN_OVERLAY_NEGATIVE = -40;
 export const MAX_PROTOCOL_BONUS = 60;
 
 /** Maximum final score (base + overlay) */
-export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 359
+export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 369
 
 /** Maximum display score (for UI - uses base score) */
-export const MAX_DISPLAY_SCORE = 319;
+export const MAX_DISPLAY_SCORE = 329;
 
-// Category maximums (Model B - Speed-Dominant Rebalance)
+// Category maximums (Consolidated Pace Module)
 export const SCORE_CATEGORY_LIMITS = {
   connections: 23, // Model B: reduced from 27
   postPosition: 12, // 3.6% - v3.0: reduced from 20
   speedClass: 140, // Model B: Speed 105 + Class 35
   form: 50, // v3.6: Form Decay System restored to 50
   equipment: 8, // 2.4% - v3.0: reduced from 12
-  pace: 35, // Model B: reduced from 45
+  pace: 45, // CONSOLIDATED: base 35 + scenario ±8 now unified into 0-45
   // NOTE: odds removed from base scoring (circular logic elimination)
   breeding: 15,
   classHiddenDrops: 10,

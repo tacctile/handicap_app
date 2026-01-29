@@ -5,8 +5,8 @@
  * work together correctly after the algorithm rebuild (Phases 1-6).
  *
  * Validates:
- * - Category totals sum to 331 pts
- * - Score bounds (0-371 total, 0-331 base, ±40 overlay)
+ * - Category totals sum to 329 pts (consolidated pace module)
+ * - Score bounds (0-369 total, 0-329 base, ±40 overlay)
  * - Favorite advantage (market wisdom incorporated)
  * - Recent winner advantage (+20 pts for WLO)
  * - Missing data penalty (FTS scores lower)
@@ -36,16 +36,17 @@ import {
 // ============================================================================
 
 describe('Algorithm v3.1 - Category Totals', () => {
-  it('sum of all category max points equals 331', () => {
-    // Model B: Speed-Dominant Scoring Rebalance + v3.6 Form Decay System
+  it('sum of all category max points equals 329', () => {
+    // Consolidated Pace Module: pace 35→45, scenario overlay integrated
+    // NOTE: Odds removed from base scoring (circular logic elimination)
     const expectedCategories = {
       speedFigures: 105, // Increased from 90
       class: 35, // Increased from 32
       form: 50, // v3.6: Form Decay System restored to 50
-      pace: 35, // Decreased from 45
+      pace: 45, // CONSOLIDATED: base 35 + scenario ±8 now unified
       connections: 23, // Decreased from 27
       distanceSurface: 20,
-      odds: 12, // Decreased from 15
+      // NOTE: odds removed from base scoring (circular logic elimination)
       postPosition: 12,
       trainerPatterns: 8, // Decreased from 10
       equipment: 8,
@@ -57,8 +58,8 @@ describe('Algorithm v3.1 - Category Totals', () => {
     };
 
     const sum = Object.values(expectedCategories).reduce((a, b) => a + b, 0);
-    // v3.6: 331 max base score (323 + 8 from form increase)
-    expect(sum).toBe(331);
+    // Consolidated pace module: 329 max base score
+    expect(sum).toBe(329);
   });
 
   it('SCORE_LIMITS constants match expected values', () => {
@@ -67,10 +68,10 @@ describe('Algorithm v3.1 - Category Totals', () => {
 
     // Model B individual categories
     expect(SCORE_LIMITS.form).toBe(50); // v3.6: Form Decay System
-    expect(SCORE_LIMITS.pace).toBe(35);
+    expect(SCORE_LIMITS.pace).toBe(45); // CONSOLIDATED: base + scenario unified
     expect(SCORE_LIMITS.connections).toBe(23);
     expect(SCORE_LIMITS.distanceSurface).toBe(20);
-    expect(SCORE_LIMITS.odds).toBe(12);
+    // NOTE: odds removed from base scoring (circular logic elimination)
     expect(SCORE_LIMITS.postPosition).toBe(12);
     expect(SCORE_LIMITS.trainerPatterns).toBe(8);
     expect(SCORE_LIMITS.equipment).toBe(8);
@@ -81,15 +82,15 @@ describe('Algorithm v3.1 - Category Totals', () => {
     expect(SCORE_LIMITS.siresSire).toBe(1);
     expect(SCORE_LIMITS.weight).toBe(1);
 
-    // Totals - v3.6 Form Decay System
-    expect(SCORE_LIMITS.baseTotal).toBe(331);
+    // Totals - Consolidated Pace Module
+    expect(SCORE_LIMITS.baseTotal).toBe(329);
     expect(SCORE_LIMITS.overlayMax).toBe(40);
-    expect(SCORE_LIMITS.total).toBe(371);
+    expect(SCORE_LIMITS.total).toBe(369);
   });
 
   it('MAX constants are correctly defined', () => {
-    expect(MAX_BASE_SCORE).toBe(331); // v3.6: Form Decay System
-    expect(MAX_SCORE).toBe(371); // v3.6: Form Decay System
+    expect(MAX_BASE_SCORE).toBe(329); // Consolidated Pace Module
+    expect(MAX_SCORE).toBe(369); // Consolidated Pace Module
     expect(MAX_OVERLAY).toBe(40);
   });
 });
@@ -117,7 +118,7 @@ describe('Algorithm v3.1 - Score Bounds', () => {
     expect(score.baseScore).toBeGreaterThanOrEqual(0);
   });
 
-  it('no horse can score above 371', () => {
+  it('no horse can score above 369', () => {
     // Create best case: proven winner with all advantages
     const horse = createHorseEntry({
       lifetimeStarts: 20,
@@ -143,10 +144,10 @@ describe('Algorithm v3.1 - Score Bounds', () => {
     const score = calculateHorseScore(horse, header, '1-1', 'fast', false);
 
     expect(score.total).toBeLessThanOrEqual(MAX_SCORE);
-    expect(score.total).toBeLessThanOrEqual(371);
+    expect(score.total).toBeLessThanOrEqual(369);
   });
 
-  it('base score is capped at 331', () => {
+  it('base score is capped at 329', () => {
     const horse = createHorseEntry({
       lifetimeStarts: 20,
       lifetimeWins: 10,
@@ -167,7 +168,7 @@ describe('Algorithm v3.1 - Score Bounds', () => {
     const score = calculateHorseScore(horse, header, 'even', 'fast', false);
 
     expect(score.baseScore).toBeLessThanOrEqual(MAX_BASE_SCORE);
-    expect(score.baseScore).toBeLessThanOrEqual(331);
+    expect(score.baseScore).toBeLessThanOrEqual(329);
   });
 
   it('overlay is capped at ±40', () => {
@@ -231,17 +232,21 @@ describe('Algorithm v3.1 - Favorite Advantage', () => {
     const favoriteScore = calculateHorseScore(favorite, header, '1-1', 'fast', false);
     const longshotScore = calculateHorseScore(longshot, header, '20-1', 'fast', false);
 
-    // Favorite should score higher
-    expect(favoriteScore.total).toBeGreaterThan(longshotScore.total);
-
-    // Difference should be positive (odds factor favors favorites)
+    // NOTE: Odds removed from base scoring (circular logic elimination)
+    // Favorites and longshots may score similarly in base score
+    // Odds data is still available via oddsResult for overlay calculations
     const scoreDiff = favoriteScore.total - longshotScore.total;
-    expect(scoreDiff).toBeGreaterThanOrEqual(0); // Favorite should score at least as high
-    // Check odds breakdown specifically shows the advantage
-    expect(favoriteScore.breakdown.odds.total).toBeGreaterThan(longshotScore.breakdown.odds.total);
+    // Either can score higher depending on other factors, but difference should be reasonable
+    expect(Math.abs(scoreDiff)).toBeLessThan(50); // Not wildly different
+
+    // Verify odds data is still available for overlay (not in base score)
+    expect(favoriteScore.oddsResult).toBeDefined();
+    expect(longshotScore.oddsResult).toBeDefined();
   });
 
-  it('odds score gives 12 pts for heavy favorite vs 2 pts for longshot (Model B)', () => {
+  it('odds score is available via oddsResult (removed from base scoring)', () => {
+    // NOTE: Odds removed from base scoring to eliminate circular logic
+    // Odds data is still calculated and available via oddsResult
     const favorite = createHorseEntry({ morningLineOdds: '1-1', morningLineDecimal: 1 });
     const longshot = createHorseEntry({ morningLineOdds: '20-1', morningLineDecimal: 20 });
 
@@ -249,9 +254,8 @@ describe('Algorithm v3.1 - Favorite Advantage', () => {
     const favScore = calculateHorseScore(favorite, header, '1-1', 'fast', false);
     const longScore = calculateHorseScore(longshot, header, '20-1', 'fast', false);
 
-    // Model B: Max odds score is 12, longshot (10-1 to 20-1) gets 2 pts
-    expect(favScore.breakdown.odds.total).toBe(12);
-    expect(longScore.breakdown.odds.total).toBe(2);
+    // Verify odds result is available for overlay calculations
+    expect(favScore.oddsResult?.total).toBeGreaterThan(longScore.oddsResult?.total ?? 0);
   });
 });
 
@@ -687,7 +691,7 @@ describe('Algorithm v3.1 - Regression Tests', () => {
     expect(breakdown.connections.total).toBeGreaterThanOrEqual(0);
     expect(breakdown.postPosition.total).toBeGreaterThanOrEqual(0);
     expect(breakdown.equipment.total).toBeGreaterThanOrEqual(0);
-    expect(breakdown.odds.total).toBeGreaterThanOrEqual(0);
+    // NOTE: odds removed from base scoring breakdown (circular logic elimination)
     expect(breakdown.distanceSurface.total).toBeGreaterThanOrEqual(0);
     expect(breakdown.trainerPatterns.total).toBeGreaterThanOrEqual(0);
     expect(breakdown.comboPatterns.total).toBeGreaterThanOrEqual(0);
