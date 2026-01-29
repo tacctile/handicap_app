@@ -36,15 +36,15 @@ import {
 // ============================================================================
 
 describe('Algorithm v3.1 - Category Totals', () => {
-  it('sum of all category max points equals 329', () => {
-    // Consolidated Pace Module: pace 35→45, scenario overlay integrated
+  it('sum of all category max points equals 330', () => {
+    // Rebalanced Connections: jockey 5→12, trainer 16→10
     // NOTE: Odds removed from base scoring (circular logic elimination)
     const expectedCategories = {
       speedFigures: 105, // Increased from 90
       class: 35, // Increased from 32
       form: 50, // v3.6: Form Decay System restored to 50
       pace: 45, // CONSOLIDATED: base 35 + scenario ±8 now unified
-      connections: 23, // Decreased from 27
+      connections: 24, // Rebalanced: Jockey 12 + Trainer 10 + Partnership 2
       distanceSurface: 20,
       // NOTE: odds removed from base scoring (circular logic elimination)
       postPosition: 12,
@@ -58,8 +58,8 @@ describe('Algorithm v3.1 - Category Totals', () => {
     };
 
     const sum = Object.values(expectedCategories).reduce((a, b) => a + b, 0);
-    // Consolidated pace module: 329 max base score
-    expect(sum).toBe(329);
+    // Rebalanced connections: 330 max base score
+    expect(sum).toBe(330);
   });
 
   it('SCORE_LIMITS constants match expected values', () => {
@@ -69,7 +69,7 @@ describe('Algorithm v3.1 - Category Totals', () => {
     // Model B individual categories
     expect(SCORE_LIMITS.form).toBe(50); // v3.6: Form Decay System
     expect(SCORE_LIMITS.pace).toBe(45); // CONSOLIDATED: base + scenario unified
-    expect(SCORE_LIMITS.connections).toBe(23);
+    expect(SCORE_LIMITS.connections).toBe(24); // Rebalanced: Jockey 12 + Trainer 10 + Partnership 2
     expect(SCORE_LIMITS.distanceSurface).toBe(20);
     // NOTE: odds removed from base scoring (circular logic elimination)
     expect(SCORE_LIMITS.postPosition).toBe(12);
@@ -82,15 +82,15 @@ describe('Algorithm v3.1 - Category Totals', () => {
     expect(SCORE_LIMITS.siresSire).toBe(1);
     expect(SCORE_LIMITS.weight).toBe(1);
 
-    // Totals - Consolidated Pace Module
-    expect(SCORE_LIMITS.baseTotal).toBe(329);
+    // Totals - Rebalanced Connections
+    expect(SCORE_LIMITS.baseTotal).toBe(330);
     expect(SCORE_LIMITS.overlayMax).toBe(40);
-    expect(SCORE_LIMITS.total).toBe(369);
+    expect(SCORE_LIMITS.total).toBe(370);
   });
 
   it('MAX constants are correctly defined', () => {
-    expect(MAX_BASE_SCORE).toBe(329); // Consolidated Pace Module
-    expect(MAX_SCORE).toBe(369); // Consolidated Pace Module
+    expect(MAX_BASE_SCORE).toBe(330); // Rebalanced Connections
+    expect(MAX_SCORE).toBe(370); // Rebalanced Connections
     expect(MAX_OVERLAY).toBe(40);
   });
 });

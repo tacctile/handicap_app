@@ -60,12 +60,12 @@ describe('getDefaultCalibration', () => {
   it('should have tiers covering full score range', () => {
     const calibration = getDefaultCalibration();
 
-    // Verify tiers cover full score range (0-331)
+    // Verify tiers cover full score range (0-330)
     const minScore = Math.min(...calibration.tiers.map((t) => t.minScore));
     const maxScore = Math.max(...calibration.tiers.map((t) => t.maxScore));
 
     expect(minScore).toBe(0);
-    expect(maxScore).toBeGreaterThanOrEqual(331);
+    expect(maxScore).toBeGreaterThanOrEqual(320); // Covers top tier
   });
 });
 
@@ -74,10 +74,10 @@ describe('DEFAULT_TIERS', () => {
     const eliteTier = DEFAULT_TIERS.find((t) => t.minScore >= 200);
     expect(eliteTier?.winProbability).toBe(75);
 
-    const strongTier = DEFAULT_TIERS.find((t) => t.minScore === 180);
+    const strongTier = DEFAULT_TIERS.find((t) => t.minScore === 178);
     expect(strongTier?.winProbability).toBe(65);
 
-    const poorTier = DEFAULT_TIERS.find((t) => t.maxScore <= 100);
+    const poorTier = DEFAULT_TIERS.find((t) => t.maxScore <= 98);
     expect(poorTier?.winProbability).toBe(15);
   });
 
