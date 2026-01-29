@@ -149,12 +149,7 @@ import {
   type FieldSpreadResult,
   type FieldType,
 } from './fieldSpread';
-import {
-  calculateWorkoutScore,
-  type WorkoutScoreResult,
-  MAX_WORKOUT_SCORE,
-  MIN_WORKOUT_SCORE,
-} from './workouts';
+import { calculateWorkoutScore } from './workouts';
 
 // ============================================================================
 // CONSTANTS
