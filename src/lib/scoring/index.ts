@@ -756,7 +756,7 @@ function calculateHorseScoreWithContext(
       total: 0,
       baseScore: 0,
       overlayScore: 0,
-      oddsScore: 0,
+      // NOTE: oddsScore removed from base scoring (circular logic elimination)
       breakdown: {
         connections: {
           total: 0,

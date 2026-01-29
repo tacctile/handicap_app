@@ -41,8 +41,7 @@ export interface ScoringDiagnostic {
   connectionsScore: number;
   /** Distance/Surface affinity score (0-20 pts) */
   distanceSurfaceScore: number;
-  /** Odds-based score (0-15 pts) */
-  oddsScore: number;
+  // NOTE: oddsScore removed from base scoring (circular logic elimination)
   /** Post position score (0-12 pts) */
   postPositionScore: number;
   /** Trainer patterns score (0-10 pts) */
@@ -185,7 +184,7 @@ function scoreToDiagnostic(horse: HorseEntry, score: HorseScore, rank: number): 
     paceScore: breakdown.pace?.total ?? 0,
     connectionsScore: breakdown.connections?.total ?? 0,
     distanceSurfaceScore: breakdown.distanceSurface?.total ?? 0,
-    oddsScore: breakdown.odds?.total ?? 0,
+    // NOTE: oddsScore removed from base scoring (circular logic elimination)
     postPositionScore: breakdown.postPosition?.total ?? 0,
     trainerPatternsScore: breakdown.trainerPatterns?.total ?? 0,
     equipmentScore: breakdown.equipment?.total ?? 0,
