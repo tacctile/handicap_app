@@ -27,30 +27,36 @@
 
 | Category                 | Max Points | % of Base | Source File                                             |
 | ------------------------ | ---------- | --------- | ------------------------------------------------------- |
-| Speed & Class            | 140        | 42.4%     | speedClass.ts                                           |
-| Form                     | 50         | 15.2%     | form.ts                                                 |
-| Pace                     | 45         | 13.6%     | pace.ts (CONSOLIDATED)                                  |
-| Connections              | 24         | 7.3%      | connections.ts (Jockey 12 + Trainer 10 + Partnership 2) |
-| Distance/Surface         | 20         | 6.1%      | distanceSurface.ts                                      |
+| Speed & Class            | 140        | 41.7%     | speedClass.ts                                           |
+| Form                     | 50         | 14.9%     | form.ts                                                 |
+| Pace                     | 45         | 13.4%     | pace.ts (CONSOLIDATED)                                  |
+| Connections              | 24         | 7.1%      | connections.ts (Jockey 12 + Trainer 10 + Partnership 2) |
+| Distance/Surface         | 20         | 6.0%      | distanceSurface.ts                                      |
 | Post Position            | 12         | 3.6%      | postPosition.ts                                         |
 | Track Specialist         | 10         | 3.0%      | distanceSurface.ts                                      |
+| Combo Patterns           | 10         | 3.0%      | comboPatterns.ts (v4.0: expanded, range -6 to +10)      |
 | Equipment                | 8          | 2.4%      | equipment.ts                                            |
-| Trainer Patterns         | 8          | 2.4%      | trainerPatterns.ts                                      |
+| Trainer Patterns         | 8          | 2.4%      | trainerPatterns.ts (with sample size discount)          |
 | Trainer Surface/Distance | 6          | 1.8%      | connections.ts                                          |
-| Combo Patterns           | 4          | 1.2%      | comboPatterns.ts                                        |
 | Age Factor               | ±1         | 0.3%      | p3Refinements.ts                                        |
 | Sire's Sire              | ±1         | 0.3%      | p3Refinements.ts                                        |
 | Weight                   | 1          | 0.3%      | weight.ts                                               |
-| **TOTAL**                | **330**    | **100%**  | index.ts                                                |
+| **TOTAL**                | **336**    | **100%**  | index.ts                                                |
 
 > **NOTE:** Odds Factor (12 pts) removed from base scoring to eliminate circular logic.
 > Odds data still available for overlay calculations.
 
+> **v4.0 CHANGES:**
+> - Combo patterns expanded from 4 to 10 pts max (+6)
+> - Added negative combo patterns (-6 to 0 pts) for pretender detection
+> - Net combo range: -6 to +10 (16 point spread)
+> - Trainer pattern minimum sample size increased from 5 to 15 for full credit
+
 | Constant       | Value | Source   |
 | -------------- | ----- | -------- |
-| MAX_BASE_SCORE | 330   | index.ts |
+| MAX_BASE_SCORE | 336   | index.ts |
 | MAX_OVERLAY    | ±40   | index.ts |
-| MAX_SCORE      | 370   | index.ts |
+| MAX_SCORE      | 376   | index.ts |
 
 ---
 
@@ -456,17 +462,20 @@ v3.8 reduced maximum and added recency decay - trip trouble was over-crediting s
 
 | Tier   | Name                 | Min Score | Max Score | Min Confidence |
 | ------ | -------------------- | --------- | --------- | -------------- |
-| Tier 1 | Cover Chalk          | 178       | 240       | 70%            |
-| Tier 2 | Logical Alternatives | 158       | 177       | 60%            |
-| Tier 3 | Value Bombs          | 129       | 157       | 40%            |
+| Tier 1 | Cover Chalk          | 181       | 245       | 70%            |
+| Tier 2 | Logical Alternatives | 161       | 180       | 60%            |
+| Tier 3 | Value Bombs          | 131       | 160       | 40%            |
 
-> Thresholds: 54%, 48%, 39% of MAX_BASE_SCORE (330)
+> Thresholds: 54%, 48%, 39% of MAX_BASE_SCORE (336)
+> v4.0: Updated from 178/158/129 to 181/161/131
 
 ### Confidence Formula
 
 ```
-confidence = 40 + (baseScore / 330) * 60
+confidence = 40 + (baseScore / 336) * 60
 ```
+
+> v4.0: Denominator updated from 330 to 336
 
 ### Expected Hit Rates
 

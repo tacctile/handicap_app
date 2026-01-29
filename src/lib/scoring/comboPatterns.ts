@@ -1,23 +1,31 @@
 /**
  * Combo Pattern Detection Module
  *
- * Identifies high-value plays where multiple positive signals align.
+ * Identifies high-value plays where multiple positive signals align,
+ * and pretenders where multiple negative signals indicate poor intent.
+ *
  * Combined signals are more powerful than individual signals - when a trainer
  * pulls multiple levers at once (class drop + equipment + jockey upgrade),
- * it indicates serious intent to win.
+ * it indicates serious intent to win. Conversely, class rises combined with
+ * jockey downgrades indicate the trainer isn't trying hard.
  *
- * Score: 0-4 points max (v3.0 - reduced from 6, stacks multiple combos, capped)
+ * Score: -6 to +10 points (16 point spread for exacta separation)
  *
- * v3.0 CHANGES (Phase 3 - Speed Weight Rebalance):
- * - Reduced from 6 to 4 pts to compensate for speed increase
- * - Scale factor: 0.67 (4/6)
- * - Individual combo points proportionally reduced
+ * v4.0 CHANGES (Exacta Separation Enhancement):
+ * - Expanded positive combos from 4 to 10 pts max
+ * - Added negative combos (-6 to 0 pts) for pretender detection
+ * - Net scoring: positive + negative, floored at -6, capped at +10
+ * - New positive combos: class drop + trainer upgrade, first-time blinkers + class drop,
+ *   jockey upgrade + equipment change, triple positive bonus
+ * - New negative combos: class rise + jockey downgrade, class rise + no workout,
+ *   trainer downgrade, triple negative penalty
  *
  * Combo Categories:
- * - High-Intent Combos: Class drop + equipment/jockey changes
+ * - High-Intent Combos: Class drop + equipment/jockey/trainer changes
  * - Freshening Combos: Layoff patterns with fitness indicators
  * - Surface/Distance Combos: First-time surface with breeding fit
- * - Triple Combos: Rare powerful combinations
+ * - Triple Combos: Rare powerful combinations (+3 bonus)
+ * - Negative Combos: Class rise + connection downgrades (pretender detection)
  */
 
 import type { HorseEntry, RaceHeader } from '../../types/drf';
@@ -46,10 +54,16 @@ export interface DetectedCombo {
  * Result of combo pattern detection
  */
 export interface ComboPatternResult {
-  /** Total points (0-4 max) */
+  /** Net total points (-6 to +10) */
   total: number;
-  /** All detected combos with details */
+  /** Gross positive points (0 to +10) */
+  grossPositive: number;
+  /** Gross negative points (-6 to 0) */
+  grossNegative: number;
+  /** All detected positive combos with details */
   detectedCombos: DetectedCombo[];
+  /** All detected negative combos with details */
+  negativePatterns: DetectedCombo[];
   /** Intent score (0-10 scale) indicating trainer intent */
   intentScore: number;
   /** Summary reasoning strings */
@@ -61,12 +75,24 @@ export interface ComboPatternResult {
 // ============================================================================
 
 /**
- * Maximum total points from combo patterns
- * v3.0: Reduced from 6 to 4 pts per Phase 3 speed rebalance.
- * Scale factor: 0.67 (4/6)
- * Combos are informational signals but shouldn't swing rankings heavily.
+ * Maximum positive points from combo patterns
+ * v4.0: Expanded from 4 to 10 pts for better exacta separation.
+ * Horses with multiple positive intent signals should separate more clearly.
  */
-export const MAX_COMBO_PATTERN_POINTS = 4;
+export const MAX_COMBO_PATTERN_POINTS = 10;
+
+/**
+ * Maximum negative points from combo patterns (expressed as positive for cap)
+ * v4.0: Added negative combos to push pretenders down.
+ * Horses with class rise + jockey downgrade + no workout = -6 pts max
+ */
+export const MAX_NEGATIVE_COMBO_POINTS = -6;
+
+/**
+ * Minimum net combo score (floor)
+ * Net score = gross positive + gross negative
+ */
+export const MIN_NET_COMBO_SCORE = -6;
 
 /** Threshold for "hot" trainer at current meet (win percentage) */
 const HOT_TRAINER_THRESHOLD = 25;
@@ -74,11 +100,21 @@ const HOT_TRAINER_THRESHOLD = 25;
 /** Threshold for jockey upgrade (win rate improvement) */
 const JOCKEY_UPGRADE_THRESHOLD = 3;
 
+/** Threshold for jockey downgrade (win rate decrease) */
+const JOCKEY_DOWNGRADE_THRESHOLD = 3;
+
 /** Days to look back for bullet works */
 const BULLET_WORK_DAYS = 30;
 
 /** Days threshold for layoff */
 const LAYOFF_DAYS_THRESHOLD = 45;
+
+/** Days threshold for "no recent work" negative combo */
+const NO_WORKOUT_DAYS_THRESHOLD = 14;
+
+/** Days threshold for "freshening" pattern (45-60 days) */
+const FRESHENING_MIN_DAYS = 45;
+const FRESHENING_MAX_DAYS = 60;
 
 // ============================================================================
 // SIGNAL DETECTION HELPERS
@@ -101,6 +137,25 @@ export function isClassDrop(horse: HorseEntry, raceHeader: RaceHeader): boolean 
 
   // Drop = current is lower value than last
   return currentValue < lastValue;
+}
+
+/**
+ * Check if horse is rising in class from last race (negative signal)
+ */
+export function isClassRise(horse: HorseEntry, raceHeader: RaceHeader): boolean {
+  if (horse.pastPerformances.length === 0) return false;
+
+  const lastPP = horse.pastPerformances[0];
+  if (!lastPP) return false;
+
+  const currentClass = extractCurrentRaceClass(raceHeader);
+  const lastClass = extractClassFromPP(lastPP);
+
+  const currentValue = CLASS_LEVEL_METADATA[currentClass].value;
+  const lastValue = CLASS_LEVEL_METADATA[lastClass].value;
+
+  // Rise = current is higher value than last (facing tougher competition)
+  return currentValue > lastValue;
 }
 
 /**
@@ -198,6 +253,153 @@ export function isJockeyUpgrade(horse: HorseEntry): boolean {
   }
 
   return false;
+}
+
+/**
+ * Check if jockey is a downgrade from last race (negative signal)
+ * Compares current jockey's meet stats to previous jockey's stats
+ */
+export function isJockeyDowngrade(horse: HorseEntry): boolean {
+  if (horse.pastPerformances.length === 0) return false;
+
+  const lastPP = horse.pastPerformances[0];
+  if (!lastPP) return false;
+
+  const currentJockey = horse.jockeyName.toLowerCase().trim();
+  const lastJockey = lastPP.jockey?.toLowerCase().trim() ?? '';
+
+  // Same jockey = not a downgrade
+  if (currentJockey === lastJockey) return false;
+
+  // Use meet stats if available
+  const currentMeetStarts = horse.jockeyMeetStarts ?? 0;
+  const currentMeetWins = horse.jockeyMeetWins ?? 0;
+  const currentWinRate = currentMeetStarts > 0 ? (currentMeetWins / currentMeetStarts) * 100 : 0;
+
+  // Try to get last jockey's stats from past performances
+  // Count their wins/starts from PPs where they rode
+  let lastJockeyStarts = 0;
+  let lastJockeyWins = 0;
+
+  for (const pp of horse.pastPerformances) {
+    if (pp.jockey?.toLowerCase().trim() === lastJockey) {
+      lastJockeyStarts++;
+      if (pp.finishPosition === 1) {
+        lastJockeyWins++;
+      }
+    }
+  }
+
+  // If we have enough data on last jockey
+  if (lastJockeyStarts >= 3) {
+    const lastJockeyWinRate = (lastJockeyWins / lastJockeyStarts) * 100;
+    // Downgrade if current jockey is significantly worse
+    return currentWinRate < lastJockeyWinRate - JOCKEY_DOWNGRADE_THRESHOLD;
+  }
+
+  // If current jockey has poor meet stats (<10% win rate), consider it a downgrade
+  // (assuming the switch was a forced move, not intentional improvement)
+  if (currentMeetStarts >= 10 && currentWinRate < 10) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Check if this is a trainer upgrade (new trainer with higher win%)
+ * Compares current trainer's meet win% to trainer from last race
+ */
+export function isTrainerUpgrade(horse: HorseEntry): boolean {
+  if (horse.pastPerformances.length === 0) return false;
+
+  const lastPP = horse.pastPerformances[0];
+  if (!lastPP) return false;
+
+  // Check if trainer changed (look at PP trainer if available)
+  const currentTrainer = horse.trainerName.toLowerCase().trim();
+  const lastTrainer = lastPP.trainer?.toLowerCase().trim() ?? '';
+
+  // Same trainer = not an upgrade
+  if (currentTrainer === lastTrainer || !lastTrainer) return false;
+
+  // Current trainer meet stats
+  const currentMeetStarts = horse.trainerMeetStarts ?? 0;
+  const currentMeetWins = horse.trainerMeetWins ?? 0;
+  const currentWinRate = currentMeetStarts > 0 ? (currentMeetWins / currentMeetStarts) * 100 : 0;
+
+  // For trainer upgrade, we need a significant improvement
+  // If current trainer has 20%+ win rate at meet, consider it an upgrade
+  if (currentMeetStarts >= 5 && currentWinRate >= 20) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Check if this is a trainer downgrade (to lower win% trainer)
+ * Negative signal when switching to a trainer with poor stats
+ */
+export function isTrainerDowngrade(horse: HorseEntry): boolean {
+  if (horse.pastPerformances.length === 0) return false;
+
+  const lastPP = horse.pastPerformances[0];
+  if (!lastPP) return false;
+
+  // Check if trainer changed
+  const currentTrainer = horse.trainerName.toLowerCase().trim();
+  const lastTrainer = lastPP.trainer?.toLowerCase().trim() ?? '';
+
+  // Same trainer = not a downgrade
+  if (currentTrainer === lastTrainer || !lastTrainer) return false;
+
+  // Current trainer meet stats
+  const currentMeetStarts = horse.trainerMeetStarts ?? 0;
+  const currentMeetWins = horse.trainerMeetWins ?? 0;
+  const currentWinRate = currentMeetStarts > 0 ? (currentMeetWins / currentMeetStarts) * 100 : 0;
+
+  // Trainer downgrade if new trainer has <10% win rate at meet
+  if (currentMeetStarts >= 5 && currentWinRate < 10) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Check if horse has no workout in the last 14 days (negative signal)
+ * Combined with class rise, indicates lack of preparation
+ */
+export function hasNoRecentWorkout(horse: HorseEntry): boolean {
+  if (horse.workouts.length === 0) return true;
+
+  const now = new Date();
+
+  for (const workout of horse.workouts) {
+    try {
+      const workDate = new Date(workout.date);
+      const diffDays = (now.getTime() - workDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays <= NO_WORKOUT_DAYS_THRESHOLD) {
+        return false; // Has a recent workout
+      }
+    } catch {
+      // Invalid date, skip
+    }
+  }
+
+  return true; // No workouts within threshold
+}
+
+/**
+ * Check if horse is in the "freshening" window (45-60 days since last race)
+ * Combined with bullet work, indicates strong comeback preparation
+ */
+export function isFreshening(horse: HorseEntry): boolean {
+  const daysSince = horse.daysSinceLastRace;
+  if (daysSince === null) return false;
+
+  return daysSince >= FRESHENING_MIN_DAYS && daysSince <= FRESHENING_MAX_DAYS;
 }
 
 /**
@@ -381,7 +583,10 @@ export function hasTrainerDistancePattern(
 // ============================================================================
 
 /**
- * Detect all combo patterns for a horse
+ * Detect all combo patterns for a horse (positive and negative)
+ *
+ * v4.0: Expanded positive combos to +10, added negative combos to -6
+ * Net scoring for better exacta separation
  */
 export function detectComboPatterns(
   horse: HorseEntry,
@@ -389,14 +594,16 @@ export function detectComboPatterns(
   _allHorses: HorseEntry[]
 ): ComboPatternResult {
   const detectedCombos: DetectedCombo[] = [];
+  const negativePatterns: DetectedCombo[] = [];
   const reasoning: string[] = [];
 
-  // Gather signal states
+  // Gather positive signal states
   const classDrop = isClassDrop(horse, raceHeader);
   const firstLasix = isFirstTimeLasix(horse);
   const firstBlinkers = isFirstTimeBlinkers(horse);
   const hasEquipment = hasFirstTimeEquipment(horse);
   const jockeyUpgrade = isJockeyUpgrade(horse);
+  const trainerUpgrade = isTrainerUpgrade(horse);
   const trainerHot = isTrainerHot(horse);
   const secondLayoff = isSecondOffLayoff(horse);
   const returningLayoff = isReturningFromLayoff(horse);
@@ -404,178 +611,295 @@ export function detectComboPatterns(
   const firstTurf = isFirstTimeTurf(horse, raceHeader);
   const turfBreeding = hasTurfBreeding(horse);
   const distanceChange = isDistanceChange(horse, raceHeader);
+  const freshening = isFreshening(horse);
+
+  // Gather negative signal states
+  const classRise = isClassRise(horse, raceHeader);
+  const jockeyDowngrade = isJockeyDowngrade(horse);
+  const trainerDowngrade = isTrainerDowngrade(horse);
+  const noRecentWorkout = hasNoRecentWorkout(horse);
+
+  // Count positive signals for triple bonus detection
+  let positiveSignalCount = 0;
+  if (classDrop) positiveSignalCount++;
+  if (hasEquipment) positiveSignalCount++;
+  if (jockeyUpgrade) positiveSignalCount++;
+  if (trainerUpgrade) positiveSignalCount++;
+  if (bulletWork) positiveSignalCount++;
+
+  // Count negative signals for triple penalty detection
+  let negativeSignalCount = 0;
+  if (classRise) negativeSignalCount++;
+  if (jockeyDowngrade) negativeSignalCount++;
+  if (trainerDowngrade) negativeSignalCount++;
+  if (noRecentWorkout) negativeSignalCount++;
 
   // =========================================================================
-  // HIGH-INTENT COMBOS (v3.0: all scaled by 0.67)
+  // POSITIVE COMBOS (v4.0: expanded values)
   // =========================================================================
 
-  // Class Drop + First Time Lasix: 1 pt (v3.0: scaled from 2)
+  // Class Drop + First Time Lasix: 3 pts (v4.0: up from 1)
   if (classDrop && firstLasix) {
     detectedCombos.push({
       combo: 'classDropLasix',
       components: ['classDrop', 'firstTimeLasix'],
-      points: 1,
+      points: 3,
       reasoning: 'Dropping in class AND adding Lasix = going for the win',
     });
   }
 
-  // Class Drop + First Time Blinkers: 1 pt (v3.0: min 1)
-  if (classDrop && firstBlinkers) {
-    detectedCombos.push({
-      combo: 'classDropBlinkers',
-      components: ['classDrop', 'firstTimeBlinkers'],
-      points: 1,
-      reasoning: 'Dropping in class AND adding blinkers = equipment experiment at easier level',
-    });
-  }
-
-  // Class Drop + Jockey Upgrade: 1 pt (v3.0: scaled from 2)
+  // Class Drop + Jockey Upgrade: 3 pts (v4.0: up from 1)
   if (classDrop && jockeyUpgrade) {
     detectedCombos.push({
       combo: 'classDropJockeyUpgrade',
       components: ['classDrop', 'jockeyUpgrade'],
-      points: 1,
+      points: 3,
       reasoning: 'Dropping in class AND upgrading jockey = serious intent',
     });
   }
 
-  // Class Drop + Trainer Hot: 1 pt (v3.0: min 1)
-  if (classDrop && trainerHot) {
+  // Layoff Return + Equipment Change: 2 pts (unchanged)
+  if (returningLayoff && hasEquipment) {
     detectedCombos.push({
-      combo: 'classDropHotTrainer',
-      components: ['classDrop', 'trainerHot'],
-      points: 1,
-      reasoning: 'Dropping in class with hot trainer = confidence play',
+      combo: 'layoffEquipment',
+      components: ['layoff', 'equipment'],
+      points: 2,
+      reasoning: 'Returning from layoff with equipment change = trainer adjustments',
     });
   }
 
-  // =========================================================================
-  // FRESHENING COMBOS (v3.0: all scaled by 0.67)
-  // =========================================================================
-
-  // 2nd Off Layoff + Bullet Work: 1 pt (v3.0: scaled from 2)
-  if (secondLayoff && bulletWork) {
+  // Freshening (45-60 days) + Bullet Work: 2 pts (v4.0: up from 1)
+  if (freshening && bulletWork) {
     detectedCombos.push({
-      combo: 'secondLayoffBullet',
-      components: ['secondOffLayoff', 'bulletWork'],
-      points: 1,
-      reasoning: 'Second start after layoff AND sharp workout = fit and ready',
+      combo: 'fresheningBullet',
+      components: ['freshening', 'bulletWork'],
+      points: 2,
+      reasoning: 'Freshened 45-60 days AND sharp workout = well-prepared return',
     });
   }
 
-  // Layoff + Class Drop: 1 pt (v3.0: scaled from 2)
-  if (returningLayoff && classDrop) {
-    detectedCombos.push({
-      combo: 'layoffClassDrop',
-      components: ['layoff', 'classDrop'],
-      points: 1,
-      reasoning: 'Returning from layoff at easier level = trainer wants a confidence builder',
-    });
-  }
-
-  // =========================================================================
-  // SURFACE/DISTANCE COMBOS (v3.0: min 1 pt each)
-  // =========================================================================
-
-  // First Time Turf + Turf Breeding: 1 pt
+  // First Time Turf + Turf Sire: 2 pts (v4.0: up from 1)
   if (firstTurf && turfBreeding) {
     detectedCombos.push({
       combo: 'firstTurfWithBreeding',
       components: ['firstTimeTurf', 'turfBreeding'],
-      points: 1,
+      points: 2,
       reasoning: 'First turf start with turf pedigree = bred for it',
     });
   }
 
-  // Distance Change + Trainer Pattern: 1 pt
-  if (distanceChange && hasTrainerDistancePattern(horse, distanceChange)) {
+  // Sprint to Route + Stamina Breeding: 2 pts (v4.0: up from 1)
+  if (distanceChange === 'sprint_to_route' && hasTrainerDistancePattern(horse, distanceChange)) {
     detectedCombos.push({
-      combo: 'distanceChangeTrainerPattern',
-      components: ['distanceChange', 'trainerPattern'],
-      points: 1,
-      reasoning: `Trainer knows how to ${distanceChange === 'sprint_to_route' ? 'stretch out' : 'cut back'} horses`,
-    });
-  }
-
-  // =========================================================================
-  // TRIPLE COMBOS (v3.0: scaled by 0.67)
-  // =========================================================================
-
-  // Class Drop + Equipment + Jockey Upgrade: 2 pts (v3.0: scaled from 3)
-  // This overrides the individual combos if all three are present
-  if (classDrop && hasEquipment && jockeyUpgrade) {
-    // Remove any double combos that would overlap
-    const overlappingCombos = ['classDropLasix', 'classDropBlinkers', 'classDropJockeyUpgrade'];
-    const filtered = detectedCombos.filter((c) => !overlappingCombos.includes(c.combo));
-    detectedCombos.length = 0;
-    detectedCombos.push(...filtered);
-
-    detectedCombos.push({
-      combo: 'tripleClassEquipmentJockey',
-      components: ['classDrop', 'equipment', 'jockeyUpgrade'],
+      combo: 'sprintToRouteStamina',
+      components: ['sprintToRoute', 'trainerPattern'],
       points: 2,
-      reasoning: 'All-in move — trainer pulling every lever',
+      reasoning: 'Stretching out with trainer who excels at sprint-to-route = strategic move',
     });
   }
 
-  // Layoff + Class Drop + Equipment: 2 pts (v3.0: scaled from 3)
-  // This overrides the individual combos if all three are present
-  if (returningLayoff && classDrop && hasEquipment) {
-    // Don't duplicate if we already have the triple combo above
-    const hasTriple = detectedCombos.some((c) => c.combo === 'tripleClassEquipmentJockey');
+  // =========================================================================
+  // NEW POSITIVE COMBOS (v4.0)
+  // =========================================================================
 
-    if (!hasTriple) {
-      // Remove overlapping combos
-      const overlappingCombos = ['layoffClassDrop', 'classDropLasix', 'classDropBlinkers'];
-      const filtered = detectedCombos.filter((c) => !overlappingCombos.includes(c.combo));
-      detectedCombos.length = 0;
-      detectedCombos.push(...filtered);
+  // Class Drop + Trainer Upgrade: 2 pts (NEW)
+  if (classDrop && trainerUpgrade) {
+    detectedCombos.push({
+      combo: 'classDropTrainerUpgrade',
+      components: ['classDrop', 'trainerUpgrade'],
+      points: 2,
+      reasoning: 'Dropping in class AND new trainer with higher win% = serious upgrade',
+    });
+  }
 
-      detectedCombos.push({
-        combo: 'tripleLayoffClassEquipment',
-        components: ['layoff', 'classDrop', 'equipment'],
-        points: 2,
-        reasoning: 'Freshened, dropped, and equipped = ready to fire',
-      });
-    }
+  // First-time Blinkers + Class Drop: 2 pts (NEW)
+  if (firstBlinkers && classDrop) {
+    detectedCombos.push({
+      combo: 'firstBlinkersClassDrop',
+      components: ['firstTimeBlinkers', 'classDrop'],
+      points: 2,
+      reasoning: 'First-time blinkers at easier level = focused improvement attempt',
+    });
+  }
+
+  // Jockey Upgrade + Equipment Change: 2 pts (NEW)
+  if (jockeyUpgrade && hasEquipment) {
+    detectedCombos.push({
+      combo: 'jockeyUpgradeEquipment',
+      components: ['jockeyUpgrade', 'equipment'],
+      points: 2,
+      reasoning: 'Better jockey AND equipment change = double improvement',
+    });
+  }
+
+  // 2nd Off Layoff + Bullet Work: 2 pts
+  if (secondLayoff && bulletWork) {
+    detectedCombos.push({
+      combo: 'secondLayoffBullet',
+      components: ['secondOffLayoff', 'bulletWork'],
+      points: 2,
+      reasoning: 'Second start after layoff AND sharp workout = fit and ready',
+    });
+  }
+
+  // Layoff + Class Drop: 2 pts
+  if (returningLayoff && classDrop) {
+    detectedCombos.push({
+      combo: 'layoffClassDrop',
+      components: ['layoff', 'classDrop'],
+      points: 2,
+      reasoning: 'Returning from layoff at easier level = trainer wants a confidence builder',
+    });
+  }
+
+  // Class Drop + Hot Trainer: 2 pts
+  if (classDrop && trainerHot) {
+    detectedCombos.push({
+      combo: 'classDropHotTrainer',
+      components: ['classDrop', 'trainerHot'],
+      points: 2,
+      reasoning: 'Dropping in class with hot trainer = confidence play',
+    });
+  }
+
+  // Route to Sprint + Trainer Pattern: 2 pts
+  if (distanceChange === 'route_to_sprint' && hasTrainerDistancePattern(horse, distanceChange)) {
+    detectedCombos.push({
+      combo: 'routeToSprintPattern',
+      components: ['routeToSprint', 'trainerPattern'],
+      points: 2,
+      reasoning: 'Cutting back with trainer who excels at route-to-sprint = tactical move',
+    });
   }
 
   // =========================================================================
-  // CALCULATE TOTAL AND INTENT SCORE
+  // TRIPLE POSITIVE BONUS (v4.0: +3 pts for any 3 positive signals)
+  // =========================================================================
+  if (positiveSignalCount >= 3) {
+    detectedCombos.push({
+      combo: 'triplePositiveBonus',
+      components: ['multiplePositiveSignals'],
+      points: 3,
+      reasoning: `Triple positive combo: ${positiveSignalCount} positive signals aligned = all-in move`,
+    });
+  }
+
+  // =========================================================================
+  // NEGATIVE COMBOS (v4.0: new pretender detection)
   // =========================================================================
 
-  const rawTotal = detectedCombos.reduce((sum, c) => sum + c.points, 0);
-  const total = Math.min(rawTotal, MAX_COMBO_PATTERN_POINTS);
+  // Class Rise + Jockey Downgrade: -3 pts
+  if (classRise && jockeyDowngrade) {
+    negativePatterns.push({
+      combo: 'classRiseJockeyDowngrade',
+      components: ['classRise', 'jockeyDowngrade'],
+      points: -3,
+      reasoning: 'Rising in class AND downgrading jockey = trainer not trying hard',
+    });
+  }
+
+  // Class Rise + No Workout in 14 days: -2 pts
+  if (classRise && noRecentWorkout) {
+    negativePatterns.push({
+      combo: 'classRiseNoWorkout',
+      components: ['classRise', 'noRecentWorkout'],
+      points: -2,
+      reasoning: 'Rising in class without recent workout = underprepared for tougher competition',
+    });
+  }
+
+  // Trainer Downgrade (standalone): -2 pts
+  if (trainerDowngrade) {
+    negativePatterns.push({
+      combo: 'trainerDowngrade',
+      components: ['trainerDowngrade'],
+      points: -2,
+      reasoning: 'Switched to trainer with lower win% = downward move',
+    });
+  }
+
+  // Jockey Downgrade + No Recent Workout: -2 pts
+  if (jockeyDowngrade && noRecentWorkout) {
+    negativePatterns.push({
+      combo: 'jockeyDowngradeNoWorkout',
+      components: ['jockeyDowngrade', 'noRecentWorkout'],
+      points: -2,
+      reasoning: 'Worse jockey AND no recent workout = lack of preparation and investment',
+    });
+  }
+
+  // =========================================================================
+  // TRIPLE NEGATIVE PENALTY (v4.0: -3 pts additional for 3+ negative signals)
+  // =========================================================================
+  if (negativeSignalCount >= 3) {
+    negativePatterns.push({
+      combo: 'tripleNegativePenalty',
+      components: ['multipleNegativeSignals'],
+      points: -3,
+      reasoning: `Triple negative combo: ${negativeSignalCount} negative signals = pretender alert`,
+    });
+  }
+
+  // =========================================================================
+  // CALCULATE TOTALS WITH FLOOR/CEILING
+  // =========================================================================
+
+  // Gross positive (capped at +10)
+  const rawPositive = detectedCombos.reduce((sum, c) => sum + c.points, 0);
+  const grossPositive = Math.min(rawPositive, MAX_COMBO_PATTERN_POINTS);
+
+  // Gross negative (floored at -6)
+  const rawNegative = negativePatterns.reduce((sum, c) => sum + c.points, 0);
+  const grossNegative = Math.max(rawNegative, MAX_NEGATIVE_COMBO_POINTS);
+
+  // Net total (floor -6, ceiling +10)
+  const netTotal = Math.max(MIN_NET_COMBO_SCORE, Math.min(MAX_COMBO_PATTERN_POINTS, grossPositive + grossNegative));
 
   // Intent score (0-10 scale)
   // Based on how many high-intent signals are present
   let intentScore = 0;
 
-  // Base intent signals
+  // Positive intent signals
   if (classDrop) intentScore += 2;
   if (hasEquipment) intentScore += 2;
   if (jockeyUpgrade) intentScore += 2;
+  if (trainerUpgrade) intentScore += 1;
   if (trainerHot) intentScore += 1;
   if (bulletWork) intentScore += 1;
 
-  // Bonus for combos
+  // Bonus for multiple combos
   if (detectedCombos.length >= 2) intentScore += 1;
-  if (detectedCombos.some((c) => c.combo.startsWith('triple'))) intentScore += 1;
 
-  intentScore = Math.min(10, intentScore);
+  // Penalty for negative signals
+  if (classRise) intentScore -= 2;
+  if (jockeyDowngrade) intentScore -= 1;
+  if (trainerDowngrade) intentScore -= 1;
+
+  intentScore = Math.max(0, Math.min(10, intentScore));
 
   // Build reasoning
   for (const combo of detectedCombos) {
     reasoning.push(`${combo.reasoning} (+${combo.points} pts)`);
   }
 
-  if (rawTotal > MAX_COMBO_PATTERN_POINTS) {
-    reasoning.push(`Total capped at ${MAX_COMBO_PATTERN_POINTS} pts (raw: ${rawTotal})`);
+  for (const combo of negativePatterns) {
+    reasoning.push(`${combo.reasoning} (${combo.points} pts)`);
+  }
+
+  if (rawPositive > MAX_COMBO_PATTERN_POINTS) {
+    reasoning.push(`Positive combos capped at ${MAX_COMBO_PATTERN_POINTS} pts (raw: ${rawPositive})`);
+  }
+
+  if (rawNegative < MAX_NEGATIVE_COMBO_POINTS) {
+    reasoning.push(`Negative combos floored at ${MAX_NEGATIVE_COMBO_POINTS} pts (raw: ${rawNegative})`);
   }
 
   return {
-    total,
+    total: netTotal,
+    grossPositive,
+    grossNegative,
     detectedCombos,
+    negativePatterns,
     intentScore,
     reasoning,
   };
@@ -586,23 +910,45 @@ export function detectComboPatterns(
 // ============================================================================
 
 /**
- * Check if any combo patterns are detected for this horse
+ * Check if any combo patterns are detected for this horse (positive or negative)
  */
 export function hasComboPatterns(horse: HorseEntry, raceHeader: RaceHeader): boolean {
   const result = detectComboPatterns(horse, raceHeader, []);
-  return result.detectedCombos.length > 0;
+  return result.detectedCombos.length > 0 || result.negativePatterns.length > 0;
+}
+
+/**
+ * Check if any negative combo patterns are detected for this horse
+ */
+export function hasNegativeComboPatterns(horse: HorseEntry, raceHeader: RaceHeader): boolean {
+  const result = detectComboPatterns(horse, raceHeader, []);
+  return result.negativePatterns.length > 0;
 }
 
 /**
  * Get a summary string for combo patterns
  */
 export function getComboPatternSummary(result: ComboPatternResult): string {
-  if (result.detectedCombos.length === 0) {
+  const positiveCount = result.detectedCombos.length;
+  const negativeCount = result.negativePatterns.length;
+
+  if (positiveCount === 0 && negativeCount === 0) {
     return 'No combo patterns detected';
   }
 
-  const combos = result.detectedCombos.map((c) => `${c.combo}: +${c.points}`).join(', ');
-  return `${result.total} pts from ${result.detectedCombos.length} combo(s): ${combos}`;
+  const parts: string[] = [];
+
+  if (positiveCount > 0) {
+    const combos = result.detectedCombos.map((c) => `${c.combo}: +${c.points}`).join(', ');
+    parts.push(`+${result.grossPositive} from ${positiveCount} positive: ${combos}`);
+  }
+
+  if (negativeCount > 0) {
+    const combos = result.negativePatterns.map((c) => `${c.combo}: ${c.points}`).join(', ');
+    parts.push(`${result.grossNegative} from ${negativeCount} negative: ${combos}`);
+  }
+
+  return `Net ${result.total} pts (${parts.join(' | ')})`;
 }
 
 /**
