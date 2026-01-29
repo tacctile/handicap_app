@@ -75,13 +75,6 @@ export interface TrainerPatternResult {
 const MAX_TRAINER_PATTERN_POINTS = 8;
 
 /**
- * Minimum sample size for FULL credit on trainer patterns
- * v4.0: Increased from 5 to 15 starts for statistical reliability
- * Patterns with 5-start minimums give full credit to meaningless samples
- */
-const MIN_SAMPLE_SIZE_FULL_CREDIT = 15;
-
-/**
  * Sample size tiers with credit percentages
  * v4.0: Tiered discount prevents overvaluing small samples
  *

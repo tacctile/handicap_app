@@ -307,30 +307,19 @@ export function isJockeyDowngrade(horse: HorseEntry): boolean {
 }
 
 /**
- * Check if this is a trainer upgrade (new trainer with higher win%)
- * Compares current trainer's meet win% to trainer from last race
+ * Check if this is a trainer upgrade scenario (elite trainer at meet)
+ * Since PastPerformance doesn't store trainer info, we use current trainer stats
+ * to determine if this horse has a high-quality trainer connection.
+ * A 20%+ win rate trainer with sufficient starts indicates trainer quality.
  */
 export function isTrainerUpgrade(horse: HorseEntry): boolean {
-  if (horse.pastPerformances.length === 0) return false;
-
-  const lastPP = horse.pastPerformances[0];
-  if (!lastPP) return false;
-
-  // Check if trainer changed (look at PP trainer if available)
-  const currentTrainer = horse.trainerName.toLowerCase().trim();
-  const lastTrainer = lastPP.trainer?.toLowerCase().trim() ?? '';
-
-  // Same trainer = not an upgrade
-  if (currentTrainer === lastTrainer || !lastTrainer) return false;
-
   // Current trainer meet stats
   const currentMeetStarts = horse.trainerMeetStarts ?? 0;
   const currentMeetWins = horse.trainerMeetWins ?? 0;
   const currentWinRate = currentMeetStarts > 0 ? (currentMeetWins / currentMeetStarts) * 100 : 0;
 
-  // For trainer upgrade, we need a significant improvement
-  // If current trainer has 20%+ win rate at meet, consider it an upgrade
-  if (currentMeetStarts >= 5 && currentWinRate >= 20) {
+  // Elite trainer = 20%+ win rate at meet with enough sample
+  if (currentMeetStarts >= 10 && currentWinRate >= 20) {
     return true;
   }
 
@@ -338,29 +327,19 @@ export function isTrainerUpgrade(horse: HorseEntry): boolean {
 }
 
 /**
- * Check if this is a trainer downgrade (to lower win% trainer)
- * Negative signal when switching to a trainer with poor stats
+ * Check if this is a trainer downgrade scenario (poor trainer at meet)
+ * Since PastPerformance doesn't store trainer info, we use current trainer stats
+ * to determine if this horse has a weak trainer connection.
+ * A <10% win rate trainer with sufficient starts indicates poor trainer quality.
  */
 export function isTrainerDowngrade(horse: HorseEntry): boolean {
-  if (horse.pastPerformances.length === 0) return false;
-
-  const lastPP = horse.pastPerformances[0];
-  if (!lastPP) return false;
-
-  // Check if trainer changed
-  const currentTrainer = horse.trainerName.toLowerCase().trim();
-  const lastTrainer = lastPP.trainer?.toLowerCase().trim() ?? '';
-
-  // Same trainer = not a downgrade
-  if (currentTrainer === lastTrainer || !lastTrainer) return false;
-
   // Current trainer meet stats
   const currentMeetStarts = horse.trainerMeetStarts ?? 0;
   const currentMeetWins = horse.trainerMeetWins ?? 0;
   const currentWinRate = currentMeetStarts > 0 ? (currentMeetWins / currentMeetStarts) * 100 : 0;
 
-  // Trainer downgrade if new trainer has <10% win rate at meet
-  if (currentMeetStarts >= 5 && currentWinRate < 10) {
+  // Poor trainer = <10% win rate at meet with enough sample
+  if (currentMeetStarts >= 10 && currentWinRate < 10) {
     return true;
   }
 
