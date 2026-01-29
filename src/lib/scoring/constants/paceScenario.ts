@@ -9,15 +9,113 @@
  * - E in speed duel (2+ E types): 15-20% win rate
  * - Closer in speed duel: 25-30% win rate
  * - Closer with no pace: 10-15% win rate (no setup)
+ *
+ * DISTANCE-ADJUSTED EP1 THRESHOLDS (January 2026):
+ * EP1 figures have different meanings based on race distance.
+ * - Sprints (≤7f): Higher EP1 values needed to classify as early speed
+ *   because early position is more contested at shorter distances
+ * - Routes (>7f): Lower EP1 thresholds are appropriate because
+ *   early speed is more conserved and an EP1 of 88 at 1.5 miles
+ *   means the horse is on the lead, not mid-pack
  */
 
-export const PACE_SCENARIO_CONFIG = {
-  // EP1 thresholds for running style classification
+/**
+ * Maximum distance in furlongs for sprint classification
+ * Races ≤7f are sprints, >7f are routes
+ */
+export const SPRINT_MAX_FURLONGS = 7;
+
+/**
+ * Sprint EP1 thresholds (≤7 furlongs)
+ * These are the original, more restrictive thresholds
+ *
+ * E (Early): EP1 ≥ 92 - Must show strong early speed in sprint
+ * EP (Early Presser): EP1 85-91 - Presses the pace
+ * P (Presser/Stalker): EP1 75-84 - Mid-pack positioning
+ * S (Closer): EP1 < 75 - Comes from behind
+ */
+export const SPRINT_EP1_THRESHOLDS = {
   /** E type (early speed): EP1 >= 92 */
-  EP1_EARLY_SPEED: 92,
+  E: 92,
   /** EP type (early presser): EP1 85-91 */
-  EP1_PRESSER: 85,
+  EP: 85,
   /** P type (stalker): EP1 75-84 */
+  P: 75,
+  // Below 75 = S type (closer)
+} as const;
+
+/**
+ * Route EP1 thresholds (>7 furlongs)
+ * Lower thresholds because early speed is more conserved at distance
+ *
+ * Logic: An EP1 of 88 at 6 furlongs means mid-pack positioning,
+ * but the same EP1 at 1.5 miles means the horse is on the lead.
+ * Pace scenarios in routes require lower EP1 thresholds to
+ * accurately classify running styles.
+ *
+ * E (Early): EP1 ≥ 88 - Early speed at route distance
+ * EP (Early Presser): EP1 80-87 - Presses the pace
+ * P (Presser/Stalker): EP1 70-79 - Mid-pack positioning
+ * S (Closer): EP1 < 70 - Comes from behind
+ */
+export const ROUTE_EP1_THRESHOLDS = {
+  /** E type (early speed): EP1 >= 88 */
+  E: 88,
+  /** EP type (early presser): EP1 80-87 */
+  EP: 80,
+  /** P type (stalker): EP1 70-79 */
+  P: 70,
+  // Below 70 = S type (closer)
+} as const;
+
+/**
+ * Get the appropriate EP1 thresholds based on race distance
+ *
+ * @param distanceFurlongs - Race distance in furlongs (null/undefined = sprint default)
+ * @returns The appropriate threshold set (sprint or route)
+ */
+export function getEP1ThresholdsForDistance(
+  distanceFurlongs: number | null | undefined
+): typeof SPRINT_EP1_THRESHOLDS | typeof ROUTE_EP1_THRESHOLDS {
+  // Default to sprint thresholds if distance is not available (more conservative)
+  if (distanceFurlongs === null || distanceFurlongs === undefined) {
+    console.warn(
+      '[PACE_SCENARIO] Distance not available, defaulting to sprint EP1 thresholds (conservative)'
+    );
+    return SPRINT_EP1_THRESHOLDS;
+  }
+
+  // 7f or less = sprint, more than 7f = route
+  if (distanceFurlongs <= SPRINT_MAX_FURLONGS) {
+    return SPRINT_EP1_THRESHOLDS;
+  }
+
+  return ROUTE_EP1_THRESHOLDS;
+}
+
+/**
+ * Determine if a race is a sprint or route
+ *
+ * @param distanceFurlongs - Race distance in furlongs
+ * @returns 'sprint' or 'route'
+ */
+export function getRaceDistanceType(
+  distanceFurlongs: number | null | undefined
+): 'sprint' | 'route' {
+  if (distanceFurlongs === null || distanceFurlongs === undefined) {
+    return 'sprint'; // Conservative default
+  }
+  return distanceFurlongs <= SPRINT_MAX_FURLONGS ? 'sprint' : 'route';
+}
+
+export const PACE_SCENARIO_CONFIG = {
+  // DEPRECATED: Use SPRINT_EP1_THRESHOLDS and ROUTE_EP1_THRESHOLDS with getEP1ThresholdsForDistance()
+  // Kept for backwards compatibility - these are the sprint thresholds
+  /** @deprecated Use SPRINT_EP1_THRESHOLDS.E instead - E type (early speed): EP1 >= 92 */
+  EP1_EARLY_SPEED: 92,
+  /** @deprecated Use SPRINT_EP1_THRESHOLDS.EP instead - EP type (early presser): EP1 85-91 */
+  EP1_PRESSER: 85,
+  /** @deprecated Use SPRINT_EP1_THRESHOLDS.P instead - P type (stalker): EP1 75-84 */
   EP1_STALKER: 75,
   // Below 75 = S type (closer)
 

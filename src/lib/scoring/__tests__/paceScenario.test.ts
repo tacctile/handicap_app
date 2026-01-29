@@ -20,6 +20,12 @@ import {
   getStyleDisplayInfo,
   formatPaceScenarioSummary,
   PACE_SCENARIO_CONFIG,
+  // Distance-adjusted threshold constants
+  SPRINT_EP1_THRESHOLDS,
+  ROUTE_EP1_THRESHOLDS,
+  SPRINT_MAX_FURLONGS,
+  getEP1ThresholdsForDistance,
+  getRaceDistanceType,
 } from '../paceScenario';
 import type { HorseEntry, PastPerformance } from '../../../types/drf';
 
@@ -776,6 +782,215 @@ describe('paceScenario', () => {
       expect(result.stalkerCount).toBe(1);
       expect(result.closerCount).toBe(1);
       expect(result.unknownCount).toBe(1);
+    });
+  });
+
+  // ============================================================================
+  // DISTANCE-ADJUSTED THRESHOLDS TESTS
+  // ============================================================================
+
+  describe('distance-adjusted EP1 thresholds', () => {
+    describe('threshold constants', () => {
+      it('has correct sprint thresholds', () => {
+        expect(SPRINT_EP1_THRESHOLDS.E).toBe(92);
+        expect(SPRINT_EP1_THRESHOLDS.EP).toBe(85);
+        expect(SPRINT_EP1_THRESHOLDS.P).toBe(75);
+      });
+
+      it('has correct route thresholds', () => {
+        expect(ROUTE_EP1_THRESHOLDS.E).toBe(88);
+        expect(ROUTE_EP1_THRESHOLDS.EP).toBe(80);
+        expect(ROUTE_EP1_THRESHOLDS.P).toBe(70);
+      });
+
+      it('has correct sprint max furlongs', () => {
+        expect(SPRINT_MAX_FURLONGS).toBe(7);
+      });
+    });
+
+    describe('getEP1ThresholdsForDistance', () => {
+      it('returns sprint thresholds for 6 furlongs', () => {
+        const thresholds = getEP1ThresholdsForDistance(6);
+        expect(thresholds).toBe(SPRINT_EP1_THRESHOLDS);
+      });
+
+      it('returns sprint thresholds for 7 furlongs (edge case)', () => {
+        const thresholds = getEP1ThresholdsForDistance(7);
+        expect(thresholds).toBe(SPRINT_EP1_THRESHOLDS);
+      });
+
+      it('returns route thresholds for 8 furlongs (1 mile)', () => {
+        const thresholds = getEP1ThresholdsForDistance(8);
+        expect(thresholds).toBe(ROUTE_EP1_THRESHOLDS);
+      });
+
+      it('returns route thresholds for 12 furlongs (1.5 miles)', () => {
+        const thresholds = getEP1ThresholdsForDistance(12);
+        expect(thresholds).toBe(ROUTE_EP1_THRESHOLDS);
+      });
+
+      it('returns sprint thresholds for null distance (conservative default)', () => {
+        const thresholds = getEP1ThresholdsForDistance(null);
+        expect(thresholds).toBe(SPRINT_EP1_THRESHOLDS);
+      });
+
+      it('returns sprint thresholds for undefined distance (conservative default)', () => {
+        const thresholds = getEP1ThresholdsForDistance(undefined);
+        expect(thresholds).toBe(SPRINT_EP1_THRESHOLDS);
+      });
+    });
+
+    describe('getRaceDistanceType', () => {
+      it('returns sprint for 6 furlongs', () => {
+        expect(getRaceDistanceType(6)).toBe('sprint');
+      });
+
+      it('returns sprint for 7 furlongs', () => {
+        expect(getRaceDistanceType(7)).toBe('sprint');
+      });
+
+      it('returns route for 8 furlongs', () => {
+        expect(getRaceDistanceType(8)).toBe('route');
+      });
+
+      it('returns route for 12 furlongs', () => {
+        expect(getRaceDistanceType(12)).toBe('route');
+      });
+
+      it('returns sprint for null distance (conservative default)', () => {
+        expect(getRaceDistanceType(null)).toBe('sprint');
+      });
+
+      it('returns sprint for undefined distance (conservative default)', () => {
+        expect(getRaceDistanceType(undefined)).toBe('sprint');
+      });
+    });
+
+    describe('classifyRunningStyle with distance', () => {
+      it('classifies EP1 88 as EP in sprint (< 92)', () => {
+        const horse = createMockHorse([88, 88, 88]);
+        expect(classifyRunningStyle(horse, 6)).toBe('EP');
+      });
+
+      it('classifies EP1 88 as E in route (>= 88)', () => {
+        const horse = createMockHorse([88, 88, 88]);
+        expect(classifyRunningStyle(horse, 9)).toBe('E');
+      });
+
+      it('classifies EP1 75 as P in sprint (>= 75)', () => {
+        const horse = createMockHorse([75, 75, 75]);
+        expect(classifyRunningStyle(horse, 6)).toBe('P');
+      });
+
+      it('classifies EP1 75 as EP in route (>= 80 threshold, but 75 is >= 70, so P)', () => {
+        // In routes: E≥88, EP 80-87, P 70-79, S<70
+        // EP1 of 75 is in P range (70-79)
+        const horse = createMockHorse([75, 75, 75]);
+        expect(classifyRunningStyle(horse, 9)).toBe('P');
+      });
+
+      it('classifies EP1 71 as S in sprint (< 75)', () => {
+        const horse = createMockHorse([71, 71, 71]);
+        expect(classifyRunningStyle(horse, 6)).toBe('S');
+      });
+
+      it('classifies EP1 71 as P in route (>= 70)', () => {
+        // In routes: P threshold is 70
+        const horse = createMockHorse([71, 71, 71]);
+        expect(classifyRunningStyle(horse, 9)).toBe('P');
+      });
+
+      it('classifies EP1 68 as S in both sprint and route', () => {
+        const horse = createMockHorse([68, 68, 68]);
+        expect(classifyRunningStyle(horse, 6)).toBe('S'); // Sprint: < 75
+        expect(classifyRunningStyle(horse, 9)).toBe('S'); // Route: < 70
+      });
+
+      it('classifies EP1 92 as E in both sprint and route', () => {
+        const horse = createMockHorse([92, 92, 92]);
+        expect(classifyRunningStyle(horse, 6)).toBe('E'); // Sprint: >= 92
+        expect(classifyRunningStyle(horse, 9)).toBe('E'); // Route: >= 88
+      });
+    });
+
+    describe('analyzePaceScenario with distance', () => {
+      it('classifies more E types in routes with same EP1 values', () => {
+        // Horses with EP1 averaging ~89 - EP in sprint, E in route
+        const horses = [
+          createMockHorse([90, 89, 88], { programNumber: 1, horseName: 'Horse A' }),
+          createMockHorse([89, 88, 90], { programNumber: 2, horseName: 'Horse B' }),
+          createMockHorse([70, 68, 65], { programNumber: 3, horseName: 'Closer' }),
+        ];
+
+        // Sprint: EP1 ~89 should be EP, not E (E threshold is 92)
+        const sprintResult = analyzePaceScenario(horses, 6);
+        expect(sprintResult.earlySpeedCount).toBe(0);
+        expect(sprintResult.presserCount).toBe(2);
+
+        // Route: EP1 ~89 should be E (E threshold is 88)
+        const routeResult = analyzePaceScenario(horses, 9);
+        expect(routeResult.earlySpeedCount).toBe(2);
+        expect(routeResult.presserCount).toBe(0);
+      });
+
+      it('detects SPEED_DUEL in route but not sprint for same field', () => {
+        // Horses with EP1 ~89 - these would be E types in route but EP in sprint
+        const horses = [
+          createMockHorse([90, 89, 88], { programNumber: 1, horseName: 'Speed A' }),
+          createMockHorse([89, 88, 90], { programNumber: 2, horseName: 'Speed B' }),
+          createMockHorse([70, 68, 65], { programNumber: 3, horseName: 'Closer' }),
+        ];
+
+        // Sprint: 0 E types, 2 EP types -> not a speed duel
+        const sprintResult = analyzePaceScenario(horses, 6);
+        expect(sprintResult.scenario).not.toBe('SPEED_DUEL');
+
+        // Route: 2 E types -> SPEED_DUEL
+        const routeResult = analyzePaceScenario(horses, 9);
+        expect(routeResult.scenario).toBe('SPEED_DUEL');
+      });
+
+      it('detects LONE_SPEED in route but CONTESTED in sprint', () => {
+        // Horse A: EP1 ~89 (E in route, EP in sprint)
+        // Horse B: EP1 ~82 (EP in route, P in sprint)
+        // Horse C: EP1 ~72 (P in route, S in sprint)
+        const horses = [
+          createMockHorse([90, 89, 88], { programNumber: 1, horseName: 'Speed' }),
+          createMockHorse([83, 82, 81], { programNumber: 2, horseName: 'Presser' }),
+          createMockHorse([73, 72, 71], { programNumber: 3, horseName: 'Stalker' }),
+        ];
+
+        // Sprint: 0 E, 1 EP (89), 1 P (82), 1 S (72)
+        const sprintResult = analyzePaceScenario(horses, 6);
+        // Not LONE_SPEED because no E types
+        expect(sprintResult.earlySpeedCount).toBe(0);
+
+        // Route: 1 E (89), 1 EP (82), 1 P (72)
+        const routeResult = analyzePaceScenario(horses, 9);
+        // Should be LONE_SPEED: 1 E type with ≤1 EP type
+        expect(routeResult.earlySpeedCount).toBe(1);
+        expect(routeResult.presserCount).toBe(1);
+        expect(routeResult.scenario).toBe('LONE_SPEED');
+      });
+
+      it('correctly applies bonuses/penalties based on route classification', () => {
+        // In route, horses with EP1 ~89 are E types and would get SPEED_DUEL penalty
+        const horses = [
+          createMockHorse([90, 89, 88], { programNumber: 1, horseName: 'Speed A' }),
+          createMockHorse([89, 88, 90], { programNumber: 2, horseName: 'Speed B' }),
+          createMockHorse([65, 63, 60], { programNumber: 3, horseName: 'Closer' }),
+        ];
+
+        const routeResult = analyzePaceScenario(horses, 9);
+        expect(routeResult.scenario).toBe('SPEED_DUEL');
+
+        // Speed horses should be disadvantaged in speed duel
+        expect(routeResult.disadvantaged.some((d) => d.programNumber === 1)).toBe(true);
+        expect(routeResult.disadvantaged.some((d) => d.programNumber === 2)).toBe(true);
+
+        // Closer should benefit from speed duel
+        expect(routeResult.beneficiaries.some((b) => b.programNumber === 3)).toBe(true);
+      });
     });
   });
 });
