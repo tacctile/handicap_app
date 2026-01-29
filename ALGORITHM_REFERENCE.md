@@ -186,6 +186,23 @@
 | Won within 30 days | +4     |
 | Won within 60 days | +3     |
 
+### Conditional Winner Bonus (v3.7)
+
+Additive bonus based on win recency AND class comparison. Replaces the unconditional 15-point floor.
+Stacks WITH WLO decay - these bonuses add to the calculated form score, not replace it.
+
+| Win Position | Class vs Today   | Bonus |
+| ------------ | ---------------- | ----- |
+| Last race    | Same or higher   | +3    |
+| Last race    | Lower (moving up)| +1    |
+| 2 races back | Same or higher   | +2    |
+| 2 races back | Lower            | +0    |
+| 3+ back      | Any              | +0    |
+
+> **v3.7 CHANGE:** Removed unconditional 15-point winner protection floor.
+> The old system gave ANY last-out winner a minimum 15 pts regardless of quality.
+> A $10K claimer win 4 races ago shouldn't protect when facing allowance company.
+
 ### Consistency Points
 
 | ITM Rate (last 10) | Points |
@@ -209,10 +226,15 @@
 | First-time starter        | -2      |
 | Long layoff but won fresh | -5      |
 
-| Constant                         | Value |
-| -------------------------------- | ----- |
-| MAX_LAYOFF_PENALTY               | 10    |
-| MIN_FORM_SCORE_FOR_RECENT_WINNER | 15    |
+| Constant                              | Value |
+| ------------------------------------- | ----- |
+| MAX_LAYOFF_PENALTY                    | 10    |
+| CONDITIONAL_WINNER_BONUS_LAST_SAME    | 3     |
+| CONDITIONAL_WINNER_BONUS_LAST_LOWER   | 1     |
+| CONDITIONAL_WINNER_BONUS_2BACK_SAME   | 2     |
+| CONDITIONAL_WINNER_BONUS_2BACK_LOWER  | 0     |
+
+> **REMOVED:** MIN_FORM_SCORE_FOR_RECENT_WINNER (was 15) - replaced by conditional bonus system
 
 ### Form Confidence Multiplier
 

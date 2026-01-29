@@ -1,13 +1,27 @@
 /**
- * Form Scoring Module (v3.6 Form Decay System)
+ * Form Scoring Module (v3.7 Conditional Winner Bonus)
  * Analyzes recent race form, layoff patterns, and consistency
  *
- * v3.6 FORM DECAY SYSTEM
+ * v3.7 CONDITIONAL WINNER BONUS (replaces unconditional 15-pt floor)
+ * Addresses issue: A horse that won a $10K claimer 4 races ago shouldn't get
+ * floor protection when facing allowance company today. The old system gave
+ * ANY last-out winner a minimum 15-point floor regardless of quality or recency.
+ *
+ * NEW SYSTEM: Conditional ADDITIVE bonuses (not a floor) based on recency AND class:
+ *   | Win Position   | Class vs Today   | Bonus |
+ *   |----------------|------------------|-------|
+ *   | Last race      | Same or higher   | +3    |
+ *   | Last race      | Lower (moving up)| +1    |
+ *   | 2 races back   | Same or higher   | +2    |
+ *   | 2 races back   | Lower            | +0    |
+ *   | 3+ races back  | Any              | +0    |
+ *
+ * v3.6 FORM DECAY SYSTEM (preserved)
  * Addresses Algorithm Audit Finding #1: 53% of bad picks had stale form.
  * Winner bonuses now scale based on recency - horses that won 90 days ago
  * get less credit than horses that won 14 days ago.
  *
- * FORM SCORING BREAKDOWN (50 pts max per v3.6 spec):
+ * FORM SCORING BREAKDOWN (50 pts max):
  *
  * Recent Performance Base: 0-15 pts
  *   - Last 3 race finishes weighted (50%, 30%, 20%)
@@ -38,6 +52,11 @@
  *   | 76-90 days     | 0.25       |
  *   | 91+ days       | 0.10       |
  *
+ * Conditional Winner Bonus (v3.7): 0-3 pts
+ *   - Stacks WITH WLO decay (not replaces it)
+ *   - Based on win recency AND class comparison
+ *   - See table above for bonus schedule
+ *
  * Win Recency Bonus: 0-4 pts (unchanged, already time-gated)
  *   - Won within 30 days: +4 pts (hot horse)
  *   - Won within 60 days: +3 pts (warm horse)
@@ -54,13 +73,19 @@
  *   - Freshening (36-60 days): -3 penalty
  *   - Moderate (61-90 days): -6 penalty
  *   - Extended (90+ days): -10 penalty (capped)
- *   - Minimum form score: 15 pts for recent winners (winner protection)
  *
- * FORM CATEGORY CAP: 50 pts (v3.6 specification)
+ * FORM CATEGORY CAP: 50 pts
  *
  * Edge Cases:
  *   - Horse with wins but no date available: Use conservative 60-day estimate
  *   - First-time starters: 20% confidence multiplier (10 pts max)
+ *   - No class context available: Use simplified bonus (+3 WLO, +1 for 2 back)
+ *
+ * v3.7 CHANGES (Conditional Winner Bonus):
+ * - REMOVED unconditional 15-point winner protection floor
+ * - ADDED conditional winner bonus (0-3 pts) based on recency AND class
+ * - Conditional bonus STACKS WITH WLO decay (doesn't replace it)
+ * - Form score now calculates naturally without artificial floors
  *
  * v3.6 CHANGES (Form Decay System):
  * - WLO bonus now decayed via calculateWLODecay() (1-18 pts)
@@ -131,6 +156,8 @@ export interface FormScoreResult {
   winRecencyBonus: number;
   /** v3.0: Layoff penalty applied (capped at 10) */
   layoffPenalty: number;
+  /** v3.7: Conditional winner bonus (0-3 pts based on recency AND class) */
+  conditionalWinnerBonus: number;
   /** Phase 2: Form confidence info for data completeness */
   formConfidence?: {
     /** Number of valid past performances */
@@ -1278,14 +1305,151 @@ function calculateRecentWinnerBonus(
 // ============================================================================
 
 /**
- * Minimum form score for horses that won last out (v3.4 - Algorithm Tuning Package v1)
- * Even with layoff penalties, a recent winner should score at least 15 pts
+ * CONDITIONAL WINNER BONUS SYSTEM (v3.7)
  *
- * v3.4 FIX: "Winner Protection" - Increased from 5 to 15 pts.
- * This prevents layoff penalties or confidence multipliers from destroying
- * the score of a horse that won its last race. Winners deserve respect.
+ * v3.7 CHANGE: Removed unconditional 15-point winner protection floor.
+ * The old system gave ANY last-out winner a minimum 15-point form score,
+ * regardless of how weak the win was or how long ago it occurred.
+ *
+ * Problem: A horse that won a $10K claimer 4 races ago shouldn't get
+ * floor protection when facing allowance company today.
+ *
+ * New system: Conditional ADDITIVE bonuses (not a floor) based on:
+ * - Win in last race (race 1 back) at same or higher class: +3 pts
+ * - Win in last race at lower class (class drop win): +1 pt
+ * - Win 2 races back at same or higher class: +2 pts
+ * - Win 2 races back at lower class: +0 pts
+ * - Win 3+ races back: no bonus regardless of class
+ *
+ * These bonuses STACK WITH WLO decay (not replace it):
+ * - WLO decay gives 1-18 pts based on days since last win
+ * - Conditional bonus adds 0-3 pts based on recency AND class
+ * - Total form score still capped at 50 pts
+ *
+ * @deprecated MIN_FORM_SCORE_FOR_RECENT_WINNER removed in v3.7
  */
-const MIN_FORM_SCORE_FOR_RECENT_WINNER = 15;
+const CONDITIONAL_WINNER_BONUS = {
+  /** Win in last race at same or higher class */
+  WIN_LAST_SAME_OR_HIGHER_CLASS: 3,
+  /** Win in last race at lower class (class drop win) */
+  WIN_LAST_LOWER_CLASS: 1,
+  /** Win 2 races back at same or higher class */
+  WIN_2_BACK_SAME_OR_HIGHER_CLASS: 2,
+  /** Win 2 races back at lower class */
+  WIN_2_BACK_LOWER_CLASS: 0,
+  /** Win 3+ races back - no bonus regardless of class */
+  WIN_3_PLUS_BACK: 0,
+} as const;
+
+/**
+ * Calculate conditional winner bonus based on win recency AND class.
+ *
+ * v3.7 NEW SYSTEM - Replaces unconditional 15-point floor.
+ *
+ * This function provides ADDITIVE bonuses (not a floor) that stack with
+ * WLO decay to reward wins appropriately based on both timing and quality.
+ *
+ * Bonus Schedule:
+ * | Win Position | Class vs Today | Bonus |
+ * |--------------|----------------|-------|
+ * | Last race    | Same or higher | +3    |
+ * | Last race    | Lower          | +1    |
+ * | 2 races back | Same or higher | +2    |
+ * | 2 races back | Lower          | +0    |
+ * | 3+ back      | Any            | +0    |
+ *
+ * @param pastPerformances - Horse's past performance records
+ * @param todayContext - Class context for today's race (optional)
+ * @returns Bonus points and reasoning
+ */
+function calculateConditionalWinnerBonus(
+  pastPerformances: PastPerformance[],
+  todayContext: ClassContext | null
+): { bonus: number; reasoning: string } {
+  if (pastPerformances.length === 0) {
+    return { bonus: 0, reasoning: 'No race history' };
+  }
+
+  // Check last race (index 0)
+  const lastPP = pastPerformances[0];
+  if (lastPP?.finishPosition === 1) {
+    // Won last race - check class comparison
+    if (todayContext) {
+      const winClassLevel = getClassLevel(
+        lastPP.classification,
+        lastPP.claimingPrice,
+        lastPP.purse
+      );
+      const todayClassLevel = getClassLevel(
+        todayContext.classification,
+        todayContext.claimingPrice,
+        todayContext.purse
+      );
+      const comparison = compareClassLevels(winClassLevel, todayClassLevel);
+
+      // 'higher' means past class > today class (win at higher class)
+      // 'same' means approximately equal
+      // 'lower' means past class < today class (win at lower class, moving up)
+      if (comparison === 'higher' || comparison === 'same') {
+        return {
+          bonus: CONDITIONAL_WINNER_BONUS.WIN_LAST_SAME_OR_HIGHER_CLASS,
+          reasoning: `WLO at ${comparison === 'higher' ? 'higher' : 'same'} class (+${CONDITIONAL_WINNER_BONUS.WIN_LAST_SAME_OR_HIGHER_CLASS})`,
+        };
+      } else {
+        return {
+          bonus: CONDITIONAL_WINNER_BONUS.WIN_LAST_LOWER_CLASS,
+          reasoning: `WLO at lower class (+${CONDITIONAL_WINNER_BONUS.WIN_LAST_LOWER_CLASS})`,
+        };
+      }
+    } else {
+      // No class context available - use simplified version: +3 for last race win
+      return {
+        bonus: CONDITIONAL_WINNER_BONUS.WIN_LAST_SAME_OR_HIGHER_CLASS,
+        reasoning: `WLO (+${CONDITIONAL_WINNER_BONUS.WIN_LAST_SAME_OR_HIGHER_CLASS})`,
+      };
+    }
+  }
+
+  // Check second-to-last race (index 1)
+  const secondPP = pastPerformances[1];
+  if (secondPP?.finishPosition === 1) {
+    // Won 2 races back - check class comparison
+    if (todayContext) {
+      const winClassLevel = getClassLevel(
+        secondPP.classification,
+        secondPP.claimingPrice,
+        secondPP.purse
+      );
+      const todayClassLevel = getClassLevel(
+        todayContext.classification,
+        todayContext.claimingPrice,
+        todayContext.purse
+      );
+      const comparison = compareClassLevels(winClassLevel, todayClassLevel);
+
+      if (comparison === 'higher' || comparison === 'same') {
+        return {
+          bonus: CONDITIONAL_WINNER_BONUS.WIN_2_BACK_SAME_OR_HIGHER_CLASS,
+          reasoning: `Won 2 back at ${comparison === 'higher' ? 'higher' : 'same'} class (+${CONDITIONAL_WINNER_BONUS.WIN_2_BACK_SAME_OR_HIGHER_CLASS})`,
+        };
+      } else {
+        return {
+          bonus: CONDITIONAL_WINNER_BONUS.WIN_2_BACK_LOWER_CLASS,
+          reasoning: 'Won 2 back at lower class (no bonus)',
+        };
+      }
+    } else {
+      // No class context - use simplified version: +1 for 2 races back
+      return {
+        bonus: 1,
+        reasoning: 'Won 2 back (+1)',
+      };
+    }
+  }
+
+  // Win 3+ races back or no recent win - no conditional bonus
+  return { bonus: 0, reasoning: 'No recent win (3+ back)' };
+}
 
 /**
  * Form category maximum score (v3.6)
@@ -1296,15 +1460,25 @@ export const FORM_CATEGORY_MAX = 50;
 /**
  * Calculate form score for a horse
  *
- * v3.6 SCORING BREAKDOWN (50 pts max - Form Decay System):
+ * v3.7 SCORING BREAKDOWN (50 pts max):
  * - Recent Performance Base: 0-15 pts
  * - Winner Bonuses (with decay): 0-30 pts
  *   - WLO: 1-18 pts (via calculateWLODecay)
  *   - Won 2/3: 0-8 pts (via getRecencyMultiplier)
  *   - Won 3/5: 0-4 pts (via getRecencyMultiplier)
+ * - Conditional Winner Bonus: 0-3 pts (v3.7 - based on recency AND class)
+ *   - Win last race at same/higher class: +3 pts
+ *   - Win last race at lower class: +1 pt
+ *   - Win 2 back at same/higher class: +2 pts
+ *   - Win 2 back at lower class: +0 pts
+ *   - Win 3+ back: +0 pts
  * - Consistency: 0-4 pts
  * - Layoff Penalty: -10 to 0 pts (capped)
  * - Win Recency Bonus: 0-4 pts (for wins within 30/60 days)
+ *
+ * v3.7 NOTE: Unconditional 15-point winner protection floor REMOVED.
+ * Form score now calculates naturally based on actual performance factors.
+ * The conditional winner bonus provides lighter protection for quality wins only.
  *
  * @param horse - The horse entry to score
  * @param todayContext - Optional class context for today's race (enables class-aware scoring)
@@ -1347,13 +1521,21 @@ export function calculateFormScore(
   // v3.6: Calculate win recency bonus
   const winRecencyResult = getWinRecencyBonus(daysSinceLastWin);
 
-  // v3.6: Calculate total with Form Decay System
+  // v3.7: Calculate conditional winner bonus (replaces unconditional floor)
+  // This bonus is ADDITIVE and considers both recency and class
+  const conditionalWinnerBonusResult = calculateConditionalWinnerBonus(
+    pastPerformances,
+    todayContext ?? null
+  );
+
+  // v3.6/3.7: Calculate total with Form Decay System + Conditional Winner Bonus
   // Form cap: 50 pts per v3.6 specification
   const baseComponents =
     formResult.score + // 0-15 pts
     consistencyResult.bonus + // 0-4 pts
-    recentWinnerResult.bonus + // 0-30 pts (decayed winner bonus)
-    beatenLengthsAdjustments.formPoints; // ±adjustment
+    recentWinnerResult.bonus + // 0-30 pts (decayed winner bonus via WLO decay)
+    beatenLengthsAdjustments.formPoints + // ±adjustment
+    conditionalWinnerBonusResult.bonus; // v3.7: 0-3 pts (conditional on recency AND class)
 
   // Apply layoff penalty (capped at -10)
   const cappedLayoffPenalty = Math.max(layoffResult.penalty, -MAX_LAYOFF_PENALTY);
@@ -1367,13 +1549,14 @@ export function calculateFormScore(
   // 1 PP → 20 pts max (40% of 50)
   // 2 PPs → 30 pts max (60% of 50)
   // 3+ PPs → 50 pts max (full scoring)
-  let adjustedTotal = Math.round(rawTotal * confidenceMultiplier);
+  const adjustedTotal = Math.round(rawTotal * confidenceMultiplier);
 
-  // v3.6: Apply minimum form score floor for recent winners
-  // A horse that won last out should never score below 15 pts
-  if (recentWinnerResult.wonLastOut && adjustedTotal < MIN_FORM_SCORE_FOR_RECENT_WINNER) {
-    adjustedTotal = MIN_FORM_SCORE_FOR_RECENT_WINNER;
-  }
+  // v3.7: REMOVED unconditional 15-point winner protection floor
+  // The old floor (MIN_FORM_SCORE_FOR_RECENT_WINNER = 15) was removed because:
+  // - It gave ANY last-out winner 15 pts regardless of win quality or recency
+  // - A $10K claimer win 4 races ago shouldn't protect against layoff penalties
+  // - The new conditional winner bonus (+0 to +3 pts) handles quality wins appropriately
+  // - WLO decay (1-18 pts) already rewards recency
 
   // v3.6: Final score capped at 50 pts per v3.6 specification
   const total = Math.min(FORM_CATEGORY_MAX, Math.max(0, adjustedTotal));
@@ -1399,6 +1582,11 @@ export function calculateFormScore(
   // v3.2: Add recent winner bonus to reasoning
   if (recentWinnerResult.bonus > 0) {
     reasoning += ` | ${recentWinnerResult.reasoning}`;
+  }
+
+  // v3.7: Add conditional winner bonus to reasoning
+  if (conditionalWinnerBonusResult.bonus > 0) {
+    reasoning += ` | ${conditionalWinnerBonusResult.reasoning}`;
   }
 
   // v3.2: Add win recency bonus to reasoning
@@ -1447,6 +1635,7 @@ export function calculateFormScore(
     daysSinceLastWin,
     winRecencyBonus: winRecencyResult.bonus,
     layoffPenalty: cappedLayoffPenalty,
+    conditionalWinnerBonus: conditionalWinnerBonusResult.bonus,
     formConfidence,
   };
 }
