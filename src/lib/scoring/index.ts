@@ -104,6 +104,8 @@ import {
   type DetectedCombo,
 } from './comboPatterns';
 import { calculateWeightScore as calcWeight } from './weight';
+// NOTE: oddsScore module preserved but removed from base scoring pipeline
+// Odds data available for post-scoring overlay calculations
 import { calculateOddsScore as calcOddsScore, type OddsScoreResult } from './oddsScore';
 import { calculateSexRestrictionScore as calcSexRestriction } from './sexRestriction';
 import { calculateP3Refinements } from './p3Refinements';
@@ -161,14 +163,13 @@ import {
 
 /**
  * Maximum base score (before overlay)
- * Model B (Speed-Dominant): 331 pts
+ * Model B (Speed-Dominant): 319 pts
  *
  * Category breakdown:
  * - Speed & Class: 140 pts (Speed 105 + Class 35)
- * - Form: 42 pts
+ * - Form: 50 pts (v3.6: Form Decay System)
  * - Pace: 35 pts
  * - Connections: 23 pts
- * - Odds Factor: 12 pts
  * - Post Position: 12 pts
  * - Equipment: 8 pts
  * - Distance/Surface: 20 pts
@@ -178,9 +179,13 @@ import {
  * - Trainer Surface/Distance: 6 pts
  * - Weight: 1 pt
  * - P3 (Age + Sire's Sire): 2 pts
- * Total: 331 pts (v3.6: Form Decay System restored form to 50 pts)
+ * Total: 319 pts
+ *
+ * NOTE: Odds Factor (12 pts) removed from base scoring to eliminate
+ * circular logic of rewarding horses for being favorites.
+ * Odds data still available for post-scoring overlay calculations.
  */
-export const MAX_BASE_SCORE = 331;
+export const MAX_BASE_SCORE = 319;
 
 /**
  * Maximum overlay adjustment
@@ -189,7 +194,7 @@ export const MAX_BASE_SCORE = 331;
 export const MAX_OVERLAY = 40;
 
 /** Maximum total score (base + overlay) */
-export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 371
+export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 359
 
 /**
  * Score limits by category
@@ -230,7 +235,7 @@ export const SCORE_LIMITS = {
   form: 50, // v3.6: Form Decay System restored to 50
   equipment: 8,
   pace: 35, // Model B: reduced from 45
-  odds: 12, // Model B: reduced from 15
+  // NOTE: odds removed from base scoring (circular logic elimination)
   distanceSurface: 20, // Turf (8) + Wet (6) + Distance (6) = 20
   trainerPatterns: 8, // Model B: reduced from 10
   comboPatterns: 4,
@@ -240,38 +245,38 @@ export const SCORE_LIMITS = {
   // P3 refinements (subtle, ±1 pt each)
   ageFactor: 1, // Age-based peak performance (+1 for 4-5yo, -1 for 8+)
   siresSire: 1, // Sire's sire breeding influence (±1 integrated into breeding)
-  baseTotal: MAX_BASE_SCORE, // 331
+  baseTotal: MAX_BASE_SCORE, // 319
   overlayMax: MAX_OVERLAY, // 40
-  total: MAX_SCORE, // 371
+  total: MAX_SCORE, // 359
 } as const;
 
 /**
  * Score thresholds for color coding and tier classification
- * Based on BASE SCORE ONLY (331 max), not total score with overlay
+ * Based on BASE SCORE ONLY (319 max), not total score with overlay
  *
  * | Base Score | Percentage | Rating     |
  * |------------|------------|------------|
- * | 265+       | 80%+       | Elite      |
- * | 216-264    | 65-79%     | Strong     |
- * | 165-215    | 50-64%     | Contender  |
- * | 116-164    | 35-49%     | Fair       |
- * | Below 116  | <35%       | Weak       |
+ * | 255+       | 80%+       | Elite      |
+ * | 207-254    | 65-79%     | Strong     |
+ * | 160-206    | 50-64%     | Contender  |
+ * | 112-159    | 35-49%     | Fair       |
+ * | Below 112  | <35%       | Weak       |
  */
 export const SCORE_THRESHOLDS = {
-  elite: 265, // 80%+ of 331 base score
-  strong: 216, // 65-79% of 331 base score
-  contender: 165, // 50-64% of 331 base score
-  fair: 116, // 35-49% of 331 base score
+  elite: 255, // 80%+ of 319 base score
+  strong: 207, // 65-79% of 319 base score
+  contender: 160, // 50-64% of 319 base score
+  fair: 112, // 35-49% of 319 base score
   weak: 0, // Below 35%
 } as const;
 
 /** Score colors matching thresholds (based on base score) */
 export const SCORE_COLORS = {
-  elite: '#22c55e', // Green - Elite (265+, 82%+)
-  strong: '#4ade80', // Light Green - Strong (216-264, 67-81%)
-  contender: '#eab308', // Yellow - Contender (165-215, 51-66%)
-  fair: '#f97316', // Orange - Fair (116-164, 36-50%)
-  weak: '#ef4444', // Red - Weak (<116, <36%)
+  elite: '#22c55e', // Green - Elite (255+, 80%+)
+  strong: '#4ade80', // Light Green - Strong (207-254, 65-79%)
+  contender: '#eab308', // Yellow - Contender (160-206, 50-64%)
+  fair: '#f97316', // Orange - Fair (112-159, 35-49%)
+  weak: '#ef4444', // Red - Weak (<112, <35%)
 } as const;
 
 // ============================================================================
@@ -324,14 +329,8 @@ export interface ScoreBreakdown {
     paceFit: string;
     reasoning: string;
   };
-  /** Odds-based score (market wisdom for favorites) */
-  odds: {
-    total: number;
-    oddsValue: number | null;
-    oddsSource: 'live' | 'morning_line' | 'none';
-    tier: string;
-    reasoning: string;
-  };
+  // NOTE: odds removed from base scoring breakdown (circular logic elimination)
+  // Odds data still available via HorseScore.oddsResult for overlay calculations
   /** Distance and surface affinity score (turf/wet/distance) */
   distanceSurface: {
     total: number;
@@ -504,12 +503,12 @@ export interface ScoreBreakdown {
 export interface HorseScore {
   /** Final total score (base + overlay) */
   total: number;
-  /** Base score (0-331) before overlay */
+  /** Base score (0-319) before overlay */
   baseScore: number;
   /** Overlay adjustment (±40) */
   overlayScore: number;
-  /** Odds-based score (0-15 pts for market wisdom) */
-  oddsScore: number;
+  // NOTE: oddsScore removed from base scoring (circular logic elimination)
+  // Odds data still available via oddsResult for overlay calculations
   breakdown: ScoreBreakdown;
   isScratched: boolean;
   confidenceLevel: 'high' | 'medium' | 'low';
@@ -616,17 +615,17 @@ export function getScoreColor(baseScore: number, isScratched: boolean): string {
 
 /**
  * Get score tier name based on BASE score
- * IMPORTANT: This should be called with baseScore (0-331), NOT total score
+ * IMPORTANT: This should be called with baseScore (0-319), NOT total score
  *
  * | Base Score | Percentage | Rating     |
  * |------------|------------|------------|
- * | 265+       | 80%+       | Elite      |
- * | 216-264    | 65-79%     | Strong     |
- * | 165-215    | 50-64%     | Contender  |
- * | 116-164    | 35-49%     | Fair       |
- * | Below 116  | <35%       | Weak       |
+ * | 255+       | 80%+       | Elite      |
+ * | 207-254    | 65-79%     | Strong     |
+ * | 160-206    | 50-64%     | Contender  |
+ * | 112-159    | 35-49%     | Fair       |
+ * | Below 112  | <35%       | Weak       |
  *
- * @param baseScore - The horse's base score (0-331 range)
+ * @param baseScore - The horse's base score (0-319 range)
  */
 export function getScoreTier(baseScore: number): string {
   if (baseScore >= SCORE_THRESHOLDS.elite) return 'Elite';
@@ -792,13 +791,7 @@ function calculateHorseScoreWithContext(
         },
         equipment: { total: 0, hasChanges: false, reasoning: 'Scratched' },
         pace: { total: 0, runningStyle: 'Unknown', paceFit: 'neutral', reasoning: 'Scratched' },
-        odds: {
-          total: 0,
-          oddsValue: null,
-          oddsSource: 'none',
-          tier: 'Unknown',
-          reasoning: 'Scratched',
-        },
+        // NOTE: odds removed from breakdown (circular logic elimination)
         distanceSurface: {
           total: 0,
           turfScore: 0,
@@ -947,9 +940,9 @@ function calculateHorseScoreWithContext(
     );
   }
 
-  // Calculate odds-based score (0-15 points, Phase 6)
-  // Note: _currentOdds parameter can be used for live odds override
-  const oddsScore = calcOddsScore(
+  // NOTE: oddsScore removed from base scoring pipeline (circular logic elimination)
+  // Still calculate for informational purposes and potential overlay use
+  const oddsResult = calcOddsScore(
     horse,
     _currentOdds !== horse.morningLineOdds ? _currentOdds : undefined
   );
@@ -1079,13 +1072,7 @@ function calculateHorseScoreWithContext(
           ? `${pace.reasoning} | Pace scenario (${context.paceScenarioResult.scenario}): ${paceScenarioAdjustment > 0 ? '+' : ''}${paceScenarioAdjustment} pts`
           : pace.reasoning,
     },
-    odds: {
-      total: oddsScore.total,
-      oddsValue: oddsScore.oddsValue,
-      oddsSource: oddsScore.oddsSource,
-      tier: oddsScore.tier,
-      reasoning: oddsScore.reasoning,
-    },
+    // NOTE: odds removed from breakdown (circular logic elimination)
     distanceSurface: {
       total: distanceSurface.total,
       turfScore: distanceSurface.turfScore,
@@ -1194,30 +1181,32 @@ function calculateHorseScoreWithContext(
   // v3.4 FIX: "Bias Inflation" - Algorithm Tuning Package v1
   // =========================================================================
   // PROBLEM: We were unconditionally adding up to 47 points for Connections/
-  // Post/Odds/Trainer Patterns, allowing slow horses with famous jockeys to
+  // Post/Trainer Patterns, allowing slow horses with famous jockeys to
   // outscore fast horses.
   //
   // SOLUTION: Cap "Bias Score" at 25% of "Ability Score"
   // - Ability Score = Speed + Class + Form + Pace (intrinsic ability)
-  // - Bias Score = Connections + Post Position + Odds + Trainer Patterns
+  // - Bias Score = Connections + Post Position + Trainer Patterns
   // - Final Bias Score = Math.min(Raw Bias Score, Ability Score * 0.25)
+  //
+  // NOTE: Odds removed from bias score (circular logic elimination)
   // =========================================================================
 
   // ABILITY SCORE: The horse's intrinsic performance potential
   // speedClass.total includes both speed (105 max) and class (35 max)
   const abilityScore =
     breakdown.speedClass.total + // Speed (105) + Class (35) = 140 max
-    breakdown.form.total + // Recent form (42 max)
+    breakdown.form.total + // Recent form (50 max)
     breakdown.pace.total; // Pace fit (35 max)
-  // Total ability: 217 pts max
+  // Total ability: 225 pts max
 
   // BIAS SCORE (RAW): External factors that can inflate scores
+  // NOTE: odds removed from bias calculation (circular logic elimination)
   const rawBiasScore =
     breakdown.connections.total + // Trainer + Jockey (23 max)
     breakdown.postPosition.total + // Post position (12 max)
-    breakdown.odds.total + // Market wisdom (12 max)
     breakdown.trainerPatterns.total; // Trainer situational patterns (8 max)
-  // Total raw bias: 55 pts max
+  // Total raw bias: 43 pts max
 
   // BIAS CAP: Bias cannot exceed 25% of Ability Score
   // This prevents famous jockeys from rescuing slow horses
@@ -1234,7 +1223,7 @@ function calculateHorseScoreWithContext(
   // Calculate final base score with capped bias
   const rawBaseTotal =
     abilityScore + // Speed + Class + Form + Pace (intrinsic ability)
-    cappedBiasScore + // Connections + Post + Odds + Trainer Patterns (CAPPED)
+    cappedBiasScore + // Connections + Post + Trainer Patterns (CAPPED, odds removed)
     breakdown.equipment.total + // Equipment changes (8 max)
     breakdown.distanceSurface.total + // Distance/surface affinity bonus (0-20)
     breakdown.comboPatterns.total + // Combo pattern bonuses (0-12)
@@ -1337,7 +1326,7 @@ function calculateHorseScoreWithContext(
     total,
     baseScore,
     overlayScore,
-    oddsScore: oddsScore.total,
+    // NOTE: oddsScore removed from base scoring (circular logic elimination)
     breakdown,
     isScratched: false,
     confidenceLevel,
@@ -1345,7 +1334,7 @@ function calculateHorseScoreWithContext(
     breedingScore,
     classScore: classScoreResult,
     overlayResult,
-    oddsResult: oddsScore,
+    oddsResult, // Still available for informational/overlay purposes
     dataCompleteness,
     lowConfidencePenaltyApplied,
     lowConfidencePenaltyAmount,

@@ -61,11 +61,11 @@ export interface ScoringDiagnostic {
   weightScore: number;
 
   // Totals
-  /** Base score before overlay (0-331) */
+  /** Base score before overlay (0-319) */
   baseScore: number;
   /** Overlay adjustment (±40) */
   overlayAdjustment: number;
-  /** Final total score (0-371) */
+  /** Final total score (0-359) */
   totalScore: number;
 
   // Data quality

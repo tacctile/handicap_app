@@ -26,8 +26,8 @@ const SCORE_LIMITS = {
   form: SCORING_LIMITS.form, // 42
   equipment: SCORING_LIMITS.equipment, // 8
   pace: SCORING_LIMITS.pace, // 35
-  base: MAX_BASE_SCORE, // 331 - Max base score before overlay
-  total: MAX_SCORE, // 371 - Max final score (base + overlay)
+  base: MAX_BASE_SCORE, // 319 - Max base score before overlay
+  total: MAX_SCORE, // 359 - Max final score (base + overlay)
 } as const;
 
 // Equipment code mappings

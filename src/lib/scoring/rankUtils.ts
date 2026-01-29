@@ -1,10 +1,10 @@
 /**
  * Rank Utility Functions
  *
- * Calculates projected finish order based on base score (X/331)
+ * Calculates projected finish order based on base score (X/319)
  * and provides dynamic gradient coloring based on field size.
  *
- * v3.2 Model B: Updated for 331 base score (from 323)
+ * v3.7: Updated for 319 base score (odds removed from base scoring)
  *
  * @module scoring/rankUtils
  */
@@ -78,7 +78,7 @@ export interface RankInfo {
 }
 
 /**
- * Calculate ranks based on BASE SCORE (X/331) with full tie-breaker chain
+ * Calculate ranks based on BASE SCORE (X/319) with full tie-breaker chain
  *
  * Model B Final: Uses deterministic tie-breaker chain to ensure UNIQUE ranks.
  * No more "1st (tie)" situations - every horse gets a distinct rank.

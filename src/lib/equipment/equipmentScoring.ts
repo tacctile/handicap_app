@@ -5,7 +5,7 @@
  * and trainer-specific success patterns.
  *
  * Score Range: 0-8 points (v3.0 - reduced from 12)
- * ~2.4% of 331 base score - Speculative, fine-tuning only
+ * ~2.5% of 319 base score - Speculative, fine-tuning only
  * Base Score: 3 points (no changes)
  *
  * v3.0 CHANGES (Phase 3 - Speed Weight Rebalance):

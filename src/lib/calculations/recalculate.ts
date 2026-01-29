@@ -90,11 +90,11 @@ function calculateConfidenceLevel(scores: number[]): number {
   // Score differential bonus
   const differential = ((topScore - secondScore) / topScore) * 30;
 
-  // Top score quality bonus (331 = max base score)
-  const qualityBonus = Math.min(20, (topScore / 331) * 25);
+  // Top score quality bonus (319 = max base score)
+  const qualityBonus = Math.min(20, (topScore / 319) * 25);
 
-  // Base confidence from average score (331 = max base score)
-  const baseConfidence = 40 + (avgScore / 331) * 30;
+  // Base confidence from average score (319 = max base score)
+  const baseConfidence = 40 + (avgScore / 319) * 30;
 
   return Math.min(100, Math.round(baseConfidence + differential + qualityBonus));
 }
