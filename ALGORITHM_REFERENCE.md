@@ -27,33 +27,33 @@
 
 | Category                 | Max Points | % of Base | Source File                                             |
 | ------------------------ | ---------- | --------- | ------------------------------------------------------- |
-| Speed & Class            | 140        | 40.7%     | speedClass.ts                                           |
-| Form                     | 50         | 14.5%     | form.ts                                                 |
-| Pace                     | 45         | 13.1%     | pace.ts (CONSOLIDATED)                                  |
-| Connections              | 24         | 7.0%      | connections.ts (Jockey 12 + Trainer 10 + Partnership 2) |
-| Distance/Surface         | 20         | 5.8%      | distanceSurface.ts                                      |
-| Post Position            | 12         | 3.5%      | postPosition.ts                                         |
-| Track Specialist         | 10         | 2.9%      | distanceSurface.ts                                      |
-| Combo Patterns           | 10         | 2.9%      | comboPatterns.ts (v4.0: expanded, range -6 to +10)      |
-| **Workouts**             | **8**      | **2.3%**  | **workouts.ts (v4.1: NEW, range -4 to +8)**             |
-| Equipment                | 8          | 2.3%      | equipment.ts                                            |
-| Trainer Patterns         | 8          | 2.3%      | trainerPatterns.ts (with sample size discount)          |
-| Trainer Surface/Distance | 6          | 1.7%      | connections.ts                                          |
+| Speed & Class            | 140        | 41.7%     | speedClass.ts                                           |
+| Form                     | 50         | 14.9%     | form.ts                                                 |
+| Pace                     | 45         | 13.4%     | pace.ts (CONSOLIDATED)                                  |
+| Connections              | 24         | 7.1%      | connections.ts (Jockey 12 + Trainer 10 + Partnership 2) |
+| Distance/Surface         | 20         | 6.0%      | distanceSurface.ts                                      |
+| Post Position            | 12         | 3.6%      | postPosition.ts                                         |
+| Track Specialist         | 10         | 3.0%      | distanceSurface.ts                                      |
+| Combo Patterns           | 10         | 3.0%      | comboPatterns.ts (v4.0: expanded, range -6 to +10)      |
+| Equipment                | 8          | 2.4%      | equipment.ts                                            |
+| Trainer Patterns         | 8          | 2.4%      | trainerPatterns.ts (with sample size discount)          |
+| Trainer Surface/Distance | 6          | 1.8%      | connections.ts                                          |
 | Age Factor               | ±1         | 0.3%      | p3Refinements.ts                                        |
 | Sire's Sire              | ±1         | 0.3%      | p3Refinements.ts                                        |
 | Weight                   | 1          | 0.3%      | weight.ts                                               |
-| **TOTAL**                | **344**    | **100%**  | index.ts                                                |
+| **TOTAL**                | **336**    | **100%**  | index.ts                                                |
 
 > **NOTE:** Odds Factor (12 pts) removed from base scoring to eliminate circular logic.
 > Odds data still available for overlay calculations.
 
-> **v4.1 CHANGES:**
-> - Workout scoring added: 8 pts max (recency 3 + quality 3 + pattern 2)
-> - Workout penalties: -4 to 0 pts (layoff no work, FTS no bullet, slow work)
-> - FTS multiplier: 2x (workouts are only performance data)
-> - Layoff multiplier: 1.5x (workouts show current fitness)
+> **DISABLED - Workout Scoring:**
+> Workout scoring (8 pts) was added in v4.1 but REVERTED due to regression.
+> Win rate dropped from 16.5% to 12.8%, exacta fell from 30.3% to 29.4%.
+> Workout data available (rankings only, no times) is insufficient for reliable scoring.
+> Module preserved in workouts.ts for future use when DRF parsing includes workout times.
 
 > **v4.0 CHANGES:**
+>
 > - Combo patterns expanded from 4 to 10 pts max (+6)
 > - Added negative combo patterns (-6 to 0 pts) for pretender detection
 > - Net combo range: -6 to +10 (16 point spread)
@@ -61,9 +61,9 @@
 
 | Constant       | Value | Source   |
 | -------------- | ----- | -------- |
-| MAX_BASE_SCORE | 344   | index.ts |
+| MAX_BASE_SCORE | 336   | index.ts |
 | MAX_OVERLAY    | ±40   | index.ts |
-| MAX_SCORE      | 384   | index.ts |
+| MAX_SCORE      | 376   | index.ts |
 
 ---
 
@@ -204,13 +204,13 @@
 Additive bonus based on win recency AND class comparison. Replaces the unconditional 15-point floor.
 Stacks WITH WLO decay - these bonuses add to the calculated form score, not replace it.
 
-| Win Position | Class vs Today   | Bonus |
-| ------------ | ---------------- | ----- |
-| Last race    | Same or higher   | +3    |
-| Last race    | Lower (moving up)| +1    |
-| 2 races back | Same or higher   | +2    |
-| 2 races back | Lower            | +0    |
-| 3+ back      | Any              | +0    |
+| Win Position | Class vs Today    | Bonus |
+| ------------ | ----------------- | ----- |
+| Last race    | Same or higher    | +3    |
+| Last race    | Lower (moving up) | +1    |
+| 2 races back | Same or higher    | +2    |
+| 2 races back | Lower             | +0    |
+| 3+ back      | Any               | +0    |
 
 > **v3.7 CHANGE:** Removed unconditional 15-point winner protection floor.
 > The old system gave ANY last-out winner a minimum 15 pts regardless of quality.
@@ -221,27 +221,28 @@ Stacks WITH WLO decay - these bonuses add to the calculated form score, not repl
 Horses coming off career-best performances regress 65-70% of the time. Previous penalty was
 token-sized at -3 pts. v3.8 doubles the full penalty to -6 pts with conditional logic.
 
-| Condition | Penalty | Criteria |
-| --------- | ------- | -------- |
-| Full bounce risk | -6 | Career-best last out + significant effort |
-| Partial bounce risk | -3 | Career-best last out, NOT significant effort |
-| Protected (repeat winner) | 0 | Won 2 of last 3 races |
-| No bounce risk | 0 | Last race NOT at/near career-best level |
+| Condition                 | Penalty | Criteria                                     |
+| ------------------------- | ------- | -------------------------------------------- |
+| Full bounce risk          | -6      | Career-best last out + significant effort    |
+| Partial bounce risk       | -3      | Career-best last out, NOT significant effort |
+| Protected (repeat winner) | 0       | Won 2 of last 3 races                        |
+| No bounce risk            | 0       | Last race NOT at/near career-best level      |
 
 **Significant Effort Definition:** Any ONE of:
+
 - Speed figure within 3 points of career best
 - Finished 1st, 2nd, or 3rd
 - Beaten less than 5 lengths
 
-| Constant | Value |
-| -------- | ----- |
-| FULL_BOUNCE_PENALTY | -6 |
-| PARTIAL_BOUNCE_PENALTY | -3 |
-| CAREER_BEST_THRESHOLD | 3 pts |
-| SIGNIFICANT_FINISH_THRESHOLD | 3 (1st-3rd) |
-| SIGNIFICANT_BEATEN_THRESHOLD | 5 lengths |
-| MIN_CAREER_STARTS | 3 |
-| REPEAT_WINNER_THRESHOLD | Won 2 of last 3 |
+| Constant                     | Value           |
+| ---------------------------- | --------------- |
+| FULL_BOUNCE_PENALTY          | -6              |
+| PARTIAL_BOUNCE_PENALTY       | -3              |
+| CAREER_BEST_THRESHOLD        | 3 pts           |
+| SIGNIFICANT_FINISH_THRESHOLD | 3 (1st-3rd)     |
+| SIGNIFICANT_BEATEN_THRESHOLD | 5 lengths       |
+| MIN_CAREER_STARTS            | 3               |
+| REPEAT_WINNER_THRESHOLD      | Won 2 of last 3 |
 
 > **v3.8 CHANGE:** Increased bounce penalty from -3 to -6 for full bounce risk scenarios.
 > Added conditional logic: -6 for significant effort, -3 for non-significant.
@@ -270,13 +271,13 @@ token-sized at -3 pts. v3.8 doubles the full penalty to -6 pts with conditional 
 | First-time starter        | -2      |
 | Long layoff but won fresh | -5      |
 
-| Constant                              | Value |
-| ------------------------------------- | ----- |
-| MAX_LAYOFF_PENALTY                    | 10    |
-| CONDITIONAL_WINNER_BONUS_LAST_SAME    | 3     |
-| CONDITIONAL_WINNER_BONUS_LAST_LOWER   | 1     |
-| CONDITIONAL_WINNER_BONUS_2BACK_SAME   | 2     |
-| CONDITIONAL_WINNER_BONUS_2BACK_LOWER  | 0     |
+| Constant                             | Value |
+| ------------------------------------ | ----- |
+| MAX_LAYOFF_PENALTY                   | 10    |
+| CONDITIONAL_WINNER_BONUS_LAST_SAME   | 3     |
+| CONDITIONAL_WINNER_BONUS_LAST_LOWER  | 1     |
+| CONDITIONAL_WINNER_BONUS_2BACK_SAME  | 2     |
+| CONDITIONAL_WINNER_BONUS_2BACK_LOWER | 0     |
 
 > **REMOVED:** MIN_FORM_SCORE_FOR_RECENT_WINNER (was 15) - replaced by conditional bonus system
 
@@ -291,63 +292,12 @@ token-sized at -3 pts. v3.8 doubles the full penalty to -6 pts with conditional 
 
 ---
 
-## Workout Score (0-8 points) — v4.1
+## Workout Score — DISABLED
 
-Critical for First-Time Starters (FTS) and layoff returnees where workouts are the primary indicator of readiness.
-
-### Recency Bonus (0-3 pts)
-
-| Days Since Work | Points | Description          |
-| --------------- | ------ | -------------------- |
-| ≤7              | 3      | Sharp, ready to fire |
-| 8-14            | 2      | Recent, fit          |
-| 15-21           | 1      | Acceptable           |
-| >21             | 0      | Stale                |
-
-### Quality Bonus (0-3 pts)
-
-| Work Quality          | Points | Criteria                           |
-| --------------------- | ------ | ---------------------------------- |
-| Bullet work           | 3      | Rank #1 (fastest of morning)       |
-| Top 10% works         | 2      | Rank/Total ≤ 0.10                  |
-| Top 25% works         | 1      | Rank/Total ≤ 0.25                  |
-| Below top 25%         | 0      | Rank/Total > 0.25                  |
-
-### Pattern Bonus (0-2 pts)
-
-| Works in Last 30 Days | Points | Description      |
-| --------------------- | ------ | ---------------- |
-| 4+                    | 2      | Trainer cranking |
-| 3                     | 1      | Solid training   |
-| <3                    | 0      | Light            |
-
-### Workout Penalties
-
-| Condition                                  | Penalty | Criteria                           |
-| ------------------------------------------ | ------- | ---------------------------------- |
-| Layoff returnee (60+ days) with no work    | -4      | No published work within 21 days   |
-| First-time starter without bullet          | -2      | FTS with no rank #1 work           |
-| Last work slow (bottom 25%)                | -1      | Most recent work rank > 75%        |
-
-### Special Multipliers
-
-| Horse Type            | Multiplier | Rationale                          |
-| --------------------- | ---------- | ---------------------------------- |
-| First-time starter    | 2.0x       | Workouts are ONLY performance data |
-| Layoff returnee (60+) | 1.5x       | Workouts show current fitness      |
-| All others            | 1.0x       | Standard weighting                 |
-
-| Constant              | Value | Source      |
-| --------------------- | ----- | ----------- |
-| MAX_WORKOUT_SCORE     | 8     | workouts.ts |
-| MIN_WORKOUT_SCORE     | -4    | workouts.ts |
-| FTS_MULTIPLIER        | 2.0   | workouts.ts |
-| LAYOFF_MULTIPLIER     | 1.5   | workouts.ts |
-| LAYOFF_THRESHOLD_DAYS | 60    | workouts.ts |
-
-> **DATA AVAILABILITY:** DRF provides workout dates, track, distance, rank, and total works.
-> Time and workout type (breeze/handily) are NOT available in standard DRF format.
-> Quality bonus uses ranking data (bullet = rank #1) as proxy for speed.
+> **DISABLED:** Workout scoring was removed due to regression.
+> Win rate dropped from 16.5% to 12.8%, exacta fell from 30.3% to 29.4%.
+> The workout data available (rankings only, no times) is insufficient for reliable scoring.
+> Module preserved in workouts.ts for future use when DRF parsing includes workout times.
 
 ---
 
@@ -448,30 +398,30 @@ v3.8 reduced maximum and added recency decay - trip trouble was over-crediting s
 
 ### v3.8 Trip Trouble Configuration
 
-| Constant | Value (v3.8) | Previous |
-| -------- | ------------ | -------- |
-| MAX_ADJUSTMENT | 4 | 8 |
-| HIGH_CONFIDENCE_PTS | 2 | 3 |
-| MEDIUM_CONFIDENCE_PTS | 1 | 2 |
-| LOW_CONFIDENCE_PTS | 1 | 1 |
-| MAX_RACES_TO_SCAN | 3 | 3 |
+| Constant              | Value (v3.8) | Previous |
+| --------------------- | ------------ | -------- |
+| MAX_ADJUSTMENT        | 4            | 8        |
+| HIGH_CONFIDENCE_PTS   | 2            | 3        |
+| MEDIUM_CONFIDENCE_PTS | 1            | 2        |
+| LOW_CONFIDENCE_PTS    | 1            | 1        |
+| MAX_RACES_TO_SCAN     | 3            | 3        |
 
 ### Recency Decay Multipliers (v3.8)
 
 | Race Position | Multiplier | Description |
 | ------------- | ---------- | ----------- |
-| Race 1 back | 1.0 | Full credit |
-| Race 2 back | 0.6 | 60% credit |
-| Race 3 back | 0.3 | 30% credit |
+| Race 1 back   | 1.0        | Full credit |
+| Race 2 back   | 0.6        | 60% credit  |
+| Race 3 back   | 0.3        | 30% credit  |
 
 ### Trouble Keywords
 
-| Category | Keywords | Points |
-| -------- | -------- | ------ |
-| HIGH (clear traffic) | blocked, steadied, check, bumped | 2 × recency |
-| MEDIUM (wide/pace) | wide, 4-wide, carried wide, shuffled | 1 × recency |
-| LOW (minor) | bumped at start, slow start | 1 × recency |
-| EXCLUSION (horse caused) | lugged, bore in/out, rank | 0 (no bonus) |
+| Category                 | Keywords                             | Points       |
+| ------------------------ | ------------------------------------ | ------------ |
+| HIGH (clear traffic)     | blocked, steadied, check, bumped     | 2 × recency  |
+| MEDIUM (wide/pace)       | wide, 4-wide, carried wide, shuffled | 1 × recency  |
+| LOW (minor)              | bumped at start, slow start          | 1 × recency  |
+| EXCLUSION (horse caused) | lugged, bore in/out, rank            | 0 (no bonus) |
 
 > **v3.8 CHANGE:** Reduced max from +8 to +4 pts. Added recency decay multipliers.
 > Recent trouble is more indicative of masked ability than old trouble.
@@ -529,20 +479,17 @@ v3.8 reduced maximum and added recency decay - trip trouble was over-crediting s
 
 | Tier   | Name                 | Min Score | Max Score | Min Confidence |
 | ------ | -------------------- | --------- | --------- | -------------- |
-| Tier 1 | Cover Chalk          | 186       | 251       | 70%            |
-| Tier 2 | Logical Alternatives | 165       | 185       | 60%            |
-| Tier 3 | Value Bombs          | 134       | 164       | 40%            |
+| Tier 1 | Cover Chalk          | 181       | 251       | 70%            |
+| Tier 2 | Logical Alternatives | 161       | 180       | 60%            |
+| Tier 3 | Value Bombs          | 131       | 160       | 40%            |
 
-> Thresholds: 54%, 48%, 39% of MAX_BASE_SCORE (344)
-> v4.1: Updated from 181/161/131 to 186/165/134
+> Thresholds: 54%, 48%, 39% of MAX_BASE_SCORE (336)
 
 ### Confidence Formula
 
 ```
-confidence = 40 + (baseScore / 344) * 60
+confidence = 40 + (baseScore / 336) * 60
 ```
-
-> v4.1: Denominator updated from 336 to 344
 
 ### Expected Hit Rates
 
@@ -758,13 +705,13 @@ confidence = 40 + (baseScore / 344) * 60
 
 | Tier      | Min Score | % of Base |
 | --------- | --------- | --------- |
-| Elite     | 275+      | 80%+      |
-| Strong    | 224-274   | 65-79%    |
-| Contender | 172-223   | 50-64%    |
-| Fair      | 120-171   | 35-49%    |
-| Weak      | <120      | <35%      |
+| Elite     | 269+      | 80%+      |
+| Strong    | 218-268   | 65-79%    |
+| Contender | 168-217   | 50-64%    |
+| Fair      | 118-167   | 35-49%    |
+| Weak      | <118      | <35%      |
 
-> v4.1: Updated for 344 base score
+> Based on 336 base score
 
 ---
 

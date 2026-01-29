@@ -20,13 +20,13 @@ export const MIN_SCORE = 0;
 
 /**
  * Maximum base score before overlay
- * v4.1: 344 points (workout scoring added)
  *
- * Workout scoring: +8 points (recency 3 + quality 3 + pattern 2)
- * Workout penalties: -4 to 0 (layoff no work, FTS no bullet, slow work)
  * v4.0: Combo patterns expanded from 4 to 10
+ *
+ * NOTE: Workout scoring (8 pts) was added in v4.1 but REVERTED due to regression.
+ * Win rate dropped 16.5% → 12.8%. Module preserved in workouts.ts for future use.
  */
-export const MAX_BASE_SCORE = 344;
+export const MAX_BASE_SCORE = 336;
 
 /**
  * Maximum overlay adjustment
@@ -44,10 +44,10 @@ export const MIN_OVERLAY_NEGATIVE = -40;
 export const MAX_PROTOCOL_BONUS = 60;
 
 /** Maximum final score (base + overlay) */
-export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 384 (v4.1: up from 376)
+export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 376
 
 /** Maximum display score (for UI - uses base score) */
-export const MAX_DISPLAY_SCORE = 344; // v4.1: up from 336
+export const MAX_DISPLAY_SCORE = 336;
 
 // Category maximums (Rebalanced Connections)
 export const SCORE_CATEGORY_LIMITS = {
@@ -57,7 +57,7 @@ export const SCORE_CATEGORY_LIMITS = {
   form: 50, // v3.6: Form Decay System restored to 50
   equipment: 8, // 2.4% - v3.0: reduced from 12
   pace: 45, // CONSOLIDATED: base 35 + scenario ±8 now unified into 0-45
-  workouts: 8, // v4.1: NEW - recency 3 + quality 3 + pattern 2 (range -4 to +8)
+  // NOTE: workouts removed from base scoring (v4.1 reverted due to regression)
   // NOTE: odds removed from base scoring (circular logic elimination)
   breeding: 15,
   classHiddenDrops: 10,

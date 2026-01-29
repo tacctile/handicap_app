@@ -1,3 +1,8 @@
+// DISABLED: Insufficient workout data (no times) caused regression. Re-enable when DRF parsing includes workout times.
+// Win rate dropped from 16.5% to 12.8%, exacta fell from 30.3% to 29.4%.
+// Workout data available (rankings only, no times) is insufficient for reliable scoring.
+// This module is preserved for future use when better workout data becomes available.
+
 /**
  * Workout Scoring Module
  *
@@ -87,7 +92,7 @@ export const QUALITY_BONUS = {
   BULLET_BONUS: 3,
 
   /** Top 10% threshold and bonus */
-  TOP_10_PERCENT_THRESHOLD: 0.10,
+  TOP_10_PERCENT_THRESHOLD: 0.1,
   TOP_10_PERCENT_BONUS: 2,
 
   /** Top 25% threshold and bonus */
@@ -473,7 +478,9 @@ function calculatePenalties(
     if (daysSinceWork === null || daysSinceWork > WORKOUT_PENALTIES.NO_WORK_THRESHOLD_DAYS) {
       totalPenalty += WORKOUT_PENALTIES.LAYOFF_NO_WORK_PENALTY;
       const daysDisplay = horse.daysSinceLastRace ?? 60;
-      reasons.push(`Layoff (${daysDisplay}d) with no recent work (${WORKOUT_PENALTIES.LAYOFF_NO_WORK_PENALTY})`);
+      reasons.push(
+        `Layoff (${daysDisplay}d) with no recent work (${WORKOUT_PENALTIES.LAYOFF_NO_WORK_PENALTY})`
+      );
     }
   }
 
@@ -528,10 +535,7 @@ export function calculateWorkoutScore(horse: HorseEntry): WorkoutScoreResult {
 
   // Sum up raw score
   const rawScore =
-    recencyResult.bonus +
-    qualityResult.bonus +
-    patternResult.bonus +
-    penaltyResult.penalty;
+    recencyResult.bonus + qualityResult.bonus + patternResult.bonus + penaltyResult.penalty;
 
   // Determine multiplier
   let multiplier = 1.0;
