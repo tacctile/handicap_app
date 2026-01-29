@@ -48,7 +48,7 @@ export interface BlendedRankResult {
   blendedScore: number;
   /** Base rank position */
   baseRank: number;
-  /** Base score (0-319) */
+  /** Base score (0-329) */
   baseScore: number;
   /** Trend rank position */
   trendRank: number;
@@ -85,10 +85,10 @@ export interface BlendedRankedHorse {
  * Formula: Blended = (Base × BaseWeight) + (Trend × TrendWeight)
  *
  * Scores are normalized before blending:
- * - Base score: 0-319 → 0-100
+ * - Base score: 0-329 → 0-100
  * - Trend score: already 0-100
  *
- * @param baseScore - Base score (0-319)
+ * @param baseScore - Base score (0-329)
  * @param trendScore - Trend normalized score (0-100)
  * @param weights - Optional custom weights
  * @returns Blended score (0-100)
