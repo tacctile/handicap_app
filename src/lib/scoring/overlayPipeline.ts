@@ -712,13 +712,13 @@ export interface EnhancedScoringResult {
 /**
  * Tier thresholds for classification
  * Based on base score ranges from the scoring engine
- * v4.0: Updated for 336 base score
+ * v4.1: Updated for 344 base score (workout scoring added)
  */
 const TIER_THRESHOLDS = {
-  elite: 269, // 80%+ of 336 base score (was 255)
-  strong: 218, // 65-80% of 336 base score (was 207)
-  contender: 168, // 50-65% of 336 base score (was 160)
-  fair: 118, // 35-50% of 336 base score (was 112)
+  elite: 275, // 80%+ of 344 base score (was 269)
+  strong: 224, // 65-80% of 344 base score (was 218)
+  contender: 172, // 50-65% of 344 base score (was 168)
+  fair: 120, // 35-50% of 344 base score (was 118)
   weak: 0, // Below 35%
 } as const;
 
