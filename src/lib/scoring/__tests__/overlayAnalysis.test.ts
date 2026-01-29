@@ -36,7 +36,7 @@ describe('Overlay Analysis', () => {
    *
    * This is the LEGACY function for standalone use when field context isn't available.
    * Model B formula: (score / MAX_BASE_SCORE) * 50, clamped to 2-50% range.
-   * MAX_BASE_SCORE = 331 per ALGORITHM_REFERENCE.md.
+   * MAX_BASE_SCORE = 336 per ALGORITHM_REFERENCE.md.
    * For field-relative calculations, use calculateFieldRelativeWinProbability instead.
    */
   describe('Score to Win Probability Conversion', () => {
@@ -391,7 +391,7 @@ describe('Overlay Analysis', () => {
    *
    * Note: The standalone analyzeOverlay function uses the formula:
    * Win% = (score / MAX_BASE_SCORE) * 50, clamped to 2-50%
-   * MAX_BASE_SCORE = 331 per ALGORITHM_REFERENCE.md.
+   * MAX_BASE_SCORE = 336 per ALGORITHM_REFERENCE.md.
    *
    * For field-relative analysis, use analyzeOverlayWithField instead.
    */
@@ -664,7 +664,7 @@ describe('Overlay Analysis', () => {
    * Edge Cases (Legacy standalone function)
    *
    * With the formula: (score / MAX_BASE_SCORE) * 50, clamped to 2-50%
-   * MAX_BASE_SCORE = 331 per ALGORITHM_REFERENCE.md.
+   * MAX_BASE_SCORE = 336 per ALGORITHM_REFERENCE.md.
    */
   describe('Edge Cases', () => {
     it('handles 0 odds gracefully', () => {
@@ -759,7 +759,7 @@ describe('Overlay Analysis', () => {
    *
    * Note: These use the analyzeOverlay function with conservative probabilities.
    * Formula: (score / MAX_BASE_SCORE) * 50, clamped to 2-50%
-   * MAX_BASE_SCORE = 331 per ALGORITHM_REFERENCE.md.
+   * MAX_BASE_SCORE = 336 per ALGORITHM_REFERENCE.md.
    */
   describe('Real-World Racing Scenarios', () => {
     it('analyzes a favorite with short odds (tests overlay calculation)', () => {

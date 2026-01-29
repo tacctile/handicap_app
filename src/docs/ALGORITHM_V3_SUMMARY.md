@@ -1,43 +1,44 @@
-# Furlong Scoring Algorithm v3.6
+# Furlong Scoring Algorithm v4.0
 
 ## Overview
 
-The Furlong scoring algorithm v3.6 represents a complete rebuild through Phases 1-7, focusing on:
+The Furlong scoring algorithm v4.0 represents the current production algorithm, with:
 
-- Speed figures as the dominant predictive factor (27.4% of base)
-- Form decay system to scale winner bonuses by recency (Phase 7)
-- Market wisdom incorporation via odds factor
+- Speed figures as the dominant predictive factor (31.3% of base)
+- Form decay system to scale winner bonuses by recency
+- Expanded combo patterns (v4.0: 10 pts, range -6 to +10)
+- Odds removed from base scoring (circular logic elimination)
 - Missing data penalties for low-confidence horses
 - Proven horse protection to prevent favorites from being destroyed by pace overlay
 - Reduced and capped overlay adjustments
 
-**Score Ranges:**
+**Score Ranges (per ALGORITHM_REFERENCE.md):**
 
-- MAX_BASE_SCORE: 331 points
+- MAX_BASE_SCORE: 336 points
 - MAX_OVERLAY: ±40 points
-- MAX_TOTAL: 371 points
+- MAX_TOTAL: 376 points
 - Practical Range: 50 to 320 points
 
 ## Category Weights
 
-| Category         | Points | % of Base | Description                                   |
-| ---------------- | ------ | --------- | --------------------------------------------- |
-| Speed Figures    | 90     | 27.4%     | Most predictive factor - Beyer/TimeformUS     |
-| Form             | 50     | 15.2%     | Recent performance + winner bonuses (+20 WLO) |
-| Pace             | 45     | 13.7%     | Race shape analysis and pace scenarios        |
-| Class            | 32     | 9.8%      | Class movement and competition level          |
-| Connections      | 27     | 8.2%      | Trainer + jockey + partnership bonuses        |
-| Distance/Surface | 20     | 6.1%      | Turf (8) + Wet (6) + Distance (6) affinities  |
-| Odds Factor      | 15     | 4.6%      | Market wisdom for favorites (Phase 6)         |
-| Post Position    | 12     | 3.7%      | Track-dependent positional advantage          |
-| Trainer Patterns | 10     | 3.0%      | Situational trainer stat bonuses              |
-| Equipment        | 8      | 2.4%      | First-time Lasix, blinkers changes            |
-| Track Specialist | 6      | 1.8%      | Proven success at today's track               |
-| Trainer S/D      | 6      | 1.8%      | Trainer surface/distance specialization       |
-| Combo Patterns   | 4      | 1.2%      | Jockey/trainer combination bonuses            |
-| P3 Refinements   | 2      | 0.6%      | Age factor (±1) + Sire's Sire (±1)            |
-| Weight           | 1      | 0.3%      | Subtle weight change refinement               |
-| **TOTAL**        | 331    | 100%      |                                               |
+| Category         | Points | % of Base | Description                                  |
+| ---------------- | ------ | --------- | -------------------------------------------- |
+| Speed & Class    | 140    | 41.7%     | Speed 105 + Class 35                         |
+| Form             | 50     | 14.9%     | Recent performance + winner bonuses          |
+| Pace             | 45     | 13.4%     | Consolidated: base + scenario unified        |
+| Connections      | 24     | 7.1%      | Jockey 12 + Trainer 10 + Partnership 2       |
+| Distance/Surface | 20     | 6.0%      | Turf (8) + Wet (6) + Distance (6) affinities |
+| Post Position    | 12     | 3.6%      | Track-dependent positional advantage         |
+| Track Specialist | 10     | 3.0%      | Proven success at today's track              |
+| Combo Patterns   | 10     | 3.0%      | v4.0: Expanded from 4, range -6 to +10       |
+| Trainer Patterns | 8      | 2.4%      | Situational trainer stat bonuses             |
+| Equipment        | 8      | 2.4%      | First-time Lasix, blinkers changes           |
+| Trainer S/D      | 6      | 1.8%      | Trainer surface/distance specialization      |
+| P3 Refinements   | 2      | 0.6%      | Age factor (±1) + Sire's Sire (±1)           |
+| Weight           | 1      | 0.3%      | Subtle weight change refinement              |
+| **TOTAL**        | 336    | 100%      |                                              |
+
+**NOTE:** Odds Factor removed from base scoring to eliminate circular logic. Odds data still available for overlay calculations.
 
 ## Key Changes from v2.5
 
@@ -255,9 +256,10 @@ To prevent penalizing active horses with old standout figures:
 
 ## Version History
 
+- **v4.0**: Combo patterns expanded to 10 pts, odds removed from base scoring, base now 336
 - **v3.7** (Phase 8): Speed Recency Decay — re-enabled with calibrated tiers and active horse protection
 - **v3.6** (Phase 7): Form Decay System — scales winner bonuses by recency
-- **v3.1** (Phase 6): Added odds factor (+15 pts), base now 331
+- **v3.1** (Phase 6): Added odds factor (+15 pts), base increased
 - **v3.0** (Phase 3): Speed rebalance, base increased to 313
 - **v2.5**: Overlay system added, cap at ±50
 - **v2.0**: Industry-aligned weights, 240-point base

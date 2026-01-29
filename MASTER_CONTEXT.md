@@ -12,12 +12,12 @@
 
 ## Toolchain — READ THIS FIRST
 
-| Tool | Purpose |
-|------|---------|
-| Claude Chat | Brainstorming, planning, prompt generation |
-| Claude Code (Web) | Code execution — paste prompts here |
-| GitHub | Repository, version control, CI/CD |
-| Vercel | Deployments |
+| Tool              | Purpose                                    |
+| ----------------- | ------------------------------------------ |
+| Claude Chat       | Brainstorming, planning, prompt generation |
+| Claude Code (Web) | Code execution — paste prompts here        |
+| GitHub            | Repository, version control, CI/CD         |
+| Vercel            | Deployments                                |
 
 **NOTHING IS EVER DONE LOCALLY. NO EXCEPTIONS.**
 
@@ -33,12 +33,14 @@
 A professional-grade horse racing handicapping progressive web application. It parses DRF (Daily Racing Form) files, applies a deterministic mathematical scoring algorithm, and outputs tiered betting recommendations.
 
 **Core Function:**
+
 - Upload DRF file → Mathematical analysis → Betting recommendations
 - Every calculation is deterministic and reproducible
 - Works fully offline at the track
 - Professional-grade analysis accessible to anyone
 
 **What It Is NOT:**
+
 - NOT a gambling platform — this is a data analysis tool
 - NOT a betting app — we do not place bets, hold funds, or facilitate wagering
 - NOT customizable algorithms — users adjust inputs, never the math
@@ -85,34 +87,35 @@ _These are foundational constraints. Every decision must respect them._
 
 ### Authentication Scaffolding
 
-| Path | Purpose |
-|------|---------|
-| src/services/auth/ | Provider abstraction (Supabase/Firebase ready) |
-| src/contexts/AuthContext.tsx | Auth state management |
-| src/hooks/useAuth.ts | Auth hook |
-| src/components/ProtectedRoute.tsx | Route protection |
-| src/components/auth/ | Auth UI components |
+| Path                              | Purpose                                        |
+| --------------------------------- | ---------------------------------------------- |
+| src/services/auth/                | Provider abstraction (Supabase/Firebase ready) |
+| src/contexts/AuthContext.tsx      | Auth state management                          |
+| src/hooks/useAuth.ts              | Auth hook                                      |
+| src/components/ProtectedRoute.tsx | Route protection                               |
+| src/components/auth/              | Auth UI components                             |
 
 **Status:** SCAFFOLDED (returns mock, ready for real provider)
 
 ### Subscription Scaffolding
 
-| Path | Purpose |
-|------|---------|
-| src/services/payments/ | Stripe integration |
-| src/hooks/useSubscription.ts | Subscription state |
+| Path                                | Purpose             |
+| ----------------------------------- | ------------------- |
+| src/services/payments/              | Stripe integration  |
+| src/hooks/useSubscription.ts        | Subscription state  |
 | src/components/SubscriptionGate.tsx | Subscription checks |
-| src/components/subscription/ | Subscription UI |
+| src/components/subscription/        | Subscription UI     |
 
 **Status:** SCAFFOLDED (returns mock, ready for Stripe)
 
 ### AI Service Layer
 
-| Path | Purpose |
-|------|---------|
+| Path             | Purpose              |
+| ---------------- | -------------------- |
 | src/services/ai/ | Provider abstraction |
 
 **5 Analysis Bots:**
+
 - Trip Trouble
 - Pace Scenario
 - Vulnerable Favorite
@@ -144,12 +147,12 @@ _These are foundational constraints. Every decision must respect them._
 
 ### Testing Infrastructure
 
-| Aspect | Detail |
-|--------|--------|
-| Framework | Vitest |
-| E2E | Playwright (configured) |
-| Test Files | 94 |
-| CI Pipeline | Configured |
+| Aspect      | Detail                  |
+| ----------- | ----------------------- |
+| Framework   | Vitest                  |
+| E2E         | Playwright (configured) |
+| Test Files  | 94                      |
+| CI Pipeline | Configured              |
 
 **Status:** IMPLEMENTED
 
@@ -157,10 +160,10 @@ _These are foundational constraints. Every decision must respect them._
 
 ## PWA Architecture
 
-| Aspect | Status |
-|--------|--------|
-| Manifest | EXISTS (public/manifest.json) |
-| Service Worker | NOT YET IMPLEMENTED |
+| Aspect             | Status                              |
+| ------------------ | ----------------------------------- |
+| Manifest           | EXISTS (public/manifest.json)       |
+| Service Worker     | NOT YET IMPLEMENTED                 |
 | Offline Capability | PARTIAL (manifest only, no caching) |
 
 **Note:** Full offline-first is architectural goal, not current state.
@@ -169,42 +172,42 @@ _These are foundational constraints. Every decision must respect them._
 
 ## Technical Stack
 
-| Layer | Technology |
-|-------|------------|
-| Framework | React 18 |
-| Build | Vite |
-| Styling | TailwindCSS + CSS |
-| Icons | Google Material Icons |
-| Typography | Inter |
-| State | React Context + useReducer |
-| Storage | IndexedDB (via services) |
-| Workers | Web Workers (DRF parsing) |
-| Animation | Framer Motion |
-| Testing | Vitest + Playwright |
-| Hosting | Vercel |
-| Auth (ready) | Supabase/Firebase |
-| Payments (ready) | Stripe |
-| AI | Google Gemini |
+| Layer            | Technology                 |
+| ---------------- | -------------------------- |
+| Framework        | React 18                   |
+| Build            | Vite                       |
+| Styling          | TailwindCSS + CSS          |
+| Icons            | Google Material Icons      |
+| Typography       | Inter                      |
+| State            | React Context + useReducer |
+| Storage          | IndexedDB (via services)   |
+| Workers          | Web Workers (DRF parsing)  |
+| Animation        | Framer Motion              |
+| Testing          | Vitest + Playwright        |
+| Hosting          | Vercel                     |
+| Auth (ready)     | Supabase/Firebase          |
+| Payments (ready) | Stripe                     |
+| AI               | Google Gemini              |
 
 ---
 
 ## Source Directory Overview
 
-| Directory | Purpose |
-|-----------|---------|
-| src/components/ | React UI components (100+) |
-| src/contexts/ | React Context providers |
-| src/data/ | Static data (track intelligence) |
-| src/docs/ | Algorithm methodology documentation |
-| src/help/ | Help content |
-| src/hooks/ | Custom React hooks (26) |
-| src/legal/ | Legal content |
-| src/lib/ | Core business logic (parser, scoring, betting) |
-| src/services/ | Service layer (AI, auth, payments, storage, analytics) |
-| src/styles/ | CSS stylesheets |
-| src/types/ | TypeScript type definitions |
-| src/utils/ | Utility functions |
-| src/workers/ | Web Workers |
+| Directory       | Purpose                                                |
+| --------------- | ------------------------------------------------------ |
+| src/components/ | React UI components (100+)                             |
+| src/contexts/   | React Context providers                                |
+| src/data/       | Static data (track intelligence)                       |
+| src/docs/       | Algorithm methodology documentation                    |
+| src/help/       | Help content                                           |
+| src/hooks/      | Custom React hooks (26)                                |
+| src/legal/      | Legal content                                          |
+| src/lib/        | Core business logic (parser, scoring, betting)         |
+| src/services/   | Service layer (AI, auth, payments, storage, analytics) |
+| src/styles/     | CSS stylesheets                                        |
+| src/types/      | TypeScript type definitions                            |
+| src/utils/      | Utility functions                                      |
+| src/workers/    | Web Workers                                            |
 
 **Do NOT include detailed file trees. Use snapshot prompts for current file state.**
 
@@ -212,23 +215,24 @@ _These are foundational constraints. Every decision must respect them._
 
 ## Key Systems
 
-| System | Description |
-|--------|-------------|
-| Scoring Engine | 331-point base + ±40 overlay (see ALGORITHM_REFERENCE.md) |
-| DRF Parser | 1,435 field parser with Web Worker |
-| Betting System | Tier classification, Kelly sizing, exotic calculators |
-| Track Intelligence | 42 tracks with bias/par data |
-| AI Analysis | 5-bot system for race analysis |
-| Multi-Race | Pick 3/4/5/6 support |
-| Value Detection | Market inefficiency identification |
-| Bet Mode | Day planning workflow |
-| Live Viewer | Session sharing |
+| System             | Description                                               |
+| ------------------ | --------------------------------------------------------- |
+| Scoring Engine     | 336-point base + ±40 overlay (see ALGORITHM_REFERENCE.md) |
+| DRF Parser         | 1,435 field parser with Web Worker                        |
+| Betting System     | Tier classification, Kelly sizing, exotic calculators     |
+| Track Intelligence | 42 tracks with bias/par data                              |
+| AI Analysis        | 5-bot system for race analysis                            |
+| Multi-Race         | Pick 3/4/5/6 support                                      |
+| Value Detection    | Market inefficiency identification                        |
+| Bet Mode           | Day planning workflow                                     |
+| Live Viewer        | Session sharing                                           |
 
 ---
 
 ## Enterprise Quality Standards
 
 **All Code Must:**
+
 - Have error handling (try/catch with logging)
 - Validate/sanitize external inputs
 - Include corresponding test file for new modules
@@ -240,6 +244,7 @@ _These are foundational constraints. Every decision must respect them._
 - Follow existing codebase patterns
 
 **Pull Request Checklist:**
+
 - [ ] `npm test` passes (0 failures)
 - [ ] No TypeScript errors (`npm run typecheck`)
 - [ ] No console.log statements (except logging service)
@@ -256,6 +261,7 @@ When creating new React components, follow this structure:
 **File Location:** `src/components/[ComponentName].tsx`
 
 **Standard Structure:**
+
 ```tsx
 import React from 'react';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -269,11 +275,7 @@ interface ComponentNameProps {
  */
 export function ComponentName({ prop1, prop2 }: ComponentNameProps): React.ReactElement {
   // Implementation
-  return (
-    <div className="component-name">
-      {/* Content */}
-    </div>
-  );
+  return <div className="component-name">{/* Content */}</div>;
 }
 
 // Wrap in ErrorBoundary for major components
@@ -287,6 +289,7 @@ export function ComponentNameWithBoundary(props: ComponentNameProps): React.Reac
 ```
 
 **Required for New Components:**
+
 - [ ] Props interface with explicit types
 - [ ] JSDoc comment describing purpose
 - [ ] ErrorBoundary wrapper (major components)
@@ -301,6 +304,7 @@ export function ComponentNameWithBoundary(props: ComponentNameProps): React.Reac
 ### Color Palette
 
 **Primary Accent:**
+
 ```
 Primary:    #19abb5
 Hover:      #1992a1
@@ -309,6 +313,7 @@ Light:      #36d1da
 ```
 
 **Backgrounds (Dark Theme Default):**
+
 ```
 Base:       #0A0A0B
 Cards:      #0F0F10
@@ -316,6 +321,7 @@ Elevated:   #1A1A1C
 ```
 
 **Text:**
+
 ```
 Primary:    #EEEFF1
 Secondary:  #B4B4B6
@@ -323,12 +329,14 @@ Tertiary:   #6E6E70
 ```
 
 **Borders:**
+
 ```
 Subtle:     #2A2A2C
 Prominent:  #3A3A3C
 ```
 
 **Status:**
+
 ```
 Success:    #10b981
 Warning:    #f59e0b
@@ -342,6 +350,7 @@ Error:      #ef4444
 **Weights:** 400 (regular), 500 (medium), 600 (semibold), 700 (bold)
 
 **Scale:**
+
 ```
 H1:     32px / 40px
 H2:     24px / 32px
@@ -499,6 +508,7 @@ For detailed methodology, read src/docs/ directly.
 ## Pre-UI-Session Checklist
 
 **Before Starting UI Work:**
+
 - [ ] `npm test` passes (0 failures)
 - [ ] `npm run typecheck` passes
 - [ ] `npm run dev` starts without errors
@@ -509,6 +519,7 @@ For detailed methodology, read src/docs/ directly.
 - [ ] Review related components for patterns to follow
 
 **During UI Work:**
+
 - [ ] Use design system colors only (see Design System Constants)
 - [ ] Use 8px grid for spacing
 - [ ] Use tabular numbers for data displays

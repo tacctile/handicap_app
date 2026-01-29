@@ -25,13 +25,12 @@ export interface TierThresholds {
 }
 
 export const TIER_CONFIG: Record<BettingTier, TierThresholds> = {
-  // v3.8: Adjusted for MAX_BASE_SCORE=330 (connections rebalanced)
-  // Confidence formula: 40 + (baseScore/330) * 60
-  // Score 178 → confidence ~72%, Score 210 → confidence ~78%
-  // Thresholds adjusted proportionally: 54%, 48%, 39% of 330
-  tier1: { minScore: 178, maxScore: 240, minConfidence: 70, maxConfidence: 100 },
-  tier2: { minScore: 158, maxScore: 177, minConfidence: 60, maxConfidence: 79 },
-  tier3: { minScore: 129, maxScore: 157, minConfidence: 40, maxConfidence: 59 },
+  // ALGORITHM_REFERENCE.md: MAX_BASE_SCORE=336
+  // Confidence formula: 40 + (baseScore/336) * 60
+  // Thresholds: 54%, 48%, 39% of 336
+  tier1: { minScore: 181, maxScore: 251, minConfidence: 70, maxConfidence: 100 }, // 54% of 336 = 181
+  tier2: { minScore: 161, maxScore: 180, minConfidence: 60, maxConfidence: 79 }, // 48% of 336 = 161
+  tier3: { minScore: 131, maxScore: 160, minConfidence: 40, maxConfidence: 59 }, // 39% of 336 = 131
 };
 
 export const TIER_NAMES: Record<BettingTier, string> = {
@@ -90,10 +89,10 @@ export interface TierGroup {
 
 /**
  * Calculate confidence percentage based on BASE score
- * Max base score is 330, so we scale to 100%
+ * Max base score is 336 (per ALGORITHM_REFERENCE.md), so we scale to 100%
  */
 function calculateConfidence(baseScore: number): number {
-  // Base confidence from score (0-330 maps to 40-100%)
+  // Base confidence from score (0-336 maps to 40-100%)
   const baseConfidence = 40 + (baseScore / MAX_BASE_SCORE) * 60;
   return Math.min(100, Math.round(baseConfidence));
 }
@@ -105,7 +104,7 @@ function calculateConfidence(baseScore: number): number {
  */
 function calculateValueScore(baseScore: number, odds: number): number {
   // Expected odds based on base score (higher score = lower expected odds)
-  const normalizedScore = baseScore / MAX_BASE_SCORE; // Use MAX_BASE_SCORE (330) scale
+  const normalizedScore = baseScore / MAX_BASE_SCORE; // Use MAX_BASE_SCORE (336) scale
   const expectedOdds = 1 / normalizedScore - 1;
 
   // Value = actual odds vs expected odds

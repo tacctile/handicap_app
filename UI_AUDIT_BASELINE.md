@@ -11,16 +11,18 @@
 ## EXECUTIVE SUMMARY
 
 ### Key Statistics
-| Category | Count | Notes |
-|----------|-------|-------|
-| Component Files (.tsx) | 89 | In src/components/ |
-| Hook Files | 23 | In src/hooks/ |
-| CSS Files (styles/) | 4 | tokens.css, responsive.css, dashboard.css, help.css |
-| CSS Files (components/) | 20 | Component-specific styles |
-| Test Files | 94 | Strong backend coverage, weak UI coverage |
-| Lines of Code (largest) | 2,840 | HorseDetailModal.tsx |
+
+| Category                | Count | Notes                                               |
+| ----------------------- | ----- | --------------------------------------------------- |
+| Component Files (.tsx)  | 89    | In src/components/                                  |
+| Hook Files              | 23    | In src/hooks/                                       |
+| CSS Files (styles/)     | 4     | tokens.css, responsive.css, dashboard.css, help.css |
+| CSS Files (components/) | 20    | Component-specific styles                           |
+| Test Files              | 94    | Strong backend coverage, weak UI coverage           |
+| Lines of Code (largest) | 2,840 | HorseDetailModal.tsx                                |
 
 ### Critical Findings
+
 1. **15 components over 500 lines** need splitting
 2. **381 hardcoded hex colors** instead of design tokens
 3. **Zero component test files** - major testing gap
@@ -33,27 +35,28 @@
 
 ### Components Over 500 Lines (SHOULD BE SPLIT)
 
-| Component | Lines | Priority |
-|-----------|-------|----------|
-| HorseDetailModal.tsx | 2,840 | CRITICAL |
-| BettingRecommendations.tsx | 1,851 | HIGH |
-| Dashboard.tsx | 1,622 | HIGH |
-| BankrollSettings.tsx | 1,390 | HIGH |
-| HorseExpandedView.tsx | 1,153 | HIGH |
-| TopBetsView.tsx | 1,080 | HIGH |
-| AIAnalysisPanel.tsx | 938 | MEDIUM |
-| MultiRaceBuilderModal.tsx | 659 | MEDIUM |
-| TrendDetailModal.tsx | 647 | MEDIUM |
-| BettingStrategyGuide.tsx | 631 | MEDIUM |
-| ScoringHelpModal.tsx | 624 | MEDIUM |
-| ExoticBuilderModal.tsx | 613 | MEDIUM |
-| AccountSettings.tsx | 612 | MEDIUM |
-| SubscriptionStatus.tsx | 596 | MEDIUM |
-| ParsingProgress.tsx | 571 | MEDIUM |
+| Component                  | Lines | Priority |
+| -------------------------- | ----- | -------- |
+| HorseDetailModal.tsx       | 2,840 | CRITICAL |
+| BettingRecommendations.tsx | 1,851 | HIGH     |
+| Dashboard.tsx              | 1,622 | HIGH     |
+| BankrollSettings.tsx       | 1,390 | HIGH     |
+| HorseExpandedView.tsx      | 1,153 | HIGH     |
+| TopBetsView.tsx            | 1,080 | HIGH     |
+| AIAnalysisPanel.tsx        | 938   | MEDIUM   |
+| MultiRaceBuilderModal.tsx  | 659   | MEDIUM   |
+| TrendDetailModal.tsx       | 647   | MEDIUM   |
+| BettingStrategyGuide.tsx   | 631   | MEDIUM   |
+| ScoringHelpModal.tsx       | 624   | MEDIUM   |
+| ExoticBuilderModal.tsx     | 613   | MEDIUM   |
+| AccountSettings.tsx        | 612   | MEDIUM   |
+| SubscriptionStatus.tsx     | 596   | MEDIUM   |
+| ParsingProgress.tsx        | 571   | MEDIUM   |
 
 ### Component Categories
 
 **Layout Components (8 files):**
+
 - src/components/layout/Sidebar.tsx
 - src/components/layout/MobileNav.tsx
 - src/components/layout/RaceTabsBar.tsx
@@ -64,6 +67,7 @@
 - src/components/Header.tsx
 
 **Screen/Page Components (6 files):**
+
 - src/components/Dashboard.tsx (main screen)
 - src/components/auth/AuthPage.tsx
 - src/components/auth/AccountSettings.tsx
@@ -72,6 +76,7 @@
 - src/components/LiveViewer/ViewerLayout.tsx
 
 **Data Display Components (15+ files):**
+
 - src/components/HorseExpandedView.tsx
 - src/components/HorseSummaryBar.tsx
 - src/components/HorseDetailModal.tsx
@@ -89,6 +94,7 @@
 - src/components/LiveViewer/ViewerRaceList.tsx
 
 **Form/Input Components (5 files):**
+
 - src/components/FileUpload.tsx
 - src/components/RaceControls.tsx
 - src/components/BankrollSettings.tsx
@@ -96,6 +102,7 @@
 - src/components/auth/SignupForm.tsx
 
 **Feedback Components (10+ files):**
+
 - src/components/Toast.tsx
 - src/components/ErrorBoundary.tsx
 - src/components/LoadingState.tsx
@@ -109,6 +116,7 @@
 - src/components/PostTimeCountdown.tsx
 
 **Modal Components (8 files):**
+
 - src/components/HorseDetailModal.tsx
 - src/components/ScoringHelpModal.tsx
 - src/components/KellyHelpModal.tsx
@@ -119,9 +127,11 @@
 - src/components/BetMode/DayPlanModal.tsx
 
 **AI-Related Components (1 file):**
+
 - src/components/AIAnalysisPanel.tsx
 
 **Betting-Related Components (15+ files):**
+
 - src/components/BettingRecommendations.tsx
 - src/components/BettingStrategyGuide.tsx
 - src/components/BankrollSummaryCard.tsx
@@ -136,11 +146,12 @@
 - src/components/BetMode/DayPlanModal.tsx
 - src/components/BetMode/InlineSettings.tsx
 - src/components/BetMode/RaceNavigation.tsx
-- src/components/BetMode/MultiRace/*.tsx (4 files)
-- src/components/BetMode/DaySetup/*.tsx (6 files)
+- src/components/BetMode/MultiRace/\*.tsx (4 files)
+- src/components/BetMode/DaySetup/\*.tsx (6 files)
 - src/components/BetMode/LiveShare/ShareControls.tsx
 
 **Auth/Subscription Scaffolding (8 files):**
+
 - src/components/auth/AuthPage.tsx
 - src/components/auth/LoginForm.tsx
 - src/components/auth/SignupForm.tsx
@@ -152,6 +163,7 @@
 - src/components/subscription/PricingCard.tsx
 
 **Help/Legal Components (6 files):**
+
 - src/components/help/HelpCenter.tsx
 - src/components/help/FAQAccordion.tsx
 - src/components/help/GuideSection.tsx
@@ -160,15 +172,18 @@
 - src/components/InfoTooltip.tsx
 
 **Tooltip Components (3 files):**
+
 - src/components/InfoTooltip.tsx
 - src/components/ValueTooltip.tsx
 - src/components/BetMode/ExplanationTooltip.tsx
 
 **Onboarding Components (2 files):**
+
 - src/components/onboarding/OnboardingFlow.tsx
 - src/components/onboarding/OnboardingStep.tsx
 
 **Motion/Animation Components (1 file):**
+
 - src/components/motion/index.tsx
 
 ---
@@ -177,12 +192,12 @@
 
 ### Routes (from App.tsx)
 
-| Route | Component | Status | Purpose |
-|-------|-----------|--------|---------|
-| `/` (dashboard) | Dashboard.tsx | FUNCTIONAL | Main app - DRF analysis |
-| `/account` | AccountSettings.tsx | SCAFFOLDED | User account settings |
-| `/help` | HelpCenter.tsx | FUNCTIONAL | Help documentation |
-| `/live/:code` | ViewerLayout.tsx | FUNCTIONAL | Live session viewer |
+| Route           | Component           | Status     | Purpose                 |
+| --------------- | ------------------- | ---------- | ----------------------- |
+| `/` (dashboard) | Dashboard.tsx       | FUNCTIONAL | Main app - DRF analysis |
+| `/account`      | AccountSettings.tsx | SCAFFOLDED | User account settings   |
+| `/help`         | HelpCenter.tsx      | FUNCTIONAL | Help documentation      |
+| `/live/:code`   | ViewerLayout.tsx    | FUNCTIONAL | Live session viewer     |
 
 ### Navigation Structure
 
@@ -200,6 +215,7 @@ App.tsx (Router)
 ```
 
 **Navigation Flow:**
+
 - State-based routing (no react-router)
 - `currentRoute` state drives which screen renders
 - Deep linking only for `/live/:code` share URLs
@@ -209,22 +225,26 @@ App.tsx (Router)
 ### Screen Details
 
 **Dashboard (Main Screen)**
+
 - Route: `/` (default)
 - Data Sources: useValueDetection, useRaceBets, useAIAnalysis, useRaceState
 - Features: DRF upload, race selection, horse scoring, betting recommendations
 - Status: FULLY FUNCTIONAL
 
 **Help Center**
+
 - Route: internal state `help`
 - Features: FAQ accordion, guide sections
 - Status: FUNCTIONAL
 
 **Account Settings**
+
 - Route: internal state `account`
 - Features: Profile, preferences, logout
 - Status: SCAFFOLDED (mock auth)
 
 **Live Viewer**
+
 - Route: `/live/:shareCode`
 - Features: View shared session, race list, race details
 - Status: FUNCTIONAL
@@ -235,78 +255,72 @@ App.tsx (Router)
 
 ### Style Files
 
-| File | Lines | Purpose |
-|------|-------|---------|
-| src/styles/tokens.css | 117 | Design system tokens |
+| File                      | Lines | Purpose                            |
+| ------------------------- | ----- | ---------------------------------- |
+| src/styles/tokens.css     | 117   | Design system tokens               |
 | src/styles/responsive.css | 2000+ | Responsive utilities & breakpoints |
-| src/styles/dashboard.css | ~1500 | Dashboard-specific styles |
-| src/styles/help.css | ~500 | Help center styles |
+| src/styles/dashboard.css  | ~1500 | Dashboard-specific styles          |
+| src/styles/help.css       | ~500  | Help center styles                 |
 
 ### Design System Compliance
 
 **Tailwind Configuration:**
+
 - Using Tailwind CSS v4 via `@tailwindcss/vite`
 - No tailwind.config.js (v4 uses CSS-based config)
 - Custom tokens in `src/styles/tokens.css`
 
 **Colors Defined in tokens.css:**
+
 ```css
---color-primary: #19abb5     ✓ Matches MASTER_CONTEXT
---color-primary-hover: #1992a1
---color-primary-muted: rgba(25, 171, 181, 0.15)
---color-base: #0a0a0b        ✓ Matches MASTER_CONTEXT
---color-card: #0f0f10        ✓ Matches MASTER_CONTEXT
---color-elevated: #1a1a1c    ✓ Matches MASTER_CONTEXT
---color-text-primary: #eeeff1 ✓ Matches MASTER_CONTEXT
---color-text-secondary: #b4b4b6
---color-text-tertiary: #6e6e70
---color-border: #2a2a2c      ✓ Matches MASTER_CONTEXT
---color-success: #10b981     ✓ Matches MASTER_CONTEXT
---color-warning: #f59e0b     ✓ Matches MASTER_CONTEXT
---color-error: #ef4444       ✓ Matches MASTER_CONTEXT
+--color-primary: #19abb5 ✓ Matches MASTER_CONTEXT --color-primary-hover: #1992a1
+  --color-primary-muted: rgba(25, 171, 181, 0.15) --color-base: #0a0a0b ✓ Matches MASTER_CONTEXT
+  --color-card: #0f0f10 ✓ Matches MASTER_CONTEXT --color-elevated: #1a1a1c ✓ Matches MASTER_CONTEXT
+  --color-text-primary: #eeeff1 ✓ Matches MASTER_CONTEXT --color-text-secondary: #b4b4b6
+  --color-text-tertiary: #6e6e70 --color-border: #2a2a2c ✓ Matches MASTER_CONTEXT
+  --color-success: #10b981 ✓ Matches MASTER_CONTEXT --color-warning: #f59e0b ✓ Matches
+  MASTER_CONTEXT --color-error: #ef4444 ✓ Matches MASTER_CONTEXT;
 ```
 
 **Spacing (8px Grid):**
+
 ```css
---space-1: 4px
---space-2: 8px   ✓ 8px grid
---space-3: 12px
---space-4: 16px  ✓ 8px grid
---space-5: 24px  ✓ 8px grid
---space-6: 32px  ✓ 8px grid
---space-7: 48px  ✓ 8px grid
---space-8: 64px  ✓ 8px grid
+--space-1: 4px --space-2: 8px ✓ 8px grid --space-3: 12px --space-4: 16px ✓ 8px grid --space-5: 24px
+  ✓ 8px grid --space-6: 32px ✓ 8px grid --space-7: 48px ✓ 8px grid --space-8: 64px ✓ 8px grid;
 ```
 
 ### Styling Issues
 
 **Hardcoded Colors (381 occurrences in 30 files):**
 
-| Component | Hardcoded Colors | Priority |
-|-----------|-----------------|----------|
-| HorseDetailModal.tsx | 117 | CRITICAL |
-| AccountSettings.tsx | 33 | HIGH |
-| SubscriptionStatus.tsx | 28 | HIGH |
-| SignupForm.tsx | 22 | HIGH |
-| LoginForm.tsx | 18 | HIGH |
-| PricingCard.tsx | 16 | MEDIUM |
-| SubscriptionPage.tsx | 15 | MEDIUM |
-| TrendDetailModal.tsx | 14 | MEDIUM |
-| ProtectedRoute.tsx | 10 | MEDIUM |
-| HorseExpandedView.tsx | 10 | MEDIUM |
-| AuthPage.tsx | 10 | MEDIUM |
-| UpdatePrompt.tsx | 10 | MEDIUM |
+| Component              | Hardcoded Colors | Priority |
+| ---------------------- | ---------------- | -------- |
+| HorseDetailModal.tsx   | 117              | CRITICAL |
+| AccountSettings.tsx    | 33               | HIGH     |
+| SubscriptionStatus.tsx | 28               | HIGH     |
+| SignupForm.tsx         | 22               | HIGH     |
+| LoginForm.tsx          | 18               | HIGH     |
+| PricingCard.tsx        | 16               | MEDIUM   |
+| SubscriptionPage.tsx   | 15               | MEDIUM   |
+| TrendDetailModal.tsx   | 14               | MEDIUM   |
+| ProtectedRoute.tsx     | 10               | MEDIUM   |
+| HorseExpandedView.tsx  | 10               | MEDIUM   |
+| AuthPage.tsx           | 10               | MEDIUM   |
+| UpdatePrompt.tsx       | 10               | MEDIUM   |
 
 **Tabular Numbers Usage:**
+
 - 61 occurrences of `tabular-nums` across 19 files ✓
 - Good coverage for data displays
 
 **Dark Mode:**
+
 - Dark mode IS the default ✓
 - Background: #0a0a0b / #0f0f10
 - No light mode remnants found
 
 **Font Configuration:**
+
 - Inter font family configured in index.css ✓
 - Font weights: 400, 500, 600, 700 available
 
@@ -316,42 +330,45 @@ App.tsx (Router)
 
 ### All Hooks (23 files)
 
-| Hook | Purpose | Category |
-|------|---------|----------|
-| useAIAnalysis | AI race analysis orchestration | AI |
-| useAnalytics | Event tracking | Analytics |
-| useAuth | Authentication actions | Auth |
-| useBankroll | Bankroll state management | Betting |
-| useBetting | Betting calculations | Betting |
-| useCalibrationData | Scoring calibration | Scoring |
-| useEnhancedBetting | Advanced betting features | Betting |
-| useFeatureFlag | Feature flag checks | Config |
-| useInstallPrompt | PWA install prompt | PWA |
-| useKeyboardShortcuts | Keyboard navigation | UI |
-| useLiveSessionAdmin | Live sharing admin | LiveShare |
-| useLiveSessionViewer | Live sharing viewer | LiveShare |
-| useOnboarding | Onboarding flow state | UI |
-| useOnlineStatus | Network status | PWA |
-| usePerformance | Performance monitoring | Performance |
-| usePostTime | Post time countdown | UI |
-| useRaceBets | Race betting state | Betting |
-| useRaceState | Race state management | Core |
-| useSessionPersistence | Session storage | Core |
-| useSubscription | Subscription status | Auth |
-| useTopBets | Top bets generation | Betting |
-| useValueDetection | Value detection | Scoring |
-| useVirtualScroll | Virtual list scrolling | Performance |
+| Hook                  | Purpose                        | Category    |
+| --------------------- | ------------------------------ | ----------- |
+| useAIAnalysis         | AI race analysis orchestration | AI          |
+| useAnalytics          | Event tracking                 | Analytics   |
+| useAuth               | Authentication actions         | Auth        |
+| useBankroll           | Bankroll state management      | Betting     |
+| useBetting            | Betting calculations           | Betting     |
+| useCalibrationData    | Scoring calibration            | Scoring     |
+| useEnhancedBetting    | Advanced betting features      | Betting     |
+| useFeatureFlag        | Feature flag checks            | Config      |
+| useInstallPrompt      | PWA install prompt             | PWA         |
+| useKeyboardShortcuts  | Keyboard navigation            | UI          |
+| useLiveSessionAdmin   | Live sharing admin             | LiveShare   |
+| useLiveSessionViewer  | Live sharing viewer            | LiveShare   |
+| useOnboarding         | Onboarding flow state          | UI          |
+| useOnlineStatus       | Network status                 | PWA         |
+| usePerformance        | Performance monitoring         | Performance |
+| usePostTime           | Post time countdown            | UI          |
+| useRaceBets           | Race betting state             | Betting     |
+| useRaceState          | Race state management          | Core        |
+| useSessionPersistence | Session storage                | Core        |
+| useSubscription       | Subscription status            | Auth        |
+| useTopBets            | Top bets generation            | Betting     |
+| useValueDetection     | Value detection                | Scoring     |
+| useVirtualScroll      | Virtual list scrolling         | Performance |
 
 ### Hook Categories
 
 **Scoring/Algorithm:**
+
 - useCalibrationData
 - useValueDetection
 
 **AI Analysis:**
+
 - useAIAnalysis
 
 **Betting Calculation:**
+
 - useBankroll
 - useBetting
 - useEnhancedBetting
@@ -359,19 +376,23 @@ App.tsx (Router)
 - useTopBets
 
 **Data/State Management:**
+
 - useRaceState
 - useSessionPersistence
 
 **UI State:**
+
 - useKeyboardShortcuts
 - useOnboarding
 - usePostTime
 
 **Auth/Subscription (Scaffolded):**
+
 - useAuth
 - useSubscription
 
 **PWA/Performance:**
+
 - useInstallPrompt
 - useOnlineStatus
 - usePerformance
@@ -393,6 +414,7 @@ App.tsx (Router)
 | Class Drop | Identify class droppers | FUNCTIONAL |
 
 **UI Integration:**
+
 - AIAnalysisPanel.tsx consumes useAIAnalysis hook
 - useAIAnalysis calls all 5 bots in parallel
 - Results displayed in expandable panel
@@ -400,6 +422,7 @@ App.tsx (Router)
 ### Scoring Engine (src/lib/scoring/)
 
 **Key Functions:**
+
 - calculateRaceScores - Main scoring entry point
 - analyzeOverlayWithField - Overlay analysis
 - calculateBaseScoreRanks - Ranking
@@ -407,18 +430,21 @@ App.tsx (Router)
 - getTopHorses - Top horse selection
 
 **UI Consumers:**
+
 - Dashboard.tsx imports and uses all scoring functions
 - TopBetsView.tsx uses scoring for bet generation
 
 ### Betting Calculators (src/lib/betting/)
 
 **Key Functions:**
+
 - Kelly criterion calculator
 - Exotic calculators (exacta, trifecta, superfecta)
 - Bet sizing
 - Tier classification
 
 **UI Consumers:**
+
 - BettingRecommendations.tsx
 - ExoticBuilderModal.tsx
 - MultiRaceBuilderModal.tsx
@@ -427,23 +453,27 @@ App.tsx (Router)
 ### Track Intelligence (src/data/tracks/)
 
 **Features:**
+
 - 42 tracks with bias/par data
 - Post position bias
 - Speed bias
 - Seasonal patterns
 
 **UI Consumers:**
+
 - Dashboard.tsx via getTrackData()
 - AIAnalysisPanel.tsx for track context
 
 ### Storage Services (src/services/storage/)
 
 **Features:**
+
 - IndexedDB via storage services
 - Session persistence
 - Calibration data storage
 
 **UI Consumers:**
+
 - useSessionPersistence hook
 - useCalibrationData hook
 
@@ -454,6 +484,7 @@ App.tsx (Router)
 ### Primary Data Flows
 
 **1. DRF Upload → Parsing → Scoring → Display**
+
 ```
 FileUpload.tsx
   → parseDRFFile (lib/parser)
@@ -465,6 +496,7 @@ FileUpload.tsx
 ```
 
 **2. Race Selection → AI Analysis → Findings Display**
+
 ```
 RaceTabsBar (race selection)
   → selectedRaceIndex state
@@ -475,6 +507,7 @@ RaceTabsBar (race selection)
 ```
 
 **3. Betting Recommendations → Display**
+
 ```
 Scoring results
   → useValueDetection hook
@@ -484,6 +517,7 @@ Scoring results
 ```
 
 **4. Track Selection → Bias/Par Data → Display**
+
 ```
 parsedData.races[x].header.trackCode
   → getTrackData(trackCode)
@@ -494,6 +528,7 @@ parsedData.races[x].header.trackCode
 ### Data Flow Issues
 
 **Identified:**
+
 - BetMode/BetModeContainer.tsx disconnected from navigation (comment in Dashboard.tsx)
 - Session persistence may have race condition on initial load (skipSaveRef pattern)
 
@@ -515,25 +550,27 @@ Large desktop: 1280px+
 ### Responsive Implementation
 
 **Media Queries:** 107 @media queries across 3 style files
+
 - responsive.css: 41 queries
 - dashboard.css: 54 queries
 - help.css: 12 queries
 
 **Touch Targets:**
+
 ```css
---touch-target-min: 44px  ✓ Meets accessibility minimum
---touch-target-lg: 48px
+--touch-target-min: 44px ✓ Meets accessibility minimum --touch-target-lg: 48px;
 ```
 
 **Safe Area Support:**
+
 ```css
---safe-area-top: env(safe-area-inset-top, 0px)
---safe-area-bottom: env(safe-area-inset-bottom, 0px)
+--safe-area-top: env(safe-area-inset-top, 0px) --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 ```
 
 ### PWA Status
 
 **manifest.json:** ✓ EXISTS
+
 ```json
 {
   "name": "Furlong - Advanced Handicapping Analysis",
@@ -545,6 +582,7 @@ Large desktop: 1280px+
 ```
 
 **Service Worker:** ✓ CONFIGURED (vite-plugin-pwa with Workbox)
+
 - Precaching of static assets
 - Runtime caching for fonts, images
 - NetworkOnly for auth/payment endpoints
@@ -557,12 +595,12 @@ Large desktop: 1280px+
 
 ### ARIA Implementation
 
-| Attribute Type | Occurrences | Files |
-|----------------|-------------|-------|
-| aria-* attributes | 96 | 40 files |
-| role= attributes | 32 | 19 files |
-| tabIndex | 14 | 8 files |
-| onKeyDown handlers | 15 | 9 files |
+| Attribute Type     | Occurrences | Files    |
+| ------------------ | ----------- | -------- |
+| aria-\* attributes | 96          | 40 files |
+| role= attributes   | 32          | 19 files |
+| tabIndex           | 14          | 8 files  |
+| onKeyDown handlers | 15          | 9 files  |
 
 ### Accessibility Strengths
 
@@ -574,11 +612,13 @@ Large desktop: 1280px+
 ### Accessibility Gaps
 
 **Critical:**
+
 - Limited keyboard navigation (only 15 onKeyDown handlers)
 - No skip links
 - No focus trap in modals (need to verify)
 
 **Medium:**
+
 - Limited role= coverage (32 occurrences)
 - Some interactive elements may lack keyboard support
 
@@ -589,6 +629,7 @@ Large desktop: 1280px+
 ### Framer Motion Usage
 
 **27 components use Framer Motion:**
+
 - BankrollSettings.tsx
 - BankrollSummaryCard.tsx
 - BettingRecommendations.tsx
@@ -620,6 +661,7 @@ Large desktop: 1280px+
 ### Animation Library (motion/index.tsx)
 
 **Variants Defined:**
+
 - staggerContainer (staggerChildren: 0.05)
 - staggerItem (spring animation)
 - fadeIn (duration: 0.3)
@@ -628,6 +670,7 @@ Large desktop: 1280px+
 - skeletonPulse (1.5s loop)
 
 **Components:**
+
 - Ripple (button ripple effect)
 - Skeleton (loading placeholder)
 - StaggerContainer
@@ -641,16 +684,16 @@ Large desktop: 1280px+
 
 ### Animation Durations
 
-| Animation | Duration | Compliant |
-|-----------|----------|-----------|
-| fadeIn | 300ms | ✓ |
-| slideUp | spring | ✓ |
-| scaleIn | spring | ✓ |
-| skeletonPulse | 1500ms | ✓ (loop) |
-| FadeIn | 400ms | ✓ |
-| Ripple | 500ms | ✓ |
-| ConfidenceMeter | 800ms | ✓ |
-| PulsingGlow | 2000ms | ✓ (loop) |
+| Animation       | Duration | Compliant |
+| --------------- | -------- | --------- |
+| fadeIn          | 300ms    | ✓         |
+| slideUp         | spring   | ✓         |
+| scaleIn         | spring   | ✓         |
+| skeletonPulse   | 1500ms   | ✓ (loop)  |
+| FadeIn          | 400ms    | ✓         |
+| Ripple          | 500ms    | ✓         |
+| ConfidenceMeter | 800ms    | ✓         |
+| PulsingGlow     | 2000ms   | ✓ (loop)  |
 
 All animations within acceptable ranges (< 300ms for interactions, longer for decorative).
 
@@ -666,22 +709,23 @@ All animations within acceptable ranges (< 300ms for interactions, longer for de
 
 ### TypeScript Compliance
 
-| Metric | Result | Status |
-|--------|--------|--------|
-| any types in components | 0 | ✓ EXCELLENT |
-| TODO/FIXME comments | 0 | ✓ EXCELLENT |
-| console.log statements | 3 | ⚠ MINOR (subscription only) |
+| Metric                  | Result | Status                      |
+| ----------------------- | ------ | --------------------------- |
+| any types in components | 0      | ✓ EXCELLENT                 |
+| TODO/FIXME comments     | 0      | ✓ EXCELLENT                 |
+| console.log statements  | 3      | ⚠ MINOR (subscription only) |
 
 ### console.log Locations
 
 Only in scaffolded subscription components:
+
 - src/components/subscription/SubscriptionStatus.tsx: 2
 - src/components/subscription/PricingCard.tsx: 1
 
 ### Naming Conventions
 
 - Components: PascalCase ✓
-- Hooks: use* prefix ✓
+- Hooks: use\* prefix ✓
 - Files: PascalCase for components ✓
 - Consistent patterns throughout
 
@@ -695,31 +739,32 @@ Only in scaffolded subscription components:
 
 ### Test Coverage by Area
 
-| Area | Test Files | Coverage |
-|------|------------|----------|
-| lib/scoring | 22 | EXCELLENT |
-| lib/betting | 9 | GOOD |
-| lib/value | 4 | GOOD |
-| lib/patterns | 3 | MODERATE |
-| services/ai | 14 | EXCELLENT |
-| services/calibration | 8 | GOOD |
-| integration | 4 | GOOD |
-| components | 1 | **CRITICAL GAP** |
+| Area                 | Test Files | Coverage         |
+| -------------------- | ---------- | ---------------- |
+| lib/scoring          | 22         | EXCELLENT        |
+| lib/betting          | 9          | GOOD             |
+| lib/value            | 4          | GOOD             |
+| lib/patterns         | 3          | MODERATE         |
+| services/ai          | 14         | EXCELLENT        |
+| services/calibration | 8          | GOOD             |
+| integration          | 4          | GOOD             |
+| components           | 1          | **CRITICAL GAP** |
 
 ### CRITICAL GAP: Component Testing
 
 **Only 1 component test exists:**
-- src/components/TopBets/__tests__/TopBetsEnhanced.test.ts
+
+- src/components/TopBets/**tests**/TopBetsEnhanced.test.ts
 
 **Components WITHOUT tests (88 of 89):**
 ALL other components have NO direct test coverage.
 
 ### Integration Tests
 
-- src/__tests__/integration/fullFlow.test.ts
-- src/__tests__/integration/fullPipeline.test.ts
-- src/__tests__/integration/realDrfFile.test.ts
-- src/__tests__/integration/uiDataFlow.test.ts
+- src/**tests**/integration/fullFlow.test.ts
+- src/**tests**/integration/fullPipeline.test.ts
+- src/**tests**/integration/realDrfFile.test.ts
+- src/**tests**/integration/uiDataFlow.test.ts
 
 ---
 
@@ -727,19 +772,19 @@ ALL other components have NO direct test coverage.
 
 ### AI Bots Status
 
-| Bot | Wired | Callable | UI Integration |
-|-----|-------|----------|----------------|
-| Trip Trouble | ✓ | ✓ | AIAnalysisPanel |
-| Pace Scenario | ✓ | ✓ | AIAnalysisPanel |
-| Vulnerable Favorite | ✓ | ✓ | AIAnalysisPanel |
-| Field Spread | ✓ | ✓ | AIAnalysisPanel |
-| Class Drop | ✓ | ✓ | AIAnalysisPanel |
+| Bot                 | Wired | Callable | UI Integration  |
+| ------------------- | ----- | -------- | --------------- |
+| Trip Trouble        | ✓     | ✓        | AIAnalysisPanel |
+| Pace Scenario       | ✓     | ✓        | AIAnalysisPanel |
+| Vulnerable Favorite | ✓     | ✓        | AIAnalysisPanel |
+| Field Spread        | ✓     | ✓        | AIAnalysisPanel |
+| Class Drop          | ✓     | ✓        | AIAnalysisPanel |
 
 ### Scoring Engine
 
 - calculateRaceScores ✓ Called from Dashboard
 - All scoring modules accessible via lib/scoring/index.ts
-- MAX_SCORE = 371 (331 base + 40 overlay)
+- MAX_SCORE = 376 (336 base + 40 overlay)
 
 ### Betting Calculators
 

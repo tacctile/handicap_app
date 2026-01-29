@@ -21,7 +21,7 @@ export const FAQ_ITEMS: FAQItem[] = [
     id: 'how-scoring-works',
     question: 'How does the scoring algorithm work?',
     answer:
-      'Our scoring algorithm evaluates horses across 6 key categories: Elite Connections (trainer/jockey), Post Position & Track Bias, Speed Figures & Class, Form Cycle & Conditioning, Equipment & Medication, and Pace & Tactical scenarios. Each category contributes to a base score of 0-331 points. Race-day adjustments (DRF Overlay) can add or subtract up to 40 additional points, resulting in final scores from 0-371. The algorithm is deterministic—same inputs always produce the same outputs.',
+      'Our scoring algorithm evaluates horses across multiple categories including Speed & Class, Pace, Form, Connections, and more. Each category contributes to a base score of 0-336 points. Race-day adjustments (DRF Overlay) can add or subtract up to 40 additional points, resulting in final scores from 0-376. The algorithm is deterministic—same inputs always produce the same outputs.',
   },
   {
     id: 'confidence-percentages',
@@ -33,7 +33,7 @@ export const FAQ_ITEMS: FAQItem[] = [
     id: 'betting-tiers',
     question: 'What are the betting tiers (Chalk/Alt/Value)?',
     answer:
-      'Tier 1 (Chalk) includes horses scoring 180+ points with 50-70% historical hit rates—these are your primary bets. Tier 2 (Alternatives) covers 160-179 points with 20-40% hit rates—good for secondary positions or exotic underlays. Tier 3 (Value) is 140-159 points with 5-20% hit rates—small stabs when odds are generous. Horses below 140 are marked "Pass" and not recommended for betting.',
+      'Tier 1 (Chalk) includes horses scoring 181+ points with 50-70% historical hit rates—these are your primary bets. Tier 2 (Alternatives) covers 161-180 points with 20-40% hit rates—good for secondary positions or exotic underlays. Tier 3 (Value) is 131-160 points with 5-20% hit rates—small stabs when odds are generous. Horses below 131 are marked "Pass" and not recommended for betting.',
   },
   {
     id: 'reading-recommendations',

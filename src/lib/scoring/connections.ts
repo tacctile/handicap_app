@@ -7,7 +7,7 @@
  * - Trainer Score: 0-10 points (based on win rate with minimum starts thresholds)
  * - Partnership Bonus: 0-2 points (tiered trainer-jockey partnership)
  *
- * Total: 0-24 points (7.3% of 330 base)
+ * Total: 0-24 points (7.1% of 336 base)
  *
  * JOCKEY REBALANCE RATIONALE:
  * Previous jockey weight (5 points, 1.5% of total) was severely underweighted
