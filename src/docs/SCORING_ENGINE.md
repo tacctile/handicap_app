@@ -8,11 +8,11 @@
 
 > ⚠️ **IMPORTANT: Algorithm Version Notice**
 >
-> The current implementation uses **Algorithm v3.6** with a **331-point base score** and **±40 overlay adjustment**.
+> The current implementation uses **Algorithm v4.0** with a **336-point base score** and **±40 overlay adjustment**.
 >
-> The detailed category sections below (Categories 1-6) document **v2.0 legacy scoring logic** for historical reference. For current implementation details, see **[ALGORITHM_V3_SUMMARY.md](./ALGORITHM_V3_SUMMARY.md)**.
+> The detailed category sections below (Categories 1-6) document **v2.0 legacy scoring logic** for historical reference. For current implementation details, see **[ALGORITHM_REFERENCE.md](../../ALGORITHM_REFERENCE.md)**.
 >
-> The summary table immediately below reflects the current v3.6 weights. Form category (50 pts) now includes the Form Decay System (Phase 7).
+> The summary table immediately below reflects the current v4.0 weights. Form category (50 pts) now includes the Form Decay System. Combo patterns expanded to 10 pts.
 
 ---
 
@@ -20,7 +20,7 @@
 
 ### Mathematical Foundation Principles
 
-**The 331-point base system provides granular precision while maintaining track specificity:**
+**The 336-point base system provides granular precision while maintaining track specificity:**
 
 **Core Philosophy (v3.6 - Phase 7 Algorithm):**
 
@@ -31,33 +31,34 @@
 - Odds factor incorporates market wisdom
 - Connections and equipment as fine-tuning factors
 
-**Weight Distribution Rationale (v3.6):**
+**Weight Distribution Rationale (v4.0 - per ALGORITHM_REFERENCE.md):**
 
-| Category         | Points | % of 331 | Rationale                                    |
-| ---------------- | ------ | -------- | -------------------------------------------- |
-| Speed Figures    | 90     | 27.4%    | Most predictive factor per industry research |
-| Form             | 50     | 15.2%    | Form decay system scales winner bonuses      |
-| Pace             | 45     | 13.7%    | High predictive value for race shape         |
-| Class            | 32     | 9.8%     | Class movement and competition level         |
-| Connections      | 27     | 8.2%     | Modifier, not primary driver                 |
-| Distance/Surface | 20     | 6.1%     | Turf/Wet/Distance affinities                 |
-| Odds Factor      | 15     | 4.6%     | Phase 6: Market wisdom for favorites         |
-| Post Position    | 12     | 3.7%     | Track-dependent situational factor           |
-| Trainer Patterns | 10     | 3.0%     | Situational trainer bonuses                  |
-| Equipment        | 8      | 2.4%     | Speculative, fine-tuning only                |
-| Track Specialist | 6      | 1.8%     | Proven success at today's track              |
-| Trainer S/D      | 6      | 1.8%     | Trainer surface/distance specialization      |
-| Combo Patterns   | 4      | 1.2%     | Jockey/trainer combinations                  |
-| P3 Refinements   | 2      | 0.6%     | Age factor + Sire's Sire                     |
-| Weight           | 1      | 0.3%     | Subtle weight change refinement              |
+| Category         | Points | % of 336 | Rationale                               |
+| ---------------- | ------ | -------- | --------------------------------------- |
+| Speed & Class    | 140    | 41.7%    | Speed 105 + Class 35                    |
+| Form             | 50     | 14.9%    | Form decay system scales winner bonuses |
+| Pace             | 45     | 13.4%    | Consolidated base + scenario unified    |
+| Connections      | 24     | 7.1%     | Jockey 12 + Trainer 10 + Partnership 2  |
+| Distance/Surface | 20     | 6.0%     | Turf/Wet/Distance affinities            |
+| Post Position    | 12     | 3.6%     | Track-dependent situational factor      |
+| Track Specialist | 10     | 3.0%     | Proven success at today's track         |
+| Combo Patterns   | 10     | 3.0%     | v4.0: Expanded from 4, range -6 to +10  |
+| Trainer Patterns | 8      | 2.4%     | Situational trainer bonuses             |
+| Equipment        | 8      | 2.4%     | Speculative, fine-tuning only           |
+| Trainer S/D      | 6      | 1.8%     | Trainer surface/distance specialization |
+| P3 Refinements   | 2      | 0.6%     | Age factor + Sire's Sire                |
+| Weight           | 1      | 0.3%     | Subtle weight change refinement         |
+| **TOTAL**        | 336    | 100%     |                                         |
+
+**NOTE:** Odds Factor removed from base scoring to eliminate circular logic. Odds data still available for overlay calculations.
 
 **Scoring Limits:**
 
-- Base Score Maximum: 331 points
-- Overlay Adjustment Range: ±40 points (Phase 5: reduced from ±50)
-- Final Score Cap: 371 points
-- Minimum Betting Threshold: 140 points
-- Elite Betting Threshold: 200+ points
+- Base Score Maximum: 336 points
+- Overlay Adjustment Range: ±40 points
+- Final Score Cap: 376 points
+- Minimum Betting Threshold: 131 points (Tier 3)
+- Elite Betting Threshold: 181+ points (Tier 1)
 
 ---
 
@@ -603,7 +604,7 @@ Maximum possible from decay system: WLO (18) + Won 2/3 (8) + Won 3/5 (4) = 30 pt
 5. Category 1 (Connections): 0-25 points (10.4%)
 6. Category 5 (Equipment/Medication): 0-20 points (8.3%)
 
-**Total Base Score Range: 0-331 points**
+**Total Base Score Range: 0-336 points (see ALGORITHM_REFERENCE.md)**
 
 ### Track-Specific Adjustments
 
@@ -721,17 +722,18 @@ The system automatically detects the current month and applies track-specific se
 
 ---
 
-> **NOTE:** The detailed category sections above document the v2.0 scoring logic for reference. The actual implementation uses Algorithm v3.6 (Phases 1-7) as documented in **[ALGORITHM_V3_SUMMARY.md](./ALGORITHM_V3_SUMMARY.md)**, which has a 331-point base with 15 refined categories, form decay system, odds factor integration, and data completeness penalties.
+> **NOTE:** The detailed category sections above document the v2.0 scoring logic for reference. The actual implementation uses Algorithm v4.0 as documented in **[ALGORITHM_REFERENCE.md](../../ALGORITHM_REFERENCE.md)**, which has a 336-point base with 14 categories (odds removed from base scoring), form decay system, and data completeness penalties.
 
 ---
 
-_Document Version: 3.7_
+_Document Version: 4.0_
 _Last Updated: January 2026_
 _Status: Track-Agnostic Universal Scoring Engine_
 _Integration: Requires Track Intelligence Database for track-specific values_
+_Changes in v4.0: Combo patterns expanded to 10 pts, odds removed from base scoring, base now 336._
 _Changes in v3.7: Speed Recency Decay — re-enabled with calibrated tiers (Phase 8). Active Horse Protection added._
 _Changes in v3.6: Form Decay System — scales winner bonuses by recency (Phase 7). Form cap 50 pts._
-_Changes in v3.1: Algorithm rebuild with 331-point base. See ALGORITHM_V3_SUMMARY.md for complete category breakdown._
+_Changes in v3.1: Algorithm rebuild. See ALGORITHM_REFERENCE.md for complete category breakdown._
 _Changes in v3.0: Phase 3 speed rebalance (90 pts), base increased to 313._
 _Changes in v2.5: Overlay system added with ±50 cap._
 _Changes in v2.0: Rebalanced category weights to align with industry handicapping research._

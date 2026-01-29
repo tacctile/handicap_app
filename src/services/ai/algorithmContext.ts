@@ -4,7 +4,7 @@
  * Contains the essential algorithm reference information that AI models need
  * to understand the scoring system. Derived from ALGORITHM_REFERENCE.md.
  *
- * Algorithm Version: v3.6 (Phase 7, Form Decay System)
+ * Algorithm Version: v4.0 (336 base score, expanded combo patterns)
  * Source: ALGORITHM_REFERENCE.md
  */
 
@@ -12,29 +12,27 @@
  * Concise algorithm reference for AI prompts.
  * Kept under 800 tokens to leave room for race data.
  */
-export const ALGORITHM_CONTEXT = `## ALGORITHM v3.6 REFERENCE
+export const ALGORITHM_CONTEXT = `## ALGORITHM v4.0 REFERENCE
 
 ### Scoring Structure
-- Base Score: 0-331 pts (15 categories)
+- Base Score: 0-336 pts (14 categories)
 - Overlay Adjustment: ±40 pts (capped)
-- Final Score: 0-371 pts (floor at 0)
+- Final Score: 0-376 pts (floor at 0)
 
-### Base Score Categories (331 pts total)
+### Base Score Categories (336 pts total)
 | Category | Points | Weight |
 |----------|--------|--------|
-| Speed Figures | 90 | 27.4% |
-| Form | 50 | 15.2% |
-| Pace | 45 | 13.7% |
-| Class | 32 | 9.8% |
-| Connections | 27 | 8.2% |
-| Distance/Surface | 20 | 6.1% |
-| Odds Factor | 15 | 4.6% |
-| Post Position | 12 | 3.7% |
-| Trainer Patterns | 10 | 3.0% |
+| Speed & Class | 140 | 41.7% |
+| Form | 50 | 14.9% |
+| Pace | 45 | 13.4% |
+| Connections | 24 | 7.1% |
+| Distance/Surface | 20 | 6.0% |
+| Post Position | 12 | 3.6% |
+| Track Specialist | 10 | 3.0% |
+| Combo Patterns | 10 | 3.0% |
+| Trainer Patterns | 8 | 2.4% |
 | Equipment | 8 | 2.4% |
-| Track Specialist | 6 | 1.8% |
 | Trainer Surface/Dist | 6 | 1.8% |
-| Combo Patterns | 4 | 1.2% |
 | P3 Refinements | 2 | 0.6% |
 | Weight | 1 | 0.3% |
 
@@ -49,14 +47,14 @@ export const ALGORITHM_CONTEXT = `## ALGORITHM v3.6 REFERENCE
 | F: Distance & Surface Opt. | ±6 |
 | G: Head-to-Head & Tactical | ±6 |
 
-### Betting Tiers
+### Betting Tiers (per ALGORITHM_REFERENCE.md)
 | Tier | Score | Action |
 |------|-------|--------|
-| Tier 1 (Chalk) | 180+ | Primary bets |
-| Tier 2 (Alternatives) | 160-179 | Secondary bets |
-| Tier 3 (Value) | 140-159 | Small stabs |
-| Diamond Check | 120-139 | Review if 200%+ overlay |
-| Pass | <120 | No bet |
+| Tier 1 (Chalk) | 181+ | Primary bets |
+| Tier 2 (Alternatives) | 161-180 | Secondary bets |
+| Tier 3 (Value) | 131-160 | Small stabs |
+| Diamond Check | 122-130 | Review if 200%+ overlay |
+| Pass | <122 | No bet |
 
 ### Confidence Levels
 | Level | Data % | Effect |
@@ -66,7 +64,7 @@ export const ALGORITHM_CONTEXT = `## ALGORITHM v3.6 REFERENCE
 | LOW | <60% | 15% base score penalty |
 
 ### Edge Cases
-- Diamond in the Rough: 120-139 pts + 200%+ overlay = special review
+- Diamond in the Rough: 122-130 pts + 200%+ overlay = special review
 - Lightly Raced: <8 starts triggers breeding compensation
 - Nuclear Longshot: 25/1+ with specific angle = separate evaluation
 - Late Changes: Scratches/equipment/jockey = full recalculation`;
@@ -75,9 +73,9 @@ export const ALGORITHM_CONTEXT = `## ALGORITHM v3.6 REFERENCE
  * Compact version for specialist bots that need less context.
  * Focused on tier thresholds and confidence.
  */
-export const ALGORITHM_CONTEXT_COMPACT = `## ALGORITHM v3.6 QUICK REF
-- Base Score: 0-331 pts | Overlay: ±40 | Final: 0-371
-- Tier 1: 180+ | Tier 2: 160-179 | Tier 3: 140-159 | Diamond: 120-139 | Pass: <120
+export const ALGORITHM_CONTEXT_COMPACT = `## ALGORITHM v4.0 QUICK REF
+- Base Score: 0-336 pts | Overlay: ±40 | Final: 0-376
+- Tier 1: 181+ | Tier 2: 161-180 | Tier 3: 131-160 | Diamond: 122-130 | Pass: <122
 - Confidence: HIGH (80%+), MEDIUM (60-79%), LOW (<60% = 15% penalty)`;
 
 /**
@@ -101,7 +99,7 @@ export const TRIP_TROUBLE_CONTEXT = `## TRIP ANALYSIS CONTEXT
  * Field spread context for field analysis bot.
  */
 export const FIELD_SPREAD_CONTEXT = `## FIELD SPREAD CONTEXT
-- Tier 1: 180+ (primary bets) | Tier 2: 160-179 | Tier 3: 140-159
+- Tier 1: 181+ (primary bets) | Tier 2: 161-180 | Tier 3: 131-160
 - SEPARATED: 15+ pt gap between top horses = go narrow
 - TIGHT: Top 4 within 10 pts = go wide
 - Confidence: HIGH/MEDIUM/LOW affects bet sizing`;
@@ -110,7 +108,7 @@ export const FIELD_SPREAD_CONTEXT = `## FIELD SPREAD CONTEXT
  * Vulnerable favorite context.
  */
 export const VULNERABLE_FAVORITE_CONTEXT = `## VULNERABLE FAVORITE CONTEXT
-- Tier 1 threshold: 180+ points
+- Tier 1 threshold: 181+ points
 - Score gap <15 pts to #2 = vulnerable indicator
 - Confidence: HIGH (80%+), MEDIUM (60-79%), LOW (<60%)
 - LOW confidence applies 15% base score penalty`;

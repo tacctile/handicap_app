@@ -21,7 +21,7 @@ import {
 describe('Overlay Analysis', () => {
   describe('scoreToWinProbability', () => {
     // Model B: Formula updated to (score/MAX_BASE_SCORE) * 50, clamped 2-50%
-    // MAX_BASE_SCORE = 331 per ALGORITHM_REFERENCE.md.
+    // MAX_BASE_SCORE = 336 per ALGORITHM_REFERENCE.md.
     it('converts score 160 to approximately 24% win probability', () => {
       const prob = scoreToWinProbability(160);
       // (160/331) * 50 = 24.17%

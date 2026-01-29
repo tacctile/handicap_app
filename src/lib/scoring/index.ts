@@ -5,25 +5,25 @@
  * All calculations are deterministic - same inputs always produce same scores.
  * Optimized for performance: scoring 12 horses completes in under 100ms.
  *
- * BASE SCORE (0-330 points max) - Rebalanced Connections:
+ * BASE SCORE (0-336 points max) - per ALGORITHM_REFERENCE.md:
  * ============================================================
  * This model shifts weighting toward Intrinsic Ability (Speed/Class) over
  * Situational Factors (Pace/Connections). Speed figures are the strongest
  * predictor; situational bonuses add granularity but shouldn't dominate.
  *
- * Core Categories (282 pts):
- * - Speed & Class: 0-140 points (42.6% - Speed 105 + Class 35)
- * - Pace: 0-45 points (13.7% - CONSOLIDATED: base + scenario now unified)
- * - Form: 0-50 points (15.2% - Recent performance patterns, v3.6 Form Decay)
- * - Post Position: 0-12 points (3.6% - unchanged)
- * - Connections (Trainer + Jockey + Partnership): 0-24 points (7.3%)
- * - Equipment: 0-8 points (2.4% - unchanged)
+ * Core Categories (286 pts):
+ * - Speed & Class: 0-140 points (41.7% - Speed 105 + Class 35)
+ * - Pace: 0-45 points (13.4% - CONSOLIDATED: base + scenario now unified)
+ * - Form: 0-50 points (14.9% - Recent performance patterns, Form Decay)
+ * - Post Position: 0-12 points (3.6%)
+ * - Connections (Trainer + Jockey + Partnership): 0-24 points (7.1%)
+ * - Equipment: 0-8 points (2.4%)
  *
- * Bonus Categories (48 pts):
- * - Distance/Surface Affinity: 0-20 points (6.1% - Turf/Wet/Distance)
+ * Bonus Categories (50 pts):
+ * - Distance/Surface Affinity: 0-20 points (6.0% - Turf/Wet/Distance)
  * - Track Specialist: 0-10 points (3.0% - Proven success at today's track)
+ * - Combo Patterns: 0-10 points (3.0% - v4.0: expanded from 4, range -6 to +10)
  * - Trainer Patterns: 0-8 points (2.4% - Situational trainer patterns)
- * - Combo Patterns: 0-4 points (1.2% - unchanged)
  * - Trainer Surface/Distance: 0-6 points (1.8% - Trainer specialization)
  * - Weight Change: 0-1 point (0.3% - subtle refinement for weight drops)
  *

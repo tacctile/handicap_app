@@ -254,14 +254,14 @@ FIELD STRENGTH: [ELITE/STRONG/AVERAGE/WEAK] | CONFIDENCE: [HIGH/MEDIUM/LOW]
 ```
 PREDICTED FINISHING ORDER:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1st: #[X] [Horse Name] - Score: [XXX]/331 - Win Prob: [XX]% - Odds: [X/1]
-2nd: #[X] [Horse Name] - Score: [XXX]/331 - Place Prob: [XX]% - Odds: [X/1]
-3rd: #[X] [Horse Name] - Score: [XXX]/331 - Show Prob: [XX]% - Odds: [X/1]
-4th: #[X] [Horse Name] - Score: [XXX]/331 - Odds: [X/1]
-5th: #[X] [Horse Name] - Score: [XXX]/331 - Odds: [X/1]
-6th: #[X] [Horse Name] - Score: [XXX]/331 - Odds: [X/1]
-7th: #[X] [Horse Name] - Score: [XXX]/331 - Odds: [X/1]
-8th: #[X] [Horse Name] - Score: [XXX]/331 - Odds: [X/1]
+1st: #[X] [Horse Name] - Score: [XXX]/336 - Win Prob: [XX]% - Odds: [X/1]
+2nd: #[X] [Horse Name] - Score: [XXX]/336 - Place Prob: [XX]% - Odds: [X/1]
+3rd: #[X] [Horse Name] - Score: [XXX]/336 - Show Prob: [XX]% - Odds: [X/1]
+4th: #[X] [Horse Name] - Score: [XXX]/336 - Odds: [X/1]
+5th: #[X] [Horse Name] - Score: [XXX]/336 - Odds: [X/1]
+6th: #[X] [Horse Name] - Score: [XXX]/336 - Odds: [X/1]
+7th: #[X] [Horse Name] - Score: [XXX]/336 - Odds: [X/1]
+8th: #[X] [Horse Name] - Score: [XXX]/336 - Odds: [X/1]
 ```
 
 ### Individual Horse Analysis Template
@@ -269,7 +269,7 @@ PREDICTED FINISHING ORDER:
 ```
 #[X] [HORSE NAME] - PREDICTED FINISH: [1st/2nd/3rd/etc.]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-FINAL SCORE: [XXX]/371 (Base: [XXX]/331, Overlay: [+/-XX]/40)
+FINAL SCORE: [XXX]/376 (Base: [XXX]/336, Overlay: [+/-XX]/40)
 CONFIDENCE: [XX]% - [MAXIMUM/HIGH/MODERATE/LOW]
 MORNING LINE: [X-1] | FAIR ODDS: [X-1] | OVERLAY: [XX]% | CURRENT: [X-1]
 

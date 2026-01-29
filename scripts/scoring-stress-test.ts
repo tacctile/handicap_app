@@ -265,8 +265,8 @@ const maxTrainerSurfaceDistanceScore = 6; // 2.1% - Trainer specialization
 const maxWeightScore = 1; // 0.3% - P2 subtle refinement
 const maxAgeFactorScore = 1; // 0.3% - P3 peak performance
 const maxSiresSireScore = 1; // 0.3% - P3 breeding influence
-const maxBaseScore = 331; // v3.6: 331 base score
-const maxOverlayScore = 40; // v3.6: ±40 overlay
+const maxBaseScore = 336; // v4.0: 336 base score (per ALGORITHM_REFERENCE.md)
+const maxOverlayScore = 40; // ±40 overlay
 const maxProtocolBonus = 60; // From edge case protocols
 
 const theoreticalMaxCoreCategories =
@@ -719,8 +719,8 @@ if (failCount > 0) {
 }
 
 console.log('\n  KEY FINDINGS:');
-console.log('  1. Base score components sum to 331 (v3.6)');
-console.log('  2. Maximum possible score with overlay: 371 (331 + 40)');
+console.log('  1. Base score components sum to 336 (v4.0, per ALGORITHM_REFERENCE.md)');
+console.log('  2. Maximum possible score with overlay: 376 (336 + 40)');
 console.log('  3. Minimum possible score: -40 (needs floor at 0)');
 console.log('  4. Division by zero needs safeguards');
 console.log('  5. Floating point precision needs rounding');
@@ -732,7 +732,7 @@ console.log('  1. Add safeDivide() helper for all division operations');
 console.log('  2. Add safeNumber() helper to coerce values');
 console.log('  3. Add clamp() helper to enforce min/max bounds');
 console.log('  4. Floor all final scores at 0');
-console.log('  5. Cap display scores at 331 (show "331+" for higher)');
+console.log('  5. Cap display scores at 336 (show "336+" for higher)');
 console.log('  6. Round all scores to integers before display');
 console.log('  7. Add isValidScore() checks throughout pipeline');
 

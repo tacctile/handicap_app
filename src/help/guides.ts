@@ -106,7 +106,7 @@ Projects race pace scenarios and identifies horses with tactical advantages—cl
 - **Pace Scenario Fit:** 0-25 points
 - **Tactical Advantages:** 0-15 points
 
-## Base Score Range: 0-331 Points
+## Base Score Range: 0-336 Points
 
 ## DRF Overlay Adjustments
 
@@ -124,10 +124,10 @@ After base scoring, race-day factors can adjust the score by ±40 points:
 | Score Range | Meaning | Hit Rate |
 |-------------|---------|----------|
 | 200+ | Elite contender | 50-70% |
-| 180-199 | Strong contender | 40-50% |
-| 160-179 | Competitive | 20-40% |
-| 140-159 | Marginal | 5-20% |
-| <140 | Pass | — |`,
+| 181-199 | Strong contender (Tier 1) | 40-50% |
+| 161-180 | Competitive (Tier 2) | 20-40% |
+| 131-160 | Marginal (Tier 3) | 5-20% |
+| <131 | Pass | — |`,
   },
   {
     id: 'betting-strategy',
@@ -140,7 +140,7 @@ Furlong provides structured betting recommendations based on proven handicapping
 ## The Three-Tier System
 
 ### Tier 1 — Chalk (Primary Bets)
-**Score: 180+ points | Hit Rate: 50-70%**
+**Score: 181+ points | Hit Rate: 50-70%**
 
 These are your highest-conviction plays. Tier 1 horses have multiple scoring factors aligned and represent the strongest value propositions.
 
@@ -149,7 +149,7 @@ These are your highest-conviction plays. Tier 1 horses have multiple scoring fac
 - **Strategy:** Bet confidently but never chase losses
 
 ### Tier 2 — Alternatives (Secondary Bets)
-**Score: 160-179 points | Hit Rate: 20-40%**
+**Score: 161-180 points | Hit Rate: 20-40%**
 
 Solid contenders that belong in exotic tickets but may not warrant straight win bets at short odds.
 
@@ -158,7 +158,7 @@ Solid contenders that belong in exotic tickets but may not warrant straight win 
 - **Strategy:** Use underneath Tier 1 horses in exotics
 
 ### Tier 3 — Value (Small Stabs)
-**Score: 140-159 points | Hit Rate: 5-20%**
+**Score: 131-160 points | Hit Rate: 5-20%**
 
 Long shots with identifiable angles. Only play when odds justify the risk.
 

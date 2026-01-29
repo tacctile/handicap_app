@@ -17,18 +17,18 @@ import {
 
 describe('ALGORITHM_CONTEXT', () => {
   describe('Version and Score Validation', () => {
-    it('should contain algorithm version v3.6', () => {
-      expect(ALGORITHM_CONTEXT).toContain('v3.6');
+    it('should contain algorithm version v4.0', () => {
+      expect(ALGORITHM_CONTEXT).toContain('v4.0');
     });
 
-    it('should contain correct base score total of 331', () => {
-      expect(ALGORITHM_CONTEXT).toContain('331');
+    it('should contain correct base score total of 336', () => {
+      expect(ALGORITHM_CONTEXT).toContain('336');
       // Should NOT contain the old incorrect value
       expect(ALGORITHM_CONTEXT).not.toContain('328');
     });
 
-    it('should contain correct max final score of 371', () => {
-      expect(ALGORITHM_CONTEXT).toContain('371');
+    it('should contain correct max final score of 376', () => {
+      expect(ALGORITHM_CONTEXT).toContain('376');
     });
 
     it('should contain overlay cap of ±40', () => {
@@ -37,24 +37,24 @@ describe('ALGORITHM_CONTEXT', () => {
   });
 
   describe('Tier Thresholds', () => {
-    it('should contain Tier 1 threshold of 180+', () => {
-      expect(ALGORITHM_CONTEXT).toContain('180+');
+    it('should contain Tier 1 threshold of 181+', () => {
+      expect(ALGORITHM_CONTEXT).toContain('181+');
     });
 
-    it('should contain Tier 2 range 160-179', () => {
-      expect(ALGORITHM_CONTEXT).toContain('160-179');
+    it('should contain Tier 2 range 161-180', () => {
+      expect(ALGORITHM_CONTEXT).toContain('161-180');
     });
 
-    it('should contain Tier 3 range 140-159', () => {
-      expect(ALGORITHM_CONTEXT).toContain('140-159');
+    it('should contain Tier 3 range 131-160', () => {
+      expect(ALGORITHM_CONTEXT).toContain('131-160');
     });
 
-    it('should contain Diamond Check range 120-139', () => {
-      expect(ALGORITHM_CONTEXT).toContain('120-139');
+    it('should contain Diamond Check range 122-130', () => {
+      expect(ALGORITHM_CONTEXT).toContain('122-130');
     });
 
-    it('should contain Pass threshold <120', () => {
-      expect(ALGORITHM_CONTEXT).toContain('<120');
+    it('should contain Pass threshold <122', () => {
+      expect(ALGORITHM_CONTEXT).toContain('<122');
     });
   });
 
@@ -78,9 +78,9 @@ describe('ALGORITHM_CONTEXT', () => {
   });
 
   describe('Scoring Categories', () => {
-    it('should contain Speed Figures at 90 pts', () => {
-      expect(ALGORITHM_CONTEXT).toContain('Speed Figures');
-      expect(ALGORITHM_CONTEXT).toContain('90');
+    it('should contain Speed & Class at 140 pts', () => {
+      expect(ALGORITHM_CONTEXT).toContain('Speed & Class');
+      expect(ALGORITHM_CONTEXT).toContain('140');
     });
 
     it('should contain Form at 50 pts', () => {
@@ -93,14 +93,14 @@ describe('ALGORITHM_CONTEXT', () => {
       expect(ALGORITHM_CONTEXT).toContain('45');
     });
 
-    it('should contain Class at 32 pts', () => {
-      expect(ALGORITHM_CONTEXT).toContain('Class');
-      expect(ALGORITHM_CONTEXT).toContain('32');
+    it('should contain Connections at 24 pts', () => {
+      expect(ALGORITHM_CONTEXT).toContain('Connections');
+      expect(ALGORITHM_CONTEXT).toContain('24');
     });
 
-    it('should contain Connections at 27 pts', () => {
-      expect(ALGORITHM_CONTEXT).toContain('Connections');
-      expect(ALGORITHM_CONTEXT).toContain('27');
+    it('should contain Combo Patterns at 10 pts', () => {
+      expect(ALGORITHM_CONTEXT).toContain('Combo Patterns');
+      expect(ALGORITHM_CONTEXT).toContain('10');
     });
   });
 
@@ -139,16 +139,16 @@ describe('ALGORITHM_CONTEXT', () => {
 });
 
 describe('ALGORITHM_CONTEXT_COMPACT', () => {
-  it('should contain base score 331', () => {
-    expect(ALGORITHM_CONTEXT_COMPACT).toContain('331');
+  it('should contain base score 336', () => {
+    expect(ALGORITHM_CONTEXT_COMPACT).toContain('336');
   });
 
   it('should contain all tier thresholds', () => {
-    expect(ALGORITHM_CONTEXT_COMPACT).toContain('180+');
-    expect(ALGORITHM_CONTEXT_COMPACT).toContain('160-179');
-    expect(ALGORITHM_CONTEXT_COMPACT).toContain('140-159');
-    expect(ALGORITHM_CONTEXT_COMPACT).toContain('120-139');
-    expect(ALGORITHM_CONTEXT_COMPACT).toContain('<120');
+    expect(ALGORITHM_CONTEXT_COMPACT).toContain('181+');
+    expect(ALGORITHM_CONTEXT_COMPACT).toContain('161-180');
+    expect(ALGORITHM_CONTEXT_COMPACT).toContain('131-160');
+    expect(ALGORITHM_CONTEXT_COMPACT).toContain('122-130');
+    expect(ALGORITHM_CONTEXT_COMPACT).toContain('<122');
   });
 
   it('should contain confidence levels with 15% penalty', () => {
@@ -188,9 +188,9 @@ describe('Specialist Bot Contexts', () => {
 
   describe('FIELD_SPREAD_CONTEXT', () => {
     it('should contain tier thresholds', () => {
-      expect(FIELD_SPREAD_CONTEXT).toContain('180+');
-      expect(FIELD_SPREAD_CONTEXT).toContain('160-179');
-      expect(FIELD_SPREAD_CONTEXT).toContain('140-159');
+      expect(FIELD_SPREAD_CONTEXT).toContain('181+');
+      expect(FIELD_SPREAD_CONTEXT).toContain('161-180');
+      expect(FIELD_SPREAD_CONTEXT).toContain('131-160');
     });
 
     it('should mention SEPARATED, TIGHT field types', () => {
@@ -200,8 +200,8 @@ describe('Specialist Bot Contexts', () => {
   });
 
   describe('VULNERABLE_FAVORITE_CONTEXT', () => {
-    it('should contain Tier 1 threshold 180+', () => {
-      expect(VULNERABLE_FAVORITE_CONTEXT).toContain('180+');
+    it('should contain Tier 1 threshold 181+', () => {
+      expect(VULNERABLE_FAVORITE_CONTEXT).toContain('181+');
     });
 
     it('should contain confidence levels', () => {

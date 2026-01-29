@@ -470,12 +470,12 @@ describe('Main Scoring Engine', () => {
   });
 
   describe('Score Thresholds', () => {
-    it('thresholds are correctly defined for base score (330 max)', () => {
-      // Rebalanced Connections: 330 max base score
-      expect(SCORE_THRESHOLDS.elite).toBe(264); // 80%+
-      expect(SCORE_THRESHOLDS.strong).toBe(215); // 65-79%
-      expect(SCORE_THRESHOLDS.contender).toBe(165); // 50-64%
-      expect(SCORE_THRESHOLDS.fair).toBe(116); // 35-49%
+    it('thresholds are correctly defined for base score (336 max)', () => {
+      // ALGORITHM_REFERENCE.md: 336 max base score
+      expect(SCORE_THRESHOLDS.elite).toBe(269); // 80% of 336
+      expect(SCORE_THRESHOLDS.strong).toBe(218); // 65% of 336
+      expect(SCORE_THRESHOLDS.contender).toBe(168); // 50% of 336
+      expect(SCORE_THRESHOLDS.fair).toBe(118); // 35% of 336
       expect(SCORE_THRESHOLDS.weak).toBe(0); // <35%
     });
   });

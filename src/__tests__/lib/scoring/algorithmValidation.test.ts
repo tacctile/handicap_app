@@ -5,8 +5,8 @@
  * work together correctly after the algorithm rebuild (Phases 1-6).
  *
  * Validates:
- * - Category totals sum to 329 pts (consolidated pace module)
- * - Score bounds (0-369 total, 0-329 base, ±40 overlay)
+ * - Category totals sum to 336 pts (per ALGORITHM_REFERENCE.md)
+ * - Score bounds (0-376 total, 0-336 base, ±40 overlay)
  * - Favorite advantage (market wisdom incorporated)
  * - Recent winner advantage (+20 pts for WLO)
  * - Missing data penalty (FTS scores lower)
@@ -36,7 +36,7 @@ import {
 // ============================================================================
 
 describe('Algorithm v3.1 - Category Totals', () => {
-  it('sum of all category max points equals 330', () => {
+  it('sum of all category max points equals 336', () => {
     // Rebalanced Connections: jockey 5→12, trainer 16→10
     // NOTE: Odds removed from base scoring (circular logic elimination)
     const expectedCategories = {
@@ -52,14 +52,14 @@ describe('Algorithm v3.1 - Category Totals', () => {
       equipment: 8,
       trackSpecialist: 10, // Increased from 6
       trainerSurfaceDistance: 6,
-      comboPatterns: 4,
+      comboPatterns: 10, // v4.0: expanded from 4, range -6 to +10
       p3Refinements: 2, // age + siresSire
       weight: 1,
     };
 
     const sum = Object.values(expectedCategories).reduce((a, b) => a + b, 0);
-    // Rebalanced connections: 330 max base score
-    expect(sum).toBe(330);
+    // MAX_BASE_SCORE = 336 (per ALGORITHM_REFERENCE.md)
+    expect(sum).toBe(336);
   });
 
   it('SCORE_LIMITS constants match expected values', () => {
@@ -77,20 +77,20 @@ describe('Algorithm v3.1 - Category Totals', () => {
     expect(SCORE_LIMITS.equipment).toBe(8);
     expect(SCORE_LIMITS.trackSpecialist).toBe(10);
     expect(SCORE_LIMITS.trainerSurfaceDistance).toBe(6);
-    expect(SCORE_LIMITS.comboPatterns).toBe(4);
+    expect(SCORE_LIMITS.comboPatterns).toBe(10); // v4.0: expanded from 4
     expect(SCORE_LIMITS.ageFactor).toBe(1);
     expect(SCORE_LIMITS.siresSire).toBe(1);
     expect(SCORE_LIMITS.weight).toBe(1);
 
-    // Totals - Rebalanced Connections
-    expect(SCORE_LIMITS.baseTotal).toBe(330);
+    // Totals - per ALGORITHM_REFERENCE.md
+    expect(SCORE_LIMITS.baseTotal).toBe(336);
     expect(SCORE_LIMITS.overlayMax).toBe(40);
-    expect(SCORE_LIMITS.total).toBe(370);
+    expect(SCORE_LIMITS.total).toBe(376);
   });
 
   it('MAX constants are correctly defined', () => {
-    expect(MAX_BASE_SCORE).toBe(330); // Rebalanced Connections
-    expect(MAX_SCORE).toBe(370); // Rebalanced Connections
+    expect(MAX_BASE_SCORE).toBe(336); // per ALGORITHM_REFERENCE.md
+    expect(MAX_SCORE).toBe(376); // 336 base + 40 overlay
     expect(MAX_OVERLAY).toBe(40);
   });
 });
@@ -118,7 +118,7 @@ describe('Algorithm v3.1 - Score Bounds', () => {
     expect(score.baseScore).toBeGreaterThanOrEqual(0);
   });
 
-  it('no horse can score above 369', () => {
+  it('no horse can score above 376', () => {
     // Create best case: proven winner with all advantages
     const horse = createHorseEntry({
       lifetimeStarts: 20,
@@ -144,10 +144,10 @@ describe('Algorithm v3.1 - Score Bounds', () => {
     const score = calculateHorseScore(horse, header, '1-1', 'fast', false);
 
     expect(score.total).toBeLessThanOrEqual(MAX_SCORE);
-    expect(score.total).toBeLessThanOrEqual(369);
+    expect(score.total).toBeLessThanOrEqual(376);
   });
 
-  it('base score is capped at 329', () => {
+  it('base score is capped at 336', () => {
     const horse = createHorseEntry({
       lifetimeStarts: 20,
       lifetimeWins: 10,
@@ -168,7 +168,7 @@ describe('Algorithm v3.1 - Score Bounds', () => {
     const score = calculateHorseScore(horse, header, 'even', 'fast', false);
 
     expect(score.baseScore).toBeLessThanOrEqual(MAX_BASE_SCORE);
-    expect(score.baseScore).toBeLessThanOrEqual(329);
+    expect(score.baseScore).toBeLessThanOrEqual(336);
   });
 
   it('overlay is capped at ±40', () => {
@@ -694,7 +694,8 @@ describe('Algorithm v3.1 - Regression Tests', () => {
     // NOTE: odds removed from base scoring breakdown (circular logic elimination)
     expect(breakdown.distanceSurface.total).toBeGreaterThanOrEqual(0);
     expect(breakdown.trainerPatterns.total).toBeGreaterThanOrEqual(0);
-    expect(breakdown.comboPatterns.total).toBeGreaterThanOrEqual(0);
+    // comboPatterns can be negative in v4.0 (range -6 to +10)
+    expect(breakdown.comboPatterns.total).toBeGreaterThanOrEqual(-6);
     expect(breakdown.trackSpecialist.total).toBeGreaterThanOrEqual(0);
     expect(breakdown.trainerSurfaceDistance.total).toBeGreaterThanOrEqual(0);
     expect(breakdown.weightAnalysis.total).toBeGreaterThanOrEqual(0);
