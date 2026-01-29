@@ -149,6 +149,12 @@ import {
   type FieldSpreadResult,
   type FieldType,
 } from './fieldSpread';
+import {
+  calculateWorkoutScore,
+  type WorkoutScoreResult,
+  MAX_WORKOUT_SCORE,
+  MIN_WORKOUT_SCORE,
+} from './workouts';
 
 // ============================================================================
 // CONSTANTS
@@ -156,7 +162,7 @@ import {
 
 /**
  * Maximum base score (before overlay)
- * v4.0: Increased from 330 to 336 due to combo pattern expansion
+ * v4.1: Increased from 336 to 344 due to workout scoring addition
  *
  * Category breakdown:
  * - Speed & Class: 140 pts (Speed 105 + Class 35)
@@ -165,6 +171,7 @@ import {
  * - Connections: 24 pts (Jockey 12 + Trainer 10 + Partnership 2)
  * - Post Position: 12 pts
  * - Equipment: 8 pts
+ * - Workouts: 8 pts (v4.1: NEW - recency 3 + quality 3 + pattern 2)
  * - Distance/Surface: 20 pts
  * - Track Specialist: 10 pts
  * - Trainer Patterns: 8 pts
@@ -172,7 +179,13 @@ import {
  * - Trainer Surface/Distance: 6 pts
  * - Weight: 1 pt
  * - P3 (Age + Sire's Sire): 2 pts
- * Total: 336 pts
+ * Total: 344 pts
+ *
+ * v4.1 CHANGES:
+ * - Added workout scoring: 8 pts max (recency 3 + quality 3 + pattern 2)
+ * - Workout penalties: -4 to 0 pts (layoff no work, FTS no bullet, slow work)
+ * - FTS multiplier: 2x (workouts are only data)
+ * - Layoff multiplier: 1.5x (workouts show current fitness)
  *
  * v4.0 CHANGES:
  * - Combo patterns expanded from 4 to 10 pts max (+6)
@@ -180,7 +193,7 @@ import {
  * - Net combo range: -6 to +10 (16 point spread)
  * - Trainer pattern sample size increased to 15 for full credit
  */
-export const MAX_BASE_SCORE = 336;
+export const MAX_BASE_SCORE = 344;
 
 /**
  * Maximum overlay adjustment
@@ -189,7 +202,7 @@ export const MAX_BASE_SCORE = 336;
 export const MAX_OVERLAY = 40;
 
 /** Maximum total score (base + overlay) */
-export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 376
+export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 384 (v4.1: up from 376)
 
 /**
  * Score limits by category
@@ -200,27 +213,28 @@ export const MAX_SCORE = MAX_BASE_SCORE + MAX_OVERLAY; // 376
  * Factors (Pace/Connections). Speed figures are the strongest predictor
  * at 30-40% weight, with class providing additional context.
  *
- * Core Categories (282 pts):
- * - Speed/Class: 140 pts (41.7%) — Speed 105 pts (~31.3%) + Class 35 pts (~10.4%)
- * - Form: 50 pts (14.9%) — Recent performance patterns (v3.6 Form Decay)
- * - Pace: 45 pts (13.4%) — CONSOLIDATED: base + scenario adjustments unified
- * - Connections: 24 pts (7.1%) — Jockey 12 + Trainer 10 + Partnership 2
- * - Post Position: 12 pts (3.6%) — Track-dependent situational factor
- * - Equipment: 8 pts (2.4%) — Speculative, fine-tuning only
+ * Core Categories (290 pts):
+ * - Speed/Class: 140 pts (40.7%) — Speed 105 pts (~30.5%) + Class 35 pts (~10.2%)
+ * - Form: 50 pts (14.5%) — Recent performance patterns (v3.6 Form Decay)
+ * - Pace: 45 pts (13.1%) — CONSOLIDATED: base + scenario adjustments unified
+ * - Connections: 24 pts (7.0%) — Jockey 12 + Trainer 10 + Partnership 2
+ * - Post Position: 12 pts (3.5%) — Track-dependent situational factor
+ * - Equipment: 8 pts (2.3%) — Speculative, fine-tuning only
+ * - Workouts: 8 pts (2.3%) — v4.1: NEW (recency 3 + quality 3 + pattern 2)
  *
  * Bonus Categories (54 pts):
- * - Distance/Surface: 20 pts (6.0%) — Turf (8) + Wet (6) + Distance (6)
- * - Track Specialist: 10 pts (3.0%) — Proven success at today's track
- * - Trainer Patterns: 8 pts (2.4%) — Situational patterns (with sample size discount)
- * - Combo Patterns: 10 pts (3.0%) — v4.0: Expanded from 4 pts (range -6 to +10)
- * - Trainer Surface/Distance: 6 pts (1.8%) — Trainer specialization bonus
+ * - Distance/Surface: 20 pts (5.8%) — Turf (8) + Wet (6) + Distance (6)
+ * - Track Specialist: 10 pts (2.9%) — Proven success at today's track
+ * - Trainer Patterns: 8 pts (2.3%) — Situational patterns (with sample size discount)
+ * - Combo Patterns: 10 pts (2.9%) — v4.0: Expanded from 4 pts (range -6 to +10)
+ * - Trainer Surface/Distance: 6 pts (1.7%) — Trainer specialization bonus
  *
  * Weight & P3 Refinements (3 pts):
  * - Weight: 1 pt (subtle refinement for weight drops)
  * - Age Factor: ±1 pt (peak performance at 4-5yo, declining at 8+)
  * - Sire's Sire: ±1 pt (integrated into breeding for known influential sires)
  *
- * Total: 336 points base score (v4.0: up from 330)
+ * Total: 344 points base score (v4.1: up from 336)
  *
  * NOTE: Pace scenario adjustments (±8 pts) are now integrated into the
  * 45-point pace score, not applied as a separate overlay layer.
@@ -232,6 +246,7 @@ export const SCORE_LIMITS = {
   form: 50, // v3.6: Form Decay System restored to 50
   equipment: 8,
   pace: 45, // CONSOLIDATED: base 35 + scenario ±8 now unified into 0-45
+  workouts: 8, // v4.1: NEW - recency 3 + quality 3 + pattern 2 (range -4 to +8)
   // NOTE: odds removed from base scoring (circular logic elimination)
   distanceSurface: 20, // Turf (8) + Wet (6) + Distance (6) = 20
   trainerPatterns: 8, // Model B: reduced from 10, with sample size discount tiers
@@ -242,30 +257,30 @@ export const SCORE_LIMITS = {
   // P3 refinements (subtle, ±1 pt each)
   ageFactor: 1, // Age-based peak performance (+1 for 4-5yo, -1 for 8+)
   siresSire: 1, // Sire's sire breeding influence (±1 integrated into breeding)
-  baseTotal: MAX_BASE_SCORE, // 336
+  baseTotal: MAX_BASE_SCORE, // 344 (v4.1: up from 336)
   overlayMax: MAX_OVERLAY, // 40
-  total: MAX_SCORE, // 376
+  total: MAX_SCORE, // 384 (v4.1: up from 376)
 } as const;
 
 /**
  * Score thresholds for color coding and tier classification
- * Based on BASE SCORE ONLY (336 max), not total score with overlay
+ * Based on BASE SCORE ONLY (344 max), not total score with overlay
  *
- * v4.0: Updated for 336 base score (up from 330)
+ * v4.1: Updated for 344 base score (up from 336)
  *
  * | Base Score | Percentage | Rating     |
  * |------------|------------|------------|
- * | 269+       | 80%+       | Elite      |
- * | 218-268    | 65-79%     | Strong     |
- * | 168-217    | 50-64%     | Contender  |
- * | 118-167    | 35-49%     | Fair       |
- * | Below 118  | <35%       | Weak       |
+ * | 275+       | 80%+       | Elite      |
+ * | 224-274    | 65-79%     | Strong     |
+ * | 172-223    | 50-64%     | Contender  |
+ * | 120-171    | 35-49%     | Fair       |
+ * | Below 120  | <35%       | Weak       |
  */
 export const SCORE_THRESHOLDS = {
-  elite: 269, // 80%+ of 336 base score (was 264)
-  strong: 218, // 65-79% of 336 base score (was 215)
-  contender: 168, // 50-64% of 336 base score (was 165)
-  fair: 118, // 35-49% of 336 base score (was 116)
+  elite: 275, // 80%+ of 344 base score (was 269)
+  strong: 224, // 65-79% of 344 base score (was 218)
+  contender: 172, // 50-64% of 344 base score (was 168)
+  fair: 120, // 35-49% of 344 base score (was 118)
   weak: 0, // Below 35%
 } as const;
 
@@ -326,6 +341,35 @@ export interface ScoreBreakdown {
     total: number;
     runningStyle: string;
     paceFit: string;
+    reasoning: string;
+  };
+  /** v4.1: Workout analysis score (critical for FTS and layoff returnees) */
+  workouts: {
+    /** Total workout score (-4 to +8 pts, after multipliers) */
+    total: number;
+    /** Raw score before multipliers */
+    rawScore: number;
+    /** Recency bonus component (0-3 pts) */
+    recencyBonus: number;
+    /** Quality bonus component (0-3 pts) */
+    qualityBonus: number;
+    /** Pattern bonus component (0-2 pts) */
+    patternBonus: number;
+    /** Penalty component (0 to -4 pts) */
+    penalty: number;
+    /** Multiplier applied (1.0, 1.5, or 2.0) */
+    multiplier: number;
+    /** Number of works in last 30 days */
+    worksInLast30Days: number;
+    /** Days since most recent workout */
+    daysSinceMostRecentWork: number | null;
+    /** Whether horse has a bullet work */
+    hasBulletWork: boolean;
+    /** Is first-time starter */
+    isFirstTimeStarter: boolean;
+    /** Is layoff returnee (60+ days) */
+    isLayoffReturnee: boolean;
+    /** Human-readable reasoning */
     reasoning: string;
   };
   // NOTE: odds removed from base scoring breakdown (circular logic elimination)
@@ -598,9 +642,9 @@ export function parseOdds(oddsStr: string): number {
 
 /**
  * Get the color for a BASE score based on thresholds
- * IMPORTANT: This should be called with baseScore (0-336), NOT total score
+ * IMPORTANT: This should be called with baseScore (0-344), NOT total score
  *
- * @param baseScore - The horse's base score (0-336 range)
+ * @param baseScore - The horse's base score (0-344 range)
  * @param isScratched - Whether the horse is scratched
  */
 export function getScoreColor(baseScore: number, isScratched: boolean): string {
@@ -614,19 +658,19 @@ export function getScoreColor(baseScore: number, isScratched: boolean): string {
 
 /**
  * Get score tier name based on BASE score
- * IMPORTANT: This should be called with baseScore (0-336), NOT total score
+ * IMPORTANT: This should be called with baseScore (0-344), NOT total score
  *
- * v4.0 thresholds (for 336 base score):
+ * v4.1 thresholds (for 344 base score):
  *
  * | Base Score | Percentage | Rating     |
  * |------------|------------|------------|
- * | 269+       | 80%+       | Elite      |
- * | 218-268    | 65-79%     | Strong     |
- * | 168-217    | 50-64%     | Contender  |
- * | 118-167    | 35-49%     | Fair       |
- * | Below 118  | <35%       | Weak       |
+ * | 275+       | 80%+       | Elite      |
+ * | 224-274    | 65-79%     | Strong     |
+ * | 172-223    | 50-64%     | Contender  |
+ * | 120-171    | 35-49%     | Fair       |
+ * | Below 120  | <35%       | Weak       |
  *
- * @param baseScore - The horse's base score (0-336 range)
+ * @param baseScore - The horse's base score (0-344 range)
  */
 export function getScoreTier(baseScore: number): string {
   if (baseScore >= SCORE_THRESHOLDS.elite) return 'Elite';
@@ -792,6 +836,21 @@ function calculateHorseScoreWithContext(
         },
         equipment: { total: 0, hasChanges: false, reasoning: 'Scratched' },
         pace: { total: 0, runningStyle: 'Unknown', paceFit: 'neutral', reasoning: 'Scratched' },
+        workouts: {
+          total: 0,
+          rawScore: 0,
+          recencyBonus: 0,
+          qualityBonus: 0,
+          patternBonus: 0,
+          penalty: 0,
+          multiplier: 1.0,
+          worksInLast30Days: 0,
+          daysSinceMostRecentWork: null,
+          hasBulletWork: false,
+          isFirstTimeStarter: false,
+          isLayoffReturnee: false,
+          reasoning: 'Scratched',
+        },
         // NOTE: odds removed from breakdown (circular logic elimination)
         distanceSurface: {
           total: 0,
@@ -924,6 +983,24 @@ function calculateHorseScoreWithContext(
 
   const equipment = calcEquipment(horse);
   const pace = calcPace(horse, context.raceHeader, context.activeHorses, context.fieldPaceAnalysis);
+
+  // v4.1: Calculate workout score (critical for FTS and layoff returnees)
+  // Workouts are the primary new data between past races and today
+  const workoutResult = calculateWorkoutScore(horse);
+
+  // Log workout score for debugging if significant
+  if (workoutResult.total !== 0) {
+    const sign = workoutResult.total > 0 ? '+' : '';
+    let reason = '';
+    if (workoutResult.isFirstTimeStarter) {
+      reason = ' (FTS 2x)';
+    } else if (workoutResult.isLayoffReturnee) {
+      reason = ' (Layoff 1.5x)';
+    }
+    console.log(
+      `[WORKOUT] ${horse.horseName}: ${sign}${workoutResult.total} pts${reason} | ${workoutResult.reasoning}`
+    );
+  }
 
   // CONSOLIDATED: Pace scenario adjustment is now integrated into pace.ts (0-45 pts)
   // These legacy variables are kept for informational/display purposes only
@@ -1066,6 +1143,22 @@ function calculateHorseScoreWithContext(
       runningStyle: pace.profile.styleName,
       paceFit: pace.paceFit,
       reasoning: pace.reasoning,
+    },
+    // v4.1: Workout analysis (critical for FTS and layoff returnees)
+    workouts: {
+      total: workoutResult.total,
+      rawScore: workoutResult.rawScore,
+      recencyBonus: workoutResult.recencyBonus,
+      qualityBonus: workoutResult.qualityBonus,
+      patternBonus: workoutResult.patternBonus,
+      penalty: workoutResult.penalty,
+      multiplier: workoutResult.multiplier,
+      worksInLast30Days: workoutResult.worksInLast30Days,
+      daysSinceMostRecentWork: workoutResult.daysSinceMostRecentWork,
+      hasBulletWork: workoutResult.hasBulletWork,
+      isFirstTimeStarter: workoutResult.isFirstTimeStarter,
+      isLayoffReturnee: workoutResult.isLayoffReturnee,
+      reasoning: workoutResult.reasoning,
     },
     // NOTE: odds removed from breakdown (circular logic elimination)
     distanceSurface: {
@@ -1221,6 +1314,7 @@ function calculateHorseScoreWithContext(
     abilityScore + // Speed + Class + Form + Pace (intrinsic ability)
     cappedBiasScore + // Connections + Post + Trainer Patterns (CAPPED, odds removed)
     breakdown.equipment.total + // Equipment changes (8 max)
+    breakdown.workouts.total + // v4.1: Workout analysis (-4 to +8, critical for FTS/layoffs)
     breakdown.distanceSurface.total + // Distance/surface affinity bonus (0-20)
     breakdown.comboPatterns.total + // Combo pattern bonuses (0-12)
     breakdown.trackSpecialist.total + // Track specialist bonus (0-6)

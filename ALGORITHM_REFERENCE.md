@@ -27,24 +27,31 @@
 
 | Category                 | Max Points | % of Base | Source File                                             |
 | ------------------------ | ---------- | --------- | ------------------------------------------------------- |
-| Speed & Class            | 140        | 41.7%     | speedClass.ts                                           |
-| Form                     | 50         | 14.9%     | form.ts                                                 |
-| Pace                     | 45         | 13.4%     | pace.ts (CONSOLIDATED)                                  |
-| Connections              | 24         | 7.1%      | connections.ts (Jockey 12 + Trainer 10 + Partnership 2) |
-| Distance/Surface         | 20         | 6.0%      | distanceSurface.ts                                      |
-| Post Position            | 12         | 3.6%      | postPosition.ts                                         |
-| Track Specialist         | 10         | 3.0%      | distanceSurface.ts                                      |
-| Combo Patterns           | 10         | 3.0%      | comboPatterns.ts (v4.0: expanded, range -6 to +10)      |
-| Equipment                | 8          | 2.4%      | equipment.ts                                            |
-| Trainer Patterns         | 8          | 2.4%      | trainerPatterns.ts (with sample size discount)          |
-| Trainer Surface/Distance | 6          | 1.8%      | connections.ts                                          |
+| Speed & Class            | 140        | 40.7%     | speedClass.ts                                           |
+| Form                     | 50         | 14.5%     | form.ts                                                 |
+| Pace                     | 45         | 13.1%     | pace.ts (CONSOLIDATED)                                  |
+| Connections              | 24         | 7.0%      | connections.ts (Jockey 12 + Trainer 10 + Partnership 2) |
+| Distance/Surface         | 20         | 5.8%      | distanceSurface.ts                                      |
+| Post Position            | 12         | 3.5%      | postPosition.ts                                         |
+| Track Specialist         | 10         | 2.9%      | distanceSurface.ts                                      |
+| Combo Patterns           | 10         | 2.9%      | comboPatterns.ts (v4.0: expanded, range -6 to +10)      |
+| **Workouts**             | **8**      | **2.3%**  | **workouts.ts (v4.1: NEW, range -4 to +8)**             |
+| Equipment                | 8          | 2.3%      | equipment.ts                                            |
+| Trainer Patterns         | 8          | 2.3%      | trainerPatterns.ts (with sample size discount)          |
+| Trainer Surface/Distance | 6          | 1.7%      | connections.ts                                          |
 | Age Factor               | ±1         | 0.3%      | p3Refinements.ts                                        |
 | Sire's Sire              | ±1         | 0.3%      | p3Refinements.ts                                        |
 | Weight                   | 1          | 0.3%      | weight.ts                                               |
-| **TOTAL**                | **336**    | **100%**  | index.ts                                                |
+| **TOTAL**                | **344**    | **100%**  | index.ts                                                |
 
 > **NOTE:** Odds Factor (12 pts) removed from base scoring to eliminate circular logic.
 > Odds data still available for overlay calculations.
+
+> **v4.1 CHANGES:**
+> - Workout scoring added: 8 pts max (recency 3 + quality 3 + pattern 2)
+> - Workout penalties: -4 to 0 pts (layoff no work, FTS no bullet, slow work)
+> - FTS multiplier: 2x (workouts are only performance data)
+> - Layoff multiplier: 1.5x (workouts show current fitness)
 
 > **v4.0 CHANGES:**
 > - Combo patterns expanded from 4 to 10 pts max (+6)
@@ -54,9 +61,9 @@
 
 | Constant       | Value | Source   |
 | -------------- | ----- | -------- |
-| MAX_BASE_SCORE | 336   | index.ts |
+| MAX_BASE_SCORE | 344   | index.ts |
 | MAX_OVERLAY    | ±40   | index.ts |
-| MAX_SCORE      | 376   | index.ts |
+| MAX_SCORE      | 384   | index.ts |
 
 ---
 
@@ -284,6 +291,66 @@ token-sized at -3 pts. v3.8 doubles the full penalty to -6 pts with conditional 
 
 ---
 
+## Workout Score (0-8 points) — v4.1
+
+Critical for First-Time Starters (FTS) and layoff returnees where workouts are the primary indicator of readiness.
+
+### Recency Bonus (0-3 pts)
+
+| Days Since Work | Points | Description          |
+| --------------- | ------ | -------------------- |
+| ≤7              | 3      | Sharp, ready to fire |
+| 8-14            | 2      | Recent, fit          |
+| 15-21           | 1      | Acceptable           |
+| >21             | 0      | Stale                |
+
+### Quality Bonus (0-3 pts)
+
+| Work Quality          | Points | Criteria                           |
+| --------------------- | ------ | ---------------------------------- |
+| Bullet work           | 3      | Rank #1 (fastest of morning)       |
+| Top 10% works         | 2      | Rank/Total ≤ 0.10                  |
+| Top 25% works         | 1      | Rank/Total ≤ 0.25                  |
+| Below top 25%         | 0      | Rank/Total > 0.25                  |
+
+### Pattern Bonus (0-2 pts)
+
+| Works in Last 30 Days | Points | Description      |
+| --------------------- | ------ | ---------------- |
+| 4+                    | 2      | Trainer cranking |
+| 3                     | 1      | Solid training   |
+| <3                    | 0      | Light            |
+
+### Workout Penalties
+
+| Condition                                  | Penalty | Criteria                           |
+| ------------------------------------------ | ------- | ---------------------------------- |
+| Layoff returnee (60+ days) with no work    | -4      | No published work within 21 days   |
+| First-time starter without bullet          | -2      | FTS with no rank #1 work           |
+| Last work slow (bottom 25%)                | -1      | Most recent work rank > 75%        |
+
+### Special Multipliers
+
+| Horse Type            | Multiplier | Rationale                          |
+| --------------------- | ---------- | ---------------------------------- |
+| First-time starter    | 2.0x       | Workouts are ONLY performance data |
+| Layoff returnee (60+) | 1.5x       | Workouts show current fitness      |
+| All others            | 1.0x       | Standard weighting                 |
+
+| Constant              | Value | Source      |
+| --------------------- | ----- | ----------- |
+| MAX_WORKOUT_SCORE     | 8     | workouts.ts |
+| MIN_WORKOUT_SCORE     | -4    | workouts.ts |
+| FTS_MULTIPLIER        | 2.0   | workouts.ts |
+| LAYOFF_MULTIPLIER     | 1.5   | workouts.ts |
+| LAYOFF_THRESHOLD_DAYS | 60    | workouts.ts |
+
+> **DATA AVAILABILITY:** DRF provides workout dates, track, distance, rank, and total works.
+> Time and workout type (breeze/handily) are NOT available in standard DRF format.
+> Quality bonus uses ranking data (bullet = rank #1) as proxy for speed.
+
+---
+
 ## Pace Score (0-35 points)
 
 ### Tactical Fit Scoring
@@ -462,20 +529,20 @@ v3.8 reduced maximum and added recency decay - trip trouble was over-crediting s
 
 | Tier   | Name                 | Min Score | Max Score | Min Confidence |
 | ------ | -------------------- | --------- | --------- | -------------- |
-| Tier 1 | Cover Chalk          | 181       | 245       | 70%            |
-| Tier 2 | Logical Alternatives | 161       | 180       | 60%            |
-| Tier 3 | Value Bombs          | 131       | 160       | 40%            |
+| Tier 1 | Cover Chalk          | 186       | 251       | 70%            |
+| Tier 2 | Logical Alternatives | 165       | 185       | 60%            |
+| Tier 3 | Value Bombs          | 134       | 164       | 40%            |
 
-> Thresholds: 54%, 48%, 39% of MAX_BASE_SCORE (336)
-> v4.0: Updated from 178/158/129 to 181/161/131
+> Thresholds: 54%, 48%, 39% of MAX_BASE_SCORE (344)
+> v4.1: Updated from 181/161/131 to 186/165/134
 
 ### Confidence Formula
 
 ```
-confidence = 40 + (baseScore / 336) * 60
+confidence = 40 + (baseScore / 344) * 60
 ```
 
-> v4.0: Denominator updated from 330 to 336
+> v4.1: Denominator updated from 336 to 344
 
 ### Expected Hit Rates
 
@@ -691,11 +758,13 @@ confidence = 40 + (baseScore / 336) * 60
 
 | Tier      | Min Score | % of Base |
 | --------- | --------- | --------- |
-| Elite     | 265+      | 82%+      |
-| Strong    | 216-264   | 67-81%    |
-| Contender | 165-215   | 51-66%    |
-| Fair      | 116-164   | 36-50%    |
-| Weak      | <116      | <36%      |
+| Elite     | 275+      | 80%+      |
+| Strong    | 224-274   | 65-79%    |
+| Contender | 172-223   | 50-64%    |
+| Fair      | 120-171   | 35-49%    |
+| Weak      | <120      | <35%      |
+
+> v4.1: Updated for 344 base score
 
 ---
 
