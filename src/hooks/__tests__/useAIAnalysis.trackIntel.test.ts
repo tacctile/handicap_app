@@ -160,21 +160,7 @@ function createMockScoreBreakdown(): ScoreBreakdown {
       flags: [],
       reasoning: 'Open race',
     },
-    workouts: {
-      total: 0,
-      rawScore: 0,
-      recencyBonus: 0,
-      qualityBonus: 0,
-      patternBonus: 0,
-      penalty: 0,
-      multiplier: 1.0,
-      worksInLast30Days: 0,
-      daysSinceMostRecentWork: null,
-      hasBulletWork: false,
-      isFirstTimeStarter: false,
-      isLayoffReturnee: false,
-      reasoning: 'Test mock',
-    },
+    // NOTE: workouts removed from base scoring (v4.1 reverted due to regression)
   };
 }
 
