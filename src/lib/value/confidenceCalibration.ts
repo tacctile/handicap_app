@@ -113,15 +113,15 @@ export interface CalibrationSummary {
 // CONSTANTS
 // ============================================================================
 
-/** Default score tiers with probabilities (adjusted for MAX_BASE_SCORE=319) */
+/** Default score tiers with probabilities (adjusted for MAX_BASE_SCORE=330) */
 export const DEFAULT_TIERS: ScoreTier[] = [
-  { minScore: 191, maxScore: 320, winProbability: 75, label: 'Elite (191+)' },
-  { minScore: 172, maxScore: 191, winProbability: 65, label: 'Strong (172-190)' },
-  { minScore: 153, maxScore: 172, winProbability: 55, label: 'Good (153-171)' },
-  { minScore: 134, maxScore: 153, winProbability: 45, label: 'Fair (134-152)' },
-  { minScore: 115, maxScore: 134, winProbability: 35, label: 'Below Avg (115-133)' },
-  { minScore: 96, maxScore: 115, winProbability: 25, label: 'Weak (96-114)' },
-  { minScore: 0, maxScore: 96, winProbability: 15, label: 'Poor (<96)' },
+  { minScore: 200, maxScore: 330, winProbability: 75, label: 'Elite (200+)' },
+  { minScore: 178, maxScore: 200, winProbability: 65, label: 'Strong (178-199)' },
+  { minScore: 158, maxScore: 178, winProbability: 55, label: 'Good (158-177)' },
+  { minScore: 138, maxScore: 158, winProbability: 45, label: 'Fair (138-157)' },
+  { minScore: 118, maxScore: 138, winProbability: 35, label: 'Below Avg (118-137)' },
+  { minScore: 98, maxScore: 118, winProbability: 25, label: 'Weak (98-117)' },
+  { minScore: 0, maxScore: 98, winProbability: 15, label: 'Poor (<98)' },
 ];
 
 /** Brier score thresholds for quality assessment */
@@ -159,8 +159,8 @@ export function scoreToWinProbability(
   score: number,
   calibration: CalibrationProfile = getDefaultCalibration()
 ): number {
-  // Validate score (319 = max base score)
-  const validScore = Math.max(0, Math.min(319, score));
+  // Validate score (330 = max base score)
+  const validScore = Math.max(0, Math.min(330, score));
 
   // Find matching tier
   for (const tier of calibration.tiers) {

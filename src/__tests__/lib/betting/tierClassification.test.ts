@@ -426,20 +426,23 @@ describe('Tier Classification', () => {
 
   describe('TIER_CONFIG', () => {
     it('defines correct thresholds for Tier 1', () => {
-      expect(TIER_CONFIG.tier1.minScore).toBe(180);
+      // Rebalanced for MAX_BASE_SCORE=330: 54% = 178
+      expect(TIER_CONFIG.tier1.minScore).toBe(178);
       expect(TIER_CONFIG.tier1.maxScore).toBe(240);
       expect(TIER_CONFIG.tier1.minConfidence).toBe(70); // v3.1: lowered to be achievable
     });
 
     it('defines correct thresholds for Tier 2', () => {
-      expect(TIER_CONFIG.tier2.minScore).toBe(160);
-      expect(TIER_CONFIG.tier2.maxScore).toBe(179);
+      // Rebalanced for MAX_BASE_SCORE=330: 48% = 158
+      expect(TIER_CONFIG.tier2.minScore).toBe(158);
+      expect(TIER_CONFIG.tier2.maxScore).toBe(177);
       expect(TIER_CONFIG.tier2.minConfidence).toBe(60);
     });
 
     it('defines correct thresholds for Tier 3', () => {
-      expect(TIER_CONFIG.tier3.minScore).toBe(130);
-      expect(TIER_CONFIG.tier3.maxScore).toBe(159);
+      // Rebalanced for MAX_BASE_SCORE=330: 39% = 129
+      expect(TIER_CONFIG.tier3.minScore).toBe(129);
+      expect(TIER_CONFIG.tier3.maxScore).toBe(157);
       expect(TIER_CONFIG.tier3.minConfidence).toBe(40);
     });
   });

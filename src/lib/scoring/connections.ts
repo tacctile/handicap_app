@@ -2,20 +2,23 @@
  * Connections Scoring Module
  * Calculates trainer, jockey, and partnership scores based on DRF data
  *
- * Score Breakdown (Model B - Reduced Partnership):
- * - Trainer Score: 0-16 points (based on track/surface/class-specific win rates)
- * - Jockey Score: 0-5 points (based on track/style-specific win rates)
- * - Partnership Bonus: 0-2 points (reduced tiered trainer-jockey partnership)
+ * Score Breakdown (Rebalanced Connections):
+ * - Jockey Score: 0-12 points (based on win rate with minimum starts thresholds)
+ * - Trainer Score: 0-10 points (based on win rate with minimum starts thresholds)
+ * - Partnership Bonus: 0-2 points (tiered trainer-jockey partnership)
  *
- * Partnership Bonus Tiers (Model B - reduced from 4 to 2 max):
+ * Total: 0-24 points (7.3% of 330 base)
+ *
+ * JOCKEY REBALANCE RATIONALE:
+ * Previous jockey weight (5 points, 1.5% of total) was severely underweighted
+ * relative to academic studies showing jockeys account for 8-12% of outcome variance.
+ * Elite jockeys provide measurable 6-8 length advantages.
+ * We flipped the jockey:trainer ratio from 5:16 to 12:10.
+ *
+ * Partnership Bonus Tiers:
  * - Elite partnership (30%+ combo win rate, 8+ starts): 2 pts
  * - Strong partnership (25-29% combo win rate, 5+ starts): 1 pt
  * - Good/Regular/New partnership: 0 pts
- *
- * Total: 0-23 points (7.2% of 319 base)
- *
- * Model B: Connections reduced from 27 to 23 points to weight speed more heavily.
- * Connections are a situational factor; speed figures are intrinsic ability.
  *
  * Dynamic Pattern Features:
  * - Track-specific: "Trainer X at Churchill Downs: 18% win (45 starts)"
@@ -510,91 +513,125 @@ function extractJockeyStatsFromHorse(horse: HorseEntry): ConnectionStats | null 
 // ============================================================================
 
 /**
- * Phase 2: Connection scoring constants with data completeness penalties
+ * Connection scoring constants with data completeness penalties
  *
- * SCORING LOGIC:
- * - Trainer with meet stats → full scoring (0-16 pts)
- * - Trainer 0 meet starts BUT has career stats → use career, cap at 12 pts
- * - Trainer 0 meet starts AND no career stats → 4 pts (half baseline, penalized)
+ * REBALANCED SCORING LOGIC:
+ * - Jockey scoring: 0-12 pts (up from 5, reflecting 8-12% outcome variance)
+ * - Trainer scoring: 0-10 pts (down from 16)
+ * - Total: 22 pts + 2 pts partnership = 24 pts connections
  *
- * - Jockey with meet stats → full scoring (0-7 pts)
- * - Jockey 0 meet starts BUT has career stats → use career, cap at 5 pts
- * - Jockey 0 meet starts AND no career stats → 2 pts (half baseline, penalized)
+ * TRAINER SCORING (0-10 pts):
+ * - Trainer with meet stats → full scoring (0-10 pts)
+ * - Trainer 0 meet starts BUT has career stats → use career, cap at 7 pts
+ * - Trainer 0 meet starts AND no career stats → 2 pts (penalized)
+ *
+ * JOCKEY SCORING (0-12 pts):
+ * - Jockey with meet stats → full scoring (0-12 pts)
+ * - Jockey 0 meet starts BUT has career stats → use career, cap at 8 pts
+ * - Jockey 0 meet starts AND no career stats → 1 pt (penalized)
  */
-const MIN_TRAINER_SCORE_WITH_CAREER = 8; // Baseline when career stats exist
-const MIN_TRAINER_SCORE_NO_CAREER = 4; // Phase 2: Half baseline for unknowns
-const MAX_TRAINER_SCORE_SHIPPER = 12; // Phase 2: Cap for career-only stats
+const MIN_TRAINER_SCORE_WITH_CAREER = 2; // Baseline when career stats exist
+const MIN_TRAINER_SCORE_NO_CAREER = 1; // Penalized baseline for unknowns
+const MAX_TRAINER_SCORE_SHIPPER = 7; // Cap for career-only stats
 
-const MIN_JOCKEY_SCORE_WITH_CAREER = 3; // Model B: Baseline when career stats exist (was 4)
-const MIN_JOCKEY_SCORE_NO_CAREER = 1; // Model B: Half baseline for unknowns (was 2)
-const MAX_JOCKEY_SCORE_SHIPPER = 4; // Model B: Cap for career-only stats (was 5)
+const MIN_JOCKEY_SCORE_WITH_CAREER = 3; // Baseline when career stats exist
+const MIN_JOCKEY_SCORE_NO_CAREER = 1; // Penalized baseline for unknowns
+const MAX_JOCKEY_SCORE_SHIPPER = 8; // Cap for career-only stats
 
 // Keep old constants for backwards compatibility (exported for external use)
 export const MIN_TRAINER_SCORE = MIN_TRAINER_SCORE_WITH_CAREER;
 export const MIN_JOCKEY_SCORE = MIN_JOCKEY_SCORE_WITH_CAREER;
 
 /**
- * Calculate trainer score (0-16 points)
- * Based on win rate thresholds
+ * Calculate trainer score (0-10 points)
+ * Based on win rate thresholds with minimum starts requirements
  *
- * PHASE 2 - DATA COMPLETENESS PENALTIES:
- * - 0 meet starts AND no career stats → 4 pts (half baseline, penalized for unknown)
- * - 0 meet starts BUT has career stats → use career stats, cap at 12 pts
- * - Has meet stats → full scoring (0-16 pts)
+ * NEW TRAINER SCORING TIERS (rebalanced from 0-16 to 0-10):
+ * - Win rate ≥25% with 20+ starts: 10 pts
+ * - Win rate ≥22% with 15+ starts: 8 pts
+ * - Win rate ≥20% with 10+ starts: 7 pts
+ * - Win rate ≥17% with 10+ starts: 5 pts
+ * - Win rate ≥15% with 5+ starts: 4 pts
+ * - Win rate ≥12% with 5+ starts: 3 pts
+ * - Win rate ≥10%: 2 pts
+ * - Win rate <10%: 1 pt
  *
- * This ensures trainers with incomplete data are penalized,
- * not given neutral scores that reward unknowns.
+ * DATA COMPLETENESS HANDLING:
+ * - 0 meet starts AND no career stats → 1 pt (penalized for unknown)
+ * - 0 meet starts BUT has career stats → use career stats, cap at 7 pts
+ * - Has meet stats → full scoring (0-10 pts)
  */
 function calculateTrainerScore(stats: ConnectionStats | null): number {
   // No stats at all = penalized baseline (unknown trainer)
   if (!stats) {
-    return MIN_TRAINER_SCORE_NO_CAREER; // Phase 2: 4 pts, not 8
+    return MIN_TRAINER_SCORE_NO_CAREER; // 1 pt
   }
 
   // Insufficient data = penalized baseline
   if (stats.starts < 3) {
-    // Phase 2: If source is PP (career stats), give half baseline
-    // because we have some evidence but not enough
-    return MIN_TRAINER_SCORE_NO_CAREER; // 4 pts
+    return MIN_TRAINER_SCORE_NO_CAREER; // 1 pt
   }
 
   const winRate = stats.winRate;
+  const starts = stats.starts;
   const isShipperStats = stats.source === 'pp'; // Career stats, not meet stats
 
-  // Calculate raw score based on win rate
+  // Calculate raw score based on win rate and minimum starts requirements
   let score: number;
-  if (winRate >= 20)
-    score = 16; // Elite trainer (20%+ win rate)
-  else if (winRate >= 15)
-    score = 13; // Very good trainer (15-19%)
-  else if (winRate >= 10)
-    score = 9; // Good trainer (10-14%)
-  else if (winRate >= 5)
-    score = MIN_TRAINER_SCORE_WITH_CAREER; // Average trainer (5-9%)
-  else score = MIN_TRAINER_SCORE_WITH_CAREER; // Below average gets baseline
+  if (winRate >= 25 && starts >= 20) {
+    score = 10; // Elite trainer (25%+ with 20+ starts)
+  } else if (winRate >= 22 && starts >= 15) {
+    score = 8; // Very good trainer (22%+ with 15+ starts)
+  } else if (winRate >= 20 && starts >= 10) {
+    score = 7; // Good trainer (20%+ with 10+ starts)
+  } else if (winRate >= 17 && starts >= 10) {
+    score = 5; // Above average trainer (17%+ with 10+ starts)
+  } else if (winRate >= 15 && starts >= 5) {
+    score = 4; // Solid trainer (15%+ with 5+ starts)
+  } else if (winRate >= 12 && starts >= 5) {
+    score = 3; // Average trainer (12%+ with 5+ starts)
+  } else if (winRate >= 10) {
+    score = 2; // Below average trainer (10%+)
+  } else {
+    score = 1; // Poor trainer (<10%)
+  }
 
-  // Phase 2: Apply shipper cap when using career stats instead of meet stats
+  // Apply shipper cap when using career stats instead of meet stats
   // We trust meet stats more than career approximations
   if (isShipperStats) {
-    score = Math.min(score, MAX_TRAINER_SCORE_SHIPPER); // Cap at 12 pts
+    score = Math.min(score, MAX_TRAINER_SCORE_SHIPPER); // Cap at 7 pts
   }
 
   return score;
 }
 
 /**
- * Calculate jockey score (0-5 points) - Model B: reduced from 7
- * Same methodology as trainer but scaled
+ * Calculate jockey score (0-12 points)
+ * Based on win rate thresholds with minimum starts requirements
  *
- * PHASE 2 - DATA COMPLETENESS PENALTIES:
- * - 0 meet starts AND no career stats → 1 pt (half baseline, penalized for unknown)
- * - 0 meet starts BUT has career stats → use career stats, cap at 4 pts
- * - Has meet stats → full scoring (0-5 pts)
+ * NEW JOCKEY SCORING TIERS (rebalanced from 0-5 to 0-12):
+ * - Win rate ≥25% with 20+ starts: 12 pts
+ * - Win rate ≥22% with 15+ starts: 10 pts
+ * - Win rate ≥20% with 10+ starts: 8 pts
+ * - Win rate ≥17% with 10+ starts: 6 pts
+ * - Win rate ≥15% with 5+ starts: 5 pts
+ * - Win rate ≥12% with 5+ starts: 4 pts
+ * - Win rate ≥10%: 3 pts
+ * - Win rate <10%: 1 pt
+ *
+ * RATIONALE: Jockeys account for 8-12% of outcome variance in academic studies.
+ * Elite jockeys provide measurable 6-8 length advantages. Previous 5 pt max
+ * severely underweighted this factor.
+ *
+ * DATA COMPLETENESS HANDLING:
+ * - 0 meet starts AND no career stats → 1 pt (penalized for unknown)
+ * - 0 meet starts BUT has career stats → use career stats, cap at 8 pts
+ * - Has meet stats → full scoring (0-12 pts)
  */
 function calculateJockeyScore(stats: ConnectionStats | null): number {
   // No stats at all = penalized baseline (unknown jockey)
   if (!stats) {
-    return MIN_JOCKEY_SCORE_NO_CAREER; // 1 pt for Model B
+    return MIN_JOCKEY_SCORE_NO_CAREER; // 1 pt
   }
 
   // Insufficient data = penalized baseline
@@ -603,23 +640,33 @@ function calculateJockeyScore(stats: ConnectionStats | null): number {
   }
 
   const winRate = stats.winRate;
+  const starts = stats.starts;
   const isShipperStats = stats.source === 'pp'; // Career stats, not meet stats
 
-  // Calculate raw score based on win rate (Model B: max 5)
+  // Calculate raw score based on win rate and minimum starts requirements
   let score: number;
-  if (winRate >= 20)
-    score = 5; // Elite jockey (was 7)
-  else if (winRate >= 15)
-    score = 4; // Very good jockey (was 6)
-  else if (winRate >= 10)
-    score = MIN_JOCKEY_SCORE_WITH_CAREER; // Good jockey
-  else if (winRate >= 5)
-    score = MIN_JOCKEY_SCORE_WITH_CAREER; // Average jockey
-  else score = MIN_JOCKEY_SCORE_WITH_CAREER; // Below average gets baseline
+  if (winRate >= 25 && starts >= 20) {
+    score = 12; // Elite jockey (25%+ with 20+ starts)
+  } else if (winRate >= 22 && starts >= 15) {
+    score = 10; // Very good jockey (22%+ with 15+ starts)
+  } else if (winRate >= 20 && starts >= 10) {
+    score = 8; // Good jockey (20%+ with 10+ starts)
+  } else if (winRate >= 17 && starts >= 10) {
+    score = 6; // Above average jockey (17%+ with 10+ starts)
+  } else if (winRate >= 15 && starts >= 5) {
+    score = 5; // Solid jockey (15%+ with 5+ starts)
+  } else if (winRate >= 12 && starts >= 5) {
+    score = 4; // Average jockey (12%+ with 5+ starts)
+  } else if (winRate >= 10) {
+    score = 3; // Below average jockey (10%+)
+  } else {
+    score = 1; // Poor jockey (<10%)
+  }
 
-  // Phase 2: Apply shipper cap when using career stats instead of meet stats
+  // Apply shipper cap when using career stats instead of meet stats
+  // We trust meet stats more than career approximations
   if (isShipperStats) {
-    score = Math.min(score, MAX_JOCKEY_SCORE_SHIPPER); // Cap at 4 pts
+    score = Math.min(score, MAX_JOCKEY_SCORE_SHIPPER); // Cap at 8 pts
   }
 
   return score;
@@ -789,8 +836,8 @@ export function calculateRaceConnectionsScores(
 // DYNAMIC PATTERN SCORING (ENHANCED)
 // ============================================================================
 
-/** Maximum combined score for connections (Model B: 16+5+2=23, reduced from 27) */
-const MAX_CONNECTIONS_SCORE = 23;
+/** Maximum combined score for connections (Rebalanced: 12+10+2=24, from 5+16+2=23) */
+const MAX_CONNECTIONS_SCORE = 24;
 
 /**
  * Extended connections score result with pattern analysis

@@ -20,9 +20,9 @@ export const MIN_SCORE = 0;
 
 /**
  * Maximum base score before overlay
- * 329 points (consolidated pace module: base 35 + scenario ±8 now unified to 45)
+ * 330 points (connections rebalanced: jockey 5→12, trainer 16→10, net +1)
  */
-export const MAX_BASE_SCORE = 329;
+export const MAX_BASE_SCORE = 330;
 
 /**
  * Maximum overlay adjustment
@@ -40,14 +40,14 @@ export const MIN_OVERLAY_NEGATIVE = -40;
 export const MAX_PROTOCOL_BONUS = 60;
 
 /** Maximum final score (base + overlay) */
-export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 369
+export const MAX_FINAL_SCORE = MAX_BASE_SCORE + MAX_OVERLAY_POSITIVE; // 370
 
 /** Maximum display score (for UI - uses base score) */
-export const MAX_DISPLAY_SCORE = 329;
+export const MAX_DISPLAY_SCORE = 330;
 
-// Category maximums (Consolidated Pace Module)
+// Category maximums (Rebalanced Connections)
 export const SCORE_CATEGORY_LIMITS = {
-  connections: 23, // Model B: reduced from 27
+  connections: 24, // Rebalanced: jockey 12 + trainer 10 + partnership 2 (was 23)
   postPosition: 12, // 3.6% - v3.0: reduced from 20
   speedClass: 140, // Model B: Speed 105 + Class 35
   form: 50, // v3.6: Form Decay System restored to 50
