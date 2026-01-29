@@ -12,6 +12,21 @@
  *
  * This is a purely algorithmic, deterministic replacement for the AI
  * Field Spread Bot. Same inputs always produce same outputs.
+ *
+ * v3.8 UPDATE: SCORE ADJUSTMENTS REMOVED
+ * ======================================
+ * Field spread no longer modifies scores. Boosting a dominant leader because
+ * they're dominant just confirms what was already calculated (circular logic).
+ *
+ * Field spread is now INFORMATIONAL ONLY for bet construction:
+ * - Field type detection (for bet structure decisions)
+ * - Tier assignments (for keying strategy)
+ * - Confidence mapping (for bet sizing)
+ * - Sit-out condition detection (for pass/play decisions)
+ * - Recommended box sizes for exacta/trifecta/superfecta
+ *
+ * The adjustment constants below are kept for backward compatibility but
+ * are no longer used by the scoring engine.
  */
 
 export const FIELD_SPREAD_CONFIG = {
@@ -42,25 +57,31 @@ export const FIELD_SPREAD_CONFIG = {
   /** Cap on number of horses that can be in A tier */
   MAX_A_TIER_SIZE: 4,
 
-  // Adjustment values (points)
-  /** Confidence boost for dominant leader */
+  // =====================================================================
+  // DEPRECATED ADJUSTMENT VALUES (v3.8)
+  // These are no longer used by the scoring engine but are preserved
+  // for backward compatibility. Score adjustments were removed to
+  // eliminate circular logic.
+  // =====================================================================
+
+  /** @deprecated v3.8 - No longer applied. Was: Confidence boost for dominant leader */
   DOMINANT_BOOST: 3,
-  /** Confidence boost for chalky race top tier */
+  /** @deprecated v3.8 - No longer applied. Was: Confidence boost for chalky race top tier */
   CHALKY_BOOST: 2,
-  /** Confidence boost for clearly separated leader */
+  /** @deprecated v3.8 - No longer applied. Was: Confidence boost for clearly separated leader */
   SEPARATED_BOOST: 2,
-  /** Penalty for "leader" in wide open field (false confidence) */
+  /** @deprecated v3.8 - No longer applied. Was: Penalty for "leader" in wide open field */
   WIDE_OPEN_LEADER_PENALTY: -2,
-  /** Value boost for mid-pack in wide open field */
+  /** @deprecated v3.8 - No longer applied. Was: Value boost for mid-pack in wide open field */
   WIDE_OPEN_VALUE_BOOST: 1,
 
-  // Sit-out thresholds
+  // Sit-out thresholds (STILL ACTIVE - used for bet construction)
   /** Minimum top score required (below = no confident contenders) */
   MIN_TOP_SCORE: 140,
   /** Top 4 within this range = extreme tight field, sit out */
   EXTREME_TIGHT_RANGE: 8,
 
-  // Minimum field size for WIDE_OPEN classification
+  // Minimum field size for WIDE_OPEN classification (STILL ACTIVE)
   /** At least this many horses for WIDE_OPEN */
   WIDE_OPEN_MIN_FIELD_SIZE: 6,
 } as const;

@@ -2,7 +2,19 @@
  * FIELD SPREAD ANALYSIS
  *
  * Analyzes score separation to determine field competitiveness
- * and betting confidence.
+ * and betting confidence FOR BET CONSTRUCTION PURPOSES ONLY.
+ *
+ * v3.8 UPDATE: SCORE ADJUSTMENTS REMOVED
+ * ======================================
+ * This module NO LONGER modifies scores. Boosting a dominant leader because
+ * they're dominant just confirms what was already calculated (circular logic).
+ *
+ * Field spread is now INFORMATIONAL ONLY:
+ * - Field type detection (DOMINANT, CHALKY, SEPARATED, COMPETITIVE, WIDE_OPEN)
+ * - Tier assignments (A/B/C/X based on distance from leader)
+ * - Confidence mapping (VERY_HIGH to VERY_LOW)
+ * - Sit-out condition detection
+ * - Recommended box sizes for exacta/trifecta/superfecta
  *
  * Field Types:
  * - DOMINANT: Clear standout, 25+ point lead over #2
@@ -11,11 +23,11 @@
  * - WIDE_OPEN: Top 6+ within 20 points, anyone's race
  * - CHALKY: Top 2 separated from field, but close to each other
  *
- * Confidence Impact:
- * - DOMINANT: HIGH confidence in top pick
- * - SEPARATED: MEDIUM-HIGH confidence in tier structure
- * - COMPETITIVE: MEDIUM confidence, wider boxes recommended
- * - WIDE_OPEN: LOW confidence, consider sitting out or max spread
+ * Confidence Impact (for bet sizing, NOT score adjustment):
+ * - DOMINANT: HIGH confidence in top pick → smaller boxes, key play
+ * - SEPARATED: MEDIUM-HIGH confidence → moderate box sizes
+ * - COMPETITIVE: MEDIUM confidence → wider boxes recommended
+ * - WIDE_OPEN: LOW confidence → consider sitting out or max spread
  *
  * This is a purely algorithmic, deterministic replacement for the AI
  * Field Spread Bot. Same inputs always produce same outputs.
@@ -67,10 +79,15 @@ export interface TierAssignments {
 
 /**
  * Adjustment applied to a horse based on field spread
+ *
+ * @deprecated v3.8 - Score adjustments removed to eliminate circular logic.
+ * This interface is preserved for backward compatibility but the adjustments
+ * array in FieldSpreadResult is now always empty.
  */
 export interface FieldSpreadAdjustment {
   programNumber: number;
   horseName: string;
+  /** @deprecated v3.8 - Always 0. Score adjustments removed. */
   adjustment: number;
   reason: string;
 }
@@ -96,24 +113,34 @@ export interface RankedHorseInput {
 
 /**
  * Complete field spread analysis result
+ *
+ * v3.8 UPDATE: Score adjustments removed.
+ * This result is now INFORMATIONAL ONLY for bet construction.
+ * The adjustments array is always empty.
  */
 export interface FieldSpreadResult {
+  /** Field type classification (DOMINANT, CHALKY, SEPARATED, COMPETITIVE, WIDE_OPEN) */
   fieldType: FieldType;
+  /** Betting confidence level for bet sizing decisions */
   confidence: BettingConfidence;
 
-  // Score analysis
+  // Score analysis (for informational display)
   topScore: number;
   scoreGaps: ScoreGaps;
 
-  // Tier assignments
+  // Tier assignments (for keying strategy)
   tiers: TierAssignments;
 
-  // Adjustments
+  /**
+   * @deprecated v3.8 - Always empty array. Score adjustments removed.
+   * Preserved for interface compatibility.
+   */
   adjustments: FieldSpreadAdjustment[];
 
-  // Recommendations
+  // Recommendations (for bet construction)
   recommendedBoxSize: BoxSizeRecommendation;
 
+  /** Whether to consider sitting out this race (for pass/play decisions) */
   sitOutFlag: boolean;
   sitOutReason: string | null;
 
@@ -273,95 +300,34 @@ function calculateConfidence(fieldType: FieldType, gaps: ScoreGaps): BettingConf
 /**
  * Calculate score adjustments based on field type
  *
- * @param sorted - Horses sorted by score descending
- * @param fieldType - The field type classification
- * @param gaps - Score gaps between horses
- * @returns Array of adjustments to apply
+ * REMOVED (v3.8): Score adjustments were removed to eliminate circular logic.
+ * Boosting a dominant leader because they're dominant just confirms what was
+ * already calculated. Field spread analysis now provides INFORMATIONAL value
+ * only (field type, tier assignments, bet construction recommendations).
+ *
+ * This function now always returns an empty array. The adjustment infrastructure
+ * is preserved for backward compatibility with interfaces and display code.
+ *
+ * Previous adjustments that were removed:
+ * - DOMINANT: +3 pts to leader (circular - already ranked #1)
+ * - CHALKY: +2 pts to top 2 (circular - already ranked top)
+ * - SEPARATED: +2 pts to leader (circular - already ranked #1)
+ * - WIDE_OPEN: -2 pts to leader, +1 to 4th/5th (manipulated rankings)
+ *
+ * @param _sorted - Horses sorted by score descending (unused)
+ * @param _fieldType - The field type classification (unused)
+ * @param _gaps - Score gaps between horses (unused)
+ * @returns Empty array - adjustments removed to eliminate circular logic
  */
 function calculateFieldAdjustments(
-  sorted: RankedHorseInput[],
-  fieldType: FieldType,
-  gaps: ScoreGaps
+  _sorted: RankedHorseInput[],
+  _fieldType: FieldType,
+  _gaps: ScoreGaps
 ): FieldSpreadAdjustment[] {
-  const adjustments: FieldSpreadAdjustment[] = [];
-
-  const first = sorted[0];
-  if (!first) return adjustments;
-
-  switch (fieldType) {
-    case 'DOMINANT':
-      // Boost the dominant leader slightly (confidence premium)
-      adjustments.push({
-        programNumber: first.programNumber,
-        horseName: first.horseName,
-        adjustment: FIELD_SPREAD_CONFIG.DOMINANT_BOOST,
-        reason: 'Dominant leader confidence boost',
-      });
-      break;
-
-    case 'CHALKY':
-      // Small boost to top 2
-      adjustments.push({
-        programNumber: first.programNumber,
-        horseName: first.horseName,
-        adjustment: FIELD_SPREAD_CONFIG.CHALKY_BOOST,
-        reason: 'Chalky race top tier boost',
-      });
-      if (sorted[1]) {
-        adjustments.push({
-          programNumber: sorted[1].programNumber,
-          horseName: sorted[1].horseName,
-          adjustment: FIELD_SPREAD_CONFIG.CHALKY_BOOST,
-          reason: 'Chalky race top tier boost',
-        });
-      }
-      break;
-
-    case 'WIDE_OPEN':
-      // Penalize the "leader" - false confidence in wide open field
-      adjustments.push({
-        programNumber: first.programNumber,
-        horseName: first.horseName,
-        adjustment: FIELD_SPREAD_CONFIG.WIDE_OPEN_LEADER_PENALTY,
-        reason: 'Wide open field, reduced confidence in top pick',
-      });
-      // Slight boost to mid-pack (value potential)
-      if (sorted[3]) {
-        adjustments.push({
-          programNumber: sorted[3].programNumber,
-          horseName: sorted[3].horseName,
-          adjustment: FIELD_SPREAD_CONFIG.WIDE_OPEN_VALUE_BOOST,
-          reason: 'Wide open field, value at mid-odds',
-        });
-      }
-      if (sorted[4]) {
-        adjustments.push({
-          programNumber: sorted[4].programNumber,
-          horseName: sorted[4].horseName,
-          adjustment: FIELD_SPREAD_CONFIG.WIDE_OPEN_VALUE_BOOST,
-          reason: 'Wide open field, value at mid-odds',
-        });
-      }
-      break;
-
-    case 'COMPETITIVE':
-      // No adjustments - let scores speak
-      break;
-
-    case 'SEPARATED':
-      // Boost the clear top tier slightly
-      if (gaps.first_to_second >= 20) {
-        adjustments.push({
-          programNumber: first.programNumber,
-          horseName: first.horseName,
-          adjustment: FIELD_SPREAD_CONFIG.SEPARATED_BOOST,
-          reason: 'Clear separation from field',
-        });
-      }
-      break;
-  }
-
-  return adjustments;
+  // v3.8: Score adjustments removed - field spread is now informational only
+  // Field type detection and tier assignments are still calculated and returned
+  // for bet construction (box sizes, keying strategy, sit-out triggers)
+  return [];
 }
 
 /**
