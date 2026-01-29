@@ -1,6 +1,17 @@
 /**
- * Form Scoring Module (v3.7 Conditional Winner Bonus)
+ * Form Scoring Module (v3.8 Bounce Risk Penalty)
  * Analyzes recent race form, layoff patterns, and consistency
+ *
+ * v3.8 BOUNCE RISK PENALTY (new)
+ * Addresses issue: Horses coming off career-best performances regress 65-70%
+ * of the time. The previous -3 pt penalty was token-sized given actual rates.
+ *
+ * BOUNCE PENALTY SCHEDULE:
+ * - Full penalty (-6): Career-best last out + significant effort
+ *   (fig within 3 pts of best, OR finished 1st-3rd, OR beaten <5L)
+ * - Partial penalty (-3): Career-best last out but NOT significant effort
+ * - Protected (0): Won 2 of last 3 races (proven repeat ability)
+ * - No penalty (0): Last race NOT at/near career-best level
  *
  * v3.7 CONDITIONAL WINNER BONUS (replaces unconditional 15-pt floor)
  * Addresses issue: A horse that won a $10K claimer 4 races ago shouldn't get
@@ -81,6 +92,12 @@
  *   - First-time starters: 20% confidence multiplier (10 pts max)
  *   - No class context available: Use simplified bonus (+3 WLO, +1 for 2 back)
  *
+ * v3.8 CHANGES (Bounce Risk Penalty):
+ * - ADDED bounce risk penalty (0 to -6 pts) for career-best performances
+ * - Full penalty (-6) for career-best + significant effort
+ * - Partial penalty (-3) for career-best without significant effort
+ * - Protection for proven repeat winners (won 2 of last 3)
+ *
  * v3.7 CHANGES (Conditional Winner Bonus):
  * - REMOVED unconditional 15-point winner protection floor
  * - ADDED conditional winner bonus (0-3 pts) based on recency AND class
@@ -158,6 +175,10 @@ export interface FormScoreResult {
   layoffPenalty: number;
   /** v3.7: Conditional winner bonus (0-3 pts based on recency AND class) */
   conditionalWinnerBonus: number;
+  /** v3.8: Bounce risk penalty (0 to -6 pts) */
+  bounceRiskPenalty: number;
+  /** v3.8: Detailed bounce risk analysis */
+  bounceRiskResult?: BounceRiskResult;
   /** Phase 2: Form confidence info for data completeness */
   formConfidence?: {
     /** Number of valid past performances */
@@ -627,6 +648,254 @@ function calculateRecentFormScore(
  * Layoff penalties are capped at 10 pts to preserve winner bonus value
  */
 const MAX_LAYOFF_PENALTY = 10;
+
+// ============================================================================
+// BOUNCE RISK PENALTY (v3.8)
+// ============================================================================
+
+/**
+ * Bounce Risk Penalty Configuration
+ *
+ * "Bounce" refers to the tendency for horses to regress after a peak performance.
+ * Horses coming off career-best (or near career-best) speed figures are at high
+ * risk of regression, with actual bounce rates running 65-70% off career peaks.
+ *
+ * v3.8: Increased penalty from -3 to -6 to properly account for regression risk.
+ *
+ * PENALTY LOGIC:
+ * - Full penalty (-6): Last race was career-best AND a "significant effort"
+ * - Partial penalty (-3): Last race was career-best but NOT a significant effort
+ * - No penalty (0): Horse has proven repeat ability (won 2 of last 3)
+ * - No penalty (0): Last race was NOT at/near career-best level
+ *
+ * "Significant Effort" Definition:
+ * A significant effort is one that fully extended the horse's ability:
+ * - Speed figure within 3 points of career best, OR
+ * - Finished 1st-3rd, OR
+ * - Beaten less than 5 lengths
+ * (Any ONE of these qualifies as significant effort)
+ */
+export const BOUNCE_RISK_CONFIG = {
+  /** Full bounce penalty for career-best + significant effort (-6 pts) */
+  FULL_BOUNCE_PENALTY: -6,
+
+  /** Partial bounce penalty for career-best but NOT significant effort (-3 pts) */
+  PARTIAL_BOUNCE_PENALTY: -3,
+
+  /** How close to career-best triggers bounce risk (points) */
+  CAREER_BEST_THRESHOLD: 3,
+
+  /** Finish position threshold for "significant effort" */
+  SIGNIFICANT_FINISH_THRESHOLD: 3, // 1st, 2nd, or 3rd
+
+  /** Beaten lengths threshold for "significant effort" */
+  SIGNIFICANT_BEATEN_THRESHOLD: 5,
+
+  /** Minimum career starts to have enough data for career-best comparison */
+  MIN_CAREER_STARTS: 3,
+
+  /** Proven repeat ability: won X of last Y races (immune to bounce penalty) */
+  REPEAT_WINNER_THRESHOLD: { wins: 2, races: 3 },
+} as const;
+
+/**
+ * Result from bounce risk analysis
+ */
+export interface BounceRiskResult {
+  /** Penalty applied (0, -3, or -6) */
+  penalty: number;
+  /** Whether horse is at bounce risk */
+  atRisk: boolean;
+  /** Whether full penalty applied (vs partial) */
+  fullPenalty: boolean;
+  /** Whether horse is protected as proven repeat winner */
+  protectedAsRepeatWinner: boolean;
+  /** Explanation of the decision */
+  reasoning: string;
+  /** Career best speed figure detected */
+  careerBest: number | null;
+  /** Last race speed figure */
+  lastRaceFigure: number | null;
+}
+
+/**
+ * Get the best available speed figure from a past performance
+ * Prefers Beyer, then TimeformUS, then Equibase
+ */
+function getSpeedFigure(pp: PastPerformance): number | null {
+  return pp.speedFigures.beyer ?? pp.speedFigures.timeformUS ?? pp.speedFigures.equibase ?? null;
+}
+
+/**
+ * Calculate career-best speed figure from past performances
+ * Returns null if insufficient data
+ */
+function getCareerBestFigure(pastPerformances: PastPerformance[]): number | null {
+  const figures: number[] = [];
+
+  for (const pp of pastPerformances) {
+    const fig = getSpeedFigure(pp);
+    if (fig !== null) {
+      figures.push(fig);
+    }
+  }
+
+  if (figures.length < BOUNCE_RISK_CONFIG.MIN_CAREER_STARTS) {
+    return null; // Insufficient data
+  }
+
+  return Math.max(...figures);
+}
+
+/**
+ * Check if a past performance represents a "significant effort"
+ *
+ * A significant effort is one where the horse was fully extended:
+ * - Speed figure within CAREER_BEST_THRESHOLD points of career best, OR
+ * - Finished 1st-3rd, OR
+ * - Beaten less than 5 lengths
+ */
+function isSignificantEffort(
+  pp: PastPerformance,
+  careerBest: number | null,
+  lastFigure: number | null
+): boolean {
+  const { CAREER_BEST_THRESHOLD, SIGNIFICANT_FINISH_THRESHOLD, SIGNIFICANT_BEATEN_THRESHOLD } =
+    BOUNCE_RISK_CONFIG;
+
+  // Check 1: Speed figure within threshold of career best
+  if (careerBest !== null && lastFigure !== null) {
+    if (careerBest - lastFigure <= CAREER_BEST_THRESHOLD) {
+      return true;
+    }
+  }
+
+  // Check 2: Finished 1st, 2nd, or 3rd
+  if (pp.finishPosition <= SIGNIFICANT_FINISH_THRESHOLD) {
+    return true;
+  }
+
+  // Check 3: Beaten less than 5 lengths
+  if (pp.lengthsBehind < SIGNIFICANT_BEATEN_THRESHOLD) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Count wins in the last N races
+ */
+function countWinsInLastN(pastPerformances: PastPerformance[], n: number): number {
+  return pastPerformances.slice(0, n).filter((pp) => pp.finishPosition === 1).length;
+}
+
+/**
+ * Calculate bounce risk penalty for a horse
+ *
+ * v3.8: Penalizes horses coming off career-best or near-career-best performances.
+ * Actual bounce rates off career peaks run 65-70%.
+ *
+ * PENALTY SCHEDULE:
+ * - Full penalty (-6): Career-best last out AND significant effort
+ * - Partial penalty (-3): Career-best last out but NOT significant effort
+ * - No penalty (0): Protected as repeat winner (2 of last 3)
+ * - No penalty (0): Last race NOT at career-best level
+ *
+ * @param horse - The horse entry to analyze
+ * @returns BounceRiskResult with penalty and reasoning
+ */
+export function calculateBounceRiskPenalty(horse: HorseEntry): BounceRiskResult {
+  const pps = horse.pastPerformances;
+
+  // Default: no penalty
+  const noRiskResult: BounceRiskResult = {
+    penalty: 0,
+    atRisk: false,
+    fullPenalty: false,
+    protectedAsRepeatWinner: false,
+    reasoning: 'No bounce risk detected',
+    careerBest: null,
+    lastRaceFigure: null,
+  };
+
+  // Need at least one past performance
+  if (pps.length === 0) {
+    return { ...noRiskResult, reasoning: 'No past performances' };
+  }
+
+  const lastPP = pps[0];
+  if (!lastPP) {
+    return noRiskResult;
+  }
+
+  // Get career-best speed figure
+  const careerBest = getCareerBestFigure(pps);
+  if (careerBest === null) {
+    return { ...noRiskResult, reasoning: 'Insufficient data for career-best comparison' };
+  }
+
+  // Get last race figure
+  const lastFigure = getSpeedFigure(lastPP);
+  if (lastFigure === null) {
+    return { ...noRiskResult, careerBest, reasoning: 'No speed figure for last race' };
+  }
+
+  // Check if last race was at or near career-best
+  const isAtCareerBest = lastFigure >= careerBest - BOUNCE_RISK_CONFIG.CAREER_BEST_THRESHOLD;
+
+  if (!isAtCareerBest) {
+    return {
+      ...noRiskResult,
+      careerBest,
+      lastRaceFigure: lastFigure,
+      reasoning: `Last figure (${lastFigure}) well below career-best (${careerBest})`,
+    };
+  }
+
+  // PROTECTION: Check if horse has proven repeat ability (won 2 of last 3)
+  const { wins, races } = BOUNCE_RISK_CONFIG.REPEAT_WINNER_THRESHOLD;
+  const recentWins = countWinsInLastN(pps, races);
+
+  if (recentWins >= wins) {
+    return {
+      penalty: 0,
+      atRisk: false,
+      fullPenalty: false,
+      protectedAsRepeatWinner: true,
+      reasoning: `Protected: won ${recentWins} of last ${races} (proven repeat winner)`,
+      careerBest,
+      lastRaceFigure: lastFigure,
+    };
+  }
+
+  // Horse is at bounce risk - determine penalty level
+  const significant = isSignificantEffort(lastPP, careerBest, lastFigure);
+
+  if (significant) {
+    // Full penalty: career-best + significant effort
+    return {
+      penalty: BOUNCE_RISK_CONFIG.FULL_BOUNCE_PENALTY,
+      atRisk: true,
+      fullPenalty: true,
+      protectedAsRepeatWinner: false,
+      reasoning: `BOUNCE RISK: Career-best ${lastFigure} with significant effort (${BOUNCE_RISK_CONFIG.FULL_BOUNCE_PENALTY} pts)`,
+      careerBest,
+      lastRaceFigure: lastFigure,
+    };
+  } else {
+    // Partial penalty: career-best but not significant effort
+    return {
+      penalty: BOUNCE_RISK_CONFIG.PARTIAL_BOUNCE_PENALTY,
+      atRisk: true,
+      fullPenalty: false,
+      protectedAsRepeatWinner: false,
+      reasoning: `Bounce risk: Near career-best ${lastFigure} (${BOUNCE_RISK_CONFIG.PARTIAL_BOUNCE_PENALTY} pts)`,
+      careerBest,
+      lastRaceFigure: lastFigure,
+    };
+  }
+}
 
 /**
  * Calculate layoff penalty based on days since last race
@@ -1528,7 +1797,11 @@ export function calculateFormScore(
     todayContext ?? null
   );
 
-  // v3.6/3.7: Calculate total with Form Decay System + Conditional Winner Bonus
+  // v3.8: Calculate bounce risk penalty
+  // Penalizes horses coming off career-best performances (65-70% bounce rate)
+  const bounceRiskResult = calculateBounceRiskPenalty(horse);
+
+  // v3.6/3.7/3.8: Calculate total with Form Decay System + Conditional Winner Bonus + Bounce Risk
   // Form cap: 50 pts per v3.6 specification
   const baseComponents =
     formResult.score + // 0-15 pts
@@ -1540,8 +1813,11 @@ export function calculateFormScore(
   // Apply layoff penalty (capped at -10)
   const cappedLayoffPenalty = Math.max(layoffResult.penalty, -MAX_LAYOFF_PENALTY);
 
-  // Add win recency bonus (0-4 pts for hot/warm horses)
-  const rawTotal = baseComponents + cappedLayoffPenalty + winRecencyResult.bonus;
+  // v3.8: Apply bounce risk penalty (0 to -6 pts)
+  const bounceRiskPenalty = bounceRiskResult.penalty;
+
+  // Add win recency bonus (0-4 pts for hot/warm horses) and bounce penalty
+  const rawTotal = baseComponents + cappedLayoffPenalty + winRecencyResult.bonus + bounceRiskPenalty;
 
   // PHASE 2: Apply confidence multiplier to penalize incomplete form data
   // v3.6: Scaled for 50 max
@@ -1599,6 +1875,13 @@ export function calculateFormScore(
     reasoning += ` | Layoff: ${cappedLayoffPenalty} pts`;
   }
 
+  // v3.8: Add bounce risk to reasoning if applied
+  if (bounceRiskPenalty < 0) {
+    reasoning += ` | ${bounceRiskResult.reasoning}`;
+  } else if (bounceRiskResult.protectedAsRepeatWinner) {
+    reasoning += ` | Bounce protected (repeat winner)`;
+  }
+
   // PHASE 2: Add confidence info to reasoning if penalized
   if (confidenceMultiplier < 1.0) {
     const maxPossible = Math.round(FORM_CATEGORY_MAX * confidenceMultiplier);
@@ -1636,6 +1919,8 @@ export function calculateFormScore(
     winRecencyBonus: winRecencyResult.bonus,
     layoffPenalty: cappedLayoffPenalty,
     conditionalWinnerBonus: conditionalWinnerBonusResult.bonus,
+    bounceRiskPenalty,
+    bounceRiskResult,
     formConfidence,
   };
 }

@@ -203,6 +203,37 @@ Stacks WITH WLO decay - these bonuses add to the calculated form score, not repl
 > The old system gave ANY last-out winner a minimum 15 pts regardless of quality.
 > A $10K claimer win 4 races ago shouldn't protect when facing allowance company.
 
+### Bounce Risk Penalty (v3.8)
+
+Horses coming off career-best performances regress 65-70% of the time. Previous penalty was
+token-sized at -3 pts. v3.8 doubles the full penalty to -6 pts with conditional logic.
+
+| Condition | Penalty | Criteria |
+| --------- | ------- | -------- |
+| Full bounce risk | -6 | Career-best last out + significant effort |
+| Partial bounce risk | -3 | Career-best last out, NOT significant effort |
+| Protected (repeat winner) | 0 | Won 2 of last 3 races |
+| No bounce risk | 0 | Last race NOT at/near career-best level |
+
+**Significant Effort Definition:** Any ONE of:
+- Speed figure within 3 points of career best
+- Finished 1st, 2nd, or 3rd
+- Beaten less than 5 lengths
+
+| Constant | Value |
+| -------- | ----- |
+| FULL_BOUNCE_PENALTY | -6 |
+| PARTIAL_BOUNCE_PENALTY | -3 |
+| CAREER_BEST_THRESHOLD | 3 pts |
+| SIGNIFICANT_FINISH_THRESHOLD | 3 (1st-3rd) |
+| SIGNIFICANT_BEATEN_THRESHOLD | 5 lengths |
+| MIN_CAREER_STARTS | 3 |
+| REPEAT_WINNER_THRESHOLD | Won 2 of last 3 |
+
+> **v3.8 CHANGE:** Increased bounce penalty from -3 to -6 for full bounce risk scenarios.
+> Added conditional logic: -6 for significant effort, -3 for non-significant.
+> Added protection for proven repeat winners (won 2 of last 3).
+
 ### Consistency Points
 
 | ITM Rate (last 10) | Points |
@@ -334,6 +365,43 @@ Stacks WITH WLO decay - these bonuses add to the calculated form score, not repl
 | Jockey Shipper Cap           | 8     |
 | Trainer Shipper Cap          | 7     |
 | Trainer Surface/Distance Max | 6     |
+
+---
+
+## Trip Trouble Adjustment (0-4 points)
+
+Adjusts form score for horses with masked ability due to racing trouble.
+v3.8 reduced maximum and added recency decay - trip trouble was over-crediting subjective notes.
+
+### v3.8 Trip Trouble Configuration
+
+| Constant | Value (v3.8) | Previous |
+| -------- | ------------ | -------- |
+| MAX_ADJUSTMENT | 4 | 8 |
+| HIGH_CONFIDENCE_PTS | 2 | 3 |
+| MEDIUM_CONFIDENCE_PTS | 1 | 2 |
+| LOW_CONFIDENCE_PTS | 1 | 1 |
+| MAX_RACES_TO_SCAN | 3 | 3 |
+
+### Recency Decay Multipliers (v3.8)
+
+| Race Position | Multiplier | Description |
+| ------------- | ---------- | ----------- |
+| Race 1 back | 1.0 | Full credit |
+| Race 2 back | 0.6 | 60% credit |
+| Race 3 back | 0.3 | 30% credit |
+
+### Trouble Keywords
+
+| Category | Keywords | Points |
+| -------- | -------- | ------ |
+| HIGH (clear traffic) | blocked, steadied, check, bumped | 2 × recency |
+| MEDIUM (wide/pace) | wide, 4-wide, carried wide, shuffled | 1 × recency |
+| LOW (minor) | bumped at start, slow start | 1 × recency |
+| EXCLUSION (horse caused) | lugged, bore in/out, rank | 0 (no bonus) |
+
+> **v3.8 CHANGE:** Reduced max from +8 to +4 pts. Added recency decay multipliers.
+> Recent trouble is more indicative of masked ability than old trouble.
 
 ---
 
