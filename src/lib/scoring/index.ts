@@ -1542,35 +1542,33 @@ export function calculateRaceScores(
     sh.score.fieldSpreadAdjustment = fieldAdjustment;
     sh.score.fieldSpreadResult = fieldSpreadResult;
 
-    // Add field spread to breakdown
+    // Add field spread to breakdown (informational only, no score modifications)
+    // v3.8: Score adjustments removed - field spread now used for bet construction only
     sh.score.breakdown.fieldSpread = {
       fieldType: fieldSpreadResult.fieldType,
       tier: tier ?? 'X',
-      adjustment: fieldAdjustment,
-      reason:
-        fieldAdjustment !== 0
-          ? (fieldSpreadResult.adjustments.find((a) => a.programNumber === sh.horse.programNumber)
-              ?.reason ?? '')
-          : `Tier ${tier ?? 'X'}: ${fieldSpreadResult.reason}`,
+      adjustment: 0, // Always 0 - adjustments removed to eliminate circular logic
+      reason: `Tier ${tier ?? 'X'}: ${fieldSpreadResult.reason}`,
     };
 
-    // Apply field spread adjustment to scores (final confidence modifier)
-    if (fieldAdjustment !== 0) {
-      sh.score.baseScore = Math.max(0, sh.score.baseScore + fieldAdjustment);
-      sh.score.total = enforceScoreBoundaries(sh.score.baseScore + sh.score.overlayScore);
-
-      // Log adjustment
-      const sign = fieldAdjustment > 0 ? '+' : '';
-      console.log(
-        `[FIELD_SPREAD] ${sign}${fieldAdjustment} ${sh.horse.horseName}: ${sh.score.breakdown.fieldSpread.reason}`
-      );
-    }
+    // v3.8 REMOVED: Score adjustments no longer applied
+    // Field spread is now INFORMATIONAL ONLY for bet construction:
+    // - Field type detection (DOMINANT, CHALKY, SEPARATED, COMPETITIVE, WIDE_OPEN)
+    // - Tier assignments (A/B/C/X based on distance from leader)
+    // - Confidence mapping (VERY_HIGH to VERY_LOW)
+    // - Sit-out condition detection
+    // - Recommended box sizes for exacta/trifecta/superfecta
+    //
+    // Adjustments were removed because boosting a dominant leader because they're
+    // dominant just confirms what was already calculated (circular logic).
   });
 
-  // Note: We don't re-rank after Field Spread because:
-  // 1. Adjustments are small (-2 to +3 pts)
-  // 2. Rankings should be stable for UI consistency
-  // 3. Field spread is a confidence modifier, not a ranking factor
+  // Note: Field Spread does not affect rankings (v3.8)
+  // Score adjustments were removed to eliminate circular logic.
+  // Field spread is now INFORMATIONAL ONLY for bet construction:
+  // - Field type, tier assignments, confidence levels
+  // - Box size recommendations
+  // - Sit-out condition detection
 
   // Sort by post position for display (scratched horses stay in place)
   scoredHorses.sort((a, b) => {

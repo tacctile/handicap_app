@@ -1,8 +1,18 @@
 /**
  * Field Spread Analysis Tests
  *
- * Tests for algorithmic field spread detection and scoring.
- * Verifies field type classification, tier assignment, adjustments, and edge cases.
+ * Tests for algorithmic field spread detection.
+ * Verifies field type classification, tier assignment, and edge cases.
+ *
+ * v3.8 UPDATE: Score adjustments were removed to eliminate circular logic.
+ * Field spread is now INFORMATIONAL ONLY for bet construction.
+ * - Field type detection (DOMINANT, CHALKY, SEPARATED, COMPETITIVE, WIDE_OPEN)
+ * - Tier assignments (A/B/C/X)
+ * - Confidence mapping (VERY_HIGH to VERY_LOW)
+ * - Sit-out condition detection
+ * - Recommended box sizes for exotic bets
+ *
+ * The adjustments array is now always empty.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -174,61 +184,39 @@ describe('fieldSpread', () => {
   });
 
   // ============================================================================
-  // ADJUSTMENT TESTS
+  // ADJUSTMENT TESTS (v3.8: Adjustments removed - now always empty)
   // ============================================================================
 
-  describe('score adjustments', () => {
-    it('applies +3 boost to dominant leader', () => {
+  describe('score adjustments (v3.8 - removed)', () => {
+    // v3.8: Score adjustments were removed to eliminate circular logic.
+    // Field spread is now INFORMATIONAL ONLY for bet construction.
+    // These tests verify that adjustments are always empty.
+
+    it('returns empty adjustments for DOMINANT field (v3.8: adjustments removed)', () => {
       const horses = createField([200, 170, 165, 160, 155, 150]);
       const result = analyzeFieldSpread(horses);
 
       expect(result.fieldType).toBe('DOMINANT');
-      expect(result.adjustments.length).toBeGreaterThanOrEqual(1);
-
-      const leaderAdj = result.adjustments.find((a) => a.programNumber === 1);
-      expect(leaderAdj).toBeDefined();
-      expect(leaderAdj?.adjustment).toBe(FIELD_SPREAD_CONFIG.DOMINANT_BOOST);
+      expect(result.adjustments.length).toBe(0); // v3.8: No adjustments
     });
 
-    it('applies +2 boost to both horses in CHALKY field', () => {
+    it('returns empty adjustments for CHALKY field (v3.8: adjustments removed)', () => {
       const horses = createField([200, 195, 175, 170, 165, 160]);
       const result = analyzeFieldSpread(horses);
 
       expect(result.fieldType).toBe('CHALKY');
-      expect(result.adjustments.length).toBe(2);
-
-      const adj1 = result.adjustments.find((a) => a.programNumber === 1);
-      const adj2 = result.adjustments.find((a) => a.programNumber === 2);
-
-      expect(adj1?.adjustment).toBe(FIELD_SPREAD_CONFIG.CHALKY_BOOST);
-      expect(adj2?.adjustment).toBe(FIELD_SPREAD_CONFIG.CHALKY_BOOST);
+      expect(result.adjustments.length).toBe(0); // v3.8: No adjustments
     });
 
-    it('applies -2 penalty to leader in WIDE_OPEN field', () => {
+    it('returns empty adjustments for WIDE_OPEN field (v3.8: adjustments removed)', () => {
       const horses = createField([180, 178, 175, 172, 168, 165]);
       const result = analyzeFieldSpread(horses);
 
       expect(result.fieldType).toBe('WIDE_OPEN');
-
-      const leaderAdj = result.adjustments.find((a) => a.programNumber === 1);
-      expect(leaderAdj).toBeDefined();
-      expect(leaderAdj?.adjustment).toBe(FIELD_SPREAD_CONFIG.WIDE_OPEN_LEADER_PENALTY);
+      expect(result.adjustments.length).toBe(0); // v3.8: No adjustments
     });
 
-    it('applies +1 value boost to mid-pack in WIDE_OPEN field', () => {
-      const horses = createField([180, 178, 175, 172, 168, 165, 160, 155]);
-      const result = analyzeFieldSpread(horses);
-
-      expect(result.fieldType).toBe('WIDE_OPEN');
-
-      const adj4 = result.adjustments.find((a) => a.programNumber === 4);
-      const adj5 = result.adjustments.find((a) => a.programNumber === 5);
-
-      expect(adj4?.adjustment).toBe(FIELD_SPREAD_CONFIG.WIDE_OPEN_VALUE_BOOST);
-      expect(adj5?.adjustment).toBe(FIELD_SPREAD_CONFIG.WIDE_OPEN_VALUE_BOOST);
-    });
-
-    it('applies no adjustments for COMPETITIVE field', () => {
+    it('returns empty adjustments for COMPETITIVE field', () => {
       const horses = createField([200, 195, 192, 188, 170, 160]);
       const result = analyzeFieldSpread(horses);
 
@@ -236,15 +224,13 @@ describe('fieldSpread', () => {
       expect(result.adjustments.length).toBe(0);
     });
 
-    it('applies +2 boost to separated leader with 20+ gap', () => {
+    it('returns empty adjustments for SEPARATED field (v3.8: adjustments removed)', () => {
       const horses = createField([200, 178, 175, 172, 165, 160]);
       const result = analyzeFieldSpread(horses);
 
       expect(result.fieldType).toBe('SEPARATED');
       expect(result.scoreGaps.first_to_second).toBeGreaterThanOrEqual(20);
-
-      const leaderAdj = result.adjustments.find((a) => a.programNumber === 1);
-      expect(leaderAdj?.adjustment).toBe(FIELD_SPREAD_CONFIG.SEPARATED_BOOST);
+      expect(result.adjustments.length).toBe(0); // v3.8: No adjustments
     });
   });
 
@@ -452,19 +438,22 @@ describe('fieldSpread', () => {
     });
 
     describe('getFieldSpreadAdjustment', () => {
-      it('returns adjustment for adjusted horse', () => {
+      // v3.8: Adjustments removed - always returns 0
+      it('returns 0 for all horses (v3.8: adjustments removed)', () => {
         const horses = createField([200, 170, 165, 160, 155, 150]);
         const result = analyzeFieldSpread(horses);
 
-        const adj = getFieldSpreadAdjustment(result, 1);
-        expect(adj).toBe(FIELD_SPREAD_CONFIG.DOMINANT_BOOST);
+        // v3.8: All adjustments are now 0
+        expect(getFieldSpreadAdjustment(result, 1)).toBe(0);
+        expect(getFieldSpreadAdjustment(result, 2)).toBe(0);
+        expect(getFieldSpreadAdjustment(result, 3)).toBe(0);
       });
 
-      it('returns 0 for non-adjusted horse', () => {
+      it('returns 0 for non-existent horse', () => {
         const horses = createField([200, 195, 192, 188, 170, 165]);
         const result = analyzeFieldSpread(horses);
 
-        const adj = getFieldSpreadAdjustment(result, 1);
+        const adj = getFieldSpreadAdjustment(result, 99);
         expect(adj).toBe(0);
       });
     });
@@ -606,7 +595,9 @@ describe('fieldSpread', () => {
       expect(FIELD_SPREAD_CONFIG.TIER_C_MAX).toBe(45);
     });
 
-    it('has correct adjustment values', () => {
+    // v3.8: These adjustment values are deprecated but preserved for compatibility
+    it('has adjustment values (deprecated v3.8 - no longer applied)', () => {
+      // Constants preserved for backward compatibility but no longer used
       expect(FIELD_SPREAD_CONFIG.DOMINANT_BOOST).toBe(3);
       expect(FIELD_SPREAD_CONFIG.CHALKY_BOOST).toBe(2);
       expect(FIELD_SPREAD_CONFIG.WIDE_OPEN_LEADER_PENALTY).toBe(-2);
