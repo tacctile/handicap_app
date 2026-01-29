@@ -41,6 +41,11 @@ import {
   PACE_SCENARIO_CONFIG,
   PACE_SCENARIO_DEFINITIONS,
   RUNNING_STYLE_DEFINITIONS,
+  SPRINT_EP1_THRESHOLDS,
+  ROUTE_EP1_THRESHOLDS,
+  SPRINT_MAX_FURLONGS,
+  getEP1ThresholdsForDistance,
+  getRaceDistanceType,
 } from './constants/paceScenario';
 
 // ============================================================================
@@ -150,12 +155,20 @@ export function getAverageEP1(pastPerformances: PastPerformance[]): number | nul
 }
 
 /**
- * Classify running style based on EP1 figure
+ * Classify running style based on EP1 figure with distance-adjusted thresholds
+ *
+ * EP1 figures have different meanings based on race distance:
+ * - Sprints (≤7f): Higher EP1 values needed for early speed (original thresholds)
+ * - Routes (>7f): Lower EP1 thresholds because an EP1 of 88 at 1.5 miles means on the lead
  *
  * @param horse - The horse entry to classify
+ * @param distanceFurlongs - Race distance in furlongs (null = default to sprint thresholds)
  * @returns Running style classification
  */
-export function classifyRunningStyle(horse: HorseEntry): PaceRunningStyle {
+export function classifyRunningStyle(
+  horse: HorseEntry,
+  distanceFurlongs?: number | null
+): PaceRunningStyle {
   // Use EP1 (early pace figure) as primary indicator
   const ep1 = getAverageEP1(horse.pastPerformances);
 
@@ -164,11 +177,39 @@ export function classifyRunningStyle(horse: HorseEntry): PaceRunningStyle {
 
   if (ep1 === null && !explicitStyle) return 'UNKNOWN';
 
-  // EP1-based classification (takes priority)
+  // Get distance-adjusted thresholds
+  const thresholds = getEP1ThresholdsForDistance(distanceFurlongs);
+  const distanceType = getRaceDistanceType(distanceFurlongs);
+
+  // EP1-based classification with distance-adjusted thresholds (takes priority)
   if (ep1 !== null) {
-    if (ep1 >= PACE_SCENARIO_CONFIG.EP1_EARLY_SPEED) return 'E';
-    if (ep1 >= PACE_SCENARIO_CONFIG.EP1_PRESSER) return 'EP';
-    if (ep1 >= PACE_SCENARIO_CONFIG.EP1_STALKER) return 'P';
+    // Log which threshold set is being used for debugging
+    const thresholdInfo =
+      distanceType === 'route'
+        ? `route thresholds (E≥${thresholds.E}, EP≥${thresholds.EP}, P≥${thresholds.P})`
+        : `sprint thresholds (E≥${thresholds.E}, EP≥${thresholds.EP}, P≥${thresholds.P})`;
+
+    if (ep1 >= thresholds.E) {
+      console.debug(
+        `[PACE_SCENARIO] ${horse.horseName} classified as E (EP1=${ep1}) using ${thresholdInfo}`
+      );
+      return 'E';
+    }
+    if (ep1 >= thresholds.EP) {
+      console.debug(
+        `[PACE_SCENARIO] ${horse.horseName} classified as EP (EP1=${ep1}) using ${thresholdInfo}`
+      );
+      return 'EP';
+    }
+    if (ep1 >= thresholds.P) {
+      console.debug(
+        `[PACE_SCENARIO] ${horse.horseName} classified as P (EP1=${ep1}) using ${thresholdInfo}`
+      );
+      return 'P';
+    }
+    console.debug(
+      `[PACE_SCENARIO] ${horse.horseName} classified as S (EP1=${ep1}) using ${thresholdInfo}`
+    );
     return 'S';
   }
 
@@ -443,23 +484,38 @@ export function generatePaceReason(
 // ============================================================================
 
 /**
- * Analyze pace scenario for a race field
+ * Analyze pace scenario for a race field with distance-adjusted EP1 thresholds
  *
  * Examines the running style composition of all horses in the field
  * to identify tactical advantages and disadvantages.
  *
+ * Uses distance-adjusted EP1 thresholds:
+ * - Sprints (≤7f): E≥92, EP 85-91, P 75-84, S<75
+ * - Routes (>7f): E≥88, EP 80-87, P 70-79, S<70
+ *
  * @param horses - Array of horse entries in the race
+ * @param distanceFurlongs - Race distance in furlongs (null = default to sprint thresholds)
  * @returns Complete pace scenario analysis
  */
-export function analyzePaceScenario(horses: HorseEntry[]): PaceScenarioResult {
+export function analyzePaceScenario(
+  horses: HorseEntry[],
+  distanceFurlongs?: number | null
+): PaceScenarioResult {
   // Filter out scratched horses
   const activeHorses = horses.filter((h) => !h.isScratched);
 
-  // Classify all horses
+  // Log which threshold set is being used
+  const distanceType = getRaceDistanceType(distanceFurlongs);
+  console.debug(
+    `[PACE_SCENARIO] Analyzing pace scenario for ${activeHorses.length} horses using ${distanceType} thresholds` +
+      (distanceFurlongs ? ` (${distanceFurlongs}f)` : ' (distance unknown, defaulting to sprint)')
+  );
+
+  // Classify all horses using distance-adjusted thresholds
   const horseStyles: HorseStyleData[] = activeHorses.map((horse) => ({
     programNumber: horse.programNumber,
     horseName: horse.horseName,
-    style: classifyRunningStyle(horse),
+    style: classifyRunningStyle(horse, distanceFurlongs),
     ep1Average: getAverageEP1(horse.pastPerformances),
   }));
 
@@ -645,4 +701,14 @@ export function formatPaceScenarioSummary(result: PaceScenarioResult): string {
 // RE-EXPORTS
 // ============================================================================
 
-export { PACE_SCENARIO_CONFIG, PACE_SCENARIO_DEFINITIONS, RUNNING_STYLE_DEFINITIONS };
+export {
+  PACE_SCENARIO_CONFIG,
+  PACE_SCENARIO_DEFINITIONS,
+  RUNNING_STYLE_DEFINITIONS,
+  // Distance-adjusted EP1 thresholds
+  SPRINT_EP1_THRESHOLDS,
+  ROUTE_EP1_THRESHOLDS,
+  SPRINT_MAX_FURLONGS,
+  getEP1ThresholdsForDistance,
+  getRaceDistanceType,
+};
