@@ -79,12 +79,6 @@ import {
   EP1_THRESHOLDS,
   LP_THRESHOLDS,
   FIELD_PACE_THRESHOLDS,
-  // Distance-adjusted EP1 thresholds
-  SPRINT_EP1_THRESHOLDS,
-  ROUTE_EP1_THRESHOLDS,
-  SPRINT_MAX_FURLONGS,
-  getEP1ThresholdsForDistance,
-  getRaceDistanceType,
 } from './paceAnalysis';
 
 // Re-export all types and utilities from paceAnalysis
@@ -118,12 +112,6 @@ export {
   EP1_THRESHOLDS,
   LP_THRESHOLDS,
   FIELD_PACE_THRESHOLDS,
-  // Distance-adjusted EP1 thresholds
-  SPRINT_EP1_THRESHOLDS,
-  ROUTE_EP1_THRESHOLDS,
-  SPRINT_MAX_FURLONGS,
-  getEP1ThresholdsForDistance,
-  getRaceDistanceType,
 };
 
 // Re-export seasonal adjustment types from trackIntelligence
@@ -493,20 +481,16 @@ function hasConfirmedRunningStyle(profile: RunningStyleProfile | undefined): boo
 // ============================================================================
 
 /**
- * Analyze the pace scenario for the entire field with distance-adjusted EP1 thresholds
- * Uses the enhanced pace analysis system with sprint/route threshold differentiation
+ * Analyze the pace scenario for the entire field
+ * Uses static EP1 thresholds for running style classification
  *
  * @param horses - All horses in the race
- * @param distanceFurlongs - Race distance in furlongs (null = default to sprint thresholds)
  */
-export function analyzeFieldPace(
-  horses: HorseEntry[],
-  distanceFurlongs?: number | null
-): FieldPaceAnalysis {
+export function analyzeFieldPace(horses: HorseEntry[]): FieldPaceAnalysis {
   const activeHorses = horses.filter((h) => !h.isScratched);
 
-  // Use new analysis system with distance-adjusted thresholds
-  const analysis = analyzePaceScenario(activeHorses, distanceFurlongs);
+  // Use new analysis system with static thresholds
+  const analysis = analyzePaceScenario(activeHorses);
 
   // Count runners by style for legacy compatibility
   const speedCount = analysis.styleBreakdown.earlySpeed.length;
@@ -536,14 +520,13 @@ export function analyzeFieldPace(
 // ============================================================================
 
 /**
- * Calculate pace score for a horse with distance-adjusted EP1 thresholds
+ * Calculate pace score for a horse
  *
- * Uses distance-adjusted thresholds for running style classification:
- * - Sprints (≤7f): E≥92, EP 85-91, P 75-84, S<75
- * - Routes (>7f): E≥88, EP 80-87, P 70-79, S<70
+ * Uses static EP1 thresholds for running style classification:
+ * E≥92, EP 85-91, P 75-84, S<75
  *
  * @param horse - The horse entry to score
- * @param raceHeader - Race information (includes distanceFurlongs)
+ * @param raceHeader - Race information
  * @param allHorses - All horses in the race for field analysis
  * @param preCalculatedFieldAnalysis - Optional pre-calculated field analysis for efficiency
  * @returns Detailed score breakdown
@@ -554,15 +537,12 @@ export function calculatePaceScore(
   allHorses: HorseEntry[],
   preCalculatedFieldAnalysis?: FieldPaceAnalysis
 ): PaceScoreResult {
-  // Get race distance for distance-adjusted EP1 thresholds
-  const distanceFurlongs = raceHeader.distanceFurlongs;
-
-  // Get enhanced pace analysis with distance-adjusted thresholds
+  // Get enhanced pace analysis with static thresholds
   const paceScenario = preCalculatedFieldAnalysis?.paceScenarioType
-    ? analyzePaceScenario(allHorses, distanceFurlongs)
-    : analyzePaceScenario(allHorses, distanceFurlongs);
+    ? analyzePaceScenario(allHorses)
+    : analyzePaceScenario(allHorses);
 
-  const paceResult = analyzePaceForHorse(horse, allHorses, paceScenario, distanceFurlongs);
+  const paceResult = analyzePaceForHorse(horse, allHorses, paceScenario);
 
   // Get running style profile
   const detailedProfile = paceResult.profile;
@@ -582,8 +562,8 @@ export function calculatePaceScore(
     isConfirmedStyle: detailedProfile.confidence >= 70,
   };
 
-  // Get field analysis in legacy format with distance-adjusted thresholds
-  const fieldAnalysis = preCalculatedFieldAnalysis ?? analyzeFieldPace(allHorses, distanceFurlongs);
+  // Get field analysis in legacy format
+  const fieldAnalysis = preCalculatedFieldAnalysis ?? analyzeFieldPace(allHorses);
 
   // Get track speed bias and pace advantage rating
   let trackSpeedBias: number | null = null;
@@ -881,18 +861,15 @@ export function getPaceSummary(
 }
 
 /**
- * Calculate pace scores for all horses efficiently with distance-adjusted EP1 thresholds
+ * Calculate pace scores for all horses efficiently
  * Shares field analysis calculation for performance
  */
 export function calculateRacePaceScores(
   horses: HorseEntry[],
   raceHeader: RaceHeader
 ): Map<number, PaceScoreResult> {
-  // Get race distance for distance-adjusted thresholds
-  const distanceFurlongs = raceHeader.distanceFurlongs;
-
-  // Pre-calculate field analysis once with distance-adjusted thresholds
-  const fieldAnalysis = analyzeFieldPace(horses, distanceFurlongs);
+  // Pre-calculate field analysis once
+  const fieldAnalysis = analyzeFieldPace(horses);
 
   const results = new Map<number, PaceScoreResult>();
 

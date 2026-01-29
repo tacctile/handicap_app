@@ -27,41 +27,29 @@ import {
 // PACE FIGURE THRESHOLDS
 // ============================================================================
 
-// Import distance-adjusted thresholds from paceScenario constants
-import {
-  SPRINT_EP1_THRESHOLDS,
-  ROUTE_EP1_THRESHOLDS,
-  SPRINT_MAX_FURLONGS,
-  getEP1ThresholdsForDistance,
-  getRaceDistanceType,
-} from './constants/paceScenario';
+// Import static thresholds from paceScenario constants
+import { EP1_THRESHOLDS as EP1_STATIC_THRESHOLDS } from './constants/paceScenario';
 
 // Re-export for convenience
-export {
-  SPRINT_EP1_THRESHOLDS,
-  ROUTE_EP1_THRESHOLDS,
-  SPRINT_MAX_FURLONGS,
-  getEP1ThresholdsForDistance,
-  getRaceDistanceType,
-};
+export { EP1_THRESHOLDS as EP1_STATIC_THRESHOLDS } from './constants/paceScenario';
 
 /**
  * Thresholds for EP1 (Early Pace) figure classification
  * EP1 ranges typically from 0-120, with higher = faster early speed
  *
- * NOTE: For running style classification, use SPRINT_EP1_THRESHOLDS or ROUTE_EP1_THRESHOLDS
- * with getEP1ThresholdsForDistance(). These thresholds below are used for general
- * pace figure analysis (confirmed speed/closer detection).
- *
- * The values here correspond to sprint thresholds as default.
+ * Uses static EP1 thresholds for running style classification:
+ * - E (Early): EP1 ≥ 92
+ * - EP (Early Presser): EP1 85-91
+ * - P (Presser/Stalker): EP1 75-84
+ * - S (Closer): EP1 < 75
  */
 export const EP1_THRESHOLDS = {
-  /** High early pace = confirmed early speed (sprint threshold) */
-  HIGH: SPRINT_EP1_THRESHOLDS.EP, // 85 - At or above EP threshold means confirmed speed
+  /** High early pace = confirmed early speed */
+  HIGH: EP1_STATIC_THRESHOLDS.EP, // 85 - At or above EP threshold means confirmed speed
   /** Moderate early pace */
-  MODERATE: SPRINT_EP1_THRESHOLDS.P, // 75 - At or above P threshold
+  MODERATE: EP1_STATIC_THRESHOLDS.P, // 75 - At or above P threshold
   /** Low early pace = confirmed closer */
-  LOW: ROUTE_EP1_THRESHOLDS.P, // 70 - Below route P threshold = closer
+  LOW: 70, // Below 70 = confirmed closer
 } as const;
 
 /**
@@ -348,21 +336,13 @@ function calculatePaceTrend(figures: number[]): 'improving' | 'declining' | 'sta
 
 /**
  * Analyze a horse's pace figures (EP1 and LP) to determine their running profile
- * Uses distance-adjusted EP1 thresholds for accurate classification.
+ * Uses static EP1 thresholds for classification.
  *
  * @param horse - The horse entry to analyze
- * @param distanceFurlongs - Race distance in furlongs (null = default to sprint thresholds)
  * @returns Detailed pace figure analysis
  */
-export function analyzePaceFigures(
-  horse: HorseEntry,
-  distanceFurlongs?: number | null
-): PaceFigureAnalysis {
+export function analyzePaceFigures(horse: HorseEntry): PaceFigureAnalysis {
   const recentPPs = horse.pastPerformances.slice(0, 5);
-
-  // Get distance-adjusted thresholds
-  const thresholds = getEP1ThresholdsForDistance(distanceFurlongs);
-  const distanceType = getRaceDistanceType(distanceFurlongs);
 
   // Extract valid EP1 figures
   const ep1Data = recentPPs
@@ -389,27 +369,17 @@ export function analyzePaceFigures(
   const ep1Trend = calculatePaceTrend(ep1Data);
   const lpTrend = calculatePaceTrend(lpData);
 
-  // Use distance-adjusted thresholds for speed/closer classification
-  // For routes, lower EP1 qualifies as early speed (e.g., 88+ vs 92+)
-  const speedThreshold = thresholds.EP; // EP or above = confirmed speed
-  const closerThreshold = thresholds.P; // Below P = confirmed closer
+  // Use static thresholds for speed/closer classification
+  const speedThreshold = EP1_STATIC_THRESHOLDS.EP; // 85+ = confirmed speed
+  const closerThreshold = EP1_STATIC_THRESHOLDS.P; // Below 75 = confirmed closer
 
-  // Determine if confirmed speed (high EP1 using distance-adjusted threshold)
+  // Determine if confirmed speed (high EP1)
   const isConfirmedSpeed = avgEarlyPace !== null && avgEarlyPace >= speedThreshold;
 
-  // Determine if confirmed closer (low EP1 using distance-adjusted threshold OR high LP)
+  // Determine if confirmed closer (low EP1 OR high LP)
   const isConfirmedCloser =
     (avgEarlyPace !== null && avgEarlyPace < closerThreshold) ||
     (avgLatePace !== null && avgLatePace >= LP_THRESHOLDS.STRONG);
-
-  // Log classification for debugging
-  if (avgEarlyPace !== null) {
-    console.debug(
-      `[PACE_FIGURES] ${horse.horseName} EP1=${avgEarlyPace}, ` +
-        `using ${distanceType} thresholds (speed≥${speedThreshold}, closer<${closerThreshold}), ` +
-        `confirmed: ${isConfirmedSpeed ? 'SPEED' : isConfirmedCloser ? 'CLOSER' : 'NEUTRAL'}`
-    );
-  }
 
   // Calculate closing kick differential (LP - EP1)
   let closingKickDifferential: number | null = null;
@@ -436,30 +406,17 @@ export function analyzePaceFigures(
 }
 
 /**
- * Analyze the field's pace pressure based on EP1 figures with distance-adjusted thresholds
+ * Analyze the field's pace pressure based on EP1 figures
  * Higher average EP1 across the field = more contested pace
  *
  * @param horses - All horses in the race
- * @param distanceFurlongs - Race distance in furlongs (null = default to sprint thresholds)
  * @returns Field pace pressure analysis
  */
-export function getFieldPacePressure(
-  horses: HorseEntry[],
-  distanceFurlongs?: number | null
-): FieldPacePressureAnalysis {
+export function getFieldPacePressure(horses: HorseEntry[]): FieldPacePressureAnalysis {
   const activeHorses = horses.filter((h) => !h.isScratched);
 
-  // Get distance-adjusted thresholds
-  const thresholds = getEP1ThresholdsForDistance(distanceFurlongs);
-  const distanceType = getRaceDistanceType(distanceFurlongs);
-
-  // The threshold for "high EP1" varies by distance
-  // For routes, EP1 >= 80 is high; for sprints, EP1 >= 85 is high
-  const highEP1Threshold = thresholds.EP;
-
-  console.debug(
-    `[FIELD_PACE] Analyzing field pace pressure using ${distanceType} threshold (high EP1 >= ${highEP1Threshold})`
-  );
+  // Use static threshold for "high EP1" (85+)
+  const highEP1Threshold = EP1_STATIC_THRESHOLDS.EP;
 
   // Gather EP1 data for all horses
   const horsesWithEP1: Array<{ progNum: number; avgEP1: number; isHighEP1: boolean }> = [];
@@ -470,7 +427,7 @@ export function getFieldPacePressure(
       horsesWithEP1.push({
         progNum: horse.programNumber,
         avgEP1,
-        isHighEP1: avgEP1 >= highEP1Threshold, // Use distance-adjusted threshold
+        isHighEP1: avgEP1 >= highEP1Threshold,
       });
     }
   }
@@ -697,17 +654,13 @@ function analyzeRaceRunningStyle(pp: PastPerformance): RunningStyleEvidence {
 }
 
 /**
- * Parse running style from past performances with distance-adjusted EP1 thresholds
+ * Parse running style from past performances
  * Analyzes last 3 races to determine dominant running style
  * Enhanced with EP1/LP pace figure analysis when available
  *
  * @param horse - The horse entry to analyze
- * @param distanceFurlongs - Race distance in furlongs (null = default to sprint thresholds)
  */
-export function parseRunningStyle(
-  horse: HorseEntry,
-  distanceFurlongs?: number | null
-): RunningStyleProfile {
+export function parseRunningStyle(horse: HorseEntry): RunningStyleProfile {
   const pastPerfs = horse.pastPerformances.slice(0, 10); // Up to last 10 for evidence
 
   if (pastPerfs.length === 0) {
@@ -729,11 +682,8 @@ export function parseRunningStyle(
     };
   }
 
-  // Analyze pace figures first (EP1 and LP) with distance-adjusted thresholds
-  const paceFigures = analyzePaceFigures(horse, distanceFurlongs);
-
-  // Get distance-adjusted thresholds for EP1-based style override logic
-  const thresholds = getEP1ThresholdsForDistance(distanceFurlongs);
+  // Analyze pace figures first (EP1 and LP)
+  const paceFigures = analyzePaceFigures(horse);
 
   // Analyze each race
   const evidence = pastPerfs.map((pp) => analyzeRaceRunningStyle(pp));
@@ -773,27 +723,17 @@ export function parseRunningStyle(
     }
   }
 
-  // Use EP1 figures with distance-adjusted thresholds to validate/adjust running style classification
+  // Use EP1 figures to validate/adjust running style classification
   // EP1 provides more accurate classification than just position analysis
-  // For routes, lower EP1 values indicate early speed (e.g., 88+ vs 92+ for sprints)
   if (paceFigures.avgEarlyPace !== null) {
-    // Distance-adjusted speed classification
     if (paceFigures.isConfirmedSpeed && dominantStyle !== 'E') {
-      // High EP1 (route: 80+, sprint: 85+) overrides to Early Speed if not already classified
+      // High EP1 (85+) overrides to Early Speed if not already classified
       if (dominantStyle === 'P' || dominantStyle === 'U') {
-        console.debug(
-          `[PARSE_STYLE] ${horse.horseName} style overridden from ${dominantStyle} to E based on EP1=${paceFigures.avgEarlyPace} ` +
-            `(threshold: ${thresholds.EP})`
-        );
         dominantStyle = 'E';
       }
     } else if (paceFigures.isConfirmedCloser && dominantStyle !== 'C') {
-      // Low EP1 (route: <70, sprint: <75) or high LP (90+) indicates closer
+      // Low EP1 (<75) or high LP (90+) indicates closer
       if (paceFigures.hasClosingKick && dominantStyle !== 'E') {
-        console.debug(
-          `[PARSE_STYLE] ${horse.horseName} style overridden from ${dominantStyle} to C based on EP1=${paceFigures.avgEarlyPace} ` +
-            `(threshold: ${thresholds.P}) + closing kick`
-        );
         dominantStyle = 'C';
       }
     }
@@ -944,25 +884,14 @@ export function getPaceScenarioFromPPI(ppi: number): PaceScenarioType {
 }
 
 /**
- * Analyze the pace scenario for an entire field with distance-adjusted EP1 thresholds
+ * Analyze the pace scenario for an entire field
  *
  * @param horses - All horses in the race
- * @param distanceFurlongs - Race distance in furlongs (null = default to sprint thresholds)
  */
-export function analyzePaceScenario(
-  horses: HorseEntry[],
-  distanceFurlongs?: number | null
-): PaceScenarioAnalysis {
+export function analyzePaceScenario(horses: HorseEntry[]): PaceScenarioAnalysis {
   // Filter out scratched horses
   const activeHorses = horses.filter((h) => !h.isScratched);
   const fieldSize = activeHorses.length;
-
-  // Log distance type being used
-  const distanceType = getRaceDistanceType(distanceFurlongs);
-  console.debug(
-    `[PACE_SCENARIO] Analyzing pace scenario for ${fieldSize} horses ` +
-      `using ${distanceType} thresholds${distanceFurlongs ? ` (${distanceFurlongs}f)` : ''}`
-  );
 
   if (fieldSize === 0) {
     return {
@@ -983,7 +912,7 @@ export function analyzePaceScenario(
     };
   }
 
-  // Analyze each horse's running style with distance-adjusted thresholds
+  // Analyze each horse's running style
   const styleBreakdown: PaceScenarioAnalysis['styleBreakdown'] = {
     earlySpeed: [],
     pressers: [],
@@ -993,7 +922,7 @@ export function analyzePaceScenario(
   };
 
   for (const horse of activeHorses) {
-    const profile = parseRunningStyle(horse, distanceFurlongs);
+    const profile = parseRunningStyle(horse);
     const progNum = horse.programNumber;
 
     switch (profile.style) {
@@ -1030,8 +959,8 @@ export function analyzePaceScenario(
     fieldSize
   );
 
-  // Calculate field pace pressure using EP1 figures with distance-adjusted thresholds
-  const pacePressure = getFieldPacePressure(activeHorses, distanceFurlongs);
+  // Calculate field pace pressure using EP1 figures
+  const pacePressure = getFieldPacePressure(activeHorses);
 
   // If pace pressure analysis has high confidence, it may override the PPI-based scenario
   // This provides more accurate pace projection when EP1 data is available
@@ -1251,24 +1180,21 @@ function generateTacticalReasoning(
 
 /**
  * Perform complete pace analysis for a horse within a race context
- * Uses distance-adjusted EP1 thresholds for accurate running style classification.
  *
  * @param horse - The horse entry to analyze
  * @param allHorses - All horses in the race
  * @param preCalculatedScenario - Optional pre-calculated pace scenario
- * @param distanceFurlongs - Race distance in furlongs (null = default to sprint thresholds)
  */
 export function analyzePaceForHorse(
   horse: HorseEntry,
   allHorses: HorseEntry[],
-  preCalculatedScenario?: PaceScenarioAnalysis,
-  distanceFurlongs?: number | null
+  preCalculatedScenario?: PaceScenarioAnalysis
 ): PaceAnalysisResult {
-  // Get horse's running style profile with distance-adjusted thresholds
-  const profile = parseRunningStyle(horse, distanceFurlongs);
+  // Get horse's running style profile
+  const profile = parseRunningStyle(horse);
 
-  // Get field pace scenario with distance-adjusted thresholds (use pre-calculated if available)
-  const scenario = preCalculatedScenario ?? analyzePaceScenario(allHorses, distanceFurlongs);
+  // Get field pace scenario (use pre-calculated if available)
+  const scenario = preCalculatedScenario ?? analyzePaceScenario(allHorses);
 
   // Calculate tactical advantage
   const tactical = calculateTacticalAdvantage(profile.style, scenario.scenario);
@@ -1309,25 +1235,18 @@ export function analyzePaceForHorse(
 
 /**
  * Analyze pace for all horses in a race efficiently
- * Pre-calculates scenario once for performance with distance-adjusted thresholds
+ * Pre-calculates scenario once for performance
  *
  * @param horses - All horses in the race
- * @param distanceFurlongs - Race distance in furlongs (null = default to sprint thresholds)
  */
-export function analyzeRacePace(
-  horses: HorseEntry[],
-  distanceFurlongs?: number | null
-): Map<number, PaceAnalysisResult> {
-  // Pre-calculate scenario once with distance-adjusted thresholds
-  const scenario = analyzePaceScenario(horses, distanceFurlongs);
+export function analyzeRacePace(horses: HorseEntry[]): Map<number, PaceAnalysisResult> {
+  // Pre-calculate scenario once
+  const scenario = analyzePaceScenario(horses);
 
   const results = new Map<number, PaceAnalysisResult>();
 
   for (const horse of horses) {
-    results.set(
-      horse.programNumber,
-      analyzePaceForHorse(horse, horses, scenario, distanceFurlongs)
-    );
+    results.set(horse.programNumber, analyzePaceForHorse(horse, horses, scenario));
   }
 
   return results;
