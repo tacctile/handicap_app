@@ -64,11 +64,13 @@ Before we dive into how Furlong works, let's establish a foundation for those ne
 ## The Racetrack Layout
 
 A horse race takes place on a track that can be:
+
 - **Dirt** - The traditional American racing surface
 - **Turf** - Grass, common in European-style racing and many American tracks
 - **Synthetic** - Man-made all-weather surfaces (like Polytrack or Tapeta)
 
 Races are measured in **furlongs** (one furlong = 1/8 of a mile = 220 yards). Common race distances include:
+
 - **Sprint races**: 5-7 furlongs (fast, favors early speed horses)
 - **One-turn mile**: 8 furlongs
 - **Route races**: 1 1/16 miles to 1 1/4 miles (stamina becomes crucial)
@@ -85,6 +87,7 @@ Not all races are created equal. They're organized by class levels, from lowest 
 **Allowance Races** - Horses compete based on conditions (like "non-winners of two races" or "non-winners of $50,000 lifetime"). Higher quality than claiming.
 
 **Stakes Races** - The highest class. These include:
+
 - Listed stakes (lowest stakes tier)
 - Graded stakes (Grade III, Grade II, Grade I)
 - Grade I races are the pinnacle (Kentucky Derby, Breeders' Cup races)
@@ -117,22 +120,22 @@ The interaction between running styles in a race is called the **pace scenario**
 
 ## Common Terms You'll Encounter
 
-| Term | Definition |
-|------|------------|
-| **Beyer Speed Figure** | A standardized speed rating that allows comparison across tracks |
-| **Morning Line (ML)** | The track handicapper's estimated odds, set before betting begins |
-| **Post Position (PP)** | Which gate the horse starts from (1 = innermost, rail) |
-| **Furlong** | 1/8 mile (220 yards) |
-| **In the Money (ITM)** | Finishing 1st, 2nd, or 3rd |
-| **Overlay** | When the actual odds are higher than the horse's true probability suggests |
-| **Underlay** | When the odds are lower than they should be (bad value) |
-| **Chalk** | The favorite (lowest odds horse) |
-| **Longshot** | A horse with high odds (low probability of winning) |
-| **Scratch** | When a horse is withdrawn from a race |
-| **Blinkers** | Equipment that restricts peripheral vision to help a horse focus |
-| **Lasix** | A diuretic medication that prevents bleeding during exercise |
-| **Bullet Work** | The fastest workout of the day at that distance |
-| **Trip** | The journey a horse experienced during a race (good trip vs. troubled trip) |
+| Term                   | Definition                                                                  |
+| ---------------------- | --------------------------------------------------------------------------- |
+| **Beyer Speed Figure** | A standardized speed rating that allows comparison across tracks            |
+| **Morning Line (ML)**  | The track handicapper's estimated odds, set before betting begins           |
+| **Post Position (PP)** | Which gate the horse starts from (1 = innermost, rail)                      |
+| **Furlong**            | 1/8 mile (220 yards)                                                        |
+| **In the Money (ITM)** | Finishing 1st, 2nd, or 3rd                                                  |
+| **Overlay**            | When the actual odds are higher than the horse's true probability suggests  |
+| **Underlay**           | When the odds are lower than they should be (bad value)                     |
+| **Chalk**              | The favorite (lowest odds horse)                                            |
+| **Longshot**           | A horse with high odds (low probability of winning)                         |
+| **Scratch**            | When a horse is withdrawn from a race                                       |
+| **Blinkers**           | Equipment that restricts peripheral vision to help a horse focus            |
+| **Lasix**              | A diuretic medication that prevents bleeding during exercise                |
+| **Bullet Work**        | The fastest workout of the day at that distance                             |
+| **Trip**               | The journey a horse experienced during a race (good trip vs. troubled trip) |
 
 ---
 
@@ -143,6 +146,7 @@ The interaction between running styles in a race is called the **pace scenario**
 The **Daily Racing Form** (DRF) is the industry standard data provider for horse racing. A DRF file is a structured data file containing everything you need to know about a day's races at a particular track.
 
 Think of it as a spreadsheet with over 1,400 data fields per horse, covering:
+
 - The horse's complete racing history (last 10-12 races)
 - Speed figures from each race
 - Running positions at each call (start, quarter, half, stretch, finish)
@@ -188,7 +192,7 @@ Horse racing offers a variety of ways to wager, ranging from simple to complex. 
 
 **SHOW** - Your horse must finish first, second, OR third. Even lower payouts, but three chances to cash.
 
-*Strategy Note*: Place and Show bets are often undervalued for longshots. A 20:1 shot that finishes second still pays something meaningful on a Place bet, while a Win bet returns nothing.
+_Strategy Note_: Place and Show bets are often undervalued for longshots. A 20:1 shot that finishes second still pays something meaningful on a Place bet, while a Win bet returns nothing.
 
 ## Horizontal Exotics (Single Race, Multiple Horses)
 
@@ -231,6 +235,7 @@ Our betting suggestions emphasize:
 5. **Multi-race sequences** - Pick 3, Pick 4 for users who want larger potential returns
 
 We specifically identify three tiers of horses:
+
 - **Tier 1 (Contenders)**: The obvious players—safe to use
 - **Tier 2 (Logical Alternatives)**: Good horses offering value
 - **Tier 3 (Value Bombs)**: The diamonds in the rough—longshots with genuine upset potential
@@ -273,14 +278,14 @@ The betting public consistently makes predictable errors:
 
 Our system generates an **Overlay Score** ranging from -40 to +40 points on top of the base score. This overlay captures situational micro-edges:
 
-| Factor | What We're Looking For |
-|--------|----------------------|
-| Pace Dynamics | Will the pace favor this horse's running style? |
-| Trip Trouble History | Did this horse have excuses in recent races? |
-| Class Movement | Is this horse dropping in class with hidden quality? |
-| Vulnerable Favorite | Is the betting favorite beatable today? |
-| Field Spread | Is this a wide-open race where chaos favors longshots? |
-| Connection Hot Streaks | Is the trainer/jockey combination running hot? |
+| Factor                 | What We're Looking For                                 |
+| ---------------------- | ------------------------------------------------------ |
+| Pace Dynamics          | Will the pace favor this horse's running style?        |
+| Trip Trouble History   | Did this horse have excuses in recent races?           |
+| Class Movement         | Is this horse dropping in class with hidden quality?   |
+| Vulnerable Favorite    | Is the betting favorite beatable today?                |
+| Field Spread           | Is this a wide-open race where chaos favors longshots? |
+| Connection Hot Streaks | Is the trainer/jockey combination running hot?         |
 
 When multiple factors align for a single horse, that's when we get excited. That's our diamond in the rough.
 
@@ -301,25 +306,25 @@ Our "Diamond in Rough" override forces any horse scoring 140-170 with 150%+ over
 
 # Chapter 6: Our Scoring Philosophy - How We Evaluate Horses
 
-## The 331-Point Foundation
+## The 336-Point Foundation
 
-Every horse receives a base score from 0 to 331 points, distributed across multiple categories. The weights reflect what actually predicts race outcomes:
+Every horse receives a base score from 0 to 336 points, distributed across multiple categories. The weights reflect what actually predicts race outcomes:
 
 ### Score Distribution
 
-| Category | Points | % of Total | What It Measures |
-|----------|--------|-----------|------------------|
-| Speed & Class | 140 | 42.3% | Raw ability demonstrated in past races |
-| Form | 50 | 15.1% | Recent performance patterns and trends |
-| Pace | 35 | 10.6% | How today's race shape fits this horse |
-| Connections | 23 | 6.9% | Trainer, jockey, and their synergy |
-| Distance/Surface | 20 | 6.0% | Track and distance preferences |
-| Post Position | 12 | 3.6% | Starting gate advantage/disadvantage |
-| Odds Factor | 12 | 3.6% | Market wisdom (when useful) |
-| Track Specialist | 10 | 3.0% | History at today's specific track |
-| Equipment | 8 | 2.4% | Gear changes that signal intent |
-| Trainer Patterns | 8 | 2.4% | Situational trainer statistics |
-| Other Factors | 13 | 3.9% | Age, weight, breeding, combos |
+| Category         | Points | % of Total | What It Measures                       |
+| ---------------- | ------ | ---------- | -------------------------------------- |
+| Speed & Class    | 140    | 42.3%      | Raw ability demonstrated in past races |
+| Form             | 50     | 15.1%      | Recent performance patterns and trends |
+| Pace             | 35     | 10.6%      | How today's race shape fits this horse |
+| Connections      | 23     | 6.9%       | Trainer, jockey, and their synergy     |
+| Distance/Surface | 20     | 6.0%       | Track and distance preferences         |
+| Post Position    | 12     | 3.6%       | Starting gate advantage/disadvantage   |
+| Odds Factor      | 12     | 3.6%       | Market wisdom (when useful)            |
+| Track Specialist | 10     | 3.0%       | History at today's specific track      |
+| Equipment        | 8      | 2.4%       | Gear changes that signal intent        |
+| Trainer Patterns | 8      | 2.4%       | Situational trainer statistics         |
+| Other Factors    | 13     | 3.9%       | Age, weight, breeding, combos          |
 
 ### Speed & Class (140 points) - The Foundation
 
@@ -329,7 +334,7 @@ Speed figures are the single best predictor of race outcomes. We use Beyer Speed
 - A horse with improving figures earns a trend bonus
 - Class evaluation considers where the horse has competed and how it fared
 
-*Importantly*: We apply "recency decay" to older figures. A 95 Beyer from last month is worth more than a 95 Beyer from six months ago.
+_Importantly_: We apply "recency decay" to older figures. A 95 Beyer from last month is worth more than a 95 Beyer from six months ago.
 
 ### Form (50 points) - Current Condition
 
@@ -356,17 +361,17 @@ The base score is static—it reflects the horse's fundamental quality. The over
 - **Positive overlay**: Pace favors this horse, trainer pattern positive, troubled trips masked ability
 - **Negative overlay**: Wrong pace scenario, class rise too steep, connections cold
 
-This brings the final score range to 0-371 points (though most horses fall between 100-280).
+This brings the final score range to 0-376 points (though most horses fall between 100-280).
 
 ## What Our Score Tells You
 
-| Score Range | Interpretation |
-|-------------|---------------|
-| 220+ | Elite contender, likely short odds |
-| 180-219 | Strong contender, worth considering |
-| 160-179 | Playable alternative, potential value |
-| 140-159 | Upset possibility, need additional angles |
-| Below 140 | Long odds, only play with specific reason |
+| Score Range | Interpretation                            |
+| ----------- | ----------------------------------------- |
+| 220+        | Elite contender, likely short odds        |
+| 180-219     | Strong contender, worth considering       |
+| 160-179     | Playable alternative, potential value     |
+| 140-159     | Upset possibility, need additional angles |
+| Below 140   | Long odds, only play with specific reason |
 
 **Remember**: A 160-point horse at 8:1 odds may be a better bet than a 220-point horse at 2:1 odds. The score tells you ability; you must compare it to the odds to find value.
 
@@ -391,6 +396,7 @@ Our AI layer processes structured prompts through Google's Gemini model, special
 **Mission**: Identify horses whose recent poor finishes were caused by trouble, not lack of ability.
 
 This bot scans past performance comments and running lines looking for:
+
 - Blocked in traffic
 - Steadied or checked
 - Forced wide on turns
@@ -404,6 +410,7 @@ This bot scans past performance comments and running lines looking for:
 **Mission**: Project how the race will unfold and identify which horses benefit.
 
 Analyzes:
+
 - How many early speed horses are entered
 - Whether a speed duel is likely
 - If one horse will get a "lone speed" free ride
@@ -416,6 +423,7 @@ Analyzes:
 **Mission**: Identify when the betting favorite is beatable.
 
 Looks for:
+
 - Form decline (recent figures trending down)
 - Class rise (moving up in competition)
 - Pace disadvantage (wrong running style for today's scenario)
@@ -429,6 +437,7 @@ Looks for:
 **Mission**: Classify the competitive nature of the race.
 
 Race types:
+
 - **DOMINANT**: One clear standout (likely low-value race)
 - **SEPARATED**: Two tiers of horses, clear division
 - **COMPETITIVE**: Multiple viable contenders
@@ -440,9 +449,10 @@ Race types:
 
 **Mission**: Identify horses dropping in class who might be undervalued.
 
-*Important note*: This bot is **reinforcement-only**. It cannot create value candidates by itself—it can only strengthen signals from other bots. This prevents false positives from "chronic droppers" who keep losing despite class relief.
+_Important note_: This bot is **reinforcement-only**. It cannot create value candidates by itself—it can only strengthen signals from other bots. This prevents false positives from "chronic droppers" who keep losing despite class relief.
 
 Looks for:
+
 - Major drops (40%+ drop in class)
 - Moderate drops (25-39%)
 - Minor drops (20-24%)
@@ -454,12 +464,12 @@ Looks for:
 
 When multiple bots flag the same horse, confidence increases:
 
-| Scenario | Adjustment |
-|----------|-----------|
-| Trip trouble HIGH + Pace advantage | +3 points, HIGH confidence |
-| Trip trouble + Class drop + Pace neutral | +2 points, MEDIUM confidence |
-| Vulnerable favorite + Pace disadvantage | Favorite demoted -2 points |
-| Single bot flag only | +1 point max, requires caution |
+| Scenario                                 | Adjustment                     |
+| ---------------------------------------- | ------------------------------ |
+| Trip trouble HIGH + Pace advantage       | +3 points, HIGH confidence     |
+| Trip trouble + Class drop + Pace neutral | +2 points, MEDIUM confidence   |
+| Vulnerable favorite + Pace disadvantage  | Favorite demoted -2 points     |
+| Single bot flag only                     | +1 point max, requires caution |
 
 The maximum adjustment is capped at ±3 points to prevent AI from overriding the algorithm's mathematical foundation.
 
@@ -494,6 +504,7 @@ You can drag-and-drop the file or click to browse. The file uploads, and within 
 Once parsing completes, you see the **Overview**—a card for each race on the day's card:
 
 Each race card shows:
+
 - Race number and conditions (distance, surface, class)
 - Field size
 - **Race Verdict**: BET (opportunities exist), CAUTION (proceed carefully), or PASS (skip this race)
@@ -507,11 +518,13 @@ Click any race card to dive into the analysis.
 This is where the magic happens. For your selected race:
 
 ### Top Section: Race Header
+
 - Track, race number, post time
 - Distance, surface, conditions
 - AI confidence tier
 
 ### AI Analysis Panel (Collapsible)
+
 - Race narrative from the AI
 - Template recommendation
 - Field type (CHALK, COMPETITIVE, WIDE_OPEN)
@@ -519,7 +532,9 @@ This is where the magic happens. For your selected race:
 - Identified value horses with signal strength
 
 ### Horse List
+
 Every horse in the race with sortable columns:
+
 - POST (gate position)
 - RANK (our projected finish order)
 - ODDS (current/morning line—editable if you have live odds)
@@ -528,6 +543,7 @@ Every horse in the race with sortable columns:
 - EDGE (net expected value)
 
 Click any horse to expand and see:
+
 - Full scoring breakdown by category
 - Past performance summary
 - Key strength and weakness
@@ -535,13 +551,16 @@ Click any horse to expand and see:
 - Betting tier classification
 
 ### Betting Recommendations Panel
+
 Suggested bets organized by type:
+
 - Win/Place/Show suggestions with amounts
 - Exacta structures
 - Trifecta configurations
 - Any special plays (Value Bombs, Hidden Gems)
 
 Each bet shows:
+
 - Recommended stake (based on your bankroll settings)
 - Expected Value (EV)
 - Confidence level
@@ -554,6 +573,7 @@ For quick betting, switch to **Top Bets**—a six-column layout:
 | WIN | PLACE | SHOW | EXACTA | TRIFECTA | SUPERFECTA |
 
 Each column shows the best plays for that bet type, sortable by:
+
 - Confidence
 - ROI potential
 - ITM (in the money) probability
@@ -565,21 +585,27 @@ This view is perfect for the serious bettor who wants to quickly identify their 
 ## Additional Features
 
 ### Bankroll Settings
+
 Configure your total bankroll and risk tolerance. The app adjusts bet sizing automatically:
+
 - Conservative: Small bets, only highest-confidence plays
 - Balanced: Moderate bets across all tiers
 - Aggressive: Larger bets, more value bomb exposure
 
 ### Kelly Calculator
+
 Advanced users can see the mathematically optimal bet size based on the Kelly Criterion (explained in Chapter 9).
 
 ### Exotic Builder
+
 Manually construct exotic bets (Pick 3, Pick 4) by selecting horses across consecutive races. The app calculates total ticket cost and potential payouts.
 
 ### Live Session Sharing
+
 Share your analysis with friends via a unique link. They can view your picks in real-time without needing to upload the DRF file themselves.
 
 ### Offline Capability
+
 As a Progressive Web App (PWA), Furlong works offline once loaded. Perfect for the track when cell service is spotty.
 
 ---
@@ -612,17 +638,18 @@ A $1,000 bankroll would suggest a $16.60 bet.
 ## Our Kelly Approach
 
 Full Kelly is mathematically optimal but has high variance. We default to **Quarter Kelly** (25% of the calculated optimal), which:
+
 - Reduces volatility significantly
 - Still captures the benefits of proportional betting
 - Protects against model uncertainty
 
 ### Risk Profiles
 
-| Profile | Kelly Fraction | Max Bet | Target User |
-|---------|---------------|---------|-------------|
-| Conservative | 1/8 Kelly | 1% of bankroll | Beginners, capital preservation |
-| Balanced | 1/4 Kelly | 2% of bankroll | Most users (default) |
-| Aggressive | 1/2 Kelly | 5% of bankroll | Experienced, higher risk tolerance |
+| Profile      | Kelly Fraction | Max Bet        | Target User                        |
+| ------------ | -------------- | -------------- | ---------------------------------- |
+| Conservative | 1/8 Kelly      | 1% of bankroll | Beginners, capital preservation    |
+| Balanced     | 1/4 Kelly      | 2% of bankroll | Most users (default)               |
+| Aggressive   | 1/2 Kelly      | 5% of bankroll | Experienced, higher risk tolerance |
 
 ## Practical Constraints
 
@@ -697,6 +724,7 @@ The heart of Furlong is a deterministic scoring engine:
 Horse racing generates approximately **$12 billion annually** in handle (total amount wagered) in the United States alone. Globally, the figure exceeds $100 billion.
 
 The demographic is shifting:
+
 - Traditional track attendance declining
 - Mobile/online betting growing rapidly
 - Younger bettors seeking data-driven approaches
@@ -715,6 +743,7 @@ Current options for horseplayers:
 **Professional software**: Steep learning curves, Windows-only, expensive subscriptions
 
 Furlong offers:
+
 - Professional-grade analysis
 - Modern, mobile-friendly experience
 - AI-augmented insights
@@ -724,6 +753,7 @@ Furlong offers:
 ## Revenue Model
 
 **Freemium Structure**:
+
 - Free tier: Basic scoring, limited races
 - Standard tier: Full AI analysis, unlimited races
 - Pro tier: Advanced features, multi-track support, exotic builders
@@ -756,7 +786,7 @@ Furlong provides the tools to find that edge:
 
 **Data**: We parse and structure the complete DRF dataset—1,400+ fields of racing intelligence.
 
-**Algorithm**: Our 331-point scoring system, refined through extensive research, quantifies each horse's fundamental quality.
+**Algorithm**: Our 336-point scoring system, refined through extensive research, quantifies each horse's fundamental quality.
 
 **AI**: Five specialized bots analyze race dynamics, trip trouble, pace scenarios, and vulnerable favorites to surface insights pure math might miss.
 
@@ -770,4 +800,4 @@ The diamond in the rough is out there. We help you find it.
 
 ---
 
-*Furlong: Professional Handicapping. Value Hunting. Your Edge.*
+_Furlong: Professional Handicapping. Value Hunting. Your Edge._

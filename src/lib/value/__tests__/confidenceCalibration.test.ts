@@ -60,7 +60,7 @@ describe('getDefaultCalibration', () => {
   it('should have tiers covering full score range', () => {
     const calibration = getDefaultCalibration();
 
-    // Verify tiers cover full score range (0-330)
+    // Verify tiers cover full score range (0-336)
     const minScore = Math.min(...calibration.tiers.map((t) => t.minScore));
     const maxScore = Math.max(...calibration.tiers.map((t) => t.maxScore));
 

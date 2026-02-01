@@ -42,37 +42,37 @@ describe('Overlay Analysis', () => {
   describe('Score to Win Probability Conversion', () => {
     it('converts 200 pts → ~30.2% win probability (standalone formula)', () => {
       const probability = scoreToWinProbability(200);
-      // Model B formula: (200/331) * 50 = 30.21%
+      // Model B formula: (200/336) * 50 = 29.76%
       expect(probability).toBeCloseTo(30.21, 0);
     });
 
     it('converts 140 pts → ~21.1% win probability (standalone formula)', () => {
       const probability = scoreToWinProbability(140);
-      // Model B formula: (140/331) * 50 = 21.15%
+      // Model B formula: (140/336) * 50 = 20.83%
       expect(probability).toBeCloseTo(21.15, 0);
     });
 
     it('converts 100 pts → ~15.1% win probability (standalone formula)', () => {
       const probability = scoreToWinProbability(100);
-      // Model B formula: (100/331) * 50 = 15.11%
+      // Model B formula: (100/336) * 50 = 14.88%
       expect(probability).toBeCloseTo(15.11, 0);
     });
 
     it('converts 150 pts → ~22.7% win probability (standalone formula)', () => {
       const probability = scoreToWinProbability(150);
-      // Model B formula: (150/331) * 50 = 22.66%
+      // Model B formula: (150/336) * 50 = 22.32%
       expect(probability).toBeCloseTo(22.66, 0);
     });
 
     it('converts 50 pts → ~7.6% win probability', () => {
       const probability = scoreToWinProbability(50);
-      // Model B formula: (50/331) * 50 = 7.55%
+      // Model B formula: (50/336) * 50 = 7.44%
       expect(probability).toBeCloseTo(7.55, 0);
     });
 
     it('converts 250 pts → ~37.8% win probability', () => {
       const probability = scoreToWinProbability(250);
-      // Model B formula: (250/331) * 50 = 37.76%
+      // Model B formula: (250/336) * 50 = 37.20%
       expect(probability).toBeCloseTo(37.76, 0);
     });
 
@@ -397,7 +397,7 @@ describe('Overlay Analysis', () => {
    */
   describe('Analyze Overlay (Integration)', () => {
     it('performs complete analysis for overlay bet', () => {
-      // Score 160 = (160/331)*50 = 24.2% win prob = fair odds 4.1
+      // Score 160 = (160/336)*50 = 23.8% win prob = fair odds 4.2
       // Actual 5-1 = 6.0 decimal
       // Overlay = (6.0 - 4.1) / 4.1 = 46% overlay
       const analysis = analyzeOverlay(160, '5-1');
@@ -412,7 +412,7 @@ describe('Overlay Analysis', () => {
     });
 
     it('performs complete analysis for underlay bet', () => {
-      // Score 200 = (200/331)*50 = 30.2% win prob = fair odds 3.31
+      // Score 200 = (200/336)*50 = 29.8% win prob = fair odds 3.36
       // Actual 1-9 = 1.11 decimal (heavy favorite at bad odds)
       // Overlay = (1.11 - 3.31) / 3.31 = -66% (severe underlay)
       const analysis = analyzeOverlay(200, '1-9');
@@ -425,7 +425,7 @@ describe('Overlay Analysis', () => {
     });
 
     it('performs complete analysis for fair price bet', () => {
-      // Score 100 = (100/331)*50 = 15.1% win prob = fair odds 6.62
+      // Score 100 = (100/336)*50 = 14.9% win prob = fair odds 6.71
       // Actual 3-1 = 4.0 decimal
       // Overlay = (4.0 - 6.62) / 6.62 = -40% (underlay, actually)
       const analysis = analyzeOverlay(100, '3-1');
@@ -668,7 +668,7 @@ describe('Overlay Analysis', () => {
    */
   describe('Edge Cases', () => {
     it('handles 0 odds gracefully', () => {
-      // Score 150 → (150/331)*50 = 22.66%
+      // Score 150 → (150/336)*50 = 22.32%
       const analysis = analyzeOverlay(150, '0');
 
       // Should not throw and should return reasonable values
@@ -684,7 +684,7 @@ describe('Overlay Analysis', () => {
     });
 
     it('handles score out of expected range (very low)', () => {
-      // Score 10 → (10/331)*50 = 1.51% → clamps to 2%
+      // Score 10 → (10/336)*50 = 1.49% → clamps to 2%
       const analysis = analyzeOverlay(10, '10-1');
 
       expect(analysis.winProbability).toBe(2); // Clamped minimum
@@ -692,7 +692,7 @@ describe('Overlay Analysis', () => {
     });
 
     it('handles score out of expected range (very high)', () => {
-      // Model B: Score 300 → (300/331)*50 = 45.32% (not quite 50%)
+      // Model B: Score 300 → (300/336)*50 = 44.64% (not quite 50%)
       // Fair odds = 1/0.4532 = 2.21 (about 6-5)
       // Actual 2-1 = 3.0 decimal
       const analysis = analyzeOverlay(300, '2-1');
@@ -763,7 +763,7 @@ describe('Overlay Analysis', () => {
    */
   describe('Real-World Racing Scenarios', () => {
     it('analyzes a favorite with short odds (tests overlay calculation)', () => {
-      // Score 180 → (180/331)*50 = 27.2% win prob
+      // Score 180 → (180/336)*50 = 26.8% win prob
       // Fair odds = 1/0.272 = 3.68 (about 7-2)
       // 4-5 = 1.8 decimal
       const analysis = analyzeOverlay(180, '4-5');
@@ -776,7 +776,7 @@ describe('Overlay Analysis', () => {
     });
 
     it('analyzes a longshot with good odds (overlay)', () => {
-      // Score 100 → (100/331)*50 = 15.1% win prob
+      // Score 100 → (100/336)*50 = 14.9% win prob
       // Fair odds = 1/0.151 = 6.62 (about 11-2)
       // 8-1 = 9.0 decimal
       const analysis = analyzeOverlay(100, '8-1');
@@ -790,7 +790,7 @@ describe('Overlay Analysis', () => {
     });
 
     it('analyzes Penn National value play scenario', () => {
-      // Score 145 → (145/331)*50 = 21.9% win prob
+      // Score 145 → (145/336)*50 = 21.6% win prob
       // Fair odds = 1/0.219 = 4.57 (about 7-2)
       // 12-1 = 13.0 decimal
       const analysis = analyzeOverlay(145, '12-1');
@@ -804,7 +804,7 @@ describe('Overlay Analysis', () => {
     });
 
     it('identifies chalk play as underlay when odds are too short', () => {
-      // Score 185 → (185/331)*50 = 27.9% win prob
+      // Score 185 → (185/336)*50 = 27.5% win prob
       // Fair odds = 1/0.279 = 3.58 (about 5-2)
       // 2-5 = 1.4 decimal
       const analysis = analyzeOverlay(185, '2-5');
@@ -816,7 +816,7 @@ describe('Overlay Analysis', () => {
     });
 
     it('handles classic value bet: mid-odds horse at overlay', () => {
-      // Model B: Score 130 → (130/331)*50 = 19.64% win prob
+      // Model B: Score 130 → (130/336)*50 = 19.35% win prob
       // Fair odds = 1/0.1964 = 5.09 (about 4-1)
       // 5-1 = 6.0 decimal
       const analysis = analyzeOverlay(130, '5-1');

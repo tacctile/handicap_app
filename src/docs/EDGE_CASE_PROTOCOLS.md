@@ -336,7 +336,7 @@ ENHANCEMENT FACTORS:
 - Situation Bonus: [+XX points] - [specific advantage]
 
 TOTAL ENHANCEMENT: +[XX] points
-ADJUSTED SCORE: [XXX]/371 points
+ADJUSTED SCORE: [XXX]/376 points
 ENHANCED CONFIDENCE: [XX]% (breeding-supported projection)
 
 ⚠️ LIMITED DATA ADVISORY: Projection based on breeding/connections due to limited racing history
