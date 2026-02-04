@@ -159,8 +159,8 @@ export function scoreToWinProbability(
   score: number,
   calibration: CalibrationProfile = getDefaultCalibration()
 ): number {
-  // Validate score (330 = max base score)
-  const validScore = Math.max(0, Math.min(330, score));
+  // Validate score (336 = max base score)
+  const validScore = Math.max(0, Math.min(336, score));
 
   // Find matching tier
   for (const tier of calibration.tiers) {

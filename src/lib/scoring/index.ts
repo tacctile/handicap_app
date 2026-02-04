@@ -1312,7 +1312,7 @@ function calculateHorseScoreWithContext(
   const overlayScore = enforceOverlayBoundaries(overlayResult.cappedScore);
 
   // Final score = Base + Overlay (with boundary enforcement)
-  // Ensures score is floored at MIN_SCORE (0) and capped at MAX_FINAL_SCORE (371)
+  // Ensures score is floored at MIN_SCORE (0) and capped at MAX_FINAL_SCORE (376)
   const total = enforceScoreBoundaries(baseScore + overlayScore);
 
   // Add overlay to breakdown

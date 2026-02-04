@@ -633,7 +633,7 @@ describe('formatHorseForPrompt', () => {
     // Core header
     expect(result).toContain('#5 Value Hunter');
     expect(result).toContain('Algorithm Rank: 1');
-    expect(result).toContain('Score: 185/371');
+    expect(result).toContain('Score: 185/376');
 
     // Form indicators
     expect(result).toContain('Days Off: 14');
@@ -940,7 +940,7 @@ describe('buildRaceAnalysisPrompt', () => {
     const prompt = buildRaceAnalysisPrompt(race, scoringResult);
 
     expect(prompt).toContain('Algorithm Rank: 1');
-    expect(prompt).toContain('Score: 185/371');
+    expect(prompt).toContain('Score: 185/376');
     expect(prompt).toContain('Tier: high');
     expect(prompt).toContain('Speed 52/105');
     expect(prompt).toContain('Class 40/35');
