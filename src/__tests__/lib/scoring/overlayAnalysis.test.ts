@@ -24,13 +24,13 @@ describe('Overlay Analysis', () => {
     // MAX_BASE_SCORE = 336 per ALGORITHM_REFERENCE.md.
     it('converts score 160 to approximately 24% win probability', () => {
       const prob = scoreToWinProbability(160);
-      // (160/331) * 50 = 24.17%
+      // (160/336) * 50 = 23.81%
       expect(prob).toBeCloseTo(24, 0);
     });
 
     it('converts score 200 to approximately 30% win probability', () => {
       const prob = scoreToWinProbability(200);
-      // (200/331) * 50 = 30.21%
+      // (200/336) * 50 = 29.76%
       expect(prob).toBeCloseTo(30, 0);
     });
 
@@ -290,14 +290,14 @@ describe('Overlay Analysis', () => {
         expect(result.tierShift).toBe(0);
       });
 
-      it('clamps adjusted score to 0-330 range', () => {
+      it('clamps adjusted score to 0-336 range', () => {
         // Very low score with overlay
         const low = calculateTierAdjustment(10, 10, 160);
         expect(low.adjustedScore).toBe(40); // 10 + 30
 
-        // Very high score with overlay (330 = max base score)
+        // Very high score with overlay (336 = max base score)
         const high = calculateTierAdjustment(320, 320, 160);
-        expect(high.adjustedScore).toBe(330); // Clamped at max base score
+        expect(high.adjustedScore).toBe(336); // Clamped at max base score
       });
     });
   });

@@ -154,7 +154,7 @@ describe('Main Scoring Engine', () => {
   });
 
   describe('SCORE_LIMITS Enforcement', () => {
-    it('total score is capped at MAX_SCORE (371)', () => {
+    it('total score is capped at MAX_SCORE (376)', () => {
       // Create a horse that would score very high in all categories
       const horse = createHorseEntry({
         postPosition: 4,
@@ -426,7 +426,7 @@ describe('Main Scoring Engine', () => {
     });
 
     /**
-     * getScoreColor tests - based on BASE SCORE (0-331 range)
+     * getScoreColor tests - based on BASE SCORE (0-336 range)
      *
      * Updated thresholds match getScoreTier:
      * 270+ = Elite (Green), 220-269 = Strong (Light Green),
@@ -447,7 +447,7 @@ describe('Main Scoring Engine', () => {
     });
 
     /**
-     * getScoreTier tests - based on BASE SCORE (0-331 range)
+     * getScoreTier tests - based on BASE SCORE (0-336 range)
      *
      * Updated thresholds:
      * | Base Score | Percentage | Rating     |
@@ -460,11 +460,11 @@ describe('Main Scoring Engine', () => {
      */
     describe('getScoreTier', () => {
       it('returns correct tier names based on base score', () => {
-        expect(getScoreTier(280)).toBe('Elite'); // 85% of 331
-        expect(getScoreTier(250)).toBe('Strong'); // 76% of 331
-        expect(getScoreTier(190)).toBe('Contender'); // 57% of 331
-        expect(getScoreTier(145)).toBe('Fair'); // 44% of 331
-        expect(getScoreTier(100)).toBe('Weak'); // 30% of 331
+        expect(getScoreTier(280)).toBe('Elite'); // 83% of 336
+        expect(getScoreTier(250)).toBe('Strong'); // 74% of 336
+        expect(getScoreTier(190)).toBe('Contender'); // 57% of 336
+        expect(getScoreTier(145)).toBe('Fair'); // 43% of 336
+        expect(getScoreTier(100)).toBe('Weak'); // 30% of 336
       });
     });
   });

@@ -288,7 +288,7 @@ export function calculatePaperTigerPenalty(
  * Ensures:
  * - Score is a valid finite number
  * - Score is floored at MIN_SCORE (0)
- * - Score is capped at MAX_FINAL_SCORE (371)
+ * - Score is capped at MAX_FINAL_SCORE (376)
  * - Score is rounded to integer
  *
  * @param score - The raw score to enforce bounds on

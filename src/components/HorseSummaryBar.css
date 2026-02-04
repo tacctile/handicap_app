@@ -183,7 +183,7 @@
   overflow: visible;
 }
 
-/* PROJECTED FINISH - projected finish order based on base score (X/331)
+/* PROJECTED FINISH - projected finish order based on base score (X/336)
    Number sized similarly to POST position for visual consistency
    Color is set dynamically via inline style using gradient from teal to gray */
 .horse-summary-bar__rank {
