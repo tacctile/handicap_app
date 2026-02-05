@@ -505,14 +505,16 @@ describe('Trainer Patterns Scoring', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 200,
         trainerCategoryStats: createTrainerCategoryStats({
-          days181plus: createTrainerStat(25, 12),
+          // v4.0: Need 15+ starts for full credit (was 12, now 15)
+          days181plus: createTrainerStat(25, 15),
         }),
       });
       const header = createRaceHeader();
 
       const result = calculateTrainerPatternScore(horse, header);
 
-      expect(result.total).toBe(2); // v3.0: scaled down from 3 to 2
+      // v4.0: With 15 starts, gets full credit (100%)
+      expect(result.total).toBe(2);
       expect(result.matchedPatterns[0]?.pattern).toBe('days181plus');
     });
   });

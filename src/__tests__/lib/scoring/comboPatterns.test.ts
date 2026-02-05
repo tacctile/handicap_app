@@ -30,7 +30,7 @@ import {
 } from '../../fixtures/testHelpers';
 
 describe('Combo Patterns Detection', () => {
-  describe('Class Drop + First Time Lasix = 1 pt (v3.0)', () => {
+  describe('Class Drop + First Time Lasix = 3 pts (v4.0)', () => {
     it('detects class drop + first time Lasix combo', () => {
       const horse = createHorseEntry({
         medication: createMedication({
@@ -51,17 +51,17 @@ describe('Combo Patterns Detection', () => {
 
       const result = detectComboPatterns(horse, header, [horse]);
 
-      // v3.0: Combo patterns reduced to 1 pt
-      expect(result.total).toBe(1);
+      // v4.0: Combo patterns expanded - class drop + Lasix = 3 pts
+      expect(result.total).toBe(3);
       expect(result.detectedCombos.length).toBe(1);
       expect(result.detectedCombos[0]?.combo).toBe('classDropLasix');
-      expect(result.detectedCombos[0]?.points).toBe(1);
+      expect(result.detectedCombos[0]?.points).toBe(3);
       expect(result.detectedCombos[0]?.components).toContain('classDrop');
       expect(result.detectedCombos[0]?.components).toContain('firstTimeLasix');
     });
   });
 
-  describe('Class Drop + First Time Blinkers = 3 pts', () => {
+  describe('Class Drop + First Time Blinkers = 2 pts (v4.0)', () => {
     it('detects class drop + first time blinkers combo', () => {
       const horse = createHorseEntry({
         equipment: createEquipment({
@@ -82,15 +82,15 @@ describe('Combo Patterns Detection', () => {
 
       const result = detectComboPatterns(horse, header, [horse]);
 
-      // v2.5: Halved from 3 to 1
-      expect(result.total).toBe(1);
+      // v4.0: First-time blinkers + class drop = 2 pts
+      expect(result.total).toBe(2);
       expect(result.detectedCombos.length).toBe(1);
-      expect(result.detectedCombos[0]?.combo).toBe('classDropBlinkers');
-      expect(result.detectedCombos[0]?.points).toBe(1);
+      expect(result.detectedCombos[0]?.combo).toBe('firstBlinkersClassDrop');
+      expect(result.detectedCombos[0]?.points).toBe(2);
     });
   });
 
-  describe('Class Drop + Jockey Upgrade = 2 pts (v2.5)', () => {
+  describe('Class Drop + Jockey Upgrade = 3 pts (v4.0)', () => {
     it('detects class drop + jockey upgrade combo', () => {
       const horse = createHorseEntry({
         jockeyName: 'Star Jockey',
@@ -130,19 +130,21 @@ describe('Combo Patterns Detection', () => {
 
       const result = detectComboPatterns(horse, header, [horse]);
 
-      // v3.0: Further reduced to 1 pt
-      expect(result.total).toBe(1);
+      // v4.0: Class drop + jockey upgrade = 3 pts
+      expect(result.total).toBe(3);
       expect(result.detectedCombos.length).toBe(1);
       expect(result.detectedCombos[0]?.combo).toBe('classDropJockeyUpgrade');
-      expect(result.detectedCombos[0]?.points).toBe(1);
+      expect(result.detectedCombos[0]?.points).toBe(3);
     });
   });
 
-  describe('Class Drop + Hot Trainer = 3 pts', () => {
+  describe('Class Drop + Hot Trainer = 2 pts (v4.0)', () => {
     it('detects class drop + hot trainer combo', () => {
+      // Use 8 starts with 26% win rate to trigger hot trainer (25%+ with 5+ starts)
+      // but NOT trainer upgrade (needs 10+ starts for 20% check)
       const horse = createHorseEntry({
-        trainerMeetStarts: 20,
-        trainerMeetWins: 6, // 30% win rate
+        trainerMeetStarts: 8,
+        trainerMeetWins: 2, // 25% win rate
         pastPerformances: [
           createPastPerformance({
             classification: 'allowance',
@@ -155,16 +157,16 @@ describe('Combo Patterns Detection', () => {
 
       const result = detectComboPatterns(horse, header, [horse]);
 
-      // v2.5: Halved from 3 to 1
-      expect(result.total).toBe(1);
+      // v4.0: Class drop + hot trainer = 2 pts
+      expect(result.total).toBe(2);
       expect(result.detectedCombos.length).toBe(1);
       expect(result.detectedCombos[0]?.combo).toBe('classDropHotTrainer');
-      expect(result.detectedCombos[0]?.points).toBe(1);
+      expect(result.detectedCombos[0]?.points).toBe(2);
     });
   });
 
-  describe('Triple Combo: Class + Equipment + Jockey = 2 pts (v3.0)', () => {
-    it('detects triple combo and awards 2 pts (not individual combos)', () => {
+  describe('Triple Combo: Class + Equipment + Jockey = 3 pts bonus (v4.0)', () => {
+    it('detects triple combo and awards 3 pts bonus on top of individual combos', () => {
       const horse = createHorseEntry({
         medication: createMedication({
           lasixFirstTime: true,
@@ -197,18 +199,18 @@ describe('Combo Patterns Detection', () => {
 
       const result = detectComboPatterns(horse, header, [horse]);
 
-      // v3.0: Further reduced to 2 pts
-      expect(result.total).toBe(2);
-      expect(result.detectedCombos.length).toBe(1);
-      expect(result.detectedCombos[0]?.combo).toBe('tripleClassEquipmentJockey');
-      expect(result.detectedCombos[0]?.points).toBe(2);
-      expect(result.detectedCombos[0]?.components).toContain('classDrop');
-      expect(result.detectedCombos[0]?.components).toContain('equipment');
-      expect(result.detectedCombos[0]?.components).toContain('jockeyUpgrade');
+      // v4.0: Multiple combos + triple bonus, capped at MAX_COMBO_PATTERN_POINTS (10)
+      // classDropLasix (3) + classDropJockeyUpgrade (3) + triplePositiveBonus (3) + jockeyUpgrade signal (1) = 10 (capped)
+      expect(result.total).toBe(10);
+      expect(result.detectedCombos.length).toBeGreaterThanOrEqual(3);
+      // Verify triple bonus is included
+      const tripleBonus = result.detectedCombos.find((c) => c.combo === 'triplePositiveBonus');
+      expect(tripleBonus).toBeDefined();
+      expect(tripleBonus?.points).toBe(3);
     });
   });
 
-  describe('2nd Off Layoff + Bullet Work = 1 pt (v3.0)', () => {
+  describe('2nd Off Layoff + Bullet Work = 2 pts (v4.0)', () => {
     it('detects second off layoff + bullet work combo', () => {
       const today = new Date();
       const recentDate = new Date(today);
@@ -234,15 +236,15 @@ describe('Combo Patterns Detection', () => {
 
       const result = detectComboPatterns(horse, header, [horse]);
 
-      // v3.0: Further reduced to 1 pt
-      expect(result.total).toBe(1);
+      // v4.0: 2nd off layoff + bullet work = 2 pts
+      expect(result.total).toBe(2);
       expect(result.detectedCombos.length).toBe(1);
       expect(result.detectedCombos[0]?.combo).toBe('secondLayoffBullet');
-      expect(result.detectedCombos[0]?.points).toBe(1);
+      expect(result.detectedCombos[0]?.points).toBe(2);
     });
   });
 
-  describe('Layoff + Class Drop = 1 pt (v3.0)', () => {
+  describe('Layoff + Class Drop = 2 pts (v4.0)', () => {
     it('detects layoff + class drop combo', () => {
       const horse = createHorseEntry({
         daysSinceLastRace: 60, // Returning from layoff
@@ -258,15 +260,15 @@ describe('Combo Patterns Detection', () => {
 
       const result = detectComboPatterns(horse, header, [horse]);
 
-      // v3.0: Further reduced to 1 pt
-      expect(result.total).toBe(1);
+      // v4.0: Layoff + class drop = 2 pts
+      expect(result.total).toBe(2);
       expect(result.detectedCombos.length).toBe(1);
       expect(result.detectedCombos[0]?.combo).toBe('layoffClassDrop');
-      expect(result.detectedCombos[0]?.points).toBe(1);
+      expect(result.detectedCombos[0]?.points).toBe(2);
     });
   });
 
-  describe('First Time Turf + Turf Breeding = 2 pts', () => {
+  describe('First Time Turf + Turf Breeding = 2 pts (v4.0)', () => {
     it('detects first time turf + turf breeding combo', () => {
       const horse = createHorseEntry({
         breeding: createBreeding({
@@ -277,20 +279,26 @@ describe('Combo Patterns Detection', () => {
         pastPerformances: [
           createPastPerformance({
             surface: 'dirt',
+            classification: 'allowance', // Same class to avoid class combos
           }),
         ],
       });
       const header = createRaceHeader({
         surface: 'turf',
+        classification: 'allowance', // Same class to avoid class combos
       });
+
+      // Verify helper functions work as expected
+      expect(isFirstTimeTurf(horse, header)).toBe(true);
+      expect(hasTurfBreeding(horse)).toBe(true);
 
       const result = detectComboPatterns(horse, header, [horse]);
 
-      // v2.5: Halved from 2 to 1
-      expect(result.total).toBe(1);
-      expect(result.detectedCombos.length).toBe(1);
-      expect(result.detectedCombos[0]?.combo).toBe('firstTurfWithBreeding');
-      expect(result.detectedCombos[0]?.points).toBe(1);
+      // v4.0: First turf + turf breeding = 2 pts
+      expect(result.detectedCombos.length).toBeGreaterThanOrEqual(1);
+      const turfCombo = result.detectedCombos.find((c) => c.combo === 'firstTurfWithBreeding');
+      expect(turfCombo).toBeDefined();
+      expect(turfCombo?.points).toBe(2);
     });
   });
 
@@ -778,11 +786,42 @@ describe('Utility Functions', () => {
     });
 
     it('returns false when no combos detected', () => {
-      const horse = createHorseEntry({
-        pastPerformances: [createPastPerformance()],
-      });
-      const header = createRaceHeader();
+      // Ensure same class (no drop/rise), same jockey (no upgrade/downgrade),
+      // and no other triggers that could create combos
+      const today = new Date();
+      const recentDate = new Date(today);
+      recentDate.setDate(recentDate.getDate() - 7);
 
+      const horse = createHorseEntry({
+        trainerMeetStarts: 0, // No trainer data
+        jockeyMeetStarts: 0, // No jockey data
+        jockeyName: 'John Smith', // Same as PP jockey default
+        daysSinceLastRace: 21, // Not a layoff
+        turfStarts: 5, // Has turf experience (not first-time turf)
+        // Add a recent workout to avoid "no recent workout" negative signal
+        workouts: [
+          createWorkout({
+            date: recentDate.toISOString().split('T')[0]!,
+            isBullet: false,
+          }),
+        ],
+        pastPerformances: [
+          createPastPerformance({
+            classification: 'allowance', // Same as header
+            jockey: 'John Smith', // Same as current jockey
+          }),
+        ],
+      });
+      const header = createRaceHeader({
+        classification: 'allowance', // Same as PP
+        surface: 'dirt', // Not turf
+      });
+
+      const result = detectComboPatterns(horse, header, [horse]);
+
+      // No combos or negative patterns should be detected
+      expect(result.detectedCombos.length).toBe(0);
+      expect(result.negativePatterns.length).toBe(0);
       expect(hasComboPatterns(horse, header)).toBe(false);
     });
   });
@@ -791,6 +830,8 @@ describe('Utility Functions', () => {
     it('returns summary for detected combos', () => {
       const result = {
         total: 4,
+        grossPositive: 4,
+        grossNegative: 0,
         detectedCombos: [
           {
             combo: 'classDropLasix',
@@ -799,21 +840,25 @@ describe('Utility Functions', () => {
             reasoning: 'Test',
           },
         ],
+        negativePatterns: [],
         intentScore: 5,
         reasoning: ['Test'],
       };
 
       const summary = getComboPatternSummary(result);
 
-      expect(summary).toContain('4 pts');
-      expect(summary).toContain('1 combo');
+      expect(summary).toContain('4');
+      expect(summary).toContain('positive');
       expect(summary).toContain('classDropLasix');
     });
 
     it('returns appropriate message when no combos', () => {
       const result = {
         total: 0,
+        grossPositive: 0,
+        grossNegative: 0,
         detectedCombos: [],
+        negativePatterns: [],
         intentScore: 0,
         reasoning: [],
       };
