@@ -22,7 +22,6 @@ import type {
   TicketConstruction,
   ValueHorseIdentification,
 } from '../services/ai/types';
-import './AIAnalysisPanel.css';
 
 // ============================================================================
 // TYPES
