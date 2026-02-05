@@ -6,7 +6,7 @@
 >
 > **For algorithm/scoring details, see ALGORITHM_REFERENCE.md**
 >
-> **Last Updated:** January 2026
+> **Last Updated:** February 2026
 
 ---
 
@@ -30,7 +30,7 @@
 
 ## What This App Is
 
-A professional-grade horse racing handicapping progressive web application. It parses DRF (Daily Racing Form) files, applies a deterministic mathematical scoring algorithm, and outputs tiered betting recommendations.
+A personal horse racing handicapping progressive web application. It parses DRF (Daily Racing Form) files, applies a deterministic mathematical scoring algorithm, and outputs tiered betting recommendations. Built as a lean, focused tool — no auth, no payments, no SaaS scaffolding.
 
 **Core Function:**
 
@@ -56,7 +56,7 @@ This application analyzes publicly available data (DRF files) and provides stati
 _These are foundational constraints. Every decision must respect them._
 
 1. **Algorithm is immutable** — Users adjust inputs, never math
-2. **Enterprise architecture** — Scaffolding for auth/payments/AI from day one
+2. **Lean architecture** — Personal tool, not SaaS. No unnecessary scaffolding.
 3. **Mobile-first** — 375px is primary target
 4. **Offline-first** — (PWA manifest exists, service worker NOT YET IMPLEMENTED)
 5. **60fps always** — No animation jank
@@ -79,40 +79,18 @@ _These are foundational constraints. Every decision must respect them._
 - Uses Claude Code (web-based, GitHub-integrated) exclusively
 - Will paste prompts verbatim — relies entirely on Claude for all technical decisions
 - Communication style: Direct, no-nonsense, bite-sized prompts only
-- Building for personal use initially, architecting for SaaS from day one
+- Building for personal use — a lean, focused tool without enterprise scaffolding
 
 ---
 
 ## Architecture Philosophy
 
-### Authentication Scaffolding
-
-| Path                              | Purpose                                        |
-| --------------------------------- | ---------------------------------------------- |
-| src/services/auth/                | Provider abstraction (Supabase/Firebase ready) |
-| src/contexts/AuthContext.tsx      | Auth state management                          |
-| src/hooks/useAuth.ts              | Auth hook                                      |
-| src/components/ProtectedRoute.tsx | Route protection                               |
-| src/components/auth/              | Auth UI components                             |
-
-**Status:** SCAFFOLDED (returns mock, ready for real provider)
-
-### Subscription Scaffolding
-
-| Path                                | Purpose             |
-| ----------------------------------- | ------------------- |
-| src/services/payments/              | Stripe integration  |
-| src/hooks/useSubscription.ts        | Subscription state  |
-| src/components/SubscriptionGate.tsx | Subscription checks |
-| src/components/subscription/        | Subscription UI     |
-
-**Status:** SCAFFOLDED (returns mock, ready for Stripe)
-
 ### AI Service Layer
 
-| Path             | Purpose              |
-| ---------------- | -------------------- |
-| src/services/ai/ | Provider abstraction |
+| Path                            | Purpose              |
+| ------------------------------- | -------------------- |
+| src/services/ai/                | Provider abstraction |
+| src/components/AIAnalysisPanel.tsx | UI integration    |
 
 **5 Analysis Bots:**
 
@@ -124,9 +102,9 @@ _These are foundational constraints. Every decision must respect them._
 
 **Provider:** Google Gemini API
 
-**UI Integration:** src/components/AIAnalysisPanel.tsx
+**Status:** DISABLED (AI_ENABLED_FOR_BETS = false)
 
-**Status:** WIRED AND FUNCTIONAL
+Code is preserved for future use. The algorithm-only betting system is fully functional without AI.
 
 ### Error Handling
 
@@ -138,8 +116,8 @@ _These are foundational constraints. Every decision must respect them._
 
 ### State Management
 
-- 2 contexts: AuthContext, ToastContext
-- 26 custom hooks in src/hooks/
+- 1 context: ToastContext
+- 20 custom hooks in src/hooks/
 - React Context + useReducer pattern
 - No external state libraries
 
@@ -172,42 +150,40 @@ _These are foundational constraints. Every decision must respect them._
 
 ## Technical Stack
 
-| Layer            | Technology                 |
-| ---------------- | -------------------------- |
-| Framework        | React 18                   |
-| Build            | Vite                       |
-| Styling          | TailwindCSS + CSS          |
-| Icons            | Google Material Icons      |
-| Typography       | Inter                      |
-| State            | React Context + useReducer |
-| Storage          | IndexedDB (via services)   |
-| Workers          | Web Workers (DRF parsing)  |
-| Animation        | Framer Motion              |
-| Testing          | Vitest + Playwright        |
-| Hosting          | Vercel                     |
-| Auth (ready)     | Supabase/Firebase          |
-| Payments (ready) | Stripe                     |
-| AI               | Google Gemini              |
+| Layer      | Technology                                |
+| ---------- | ----------------------------------------- |
+| Framework  | React 18                                  |
+| Build      | Vite                                      |
+| Styling    | TailwindCSS + CSS                         |
+| Icons      | Google Material Icons                     |
+| Typography | Inter                                     |
+| State      | React Context + useReducer                |
+| Storage    | IndexedDB (via services)                  |
+| Workers    | Web Workers (DRF parsing)                 |
+| Animation  | Framer Motion                             |
+| Testing    | Vitest + Playwright                       |
+| Hosting    | Vercel                                    |
+| AI         | Google Gemini (disabled, code preserved)  |
 
 ---
 
 ## Source Directory Overview
 
-| Directory       | Purpose                                                |
-| --------------- | ------------------------------------------------------ |
-| src/components/ | React UI components (100+)                             |
-| src/contexts/   | React Context providers                                |
-| src/data/       | Static data (track intelligence)                       |
-| src/docs/       | Algorithm methodology documentation                    |
-| src/help/       | Help content                                           |
-| src/hooks/      | Custom React hooks (26)                                |
-| src/legal/      | Legal content                                          |
-| src/lib/        | Core business logic (parser, scoring, betting)         |
-| src/services/   | Service layer (AI, auth, payments, storage, analytics) |
-| src/styles/     | CSS stylesheets                                        |
-| src/types/      | TypeScript type definitions                            |
-| src/utils/      | Utility functions                                      |
-| src/workers/    | Web Workers                                            |
+| Directory       | Purpose                                        |
+| --------------- | ---------------------------------------------- |
+| src/components/ | React UI components (100+)                     |
+| src/contexts/   | React Context providers                        |
+| src/data/       | Static data (track intelligence)               |
+| src/docs/       | Algorithm methodology documentation            |
+| src/help/       | Help content                                   |
+| src/hooks/      | Custom React hooks (20)                        |
+| src/legal/      | Legal content                                  |
+| src/lib/        | Core business logic (parser, scoring, betting) |
+| src/services/   | Service layer (AI, storage, analytics)         |
+| src/styles/     | CSS stylesheets                                |
+| src/types/      | TypeScript type definitions                    |
+| src/utils/      | Utility functions                              |
+| src/workers/    | Web Workers                                    |
 
 **Do NOT include detailed file trees. Use snapshot prompts for current file state.**
 
