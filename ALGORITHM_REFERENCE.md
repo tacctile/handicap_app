@@ -301,7 +301,7 @@ token-sized at -3 pts. v3.8 doubles the full penalty to -6 pts with conditional 
 
 ---
 
-## Pace Score (0-35 points)
+## Pace Score (0-45 points)
 
 ### Tactical Fit Scoring
 
