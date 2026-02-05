@@ -1,16 +1,13 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { AuthProvider, useAuthContext } from './contexts/AuthContext';
 import { ToastProvider, useToastContext } from './contexts/ToastContext';
-import { AuthPage, AccountSettings } from './components/auth';
 import { HelpCenter } from './components/help';
 import { ViewerLayout } from './components/LiveViewer';
 import { useRaceState } from './hooks/useRaceState';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAnalytics } from './hooks/useAnalytics';
-import { useFeatureFlag } from './hooks/useFeatureFlag';
 import { validateParsedData, getValidationSummary, isDataUsable } from './lib/validation';
 import { extractShareCodeFromUrl } from './lib/supabase/shareCode';
 import { logger } from './services/logging';
@@ -23,7 +20,7 @@ import './styles/help.css';
 // ROUTE TYPES
 // ============================================================================
 
-type AppRoute = 'dashboard' | 'account' | 'help' | 'live-viewer';
+type AppRoute = 'dashboard' | 'help' | 'live-viewer';
 
 function AppContent() {
   const [parsedData, setParsedData] = useState<ParsedDRFFile | null>(null);
@@ -56,10 +53,6 @@ function AppContent() {
   };
   const [currentRoute, setCurrentRoute] = useState<AppRoute>(getInitialRoute);
 
-  // Auth state
-  const { isAuthenticated, isLoading: authLoading } = useAuthContext();
-  const authEnabled = useFeatureFlag('AUTH_ENABLED');
-
   const raceState = useRaceState();
   const sessionPersistence = useSessionPersistence();
   const { trackEvent } = useAnalytics();
@@ -72,16 +65,6 @@ function AppContent() {
 
   // Navigation handlers
   const navigateToDashboard = useCallback(() => {
-    setCurrentRoute('dashboard');
-  }, []);
-
-  // Handle successful auth (login/signup)
-  const handleAuthSuccess = useCallback(() => {
-    setCurrentRoute('dashboard');
-  }, []);
-
-  // Handle logout
-  const handleLogout = useCallback(() => {
     setCurrentRoute('dashboard');
   }, []);
 
@@ -303,48 +286,6 @@ function AppContent() {
     hasChanges: raceState.hasChanges,
   });
 
-  // Show loading state while checking auth
-  if (authEnabled && authLoading) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          backgroundColor: '#0A0A0B',
-        }}
-      >
-        <div
-          style={{
-            width: '40px',
-            height: '40px',
-            border: '3px solid #2A2A2C',
-            borderTopColor: '#19abb5',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-          }}
-        />
-        <style>
-          {`
-            @keyframes spin {
-              to { transform: rotate(360deg); }
-            }
-          `}
-        </style>
-      </div>
-    );
-  }
-
-  // Show auth page if auth is enabled and user is not authenticated
-  if (authEnabled && !isAuthenticated) {
-    return (
-      <ErrorBoundary onReset={handleFullReset}>
-        <AuthPage onAuthSuccess={handleAuthSuccess} />
-      </ErrorBoundary>
-    );
-  }
-
   // Show live viewer (no auth required for viewers)
   if (currentRoute === 'live-viewer' && liveShareCode) {
     const handleExitViewer = () => {
@@ -365,15 +306,6 @@ function AppContent() {
     return (
       <ErrorBoundary onReset={handleFullReset}>
         <HelpCenter onBack={navigateToDashboard} />
-      </ErrorBoundary>
-    );
-  }
-
-  // Show account settings page
-  if (currentRoute === 'account') {
-    return (
-      <ErrorBoundary onReset={handleFullReset}>
-        <AccountSettings onLogout={handleLogout} onBack={navigateToDashboard} />
       </ErrorBoundary>
     );
   }
@@ -400,16 +332,13 @@ function AppContent() {
 
 /**
  * App component wrapped with providers
- * AuthProvider is always present but auth is controlled by feature flags
  * ToastProvider enables app-wide toast notifications
  */
 function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <AppContent />
-      </ToastProvider>
-    </AuthProvider>
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
   );
 }
 
