@@ -1,15 +1,13 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider, useToastContext } from './contexts/ToastContext';
 import { HelpCenter } from './components/help';
-import { ViewerLayout } from './components/LiveViewer';
 import { useRaceState } from './hooks/useRaceState';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAnalytics } from './hooks/useAnalytics';
 import { validateParsedData, getValidationSummary, isDataUsable } from './lib/validation';
-import { extractShareCodeFromUrl } from './lib/supabase/shareCode';
 import { logger } from './services/logging';
 import type { ParsedDRFFile } from './types/drf';
 import './styles/responsive.css';
@@ -20,7 +18,7 @@ import './styles/help.css';
 // ROUTE TYPES
 // ============================================================================
 
-type AppRoute = 'dashboard' | 'help' | 'live-viewer';
+type AppRoute = 'dashboard' | 'help';
 
 function AppContent() {
   const [parsedData, setParsedData] = useState<ParsedDRFFile | null>(null);
@@ -30,28 +28,8 @@ function AppContent() {
   const [modalOpen] = useState(false);
   const [selectedRaceIndex, setSelectedRaceIndex] = useState(0);
 
-  // Check for live viewer route from URL
-  const liveShareCode = useMemo(() => {
-    if (typeof window !== 'undefined') {
-      const path = window.location.pathname;
-      const code = extractShareCodeFromUrl(path);
-      return code;
-    }
-    return null;
-  }, []);
-
-  // Routing state - check URL on initial load
-  const getInitialRoute = (): AppRoute => {
-    // Check for /live/:code route
-    if (typeof window !== 'undefined') {
-      const path = window.location.pathname;
-      if (path.startsWith('/live/') && extractShareCodeFromUrl(path)) {
-        return 'live-viewer';
-      }
-    }
-    return 'dashboard';
-  };
-  const [currentRoute, setCurrentRoute] = useState<AppRoute>(getInitialRoute);
+  // Routing state
+  const [currentRoute, setCurrentRoute] = useState<AppRoute>('dashboard');
 
   const raceState = useRaceState();
   const sessionPersistence = useSessionPersistence();
@@ -285,21 +263,6 @@ function AppContent() {
     },
     hasChanges: raceState.hasChanges,
   });
-
-  // Show live viewer (no auth required for viewers)
-  if (currentRoute === 'live-viewer' && liveShareCode) {
-    const handleExitViewer = () => {
-      // Clear the URL and go to dashboard
-      window.history.pushState({}, '', '/');
-      setCurrentRoute('dashboard');
-    };
-
-    return (
-      <ErrorBoundary onReset={handleExitViewer}>
-        <ViewerLayout shareCode={liveShareCode} onExit={handleExitViewer} />
-      </ErrorBoundary>
-    );
-  }
 
   // Show help center
   if (currentRoute === 'help') {
