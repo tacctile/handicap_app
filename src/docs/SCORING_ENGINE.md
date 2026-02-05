@@ -8,11 +8,11 @@
 
 > ⚠️ **IMPORTANT: Algorithm Version Notice**
 >
-> The current implementation uses **Algorithm v4.0** with a **336-point base score** and **±40 overlay adjustment**.
+> The current implementation uses **Algorithm v4.0** with a **336-point base score** (14 categories), **±40 overlay adjustment**, and **376 max score**.
 >
-> The detailed category sections below (Categories 1-6) document **v2.0 legacy scoring logic** for historical reference. For current implementation details, see **[ALGORITHM_REFERENCE.md](../../ALGORITHM_REFERENCE.md)**.
+> The detailed sections below document **v2.0 legacy scoring logic** for historical reference. For current implementation details, see **[ALGORITHM_REFERENCE.md](../../ALGORITHM_REFERENCE.md)** and **[ALGORITHM_V4_SUMMARY.md](./ALGORITHM_V4_SUMMARY.md)**.
 >
-> The summary table immediately below reflects the current v4.0 weights. Form category (50 pts) now includes the Form Decay System. Combo patterns expanded to 10 pts.
+> The v4.0 summary table immediately below reflects the current weights. Odds Factor removed from base scoring. Form category (50 pts) includes Form Decay System. Combo patterns expanded to 10 pts (range -6 to +10). Workout scoring DISABLED.
 
 ---
 
@@ -22,14 +22,15 @@
 
 **The 336-point base system provides granular precision while maintaining track specificity:**
 
-**Core Philosophy (v3.6 - Phase 7 Algorithm):**
+**Core Philosophy (v4.0 - Current Algorithm):**
 
-- Speed figures as primary predictive factor (27.4% of base)
+- Speed & Class as dominant predictive factor (41.7% of base)
 - Pace scenario analysis for race shape prediction
-- Form decay system scales winner bonuses by recency (Phase 7)
+- Form decay system scales winner bonuses by recency
 - Track bias and post position as situational modifiers
-- Odds factor incorporates market wisdom
+- Combo patterns expanded with negative pretender detection
 - Connections and equipment as fine-tuning factors
+- Odds factor removed from base scoring (available for overlay only)
 
 **Weight Distribution Rationale (v4.0 - per ALGORITHM_REFERENCE.md):**
 
@@ -50,7 +51,9 @@
 | Weight           | 1      | 0.3%     | Subtle weight change refinement         |
 | **TOTAL**        | 336    | 100%     |                                         |
 
-**NOTE:** Odds Factor removed from base scoring to eliminate circular logic. Odds data still available for overlay calculations.
+**NOTE:** Odds Factor (12 pts) removed from base scoring to eliminate circular logic. Odds data still available for overlay calculations.
+
+**DISABLED — Workout Scoring:** Workout scoring (8 pts) was added in v4.1 but REVERTED due to regression. Win rate dropped from 16.5% to 12.8%, exacta fell from 30.3% to 29.4%. Module preserved in workouts.ts for future use when DRF parsing includes workout times.
 
 **Scoring Limits:**
 
@@ -62,9 +65,11 @@
 
 ---
 
-## CATEGORY 1: CONNECTIONS ANALYSIS (25 POINTS MAXIMUM)
+## CONNECTIONS ANALYSIS (v4.0: 24 POINTS — Jockey 12 + Trainer 10 + Partnership 2)
 
-> **v2.0 Note:** Connections reduced from 55 to 25 points (10.4% of base) to reflect industry research showing this is a modifier rather than primary predictive factor.
+> **v4.0:** Connections total 24 pts (7.1% of base). Jockey:Trainer ratio flipped from 5:16 to 12:10 per industry research. See ALGORITHM_REFERENCE.md for current tiers.
+>
+> **v2.0 Legacy Note:** The detailed scoring tiers below document v2.0 logic (25 pts) for historical reference.
 
 ### Trainer Evaluation Matrix (16 points maximum)
 
@@ -166,9 +171,11 @@ Claiming specialists override standard trainer scoring when:
 
 ---
 
-## CATEGORY 2: POST POSITION & TRACK BIAS (30 POINTS MAXIMUM)
+## POST POSITION & TRACK BIAS (v4.0: 12 POINTS — 3.6% of base)
 
-> **v2.0 Note:** Post Position reduced from 45 to 30 points (12.5% of base) as a track-dependent situational factor.
+> **v4.0:** Post Position is 12 pts (3.6% of base). Track-dependent situational factor. See ALGORITHM_REFERENCE.md for current implementation.
+>
+> **v2.0 Legacy Note:** The detailed scoring tiers below document v2.0 logic (30 pts) for historical reference.
 
 ### Post Position Bias Matrix (27 points maximum)
 
@@ -257,9 +264,11 @@ Track bias data from Track Intelligence Database determines running style advant
 
 ---
 
-## CATEGORY 3: SPEED FIGURES & CLASS MASTERY (80 POINTS MAXIMUM)
+## SPEED FIGURES & CLASS MASTERY (v4.0: 140 POINTS — Speed 105 + Class 35, 41.7% of base)
 
-> **v2.0 Note:** Speed/Class increased from 50 to 80 points (33.3% of base) as the most predictive factor per industry research.
+> **v4.0:** Speed & Class total 140 pts (41.7% of base). Dominant predictive factor. See ALGORITHM_REFERENCE.md for current tiers.
+>
+> **v2.0 Legacy Note:** The detailed scoring tiers below document v2.0 logic (80 pts) for historical reference.
 
 ### Speed Figure Evaluation Matrix (48 points maximum)
 
@@ -379,9 +388,9 @@ Speed decay is gentler because ability is more stable than current condition.
 
 ---
 
-## CATEGORY 4: FORM CYCLE & CONDITIONING (50 POINTS MAXIMUM)
+## FORM CYCLE & CONDITIONING (v4.0: 50 POINTS — 14.9% of base)
 
-> **v3.6 Note:** Form category updated to 50 pts with decay system. Winner bonuses now scale by recency to address Algorithm Audit Finding #1 — 53% of bad picks had stale form.
+> **v4.0:** Form is 50 pts (14.9% of base) with Form Decay System. Winner bonuses scale by recency to address Algorithm Audit Finding #1 — 53% of bad picks had stale form. See ALGORITHM_REFERENCE.md for current tiers.
 
 ### Form Decay System (v3.6)
 
@@ -484,9 +493,11 @@ Maximum possible from decay system: WLO (18) + Won 2/3 (8) + Won 3/5 (4) = 30 pt
 
 ---
 
-## CATEGORY 5: EQUIPMENT & MEDICATION (20 POINTS MAXIMUM)
+## EQUIPMENT & MEDICATION (v4.0: 8 POINTS — 2.4% of base)
 
-> **v2.0 Note:** Equipment reduced from 25 to 20 points (8.3% of base) as speculative fine-tuning factor.
+> **v4.0:** Equipment is 8 pts (2.4% of base). Speculative fine-tuning factor. See ALGORITHM_REFERENCE.md for current implementation.
+>
+> **v2.0 Legacy Note:** The detailed scoring tiers below document v2.0 logic (20 pts) for historical reference.
 
 ### Equipment Change Analysis (12 points maximum)
 
@@ -535,9 +546,11 @@ Maximum possible from decay system: WLO (18) + Won 2/3 (8) + Won 3/5 (4) = 30 pt
 
 ---
 
-## CATEGORY 6: PACE & TACTICAL ANALYSIS (45 POINTS MAXIMUM)
+## PACE & TACTICAL ANALYSIS (v4.0: 45 POINTS — 13.4% of base)
 
-> **v2.0 Note:** Pace increased from 40 to 45 points (18.8% of base) to reflect high predictive value of race shape analysis.
+> **v4.0:** Pace is 45 pts (13.4% of base). Consolidated base + scenario unified. See ALGORITHM_REFERENCE.md for current tiers.
+>
+> **v2.0 Legacy Note:** The detailed scoring tiers below document v2.0 logic (45 pts) for historical reference.
 
 ### Pace Scenario Evaluation (28 points maximum, rescaled)
 
@@ -595,16 +608,24 @@ Maximum possible from decay system: WLO (18) + Won 2/3 (8) + Won 3/5 (4) = 30 pt
 
 ### Scoring Calculation Protocol
 
-**Base Score Computation (v2.0 Industry-Aligned Weights):**
+**Base Score Computation (v4.0 — per ALGORITHM_REFERENCE.md):**
 
-1. Category 3 (Speed/Class): 0-80 points (33.3%)
-2. Category 6 (Pace/Tactical): 0-45 points (18.8%)
-3. Category 4 (Form/Condition): 0-40 points (16.7%)
-4. Category 2 (Post/Bias): 0-30 points (12.5%)
-5. Category 1 (Connections): 0-25 points (10.4%)
-6. Category 5 (Equipment/Medication): 0-20 points (8.3%)
+1. Speed & Class: 0-140 points (41.7%)
+2. Form: 0-50 points (14.9%)
+3. Pace: 0-45 points (13.4%)
+4. Connections: 0-24 points (7.1%)
+5. Distance/Surface: 0-20 points (6.0%)
+6. Post Position: 0-12 points (3.6%)
+7. Track Specialist: 0-10 points (3.0%)
+8. Combo Patterns: -6 to +10 points (3.0%)
+9. Equipment: 0-8 points (2.4%)
+10. Trainer Patterns: 0-8 points (2.4%)
+11. Trainer Surface/Distance: 0-6 points (1.8%)
+12. Age Factor: ±1 (0.3%)
+13. Sire's Sire: ±1 (0.3%)
+14. Weight: 0-1 points (0.3%)
 
-**Total Base Score Range: 0-336 points (see ALGORITHM_REFERENCE.md)**
+**Total Base Score: MAX_BASE_SCORE = 336 points (see ALGORITHM_REFERENCE.md)**
 
 ### Track-Specific Adjustments
 
@@ -722,12 +743,12 @@ The system automatically detects the current month and applies track-specific se
 
 ---
 
-> **NOTE:** The detailed category sections above document the v2.0 scoring logic for reference. The actual implementation uses Algorithm v4.0 as documented in **[ALGORITHM_REFERENCE.md](../../ALGORITHM_REFERENCE.md)**, which has a 336-point base with 14 categories (odds removed from base scoring), form decay system, and data completeness penalties.
+> **NOTE:** The detailed category sections above document v2.0 scoring logic for historical reference. The actual implementation uses **Algorithm v4.0** as documented in **[ALGORITHM_REFERENCE.md](../../ALGORITHM_REFERENCE.md)**, which has a **336-point base** with **14 categories** (odds removed from base scoring), form decay system, combo pattern expansion, and data completeness penalties. The v4.0 summary table and scoring limits at the top of this document are authoritative.
 
 ---
 
 _Document Version: 4.0_
-_Last Updated: January 2026_
+_Last Updated: February 2026_
 _Status: Track-Agnostic Universal Scoring Engine_
 _Integration: Requires Track Intelligence Database for track-specific values_
 _Changes in v4.0: Combo patterns expanded to 10 pts, odds removed from base scoring, base now 336._

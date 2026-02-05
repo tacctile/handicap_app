@@ -4,7 +4,7 @@
 
 The Furlong scoring algorithm v4.0 represents the current production algorithm, with:
 
-- Speed figures as the dominant predictive factor (31.3% of base)
+- Speed & Class as the dominant predictive factor (41.7% of base)
 - Form decay system to scale winner bonuses by recency
 - Expanded combo patterns (v4.0: 10 pts, range -6 to +10)
 - Odds removed from base scoring (circular logic elimination)
@@ -38,7 +38,9 @@ The Furlong scoring algorithm v4.0 represents the current production algorithm, 
 | Weight           | 1      | 0.3%      | Subtle weight change refinement              |
 | **TOTAL**        | 336    | 100%      |                                              |
 
-**NOTE:** Odds Factor removed from base scoring to eliminate circular logic. Odds data still available for overlay calculations.
+**NOTE:** Odds Factor (12 pts) removed from base scoring to eliminate circular logic. Odds data still available for overlay calculations.
+
+**DISABLED — Workout Scoring:** Workout scoring (8 pts) was added in v4.1 but REVERTED due to regression. Win rate dropped from 16.5% to 12.8%. Module preserved in workouts.ts for future use.
 
 ## Key Changes from v2.5
 
@@ -75,16 +77,18 @@ The Furlong scoring algorithm v4.0 represents the current production algorithm, 
 - Overall overlay cap: ±50 → ±40 pts
 - Proven horse protection: 50% reduction on pace penalties for high-scoring horses (base ≥180)
 
-### Phase 6: Odds Factor
+### Phase 6: Odds Factor (REMOVED in v4.0)
 
-- Added 0-15 pt category based on morning line / live odds
-- Heavy favorite (1-1 or lower): 15 pts
-- Strong favorite (5-2 to 3-1): 12 pts
-- Low favorite (4-1 to 5-1): 10 pts
-- Contender (6-1 to 10-1): 8 pts
-- Mid-odds (11-1 to 15-1): 6 pts
-- Longer (16-1 to 24-1): 5 pts
-- Longshot (25-1 or higher): 3 pts
+> **v4.0:** Odds Factor removed from base scoring to eliminate circular logic. Odds data still available for overlay calculations only.
+
+- ~~Added 0-15 pt category based on morning line / live odds~~
+- ~~Heavy favorite (1-1 or lower): 15 pts~~
+- ~~Strong favorite (5-2 to 3-1): 12 pts~~
+- ~~Low favorite (4-1 to 5-1): 10 pts~~
+- ~~Contender (6-1 to 10-1): 8 pts~~
+- ~~Mid-odds (11-1 to 15-1): 6 pts~~
+- ~~Longer (16-1 to 24-1): 5 pts~~
+- ~~Longshot (25-1 or higher): 3 pts~~
 
 ### Phase 7: Form Decay System (v3.6)
 
@@ -183,11 +187,11 @@ This ensures that horses the algorithm rates highly aren't unfairly penalized by
 
 ## Scoring Philosophy
 
-1. **Speed is King**: Speed figures account for 27.4% of base score, reflecting industry research that shows speed is the most predictive factor.
+1. **Speed is King**: Speed & Class accounts for 41.7% of base score (140 pts), reflecting industry research that shows speed is the most predictive factor.
 
-2. **Winners Rewarded**: A horse that just won should score high in form. The +20 pt WLO bonus ensures this.
+2. **Winners Rewarded**: A horse that just won should score high in form. The WLO decay system (up to +18 pts for hot winners) ensures this while penalizing stale form.
 
-3. **Market Wisdom**: The odds factor incorporates collective market intelligence, giving 12-15 pts to horses the public believes will contend.
+3. **No Circular Logic**: Odds factor removed from base scoring in v4.0 to eliminate circular dependency. Odds data is available for overlay calculations only.
 
 4. **Penalty for Unknowns**: Missing data is penalized, not treated as neutral. FTS horses score significantly lower than proven runners.
 
@@ -264,3 +268,7 @@ To prevent penalizing active horses with old standout figures:
 - **v2.5**: Overlay system added, cap at ±50
 - **v2.0**: Industry-aligned weights, 240-point base
 - **v1.0**: Initial scoring implementation
+
+---
+
+_Last Updated: February 2026_

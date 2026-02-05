@@ -11,7 +11,7 @@
 ```
 src/docs/
 ├── METHODOLOGY_INDEX.md      ← You are here
-├── ALGORITHM_V3_SUMMARY.md   ← Current v4.0 algorithm (336-pt base, combo patterns, form decay)
+├── ALGORITHM_V4_SUMMARY.md   ← Current v4.0 algorithm (336-pt base, combo patterns, form decay)
 ├── SCORING_ENGINE.md         ← Detailed scoring reference (v2.0 legacy + v4.0 notes)
 ├── DRF_FIELD_MAP.md          ← All 1,435 DRF fields mapped
 ├── OVERLAY_SYSTEM.md         ← ±40 point adjustment logic
@@ -43,7 +43,7 @@ src/docs/
          │
          ▼
 ┌─────────────────┐
-│ SCORING ENGINE  │ ← Calculates 0-336 base per ALGORITHM_V3_SUMMARY.md (v4.0)
+│ SCORING ENGINE  │ ← Calculates 0-336 base per ALGORITHM_V4_SUMMARY.md (v4.0)
 └────────┬────────┘
          │
          ▼
@@ -71,7 +71,7 @@ src/docs/
 
 ## DOCUMENT SUMMARIES
 
-### 0. ALGORITHM_V3_SUMMARY.md (PRIMARY REFERENCE)
+### 0. ALGORITHM_V4_SUMMARY.md (PRIMARY REFERENCE)
 
 **Purpose:** Current algorithm implementation (v4.0)
 
@@ -338,13 +338,13 @@ Recommended update frequency:
 
 ### Version History
 
-| Version | Date    | Changes                                                          |
-| ------- | ------- | ---------------------------------------------------------------- |
-| 4.0     | 2026-02 | v4.0 - Combo patterns expanded, odds removed from base, weights updated |
-| 3.6     | 2026-01 | v3.6 - Form Decay System - Scales winner bonuses by recency      |
-| 3.1     | 2025-12 | Algorithm v3.1 (Phase 6): Added ALGORITHM_V3_SUMMARY.md          |
-| 3.0     | 2025-12 | Algorithm rebuild Phases 1-5: 336-pt base, overlay cap ±40       |
-| 1.0     | 2024-12 | Initial methodology documentation                                |
+| Version | Date    | Changes                                                                                            |
+| ------- | ------- | -------------------------------------------------------------------------------------------------- |
+| 4.0     | 2026-02 | v4.0 - Combo patterns expanded, odds removed from base, weights updated                            |
+| 3.6     | 2026-01 | v3.6 - Form Decay System - Scales winner bonuses by recency                                        |
+| 3.1     | 2025-12 | Algorithm v3.1 (Phase 6): Added algorithm summary doc (renamed to ALGORITHM_V4_SUMMARY.md in v4.0) |
+| 3.0     | 2025-12 | Algorithm rebuild Phases 1-5: 336-pt base, overlay cap ±40                                         |
+| 1.0     | 2024-12 | Initial methodology documentation                                                                  |
 
 ---
 
