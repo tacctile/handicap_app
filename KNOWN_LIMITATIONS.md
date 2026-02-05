@@ -4,22 +4,17 @@
 
 ## Not Yet Implemented
 
-| Feature                | Status      | Notes                                                |
-| ---------------------- | ----------- | ---------------------------------------------------- |
-| Service Worker         | NOT STARTED | PWA manifest exists, offline caching not implemented |
-| Real Authentication    | SCAFFOLDED  | Returns mock, Supabase/Firebase ready                |
-| Real Payments          | SCAFFOLDED  | Returns mock, Stripe ready                           |
-| Live Odds Feed         | NOT STARTED | Manual odds entry only                               |
-| Performance Monitoring | SCAFFOLDED  | DataDog/NewRelic ready but not wired                 |
+| Feature        | Status      | Notes                                                |
+| -------------- | ----------- | ---------------------------------------------------- |
+| Service Worker | NOT STARTED | PWA manifest exists, offline caching not implemented |
+| Live Odds Feed | NOT STARTED | Manual odds entry only                               |
 
 ## Current Constraints
 
-| Constraint         | Details                                     |
-| ------------------ | ------------------------------------------- |
-| Offline Capability | Manifest only, no service worker caching    |
-| Auth Provider      | Mock implementation, no real user accounts  |
-| Payment Processing | Mock implementation, no real transactions   |
-| AI Analysis        | Requires online connection + Gemini API key |
+| Constraint         | Details                                            |
+| ------------------ | -------------------------------------------------- |
+| Offline Capability | Manifest only, no service worker caching           |
+| AI Analysis        | Intentionally disabled (code preserved for future) |
 
 ## Resolved Limitations
 

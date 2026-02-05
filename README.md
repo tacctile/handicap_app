@@ -32,29 +32,30 @@ This project uses GitHub Actions for continuous integration and deployment.
 
 ### Workflows
 
-| Workflow | Trigger | Purpose |
-|----------|---------|---------|
-| CI | Push/PR to main | Lint, type check, test, build |
-| Quality | PRs only | Bundle size, console.log, any checks |
-| Deploy | Push/PR to main | Vercel deployment |
-| AI Validation | Manual or AI file changes | AI vs Algorithm comparison tests |
+| Workflow      | Trigger                   | Purpose                              |
+| ------------- | ------------------------- | ------------------------------------ |
+| CI            | Push/PR to main           | Lint, type check, test, build        |
+| Quality       | PRs only                  | Bundle size, console.log, any checks |
+| Deploy        | Push/PR to main           | Vercel deployment                    |
+| AI Validation | Manual or AI file changes | AI vs Algorithm comparison tests     |
 
 ### Required Secrets
 
 Configure these secrets in GitHub repository settings:
 
-| Secret | Description |
-|--------|-------------|
-| `VERCEL_TOKEN` | Vercel authentication token |
-| `VERCEL_ORG_ID` | Vercel organization ID (auto-configured by Vercel CLI) |
-| `VERCEL_PROJECT_ID` | Vercel project ID (auto-configured by Vercel CLI) |
-| `VITE_GEMINI_API_KEY` | Gemini API key for AI validation tests |
+| Secret                | Description                                                    |
+| --------------------- | -------------------------------------------------------------- |
+| `VERCEL_TOKEN`        | Vercel authentication token                                    |
+| `VERCEL_ORG_ID`       | Vercel organization ID (auto-configured by Vercel CLI)         |
+| `VERCEL_PROJECT_ID`   | Vercel project ID (auto-configured by Vercel CLI)              |
+| `VITE_GEMINI_API_KEY` | Gemini API key (optional - AI features are currently disabled) |
 
 ## AI Testing
 
 AI validation tests run via GitHub Actions. See [docs/AI_TESTING.md](docs/AI_TESTING.md) for details.
 
 To trigger manually:
+
 1. Go to Actions → AI Validation Tests → Run workflow
 
 ## Branch Protection Rules

@@ -118,30 +118,6 @@ export default defineConfig({
               },
             },
           },
-          // Auth endpoints - NetworkOnly (must always be fresh)
-          {
-            urlPattern: /\/auth\/.*/i,
-            handler: 'NetworkOnly',
-          },
-          // Payment endpoints - NetworkOnly (security critical)
-          {
-            urlPattern: /\/payments?\/.*/i,
-            handler: 'NetworkOnly',
-          },
-          // Stripe API - NetworkOnly
-          {
-            urlPattern: /^https:\/\/.*\.stripe\.com\/.*/i,
-            handler: 'NetworkOnly',
-          },
-          // Supabase/Firebase auth - NetworkOnly
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: 'NetworkOnly',
-          },
-          {
-            urlPattern: /^https:\/\/.*\.firebaseapp\.com\/.*/i,
-            handler: 'NetworkOnly',
-          },
         ],
       },
       // Dev options
