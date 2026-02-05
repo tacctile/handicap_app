@@ -11,8 +11,8 @@
 ```
 src/docs/
 ├── METHODOLOGY_INDEX.md      ← You are here
-├── ALGORITHM_V3_SUMMARY.md   ← Current v3.6 algorithm (336-pt base, form decay)
-├── SCORING_ENGINE.md         ← Detailed scoring reference (v2.0 legacy + v3.6 notes)
+├── ALGORITHM_V3_SUMMARY.md   ← Current v4.0 algorithm (336-pt base, combo patterns, form decay)
+├── SCORING_ENGINE.md         ← Detailed scoring reference (v2.0 legacy + v4.0 notes)
 ├── DRF_FIELD_MAP.md          ← All 1,435 DRF fields mapped
 ├── OVERLAY_SYSTEM.md         ← ±40 point adjustment logic
 ├── EDGE_CASE_PROTOCOLS.md    ← Diamond, Nuclear, Lightly Raced, Late-Breaking
@@ -43,7 +43,7 @@ src/docs/
          │
          ▼
 ┌─────────────────┐
-│ SCORING ENGINE  │ ← Calculates 0-336 base per ALGORITHM_V3_SUMMARY.md
+│ SCORING ENGINE  │ ← Calculates 0-336 base per ALGORITHM_V3_SUMMARY.md (v4.0)
 └────────┬────────┘
          │
          ▼
@@ -73,18 +73,18 @@ src/docs/
 
 ### 0. ALGORITHM_V3_SUMMARY.md (PRIMARY REFERENCE)
 
-**Purpose:** Current algorithm implementation (v3.6, Phases 1-7)
+**Purpose:** Current algorithm implementation (v4.0)
 
 **Key Contents:**
 
-- 336-point base score with 15 categories
-- Category weights: Speed (90), Form (50), Pace (45), Class (32), Connections (27), etc.
-- Phase 1-7 changes documented
-- Form Decay System (Phase 7) - scales winner bonuses by recency
+- 336-point base score with 14 categories (see ALGORITHM_REFERENCE.md for exact values)
+- Category weights: Speed & Class (140), Form (50), Pace (45), Connections (24), Distance/Surface (20), etc.
+- Combo patterns expanded to ±10 pts with negative pretender detection
+- Form Decay System - scales winner bonuses by recency
 - Overlay system (±40 pts)
 - Data completeness and low confidence penalties
 - Proven horse protection
-- Odds factor integration (0-15 pts)
+- Odds factor removed from base scoring (available for overlay only)
 - Score interpretation guide
 
 **When to Reference:** Understanding current algorithm, validating scores, debugging
@@ -93,17 +93,21 @@ src/docs/
 
 ### 1. SCORING_ENGINE.md
 
-**Purpose:** Detailed scoring reference with v2.0 legacy documentation and v3.6 notes
+**Purpose:** Detailed scoring reference with v2.0 legacy documentation and v4.0 notes
 
 **Key Contents:**
 
-- Category 1: Elite Connections (50 pts max)
-- Category 2: Post Position & Track Bias (45 pts max)
-- Category 3: Speed Figures & Class (50 pts max)
-- Category 4: Form Cycle & Conditioning (50 pts max, includes Form Decay v3.6)
-- Category 5: Equipment & Medication (25 pts max)
-- Category 6: Pace & Tactical (40 pts max)
-- Form Decay System (v3.6) - WLO decay tiers, pattern multipliers
+- Speed & Class: 140 pts max
+- Form: 50 pts max
+- Pace: 45 pts max
+- Connections: 24 pts max (Jockey 12 + Trainer 10 + Partnership 2)
+- Distance/Surface: 20 pts max
+- Post Position: 12 pts max
+- Track Specialist: 10 pts max
+- Combo Patterns: 10 pts max (v4.0: range -6 to +10)
+- Equipment: 8 pts max
+- Trainer Patterns: 8 pts max
+- Form Decay System - WLO decay tiers, pattern multipliers
 - Score categorization thresholds
 - Quality control verification
 
@@ -171,9 +175,9 @@ src/docs/
 
 **Key Contents:**
 
-- Tier 1: Cover Chalk (180+ points, foundation bets)
-- Tier 2: Logical Alternatives (160-179 points, value plays)
-- Tier 3: Value Bombs (140-159 points, longshot specials)
+- Tier 1: Cover Chalk (181+ points, foundation bets)
+- Tier 2: Logical Alternatives (161-180 points, value plays)
+- Tier 3: Value Bombs (131-160 points, longshot specials)
 - Complete bet construction examples
 - Output formatting templates
 - Daily card optimization
@@ -207,17 +211,17 @@ src/docs/
 | Final Score | Category        | Betting Tier  | Action                   |
 | ----------- | --------------- | ------------- | ------------------------ |
 | 200+        | Elite           | Tier 1        | Maximum confidence plays |
-| 180-199     | Strong          | Tier 1        | Foundation betting       |
-| 160-179     | Competitive     | Tier 2        | Value seeking            |
-| 140-159     | Marginal        | Tier 3        | Selective longshots      |
-| 120-139     | Sub-threshold   | Diamond Check | Special review only      |
+| 181-199     | Strong          | Tier 1        | Foundation betting       |
+| 161-180     | Competitive     | Tier 2        | Value seeking            |
+| 131-160     | Marginal        | Tier 3        | Selective longshots      |
+| 120-130     | Sub-threshold   | Diamond Check | Special review only      |
 | <120        | Non-competitive | Pass          | No betting consideration |
 
 ---
 
 ## FORMULA QUICK REFERENCE
 
-### Final Score Calculation (Algorithm v3.1)
+### Final Score Calculation (Algorithm v4.0)
 
 ```
 Final Score = Base Score (0-336) + Overlay Adjustment (±40)
@@ -227,18 +231,23 @@ Practical Range: 50 to 320
 Betting Threshold: 140+ minimum
 
 Base Score Categories (336 pts total):
-- Speed/Class: 122 pts (37.2%)
-- Form: 50 pts (15.2%)
-- Pace: 45 pts (13.7%)
-- Connections: 27 pts (8.2%)
-- Distance/Surface: 20 pts (6.1%)
-- Odds Factor: 15 pts (4.6%)
-- Post Position: 12 pts (3.7%)
-- Trainer Patterns: 10 pts (3.0%)
+- Speed & Class: 140 pts (41.7%)
+- Form: 50 pts (14.9%)
+- Pace: 45 pts (13.4%)
+- Connections: 24 pts (7.1%)
+- Distance/Surface: 20 pts (6.0%)
+- Post Position: 12 pts (3.6%)
+- Track Specialist: 10 pts (3.0%)
+- Combo Patterns: 10 pts (3.0%)
 - Equipment: 8 pts (2.4%)
-- Other bonuses: 19 pts (Track Specialist, Trainer S/D, Combos, Weight, P3)
+- Trainer Patterns: 8 pts (2.4%)
+- Trainer Surface/Distance: 6 pts (1.8%)
+- Age Factor: ±1 (0.3%)
+- Sire's Sire: ±1 (0.3%)
+- Weight: 1 pt (0.3%)
+- MAX_BASE_SCORE: 336
 
-See ALGORITHM_V3_SUMMARY.md for complete category breakdown.
+See ALGORITHM_REFERENCE.md for complete category breakdown.
 ```
 
 ### Pace Pressure Index (PPI)
@@ -329,12 +338,13 @@ Recommended update frequency:
 
 ### Version History
 
-| Version | Date    | Changes                                                     |
-| ------- | ------- | ----------------------------------------------------------- |
-| 3.6     | 2026-01 | v3.6 - Form Decay System - Scales winner bonuses by recency |
-| 3.1     | 2025-12 | Algorithm v3.1 (Phase 6): Added ALGORITHM_V3_SUMMARY.md     |
-| 3.0     | 2025-12 | Algorithm rebuild Phases 1-5: 336-pt base, overlay cap ±40  |
-| 1.0     | 2024-12 | Initial methodology documentation                           |
+| Version | Date    | Changes                                                          |
+| ------- | ------- | ---------------------------------------------------------------- |
+| 4.0     | 2026-02 | v4.0 - Combo patterns expanded, odds removed from base, weights updated |
+| 3.6     | 2026-01 | v3.6 - Form Decay System - Scales winner bonuses by recency      |
+| 3.1     | 2025-12 | Algorithm v3.1 (Phase 6): Added ALGORITHM_V3_SUMMARY.md          |
+| 3.0     | 2025-12 | Algorithm rebuild Phases 1-5: 336-pt base, overlay cap ±40       |
+| 1.0     | 2024-12 | Initial methodology documentation                                |
 
 ---
 
@@ -354,6 +364,7 @@ Recommended update frequency:
 
 ---
 
-_Document Version: 3.6_
+_Document Version: 4.0_
+_Last Updated: February 2026_
 _Status: Complete Methodology Index_
 _Purpose: Entry point and navigation for all methodology documentation_
