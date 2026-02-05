@@ -18,8 +18,10 @@ The Track Intelligence Database provides track-specific data that the universal 
 src/data/tracks/
 ├── index.ts              # Exports Map<string, TrackData>
 ├── trackSchema.ts        # TypeScript interfaces (this document's implementation)
-├── trackIntelligence.ts  # Lookup service and fallback handling
-└── [TRACK_CODE].ts       # Individual track files (CD.ts, SA.ts, GP.ts, etc.)
+└── [trackName].ts        # Individual track files (churchillDowns.ts, santaAnita.ts, gulfstreamPark.ts, etc.)
+
+src/lib/
+└── trackIntelligence.ts  # Lookup service and fallback handling
 ```
 
 ### Integration Flow
@@ -34,7 +36,7 @@ src/data/tracks/
 
 ### Available Data Getter Functions (v1.1)
 
-The following functions are available in `trackIntelligence.ts` for retrieving track-specific data:
+The following functions are available in `src/lib/trackIntelligence.ts` for retrieving track-specific data:
 
 | Function                                               | Parameters                                      | Returns                             | Usage                             |
 | ------------------------------------------------------ | ----------------------------------------------- | ----------------------------------- | --------------------------------- |
@@ -459,29 +461,29 @@ When using fallback data:
 
 ### How Track Data Feeds Scoring
 
-**Category 1: Elite Connections (50 pts max)**
+**Connections (24 pts max)**
 
 ```
 Source: eliteTrainers[], eliteJockeys[]
 Usage:
 - Look up trainer/jockey in track's elite lists
-- Apply tier-based points (Tier 1: 20pts, Tier 2: 15pts, Tier 3: 10pts)
-- Apply specialty bonuses from trainer.specialties
-- Apply partnership bonuses for trainer/jockey combinations
+- Jockey scoring: 0-12 pts based on win rate and sample size
+- Trainer scoring: 0-10 pts based on win rate and sample size
+- Partnership bonus: 0-2 pts for elite trainer/jockey combinations
 ```
 
-**Category 2: Post Position & Bias (45 pts max)**
+**Post Position (12 pts max)**
 
 ```
 Source: postPositionBias, speedBias
 Usage:
 - Look up post position in appropriate matrix (sprint/route/turf)
-- Apply scoringPoints for that post
+- Apply scoring points for that post
 - Apply speedBias.styleAdjustments based on horse's running style
 - Adjust for current track condition using byCondition ratings
 ```
 
-**Category 3: Speed Figures & Class (50 pts max)**
+**Speed & Class (140 pts max)**
 
 ```
 Source: parTimes
@@ -491,7 +493,7 @@ Usage:
 - Use par times for pace analysis and time comparisons
 ```
 
-**Category 6: Pace & Tactical (40 pts max)**
+**Pace (45 pts max)**
 
 ```
 Source: speedBias, parTimes
@@ -510,7 +512,7 @@ function integrateTrackData(
   raceConditions: RaceConditions
 ): TrackAdjustments {
   // 1. Retrieve track data (or fallback)
-  const track = getTrackIntelligence(trackCode);
+  const track = getTrackData(trackCode);
 
   // 2. Get appropriate bias matrix
   const biasMatrix = raceConditions.isRoute
@@ -642,8 +644,9 @@ All other active North American tracks.
 
 ---
 
-_Document Version: 1.1_
-_Last Updated: December 2025_
+_Document Version: 1.2_
+_Last Updated: February 2026_
 _Status: Complete Track Intelligence Schema Specification_
 _Integration: Provides track-specific data to universal Scoring Engine_
+_Changes in v1.2: Fixed file paths, updated track file naming convention, corrected scoring category values to match v4.0 algorithm_
 _Changes in v1.1: Added new getter functions for drainage, stretch length, seasonal patterns, and par times_
