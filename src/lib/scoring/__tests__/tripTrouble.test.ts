@@ -249,7 +249,7 @@ describe('tripTrouble', () => {
   // ============================================================================
 
   describe('calculateTripAdjustment', () => {
-    it('returns +3 pts for one high-confidence trouble race', () => {
+    it('returns +2 pts for one high-confidence trouble race (v3.8)', () => {
       const troubledRaces: TroubledRace[] = [
         {
           raceIndex: 0,
@@ -260,11 +260,11 @@ describe('tripTrouble', () => {
         },
       ];
       const result = calculateTripAdjustment(troubledRaces, 0);
-      expect(result.adjustment).toBe(3);
+      expect(result.adjustment).toBe(2); // v3.8: HIGH_CONFIDENCE_PTS=2, recency=1.0
       expect(result.confidence).toBe('MEDIUM'); // 1 high = MEDIUM overall
     });
 
-    it('returns +6 pts for two high-confidence trouble races', () => {
+    it('returns +3 pts for two high-confidence trouble races (v3.8)', () => {
       const troubledRaces: TroubledRace[] = [
         {
           raceIndex: 0,
@@ -282,11 +282,11 @@ describe('tripTrouble', () => {
         },
       ];
       const result = calculateTripAdjustment(troubledRaces, 0);
-      expect(result.adjustment).toBe(6);
+      expect(result.adjustment).toBe(3); // v3.8: 2*1.0 + 2*0.6 = 3.2 → 3
       expect(result.confidence).toBe('HIGH'); // 2+ high = HIGH overall
     });
 
-    it('returns +2 pts for one medium-confidence trouble race', () => {
+    it('returns +1 pt for one medium-confidence trouble race (v3.8)', () => {
       const troubledRaces: TroubledRace[] = [
         {
           raceIndex: 0,
@@ -297,7 +297,7 @@ describe('tripTrouble', () => {
         },
       ];
       const result = calculateTripAdjustment(troubledRaces, 0);
-      expect(result.adjustment).toBe(2);
+      expect(result.adjustment).toBe(1); // v3.8: MEDIUM_CONFIDENCE_PTS=1, recency=1.0
       expect(result.confidence).toBe('LOW');
     });
 
@@ -332,7 +332,7 @@ describe('tripTrouble', () => {
       expect(result.reason).toContain('causes trouble');
     });
 
-    it('caps adjustment at MAX_ADJUSTMENT (8 pts)', () => {
+    it('caps adjustment at MAX_ADJUSTMENT (4 pts v3.8)', () => {
       const troubledRaces: TroubledRace[] = [
         {
           raceIndex: 0,
@@ -383,7 +383,7 @@ describe('tripTrouble', () => {
           beyer: 75,
         },
       ];
-      // With no caused trouble: 6 pts
+      // With no caused trouble: 3 pts (v3.8: 2*1.0 + 2*0.6 = 3.2 → 3)
       const resultNoCaused = calculateTripAdjustment(troubledRaces, 0);
       // With 1 caused trouble: reduced by 25%
       const resultWithCaused = calculateTripAdjustment(troubledRaces, 1);
@@ -404,7 +404,7 @@ describe('tripTrouble', () => {
       ]);
 
       const result = analyzeTripTrouble(horse);
-      expect(result.adjustment).toBe(3);
+      expect(result.adjustment).toBe(2); // v3.8: HIGH_CONFIDENCE_PTS=2, recency=1.0
       expect(result.highConfidenceCount).toBe(1);
       expect(result.totalTroubledCount).toBe(1);
     });
@@ -417,7 +417,7 @@ describe('tripTrouble', () => {
       ]);
 
       const result = analyzeTripTrouble(horse);
-      expect(result.adjustment).toBe(6); // 2 * 3 = 6
+      expect(result.adjustment).toBe(3); // v3.8: 2*1.0 + 2*0.6 = 3.2 → 3
       expect(result.highConfidenceCount).toBe(2);
       expect(result.confidence).toBe('HIGH');
     });
@@ -429,7 +429,7 @@ describe('tripTrouble', () => {
       ]);
 
       const result = analyzeTripTrouble(horse);
-      expect(result.adjustment).toBe(2); // Medium confidence = 2 pts
+      expect(result.adjustment).toBe(1); // v3.8: MEDIUM_CONFIDENCE_PTS=1, recency=1.0
       expect(result.mediumConfidenceCount).toBe(1);
     });
 
@@ -527,7 +527,7 @@ describe('tripTrouble', () => {
       const horse1Result = results.get(1);
       const horse2Result = results.get(2);
 
-      expect(horse1Result?.adjustment).toBe(3);
+      expect(horse1Result?.adjustment).toBe(2); // v3.8: HIGH_CONFIDENCE_PTS=2
       expect(horse2Result?.adjustment).toBe(0);
     });
   });
@@ -538,15 +538,20 @@ describe('tripTrouble', () => {
 
   describe('hasSignificantTrouble', () => {
     it('returns true for adjustment >= 3', () => {
+      // v3.8: Need two HIGH races to reach >= 3 (2*1.0 + 2*0.6 = 3.2 → 3)
       const result = analyzeTripTrouble(
-        createMockHorse([createMockPP({ tripComment: 'blocked', finishPosition: 5 })])
+        createMockHorse([
+          createMockPP({ tripComment: 'blocked', finishPosition: 5 }),
+          createMockPP({ tripComment: 'steadied', finishPosition: 4 }),
+        ])
       );
       expect(hasSignificantTrouble(result)).toBe(true);
     });
 
     it('returns false for adjustment < 3', () => {
+      // v3.8: Single HIGH race gives 2 pts, which is < 3
       const result = analyzeTripTrouble(
-        createMockHorse([createMockPP({ tripComment: 'wide', finishPosition: 5 })])
+        createMockHorse([createMockPP({ tripComment: 'blocked', finishPosition: 5 })])
       );
       expect(hasSignificantTrouble(result)).toBe(false);
     });
@@ -559,7 +564,7 @@ describe('tripTrouble', () => {
       );
       const summary = getTripTroubleSummary(result);
       expect(summary).toContain('clear trouble');
-      expect(summary).toContain('+3');
+      expect(summary).toContain('+2'); // v3.8: HIGH_CONFIDENCE_PTS=2
     });
 
     it('returns appropriate message for caused trouble', () => {
@@ -580,12 +585,12 @@ describe('tripTrouble', () => {
   });
 
   describe('getTripTroubleColor', () => {
-    it('returns green for high adjustment', () => {
-      expect(getTripTroubleColor(6)).toBe('#22c55e');
+    it('returns green for max adjustment (v3.8: >= 4)', () => {
+      expect(getTripTroubleColor(4)).toBe('#22c55e');
     });
 
-    it('returns light green for moderate adjustment', () => {
-      expect(getTripTroubleColor(4)).toBe('#4ade80');
+    it('returns light green for moderate adjustment (v3.8: >= 2)', () => {
+      expect(getTripTroubleColor(3)).toBe('#4ade80');
     });
 
     it('returns yellow for minor adjustment', () => {
@@ -602,13 +607,13 @@ describe('tripTrouble', () => {
   // ============================================================================
 
   describe('TRIP_TROUBLE_CONFIG', () => {
-    it('has correct max adjustment', () => {
-      expect(TRIP_TROUBLE_CONFIG.MAX_ADJUSTMENT).toBe(8);
+    it('has correct max adjustment (v3.8)', () => {
+      expect(TRIP_TROUBLE_CONFIG.MAX_ADJUSTMENT).toBe(4);
     });
 
-    it('has correct points per confidence level', () => {
-      expect(TRIP_TROUBLE_CONFIG.HIGH_CONFIDENCE_PTS).toBe(3);
-      expect(TRIP_TROUBLE_CONFIG.MEDIUM_CONFIDENCE_PTS).toBe(2);
+    it('has correct points per confidence level (v3.8)', () => {
+      expect(TRIP_TROUBLE_CONFIG.HIGH_CONFIDENCE_PTS).toBe(2);
+      expect(TRIP_TROUBLE_CONFIG.MEDIUM_CONFIDENCE_PTS).toBe(1);
       expect(TRIP_TROUBLE_CONFIG.LOW_CONFIDENCE_PTS).toBe(1);
     });
 
@@ -627,7 +632,7 @@ describe('tripTrouble', () => {
         createMockPP({ tripComment: 'blocked @ 1/4 pole (bad luck!)', finishPosition: 6 }),
       ]);
       const result = analyzeTripTrouble(horse);
-      expect(result.adjustment).toBe(3);
+      expect(result.adjustment).toBe(2); // v3.8: HIGH_CONFIDENCE_PTS=2
     });
 
     it('handles very long comments', () => {
@@ -636,7 +641,7 @@ describe('tripTrouble', () => {
         createMockPP({ tripComment: longComment, finishPosition: 6 }),
       ]);
       const result = analyzeTripTrouble(horse);
-      expect(result.adjustment).toBeGreaterThanOrEqual(3); // Should find "blocked"
+      expect(result.adjustment).toBeGreaterThanOrEqual(2); // v3.8: Should find "blocked" (2 pts)
     });
 
     it('handles comments with multiple trouble indicators', () => {
