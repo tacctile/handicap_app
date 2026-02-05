@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import './Dashboard.css';
 import { useValueDetection } from '../hooks/useValueDetection';
 import { useRaceBets } from '../hooks/useRaceBets';
-import { useAIAnalysis } from '../hooks/useAIAnalysis';
 import type { UseSessionPersistenceReturn } from '../hooks/useSessionPersistence';
 // Note: BetModeContainer import removed - old BET MODE screen disconnected from navigation
 // File kept at ./BetMode/BetModeContainer.tsx for potential future use
@@ -14,7 +13,6 @@ import { ScoringHelpModal } from './ScoringHelpModal';
 import { BettingStrategyGuide } from './BettingStrategyGuide';
 import { RaceVerdictHeader } from './RaceVerdictHeader';
 import { RaceOverview } from './RaceOverview';
-import { AIAnalysisPanel } from './AIAnalysisPanel';
 import {
   calculateRaceScores,
   MAX_SCORE,
@@ -652,22 +650,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
     selectedRaceIndex + 1
   );
 
-  // AI Analysis - triggers automatically when race and scores are ready
-  // Non-blocking: scoring results display immediately, AI loads in background
-  const { aiAnalysis, aiLoading, aiError, retryAnalysis } = useAIAnalysis(
-    currentRace,
-    currentRaceScoredHorses
-  );
-
-  // Helper to get horse name by program number for AI panel display
-  const getHorseNameByProgram = useCallback(
-    (programNumber: number) => {
-      const horse = currentRace?.horses?.find((h) => h.programNumber === programNumber);
-      return horse?.horseName || `#${programNumber}`;
-    },
-    [currentRace?.horses]
-  );
-
   // Calculate blended rankings (includes trend analysis)
   const blendedRankedHorses = useMemo(() => {
     if (!currentRace) return [];
@@ -1236,16 +1218,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
               ) : (
                 <>
-                  {/* AI Analysis Panel - displays above horse list */}
-                  {/* Non-blocking: shows loading state while scoring results are already visible */}
-                  <AIAnalysisPanel
-                    aiAnalysis={aiAnalysis}
-                    loading={aiLoading}
-                    error={aiError}
-                    onRetry={retryAnalysis}
-                    getHorseName={getHorseNameByProgram}
-                  />
-
                   <div className="horse-list" ref={horseListRef}>
                     {/* Horse rows only - verdict header and column header are now grid-level elements */}
                     {/* Collect all field base scores for proper overlay calculation */}
