@@ -539,18 +539,39 @@ describe('Algorithm v3.1 - Score Distribution Sanity', () => {
   });
 
   it('average horse scores 150-200 base', () => {
+    // Fixture represents a typical average horse:
+    // - 2 lifetime wins from 12 starts (16.7% win rate)
+    // - One recent win reflected in PPs (consistent with lifetimeWins)
+    // - Mix of competitive finishes (2nd, 3rd, 4th)
+    // - Beyer figures in 78-82 range (appropriate for allowance-level)
     const average = createHorseEntry({
       lifetimeStarts: 12,
       lifetimeWins: 2,
       bestBeyer: 82,
       averageBeyer: 78,
       lastBeyer: 80,
-      pastPerformances: Array.from({ length: 5 }, () =>
+      pastPerformances: [
+        createPastPerformance({
+          finishPosition: 3,
+          speedFigures: createSpeedFigures({ beyer: 80 }),
+        }),
+        createPastPerformance({
+          finishPosition: 1, // Reflects one of the 2 lifetime wins
+          speedFigures: createSpeedFigures({ beyer: 82 }),
+        }),
         createPastPerformance({
           finishPosition: 4,
           speedFigures: createSpeedFigures({ beyer: 78 }),
-        })
-      ),
+        }),
+        createPastPerformance({
+          finishPosition: 2,
+          speedFigures: createSpeedFigures({ beyer: 79 }),
+        }),
+        createPastPerformance({
+          finishPosition: 4,
+          speedFigures: createSpeedFigures({ beyer: 77 }),
+        }),
+      ],
     });
 
     const header = createRaceHeader();
