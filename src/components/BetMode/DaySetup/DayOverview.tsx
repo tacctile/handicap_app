@@ -6,13 +6,11 @@
  * For STANDARD and EXPERT users, also shows multi-race opportunities.
  */
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import type { DaySession } from '../../../lib/betting/daySession';
 import type { RaceAllocation } from '../../../lib/betting/allocateDayBudget';
 import type { MultiRaceOpportunity, MultiRaceBet } from '../../../lib/betting/betTypes';
 import { MultiRaceOpportunities } from '../MultiRace';
-import { ShareControls } from '../LiveShare';
-import { useLiveSessionAdmin } from '../../../hooks/useLiveSessionAdmin';
 import './DaySetup.css';
 
 interface DayOverviewProps {
@@ -65,20 +63,14 @@ export const DayOverview: React.FC<DayOverviewProps> = ({
   multiRaceTickets = [],
   onViewMultiRace,
 }) => {
-  const { raceAllocations, totalBankroll, experienceLevel, riskStyle, trackName, multiRaceReserve = 0 } = session;
-
-  // Live sharing hook
-  const liveAdmin = useLiveSessionAdmin();
-
-  // Handle starting live share
-  const handleStartSharing = useCallback(async () => {
-    await liveAdmin.startSharing(session);
-  }, [liveAdmin, session]);
-
-  // Handle stopping live share
-  const handleStopSharing = useCallback(async () => {
-    await liveAdmin.stopSharing();
-  }, [liveAdmin]);
+  const {
+    raceAllocations,
+    totalBankroll,
+    experienceLevel,
+    riskStyle,
+    trackName,
+    multiRaceReserve = 0,
+  } = session;
 
   // Count verdicts
   const betRaces = raceAllocations.filter((r) => r.verdict === 'BET');
@@ -93,7 +85,8 @@ export const DayOverview: React.FC<DayOverviewProps> = ({
   const totalAllocated = singleRaceTotal + multiRaceReserve;
 
   // Check if multi-race opportunities are available
-  const showMultiRace = experienceLevel !== 'beginner' &&
+  const showMultiRace =
+    experienceLevel !== 'beginner' &&
     multiRaceOpportunities.length > 0 &&
     onViewMultiRace !== undefined;
 
@@ -145,7 +138,9 @@ export const DayOverview: React.FC<DayOverviewProps> = ({
         <div className="day-overview__summary-card day-overview__summary-card--caution">
           <div className="day-overview__summary-header">
             <span className="day-overview__summary-icon">🟡</span>
-            <span className="day-overview__summary-label">CAUTION RACES: {cautionRaces.length}</span>
+            <span className="day-overview__summary-label">
+              CAUTION RACES: {cautionRaces.length}
+            </span>
           </div>
           <div className="day-overview__summary-budget">Budget: ${cautionBudget}</div>
           <div className="day-overview__summary-desc">Marginal value. Bet light.</div>
@@ -157,15 +152,15 @@ export const DayOverview: React.FC<DayOverviewProps> = ({
             <span className="day-overview__summary-label">PASS RACES: {passRaces.length}</span>
           </div>
           <div className="day-overview__summary-budget">Budget: ${passBudget}</div>
-          <div className="day-overview__summary-desc">No value. Minimal bets to stay in action.</div>
+          <div className="day-overview__summary-desc">
+            No value. Minimal bets to stay in action.
+          </div>
         </div>
       </div>
 
       {/* Race-by-race breakdown */}
       <div className="day-overview__breakdown">
-        <div className="day-overview__breakdown-header">
-          RACE-BY-RACE BREAKDOWN:
-        </div>
+        <div className="day-overview__breakdown-header">RACE-BY-RACE BREAKDOWN:</div>
 
         <div className="day-overview__race-list">
           {raceAllocations.map((allocation) => (
@@ -188,7 +183,14 @@ export const DayOverview: React.FC<DayOverviewProps> = ({
             <span className="day-overview__total-value">${multiRaceReserve}</span>
           </div>
         )}
-        <div className="day-overview__total-row" style={{ marginTop: 4, borderTop: '1px solid var(--color-border, #2a2a2c)', paddingTop: 12 }}>
+        <div
+          className="day-overview__total-row"
+          style={{
+            marginTop: 4,
+            borderTop: '1px solid var(--color-border, #2a2a2c)',
+            paddingTop: 12,
+          }}
+        >
           <span className="day-overview__total-label">TOTAL ALLOCATED:</span>
           <span className="day-overview__total-value">${totalAllocated}</span>
         </div>
@@ -203,19 +205,6 @@ export const DayOverview: React.FC<DayOverviewProps> = ({
           onViewOpportunity={onViewMultiRace}
         />
       )}
-
-      {/* Live sharing controls */}
-      <ShareControls
-        daySession={session}
-        isAvailable={liveAdmin.isAvailable}
-        isSharing={liveAdmin.isSharing}
-        liveSession={liveAdmin.liveSession}
-        shareUrl={liveAdmin.shareUrl}
-        isLoading={liveAdmin.isLoading}
-        error={liveAdmin.error}
-        onStartSharing={handleStartSharing}
-        onStopSharing={handleStopSharing}
-      />
 
       {/* Help tip */}
       <div className="day-overview__help">
@@ -258,9 +247,7 @@ const RaceRow: React.FC<RaceRowProps> = ({ allocation, isCompleted, onClick }) =
       className={`day-overview__race-row ${isCompleted ? 'day-overview__race-row--completed' : ''}`}
       onClick={onClick}
     >
-      <div className="day-overview__race-number">
-        R{raceNumber}
-      </div>
+      <div className="day-overview__race-number">R{raceNumber}</div>
 
       <div className="day-overview__race-verdict">
         <span className="day-overview__verdict-emoji">{VERDICT_EMOJI[verdict]}</span>
@@ -283,7 +270,9 @@ const RaceRow: React.FC<RaceRowProps> = ({ allocation, isCompleted, onClick }) =
 
       <div className="day-overview__race-edge">
         {edge !== null ? (
-          <span className={`day-overview__edge-value ${edge >= 75 ? 'day-overview__edge-value--high' : ''}`}>
+          <span
+            className={`day-overview__edge-value ${edge >= 75 ? 'day-overview__edge-value--high' : ''}`}
+          >
             +{Math.round(edge)}%
           </span>
         ) : (
@@ -291,9 +280,7 @@ const RaceRow: React.FC<RaceRowProps> = ({ allocation, isCompleted, onClick }) =
         )}
       </div>
 
-      <div className="day-overview__race-budget">
-        ${allocatedBudget}
-      </div>
+      <div className="day-overview__race-budget">${allocatedBudget}</div>
 
       {isCompleted && (
         <div className="day-overview__completed-check">
