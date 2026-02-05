@@ -84,7 +84,6 @@ We reserve the right to terminate or suspend your access to the service at any t
 
 Upon termination:
 - Your right to use the service will immediately cease
-- No refunds will be provided for any prepaid subscription fees
 - Provisions that by their nature should survive termination shall survive
 
 [PLACEHOLDER: Additional termination terms including data retention after termination, appeal process, and reactivation policies to be added after legal review.]
@@ -94,8 +93,6 @@ Upon termination:
 ADDITIONAL SECTIONS TO BE ADDED:
 
 [PLACEHOLDER: Intellectual Property Rights]
-[PLACEHOLDER: Payment Terms and No Refund Policy]
-[PLACEHOLDER: Subscription and Cancellation Terms]
 [PLACEHOLDER: Privacy Policy Reference]
 [PLACEHOLDER: Dispute Resolution and Arbitration]
 [PLACEHOLDER: Governing Law and Jurisdiction]

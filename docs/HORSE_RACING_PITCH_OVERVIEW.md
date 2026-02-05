@@ -711,7 +711,7 @@ The heart of Furlong is a deterministic scoring engine:
 ## Security & Privacy
 
 - No racing data stored on servers—everything happens in your browser
-- Optional authentication for premium features
+- No account required—works as a personal tool
 - No tracking of your betting activity
 - Your DRF files are processed locally and never uploaded
 
@@ -746,19 +746,9 @@ Furlong offers:
 
 - Professional-grade analysis
 - Modern, mobile-friendly experience
-- AI-augmented insights
+- AI-augmented insights (disabled by default, code preserved)
 - Value-focused methodology
-- Accessible pricing
-
-## Revenue Model
-
-**Freemium Structure**:
-
-- Free tier: Basic scoring, limited races
-- Standard tier: Full AI analysis, unlimited races
-- Pro tier: Advanced features, multi-track support, exotic builders
-
-**Subscription Pricing**: Monthly/annual plans aligned with racing calendars (racing is seasonal in many markets).
+- Free personal tool—no subscriptions required
 
 ## Competitive Advantages
 

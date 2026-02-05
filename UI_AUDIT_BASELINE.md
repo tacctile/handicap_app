@@ -2,9 +2,11 @@
 
 > **Comprehensive audit of all UI components, screens, styles, and backend integration points**
 >
-> **Date:** January 2026
+> **Date:** January 2026 (Audit) / February 2026 (Updated)
 >
 > **Purpose:** Establish exact baseline before UI overhaul
+>
+> **NOTE (February 2026):** Auth/subscription scaffolding has been removed. The following components and hooks no longer exist: AuthPage, LoginForm, SignupForm, AccountSettings, ProtectedRoute, SubscriptionGate, SubscriptionPage, SubscriptionStatus, PricingCard, useAuth, useSubscription. This document is preserved for historical reference of the baseline state before cleanup.
 
 ---
 

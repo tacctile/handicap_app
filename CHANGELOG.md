@@ -6,6 +6,12 @@
 
 ---
 
+## February 2026
+
+- Removed auth/payments/performance scaffolding - converted to lean personal tool
+- Cleaned documentation, workflows, and legal files to remove stale references
+- Updated privacy policy and terms of service for personal tool context
+
 ## January 26, 2026
 
 - All tests passing (3176 tests, 0 failures)
