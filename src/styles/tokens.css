@@ -26,6 +26,7 @@
   --space-6: 32px;
   --space-7: 48px;
   --space-8: 64px;
+  --space-10: 40px; /* 5×8, used by dashboard large padding */
 
   /* Universal gaps - THESE ARE THE ONLY VALUES FOR CONTAINER SPACING */
   --gap-container: 16px; /* Between and inside all cards, panels, sections */

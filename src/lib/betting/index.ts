@@ -60,7 +60,7 @@ export {
   type RaceRecommendations,
   type RecommendationFilters,
   type RecommendationConfidence,
-  type BetType as KellyBetType,
+  type KellyBetType,
 } from './betRecommender';
 
 // Place/Show Estimator - Probability estimation for place and show bets
@@ -108,8 +108,9 @@ export {
 // LEGACY EXPORTS (unchanged)
 // ============================================================================
 
-// Bet types - selectively export to avoid conflicts with betRecommendations
+// Bet types - canonical BetType now safe to export (conflicts resolved)
 export type {
+  BetType,
   MultiRaceBetType,
   LegStrategy,
   MultiRaceQuality,

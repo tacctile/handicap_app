@@ -2,8 +2,8 @@ import type { ClassifiedHorse, TierGroup, BettingTier } from './tierClassificati
 import type { LongshotAnalysisResult } from '../longshots';
 import type { DiamondAnalysis } from '../diamonds';
 
-// Bet types
-export type BetType =
+// Recommendation-specific bet types (lowercase, includes display-only types like value_bomb/hidden_gem)
+export type RecommendationBetType =
   | 'win'
   | 'place'
   | 'show'
@@ -19,7 +19,7 @@ export type BetType =
   | 'hidden_gem'; // Diamond in rough special bet
 
 export interface BetRecommendation {
-  type: BetType;
+  type: RecommendationBetType;
   typeName: string;
   description: string;
   horses: ClassifiedHorse[];
@@ -58,7 +58,7 @@ const BASE_AMOUNTS: Record<BettingTier, number> = {
 };
 
 // Bet type configurations
-const BET_TYPE_CONFIG: Record<BetType, { name: string; icon: string }> = {
+const BET_TYPE_CONFIG: Record<RecommendationBetType, { name: string; icon: string }> = {
   win: { name: 'Win', icon: 'emoji_events' },
   place: { name: 'Place', icon: 'looks_two' },
   show: { name: 'Show', icon: 'looks_3' },
@@ -102,7 +102,7 @@ function trifectaBoxCost(numHorses: number, baseAmount: number): number {
  * Calculate potential returns based on odds
  */
 function calculatePotentialReturn(
-  betType: BetType,
+  betType: RecommendationBetType,
   horses: ClassifiedHorse[],
   cost: number
 ): { min: number; max: number } {
@@ -180,7 +180,7 @@ function formatHorseNumbers(horses: ClassifiedHorse[]): string {
  * Generate window instruction text
  */
 function generateWindowInstruction(
-  betType: BetType,
+  betType: RecommendationBetType,
   horses: ClassifiedHorse[],
   amount: number,
   raceNumber?: number
