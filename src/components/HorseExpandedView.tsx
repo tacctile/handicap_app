@@ -27,14 +27,14 @@ import {
 
 // Score limits by category - derived from lib/scoring for display
 const SCORE_LIMITS = {
-  connections: SCORING_LIMITS.connections, // 23
+  connections: SCORING_LIMITS.connections, // 24
   postPosition: SCORING_LIMITS.postPosition, // 12
   speedClass: SCORING_LIMITS.speedClass, // 140
-  form: SCORING_LIMITS.form, // 42
+  form: SCORING_LIMITS.form, // 50
   equipment: SCORING_LIMITS.equipment, // 8
-  pace: SCORING_LIMITS.pace, // 35
-  base: MAX_BASE_SCORE, // 319 - Max base score before overlay
-  total: MAX_SCORE, // 359 - Max final score (base + overlay)
+  pace: SCORING_LIMITS.pace, // 45
+  base: MAX_BASE_SCORE, // 336 - Max base score before overlay
+  total: MAX_SCORE, // 376 - Max final score (base + overlay)
 } as const;
 
 // Equipment code mappings
@@ -78,12 +78,32 @@ interface CategoryConfig {
 }
 
 const CATEGORIES: CategoryConfig[] = [
-  { key: 'connections', label: 'CONNECTIONS', description: 'Trainer/Jockey', max: 23 },
-  { key: 'postPosition', label: 'POST', description: 'Draw position', max: 12 },
-  { key: 'speedClass', label: 'SPEED/CLASS', description: 'Figures & Class', max: 140 },
-  { key: 'form', label: 'FORM', description: 'Recent races', max: 42 },
-  { key: 'equipment', label: 'EQUIPMENT', description: 'Gear changes', max: 8 },
-  { key: 'pace', label: 'PACE', description: 'Race shape', max: 35 },
+  {
+    key: 'connections',
+    label: 'CONNECTIONS',
+    description: 'Trainer/Jockey',
+    max: SCORING_LIMITS.connections,
+  },
+  {
+    key: 'postPosition',
+    label: 'POST',
+    description: 'Draw position',
+    max: SCORING_LIMITS.postPosition,
+  },
+  {
+    key: 'speedClass',
+    label: 'SPEED/CLASS',
+    description: 'Figures & Class',
+    max: SCORING_LIMITS.speedClass,
+  },
+  { key: 'form', label: 'FORM', description: 'Recent races', max: SCORING_LIMITS.form },
+  {
+    key: 'equipment',
+    label: 'EQUIPMENT',
+    description: 'Gear changes',
+    max: SCORING_LIMITS.equipment,
+  },
+  { key: 'pace', label: 'PACE', description: 'Race shape', max: SCORING_LIMITS.pace },
 ];
 
 /**
