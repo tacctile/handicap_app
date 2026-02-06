@@ -656,7 +656,7 @@ describe('Algorithm Validation - Full DRF Pipeline', () => {
         const scoredHorses = calculateRaceScores(
           race.horses,
           race.header,
-          (idx: number, origOdds: string) => origOdds,
+          (_idx: number, origOdds: string) => origOdds,
           (idx: number) => race.horses[idx]?.isScratched || false,
           'fast'
         );
