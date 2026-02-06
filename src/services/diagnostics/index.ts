@@ -79,7 +79,7 @@ function parseResultsFile(content: string): RaceResult[] {
   for (const line of lines) {
     // Race header
     const raceMatch = line.match(/^RACE\s+(\d+)/i);
-    if (raceMatch) {
+    if (raceMatch?.[1]) {
       if (currentRace) {
         results.push(currentRace);
       }
@@ -95,7 +95,7 @@ function parseResultsFile(content: string): RaceResult[] {
 
     // Position lines (1st, 2nd, 3rd, 4th)
     const posMatch = line.match(/^(1st|2nd|3rd|4th):\s*(\d+)\s+(.+)$/i);
-    if (posMatch) {
+    if (posMatch?.[1] && posMatch[2] && posMatch[3]) {
       const positionMap: Record<string, number> = {
         '1st': 1,
         '2nd': 2,
@@ -116,13 +116,13 @@ function parseResultsFile(content: string): RaceResult[] {
 
     // Scratches
     const scratchMatch = line.match(/^SCRATCHED:\s*(.+)$/i);
-    if (scratchMatch) {
+    if (scratchMatch?.[1]) {
       const scratchText = scratchMatch[1].trim().toLowerCase();
       if (scratchText !== 'none' && scratchText !== '(none)') {
         const scratchParts = scratchMatch[1].split(/[,;]/);
         for (const part of scratchParts) {
           const scratchHorseMatch = part.trim().match(/^(\d+)\s+(.+)$/);
-          if (scratchHorseMatch) {
+          if (scratchHorseMatch?.[1] && scratchHorseMatch[2]) {
             currentRace.scratches.push({
               post: parseInt(scratchHorseMatch[1], 10),
               horseName: scratchHorseMatch[2].trim(),
@@ -212,14 +212,18 @@ function processRace(
   algorithmTop: number[];
 } | null {
   const positions = raceResult.positions;
-  if (positions.length < 4) {
+  const p0 = positions[0];
+  const p1 = positions[1];
+  const p2 = positions[2];
+  const p3 = positions[3];
+  if (!p0 || !p1 || !p2 || !p3) {
     return null; // Need at least 4 finishers
   }
 
-  const actualFirst = positions[0].post;
-  const actualSecond = positions[1].post;
-  const actualThird = positions[2].post;
-  const actualFourth = positions[3].post;
+  const actualFirst = p0.post;
+  const actualSecond = p1.post;
+  const actualThird = p2.post;
+  const actualFourth = p3.post;
 
   // Score using the actual scoring engine
   const scoredHorses = calculateRaceScores(
@@ -406,7 +410,7 @@ export async function runDiagnostics(
 
   // Process each file pair
   for (let fileIdx = 0; fileIdx < pairs.length; fileIdx++) {
-    const pair = pairs[fileIdx];
+    const pair = pairs[fileIdx]!;
 
     onProgress?.({
       currentFile: pair.trackCode,
@@ -461,7 +465,7 @@ export async function runDiagnostics(
 
         const { scoredHorses, actualFirst, actualSecond, actualThird, actualFourth, algorithmTop } =
           metrics;
-        const topPick = algorithmTop[0];
+        const topPick = algorithmTop[0] ?? -1;
 
         // Win/Place/Show
         if (topPick === actualFirst) {
