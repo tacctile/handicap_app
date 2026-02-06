@@ -185,13 +185,15 @@ function ChartTooltipContent({
             <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
               {entry.value}%
             </span>
-            {detail && <span style={{ color: C.textTertiary }}>— {String(detail)}</span>}
+            {detail != null && (
+              <span style={{ color: C.textTertiary }}>— {String(detail) as string}</span>
+            )}
           </div>
         );
       })}
-      {payload[0]?.payload?.tooltip && (
+      {payload[0]?.payload?.tooltip != null && (
         <div style={{ color: C.textTertiary, fontSize: 11, marginTop: 4, lineHeight: 1.4 }}>
-          {String(payload[0].payload.tooltip)}
+          {String(payload[0].payload.tooltip) as string}
         </div>
       )}
     </div>
@@ -620,7 +622,7 @@ function ExoticBetChart({ results }: { results: DiagnosticsResults }) {
                 position="right"
                 fill={C.textSecondary}
                 fontSize={11}
-                formatter={(val: number | string) => `${val}%`}
+                formatter={(val: unknown) => `${String(val)}%`}
               />
               {data.map((entry, i) => {
                 const t = maxRate > 0 ? entry.rate / maxRate : 0;
