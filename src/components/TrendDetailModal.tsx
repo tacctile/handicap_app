@@ -24,8 +24,14 @@ import {
   ReferenceLine,
 } from 'recharts';
 import type { HorseEntry, PastPerformance } from '../types/drf';
-import type { TrendScore, TrendResult, TrendDirection, TrendConfidence } from '../lib/scoring/trendAnalysis';
+import type {
+  TrendScore,
+  TrendResult,
+  TrendDirection,
+  TrendConfidence,
+} from '../lib/scoring/trendAnalysis';
 import { TREND_COLORS } from './TrendSparkline';
+import { Icon } from './shared/Icon';
 
 // ============================================================================
 // TYPES
@@ -79,14 +85,6 @@ const METRIC_LABELS: Record<string, string> = {
 // HELPER COMPONENTS
 // ============================================================================
 
-function Icon({ name, className = '' }: { name: string; className?: string }) {
-  return (
-    <span className={`material-icons ${className}`} aria-hidden="true">
-      {name}
-    </span>
-  );
-}
-
 interface TrendBadgeProps {
   direction: TrendDirection;
   strength: string;
@@ -133,7 +131,11 @@ function ConfidenceBadge({ confidence }: ConfidenceBadgeProps) {
         fontSize: '12px',
       }}
     >
-      <Icon name={confidence === 'HIGH' ? 'verified' : confidence === 'MEDIUM' ? 'help_outline' : 'warning'} />
+      <Icon
+        name={
+          confidence === 'HIGH' ? 'verified' : confidence === 'MEDIUM' ? 'help_outline' : 'warning'
+        }
+      />
       <span>{confidence} Confidence</span>
     </div>
   );
@@ -176,13 +178,30 @@ function CustomTooltip({ active, payload, label, pastPerformances }: CustomToolt
     >
       {race && (
         <>
-          <div style={{ fontWeight: 600, marginBottom: '6px', borderBottom: '1px solid #333', paddingBottom: '6px' }}>
+          <div
+            style={{
+              fontWeight: 600,
+              marginBottom: '6px',
+              borderBottom: '1px solid #333',
+              paddingBottom: '6px',
+            }}
+          >
             {race.date} - {race.track}
           </div>
           <div style={{ display: 'grid', gap: '4px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#888' }}>Finish:</span>
-              <span style={{ fontWeight: 500 }}>{race.finishPosition}{race.finishPosition === 1 ? 'st' : race.finishPosition === 2 ? 'nd' : race.finishPosition === 3 ? 'rd' : 'th'} of {race.fieldSize}</span>
+              <span style={{ fontWeight: 500 }}>
+                {race.finishPosition}
+                {race.finishPosition === 1
+                  ? 'st'
+                  : race.finishPosition === 2
+                    ? 'nd'
+                    : race.finishPosition === 3
+                      ? 'rd'
+                      : 'th'}{' '}
+                of {race.fieldSize}
+              </span>
             </div>
             {race.speedFigures?.beyer && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -196,7 +215,9 @@ function CustomTooltip({ active, payload, label, pastPerformances }: CustomToolt
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#888' }}>Class:</span>
-              <span style={{ fontWeight: 500, textTransform: 'capitalize' }}>{race.classification.replace(/-/g, ' ')}</span>
+              <span style={{ fontWeight: 500, textTransform: 'capitalize' }}>
+                {race.classification.replace(/-/g, ' ')}
+              </span>
             </div>
             {race.lengthsBehind > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -209,8 +230,13 @@ function CustomTooltip({ active, payload, label, pastPerformances }: CustomToolt
       )}
       <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px solid #333' }}>
         {payload.map((entry, index) => (
-          <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: entry.color }}>{entry.dataKey === 'finishPosition' ? 'Finish' : 'Beyer'}:</span>
+          <div
+            key={index}
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <span style={{ color: entry.color }}>
+              {entry.dataKey === 'finishPosition' ? 'Finish' : 'Beyer'}:
+            </span>
             <span style={{ fontWeight: 500 }}>{entry.value}</span>
           </div>
         ))}
@@ -223,12 +249,7 @@ function CustomTooltip({ active, payload, label, pastPerformances }: CustomToolt
 // MAIN COMPONENT
 // ============================================================================
 
-export function TrendDetailModal({
-  horse,
-  trendData,
-  isOpen,
-  onClose,
-}: TrendDetailModalProps) {
+export function TrendDetailModal({ horse, trendData, isOpen, onClose }: TrendDetailModalProps) {
   const [showBeyer, setShowBeyer] = useState(false);
   const [showBeatenLengths, setShowBeatenLengths] = useState(false);
 
@@ -388,7 +409,13 @@ export function TrendDetailModal({
                   domain={finishDomain}
                   tick={{ fill: '#888', fontSize: 11 }}
                   axisLine={{ stroke: '#444' }}
-                  label={{ value: 'Finish', angle: -90, position: 'insideLeft', fill: '#888', fontSize: 11 }}
+                  label={{
+                    value: 'Finish',
+                    angle: -90,
+                    position: 'insideLeft',
+                    fill: '#888',
+                    fontSize: 11,
+                  }}
                   reversed
                 />
                 {showBeyer && (
@@ -398,12 +425,24 @@ export function TrendDetailModal({
                     domain={beyerDomain}
                     tick={{ fill: '#888', fontSize: 11 }}
                     axisLine={{ stroke: '#444' }}
-                    label={{ value: 'Beyer', angle: 90, position: 'insideRight', fill: '#888', fontSize: 11 }}
+                    label={{
+                      value: 'Beyer',
+                      angle: 90,
+                      position: 'insideRight',
+                      fill: '#888',
+                      fontSize: 11,
+                    }}
                   />
                 )}
                 <Tooltip content={<CustomTooltip pastPerformances={races} />} />
                 <Legend />
-                <ReferenceLine yAxisId="finish" y={1} stroke="#22c55e" strokeDasharray="3 3" label={{ value: 'Win', fill: '#22c55e', fontSize: 10 }} />
+                <ReferenceLine
+                  yAxisId="finish"
+                  y={1}
+                  stroke="#22c55e"
+                  strokeDasharray="3 3"
+                  label={{ value: 'Win', fill: '#22c55e', fontSize: 10 }}
+                />
                 <Line
                   yAxisId="finish"
                   type="monotone"
@@ -457,19 +496,39 @@ export function TrendDetailModal({
             }}
           >
             {trendData.finishWindows.window1 !== null && (
-              <WindowCard label="Race 1" value={trendData.finishWindows.window1.toFixed(1)} subtext="Current form" />
+              <WindowCard
+                label="Race 1"
+                value={trendData.finishWindows.window1.toFixed(1)}
+                subtext="Current form"
+              />
             )}
             {trendData.finishWindows.window1_2 !== null && (
-              <WindowCard label="Races 1-2" value={trendData.finishWindows.window1_2.toFixed(1)} subtext="Very recent" />
+              <WindowCard
+                label="Races 1-2"
+                value={trendData.finishWindows.window1_2.toFixed(1)}
+                subtext="Very recent"
+              />
             )}
             {trendData.finishWindows.window1_3 !== null && (
-              <WindowCard label="Races 1-3" value={trendData.finishWindows.window1_3.toFixed(1)} subtext="Short-term" />
+              <WindowCard
+                label="Races 1-3"
+                value={trendData.finishWindows.window1_3.toFixed(1)}
+                subtext="Short-term"
+              />
             )}
             {trendData.finishWindows.window4_5 !== null && (
-              <WindowCard label="Races 4-5" value={trendData.finishWindows.window4_5.toFixed(1)} subtext="Old baseline" />
+              <WindowCard
+                label="Races 4-5"
+                value={trendData.finishWindows.window4_5.toFixed(1)}
+                subtext="Old baseline"
+              />
             )}
             {trendData.finishWindows.window3_5 !== null && (
-              <WindowCard label="Races 3-5" value={trendData.finishWindows.window3_5.toFixed(1)} subtext="Older trend" />
+              <WindowCard
+                label="Races 3-5"
+                value={trendData.finishWindows.window3_5.toFixed(1)}
+                subtext="Older trend"
+              />
             )}
           </div>
         </div>
@@ -510,15 +569,21 @@ export function TrendDetailModal({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <span style={{ color: '#888', fontSize: '12px' }}>Trend Score: </span>
-              <span style={{ color: '#fff', fontWeight: 600 }}>{trendData.normalizedScore.toFixed(1)}/100</span>
+              <span style={{ color: '#fff', fontWeight: 600 }}>
+                {trendData.normalizedScore.toFixed(1)}/100
+              </span>
             </div>
             <div>
               <span style={{ color: '#888', fontSize: '12px' }}>Raw Score: </span>
-              <span style={{ color: '#fff', fontWeight: 500 }}>{trendData.rawScore.toFixed(2)}</span>
+              <span style={{ color: '#fff', fontWeight: 500 }}>
+                {trendData.rawScore.toFixed(2)}
+              </span>
             </div>
             <div>
               <span style={{ color: '#888', fontSize: '12px' }}>Data Points: </span>
-              <span style={{ color: '#fff', fontWeight: 500 }}>{trendData.finishWindows.raceCount} races</span>
+              <span style={{ color: '#fff', fontWeight: 500 }}>
+                {trendData.finishWindows.raceCount} races
+              </span>
             </div>
           </div>
         </div>
@@ -574,10 +639,7 @@ function MetricRow({ detail }: MetricRowProps) {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Icon
-          name={DIRECTION_ICONS[detail.direction]}
-          className=""
-        />
+        <Icon name={DIRECTION_ICONS[detail.direction]} className="" />
         <span style={{ color: '#fff', fontSize: '13px' }}>
           {METRIC_LABELS[detail.metric] || detail.metric}
         </span>
@@ -595,7 +657,8 @@ function MetricRow({ detail }: MetricRowProps) {
             textAlign: 'right',
           }}
         >
-          {detail.strength >= 0 ? '+' : ''}{detail.strength.toFixed(1)}
+          {detail.strength >= 0 ? '+' : ''}
+          {detail.strength.toFixed(1)}
         </span>
       </div>
     </div>

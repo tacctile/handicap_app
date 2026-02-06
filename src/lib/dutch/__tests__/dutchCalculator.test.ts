@@ -751,7 +751,7 @@ describe('Dutch Book Display', () => {
     });
 
     it('formats dollars with cents', () => {
-      expect(formatCurrency(54.77)).toBe('$54.77');
+      expect(formatCurrency(54.77, 2)).toBe('$54.77');
     });
   });
 

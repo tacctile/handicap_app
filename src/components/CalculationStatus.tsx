@@ -1,21 +1,13 @@
 import { memo, useEffect, useState } from 'react';
 import type { CalculationState } from '../hooks/useRaceState';
 import { getConfidenceColor, getConfidenceLabel } from '../lib/confidence';
+import { Icon } from './shared/Icon';
 
 interface CalculationStatusProps {
   calculationState: CalculationState;
   horsesAnalyzed: number;
   activeHorses: number;
   confidenceLevel: number;
-}
-
-// Material Icon component
-function Icon({ name, className = '' }: { name: string; className?: string }) {
-  return (
-    <span className={`material-icons ${className}`} aria-hidden="true">
-      {name}
-    </span>
-  );
 }
 
 function formatTimestamp(timestamp: number | null): string {

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { HorseEntry, RaceHeader } from '../types/drf';
 import type { HorseScore, TacticalAdvantage, OverlayAnalysis } from '../lib/scoring';
 import { InfoTooltip } from './InfoTooltip';
+import { Icon } from './shared/Icon';
 import {
   SCORE_LIMITS,
   getScoreColor,
@@ -80,15 +81,6 @@ interface HorseDetailModalProps {
   longshotAnalysis?: LongshotAnalysisResult;
   /** Diamond analysis for hidden gem horses */
   diamondAnalysis?: DiamondAnalysis;
-}
-
-// Material Icon component
-function Icon({ name, className = '' }: { name: string; className?: string }) {
-  return (
-    <span className={`material-icons ${className}`} aria-hidden="true">
-      {name}
-    </span>
-  );
 }
 
 // Progress bar component for score visualization

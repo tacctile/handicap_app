@@ -391,8 +391,8 @@ describe('Bet Recommendations', () => {
     });
 
     it('formats cents with two decimal places', () => {
-      expect(formatCurrency(0.1)).toBe('$0.10');
-      expect(formatCurrency(0.5)).toBe('$0.50');
+      expect(formatCurrency(0.1, 2)).toBe('$0.10');
+      expect(formatCurrency(0.5, 2)).toBe('$0.50');
     });
 
     it('formats large amounts with commas', () => {

@@ -30,6 +30,7 @@ import { getTrackData } from '../data/tracks';
 import type { ParsedDRFFile, ParsedRace, HorseEntry } from '../types/drf';
 import type { useRaceState } from '../hooks/useRaceState';
 import type { TrackCondition as RaceStateTrackCondition } from '../hooks/useRaceState';
+import { formatCurrency } from '../utils/formatters';
 
 interface DashboardProps {
   parsedData: ParsedDRFFile | null;
@@ -47,16 +48,6 @@ interface DashboardProps {
   /** Handler to reset all races state */
   onResetAllRaces?: () => void;
 }
-
-// Format currency helper
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
 
 // Get full track name with code and size
 const getTrackDisplayName = (trackCode: string | undefined, trackSize: string): string => {

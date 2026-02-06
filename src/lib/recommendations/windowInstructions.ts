@@ -87,17 +87,9 @@ export function formatDisplayAmount(amount: number): string {
   return `$${Math.round(amount)}`;
 }
 
-/**
- * Format currency with proper decimals
- */
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: amount < 1 ? 2 : 0,
-    maximumFractionDigits: 2,
-  }).format(amount);
-}
+// formatCurrency moved to src/utils/formatters.ts
+import { formatCurrency } from '../../utils/formatters';
+export { formatCurrency };
 
 // ============================================================================
 // HORSE NUMBER FORMATTING

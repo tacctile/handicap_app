@@ -26,6 +26,7 @@ import {
 } from '../lib/exotics';
 import { formatCurrency } from '../lib/recommendations';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { TIER_COLORS_BY_NUMBER as TIER_COLORS } from '../constants/tierColors';
 
 // ============================================================================
 // TYPES
@@ -93,12 +94,6 @@ const STRUCTURE_OPTIONS: Record<
     { value: 'key_over', label: 'Key', description: 'Key horse must win' },
     { value: 'part_wheel', label: 'Part Wheel', description: 'Different horses per position' },
   ],
-};
-
-const TIER_COLORS = {
-  1: { bg: 'rgba(25, 171, 181, 0.15)', border: '#19abb5', text: '#19abb5' },
-  2: { bg: 'rgba(59, 130, 246, 0.15)', border: '#3b82f6', text: '#3b82f6' },
-  3: { bg: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b', text: '#f59e0b' },
 };
 
 // ============================================================================

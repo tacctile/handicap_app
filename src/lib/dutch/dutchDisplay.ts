@@ -89,17 +89,9 @@ export const EDGE_CLASS_LABELS: Record<EdgeClassification, string> = {
 // FORMATTING FUNCTIONS
 // ============================================================================
 
-/**
- * Format currency for display
- */
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(amount);
-}
+// formatCurrency moved to src/utils/formatters.ts
+import { formatCurrency } from '../../utils/formatters';
+export { formatCurrency };
 
 /**
  * Format currency for window (rounded to nearest $0.10)

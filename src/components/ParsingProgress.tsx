@@ -9,6 +9,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState, useRef, memo } from 'react';
 import type { ParsingStep, DRFWorkerProgressMessage } from '../types/drf';
+import { Icon } from './shared/Icon';
 
 // ============================================================================
 // TYPES
@@ -67,29 +68,6 @@ const STEP_ICONS: Record<ParsingStep, string> = {
   finalizing: 'check_circle',
   complete: 'done_all',
 };
-
-// ============================================================================
-// HELPER COMPONENTS
-// ============================================================================
-
-function Icon({
-  name,
-  className = '',
-  style,
-}: {
-  name: string;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <span
-      className={`material-icons ${className}`}
-      style={{ fontFamily: 'Material Icons', ...style }}
-    >
-      {name}
-    </span>
-  );
-}
 
 // ============================================================================
 // PROGRESS BAR COMPONENT
