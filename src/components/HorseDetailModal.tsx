@@ -1412,8 +1412,787 @@ export function HorseDetailModal({
                     </div>
                   }
                 />
+
+                {/* === Surface & Distance Section === */}
+                <CategoryCard
+                  icon="terrain"
+                  title="Distance / Surface"
+                  score={score.breakdown.distanceSurface.total}
+                  maxScore={SCORE_LIMITS.distanceSurface}
+                  isExpanded={expandedCategories.has('distanceSurface')}
+                  onToggle={() => toggleCategory('distanceSurface')}
+                  tooltip="How well does this horse perform on today's surface (dirt/turf/wet) and at today's distance? Based on past performance win rates."
+                  details={
+                    <div className="breakdown-details">
+                      <div className="breakdown-row">
+                        <span className="breakdown-label">Turf Score</span>
+                        <span className="breakdown-value">
+                          {score.breakdown.distanceSurface.turfScore}/8
+                        </span>
+                      </div>
+                      <div className="breakdown-row">
+                        <span className="breakdown-label">Wet Track Score</span>
+                        <span className="breakdown-value">
+                          {score.breakdown.distanceSurface.wetScore}/6
+                        </span>
+                      </div>
+                      <div className="breakdown-row">
+                        <span className="breakdown-label">Distance Score</span>
+                        <span className="breakdown-value">
+                          {score.breakdown.distanceSurface.distanceScore}/6
+                        </span>
+                      </div>
+                      {score.breakdown.distanceSurface.turfWinRate > 0 && (
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Turf Win Rate</span>
+                          <span className="breakdown-value">
+                            {(score.breakdown.distanceSurface.turfWinRate * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      )}
+                      {score.breakdown.distanceSurface.wetWinRate > 0 && (
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Wet Win Rate</span>
+                          <span className="breakdown-value">
+                            {(score.breakdown.distanceSurface.wetWinRate * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      )}
+                      {score.breakdown.distanceSurface.distanceWinRate > 0 && (
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Distance Win Rate</span>
+                          <span className="breakdown-value">
+                            {(score.breakdown.distanceSurface.distanceWinRate * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      )}
+                      {score.breakdown.distanceSurface.reasoning.length > 0 && (
+                        <div className="breakdown-note">
+                          {score.breakdown.distanceSurface.reasoning.join('. ')}
+                        </div>
+                      )}
+                    </div>
+                  }
+                />
+
+                <CategoryCard
+                  icon="emoji_events"
+                  title="Track Specialist"
+                  score={score.breakdown.trackSpecialist.total}
+                  maxScore={SCORE_LIMITS.trackSpecialist}
+                  isExpanded={expandedCategories.has('trackSpecialist')}
+                  onToggle={() => toggleCategory('trackSpecialist')}
+                  tooltip="Has this horse proven it can win at today's specific track? Horses that repeatedly run well at a track have a measurable edge."
+                  details={
+                    <div className="breakdown-details">
+                      {score.breakdown.trackSpecialist.trackWinRate > 0 && (
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Track Win Rate</span>
+                          <span className="breakdown-value">
+                            {(score.breakdown.trackSpecialist.trackWinRate * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      )}
+                      {score.breakdown.trackSpecialist.trackITMRate > 0 && (
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Track ITM Rate</span>
+                          <span className="breakdown-value">
+                            {(score.breakdown.trackSpecialist.trackITMRate * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      )}
+                      <div className="breakdown-row">
+                        <span className="breakdown-label">Specialist Status</span>
+                        <span
+                          className="breakdown-value"
+                          style={{
+                            color: score.breakdown.trackSpecialist.isSpecialist
+                              ? 'var(--color-primary)'
+                              : 'var(--color-text-secondary)',
+                          }}
+                        >
+                          {score.breakdown.trackSpecialist.isSpecialist ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                      <div className="breakdown-note">
+                        {score.breakdown.trackSpecialist.reasoning}
+                      </div>
+                    </div>
+                  }
+                />
+
+                {/* === Patterns Section === */}
+                <CategoryCard
+                  icon="pattern"
+                  title="Combo Patterns"
+                  score={score.breakdown.comboPatterns.total}
+                  maxScore={SCORE_LIMITS.comboPatterns}
+                  isExpanded={expandedCategories.has('comboPatterns')}
+                  onToggle={() => toggleCategory('comboPatterns')}
+                  tooltip="When multiple positive signals align (class drop + equipment change + trainer pattern), the combo is worth more than the sum of its parts. Range: -6 to +10."
+                  details={
+                    <div className="breakdown-details">
+                      {score.breakdown.comboPatterns.total < 0 && (
+                        <div
+                          className="breakdown-row"
+                          style={{
+                            backgroundColor: 'var(--color-error-bg, rgba(239, 68, 68, 0.1))',
+                            padding: '6px 8px',
+                            borderRadius: '6px',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            marginBottom: '8px',
+                          }}
+                        >
+                          <span className="breakdown-label" style={{ color: 'var(--color-error)' }}>
+                            <Icon name="warning" className="text-xs mr-1" />
+                            Negative Pattern Detected
+                          </span>
+                          <span className="breakdown-value" style={{ color: 'var(--color-error)' }}>
+                            {score.breakdown.comboPatterns.total}
+                          </span>
+                        </div>
+                      )}
+                      {score.breakdown.comboPatterns.intentScore !== 0 && (
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Intent Score</span>
+                          <span
+                            className="breakdown-value"
+                            style={{
+                              color:
+                                score.breakdown.comboPatterns.intentScore > 0
+                                  ? 'var(--color-primary)'
+                                  : 'var(--color-error)',
+                            }}
+                          >
+                            {score.breakdown.comboPatterns.intentScore > 0 ? '+' : ''}
+                            {score.breakdown.comboPatterns.intentScore}
+                          </span>
+                        </div>
+                      )}
+                      {score.breakdown.comboPatterns.detectedCombos.length > 0 ? (
+                        score.breakdown.comboPatterns.detectedCombos.map((combo, i) => (
+                          <div
+                            key={i}
+                            className="breakdown-row"
+                            style={{
+                              backgroundColor:
+                                combo.points >= 0
+                                  ? 'rgba(25, 171, 181, 0.08)'
+                                  : 'rgba(239, 68, 68, 0.08)',
+                              padding: '6px 8px',
+                              borderRadius: '6px',
+                              marginBottom: '4px',
+                            }}
+                          >
+                            <span className="breakdown-label" style={{ fontSize: '0.8rem' }}>
+                              {combo.reasoning}
+                            </span>
+                            <span
+                              className="breakdown-value"
+                              style={{
+                                color:
+                                  combo.points >= 0 ? 'var(--color-primary)' : 'var(--color-error)',
+                              }}
+                            >
+                              {combo.points >= 0 ? '+' : ''}
+                              {combo.points}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Status</span>
+                          <span
+                            className="breakdown-value"
+                            style={{ color: 'var(--color-text-secondary)' }}
+                          >
+                            No combos detected
+                          </span>
+                        </div>
+                      )}
+                      {score.breakdown.comboPatterns.reasoning.length > 0 && (
+                        <div className="breakdown-note">
+                          {score.breakdown.comboPatterns.reasoning.join('. ')}
+                        </div>
+                      )}
+                    </div>
+                  }
+                />
+
+                <CategoryCard
+                  icon="insights"
+                  title="Trainer Patterns"
+                  score={score.breakdown.trainerPatterns.total}
+                  maxScore={SCORE_LIMITS.trainerPatterns}
+                  isExpanded={expandedCategories.has('trainerPatterns')}
+                  onToggle={() => toggleCategory('trainerPatterns')}
+                  tooltip="DRF tracks 76 trainer stat categories (layoff, turf, first-time starter, etc.). This scores the trainer's win rate in the specific situation matching today's race."
+                  details={
+                    <div className="breakdown-details">
+                      {score.breakdown.trainerPatterns.matchedPatterns.length > 0 ? (
+                        score.breakdown.trainerPatterns.matchedPatterns.map((mp, i) => (
+                          <div
+                            key={i}
+                            className="breakdown-row"
+                            style={{
+                              backgroundColor: 'rgba(25, 171, 181, 0.08)',
+                              padding: '6px 8px',
+                              borderRadius: '6px',
+                              marginBottom: '4px',
+                            }}
+                          >
+                            <span className="breakdown-label" style={{ fontSize: '0.8rem' }}>
+                              {mp.pattern}
+                              <span
+                                style={{
+                                  color: 'var(--color-text-tertiary)',
+                                  marginLeft: '4px',
+                                }}
+                              >
+                                ({mp.trainerWinPercent.toFixed(0)}% win)
+                              </span>
+                            </span>
+                            <span
+                              className="breakdown-value"
+                              style={{ color: 'var(--color-primary)' }}
+                            >
+                              +{mp.points}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Status</span>
+                          <span
+                            className="breakdown-value"
+                            style={{ color: 'var(--color-text-secondary)' }}
+                          >
+                            No matching patterns
+                          </span>
+                        </div>
+                      )}
+                      {score.breakdown.trainerPatterns.reasoning.length > 0 && (
+                        <div className="breakdown-note">
+                          {score.breakdown.trainerPatterns.reasoning.join('. ')}
+                        </div>
+                      )}
+                    </div>
+                  }
+                />
+
+                {/* === Minor Factors Section === */}
+                <CategoryCard
+                  icon="school"
+                  title="Trainer Surf/Dist"
+                  score={score.breakdown.trainerSurfaceDistance.total}
+                  maxScore={SCORE_LIMITS.trainerSurfaceDistance}
+                  isExpanded={expandedCategories.has('trainerSurfDist')}
+                  onToggle={() => toggleCategory('trainerSurfDist')}
+                  tooltip="Does the trainer specialize in today's surface/distance combination? Trainers who excel with turf sprinters or dirt routers get bonus credit."
+                  details={
+                    <div className="breakdown-details">
+                      {score.breakdown.trainerSurfaceDistance.matchedCategory && (
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Matched Category</span>
+                          <span
+                            className="breakdown-value"
+                            style={{ color: 'var(--color-primary)' }}
+                          >
+                            {score.breakdown.trainerSurfaceDistance.matchedCategory}
+                          </span>
+                        </div>
+                      )}
+                      {score.breakdown.trainerSurfaceDistance.trainerWinPercent > 0 && (
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Trainer Win %</span>
+                          <span className="breakdown-value">
+                            {score.breakdown.trainerSurfaceDistance.trainerWinPercent.toFixed(0)}%
+                          </span>
+                        </div>
+                      )}
+                      {score.breakdown.trainerSurfaceDistance.wetBonusApplied && (
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Wet Track Bonus</span>
+                          <span
+                            className="breakdown-value"
+                            style={{ color: 'var(--color-primary)' }}
+                          >
+                            Applied (
+                            {score.breakdown.trainerSurfaceDistance.wetTrackWinPercent.toFixed(0)}%
+                            wet win)
+                          </span>
+                        </div>
+                      )}
+                      <div className="breakdown-note">
+                        {score.breakdown.trainerSurfaceDistance.reasoning}
+                      </div>
+                    </div>
+                  }
+                />
+
+                <CategoryCard
+                  icon="scale"
+                  title="Weight"
+                  score={score.breakdown.weightAnalysis.total}
+                  maxScore={SCORE_LIMITS.weight}
+                  isExpanded={expandedCategories.has('weight')}
+                  onToggle={() => toggleCategory('weight')}
+                  tooltip="Significant weight drops (5+ lbs) from the last race can indicate improved conditions. A subtle refinement worth up to 1 point."
+                  details={
+                    <div className="breakdown-details">
+                      <div className="breakdown-row">
+                        <span className="breakdown-label">Current Weight</span>
+                        <span className="breakdown-value">
+                          {score.breakdown.weightAnalysis.currentWeight} lbs
+                        </span>
+                      </div>
+                      {score.breakdown.weightAnalysis.lastRaceWeight != null && (
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Last Race Weight</span>
+                          <span className="breakdown-value">
+                            {score.breakdown.weightAnalysis.lastRaceWeight} lbs
+                          </span>
+                        </div>
+                      )}
+                      {score.breakdown.weightAnalysis.weightChange != null && (
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Change</span>
+                          <span
+                            className="breakdown-value"
+                            style={{
+                              color: score.breakdown.weightAnalysis.significantDrop
+                                ? 'var(--color-success)'
+                                : score.breakdown.weightAnalysis.significantGain
+                                  ? 'var(--color-warning)'
+                                  : 'var(--color-text-secondary)',
+                            }}
+                          >
+                            {score.breakdown.weightAnalysis.weightChange > 0 ? '+' : ''}
+                            {score.breakdown.weightAnalysis.weightChange} lbs
+                          </span>
+                        </div>
+                      )}
+                      <div className="breakdown-note">
+                        {score.breakdown.weightAnalysis.reasoning}
+                      </div>
+                    </div>
+                  }
+                />
+
+                {score.breakdown.ageAnalysis && (
+                  <CategoryCard
+                    icon="cake"
+                    title="Age Factor"
+                    score={score.breakdown.ageAnalysis.adjustment}
+                    maxScore={SCORE_LIMITS.ageFactor}
+                    isExpanded={expandedCategories.has('ageFactor')}
+                    onToggle={() => toggleCategory('ageFactor')}
+                    tooltip="Horses peak at ages 4-5. Younger horses are still developing, older horses may be declining. A ±1 point adjustment."
+                    details={
+                      <div className="breakdown-details">
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Age</span>
+                          <span className="breakdown-value">
+                            {score.breakdown.ageAnalysis!.age} years
+                          </span>
+                        </div>
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Peak Status</span>
+                          <span
+                            className="breakdown-value"
+                            style={{
+                              color:
+                                score.breakdown.ageAnalysis!.peakStatus === 'peak'
+                                  ? 'var(--color-success)'
+                                  : score.breakdown.ageAnalysis!.peakStatus === 'declining'
+                                    ? 'var(--color-error)'
+                                    : 'var(--color-text-secondary)',
+                            }}
+                          >
+                            {score.breakdown.ageAnalysis!.peakStatus.charAt(0).toUpperCase() +
+                              score.breakdown.ageAnalysis!.peakStatus.slice(1)}
+                          </span>
+                        </div>
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Adjustment</span>
+                          <span
+                            className="breakdown-value"
+                            style={{
+                              color:
+                                score.breakdown.ageAnalysis!.adjustment > 0
+                                  ? 'var(--color-success)'
+                                  : score.breakdown.ageAnalysis!.adjustment < 0
+                                    ? 'var(--color-error)'
+                                    : 'var(--color-text-secondary)',
+                            }}
+                          >
+                            {score.breakdown.ageAnalysis!.adjustment > 0 ? '+' : ''}
+                            {score.breakdown.ageAnalysis!.adjustment}
+                          </span>
+                        </div>
+                        <div className="breakdown-note">
+                          {score.breakdown.ageAnalysis!.reasoning}
+                        </div>
+                      </div>
+                    }
+                  />
+                )}
+
+                {score.breakdown.siresSireAnalysis && (
+                  <CategoryCard
+                    icon="pets"
+                    title="Sire's Sire"
+                    score={score.breakdown.siresSireAnalysis.adjustment}
+                    maxScore={SCORE_LIMITS.siresSire}
+                    isExpanded={expandedCategories.has('siresSire')}
+                    onToggle={() => toggleCategory('siresSire')}
+                    tooltip="The sire's sire (paternal grandsire) can influence surface and distance preferences. A ±1 point breeding adjustment."
+                    details={
+                      <div className="breakdown-details">
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Sire's Sire</span>
+                          <span className="breakdown-value">
+                            {score.breakdown.siresSireAnalysis!.siresSireName || 'Unknown'}
+                          </span>
+                        </div>
+                        {score.breakdown.siresSireAnalysis!.known && (
+                          <>
+                            <div className="breakdown-row">
+                              <span className="breakdown-label">Surface Affinity</span>
+                              <span
+                                className="breakdown-value"
+                                style={{
+                                  color:
+                                    score.breakdown.siresSireAnalysis!.surfaceAffinity > 0
+                                      ? 'var(--color-success)'
+                                      : score.breakdown.siresSireAnalysis!.surfaceAffinity < 0
+                                        ? 'var(--color-error)'
+                                        : 'var(--color-text-secondary)',
+                                }}
+                              >
+                                {score.breakdown.siresSireAnalysis!.surfaceAffinity > 0 ? '+' : ''}
+                                {score.breakdown.siresSireAnalysis!.surfaceAffinity.toFixed(1)}
+                              </span>
+                            </div>
+                            <div className="breakdown-row">
+                              <span className="breakdown-label">Distance Affinity</span>
+                              <span
+                                className="breakdown-value"
+                                style={{
+                                  color:
+                                    score.breakdown.siresSireAnalysis!.distanceAffinity > 0
+                                      ? 'var(--color-success)'
+                                      : score.breakdown.siresSireAnalysis!.distanceAffinity < 0
+                                        ? 'var(--color-error)'
+                                        : 'var(--color-text-secondary)',
+                                }}
+                              >
+                                {score.breakdown.siresSireAnalysis!.distanceAffinity > 0 ? '+' : ''}
+                                {score.breakdown.siresSireAnalysis!.distanceAffinity.toFixed(1)}
+                              </span>
+                            </div>
+                          </>
+                        )}
+                        <div className="breakdown-row">
+                          <span className="breakdown-label">Adjustment</span>
+                          <span
+                            className="breakdown-value"
+                            style={{
+                              color:
+                                score.breakdown.siresSireAnalysis!.adjustment > 0
+                                  ? 'var(--color-success)'
+                                  : score.breakdown.siresSireAnalysis!.adjustment < 0
+                                    ? 'var(--color-error)'
+                                    : 'var(--color-text-secondary)',
+                            }}
+                          >
+                            {score.breakdown.siresSireAnalysis!.adjustment > 0 ? '+' : ''}
+                            {score.breakdown.siresSireAnalysis!.adjustment}
+                          </span>
+                        </div>
+                        <div className="breakdown-note">
+                          {score.breakdown.siresSireAnalysis!.reasoning}
+                        </div>
+                      </div>
+                    }
+                  />
+                )}
               </div>
             </section>
+
+            {/* Overlay Scoring Breakdown Section */}
+            {score.breakdown.overlay && (
+              <section className="modal-section modal-section-responsive">
+                <h3 className="section-title-modal">
+                  <Icon name="tune" className="section-icon-modal" />
+                  Overlay Scoring Breakdown
+                  <span
+                    style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      marginLeft: '8px',
+                      color:
+                        score.breakdown.overlay.cappedScore > 0
+                          ? 'var(--color-success)'
+                          : score.breakdown.overlay.cappedScore < 0
+                            ? 'var(--color-error)'
+                            : 'var(--color-text-tertiary)',
+                    }}
+                  >
+                    {score.breakdown.overlay.cappedScore > 0 ? '+' : ''}
+                    {score.breakdown.overlay.cappedScore} pts
+                  </span>
+                </h3>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                  }}
+                >
+                  {/* Total Overlay Badge */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      backgroundColor:
+                        score.breakdown.overlay.cappedScore > 0
+                          ? 'rgba(16, 185, 129, 0.1)'
+                          : score.breakdown.overlay.cappedScore < 0
+                            ? 'rgba(239, 68, 68, 0.1)'
+                            : 'var(--color-elevated)',
+                      border: `1px solid ${
+                        score.breakdown.overlay.cappedScore > 0
+                          ? 'rgba(16, 185, 129, 0.3)'
+                          : score.breakdown.overlay.cappedScore < 0
+                            ? 'rgba(239, 68, 68, 0.3)'
+                            : 'var(--color-border)'
+                      }`,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Icon name="equalizer" className="text-base" />
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          color: 'var(--color-text-primary)',
+                          fontSize: '0.9rem',
+                        }}
+                      >
+                        Total Overlay
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '0.7rem',
+                          color: 'var(--color-text-tertiary)',
+                        }}
+                      >
+                        (cap ±40)
+                      </span>
+                    </div>
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        fontSize: '1.1rem',
+                        fontVariantNumeric: 'tabular-nums',
+                        color:
+                          score.breakdown.overlay.cappedScore > 0
+                            ? 'var(--color-success)'
+                            : score.breakdown.overlay.cappedScore < 0
+                              ? 'var(--color-error)'
+                              : 'var(--color-text-tertiary)',
+                      }}
+                    >
+                      {score.breakdown.overlay.cappedScore > 0 ? '+' : ''}
+                      {score.breakdown.overlay.cappedScore}
+                    </span>
+                  </div>
+
+                  {/* Overlay Sections Grid */}
+                  {[
+                    {
+                      label: 'Pace & Bias',
+                      icon: 'speed',
+                      value: score.breakdown.overlay.paceAndBias,
+                      max: 10,
+                    },
+                    {
+                      label: 'Form Cycle',
+                      icon: 'fitness_center',
+                      value: score.breakdown.overlay.formCycle,
+                      max: 15,
+                    },
+                    {
+                      label: 'Trip Analysis',
+                      icon: 'route',
+                      value: score.breakdown.overlay.tripAnalysis,
+                      max: 10,
+                    },
+                    {
+                      label: 'Class Movement',
+                      icon: 'leaderboard',
+                      value: score.breakdown.overlay.classMovement,
+                      max: 12,
+                    },
+                    {
+                      label: 'Connection Edges',
+                      icon: 'people',
+                      value: score.breakdown.overlay.connectionEdges,
+                      max: 8,
+                    },
+                    {
+                      label: 'Distance & Surface',
+                      icon: 'terrain',
+                      value: score.breakdown.overlay.distanceSurface,
+                      max: 6,
+                    },
+                    {
+                      label: 'Head-to-Head',
+                      icon: 'compare_arrows',
+                      value: score.breakdown.overlay.headToHead,
+                      max: 6,
+                    },
+                  ].map((section) => (
+                    <div
+                      key={section.label}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        backgroundColor: 'var(--color-elevated)',
+                        border: '1px solid var(--color-border)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Icon name={section.icon} className="text-sm" />
+                        <span
+                          style={{
+                            color: 'var(--color-text-secondary)',
+                            fontSize: '0.85rem',
+                          }}
+                        >
+                          {section.label}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '0.7rem',
+                            color: 'var(--color-text-tertiary)',
+                          }}
+                        >
+                          (±{section.max})
+                        </span>
+                      </div>
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          fontVariantNumeric: 'tabular-nums',
+                          fontSize: '0.9rem',
+                          color:
+                            section.value > 0
+                              ? 'var(--color-success)'
+                              : section.value < 0
+                                ? 'var(--color-error)'
+                                : 'var(--color-text-tertiary)',
+                        }}
+                      >
+                        {section.value > 0 ? '+' : ''}
+                        {section.value}
+                      </span>
+                    </div>
+                  ))}
+
+                  {/* Overflow / Confidence */}
+                  {score.breakdown.overlay.overflow !== 0 && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                        border: '1px solid rgba(245, 158, 11, 0.2)',
+                      }}
+                    >
+                      <span style={{ color: 'var(--color-warning)', fontSize: '0.85rem' }}>
+                        Overflow (confidence modifier)
+                      </span>
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          fontVariantNumeric: 'tabular-nums',
+                          color: 'var(--color-warning)',
+                        }}
+                      >
+                        {score.breakdown.overlay.overflow > 0 ? '+' : ''}
+                        {score.breakdown.overlay.overflow}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Confidence Level Badge */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 16px',
+                    }}
+                  >
+                    <span style={{ fontSize: '0.8rem', color: 'var(--color-text-tertiary)' }}>
+                      Confidence:
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        textTransform: 'uppercase',
+                        backgroundColor:
+                          score.breakdown.overlay.confidenceLevel === 'supreme' ||
+                          score.breakdown.overlay.confidenceLevel === 'maximum'
+                            ? 'rgba(16, 185, 129, 0.15)'
+                            : score.breakdown.overlay.confidenceLevel === 'extreme_caution' ||
+                                score.breakdown.overlay.confidenceLevel === 'strong_caution'
+                              ? 'rgba(239, 68, 68, 0.15)'
+                              : 'var(--color-elevated)',
+                        color:
+                          score.breakdown.overlay.confidenceLevel === 'supreme' ||
+                          score.breakdown.overlay.confidenceLevel === 'maximum'
+                            ? 'var(--color-success)'
+                            : score.breakdown.overlay.confidenceLevel === 'extreme_caution' ||
+                                score.breakdown.overlay.confidenceLevel === 'strong_caution'
+                              ? 'var(--color-error)'
+                              : 'var(--color-text-secondary)',
+                      }}
+                    >
+                      {score.breakdown.overlay.confidenceLevel.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+
+                  {/* Reasoning */}
+                  {score.breakdown.overlay.reasoning && (
+                    <div
+                      style={{
+                        fontSize: '0.8rem',
+                        color: 'var(--color-text-secondary)',
+                        padding: '0 16px 8px',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {score.breakdown.overlay.reasoning}
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
 
             {/* Class Analysis Section */}
             {score.classScore && (
