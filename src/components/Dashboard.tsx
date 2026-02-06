@@ -23,6 +23,7 @@ import { RaceOverview } from './RaceOverview';
 import {
   calculateRaceScores,
   MAX_SCORE,
+  SCORE_LIMITS,
   analyzeOverlayWithField,
   calculateBaseScoreRanks,
   calculateRaceConfidence,
@@ -509,9 +510,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
       let eliteCount = 0;
       for (const sh of scoredHorses) {
         if (!sh.score.isScratched) {
-          // Elite connections defined as 30+ points in connections category
+          // Elite connections defined as 80%+ of max connections score
           const connectionsTotal = sh.score.breakdown.connections.total;
-          if (connectionsTotal >= 30) {
+          if (connectionsTotal >= Math.floor(SCORE_LIMITS.connections * 0.8)) {
             eliteCount++;
           }
         }
