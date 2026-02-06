@@ -478,7 +478,7 @@ export function HorseDetailModal({
 
   if (!isOpen) return null;
 
-  const scoreColor = getScoreColor(score.total, score.isScratched);
+  const scoreColor = getScoreColor(score.baseScore, score.isScratched);
   const ordinal = (n: number) => {
     const s = ['th', 'st', 'nd', 'rd'];
     const v = n % 100;
@@ -946,7 +946,7 @@ export function HorseDetailModal({
                         </span>
                         <span className="breakdown-value">
                           {dynamicConnections?.trainerScore ?? score.breakdown.connections.trainer}
-                          /35
+                          /10
                         </span>
                       </div>
                       {dynamicConnections?.trainerPattern?.relevantPattern && (
@@ -972,7 +972,7 @@ export function HorseDetailModal({
                           Jockey
                         </span>
                         <span className="breakdown-value">
-                          {dynamicConnections?.jockeyScore ?? score.breakdown.connections.jockey}/15
+                          {dynamicConnections?.jockeyScore ?? score.breakdown.connections.jockey}/12
                         </span>
                       </div>
                       {dynamicConnections?.jockeyPattern?.relevantPattern && (
@@ -1117,13 +1117,13 @@ export function HorseDetailModal({
                       <div className="breakdown-row">
                         <span className="breakdown-label">Speed Score</span>
                         <span className="breakdown-value">
-                          {score.breakdown.speedClass.speedScore}/30
+                          {score.breakdown.speedClass.speedScore}/105
                         </span>
                       </div>
                       <div className="breakdown-row">
                         <span className="breakdown-label">Class Score</span>
                         <span className="breakdown-value">
-                          {score.breakdown.speedClass.classScore}/20
+                          {score.breakdown.speedClass.classScore}/35
                         </span>
                       </div>
                       {score.breakdown.speedClass.bestFigure && (

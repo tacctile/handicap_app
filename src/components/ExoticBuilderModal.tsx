@@ -14,6 +14,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { HorseEntry } from '../types/drf';
 import type { HorseScore } from '../lib/scoring';
+import { MAX_BASE_SCORE } from '../lib/scoring';
 import {
   calculateExoticCost,
   quickPayoutEstimate,
@@ -138,7 +139,7 @@ export function ExoticBuilderModal({
           horseName: h.horse.horseName,
           odds,
           oddsDisplay: h.horse.morningLineOdds,
-          confidence: Math.min(100, 40 + (h.score.total / 319) * 60),
+          confidence: Math.min(100, 40 + (h.score.baseScore / MAX_BASE_SCORE) * 60),
           tier,
           isSelected: false,
           position: null,
