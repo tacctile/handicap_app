@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ErrorBoundary } from './ErrorBoundary';
 import type { HorseEntry, RaceHeader } from '../types/drf';
 import type { HorseScore, ScoredHorse } from '../lib/scoring';
 import type { BettingTier } from '../lib/betting';
@@ -1842,4 +1843,42 @@ export function BettingRecommendations({
   );
 }
 
-export default BettingRecommendations;
+function BettingRecommendationsFallback() {
+  return (
+    <div
+      style={{
+        padding: '1.5rem',
+        textAlign: 'center',
+        background: '#0F0F10',
+        borderRadius: '8px',
+        border: '1px solid #2A2A2C',
+      }}
+    >
+      <span
+        className="material-icons"
+        style={{ fontSize: '2rem', color: '#ef4444', marginBottom: '0.5rem', display: 'block' }}
+      >
+        error
+      </span>
+      <h3 style={{ color: '#EEEFF1', margin: '0 0 0.5rem 0', fontSize: '1rem' }}>
+        Something went wrong
+      </h3>
+      <p style={{ color: '#B4B4B6', fontSize: '0.875rem', margin: 0 }}>
+        Unable to load betting recommendations. Try refreshing the page.
+      </p>
+    </div>
+  );
+}
+
+export function BettingRecommendationsWithBoundary(props: BettingRecommendationsProps) {
+  return (
+    <ErrorBoundary
+      componentName="BettingRecommendations"
+      fallback={<BettingRecommendationsFallback />}
+    >
+      <BettingRecommendations {...props} />
+    </ErrorBoundary>
+  );
+}
+
+export default BettingRecommendationsWithBoundary;
