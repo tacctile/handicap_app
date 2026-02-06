@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '../services/logging';
 
 // Type for the beforeinstallprompt event
 interface BeforeInstallPromptEvent extends Event {
@@ -162,7 +163,9 @@ export function useInstallPrompt(): InstallPromptState {
 
       return outcome;
     } catch (error) {
-      console.error('[InstallPrompt] Error showing install prompt:', error);
+      logger.logError(error instanceof Error ? error : new Error(String(error)), {
+        component: 'useInstallPrompt',
+      });
       return 'unavailable';
     }
   }, [deferredPrompt]);
@@ -175,7 +178,9 @@ export function useInstallPrompt(): InstallPromptState {
     try {
       localStorage.setItem(INSTALL_DISMISSED_KEY, new Date().toISOString());
     } catch (error) {
-      console.error('[InstallPrompt] Error saving dismissal:', error);
+      logger.logError(error instanceof Error ? error : new Error(String(error)), {
+        component: 'useInstallPrompt',
+      });
     }
   }, []);
 
@@ -187,7 +192,9 @@ export function useInstallPrompt(): InstallPromptState {
     try {
       localStorage.removeItem(INSTALL_DISMISSED_KEY);
     } catch (error) {
-      console.error('[InstallPrompt] Error resetting dismissal:', error);
+      logger.logError(error instanceof Error ? error : new Error(String(error)), {
+        component: 'useInstallPrompt',
+      });
     }
   }, []);
 

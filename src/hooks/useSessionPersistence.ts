@@ -7,6 +7,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { logger } from '../services/logging';
 import {
   loadSession,
   saveSession,
@@ -172,7 +173,9 @@ export function useSessionPersistence(): UseSessionPersistenceReturn {
       // Update local state
       setSession(updatedSession);
     } catch (error) {
-      console.error('[SessionPersistence] Save failed:', error);
+      logger.logError(error instanceof Error ? error : new Error(String(error)), {
+        component: 'useSessionPersistence',
+      });
     } finally {
       setIsSaving(false);
     }
@@ -245,7 +248,9 @@ export function useSessionPersistence(): UseSessionPersistenceReturn {
           return { wasRestored: true, session: existingSession };
         }
       } catch (error) {
-        console.error('[SessionPersistence] Error loading session:', error);
+        logger.logError(error instanceof Error ? error : new Error(String(error)), {
+          component: 'useSessionPersistence',
+        });
       }
 
       // Create new session
@@ -254,7 +259,9 @@ export function useSessionPersistence(): UseSessionPersistenceReturn {
       try {
         await saveSession(newSession);
       } catch (error) {
-        console.error('[SessionPersistence] Error saving new session:', error);
+        logger.logError(error instanceof Error ? error : new Error(String(error)), {
+          component: 'useSessionPersistence',
+        });
       }
 
       setSession(newSession);

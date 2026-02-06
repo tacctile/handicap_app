@@ -573,33 +573,8 @@ export function getHorseRunningStyle(
  *
  * @param result - Pace scenario result
  */
-export function logPaceScenarioAnalysis(result: PaceScenarioResult): void {
-  console.log('[PACE_SCENARIO] Field composition:');
-  console.log(`  E (early speed): ${result.earlySpeedCount}`);
-  console.log(`  EP (pressers): ${result.presserCount}`);
-  console.log(`  P (stalkers): ${result.stalkerCount}`);
-  console.log(`  S (closers): ${result.closerCount}`);
-  console.log(`  Unknown: ${result.unknownCount}`);
-  console.log(`[PACE_SCENARIO] ${result.scenario} (${result.confidence})`);
-  console.log(`[PACE_SCENARIO] ${result.reason}`);
-
-  if (result.likelyLeader !== null) {
-    console.log(`[PACE_SCENARIO] Likely leader: #${result.likelyLeader}`);
-  }
-
-  if (result.speedDuelParticipants.length > 0) {
-    console.log(
-      `[PACE_SCENARIO] Speed duel participants: ${result.speedDuelParticipants.map((n) => `#${n}`).join(', ')}`
-    );
-  }
-
-  for (const ben of result.beneficiaries) {
-    console.log(`[PACE_SCENARIO] +${ben.adjustment} ${ben.horseName}: ${ben.advantage}`);
-  }
-
-  for (const dis of result.disadvantaged) {
-    console.log(`[PACE_SCENARIO] ${dis.adjustment} ${dis.horseName}: ${dis.disadvantage}`);
-  }
+export function logPaceScenarioAnalysis(_result: PaceScenarioResult): void {
+  // Debug logging removed — use logger service for production diagnostics
 }
 
 // ============================================================================

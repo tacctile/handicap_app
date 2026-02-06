@@ -926,13 +926,6 @@ function calculateHorseScoreWithContext(
   const tripTroubleResult = analyzeTripTrouble(horse);
   const tripTroubleAdjustment = tripTroubleResult.adjustment;
 
-  // Log trip trouble for debugging if adjustment applied
-  if (tripTroubleAdjustment > 0) {
-    console.log(
-      `[TRIP_TROUBLE] ${horse.horseName}: +${tripTroubleAdjustment} pts (${tripTroubleResult.reason})`
-    );
-  }
-
   const equipment = calcEquipment(horse);
   const pace = calcPace(horse, context.raceHeader, context.activeHorses, context.fieldPaceAnalysis);
 
@@ -943,14 +936,6 @@ function calculateHorseScoreWithContext(
   // CONSOLIDATED: Pace scenario adjustment is now integrated into pace.ts (0-45 pts)
   // These legacy variables are kept for informational/display purposes only
   const horseRunningStyle = getHorseRunningStyle(context.paceScenarioResult, horse.programNumber);
-
-  // Log consolidated pace scenario for debugging if applicable
-  if (pace.integratedScenarioAdjustment && pace.integratedScenarioAdjustment !== 0) {
-    const sign = pace.integratedScenarioAdjustment > 0 ? '+' : '';
-    console.log(
-      `[PACE_CONSOLIDATED] ${horse.horseName}: ${sign}${pace.integratedScenarioAdjustment} pts scenario adjustment (${pace.integratedScenario} - integrated into ${pace.total} pt pace score)`
-    );
-  }
 
   // NOTE: oddsScore removed from base scoring pipeline (circular logic elimination)
   // Still calculate for informational purposes and potential overlay use

@@ -479,23 +479,6 @@ export function getTripTroubleColor(adjustment: number): string {
  *
  * @param results - Map of trip trouble results
  */
-export function logTripTroubleAnalysis(results: Map<number, TripTroubleResult>): void {
-  const adjustedHorses = Array.from(results.values()).filter((r) => r.adjustment > 0);
-
-  if (adjustedHorses.length === 0) {
-    console.log('[TRIP_TROUBLE] No adjustments applied');
-    return;
-  }
-
-  console.log(`[TRIP_TROUBLE] Analyzing ${results.size} horses`);
-  console.log('[TRIP_TROUBLE] Adjustments applied:');
-
-  for (const result of adjustedHorses) {
-    console.log(
-      `  #${result.programNumber} ${result.horseName}: +${result.adjustment} (${result.confidence})`
-    );
-    for (const tr of result.troubledRaces) {
-      console.log(`    Race ${tr.raceIndex + 1} back: ${tr.troubleKeywords.join(', ')}`);
-    }
-  }
+export function logTripTroubleAnalysis(_results: Map<number, TripTroubleResult>): void {
+  // Debug logging removed — use logger service for production diagnostics
 }

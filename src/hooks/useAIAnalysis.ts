@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { logger } from '../services/logging';
 import { getMultiBotAnalysis, checkAIServiceStatus, type AIRaceAnalysis } from '../services/ai';
 import type {
   ParsedRace,
@@ -820,7 +821,9 @@ export function useAIAnalysis(
         setAiError('NETWORK_ERROR');
       } else {
         setAiError(errorMessage);
-        console.error('AI Analysis error:', error);
+        logger.logError(error instanceof Error ? error : new Error(String(error)), {
+          component: 'useAIAnalysis',
+        });
       }
 
       setAiAnalysis(null);

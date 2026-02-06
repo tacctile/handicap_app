@@ -96,17 +96,17 @@ const LOW_CONFIDENCE_PENALTY = 0.15; // 15% base score penalty
 // Source: ALGORITHM_REFERENCE.md lines 83-91
 // =============================================================================
 
-// v4.1: Tier thresholds updated for 344 base score (up from 336)
+// Tier thresholds based on MAX_BASE_SCORE = 336 (ALGORITHM_REFERENCE.md)
 // Percentages: Tier 1 = 54%, Tier 2 = 48%, Tier 3 = 39%
 const TIER_THRESHOLDS = {
-  TIER_1_MIN: 186, // Chalk - 54% of 344 (was 181)
-  TIER_2_MIN: 165, // Alternatives - 48% of 344 (was 161)
-  TIER_2_MAX: 185, // (was 180)
-  TIER_3_MIN: 134, // Value - 39% of 344 (was 131)
-  TIER_3_MAX: 164, // (was 160)
-  DIAMOND_CHECK_MIN: 124, // Special review - 36% of 344 (was 122)
-  DIAMOND_CHECK_MAX: 133, // (was 130)
-  PASS_MAX: 123, // No bet (was 121)
+  TIER_1_MIN: 181, // Chalk - 54% of 336
+  TIER_2_MIN: 161, // Alternatives - 48% of 336
+  TIER_2_MAX: 180,
+  TIER_3_MIN: 131, // Value - 39% of 336
+  TIER_3_MAX: 160,
+  DIAMOND_CHECK_MIN: 122, // Special review - 36% of 336
+  DIAMOND_CHECK_MAX: 130,
+  PASS_MAX: 121, // No bet
 } as const;
 
 // =============================================================================
@@ -372,52 +372,48 @@ describe('Algorithm Validation - Confidence Calculation (PART 4)', () => {
 });
 
 describe('Algorithm Validation - Tier Classification (PART 5)', () => {
-  it('should classify Tier 1 at score >= 186', () => {
+  it('should classify Tier 1 at score >= 181', () => {
     // ALGORITHM_REFERENCE.md: Tier 1 (Cover Chalk) = 181+ (54% of 336)
-    // v4.1 thresholds updated for 344 base: 186+ (54% of 344)
-    expect(classifyTier(186)).toBe('TIER_1');
+    expect(classifyTier(181)).toBe('TIER_1');
     expect(classifyTier(200)).toBe('TIER_1');
     expect(classifyTier(376)).toBe('TIER_1'); // Max possible (336 + 40)
-    expect(classifyTier(185)).not.toBe('TIER_1');
+    expect(classifyTier(180)).not.toBe('TIER_1');
   });
 
-  it('should classify Tier 2 at score 165-185', () => {
+  it('should classify Tier 2 at score 161-180', () => {
     // ALGORITHM_REFERENCE.md: Tier 2 (Logical Alternatives) = 161-180 (48% of 336)
-    // v4.1 thresholds updated for 344 base: 165-185
-    expect(classifyTier(165)).toBe('TIER_2');
-    expect(classifyTier(175)).toBe('TIER_2');
-    expect(classifyTier(185)).toBe('TIER_2');
-    expect(classifyTier(164)).not.toBe('TIER_2');
-    expect(classifyTier(186)).not.toBe('TIER_2');
+    expect(classifyTier(161)).toBe('TIER_2');
+    expect(classifyTier(170)).toBe('TIER_2');
+    expect(classifyTier(180)).toBe('TIER_2');
+    expect(classifyTier(160)).not.toBe('TIER_2');
+    expect(classifyTier(181)).not.toBe('TIER_2');
   });
 
-  it('should classify Tier 3 at score 134-164', () => {
+  it('should classify Tier 3 at score 131-160', () => {
     // ALGORITHM_REFERENCE.md: Tier 3 (Value Bombs) = 131-160 (39% of 336)
-    // v4.1 thresholds updated for 344 base: 134-164
-    expect(classifyTier(134)).toBe('TIER_3');
-    expect(classifyTier(150)).toBe('TIER_3');
-    expect(classifyTier(164)).toBe('TIER_3');
-    expect(classifyTier(133)).not.toBe('TIER_3');
-    expect(classifyTier(165)).not.toBe('TIER_3');
+    expect(classifyTier(131)).toBe('TIER_3');
+    expect(classifyTier(145)).toBe('TIER_3');
+    expect(classifyTier(160)).toBe('TIER_3');
+    expect(classifyTier(130)).not.toBe('TIER_3');
+    expect(classifyTier(161)).not.toBe('TIER_3');
   });
 
-  it('should flag Diamond Check at score 124-133 for special review', () => {
-    // ALGORITHM_REFERENCE.md: Diamond Check for special review
-    // v4.1 thresholds updated for 344 base: 124-133
-    expect(classifyTier(124)).toBe('DIAMOND_CHECK');
-    expect(classifyTier(128)).toBe('DIAMOND_CHECK');
-    expect(classifyTier(133)).toBe('DIAMOND_CHECK');
-    expect(classifyTier(123)).not.toBe('DIAMOND_CHECK');
-    expect(classifyTier(134)).not.toBe('DIAMOND_CHECK');
+  it('should flag Diamond Check at score 122-130 for special review', () => {
+    // ALGORITHM_REFERENCE.md: Diamond Check for special review (36% of 336)
+    expect(classifyTier(122)).toBe('DIAMOND_CHECK');
+    expect(classifyTier(126)).toBe('DIAMOND_CHECK');
+    expect(classifyTier(130)).toBe('DIAMOND_CHECK');
+    expect(classifyTier(121)).not.toBe('DIAMOND_CHECK');
+    expect(classifyTier(131)).not.toBe('DIAMOND_CHECK');
   });
 
-  it('should classify Pass at score < 124', () => {
-    // v4.1 thresholds: Pass = <124
+  it('should classify Pass at score < 122', () => {
+    // Pass = score below Diamond Check threshold
     expect(classifyTier(0)).toBe('PASS');
     expect(classifyTier(50)).toBe('PASS');
     expect(classifyTier(100)).toBe('PASS');
-    expect(classifyTier(123)).toBe('PASS');
-    expect(classifyTier(124)).not.toBe('PASS');
+    expect(classifyTier(121)).toBe('PASS');
+    expect(classifyTier(122)).not.toBe('PASS');
   });
 });
 

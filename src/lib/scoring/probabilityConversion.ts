@@ -84,16 +84,6 @@ export const SOFTMAX_CONFIG = {
 } as const;
 
 /**
- * Debug flag - set DEBUG_PROBABILITY env var to enable logging
- * Safe for browser environments where process is not defined
- */
-const DEBUG_ENABLED =
-  typeof globalThis !== 'undefined' &&
-  typeof (globalThis as { process?: { env?: Record<string, string> } }).process !== 'undefined' &&
-  (globalThis as { process?: { env?: Record<string, string> } }).process?.env?.DEBUG_PROBABILITY ===
-    'true';
-
-/**
  * Type for softmax configuration values (allows number types for overrides)
  */
 export type SoftmaxConfigType = {
@@ -146,17 +136,11 @@ export function softmaxProbabilities(
 ): number[] {
   // Edge case: empty array
   if (!scores || scores.length === 0) {
-    if (DEBUG_ENABLED) {
-      console.log('[softmax] Empty array received, returning []');
-    }
     return [];
   }
 
   // Edge case: single horse gets 100% probability
   if (scores.length === 1) {
-    if (DEBUG_ENABLED) {
-      console.log('[softmax] Single horse, returning [1.0]');
-    }
     return [1.0];
   }
 
@@ -171,9 +155,6 @@ export function softmaxProbabilities(
   if (allZeros) {
     // Equal probability for all horses
     const equalProb = 1.0 / scores.length;
-    if (DEBUG_ENABLED) {
-      console.log('[softmax] All zeros, returning equal probabilities:', equalProb);
-    }
     return scores.map(() => equalProb);
   }
 
@@ -199,29 +180,14 @@ export function softmaxProbabilities(
   // Calculate raw probabilities
   let rawProbabilities = expScores.map((exp) => exp / sumExp);
 
-  // Debug logging before clamping
-  if (DEBUG_ENABLED) {
-    console.log('[softmax] Input scores:', sanitizedScores);
-    console.log('[softmax] Temperature:', safeTemperature);
-    console.log('[softmax] Raw softmax output:', rawProbabilities);
-  }
-
   // Apply bounds (min/max probability)
   rawProbabilities = clampAndRedistribute(rawProbabilities);
-
-  // Debug logging after clamping
-  if (DEBUG_ENABLED) {
-    console.log('[softmax] After clamping:', rawProbabilities);
-  }
 
   // Apply Platt scaling calibration if enabled and ready
   if (applyCalibration) {
     const calibrationMgr = getCalibrationManager();
     if (calibrationMgr?.isReady) {
       const calibrated = calibrationMgr.calibrateField(rawProbabilities);
-      if (DEBUG_ENABLED) {
-        console.log('[softmax] After calibration:', calibrated);
-      }
       return calibrated;
     }
   }

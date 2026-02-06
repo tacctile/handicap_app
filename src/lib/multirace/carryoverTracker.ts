@@ -10,6 +10,7 @@
 
 import { validateNumber, sanitizeString } from '../sanitization';
 import { type CarryoverInfo, CARRYOVER_THRESHOLDS, getBetConfig } from './multiraceTypes';
+import { logger } from '../../services/logging';
 
 // ============================================================================
 // CONSTANTS
@@ -296,7 +297,7 @@ export function saveCarryovers(carryovers: CarryoverInfo[]): void {
     localStorage.setItem(CARRYOVER_STORAGE_KEY, JSON.stringify(data));
   } catch {
     // Storage may be unavailable or full
-    console.warn('Unable to save carryover data');
+    logger.logWarning('Unable to save carryover data');
   }
 }
 
