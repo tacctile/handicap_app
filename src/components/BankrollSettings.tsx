@@ -7,7 +7,7 @@ import type {
   BankrollSettings as BankrollSettingsType,
   ComplexityMode,
   BettingStyle,
-  BetType,
+  BankrollBetCategory,
 } from '../hooks/useBankroll';
 import { BETTING_STYLE_INFO, BET_TYPE_LABELS, getExpectedReturnRange } from '../hooks/useBankroll';
 import type { NotificationSettings } from '../hooks/usePostTime';
@@ -88,7 +88,13 @@ const MODE_OPTIONS: { value: ComplexityMode; label: string; description: string 
 
 const BETTING_STYLES: BettingStyle[] = ['safe', 'balanced', 'aggressive'];
 
-const BET_TYPES: BetType[] = ['win_place', 'exacta', 'trifecta', 'superfecta', 'multi_race'];
+const BET_TYPES: BankrollBetCategory[] = [
+  'win_place',
+  'exacta',
+  'trifecta',
+  'superfecta',
+  'multi_race',
+];
 
 export function BankrollSettings({
   isOpen,
@@ -180,7 +186,7 @@ export function BankrollSettings({
   );
 
   // Toggle bet type for Moderate mode
-  const toggleBetType = useCallback((betType: BetType) => {
+  const toggleBetType = useCallback((betType: BankrollBetCategory) => {
     setFormState((prev) => {
       const currentTypes = prev.moderateSelectedBetTypes || [];
       const newTypes = currentTypes.includes(betType)

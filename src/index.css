@@ -55,8 +55,8 @@ body {
 }
 
 /* Material Design 3 Custom Properties */
+/* NOTE: --color-primary is defined in tokens.css (source of truth) */
 :root {
-  --color-primary: #19abb5;
   --color-primary-hover: #1b7583;
   --color-surface: #1a1a1c;
   --color-surface-variant: #242428;

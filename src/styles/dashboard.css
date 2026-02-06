@@ -26,10 +26,7 @@
   --accent-pressed: #1b7583;
   --accent-glow: rgba(25, 171, 181, 0.3);
 
-  /* Semantic colors */
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
+  /* Semantic colors - use tokens.css as source of truth for --color-success/warning/error */
 
   /* Borders */
   --border-subtle: #2a2a2c;
@@ -49,16 +46,8 @@
   --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
   --shadow-glow: 0 0 20px var(--accent-glow);
 
-  /* Spacing */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
+  /* Spacing: tokens.css is the source of truth for --space-* variables.
+     Use --space-10 (40px) from tokens.css for larger spacing needs. */
 
   /* Typography */
   --font-xs: 0.75rem; /* 12px */

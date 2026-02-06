@@ -6,8 +6,8 @@ export type ComplexityMode = 'simple' | 'moderate' | 'advanced';
 // Betting styles for Simple mode
 export type BettingStyle = 'safe' | 'balanced' | 'aggressive';
 
-// Bet types for Moderate mode
-export type BetType = 'win_place' | 'exacta' | 'trifecta' | 'superfecta' | 'multi_race';
+// Bankroll bet category groupings for Moderate mode
+export type BankrollBetCategory = 'win_place' | 'exacta' | 'trifecta' | 'superfecta' | 'multi_race';
 
 // Risk tolerance levels
 export type RiskTolerance = 'conservative' | 'moderate' | 'aggressive';
@@ -28,7 +28,7 @@ export interface SimpleModeSettings {
 export interface ModerateModeSettings {
   raceBudget: number;
   riskLevel: RiskTolerance;
-  selectedBetTypes: BetType[];
+  selectedBetTypes: BankrollBetCategory[];
 }
 
 // Bankroll settings interface
@@ -43,7 +43,7 @@ export interface BankrollSettings {
   // Moderate mode fields
   moderateRaceBudget: number;
   moderateRiskLevel: RiskTolerance;
-  moderateSelectedBetTypes: BetType[];
+  moderateSelectedBetTypes: BankrollBetCategory[];
 
   // Advanced mode fields (existing)
   totalBankroll: number;
@@ -98,7 +98,7 @@ export const BETTING_STYLE_INFO: Record<
 };
 
 // Bet type labels
-export const BET_TYPE_LABELS: Record<BetType, string> = {
+export const BET_TYPE_LABELS: Record<BankrollBetCategory, string> = {
   win_place: 'Win/Place bets',
   exacta: 'Exacta boxes',
   trifecta: 'Trifecta combos',
@@ -107,7 +107,10 @@ export const BET_TYPE_LABELS: Record<BetType, string> = {
 };
 
 // Expected return ranges by risk and bet types
-export function getExpectedReturnRange(riskLevel: RiskTolerance, betTypes: BetType[]): string {
+export function getExpectedReturnRange(
+  riskLevel: RiskTolerance,
+  betTypes: BankrollBetCategory[]
+): string {
   const hasExotics = betTypes.some((t) => ['trifecta', 'superfecta', 'multi_race'].includes(t));
 
   if (riskLevel === 'conservative') {

@@ -31,9 +31,9 @@ import { estimatePlaceProbability, estimateShowProbability } from './placeShowEs
 // ============================================================================
 
 /**
- * Bet type for recommendations
+ * Kelly-based bet type (WIN/PLACE/SHOW only)
  */
-export type BetType = 'WIN' | 'PLACE' | 'SHOW';
+export type KellyBetType = 'WIN' | 'PLACE' | 'SHOW';
 
 /**
  * Confidence level for recommendations
@@ -49,7 +49,7 @@ export interface BetRecommendation {
   /** Horse name if available */
   horseName?: string;
   /** Bet type */
-  betType: BetType;
+  betType: KellyBetType;
   /** Suggested bet amount in dollars */
   suggestedAmount: number;
   /** Actual odds (decimal) */
@@ -574,7 +574,7 @@ export function sortRecommendationsByValue(
  */
 export function filterByBetType(
   recommendations: BetRecommendation[],
-  betTypes: BetType[]
+  betTypes: KellyBetType[]
 ): BetRecommendation[] {
   return recommendations.filter((r) => betTypes.includes(r.betType));
 }
