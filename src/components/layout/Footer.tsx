@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import type { LegalContentType } from '../legal';
+// LegalContentType inlined — legal/ directory removed in dead code cleanup
+type LegalContentType = 'terms' | 'privacy' | 'disclaimer';
 import { logger } from '../../services/logging';
 
 interface FooterProps {

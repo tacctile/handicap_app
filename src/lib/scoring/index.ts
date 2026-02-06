@@ -1679,7 +1679,6 @@ export {
   getTrackRecordSummary,
   type TrackSpecialistResult,
 } from './distanceSurface';
-export { getFormSummary, isOnHotStreak } from './form';
 export {
   getEquipmentSummary,
   hasSignificantEquipmentChange,
@@ -1708,7 +1707,6 @@ export {
   type EquipmentHistoryEntry,
   type TrainerEquipmentPattern,
 } from './equipment';
-export { getOptimalPostPositions } from './postPosition';
 export {
   getParFigures,
   getClassHierarchy,
