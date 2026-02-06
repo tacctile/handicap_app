@@ -12,7 +12,7 @@ import type { HorseScore, ScoredHorse } from '../lib/scoring';
 import type { BettingTier } from '../lib/betting';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { TIER_COLORS } from '../constants/tierColors';
-import { formatOverlayPercent, formatEV, getOverlayColor } from '../lib/scoring';
+import { formatOverlayPercent, formatEV, getOverlayColor, MAX_BASE_SCORE } from '../lib/scoring';
 import {
   generateRecommendations,
   formatCurrency,
@@ -868,7 +868,7 @@ export function BettingRecommendations({
         tier,
         winProbability: winProb,
         odds,
-        confidence: Math.min(100, 40 + (h.score.total / 319) * 60),
+        confidence: Math.min(100, 40 + (h.score.baseScore / MAX_BASE_SCORE) * 60),
       };
     });
   }, [horses]);
@@ -924,7 +924,7 @@ export function BettingRecommendations({
           horseName: h.horse.horseName,
           morningLineOdds: h.horse.morningLineOdds,
           score: h.score.total,
-          confidence: Math.min(100, 40 + (h.score.total / 319) * 60),
+          confidence: Math.min(100, 40 + (h.score.baseScore / MAX_BASE_SCORE) * 60),
           tier,
           estimatedWinProb: undefined,
           overlayPercent: 0,
