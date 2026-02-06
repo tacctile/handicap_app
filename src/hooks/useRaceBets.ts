@@ -9,6 +9,7 @@
  */
 
 import { useMemo } from 'react';
+import { logger } from '../services/logging';
 import { useBankroll } from './useBankroll';
 import { generateRecommendations } from '../lib/recommendations';
 import type { BetGeneratorResult, GeneratedBet } from '../lib/recommendations';
@@ -531,7 +532,9 @@ export function useRaceBets(
         bankroll,
       });
     } catch (error) {
-      console.error('Error generating bet recommendations:', error);
+      logger.logError(error instanceof Error ? error : new Error(String(error)), {
+        component: 'useRaceBets',
+      });
       return {
         conservative: emptyConservative,
         moderate: emptyModerate,

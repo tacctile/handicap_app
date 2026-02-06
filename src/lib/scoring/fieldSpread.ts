@@ -633,27 +633,8 @@ export function getFieldSpreadSummary(result: FieldSpreadResult): string {
  *
  * @param result - Field spread result
  */
-export function logFieldSpreadAnalysis(result: FieldSpreadResult): void {
-  console.log(`[FIELD_SPREAD] ${result.fieldType} (${result.confidence})`);
-  console.log(`[FIELD_SPREAD] ${result.reason}`);
-  console.log(
-    `[FIELD_SPREAD] Score gaps: 1st-2nd: ${result.scoreGaps.first_to_second}, 1st-4th: ${result.scoreGaps.first_to_fourth}`
-  );
-  console.log(
-    `[FIELD_SPREAD] Tiers - A: ${result.tiers.A.length}, B: ${result.tiers.B.length}, C: ${result.tiers.C.length}, X: ${result.tiers.X.length}`
-  );
-  console.log(
-    `[FIELD_SPREAD] Recommended box: exacta ${result.recommendedBoxSize.exacta}, tri ${result.recommendedBoxSize.trifecta}, super ${result.recommendedBoxSize.superfecta}`
-  );
-
-  if (result.sitOutFlag) {
-    console.log(`[FIELD_SPREAD] ⚠️ SIT OUT: ${result.sitOutReason}`);
-  }
-
-  for (const adj of result.adjustments) {
-    const sign = adj.adjustment > 0 ? '+' : '';
-    console.log(`[FIELD_SPREAD] ${sign}${adj.adjustment} ${adj.horseName}: ${adj.reason}`);
-  }
+export function logFieldSpreadAnalysis(_result: FieldSpreadResult): void {
+  // Debug logging removed — use logger service for production diagnostics
 }
 
 // ============================================================================

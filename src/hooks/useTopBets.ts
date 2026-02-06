@@ -14,6 +14,7 @@
  */
 
 import { useMemo } from 'react';
+import { logger } from '../services/logging';
 import type { ScoredHorse } from '../lib/scoring';
 import type { RaceHeader } from '../types/drf';
 import {
@@ -198,9 +199,7 @@ export function useTopBets(input: UseTopBetsInput): UseTopBetsResult {
     }
 
     // Filter to active horses
-    const activeHorses = scoredHorses.filter(
-      h => !isScratched(h.index) && !h.score.isScratched
-    );
+    const activeHorses = scoredHorses.filter((h) => !isScratched(h.index) && !h.score.isScratched);
 
     if (activeHorses.length < 2) {
       return {
@@ -221,15 +220,11 @@ export function useTopBets(input: UseTopBetsInput): UseTopBetsResult {
     // Generate top bets
     let topBetsResult: TopBetsResult;
     try {
-      topBetsResult = generateTopBets(
-        scoredHorses,
-        raceHeader,
-        raceNumber,
-        getOdds,
-        isScratched
-      );
+      topBetsResult = generateTopBets(scoredHorses, raceHeader, raceNumber, getOdds, isScratched);
     } catch (error) {
-      console.error('Error generating top bets:', error);
+      logger.logError(error instanceof Error ? error : new Error(String(error)), {
+        component: 'useTopBets',
+      });
       return {
         ...emptyResult,
         error: `Generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -243,44 +238,38 @@ export function useTopBets(input: UseTopBetsInput): UseTopBetsResult {
       };
     }
 
-    const { topBets, totalCombinationsAnalyzed, raceContext, generatedAt, generationTimeMs } = topBetsResult;
+    const { topBets, totalCombinationsAnalyzed, raceContext, generatedAt, generationTimeMs } =
+      topBetsResult;
 
     // Calculate summary statistics
-    const conservativeBets = topBets.filter(b => b.riskTier === 'Conservative');
-    const moderateBets = topBets.filter(b => b.riskTier === 'Moderate');
-    const aggressiveBets = topBets.filter(b => b.riskTier === 'Aggressive');
+    const conservativeBets = topBets.filter((b) => b.riskTier === 'Conservative');
+    const moderateBets = topBets.filter((b) => b.riskTier === 'Moderate');
+    const aggressiveBets = topBets.filter((b) => b.riskTier === 'Aggressive');
 
-    const avgEV = topBets.length > 0
-      ? topBets.reduce((sum, b) => sum + b.expectedValue, 0) / topBets.length
-      : 0;
+    const avgEV =
+      topBets.length > 0
+        ? topBets.reduce((sum, b) => sum + b.expectedValue, 0) / topBets.length
+        : 0;
 
     const bestBetEV = topBets.length > 0 ? topBets[0]?.expectedValue || 0 : 0;
 
     const totalCost = topBets.reduce((sum, b) => sum + b.cost, 0);
 
     // Group by bet type
-    const winPlaceShowBets = topBets.filter(b =>
+    const winPlaceShowBets = topBets.filter((b) =>
       ['WIN', 'PLACE', 'SHOW'].includes(b.internalType)
     );
-    const exactaBets = topBets.filter(b =>
-      b.internalType.startsWith('EXACTA')
-    );
-    const trifectaBets = topBets.filter(b =>
-      b.internalType.startsWith('TRIFECTA')
-    );
-    const superfectaBets = topBets.filter(b =>
-      b.internalType.startsWith('SUPERFECTA')
-    );
+    const exactaBets = topBets.filter((b) => b.internalType.startsWith('EXACTA'));
+    const trifectaBets = topBets.filter((b) => b.internalType.startsWith('TRIFECTA'));
+    const superfectaBets = topBets.filter((b) => b.internalType.startsWith('SUPERFECTA'));
 
     // Helper functions
     const getBetsForHorse = (programNumber: number): TopBet[] => {
-      return topBets.filter(bet =>
-        bet.horseNumbers.includes(programNumber)
-      );
+      return topBets.filter((bet) => bet.horseNumbers.includes(programNumber));
     };
 
     const getBestByTier = (tier: RiskTier): TopBet | null => {
-      const tierBets = topBets.filter(b => b.riskTier === tier);
+      const tierBets = topBets.filter((b) => b.riskTier === tier);
       return tierBets.length > 0 ? tierBets[0] || null : null;
     };
 
@@ -327,10 +316,6 @@ export function useTopBets(input: UseTopBetsInput): UseTopBetsResult {
 // EXPORTS
 // ============================================================================
 
-export type {
-  TopBet,
-  TopBetsResult,
-  RiskTier,
-} from '../lib/betting/topBetsGenerator';
+export type { TopBet, TopBetsResult, RiskTier } from '../lib/betting/topBetsGenerator';
 
 export default useTopBets;

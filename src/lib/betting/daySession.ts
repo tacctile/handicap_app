@@ -8,6 +8,7 @@
  */
 
 import type { RiskStyle, ExperienceLevel, MultiRaceBet } from './betTypes';
+import { logger } from '../../services/logging';
 import type { RaceAllocation } from './allocateDayBudget';
 
 // ============================================================================
@@ -132,8 +133,8 @@ export function createDaySession(
 export function saveDaySession(session: DaySession): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-  } catch (error) {
-    console.warn('Failed to save day session to localStorage:', error);
+  } catch (_error) {
+    logger.logWarning('Failed to save day session to localStorage');
   }
 }
 
@@ -155,8 +156,8 @@ export function loadDaySession(): DaySession | null {
     }
 
     return session;
-  } catch (error) {
-    console.warn('Failed to load day session from localStorage:', error);
+  } catch (_error) {
+    logger.logWarning('Failed to load day session from localStorage');
     return null;
   }
 }
@@ -167,8 +168,8 @@ export function loadDaySession(): DaySession | null {
 export function clearDaySession(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
-  } catch (error) {
-    console.warn('Failed to clear day session from localStorage:', error);
+  } catch (_error) {
+    logger.logWarning('Failed to clear day session from localStorage');
   }
 }
 
@@ -282,10 +283,7 @@ export function isSessionComplete(session: DaySession): boolean {
 /**
  * Get allocation for a specific race
  */
-export function getRaceAllocation(
-  session: DaySession,
-  raceNumber: number
-): RaceAllocation | null {
+export function getRaceAllocation(session: DaySession, raceNumber: number): RaceAllocation | null {
   return session.raceAllocations.find((a) => a.raceNumber === raceNumber) ?? null;
 }
 
@@ -330,12 +328,9 @@ export function getDaySummary(session: DaySession): {
 /**
  * Add a multi-race bet to the session
  */
-export function addMultiRaceBet(
-  session: DaySession,
-  bet: MultiRaceBet
-): DaySession {
+export function addMultiRaceBet(session: DaySession, bet: MultiRaceBet): DaySession {
   // Don't add duplicates
-  if (session.multiRaceBets.some(b => b.id === bet.id)) {
+  if (session.multiRaceBets.some((b) => b.id === bet.id)) {
     return session;
   }
 
@@ -354,16 +349,13 @@ export function addMultiRaceBet(
 /**
  * Remove a multi-race bet from the session
  */
-export function removeMultiRaceBet(
-  session: DaySession,
-  betId: string
-): DaySession {
-  const bet = session.multiRaceBets.find(b => b.id === betId);
+export function removeMultiRaceBet(session: DaySession, betId: string): DaySession {
+  const bet = session.multiRaceBets.find((b) => b.id === betId);
   if (!bet) return session;
 
   const updated: DaySession = {
     ...session,
-    multiRaceBets: session.multiRaceBets.filter(b => b.id !== betId),
+    multiRaceBets: session.multiRaceBets.filter((b) => b.id !== betId),
     multiRaceWagered: Math.max(0, session.multiRaceWagered - bet.totalCost),
     amountRemaining: session.amountRemaining + bet.totalCost,
     amountWagered: Math.max(0, session.amountWagered - bet.totalCost),
@@ -376,11 +368,8 @@ export function removeMultiRaceBet(
 /**
  * Update a multi-race bet in the session
  */
-export function updateMultiRaceBet(
-  session: DaySession,
-  updatedBet: MultiRaceBet
-): DaySession {
-  const oldBet = session.multiRaceBets.find(b => b.id === updatedBet.id);
+export function updateMultiRaceBet(session: DaySession, updatedBet: MultiRaceBet): DaySession {
+  const oldBet = session.multiRaceBets.find((b) => b.id === updatedBet.id);
   if (!oldBet) {
     // If not found, add as new
     return addMultiRaceBet(session, updatedBet);
@@ -390,9 +379,7 @@ export function updateMultiRaceBet(
 
   const updated: DaySession = {
     ...session,
-    multiRaceBets: session.multiRaceBets.map(b =>
-      b.id === updatedBet.id ? updatedBet : b
-    ),
+    multiRaceBets: session.multiRaceBets.map((b) => (b.id === updatedBet.id ? updatedBet : b)),
     multiRaceWagered: session.multiRaceWagered + costDiff,
     amountRemaining: session.amountRemaining - costDiff,
     amountWagered: session.amountWagered + costDiff,
@@ -412,10 +399,7 @@ export function getMultiRaceRemaining(session: DaySession): number {
 /**
  * Check if can afford a multi-race bet
  */
-export function canAffordMultiRaceBet(
-  session: DaySession,
-  betCost: number
-): boolean {
+export function canAffordMultiRaceBet(session: DaySession, betCost: number): boolean {
   return betCost <= getMultiRaceRemaining(session);
 }
 

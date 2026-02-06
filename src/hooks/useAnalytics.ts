@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
+import { logger } from '../services/logging';
 import { getAnalyticsService } from '../services/analytics';
 import type { EventName, EventProperties } from '../services/analytics/types';
 
@@ -62,7 +63,7 @@ export function useAnalytics(): UseAnalyticsReturn {
         // Silently fail - analytics should never break the app
         // In development, log for debugging (Vite exposes dev mode via import.meta)
         if (import.meta.env?.DEV) {
-          console.warn(`[useAnalytics] Failed to track event: ${eventName}`);
+          logger.logWarning(`[useAnalytics] Failed to track event: ${eventName}`);
         }
       }
     },
