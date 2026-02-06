@@ -785,7 +785,7 @@ describe('Longshot Detector', () => {
 
   describe('Edge Cases', () => {
     it('handles missing odds gracefully', () => {
-      expect(parseOddsToDecimal('')).toBe(0);
+      expect(parseOddsToDecimal('')).toBe(2); // Defaults to even money
       expect(isLongshotOdds('')).toBe(false);
     });
 

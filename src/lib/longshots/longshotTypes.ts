@@ -324,28 +324,9 @@ export interface LongshotAnalysisResult {
 // UTILITY FUNCTIONS
 // ============================================================================
 
-/**
- * Parse odds string to decimal (25/1 = 26.0)
- */
-export function parseOddsToDecimal(oddsStr: string): number {
-  if (!oddsStr) return 0;
-
-  // Handle "25-1" or "25/1" format
-  const match = oddsStr.match(/(\d+(?:\.\d+)?)\s*[-/]\s*(\d+)/);
-  if (match && match[1] && match[2]) {
-    const numerator = parseFloat(match[1]);
-    const denominator = parseFloat(match[2]);
-    return numerator / denominator + 1; // +1 for decimal odds
-  }
-
-  // Handle decimal odds directly
-  const decimal = parseFloat(oddsStr);
-  if (!isNaN(decimal)) {
-    return decimal;
-  }
-
-  return 0;
-}
+// Import and re-export from canonical source
+import { parseOddsToDecimal } from '../../utils/formatters';
+export { parseOddsToDecimal };
 
 /**
  * Format decimal odds to display string

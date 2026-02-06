@@ -3,7 +3,7 @@ import './HorseExpandedView.css';
 import { PPLine } from './PPLine';
 import type { HorseEntry, PastPerformance, Workout } from '../types/drf';
 import type { HorseScore } from '../lib/scoring';
-import { formatRacingDistance } from '../utils/formatters';
+import { formatRacingDistance, getEdgeColor } from '../utils/formatters';
 import type { BetTier, RaceContextSummary } from '../hooks/useRaceBets';
 
 // ============================================================================
@@ -198,14 +198,7 @@ const getDataQualityColor = (quality: string | undefined): string => {
   }
 };
 
-// Get edge color
-const getEdgeColor = (edge: number): string => {
-  if (edge >= 75) return '#10b981'; // Bright green
-  if (edge >= 50) return '#22c55e'; // Green
-  if (edge >= 25) return '#84cc16'; // Yellow-green
-  if (edge >= -25) return '#6B7280'; // Gray (fair)
-  return '#ef4444'; // Red (underlay)
-};
+// getEdgeColor imported from utils/formatters
 
 /**
  * Get solid teal color for progress bars

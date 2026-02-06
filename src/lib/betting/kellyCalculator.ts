@@ -17,6 +17,7 @@
  * @module betting/kellyCalculator
  */
 
+import { parseOddsToDecimal as _parseOddsToDecimal } from '../../utils/formatters';
 import { isCalibrationActive } from '../scoring/probabilityConversion';
 
 // ============================================================================
@@ -305,58 +306,8 @@ function calculateRiskOfRuin(p: number, f: number, bankroll: number): number {
   return Math.min(1, Math.max(0, ror));
 }
 
-/**
- * Convert traditional odds string to decimal odds
- *
- * @param oddsString - Odds string (e.g., "5-1", "9/2", "3.5")
- * @returns Decimal odds
- */
-export function parseOddsToDecimal(oddsString: string): number {
-  if (!oddsString || typeof oddsString !== 'string') {
-    return 2.0; // Default to even money
-  }
-
-  const cleaned = oddsString.trim().toUpperCase();
-
-  // Handle "EVEN" or "EVN"
-  if (cleaned === 'EVEN' || cleaned === 'EVN') {
-    return 2.0;
-  }
-
-  // Handle "X-Y" format (e.g., "5-1")
-  const dashMatch = cleaned.match(/^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)$/);
-  if (dashMatch) {
-    const [, numStr, denStr] = dashMatch;
-    if (numStr && denStr) {
-      const num = parseFloat(numStr);
-      const den = parseFloat(denStr);
-      if (den > 0) {
-        return num / den + 1;
-      }
-    }
-  }
-
-  // Handle "X/Y" format (e.g., "9/2")
-  const slashMatch = cleaned.match(/^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/);
-  if (slashMatch) {
-    const [, numStr, denStr] = slashMatch;
-    if (numStr && denStr) {
-      const num = parseFloat(numStr);
-      const den = parseFloat(denStr);
-      if (den > 0) {
-        return num / den + 1;
-      }
-    }
-  }
-
-  // Handle pure decimal (e.g., "5.0")
-  const decimal = parseFloat(cleaned);
-  if (!isNaN(decimal) && decimal > 1) {
-    return decimal;
-  }
-
-  return 2.0; // Default
-}
+// Re-export from canonical source
+export const parseOddsToDecimal = _parseOddsToDecimal;
 
 /**
  * Convert decimal odds to display string (e.g., "5-1")

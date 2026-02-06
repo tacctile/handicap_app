@@ -174,6 +174,145 @@ export const formatOdds = (odds: number | null | undefined, isFavorite?: boolean
   return prefix + Math.round(odds).toString();
 };
 
+/**
+ * Parse various odds formats to decimal odds.
+ * Handles: "5-1", "9/2", "EVEN", "+300", "-150", plain numbers.
+ *
+ * @param oddsStr - The odds string to parse
+ * @returns Decimal odds (e.g., "5-1" returns 6.0, "EVEN" returns 2.0)
+ */
+export function parseOddsToDecimal(oddsStr: string): number {
+  if (!oddsStr || typeof oddsStr !== 'string') {
+    return 2.0;
+  }
+
+  const cleaned = oddsStr.trim().toUpperCase();
+
+  // Handle "EVEN" odds
+  if (cleaned === 'EVEN' || cleaned === 'EVN') {
+    return 2.0;
+  }
+
+  // Handle moneyline format (+300 or -150)
+  if (cleaned.startsWith('+')) {
+    const ml = parseFloat(cleaned.substring(1));
+    if (!isNaN(ml)) {
+      return 1 + ml / 100;
+    }
+  }
+  if (cleaned.startsWith('-')) {
+    const ml = parseFloat(cleaned.substring(1));
+    if (!isNaN(ml) && ml > 0) {
+      return 1 + 100 / ml;
+    }
+  }
+
+  // Handle "X-Y" format (e.g., "5-1", "4-5")
+  const dashMatch = cleaned.match(/^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)$/);
+  if (dashMatch && dashMatch[1] && dashMatch[2]) {
+    const num = parseFloat(dashMatch[1]);
+    const denom = parseFloat(dashMatch[2]);
+    if (!isNaN(num) && !isNaN(denom) && denom > 0) {
+      return 1 + num / denom;
+    }
+  }
+
+  // Handle "X/Y" format (e.g., "5/2")
+  const slashMatch = cleaned.match(/^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/);
+  if (slashMatch && slashMatch[1] && slashMatch[2]) {
+    const num = parseFloat(slashMatch[1]);
+    const denom = parseFloat(slashMatch[2]);
+    if (!isNaN(num) && !isNaN(denom) && denom > 0) {
+      return 1 + num / denom;
+    }
+  }
+
+  // Handle plain number
+  const plainNum = parseFloat(cleaned);
+  if (!isNaN(plainNum)) {
+    // Numbers with a decimal point (e.g., "5.0", "2.5") are treated as decimal odds
+    if (cleaned.includes('.')) {
+      if (plainNum > 1) return plainNum;
+      return 2.0; // Sub-1 decimals default to even money
+    }
+    // Integer numbers (e.g., "5", "10") are treated as X-1 format
+    if (plainNum < 1.5) return 2.0; // Probably meant even money
+    return 1 + plainNum; // Assume X-1 format (e.g., "5" = 5-1 = 6.0)
+  }
+
+  return 2.0; // Default to even money
+}
+
+/**
+ * Get color for edge percentage display.
+ *
+ * @param edge - Edge percentage value
+ * @returns Hex color string
+ */
+export function getEdgeColor(edge: number): string {
+  if (edge >= 75) return '#10b981'; // Bright green
+  if (edge >= 50) return '#22c55e'; // Green
+  if (edge >= 25) return '#84cc16'; // Yellow-green
+  if (edge >= -25) return '#6B7280'; // Gray (fair)
+  return '#ef4444'; // Red (underlay)
+}
+
+/**
+ * Format edge percentage for display.
+ *
+ * @param edge - Edge percentage value
+ * @param precision - Decimal places (default 0 for integer rounding)
+ * @returns Formatted string (e.g., "+25%" or "+25.3%")
+ */
+export function formatEdge(edge: number, precision: number = 0): string {
+  const formatted = precision === 0 ? Math.round(edge).toString() : edge.toFixed(precision);
+  return edge >= 0 ? `+${formatted}%` : `${formatted}%`;
+}
+
+/**
+ * Format EV percentage for display.
+ *
+ * @param evPercent - Expected value percentage
+ * @returns Formatted string (e.g., "+12.5%")
+ */
+export function formatEVPercent(evPercent: number): string {
+  if (!Number.isFinite(evPercent)) return '\u2014';
+  const sign = evPercent >= 0 ? '+' : '';
+  return `${sign}${evPercent.toFixed(1)}%`;
+}
+
+/**
+ * Format overlay percentage for display.
+ *
+ * @param overlayPercent - Overlay percentage value
+ * @param precision - Decimal places (default 0)
+ * @returns Formatted string (e.g., "+150%")
+ */
+export function formatOverlayPercent(overlayPercent: number, precision: number = 0): string {
+  if (!Number.isFinite(overlayPercent)) return '\u2014';
+  const sign = overlayPercent >= 0 ? '+' : '';
+  return `${sign}${overlayPercent.toFixed(precision)}%`;
+}
+
+/**
+ * Format a number as a percentage string.
+ *
+ * @param value - The value to format
+ * @param decimals - Decimal places (default 1)
+ * @param showSign - Whether to show +/- sign prefix (default false)
+ * @returns Formatted percentage string
+ */
+export function formatPercent(
+  value: number,
+  decimals: number = 1,
+  showSign: boolean = false
+): string {
+  if (showSign) {
+    return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
+  }
+  return `${value.toFixed(decimals)}%`;
+}
+
 // Test function for verifying distance formatting (can be run in console)
 export const testDistanceFormatting = (): void => {
   const testDistances = [

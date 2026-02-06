@@ -20,6 +20,7 @@
  * @module dutch/dutchCalculator
  */
 
+import { parseOddsToDecimal as _parseOddsToDecimal } from '../../utils/formatters';
 import { validateNumber } from '../sanitization';
 
 // ============================================================================
@@ -132,67 +133,8 @@ export const MINIMUM_EDGE_PERCENT = 0;
 // UTILITY FUNCTIONS
 // ============================================================================
 
-/**
- * Parse odds string to decimal odds
- * Handles: "5-1", "9/2", "EVEN", "+300", "-150"
- */
-export function parseOddsToDecimal(oddsStr: string): number {
-  if (!oddsStr || typeof oddsStr !== 'string') {
-    return 2.0;
-  }
-
-  const cleaned = oddsStr.trim().toUpperCase();
-
-  // Handle "EVEN" odds
-  if (cleaned === 'EVEN' || cleaned === 'EVN') {
-    return 2.0;
-  }
-
-  // Handle moneyline format (+300 or -150)
-  if (cleaned.startsWith('+')) {
-    const ml = parseFloat(cleaned.substring(1));
-    if (!isNaN(ml)) {
-      return 1 + ml / 100;
-    }
-  }
-  if (cleaned.startsWith('-')) {
-    const ml = parseFloat(cleaned.substring(1));
-    if (!isNaN(ml) && ml > 0) {
-      return 1 + 100 / ml;
-    }
-  }
-
-  // Handle "X-Y" format (e.g., "5-1", "4-5")
-  const dashMatch = cleaned.match(/^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)$/);
-  if (dashMatch && dashMatch[1] && dashMatch[2]) {
-    const num = parseFloat(dashMatch[1]);
-    const denom = parseFloat(dashMatch[2]);
-    if (!isNaN(num) && !isNaN(denom) && denom > 0) {
-      return 1 + num / denom;
-    }
-  }
-
-  // Handle "X/Y" format (e.g., "5/2")
-  const slashMatch = cleaned.match(/^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/);
-  if (slashMatch && slashMatch[1] && slashMatch[2]) {
-    const num = parseFloat(slashMatch[1]);
-    const denom = parseFloat(slashMatch[2]);
-    if (!isNaN(num) && !isNaN(denom) && denom > 0) {
-      return 1 + num / denom;
-    }
-  }
-
-  // Handle plain number (already decimal or assume X-1 format)
-  const plainNum = parseFloat(cleaned);
-  if (!isNaN(plainNum)) {
-    if (plainNum >= 1 && plainNum < 1.5) return 2.0; // Probably even money
-    if (plainNum >= 1.5) return plainNum; // Already decimal
-    if (plainNum > 0 && plainNum < 1) return 1 + plainNum; // Assume fractional part
-    return 1 + plainNum; // Assume X-1 format
-  }
-
-  return 2.0; // Default to even money
-}
+// Re-export from canonical source
+export const parseOddsToDecimal = _parseOddsToDecimal;
 
 /**
  * Calculate implied probability from decimal odds
