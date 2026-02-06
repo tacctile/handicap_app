@@ -19,12 +19,15 @@
 | GitHub            | Repository, version control, CI/CD         |
 | Vercel            | Deployments                                |
 
-**NOTHING IS EVER DONE LOCALLY. NO EXCEPTIONS.**
+**THIS IS A 100% WEB-BASED TOOLCHAIN. NOTHING IS EVER DONE LOCALLY. NO EXCEPTIONS.**
 
-- Claude Chat writes prompts
-- Claude Code executes prompts
+- Claude Code runs in the browser at claude.ai — it is the WEB-BASED version only, never local CLI
+- There is no local machine, no local IDE, no local terminal — none exist in this workflow
+- Nick pastes prompts from Claude Chat into the Claude Code web interface
+- Claude Chat writes prompts → Claude Code executes them in the browser
 - All code lives in GitHub
 - All deploys go through Vercel
+- Every file read, write, build, and test happens through the Claude Code web session
 
 ---
 
@@ -69,6 +72,28 @@ _These are foundational constraints. Every decision must respect them._
 12. **No App Store** — PWA only, direct web access
 13. **Overview-first navigation** — Users see all races with confidence before drilling into details
 14. **Methodology docs are authoritative** — Code implements what docs define, not the reverse
+
+---
+
+## Audit & Report Output Rules
+
+_These rules are non-negotiable. Every Claude Code session must follow them._
+
+1. **NEVER commit audit reports, analysis files, or temporary documentation to the repo.** No exceptions.
+2. **ALL audit results, reports, summaries, and analysis must be displayed directly in the chat session response.** The chat window is the output destination — not the filesystem.
+3. **Do NOT create .md, .txt, .yml, .yaml, or any other files for audit outputs, reports, summaries, checklists, or analysis.** If a user requests an audit, the full results go in the chat response.
+4. **The only .md files permitted in the repo are:**
+   - `README.md`
+   - `CHANGELOG.md`
+   - `MASTER_CONTEXT.md`
+   - `ALGORITHM_REFERENCE.md`
+   - `KNOWN_LIMITATIONS.md`
+   - `SECURITY.md`
+   - Files inside `src/docs/`
+   - Files inside `src/legal/`
+   - Files inside `src/help/`
+5. **Any audit, report, or temporary documentation file found in the repo must be deleted immediately.** These files are accidents — they should never exist.
+6. **No "temporary" files.** There is no such thing as a temporary file that gets committed. If it touches the repo, it must be on the allowed list above.
 
 ---
 
