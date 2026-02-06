@@ -1,3 +1,9 @@
+/**
+ * DRF file upload component with drag-and-drop support, progress tracking,
+ * and Web Worker-based parsing with automatic fallback to main thread.
+ * @param props - Component props
+ * @returns React element
+ */
 import { useState, useRef } from 'react';
 import type { DragEvent, ChangeEvent } from 'react';
 import type { ParsedDRFFile, DRFWorkerProgressMessage } from '../types/drf';

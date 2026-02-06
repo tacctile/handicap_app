@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '../services/logging';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
@@ -35,7 +36,9 @@ export function UpdatePrompt({ className = '' }: UpdatePromptProps) {
       }
     },
     onRegisterError(error) {
-      console.error('[SW] Registration error:', error);
+      logger.logError(error instanceof Error ? error : new Error(String(error)), {
+        component: 'UpdatePrompt',
+      });
     },
   });
 

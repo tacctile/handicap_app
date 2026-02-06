@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
+import { logger } from '../../services/logging';
 import type { TopBet } from '../../lib/betting/topBetsGenerator';
 
 interface TopBetCardProps {
@@ -29,8 +30,8 @@ export const TopBetCard: React.FC<TopBetCardProps> = ({
         await navigator.clipboard.writeText(bet.whatToSay);
         setCopySuccess(true);
         setTimeout(() => setCopySuccess(false), 1500);
-      } catch (error) {
-        console.error('Failed to copy:', error);
+      } catch (_error) {
+        logger.logWarning('Failed to copy to clipboard', { component: 'TopBetCard' });
       }
     },
     [bet.whatToSay]

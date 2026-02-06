@@ -1,3 +1,9 @@
+/**
+ * Bankroll management settings panel for configuring budget, risk tolerance,
+ * bet sizing strategy, Kelly criterion, and Dutch betting preferences.
+ * @param props - Component props
+ * @returns React element
+ */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ErrorBoundary } from './ErrorBoundary';

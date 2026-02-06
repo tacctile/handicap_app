@@ -1,3 +1,9 @@
+/**
+ * Expanded inline view for a horse showing past performances, workouts,
+ * score breakdowns, and betting context within the race list.
+ * @param props - Component props
+ * @returns React element
+ */
 import React, { useState } from 'react';
 import { ErrorBoundary } from './ErrorBoundary';
 import './HorseExpandedView.css';

@@ -1,3 +1,9 @@
+/**
+ * Full-detail modal for a single horse showing scoring breakdown,
+ * pace analysis, connections, class movement, value metrics, and overlay data.
+ * @param props - Component props
+ * @returns React element
+ */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { HorseEntry, RaceHeader } from '../types/drf';
 import type { HorseScore, TacticalAdvantage, OverlayAnalysis } from '../lib/scoring';
@@ -136,7 +142,11 @@ function CategoryCard({
   tooltip,
 }: CategoryCardProps) {
   const scoreColor =
-    score >= maxScore * 0.7 ? '#36d1da' : score >= maxScore * 0.5 ? '#19abb5' : '#888888';
+    score >= maxScore * 0.7
+      ? 'var(--color-primary)'
+      : score >= maxScore * 0.5
+        ? 'var(--color-primary-hover)'
+        : 'var(--color-text-secondary)';
 
   return (
     <div className={`category-card ${isExpanded ? 'expanded' : ''}`}>
@@ -206,15 +216,15 @@ function KeyFactor({
 function getRunningStyleColor(style: string): string {
   switch (style) {
     case 'E':
-      return '#ef4444'; // Red for early speed
+      return 'var(--color-error)'; // Red for early speed
     case 'P':
-      return '#f97316'; // Orange for presser
+      return 'var(--color-tier-neutral)'; // Orange for presser
     case 'C':
-      return '#3b82f6'; // Blue for closer
+      return '#3b82f6'; // Blue for closer (no direct token)
     case 'S':
-      return '#8b5cf6'; // Purple for sustained
+      return '#8b5cf6'; // Purple for sustained (no direct token)
     default:
-      return '#888888'; // Gray for unknown
+      return 'var(--color-text-secondary)'; // Gray for unknown
   }
 }
 
@@ -222,15 +232,15 @@ function getRunningStyleColor(style: string): string {
 function getTacticalLevelColor(level: TacticalAdvantage['level']): string {
   switch (level) {
     case 'excellent':
-      return '#22c55e';
+      return 'var(--color-success)';
     case 'good':
-      return '#36d1da';
+      return 'var(--color-primary)';
     case 'neutral':
-      return '#888888';
+      return 'var(--color-text-secondary)';
     case 'poor':
-      return '#f97316';
+      return 'var(--color-tier-neutral)';
     case 'terrible':
-      return '#ef4444';
+      return 'var(--color-error)';
   }
 }
 
@@ -502,25 +512,33 @@ export function HorseDetailModal({
                 className="material-icons"
                 style={{
                   fontSize: '2rem',
-                  color: '#ef4444',
+                  color: 'var(--color-error)',
                   marginBottom: '0.5rem',
                   display: 'block',
                 }}
               >
                 error
               </span>
-              <h3 style={{ color: '#EEEFF1', margin: '0 0 0.5rem 0' }}>Something went wrong</h3>
-              <p style={{ color: '#B4B4B6', fontSize: '0.875rem', margin: '0 0 1rem 0' }}>
+              <h3 style={{ color: 'var(--color-text-primary)', margin: '0 0 0.5rem 0' }}>
+                Something went wrong
+              </h3>
+              <p
+                style={{
+                  color: 'var(--color-text-secondary)',
+                  fontSize: '0.875rem',
+                  margin: '0 0 1rem 0',
+                }}
+              >
                 Unable to load horse details.
               </p>
               <button
                 onClick={onClose}
                 style={{
                   padding: '0.5rem 1rem',
-                  background: '#19abb5',
+                  background: 'var(--color-primary)',
                   border: 'none',
                   borderRadius: '6px',
-                  color: '#fff',
+                  color: 'var(--color-text-primary)',
                   cursor: 'pointer',
                   fontSize: '0.875rem',
                 }}
@@ -599,7 +617,7 @@ export function HorseDetailModal({
                       top: 0,
                       right: 0,
                       backgroundColor: getDiamondColor(),
-                      color: '#1a1a1a',
+                      color: 'var(--color-elevated)',
                       padding: '6px 16px',
                       borderBottomLeftRadius: '12px',
                       fontWeight: 800,
@@ -633,7 +651,7 @@ export function HorseDetailModal({
                       </h3>
                       <p
                         style={{
-                          color: '#e0e0e0',
+                          color: 'var(--color-text-primary)',
                           fontSize: '0.95rem',
                           margin: '4px 0 0 0',
                         }}
@@ -654,43 +672,73 @@ export function HorseDetailModal({
                   >
                     <div
                       style={{
-                        backgroundColor: '#1a1a1a',
+                        backgroundColor: 'var(--color-elevated)',
                         padding: '12px',
                         borderRadius: '8px',
                         textAlign: 'center',
                       }}
                     >
-                      <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>
+                      <div
+                        style={{
+                          color: 'var(--color-text-secondary)',
+                          fontSize: '0.75rem',
+                          marginBottom: '4px',
+                        }}
+                      >
                         Score
                       </div>
-                      <div style={{ color: '#e0e0e0', fontWeight: 700, fontSize: '1.1rem' }}>
+                      <div
+                        style={{
+                          color: 'var(--color-text-primary)',
+                          fontWeight: 700,
+                          fontSize: '1.1rem',
+                        }}
+                      >
                         {diamondAnalysis.score}
                       </div>
                     </div>
                     <div
                       style={{
-                        backgroundColor: '#1a1a1a',
+                        backgroundColor: 'var(--color-elevated)',
                         padding: '12px',
                         borderRadius: '8px',
                         textAlign: 'center',
                       }}
                     >
-                      <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>
+                      <div
+                        style={{
+                          color: 'var(--color-text-secondary)',
+                          fontSize: '0.75rem',
+                          marginBottom: '4px',
+                        }}
+                      >
                         Overlay
                       </div>
-                      <div style={{ color: '#22c55e', fontWeight: 700, fontSize: '1.1rem' }}>
+                      <div
+                        style={{
+                          color: 'var(--color-success)',
+                          fontWeight: 700,
+                          fontSize: '1.1rem',
+                        }}
+                      >
                         +{diamondAnalysis.overlayPercent.toFixed(0)}%
                       </div>
                     </div>
                     <div
                       style={{
-                        backgroundColor: '#1a1a1a',
+                        backgroundColor: 'var(--color-elevated)',
                         padding: '12px',
                         borderRadius: '8px',
                         textAlign: 'center',
                       }}
                     >
-                      <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>
+                      <div
+                        style={{
+                          color: 'var(--color-text-secondary)',
+                          fontSize: '0.75rem',
+                          marginBottom: '4px',
+                        }}
+                      >
                         Factors
                       </div>
                       <div
@@ -701,13 +749,19 @@ export function HorseDetailModal({
                     </div>
                     <div
                       style={{
-                        backgroundColor: '#1a1a1a',
+                        backgroundColor: 'var(--color-elevated)',
                         padding: '12px',
                         borderRadius: '8px',
                         textAlign: 'center',
                       }}
                     >
-                      <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>
+                      <div
+                        style={{
+                          color: 'var(--color-text-secondary)',
+                          fontSize: '0.75rem',
+                          marginBottom: '4px',
+                        }}
+                      >
                         Confidence
                       </div>
                       <div
@@ -722,7 +776,7 @@ export function HorseDetailModal({
                   <div style={{ marginBottom: '16px' }}>
                     <div
                       style={{
-                        color: '#e0e0e0',
+                        color: 'var(--color-text-primary)',
                         fontWeight: 600,
                         fontSize: '0.9rem',
                         marginBottom: '10px',
@@ -767,7 +821,7 @@ export function HorseDetailModal({
                             <span
                               style={{
                                 backgroundColor: FACTOR_COLORS[factor.type],
-                                color: '#fff',
+                                color: 'var(--color-text-primary)',
                                 padding: '2px 8px',
                                 borderRadius: '4px',
                                 fontSize: '0.7rem',
@@ -777,7 +831,7 @@ export function HorseDetailModal({
                               {factor.confidence}%
                             </span>
                           </div>
-                          <div style={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                          <div style={{ color: 'var(--color-text-primary)', fontSize: '0.85rem' }}>
                             {factor.evidence}
                           </div>
                           {factor.evidenceDetails.length > 0 && (
@@ -785,9 +839,9 @@ export function HorseDetailModal({
                               style={{
                                 marginTop: '8px',
                                 paddingTop: '8px',
-                                borderTop: '1px solid #333',
+                                borderTop: '1px solid var(--color-border)',
                                 fontSize: '0.75rem',
-                                color: '#888',
+                                color: 'var(--color-text-secondary)',
                               }}
                             >
                               {factor.evidenceDetails.map((detail, j) => (
@@ -805,7 +859,7 @@ export function HorseDetailModal({
                   {/* ROI Potential */}
                   <div
                     style={{
-                      backgroundColor: '#1a1a1a',
+                      backgroundColor: 'var(--color-elevated)',
                       padding: '12px',
                       borderRadius: '8px',
                       marginBottom: '16px',
@@ -819,14 +873,19 @@ export function HorseDetailModal({
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span className="material-icons text-base" style={{ color: '#22c55e' }}>
+                        <span
+                          className="material-icons text-base"
+                          style={{ color: 'var(--color-success)' }}
+                        >
                           trending_up
                         </span>
-                        <span style={{ color: '#e0e0e0', fontWeight: 600 }}>ROI Potential</span>
+                        <span style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>
+                          ROI Potential
+                        </span>
                       </div>
                       <span
                         style={{
-                          color: '#22c55e',
+                          color: 'var(--color-success)',
                           fontWeight: 700,
                           fontSize: '1.1rem',
                         }}
@@ -841,7 +900,7 @@ export function HorseDetailModal({
                   <div
                     style={{
                       backgroundColor: getDiamondColor(),
-                      color: '#1a1a1a',
+                      color: 'var(--color-elevated)',
                       padding: '14px 16px',
                       borderRadius: '8px',
                       display: 'flex',
@@ -941,7 +1000,10 @@ export function HorseDetailModal({
                               <Icon name="handshake" className="text-xs mr-1" />
                               Partnership Synergy
                             </span>
-                            <span className="breakdown-value" style={{ color: '#36d1da' }}>
+                            <span
+                              className="breakdown-value"
+                              style={{ color: 'var(--color-primary)' }}
+                            >
                               +
                               {dynamicConnections?.synergyBonus ??
                                 score.breakdown.connections.partnershipBonus}
@@ -952,7 +1014,7 @@ export function HorseDetailModal({
                               className="breakdown-evidence"
                               style={{
                                 fontSize: '0.75rem',
-                                color: '#36d1da',
+                                color: 'var(--color-primary)',
                                 marginBottom: '8px',
                                 paddingLeft: '16px',
                               }}
@@ -963,8 +1025,8 @@ export function HorseDetailModal({
                                 <span
                                   style={{
                                     marginLeft: '6px',
-                                    backgroundColor: '#ef4444',
-                                    color: '#fff',
+                                    backgroundColor: 'var(--color-error)',
+                                    color: 'var(--color-text-primary)',
                                     padding: '1px 4px',
                                     borderRadius: '4px',
                                     fontSize: '0.65rem',
@@ -993,7 +1055,7 @@ export function HorseDetailModal({
                           <span
                             style={{
                               backgroundColor: getConnectionsTierColor(dynamicConnections.total),
-                              color: '#fff',
+                              color: 'var(--color-text-primary)',
                               padding: '2px 8px',
                               borderRadius: '4px',
                               fontSize: '0.7rem',
@@ -1103,7 +1165,10 @@ export function HorseDetailModal({
                       {score.breakdown.form.consistencyBonus > 0 && (
                         <div className="breakdown-row">
                           <span className="breakdown-label">Consistency Bonus</span>
-                          <span className="breakdown-value" style={{ color: '#36d1da' }}>
+                          <span
+                            className="breakdown-value"
+                            style={{ color: 'var(--color-primary)' }}
+                          >
                             +{score.breakdown.form.consistencyBonus}
                           </span>
                         </div>
@@ -1128,7 +1193,10 @@ export function HorseDetailModal({
                         <>
                           <div className="breakdown-row" style={{ marginBottom: '8px' }}>
                             <span className="breakdown-label">Changes Detected</span>
-                            <span className="breakdown-value" style={{ color: '#36d1da' }}>
+                            <span
+                              className="breakdown-value"
+                              style={{ color: 'var(--color-primary)' }}
+                            >
                               {equipmentAnalysis.changes.length}
                             </span>
                           </div>
@@ -1153,7 +1221,9 @@ export function HorseDetailModal({
                                   >
                                     {formatted.icon}
                                   </span>
-                                  <span style={{ color: '#e0e0e0' }}>{formatted.label}</span>
+                                  <span style={{ color: 'var(--color-text-primary)' }}>
+                                    {formatted.label}
+                                  </span>
                                 </span>
                                 <span
                                   className="breakdown-value"
@@ -1170,9 +1240,9 @@ export function HorseDetailModal({
                               style={{
                                 marginTop: '8px',
                                 padding: '8px',
-                                backgroundColor: '#1a1a1a',
+                                backgroundColor: 'var(--color-elevated)',
                                 borderRadius: '6px',
-                                border: '1px solid #333',
+                                border: '1px solid var(--color-border)',
                               }}
                             >
                               <div
@@ -1185,17 +1255,26 @@ export function HorseDetailModal({
                               >
                                 <span
                                   className="material-icons text-sm"
-                                  style={{ color: '#f59e0b' }}
+                                  style={{ color: 'var(--color-warning)' }}
                                 >
                                   star
                                 </span>
                                 <span
-                                  style={{ color: '#f59e0b', fontSize: '0.8rem', fontWeight: 600 }}
+                                  style={{
+                                    color: 'var(--color-warning)',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 600,
+                                  }}
                                 >
                                   Trainer Pattern Active
                                 </span>
                               </div>
-                              <span style={{ color: '#888', fontSize: '0.75rem' }}>
+                              <span
+                                style={{
+                                  color: 'var(--color-text-secondary)',
+                                  fontSize: '0.75rem',
+                                }}
+                              >
                                 {horse.trainerName} has{' '}
                                 {equipmentAnalysis.trainerProfile.patterns.length} tracked equipment
                                 patterns
@@ -1206,7 +1285,10 @@ export function HorseDetailModal({
                       ) : (
                         <div className="breakdown-row">
                           <span className="breakdown-label">Status</span>
-                          <span className="breakdown-value" style={{ color: '#888' }}>
+                          <span
+                            className="breakdown-value"
+                            style={{ color: 'var(--color-text-secondary)' }}
+                          >
                             No equipment changes
                           </span>
                         </div>
@@ -1215,8 +1297,12 @@ export function HorseDetailModal({
                       {/* Current Equipment */}
                       {equipmentAnalysis.currentEquipment && (
                         <div style={{ marginTop: '8px' }}>
-                          <span style={{ color: '#888', fontSize: '0.75rem' }}>Current: </span>
-                          <span style={{ color: '#e0e0e0', fontSize: '0.75rem' }}>
+                          <span
+                            style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem' }}
+                          >
+                            Current:{' '}
+                          </span>
+                          <span style={{ color: 'var(--color-text-primary)', fontSize: '0.75rem' }}>
                             {equipmentAnalysis.currentEquipment || 'None listed'}
                           </span>
                         </div>
@@ -1225,8 +1311,12 @@ export function HorseDetailModal({
                       {/* Last Race Equipment */}
                       {equipmentAnalysis.lastRaceEquipment && (
                         <div>
-                          <span style={{ color: '#888', fontSize: '0.75rem' }}>Last race: </span>
-                          <span style={{ color: '#e0e0e0', fontSize: '0.75rem' }}>
+                          <span
+                            style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem' }}
+                          >
+                            Last race:{' '}
+                          </span>
+                          <span style={{ color: 'var(--color-text-primary)', fontSize: '0.75rem' }}>
                             {equipmentAnalysis.lastRaceEquipment}
                           </span>
                         </div>
@@ -1305,11 +1395,11 @@ export function HorseDetailModal({
                           style={{
                             color:
                               score.breakdown.pace.paceFit === 'perfect'
-                                ? '#36d1da'
+                                ? 'var(--color-primary)'
                                 : score.breakdown.pace.paceFit === 'good'
-                                  ? '#19abb5'
+                                  ? 'var(--color-primary)'
                                   : score.breakdown.pace.paceFit === 'poor'
-                                    ? '#ff6b6b'
+                                    ? 'var(--color-error)'
                                     : 'inherit',
                           }}
                         >
@@ -1338,7 +1428,7 @@ export function HorseDetailModal({
                         padding: '2px 8px',
                         borderRadius: '9999px',
                         backgroundColor: '#22c55e20',
-                        color: '#22c55e',
+                        color: 'var(--color-success)',
                         marginLeft: '8px',
                         fontWeight: 600,
                       }}
@@ -1351,10 +1441,10 @@ export function HorseDetailModal({
                 <div
                   className="class-analysis-box"
                   style={{
-                    backgroundColor: '#1a1a1a',
+                    backgroundColor: 'var(--color-elevated)',
                     borderRadius: '12px',
                     padding: '16px',
-                    border: '1px solid #333',
+                    border: '1px solid var(--color-border)',
                   }}
                 >
                   {/* Class Movement Badge */}
@@ -1401,7 +1491,7 @@ export function HorseDetailModal({
                                 ? 'Same Class'
                                 : 'First Start'}
                         </div>
-                        <div style={{ color: '#888', fontSize: '0.85rem' }}>
+                        <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
                           {formatClassMovement(score.classScore.analysis)}
                         </div>
                       </div>
@@ -1431,29 +1521,41 @@ export function HorseDetailModal({
                   >
                     <div
                       style={{
-                        backgroundColor: '#222',
+                        backgroundColor: 'var(--color-elevated)',
                         padding: '10px 12px',
                         borderRadius: '8px',
                       }}
                     >
-                      <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>
+                      <div
+                        style={{
+                          color: 'var(--color-text-secondary)',
+                          fontSize: '0.75rem',
+                          marginBottom: '4px',
+                        }}
+                      >
                         Current Race
                       </div>
-                      <div style={{ color: '#e0e0e0', fontWeight: 600 }}>
+                      <div style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>
                         {getClassLevelName(score.classScore.analysis.currentClass)}
                       </div>
                     </div>
                     <div
                       style={{
-                        backgroundColor: '#222',
+                        backgroundColor: 'var(--color-elevated)',
                         padding: '10px 12px',
                         borderRadius: '8px',
                       }}
                     >
-                      <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>
+                      <div
+                        style={{
+                          color: 'var(--color-text-secondary)',
+                          fontSize: '0.75rem',
+                          marginBottom: '4px',
+                        }}
+                      >
                         Last Race
                       </div>
-                      <div style={{ color: '#e0e0e0', fontWeight: 600 }}>
+                      <div style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>
                         {score.classScore.analysis.lastRaceClass
                           ? getClassLevelName(score.classScore.analysis.lastRaceClass)
                           : 'First Start'}
@@ -1465,7 +1567,7 @@ export function HorseDetailModal({
                   {score.classScore.analysis.provenAtLevel && (
                     <div
                       style={{
-                        backgroundColor: '#222',
+                        backgroundColor: 'var(--color-elevated)',
                         padding: '12px',
                         borderRadius: '8px',
                         marginBottom: '16px',
@@ -1479,10 +1581,16 @@ export function HorseDetailModal({
                           marginBottom: '8px',
                         }}
                       >
-                        <span style={{ color: '#36d1da' }}>
+                        <span style={{ color: 'var(--color-primary)' }}>
                           <Icon name="verified" className="text-sm" />
                         </span>
-                        <span style={{ color: '#e0e0e0', fontWeight: 600, fontSize: '0.9rem' }}>
+                        <span
+                          style={{
+                            color: 'var(--color-text-primary)',
+                            fontWeight: 600,
+                            fontSize: '0.9rem',
+                          }}
+                        >
                           Proven at Level
                         </span>
                       </div>
@@ -1495,34 +1603,36 @@ export function HorseDetailModal({
                         }}
                       >
                         <div>
-                          <span style={{ color: '#888' }}>Wins: </span>
+                          <span style={{ color: 'var(--color-text-secondary)' }}>Wins: </span>
                           <span
                             style={{
                               color:
                                 score.classScore.analysis.provenAtLevel.winsAtLevel > 0
-                                  ? '#22c55e'
-                                  : '#e0e0e0',
+                                  ? 'var(--color-success)'
+                                  : 'var(--color-text-primary)',
                             }}
                           >
                             {score.classScore.analysis.provenAtLevel.winsAtLevel}
                           </span>
                         </div>
                         <div>
-                          <span style={{ color: '#888' }}>ITM: </span>
+                          <span style={{ color: 'var(--color-text-secondary)' }}>ITM: </span>
                           <span
                             style={{
                               color:
                                 score.classScore.analysis.provenAtLevel.itmAtLevel > 0
-                                  ? '#36d1da'
-                                  : '#e0e0e0',
+                                  ? 'var(--color-primary)'
+                                  : 'var(--color-text-primary)',
                             }}
                           >
                             {score.classScore.analysis.provenAtLevel.itmAtLevel}
                           </span>
                         </div>
                         <div>
-                          <span style={{ color: '#888' }}>Competitive: </span>
-                          <span style={{ color: '#e0e0e0' }}>
+                          <span style={{ color: 'var(--color-text-secondary)' }}>
+                            Competitive:{' '}
+                          </span>
+                          <span style={{ color: 'var(--color-text-primary)' }}>
                             {score.classScore.analysis.provenAtLevel.competitiveRacesAtLevel}
                           </span>
                         </div>
@@ -1549,16 +1659,22 @@ export function HorseDetailModal({
                           marginBottom: '10px',
                         }}
                       >
-                        <span style={{ color: '#22c55e' }}>
+                        <span style={{ color: 'var(--color-success)' }}>
                           <Icon name="trending_down" className="text-sm" />
                         </span>
-                        <span style={{ color: '#22c55e', fontWeight: 600, fontSize: '0.9rem' }}>
+                        <span
+                          style={{
+                            color: 'var(--color-success)',
+                            fontWeight: 600,
+                            fontSize: '0.9rem',
+                          }}
+                        >
                           Hidden Class Drops Detected
                         </span>
                         <span
                           style={{
                             backgroundColor: '#22c55e20',
-                            color: '#22c55e',
+                            color: 'var(--color-success)',
                             padding: '2px 6px',
                             borderRadius: '4px',
                             fontSize: '0.7rem',
@@ -1573,10 +1689,10 @@ export function HorseDetailModal({
                           <div
                             key={i}
                             style={{
-                              backgroundColor: '#222',
+                              backgroundColor: 'var(--color-elevated)',
                               padding: '10px',
                               borderRadius: '6px',
-                              border: '1px solid #333',
+                              border: '1px solid var(--color-border)',
                             }}
                           >
                             <div
@@ -1588,17 +1704,27 @@ export function HorseDetailModal({
                               }}
                             >
                               <span
-                                style={{ color: '#e0e0e0', fontSize: '0.85rem', fontWeight: 500 }}
+                                style={{
+                                  color: 'var(--color-text-primary)',
+                                  fontSize: '0.85rem',
+                                  fontWeight: 500,
+                                }}
                               >
                                 {drop.description}
                               </span>
                               <span
-                                style={{ color: '#22c55e', fontSize: '0.8rem', fontWeight: 600 }}
+                                style={{
+                                  color: 'var(--color-success)',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 600,
+                                }}
                               >
                                 +{drop.pointsBonus} pts
                               </span>
                             </div>
-                            <div style={{ color: '#888', fontSize: '0.75rem' }}>
+                            <div
+                              style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem' }}
+                            >
                               {drop.explanation}
                             </div>
                           </div>
@@ -1611,7 +1737,7 @@ export function HorseDetailModal({
                   {score.classScore.analysis.trackTierMovement && (
                     <div
                       style={{
-                        backgroundColor: '#222',
+                        backgroundColor: 'var(--color-elevated)',
                         padding: '12px',
                         borderRadius: '8px',
                         marginBottom: '16px',
@@ -1625,10 +1751,16 @@ export function HorseDetailModal({
                           marginBottom: '8px',
                         }}
                       >
-                        <span style={{ color: '#f59e0b' }}>
+                        <span style={{ color: 'var(--color-warning)' }}>
                           <Icon name="location_on" className="text-sm" />
                         </span>
-                        <span style={{ color: '#e0e0e0', fontWeight: 600, fontSize: '0.9rem' }}>
+                        <span
+                          style={{
+                            color: 'var(--color-text-primary)',
+                            fontWeight: 600,
+                            fontSize: '0.9rem',
+                          }}
+                        >
                           Track Tier Movement
                         </span>
                       </div>
@@ -1655,7 +1787,7 @@ export function HorseDetailModal({
                           {getTierDisplayName(score.classScore.analysis.trackTierMovement.fromTier)}
                           )
                         </span>
-                        <span style={{ color: '#888' }}>
+                        <span style={{ color: 'var(--color-text-secondary)' }}>
                           <Icon name="arrow_forward" className="text-sm" />
                         </span>
                         <span
@@ -1675,8 +1807,8 @@ export function HorseDetailModal({
                             style={{
                               color:
                                 score.classScore.analysis.trackTierMovement.pointsAdjustment > 0
-                                  ? '#22c55e'
-                                  : '#ef4444',
+                                  ? 'var(--color-success)'
+                                  : 'var(--color-error)',
                               fontWeight: 600,
                             }}
                           >
@@ -1701,45 +1833,48 @@ export function HorseDetailModal({
                   >
                     <div
                       style={{
-                        backgroundColor: '#222',
+                        backgroundColor: 'var(--color-elevated)',
                         padding: '8px 10px',
                         borderRadius: '6px',
                         display: 'flex',
                         justifyContent: 'space-between',
                       }}
                     >
-                      <span style={{ color: '#888' }}>Proven at Level</span>
-                      <span style={{ color: '#e0e0e0' }}>
+                      <span style={{ color: 'var(--color-text-secondary)' }}>Proven at Level</span>
+                      <span style={{ color: 'var(--color-text-primary)' }}>
                         {score.classScore.provenAtLevelScore}
                       </span>
                     </div>
                     <div
                       style={{
-                        backgroundColor: '#222',
+                        backgroundColor: 'var(--color-elevated)',
                         padding: '8px 10px',
                         borderRadius: '6px',
                         display: 'flex',
                         justifyContent: 'space-between',
                       }}
                     >
-                      <span style={{ color: '#888' }}>Class Movement</span>
-                      <span style={{ color: '#e0e0e0' }}>
+                      <span style={{ color: 'var(--color-text-secondary)' }}>Class Movement</span>
+                      <span style={{ color: 'var(--color-text-primary)' }}>
                         {score.classScore.classMovementScore}
                       </span>
                     </div>
                     <div
                       style={{
-                        backgroundColor: '#222',
+                        backgroundColor: 'var(--color-elevated)',
                         padding: '8px 10px',
                         borderRadius: '6px',
                         display: 'flex',
                         justifyContent: 'space-between',
                       }}
                     >
-                      <span style={{ color: '#888' }}>Hidden Drops</span>
+                      <span style={{ color: 'var(--color-text-secondary)' }}>Hidden Drops</span>
                       <span
                         style={{
-                          color: score.classScore.hiddenDropsScore > 0 ? '#22c55e' : '#e0e0e0',
+                          color:
+                            score.classScore.hiddenDropsScore > 0
+                              ? 'var(--color-success)'
+                              : 'var(--color-text-primary)',
                         }}
                       >
                         {score.classScore.hiddenDropsScore > 0 ? '+' : ''}
@@ -1748,15 +1883,17 @@ export function HorseDetailModal({
                     </div>
                     <div
                       style={{
-                        backgroundColor: '#222',
+                        backgroundColor: 'var(--color-elevated)',
                         padding: '8px 10px',
                         borderRadius: '6px',
                         display: 'flex',
                         justifyContent: 'space-between',
                       }}
                     >
-                      <span style={{ color: '#888' }}>Track Tier</span>
-                      <span style={{ color: '#e0e0e0' }}>{score.classScore.trackTierScore}</span>
+                      <span style={{ color: 'var(--color-text-secondary)' }}>Track Tier</span>
+                      <span style={{ color: 'var(--color-text-primary)' }}>
+                        {score.classScore.trackTierScore}
+                      </span>
                     </div>
                   </div>
 
@@ -1764,7 +1901,7 @@ export function HorseDetailModal({
                   <div
                     style={{
                       marginTop: '12px',
-                      color: '#888',
+                      color: 'var(--color-text-secondary)',
                       fontSize: '0.8rem',
                       fontStyle: 'italic',
                     }}
@@ -1786,10 +1923,10 @@ export function HorseDetailModal({
                       fontSize: '0.75rem',
                       color:
                         score.breedingScore.total >= 40
-                          ? '#22c55e'
+                          ? 'var(--color-success)'
                           : score.breedingScore.total >= 30
-                            ? '#36d1da'
-                            : '#888888',
+                            ? 'var(--color-primary)'
+                            : 'var(--color-text-secondary)',
                       marginLeft: '8px',
                     }}
                   >
@@ -1822,7 +1959,10 @@ export function HorseDetailModal({
                     {breedingInfo.badge.text}
                   </span>
                   {breedingInfo.showBreedingScore && score.breedingScore?.wasApplied && (
-                    <span className="breeding-analysis-indicator" style={{ color: '#36d1da' }}>
+                    <span
+                      className="breeding-analysis-indicator"
+                      style={{ color: 'var(--color-primary)' }}
+                    >
                       <Icon name="insights" className="text-sm" />
                       Breeding analysis active
                     </span>
@@ -1874,9 +2014,9 @@ export function HorseDetailModal({
                     style={{
                       marginTop: '12px',
                       padding: '12px',
-                      backgroundColor: '#1a1a1a',
+                      backgroundColor: 'var(--color-elevated)',
                       borderRadius: '8px',
-                      border: '1px solid #333',
+                      border: '1px solid var(--color-border)',
                     }}
                   >
                     <div
@@ -1887,17 +2027,19 @@ export function HorseDetailModal({
                         marginBottom: '12px',
                       }}
                     >
-                      <span style={{ fontWeight: 600, color: '#e0e0e0' }}>Breeding Score</span>
+                      <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                        Breeding Score
+                      </span>
                       <span
                         style={{
                           fontSize: '1.1rem',
                           fontWeight: 700,
                           color:
                             score.breedingScore.total >= 40
-                              ? '#22c55e'
+                              ? 'var(--color-success)'
                               : score.breedingScore.total >= 30
-                                ? '#36d1da'
-                                : '#888888',
+                                ? 'var(--color-primary)'
+                                : 'var(--color-text-secondary)',
                         }}
                       >
                         {score.breedingScore.total}/{BREEDING_CATEGORY_LIMITS.total}
@@ -1913,8 +2055,10 @@ export function HorseDetailModal({
                           alignItems: 'center',
                         }}
                       >
-                        <span style={{ color: '#888', fontSize: '0.85rem' }}>Sire</span>
-                        <span style={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
+                          Sire
+                        </span>
+                        <span style={{ color: 'var(--color-text-primary)', fontSize: '0.85rem' }}>
                           {score.breedingScore.breakdown.sireScore}/{BREEDING_CATEGORY_LIMITS.sire}
                         </span>
                       </div>
@@ -1925,8 +2069,10 @@ export function HorseDetailModal({
                           alignItems: 'center',
                         }}
                       >
-                        <span style={{ color: '#888', fontSize: '0.85rem' }}>Dam</span>
-                        <span style={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
+                          Dam
+                        </span>
+                        <span style={{ color: 'var(--color-text-primary)', fontSize: '0.85rem' }}>
                           {score.breedingScore.breakdown.damScore}/{BREEDING_CATEGORY_LIMITS.dam}
                         </span>
                       </div>
@@ -1937,8 +2083,10 @@ export function HorseDetailModal({
                           alignItems: 'center',
                         }}
                       >
-                        <span style={{ color: '#888', fontSize: '0.85rem' }}>Damsire</span>
-                        <span style={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
+                          Damsire
+                        </span>
+                        <span style={{ color: 'var(--color-text-primary)', fontSize: '0.85rem' }}>
                           {score.breedingScore.breakdown.damsireScore}/
                           {BREEDING_CATEGORY_LIMITS.damsire}
                         </span>
@@ -1951,8 +2099,10 @@ export function HorseDetailModal({
                             alignItems: 'center',
                           }}
                         >
-                          <span style={{ color: '#36d1da', fontSize: '0.85rem' }}>Bonuses</span>
-                          <span style={{ color: '#36d1da', fontSize: '0.85rem' }}>
+                          <span style={{ color: 'var(--color-primary)', fontSize: '0.85rem' }}>
+                            Bonuses
+                          </span>
+                          <span style={{ color: 'var(--color-primary)', fontSize: '0.85rem' }}>
                             +{score.breedingScore.bonuses.total}
                           </span>
                         </div>
@@ -1964,16 +2114,22 @@ export function HorseDetailModal({
                       style={{
                         marginTop: '12px',
                         paddingTop: '10px',
-                        borderTop: '1px solid #333',
+                        borderTop: '1px solid var(--color-border)',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
                       }}
                     >
-                      <span style={{ color: '#888', fontSize: '0.8rem' }}>
+                      <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
                         Contributing to overall score
                       </span>
-                      <span style={{ color: '#36d1da', fontWeight: 600, fontSize: '0.9rem' }}>
+                      <span
+                        style={{
+                          color: 'var(--color-primary)',
+                          fontWeight: 600,
+                          fontSize: '0.9rem',
+                        }}
+                      >
                         +{score.breakdown.breeding?.contribution || 0} pts
                       </span>
                     </div>
@@ -1984,12 +2140,18 @@ export function HorseDetailModal({
                         style={{
                           marginTop: '12px',
                           padding: '10px',
-                          backgroundColor: '#222',
+                          backgroundColor: 'var(--color-elevated)',
                           borderRadius: '6px',
                           fontSize: '0.8rem',
                         }}
                       >
-                        <div style={{ color: '#e0e0e0', fontWeight: 600, marginBottom: '6px' }}>
+                        <div
+                          style={{
+                            color: 'var(--color-text-primary)',
+                            fontWeight: 600,
+                            marginBottom: '6px',
+                          }}
+                        >
                           {score.breedingScore.sireDetails.profile.name} Stats
                         </div>
                         <div
@@ -1997,18 +2159,18 @@ export function HorseDetailModal({
                             display: 'grid',
                             gridTemplateColumns: 'repeat(2, 1fr)',
                             gap: '6px',
-                            color: '#888',
+                            color: 'var(--color-text-secondary)',
                           }}
                         >
                           <span>
                             Win Rate:{' '}
-                            <span style={{ color: '#e0e0e0' }}>
+                            <span style={{ color: 'var(--color-text-primary)' }}>
                               {score.breedingScore.sireDetails.profile.winRate.toFixed(1)}%
                             </span>
                           </span>
                           <span>
                             $/Start:{' '}
-                            <span style={{ color: '#e0e0e0' }}>
+                            <span style={{ color: 'var(--color-text-primary)' }}>
                               $
                               {(
                                 score.breedingScore.sireDetails.profile.earningsPerStart / 1000
@@ -2018,19 +2180,19 @@ export function HorseDetailModal({
                           </span>
                           <span>
                             Surface:{' '}
-                            <span style={{ color: '#e0e0e0' }}>
+                            <span style={{ color: 'var(--color-text-primary)' }}>
                               {score.breedingScore.sireDetails.profile.surfacePreference}
                             </span>
                           </span>
                           <span>
                             Distance:{' '}
-                            <span style={{ color: '#e0e0e0' }}>
+                            <span style={{ color: 'var(--color-text-primary)' }}>
                               {score.breedingScore.sireDetails.profile.distancePreference.category}
                             </span>
                           </span>
                           <span>
                             FTS Win%:{' '}
-                            <span style={{ color: '#e0e0e0' }}>
+                            <span style={{ color: 'var(--color-text-primary)' }}>
                               {score.breedingScore.sireDetails.profile.firstTimeStarterWinRate.toFixed(
                                 1
                               )}
@@ -2046,7 +2208,7 @@ export function HorseDetailModal({
                       style={{
                         marginTop: '10px',
                         fontSize: '0.75rem',
-                        color: '#666',
+                        color: 'var(--color-text-tertiary)',
                         fontStyle: 'italic',
                         display: 'flex',
                         alignItems: 'flex-start',
@@ -2068,7 +2230,7 @@ export function HorseDetailModal({
                   <div className="breeding-experience-details" style={{ marginTop: '12px' }}>
                     <div
                       className="breeding-starts-row"
-                      style={{ color: '#888', fontSize: '0.85rem' }}
+                      style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}
                     >
                       <Icon name="verified" className="text-sm" />
                       <span>
@@ -2083,7 +2245,7 @@ export function HorseDetailModal({
                   <div className="breeding-experience-details" style={{ marginTop: '12px' }}>
                     <div
                       className="breeding-starts-row"
-                      style={{ color: '#888', fontSize: '0.85rem' }}
+                      style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}
                     >
                       <Icon name="history" className="text-sm" />
                       <span>
@@ -2153,7 +2315,10 @@ export function HorseDetailModal({
                     <span className="overlay-detail-label">Expected Value (per $1)</span>
                     <span
                       className="overlay-detail-value"
-                      style={{ color: overlay.evPerDollar >= 0 ? '#22c55e' : '#ef4444' }}
+                      style={{
+                        color:
+                          overlay.evPerDollar >= 0 ? 'var(--color-success)' : 'var(--color-error)',
+                      }}
                     >
                       {formatEV(overlay.evPerDollar)}
                     </span>
@@ -2166,12 +2331,12 @@ export function HorseDetailModal({
                   style={{
                     borderColor:
                       overlay.recommendation.action === 'bet_heavily'
-                        ? '#22c55e'
+                        ? 'var(--color-success)'
                         : overlay.recommendation.action === 'bet_standard'
                           ? '#3b82f6'
                           : overlay.recommendation.action === 'avoid'
-                            ? '#ef4444'
-                            : '#6b7280',
+                            ? 'var(--color-error)'
+                            : 'var(--color-text-tertiary)',
                   }}
                 >
                   <div className="overlay-rec-header">
@@ -2259,7 +2424,7 @@ export function HorseDetailModal({
                           >
                             {VALUE_CLASSIFICATION_META[valueAnalysis.classification].name}
                           </div>
-                          <div style={{ color: '#888', fontSize: '0.8rem' }}>
+                          <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
                             {VALUE_CLASSIFICATION_META[valueAnalysis.classification].action}
                           </div>
                         </div>
@@ -2268,7 +2433,7 @@ export function HorseDetailModal({
                         style={{
                           backgroundColor:
                             VALUE_CLASSIFICATION_META[valueAnalysis.classification].color,
-                          color: '#1a1a1a',
+                          color: 'var(--color-elevated)',
                           padding: '8px 16px',
                           borderRadius: '8px',
                           fontWeight: 800,
@@ -2283,7 +2448,7 @@ export function HorseDetailModal({
                     {/* EV Calculation Breakdown */}
                     <div
                       style={{
-                        backgroundColor: '#1a1a1a',
+                        backgroundColor: 'var(--color-elevated)',
                         borderRadius: '8px',
                         padding: '12px',
                         marginBottom: '12px',
@@ -2298,30 +2463,41 @@ export function HorseDetailModal({
                         }}
                       >
                         <div>
-                          <span style={{ color: '#888' }}>Our probability: </span>
-                          <span style={{ color: '#36d1da', fontWeight: 600 }}>
+                          <span style={{ color: 'var(--color-text-secondary)' }}>
+                            Our probability:{' '}
+                          </span>
+                          <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>
                             {valueAnalysis.ourProbability.toFixed(1)}%
                           </span>
-                          <span style={{ color: '#666', fontSize: '0.75rem' }}>
+                          <span
+                            style={{ color: 'var(--color-text-tertiary)', fontSize: '0.75rem' }}
+                          >
                             {' '}
                             ({valueAnalysis.score} pts)
                           </span>
                         </div>
                         <div>
-                          <span style={{ color: '#888' }}>Market probability: </span>
-                          <span style={{ color: '#e0e0e0', fontWeight: 600 }}>
+                          <span style={{ color: 'var(--color-text-secondary)' }}>
+                            Market probability:{' '}
+                          </span>
+                          <span style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>
                             {valueAnalysis.marketProbability.toFixed(1)}%
                           </span>
-                          <span style={{ color: '#666', fontSize: '0.75rem' }}>
+                          <span
+                            style={{ color: 'var(--color-text-tertiary)', fontSize: '0.75rem' }}
+                          >
                             {' '}
                             ({valueAnalysis.oddsDisplay})
                           </span>
                         </div>
                         <div>
-                          <span style={{ color: '#888' }}>Edge: </span>
+                          <span style={{ color: 'var(--color-text-secondary)' }}>Edge: </span>
                           <span
                             style={{
-                              color: valueAnalysis.edge > 0 ? '#22c55e' : '#ef4444',
+                              color:
+                                valueAnalysis.edge > 0
+                                  ? 'var(--color-success)'
+                                  : 'var(--color-error)',
                               fontWeight: 600,
                             }}
                           >
@@ -2330,8 +2506,8 @@ export function HorseDetailModal({
                           </span>
                         </div>
                         <div>
-                          <span style={{ color: '#888' }}>Fair odds: </span>
-                          <span style={{ color: '#e0e0e0', fontWeight: 600 }}>
+                          <span style={{ color: 'var(--color-text-secondary)' }}>Fair odds: </span>
+                          <span style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>
                             {valueAnalysis.fairOddsDisplay}
                           </span>
                         </div>
@@ -2340,17 +2516,22 @@ export function HorseDetailModal({
                         style={{
                           marginTop: '12px',
                           paddingTop: '12px',
-                          borderTop: '1px solid #333',
+                          borderTop: '1px solid var(--color-border)',
                           display: 'flex',
                           justifyContent: 'center',
                           alignItems: 'center',
                           gap: '8px',
                         }}
                       >
-                        <span style={{ color: '#888' }}>Expected return per $1:</span>
+                        <span style={{ color: 'var(--color-text-secondary)' }}>
+                          Expected return per $1:
+                        </span>
                         <span
                           style={{
-                            color: valueAnalysis.evPerDollar >= 0 ? '#22c55e' : '#ef4444',
+                            color:
+                              valueAnalysis.evPerDollar >= 0
+                                ? 'var(--color-success)'
+                                : 'var(--color-error)',
                             fontWeight: 700,
                             fontSize: '1rem',
                           }}
@@ -2364,7 +2545,7 @@ export function HorseDetailModal({
                     {/* Value Recommendation */}
                     <div
                       style={{
-                        color: '#e0e0e0',
+                        color: 'var(--color-text-primary)',
                         fontSize: '0.9rem',
                         fontStyle: 'italic',
                       }}
@@ -2414,7 +2595,7 @@ export function HorseDetailModal({
                             Market Inefficiency:{' '}
                             {INEFFICIENCY_META[inefficiencyAnalysis.primaryInefficiency.type].name}
                           </div>
-                          <div style={{ color: '#e0e0e0', fontSize: '0.9rem' }}>
+                          <div style={{ color: 'var(--color-text-primary)', fontSize: '0.9rem' }}>
                             {inefficiencyAnalysis.primaryInefficiency.title}
                           </div>
                         </div>
@@ -2424,7 +2605,7 @@ export function HorseDetailModal({
                             backgroundColor:
                               INEFFICIENCY_META[inefficiencyAnalysis.primaryInefficiency.type]
                                 .color,
-                            color: '#1a1a1a',
+                            color: 'var(--color-elevated)',
                             padding: '4px 10px',
                             borderRadius: '6px',
                             fontWeight: 700,
@@ -2437,23 +2618,35 @@ export function HorseDetailModal({
 
                       <div
                         style={{
-                          backgroundColor: '#1a1a1a',
+                          backgroundColor: 'var(--color-elevated)',
                           borderRadius: '8px',
                           padding: '12px',
                           marginBottom: '12px',
                         }}
                       >
-                        <div style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '8px' }}>
+                        <div
+                          style={{
+                            color: 'var(--color-text-primary)',
+                            fontSize: '0.9rem',
+                            marginBottom: '8px',
+                          }}
+                        >
                           {inefficiencyAnalysis.primaryInefficiency.explanation}
                         </div>
-                        <div style={{ color: '#888', fontSize: '0.8rem', fontStyle: 'italic' }}>
+                        <div
+                          style={{
+                            color: 'var(--color-text-secondary)',
+                            fontSize: '0.8rem',
+                            fontStyle: 'italic',
+                          }}
+                        >
                           {inefficiencyAnalysis.primaryInefficiency.valueReason}
                         </div>
                       </div>
 
                       {/* Evidence List */}
                       {inefficiencyAnalysis.primaryInefficiency.evidence.length > 0 && (
-                        <div style={{ fontSize: '0.8rem', color: '#888' }}>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
                           {inefficiencyAnalysis.primaryInefficiency.evidence
                             .slice(0, 3)
                             .map((ev, i) => (
@@ -2491,7 +2684,7 @@ export function HorseDetailModal({
 
                 <div
                   style={{
-                    backgroundColor: '#1a1a1a',
+                    backgroundColor: 'var(--color-elevated)',
                     borderRadius: '12px',
                     padding: '16px',
                     border: `1px solid ${LONGSHOT_CLASSIFICATION_META[longshotAnalysis.classification].color}40`,
@@ -2529,7 +2722,7 @@ export function HorseDetailModal({
                         >
                           {longshotAnalysis.oddsDisplay} Longshot
                         </div>
-                        <div style={{ color: '#888', fontSize: '0.85rem' }}>
+                        <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
                           {longshotAnalysis.angleCount} upset angle
                           {longshotAnalysis.angleCount !== 1 ? 's' : ''} detected
                         </div>
@@ -2560,33 +2753,48 @@ export function HorseDetailModal({
                   >
                     <div
                       style={{
-                        backgroundColor: '#222',
+                        backgroundColor: 'var(--color-elevated)',
                         padding: '10px 12px',
                         borderRadius: '8px',
                         textAlign: 'center',
                       }}
                     >
-                      <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>
+                      <div
+                        style={{
+                          color: 'var(--color-text-secondary)',
+                          fontSize: '0.75rem',
+                          marginBottom: '4px',
+                        }}
+                      >
                         Upset Chance
                       </div>
-                      <div style={{ color: '#22c55e', fontWeight: 600 }}>
+                      <div style={{ color: 'var(--color-success)', fontWeight: 600 }}>
                         {(longshotAnalysis.upsetProbability * 100).toFixed(1)}%
                       </div>
                     </div>
                     <div
                       style={{
-                        backgroundColor: '#222',
+                        backgroundColor: 'var(--color-elevated)',
                         padding: '10px 12px',
                         borderRadius: '8px',
                         textAlign: 'center',
                       }}
                     >
-                      <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>
+                      <div
+                        style={{
+                          color: 'var(--color-text-secondary)',
+                          fontSize: '0.75rem',
+                          marginBottom: '4px',
+                        }}
+                      >
                         Expected Value
                       </div>
                       <div
                         style={{
-                          color: longshotAnalysis.expectedValue > 0 ? '#22c55e' : '#ef4444',
+                          color:
+                            longshotAnalysis.expectedValue > 0
+                              ? 'var(--color-success)'
+                              : 'var(--color-error)',
                           fontWeight: 600,
                         }}
                       >
@@ -2596,16 +2804,22 @@ export function HorseDetailModal({
                     </div>
                     <div
                       style={{
-                        backgroundColor: '#222',
+                        backgroundColor: 'var(--color-elevated)',
                         padding: '10px 12px',
                         borderRadius: '8px',
                         textAlign: 'center',
                       }}
                     >
-                      <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '4px' }}>
+                      <div
+                        style={{
+                          color: 'var(--color-text-secondary)',
+                          fontSize: '0.75rem',
+                          marginBottom: '4px',
+                        }}
+                      >
                         ROI Potential
                       </div>
-                      <div style={{ color: '#36d1da', fontWeight: 600 }}>
+                      <div style={{ color: 'var(--color-primary)', fontWeight: 600 }}>
                         {longshotAnalysis.roiMultiplier.toFixed(2)}x
                       </div>
                     </div>
@@ -2620,7 +2834,7 @@ export function HorseDetailModal({
                           alignItems: 'center',
                           gap: '8px',
                           marginBottom: '10px',
-                          color: '#e0e0e0',
+                          color: 'var(--color-text-primary)',
                           fontWeight: 600,
                           fontSize: '0.9rem',
                         }}
@@ -2664,7 +2878,7 @@ export function HorseDetailModal({
                               <span
                                 style={{
                                   backgroundColor: UPSET_ANGLE_COLORS[angle.category],
-                                  color: '#fff',
+                                  color: 'var(--color-text-primary)',
                                   padding: '2px 8px',
                                   borderRadius: '4px',
                                   fontSize: '0.75rem',
@@ -2674,7 +2888,9 @@ export function HorseDetailModal({
                                 +{angle.points} pts
                               </span>
                             </div>
-                            <div style={{ color: '#e0e0e0', fontSize: '0.85rem' }}>
+                            <div
+                              style={{ color: 'var(--color-text-primary)', fontSize: '0.85rem' }}
+                            >
                               {angle.evidence}
                             </div>
                             {angle.evidenceDetails.length > 0 && (
@@ -2682,9 +2898,9 @@ export function HorseDetailModal({
                                 style={{
                                   marginTop: '8px',
                                   paddingTop: '8px',
-                                  borderTop: '1px solid #333',
+                                  borderTop: '1px solid var(--color-border)',
                                   fontSize: '0.75rem',
-                                  color: '#888',
+                                  color: 'var(--color-text-secondary)',
                                 }}
                               >
                                 {angle.evidenceDetails.map((detail, j) => (
@@ -2723,7 +2939,9 @@ export function HorseDetailModal({
                         <span
                           style={{
                             color:
-                              longshotAnalysis.classification === 'nuclear' ? '#22c55e' : '#f59e0b',
+                              longshotAnalysis.classification === 'nuclear'
+                                ? 'var(--color-success)'
+                                : 'var(--color-warning)',
                           }}
                         >
                           <Icon name="paid" className="text-base" />
@@ -2731,14 +2949,16 @@ export function HorseDetailModal({
                         <span
                           style={{
                             color:
-                              longshotAnalysis.classification === 'nuclear' ? '#22c55e' : '#f59e0b',
+                              longshotAnalysis.classification === 'nuclear'
+                                ? 'var(--color-success)'
+                                : 'var(--color-warning)',
                             fontWeight: 600,
                           }}
                         >
                           Bet Recommendation
                         </span>
                       </div>
-                      <div style={{ color: '#e0e0e0', fontSize: '0.9rem' }}>
+                      <div style={{ color: 'var(--color-text-primary)', fontSize: '0.9rem' }}>
                         {longshotAnalysis.betRecommendation}
                       </div>
                     </div>
@@ -2747,7 +2967,7 @@ export function HorseDetailModal({
                   {/* Summary */}
                   <div
                     style={{
-                      color: '#888',
+                      color: 'var(--color-text-secondary)',
                       fontSize: '0.8rem',
                       fontStyle: 'italic',
                       display: 'flex',

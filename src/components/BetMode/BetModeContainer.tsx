@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { logger } from '../../services/logging';
 import { BetModeHeader } from './BetModeHeader';
 import { BetResults } from './BetResults';
 import { InlineSettings } from './InlineSettings';
@@ -338,8 +339,8 @@ export const BetModeContainer: React.FC<BetModeContainerProps> = ({
       await navigator.clipboard.writeText(ticket);
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy:', error);
+    } catch (_error) {
+      logger.logWarning('Failed to copy to clipboard', { component: 'BetModeContainer' });
     }
   }, [calculationResult, viewedRaceNumber, trackName]);
 

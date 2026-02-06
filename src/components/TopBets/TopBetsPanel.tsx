@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
+import { logger } from '../../services/logging';
 import { TopBetCard } from './TopBetCard';
 import { useTopBets, type RiskTier } from '../../hooks/useTopBets';
 import type { ScoredHorse } from '../../lib/scoring';
@@ -137,8 +138,8 @@ export const TopBetsPanel: React.FC<TopBetsPanelProps> = ({
       await navigator.clipboard.writeText(allBets);
       setCopyAllSuccess(true);
       setTimeout(() => setCopyAllSuccess(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy:', error);
+    } catch (_error) {
+      logger.logWarning('Failed to copy to clipboard', { component: 'TopBetsPanel' });
     }
   }, [filteredBets]);
 

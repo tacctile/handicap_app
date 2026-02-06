@@ -1,3 +1,9 @@
+/**
+ * Betting recommendations panel that generates and displays tiered betting suggestions
+ * including straight bets, exotics, Dutch betting, and multi-race opportunities.
+ * @param props - Component props
+ * @returns React element
+ */
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ErrorBoundary } from './ErrorBoundary';

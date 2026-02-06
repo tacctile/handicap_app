@@ -6,6 +6,7 @@
  */
 
 import React, { useState } from 'react';
+import { logger } from '../../../services/logging';
 import type { MultiRaceBet, MultiRaceOpportunity } from '../../../lib/betting/betTypes';
 import { MULTI_RACE_BET_CONFIGS } from '../../../lib/betting/betTypes';
 import { getCombinationMath } from '../../../lib/betting/multiRaceTickets';
@@ -27,7 +28,12 @@ interface MultiRaceBetDetailProps {
   onAddToBets: (ticket: MultiRaceBet) => void;
 }
 
-type HelpTopic = 'pick-4-explained' | 'pick-3-explained' | 'daily-double-explained' | 'what-is-single' | 'what-is-spread';
+type HelpTopic =
+  | 'pick-4-explained'
+  | 'pick-3-explained'
+  | 'daily-double-explained'
+  | 'what-is-single'
+  | 'what-is-spread';
 
 export const MultiRaceBetDetail: React.FC<MultiRaceBetDetailProps> = ({
   ticket,
@@ -49,8 +55,8 @@ export const MultiRaceBetDetail: React.FC<MultiRaceBetDetailProps> = ({
       await navigator.clipboard.writeText(ticket.whatToSay);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.warn('Failed to copy:', err);
+    } catch (_err) {
+      logger.logWarning('Failed to copy to clipboard', { component: 'MultiRaceBetDetail' });
     }
   };
 
@@ -83,9 +89,13 @@ export const MultiRaceBetDetail: React.FC<MultiRaceBetDetailProps> = ({
       </div>
 
       {/* Quality badge */}
-      <div className={`multi-race-detail__quality multi-race-detail__quality--${opportunity.quality.toLowerCase()}`}>
+      <div
+        className={`multi-race-detail__quality multi-race-detail__quality--${opportunity.quality.toLowerCase()}`}
+      >
         <span className="multi-race-detail__quality-icon">{qualityIcon}</span>
-        <span className={`multi-race-detail__quality-label multi-race-detail__quality-label--${opportunity.quality.toLowerCase()}`}>
+        <span
+          className={`multi-race-detail__quality-label multi-race-detail__quality-label--${opportunity.quality.toLowerCase()}`}
+        >
           {opportunity.quality} OPPORTUNITY
         </span>
         <span className="multi-race-detail__quality-text">"{ticket.explanation}"</span>
@@ -101,9 +111,13 @@ export const MultiRaceBetDetail: React.FC<MultiRaceBetDetailProps> = ({
           >
             <div className="multi-race-leg__header">
               <div className="multi-race-leg__title">
-                <span className="multi-race-leg__race-label">LEG {idx + 1} — RACE {leg.raceNumber}</span>
+                <span className="multi-race-leg__race-label">
+                  LEG {idx + 1} — RACE {leg.raceNumber}
+                </span>
               </div>
-              <span className={`multi-race-leg__strategy ${leg.strategy === 'SINGLE' ? 'multi-race-leg__strategy--single' : ''}`}>
+              <span
+                className={`multi-race-leg__strategy ${leg.strategy === 'SINGLE' ? 'multi-race-leg__strategy--single' : ''}`}
+              >
                 {leg.strategy}
               </span>
             </div>
@@ -157,7 +171,9 @@ export const MultiRaceBetDetail: React.FC<MultiRaceBetDetailProps> = ({
             <div key={idx} className="multi-race-detail__payout-row">
               <span className="multi-race-detail__payout-icon">{scenario.icon}</span>
               <span className="multi-race-detail__payout-scenario">{scenario.scenario}</span>
-              <span className={`multi-race-detail__payout-value ${idx === payoutScenarios.length - 1 ? 'multi-race-detail__payout-value--highlight' : ''}`}>
+              <span
+                className={`multi-race-detail__payout-value ${idx === payoutScenarios.length - 1 ? 'multi-race-detail__payout-value--highlight' : ''}`}
+              >
                 {scenario.estimate}
               </span>
             </div>
@@ -216,12 +232,7 @@ export const MultiRaceBetDetail: React.FC<MultiRaceBetDetailProps> = ({
       </div>
 
       {/* Help modal */}
-      {helpTopic && (
-        <MultiRaceExplanations
-          topic={helpTopic}
-          onClose={() => setHelpTopic(null)}
-        />
-      )}
+      {helpTopic && <MultiRaceExplanations topic={helpTopic} onClose={() => setHelpTopic(null)} />}
     </div>
   );
 };
