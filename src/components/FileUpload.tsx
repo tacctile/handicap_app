@@ -311,8 +311,11 @@ export function FileUpload({ onParsed }: FileUploadProps) {
                 <div className="mt-3 w-full max-w-xs mx-auto">
                   <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-[#19abb5] rounded-full transition-all duration-300 ease-out"
-                      style={{ width: `${progress.percent}%` }}
+                      className="h-full rounded-full transition-all duration-300 ease-out"
+                      style={{
+                        width: `${progress.percent}%`,
+                        backgroundColor: 'var(--color-primary)',
+                      }}
                     />
                   </div>
                   <p className="mt-1 text-xs text-white/30 tabular-nums">{progress.percent}%</p>

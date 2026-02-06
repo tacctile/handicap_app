@@ -1327,11 +1327,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         const trendRankColor =
                           trendRank > 0 && activeFieldSize > 0
                             ? calculateRankGradientColor(trendRank - 1, activeFieldSize)
-                            : '#555555';
+                            : 'var(--color-text-tertiary)';
                         const blendedRankColor =
                           blendedRank > 0 && activeFieldSize > 0
                             ? calculateRankGradientColor(blendedRank - 1, activeFieldSize)
-                            : '#555555';
+                            : 'var(--color-text-tertiary)';
 
                         // Find value play info for this horse
                         const valuePlay = valueAnalysis.valuePlays.find(

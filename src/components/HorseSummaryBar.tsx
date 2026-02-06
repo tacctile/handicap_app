@@ -154,7 +154,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
     : getValueTag(baseScoreRank ?? 10, fieldSize, displayEdge);
 
   // Neutral white color for all value columns (PROJECTED FINISH, VALUE badge, EDGE)
-  const neutralTextColor = '#ffffff';
+  const neutralTextColor = 'var(--color-text-primary)';
 
   const handleRowClick = () => {
     if (!isScratched) {

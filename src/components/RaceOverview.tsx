@@ -22,15 +22,15 @@ function getVerdictBadgeStyle(verdict: RaceVerdict): { bg: string; text: string;
   switch (verdict) {
     case 'BET':
       return {
-        bg: '#10b981', // Green
+        bg: 'var(--color-success)',
         text: '#ffffff',
-        border: '#10b981',
+        border: 'var(--color-success)',
       };
     case 'CAUTION':
       return {
-        bg: '#f59e0b', // Amber/Yellow
+        bg: 'var(--color-warning)',
         text: '#000000',
-        border: '#f59e0b',
+        border: 'var(--color-warning)',
       };
     case 'PASS':
       return {
@@ -345,12 +345,12 @@ export const RaceOverview = memo(function RaceOverview({
           // Find the horse with this index and return its odds from morningLineOdds
           // The scoring already factored in any odds overrides, but analyzeRaceValue
           // uses this to check odds-based logic. Use the original horse data.
-          const horse = scoredHorses.find(sh => sh.index === index);
+          const horse = scoredHorses.find((sh) => sh.index === index);
           return horse?.horse.morningLineOdds ?? originalOdds;
         },
         (index) => {
           // Check if horse is scratched using the scored horse data
-          const horse = scoredHorses.find(sh => sh.index === index);
+          const horse = scoredHorses.find((sh) => sh.index === index);
           return horse?.score.isScratched ?? false;
         }
       );
