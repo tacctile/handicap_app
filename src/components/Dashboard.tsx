@@ -1,3 +1,9 @@
+/**
+ * Main dashboard component that orchestrates race display, horse scoring,
+ * race navigation, and value detection after a DRF file is parsed.
+ * @param props - Component props
+ * @returns React element
+ */
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { ErrorBoundary } from './ErrorBoundary';
 import './Dashboard.css';

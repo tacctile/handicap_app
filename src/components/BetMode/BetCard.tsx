@@ -9,6 +9,7 @@
  */
 
 import React, { useState } from 'react';
+import { logger } from '../../services/logging';
 import { WhyBetTooltip, BetTypeTooltip } from './ExplanationTooltip';
 import { BET_EXPLANATIONS, type SingleBet } from '../../lib/betting/betTypes';
 import { formatReturnRange } from '../../lib/betting/returnEstimates';
@@ -31,8 +32,8 @@ export const BetCard: React.FC<BetCardProps> = ({ bet, betNumber, compact = fals
       await navigator.clipboard.writeText(bet.whatToSay);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy:', error);
+    } catch (_error) {
+      logger.logWarning('Failed to copy to clipboard', { component: 'BetCard' });
     }
   };
 
@@ -46,7 +47,9 @@ export const BetCard: React.FC<BetCardProps> = ({ bet, betNumber, compact = fals
       : bet.horseNames[0];
 
   return (
-    <div className={`bet-card ${bet.skip ? 'bet-card--skip' : ''} ${compact ? 'bet-card--compact' : ''}`}>
+    <div
+      className={`bet-card ${bet.skip ? 'bet-card--skip' : ''} ${compact ? 'bet-card--compact' : ''}`}
+    >
       {/* Header */}
       <div className="bet-card__header">
         <div className="bet-card__title">

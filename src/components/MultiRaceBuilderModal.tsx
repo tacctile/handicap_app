@@ -114,9 +114,13 @@ const STRATEGY_OPTIONS: {
 ];
 
 const RACE_STRENGTH_COLORS: Record<string, { bg: string; text: string; icon: string }> = {
-  standout: { bg: 'rgba(34, 197, 94, 0.15)', text: '#22c55e', icon: 'verified' },
-  competitive: { bg: 'rgba(234, 179, 8, 0.15)', text: '#eab308', icon: 'multiple_stop' },
-  weak: { bg: 'rgba(239, 68, 68, 0.15)', text: '#ef4444', icon: 'help_outline' },
+  standout: { bg: 'var(--color-tier-elite-bg)', text: 'var(--color-success)', icon: 'verified' },
+  competitive: {
+    bg: 'var(--color-tier-fair-bg)',
+    text: 'var(--color-warning)',
+    icon: 'multiple_stop',
+  },
+  weak: { bg: 'var(--color-tier-bad-bg)', text: 'var(--color-error)', icon: 'help_outline' },
 };
 
 // ============================================================================
@@ -380,9 +384,11 @@ export function MultiRaceBuilderModal({
           <div className="multirace-race-tabs">
             {state.selections.map((sel, idx) => {
               const race = multiRaceData[idx];
-              const strengthColor = race
-                ? RACE_STRENGTH_COLORS[race.strength]
-                : RACE_STRENGTH_COLORS.weak;
+              const strengthColor = (race ? RACE_STRENGTH_COLORS[race.strength] : undefined) ?? {
+                bg: 'var(--color-tier-bad-bg)',
+                text: 'var(--color-error)',
+                icon: 'help_outline',
+              };
               const hasSelections = sel.selections.length > 0;
 
               return (
@@ -415,10 +421,9 @@ export function MultiRaceBuilderModal({
             {currentRace &&
               currentSelection &&
               (() => {
-                const strengthColorLookup = RACE_STRENGTH_COLORS[currentRace.strength];
-                const strengthColor = strengthColorLookup ?? {
-                  bg: 'rgba(239, 68, 68, 0.15)',
-                  text: '#ef4444',
+                const strengthColor = RACE_STRENGTH_COLORS[currentRace.strength] ?? {
+                  bg: 'var(--color-tier-bad-bg)',
+                  text: 'var(--color-error)',
                   icon: 'help_outline',
                 };
                 return (

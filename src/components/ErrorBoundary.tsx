@@ -1,3 +1,9 @@
+/**
+ * React error boundary that catches rendering errors in child components,
+ * logs them via the logging service, and displays a recoverable fallback UI.
+ * @param props - Component props
+ * @returns React element
+ */
 import { Component } from 'react';
 import type { ReactNode } from 'react';
 import { logger } from '../services/logging';

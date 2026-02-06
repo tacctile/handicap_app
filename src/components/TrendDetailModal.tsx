@@ -65,9 +65,9 @@ const DIRECTION_ICONS: Record<TrendDirection, string> = {
 };
 
 const CONFIDENCE_COLORS: Record<TrendConfidence, string> = {
-  HIGH: '#22c55e',
-  MEDIUM: '#eab308',
-  LOW: '#ef4444',
+  HIGH: 'var(--color-success)',
+  MEDIUM: 'var(--color-warning)',
+  LOW: 'var(--color-error)',
 };
 
 const METRIC_LABELS: Record<string, string> = {
@@ -167,12 +167,12 @@ function CustomTooltip({ active, payload, label, pastPerformances }: CustomToolt
   return (
     <div
       style={{
-        backgroundColor: '#1e1e1e',
-        border: '1px solid #333',
+        backgroundColor: 'var(--color-elevated)',
+        border: '1px solid var(--color-border)',
         borderRadius: '6px',
         padding: '10px',
         fontSize: '12px',
-        color: '#fff',
+        color: 'var(--color-text-primary)',
         minWidth: '180px',
       }}
     >
@@ -182,7 +182,7 @@ function CustomTooltip({ active, payload, label, pastPerformances }: CustomToolt
             style={{
               fontWeight: 600,
               marginBottom: '6px',
-              borderBottom: '1px solid #333',
+              borderBottom: '1px solid var(--color-border)',
               paddingBottom: '6px',
             }}
           >
@@ -190,7 +190,7 @@ function CustomTooltip({ active, payload, label, pastPerformances }: CustomToolt
           </div>
           <div style={{ display: 'grid', gap: '4px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#888' }}>Finish:</span>
+              <span style={{ color: 'var(--color-text-secondary)' }}>Finish:</span>
               <span style={{ fontWeight: 500 }}>
                 {race.finishPosition}
                 {race.finishPosition === 1
@@ -205,30 +205,32 @@ function CustomTooltip({ active, payload, label, pastPerformances }: CustomToolt
             </div>
             {race.speedFigures?.beyer && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#888' }}>Beyer:</span>
+                <span style={{ color: 'var(--color-text-secondary)' }}>Beyer:</span>
                 <span style={{ fontWeight: 500 }}>{race.speedFigures.beyer}</span>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#888' }}>Odds:</span>
+              <span style={{ color: 'var(--color-text-secondary)' }}>Odds:</span>
               <span style={{ fontWeight: 500 }}>{race.odds ?? 'N/A'}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#888' }}>Class:</span>
+              <span style={{ color: 'var(--color-text-secondary)' }}>Class:</span>
               <span style={{ fontWeight: 500, textTransform: 'capitalize' }}>
                 {race.classification.replace(/-/g, ' ')}
               </span>
             </div>
             {race.lengthsBehind > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#888' }}>Beaten:</span>
+                <span style={{ color: 'var(--color-text-secondary)' }}>Beaten:</span>
                 <span style={{ fontWeight: 500 }}>{race.lengthsBehind.toFixed(1)} lengths</span>
               </div>
             )}
           </div>
         </>
       )}
-      <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px solid #333' }}>
+      <div
+        style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px solid var(--color-border)' }}
+      >
         {payload.map((entry, index) => (
           <div
             key={index}
@@ -311,7 +313,7 @@ export function TrendDetailModal({ horse, trendData, isOpen, onClose }: TrendDet
       <div
         className="modal-content"
         style={{
-          backgroundColor: '#1a1a1a',
+          backgroundColor: 'var(--color-elevated)',
           borderRadius: '12px',
           width: '100%',
           maxWidth: '600px',
@@ -328,11 +330,18 @@ export function TrendDetailModal({ horse, trendData, isOpen, onClose }: TrendDet
             justifyContent: 'space-between',
             alignItems: 'flex-start',
             padding: '16px 20px',
-            borderBottom: '1px solid #333',
+            borderBottom: '1px solid var(--color-border)',
           }}
         >
           <div>
-            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#fff' }}>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: '18px',
+                fontWeight: 600,
+                color: 'var(--color-text-primary)',
+              }}
+            >
               Trend Analysis: {horse.horseName}
             </h2>
             <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
@@ -345,7 +354,7 @@ export function TrendDetailModal({ horse, trendData, isOpen, onClose }: TrendDet
             style={{
               background: 'none',
               border: 'none',
-              color: '#888',
+              color: 'var(--color-text-secondary)',
               cursor: 'pointer',
               padding: '4px',
               display: 'flex',
@@ -367,8 +376,8 @@ export function TrendDetailModal({ horse, trendData, isOpen, onClose }: TrendDet
                 padding: '6px 12px',
                 borderRadius: '4px',
                 border: 'none',
-                backgroundColor: showBeyer ? '#19abb5' : '#333',
-                color: showBeyer ? '#fff' : '#888',
+                backgroundColor: showBeyer ? 'var(--color-primary)' : 'var(--color-border)',
+                color: showBeyer ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
                 cursor: 'pointer',
                 fontSize: '12px',
                 fontWeight: 500,
@@ -382,8 +391,10 @@ export function TrendDetailModal({ horse, trendData, isOpen, onClose }: TrendDet
                 padding: '6px 12px',
                 borderRadius: '4px',
                 border: 'none',
-                backgroundColor: showBeatenLengths ? '#19abb5' : '#333',
-                color: showBeatenLengths ? '#fff' : '#888',
+                backgroundColor: showBeatenLengths ? 'var(--color-primary)' : 'var(--color-border)',
+                color: showBeatenLengths
+                  ? 'var(--color-text-primary)'
+                  : 'var(--color-text-secondary)',
                 cursor: 'pointer',
                 fontSize: '12px',
                 fontWeight: 500,
@@ -396,24 +407,24 @@ export function TrendDetailModal({ horse, trendData, isOpen, onClose }: TrendDet
           <div style={{ height: '200px', width: '100%' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis
                   dataKey="raceNumber"
-                  tick={{ fill: '#888', fontSize: 11 }}
-                  axisLine={{ stroke: '#444' }}
+                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }}
+                  axisLine={{ stroke: 'var(--color-border-prominent)' }}
                   tickFormatter={(value) => `Race ${value}`}
                 />
                 <YAxis
                   yAxisId="finish"
                   orientation="left"
                   domain={finishDomain}
-                  tick={{ fill: '#888', fontSize: 11 }}
-                  axisLine={{ stroke: '#444' }}
+                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }}
+                  axisLine={{ stroke: 'var(--color-border-prominent)' }}
                   label={{
                     value: 'Finish',
                     angle: -90,
                     position: 'insideLeft',
-                    fill: '#888',
+                    fill: 'var(--color-text-secondary)',
                     fontSize: 11,
                   }}
                   reversed
@@ -423,13 +434,13 @@ export function TrendDetailModal({ horse, trendData, isOpen, onClose }: TrendDet
                     yAxisId="beyer"
                     orientation="right"
                     domain={beyerDomain}
-                    tick={{ fill: '#888', fontSize: 11 }}
-                    axisLine={{ stroke: '#444' }}
+                    tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }}
+                    axisLine={{ stroke: 'var(--color-border-prominent)' }}
                     label={{
                       value: 'Beyer',
                       angle: 90,
                       position: 'insideRight',
-                      fill: '#888',
+                      fill: 'var(--color-text-secondary)',
                       fontSize: 11,
                     }}
                   />
@@ -439,9 +450,9 @@ export function TrendDetailModal({ horse, trendData, isOpen, onClose }: TrendDet
                 <ReferenceLine
                   yAxisId="finish"
                   y={1}
-                  stroke="#22c55e"
+                  stroke="var(--color-success)"
                   strokeDasharray="3 3"
-                  label={{ value: 'Win', fill: '#22c55e', fontSize: 10 }}
+                  label={{ value: 'Win', fill: 'var(--color-success)', fontSize: 10 }}
                 />
                 <Line
                   yAxisId="finish"
@@ -485,7 +496,14 @@ export function TrendDetailModal({ horse, trendData, isOpen, onClose }: TrendDet
 
         {/* Rolling Windows Section */}
         <div style={{ padding: '0 20px 20px' }}>
-          <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#fff', marginBottom: '12px' }}>
+          <h3
+            style={{
+              fontSize: '14px',
+              fontWeight: 600,
+              color: 'var(--color-text-primary)',
+              marginBottom: '12px',
+            }}
+          >
             Rolling Window Analysis
           </h3>
           <div
@@ -535,7 +553,14 @@ export function TrendDetailModal({ horse, trendData, isOpen, onClose }: TrendDet
 
         {/* Metric Details */}
         <div style={{ padding: '0 20px 20px' }}>
-          <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#fff', marginBottom: '12px' }}>
+          <h3
+            style={{
+              fontSize: '14px',
+              fontWeight: 600,
+              color: 'var(--color-text-primary)',
+              marginBottom: '12px',
+            }}
+          >
             Metric Trends
           </h3>
           <div style={{ display: 'grid', gap: '8px' }}>
@@ -547,7 +572,14 @@ export function TrendDetailModal({ horse, trendData, isOpen, onClose }: TrendDet
 
         {/* Trend Flags */}
         <div style={{ padding: '0 20px 20px' }}>
-          <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#fff', marginBottom: '12px' }}>
+          <h3
+            style={{
+              fontSize: '14px',
+              fontWeight: 600,
+              color: 'var(--color-text-primary)',
+              marginBottom: '12px',
+            }}
+          >
             Trend Signals
           </h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -561,27 +593,33 @@ export function TrendDetailModal({ horse, trendData, isOpen, onClose }: TrendDet
         <div
           style={{
             padding: '16px 20px',
-            borderTop: '1px solid #333',
-            backgroundColor: '#111',
+            borderTop: '1px solid var(--color-border)',
+            backgroundColor: 'var(--color-card)',
             borderRadius: '0 0 12px 12px',
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <span style={{ color: '#888', fontSize: '12px' }}>Trend Score: </span>
-              <span style={{ color: '#fff', fontWeight: 600 }}>
+              <span style={{ color: 'var(--color-text-secondary)', fontSize: '12px' }}>
+                Trend Score:{' '}
+              </span>
+              <span style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>
                 {trendData.normalizedScore.toFixed(1)}/100
               </span>
             </div>
             <div>
-              <span style={{ color: '#888', fontSize: '12px' }}>Raw Score: </span>
-              <span style={{ color: '#fff', fontWeight: 500 }}>
+              <span style={{ color: 'var(--color-text-secondary)', fontSize: '12px' }}>
+                Raw Score:{' '}
+              </span>
+              <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>
                 {trendData.rawScore.toFixed(2)}
               </span>
             </div>
             <div>
-              <span style={{ color: '#888', fontSize: '12px' }}>Data Points: </span>
-              <span style={{ color: '#fff', fontWeight: 500 }}>
+              <span style={{ color: 'var(--color-text-secondary)', fontSize: '12px' }}>
+                Data Points:{' '}
+              </span>
+              <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>
                 {trendData.finishWindows.raceCount} races
               </span>
             </div>
@@ -606,15 +644,19 @@ function WindowCard({ label, value, subtext }: WindowCardProps) {
   return (
     <div
       style={{
-        backgroundColor: '#222',
+        backgroundColor: 'var(--color-elevated)',
         borderRadius: '6px',
         padding: '10px',
         textAlign: 'center',
       }}
     >
-      <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px' }}>{label}</div>
-      <div style={{ fontSize: '18px', fontWeight: 600, color: '#fff' }}>{value}</div>
-      <div style={{ fontSize: '10px', color: '#666' }}>{subtext}</div>
+      <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>
+        {label}
+      </div>
+      <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+        {value}
+      </div>
+      <div style={{ fontSize: '10px', color: 'var(--color-text-tertiary)' }}>{subtext}</div>
     </div>
   );
 }
@@ -634,23 +676,27 @@ function MetricRow({ detail }: MetricRowProps) {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '8px 12px',
-        backgroundColor: '#222',
+        backgroundColor: 'var(--color-elevated)',
         borderRadius: '6px',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <Icon name={DIRECTION_ICONS[detail.direction]} className="" />
-        <span style={{ color: '#fff', fontSize: '13px' }}>
+        <span style={{ color: 'var(--color-text-primary)', fontSize: '13px' }}>
           {METRIC_LABELS[detail.metric] || detail.metric}
         </span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <span style={{ color: '#888', fontSize: '11px' }}>
+        <span style={{ color: 'var(--color-text-secondary)', fontSize: '11px' }}>
           {detail.oldAvg.toFixed(1)} → {detail.recentAvg.toFixed(1)}
         </span>
         <span
           style={{
-            color: isPositive ? '#22c55e' : isNegative ? '#ef4444' : '#eab308',
+            color: isPositive
+              ? 'var(--color-success)'
+              : isNegative
+                ? 'var(--color-error)'
+                : 'var(--color-warning)',
             fontWeight: 600,
             fontSize: '13px',
             minWidth: '50px',
@@ -688,8 +734,8 @@ function FlagChip({ flag, active }: FlagChipProps) {
       style={{
         padding: '4px 8px',
         borderRadius: '4px',
-        backgroundColor: active ? 'rgba(34, 197, 94, 0.2)' : '#222',
-        color: active ? '#22c55e' : '#555',
+        backgroundColor: active ? 'rgba(34, 197, 94, 0.2)' : 'var(--color-elevated)',
+        color: active ? 'var(--color-success)' : 'var(--color-text-tertiary)',
         fontSize: '11px',
         fontWeight: 500,
         display: 'flex',
