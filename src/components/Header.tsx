@@ -5,9 +5,16 @@ interface HeaderProps {
   onMenuClick?: () => void;
   onReset?: () => void;
   hasChanges?: boolean;
+  onDiagnosticsClick?: () => void;
 }
 
-export function Header({ currentFileName, onMenuClick, onReset, hasChanges = false }: HeaderProps) {
+export function Header({
+  currentFileName,
+  onMenuClick,
+  onReset,
+  hasChanges = false,
+  onDiagnosticsClick,
+}: HeaderProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const handleResetClick = useCallback(() => {
@@ -38,7 +45,7 @@ export function Header({ currentFileName, onMenuClick, onReset, hasChanges = fal
                 <span className="material-icons">menu</span>
               </button>
             )}
-            <div className="header-branding">
+            <div className="header-branding" onClick={onDiagnosticsClick} role="presentation">
               <h1 className="header-title">Furlong</h1>
               <span className="header-subtitle">Advanced Handicapping Analysis</span>
             </div>

@@ -55,6 +55,8 @@ interface DashboardProps {
   onResetRace?: () => void;
   /** Handler to reset all races state */
   onResetAllRaces?: () => void;
+  /** Handler to navigate to hidden diagnostics page */
+  onDiagnosticsClick?: () => void;
 }
 
 // Get full track name with code and size
@@ -228,6 +230,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   sessionPersistence,
   onResetRace: _onResetRace,
   onResetAllRaces: _onResetAllRaces,
+  onDiagnosticsClick,
 }) => {
   // View mode state: 'overview' (default after parse), 'analysis', or 'topBets'
   // Note: 'betMode' removed - old BET MODE screen is now disconnected
@@ -896,7 +899,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             /* EMPTY STATE - No DRF loaded */
             <>
               {/* Logo */}
-              <div className="app-topbar__logo">
+              <div className="app-topbar__logo" onClick={onDiagnosticsClick} role="presentation">
                 <div className="app-topbar__logo-icon">
                   <span className="material-icons">casino</span>
                 </div>
@@ -923,7 +926,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             /* OVERVIEW MODE - Track-level info only */
             <>
               {/* Logo */}
-              <div className="app-topbar__logo">
+              <div className="app-topbar__logo" onClick={onDiagnosticsClick} role="presentation">
                 <div className="app-topbar__logo-icon">
                   <span className="material-icons">casino</span>
                 </div>
@@ -949,7 +952,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             /* LOADED STATE - DRF file loaded - Clean top bar with race details only */
             <>
               {/* Logo */}
-              <div className="app-topbar__logo">
+              <div className="app-topbar__logo" onClick={onDiagnosticsClick} role="presentation">
                 <div className="app-topbar__logo-icon">
                   <span className="material-icons">casino</span>
                 </div>

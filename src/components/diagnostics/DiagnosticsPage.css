@@ -1,0 +1,457 @@
+/* ============================================
+   DiagnosticsPage Styles
+
+   Uses ONLY design tokens from tokens.css.
+   8px grid for all spacing. Mobile-first (375px target).
+   ============================================ */
+
+/* ============================================
+   PAGE LAYOUT
+   ============================================ */
+
+.diag-page {
+  min-height: 100dvh;
+  background: var(--color-base);
+  color: var(--color-text-primary);
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+.diag-header {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-element);
+  height: var(--bar-height);
+  padding: 0 var(--gap-container);
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.diag-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.diag-back-btn:hover {
+  color: var(--color-text-primary);
+}
+
+.diag-page-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.diag-content {
+  padding: var(--gap-container);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+
+.diag-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap-container);
+  padding: var(--space-7) var(--gap-container);
+  text-align: center;
+}
+
+.diag-loading-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.diag-progress-bar-track {
+  width: 100%;
+  max-width: 400px;
+  height: 8px;
+  background: var(--color-elevated);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.diag-progress-bar-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 4px;
+}
+
+.diag-loading-detail {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.diag-loading-detail strong {
+  color: var(--color-text-primary);
+}
+
+/* ============================================
+   ERROR STATE
+   ============================================ */
+
+.diag-error-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap-element);
+  padding: var(--space-6);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  margin-top: var(--space-6);
+}
+
+.diag-error-icon {
+  font-size: 40px;
+  color: var(--color-error);
+}
+
+.diag-error-card .diag-error-icon[style] {
+  /* folder_open uses text-secondary */
+}
+
+.diag-error-card:has(.material-icons:first-child) .material-icons:first-child {
+  color: var(--color-text-tertiary);
+}
+
+.diag-error-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.diag-error-message {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+  max-width: 420px;
+}
+
+.diag-error-message code {
+  background: var(--color-elevated);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--color-primary);
+}
+
+/* ============================================
+   METRIC CARDS — TOP ROW
+   ============================================ */
+
+.diag-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-container);
+}
+
+.diag-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap-element);
+}
+
+@media (min-width: 600px) {
+  .diag-metrics-grid {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+}
+
+.diag-metric-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--gap-container);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-tight);
+}
+
+.diag-metric-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.diag-metric-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.diag-metric-subtitle {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================
+   SHARED CARD STYLE
+   ============================================ */
+
+.diag-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--gap-container);
+}
+
+.diag-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--gap-element) 0;
+}
+
+/* ============================================
+   TIER TABLE
+   ============================================ */
+
+.diag-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.diag-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.diag-table th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  padding: var(--gap-element) var(--gap-element);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.diag-table td {
+  padding: var(--gap-element) var(--gap-element);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.diag-table tr:last-child td {
+  border-bottom: none;
+}
+
+.diag-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================
+   TRACK CARDS
+   ============================================ */
+
+.diag-track-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-element);
+}
+
+.diag-track-card {
+  flex: 0 0 auto;
+  min-width: 144px;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--gap-element);
+}
+
+.diag-track-code {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: var(--gap-tight);
+  letter-spacing: 0.02em;
+}
+
+.diag-track-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.diag-track-stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.diag-track-stat-label {
+  color: var(--color-text-tertiary);
+}
+
+.diag-track-stat-value {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.diag-track-date {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-top: var(--gap-tight);
+}
+
+/* ============================================
+   METADATA FOOTER
+   ============================================ */
+
+.diag-metadata {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-element);
+  padding: var(--gap-container);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+@media (min-width: 600px) {
+  .diag-metadata {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+
+.diag-metadata-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.diag-metadata-warn {
+  color: var(--color-warning);
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.diag-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gap-tight);
+  padding: var(--gap-element) var(--gap-container);
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.diag-btn-secondary:hover {
+  background: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.diag-btn-secondary .material-icons {
+  font-size: 16px;
+}
+
+.diag-btn-small {
+  padding: var(--gap-tight) var(--gap-element);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   TOOLTIP
+   ============================================ */
+
+.diag-tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.diag-tooltip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-text-tertiary);
+  border: 1px solid var(--color-border-prominent);
+  border-radius: 50%;
+  flex-shrink: 0;
+  cursor: help;
+}
+
+.diag-tooltip-popup {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border-prominent);
+  border-radius: var(--radius-sm);
+  padding: var(--gap-tight) var(--gap-element);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  max-width: 280px;
+  white-space: normal;
+  line-height: 1.4;
+  z-index: 100;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Ensure tooltip doesn't overflow on mobile */
+@media (max-width: 400px) {
+  .diag-tooltip-popup {
+    left: 0;
+    transform: none;
+    max-width: 240px;
+  }
+}
