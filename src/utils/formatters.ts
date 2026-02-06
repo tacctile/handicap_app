@@ -1,9 +1,23 @@
 /**
- * Racing distance and number formatting utilities
+ * Racing distance, number, and currency formatting utilities
  *
  * Provides standardized formatting for racing distances matching
- * Equibase/DRF industry conventions.
+ * Equibase/DRF industry conventions, plus shared currency formatting.
  */
+
+/**
+ * Format a number as US currency.
+ *
+ * @param amount - Dollar amount to format
+ * @param precision - Number of decimal places (default 0 for whole dollars)
+ * @returns Formatted string (e.g., "$1,000", "$0.50")
+ */
+export function formatCurrency(amount: number, precision: number = 0): string {
+  return `$${amount.toLocaleString('en-US', {
+    minimumFractionDigits: precision,
+    maximumFractionDigits: precision,
+  })}`;
+}
 
 /**
  * Convert furlongs to standard racing distance format

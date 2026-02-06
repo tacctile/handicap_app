@@ -1,6 +1,7 @@
 import { memo, useState, useCallback } from 'react';
 import { TRACK_CONDITIONS, type TrackCondition } from '../hooks/useRaceState';
 import { ResetConfirmDialog } from './ResetConfirmDialog';
+import { Icon } from './shared/Icon';
 
 interface RaceControlsProps {
   trackCondition: TrackCondition;
@@ -11,15 +12,6 @@ interface RaceControlsProps {
   onReset?: () => void;
   scratchesCount?: number;
   oddsChangesCount?: number;
-}
-
-// Material Icon component
-function Icon({ name, className = '' }: { name: string; className?: string }) {
-  return (
-    <span className={`material-icons ${className}`} aria-hidden="true">
-      {name}
-    </span>
-  );
 }
 
 export const RaceControls = memo(function RaceControls({

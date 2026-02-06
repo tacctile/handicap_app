@@ -4,6 +4,7 @@ import type { HorseEntry, RaceHeader } from '../types/drf';
 import type { HorseScore, ScoredHorse } from '../lib/scoring';
 import type { BettingTier } from '../lib/betting';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { TIER_COLORS } from '../constants/tierColors';
 import { formatOverlayPercent, formatEV, getOverlayColor } from '../lib/scoring';
 import {
   generateRecommendations,
@@ -67,13 +68,6 @@ interface SelectableBet extends GeneratedBet {
     warnings: string[];
   };
 }
-
-// Tier badge colors
-const TIER_COLORS: Record<BettingTier, { bg: string; border: string; text: string }> = {
-  tier1: { bg: 'rgba(25, 171, 181, 0.2)', border: 'rgba(25, 171, 181, 0.5)', text: '#19abb5' },
-  tier2: { bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.4)', text: '#3b82f6' },
-  tier3: { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.4)', text: '#f59e0b' },
-};
 
 const TIER_ICONS: Record<BettingTier, string> = {
   tier1: 'workspace_premium',

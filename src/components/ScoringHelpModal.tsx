@@ -8,19 +8,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Icon } from './shared/Icon';
 
 interface ScoringHelpModalProps {
   isOpen: boolean;
   onClose: () => void;
-}
-
-// Icon component for consistency
-function Icon({ name, className = '' }: { name: string; className?: string }) {
-  return (
-    <span className={`material-icons ${className}`} aria-hidden="true">
-      {name}
-    </span>
-  );
 }
 
 export function ScoringHelpModal({ isOpen, onClose }: ScoringHelpModalProps) {

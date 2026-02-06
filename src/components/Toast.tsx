@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { memo, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Icon } from './shared/Icon';
 
 export interface ToastMessage {
   id: string;
@@ -19,15 +20,6 @@ interface ToastProps {
   toast: ToastMessage;
   onDismiss: (id: string) => void;
   position?: 'top-right' | 'bottom-center';
-}
-
-// Material Icon component
-function Icon({ name, className = '' }: { name: string; className?: string }) {
-  return (
-    <span className={`material-icons ${className}`} aria-hidden="true">
-      {name}
-    </span>
-  );
 }
 
 const TOAST_ICONS: Record<ToastMessage['type'], string> = {

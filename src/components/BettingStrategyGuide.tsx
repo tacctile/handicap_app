@@ -10,27 +10,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Icon } from './shared/Icon';
 
 interface BettingStrategyGuideProps {
   isOpen: boolean;
   onClose: () => void;
-}
-
-// Icon component for consistency
-function Icon({
-  name,
-  className = '',
-  style,
-}: {
-  name: string;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <span className={`material-icons ${className}`} style={style} aria-hidden="true">
-      {name}
-    </span>
-  );
 }
 
 export function BettingStrategyGuide({ isOpen, onClose }: BettingStrategyGuideProps) {

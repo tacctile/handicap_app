@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatCurrency } from '../utils/formatters';
 import type {
   RiskTolerance,
   BetUnitType,
@@ -276,16 +277,6 @@ export function BankrollSettings({
     saveDutchSettings(DEFAULT_DUTCH_SETTINGS);
     setHasChanges(false);
   }, [onReset]);
-
-  // Format currency for display
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   // Render Mode Selector
   const renderModeSelector = () => (

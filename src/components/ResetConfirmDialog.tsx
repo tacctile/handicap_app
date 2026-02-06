@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef } from 'react';
+import { Icon } from './shared/Icon';
 
 interface ResetConfirmDialogProps {
   isOpen: boolean;
@@ -9,15 +10,6 @@ interface ResetConfirmDialogProps {
     oddsChanges: number;
     trackConditionChanged: boolean;
   };
-}
-
-// Material Icon component
-function Icon({ name, className = '' }: { name: string; className?: string }) {
-  return (
-    <span className={`material-icons ${className}`} aria-hidden="true">
-      {name}
-    </span>
-  );
 }
 
 export const ResetConfirmDialog = memo(function ResetConfirmDialog({
