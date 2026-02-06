@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { LegalContentType } from '../legal';
+// LegalContentType inlined — legal/ directory removed in dead code cleanup
+type LegalContentType = 'terms' | 'privacy' | 'disclaimer';
 import { logger } from '../../services/logging';
 
 interface SidebarProps {

@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PulsingGlow } from '../motion';
+// PulsingGlow inlined — motion/ directory removed in dead code cleanup
+function PulsingGlow({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={className}>{children}</div>;
+}
 import { BankrollSummaryCard } from '../BankrollSummaryCard';
 import { TopBarCountdown } from '../PostTimeCountdown';
 import type { UseBankrollReturn } from '../../hooks/useBankroll';
