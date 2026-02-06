@@ -116,15 +116,15 @@ function formatHorseDisplay(bet: ScaledTopBet): string {
  */
 function getRankStyle(rank: number): React.CSSProperties {
   if (rank <= 3) {
-    return { backgroundColor: '#19abb5', color: '#ffffff' }; // Primary teal for top 3
+    return { backgroundColor: 'var(--color-primary)', color: '#ffffff' }; // Primary teal for top 3
   }
   if (rank <= 7) {
-    return { backgroundColor: '#1992a1', color: '#ffffff' }; // Darker teal for 4-7
+    return { backgroundColor: 'var(--color-primary-hover)', color: '#ffffff' }; // Darker teal for 4-7
   }
   if (rank <= 12) {
     return { backgroundColor: '#1b7583', color: '#ffffff' }; // Even darker for 8-12
   }
-  return { backgroundColor: '#3A3A3C', color: '#9CA3AF' }; // Subtle gray for 13-20
+  return { backgroundColor: 'var(--color-border-prominent)', color: '#9CA3AF' }; // Subtle gray for 13-20
 }
 
 export default SimpleTopBetCard;

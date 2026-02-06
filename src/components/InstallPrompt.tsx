@@ -156,7 +156,7 @@ const styles = `
 .install-prompt {
   position: fixed;
   z-index: 999;
-  background: linear-gradient(135deg, #1a1a1c 0%, #242428 100%);
+  background: linear-gradient(135deg, var(--color-elevated) 0%, #242428 100%);
   border: 1px solid rgba(25, 171, 181, 0.3);
   border-radius: var(--radius-lg);
   padding: 1rem;
@@ -206,7 +206,7 @@ const styles = `
   justify-content: center;
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #19abb5 0%, #1b7583 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #1b7583 100%);
   border-radius: var(--radius-lg);
   margin-bottom: 0.25rem;
 }
@@ -223,7 +223,7 @@ const styles = `
 .install-prompt-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #EEEFF1;
+  color: var(--color-text-primary);
   margin: 0 0 0.25rem 0;
 }
 
@@ -269,7 +269,7 @@ const styles = `
   justify-content: center;
   gap: 0.375rem;
   padding: 0.625rem 1rem;
-  background: linear-gradient(135deg, #19abb5 0%, #1b7583 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #1b7583 100%);
   border: none;
   border-radius: var(--radius-md);
   color: #fff;
@@ -324,7 +324,7 @@ const styles = `
 
 .install-prompt-close .material-icons {
   font-size: 1rem;
-  color: #EEEFF1;
+  color: var(--color-text-primary);
 }
 
 /* Compact install button */
@@ -336,7 +336,7 @@ const styles = `
   background: rgba(25, 171, 181, 0.1);
   border: 1px solid rgba(25, 171, 181, 0.3);
   border-radius: var(--radius-md);
-  color: #19abb5;
+  color: var(--color-primary);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;

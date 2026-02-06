@@ -373,7 +373,7 @@ function InteractiveBetCard({
               <span
                 className="bet-ev-badge"
                 style={{
-                  color: bet.evPerDollar > 0 ? '#22c55e' : '#9ca3af',
+                  color: bet.evPerDollar > 0 ? 'var(--color-status-normal)' : '#9ca3af',
                 }}
               >
                 EV: {formatEV(bet.evPerDollar)}
@@ -419,7 +419,9 @@ function InteractiveBetCard({
                 <span
                   className="bet-kelly-edge"
                   style={{
-                    color: bet.kellyInfo.edge.startsWith('+') ? '#22c55e' : '#ef4444',
+                    color: bet.kellyInfo.edge.startsWith('+')
+                      ? 'var(--color-status-normal)'
+                      : 'var(--color-error)',
                   }}
                 >
                   Edge: {bet.kellyInfo.edge}

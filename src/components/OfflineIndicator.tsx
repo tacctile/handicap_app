@@ -83,7 +83,7 @@ const styles = `
   left: 0;
   right: 0;
   z-index: 1000;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: linear-gradient(135deg, var(--color-warning) 0%, #d97706 100%);
   color: #fff;
   padding: 0.5rem 1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -134,7 +134,7 @@ const styles = `
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #f59e0b;
+  color: var(--color-warning);
   padding: 0.25rem;
 }
 

@@ -377,7 +377,7 @@ export const ParsingProgress = memo(function ParsingProgress({
           <motion.div
             className="relative z-10 w-full max-w-md mx-4 rounded-2xl p-8"
             style={{
-              backgroundColor: '#0F0F10',
+              backgroundColor: 'var(--color-card)',
               border: '1px solid rgba(255,255,255,0.1)',
               boxShadow: `0 0 60px ${ACCENT_GLOW}, 0 25px 50px rgba(0,0,0,0.5)`,
             }}
