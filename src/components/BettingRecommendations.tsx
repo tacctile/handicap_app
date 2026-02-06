@@ -853,8 +853,8 @@ export function BettingRecommendations({
   const horseTiers = useMemo((): HorseTier[] => {
     return horses.map((h) => {
       let tier: 1 | 2 | 3 = 3;
-      if (h.score.total >= 180) tier = 1;
-      else if (h.score.total >= 160) tier = 2;
+      if (h.score.baseScore >= 181) tier = 1;
+      else if (h.score.baseScore >= 161) tier = 2;
 
       const oddsMatch = h.horse.morningLineOdds.match(/(\d+(?:\.\d+)?)[/-](\d+(?:\.\d+)?)?/);
       const odds = oddsMatch
@@ -916,8 +916,8 @@ export function BettingRecommendations({
     return convertToDutchCandidates(
       horses.map((h) => {
         let tier: 1 | 2 | 3 = 3;
-        if (h.score.total >= 180) tier = 1;
-        else if (h.score.total >= 160) tier = 2;
+        if (h.score.baseScore >= 181) tier = 1;
+        else if (h.score.baseScore >= 161) tier = 2;
 
         return {
           programNumber: h.horse.programNumber,
