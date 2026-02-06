@@ -3,10 +3,12 @@ import { Dashboard } from './components/Dashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider, useToastContext } from './contexts/ToastContext';
 import { HelpCenter } from './components/help';
+import { DiagnosticsPage } from './components/diagnostics/DiagnosticsPage';
 import { useRaceState } from './hooks/useRaceState';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAnalytics } from './hooks/useAnalytics';
+import { useDiagnostics } from './hooks/useDiagnostics';
 import { validateParsedData, getValidationSummary, isDataUsable } from './lib/validation';
 import { logger } from './services/logging';
 import type { ParsedDRFFile } from './types/drf';
@@ -18,7 +20,7 @@ import './styles/help.css';
 // ROUTE TYPES
 // ============================================================================
 
-type AppRoute = 'dashboard' | 'help';
+type AppRoute = 'dashboard' | 'help' | 'diagnostics';
 
 function AppContent() {
   const [parsedData, setParsedData] = useState<ParsedDRFFile | null>(null);
@@ -35,6 +37,7 @@ function AppContent() {
   const sessionPersistence = useSessionPersistence();
   const { trackEvent } = useAnalytics();
   const { addToast } = useToastContext();
+  const diagnostics = useDiagnostics();
 
   // Track previous race index to detect race switches
   const prevRaceIndexRef = useRef<number>(selectedRaceIndex);
@@ -44,6 +47,10 @@ function AppContent() {
   // Navigation handlers
   const navigateToDashboard = useCallback(() => {
     setCurrentRoute('dashboard');
+  }, []);
+
+  const navigateToDiagnostics = useCallback(() => {
+    setCurrentRoute('diagnostics');
   }, []);
 
   // Session tracking - track start on mount and end on beforeunload
@@ -264,6 +271,11 @@ function AppContent() {
     hasChanges: raceState.hasChanges,
   });
 
+  // Show diagnostics dashboard (hidden route)
+  if (currentRoute === 'diagnostics') {
+    return <DiagnosticsPage diagnostics={diagnostics} onBack={navigateToDashboard} />;
+  }
+
   // Show help center
   if (currentRoute === 'help') {
     return (
@@ -288,6 +300,7 @@ function AppContent() {
         sessionPersistence={sessionPersistence}
         onResetRace={handleReset}
         onResetAllRaces={handleResetAllRaces}
+        onDiagnosticsClick={navigateToDiagnostics}
       />
     </ErrorBoundary>
   );
