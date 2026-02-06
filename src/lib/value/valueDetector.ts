@@ -1,6 +1,37 @@
 /**
  * Value Bet Detector
  *
+ * ARCHITECTURE NOTE — VALUE DETECTION SYSTEMS
+ * ============================================
+ * This app has three value detection modules with different probability models:
+ *
+ *   1. useValueDetection.ts (src/hooks/)
+ *      → CANONICAL UI SYSTEM for race verdicts (BET/CAUTION/PASS)
+ *      → Linear probability model (score / fieldTotal)
+ *      → 50% minimum edge threshold
+ *      → Consumed by: Dashboard, BetModeContainer, BetResults, RaceOverview,
+ *        RaceVerdictHeader, allocateDayBudget, multiRaceBets, betTypes,
+ *        multiRaceTickets
+ *
+ *   2. overlayAnalysis.ts (src/lib/scoring/)
+ *      → SCORING PIPELINE system for overlay/underlay classification
+ *      → Softmax probability model (temperature-based)
+ *      → 20% moderate overlay threshold
+ *      → Consumed by: tierClassification.ts, diamondDetector.ts,
+ *        scoring/index.ts (re-exports)
+ *
+ *   3. valueDetector.ts (THIS FILE)
+ *      → PER-HORSE DEEP ANALYSIS for horse detail views
+ *      → Calibrated linear probability (score bands)
+ *      → 5/10/25/50% EV tiers
+ *      → Consumed by: HorseDetailModal (via lib/value), marketInefficiency.ts,
+ *        valueBetting.ts
+ *      → NOT consumed by UI race verdict components
+ *
+ * These systems intentionally use different models for their different purposes.
+ * Do NOT wire this module into the UI verdict system — use useValueDetection.ts.
+ * ============================================
+ *
  * Core module for identifying value betting opportunities using Expected Value (EV) analysis.
  *
  * Value bet = Expected Value is positive

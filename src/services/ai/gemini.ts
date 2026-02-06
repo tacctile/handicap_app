@@ -347,8 +347,7 @@ async function callGeminiDirect(
     console.log('[GEMINI] Making request through proxy...');
     // Dynamic import undici (Node.js only, will be tree-shaken in browser)
     const undiciModule = await (Function('return import("undici")')() as Promise<{
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      fetch: (url: string, options: any) => Promise<Response>;
+      fetch: (url: string, options: RequestInit & { dispatcher?: unknown }) => Promise<Response>;
     }>);
     response = await undiciModule.fetch(url, {
       method: 'POST',
@@ -1093,19 +1092,18 @@ export function parseVulnerableFavoriteResponse(text: string): VulnerableFavorit
   try {
     const rawParsed = JSON.parse(jsonStr);
     // Normalize keys to handle both camelCase and snake_case from Gemini
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const parsed = normalizeKeys(rawParsed) as any;
+    const parsed = normalizeKeys(rawParsed) as Record<string, unknown>;
 
     // Validate and normalize confidence (at root level in prompt output)
     const validConfidence = ['HIGH', 'MEDIUM', 'LOW'];
-    const confidence = validConfidence.includes(parsed.confidence)
+    const confidence = validConfidence.includes(parsed.confidence as string)
       ? (parsed.confidence as 'HIGH' | 'MEDIUM' | 'LOW')
       : 'MEDIUM';
 
     // Handle nested structure from prompt output
     // Prompt outputs: { favoriteAnalysis: { isVulnerable, vulnerabilityFlags, ... }, confidence, ... }
     // Parser expects: { isVulnerable, reasons, confidence }
-    const favoriteAnalysis = parsed.favoriteAnalysis || {};
+    const favoriteAnalysis = (parsed.favoriteAnalysis || {}) as Record<string, unknown>;
 
     // Get isVulnerable from nested favoriteAnalysis or root (for backwards compatibility)
     const isVulnerable =
@@ -1118,18 +1116,18 @@ export function parseVulnerableFavoriteResponse(text: string): VulnerableFavorit
     // Get reasons from vulnerabilityFlags (prompt) or reasons (legacy) or beneficiaries reasoning
     let reasons: string[] = [];
     if (Array.isArray(favoriteAnalysis.vulnerabilityFlags)) {
-      reasons = favoriteAnalysis.vulnerabilityFlags;
+      reasons = favoriteAnalysis.vulnerabilityFlags as string[];
     } else if (Array.isArray(parsed.vulnerabilityFlags)) {
-      reasons = parsed.vulnerabilityFlags;
+      reasons = parsed.vulnerabilityFlags as string[];
     } else if (Array.isArray(parsed.reasons)) {
-      reasons = parsed.reasons;
-    } else if (typeof parsed.reasoning === 'string' && parsed.reasoning.length > 0) {
+      reasons = parsed.reasons as string[];
+    } else if (typeof parsed.reasoning === 'string' && (parsed.reasoning as string).length > 0) {
       reasons = [parsed.reasoning as string];
     } else if (
       typeof favoriteAnalysis.overallAssessment === 'string' &&
-      favoriteAnalysis.overallAssessment.length > 0
+      (favoriteAnalysis.overallAssessment as string).length > 0
     ) {
-      reasons = [favoriteAnalysis.overallAssessment];
+      reasons = [favoriteAnalysis.overallAssessment as string];
     }
 
     return {
@@ -1157,16 +1155,15 @@ export function parseFieldSpreadResponse(text: string): FieldSpreadAnalysis {
   try {
     const rawParsed = JSON.parse(jsonStr);
     // Normalize keys to handle both camelCase and snake_case from Gemini
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const parsed = normalizeKeys(rawParsed) as any;
+    const parsed = normalizeKeys(rawParsed) as Record<string, unknown>;
 
     // Handle nested structure from prompt output
     // Prompt outputs: { fieldAssessment: { fieldType, topTierCount, ... }, horseClassifications, ... }
     // Parser expects: { fieldType, topTierCount, recommendedSpread, horseClassifications? }
-    const fieldAssessment = parsed.fieldAssessment || {};
+    const fieldAssessment = (parsed.fieldAssessment || {}) as Record<string, unknown>;
 
     // Get raw field type from nested or root
-    const rawFieldType = fieldAssessment.fieldType || parsed.fieldType;
+    const rawFieldType = (fieldAssessment.fieldType || parsed.fieldType) as string | undefined;
 
     // Map prompt's field type values to parser expected values
     // Prompt outputs: "DOMINANT" | "SEPARATED" | "COMPETITIVE" | "WIDE_OPEN"
@@ -1206,11 +1203,16 @@ export function parseFieldSpreadResponse(text: string): FieldSpreadAnalysis {
     const validSpreads = ['NARROW', 'MEDIUM', 'WIDE'];
 
     // Check for explicit recommendedSpread
-    if (validSpreads.includes(parsed.recommendedSpread)) {
+    if (validSpreads.includes(parsed.recommendedSpread as string)) {
       recommendedSpread = parsed.recommendedSpread as 'NARROW' | 'MEDIUM' | 'WIDE';
-    } else if (parsed.betStructure?.recommendedApproach) {
+    } else if (
+      parsed.betStructure &&
+      (parsed.betStructure as Record<string, unknown>).recommendedApproach
+    ) {
       // Derive from betStructure.recommendedApproach
-      const approach = parsed.betStructure.recommendedApproach.toLowerCase();
+      const approach = String(
+        (parsed.betStructure as Record<string, unknown>).recommendedApproach
+      ).toLowerCase();
       if (approach.includes('narrow') || approach.includes('key')) {
         recommendedSpread = 'NARROW';
       } else if (approach.includes('wide') || approach.includes('spread')) {
