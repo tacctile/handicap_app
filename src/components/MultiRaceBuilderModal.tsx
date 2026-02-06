@@ -486,8 +486,8 @@ export function MultiRaceBuilderModal({
                               handleHorseToggle(currentSelection.legNumber, horse.programNumber)
                             }
                             style={{
-                              borderColor: isSelected ? tierColor.border : undefined,
-                              backgroundColor: isSelected ? tierColor.bg : undefined,
+                              borderColor: isSelected ? tierColor?.border : undefined,
+                              backgroundColor: isSelected ? tierColor?.bg : undefined,
                             }}
                           >
                             <div className="multirace-horse-header">
@@ -499,7 +499,7 @@ export function MultiRaceBuilderModal({
                               <span className="multirace-horse-odds">{horse.morningLineOdds}</span>
                               <span
                                 className="multirace-horse-tier"
-                                style={{ color: tierColor.text }}
+                                style={{ color: tierColor?.text }}
                               >
                                 T{horse.tier}
                               </span>

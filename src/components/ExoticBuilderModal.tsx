@@ -445,15 +445,15 @@ export function ExoticBuilderModal({
                     className={`exotic-horse-card ${horse.isSelected ? 'selected' : ''}`}
                     onClick={() => handleHorseSelect(horse.programNumber)}
                     style={{
-                      borderColor: horse.isSelected ? TIER_COLORS[horse.tier].border : undefined,
-                      backgroundColor: horse.isSelected ? TIER_COLORS[horse.tier].bg : undefined,
+                      borderColor: horse.isSelected ? TIER_COLORS[horse.tier]?.border : undefined,
+                      backgroundColor: horse.isSelected ? TIER_COLORS[horse.tier]?.bg : undefined,
                     }}
                   >
                     <div className="exotic-horse-header">
                       <span className="exotic-horse-number">#{horse.programNumber}</span>
                       <span
                         className="exotic-horse-tier"
-                        style={{ color: TIER_COLORS[horse.tier].text }}
+                        style={{ color: TIER_COLORS[horse.tier]?.text }}
                       >
                         T{horse.tier}
                       </span>
