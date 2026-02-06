@@ -38,7 +38,7 @@ export {
 } from './diamondTypes';
 
 // Detector Functions
-export { analyzeDiamondCandidate, analyzeRaceDiamonds, mightBeDiamond } from './diamondDetector';
+export { analyzeRaceDiamonds } from './diamondDetector';
 
 // Validator Functions and Types
 export {
