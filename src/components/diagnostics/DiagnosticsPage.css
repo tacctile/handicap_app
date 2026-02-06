@@ -61,8 +61,27 @@
 
 .diag-content {
   padding: var(--gap-container);
-  max-width: 800px;
   margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .diag-content {
+    padding: var(--space-5);
+  }
+}
+
+@media (min-width: 1024px) {
+  .diag-content {
+    padding: var(--space-6);
+    max-width: 1400px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .diag-content {
+    padding: var(--space-10);
+    max-width: 1600px;
+  }
 }
 
 /* ============================================
@@ -556,4 +575,187 @@
 .diag-chart-card .recharts-legend-item-text {
   color: var(--color-text-secondary) !important;
   font-size: 12px;
+}
+
+/* ============================================
+   BET PERFORMANCE — CATEGORY HEADERS
+   ============================================ */
+
+.diag-bet-category {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: var(--gap-element) 0 var(--gap-tight) 0;
+  border-bottom: 1px solid var(--color-border);
+  margin-top: var(--gap-element);
+}
+
+.diag-bet-category:first-child {
+  margin-top: 0;
+}
+
+/* ============================================
+   BET VERDICT COLORS
+   ============================================ */
+
+.diag-verdict-strong {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.diag-verdict-promising {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.diag-verdict-risky {
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
+.diag-verdict-avoid {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+/* ============================================
+   PODIUM — RECOMMENDED BETS
+   ============================================ */
+
+.diag-podium {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-element);
+}
+
+@media (min-width: 768px) {
+  .diag-podium {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: var(--gap-container);
+  }
+}
+
+.diag-podium-card {
+  flex: 1;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--gap-container);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-element);
+  border-top: 3px solid var(--color-border);
+}
+
+.diag-podium-card--first {
+  border-top-color: var(--color-warning);
+}
+
+@media (min-width: 768px) {
+  .diag-podium-card--first {
+    order: 2;
+    min-height: 224px;
+  }
+
+  .diag-podium-card--second {
+    order: 1;
+    min-height: 184px;
+  }
+
+  .diag-podium-card--third {
+    order: 3;
+    min-height: 152px;
+  }
+}
+
+.diag-podium-card--second {
+  border-top-color: var(--color-text-tertiary);
+}
+
+.diag-podium-card--third {
+  border-top-color: var(--color-primary);
+}
+
+.diag-podium-rank {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.diag-podium-card--first .diag-podium-rank {
+  color: var(--color-warning);
+}
+
+.diag-podium-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+}
+
+.diag-podium-stats {
+  display: flex;
+  gap: var(--gap-container);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.diag-podium-stat-label {
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+}
+
+.diag-podium-stat-value {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.diag-podium-description {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+/* ============================================
+   SAMPLE SIZE NOTICE
+   ============================================ */
+
+.diag-sample-notice {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--gap-container);
+  border-left: 3px solid var(--color-border-prominent);
+}
+
+.diag-sample-notice--small {
+  border-left-color: var(--color-warning);
+}
+
+.diag-sample-notice--solid {
+  border-left-color: var(--color-success);
+}
+
+.diag-sample-notice-text {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.diag-sample-notice-text + .diag-sample-notice-text {
+  margin-top: var(--gap-element);
+}
+
+.diag-sample-notice-text--warn {
+  color: var(--color-warning);
+}
+
+.diag-sample-notice-text--success {
+  color: var(--color-success);
 }

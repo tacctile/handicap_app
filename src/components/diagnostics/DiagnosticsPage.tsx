@@ -83,17 +83,6 @@ function getGrade(winRate: number): { grade: string; descriptor: string } {
   return { grade: 'F', descriptor: 'Needs improvement' };
 }
 
-function lerpColor(a: string, b: string, t: number): string {
-  const parse = (hex: string): [number, number, number] => [
-    parseInt(hex.slice(1, 3), 16),
-    parseInt(hex.slice(3, 5), 16),
-    parseInt(hex.slice(5, 7), 16),
-  ];
-  const [r1, g1, b1] = parse(a);
-  const [r2, g2, b2] = parse(b);
-  return `rgb(${Math.round(r1 + (r2 - r1) * t)}, ${Math.round(g1 + (g2 - g1) * t)}, ${Math.round(b1 + (b2 - b1) * t)})`;
-}
-
 // ============================================================================
 // TOOLTIP
 // ============================================================================
@@ -521,79 +510,247 @@ function TierPerformanceChart({ results }: { results: DiagnosticsResults }) {
 }
 
 // ============================================================================
-// EXOTIC BET ACCURACY CHART
+// BET TYPE DATA — shared between chart & recommendations
 // ============================================================================
 
-function ExoticBetChart({ results }: { results: DiagnosticsResults }) {
-  const data = useMemo(() => {
-    const items = [
-      {
-        name: 'Exacta Box 2',
-        rate: results.exactaBox2Rate,
-        tooltip: 'Pick the top 2 finishers in any order using our top 2 ranked horses',
-      },
-      {
-        name: 'Exacta Box 3',
-        rate: results.exactaBox3Rate,
-        tooltip: 'Pick the top 2 finishers in any order using our top 3 ranked horses',
-      },
-      {
-        name: 'Exacta Box 4',
-        rate: results.exactaBox4Rate,
-        tooltip: 'Pick the top 2 finishers in any order using our top 4 ranked horses',
-      },
-      {
-        name: 'Trifecta Box 3',
-        rate: results.trifectaBox3Rate,
-        tooltip: 'Pick the top 3 finishers in any order using our top 3 ranked horses',
-      },
-      {
-        name: 'Trifecta Box 4',
-        rate: results.trifectaBox4Rate,
-        tooltip: 'Pick the top 3 finishers in any order using our top 4 ranked horses',
-      },
-      {
-        name: 'Trifecta Box 5',
-        rate: results.trifectaBox5Rate,
-        tooltip: 'Pick the top 3 finishers in any order using our top 5 ranked horses',
-      },
-      {
-        name: 'Superfecta Box 4',
-        rate: results.superfectaBox4Rate,
-        tooltip: 'Pick the top 4 finishers in any order using our top 4 ranked horses',
-      },
-      {
-        name: 'Superfecta Box 5',
-        rate: results.superfectaBox5Rate,
-        tooltip: 'Pick the top 4 finishers in any order using our top 5 ranked horses',
-      },
-      {
-        name: 'Superfecta Box 6',
-        rate: results.superfectaBox6Rate,
-        tooltip: 'Pick the top 4 finishers in any order using our top 6 ranked horses',
-      },
-    ];
-    return items.filter((i) => i.rate > 0);
-  }, [results]);
+type BetCategory = 'win' | 'exacta' | 'trifecta' | 'superfecta';
 
-  if (data.length === 0) return null;
+interface BetTypeInfo {
+  key: string;
+  name: string;
+  category: BetCategory;
+  ticketCost: number;
+  tooltip: string;
+  contextDescription: string;
+  getRate: (r: DiagnosticsResults) => number;
+}
 
-  const maxRate = Math.max(...data.map((d) => d.rate));
-  const xMax = Math.min(60, Math.ceil(maxRate / 10) * 10 + 10);
+const BET_TYPES: BetTypeInfo[] = [
+  {
+    key: 'topPickWin',
+    name: 'Top Pick Win',
+    category: 'win',
+    ticketCost: 2,
+    tooltip: 'Betting on our #1 ranked horse to win',
+    contextDescription: 'Simple and effective — just pick the winner.',
+    getRate: (r) => r.topPickWinRate,
+  },
+  {
+    key: 'exactaBox2',
+    name: 'Exacta Box 2',
+    category: 'exacta',
+    ticketCost: 2,
+    tooltip: 'Our top 2 horses finish 1st and 2nd in any order',
+    contextDescription: 'Affordable exotic — only needs your top two picks to connect.',
+    getRate: (r) => r.exactaBox2Rate,
+  },
+  {
+    key: 'exactaBox3',
+    name: 'Exacta Box 3',
+    category: 'exacta',
+    ticketCost: 6,
+    tooltip: 'Any 2 of our top 3 horses finish 1st and 2nd',
+    contextDescription:
+      'A good balance of cost and accuracy — one of the most popular exotic bets.',
+    getRate: (r) => r.exactaBox3Rate,
+  },
+  {
+    key: 'exactaBox4',
+    name: 'Exacta Box 4',
+    category: 'exacta',
+    ticketCost: 12,
+    tooltip: 'Any 2 of our top 4 horses finish 1st and 2nd',
+    contextDescription: 'Wider net for the exacta — more combos, higher cost.',
+    getRate: (r) => r.exactaBox4Rate,
+  },
+  {
+    key: 'trifectaBox3',
+    name: 'Trifecta Box 3',
+    category: 'trifecta',
+    ticketCost: 6,
+    tooltip: 'Our top 3 horses finish 1st, 2nd, and 3rd in any order',
+    contextDescription: 'Tight trifecta — all three picks must hit.',
+    getRate: (r) => r.trifectaBox3Rate,
+  },
+  {
+    key: 'trifectaBox4',
+    name: 'Trifecta Box 4',
+    category: 'trifecta',
+    ticketCost: 24,
+    tooltip: 'Any 3 of our top 4 horses finish 1st, 2nd, and 3rd',
+    contextDescription: 'Decent hit rate but higher cost — use when the favorites are clear.',
+    getRate: (r) => r.trifectaBox4Rate,
+  },
+  {
+    key: 'trifectaBox5',
+    name: 'Trifecta Box 5',
+    category: 'trifecta',
+    ticketCost: 60,
+    tooltip: 'Any 3 of our top 5 horses finish 1st, 2nd, and 3rd',
+    contextDescription: 'Expensive but covers more scenarios — best in wide-open fields.',
+    getRate: (r) => r.trifectaBox5Rate,
+  },
+  {
+    key: 'superfectaBox4',
+    name: 'Superfecta Box 4',
+    category: 'superfecta',
+    ticketCost: 24,
+    tooltip: 'Our top 4 horses finish 1st through 4th in any order',
+    contextDescription: 'Tight superfecta — all four picks must fill the top four spots.',
+    getRate: (r) => r.superfectaBox4Rate,
+  },
+  {
+    key: 'superfectaBox5',
+    name: 'Superfecta Box 5',
+    category: 'superfecta',
+    ticketCost: 120,
+    tooltip: 'Any 4 of our top 5 horses finish 1st through 4th',
+    contextDescription: 'High cost, high reward — for when you like five horses.',
+    getRate: (r) => r.superfectaBox5Rate,
+  },
+  {
+    key: 'superfectaBox6',
+    name: 'Superfecta Box 6',
+    category: 'superfecta',
+    ticketCost: 360,
+    tooltip: 'Any 4 of our top 6 horses finish 1st through 4th',
+    contextDescription: 'Maximum coverage superfecta — very expensive per ticket.',
+    getRate: (r) => r.superfectaBox6Rate,
+  },
+];
+
+const CATEGORY_LABELS: Record<BetCategory, string> = {
+  win: 'WIN BETS',
+  exacta: 'EXACTA',
+  trifecta: 'TRIFECTA',
+  superfecta: 'SUPERFECTA',
+};
+
+type Verdict = 'Strong' | 'Promising' | 'Risky' | 'Avoid';
+
+function getVerdict(rate: number, category: BetCategory): Verdict {
+  switch (category) {
+    case 'win':
+      if (rate >= 20) return 'Strong';
+      if (rate >= 15) return 'Promising';
+      if (rate >= 10) return 'Risky';
+      return 'Avoid';
+    case 'exacta':
+      if (rate >= 25) return 'Strong';
+      if (rate >= 15) return 'Promising';
+      if (rate >= 8) return 'Risky';
+      return 'Avoid';
+    case 'trifecta':
+      if (rate >= 15) return 'Strong';
+      if (rate >= 8) return 'Promising';
+      if (rate >= 3) return 'Risky';
+      return 'Avoid';
+    case 'superfecta':
+      if (rate >= 8) return 'Strong';
+      if (rate >= 3) return 'Promising';
+      if (rate >= 1) return 'Risky';
+      return 'Avoid';
+  }
+}
+
+function getVerdictClass(verdict: Verdict): string {
+  switch (verdict) {
+    case 'Strong':
+      return 'diag-verdict-strong';
+    case 'Promising':
+      return 'diag-verdict-promising';
+    case 'Risky':
+      return 'diag-verdict-risky';
+    case 'Avoid':
+      return 'diag-verdict-avoid';
+  }
+}
+
+function getBarColor(rate: number): string {
+  if (rate >= 30) return C.success;
+  if (rate >= 15) return C.primary;
+  if (rate >= 5) return C.warning;
+  return C.error;
+}
+
+function getEffectivenessScore(rate: number, ticketCost: number): number {
+  return rate / Math.log2(ticketCost + 1);
+}
+
+interface BetTypeWithRate extends BetTypeInfo {
+  rate: number;
+  verdict: Verdict;
+  effectivenessScore: number;
+}
+
+function getBetTypesWithRates(results: DiagnosticsResults): BetTypeWithRate[] {
+  return BET_TYPES.map((bt) => {
+    const rate = bt.getRate(results);
+    return {
+      ...bt,
+      rate,
+      verdict: getVerdict(rate, bt.category),
+      effectivenessScore: getEffectivenessScore(rate, bt.ticketCost),
+    };
+  }).filter((bt) => bt.rate > 0);
+}
+
+// ============================================================================
+// BET PERFORMANCE BREAKDOWN (Part 2)
+// ============================================================================
+
+function BetPerformanceBreakdown({ results }: { results: DiagnosticsResults }) {
+  const betTypes = useMemo(() => getBetTypesWithRates(results), [results]);
+
+  if (betTypes.length === 0) return null;
+
+  // Group by category for chart rendering
+  const categories: BetCategory[] = ['win', 'exacta', 'trifecta', 'superfecta'];
+  const grouped = categories
+    .map((cat) => ({
+      category: cat,
+      label: CATEGORY_LABELS[cat],
+      bets: betTypes.filter((bt) => bt.category === cat),
+    }))
+    .filter((g) => g.bets.length > 0);
+
+  // Build flat chart data with category separators
+  const chartData: Array<{
+    name: string;
+    rate: number;
+    tooltip: string;
+    fill: string;
+    isCategory?: boolean;
+  }> = [];
+  for (const group of grouped) {
+    for (const bet of group.bets) {
+      chartData.push({
+        name: bet.name,
+        rate: bet.rate,
+        tooltip: bet.tooltip,
+        fill: getBarColor(bet.rate),
+      });
+    }
+  }
+
+  const maxRate = Math.max(...chartData.map((d) => d.rate));
+  const xMax = Math.min(80, Math.ceil(maxRate / 10) * 10 + 10);
 
   return (
     <div className="diag-chart-card">
-      <h3 className="diag-chart-title">Exotic Bet Hit Rates</h3>
+      <h3 className="diag-chart-title">Bet Performance Breakdown</h3>
       <p className="diag-chart-description">
-        How often our top-ranked horses filled exotic bet combinations. Higher box sizes cost more
-        but hit more often.
+        How each bet type performs based on our rankings. Hit rate shows how often the bet would
+        have cashed. Higher is better.
       </p>
+
+      {/* Horizontal bar chart */}
       <div className="diag-chart-container">
-        <ResponsiveContainer width="100%" height={Math.max(240, data.length * 36 + 48)}>
+        <ResponsiveContainer width="100%" height={Math.max(280, chartData.length * 40 + 48)}>
           <BarChart
-            data={data}
+            data={chartData}
             layout="vertical"
-            margin={{ top: 8, right: 48, bottom: 0, left: 0 }}
+            margin={{ top: 8, right: 56, bottom: 0, left: 0 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke={C.borderSubtle} horizontal={false} />
             <XAxis
@@ -610,7 +767,7 @@ function ExoticBetChart({ results }: { results: DiagnosticsResults }) {
               tick={{ fill: C.textSecondary, fontSize: 11 }}
               axisLine={false}
               tickLine={false}
-              width={104}
+              width={120}
             />
             <RechartsTooltip
               content={<ChartTooltipContent />}
@@ -624,13 +781,143 @@ function ExoticBetChart({ results }: { results: DiagnosticsResults }) {
                 fontSize={11}
                 formatter={(val: unknown) => `${String(val)}%`}
               />
-              {data.map((entry, i) => {
-                const t = maxRate > 0 ? entry.rate / maxRate : 0;
-                return <Cell key={i} fill={lerpColor(C.primary, C.success, t)} />;
-              })}
+              {chartData.map((entry, i) => (
+                <Cell key={i} fill={entry.fill} />
+              ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* Summary table */}
+      <div className="diag-table-wrapper" style={{ marginTop: 16 }}>
+        <table className="diag-table">
+          <thead>
+            <tr>
+              <th>Bet Type</th>
+              <th>Hit Rate</th>
+              <th>Hits / Attempts</th>
+              <th>Ticket Cost</th>
+              <th>Verdict</th>
+            </tr>
+          </thead>
+          <tbody>
+            {grouped.map((group) => (
+              <>
+                <tr key={`cat-${group.category}`}>
+                  <td colSpan={5} className="diag-bet-category">
+                    {group.label}
+                  </td>
+                </tr>
+                {group.bets.map((bet) => {
+                  const attempts = bet.category === 'win' ? results.validRaces : results.validRaces;
+                  const hits = Math.round((bet.rate / 100) * attempts);
+                  return (
+                    <tr key={bet.key}>
+                      <td>
+                        <Tooltip text={bet.tooltip}>{bet.name}</Tooltip>
+                      </td>
+                      <td className="diag-tabular">{bet.rate}%</td>
+                      <td className="diag-tabular">
+                        {hits} / {attempts}
+                      </td>
+                      <td className="diag-tabular">${bet.ticketCost}</td>
+                      <td className={getVerdictClass(bet.verdict)}>{bet.verdict}</td>
+                    </tr>
+                  );
+                })}
+              </>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// RECOMMENDED BETS (Part 3)
+// ============================================================================
+
+function RecommendedBets({ results }: { results: DiagnosticsResults }) {
+  const betTypes = useMemo(() => getBetTypesWithRates(results), [results]);
+
+  if (betTypes.length < 3) return null;
+
+  // Sort by effectiveness score descending, take top 3
+  const ranked = [...betTypes].sort((a, b) => b.effectivenessScore - a.effectivenessScore);
+  const top3 = ranked.slice(0, 3);
+
+  const podiumLabels = ['#1 Best Bet', '#2 Runner Up', '#3 Also Good'] as const;
+  const podiumClasses = [
+    'diag-podium-card--first',
+    'diag-podium-card--second',
+    'diag-podium-card--third',
+  ] as const;
+
+  const totalRaces = results.validRaces;
+  const totalTracks = results.totalTracks;
+
+  let sampleClass = '';
+  let sampleMessage = '';
+  if (totalRaces < 50) {
+    sampleClass = 'diag-sample-notice--small';
+    sampleMessage = 'Small sample — treat these as early indicators, not guarantees.';
+  } else if (totalRaces >= 200) {
+    sampleClass = 'diag-sample-notice--solid';
+    sampleMessage = 'Solid sample size — these trends are statistically meaningful.';
+  } else {
+    sampleMessage = 'Growing sample — trends are forming but more data will sharpen the picture.';
+  }
+
+  return (
+    <div className="diag-chart-card">
+      <h3 className="diag-chart-title">What Should You Bet?</h3>
+      <p className="diag-chart-description">
+        Based on our system&apos;s track record with this data, here are the bet types that give you
+        the best edge.
+      </p>
+
+      {/* Podium */}
+      <div className="diag-podium">
+        {top3.map((bet, i) => (
+          <div key={bet.key} className={`diag-podium-card ${podiumClasses[i]}`}>
+            <div className="diag-podium-rank">{podiumLabels[i]}</div>
+            <div className="diag-podium-name">{bet.name}</div>
+            <div className="diag-podium-stats">
+              <div>
+                <div className="diag-podium-stat-label">Hit Rate</div>
+                <div className="diag-podium-stat-value">{bet.rate}%</div>
+              </div>
+              <div>
+                <div className="diag-podium-stat-label">Cost</div>
+                <div className="diag-podium-stat-value">${bet.ticketCost}</div>
+              </div>
+              <div>
+                <div className="diag-podium-stat-label">Verdict</div>
+                <div className={getVerdictClass(bet.verdict)}>{bet.verdict}</div>
+              </div>
+            </div>
+            <p className="diag-podium-description">
+              This bet hits {bet.rate}% of the time and costs ${bet.ticketCost} per ticket.{' '}
+              {bet.contextDescription}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Sample size notice */}
+      <div className={`diag-sample-notice ${sampleClass}`} style={{ marginTop: 16 }}>
+        <p className="diag-sample-notice-text">
+          These recommendations are based on {totalRaces} races across {totalTracks} track
+          {totalTracks !== 1 ? 's' : ''}. As more data is added, these insights become more
+          reliable.
+        </p>
+        <p
+          className={`diag-sample-notice-text ${totalRaces < 50 ? 'diag-sample-notice-text--warn' : totalRaces >= 200 ? 'diag-sample-notice-text--success' : ''}`}
+        >
+          {sampleMessage}
+        </p>
       </div>
     </div>
   );
@@ -870,13 +1157,22 @@ function CompleteState({ diagnostics }: { diagnostics: UseDiagnosticsReturn }) {
             <TierPerformanceChart results={results} />
           </motion.div>
 
-          {/* Exotic Bet Chart */}
+          {/* Bet Performance Breakdown */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: STAGGER * 3 }}
           >
-            <ExoticBetChart results={results} />
+            <BetPerformanceBreakdown results={results} />
+          </motion.div>
+
+          {/* What Should You Bet? — Recommended bets */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: STAGGER * 4 }}
+          >
+            <RecommendedBets results={results} />
           </motion.div>
 
           {/* Track Comparison Table — only when All Tracks */}
@@ -884,7 +1180,7 @@ function CompleteState({ diagnostics }: { diagnostics: UseDiagnosticsReturn }) {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: STAGGER * 4 }}
+              transition={{ duration: 0.3, delay: STAGGER * 5 }}
             >
               <TrackComparisonTable results={results} />
             </motion.div>
@@ -895,7 +1191,7 @@ function CompleteState({ diagnostics }: { diagnostics: UseDiagnosticsReturn }) {
             className="diag-metadata"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: STAGGER * 5 }}
+            transition={{ duration: 0.3, delay: STAGGER * 6 }}
           >
             <div className="diag-metadata-items">
               <span>Last analyzed: {analyzedDate}</span>
