@@ -13,6 +13,7 @@
  */
 
 import { useMemo } from 'react';
+import { formatEdge as _formatEdge, getEdgeColor as _getEdgeColor } from '../utils/formatters';
 import type { ScoredHorse } from '../lib/scoring';
 
 // ============================================================================
@@ -335,24 +336,11 @@ function determineRaceVerdict(
   };
 }
 
-/**
- * Format edge percentage for display
- */
-export function formatEdge(edge: number): string {
-  const rounded = Math.round(edge);
-  return edge >= 0 ? `+${rounded}%` : `${rounded}%`;
-}
+// Re-export from canonical source (precision 0 matches original integer rounding)
+export const formatEdge = _formatEdge;
 
-/**
- * Get color for edge percentage
- */
-export function getEdgeColor(edge: number): string {
-  if (edge >= 75) return '#10b981'; // Bright green
-  if (edge >= 50) return '#22c55e'; // Green
-  if (edge >= 25) return '#84cc16'; // Yellow-green
-  if (edge >= -25) return '#6B7280'; // Gray (fair)
-  return '#ef4444'; // Red (underlay)
-}
+// Re-export from canonical source
+export const getEdgeColor = _getEdgeColor;
 
 /**
  * Get verdict color

@@ -10,6 +10,7 @@
  * @module dutch/dutchDisplay
  */
 
+import { formatPercent as _formatPercent } from '../../utils/formatters';
 import type { DutchResult, DutchBet } from './dutchCalculator';
 import type { DutchCombination } from './dutchOptimizer';
 import type { EdgeClassification } from './dutchValidator';
@@ -104,11 +105,9 @@ export function formatCurrencyForWindow(amount: number): string {
   return `$${rounded.toFixed(2)}`;
 }
 
-/**
- * Format percentage for display
- */
+// Re-export from canonical source (showSign=true matches original +/- prefix behavior)
 export function formatPercent(value: number, decimals: number = 1): string {
-  return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
+  return _formatPercent(value, decimals, true);
 }
 
 /**

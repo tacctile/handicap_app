@@ -204,7 +204,7 @@ describe('Overlay Analysis', () => {
     });
 
     it('handles invalid input gracefully', () => {
-      expect(parseOddsToDecimal('invalid')).toBe(11); // Default to 10-1
+      expect(parseOddsToDecimal('invalid')).toBe(2); // Default to even money
     });
   });
 

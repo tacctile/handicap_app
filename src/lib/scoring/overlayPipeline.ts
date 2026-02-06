@@ -15,6 +15,7 @@
  * @module scoring/overlayPipeline
  */
 
+import { formatOverlayPercent as _formatOverlayPercent } from '../../utils/formatters';
 import {
   softmaxProbabilities,
   probabilityToFairOdds,
@@ -957,13 +958,9 @@ export function getEVClassDetails(classification: EVClassification): {
   };
 }
 
-/**
- * Format overlay percentage for display
- */
+// Re-export from canonical source (precision 1 matches original)
 export function formatOverlayPercent(percent: number): string {
-  if (!Number.isFinite(percent)) return '—';
-  const sign = percent >= 0 ? '+' : '';
-  return `${sign}${percent.toFixed(1)}%`;
+  return _formatOverlayPercent(percent, 1);
 }
 
 /**

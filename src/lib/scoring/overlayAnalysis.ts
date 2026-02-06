@@ -19,6 +19,12 @@
  */
 
 import {
+  parseOddsToDecimal as _parseOddsToDecimal,
+  formatOverlayPercent as _formatOverlayPercent,
+  formatEVPercent as _formatEVPercent,
+} from '../../utils/formatters';
+
+import {
   softmaxProbabilities,
   probabilityToFairOdds as softmaxProbabilityToFairOdds,
   SOFTMAX_CONFIG,
@@ -413,59 +419,8 @@ export function decimalToMoneyline(decimal: number): string {
   }
 }
 
-/**
- * Parse various odds formats to decimal
- * Handles: "3-1", "5/2", "EVEN", plain numbers, "+300", "-150"
- */
-export function parseOddsToDecimal(oddsStr: string): number {
-  const cleaned = oddsStr.trim().toUpperCase();
-
-  // Handle "EVEN" odds
-  if (cleaned === 'EVEN' || cleaned === 'EVN') {
-    return 2.0; // Even money is 2.0 decimal (1-1)
-  }
-
-  // Handle moneyline format (+300 or -150)
-  if (cleaned.startsWith('+')) {
-    const ml = parseFloat(cleaned.substring(1));
-    return 1 + ml / 100;
-  }
-  if (cleaned.startsWith('-')) {
-    const ml = parseFloat(cleaned.substring(1));
-    return 1 + 100 / ml;
-  }
-
-  // Handle "X-1" format (e.g., "5-1")
-  if (cleaned.includes('-')) {
-    const parts = cleaned.split('-');
-    const num = parts[0];
-    const denom = parts[1];
-    const numerator = num ? parseFloat(num) : 0;
-    const denominator = denom ? parseFloat(denom) : 1;
-    return 1 + numerator / (denominator || 1);
-  }
-
-  // Handle "X/Y" format (e.g., "5/2")
-  if (cleaned.includes('/')) {
-    const parts = cleaned.split('/');
-    const num = parts[0];
-    const denom = parts[1];
-    const numerator = num ? parseFloat(num) : 0;
-    const denominator = denom ? parseFloat(denom) : 1;
-    return 1 + numerator / (denominator || 1);
-  }
-
-  // Handle plain number (already decimal)
-  const plainNum = parseFloat(cleaned);
-  if (!isNaN(plainNum)) {
-    // If it's a small number like 5, assume it's the profit ratio (5-1)
-    if (plainNum < 1.5) return 2.0; // Probably meant even money
-    if (plainNum < 20) return 1 + plainNum; // Assume X-1 format
-    return plainNum; // Already decimal odds
-  }
-
-  return 11.0; // Default to 10-1 if parsing fails
-}
+// Re-export from canonical source
+export const parseOddsToDecimal = _parseOddsToDecimal;
 
 /**
  * Calculate overlay percentage
@@ -1083,16 +1038,8 @@ export function calculateTierAdjustment(
 // DISPLAY HELPERS
 // ============================================================================
 
-/**
- * Format overlay percentage for display
- */
-export function formatOverlayPercent(overlayPercent: number): string {
-  // Handle NaN or invalid input
-  if (!Number.isFinite(overlayPercent)) return '—';
-
-  const sign = overlayPercent >= 0 ? '+' : '';
-  return `${sign}${overlayPercent.toFixed(0)}%`;
-}
+// Re-export from canonical source (precision 0 matches original)
+export const formatOverlayPercent = _formatOverlayPercent;
 
 /**
  * Format EV for display
@@ -1105,16 +1052,8 @@ export function formatEV(evPerDollar: number): string {
   return `${sign}$${evPerDollar.toFixed(2)}`;
 }
 
-/**
- * Format EV as percentage
- */
-export function formatEVPercent(evPercent: number): string {
-  // Handle NaN or invalid input
-  if (!Number.isFinite(evPercent)) return '—';
-
-  const sign = evPercent >= 0 ? '+' : '';
-  return `${sign}${evPercent.toFixed(1)}%`;
-}
+// Re-export from canonical source
+export const formatEVPercent = _formatEVPercent;
 
 /**
  * Get color for overlay display

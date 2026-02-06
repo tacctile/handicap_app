@@ -19,6 +19,7 @@
  * @module betting/kellyCriterion
  */
 
+import { parseOddsToDecimal as _parseOddsToDecimal } from '../../utils/formatters';
 import { logger } from '../../services/logging';
 import type { KellySettings, KellyFraction, RiskToleranceKelly } from './kellySettings';
 import { validateKellyInputs } from './kellyValidator';
@@ -393,59 +394,8 @@ export function fractionalToDecimal(numerator: number, denominator: number): num
   return numerator / denominator + 1;
 }
 
-/**
- * Parse morning line odds string to decimal odds
- *
- * Handles: "5-1", "9/2", "3-2", "4-5", "1-5"
- */
-export function parseOddsToDecimal(oddsString: string): number {
-  if (!oddsString || typeof oddsString !== 'string') {
-    return 2.0;
-  }
-
-  const cleanOdds = oddsString.trim();
-
-  // Handle "X-Y" format (e.g., "5-1", "4-5")
-  const dashMatch = cleanOdds.match(/^(\d+)-(\d+)$/);
-  if (dashMatch) {
-    const numStr = dashMatch[1];
-    const denStr = dashMatch[2];
-    if (numStr && denStr) {
-      const num = parseInt(numStr, 10);
-      const den = parseInt(denStr, 10);
-      if (den > 0) {
-        return num / den + 1;
-      }
-    }
-  }
-
-  // Handle "X/Y" format (e.g., "5/1", "9/2")
-  const slashMatch = cleanOdds.match(/^(\d+)\/(\d+)$/);
-  if (slashMatch) {
-    const numStr = slashMatch[1];
-    const denStr = slashMatch[2];
-    if (numStr && denStr) {
-      const num = parseInt(numStr, 10);
-      const den = parseInt(denStr, 10);
-      if (den > 0) {
-        return num / den + 1;
-      }
-    }
-  }
-
-  // Handle "Even" or "EVN"
-  if (/^even$/i.test(cleanOdds) || /^evn$/i.test(cleanOdds)) {
-    return 2.0;
-  }
-
-  // Handle pure decimal (e.g., "5.0")
-  const decimal = parseFloat(cleanOdds);
-  if (!isNaN(decimal) && decimal > 1) {
-    return decimal;
-  }
-
-  return 2.0; // Default
-}
+// Re-export from canonical source
+export const parseOddsToDecimal = _parseOddsToDecimal;
 
 /**
  * Convert confidence score (0-100) to win probability (0-1)

@@ -15,6 +15,10 @@
  * @module value/valueDetector
  */
 
+import {
+  formatEdge as _formatEdge,
+  formatEVPercent as _formatEVPercent,
+} from '../../utils/formatters';
 import { logger } from '../../services/logging';
 import type { HorseEntry } from '../../types/drf';
 import type { HorseScore } from '../scoring';
@@ -684,20 +688,12 @@ export function analyzeRaceValue(
 // DISPLAY HELPERS
 // ============================================================================
 
-/**
- * Format EV percentage for display
- */
-export function formatEVPercent(evPercent: number): string {
-  const sign = evPercent >= 0 ? '+' : '';
-  return `${sign}${evPercent.toFixed(1)}%`;
-}
+// Re-export from canonical source
+export const formatEVPercent = _formatEVPercent;
 
-/**
- * Format edge for display
- */
+// Re-export from canonical source (precision 1 matches original)
 export function formatEdge(edge: number): string {
-  const sign = edge >= 0 ? '+' : '';
-  return `${sign}${edge.toFixed(1)}%`;
+  return _formatEdge(edge, 1);
 }
 
 /**
