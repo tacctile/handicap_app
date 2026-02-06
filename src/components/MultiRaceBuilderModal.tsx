@@ -384,9 +384,11 @@ export function MultiRaceBuilderModal({
           <div className="multirace-race-tabs">
             {state.selections.map((sel, idx) => {
               const race = multiRaceData[idx];
-              const strengthColor = race
-                ? RACE_STRENGTH_COLORS[race.strength]
-                : RACE_STRENGTH_COLORS.weak;
+              const strengthColor = (race ? RACE_STRENGTH_COLORS[race.strength] : undefined) ?? {
+                bg: 'var(--color-tier-bad-bg)',
+                text: 'var(--color-error)',
+                icon: 'help_outline',
+              };
               const hasSelections = sel.selections.length > 0;
 
               return (
@@ -419,8 +421,11 @@ export function MultiRaceBuilderModal({
             {currentRace &&
               currentSelection &&
               (() => {
-                const strengthColorLookup = RACE_STRENGTH_COLORS[currentRace.strength];
-                const strengthColor = strengthColorLookup ?? RACE_STRENGTH_COLORS.weak;
+                const strengthColor = RACE_STRENGTH_COLORS[currentRace.strength] ?? {
+                  bg: 'var(--color-tier-bad-bg)',
+                  text: 'var(--color-error)',
+                  icon: 'help_outline',
+                };
                 return (
                   <>
                     {/* Race Header */}
