@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
+import { logger } from '../services/logging';
 
 interface InstallPromptProps {
   /** Optional className for custom positioning */
@@ -23,13 +24,21 @@ export function InstallPrompt({ className = '', position = 'bottom-right' }: Ins
 
   const handleInstall = async () => {
     setIsInstalling(true);
-    const result = await promptInstall();
-    setIsInstalling(false);
+    try {
+      const result = await promptInstall();
 
-    if (result === 'accepted') {
-      // Prompt is automatically hidden when installed
-    } else if (result === 'dismissed') {
-      // User dismissed, already handled by the hook
+      if (result === 'accepted') {
+        // Prompt is automatically hidden when installed
+      } else if (result === 'dismissed') {
+        // User dismissed, already handled by the hook
+      }
+    } catch (error) {
+      logger.logError(error instanceof Error ? error : new Error(String(error)), {
+        component: 'InstallPrompt',
+        action: 'handleInstall',
+      });
+    } finally {
+      setIsInstalling(false);
     }
   };
 
@@ -117,8 +126,16 @@ export function InstallButton({ className = '' }: { className?: string }) {
 
   const handleClick = async () => {
     setIsInstalling(true);
-    await promptInstall();
-    setIsInstalling(false);
+    try {
+      await promptInstall();
+    } catch (error) {
+      logger.logError(error instanceof Error ? error : new Error(String(error)), {
+        component: 'InstallButton',
+        action: 'handleClick',
+      });
+    } finally {
+      setIsInstalling(false);
+    }
   };
 
   return (

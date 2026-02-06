@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ErrorBoundary } from './ErrorBoundary';
 import './HorseExpandedView.css';
 import { PPLine } from './PPLine';
 import type { HorseEntry, PastPerformance, Workout } from '../types/drf';
@@ -1143,4 +1144,36 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   );
 };
 
-export default HorseExpandedView;
+function HorseExpandedViewFallback() {
+  return (
+    <div
+      style={{
+        padding: '1rem',
+        textAlign: 'center',
+        background: '#0F0F10',
+        borderRadius: '8px',
+        border: '1px solid #2A2A2C',
+      }}
+    >
+      <span
+        className="material-icons"
+        style={{ fontSize: '1.5rem', color: '#ef4444', marginBottom: '0.5rem', display: 'block' }}
+      >
+        error
+      </span>
+      <p style={{ color: '#B4B4B6', fontSize: '0.875rem', margin: 0 }}>
+        Something went wrong loading horse details.
+      </p>
+    </div>
+  );
+}
+
+export function HorseExpandedViewWithBoundary(props: HorseExpandedViewProps) {
+  return (
+    <ErrorBoundary componentName="HorseExpandedView" fallback={<HorseExpandedViewFallback />}>
+      <HorseExpandedView {...props} />
+    </ErrorBoundary>
+  );
+}
+
+export default HorseExpandedViewWithBoundary;

@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { ErrorBoundary } from '../ErrorBoundary';
 import {
   generateTopBets,
   type TopBet,
@@ -1077,4 +1078,39 @@ function parseMaxPayout(payoutStr: string): number {
   return Math.max(...numbers);
 }
 
-export default TopBetsView;
+function TopBetsViewFallback() {
+  return (
+    <div
+      style={{
+        padding: '1.5rem',
+        textAlign: 'center',
+        background: '#0F0F10',
+        borderRadius: '8px',
+        border: '1px solid #2A2A2C',
+      }}
+    >
+      <span
+        className="material-icons"
+        style={{ fontSize: '2rem', color: '#ef4444', marginBottom: '0.5rem', display: 'block' }}
+      >
+        error
+      </span>
+      <h3 style={{ color: '#EEEFF1', margin: '0 0 0.5rem 0', fontSize: '1rem' }}>
+        Something went wrong
+      </h3>
+      <p style={{ color: '#B4B4B6', fontSize: '0.875rem', margin: 0 }}>
+        Unable to load top bets view. Try refreshing the page.
+      </p>
+    </div>
+  );
+}
+
+export function TopBetsViewWithBoundary(props: TopBetsViewProps) {
+  return (
+    <ErrorBoundary componentName="TopBetsView" fallback={<TopBetsViewFallback />}>
+      <TopBetsView {...props} />
+    </ErrorBoundary>
+  );
+}
+
+export default TopBetsViewWithBoundary;

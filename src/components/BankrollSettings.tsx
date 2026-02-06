@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ErrorBoundary } from './ErrorBoundary';
 import { formatCurrency } from '../utils/formatters';
 import type {
   RiskTolerance,
@@ -1384,4 +1385,46 @@ export function BankrollSettings({
   );
 }
 
-export default BankrollSettings;
+function BankrollSettingsFallback({ onClose }: { onClose: () => void }) {
+  return (
+    <div style={{ padding: '2rem', textAlign: 'center' }}>
+      <span
+        className="material-icons"
+        style={{ fontSize: '2rem', color: '#ef4444', marginBottom: '0.5rem', display: 'block' }}
+      >
+        error
+      </span>
+      <h3 style={{ color: '#EEEFF1', margin: '0 0 0.5rem 0' }}>Something went wrong</h3>
+      <p style={{ color: '#B4B4B6', fontSize: '0.875rem', margin: '0 0 1rem 0' }}>
+        Unable to load bankroll settings.
+      </p>
+      <button
+        onClick={onClose}
+        style={{
+          padding: '0.5rem 1rem',
+          background: '#19abb5',
+          border: 'none',
+          borderRadius: '6px',
+          color: '#fff',
+          cursor: 'pointer',
+          fontSize: '0.875rem',
+        }}
+      >
+        Close
+      </button>
+    </div>
+  );
+}
+
+export function BankrollSettingsWithBoundary(props: BankrollSettingsProps) {
+  return (
+    <ErrorBoundary
+      componentName="BankrollSettings"
+      fallback={<BankrollSettingsFallback onClose={props.onClose} />}
+    >
+      <BankrollSettings {...props} />
+    </ErrorBoundary>
+  );
+}
+
+export default BankrollSettingsWithBoundary;

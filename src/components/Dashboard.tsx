@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { ErrorBoundary } from './ErrorBoundary';
 import './Dashboard.css';
 import { useValueDetection } from '../hooks/useValueDetection';
 import { useRaceBets } from '../hooks/useRaceBets';
 import type { UseSessionPersistenceReturn } from '../hooks/useSessionPersistence';
 // Note: BetModeContainer import removed - old BET MODE screen disconnected from navigation
 // File kept at ./BetMode/BetModeContainer.tsx for potential future use
-import { TopBetsView } from './TopBets';
+import { TopBetsViewWithBoundary as TopBetsView } from './TopBets';
 import { FileUpload } from './FileUpload';
-import { HorseExpandedView } from './HorseExpandedView';
+import { HorseExpandedViewWithBoundary as HorseExpandedView } from './HorseExpandedView';
 import { HorseSummaryBar } from './HorseSummaryBar';
 import { ScoringHelpModal } from './ScoringHelpModal';
 import { BettingStrategyGuide } from './BettingStrategyGuide';
@@ -1582,4 +1583,60 @@ export const Dashboard: React.FC<DashboardProps> = ({
   );
 };
 
-export default Dashboard;
+function DashboardFallback() {
+  return (
+    <div
+      style={{
+        padding: '2rem',
+        textAlign: 'center',
+        minHeight: '50vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <span
+        className="material-icons"
+        style={{ fontSize: '3rem', color: '#ef4444', marginBottom: '1rem' }}
+      >
+        error
+      </span>
+      <h2 style={{ color: '#EEEFF1', margin: '0 0 0.5rem 0' }}>Something went wrong</h2>
+      <p style={{ color: '#B4B4B6', fontSize: '0.875rem', margin: '0 0 1.5rem 0' }}>
+        The dashboard encountered an error. Please refresh the page.
+      </p>
+      <button
+        onClick={() => window.location.reload()}
+        style={{
+          padding: '0.625rem 1.25rem',
+          background: '#19abb5',
+          border: 'none',
+          borderRadius: '6px',
+          color: '#fff',
+          cursor: 'pointer',
+          fontSize: '0.875rem',
+          fontWeight: 600,
+        }}
+      >
+        <span
+          className="material-icons"
+          style={{ fontSize: '1rem', verticalAlign: 'middle', marginRight: '0.375rem' }}
+        >
+          refresh
+        </span>
+        Refresh Page
+      </button>
+    </div>
+  );
+}
+
+export function DashboardWithBoundary(props: DashboardProps) {
+  return (
+    <ErrorBoundary componentName="Dashboard" fallback={<DashboardFallback />}>
+      <Dashboard {...props} />
+    </ErrorBoundary>
+  );
+}
+
+export default DashboardWithBoundary;
