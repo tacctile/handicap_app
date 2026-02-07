@@ -578,6 +578,29 @@
 }
 
 /* ============================================
+   CALIBRATION TABLE
+   ============================================ */
+
+.diag-calibration-table td,
+.diag-calibration-table th {
+  white-space: nowrap;
+}
+
+.diag-calibration-tier {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.diag-calibration-tier-label {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+}
+
+/* ============================================
    BET PERFORMANCE — CATEGORY HEADERS
    ============================================ */
 

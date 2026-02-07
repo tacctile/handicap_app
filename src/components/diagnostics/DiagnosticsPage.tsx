@@ -25,7 +25,11 @@ import {
 } from 'recharts';
 import { ErrorBoundary } from '../ErrorBoundary';
 import type { UseDiagnosticsReturn } from '../../hooks/useDiagnostics';
-import type { DiagnosticsResults, TrackSummary } from '../../services/diagnostics/types';
+import type {
+  DiagnosticsResults,
+  PredictionRecord,
+  TrackSummary,
+} from '../../services/diagnostics/types';
 import './DiagnosticsPage.css';
 
 // ============================================================================
@@ -322,79 +326,133 @@ function MetricCard({
 }
 
 // ============================================================================
-// PREDICTION ACCURACY CHART
+// HELPERS — color interpolation for rank gradient
 // ============================================================================
 
-function PredictionAccuracyChart({
-  metrics,
-  results,
-  isFiltered,
+function interpolateColor(hex1: string, hex2: string, t: number): string {
+  const r1 = parseInt(hex1.slice(1, 3), 16);
+  const g1 = parseInt(hex1.slice(3, 5), 16);
+  const b1 = parseInt(hex1.slice(5, 7), 16);
+  const r2 = parseInt(hex2.slice(1, 3), 16);
+  const g2 = parseInt(hex2.slice(3, 5), 16);
+  const b2 = parseInt(hex2.slice(5, 7), 16);
+  const r = Math.round(r1 + (r2 - r1) * t);
+  const g = Math.round(g1 + (g2 - g1) * t);
+  const b = Math.round(b1 + (b2 - b1) * t);
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+// ============================================================================
+// RANK TOOLTIP
+// ============================================================================
+
+function RankTooltipContent({
+  active,
+  payload,
 }: {
-  metrics: FilteredMetrics;
-  results: DiagnosticsResults;
-  isFiltered: boolean;
+  active?: boolean;
+  payload?: TooltipPayloadEntry[];
 }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]!.payload as Record<string, unknown>;
+  return (
+    <div
+      style={{
+        background: C.elevated,
+        border: `1px solid ${C.borderSubtle}`,
+        borderRadius: 6,
+        padding: '8px 12px',
+        fontSize: 12,
+        color: C.textPrimary,
+        boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+      }}
+    >
+      Rank {String(d.rank)}: Won {String(d.wins)} of {String(d.total)} races ({String(d.winRate)}%)
+    </div>
+  );
+}
+
+// ============================================================================
+// PER-RANK WIN RATE CHART (replaces PredictionAccuracyChart)
+// ============================================================================
+
+function PerRankWinRateChart({
+  predictions,
+  results,
+}: {
+  predictions: PredictionRecord[];
+  results: DiagnosticsResults;
+}) {
+  const data = useMemo(() => {
+    const ranks: Array<{
+      rank: string;
+      winRate: number;
+      wins: number;
+      total: number;
+      fill: string;
+    }> = [];
+    for (let r = 1; r <= 10; r++) {
+      const atRank = predictions.filter((p) => p.algorithmRank === r);
+      const wins = atRank.filter((p) => p.actualFinish === 1).length;
+      const rate = atRank.length > 0 ? Math.round((wins / atRank.length) * 1000) / 10 : 0;
+      ranks.push({
+        rank: String(r),
+        winRate: rate,
+        wins,
+        total: atRank.length,
+        fill: interpolateColor(C.primary, C.textTertiary, (r - 1) / 9),
+      });
+    }
+    return ranks;
+  }, [predictions]);
+
   const avgFieldSize = results.validRaces > 0 ? results.totalHorses / results.validRaces : 10;
   const randomChance = Math.round((1 / avgFieldSize) * 1000) / 10;
+  const rank1Rate = data[0]?.winRate ?? 0;
   const multiplier =
-    metrics.topPickWinRate > 0 && randomChance > 0
-      ? (metrics.topPickWinRate / randomChance).toFixed(1)
-      : '0';
-
-  const data: Array<{ name: string; rate: number; detail: string; fill: string }> = [];
-
-  data.push({
-    name: 'Win',
-    rate: metrics.topPickWinRate,
-    detail: `won ${metrics.topPickWins} of ${metrics.raceCount}`,
-    fill: C.primary,
-  });
-
-  if (metrics.topPickPlaceRate !== null && metrics.topPickPlaces !== null) {
-    data.push({
-      name: 'Place',
-      rate: metrics.topPickPlaceRate,
-      detail: `placed ${metrics.topPickPlaces} of ${metrics.raceCount}`,
-      fill: C.success,
-    });
-  }
-
-  data.push({
-    name: 'Show',
-    rate: metrics.topPickShowRate,
-    detail: `showed ${metrics.topPickShows} of ${metrics.raceCount}`,
-    fill: C.warning,
-  });
-
-  const maxVal = Math.max(...data.map((d) => d.rate));
-  const yMax = Math.max(50, Math.ceil(maxVal / 10) * 10 + 10);
+    rank1Rate > 0 && randomChance > 0 ? (rank1Rate / randomChance).toFixed(1) : '0';
 
   return (
     <div className="diag-chart-card">
-      <h3 className="diag-chart-title">How Accurate Are Our Rankings?</h3>
+      <h3 className="diag-chart-title">Win Rate by Our Ranking</h3>
       <p className="diag-chart-description">
-        How our top-ranked horse performs across win, place, and show bets
-        {isFiltered ? ' at this track' : ''}.
+        How often a horse actually won based on where we ranked them. Rank 1 is our top pick. Bars
+        should decrease left to right — that means our rankings are working.
       </p>
       <div className="diag-chart-container">
-        <ResponsiveContainer width="100%" height={240}>
+        <ResponsiveContainer width="100%" height={260}>
           <BarChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.borderSubtle} vertical={false} />
             <XAxis
-              dataKey="name"
+              dataKey="rank"
               tick={{ fill: C.textTertiary, fontSize: 12 }}
               axisLine={{ stroke: C.borderSubtle }}
               tickLine={false}
+              label={{
+                value: 'Our Ranking',
+                position: 'insideBottom',
+                offset: -4,
+                fill: C.textSecondary,
+                fontSize: 12,
+              }}
             />
             <YAxis
-              domain={[0, yMax]}
+              domain={[0, 50]}
               tick={{ fill: C.textTertiary, fontSize: 12 }}
               axisLine={false}
               tickLine={false}
               tickFormatter={(v: number) => `${v}%`}
+              label={{
+                value: 'Win Rate %',
+                angle: -90,
+                position: 'insideLeft',
+                offset: 10,
+                fill: C.textSecondary,
+                fontSize: 12,
+              }}
             />
             <RechartsTooltip
-              content={<ChartTooltipContent />}
+              content={<RankTooltipContent />}
               cursor={{ fill: 'rgba(255,255,255,0.03)' }}
             />
             <ReferenceLine
@@ -402,13 +460,13 @@ function PredictionAccuracyChart({
               stroke={C.textTertiary}
               strokeDasharray="6 4"
               label={{
-                value: `Random ${randomChance}%`,
+                value: `Random Chance`,
                 position: 'right',
                 fill: C.textTertiary,
                 fontSize: 11,
               }}
             />
-            <Bar dataKey="rate" name=" " radius={[4, 4, 0, 0]} maxBarSize={64}>
+            <Bar dataKey="winRate" name="Win Rate" radius={[4, 4, 0, 0]} maxBarSize={48}>
               {data.map((entry, i) => (
                 <Cell key={i} fill={entry.fill} />
               ))}
@@ -417,8 +475,7 @@ function PredictionAccuracyChart({
         </ResponsiveContainer>
       </div>
       <p className="diag-chart-insight">
-        Our top-ranked horse wins {metrics.topPickWinRate}% of races — {multiplier}x better than
-        random chance ({randomChance}%).
+        Our #1 pick wins {rank1Rate}% — {multiplier}x better than random chance ({randomChance}%).
       </p>
     </div>
   );
@@ -504,6 +561,192 @@ function TierPerformanceChart({ results }: { results: DiagnosticsResults }) {
       <p className="diag-chart-insight">
         Tier 1 horses win {tier1?.winRate ?? 0}% of the time and cash {tier1?.itmRate ?? 0}% — our
         confidence rankings are {isCalibrated ? 'working well' : 'need calibration'}.
+      </p>
+    </div>
+  );
+}
+
+// ============================================================================
+// CONFIDENCE CALIBRATION
+// ============================================================================
+
+const EXPECTED_WIN_RATES: Record<number, number> = { 1: 35, 2: 18, 3: 8 };
+
+interface CalibrationRow {
+  tier: number;
+  tierLabel: string;
+  expected: number;
+  actual: number;
+  diff: number;
+  status: string;
+  statusColor: string;
+  statusTooltip: string;
+}
+
+function getCalibrationStatus(
+  actual: number,
+  expected: number
+): { label: string; color: string; tooltip: string } {
+  const diff = actual - expected;
+  if (Math.abs(diff) > 15)
+    return {
+      label: 'Needs Calibration',
+      color: C.error,
+      tooltip: 'Difference is too large — model needs retuning',
+    };
+  if (Math.abs(diff) <= 5)
+    return {
+      label: 'On Track',
+      color: C.success,
+      tooltip: 'Performance matches expectations',
+    };
+  if (diff > 5)
+    return {
+      label: 'Under-confident',
+      color: C.warning,
+      tooltip: 'Winning more than expected — confidence could be higher',
+    };
+  return {
+    label: 'Over-confident',
+    color: C.warning,
+    tooltip: 'Winning less than expected — confidence may be too high',
+  };
+}
+
+function ConfidenceCalibration({ predictions }: { predictions: PredictionRecord[] }) {
+  const rows = useMemo((): CalibrationRow[] => {
+    return [1, 2, 3].map((tier) => {
+      const tierPreds = predictions.filter((p) => p.tier === tier);
+      const wins = tierPreds.filter((p) => p.actualFinish === 1).length;
+      const actual = tierPreds.length > 0 ? Math.round((wins / tierPreds.length) * 1000) / 10 : 0;
+      const expected = EXPECTED_WIN_RATES[tier] ?? 0;
+      const diff = Math.round((actual - expected) * 10) / 10;
+      const status = getCalibrationStatus(actual, expected);
+      const labels = ['', 'Top Contenders', 'Solid Alternatives', 'Longshots'];
+      return {
+        tier,
+        tierLabel: labels[tier] ?? `Tier ${tier}`,
+        expected,
+        actual,
+        diff,
+        status: status.label,
+        statusColor: status.color,
+        statusTooltip: status.tooltip,
+      };
+    });
+  }, [predictions]);
+
+  const chartData = useMemo(
+    () =>
+      rows.map((r) => ({
+        name: `Tier ${r.tier}`,
+        expected: r.expected,
+        actual: r.actual,
+      })),
+    [rows]
+  );
+
+  return (
+    <div className="diag-chart-card">
+      <h3 className="diag-chart-title">Is Our Confidence Accurate?</h3>
+      <p className="diag-chart-description">
+        When we say a horse is a top contender, does it actually win more? This compares what we
+        expect vs what actually happened.
+      </p>
+
+      {/* Calibration table */}
+      <div className="diag-table-wrapper">
+        <table className="diag-table diag-calibration-table">
+          <thead>
+            <tr>
+              <th>Tier</th>
+              <th>
+                <Tooltip text="The win rate our model targets for this tier">Expected Win%</Tooltip>
+              </th>
+              <th>
+                <Tooltip text="What we observed in test data">Actual Win%</Tooltip>
+              </th>
+              <th>Difference</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.tier}>
+                <td className="diag-calibration-tier">
+                  Tier {row.tier}
+                  <span className="diag-calibration-tier-label">{row.tierLabel}</span>
+                </td>
+                <td className="diag-tabular">{row.expected}%</td>
+                <td className="diag-tabular">{row.actual}%</td>
+                <td
+                  className="diag-tabular"
+                  style={{
+                    color: row.diff > 0 ? C.success : row.diff < 0 ? C.warning : C.textSecondary,
+                  }}
+                >
+                  {row.diff > 0 ? '+' : ''}
+                  {row.diff}%
+                </td>
+                <td>
+                  <Tooltip text={row.statusTooltip}>
+                    <span style={{ color: row.statusColor, fontWeight: 600 }}>{row.status}</span>
+                  </Tooltip>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Paired bar chart */}
+      <div className="diag-chart-container" style={{ marginTop: 24 }}>
+        <ResponsiveContainer width="100%" height={240}>
+          <BarChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={C.borderSubtle} vertical={false} />
+            <XAxis
+              dataKey="name"
+              tick={{ fill: C.textTertiary, fontSize: 12 }}
+              axisLine={{ stroke: C.borderSubtle }}
+              tickLine={false}
+            />
+            <YAxis
+              domain={[0, 40]}
+              tick={{ fill: C.textTertiary, fontSize: 12 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v: number) => `${v}%`}
+            />
+            <RechartsTooltip
+              content={<ChartTooltipContent />}
+              cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+            />
+            <Legend
+              wrapperStyle={{ paddingTop: 8 }}
+              formatter={(value: string) => (
+                <span style={{ color: C.textSecondary, fontSize: 12 }}>{value}</span>
+              )}
+            />
+            <Bar
+              dataKey="expected"
+              name="Expected"
+              fill="rgba(110, 110, 112, 0.5)"
+              radius={[4, 4, 0, 0]}
+              maxBarSize={48}
+            />
+            <Bar
+              dataKey="actual"
+              name="Actual"
+              fill={C.primary}
+              radius={[4, 4, 0, 0]}
+              maxBarSize={48}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <p className="diag-chart-insight">
+        Actual bars taller than expected = under-confident (good). Shorter = over-confident (needs
+        work).
       </p>
     </div>
   );
@@ -1076,6 +1319,13 @@ function CompleteState({ diagnostics }: { diagnostics: UseDiagnosticsReturn }) {
     };
   }, [results, selectedTrack]);
 
+  const filteredPredictions = useMemo((): PredictionRecord[] => {
+    if (!results) return [];
+    const preds = results.predictions ?? [];
+    if (!selectedTrack) return preds;
+    return preds.filter((p) => p.trackCode === selectedTrack);
+  }, [results, selectedTrack]);
+
   if (!results) return null;
   if (results.totalRaces === 0) return <NoDataState />;
   if (!filteredMetrics) return null;
@@ -1135,17 +1385,13 @@ function CompleteState({ diagnostics }: { diagnostics: UseDiagnosticsReturn }) {
             />
           </motion.div>
 
-          {/* Prediction Accuracy Chart */}
+          {/* Win Rate by Our Ranking (per-rank chart) */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: STAGGER * 1 }}
           >
-            <PredictionAccuracyChart
-              metrics={filteredMetrics}
-              results={results}
-              isFiltered={isFiltered}
-            />
+            <PerRankWinRateChart predictions={filteredPredictions} results={results} />
           </motion.div>
 
           {/* Tier Performance Chart */}
@@ -1157,11 +1403,20 @@ function CompleteState({ diagnostics }: { diagnostics: UseDiagnosticsReturn }) {
             <TierPerformanceChart results={results} />
           </motion.div>
 
-          {/* Bet Performance Breakdown */}
+          {/* Confidence Calibration */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: STAGGER * 3 }}
+          >
+            <ConfidenceCalibration predictions={filteredPredictions} />
+          </motion.div>
+
+          {/* Bet Performance Breakdown */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: STAGGER * 4 }}
           >
             <BetPerformanceBreakdown results={results} />
           </motion.div>
@@ -1170,7 +1425,7 @@ function CompleteState({ diagnostics }: { diagnostics: UseDiagnosticsReturn }) {
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: STAGGER * 4 }}
+            transition={{ duration: 0.3, delay: STAGGER * 5 }}
           >
             <RecommendedBets results={results} />
           </motion.div>
@@ -1180,7 +1435,7 @@ function CompleteState({ diagnostics }: { diagnostics: UseDiagnosticsReturn }) {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: STAGGER * 5 }}
+              transition={{ duration: 0.3, delay: STAGGER * 6 }}
             >
               <TrackComparisonTable results={results} />
             </motion.div>
@@ -1191,7 +1446,7 @@ function CompleteState({ diagnostics }: { diagnostics: UseDiagnosticsReturn }) {
             className="diag-metadata"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: STAGGER * 6 }}
+            transition={{ duration: 0.3, delay: STAGGER * 7 }}
           >
             <div className="diag-metadata-items">
               <span>Last analyzed: {analyzedDate}</span>
