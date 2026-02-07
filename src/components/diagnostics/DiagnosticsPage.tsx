@@ -30,6 +30,8 @@ import type {
   PredictionRecord,
   TrackSummary,
 } from '../../services/diagnostics/types';
+import { ScoreCategoryChart } from './ScoreCategoryChart';
+import { ImprovementSuggestions } from './ImprovementSuggestions';
 import './DiagnosticsPage.css';
 
 // ============================================================================
@@ -1412,11 +1414,20 @@ function CompleteState({ diagnostics }: { diagnostics: UseDiagnosticsReturn }) {
             <ConfidenceCalibration predictions={filteredPredictions} />
           </motion.div>
 
-          {/* Bet Performance Breakdown */}
+          {/* Where Does the Algorithm Shine? — Winners vs Field */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: STAGGER * 4 }}
+          >
+            <ScoreCategoryChart predictions={filteredPredictions} />
+          </motion.div>
+
+          {/* Bet Performance Breakdown */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: STAGGER * 5 }}
           >
             <BetPerformanceBreakdown results={results} />
           </motion.div>
@@ -1425,9 +1436,18 @@ function CompleteState({ diagnostics }: { diagnostics: UseDiagnosticsReturn }) {
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: STAGGER * 5 }}
+            transition={{ duration: 0.3, delay: STAGGER * 6 }}
           >
             <RecommendedBets results={results} />
+          </motion.div>
+
+          {/* What Could Be Better? — Improvement Suggestions */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: STAGGER * 7 }}
+          >
+            <ImprovementSuggestions results={results} predictions={filteredPredictions} />
           </motion.div>
 
           {/* Track Comparison Table — only when All Tracks */}
@@ -1435,7 +1455,7 @@ function CompleteState({ diagnostics }: { diagnostics: UseDiagnosticsReturn }) {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: STAGGER * 6 }}
+              transition={{ duration: 0.3, delay: STAGGER * 8 }}
             >
               <TrackComparisonTable results={results} />
             </motion.div>
@@ -1446,7 +1466,7 @@ function CompleteState({ diagnostics }: { diagnostics: UseDiagnosticsReturn }) {
             className="diag-metadata"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: STAGGER * 7 }}
+            transition={{ duration: 0.3, delay: STAGGER * 9 }}
           >
             <div className="diag-metadata-items">
               <span>Last analyzed: {analyzedDate}</span>

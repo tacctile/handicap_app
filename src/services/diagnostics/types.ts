@@ -50,6 +50,14 @@ export interface PredictionRecord {
   trackCode: string;
   /** Tier classification (1, 2, 3, or 0 if below all tiers) */
   tier: number;
+  /** Individual scoring category scores for winners vs field analysis */
+  categoryScores?: {
+    speed: number;
+    class: number;
+    form: number;
+    pace: number;
+    connections: number;
+  };
 }
 
 // ============================================================================
