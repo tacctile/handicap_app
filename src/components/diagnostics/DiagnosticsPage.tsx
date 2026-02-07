@@ -21,7 +21,6 @@ import {
   Legend,
   ReferenceLine,
   Cell,
-  LabelList,
 } from 'recharts';
 import { ErrorBoundary } from '../ErrorBoundary';
 import type { UseDiagnosticsReturn } from '../../hooks/useDiagnostics';
@@ -50,7 +49,7 @@ const C = {
   elevated: '#1a1a1c',
 } as const;
 
-const STAGGER = 0.1;
+const STAGGER = 0.08;
 
 // ============================================================================
 // TYPES
@@ -90,7 +89,7 @@ function getGrade(winRate: number): { grade: string; descriptor: string } {
 }
 
 // ============================================================================
-// TOOLTIP
+// TOOLTIP (supplementary — core explanations are always visible)
 // ============================================================================
 
 function Tooltip({ text, children }: { text: string; children: ReactNode }) {
@@ -230,6 +229,26 @@ function TrackFilter({
 }
 
 // ============================================================================
+// INTRO SECTION
+// ============================================================================
+
+function IntroSection({ raceCount }: { raceCount: number }) {
+  return (
+    <div className="diag-intro">
+      <h3 className="diag-intro-title">What Is This Page?</h3>
+      <p className="diag-intro-body">
+        This page tests how well our prediction system works using real race data. We fed our system
+        information about {raceCount} past races and asked it to rank every horse from best to
+        worst. Then we compared our rankings against what actually happened. Every number below
+        shows how accurate our predictions were.{' '}
+        <span style={{ color: 'var(--color-success)' }}>Green means we&apos;re doing well.</span>{' '}
+        <span style={{ color: 'var(--color-error)' }}>Red means there&apos;s room to improve.</span>
+      </p>
+    </div>
+  );
+}
+
+// ============================================================================
 // LOADING STATE
 // ============================================================================
 
@@ -298,17 +317,19 @@ function NoDataState() {
 }
 
 // ============================================================================
-// METRIC CARD (ENHANCED)
+// METRIC CARD (ENHANCED — description always visible)
 // ============================================================================
 
 function MetricCard({
   label,
   value,
+  description,
   subtitle,
   tooltip,
 }: {
   label: string;
   value: string;
+  description: string;
   subtitle?: string;
   tooltip?: string;
 }) {
@@ -322,6 +343,7 @@ function MetricCard({
     >
       <div className="diag-metric-label">{labelEl}</div>
       <div className="diag-metric-value">{value}</div>
+      <div className="diag-metric-description">{description}</div>
       {subtitle && <div className="diag-metric-subtitle">{subtitle}</div>}
     </motion.div>
   );
@@ -375,7 +397,7 @@ function RankTooltipContent({
 }
 
 // ============================================================================
-// PER-RANK WIN RATE CHART (replaces PredictionAccuracyChart)
+// PER-RANK WIN RATE CHART
 // ============================================================================
 
 function PerRankWinRateChart({
@@ -416,13 +438,15 @@ function PerRankWinRateChart({
 
   return (
     <div className="diag-chart-card">
-      <h3 className="diag-chart-title">Win Rate by Our Ranking</h3>
+      <h3 className="diag-chart-title">Accuracy by Ranking Position</h3>
       <p className="diag-chart-description">
-        How often a horse actually won based on where we ranked them. Rank 1 is our top pick. Bars
-        should decrease left to right — that means our rankings are working.
+        We rank every horse in a race from 1 (our best pick) to last. This chart shows how often a
+        horse actually won based on where we ranked them. If our system works well, the bars should
+        be tallest on the left and get shorter as you move right — meaning our top picks win more
+        often than our lower picks.
       </p>
       <div className="diag-chart-container">
-        <ResponsiveContainer width="100%" height={260}>
+        <ResponsiveContainer width="100%" height={200}>
           <BarChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.borderSubtle} vertical={false} />
             <XAxis
@@ -431,11 +455,11 @@ function PerRankWinRateChart({
               axisLine={{ stroke: C.borderSubtle }}
               tickLine={false}
               label={{
-                value: 'Our Ranking',
+                value: 'Our Ranking (1 = Best Pick)',
                 position: 'insideBottom',
                 offset: -4,
                 fill: C.textSecondary,
-                fontSize: 12,
+                fontSize: 11,
               }}
             />
             <YAxis
@@ -445,12 +469,12 @@ function PerRankWinRateChart({
               tickLine={false}
               tickFormatter={(v: number) => `${v}%`}
               label={{
-                value: 'Win Rate %',
+                value: 'Actual Win Rate',
                 angle: -90,
                 position: 'insideLeft',
                 offset: 10,
                 fill: C.textSecondary,
-                fontSize: 12,
+                fontSize: 11,
               }}
             />
             <RechartsTooltip
@@ -462,7 +486,7 @@ function PerRankWinRateChart({
               stroke={C.textTertiary}
               strokeDasharray="6 4"
               label={{
-                value: `Random Chance`,
+                value: 'Random Guess',
                 position: 'right',
                 fill: C.textTertiary,
                 fontSize: 11,
@@ -477,7 +501,8 @@ function PerRankWinRateChart({
         </ResponsiveContainer>
       </div>
       <p className="diag-chart-insight">
-        Our #1 pick wins {rank1Rate}% — {multiplier}x better than random chance ({randomChance}%).
+        Our #1 ranked horse wins {rank1Rate}% of the time. A random guess would win {randomChance}%
+        of the time, so our system is {multiplier}x more accurate than guessing.
       </p>
     </div>
   );
@@ -501,7 +526,7 @@ function TierPerformanceChart({ results }: { results: DiagnosticsResults }) {
     winRate: tier.winRate,
     itmRate: tier.itmRate,
     winDetail: `won ${tier.wins} of ${tier.horseCount}`,
-    itmDetail: `ITM ${tier.itmFinishes} of ${tier.horseCount}`,
+    itmDetail: `top 3 in ${tier.itmFinishes} of ${tier.horseCount}`,
   }));
 
   const tier1 = tiers.find((t) => t.tierName === 'tier1');
@@ -512,17 +537,35 @@ function TierPerformanceChart({ results }: { results: DiagnosticsResults }) {
 
   return (
     <div className="diag-chart-card">
-      <h3 className="diag-chart-title">Performance by Confidence Tier</h3>
+      <h3 className="diag-chart-title">Performance by Confidence Level</h3>
       <p className="diag-chart-description">
-        How horses in each confidence tier performed. Higher tiers should win more often.
+        We group horses into three confidence levels based on their scores. Top Contenders are
+        horses we are most confident about. Solid Alternatives are our next best picks. Longshots
+        are horses with lower scores but potential for surprises. If our confidence levels are
+        accurate, Top Contenders should win more often than the other groups.
       </p>
+
+      {/* Tier explanations */}
+      <div className="diag-tier-explanations">
+        <div className="diag-tier-explanation">
+          <strong>Top Contenders</strong> — horses we&apos;re most confident will perform well
+        </div>
+        <div className="diag-tier-explanation">
+          <strong>Solid Alternatives</strong> — good horses that could compete but aren&apos;t our
+          top choice
+        </div>
+        <div className="diag-tier-explanation">
+          <strong>Longshots</strong> — lower-rated horses that could surprise everyone
+        </div>
+      </div>
+
       <div className="diag-chart-container">
-        <ResponsiveContainer width="100%" height={280}>
+        <ResponsiveContainer width="100%" height={220}>
           <BarChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.borderSubtle} vertical={false} />
             <XAxis
               dataKey="name"
-              tick={{ fill: C.textTertiary, fontSize: 12 }}
+              tick={{ fill: C.textTertiary, fontSize: 11 }}
               axisLine={{ stroke: C.borderSubtle }}
               tickLine={false}
             />
@@ -545,14 +588,14 @@ function TierPerformanceChart({ results }: { results: DiagnosticsResults }) {
             />
             <Bar
               dataKey="winRate"
-              name="Win Rate"
+              name="Win Rate — how often horses in this group actually won"
               fill={C.primary}
               radius={[4, 4, 0, 0]}
               maxBarSize={48}
             />
             <Bar
               dataKey="itmRate"
-              name="ITM Rate"
+              name="Top 3 Rate — how often they finished 1st, 2nd, or 3rd"
               fill={C.warning}
               radius={[4, 4, 0, 0]}
               maxBarSize={48}
@@ -561,8 +604,9 @@ function TierPerformanceChart({ results }: { results: DiagnosticsResults }) {
         </ResponsiveContainer>
       </div>
       <p className="diag-chart-insight">
-        Tier 1 horses win {tier1?.winRate ?? 0}% of the time and cash {tier1?.itmRate ?? 0}% — our
-        confidence rankings are {isCalibrated ? 'working well' : 'need calibration'}.
+        Top Contenders win {tier1?.winRate ?? 0}% and finish in the top 3 about{' '}
+        {tier1?.itmRate ?? 0}% of the time — our confidence levels are{' '}
+        {isCalibrated ? 'working well' : 'not yet fully calibrated'}.
       </p>
     </div>
   );
@@ -582,36 +626,28 @@ interface CalibrationRow {
   diff: number;
   status: string;
   statusColor: string;
-  statusTooltip: string;
 }
 
-function getCalibrationStatus(
-  actual: number,
-  expected: number
-): { label: string; color: string; tooltip: string } {
+function getCalibrationStatus(actual: number, expected: number): { label: string; color: string } {
   const diff = actual - expected;
   if (Math.abs(diff) > 15)
     return {
-      label: 'Needs Calibration',
+      label: 'Needs Work — predictions are significantly off from reality',
       color: C.error,
-      tooltip: 'Difference is too large — model needs retuning',
     };
   if (Math.abs(diff) <= 5)
     return {
-      label: 'On Track',
+      label: 'On Track — predictions match reality',
       color: C.success,
-      tooltip: 'Performance matches expectations',
     };
   if (diff > 5)
     return {
-      label: 'Under-confident',
+      label: 'Too Conservative — horses did better than we expected (this is actually good)',
       color: C.warning,
-      tooltip: 'Winning more than expected — confidence could be higher',
     };
   return {
-    label: 'Over-confident',
+    label: 'Too Optimistic — we predicted better results than what happened',
     color: C.warning,
-    tooltip: 'Winning less than expected — confidence may be too high',
   };
 }
 
@@ -633,7 +669,6 @@ function ConfidenceCalibration({ predictions }: { predictions: PredictionRecord[
         diff,
         status: status.label,
         statusColor: status.color,
-        statusTooltip: status.tooltip,
       };
     });
   }, [predictions]);
@@ -641,7 +676,7 @@ function ConfidenceCalibration({ predictions }: { predictions: PredictionRecord[
   const chartData = useMemo(
     () =>
       rows.map((r) => ({
-        name: `Tier ${r.tier}`,
+        name: r.tierLabel,
         expected: r.expected,
         actual: r.actual,
       })),
@@ -650,11 +685,30 @@ function ConfidenceCalibration({ predictions }: { predictions: PredictionRecord[
 
   return (
     <div className="diag-chart-card">
-      <h3 className="diag-chart-title">Is Our Confidence Accurate?</h3>
+      <h3 className="diag-chart-title">Are Our Confidence Levels Accurate?</h3>
       <p className="diag-chart-description">
-        When we say a horse is a top contender, does it actually win more? This compares what we
-        expect vs what actually happened.
+        This compares what we expect to happen versus what actually happened. &quot;Expected&quot;
+        is what our math model predicts. &quot;Actual&quot; is what really happened in races. If
+        they match closely, our system is well-calibrated — meaning when we say we&apos;re
+        confident, we should be.
       </p>
+
+      {/* Column explanation text */}
+      <div className="diag-column-explanations">
+        <span>
+          <strong>Expected</strong> — what our model predicts should happen
+        </span>
+        <span>
+          <strong>Actual</strong> — what really happened in the races we tested
+        </span>
+        <span>
+          <strong>Difference</strong> — how far off we were (positive = better than expected,
+          negative = worse)
+        </span>
+        <span>
+          <strong>Status</strong> — a quick summary of whether we&apos;re on track
+        </span>
+      </div>
 
       {/* Calibration table */}
       <div className="diag-table-wrapper">
@@ -662,12 +716,8 @@ function ConfidenceCalibration({ predictions }: { predictions: PredictionRecord[
           <thead>
             <tr>
               <th>Tier</th>
-              <th>
-                <Tooltip text="The win rate our model targets for this tier">Expected Win%</Tooltip>
-              </th>
-              <th>
-                <Tooltip text="What we observed in test data">Actual Win%</Tooltip>
-              </th>
+              <th>Expected</th>
+              <th>Actual</th>
               <th>Difference</th>
               <th>Status</th>
             </tr>
@@ -675,10 +725,7 @@ function ConfidenceCalibration({ predictions }: { predictions: PredictionRecord[
           <tbody>
             {rows.map((row) => (
               <tr key={row.tier}>
-                <td className="diag-calibration-tier">
-                  Tier {row.tier}
-                  <span className="diag-calibration-tier-label">{row.tierLabel}</span>
-                </td>
+                <td className="diag-calibration-tier">{row.tierLabel}</td>
                 <td className="diag-tabular">{row.expected}%</td>
                 <td className="diag-tabular">{row.actual}%</td>
                 <td
@@ -691,9 +738,9 @@ function ConfidenceCalibration({ predictions }: { predictions: PredictionRecord[
                   {row.diff}%
                 </td>
                 <td>
-                  <Tooltip text={row.statusTooltip}>
-                    <span style={{ color: row.statusColor, fontWeight: 600 }}>{row.status}</span>
-                  </Tooltip>
+                  <span style={{ color: row.statusColor, fontWeight: 600, fontSize: 12 }}>
+                    {row.status}
+                  </span>
                 </td>
               </tr>
             ))}
@@ -702,13 +749,13 @@ function ConfidenceCalibration({ predictions }: { predictions: PredictionRecord[
       </div>
 
       {/* Paired bar chart */}
-      <div className="diag-chart-container" style={{ marginTop: 24 }}>
-        <ResponsiveContainer width="100%" height={240}>
+      <div className="diag-chart-container" style={{ marginTop: 12 }}>
+        <ResponsiveContainer width="100%" height={200}>
           <BarChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.borderSubtle} vertical={false} />
             <XAxis
               dataKey="name"
-              tick={{ fill: C.textTertiary, fontSize: 12 }}
+              tick={{ fill: C.textTertiary, fontSize: 11 }}
               axisLine={{ stroke: C.borderSubtle }}
               tickLine={false}
             />
@@ -747,423 +794,10 @@ function ConfidenceCalibration({ predictions }: { predictions: PredictionRecord[
         </ResponsiveContainer>
       </div>
       <p className="diag-chart-insight">
-        Actual bars taller than expected = under-confident (good). Shorter = over-confident (needs
-        work).
+        When the &quot;Actual&quot; bars are taller than &quot;Expected,&quot; our system is being
+        too conservative (good problem). When they&apos;re shorter, we&apos;re being too optimistic
+        (needs work).
       </p>
-    </div>
-  );
-}
-
-// ============================================================================
-// BET TYPE DATA — shared between chart & recommendations
-// ============================================================================
-
-type BetCategory = 'win' | 'exacta' | 'trifecta' | 'superfecta';
-
-interface BetTypeInfo {
-  key: string;
-  name: string;
-  category: BetCategory;
-  ticketCost: number;
-  tooltip: string;
-  contextDescription: string;
-  getRate: (r: DiagnosticsResults) => number;
-}
-
-const BET_TYPES: BetTypeInfo[] = [
-  {
-    key: 'topPickWin',
-    name: 'Top Pick Win',
-    category: 'win',
-    ticketCost: 2,
-    tooltip: 'Betting on our #1 ranked horse to win',
-    contextDescription: 'Simple and effective — just pick the winner.',
-    getRate: (r) => r.topPickWinRate,
-  },
-  {
-    key: 'exactaBox2',
-    name: 'Exacta Box 2',
-    category: 'exacta',
-    ticketCost: 2,
-    tooltip: 'Our top 2 horses finish 1st and 2nd in any order',
-    contextDescription: 'Affordable exotic — only needs your top two picks to connect.',
-    getRate: (r) => r.exactaBox2Rate,
-  },
-  {
-    key: 'exactaBox3',
-    name: 'Exacta Box 3',
-    category: 'exacta',
-    ticketCost: 6,
-    tooltip: 'Any 2 of our top 3 horses finish 1st and 2nd',
-    contextDescription:
-      'A good balance of cost and accuracy — one of the most popular exotic bets.',
-    getRate: (r) => r.exactaBox3Rate,
-  },
-  {
-    key: 'exactaBox4',
-    name: 'Exacta Box 4',
-    category: 'exacta',
-    ticketCost: 12,
-    tooltip: 'Any 2 of our top 4 horses finish 1st and 2nd',
-    contextDescription: 'Wider net for the exacta — more combos, higher cost.',
-    getRate: (r) => r.exactaBox4Rate,
-  },
-  {
-    key: 'trifectaBox3',
-    name: 'Trifecta Box 3',
-    category: 'trifecta',
-    ticketCost: 6,
-    tooltip: 'Our top 3 horses finish 1st, 2nd, and 3rd in any order',
-    contextDescription: 'Tight trifecta — all three picks must hit.',
-    getRate: (r) => r.trifectaBox3Rate,
-  },
-  {
-    key: 'trifectaBox4',
-    name: 'Trifecta Box 4',
-    category: 'trifecta',
-    ticketCost: 24,
-    tooltip: 'Any 3 of our top 4 horses finish 1st, 2nd, and 3rd',
-    contextDescription: 'Decent hit rate but higher cost — use when the favorites are clear.',
-    getRate: (r) => r.trifectaBox4Rate,
-  },
-  {
-    key: 'trifectaBox5',
-    name: 'Trifecta Box 5',
-    category: 'trifecta',
-    ticketCost: 60,
-    tooltip: 'Any 3 of our top 5 horses finish 1st, 2nd, and 3rd',
-    contextDescription: 'Expensive but covers more scenarios — best in wide-open fields.',
-    getRate: (r) => r.trifectaBox5Rate,
-  },
-  {
-    key: 'superfectaBox4',
-    name: 'Superfecta Box 4',
-    category: 'superfecta',
-    ticketCost: 24,
-    tooltip: 'Our top 4 horses finish 1st through 4th in any order',
-    contextDescription: 'Tight superfecta — all four picks must fill the top four spots.',
-    getRate: (r) => r.superfectaBox4Rate,
-  },
-  {
-    key: 'superfectaBox5',
-    name: 'Superfecta Box 5',
-    category: 'superfecta',
-    ticketCost: 120,
-    tooltip: 'Any 4 of our top 5 horses finish 1st through 4th',
-    contextDescription: 'High cost, high reward — for when you like five horses.',
-    getRate: (r) => r.superfectaBox5Rate,
-  },
-  {
-    key: 'superfectaBox6',
-    name: 'Superfecta Box 6',
-    category: 'superfecta',
-    ticketCost: 360,
-    tooltip: 'Any 4 of our top 6 horses finish 1st through 4th',
-    contextDescription: 'Maximum coverage superfecta — very expensive per ticket.',
-    getRate: (r) => r.superfectaBox6Rate,
-  },
-];
-
-const CATEGORY_LABELS: Record<BetCategory, string> = {
-  win: 'WIN BETS',
-  exacta: 'EXACTA',
-  trifecta: 'TRIFECTA',
-  superfecta: 'SUPERFECTA',
-};
-
-type Verdict = 'Strong' | 'Promising' | 'Risky' | 'Avoid';
-
-function getVerdict(rate: number, category: BetCategory): Verdict {
-  switch (category) {
-    case 'win':
-      if (rate >= 20) return 'Strong';
-      if (rate >= 15) return 'Promising';
-      if (rate >= 10) return 'Risky';
-      return 'Avoid';
-    case 'exacta':
-      if (rate >= 25) return 'Strong';
-      if (rate >= 15) return 'Promising';
-      if (rate >= 8) return 'Risky';
-      return 'Avoid';
-    case 'trifecta':
-      if (rate >= 15) return 'Strong';
-      if (rate >= 8) return 'Promising';
-      if (rate >= 3) return 'Risky';
-      return 'Avoid';
-    case 'superfecta':
-      if (rate >= 8) return 'Strong';
-      if (rate >= 3) return 'Promising';
-      if (rate >= 1) return 'Risky';
-      return 'Avoid';
-  }
-}
-
-function getVerdictClass(verdict: Verdict): string {
-  switch (verdict) {
-    case 'Strong':
-      return 'diag-verdict-strong';
-    case 'Promising':
-      return 'diag-verdict-promising';
-    case 'Risky':
-      return 'diag-verdict-risky';
-    case 'Avoid':
-      return 'diag-verdict-avoid';
-  }
-}
-
-function getBarColor(rate: number): string {
-  if (rate >= 30) return C.success;
-  if (rate >= 15) return C.primary;
-  if (rate >= 5) return C.warning;
-  return C.error;
-}
-
-function getEffectivenessScore(rate: number, ticketCost: number): number {
-  return rate / Math.log2(ticketCost + 1);
-}
-
-interface BetTypeWithRate extends BetTypeInfo {
-  rate: number;
-  verdict: Verdict;
-  effectivenessScore: number;
-}
-
-function getBetTypesWithRates(results: DiagnosticsResults): BetTypeWithRate[] {
-  return BET_TYPES.map((bt) => {
-    const rate = bt.getRate(results);
-    return {
-      ...bt,
-      rate,
-      verdict: getVerdict(rate, bt.category),
-      effectivenessScore: getEffectivenessScore(rate, bt.ticketCost),
-    };
-  }).filter((bt) => bt.rate > 0);
-}
-
-// ============================================================================
-// BET PERFORMANCE BREAKDOWN (Part 2)
-// ============================================================================
-
-function BetPerformanceBreakdown({ results }: { results: DiagnosticsResults }) {
-  const betTypes = useMemo(() => getBetTypesWithRates(results), [results]);
-
-  if (betTypes.length === 0) return null;
-
-  // Group by category for chart rendering
-  const categories: BetCategory[] = ['win', 'exacta', 'trifecta', 'superfecta'];
-  const grouped = categories
-    .map((cat) => ({
-      category: cat,
-      label: CATEGORY_LABELS[cat],
-      bets: betTypes.filter((bt) => bt.category === cat),
-    }))
-    .filter((g) => g.bets.length > 0);
-
-  // Build flat chart data with category separators
-  const chartData: Array<{
-    name: string;
-    rate: number;
-    tooltip: string;
-    fill: string;
-    isCategory?: boolean;
-  }> = [];
-  for (const group of grouped) {
-    for (const bet of group.bets) {
-      chartData.push({
-        name: bet.name,
-        rate: bet.rate,
-        tooltip: bet.tooltip,
-        fill: getBarColor(bet.rate),
-      });
-    }
-  }
-
-  const maxRate = Math.max(...chartData.map((d) => d.rate));
-  const xMax = Math.min(80, Math.ceil(maxRate / 10) * 10 + 10);
-
-  return (
-    <div className="diag-chart-card">
-      <h3 className="diag-chart-title">Bet Performance Breakdown</h3>
-      <p className="diag-chart-description">
-        How each bet type performs based on our rankings. Hit rate shows how often the bet would
-        have cashed. Higher is better.
-      </p>
-
-      {/* Horizontal bar chart */}
-      <div className="diag-chart-container">
-        <ResponsiveContainer width="100%" height={Math.max(280, chartData.length * 40 + 48)}>
-          <BarChart
-            data={chartData}
-            layout="vertical"
-            margin={{ top: 8, right: 56, bottom: 0, left: 0 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke={C.borderSubtle} horizontal={false} />
-            <XAxis
-              type="number"
-              domain={[0, xMax]}
-              tick={{ fill: C.textTertiary, fontSize: 12 }}
-              axisLine={{ stroke: C.borderSubtle }}
-              tickLine={false}
-              tickFormatter={(v: number) => `${v}%`}
-            />
-            <YAxis
-              type="category"
-              dataKey="name"
-              tick={{ fill: C.textSecondary, fontSize: 11 }}
-              axisLine={false}
-              tickLine={false}
-              width={120}
-            />
-            <RechartsTooltip
-              content={<ChartTooltipContent />}
-              cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-            />
-            <Bar dataKey="rate" name="Hit Rate" radius={[0, 4, 4, 0]} maxBarSize={24}>
-              <LabelList
-                dataKey="rate"
-                position="right"
-                fill={C.textSecondary}
-                fontSize={11}
-                formatter={(val: unknown) => `${String(val)}%`}
-              />
-              {chartData.map((entry, i) => (
-                <Cell key={i} fill={entry.fill} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Summary table */}
-      <div className="diag-table-wrapper" style={{ marginTop: 16 }}>
-        <table className="diag-table">
-          <thead>
-            <tr>
-              <th>Bet Type</th>
-              <th>Hit Rate</th>
-              <th>Hits / Attempts</th>
-              <th>Ticket Cost</th>
-              <th>Verdict</th>
-            </tr>
-          </thead>
-          <tbody>
-            {grouped.map((group) => (
-              <>
-                <tr key={`cat-${group.category}`}>
-                  <td colSpan={5} className="diag-bet-category">
-                    {group.label}
-                  </td>
-                </tr>
-                {group.bets.map((bet) => {
-                  const attempts = bet.category === 'win' ? results.validRaces : results.validRaces;
-                  const hits = Math.round((bet.rate / 100) * attempts);
-                  return (
-                    <tr key={bet.key}>
-                      <td>
-                        <Tooltip text={bet.tooltip}>{bet.name}</Tooltip>
-                      </td>
-                      <td className="diag-tabular">{bet.rate}%</td>
-                      <td className="diag-tabular">
-                        {hits} / {attempts}
-                      </td>
-                      <td className="diag-tabular">${bet.ticketCost}</td>
-                      <td className={getVerdictClass(bet.verdict)}>{bet.verdict}</td>
-                    </tr>
-                  );
-                })}
-              </>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
-// RECOMMENDED BETS (Part 3)
-// ============================================================================
-
-function RecommendedBets({ results }: { results: DiagnosticsResults }) {
-  const betTypes = useMemo(() => getBetTypesWithRates(results), [results]);
-
-  if (betTypes.length < 3) return null;
-
-  // Sort by effectiveness score descending, take top 3
-  const ranked = [...betTypes].sort((a, b) => b.effectivenessScore - a.effectivenessScore);
-  const top3 = ranked.slice(0, 3);
-
-  const podiumLabels = ['#1 Best Bet', '#2 Runner Up', '#3 Also Good'] as const;
-  const podiumClasses = [
-    'diag-podium-card--first',
-    'diag-podium-card--second',
-    'diag-podium-card--third',
-  ] as const;
-
-  const totalRaces = results.validRaces;
-  const totalTracks = results.totalTracks;
-
-  let sampleClass = '';
-  let sampleMessage = '';
-  if (totalRaces < 50) {
-    sampleClass = 'diag-sample-notice--small';
-    sampleMessage = 'Small sample — treat these as early indicators, not guarantees.';
-  } else if (totalRaces >= 200) {
-    sampleClass = 'diag-sample-notice--solid';
-    sampleMessage = 'Solid sample size — these trends are statistically meaningful.';
-  } else {
-    sampleMessage = 'Growing sample — trends are forming but more data will sharpen the picture.';
-  }
-
-  return (
-    <div className="diag-chart-card">
-      <h3 className="diag-chart-title">What Should You Bet?</h3>
-      <p className="diag-chart-description">
-        Based on our system&apos;s track record with this data, here are the bet types that give you
-        the best edge.
-      </p>
-
-      {/* Podium */}
-      <div className="diag-podium">
-        {top3.map((bet, i) => (
-          <div key={bet.key} className={`diag-podium-card ${podiumClasses[i]}`}>
-            <div className="diag-podium-rank">{podiumLabels[i]}</div>
-            <div className="diag-podium-name">{bet.name}</div>
-            <div className="diag-podium-stats">
-              <div>
-                <div className="diag-podium-stat-label">Hit Rate</div>
-                <div className="diag-podium-stat-value">{bet.rate}%</div>
-              </div>
-              <div>
-                <div className="diag-podium-stat-label">Cost</div>
-                <div className="diag-podium-stat-value">${bet.ticketCost}</div>
-              </div>
-              <div>
-                <div className="diag-podium-stat-label">Verdict</div>
-                <div className={getVerdictClass(bet.verdict)}>{bet.verdict}</div>
-              </div>
-            </div>
-            <p className="diag-podium-description">
-              This bet hits {bet.rate}% of the time and costs ${bet.ticketCost} per ticket.{' '}
-              {bet.contextDescription}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* Sample size notice */}
-      <div className={`diag-sample-notice ${sampleClass}`} style={{ marginTop: 16 }}>
-        <p className="diag-sample-notice-text">
-          These recommendations are based on {totalRaces} races across {totalTracks} track
-          {totalTracks !== 1 ? 's' : ''}. As more data is added, these insights become more
-          reliable.
-        </p>
-        <p
-          className={`diag-sample-notice-text ${totalRaces < 50 ? 'diag-sample-notice-text--warn' : totalRaces >= 200 ? 'diag-sample-notice-text--success' : ''}`}
-        >
-          {sampleMessage}
-        </p>
-      </div>
     </div>
   );
 }
@@ -1218,18 +852,19 @@ function TrackComparisonTable({ results }: { results: DiagnosticsResults }) {
   }, [results.trackSummaries]);
 
   const columns: Array<{ key: SortKey; label: string }> = [
-    { key: 'trackCode', label: 'Track' },
-    { key: 'raceCount', label: 'Races' },
-    { key: 'horseCount', label: 'Horses' },
-    { key: 'topPickWinRate', label: 'Win%' },
-    { key: 'topPickITMRate', label: 'ITM%' },
+    { key: 'trackCode', label: 'Venue' },
+    { key: 'raceCount', label: 'Races Tested' },
+    { key: 'horseCount', label: 'Horses Scored' },
+    { key: 'topPickWinRate', label: 'Top Pick Win Rate' },
+    { key: 'topPickITMRate', label: 'Top 3 Rate' },
   ];
 
   return (
     <div className="diag-chart-card">
-      <h3 className="diag-chart-title">Track-by-Track Breakdown</h3>
+      <h3 className="diag-chart-title">Results by Racing Venue</h3>
       <p className="diag-chart-description">
-        Compare prediction accuracy across all tracks. Tap a column to sort.
+        How our predictions performed at each racing venue. Some tracks have characteristics that
+        our system handles better than others.
       </p>
       <div className="diag-table-wrapper">
         <table className="diag-table diag-comparison-table">
@@ -1243,7 +878,7 @@ function TrackComparisonTable({ results }: { results: DiagnosticsResults }) {
                   )}
                 </th>
               ))}
-              <th>Grade</th>
+              <th>Accuracy Grade</th>
             </tr>
           </thead>
           <tbody>
@@ -1272,9 +907,9 @@ function TrackComparisonTable({ results }: { results: DiagnosticsResults }) {
       </div>
       {bestTrack && worstTrack && bestTrack.trackCode !== worstTrack.trackCode && (
         <p className="diag-chart-insight">
-          Our system performs best at {bestTrack.trackCode} ({bestTrack.topPickWinRate}% win rate)
-          and has the most room for improvement at {worstTrack.trackCode} (
-          {worstTrack.topPickWinRate}% win rate).
+          We perform best at {bestTrack.trackCode} ({bestTrack.topPickWinRate}% top pick win rate)
+          and have the most room to improve at {worstTrack.trackCode} ({worstTrack.topPickWinRate}%
+          top pick win rate).
         </p>
       )}
     </div>
@@ -1335,7 +970,7 @@ function CompleteState({ diagnostics }: { diagnostics: UseDiagnosticsReturn }) {
   const analysisTimeSec = (results.analysisTimeMs / 1000).toFixed(1);
   const analyzedDate = new Date(results.analyzedAt).toLocaleString();
   const isFiltered = selectedTrack !== null;
-  const { grade, descriptor } = getGrade(filteredMetrics.topPickWinRate);
+  const { grade } = getGrade(filteredMetrics.topPickWinRate);
 
   return (
     <div className="diag-results">
@@ -1354,108 +989,100 @@ function CompleteState({ diagnostics }: { diagnostics: UseDiagnosticsReturn }) {
           transition={{ duration: 0.2 }}
           className="diag-sections"
         >
+          {/* How to read this page — intro */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <IntroSection raceCount={filteredMetrics.raceCount} />
+          </motion.div>
+
           {/* Key metric cards */}
           <motion.div
             className="diag-metrics-grid"
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: STAGGER * 0 }}
           >
             <MetricCard
-              label="Races Analyzed"
+              label="Races Tested"
               value={filteredMetrics.raceCount.toString()}
-              subtitle={`across ${filteredMetrics.trackCount} track${filteredMetrics.trackCount !== 1 ? 's' : ''}, ${filteredMetrics.horseCount.toLocaleString()} horses scored`}
-              tooltip="Total number of races our system analyzed using real race data"
+              description="We tested our system against this many real races that already happened."
+              subtitle={`${filteredMetrics.trackCount} venue${filteredMetrics.trackCount !== 1 ? 's' : ''}, ${filteredMetrics.horseCount.toLocaleString()} horses`}
             />
             <MetricCard
-              label="Top Pick Wins"
+              label="Top Pick Accuracy"
               value={`${filteredMetrics.topPickWinRate}%`}
-              subtitle={`${filteredMetrics.topPickWins} of ${filteredMetrics.raceCount} races`}
-              tooltip="How often the horse our system ranked #1 actually won the race"
+              description="When we ranked a horse #1, this is how often that horse actually won the race."
+              subtitle={`${filteredMetrics.topPickWins} correct out of ${filteredMetrics.raceCount} races`}
             />
             <MetricCard
-              label="Top Pick Cashes"
+              label="Top 3 Accuracy"
               value={`${filteredMetrics.topPickShowRate}%`}
-              subtitle={`${filteredMetrics.topPickShows} of ${filteredMetrics.raceCount} in the money`}
-              tooltip="How often our #1 pick finished in the top 3 — good enough to cash a show bet"
+              description="How often our #1 ranked horse finished in the top 3 (1st, 2nd, or 3rd place)."
+              subtitle={`${filteredMetrics.topPickShows} of ${filteredMetrics.raceCount} in the top 3`}
             />
             <MetricCard
-              label="Prediction Score"
+              label="Overall Grade"
               value={grade}
-              subtitle={descriptor}
-              tooltip="Overall grade for how well our system predicted race outcomes. A = excellent, F = needs work"
+              description="Our overall prediction accuracy grade. A = excellent, B = good, C = average, D = below average, F = poor."
             />
           </motion.div>
 
-          {/* Win Rate by Our Ranking (per-rank chart) */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: STAGGER * 1 }}
-          >
-            <PerRankWinRateChart predictions={filteredPredictions} results={results} />
-          </motion.div>
+          {/* Desktop 2-column row: Per-rank chart LEFT, Tier performance RIGHT */}
+          <div className="diag-two-col">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: STAGGER * 1 }}
+            >
+              <PerRankWinRateChart predictions={filteredPredictions} results={results} />
+            </motion.div>
 
-          {/* Tier Performance Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: STAGGER * 2 }}
-          >
-            <TierPerformanceChart results={results} />
-          </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: STAGGER * 2 }}
+            >
+              <TierPerformanceChart results={results} />
+            </motion.div>
+          </div>
 
-          {/* Confidence Calibration */}
+          {/* Confidence Calibration (full width) */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: STAGGER * 3 }}
           >
             <ConfidenceCalibration predictions={filteredPredictions} />
           </motion.div>
 
-          {/* Where Does the Algorithm Shine? — Winners vs Field */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: STAGGER * 4 }}
-          >
-            <ScoreCategoryChart predictions={filteredPredictions} />
-          </motion.div>
+          {/* Desktop 2-column row: Winners vs Field LEFT, Improvement Suggestions RIGHT */}
+          <div className="diag-two-col">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: STAGGER * 4 }}
+            >
+              <ScoreCategoryChart predictions={filteredPredictions} />
+            </motion.div>
 
-          {/* Bet Performance Breakdown */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: STAGGER * 5 }}
-          >
-            <BetPerformanceBreakdown results={results} />
-          </motion.div>
-
-          {/* What Should You Bet? — Recommended bets */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: STAGGER * 6 }}
-          >
-            <RecommendedBets results={results} />
-          </motion.div>
-
-          {/* What Could Be Better? — Improvement Suggestions */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: STAGGER * 7 }}
-          >
-            <ImprovementSuggestions results={results} predictions={filteredPredictions} />
-          </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: STAGGER * 5 }}
+            >
+              <ImprovementSuggestions results={results} predictions={filteredPredictions} />
+            </motion.div>
+          </div>
 
           {/* Track Comparison Table — only when All Tracks */}
           {!isFiltered && results.trackSummaries.length > 1 && (
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: STAGGER * 8 }}
+              transition={{ duration: 0.3, delay: STAGGER * 6 }}
             >
               <TrackComparisonTable results={results} />
             </motion.div>
@@ -1466,24 +1093,24 @@ function CompleteState({ diagnostics }: { diagnostics: UseDiagnosticsReturn }) {
             className="diag-metadata"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: STAGGER * 9 }}
+            transition={{ duration: 0.3, delay: STAGGER * 7 }}
           >
             <div className="diag-metadata-items">
-              <span>Last analyzed: {analyzedDate}</span>
+              <span>Last tested: {analyzedDate}</span>
               <span>
-                Data files: {results.totalFiles} tracks, {results.validRaces} races,{' '}
+                Test data: {results.totalTracks} venues, {results.validRaces} races,{' '}
                 {results.totalHorses.toLocaleString()} horses
               </span>
-              <span>Analysis time: {analysisTimeSec}s</span>
+              <span>Processing time: {analysisTimeSec} seconds</span>
               {results.unmatchedFiles.length > 0 && (
                 <span className="diag-metadata-warn">
-                  Skipped (no results): {results.unmatchedFiles.join(', ')}
+                  Skipped (no results available): {results.unmatchedFiles.join(', ')}
                 </span>
               )}
             </div>
             <button className="diag-btn-secondary diag-btn-small" onClick={rerun}>
               <span className="material-icons">refresh</span>
-              Re-run Analysis
+              Re-run Tests
             </button>
           </motion.div>
         </motion.div>
