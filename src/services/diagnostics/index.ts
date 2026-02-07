@@ -523,6 +523,13 @@ export async function runDiagnostics(
             actualFinish: finish,
             trackCode,
             tier,
+            categoryScores: {
+              speed: sh.score.breakdown.speedClass.speedScore,
+              class: sh.score.breakdown.speedClass.classScore,
+              form: sh.score.breakdown.form.total,
+              pace: sh.score.breakdown.pace.total,
+              connections: sh.score.breakdown.connections.total,
+            },
           });
         }
 

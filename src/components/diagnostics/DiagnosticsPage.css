@@ -782,3 +782,51 @@
 .diag-sample-notice-text--success {
   color: var(--color-success);
 }
+
+/* ============================================
+   SCORE CATEGORY CHART — "Where Does the Algorithm Shine?"
+   ============================================ */
+
+.diag-score-category-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-element);
+  margin-bottom: var(--gap-container);
+}
+
+.diag-score-category-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* ============================================
+   IMPROVEMENT SUGGESTIONS — "What Could Be Better?"
+   ============================================ */
+
+.diag-suggestions-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-element);
+}
+
+.diag-suggestion-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-border-prominent);
+  border-radius: var(--radius-md);
+  padding: var(--gap-container);
+}
+
+.diag-suggestion-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--gap-tight);
+}
+
+.diag-suggestion-text {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
