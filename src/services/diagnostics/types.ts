@@ -37,6 +37,22 @@ export interface RaceResult {
 }
 
 // ============================================================================
+// PREDICTION RECORD (for per-rank and calibration charts)
+// ============================================================================
+
+/** Minimal prediction record for per-rank win-rate and calibration analysis */
+export interface PredictionRecord {
+  /** Algorithm rank among active horses (1 = top pick) */
+  algorithmRank: number;
+  /** Actual finish position (1–4, or 0 if worse than 4th) */
+  actualFinish: number;
+  /** Track code for per-track filtering */
+  trackCode: string;
+  /** Tier classification (1, 2, 3, or 0 if below all tiers) */
+  tier: number;
+}
+
+// ============================================================================
 // PREDICTION ACCURACY
 // ============================================================================
 
@@ -213,6 +229,10 @@ export interface DiagnosticsResults {
   superfectaBox4Rate: number;
   superfectaBox5Rate: number;
   superfectaBox6Rate: number;
+
+  // --- Per-Horse Predictions ---
+  /** Individual prediction records for per-rank and calibration analysis */
+  predictions: PredictionRecord[];
 
   // --- Metadata ---
   /** When this analysis was run (ISO timestamp) */

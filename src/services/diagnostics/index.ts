@@ -21,6 +21,7 @@ import {
 } from './cache';
 import type {
   DiagnosticsResults,
+  PredictionRecord,
   RaceResult,
   FilePair,
   AnalysisProgress,
@@ -394,6 +395,9 @@ export async function runDiagnostics(
   const tierWins = { tier1: 0, tier2: 0, tier3: 0 };
   const tierITM = { tier1: 0, tier2: 0, tier3: 0 };
 
+  // Per-horse prediction records
+  const allPredictions: PredictionRecord[] = [];
+
   // Track summary tracking
   const trackMap = new Map<
     string,
@@ -480,7 +484,7 @@ export async function runDiagnostics(
           trackInfo.topPickITM++;
         }
 
-        // Tier tracking
+        // Tier tracking + per-horse prediction records
         const activeHorses = scoredHorses.filter((sh) => !sh.score.isScratched);
         for (const sh of activeHorses) {
           const baseScore = sh.score.baseScore;
@@ -489,19 +493,37 @@ export async function runDiagnostics(
             actualPost === actualFirst || actualPost === actualSecond || actualPost === actualThird;
           const finishedFirst = actualPost === actualFirst;
 
+          let tier = 0;
           if (baseScore >= TIER_CONFIG.tier1.minScore) {
+            tier = 1;
             tierCounts.tier1++;
             if (finishedFirst) tierWins.tier1++;
             if (finishedTop3) tierITM.tier1++;
           } else if (baseScore >= TIER_CONFIG.tier2.minScore) {
+            tier = 2;
             tierCounts.tier2++;
             if (finishedFirst) tierWins.tier2++;
             if (finishedTop3) tierITM.tier2++;
           } else if (baseScore >= TIER_CONFIG.tier3.minScore) {
+            tier = 3;
             tierCounts.tier3++;
             if (finishedFirst) tierWins.tier3++;
             if (finishedTop3) tierITM.tier3++;
           }
+
+          // Build prediction record
+          let finish = 0;
+          if (actualPost === actualFirst) finish = 1;
+          else if (actualPost === actualSecond) finish = 2;
+          else if (actualPost === actualThird) finish = 3;
+          else if (actualPost === actualFourth) finish = 4;
+
+          allPredictions.push({
+            algorithmRank: sh.rank,
+            actualFinish: finish,
+            trackCode,
+            tier,
+          });
         }
 
         // Exacta boxes
@@ -659,6 +681,7 @@ export async function runDiagnostics(
 
     tierPerformance,
     trackSummaries,
+    predictions: allPredictions,
 
     exactaBox2Rate: toRate(exactaBox2Hits, validRaces),
     exactaBox3Rate: toRate(exactaBox3Hits, validRaces),
@@ -707,6 +730,7 @@ function createEmptyResults(unmatchedFiles: string[]): DiagnosticsResults {
     validRaces: 0,
     tierPerformance: [],
     trackSummaries: [],
+    predictions: [],
     exactaBox2Rate: 0,
     exactaBox3Rate: 0,
     exactaBox4Rate: 0,
