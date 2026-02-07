@@ -3,6 +3,7 @@
 
    Uses ONLY design tokens from tokens.css.
    8px grid for all spacing. Mobile-first (375px target).
+   Tightened layout — dense, information-rich.
    ============================================ */
 
 /* ============================================
@@ -60,32 +61,32 @@
 }
 
 .diag-content {
-  padding: var(--gap-container);
+  padding: var(--gap-element);
   margin: 0 auto;
 }
 
 @media (min-width: 768px) {
   .diag-content {
-    padding: var(--space-5);
+    padding: var(--gap-container);
   }
 }
 
 @media (min-width: 1024px) {
   .diag-content {
-    padding: var(--space-6);
+    padding: var(--gap-container) var(--space-5);
     max-width: 1400px;
   }
 }
 
 @media (min-width: 1440px) {
   .diag-content {
-    padding: var(--space-10);
+    padding: var(--gap-container) var(--space-6);
     max-width: 1600px;
   }
 }
 
 /* ============================================
-   TRACK FILTER BAR
+   TRACK FILTER BAR (compact)
    ============================================ */
 
 .diag-filter-bar {
@@ -94,8 +95,8 @@
   z-index: 9;
   background: var(--color-base);
   display: flex;
-  gap: var(--gap-element);
-  padding: var(--gap-element) 0 var(--gap-element);
+  gap: var(--gap-tight);
+  padding: var(--gap-tight) 0;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -143,13 +144,67 @@
 }
 
 /* ============================================
-   SECTIONS WRAPPER
+   INTRO SECTION — "What Is This Page?"
+   ============================================ */
+
+.diag-intro {
+  background: var(--color-elevated);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: var(--gap-element) var(--gap-container);
+}
+
+@media (min-width: 1024px) {
+  .diag-intro {
+    max-height: 80px;
+    overflow: hidden;
+  }
+}
+
+.diag-intro-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--gap-tight) 0;
+}
+
+.diag-intro-body {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ============================================
+   SECTIONS WRAPPER (tight gaps)
    ============================================ */
 
 .diag-sections {
   display: flex;
   flex-direction: column;
   gap: var(--gap-container);
+}
+
+/* ============================================
+   TWO-COLUMN LAYOUT (desktop 1024px+)
+   ============================================ */
+
+.diag-two-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-container);
+}
+
+@media (min-width: 1024px) {
+  .diag-two-col {
+    flex-direction: row;
+    gap: var(--gap-container);
+  }
+
+  .diag-two-col > * {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 /* ============================================
@@ -206,12 +261,12 @@
   flex-direction: column;
   align-items: center;
   gap: var(--gap-element);
-  padding: var(--space-6);
+  padding: var(--space-5);
   background: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   text-align: center;
-  margin-top: var(--space-6);
+  margin-top: var(--gap-container);
 }
 
 .diag-error-icon {
@@ -247,7 +302,7 @@
 }
 
 /* ============================================
-   METRIC CARDS — TOP ROW (ENHANCED)
+   METRIC CARDS — TOP ROW (tight padding)
    ============================================ */
 
 .diag-results {
@@ -280,7 +335,7 @@
 }
 
 .diag-metric-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--color-text-secondary);
   text-transform: uppercase;
@@ -288,77 +343,127 @@
 }
 
 .diag-metric-value {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
 
+.diag-metric-description {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
 .diag-metric-subtitle {
-  font-size: 14px;
+  font-size: 12px;
   color: var(--color-text-tertiary);
   font-variant-numeric: tabular-nums;
 }
 
 /* ============================================
-   CHART CARD (SHARED)
+   CHART CARD (SHARED — tight padding)
    ============================================ */
 
 .diag-chart-card {
   background: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-5);
+  padding: var(--gap-container);
 }
 
 .diag-chart-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--color-text-primary);
   margin: 0 0 var(--gap-tight) 0;
 }
 
 .diag-chart-description {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--color-text-secondary);
-  margin: 0 0 var(--gap-container) 0;
+  margin: 0 0 var(--gap-element) 0;
   line-height: 1.5;
 }
 
 .diag-chart-container {
-  min-height: 240px;
+  min-height: 200px;
 }
 
 .diag-chart-insight {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--color-text-secondary);
-  margin: var(--gap-container) 0 0 0;
+  margin: var(--gap-element) 0 0 0;
   padding-top: var(--gap-element);
   border-top: 1px solid var(--color-border);
   line-height: 1.5;
 }
 
 /* ============================================
-   TIER TABLE (LEGACY — preserved for compatibility)
+   TIER EXPLANATIONS (visible, not tooltips)
    ============================================ */
 
-.diag-card {
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--gap-container);
+.diag-tier-explanations {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-tight);
+  margin-bottom: var(--gap-element);
 }
 
-.diag-card-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 0 0 var(--gap-element) 0;
+.diag-tier-explanation {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  line-height: 1.4;
+}
+
+.diag-tier-explanation strong {
+  color: var(--color-text-secondary);
 }
 
 /* ============================================
-   TABLES (SHARED)
+   COLUMN EXPLANATIONS (visible, for calibration)
+   ============================================ */
+
+.diag-column-explanations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-tight) var(--gap-container);
+  margin-bottom: var(--gap-element);
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  line-height: 1.4;
+}
+
+.diag-column-explanations strong {
+  color: var(--color-text-secondary);
+}
+
+/* ============================================
+   CATEGORY EXPLANATIONS (for winners vs field)
+   ============================================ */
+
+.diag-category-explanations {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-tight);
+  margin-top: var(--gap-element);
+  padding-top: var(--gap-element);
+  border-top: 1px solid var(--color-border);
+}
+
+.diag-category-explanation {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  line-height: 1.4;
+}
+
+.diag-category-explanation strong {
+  color: var(--color-text-secondary);
+}
+
+/* ============================================
+   TABLES (SHARED — tight row padding)
    ============================================ */
 
 .diag-table-wrapper {
@@ -369,7 +474,7 @@
 .diag-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .diag-table th {
@@ -398,11 +503,29 @@
 }
 
 /* ============================================
+   CALIBRATION TABLE
+   ============================================ */
+
+.diag-calibration-table td,
+.diag-calibration-table th {
+  white-space: nowrap;
+}
+
+.diag-calibration-table td:last-child {
+  white-space: normal;
+}
+
+.diag-calibration-tier {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* ============================================
    TRACK COMPARISON TABLE
    ============================================ */
 
 .diag-comparison-table {
-  font-size: 14px;
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -578,220 +701,14 @@
 }
 
 /* ============================================
-   CALIBRATION TABLE
-   ============================================ */
-
-.diag-calibration-table td,
-.diag-calibration-table th {
-  white-space: nowrap;
-}
-
-.diag-calibration-tier {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.diag-calibration-tier-label {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--color-text-tertiary);
-}
-
-/* ============================================
-   BET PERFORMANCE — CATEGORY HEADERS
-   ============================================ */
-
-.diag-bet-category {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: var(--gap-element) 0 var(--gap-tight) 0;
-  border-bottom: 1px solid var(--color-border);
-  margin-top: var(--gap-element);
-}
-
-.diag-bet-category:first-child {
-  margin-top: 0;
-}
-
-/* ============================================
-   BET VERDICT COLORS
-   ============================================ */
-
-.diag-verdict-strong {
-  color: var(--color-success);
-  font-weight: 600;
-}
-
-.diag-verdict-promising {
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.diag-verdict-risky {
-  color: var(--color-warning);
-  font-weight: 600;
-}
-
-.diag-verdict-avoid {
-  color: var(--color-error);
-  font-weight: 600;
-}
-
-/* ============================================
-   PODIUM — RECOMMENDED BETS
-   ============================================ */
-
-.diag-podium {
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap-element);
-}
-
-@media (min-width: 768px) {
-  .diag-podium {
-    flex-direction: row;
-    align-items: flex-end;
-    gap: var(--gap-container);
-  }
-}
-
-.diag-podium-card {
-  flex: 1;
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--gap-container);
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap-element);
-  border-top: 3px solid var(--color-border);
-}
-
-.diag-podium-card--first {
-  border-top-color: var(--color-warning);
-}
-
-@media (min-width: 768px) {
-  .diag-podium-card--first {
-    order: 2;
-    min-height: 224px;
-  }
-
-  .diag-podium-card--second {
-    order: 1;
-    min-height: 184px;
-  }
-
-  .diag-podium-card--third {
-    order: 3;
-    min-height: 152px;
-  }
-}
-
-.diag-podium-card--second {
-  border-top-color: var(--color-text-tertiary);
-}
-
-.diag-podium-card--third {
-  border-top-color: var(--color-primary);
-}
-
-.diag-podium-rank {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.diag-podium-card--first .diag-podium-rank {
-  color: var(--color-warning);
-}
-
-.diag-podium-name {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  line-height: 1.2;
-}
-
-.diag-podium-stats {
-  display: flex;
-  gap: var(--gap-container);
-  font-size: 14px;
-  font-variant-numeric: tabular-nums;
-}
-
-.diag-podium-stat-label {
-  color: var(--color-text-tertiary);
-  font-size: 12px;
-}
-
-.diag-podium-stat-value {
-  color: var(--color-text-primary);
-  font-weight: 600;
-}
-
-.diag-podium-description {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  line-height: 1.5;
-}
-
-/* ============================================
-   SAMPLE SIZE NOTICE
-   ============================================ */
-
-.diag-sample-notice {
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--gap-container);
-  border-left: 3px solid var(--color-border-prominent);
-}
-
-.diag-sample-notice--small {
-  border-left-color: var(--color-warning);
-}
-
-.diag-sample-notice--solid {
-  border-left-color: var(--color-success);
-}
-
-.diag-sample-notice-text {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  line-height: 1.5;
-  margin: 0;
-}
-
-.diag-sample-notice-text + .diag-sample-notice-text {
-  margin-top: var(--gap-element);
-}
-
-.diag-sample-notice-text--warn {
-  color: var(--color-warning);
-}
-
-.diag-sample-notice-text--success {
-  color: var(--color-success);
-}
-
-/* ============================================
-   SCORE CATEGORY CHART — "Where Does the Algorithm Shine?"
+   SCORE CATEGORY CHART — "What Makes Winners Different?"
    ============================================ */
 
 .diag-score-category-labels {
   display: flex;
   flex-wrap: wrap;
   gap: var(--gap-element);
-  margin-bottom: var(--gap-container);
+  margin-bottom: var(--gap-element);
 }
 
 .diag-score-category-label {
@@ -801,7 +718,7 @@
 }
 
 /* ============================================
-   IMPROVEMENT SUGGESTIONS — "What Could Be Better?"
+   IMPROVEMENT SUGGESTIONS — "Areas for Improvement"
    ============================================ */
 
 .diag-suggestions-stack {
@@ -815,18 +732,18 @@
   border: 1px solid var(--color-border);
   border-left: 4px solid var(--color-border-prominent);
   border-radius: var(--radius-md);
-  padding: var(--gap-container);
+  padding: var(--gap-element) var(--gap-container);
 }
 
 .diag-suggestion-title {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
   margin-bottom: var(--gap-tight);
 }
 
 .diag-suggestion-text {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--color-text-secondary);
   line-height: 1.5;
 }

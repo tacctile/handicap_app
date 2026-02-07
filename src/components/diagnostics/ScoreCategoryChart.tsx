@@ -1,11 +1,11 @@
 /**
- * ScoreCategoryChart — "Where Does the Algorithm Shine?"
+ * ScoreCategoryChart — "What Makes Winners Different?"
  *
  * Horizontal paired bar chart comparing average scoring category values
  * for winners vs the rest of the field. Sorted by gap size descending.
  */
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo } from 'react';
 import {
   BarChart,
   Bar,
@@ -16,7 +16,6 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { PredictionRecord } from '../../services/diagnostics/types';
 
 // Design token values for Recharts (CSS vars don't work in SVG)
@@ -29,61 +28,29 @@ const C = {
   elevated: '#1a1a1c',
 } as const;
 
-// Category display config
-const CATEGORY_CONFIG: Record<string, { label: string; tooltip: string }> = {
+// Category display config with plain-English explanations
+const CATEGORY_CONFIG: Record<string, { label: string; explanation: string }> = {
   speed: {
     label: 'Speed',
-    tooltip: 'Raw speed figures — how fast the horse runs',
+    explanation: 'Speed — how fast the horse has run in recent races',
   },
   class: {
     label: 'Class',
-    tooltip: 'Quality of competition the horse has faced',
+    explanation: 'Class — the level of competition the horse has been racing against',
   },
   form: {
     label: 'Form',
-    tooltip: 'Recent race results and winning patterns',
+    explanation: 'Form — how well the horse has performed in its most recent races',
   },
   pace: {
     label: 'Pace',
-    tooltip: "How the race flow suits this horse's running style",
+    explanation: "Pace — whether the expected race flow suits this horse's running style",
   },
   connections: {
     label: 'Connections',
-    tooltip: 'Jockey and trainer quality and track record',
+    explanation: 'Connections — the quality and track record of the jockey (rider) and trainer',
   },
 };
-
-// ============================================================================
-// INLINE TOOLTIP (matching DiagnosticsPage pattern)
-// ============================================================================
-
-function CategoryTooltip({ text, children }: { text: string; children: ReactNode }) {
-  const [visible, setVisible] = useState(false);
-  return (
-    <span
-      className="diag-tooltip-wrapper"
-      onMouseEnter={() => setVisible(true)}
-      onMouseLeave={() => setVisible(false)}
-      onTouchStart={() => setVisible((v) => !v)}
-    >
-      {children}
-      <span className="diag-tooltip-icon">i</span>
-      <AnimatePresence>
-        {visible && (
-          <motion.span
-            className="diag-tooltip-popup"
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 4 }}
-            transition={{ duration: 0.15 }}
-          >
-            {text}
-          </motion.span>
-        )}
-      </AnimatePresence>
-    </span>
-  );
-}
 
 // ============================================================================
 // CUSTOM TOOLTIP FOR THE CHART
@@ -166,7 +133,7 @@ export function ScoreCategoryChart({ predictions }: { predictions: PredictionRec
       return {
         category: cat,
         label: CATEGORY_CONFIG[cat]!.label,
-        tooltip: CATEGORY_CONFIG[cat]!.tooltip,
+        explanation: CATEGORY_CONFIG[cat]!.explanation,
         winnersAvg: Math.round(winnerAvg * 10) / 10,
         fieldAvg: Math.round(fieldAvg * 10) / 10,
         gap,
@@ -189,20 +156,12 @@ export function ScoreCategoryChart({ predictions }: { predictions: PredictionRec
 
   return (
     <div className="diag-chart-card">
-      <h3 className="diag-chart-title">Where Does the Algorithm Shine?</h3>
+      <h3 className="diag-chart-title">What Makes Winners Different?</h3>
       <p className="diag-chart-description">
-        Which parts of our scoring system are best at identifying winners. Bigger gaps between
-        winners and the rest of the field mean that category is doing the heavy lifting.
+        Our system scores horses across five categories. This chart compares the average scores of
+        horses that actually won versus all other horses. Categories where winners score much higher
+        are our strongest tools for finding the right horse.
       </p>
-
-      {/* Category labels with tooltips */}
-      <div className="diag-score-category-labels">
-        {chartData.map((d) => (
-          <CategoryTooltip key={d.category} text={d.tooltip}>
-            <span className="diag-score-category-label">{d.label}</span>
-          </CategoryTooltip>
-        ))}
-      </div>
 
       {/* Horizontal paired bar chart */}
       <div className="diag-chart-container">
@@ -240,7 +199,7 @@ export function ScoreCategoryChart({ predictions }: { predictions: PredictionRec
             />
             <Bar
               dataKey="fieldAvg"
-              name="Field Average"
+              name="All Other Horses"
               fill="rgba(110, 110, 112, 0.5)"
               radius={[0, 4, 4, 0]}
               maxBarSize={20}
@@ -256,10 +215,19 @@ export function ScoreCategoryChart({ predictions }: { predictions: PredictionRec
         </ResponsiveContainer>
       </div>
 
+      {/* Category explanations — visible, not tooltips */}
+      <div className="diag-category-explanations">
+        {chartData.map((d) => (
+          <div key={d.category} className="diag-category-explanation">
+            <strong>{d.label}</strong> — {d.explanation.split(' — ')[1]}
+          </div>
+        ))}
+      </div>
+
       {topCategory && (
         <p className="diag-chart-insight">
-          {topCategory.label} is our strongest predictor — winners score {topCategory.gap} points
-          higher than the field average in this category.
+          {topCategory.label} is our best predictor — winning horses score {topCategory.gap} points
+          higher than average in this area.
         </p>
       )}
     </div>

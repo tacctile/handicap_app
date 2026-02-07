@@ -1,8 +1,9 @@
 /**
- * ImprovementSuggestions — "What Could Be Better?"
+ * ImprovementSuggestions — "Areas for Improvement"
  *
  * Generates dynamic suggestion cards based on pattern analysis
  * of algorithm performance data. Cards sorted by severity.
+ * All text written for total novices — no jargon.
  */
 
 import { useMemo } from 'react';
@@ -58,11 +59,11 @@ function generateSuggestions(
   const tier2WinRate = tierWinRates[2] ?? 0;
   const tier3WinRate = tierWinRates[3] ?? 0;
 
-  // (a) Tier 1 win rate < 25%
+  // (a) Tier 1 win rate below target
   if (tier1WinRate < 25) {
     suggestions.push({
-      title: 'Tier 1 Accuracy Below Target',
-      text: `Top-tier horses are winning ${Math.round(tier1WinRate * 10) / 10}% vs the 35% target. The scoring engine may need rebalancing between speed and form factors.`,
+      title: 'Top Picks Below Target',
+      text: `Our most confident picks are winning ${Math.round(tier1WinRate * 10) / 10}% of the time, but our target is 35%. This means we might be rating some horses too highly. As we add more race data, this number should improve.`,
       borderColor: C.error,
       severity: 'error',
     });
@@ -71,8 +72,8 @@ function generateSuggestions(
   // (b) Tier 3 win rate > Tier 2 win rate
   if (tier3WinRate > tier2WinRate && tier3WinRate > 0) {
     suggestions.push({
-      title: 'Tier Inversion Detected',
-      text: `Longshots (Tier 3) are outperforming mid-tier horses (Tier 2). The tier boundaries may need adjustment or the value detection is finding genuine overlays.`,
+      title: 'Confidence Levels Out of Order',
+      text: `Surprisingly, our lower-rated horses are winning more than our middle-rated ones. This can happen with a small amount of test data, or it might mean we need to adjust how we separate the groups.`,
       borderColor: C.warning,
       severity: 'warning',
     });
@@ -83,7 +84,7 @@ function generateSuggestions(
     if (track.topPickWinRate === 0 && track.raceCount >= 5) {
       suggestions.push({
         title: `Struggling at ${track.trackName || track.trackCode}`,
-        text: `Zero top-pick wins from ${track.raceCount} races at ${track.trackCode}. Track intelligence data may need review.`,
+        text: `Our top pick hasn't won any of the ${track.raceCount} races we tested at ${track.trackCode}. This track might have unique characteristics our system doesn't fully account for yet.`,
         borderColor: C.error,
         severity: 'error',
       });
@@ -96,7 +97,7 @@ function generateSuggestions(
   if (topPickITM > 45 && topPickWin < 15) {
     suggestions.push({
       title: 'Close But Not Closing',
-      text: `Top picks finish in the money ${topPickITM}% but only win ${topPickWin}%. The system finds contenders but struggles to identify the actual winner.`,
+      text: `Our top picks finish in the top 3 about ${topPickITM}% of the time, which is good — but they only win ${topPickWin}%. This means we're good at finding competitive horses but need to get better at identifying the actual winner.`,
       borderColor: C.warning,
       severity: 'warning',
     });
@@ -115,41 +116,31 @@ function generateSuggestions(
       : 0;
   if (rank1WinRate < rank2WinRate && rank2WinRate > 0) {
     suggestions.push({
-      title: 'Ranking Inversion at the Top',
-      text: 'Our #2 ranked horses win more often than #1. The scoring may over-value a factor that produces false favorites.',
+      title: 'Ranking Order Issue',
+      text: 'Our #2 ranked horse actually wins more often than our #1 pick. This suggests our scoring might be slightly overvaluing one factor, causing the wrong horse to rank first.',
       borderColor: C.error,
       severity: 'error',
     });
   }
 
-  // (f) Exacta box 3 hit rate > 30%
-  if (results.exactaBox3Rate > 30) {
-    suggestions.push({
-      title: 'Strong Exacta Performance',
-      text: `Top 3 horses produce the exacta ${results.exactaBox3Rate}% of the time. Consider making exacta box 3 a primary recommendation.`,
-      borderColor: C.success,
-      severity: 'success',
-    });
-  }
-
-  // (g) Total races < 100
+  // (f) Total races < 100
   if (results.validRaces < 100) {
     suggestions.push({
       title: 'More Data Needed',
-      text: `With ${results.validRaces} races, patterns may shift. Aim for 200+ for reliable conclusions and 500+ for statistical significance.`,
+      text: `We've only tested ${results.validRaces} races so far. The more races we test, the more reliable these numbers become. Aim for 200+ races for solid conclusions.`,
       borderColor: C.primary,
       severity: 'info',
     });
   }
 
-  // (h) All tier win rates within ±5% of expected (35/18/8)
+  // (g) All tier win rates within ±5% of expected (35/18/8)
   const tier1Diff = Math.abs(tier1WinRate - 35);
   const tier2Diff = Math.abs(tier2WinRate - 18);
   const tier3Diff = Math.abs(tier3WinRate - 8);
   if (tier1Diff <= 5 && tier2Diff <= 5 && tier3Diff <= 5) {
     suggestions.push({
-      title: 'Algorithm Well-Calibrated',
-      text: 'All tiers performing within 5% of targets. The scoring engine is working as designed.',
+      title: 'System Well-Calibrated',
+      text: 'All of our confidence levels are performing close to their targets. The prediction system is working as designed.',
       borderColor: C.success,
       severity: 'success',
     });
@@ -183,7 +174,7 @@ export function ImprovementSuggestions({
       : [
           {
             title: 'No Issues Detected',
-            text: 'Algorithm performing within expected parameters.',
+            text: 'Our prediction system is performing within expected ranges across all metrics.',
             borderColor: C.success,
             severity: 'success' as SuggestionSeverity,
           },
@@ -191,10 +182,10 @@ export function ImprovementSuggestions({
 
   return (
     <div className="diag-chart-card">
-      <h3 className="diag-chart-title">What Could Be Better?</h3>
+      <h3 className="diag-chart-title">Areas for Improvement</h3>
       <p className="diag-chart-description">
-        Based on the patterns in our data, here are areas where the system excels and where it could
-        improve.
+        Based on the patterns in our test data, here are areas where the system is doing well and
+        where it could get better.
       </p>
 
       <div className="diag-suggestions-stack">
