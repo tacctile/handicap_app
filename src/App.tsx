@@ -8,7 +8,6 @@ import { useRaceState } from './hooks/useRaceState';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAnalytics } from './hooks/useAnalytics';
-import { useDiagnostics } from './hooks/useDiagnostics';
 import { validateParsedData, getValidationSummary, isDataUsable } from './lib/validation';
 import { logger } from './services/logging';
 import type { ParsedDRFFile } from './types/drf';
@@ -37,7 +36,8 @@ function AppContent() {
   const sessionPersistence = useSessionPersistence();
   const { trackEvent } = useAnalytics();
   const { addToast } = useToastContext();
-  const diagnostics = useDiagnostics();
+  // Diagnostics no longer needs a separate hook call at App level;
+  // parsedData is passed directly to DiagnosticsPage
 
   // Track previous race index to detect race switches
   const prevRaceIndexRef = useRef<number>(selectedRaceIndex);
@@ -273,7 +273,7 @@ function AppContent() {
 
   // Show diagnostics dashboard (hidden route)
   if (currentRoute === 'diagnostics') {
-    return <DiagnosticsPage diagnostics={diagnostics} onBack={navigateToDashboard} />;
+    return <DiagnosticsPage parsedData={parsedData} onBack={navigateToDashboard} />;
   }
 
   // Show help center
