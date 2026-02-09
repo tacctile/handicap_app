@@ -61,7 +61,7 @@ _These are foundational constraints. Every decision must respect them._
 1. **Algorithm is immutable** — Users adjust inputs, never math
 2. **Lean architecture** — Personal tool, not SaaS. No unnecessary scaffolding.
 3. **Mobile-first** — 375px is primary target
-4. **Offline-first** — (PWA manifest exists, service worker NOT YET IMPLEMENTED)
+4. **Offline-first** — (PWA manifest exists, service worker GENERATED via vite-plugin-pwa (registerType: 'prompt'))
 5. **60fps always** — No animation jank
 6. **Design system only** — No colors/fonts outside the system
 7. **8px grid** — All spacing multiples of 8
@@ -166,8 +166,8 @@ Code is preserved for future use. The algorithm-only betting system is fully fun
 | Aspect             | Status                              |
 | ------------------ | ----------------------------------- |
 | Manifest           | EXISTS (public/manifest.json)       |
-| Service Worker     | NOT YET IMPLEMENTED                 |
-| Offline Capability | PARTIAL (manifest only, no caching) |
+| Service Worker     | GENERATED via vite-plugin-pwa with Workbox |
+| Offline Capability | CONFIGURED (Workbox caching via vite-plugin-pwa) |
 
 **Note:** Full offline-first is architectural goal, not current state.
 
@@ -177,7 +177,7 @@ Code is preserved for future use. The algorithm-only betting system is fully fun
 
 | Layer      | Technology                                |
 | ---------- | ----------------------------------------- |
-| Framework  | React 18                                  |
+| Framework  | React 19                                  |
 | Build      | Vite                                      |
 | Styling    | TailwindCSS + CSS                         |
 | Icons      | Google Material Icons                     |
@@ -196,7 +196,7 @@ Code is preserved for future use. The algorithm-only betting system is fully fun
 
 | Directory       | Purpose                                        |
 | --------------- | ---------------------------------------------- |
-| src/components/ | React UI components (100+)                     |
+| src/components/ | React UI components (55+)                      |
 | src/contexts/   | React Context providers                        |
 | src/data/       | Static data (track intelligence)               |
 | src/docs/       | Algorithm methodology documentation            |
@@ -227,6 +227,12 @@ Code is preserved for future use. The algorithm-only betting system is fully fun
 | Value Detection    | Market inefficiency identification                        |
 | Bet Mode           | Day planning workflow                                     |
 | Live Viewer        | Session sharing                                           |
+| Breeding Analysis  | Sire/dam scoring for lightly raced horses                  |
+| Class Analysis     | Hidden class drops, track tier movement                   |
+| Diamond Detection  | Value plays at 150%+ overlay                              |
+| Longshot Detection | High-value longshot identification                        |
+| Dutch Betting      | Multi-horse profit guarantee calculator                   |
+| Late Breaking      | Late scratch/odds impact analysis                         |
 
 ---
 
