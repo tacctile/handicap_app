@@ -639,26 +639,26 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
 
           <div className="help-two-col">
             <div className="help-section">
-              <div className="help-section__heading">
-                Base: {baseScore}/{MAX_BASE_SCORE}
-              </div>
+              <div className="help-section__heading">Horse Quality Score</div>
               <p className="help-section__text">
-                This is the "report card" score — how good is this horse on paper? It's built from
-                six categories below (speed, form, connections, etc.). Think of it like grading a
-                student on math, reading, science, etc. and adding them all up.
+                The big number and teal bar answer one question:{' '}
+                <strong>"Is this horse good?"</strong> It's built from six categories below (speed,
+                form, connections, etc.). Think of it like grading a student on math, reading,
+                science, etc. and adding them all up. You can see the full base score breakdown in
+                the Full Report Card tab above.
               </p>
             </div>
             <div className="help-section">
-              <div className="help-section__heading">
-                Edge: {edgePercent >= 0 ? '+' : ''}
-                {Math.round(edgePercent)}%
-              </div>
+              <div className="help-section__heading">Betting Value</div>
               <p className="help-section__text">
-                This is the "deal" meter. Imagine a toy is worth $10, but the store is selling it
-                for $5 — that's a great deal (+100% edge). A <strong>positive edge</strong> means
-                the horse is better than the public thinks. A <strong>negative edge</strong> means
-                the public already knows this horse is good, so you're overpaying. Current rating:{' '}
-                <strong>{valueLabel}</strong>.
+                The VALUE / FAIR / NO VALUE label answers a different question:{' '}
+                <strong>"Is this a good bet?"</strong> This is the "deal" meter. Imagine a toy is
+                worth $10, but the store is selling it for $5 — that's a great deal (+100% edge). A{' '}
+                <strong>positive edge</strong> means the horse is better than the public thinks. A{' '}
+                <strong>negative edge</strong> means the public already knows this horse is good, so
+                you're overpaying. Current rating: <strong>{valueLabel}</strong> (Edge:{' '}
+                {edgePercent >= 0 ? '+' : ''}
+                {Math.round(edgePercent)}%).
               </p>
             </div>
           </div>
@@ -1290,42 +1290,46 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
               />
             </div>
 
-            {/* Base + Edge Breakdown */}
-            <div className="furlong-score__breakdown">
-              <span className="furlong-score__breakdown-item">
-                Base: {baseScore}/{SCORE_LIMITS.base}
+            {/* Zone 1 Label: HORSE QUALITY + Data Quality dot */}
+            <div className="furlong-score__zone-label">
+              <span className="furlong-score__zone-label-text">HORSE QUALITY</span>
+              <span className="furlong-score__quality-dot-row">
+                <span
+                  className="furlong-score__quality-dot"
+                  style={{ backgroundColor: getDataQualityColor(score?.confidenceLevel) }}
+                />
+                <span className="furlong-score__quality-dot-text">
+                  {score?.confidenceLevel?.toUpperCase() || 'HIGH'} DATA
+                </span>
               </span>
-              <span className="furlong-score__breakdown-separator">·</span>
+            </div>
+
+            {/* Zone 2: BETTING VALUE */}
+            <div className="furlong-score__zone-divider" />
+            <div className="furlong-score__zone-label">
+              <span className="furlong-score__zone-label-text">BETTING VALUE</span>
+            </div>
+            <div className="furlong-score__betting-value">
               <span
-                className="furlong-score__breakdown-item"
+                className="furlong-score__value-indicator"
+                style={{ color: valueIndicator.color }}
+              >
+                {valueIndicator.label}
+              </span>
+              <span className="furlong-score__value-sublabel">
+                {valueIndicator.label === 'VALUE'
+                  ? 'Public is undervaluing this horse'
+                  : valueIndicator.label === 'FAIR'
+                    ? 'Priced about right'
+                    : 'Public already knows — overpriced'}
+              </span>
+              <span
+                className="furlong-score__edge-context"
                 style={{ color: getEdgeColor(edgePercent) }}
               >
                 Edge: {edgePercent >= 0 ? '+' : ''}
                 {Math.round(edgePercent)}%
               </span>
-            </div>
-
-            {/* Rating Section - Simplified to single word only */}
-            <div className="furlong-score__rating-section">
-              <div className="furlong-score__tier-rating">
-                <span
-                  className="furlong-score__value-indicator"
-                  style={{ color: valueIndicator.color }}
-                >
-                  {valueIndicator.label}
-                </span>
-                <span className="furlong-score__tier-label">RATING</span>
-              </div>
-
-              <div className="furlong-score__data-quality">
-                <span
-                  className="furlong-score__quality-value"
-                  style={{ color: getDataQualityColor(score?.confidenceLevel) }}
-                >
-                  {score?.confidenceLevel?.toUpperCase() || 'HIGH'}
-                </span>
-                <span className="furlong-score__quality-label">DATA QUALITY</span>
-              </div>
             </div>
           </div>
 

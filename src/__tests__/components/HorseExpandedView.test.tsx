@@ -9,7 +9,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { HorseExpandedView } from '../../components/HorseExpandedView';
-import { SCORE_LIMITS, MAX_BASE_SCORE, MAX_SCORE, getScoreColor } from '../../lib/scoring';
+import { SCORE_LIMITS, MAX_SCORE, getScoreColor } from '../../lib/scoring';
 import type { HorseEntry } from '../../types/drf';
 import type { HorseScore } from '../../lib/scoring';
 
@@ -203,7 +203,7 @@ describe('HorseExpandedView', () => {
       expect(screen.getByText(`/${MAX_SCORE}`)).toBeInTheDocument();
     });
 
-    it('displays base score breakdown with MAX_BASE_SCORE (336)', () => {
+    it('displays two-zone layout with HORSE QUALITY and BETTING VALUE labels', () => {
       render(
         <HorseExpandedView
           horse={createMockHorse()}
@@ -212,7 +212,8 @@ describe('HorseExpandedView', () => {
         />
       );
 
-      expect(screen.getByText(`Base: 250/${MAX_BASE_SCORE}`)).toBeInTheDocument();
+      expect(screen.getByText('HORSE QUALITY')).toBeInTheDocument();
+      expect(screen.getByText('BETTING VALUE')).toBeInTheDocument();
     });
   });
 
