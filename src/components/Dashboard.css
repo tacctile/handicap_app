@@ -1409,9 +1409,22 @@
 
 .horse-list-header__cell {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
+}
+
+/* Sub-labels beneath column headers - plain-English clarifiers */
+.horse-list-header__sub-label {
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1;
+  margin-top: 2px;
+  white-space: nowrap;
 }
 
 /* RACES label cell - positioned in the left extension area above race rail */

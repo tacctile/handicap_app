@@ -44,13 +44,13 @@ export interface ValueTagResult {
 const VALUE_TAG_MATRIX: Record<RankTier, Record<string, ValueTag>> = {
   TOP: {
     STRONG_OVERLAY: {
-      plainLabel: 'BEST BET',
-      techLabel: 'PRIME VALUE',
+      plainLabel: 'TOP PICK',
+      techLabel: 'GREAT VALUE',
       action: 'BET_STRONG',
     },
     MILD_OVERLAY: {
       plainLabel: 'STRONG PICK',
-      techLabel: 'SOLID EDGE',
+      techLabel: 'GOOD VALUE',
       action: 'BET',
     },
     FAIR: {
@@ -60,46 +60,46 @@ const VALUE_TAG_MATRIX: Record<RankTier, Record<string, ValueTag>> = {
     },
     MILD_UNDERLAY: {
       plainLabel: 'TOO SHORT',
-      techLabel: 'UNDERLAID',
+      techLabel: 'OVERPRICED',
       action: 'WATCH',
     },
     STRONG_UNDERLAY: {
       plainLabel: 'PASS',
-      techLabel: 'OVERBET',
+      techLabel: 'OVERPRICED',
       action: 'AVOID',
     },
   },
   MID: {
     STRONG_OVERLAY: {
       plainLabel: 'SNEAKY GOOD',
-      techLabel: 'BIG OVERLAY',
+      techLabel: 'GREAT VALUE',
       action: 'BET',
     },
     MILD_OVERLAY: {
       plainLabel: 'WORTH A LOOK',
-      techLabel: 'MILD OVERLAY',
+      techLabel: 'GOOD VALUE',
       action: 'CONSIDER',
     },
     FAIR: {
-      plainLabel: 'COIN FLIP',
+      plainLabel: 'TOSS UP',
       techLabel: 'IN THE MIX',
       action: 'WATCH',
     },
     MILD_UNDERLAY: {
       plainLabel: 'RISKY',
-      techLabel: 'UNDERLAID',
+      techLabel: 'OVERPRICED',
       action: 'CAUTION',
     },
     STRONG_UNDERLAY: {
       plainLabel: 'SKIP',
-      techLabel: 'FADE',
+      techLabel: 'OVERPRICED',
       action: 'AVOID',
     },
   },
   BOTTOM: {
     STRONG_OVERLAY: {
       plainLabel: 'LOTTERY TICKET',
-      techLabel: 'BOMB PRICE',
+      techLabel: 'GREAT VALUE',
       action: 'SMALL_BET',
     },
     MILD_OVERLAY: {
@@ -108,18 +108,18 @@ const VALUE_TAG_MATRIX: Record<RankTier, Record<string, ValueTag>> = {
       action: 'WATCH',
     },
     FAIR: {
-      plainLabel: 'NEEDS HELP',
-      techLabel: 'NEEDS CHAOS',
+      plainLabel: 'UNLIKELY',
+      techLabel: 'LONG ODDS',
       action: 'PASS',
     },
     MILD_UNDERLAY: {
       plainLabel: 'UNLIKELY',
-      techLabel: 'THIN',
+      techLabel: 'OVERPRICED',
       action: 'AVOID',
     },
     STRONG_UNDERLAY: {
       plainLabel: 'NO CHANCE',
-      techLabel: 'DEAD MONEY',
+      techLabel: 'OVERPRICED',
       action: 'AVOID',
     },
   },

@@ -1040,6 +1040,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   {sortColumn === 'POST' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
                 </span>
               </span>
+              <span className="horse-list-header__sub-label">Gate #</span>
             </div>
 
             {/* Column 3: Horse Name - NOT sortable */}
@@ -1063,9 +1064,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   {sortColumn === 'ODDS' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
                 </span>
               </span>
+              <span className="horse-list-header__sub-label">What track is paying</span>
             </div>
 
-            {/* Column 5: FAIR - Sortable (left side - price data) */}
+            {/* Column 5: SHOULD BE - Sortable (left side - price data) */}
             <div
               className={`horse-list-header__cell horse-list-header__cell--fair-odds horse-list-header__cell--sortable ${sortColumn === 'FAIR' ? 'horse-list-header__cell--active' : ''}`}
               onClick={() => handleColumnSort('FAIR')}
@@ -1074,16 +1076,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('FAIR')}
             >
               <span className="horse-list-header__label">
-                FAIR
+                SHOULD BE
                 <span
                   className={`horse-list-header__arrow ${sortColumn === 'FAIR' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
                 >
                   {sortColumn === 'FAIR' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
                 </span>
               </span>
+              <span className="horse-list-header__sub-label">Our fair price</span>
             </div>
 
-            {/* Column 6: PROJECTED FINISH - Sortable (right side - value analysis) */}
+            {/* Column 6: OUR PICK - Sortable (right side - value analysis) */}
             <div
               className={`horse-list-header__cell horse-list-header__cell--rank horse-list-header__cell--sortable ${sortColumn === 'RANK' ? 'horse-list-header__cell--active' : ''}`}
               onClick={() => handleColumnSort('RANK')}
@@ -1092,16 +1095,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('RANK')}
             >
               <span className="horse-list-header__label">
-                PROJECTED FINISH
+                OUR PICK
                 <span
                   className={`horse-list-header__arrow ${sortColumn === 'RANK' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
                 >
                   {sortColumn === 'RANK' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
                 </span>
               </span>
+              <span className="horse-list-header__sub-label">Our predicted finish</span>
             </div>
 
-            {/* Column 7: VALUE - Plain-English value labels - Sortable (right side - value analysis) */}
+            {/* Column 7: RATING - Plain-English value labels - Sortable (right side - value analysis) */}
             <div
               className={`horse-list-header__cell horse-list-header__cell--value-label horse-list-header__cell--sortable ${sortColumn === 'VALUE' ? 'horse-list-header__cell--active' : ''}`}
               onClick={() => handleColumnSort('VALUE')}
@@ -1110,16 +1114,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('VALUE')}
             >
               <span className="horse-list-header__label">
-                VALUE
+                RATING
                 <span
                   className={`horse-list-header__arrow ${sortColumn === 'VALUE' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
                 >
                   {sortColumn === 'VALUE' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
                 </span>
               </span>
+              <span className="horse-list-header__sub-label">Our overall rating</span>
             </div>
 
-            {/* Column 8: EDGE - Sortable (right side - value analysis, far right) */}
+            {/* Column 8: EDGE % - Sortable (right side - value analysis, far right) */}
             <div
               className={`horse-list-header__cell horse-list-header__cell--edge horse-list-header__cell--sortable ${sortColumn === 'EDGE' ? 'horse-list-header__cell--active' : ''}`}
               onClick={() => handleColumnSort('EDGE')}
@@ -1128,13 +1133,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onKeyDown={(e) => e.key === 'Enter' && handleColumnSort('EDGE')}
             >
               <span className="horse-list-header__label">
-                EDGE
+                EDGE %
                 <span
                   className={`horse-list-header__arrow ${sortColumn === 'EDGE' ? 'horse-list-header__arrow--active' : 'horse-list-header__arrow--inactive'}`}
                 >
                   {sortColumn === 'EDGE' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
                 </span>
               </span>
+              <span className="horse-list-header__sub-label">Value vs. public</span>
             </div>
           </div>
         )}

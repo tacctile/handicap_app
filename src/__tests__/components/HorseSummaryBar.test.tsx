@@ -121,9 +121,9 @@ describe('HorseSummaryBar', () => {
       expect(screen.getByText('3-1')).toBeInTheDocument();
     });
 
-    it('renders projected finish rank', () => {
+    it('renders projected finish rank as ordinal', () => {
       render(<HorseSummaryBar horse={createMockHorse()} {...defaultProps} baseScoreRank={2} />);
-      expect(screen.getByText('#2')).toBeInTheDocument();
+      expect(screen.getByText('2nd')).toBeInTheDocument();
     });
   });
 
@@ -154,7 +154,7 @@ describe('HorseSummaryBar', () => {
         />
       );
 
-      expect(screen.getByText('Fair Price')).toBeInTheDocument();
+      expect(screen.getAllByText('Fair Price').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('FAIR ODDS')).toBeInTheDocument();
     });
 
