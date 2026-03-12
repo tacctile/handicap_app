@@ -1412,6 +1412,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 valueAnalysis.verdict === 'PASS' &&
                                 (rankInfo?.rank ?? scoredHorse.rank) === 1
                               }
+                              // All scored horses for field comparison in help modals
+                              allScoredHorses={currentRaceScoredHorses}
                               // Bet recommendations from useRaceBets hook
                               betRecommendations={
                                 betRecommendations.hasRecommendations
