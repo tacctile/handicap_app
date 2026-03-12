@@ -723,99 +723,87 @@
   transition: width 0.3s ease;
 }
 
-/* Score Breakdown Line (Base + Overlay) */
-.furlong-score__breakdown {
+/* Zone Label (HORSE QUALITY / BETTING VALUE) */
+.furlong-score__zone-label {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-top: 8px;
 }
 
-.furlong-score__breakdown-item {
+.furlong-score__zone-label-text {
   font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--color-text-secondary, #b4b4b6);
-  font-variant-numeric: tabular-nums;
-}
-
-.furlong-score__breakdown-separator {
-  font-size: 11px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
   color: var(--color-text-tertiary, #6e6e70);
 }
 
-/* Rating Section (Tier + Data Quality) */
-.furlong-score__rating-section {
+/* Data Quality Dot (compact inline indicator) */
+.furlong-score__quality-dot-row {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 4px;
+}
+
+.furlong-score__quality-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.furlong-score__quality-dot-text {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--color-text-tertiary, #6e6e70);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Zone Divider */
+.furlong-score__zone-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
   margin-top: 10px;
 }
 
-.furlong-score__tier-rating {
+/* Betting Value Zone */
+.furlong-score__betting-value {
   display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.furlong-score__tier-value-row {
-  display: flex;
-  align-items: center;
-  gap: 0;
-}
-
-.furlong-score__tier-value {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
-
-.furlong-score__value-separator {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--color-text-secondary);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin-top: 4px;
 }
 
 .furlong-score__value-indicator {
   font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-
-.furlong-score__tier-label {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary, #6e6e70);
-}
-
-.furlong-score__data-quality {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding-left: 16px;
-  border-left: 1px solid var(--section-border, #2a2a2c);
-}
-
-.furlong-score__quality-value {
-  font-family: var(--font-sans);
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.3px;
+  line-height: 1.2;
 }
 
-.furlong-score__quality-label {
+.furlong-score__value-sublabel {
   font-family: var(--font-sans);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 400;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
+  color: var(--color-text-secondary, #b4b4b6);
+  line-height: 1.3;
+}
+
+.furlong-score__edge-context {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
   color: var(--color-text-tertiary, #6e6e70);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
 }
 
 /* Category Scores - Supporting (Right Side) */
@@ -906,6 +894,14 @@
     padding-right: 0;
     padding-bottom: 16px;
     min-width: auto;
+  }
+
+  .furlong-score__zone-divider {
+    margin-top: 8px;
+  }
+
+  .furlong-score__betting-value {
+    margin-top: 2px;
   }
 
   .furlong-score__categories {
