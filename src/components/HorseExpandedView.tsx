@@ -4,7 +4,7 @@
  * @param props - Component props
  * @returns React element
  */
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ErrorBoundary } from './ErrorBoundary';
 import './HorseExpandedView.css';
 import { PPLine } from './PPLine';
@@ -320,6 +320,306 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title }) => (
 );
 
 // ============================================================================
+// HELP MODAL OVERLAY COMPONENT
+// ============================================================================
+
+interface HelpModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}
+
+const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, children }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="help-modal-overlay" onClick={onClose}>
+      <div
+        className="help-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        <button className="help-modal__close" onClick={onClose} aria-label="Close help">
+          <span className="material-icons" style={{ fontSize: '18px' }}>
+            close
+          </span>
+        </button>
+        <div className="help-modal__content">{children}</div>
+      </div>
+    </div>
+  );
+};
+
+// Small "?" button component
+const HelpButton: React.FC<{ onClick: () => void; label: string }> = ({ onClick, label }) => (
+  <button
+    className="help-btn"
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick();
+    }}
+    aria-label={label}
+    title={label}
+  >
+    ?
+  </button>
+);
+
+// ============================================================================
+// FURLONG SCORE HELP MODAL CONTENT
+// ============================================================================
+
+interface FurlongHelpContentProps {
+  horseName: string;
+  scoreTotal: number;
+  scorePercentage: number;
+  baseScore: number;
+  edgePercent: number;
+  valueLabel: string;
+  dataQuality: string;
+  categoryAnalysis: Array<{
+    key: string;
+    label: string;
+    value: number;
+    max: number;
+    percent: number;
+    explanation: string;
+  }>;
+}
+
+const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
+  horseName,
+  scoreTotal,
+  scorePercentage,
+  baseScore,
+  edgePercent,
+  valueLabel,
+  dataQuality,
+  categoryAnalysis,
+}) => (
+  <div className="help-furlong">
+    <div className="help-furlong__title">
+      <span className="material-icons" style={{ fontSize: '18px', color: 'var(--color-primary)' }}>
+        help_outline
+      </span>
+      <span>
+        Furlong Score — {horseName} ({scoreTotal}/{MAX_SCORE})
+      </span>
+    </div>
+
+    <div className="help-section">
+      <div className="help-section__heading">What is the Furlong Score?</div>
+      <p className="help-section__text">
+        The score ({scoreTotal}) is out of a maximum of {MAX_SCORE}. The {MAX_SCORE} breaks down as{' '}
+        {MAX_BASE_SCORE} base points + up to 40 overlay points. The percentage ({scorePercentage}%)
+        shows how this horse scored relative to the maximum. Higher = stronger horse mathematically.
+      </p>
+      <div className="help-tiers">
+        <span className="help-tier help-tier--strong">181+ Strong Contender</span>
+        <span className="help-tier help-tier--fair">161–180 Fair Contender</span>
+        <span className="help-tier help-tier--long">131–160 Long Shot</span>
+      </div>
+    </div>
+
+    <div className="help-section">
+      <div className="help-section__heading">The Progress Bar</div>
+      <p className="help-section__text">
+        The colored bar fills left-to-right based on the score percentage. Teal/green = strong
+        (67%+), yellow = average (40–66%), red/orange = weak (under 40%).
+      </p>
+    </div>
+
+    <div className="help-two-col">
+      <div className="help-section">
+        <div className="help-section__heading">Base vs Edge</div>
+        <p className="help-section__text">
+          <strong>
+            Base ({baseScore}/{MAX_BASE_SCORE})
+          </strong>{' '}
+          is the raw score from six objective categories.{' '}
+          <strong>
+            Edge ({edgePercent >= 0 ? '+' : ''}
+            {Math.round(edgePercent)}%)
+          </strong>{' '}
+          is the value edge — how much more you are being paid than the horse's true probability
+          warrants. A positive edge means the public odds are higher than fair odds, representing
+          value.
+        </p>
+      </div>
+      <div className="help-section">
+        <div className="help-section__heading">Value Rating</div>
+        <p className="help-section__text">
+          Current: <strong>{valueLabel}</strong>. This is a composite label summarizing value
+          opportunity. It combines score quality with odds edge. A "VALUE" rating means the horse is
+          both a strong contender AND underbet by the public.
+        </p>
+      </div>
+    </div>
+
+    <div className="help-section">
+      <div className="help-section__heading">Data Quality</div>
+      <p className="help-section__text">
+        Current: <strong>{dataQuality}</strong>. HIGH = complete, reliable data. MEDIUM = some
+        fields missing or estimated. LOW = limited data; treat score with more caution.
+      </p>
+    </div>
+
+    <div className="help-section">
+      <div className="help-section__heading">The Six Categories</div>
+      <div className="help-categories-grid">
+        {categoryAnalysis.map((cat) => (
+          <div key={cat.key} className="help-cat-card">
+            <div className="help-cat-card__header">
+              <span className="help-cat-card__name">{cat.label}</span>
+              <span className="help-cat-card__score">
+                {cat.value}/{cat.max}
+              </span>
+            </div>
+            <p className="help-cat-card__desc">
+              {cat.key === 'connections' &&
+                `Trainer and jockey win rates, recent partnership success. Max ${cat.max} pts.`}
+              {cat.key === 'postPosition' &&
+                `Draw position advantage at this distance and track. Post 1 can be a trap; outer posts lose ground on turns. Max ${cat.max} pts.`}
+              {cat.key === 'speedClass' &&
+                `Best Beyer speed figures and class level. The single biggest factor. Elite = 77+ Beyer at this class. Max ${cat.max} pts.`}
+              {cat.key === 'form' &&
+                `Recent race results. Top-3 finishes in last 3 races = Good. Declining form = Warning. Max ${cat.max} pts.`}
+              {cat.key === 'equipment' &&
+                `Gear changes like blinkers or removing shoes can dramatically change performance. Max ${cat.max} pts.`}
+              {cat.key === 'pace' &&
+                `Does this horse's running style match the expected pace of this race? A closer in a slow-pace race has an advantage. Max ${cat.max} pts.`}
+            </p>
+            <div className="help-cat-card__live">{cat.explanation}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+// ============================================================================
+// FACTOR HELP MODAL CONTENT
+// ============================================================================
+
+const FACTOR_HELP_CONTENT: Record<string, { what: string; scoring: string }> = {
+  connections: {
+    what: 'Trainer and jockey are two of the biggest human factors in horse racing. A trainer with a high win rate, especially with first-time starters or off long layoffs, is a major edge. A top jockey on a live horse is never an accident.',
+    scoring:
+      'Elite trainers (15%+ win rate) and elite jockeys (15%+ win rate) each earn significant points. Recent trainer/jockey combo success adds bonus points.',
+  },
+  postPosition: {
+    what: 'Where the horse starts from the gate. In shorter races on dirt, inside posts (1–3) can get pinched early. In longer turf races, outside posts lose ground. At some tracks, post 1 is a massive advantage; at others it is a trap.',
+    scoring:
+      'Scored based on historical win rates for each post at this specific track and distance. A high percentage means statistically this is one of the best starting positions for this race setup.',
+  },
+  speedClass: {
+    what: 'Raw speed (measured by Beyer Speed Figures — a universal scale used across all US tracks) combined with class level (what level of competition this horse has faced). A horse that ran a 77 Beyer at maiden level is very different from one that ran 77 in stakes company.',
+    scoring:
+      "The highest recent Beyer is the primary driver. Elite = 77+. Strong = 65–76. Average = 50–64. Below average = under 50. Class adjustments up or down based on today's field level.",
+  },
+  form: {
+    what: 'How has this horse been running recently? Last 3 races are weighted heavily. A horse finishing 1st–2nd–3rd consistently is in form. A horse finishing 6th–7th–8th is out of form.',
+    scoring:
+      'Top-3 finishes earn points. Wins earn the most. Recent = more weight. A 70% Form score means the horse has been running solidly — top 3 in at least 2 of the last 3 outings.',
+  },
+  equipment: {
+    what: 'Equipment changes — adding blinkers, removing shoes, switching to a different bit — can be game-changers. Trainers use equipment strategically. Blinkers help a distracted horse focus. Removing blinkers can calm an anxious one.',
+    scoring:
+      'Points awarded for proven equipment changes (horse won or ran better with this gear). Standard equipment with no changes scores neutral (25% = no significant gear edge).',
+  },
+  pace: {
+    what: 'Every horse has a running style: early speed (sprints to the front), stalker (sits just off the pace), or closer (hangs back and makes a late run). The pace of a race — whether it will be fast or slow early — determines which style wins.',
+    scoring:
+      "Scored based on how well this horse's running style matches the expected pace scenario. A 40% Pace score = neutral, meaning this horse's style does not have a significant advantage or disadvantage.",
+  },
+};
+
+interface FactorHelpContentProps {
+  factorKey: string;
+  label: string;
+  percent: number;
+  explanation: string;
+  icon: string;
+}
+
+const FactorHelpContent: React.FC<FactorHelpContentProps> = ({
+  factorKey,
+  label,
+  percent,
+  explanation,
+  icon,
+}) => {
+  const content = FACTOR_HELP_CONTENT[factorKey];
+  if (!content) return null;
+
+  let verdict: string;
+  let verdictClass: string;
+  if (percent >= 67) {
+    verdict = 'This is a genuine strength going into this race.';
+    verdictClass = 'help-verdict--strength';
+  } else if (percent >= 34) {
+    verdict = 'This is a neutral or average area — not helping, not hurting.';
+    verdictClass = 'help-verdict--neutral';
+  } else {
+    verdict = 'This is a significant weakness for this horse.';
+    verdictClass = 'help-verdict--weakness';
+  }
+
+  return (
+    <div className="help-factor">
+      <div className="help-factor__title">
+        <span style={{ fontSize: '16px' }}>{icon}</span>
+        <span>
+          {label} — {percent}%
+        </span>
+      </div>
+
+      <div className="help-section">
+        <div className="help-section__heading">What This Measures</div>
+        <p className="help-section__text">{content.what}</p>
+      </div>
+
+      <div className="help-section">
+        <div className="help-section__heading">How It's Scored</div>
+        <p className="help-section__text">{content.scoring}</p>
+      </div>
+
+      <div className="help-section">
+        <div className="help-section__heading">What This Horse's Score Means</div>
+        <p className={`help-section__text ${verdictClass}`}>{verdict}</p>
+        <p className="help-section__text help-section__text--live">{explanation}</p>
+      </div>
+
+      <div className="help-section">
+        <div className="help-section__heading">Icon Guide</div>
+        <div className="help-icon-guide">
+          <span>
+            <span style={{ color: 'var(--color-success)' }}>✅</span> Strength
+          </span>
+          <span>
+            <span style={{ color: 'var(--color-warning)' }}>⚠️</span> Caution
+          </span>
+          <span>
+            <span style={{ color: 'var(--color-error)' }}>❌</span> Weakness
+          </span>
+          <span>➖ Neutral</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
 // WORKOUT ITEM COMPONENT
 // ============================================================================
 
@@ -516,6 +816,12 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
     'analysis'
   );
 
+  // Help modal state
+  const [furlongHelpOpen, setFurlongHelpOpen] = useState(false);
+  const [factorHelpOpen, setFactorHelpOpen] = useState<string | null>(null);
+  const closeFurlongHelp = useCallback(() => setFurlongHelpOpen(false), []);
+  const closeFactorHelp = useCallback(() => setFactorHelpOpen(null), []);
+
   // Always render the outer container for smooth CSS transitions
   // The --visible class controls the expand/collapse animation
   const scoreTotal = score?.total || 0;
@@ -568,7 +874,13 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
           Right: Horizontal category breakdown with progress bars
           ================================================================ */}
       <section className="furlong-score-analysis">
-        <div className="furlong-score-analysis__header">FURLONG SCORE ANALYSIS</div>
+        <div className="furlong-score-analysis__header">
+          FURLONG SCORE ANALYSIS
+          <HelpButton
+            onClick={() => setFurlongHelpOpen(true)}
+            label="Learn about Furlong Score Analysis"
+          />
+        </div>
         <div className="furlong-score-analysis__content">
           {/* Left Side: Total Score Hero */}
           <div className="furlong-score__total">
@@ -657,6 +969,38 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
         </div>
       </section>
 
+      {/* Furlong Score Help Modal */}
+      <HelpModal isOpen={furlongHelpOpen} onClose={closeFurlongHelp}>
+        <FurlongHelpContent
+          horseName={horse.horseName || 'Horse'}
+          scoreTotal={scoreTotal}
+          scorePercentage={scorePercentage}
+          baseScore={baseScore}
+          edgePercent={edgePercent}
+          valueLabel={valueIndicator.label}
+          dataQuality={score?.confidenceLevel?.toUpperCase() || 'HIGH'}
+          categoryAnalysis={categoryAnalysis}
+        />
+      </HelpModal>
+
+      {/* Factor Help Modal */}
+      <HelpModal isOpen={factorHelpOpen !== null} onClose={closeFactorHelp}>
+        {factorHelpOpen !== null &&
+          (() => {
+            const cat = categoryAnalysis.find((c) => c.key === factorHelpOpen);
+            if (!cat) return null;
+            return (
+              <FactorHelpContent
+                factorKey={cat.key}
+                label={cat.label}
+                percent={cat.percent}
+                explanation={cat.explanation}
+                icon={cat.rating.icon}
+              />
+            );
+          })()}
+      </HelpModal>
+
       {/* ================================================================
           SECTION 2: TAB NAVIGATION
           [Analysis] [View Profile] [View Full PPs] [View Workouts]
@@ -717,6 +1061,10 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                     <span className="factor-breakdown__category-explanation">
                       {cat.explanation}
                     </span>
+                    <HelpButton
+                      onClick={() => setFactorHelpOpen(cat.key)}
+                      label={`Learn about ${cat.label}`}
+                    />
                   </div>
                 ))}
               </div>
