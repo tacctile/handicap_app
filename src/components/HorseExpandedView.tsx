@@ -105,17 +105,28 @@ const ALL_CATEGORIES: Array<{ key: string; label: string; max: number; descripti
   { key: 'sexAnalysis', label: 'SEX ANALYSIS', max: 0, description: 'Gender-based adjustments' },
 ];
 
-// Get letter grade from percentage
-const getLetterGrade = (percent: number): { grade: string; color: string } => {
-  if (percent >= 90) return { grade: 'A+', color: '#22c55e' };
-  if (percent >= 80) return { grade: 'A', color: '#22c55e' };
-  if (percent >= 70) return { grade: 'B', color: '#4ade80' };
-  if (percent >= 60) return { grade: 'B-', color: '#4ade80' };
-  if (percent >= 50) return { grade: 'C+', color: '#eab308' };
-  if (percent >= 40) return { grade: 'C', color: '#eab308' };
-  if (percent >= 30) return { grade: 'D', color: '#f97316' };
-  if (percent >= 20) return { grade: 'D-', color: '#f97316' };
-  return { grade: 'F', color: '#ef4444' };
+// Get field-relative label from rank and field size
+const getFieldLabel = (fieldRank: number, fieldSize: number): { label: string; color: string } => {
+  if (fieldSize <= 4) {
+    // Compressed scale for small fields
+    if (fieldRank === 1) return { label: 'Top Pick', color: '#22c55e' };
+    if (fieldRank === 2) return { label: 'Contender', color: '#22c55e' };
+    return { label: 'Longshot', color: '#eab308' };
+  }
+  if (fieldRank === 1) return { label: 'Top Pick', color: '#22c55e' };
+  if (fieldRank === 2) return { label: 'Contender', color: '#22c55e' };
+  if (fieldRank === 3) return { label: 'In the Mix', color: '#eab308' };
+  if (fieldRank === 4) return { label: 'Longshot', color: '#eab308' };
+  return { label: 'Long Odds', color: '#6B7280' };
+};
+
+// Fallback: percentage-based labels when field rank is not available
+const getPercentLabel = (percent: number): { label: string; color: string } => {
+  if (percent >= 70) return { label: 'Top Tier', color: '#22c55e' };
+  if (percent >= 55) return { label: 'Solid Pick', color: '#22c55e' };
+  if (percent >= 40) return { label: 'In the Mix', color: '#eab308' };
+  if (percent >= 25) return { label: 'Longshot', color: '#eab308' };
+  return { label: 'Long Odds', color: '#6B7280' };
 };
 
 // Get field ranking for a specific category
@@ -520,7 +531,6 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
   score,
 }) => {
   const [activeHelpTab, setActiveHelpTab] = useState<'overview' | 'fullReport'>('overview');
-  const overallGrade = getLetterGrade(scorePercentage);
   const activeFieldSize = allScoredHorses.filter((h) => !h.score.isScratched).length;
   const scratchedHorses = allScoredHorses.filter((h) => h.score.isScratched);
 
@@ -530,6 +540,12 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
     activeHorses
       .sort((a, b) => b.score.total - a.score.total)
       .findIndex((h) => h.horse.horseName === horseName) + 1;
+
+  // Field-relative label for overall grade
+  const overallLabel =
+    overallRank > 0
+      ? getFieldLabel(overallRank, activeFieldSize)
+      : getPercentLabel(scorePercentage);
 
   // Build full report card data for all categories
   const fullReportData = ALL_CATEGORIES.map((cat) => {
@@ -541,7 +557,8 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
     const max = cat.max;
     const percent = max > 0 ? Math.round((value / max) * 100) : 0;
     const ranking = getFieldRanking(horseName, cat.key, allScoredHorses);
-    const grade = max > 0 ? getLetterGrade(percent) : { grade: 'N/A', color: '#6e6e70' };
+    const grade =
+      max > 0 ? getFieldLabel(ranking.rank, ranking.total) : { label: 'N/A', color: '#6e6e70' };
     return { ...cat, value, percent, ranking, grade };
   });
 
@@ -555,8 +572,8 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
           help_outline
         </span>
         <span>Understanding the Score — {horseName}</span>
-        <span className="help-furlong__grade" style={{ color: overallGrade.color }}>
-          {overallGrade.grade}
+        <span className="help-furlong__grade" style={{ color: overallLabel.color }}>
+          {overallLabel.label}
         </span>
       </div>
 
@@ -588,11 +605,18 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
                 <strong>{scorePercentage}%</strong>. Like a spelling test where 100% means you got
                 every word right, a higher score here means the horse checks more boxes for winning.
               </p>
-              <div className="help-tiers">
-                <span className="help-tier help-tier--strong">181+ A-Student</span>
-                <span className="help-tier help-tier--fair">161–180 B-Student</span>
-                <span className="help-tier help-tier--long">131–160 C-Student</span>
-              </div>
+              <p
+                className="help-section__text"
+                style={{
+                  fontStyle: 'italic',
+                  marginTop: '8px',
+                  fontSize: '11px',
+                  color: '#b4b4b6',
+                }}
+              >
+                Your horse's rank is based on how it compares to the other horses in today's race —
+                not a fixed scale.
+              </p>
             </div>
             <div className="help-section">
               <div className="help-section__heading">The teal bar</div>
@@ -646,13 +670,13 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
             <div className="help-categories-grid">
               {categoryAnalysis.map((cat) => {
                 const ranking = getFieldRanking(horseName, cat.key, allScoredHorses);
-                const grade = getLetterGrade(cat.percent);
+                const catLabel = getFieldLabel(ranking.rank, ranking.total);
                 return (
                   <div key={cat.key} className="help-cat-card">
                     <div className="help-cat-card__header">
                       <span className="help-cat-card__name">{cat.label}</span>
-                      <span className="help-cat-card__grade" style={{ color: grade.color }}>
-                        {grade.grade}
+                      <span className="help-cat-card__grade" style={{ color: catLabel.color }}>
+                        {catLabel.label}
                       </span>
                     </div>
                     <div className="help-cat-card__score-row">
@@ -697,8 +721,8 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
           <div className="help-summary">
             <div className="help-summary__header">
               <span className="help-summary__title">Overall Grade</span>
-              <span className="help-summary__grade" style={{ color: overallGrade.color }}>
-                {overallGrade.grade}
+              <span className="help-summary__grade" style={{ color: overallLabel.color }}>
+                {overallLabel.label}
               </span>
             </div>
             <div className="help-summary__details">
@@ -737,11 +761,15 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
               />
             </div>
             <p className="help-summary__text">
-              {scorePercentage >= 60
-                ? `${horseName} is a strong contender in this field, ranking #${overallRank} out of ${activeFieldSize} horses. The data suggests this horse has real ability.`
-                : scorePercentage >= 40
-                  ? `${horseName} is an average runner in this field, ranking #${overallRank} out of ${activeFieldSize}. Not the strongest on paper, but not the weakest either.`
-                  : `${horseName} ranks #${overallRank} out of ${activeFieldSize} in this field. The numbers suggest this horse faces an uphill battle today.`}
+              {overallRank === 1
+                ? `${horseName} is our top pick in this race.`
+                : overallRank === 2
+                  ? `${horseName} is a strong contender — second best in the field on paper.`
+                  : overallRank === 3
+                    ? `${horseName} is in the mix — middle of the pack.`
+                    : overallRank === 4
+                      ? `${horseName} is a longshot — below average in this field.`
+                      : `${horseName} is a long-odds play — among the weakest in this field on paper.`}
             </p>
           </div>
         </>
@@ -763,7 +791,7 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
               <div key={cat.key} className="help-report-row">
                 <span className="help-report-row__name">{cat.label}</span>
                 <span className="help-report-row__grade" style={{ color: cat.grade.color }}>
-                  {cat.grade.grade}
+                  {cat.grade.label}
                 </span>
                 <span className="help-report-row__score">
                   {cat.value}/{cat.max}
@@ -785,8 +813,8 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
           <div className="help-summary" style={{ marginTop: '12px' }}>
             <div className="help-summary__header">
               <span className="help-summary__title">Final Grade</span>
-              <span className="help-summary__grade" style={{ color: overallGrade.color }}>
-                {overallGrade.grade}
+              <span className="help-summary__grade" style={{ color: overallLabel.color }}>
+                {overallLabel.label}
               </span>
             </div>
             <div className="help-summary__details">
@@ -914,13 +942,13 @@ const FactorHelpContent: React.FC<FactorHelpContentProps> = ({
   let verdict: string;
   let verdictClass: string;
   if (percent >= 67) {
-    verdict = 'This is a real strength for this horse — like getting an A on this subject.';
+    verdict = 'This is a genuine strength for this horse in this race.';
     verdictClass = 'help-verdict--strength';
   } else if (percent >= 34) {
-    verdict = 'This is average — not helping, not hurting. Like getting a C.';
+    verdict = 'This is average — not helping, not hurting.';
     verdictClass = 'help-verdict--neutral';
   } else {
-    verdict = 'This is a weakness — like getting a D or F on this subject.';
+    verdict = 'This is a real weakness for this horse in this race.';
     verdictClass = 'help-verdict--weakness';
   }
 
