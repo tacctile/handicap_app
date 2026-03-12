@@ -4,12 +4,13 @@
  * @param props - Component props
  * @returns React element
  */
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ErrorBoundary } from './ErrorBoundary';
 import './HorseExpandedView.css';
 import { PPLine } from './PPLine';
 import type { HorseEntry, PastPerformance, Workout } from '../types/drf';
-import type { HorseScore } from '../lib/scoring';
+import type { HorseScore, ScoredHorse } from '../lib/scoring';
 import { formatRacingDistance, getEdgeColor } from '../utils/formatters';
 import type { BetTier, RaceContextSummary } from '../hooks/useRaceBets';
 
@@ -36,6 +37,112 @@ const SCORE_LIMITS = {
   base: MAX_BASE_SCORE, // 336 - Max base score before overlay
   total: MAX_SCORE, // 376 - Max final score (base + overlay)
 } as const;
+
+// All scoring categories including hidden ones (for full report card)
+const ALL_CATEGORIES: Array<{ key: string; label: string; max: number; description: string }> = [
+  {
+    key: 'connections',
+    label: 'CONNECTIONS',
+    max: SCORING_LIMITS.connections,
+    description: 'Trainer & Jockey combo quality',
+  },
+  {
+    key: 'postPosition',
+    label: 'POST POSITION',
+    max: SCORING_LIMITS.postPosition,
+    description: 'Starting gate advantage',
+  },
+  {
+    key: 'speedClass',
+    label: 'SPEED/CLASS',
+    max: SCORING_LIMITS.speedClass,
+    description: 'Raw speed + competition level',
+  },
+  { key: 'form', label: 'FORM', max: SCORING_LIMITS.form, description: 'Recent race performance' },
+  {
+    key: 'equipment',
+    label: 'EQUIPMENT',
+    max: SCORING_LIMITS.equipment,
+    description: 'Gear changes & effects',
+  },
+  {
+    key: 'pace',
+    label: 'PACE',
+    max: SCORING_LIMITS.pace,
+    description: 'Running style fit for this race',
+  },
+  {
+    key: 'distanceSurface',
+    label: 'DISTANCE/SURFACE',
+    max: 20,
+    description: 'Track type & distance preference',
+  },
+  {
+    key: 'trainerPatterns',
+    label: 'TRAINER PATTERNS',
+    max: 8,
+    description: 'Trainer situational win patterns',
+  },
+  {
+    key: 'comboPatterns',
+    label: 'COMBO PATTERNS',
+    max: 10,
+    description: 'Multi-factor winning combos',
+  },
+  {
+    key: 'trackSpecialist',
+    label: 'TRACK SPECIALIST',
+    max: 10,
+    description: 'Performance at this specific track',
+  },
+  {
+    key: 'trainerSurfaceDistance',
+    label: 'TRAINER SURFACE/DIST',
+    max: 6,
+    description: 'Trainer skill on this surface & distance',
+  },
+  { key: 'weightAnalysis', label: 'WEIGHT', max: 1, description: 'Weight change impact' },
+  { key: 'sexAnalysis', label: 'SEX ANALYSIS', max: 0, description: 'Gender-based adjustments' },
+];
+
+// Get letter grade from percentage
+const getLetterGrade = (percent: number): { grade: string; color: string } => {
+  if (percent >= 90) return { grade: 'A+', color: '#22c55e' };
+  if (percent >= 80) return { grade: 'A', color: '#22c55e' };
+  if (percent >= 70) return { grade: 'B', color: '#4ade80' };
+  if (percent >= 60) return { grade: 'B-', color: '#4ade80' };
+  if (percent >= 50) return { grade: 'C+', color: '#eab308' };
+  if (percent >= 40) return { grade: 'C', color: '#eab308' };
+  if (percent >= 30) return { grade: 'D', color: '#f97316' };
+  if (percent >= 20) return { grade: 'D-', color: '#f97316' };
+  return { grade: 'F', color: '#ef4444' };
+};
+
+// Get field ranking for a specific category
+const getFieldRanking = (
+  horseName: string,
+  categoryKey: string,
+  allScoredHorses: ScoredHorse[]
+): { rank: number; total: number; percentile: string } => {
+  const activeHorses = allScoredHorses.filter((h) => !h.score.isScratched);
+  if (activeHorses.length === 0) return { rank: 0, total: 0, percentile: '—' };
+
+  const scores = activeHorses
+    .map((h) => {
+      const breakdown = h.score.breakdown;
+      const cat = breakdown?.[categoryKey as keyof typeof breakdown] as
+        | { total?: number }
+        | undefined;
+      return { name: h.horse.horseName, value: cat?.total || 0 };
+    })
+    .sort((a, b) => b.value - a.value);
+
+  const rank = scores.findIndex((s) => s.name === horseName) + 1;
+  const total = scores.length;
+  const percentile = total > 1 ? `Top ${Math.round((rank / total) * 100)}%` : '—';
+
+  return { rank: rank || total, total, percentile };
+};
 
 // Equipment code mappings
 const EQUIPMENT_CODES: Record<string, string> = {
@@ -320,6 +427,549 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title }) => (
 );
 
 // ============================================================================
+// HELP MODAL OVERLAY COMPONENT
+// ============================================================================
+
+interface HelpModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}
+
+const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, children }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="help-modal-overlay" onClick={onClose}>
+      <div
+        className="help-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        <button className="help-modal__close" onClick={onClose} aria-label="Close help">
+          <span className="material-icons" style={{ fontSize: '18px' }}>
+            close
+          </span>
+        </button>
+        <div className="help-modal__content">{children}</div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+// Small "?" button component
+const HelpButton: React.FC<{ onClick: () => void; label: string }> = ({ onClick, label }) => (
+  <button
+    className="help-btn"
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick();
+    }}
+    aria-label={label}
+    title={label}
+  >
+    ?
+  </button>
+);
+
+// ============================================================================
+// FURLONG SCORE HELP MODAL CONTENT
+// ============================================================================
+
+interface FurlongHelpContentProps {
+  horseName: string;
+  scoreTotal: number;
+  scorePercentage: number;
+  baseScore: number;
+  edgePercent: number;
+  valueLabel: string;
+  dataQuality: string;
+  categoryAnalysis: Array<{
+    key: string;
+    label: string;
+    value: number;
+    max: number;
+    percent: number;
+    explanation: string;
+  }>;
+  allScoredHorses: ScoredHorse[];
+  score?: HorseScore;
+}
+
+const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
+  horseName,
+  scoreTotal,
+  scorePercentage,
+  baseScore,
+  edgePercent,
+  valueLabel,
+  dataQuality,
+  categoryAnalysis,
+  allScoredHorses,
+  score,
+}) => {
+  const [activeHelpTab, setActiveHelpTab] = useState<'overview' | 'fullReport'>('overview');
+  const overallGrade = getLetterGrade(scorePercentage);
+  const activeFieldSize = allScoredHorses.filter((h) => !h.score.isScratched).length;
+  const scratchedHorses = allScoredHorses.filter((h) => h.score.isScratched);
+
+  // Get overall field rank
+  const activeHorses = allScoredHorses.filter((h) => !h.score.isScratched);
+  const overallRank =
+    activeHorses
+      .sort((a, b) => b.score.total - a.score.total)
+      .findIndex((h) => h.horse.horseName === horseName) + 1;
+
+  // Build full report card data for all categories
+  const fullReportData = ALL_CATEGORIES.map((cat) => {
+    const breakdown = score?.breakdown;
+    const catData = breakdown?.[cat.key as keyof typeof breakdown] as
+      | { total?: number }
+      | undefined;
+    const value = catData?.total || 0;
+    const max = cat.max;
+    const percent = max > 0 ? Math.round((value / max) * 100) : 0;
+    const ranking = getFieldRanking(horseName, cat.key, allScoredHorses);
+    const grade = max > 0 ? getLetterGrade(percent) : { grade: 'N/A', color: '#6e6e70' };
+    return { ...cat, value, percent, ranking, grade };
+  });
+
+  return (
+    <div className="help-furlong">
+      <div className="help-furlong__title">
+        <span
+          className="material-icons"
+          style={{ fontSize: '18px', color: 'var(--color-primary)' }}
+        >
+          help_outline
+        </span>
+        <span>Understanding the Score — {horseName}</span>
+        <span className="help-furlong__grade" style={{ color: overallGrade.color }}>
+          {overallGrade.grade}
+        </span>
+      </div>
+
+      {/* Tab buttons */}
+      <div className="help-tabs">
+        <button
+          className={`help-tabs__btn ${activeHelpTab === 'overview' ? 'help-tabs__btn--active' : ''}`}
+          onClick={() => setActiveHelpTab('overview')}
+        >
+          Overview
+        </button>
+        <button
+          className={`help-tabs__btn ${activeHelpTab === 'fullReport' ? 'help-tabs__btn--active' : ''}`}
+          onClick={() => setActiveHelpTab('fullReport')}
+        >
+          Full Report Card
+        </button>
+      </div>
+
+      {/* ==================== TAB 1: OVERVIEW ==================== */}
+      {activeHelpTab === 'overview' && (
+        <>
+          <div className="help-three-col">
+            <div className="help-section">
+              <div className="help-section__heading">What is this number?</div>
+              <p className="help-section__text">
+                Think of it like a test score. {horseName} got <strong>{scoreTotal}</strong> out of{' '}
+                <strong>{MAX_SCORE}</strong> possible points — that's{' '}
+                <strong>{scorePercentage}%</strong>. Like a spelling test where 100% means you got
+                every word right, a higher score here means the horse checks more boxes for winning.
+              </p>
+              <div className="help-tiers">
+                <span className="help-tier help-tier--strong">181+ A-Student</span>
+                <span className="help-tier help-tier--fair">161–180 B-Student</span>
+                <span className="help-tier help-tier--long">131–160 C-Student</span>
+              </div>
+            </div>
+            <div className="help-section">
+              <div className="help-section__heading">The teal bar</div>
+              <p className="help-section__text">
+                The teal-colored bar is like a fuel gauge. A full bar means this horse scored close
+                to perfect. A bar that only fills halfway means it scored about average. All bars
+                are the same teal color — what matters is <strong>how far it fills</strong>, not the
+                color.
+              </p>
+            </div>
+            <div className="help-section">
+              <div className="help-section__heading">Data Quality: {dataQuality}</div>
+              <p className="help-section__text">
+                This tells you how much homework we could do. <strong>HIGH</strong> = we had all the
+                info we needed. <strong>MEDIUM</strong> = some info was missing, so we estimated.{' '}
+                <strong>LOW</strong> = not much data available — take the score with a grain of
+                salt.
+              </p>
+            </div>
+          </div>
+
+          <div className="help-two-col">
+            <div className="help-section">
+              <div className="help-section__heading">
+                Base: {baseScore}/{MAX_BASE_SCORE}
+              </div>
+              <p className="help-section__text">
+                This is the "report card" score — how good is this horse on paper? It's built from
+                six categories below (speed, form, connections, etc.). Think of it like grading a
+                student on math, reading, science, etc. and adding them all up.
+              </p>
+            </div>
+            <div className="help-section">
+              <div className="help-section__heading">
+                Edge: {edgePercent >= 0 ? '+' : ''}
+                {Math.round(edgePercent)}%
+              </div>
+              <p className="help-section__text">
+                This is the "deal" meter. Imagine a toy is worth $10, but the store is selling it
+                for $5 — that's a great deal (+100% edge). A <strong>positive edge</strong> means
+                the horse is better than the public thinks. A <strong>negative edge</strong> means
+                the public already knows this horse is good, so you're overpaying. Current rating:{' '}
+                <strong>{valueLabel}</strong>.
+              </p>
+            </div>
+          </div>
+
+          {/* Category cards with real bars and field comparison */}
+          <div className="help-section">
+            <div className="help-section__heading">The six subjects on the report card</div>
+            <div className="help-categories-grid">
+              {categoryAnalysis.map((cat) => {
+                const ranking = getFieldRanking(horseName, cat.key, allScoredHorses);
+                const grade = getLetterGrade(cat.percent);
+                return (
+                  <div key={cat.key} className="help-cat-card">
+                    <div className="help-cat-card__header">
+                      <span className="help-cat-card__name">{cat.label}</span>
+                      <span className="help-cat-card__grade" style={{ color: grade.color }}>
+                        {grade.grade}
+                      </span>
+                    </div>
+                    <div className="help-cat-card__score-row">
+                      <span className="help-cat-card__score">
+                        {cat.value}/{cat.max}
+                      </span>
+                      <span className="help-cat-card__percent">({cat.percent}%)</span>
+                    </div>
+                    {/* Real teal progress bar matching main screen */}
+                    <div className="help-cat-card__bar">
+                      <div
+                        className="help-cat-card__bar-fill"
+                        style={{ width: `${cat.percent}%`, backgroundColor: '#19abb5' }}
+                      />
+                    </div>
+                    {/* Field ranking */}
+                    <div className="help-cat-card__ranking">
+                      #{ranking.rank} of {ranking.total} horses
+                    </div>
+                    <p className="help-cat-card__desc">
+                      {cat.key === 'connections' &&
+                        'The coach and driver. A great trainer + jockey combo is like having the best teacher AND tutor.'}
+                      {cat.key === 'postPosition' &&
+                        'Starting position in the gate. Like getting a lane assignment in a race — some lanes have an advantage.'}
+                      {cat.key === 'speedClass' &&
+                        "Raw speed + level of competition. The biggest factor. Like comparing a kid's 100m time AND what league they ran it in."}
+                      {cat.key === 'form' &&
+                        'How the horse has been running lately. A horse winning its last 3 races is "on fire." A horse finishing last is ice cold.'}
+                      {cat.key === 'equipment' &&
+                        'Gear changes (like adding blinders). Sometimes a small equipment change is like getting new running shoes — it can make a big difference.'}
+                      {cat.key === 'pace' &&
+                        "Does this horse's running style fit today's race? A sprinter in a slow race has an advantage, like a fast kid getting a head start."}
+                    </p>
+                    <div className="help-cat-card__live">{cat.explanation}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Overall Summary "Report Card" */}
+          <div className="help-summary">
+            <div className="help-summary__header">
+              <span className="help-summary__title">Overall Grade</span>
+              <span className="help-summary__grade" style={{ color: overallGrade.color }}>
+                {overallGrade.grade}
+              </span>
+            </div>
+            <div className="help-summary__details">
+              <div className="help-summary__stat">
+                <span className="help-summary__stat-label">Total Score</span>
+                <span className="help-summary__stat-value">
+                  {scoreTotal}/{MAX_SCORE}
+                </span>
+              </div>
+              <div className="help-summary__stat">
+                <span className="help-summary__stat-label">Field Rank</span>
+                <span className="help-summary__stat-value">
+                  #{overallRank} of {activeFieldSize}
+                </span>
+              </div>
+              <div className="help-summary__stat">
+                <span className="help-summary__stat-label">Edge</span>
+                <span
+                  className="help-summary__stat-value"
+                  style={{ color: getEdgeColor(edgePercent) }}
+                >
+                  {edgePercent >= 0 ? '+' : ''}
+                  {Math.round(edgePercent)}%
+                </span>
+              </div>
+              <div className="help-summary__stat">
+                <span className="help-summary__stat-label">Rating</span>
+                <span className="help-summary__stat-value">{valueLabel}</span>
+              </div>
+            </div>
+            {/* Overall progress bar */}
+            <div className="help-summary__bar">
+              <div
+                className="help-summary__bar-fill"
+                style={{ width: `${scorePercentage}%`, backgroundColor: '#19abb5' }}
+              />
+            </div>
+            <p className="help-summary__text">
+              {scorePercentage >= 60
+                ? `${horseName} is a strong contender in this field, ranking #${overallRank} out of ${activeFieldSize} horses. The data suggests this horse has real ability.`
+                : scorePercentage >= 40
+                  ? `${horseName} is an average runner in this field, ranking #${overallRank} out of ${activeFieldSize}. Not the strongest on paper, but not the weakest either.`
+                  : `${horseName} ranks #${overallRank} out of ${activeFieldSize} in this field. The numbers suggest this horse faces an uphill battle today.`}
+            </p>
+          </div>
+        </>
+      )}
+
+      {/* ==================== TAB 2: FULL REPORT CARD ==================== */}
+      {activeHelpTab === 'fullReport' && (
+        <>
+          <div className="help-section" style={{ marginBottom: '8px' }}>
+            <p className="help-section__text">
+              This is the complete breakdown of <strong>every category</strong> we grade {horseName}{' '}
+              on — including categories not shown on the main screen. The 6 "core" categories are
+              the top ones; the rest are bonus factors that fine-tune the final score.
+            </p>
+          </div>
+
+          <div className="help-report-grid">
+            {fullReportData.map((cat) => (
+              <div key={cat.key} className="help-report-row">
+                <span className="help-report-row__name">{cat.label}</span>
+                <span className="help-report-row__grade" style={{ color: cat.grade.color }}>
+                  {cat.grade.grade}
+                </span>
+                <span className="help-report-row__score">
+                  {cat.value}/{cat.max}
+                </span>
+                <div className="help-report-row__bar">
+                  <div
+                    className="help-report-row__bar-fill"
+                    style={{ width: `${cat.percent}%`, backgroundColor: '#19abb5' }}
+                  />
+                </div>
+                <span className="help-report-row__rank">
+                  #{cat.ranking.rank}/{cat.ranking.total}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Overall summary in full report too */}
+          <div className="help-summary" style={{ marginTop: '12px' }}>
+            <div className="help-summary__header">
+              <span className="help-summary__title">Final Grade</span>
+              <span className="help-summary__grade" style={{ color: overallGrade.color }}>
+                {overallGrade.grade}
+              </span>
+            </div>
+            <div className="help-summary__details">
+              <div className="help-summary__stat">
+                <span className="help-summary__stat-label">Total</span>
+                <span className="help-summary__stat-value">
+                  {scoreTotal}/{MAX_SCORE}
+                </span>
+              </div>
+              <div className="help-summary__stat">
+                <span className="help-summary__stat-label">Field Rank</span>
+                <span className="help-summary__stat-value">
+                  #{overallRank} of {activeFieldSize}
+                </span>
+              </div>
+              <div className="help-summary__stat">
+                <span className="help-summary__stat-label">Base</span>
+                <span className="help-summary__stat-value">
+                  {baseScore}/{MAX_BASE_SCORE}
+                </span>
+              </div>
+              <div className="help-summary__stat">
+                <span className="help-summary__stat-label">Overlay</span>
+                <span className="help-summary__stat-value">{scoreTotal - baseScore}/40</span>
+              </div>
+            </div>
+            <div className="help-summary__bar">
+              <div
+                className="help-summary__bar-fill"
+                style={{ width: `${scorePercentage}%`, backgroundColor: '#19abb5' }}
+              />
+            </div>
+          </div>
+
+          {/* Scratched horses note */}
+          {scratchedHorses.length > 0 && (
+            <div className="help-scratched-note">
+              <span
+                className="help-scratched-note__icon material-icons"
+                style={{ fontSize: '14px' }}
+              >
+                info
+              </span>
+              <div>
+                <strong>Scratched horses excluded:</strong>{' '}
+                {scratchedHorses.map((h) => h.horse.horseName).join(', ')}. Scratched horses have
+                been removed from all rankings and comparisons. Their scores are not factored into
+                any calculations for the remaining horses.
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
+// FACTOR HELP MODAL CONTENT
+// ============================================================================
+
+const FACTOR_HELP_CONTENT: Record<string, { what: string; analogy: string; scoring: string }> = {
+  connections: {
+    what: 'The trainer teaches the horse how to race. The jockey steers it during the race. When both are winning a lot lately, it means the "team" is hot.',
+    analogy:
+      'Think of it like a basketball team. A great coach (trainer) + a great point guard (jockey) = more wins. We check their recent win rates to see if this team is clicking.',
+    scoring:
+      'Top trainers and jockeys (15%+ win rate each) earn the most points. If the trainer-jockey pair has been winning together recently, bonus points.',
+  },
+  postPosition: {
+    what: 'This is which starting gate the horse leaves from. Gate 1 is on the inside rail, and higher numbers are further out.',
+    analogy:
+      'Like lanes in a 400m track race — the inside lane runs less distance on turns, but can get boxed in. We look at which gate has won the most at THIS track and distance.',
+    scoring:
+      'We compare this post against real win rate data for this exact track and distance. A high % means history says this is a great gate to start from.',
+  },
+  speedClass: {
+    what: 'How fast has this horse run (measured by "Beyer Speed Figures" — a standard score used at every US track), and how tough was the competition?',
+    analogy:
+      'Like comparing SAT scores AND which school you went to. Running fast at a low-level race is good, but running fast against top horses is great. This is the single biggest factor in the score.',
+    scoring:
+      "Best recent Beyer is the main driver. 77+ = elite. 65–76 = strong. 50–64 = average. Under 50 = below average. Adjusted up or down based on the level of today's race.",
+  },
+  form: {
+    what: 'Is this horse on a hot streak or a cold streak? We look at the last 3 races. Finishing in the top 3 = hot. Finishing way back = cold.',
+    analogy:
+      'Like checking a baseball player\'s last 10 games. Are they hitting .400 or .100? Recent results tell you who is "in the zone" right now.',
+    scoring:
+      'Top-3 finishes earn points. Wins earn the most. More recent races count more. 70%+ form = the horse is running well right now.',
+  },
+  equipment: {
+    what: 'Sometimes trainers add or remove gear — like blinkers (blinders that help a distracted horse focus) or special shoes. These small changes can make a big difference.',
+    analogy:
+      'Like a runner switching to racing spikes, or a swimmer shaving their head. A small change in equipment can unlock better performance.',
+    scoring:
+      'Points go up if this equipment change has worked before. No equipment change = neutral score (around 25%). First-time blinkers is the most watched change in racing.',
+  },
+  pace: {
+    what: "Every horse has a style: some sprint to the front early, some sit in the middle, some come from behind. The question is: does today's race favor their style?",
+    analogy:
+      "Imagine a tug-of-war. If 5 horses want to lead, they'll tire each other out, and the horse waiting in back wins easily. If only 1 horse wants to lead, it can cruise and save energy.",
+    scoring:
+      "We predict the pace scenario and check if this horse's style fits. High % = the race sets up perfectly for them. Low % = they're at a style disadvantage today.",
+  },
+};
+
+interface FactorHelpContentProps {
+  factorKey: string;
+  label: string;
+  percent: number;
+  explanation: string;
+  icon: string;
+}
+
+const FactorHelpContent: React.FC<FactorHelpContentProps> = ({
+  factorKey,
+  label,
+  percent,
+  explanation,
+  icon,
+}) => {
+  const content = FACTOR_HELP_CONTENT[factorKey];
+  if (!content) return null;
+
+  let verdict: string;
+  let verdictClass: string;
+  if (percent >= 67) {
+    verdict = 'This is a real strength for this horse — like getting an A on this subject.';
+    verdictClass = 'help-verdict--strength';
+  } else if (percent >= 34) {
+    verdict = 'This is average — not helping, not hurting. Like getting a C.';
+    verdictClass = 'help-verdict--neutral';
+  } else {
+    verdict = 'This is a weakness — like getting a D or F on this subject.';
+    verdictClass = 'help-verdict--weakness';
+  }
+
+  return (
+    <div className="help-factor">
+      <div className="help-factor__title">
+        <span style={{ fontSize: '16px' }}>{icon}</span>
+        <span>
+          {label} — {percent}%
+        </span>
+      </div>
+
+      <div className="help-factor__body">
+        <div>
+          <div className="help-section">
+            <div className="help-section__heading">What is this?</div>
+            <p className="help-section__text">{content.what}</p>
+          </div>
+          <div className="help-section">
+            <div className="help-section__heading">Think of it like...</div>
+            <p className="help-section__text">{content.analogy}</p>
+          </div>
+        </div>
+        <div>
+          <div className="help-section">
+            <div className="help-section__heading">How we grade it</div>
+            <p className="help-section__text">{content.scoring}</p>
+          </div>
+          <div className="help-section">
+            <div className="help-section__heading">This horse's grade</div>
+            <p className={`help-section__text ${verdictClass}`}>{verdict}</p>
+            <p className="help-section__text help-section__text--live">{explanation}</p>
+          </div>
+          <div className="help-section">
+            <div className="help-section__heading">Icons</div>
+            <div className="help-icon-guide">
+              <span>✅ Strength</span>
+              <span>⚠️ Caution</span>
+              <span>❌ Weakness</span>
+              <span>➖ Neutral</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
 // WORKOUT ITEM COMPONENT
 // ============================================================================
 
@@ -477,6 +1127,8 @@ interface HorseExpandedViewProps {
   isBestInPassRace?: boolean;
   // All horses in the race for suggested bets display (legacy)
   raceHorses?: Array<{ horseName: string; modelRank?: number; programNumber?: string }>;
+  // All scored horses for field comparison in help modals
+  allScoredHorses?: ScoredHorse[];
   // New bet recommendations from useRaceBets hook
   betRecommendations?: {
     conservative: BetTier;
@@ -509,12 +1161,19 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
   raceVerdict: _raceVerdict = 'BET',
   isBestInPassRace: _isBestInPassRace = false,
   raceHorses: _raceHorses = [],
+  allScoredHorses = [],
   betRecommendations,
 }) => {
   // State for active tab - defaults to 'analysis'
   const [activeTab, setActiveTab] = useState<'analysis' | 'pps' | 'workouts' | 'profile'>(
     'analysis'
   );
+
+  // Help modal state
+  const [furlongHelpOpen, setFurlongHelpOpen] = useState(false);
+  const [factorHelpOpen, setFactorHelpOpen] = useState<string | null>(null);
+  const closeFurlongHelp = useCallback(() => setFurlongHelpOpen(false), []);
+  const closeFactorHelp = useCallback(() => setFactorHelpOpen(null), []);
 
   // Always render the outer container for smooth CSS transitions
   // The --visible class controls the expand/collapse animation
@@ -568,7 +1227,13 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
           Right: Horizontal category breakdown with progress bars
           ================================================================ */}
       <section className="furlong-score-analysis">
-        <div className="furlong-score-analysis__header">FURLONG SCORE ANALYSIS</div>
+        <div className="furlong-score-analysis__header">
+          FURLONG SCORE ANALYSIS
+          <HelpButton
+            onClick={() => setFurlongHelpOpen(true)}
+            label="Learn about Furlong Score Analysis"
+          />
+        </div>
         <div className="furlong-score-analysis__content">
           {/* Left Side: Total Score Hero */}
           <div className="furlong-score__total">
@@ -657,6 +1322,40 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
         </div>
       </section>
 
+      {/* Furlong Score Help Modal */}
+      <HelpModal isOpen={furlongHelpOpen} onClose={closeFurlongHelp}>
+        <FurlongHelpContent
+          horseName={horse.horseName || 'Horse'}
+          scoreTotal={scoreTotal}
+          scorePercentage={scorePercentage}
+          baseScore={baseScore}
+          edgePercent={edgePercent}
+          valueLabel={valueIndicator.label}
+          dataQuality={score?.confidenceLevel?.toUpperCase() || 'HIGH'}
+          categoryAnalysis={categoryAnalysis}
+          allScoredHorses={allScoredHorses}
+          score={score}
+        />
+      </HelpModal>
+
+      {/* Factor Help Modal */}
+      <HelpModal isOpen={factorHelpOpen !== null} onClose={closeFactorHelp}>
+        {factorHelpOpen !== null &&
+          (() => {
+            const cat = categoryAnalysis.find((c) => c.key === factorHelpOpen);
+            if (!cat) return null;
+            return (
+              <FactorHelpContent
+                factorKey={cat.key}
+                label={cat.label}
+                percent={cat.percent}
+                explanation={cat.explanation}
+                icon={cat.rating.icon}
+              />
+            );
+          })()}
+      </HelpModal>
+
       {/* ================================================================
           SECTION 2: TAB NAVIGATION
           [Analysis] [View Profile] [View Full PPs] [View Workouts]
@@ -717,6 +1416,10 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                     <span className="factor-breakdown__category-explanation">
                       {cat.explanation}
                     </span>
+                    <HelpButton
+                      onClick={() => setFactorHelpOpen(cat.key)}
+                      label={`Learn about ${cat.label}`}
+                    />
                   </div>
                 ))}
               </div>

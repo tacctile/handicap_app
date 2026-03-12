@@ -1937,3 +1937,673 @@
     font-size: 9px;
   }
 }
+
+/* ============================================================================
+   HELP MODAL OVERLAY & BUTTON STYLES
+   Contextual help for Furlong Score Analysis and Factor Breakdown
+   ============================================================================ */
+
+/* Small circular "?" button - inline, does not disrupt layout */
+.help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--color-text-tertiary, #6e6e70);
+  background: transparent;
+  color: var(--color-text-tertiary, #6e6e70);
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 6px;
+  flex-shrink: 0;
+  transition: all var(--transition-fast, 150ms ease);
+  vertical-align: middle;
+}
+
+.help-btn:hover {
+  border-color: var(--color-primary, #19abb5);
+  color: var(--color-primary, #19abb5);
+  background: rgba(25, 171, 181, 0.1);
+}
+
+.help-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(25, 171, 181, 0.3);
+}
+
+/* Ensure the header can contain the ? button inline */
+.furlong-score-analysis__header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.factor-breakdown__category {
+  position: relative;
+}
+
+.factor-breakdown__category .help-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   HELP MODAL OVERLAY
+   Dark backdrop + centered modal, matching existing modal-overlay pattern
+   ============================================================================ */
+
+.help-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: help-modal-fade-in 0.2s ease;
+}
+
+@keyframes help-modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.help-modal {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  max-height: 92vh;
+  overflow-y: auto;
+  background: var(--color-card, #0f0f10);
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  animation: help-modal-scale-in 0.2s ease;
+}
+
+@keyframes help-modal-scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.help-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border, #2a2a2c);
+  background: var(--color-elevated, #1a1a1c);
+  color: var(--color-text-secondary, #b4b4b6);
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms ease);
+}
+
+.help-modal__close:hover {
+  background: var(--color-primary, #19abb5);
+  border-color: var(--color-primary, #19abb5);
+  color: #fff;
+}
+
+.help-modal__content {
+  padding: 20px 28px 24px;
+}
+
+/* ============================================================================
+   HELP CONTENT SHARED STYLES
+   ============================================================================ */
+
+.help-section {
+  margin-bottom: 10px;
+}
+
+.help-section:last-child {
+  margin-bottom: 0;
+}
+
+.help-section__heading {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--color-primary, #19abb5);
+  margin-bottom: 4px;
+}
+
+.help-section__text {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-secondary, #b4b4b6);
+  margin: 0 0 4px;
+}
+
+.help-section__text strong {
+  color: var(--color-text-primary, #eeeff1);
+  font-weight: 600;
+}
+
+.help-section__text--live {
+  color: var(--color-text-tertiary, #6e6e70);
+  font-style: italic;
+  font-size: 11px;
+}
+
+/* ============================================================================
+   FURLONG HELP MODAL CONTENT
+   ============================================================================ */
+
+.help-furlong__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary, #eeeff1);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border, #2a2a2c);
+}
+
+.help-tiers {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.help-tier {
+  font-family: var(--font-mono, 'SF Mono', monospace);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm, 6px);
+}
+
+.help-tier--strong {
+  color: var(--color-tier-elite, #22c55e);
+  background: var(--color-tier-elite-bg, rgba(34, 197, 94, 0.15));
+}
+
+.help-tier--fair {
+  color: var(--color-tier-fair, #eab308);
+  background: var(--color-tier-fair-bg, rgba(234, 179, 8, 0.15));
+}
+
+.help-tier--long {
+  color: var(--color-tier-neutral, #f97316);
+  background: var(--color-tier-neutral-bg, rgba(249, 115, 22, 0.15));
+}
+
+.help-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Three-column layout for top explanation sections */
+.help-three-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+/* Four-column layout for even more compact display */
+.help-four-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+/* Six categories grid - 3 columns to go horizontal and avoid scroll */
+.help-categories-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.help-cat-card {
+  background: var(--color-elevated, #1a1a1c);
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: var(--radius-sm, 6px);
+  padding: 8px 10px;
+}
+
+.help-cat-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.help-cat-card__name {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--color-text-primary, #eeeff1);
+}
+
+.help-cat-card__score {
+  font-family: var(--font-mono, 'SF Mono', monospace);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-primary, #19abb5);
+}
+
+.help-cat-card__desc {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--color-text-secondary, #b4b4b6);
+  margin: 0 0 4px;
+}
+
+.help-cat-card__live {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 10px;
+  font-style: italic;
+  color: var(--color-text-tertiary, #6e6e70);
+}
+
+/* ============================================================================
+   HELP MODAL TABS
+   ============================================================================ */
+
+.help-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--color-border, #2a2a2c);
+  padding-bottom: 8px;
+}
+
+.help-tabs__btn {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  padding: 5px 14px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--color-border, #2a2a2c);
+  background: transparent;
+  color: var(--color-text-secondary, #b4b4b6);
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms ease);
+}
+
+.help-tabs__btn:hover {
+  border-color: var(--color-primary, #19abb5);
+  color: var(--color-primary, #19abb5);
+}
+
+.help-tabs__btn--active {
+  background: rgba(25, 171, 181, 0.15);
+  border-color: var(--color-primary, #19abb5);
+  color: var(--color-primary, #19abb5);
+}
+
+/* Grade badge in title */
+.help-furlong__grade {
+  font-family: var(--font-mono, 'SF Mono', monospace);
+  font-size: 16px;
+  font-weight: 800;
+  margin-left: auto;
+  padding: 2px 10px;
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================================================
+   HELP CATEGORY CARD ENHANCEMENTS (bars, grades, rankings)
+   ============================================================================ */
+
+.help-cat-card__score-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.help-cat-card__percent {
+  font-family: var(--font-mono, 'SF Mono', monospace);
+  font-size: 9px;
+  color: var(--color-text-tertiary, #6e6e70);
+}
+
+.help-cat-card__grade {
+  font-family: var(--font-mono, 'SF Mono', monospace);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.help-cat-card__bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.help-cat-card__bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.help-cat-card__ranking {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--color-text-tertiary, #6e6e70);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 4px;
+}
+
+/* ============================================================================
+   HELP OVERALL SUMMARY / REPORT CARD
+   ============================================================================ */
+
+.help-summary {
+  background: var(--color-elevated, #1a1a1c);
+  border: 1px solid var(--color-border, #2a2a2c);
+  border-radius: var(--radius-sm, 6px);
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+
+.help-summary__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.help-summary__title {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--color-primary, #19abb5);
+}
+
+.help-summary__grade {
+  font-family: var(--font-mono, 'SF Mono', monospace);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.help-summary__details {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.help-summary__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.help-summary__stat-label {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary, #6e6e70);
+}
+
+.help-summary__stat-value {
+  font-family: var(--font-mono, 'SF Mono', monospace);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-primary, #eeeff1);
+}
+
+.help-summary__bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.help-summary__bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.help-summary__text {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--color-text-secondary, #b4b4b6);
+  margin: 0;
+}
+
+/* ============================================================================
+   FULL REPORT CARD GRID (Tab 2)
+   ============================================================================ */
+
+.help-report-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.help-report-row {
+  display: grid;
+  grid-template-columns: 140px 32px 52px 1fr 56px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  background: var(--color-elevated, #1a1a1c);
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--color-border, #2a2a2c);
+}
+
+.help-report-row__name {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-primary, #eeeff1);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.help-report-row__grade {
+  font-family: var(--font-mono, 'SF Mono', monospace);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.help-report-row__score {
+  font-family: var(--font-mono, 'SF Mono', monospace);
+  font-size: 10px;
+  color: var(--color-text-secondary, #b4b4b6);
+  text-align: right;
+}
+
+.help-report-row__bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.help-report-row__bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.help-report-row__rank {
+  font-family: var(--font-mono, 'SF Mono', monospace);
+  font-size: 10px;
+  color: var(--color-text-tertiary, #6e6e70);
+  text-align: right;
+}
+
+/* ============================================================================
+   SCRATCHED HORSES NOTE
+   ============================================================================ */
+
+.help-scratched-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-top: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm, 6px);
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--color-text-secondary, #b4b4b6);
+}
+
+.help-scratched-note__icon {
+  color: var(--color-error, #ef4444);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ============================================================================
+   FACTOR HELP MODAL CONTENT
+   ============================================================================ */
+
+.help-factor__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary, #eeeff1);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border, #2a2a2c);
+}
+
+/* Factor help uses horizontal 2-col layout for "what" and "scoring" side by side */
+.help-factor__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.help-verdict--strength {
+  color: var(--color-success, #10b981) !important;
+  font-weight: 600;
+}
+
+.help-verdict--neutral {
+  color: var(--color-warning, #f59e0b) !important;
+  font-weight: 600;
+}
+
+.help-verdict--weakness {
+  color: var(--color-error, #ef4444) !important;
+  font-weight: 600;
+}
+
+.help-icon-guide {
+  display: flex;
+  gap: 16px;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 11px;
+  color: var(--color-text-secondary, #b4b4b6);
+}
+
+/* ============================================================================
+   RESPONSIVE — Help modals on small screens
+   ============================================================================ */
+
+@media (max-width: 1000px) {
+  .help-modal {
+    max-width: calc(100vw - 32px);
+  }
+
+  .help-categories-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .help-three-col {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .help-four-col {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .help-modal {
+    max-width: none;
+    max-height: 92vh;
+    border-radius: var(--radius-md, 8px);
+    margin: 8px;
+  }
+
+  .help-modal__content {
+    padding: 14px;
+  }
+
+  .help-two-col,
+  .help-three-col,
+  .help-four-col {
+    grid-template-columns: 1fr;
+  }
+
+  .help-categories-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .help-icon-guide {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .help-factor__body {
+    grid-template-columns: 1fr;
+  }
+}
