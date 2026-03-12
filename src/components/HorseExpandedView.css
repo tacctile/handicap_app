@@ -2001,9 +2001,9 @@
 .help-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 200;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2023,8 +2023,8 @@
 .help-modal {
   position: relative;
   width: 100%;
-  max-width: 640px;
-  max-height: 80vh;
+  max-width: 960px;
+  max-height: 92vh;
   overflow-y: auto;
   background: var(--color-card, #0f0f10);
   border: 1px solid var(--color-border, #2a2a2c);
@@ -2069,7 +2069,7 @@
 }
 
 .help-modal__content {
-  padding: 20px 24px 24px;
+  padding: 20px 28px 24px;
 }
 
 /* ============================================================================
@@ -2077,7 +2077,7 @@
    ============================================================================ */
 
 .help-section {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .help-section:last-child {
@@ -2125,8 +2125,8 @@
   font-size: 14px;
   font-weight: 700;
   color: var(--color-text-primary, #eeeff1);
-  margin-bottom: 16px;
-  padding-bottom: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--color-border, #2a2a2c);
 }
 
@@ -2163,13 +2163,27 @@
 .help-two-col {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 
-/* Six categories grid */
+/* Three-column layout for top explanation sections */
+.help-three-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+/* Four-column layout for even more compact display */
+.help-four-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+/* Six categories grid - 3 columns to go horizontal and avoid scroll */
 .help-categories-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
 }
 
@@ -2230,9 +2244,16 @@
   font-size: 14px;
   font-weight: 700;
   color: var(--color-text-primary, #eeeff1);
-  margin-bottom: 16px;
-  padding-bottom: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--color-border, #2a2a2c);
+}
+
+/* Factor help uses horizontal 2-col layout for "what" and "scoring" side by side */
+.help-factor__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 .help-verdict--strength {
@@ -2262,19 +2283,39 @@
    RESPONSIVE — Help modals on small screens
    ============================================================================ */
 
+@media (max-width: 1000px) {
+  .help-modal {
+    max-width: calc(100vw - 32px);
+  }
+
+  .help-categories-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .help-three-col {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .help-four-col {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .help-modal {
     max-width: none;
-    max-height: 90vh;
+    max-height: 92vh;
     border-radius: var(--radius-md, 8px);
     margin: 8px;
   }
 
   .help-modal__content {
-    padding: 16px;
+    padding: 14px;
   }
 
-  .help-two-col {
+  .help-two-col,
+  .help-three-col,
+  .help-four-col {
     grid-template-columns: 1fr;
   }
 
@@ -2285,5 +2326,9 @@
   .help-icon-guide {
     flex-wrap: wrap;
     gap: 8px;
+  }
+
+  .help-factor__body {
+    grid-template-columns: 1fr;
   }
 }

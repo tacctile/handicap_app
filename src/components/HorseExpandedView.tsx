@@ -5,6 +5,7 @@
  * @returns React element
  */
 import React, { useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ErrorBoundary } from './ErrorBoundary';
 import './HorseExpandedView.css';
 import { PPLine } from './PPLine';
@@ -341,7 +342,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, children }) => {
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="help-modal-overlay" onClick={onClose}>
       <div
         className="help-modal"
@@ -356,7 +357,8 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, children }) => {
         </button>
         <div className="help-modal__content">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
@@ -413,69 +415,71 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
         help_outline
       </span>
       <span>
-        Furlong Score — {horseName} ({scoreTotal}/{MAX_SCORE})
+        Understanding the Score — {horseName} ({scoreTotal}/{MAX_SCORE})
       </span>
     </div>
 
-    <div className="help-section">
-      <div className="help-section__heading">What is the Furlong Score?</div>
-      <p className="help-section__text">
-        The score ({scoreTotal}) is out of a maximum of {MAX_SCORE}. The {MAX_SCORE} breaks down as{' '}
-        {MAX_BASE_SCORE} base points + up to 40 overlay points. The percentage ({scorePercentage}%)
-        shows how this horse scored relative to the maximum. Higher = stronger horse mathematically.
-      </p>
-      <div className="help-tiers">
-        <span className="help-tier help-tier--strong">181+ Strong Contender</span>
-        <span className="help-tier help-tier--fair">161–180 Fair Contender</span>
-        <span className="help-tier help-tier--long">131–160 Long Shot</span>
+    <div className="help-three-col">
+      <div className="help-section">
+        <div className="help-section__heading">What is this number?</div>
+        <p className="help-section__text">
+          Think of it like a test score. {horseName} got <strong>{scoreTotal}</strong> out of{' '}
+          <strong>{MAX_SCORE}</strong> possible points — that's <strong>{scorePercentage}%</strong>.
+          Like a spelling test where 100% means you got every word right, a higher score here means
+          the horse checks more boxes for winning.
+        </p>
+        <div className="help-tiers">
+          <span className="help-tier help-tier--strong">181+ A-Student</span>
+          <span className="help-tier help-tier--fair">161–180 B-Student</span>
+          <span className="help-tier help-tier--long">131–160 C-Student</span>
+        </div>
       </div>
-    </div>
-
-    <div className="help-section">
-      <div className="help-section__heading">The Progress Bar</div>
-      <p className="help-section__text">
-        The colored bar fills left-to-right based on the score percentage. Teal/green = strong
-        (67%+), yellow = average (40–66%), red/orange = weak (under 40%).
-      </p>
+      <div className="help-section">
+        <div className="help-section__heading">The teal bar</div>
+        <p className="help-section__text">
+          The teal-colored bar is like a fuel gauge. A full bar means this horse scored close to
+          perfect. A bar that only fills halfway means it scored about average. All bars are the
+          same teal color — what matters is <strong>how far it fills</strong>, not the color.
+        </p>
+      </div>
+      <div className="help-section">
+        <div className="help-section__heading">Data Quality: {dataQuality}</div>
+        <p className="help-section__text">
+          This tells you how much homework we could do. <strong>HIGH</strong> = we had all the info
+          we needed. <strong>MEDIUM</strong> = some info was missing, so we estimated.{' '}
+          <strong>LOW</strong> = not much data available — take the score with a grain of salt.
+        </p>
+      </div>
     </div>
 
     <div className="help-two-col">
       <div className="help-section">
-        <div className="help-section__heading">Base vs Edge</div>
+        <div className="help-section__heading">
+          Base: {baseScore}/{MAX_BASE_SCORE}
+        </div>
         <p className="help-section__text">
-          <strong>
-            Base ({baseScore}/{MAX_BASE_SCORE})
-          </strong>{' '}
-          is the raw score from six objective categories.{' '}
-          <strong>
-            Edge ({edgePercent >= 0 ? '+' : ''}
-            {Math.round(edgePercent)}%)
-          </strong>{' '}
-          is the value edge — how much more you are being paid than the horse's true probability
-          warrants. A positive edge means the public odds are higher than fair odds, representing
-          value.
+          This is the "report card" score — how good is this horse on paper? It's built from six
+          categories below (speed, form, connections, etc.). Think of it like grading a student on
+          math, reading, science, etc. and adding them all up.
         </p>
       </div>
       <div className="help-section">
-        <div className="help-section__heading">Value Rating</div>
+        <div className="help-section__heading">
+          Edge: {edgePercent >= 0 ? '+' : ''}
+          {Math.round(edgePercent)}%
+        </div>
         <p className="help-section__text">
-          Current: <strong>{valueLabel}</strong>. This is a composite label summarizing value
-          opportunity. It combines score quality with odds edge. A "VALUE" rating means the horse is
-          both a strong contender AND underbet by the public.
+          This is the "deal" meter. Imagine a toy is worth $10, but the store is selling it for $5 —
+          that's a great deal (+100% edge). A <strong>positive edge</strong> means the horse is
+          better than the public thinks. A <strong>negative edge</strong> means the public already
+          knows this horse is good, so you're overpaying. Current rating:{' '}
+          <strong>{valueLabel}</strong>.
         </p>
       </div>
     </div>
 
     <div className="help-section">
-      <div className="help-section__heading">Data Quality</div>
-      <p className="help-section__text">
-        Current: <strong>{dataQuality}</strong>. HIGH = complete, reliable data. MEDIUM = some
-        fields missing or estimated. LOW = limited data; treat score with more caution.
-      </p>
-    </div>
-
-    <div className="help-section">
-      <div className="help-section__heading">The Six Categories</div>
+      <div className="help-section__heading">The six subjects on the report card</div>
       <div className="help-categories-grid">
         {categoryAnalysis.map((cat) => (
           <div key={cat.key} className="help-cat-card">
@@ -487,17 +491,17 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
             </div>
             <p className="help-cat-card__desc">
               {cat.key === 'connections' &&
-                `Trainer and jockey win rates, recent partnership success. Max ${cat.max} pts.`}
+                'The coach and driver. A great trainer + jockey combo is like having the best teacher AND tutor.'}
               {cat.key === 'postPosition' &&
-                `Draw position advantage at this distance and track. Post 1 can be a trap; outer posts lose ground on turns. Max ${cat.max} pts.`}
+                'Starting position in the gate. Like getting a lane assignment in a race — some lanes have an advantage.'}
               {cat.key === 'speedClass' &&
-                `Best Beyer speed figures and class level. The single biggest factor. Elite = 77+ Beyer at this class. Max ${cat.max} pts.`}
+                "Raw speed + level of competition. The biggest factor. Like comparing a kid's 100m time AND what league they ran it in."}
               {cat.key === 'form' &&
-                `Recent race results. Top-3 finishes in last 3 races = Good. Declining form = Warning. Max ${cat.max} pts.`}
+                'How the horse has been running lately. A horse winning its last 3 races is "on fire." A horse finishing last is ice cold.'}
               {cat.key === 'equipment' &&
-                `Gear changes like blinkers or removing shoes can dramatically change performance. Max ${cat.max} pts.`}
+                'Gear changes (like adding blinders). Sometimes a small equipment change is like getting new running shoes — it can make a big difference.'}
               {cat.key === 'pace' &&
-                `Does this horse's running style match the expected pace of this race? A closer in a slow-pace race has an advantage. Max ${cat.max} pts.`}
+                "Does this horse's running style fit today's race? A sprinter in a slow race has an advantage, like a fast kid getting a head start."}
             </p>
             <div className="help-cat-card__live">{cat.explanation}</div>
           </div>
@@ -511,36 +515,48 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
 // FACTOR HELP MODAL CONTENT
 // ============================================================================
 
-const FACTOR_HELP_CONTENT: Record<string, { what: string; scoring: string }> = {
+const FACTOR_HELP_CONTENT: Record<string, { what: string; analogy: string; scoring: string }> = {
   connections: {
-    what: 'Trainer and jockey are two of the biggest human factors in horse racing. A trainer with a high win rate, especially with first-time starters or off long layoffs, is a major edge. A top jockey on a live horse is never an accident.',
+    what: 'The trainer teaches the horse how to race. The jockey steers it during the race. When both are winning a lot lately, it means the "team" is hot.',
+    analogy:
+      'Think of it like a basketball team. A great coach (trainer) + a great point guard (jockey) = more wins. We check their recent win rates to see if this team is clicking.',
     scoring:
-      'Elite trainers (15%+ win rate) and elite jockeys (15%+ win rate) each earn significant points. Recent trainer/jockey combo success adds bonus points.',
+      'Top trainers and jockeys (15%+ win rate each) earn the most points. If the trainer-jockey pair has been winning together recently, bonus points.',
   },
   postPosition: {
-    what: 'Where the horse starts from the gate. In shorter races on dirt, inside posts (1–3) can get pinched early. In longer turf races, outside posts lose ground. At some tracks, post 1 is a massive advantage; at others it is a trap.',
+    what: 'This is which starting gate the horse leaves from. Gate 1 is on the inside rail, and higher numbers are further out.',
+    analogy:
+      'Like lanes in a 400m track race — the inside lane runs less distance on turns, but can get boxed in. We look at which gate has won the most at THIS track and distance.',
     scoring:
-      'Scored based on historical win rates for each post at this specific track and distance. A high percentage means statistically this is one of the best starting positions for this race setup.',
+      'We compare this post against real win rate data for this exact track and distance. A high % means history says this is a great gate to start from.',
   },
   speedClass: {
-    what: 'Raw speed (measured by Beyer Speed Figures — a universal scale used across all US tracks) combined with class level (what level of competition this horse has faced). A horse that ran a 77 Beyer at maiden level is very different from one that ran 77 in stakes company.',
+    what: 'How fast has this horse run (measured by "Beyer Speed Figures" — a standard score used at every US track), and how tough was the competition?',
+    analogy:
+      'Like comparing SAT scores AND which school you went to. Running fast at a low-level race is good, but running fast against top horses is great. This is the single biggest factor in the score.',
     scoring:
-      "The highest recent Beyer is the primary driver. Elite = 77+. Strong = 65–76. Average = 50–64. Below average = under 50. Class adjustments up or down based on today's field level.",
+      "Best recent Beyer is the main driver. 77+ = elite. 65–76 = strong. 50–64 = average. Under 50 = below average. Adjusted up or down based on the level of today's race.",
   },
   form: {
-    what: 'How has this horse been running recently? Last 3 races are weighted heavily. A horse finishing 1st–2nd–3rd consistently is in form. A horse finishing 6th–7th–8th is out of form.',
+    what: 'Is this horse on a hot streak or a cold streak? We look at the last 3 races. Finishing in the top 3 = hot. Finishing way back = cold.',
+    analogy:
+      'Like checking a baseball player\'s last 10 games. Are they hitting .400 or .100? Recent results tell you who is "in the zone" right now.',
     scoring:
-      'Top-3 finishes earn points. Wins earn the most. Recent = more weight. A 70% Form score means the horse has been running solidly — top 3 in at least 2 of the last 3 outings.',
+      'Top-3 finishes earn points. Wins earn the most. More recent races count more. 70%+ form = the horse is running well right now.',
   },
   equipment: {
-    what: 'Equipment changes — adding blinkers, removing shoes, switching to a different bit — can be game-changers. Trainers use equipment strategically. Blinkers help a distracted horse focus. Removing blinkers can calm an anxious one.',
+    what: 'Sometimes trainers add or remove gear — like blinkers (blinders that help a distracted horse focus) or special shoes. These small changes can make a big difference.',
+    analogy:
+      'Like a runner switching to racing spikes, or a swimmer shaving their head. A small change in equipment can unlock better performance.',
     scoring:
-      'Points awarded for proven equipment changes (horse won or ran better with this gear). Standard equipment with no changes scores neutral (25% = no significant gear edge).',
+      'Points go up if this equipment change has worked before. No equipment change = neutral score (around 25%). First-time blinkers is the most watched change in racing.',
   },
   pace: {
-    what: 'Every horse has a running style: early speed (sprints to the front), stalker (sits just off the pace), or closer (hangs back and makes a late run). The pace of a race — whether it will be fast or slow early — determines which style wins.',
+    what: "Every horse has a style: some sprint to the front early, some sit in the middle, some come from behind. The question is: does today's race favor their style?",
+    analogy:
+      "Imagine a tug-of-war. If 5 horses want to lead, they'll tire each other out, and the horse waiting in back wins easily. If only 1 horse wants to lead, it can cruise and save energy.",
     scoring:
-      "Scored based on how well this horse's running style matches the expected pace scenario. A 40% Pace score = neutral, meaning this horse's style does not have a significant advantage or disadvantage.",
+      "We predict the pace scenario and check if this horse's style fits. High % = the race sets up perfectly for them. Low % = they're at a style disadvantage today.",
   },
 };
 
@@ -565,13 +581,13 @@ const FactorHelpContent: React.FC<FactorHelpContentProps> = ({
   let verdict: string;
   let verdictClass: string;
   if (percent >= 67) {
-    verdict = 'This is a genuine strength going into this race.';
+    verdict = 'This is a real strength for this horse — like getting an A on this subject.';
     verdictClass = 'help-verdict--strength';
   } else if (percent >= 34) {
-    verdict = 'This is a neutral or average area — not helping, not hurting.';
+    verdict = 'This is average — not helping, not hurting. Like getting a C.';
     verdictClass = 'help-verdict--neutral';
   } else {
-    verdict = 'This is a significant weakness for this horse.';
+    verdict = 'This is a weakness — like getting a D or F on this subject.';
     verdictClass = 'help-verdict--weakness';
   }
 
@@ -584,35 +600,36 @@ const FactorHelpContent: React.FC<FactorHelpContentProps> = ({
         </span>
       </div>
 
-      <div className="help-section">
-        <div className="help-section__heading">What This Measures</div>
-        <p className="help-section__text">{content.what}</p>
-      </div>
-
-      <div className="help-section">
-        <div className="help-section__heading">How It's Scored</div>
-        <p className="help-section__text">{content.scoring}</p>
-      </div>
-
-      <div className="help-section">
-        <div className="help-section__heading">What This Horse's Score Means</div>
-        <p className={`help-section__text ${verdictClass}`}>{verdict}</p>
-        <p className="help-section__text help-section__text--live">{explanation}</p>
-      </div>
-
-      <div className="help-section">
-        <div className="help-section__heading">Icon Guide</div>
-        <div className="help-icon-guide">
-          <span>
-            <span style={{ color: 'var(--color-success)' }}>✅</span> Strength
-          </span>
-          <span>
-            <span style={{ color: 'var(--color-warning)' }}>⚠️</span> Caution
-          </span>
-          <span>
-            <span style={{ color: 'var(--color-error)' }}>❌</span> Weakness
-          </span>
-          <span>➖ Neutral</span>
+      <div className="help-factor__body">
+        <div>
+          <div className="help-section">
+            <div className="help-section__heading">What is this?</div>
+            <p className="help-section__text">{content.what}</p>
+          </div>
+          <div className="help-section">
+            <div className="help-section__heading">Think of it like...</div>
+            <p className="help-section__text">{content.analogy}</p>
+          </div>
+        </div>
+        <div>
+          <div className="help-section">
+            <div className="help-section__heading">How we grade it</div>
+            <p className="help-section__text">{content.scoring}</p>
+          </div>
+          <div className="help-section">
+            <div className="help-section__heading">This horse's grade</div>
+            <p className={`help-section__text ${verdictClass}`}>{verdict}</p>
+            <p className="help-section__text help-section__text--live">{explanation}</p>
+          </div>
+          <div className="help-section">
+            <div className="help-section__heading">Icons</div>
+            <div className="help-icon-guide">
+              <span>✅ Strength</span>
+              <span>⚠️ Caution</span>
+              <span>❌ Weakness</span>
+              <span>➖ Neutral</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
