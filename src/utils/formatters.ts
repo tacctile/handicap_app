@@ -250,11 +250,9 @@ export function parseOddsToDecimal(oddsStr: string): number {
  * @returns Hex color string
  */
 export function getEdgeColor(edge: number): string {
-  if (edge >= 75) return '#10b981'; // Bright green
-  if (edge >= 50) return '#22c55e'; // Green
-  if (edge >= 25) return '#84cc16'; // Yellow-green
-  if (edge >= -25) return '#6B7280'; // Gray (fair)
-  return '#ef4444'; // Red (underlay)
+  if (edge >= 20) return '#22c55e'; // Green (value)
+  if (edge >= -20) return '#6B7280'; // Gray (fair/neutral)
+  return '#ef4444'; // Red (overpriced)
 }
 
 /**
