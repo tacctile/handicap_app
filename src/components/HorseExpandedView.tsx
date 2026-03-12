@@ -122,7 +122,6 @@ const getLetterGrade = (percent: number): { grade: string; color: string } => {
 const getFieldRanking = (
   horseName: string,
   categoryKey: string,
-  categoryMax: number,
   allScoredHorses: ScoredHorse[]
 ): { rank: number; total: number; percentile: string } => {
   const activeHorses = allScoredHorses.filter((h) => !h.score.isScratched);
@@ -541,7 +540,7 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
     const value = catData?.total || 0;
     const max = cat.max;
     const percent = max > 0 ? Math.round((value / max) * 100) : 0;
-    const ranking = getFieldRanking(horseName, cat.key, max, allScoredHorses);
+    const ranking = getFieldRanking(horseName, cat.key, allScoredHorses);
     const grade = max > 0 ? getLetterGrade(percent) : { grade: 'N/A', color: '#6e6e70' };
     return { ...cat, value, percent, ranking, grade };
   });
@@ -646,7 +645,7 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
             <div className="help-section__heading">The six subjects on the report card</div>
             <div className="help-categories-grid">
               {categoryAnalysis.map((cat) => {
-                const ranking = getFieldRanking(horseName, cat.key, cat.max, allScoredHorses);
+                const ranking = getFieldRanking(horseName, cat.key, allScoredHorses);
                 const grade = getLetterGrade(cat.percent);
                 return (
                   <div key={cat.key} className="help-cat-card">
