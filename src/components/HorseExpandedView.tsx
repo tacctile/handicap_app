@@ -19,12 +19,7 @@ import type { BetTier, RaceContextSummary } from '../hooks/useRaceBets';
 // ============================================================================
 
 // Import score limits and tier functions from the authoritative scoring engine (single source of truth)
-import {
-  SCORE_LIMITS as SCORING_LIMITS,
-  MAX_BASE_SCORE,
-  MAX_SCORE,
-  getScoreColor,
-} from '../lib/scoring';
+import { SCORE_LIMITS as SCORING_LIMITS, MAX_BASE_SCORE, MAX_SCORE } from '../lib/scoring';
 
 // Score limits by category - derived from lib/scoring for display
 const SCORE_LIMITS = {
@@ -234,7 +229,6 @@ interface CategoryRating {
 }
 
 const getCategoryRating = (percent: number): CategoryRating => {
-  if (percent >= 80) return { icon: '✅', label: 'Elite', colorClass: 'elite' };
   if (percent >= 60) return { icon: '✅', label: 'Good', colorClass: 'good' };
   if (percent >= 40) return { icon: '➖', label: 'Average', colorClass: 'average' };
   if (percent >= 20) return { icon: '⚠️', label: 'Weak', colorClass: 'weak' };
@@ -317,7 +311,7 @@ const getValueIndicator = (
   isOverlay: boolean,
   isUnderlay: boolean
 ): { label: string; className: string; color: string } => {
-  if (isOverlay) return { label: 'VALUE', className: 'value', color: '#10b981' };
+  if (isOverlay) return { label: 'VALUE', className: 'value', color: '#22c55e' };
   if (isUnderlay) return { label: 'NO VALUE', className: 'no-value', color: '#ef4444' };
   return { label: 'FAIR', className: 'fair', color: '#6B7280' };
 };
@@ -326,18 +320,23 @@ const getValueIndicator = (
  * Get tier color for BASE score using authoritative scoring thresholds
  */
 const getTierColor = (baseScore: number): string => {
-  return getScoreColor(baseScore, false);
+  // Override getScoreColor output with consolidated 3-tier color system
+  const maxBase = SCORE_LIMITS.base;
+  const percent = baseScore / maxBase;
+  if (percent >= 0.67) return '#22c55e'; // Green — strong
+  if (percent >= 0.4) return '#eab308'; // Yellow — average/caution
+  return '#ef4444'; // Red — weak
 };
 
 // Get data quality color
 const getDataQualityColor = (quality: string | undefined): string => {
   switch (quality?.toUpperCase()) {
     case 'HIGH':
-      return 'var(--color-tier-good)';
+      return '#22c55e';
     case 'MEDIUM':
-      return 'var(--color-tier-fair)';
+      return '#eab308';
     case 'LOW':
-      return 'var(--color-tier-bad)';
+      return '#ef4444';
     default:
       return 'var(--color-text-secondary)';
   }

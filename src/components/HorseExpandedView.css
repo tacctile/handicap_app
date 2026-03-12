@@ -24,12 +24,12 @@
   --subtle-border: rgba(255, 255, 255, 0.06);
 
   /* Semantic Data Colors */
-  --color-win: #10b981;
+  --color-win: #22c55e;
   --color-speed-figure: #06b6d4;
-  --color-favorite: #f59e0b;
-  --color-bullet: #10b981;
-  --color-layoff-warning: #f59e0b;
-  --color-overlay: #10b981;
+  --color-favorite: #eab308;
+  --color-bullet: #22c55e;
+  --color-layoff-warning: #eab308;
+  --color-overlay: #22c55e;
   --color-underlay: #ef4444;
   --color-fair: #6b7280;
 
@@ -69,7 +69,7 @@
 
 /* Value Status Border Colors */
 .horse-expanded--overlay {
-  border-left-color: var(--color-overlay, #10b981);
+  border-left-color: var(--color-overlay, #22c55e);
 }
 .horse-expanded--underlay {
   border-left-color: var(--color-underlay, #ef4444);
@@ -83,13 +83,13 @@
   border-left-color: var(--color-tier-elite, #22c55e);
 }
 .horse-expanded--tier-good {
-  border-left-color: var(--color-tier-good, #4ade80);
+  border-left-color: var(--color-tier-good, #22c55e);
 }
 .horse-expanded--tier-fair {
   border-left-color: var(--color-tier-fair, #eab308);
 }
 .horse-expanded--tier-neutral {
-  border-left-color: var(--color-tier-neutral, #f97316);
+  border-left-color: var(--color-tier-neutral, #eab308);
 }
 .horse-expanded--tier-bad {
   border-left-color: var(--color-tier-bad, #ef4444);
@@ -206,8 +206,8 @@
 }
 
 .value-reasons__category--elite {
-  border-left-color: #10b981;
-  background: rgba(16, 185, 129, 0.08);
+  border-left-color: #22c55e;
+  background: rgba(34, 197, 94, 0.08);
 }
 
 .value-reasons__category--good {
@@ -221,8 +221,8 @@
 }
 
 .value-reasons__category--weak {
-  border-left-color: #f59e0b;
-  background: rgba(245, 158, 11, 0.05);
+  border-left-color: #eab308;
+  background: rgba(234, 179, 8, 0.05);
 }
 
 .value-reasons__category--poor {
@@ -358,8 +358,8 @@
 }
 
 .betting-suggestion__item--primary {
-  border-left-color: #10b981;
-  background: rgba(16, 185, 129, 0.08);
+  border-left-color: #22c55e;
+  background: rgba(34, 197, 94, 0.08);
 }
 
 .betting-suggestion__item--exotic {
@@ -373,8 +373,8 @@
 }
 
 .betting-suggestion__item--ifyoumust {
-  border-left-color: #f59e0b;
-  background: rgba(245, 158, 11, 0.05);
+  border-left-color: #eab308;
+  background: rgba(234, 179, 8, 0.05);
 }
 
 .betting-suggestion__item--neutral {
@@ -417,7 +417,7 @@
   padding: 8px 14px;
   background: rgba(255, 255, 255, 0.03);
   border-radius: 6px;
-  border-left: 3px solid #f59e0b;
+  border-left: 3px solid #eab308;
 }
 
 .betting-suggestion__item-label {
@@ -486,7 +486,7 @@
 }
 
 .expanded-tabs__btn--active .expanded-tabs__btn-icon {
-  color: #10b981;
+  color: #22c55e;
 }
 
 .expanded-tabs__btn-text {
@@ -1086,7 +1086,7 @@
 }
 
 .profile-col__split-value--hot {
-  color: var(--color-win, #10b981);
+  color: var(--color-win, #22c55e);
 }
 
 /* Responsive: Stack columns on smaller screens */
@@ -1404,7 +1404,7 @@
 }
 
 .workout-row__bullet {
-  color: var(--color-bullet, #10b981);
+  color: var(--color-bullet, #22c55e);
   font-size: 10px;
   margin-left: 4px;
 }
@@ -1424,7 +1424,7 @@
 }
 
 .workouts-panel__legend-bullet {
-  color: var(--color-bullet, #10b981);
+  color: var(--color-bullet, #22c55e);
   margin-right: 4px;
 }
 
@@ -1512,8 +1512,8 @@
 }
 
 .factor-breakdown__category--elite {
-  border-left-color: #10b981;
-  background: rgba(16, 185, 129, 0.08);
+  border-left-color: #22c55e;
+  background: rgba(34, 197, 94, 0.08);
 }
 
 .factor-breakdown__category--good {
@@ -1527,8 +1527,8 @@
 }
 
 .factor-breakdown__category--weak {
-  border-left-color: #f59e0b;
-  background: rgba(245, 158, 11, 0.05);
+  border-left-color: #eab308;
+  background: rgba(234, 179, 8, 0.05);
 }
 
 .factor-breakdown__category--poor {
@@ -1681,11 +1681,11 @@
 }
 
 .suggested-bets__tier:nth-child(1) {
-  border-left-color: #10b981; /* Conservative - green */
+  border-left-color: #22c55e; /* Conservative - green */
 }
 
 .suggested-bets__tier:nth-child(2) {
-  border-left-color: #f59e0b; /* Moderate - yellow */
+  border-left-color: #eab308; /* Moderate - yellow */
 }
 
 .suggested-bets__tier:nth-child(3) {
@@ -1815,12 +1815,12 @@
 
 /* Race Context Severity Variants */
 .suggested-bets__race-context--good {
-  border-left-color: #10b981;
-  background: rgba(16, 185, 129, 0.08);
+  border-left-color: #22c55e;
+  background: rgba(34, 197, 94, 0.08);
 }
 
 .suggested-bets__race-context--good .suggested-bets__race-context-message {
-  color: #10b981;
+  color: #22c55e;
 }
 
 .suggested-bets__race-context--limited {
@@ -1842,24 +1842,24 @@
 }
 
 .suggested-bets__race-context--caution {
-  border-left-color: #f59e0b;
-  background: rgba(245, 158, 11, 0.1);
+  border-left-color: #eab308;
+  background: rgba(234, 179, 8, 0.1);
 }
 
 .suggested-bets__race-context--caution .suggested-bets__race-context-message {
-  color: #f59e0b;
+  color: #eab308;
 }
 
-/* PASS Race - Amber/Yellow caution styling */
+/* PASS Race - Yellow caution styling */
 .suggested-bets__race-context--pass {
-  border-left-color: #f59e0b;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-left-color: #eab308;
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.3);
   border-left-width: 3px;
 }
 
 .suggested-bets__race-context--pass .suggested-bets__race-context-message {
-  color: #f59e0b;
+  color: #eab308;
   font-weight: 700;
   letter-spacing: 0.3px;
 }
@@ -2156,8 +2156,8 @@
 }
 
 .help-tier--long {
-  color: var(--color-tier-neutral, #f97316);
-  background: var(--color-tier-neutral-bg, rgba(249, 115, 22, 0.15));
+  color: var(--color-tier-neutral, #eab308);
+  background: var(--color-tier-neutral-bg, rgba(234, 179, 8, 0.15));
 }
 
 .help-two-col {
@@ -2536,12 +2536,12 @@
 }
 
 .help-verdict--strength {
-  color: var(--color-success, #10b981) !important;
+  color: var(--color-success, #22c55e) !important;
   font-weight: 600;
 }
 
 .help-verdict--neutral {
-  color: var(--color-warning, #f59e0b) !important;
+  color: var(--color-warning, #eab308) !important;
   font-weight: 600;
 }
 

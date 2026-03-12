@@ -399,12 +399,12 @@ describe('HorseExpandedView', () => {
     it('shows Elite rating for category at 80%+', () => {
       const score = createMockScore();
       // postPosition: 8/12 = 67% -> Good
-      // Let's set to 10/12 = 83% -> Elite
+      // Set to 10/12 = 83% -> Good (consolidated: ≥60% = Good)
       score.breakdown.postPosition.total = 10;
 
       render(<HorseExpandedView horse={createMockHorse()} isVisible={true} score={score} />);
 
-      expect(screen.getByText(/POST: Elite \(83%\)/)).toBeInTheDocument();
+      expect(screen.getByText(/POST: Good \(83%\)/)).toBeInTheDocument();
     });
   });
 
