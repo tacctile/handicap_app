@@ -229,10 +229,10 @@ interface CategoryRating {
 }
 
 const getCategoryRating = (percent: number): CategoryRating => {
-  if (percent >= 60) return { icon: '✅', label: 'Good', colorClass: 'good' };
+  if (percent >= 60) return { icon: '✅', label: 'Strength', colorClass: 'good' };
   if (percent >= 40) return { icon: '➖', label: 'Average', colorClass: 'average' };
-  if (percent >= 20) return { icon: '⚠️', label: 'Weak', colorClass: 'weak' };
-  return { icon: '❌', label: 'Poor', colorClass: 'poor' };
+  if (percent >= 20) return { icon: '⚠️', label: 'Caution', colorClass: 'weak' };
+  return { icon: '❌', label: 'Weakness', colorClass: 'poor' };
 };
 
 /**
@@ -682,7 +682,6 @@ const FurlongHelpContent: React.FC<FurlongHelpContentProps> = ({
                       <span className="help-cat-card__score">
                         {cat.value}/{cat.max}
                       </span>
-                      <span className="help-cat-card__percent">({cat.percent}%)</span>
                     </div>
                     {/* Real teal progress bar matching main screen */}
                     <div className="help-cat-card__bar">
@@ -926,6 +925,7 @@ interface FactorHelpContentProps {
   percent: number;
   explanation: string;
   icon: string;
+  ratingLabel: string;
 }
 
 const FactorHelpContent: React.FC<FactorHelpContentProps> = ({
@@ -934,20 +934,24 @@ const FactorHelpContent: React.FC<FactorHelpContentProps> = ({
   percent,
   explanation,
   icon,
+  ratingLabel,
 }) => {
   const content = FACTOR_HELP_CONTENT[factorKey];
   if (!content) return null;
 
   let verdict: string;
   let verdictClass: string;
-  if (percent >= 67) {
-    verdict = 'This is a genuine strength for this horse in this race.';
+  if (percent >= 60) {
+    verdict = "This is a genuine strength — this factor is working in this horse's favor today.";
     verdictClass = 'help-verdict--strength';
-  } else if (percent >= 34) {
-    verdict = 'This is average — not helping, not hurting.';
+  } else if (percent >= 40) {
+    verdict = 'This is average — not helping, not hurting. Neutral for this race.';
     verdictClass = 'help-verdict--neutral';
+  } else if (percent >= 20) {
+    verdict = 'This is a caution flag — this factor is slightly working against this horse.';
+    verdictClass = 'help-verdict--caution';
   } else {
-    verdict = 'This is a real weakness for this horse in this race.';
+    verdict = 'This is a real weakness — this factor is working against this horse in this race.';
     verdictClass = 'help-verdict--weakness';
   }
 
@@ -956,7 +960,7 @@ const FactorHelpContent: React.FC<FactorHelpContentProps> = ({
       <div className="help-factor__title">
         <span style={{ fontSize: '16px' }}>{icon}</span>
         <span>
-          {label} — {percent}%
+          {label} — {ratingLabel}
         </span>
       </div>
 
@@ -1378,6 +1382,7 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                 percent={cat.percent}
                 explanation={cat.explanation}
                 icon={cat.rating.icon}
+                ratingLabel={cat.rating.label}
               />
             );
           })()}
@@ -1438,7 +1443,7 @@ export const HorseExpandedView: React.FC<HorseExpandedViewProps> = ({
                   >
                     <span className="factor-breakdown__category-icon">{cat.rating.icon}</span>
                     <span className="factor-breakdown__category-name">
-                      {cat.label}: {cat.rating.label} ({cat.percent}%)
+                      {cat.label}: {cat.rating.label}
                     </span>
                     <span className="factor-breakdown__category-explanation">
                       {cat.explanation}

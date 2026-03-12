@@ -379,32 +379,32 @@ describe('HorseExpandedView', () => {
     });
   });
 
-  describe('Category Rating Percentages', () => {
-    it('calculates correct percentage for each category', () => {
+  describe('Category Rating Labels', () => {
+    it('shows correct strength label for each category without percentages', () => {
       const score = createMockScore();
-      // connections: 18/24 = 75% -> "Good"
-      // speedClass: 100/140 = 71% -> "Good"
-      // form: 35/50 = 70% -> "Good"
-      // pace: 30/45 = 67% -> "Good"
+      // connections: 18/24 = 75% -> "Strength"
+      // speedClass: 100/140 = 71% -> "Strength"
+      // form: 35/50 = 70% -> "Strength"
+      // pace: 30/45 = 67% -> "Strength"
 
       render(<HorseExpandedView horse={createMockHorse()} isVisible={true} score={score} />);
 
-      // Check that percentage displays exist in the factor breakdown
-      expect(screen.getByText(/CONNECTIONS: Good \(75%\)/)).toBeInTheDocument();
-      expect(screen.getByText(/SPEED\/CLASS: Good \(71%\)/)).toBeInTheDocument();
-      expect(screen.getByText(/FORM: Good \(70%\)/)).toBeInTheDocument();
-      expect(screen.getByText(/PACE: Good \(67%\)/)).toBeInTheDocument();
+      // Check that strength labels exist without percentages in the factor breakdown
+      expect(screen.getByText(/CONNECTIONS: Strength$/)).toBeInTheDocument();
+      expect(screen.getByText(/SPEED\/CLASS: Strength$/)).toBeInTheDocument();
+      expect(screen.getByText(/FORM: Strength$/)).toBeInTheDocument();
+      expect(screen.getByText(/PACE: Strength$/)).toBeInTheDocument();
     });
 
-    it('shows Elite rating for category at 80%+', () => {
+    it('shows Strength rating for category at 80%+', () => {
       const score = createMockScore();
-      // postPosition: 8/12 = 67% -> Good
-      // Set to 10/12 = 83% -> Good (consolidated: ≥60% = Good)
+      // postPosition: 8/12 = 67% -> Strength
+      // Set to 10/12 = 83% -> Strength (≥60% = Strength)
       score.breakdown.postPosition.total = 10;
 
       render(<HorseExpandedView horse={createMockHorse()} isVisible={true} score={score} />);
 
-      expect(screen.getByText(/POST: Good \(83%\)/)).toBeInTheDocument();
+      expect(screen.getByText(/POST: Strength$/)).toBeInTheDocument();
     });
   });
 
