@@ -126,6 +126,21 @@ export interface UseEnhancedBettingResult {
 const DEFAULT_BANKROLL = 250;
 const STORAGE_KEY_CONFIG = 'furlong_enhanced_betting_config';
 
+function loadInitialBankroll(): number {
+  try {
+    const stored = localStorage.getItem('furlong_bankroll_settings');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (typeof parsed.totalBankroll === 'number' && parsed.totalBankroll > 0) {
+        return parsed.totalBankroll;
+      }
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return DEFAULT_BANKROLL;
+}
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
@@ -197,11 +212,11 @@ export function useEnhancedBetting(input: UseEnhancedBettingInput): UseEnhancedB
     raceNumber: _raceNumber, // Available for future use
     getOdds = (_, original) => original,
     isScratched = () => false,
-    initialBankroll = DEFAULT_BANKROLL,
+    initialBankroll,
   } = input;
 
-  // State for bankroll tracking
-  const [tracker] = useState(() => new BankrollTracker(initialBankroll, true));
+  // State for bankroll tracking — read from existing bankroll settings if available
+  const [tracker] = useState(() => new BankrollTracker(initialBankroll ?? loadInitialBankroll(), true));
   const [bankrollState, setBankrollState] = useState<BankrollState>(() => tracker.getState());
   const [config, setConfig] = useState<BetSizingConfig>(loadConfig);
 
@@ -233,7 +248,7 @@ export function useEnhancedBetting(input: UseEnhancedBettingInput): UseEnhancedB
   // Reset session
   const resetSession = useCallback(
     (newBankroll?: number) => {
-      tracker.reset(newBankroll ?? initialBankroll);
+      tracker.reset(newBankroll ?? initialBankroll ?? loadInitialBankroll());
       syncState();
     },
     [tracker, initialBankroll, syncState]

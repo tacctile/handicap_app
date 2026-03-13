@@ -72,6 +72,11 @@ export interface ScaledTopBet extends TopBet {
 const BASE_AMOUNTS = [1, 2, 5, 10];
 const DEFAULT_BASE = 1;
 
+const LS_BASE_AMOUNT = 'furlong_topbets_base_amount';
+const LS_CUSTOM_AMOUNT = 'furlong_topbets_custom_amount';
+const LS_IS_CUSTOM = 'furlong_topbets_is_custom';
+const LS_SORT = 'furlong_topbets_sort';
+
 // Bet types per column - All box depths and wheel types
 const WIN_TYPES: TopBetType[] = ['WIN'];
 const PLACE_TYPES: TopBetType[] = ['PLACE'];
@@ -199,15 +204,31 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   // STATE
   // ============================================================================
 
-  const [baseAmount, setBaseAmount] = useState<number>(DEFAULT_BASE);
-  const [customAmount, setCustomAmount] = useState<string>('');
-  const [isCustom, setIsCustom] = useState(false);
-  const [sortBy, setSortBy] = useState<SortOption>('confidence');
+  const [baseAmount, setBaseAmount] = useState<number>(() => {
+    const saved = localStorage.getItem(LS_BASE_AMOUNT);
+    return saved ? Number(saved) : DEFAULT_BASE;
+  });
+  const [customAmount, setCustomAmount] = useState<string>(() => {
+    return localStorage.getItem(LS_CUSTOM_AMOUNT) || '';
+  });
+  const [isCustom, setIsCustom] = useState<boolean>(() => {
+    return localStorage.getItem(LS_IS_CUSTOM) === 'true';
+  });
+  const [sortBy, setSortBy] = useState<SortOption>(() => {
+    const saved = localStorage.getItem(LS_SORT);
+    return (saved as SortOption) || 'confidence';
+  });
   const [exactaVariant, setExactaVariant] = useState<ExactaVariant>('straight');
   const [trifectaVariant, setTrifectaVariant] = useState<TrifectaVariant>('straight');
   const [superfectaVariant, setSuperfectaVariant] = useState<SuperfectaVariant>('straight');
   const [showValueHorseOnly, setShowValueHorseOnly] = useState(false);
   const [showTicketBuilder, setShowTicketBuilder] = useState(false);
+
+  // Persist base amount, custom amount, isCustom, and sort to localStorage
+  useEffect(() => { localStorage.setItem(LS_BASE_AMOUNT, String(baseAmount)); }, [baseAmount]);
+  useEffect(() => { localStorage.setItem(LS_CUSTOM_AMOUNT, customAmount); }, [customAmount]);
+  useEffect(() => { localStorage.setItem(LS_IS_CUSTOM, String(isCustom)); }, [isCustom]);
+  useEffect(() => { localStorage.setItem(LS_SORT, sortBy); }, [sortBy]);
 
   // ============================================================================
   // ENHANCED BETTING HOOK (Softmax probabilities + Kelly sizing)
