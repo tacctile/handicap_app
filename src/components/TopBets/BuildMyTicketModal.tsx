@@ -5,6 +5,12 @@
  * Takes budget, bet count, and risk mode as inputs.
  * Includes a "Surprise Me" button for random quality-floored tickets.
  * Uses createPortal for modal mounting (matching HorseExpandedView pattern).
+ *
+ * Features:
+ * - Budget utilization bar with color-coded status
+ * - Locked bet count indicators with unlock suggestions
+ * - Tight single-row controls layout
+ * - Composite quality scoring via ticket allocator
  */
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
@@ -13,10 +19,10 @@ import type { ScaledTopBet } from './TopBetsView';
 import {
   allocateTicket,
   generateSurpriseTicket,
-  verifyTicket,
   type TicketAllocatorResult,
-  type TicketIntegrityResult,
+  type AllocatedBet,
   type RiskMode,
+  type UtilizationStatus,
 } from '../../lib/betting/ticketAllocator';
 import './BuildMyTicketModal.css';
 
@@ -28,7 +34,6 @@ interface BuildMyTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
   betPool: ScaledTopBet[];
-  currentBaseAmount: number;
 }
 
 // ============================================================================
@@ -51,6 +56,19 @@ function getConfidenceVerdict(probability: number): string {
 
 function formatBetTypeLabel(internalType: string): string {
   return internalType.replace(/_/g, ' ');
+}
+
+function getUtilizationColor(status: UtilizationStatus): string {
+  switch (status) {
+    case 'excellent':
+      return '#22c55e';
+    case 'good':
+      return '#eab308';
+    case 'low':
+      return '#ef4444';
+    case 'critical':
+      return '#ef4444';
+  }
 }
 
 // ============================================================================
@@ -77,12 +95,6 @@ export const BuildMyTicketModal: React.FC<BuildMyTicketModalProps> = ({
     [betPool, budget, betCount, mode]
   );
 
-  // Integrity verification for the build ticket
-  const buildIntegrity = useMemo(
-    () => verifyTicket(buildTicket.selectedBets, betPool),
-    [buildTicket, betPool]
-  );
-
   // Surprise Me — only on button press
   const handleSurpriseMe = useCallback(() => {
     setSurpriseTicket(
@@ -90,11 +102,35 @@ export const BuildMyTicketModal: React.FC<BuildMyTicketModalProps> = ({
     );
   }, [betPool, budget, betCount, mode]);
 
-  // Integrity verification for the surprise ticket
-  const surpriseIntegrity = useMemo(
-    () => surpriseTicket ? verifyTicket(surpriseTicket.selectedBets, betPool) : null,
-    [surpriseTicket, betPool]
-  );
+  // Derive locked state for bet count buttons
+  const availability = buildTicket.availability;
+
+  // Find the unlock suggestion to display
+  const unlockSuggestion = useMemo(() => {
+    // Find the NEXT locked bet count above the currently selected count
+    for (let n = betCount + 1; n <= 5; n++) {
+      const entry = availability[n];
+      if (entry && !entry.available && entry.suggestion) {
+        return entry.suggestion;
+      }
+    }
+    // If current selection is locked (user was on a higher count that became locked), show for current
+    for (let n = betCount; n <= 5; n++) {
+      const entry = availability[n];
+      if (entry && !entry.available && entry.suggestion) {
+        return entry.suggestion;
+      }
+    }
+    return null;
+  }, [availability, betCount]);
+
+  const hasLockedButtons = useMemo(() => {
+    for (let n = 1; n <= 5; n++) {
+      const entry = availability[n];
+      if (entry && !entry.available) return true;
+    }
+    return false;
+  }, [availability]);
 
   // Budget input handler
   const handleBudgetChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,6 +151,16 @@ export const BuildMyTicketModal: React.FC<BuildMyTicketModalProps> = ({
       setBudgetInput(budget.toString());
     }
   }, [budgetInput, budget]);
+
+  // Bet count click handler — only change if available
+  const handleBetCountClick = useCallback(
+    (n: number) => {
+      const entry = availability[n];
+      if (entry && !entry.available) return; // locked — do nothing
+      setBetCount(n);
+    },
+    [availability]
+  );
 
   // Escape key handler
   useEffect(() => {
@@ -145,7 +191,7 @@ export const BuildMyTicketModal: React.FC<BuildMyTicketModalProps> = ({
         tabIndex={-1}
       >
         <button className="help-modal__close" onClick={onClose} aria-label="Close">
-          ×
+          &times;
         </button>
 
         <div className="help-modal__content">
@@ -156,17 +202,17 @@ export const BuildMyTicketModal: React.FC<BuildMyTicketModalProps> = ({
               fontWeight: 700,
               color: '#eeeff1',
               marginTop: 0,
-              marginBottom: 16,
+              marginBottom: 12,
             }}
           >
             Build My Ticket
           </h2>
 
-          {/* Controls Row */}
+          {/* Controls Row — single tight row */}
           <div className="ticket-controls">
             {/* Budget */}
-            <div className="ticket-controls__group">
-              <span className="ticket-controls__label">Race Budget</span>
+            <div className="ticket-controls__group ticket-controls__group--inline">
+              <span className="ticket-controls__label">Budget</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ color: '#b4b4b6', fontSize: 14 }}>$</span>
                 <input
@@ -181,24 +227,34 @@ export const BuildMyTicketModal: React.FC<BuildMyTicketModalProps> = ({
             </div>
 
             {/* Bet Count */}
-            <div className="ticket-controls__group">
-              <span className="ticket-controls__label">Number of Bets</span>
+            <div className="ticket-controls__group ticket-controls__group--inline">
+              <span className="ticket-controls__label">Bets</span>
               <div style={{ display: 'flex', gap: 4 }}>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button
-                    key={n}
-                    className={`ticket-count-btn ${betCount === n ? 'active' : ''}`}
-                    onClick={() => setBetCount(n)}
-                  >
-                    {n}
-                  </button>
-                ))}
+                {[1, 2, 3, 4, 5].map((n) => {
+                  const entry = availability[n];
+                  const isLocked = entry ? !entry.available : false;
+                  const isActive = betCount === n;
+                  let className = 'ticket-count-btn';
+                  if (isActive) className += ' active';
+                  if (isLocked) className += ' ticket-bet-count-btn--locked';
+
+                  return (
+                    <button
+                      key={n}
+                      className={className}
+                      onClick={() => handleBetCountClick(n)}
+                      disabled={isLocked}
+                    >
+                      {n}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Risk Mode */}
-            <div className="ticket-controls__group">
-              <span className="ticket-controls__label">Risk Mode</span>
+            <div className="ticket-controls__group ticket-controls__group--inline">
+              <span className="ticket-controls__label">Mode</span>
               <div style={{ display: 'flex', gap: 4 }}>
                 {(['Conservative', 'Moderate', 'Aggressive'] as RiskMode[]).map((m) => (
                   <button
@@ -212,8 +268,8 @@ export const BuildMyTicketModal: React.FC<BuildMyTicketModalProps> = ({
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="ticket-controls__group">
+            {/* Action Buttons — inline with controls */}
+            <div className="ticket-controls__group ticket-controls__group--inline ticket-controls__actions">
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   className="ticket-action-btn"
@@ -233,6 +289,22 @@ export const BuildMyTicketModal: React.FC<BuildMyTicketModalProps> = ({
             </div>
           </div>
 
+          {/* Budget Utilization Bar */}
+          <UtilizationBar
+            totalCost={buildTicket.totalCost}
+            budget={budget}
+            utilization={buildTicket.budgetUtilization}
+            status={buildTicket.utilizationStatus}
+          />
+
+          {/* Unlock Suggestion */}
+          {hasLockedButtons && unlockSuggestion && unlockSuggestion.additionalBudgetNeeded > 0 && (
+            <div className="ticket-unlock-suggestion">
+              {'💡'} Increase budget by ${unlockSuggestion.additionalBudgetNeeded} to unlock{' '}
+              {unlockSuggestion.betCount} bets &mdash; would add a {unlockSuggestion.betDescription}
+            </div>
+          )}
+
           {/* Two Column Output */}
           <div className="ticket-columns">
             {/* Left: Optimized Ticket */}
@@ -241,17 +313,15 @@ export const BuildMyTicketModal: React.FC<BuildMyTicketModalProps> = ({
               result={buildTicket}
               budget={budget}
               mode={mode}
-              integrity={buildIntegrity}
             />
 
             {/* Right: Surprise Me */}
-            {surpriseTicket && surpriseIntegrity ? (
+            {surpriseTicket ? (
               <TicketColumn
                 title="Surprise Ticket"
                 result={surpriseTicket}
                 budget={budget}
                 mode={mode}
-                integrity={surpriseIntegrity}
               />
             ) : (
               <div className="ticket-column">
@@ -272,6 +342,43 @@ export const BuildMyTicketModal: React.FC<BuildMyTicketModalProps> = ({
 };
 
 // ============================================================================
+// UTILIZATION BAR SUB-COMPONENT
+// ============================================================================
+
+interface UtilizationBarProps {
+  totalCost: number;
+  budget: number;
+  utilization: number;
+  status: UtilizationStatus;
+}
+
+const UtilizationBar: React.FC<UtilizationBarProps> = ({
+  totalCost,
+  budget,
+  utilization,
+  status,
+}) => {
+  const fillColor = getUtilizationColor(status);
+  const fillWidth = Math.min(100, utilization);
+  const isCritical = status === 'critical';
+
+  return (
+    <div className="ticket-utilization-bar">
+      <span className="ticket-utilization-bar__label">BUDGET UTILIZATION</span>
+      <span className="ticket-utilization-bar__text">
+        ${totalCost} of ${budget} &middot; {utilization}%
+      </span>
+      <div className="ticket-utilization-bar__track">
+        <div
+          className={`ticket-utilization-bar__fill${isCritical ? ' ticket-utilization-bar__fill--critical' : ''}`}
+          style={{ width: `${fillWidth}%`, background: fillColor }}
+        />
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
 // TICKET COLUMN SUB-COMPONENT
 // ============================================================================
 
@@ -280,13 +387,13 @@ interface TicketColumnProps {
   result: TicketAllocatorResult;
   budget: number;
   mode: RiskMode;
-  integrity?: TicketIntegrityResult;
 }
 
-const TicketColumn: React.FC<TicketColumnProps> = ({ title, result, budget, mode, integrity }) => {
+const TicketColumn: React.FC<TicketColumnProps> = ({ title, result, budget, mode }) => {
   const [showIssues, setShowIssues] = useState(false);
+  const integrity = result.integrity;
 
-  if (result.selectedBets.length === 0) {
+  if (result.bets.length === 0) {
     return (
       <div className="ticket-column">
         <div className="ticket-column__header">
@@ -306,33 +413,33 @@ const TicketColumn: React.FC<TicketColumnProps> = ({ title, result, budget, mode
         <span className="ticket-confidence-badge">
           Blended Confidence: {result.blendedConfidence}%
         </span>
-        {integrity && (
-          integrity.verified ? (
-            <span className="ticket-integrity-badge ticket-integrity-badge--verified">
-              ✓ Ticket Verified
-            </span>
-          ) : (
-            <span
-              className="ticket-integrity-badge ticket-integrity-badge--warning"
-              onClick={() => setShowIssues(!showIssues)}
-              style={{ cursor: 'pointer' }}
-            >
-              ⚠ Check Manually
-            </span>
-          )
+        {integrity.verified ? (
+          <span className="ticket-integrity-badge ticket-integrity-badge--verified">
+            &#10003; Ticket Verified
+          </span>
+        ) : (
+          <span
+            className="ticket-integrity-badge ticket-integrity-badge--warning"
+            onClick={() => setShowIssues(!showIssues)}
+            style={{ cursor: 'pointer' }}
+          >
+            &#9888; Check Manually
+          </span>
         )}
       </div>
-      {integrity && !integrity.verified && showIssues && (
+      {!integrity.verified && showIssues && (
         <div className="ticket-integrity-issues">
           {integrity.issues.map((issue, i) => (
-            <div key={i} className="ticket-integrity-issues__item">{issue}</div>
+            <div key={i} className="ticket-integrity-issues__item">
+              {issue}
+            </div>
           ))}
         </div>
       )}
       <div className="ticket-total">
         Total: ${result.totalCost} of ${budget} budget
       </div>
-      {result.selectedBets.map((bet, idx) => (
+      {result.bets.map((bet, idx) => (
         <TicketBetCard key={`${bet.internalType}-${bet.horseNumbers.join('-')}-${idx}`} bet={bet} />
       ))}
     </div>
@@ -344,7 +451,7 @@ const TicketColumn: React.FC<TicketColumnProps> = ({ title, result, budget, mode
 // ============================================================================
 
 interface TicketBetCardProps {
-  bet: ScaledTopBet & { allocationReason: string; budgetShare: number };
+  bet: AllocatedBet;
 }
 
 const TicketBetCard: React.FC<TicketBetCardProps> = ({ bet }) => {
@@ -373,11 +480,15 @@ const TicketBetCard: React.FC<TicketBetCardProps> = ({ bet }) => {
 
       {/* Cost and confidence row */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 6 }}>
-        <span style={{ fontSize: 13, color: '#eeeff1' }}>Cost: ${bet.scaledCost}</span>
+        <span style={{ fontSize: 13, color: '#eeeff1' }}>Cost: ${bet.computedCost}</span>
         <span style={{ fontSize: 13, color: confColor, fontWeight: 600 }}>
-          {Math.round(bet.probability)}% Confidence &middot; {getConfidenceVerdict(Math.round(bet.probability))}
+          {Math.round(bet.probability)}% Confidence &middot;{' '}
+          {getConfidenceVerdict(Math.round(bet.probability))}
         </span>
       </div>
+
+      {/* Over budget badge */}
+      {bet.isOverBudget && <div className="ticket-over-budget-badge">slightly over budget</div>}
 
       {/* Allocation reason */}
       <div style={{ fontSize: 13, color: '#b4b4b6', marginBottom: 8 }}>{bet.allocationReason}</div>
@@ -385,7 +496,7 @@ const TicketBetCard: React.FC<TicketBetCardProps> = ({ bet }) => {
       {/* Window script */}
       <div className="ticket-window-script">
         <div className="ticket-window-script__label">Say at the window:</div>
-        <div>{bet.scaledWhatToSay}</div>
+        <div>{bet.scaledScript}</div>
       </div>
     </div>
   );

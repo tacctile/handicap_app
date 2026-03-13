@@ -230,10 +230,18 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   const [showValueHorseOnly, setShowValueHorseOnly] = useState(false);
 
   // Persist base amount, custom amount, isCustom, and sort to localStorage
-  useEffect(() => { localStorage.setItem(LS_BASE_AMOUNT, String(baseAmount)); }, [baseAmount]);
-  useEffect(() => { localStorage.setItem(LS_CUSTOM_AMOUNT, customAmount); }, [customAmount]);
-  useEffect(() => { localStorage.setItem(LS_IS_CUSTOM, String(isCustom)); }, [isCustom]);
-  useEffect(() => { localStorage.setItem(LS_SORT, sortBy); }, [sortBy]);
+  useEffect(() => {
+    localStorage.setItem(LS_BASE_AMOUNT, String(baseAmount));
+  }, [baseAmount]);
+  useEffect(() => {
+    localStorage.setItem(LS_CUSTOM_AMOUNT, customAmount);
+  }, [customAmount]);
+  useEffect(() => {
+    localStorage.setItem(LS_IS_CUSTOM, String(isCustom));
+  }, [isCustom]);
+  useEffect(() => {
+    localStorage.setItem(LS_SORT, sortBy);
+  }, [sortBy]);
 
   // ============================================================================
   // ENHANCED BETTING HOOK (Softmax probabilities + Kelly sizing)
@@ -728,7 +736,6 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
           isOpen={onOpenTicketBuilder}
           onClose={() => onCloseTicketBuilder?.()}
           betPool={allScaledBets}
-          currentBaseAmount={effectiveBase}
         />
       )}
     </div>
