@@ -374,11 +374,11 @@ function budgetDistribution(
     shares = shares.map((s) => (s / sharesTotal) * budget);
   }
 
-  // Step G3 — Derive base amounts
+  // Step G3 — Derive base amounts (floor DOWN to prevent over-budget)
   const allocated: AllocatedBet[] = selectedBets.map((bet, i) => {
     const combinations = getCombinations(bet.internalType, bet.combinationsInvolved);
-    const rawBase = shares[i]! / combinations;
-    const computedBase = Math.max(1, Math.round(rawBase));
+    const maxAffordableBase = Math.max(1, Math.floor(shares[i]! / combinations));
+    const computedBase = maxAffordableBase;
     const computedCost = computedBase * combinations;
 
     return {
@@ -388,67 +388,73 @@ function budgetDistribution(
       budgetShare: Math.round(shares[i]!),
       isOverBudget: false,
       overBudgetAmount: 0,
-      scaledScript: scaleWhatToSay(bet.scaledWhatToSay || bet.whatToSay, computedBase),
+      scaledScript: scaleWhatToSay(bet.whatToSay, computedBase),
     };
   });
 
-  // Step G4 — Adjust last bet to hit budget target
-  const totalAfterRounding = allocated.reduce((sum, b) => sum + b.computedCost, 0);
-  const variance = budget - totalAfterRounding;
+  // Step G4 — Reduce if over budget (115% ceiling)
+  const recalcTotal = () => allocated.reduce((sum, b) => sum + b.computedCost, 0);
+  let totalCostCheck = recalcTotal();
 
-  if (Math.abs(variance) > 0 && allocated.length > 0) {
-    // Find the bet with most combinations (most flexible)
-    let flexIdx = 0;
-    let maxComb = 0;
-    for (let i = 0; i < allocated.length; i++) {
-      const comb = getCombinations(allocated[i]!.internalType, allocated[i]!.combinationsInvolved);
-      if (comb > maxComb) {
-        maxComb = comb;
-        flexIdx = i;
+  if (totalCostCheck > budget * 1.15) {
+    // Sort by computedCost descending — reduce most expensive first
+    const byExpense = [...allocated].sort((a, b) => b.computedCost - a.computedCost);
+    while (totalCostCheck > budget * 1.15) {
+      let reduced = false;
+      for (const bet of byExpense) {
+        if (bet.computedBase > 1) {
+          const comb = getCombinations(bet.internalType, bet.combinationsInvolved);
+          bet.computedBase -= 1;
+          bet.computedCost = bet.computedBase * comb;
+          totalCostCheck = recalcTotal();
+          reduced = true;
+          if (totalCostCheck <= budget * 1.15) break;
+        }
       }
+      if (!reduced) break; // all bets at $1 base minimum
     }
-
-    const flexBet = allocated[flexIdx]!;
-    const flexComb = getCombinations(flexBet.internalType, flexBet.combinationsInvolved);
-    const adjustment = Math.round(variance / flexComb);
-    const newBase = Math.max(1, flexBet.computedBase + adjustment);
-    flexBet.computedBase = newBase;
-    flexBet.computedCost = newBase * flexComb;
-    flexBet.scaledScript = scaleWhatToSay(flexBet.scaledWhatToSay || flexBet.whatToSay, newBase);
   }
 
-  // Step G5 — Budget tolerance check
-  const finalTotal = allocated.reduce((sum, b) => sum + b.computedCost, 0);
+  // Step G4b — Fill up if under-utilized (below 80%)
+  totalCostCheck = recalcTotal();
+  if (totalCostCheck < budget * 0.8) {
+    // Sort by combinations ascending — smallest combo bets are most efficient to scale
+    const byComboAsc = [...allocated].sort((a, b) => {
+      const combA = getCombinations(a.internalType, a.combinationsInvolved);
+      const combB = getCombinations(b.internalType, b.combinationsInvolved);
+      return combA - combB;
+    });
+    let remainingBudget = budget - totalCostCheck;
+    for (const bet of byComboAsc) {
+      const comb = getCombinations(bet.internalType, bet.combinationsInvolved);
+      const additionalBase = Math.floor(remainingBudget / comb);
+      if (additionalBase > 0) {
+        bet.computedBase += additionalBase;
+        bet.computedCost = bet.computedBase * comb;
+        remainingBudget = budget - recalcTotal();
+        if (remainingBudget <= 0) break;
+      }
+    }
+  }
+
+  // Step G5 — Budget tolerance check & over-budget marking
+  const finalTotal = recalcTotal();
   const utilizationPct = (finalTotal / budget) * 100;
 
-  if (utilizationPct > 115) {
-    // Sort by computedCost descending to reduce the most expensive first
-    const byExpense = [...allocated].sort((a, b) => b.computedCost - a.computedCost);
-    for (const bet of byExpense) {
-      if (bet.computedBase <= 1) continue;
-      const comb = getCombinations(bet.internalType, bet.combinationsInvolved);
-      bet.computedBase = Math.max(1, bet.computedBase - 1);
-      bet.computedCost = bet.computedBase * comb;
-      bet.scaledScript = scaleWhatToSay(bet.scaledWhatToSay || bet.whatToSay, bet.computedBase);
-
-      const newTotal = allocated.reduce((sum, b) => sum + b.computedCost, 0);
-      if ((newTotal / budget) * 100 <= 115) break;
-    }
-  } else if (utilizationPct > 110 && utilizationPct <= 115) {
+  if (utilizationPct > 110 && utilizationPct <= 115) {
     // Mark the most expensive bet as slightly over budget
     const mostExpensive = allocated.reduce(
       (max, b) => (b.computedCost > max.computedCost ? b : max),
       allocated[0]!
     );
     mostExpensive.isOverBudget = true;
-    mostExpensive.overBudgetAmount = Math.round(
-      allocated.reduce((sum, b) => sum + b.computedCost, 0) - budget * 1.1
-    );
+    mostExpensive.overBudgetAmount = Math.round(finalTotal - budget * 1.1);
   }
 
   // Step G6 — Regenerate all scaled scripts with final base amounts
+  // Always use bet.whatToSay (the original $1-base script) as the source
   for (const bet of allocated) {
-    bet.scaledScript = scaleWhatToSay(bet.scaledWhatToSay || bet.whatToSay, bet.computedBase);
+    bet.scaledScript = scaleWhatToSay(bet.whatToSay, bet.computedBase);
     bet.computedCost =
       bet.computedBase * getCombinations(bet.internalType, bet.combinationsInvolved);
   }
