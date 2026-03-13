@@ -449,11 +449,11 @@
   font-weight: 500;
 }
 
-.compact-bet-card__softmax-indicator {
-  color: var(--color-success);
-  font-size: 10px;
-  margin-left: 4px;
-  opacity: 0.7;
+/* Model verdict text — fits next to CONFIDENCE: label on one line */
+.compact-bet-card__verdict {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 /* Window script - plain text, no grey box */

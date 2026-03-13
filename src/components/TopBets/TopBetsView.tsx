@@ -70,6 +70,35 @@ export interface ScaledTopBet extends TopBet {
 }
 
 // ============================================================================
+// MODEL VERDICT HELPER
+// ============================================================================
+
+/**
+ * Translates a normalized model conviction score (0-1) into a plain-English verdict.
+ * Score is derived from probability / 100 (probability is on a 0-100 scale).
+ */
+function getModelVerdict(score: number): string {
+  if (score >= 0.85) return 'Model loves this one';
+  if (score >= 0.75) return 'Numbers back this play';
+  if (score >= 0.65) return 'Strong case here';
+  if (score >= 0.55) return 'Good coverage';
+  if (score >= 0.45) return 'Reasonable shot';
+  if (score >= 0.38) return 'Could go either way';
+  if (score >= 0.3) return 'Worth a look';
+  if (score >= 0.22) return 'Solid spread';
+  if (score >= 0.15) return 'Long shot territory';
+  if (score >= 0.08) return 'High risk, high reward';
+  if (score >= 0.03) return "Model isn't sold";
+  return 'Roll the dice';
+}
+
+function getVerdictColor(score: number): string {
+  if (score >= 0.55) return '#22c55e';
+  if (score >= 0.3) return '#eab308';
+  return '#ef4444';
+}
+
+// ============================================================================
 // CONSTANTS
 // ============================================================================
 
@@ -838,13 +867,10 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({
   const horseDisplay = formatHorseDisplay(bet);
   const showTooltip = isExoticBet(bet.internalType);
 
-  // Calculate confidence display (show decimal for low probabilities to reveal variation)
-  // For exotic bets with low probability, integer rounding hides meaningful differences
-  const rawProbability = Math.min(bet.probability, 99);
-  const confidenceDisplay =
-    rawProbability < 10 && rawProbability > 0
-      ? `${Math.max(0.1, rawProbability).toFixed(1)}%`
-      : `${Math.round(rawProbability)}%`;
+  // Calculate model verdict from normalized probability score (0-1)
+  const normalizedScore = Math.min(bet.probability, 99) / 100;
+  const verdictLabel = getModelVerdict(normalizedScore);
+  const verdictColor = getVerdictColor(normalizedScore);
 
   // Check if this is a WIN/PLACE/SHOW bet with Kelly sizing available
   const hasKellySizing = bet.kellyAmount !== undefined && bet.kellyAmount > 0;
@@ -936,18 +962,12 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({
         )}
       </div>
 
-      {/* Row 3: Confidence (with softmax indicator for WIN/PLACE/SHOW) */}
+      {/* Row 3: Confidence verdict (plain-English model conviction) */}
       <div className="compact-bet-card__confidence">
         <span className="compact-bet-card__label">CONFIDENCE:</span>
-        <span className="compact-bet-card__value">{confidenceDisplay}</span>
-        {isWinPlaceShow && (
-          <span
-            className="compact-bet-card__softmax-indicator"
-            title="Softmax probability (coherent)"
-          >
-            ✓
-          </span>
-        )}
+        <span className="compact-bet-card__verdict" style={{ color: verdictColor }}>
+          {verdictLabel}
+        </span>
       </div>
 
       {/* Row 4: Window script (last row) */}

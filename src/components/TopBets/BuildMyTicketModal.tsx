@@ -40,18 +40,29 @@ interface BuildMyTicketModalProps {
 // HELPERS
 // ============================================================================
 
-function getConfidenceColor(probability: number): string {
-  if (probability >= 67) return '#22c55e';
-  if (probability >= 40) return '#eab308';
-  return '#ef4444';
+/**
+ * Translates a normalized model conviction score (0-1) into a plain-English verdict.
+ * Score is derived from probability / 100 (probability is on a 0-100 scale).
+ */
+function getModelVerdict(score: number): string {
+  if (score >= 0.85) return 'Model loves this one';
+  if (score >= 0.75) return 'Numbers back this play';
+  if (score >= 0.65) return 'Strong case here';
+  if (score >= 0.55) return 'Good coverage';
+  if (score >= 0.45) return 'Reasonable shot';
+  if (score >= 0.38) return 'Could go either way';
+  if (score >= 0.3) return 'Worth a look';
+  if (score >= 0.22) return 'Solid spread';
+  if (score >= 0.15) return 'Long shot territory';
+  if (score >= 0.08) return 'High risk, high reward';
+  if (score >= 0.03) return "Model isn't sold";
+  return 'Roll the dice';
 }
 
-function getConfidenceVerdict(probability: number): string {
-  if (probability >= 70) return 'Very Strong';
-  if (probability >= 50) return 'Strong';
-  if (probability >= 30) return 'Moderate';
-  if (probability >= 15) return 'Low';
-  return 'Long Shot';
+function getVerdictColor(score: number): string {
+  if (score >= 0.55) return '#22c55e';
+  if (score >= 0.3) return '#eab308';
+  return '#ef4444';
 }
 
 function formatBetTypeLabel(internalType: string): string {
@@ -411,7 +422,7 @@ const TicketColumn: React.FC<TicketColumnProps> = ({ title, result, budget, mode
       <div className="ticket-column__header">
         <span className="ticket-column__title">{title}</span>
         <span className="ticket-confidence-badge">
-          Blended Confidence: {result.blendedConfidence}%
+          Blended Strength: {getModelVerdict(result.blendedConfidence / 100)}
         </span>
         {integrity.verified ? (
           <span className="ticket-integrity-badge ticket-integrity-badge--verified">
@@ -455,22 +466,33 @@ interface TicketBetCardProps {
 }
 
 const TicketBetCard: React.FC<TicketBetCardProps> = ({ bet }) => {
-  const confColor = getConfidenceColor(bet.probability);
+  const normalizedScore = Math.min(bet.probability, 99) / 100;
+  const verdictLabel = getModelVerdict(normalizedScore);
+  const verdictColor = getVerdictColor(normalizedScore);
   const horseNames = bet.horses.map((h) => h.name).join(' + ');
 
   return (
-    <div className="ticket-bet-card" style={{ borderLeft: `3px solid ${confColor}` }}>
-      {/* Bet type label */}
+    <div className="ticket-bet-card" style={{ borderLeft: `3px solid ${verdictColor}` }}>
+      {/* Bet type label + verdict right-aligned */}
       <div
         style={{
-          fontSize: 12,
-          fontWeight: 700,
-          color: '#19abb5',
-          textTransform: 'uppercase' as const,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
           marginBottom: 4,
         }}
       >
-        {formatBetTypeLabel(bet.internalType)}
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: '#19abb5',
+            textTransform: 'uppercase' as const,
+          }}
+        >
+          {formatBetTypeLabel(bet.internalType)}
+        </span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: verdictColor }}>{verdictLabel}</span>
       </div>
 
       {/* Horse names */}
@@ -478,13 +500,9 @@ const TicketBetCard: React.FC<TicketBetCardProps> = ({ bet }) => {
         {horseNames}
       </div>
 
-      {/* Cost and confidence row */}
+      {/* Cost row */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 6 }}>
         <span style={{ fontSize: 13, color: '#eeeff1' }}>Cost: ${bet.computedCost}</span>
-        <span style={{ fontSize: 13, color: confColor, fontWeight: 600 }}>
-          {Math.round(bet.probability)}% Confidence &middot;{' '}
-          {getConfidenceVerdict(Math.round(bet.probability))}
-        </span>
       </div>
 
       {/* Over budget badge */}
