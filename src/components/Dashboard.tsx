@@ -1566,6 +1566,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
           </div>
 
+          {/* Separator */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* GUIDE button - Opens platform overview slideshow */}
+          <div className="app-bottombar__cluster">
+            <button
+              className="app-bottombar__item app-bottombar__item--guide"
+              onClick={() => window.open('/slideshow/index.html', '_blank')}
+              title="Platform overview presentation"
+            >
+              <span>▶ GUIDE</span>
+            </button>
+          </div>
+
           {/* Center spacer - pushes Upload to far right */}
           <div className="app-bottombar__spacer"></div>
 

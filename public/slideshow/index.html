@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Furlong — Platform Overview</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0f1117;
+  --card: #1a1d26;
+  --border: #2a2d3a;
+  --teal: #19abb5;
+  --teal-hover: #1992a1;
+  --green: #22c55e;
+  --yellow: #eab308;
+  --red: #ef4444;
+  --text: #ffffff;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --radius: 8px;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Layout */
+.slideshow { width: 100%; height: 100%; position: relative; }
+
+.slide {
+  display: none;
+  width: 100%; height: 100%;
+  padding: 60px 48px 80px;
+  overflow-y: auto;
+  cursor: pointer;
+}
+.slide.active { display: block; }
+
+/* Navigation */
+.nav-close {
+  position: fixed; top: 16px; right: 24px; z-index: 100;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  color: var(--text-secondary); font-size: 14px; font-weight: 600;
+  padding: 8px 16px; cursor: pointer;
+  font-family: inherit;
+}
+.nav-close:hover { color: var(--text); border-color: var(--teal); }
+
+.nav-back {
+  position: fixed; bottom: 24px; left: 24px; z-index: 100;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  color: var(--text-secondary); font-size: 20px; width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-family: inherit;
+}
+.nav-back:hover { color: var(--text); border-color: var(--teal); }
+.nav-back.hidden { display: none; }
+
+.slide-counter {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); z-index: 100;
+  color: var(--text-muted); font-size: 14px; font-weight: 600;
+  letter-spacing: 2px;
+}
+
+/* Restart overlay */
+.restart-overlay {
+  display: none;
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: var(--bg); z-index: 200;
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 12px;
+}
+.restart-overlay.active { display: flex; }
+.restart-overlay span:first-child { font-size: 24px; font-weight: 700; color: var(--teal); }
+.restart-overlay span:last-child { font-size: 14px; color: var(--text-muted); }
+
+/* Typography */
+.slide-header {
+  font-size: 28px; font-weight: 800; color: var(--teal);
+  letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px;
+}
+.slide-subheader {
+  font-size: 16px; color: var(--text-secondary); font-style: italic;
+  margin-bottom: 32px;
+}
+
+/* Two column layout */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 24px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+.four-col { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+
+/* Stat boxes */
+.stat-box {
+  background: var(--card); border: 1px solid var(--teal); border-radius: var(--radius);
+  padding: 16px; margin-bottom: 12px;
+}
+.stat-box-title { font-size: 15px; font-weight: 700; color: var(--teal); margin-bottom: 4px; }
+.stat-box-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+
+/* Bullet points */
+.bullets {
+  display: flex; gap: 24px; flex-wrap: wrap;
+  padding: 16px 0; border-top: 1px solid var(--border);
+  margin-top: 16px;
+}
+.bullet {
+  font-size: 13px; color: var(--text-secondary); line-height: 1.5;
+  padding-left: 16px; position: relative;
+}
+.bullet::before {
+  content: '—'; position: absolute; left: 0; color: var(--teal);
+}
+
+/* Callout arrows */
+.callout {
+  display: flex; align-items: flex-start; gap: 8px;
+  margin: 6px 0; font-size: 13px;
+}
+.callout-arrow { color: var(--teal); font-weight: 700; flex-shrink: 0; }
+.callout-label { color: var(--teal); font-weight: 700; min-width: 90px; flex-shrink: 0; }
+.callout-text { color: var(--text-secondary); line-height: 1.4; }
+
+/* Mock table */
+.mock-table {
+  width: 100%; border-collapse: collapse; margin-bottom: 16px;
+  font-size: 13px;
+}
+.mock-table th {
+  text-align: left; padding: 8px 10px; font-weight: 700; font-size: 11px;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;
+  border-bottom: 1px solid var(--border); background: var(--card);
+}
+.mock-table td {
+  padding: 8px 10px; border-bottom: 1px solid var(--border);
+  color: var(--text); font-variant-numeric: tabular-nums;
+}
+.mock-table tr:hover td { background: rgba(25, 171, 181, 0.05); }
+
+/* Badges */
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.badge--best { background: rgba(34, 197, 94, 0.15); color: var(--green); border: 1px solid rgba(34, 197, 94, 0.3); }
+.badge--great { background: rgba(25, 171, 181, 0.15); color: var(--teal); border: 1px solid rgba(25, 171, 181, 0.3); }
+.badge--toss { background: rgba(234, 179, 8, 0.15); color: var(--yellow); border: 1px solid rgba(234, 179, 8, 0.3); }
+.badge--mix { background: rgba(156, 163, 175, 0.1); color: var(--text-secondary); border: 1px solid rgba(156, 163, 175, 0.2); }
+.badge--no { background: rgba(239, 68, 68, 0.1); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.2); }
+.badge--prime { background: rgba(25, 171, 181, 0.15); color: var(--teal); border: 1px solid rgba(25, 171, 181, 0.3); }
+
+.edge-pos { color: var(--green); font-weight: 600; }
+.edge-neg { color: var(--red); font-weight: 600; }
+
+/* Card mockup */
+.mock-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; margin-bottom: 12px;
+}
+.mock-card--teal { border-left: 3px solid var(--teal); }
+.mock-card--green { border-left: 3px solid var(--green); }
+.mock-card--yellow { border-left: 3px solid var(--yellow); }
+
+/* Zone sections */
+.zone {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; margin-bottom: 12px;
+}
+.zone-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; margin-bottom: 8px;
+}
+.zone-label--teal { color: var(--teal); }
+.zone-label--yellow { color: var(--yellow); }
+
+/* Progress bar */
+.progress-bar {
+  height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px;
+  overflow: hidden; margin: 8px 0;
+}
+.progress-fill { height: 100%; border-radius: 4px; }
+.progress-fill--teal { background: var(--teal); }
+.progress-fill--green { background: var(--green); }
+
+/* Factor rows */
+.factor-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 12px; border-radius: 6px; margin-bottom: 6px;
+  font-size: 13px; background: rgba(255,255,255,0.02);
+}
+.factor-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.factor-name { font-weight: 600; min-width: 100px; color: var(--text); }
+.factor-rating { font-weight: 600; min-width: 80px; }
+.factor-desc { color: var(--text-secondary); }
+
+/* Bet card */
+.bet-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px; margin-bottom: 10px; border-left: 3px solid var(--border);
+}
+.bet-card--best { border-left-color: var(--green); }
+.bet-card--prime { border-left-color: var(--teal); }
+.bet-type-label { font-size: 12px; font-weight: 700; color: var(--teal); text-transform: uppercase; }
+.bet-horses { font-size: 14px; font-weight: 600; color: var(--text); margin: 4px 0; }
+.bet-detail { font-size: 13px; color: var(--text-secondary); }
+.bet-verdict { font-size: 12px; font-weight: 600; }
+
+/* Window script box */
+.window-script {
+  background: var(--card); border: 2px solid var(--teal); border-radius: var(--radius);
+  padding: 20px 24px; margin: 16px 0; text-align: center;
+}
+.window-script-label {
+  font-size: 11px; font-weight: 700; color: var(--teal);
+  letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;
+}
+.window-script-text {
+  font-size: 22px; font-weight: 700; color: var(--text);
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  letter-spacing: 1px;
+}
+
+/* Controls mockup */
+.controls-row {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 16px; margin-bottom: 16px;
+}
+.control-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+.control-input {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text); font-size: 14px; font-weight: 600; padding: 6px 12px;
+  width: 60px; text-align: center;
+}
+.control-btn {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text-secondary); font-size: 13px; font-weight: 600;
+  padding: 6px 10px; min-width: 32px; text-align: center;
+}
+.control-btn.active { background: var(--teal); color: white; border-color: var(--teal); }
+.control-btn.active--moderate { background: var(--yellow); color: #000; border-color: var(--yellow); }
+.control-btn.active--aggressive { background: var(--red); color: white; border-color: var(--red); }
+.control-action {
+  background: var(--teal); color: white; border: none; border-radius: 6px;
+  font-size: 13px; font-weight: 700; padding: 8px 16px;
+}
+.control-surprise {
+  background: transparent; color: var(--teal); border: 1px solid var(--teal); border-radius: 6px;
+  font-size: 13px; font-weight: 600; padding: 8px 16px;
+}
+
+/* Utilization bar */
+.util-bar {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px 16px; margin-bottom: 16px;
+}
+.util-bar-label { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; }
+.util-bar-text { font-size: 13px; font-weight: 600; color: var(--text); float: right; }
+
+/* Bet type columns */
+.bet-col-header {
+  font-size: 12px; font-weight: 700; color: var(--teal);
+  text-transform: uppercase; letter-spacing: 1px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+
+/* Sections for slide 7 */
+.exotic-section {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px 20px; margin-bottom: 16px;
+}
+.exotic-title { font-size: 16px; font-weight: 700; color: var(--teal); margin-bottom: 4px; }
+.exotic-desc { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; }
+.exotic-variants { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.exotic-variant {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px;
+}
+.exotic-variant-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.exotic-variant-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; line-height: 1.4; }
+.exotic-cost { font-size: 12px; color: var(--text-muted); }
+
+/* Highlight box */
+.highlight-box {
+  background: rgba(25, 171, 181, 0.08); border: 1px solid rgba(25, 171, 181, 0.3);
+  border-radius: var(--radius); padding: 16px 20px; margin: 16px 0;
+  font-size: 14px; color: var(--text-secondary); line-height: 1.6;
+}
+
+/* Script grid */
+.script-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.script-item {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px 16px;
+}
+.script-say {
+  font-size: 14px; font-weight: 700; color: var(--text);
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  margin-bottom: 4px;
+}
+.script-plain { font-size: 12px; color: var(--text-muted); font-style: italic; }
+
+/* Column top-border color accents for slide 6 */
+.col-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; position: relative;
+}
+.col-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 3px; border-radius: var(--radius) var(--radius) 0 0;
+}
+.col-card--green::before { background: var(--green); }
+.col-card--yellow::before { background: var(--yellow); }
+.col-card--teal::before { background: var(--teal); }
+.col-card-label { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+.col-card-desc { font-size: 15px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5; }
+.col-card-example { font-size: 13px; color: var(--text); margin-bottom: 4px; }
+.col-card-detail { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+.col-card-risk { font-size: 13px; color: var(--text-secondary); margin-top: 8px; line-height: 1.6; }
+
+/* Big statement */
+.big-statement { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.4; margin-bottom: 16px; }
+.big-paragraph { font-size: 15px; color: var(--text-secondary); line-height: 1.7; }
+
+/* Annotation column */
+.annotation { margin-bottom: 10px; }
+.annotation-label { font-size: 12px; font-weight: 700; color: var(--teal); margin-bottom: 2px; }
+.annotation-text { font-size: 13px; color: var(--text-secondary); line-height: 1.4; }
+
+/* Verified badge */
+.verified-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 700;
+  color: var(--green); margin-top: 8px;
+}
+
+/* Bottom final line */
+.final-line {
+  text-align: center; font-size: 16px; font-weight: 600;
+  color: var(--text-muted); margin-top: 24px; padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .slide { padding: 56px 24px 80px; }
+  .two-col, .four-col { grid-template-columns: 1fr; }
+  .three-col { grid-template-columns: 1fr; }
+  .exotic-variants { grid-template-columns: 1fr; }
+  .script-grid { grid-template-columns: 1fr; }
+  .big-statement { font-size: 18px; }
+  .slide-header { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="slideshow" id="slideshow">
+
+  <!-- Close button -->
+  <button class="nav-close" id="navClose" onclick="event.stopPropagation(); window.close();">✕ Back to Furlong</button>
+
+  <!-- Back button -->
+  <button class="nav-back hidden" id="navBack" onclick="event.stopPropagation(); goBack();">←</button>
+
+  <!-- Slide counter -->
+  <div class="slide-counter" id="slideCounter">1 / 8</div>
+
+  <!-- Restart overlay -->
+  <div class="restart-overlay" id="restartOverlay">
+    <span>You're all set</span>
+    <span>Restarting...</span>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 1: What is Furlong? -->
+  <!-- ============================================ -->
+  <div class="slide active" data-slide="1" onclick="advance()">
+    <div class="slide-header">FURLONG</div>
+    <div class="slide-subheader">Finding value the public misses.</div>
+
+    <div class="two-col">
+      <div>
+        <div class="big-statement">We don't predict who wins.<br>We find horses the public is undervaluing.</div>
+        <p class="big-paragraph">Every bet at the track is priced by the crowd. When the crowd is wrong about a horse, the payout is bigger than it should be. Furlong finds those horses — then helps you build smart tickets to capitalize.</p>
+      </div>
+      <div>
+        <div class="stat-box">
+          <div class="stat-box-title">336-Point Scoring Engine</div>
+          <div class="stat-box-desc">Every horse scored across 15 categories before you see a single result</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-title">Live Value Detection</div>
+          <div class="stat-box-desc">Edge % shows you how much the public is underpricing a horse right now</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-title">Ticket Builder</div>
+          <div class="stat-box-desc">Budget-aware bet allocation across Win, Exacta, Trifecta, and Superfecta plays</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bullets">
+      <span class="bullet">Runs 100% offline — no wifi needed at the track</span>
+      <span class="bullet">Loads any DRF file from any North American track</span>
+      <span class="bullet">Built for real bettors, not just favorites players</span>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 2: The Race Analysis Screen -->
+  <!-- ============================================ -->
+  <div class="slide" data-slide="2" onclick="advance()">
+    <div class="slide-header">RACE ANALYSIS SCREEN</div>
+    <div class="slide-subheader">Your command center for every race.</div>
+
+    <table class="mock-table">
+      <thead>
+        <tr>
+          <th>HORSE</th>
+          <th>SCORE</th>
+          <th>FIELD LABEL</th>
+          <th>SHOULD BE</th>
+          <th>MORNING LINE</th>
+          <th>EDGE %</th>
+          <th>RATING</th>
+          <th>OUR PICK</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-weight:600">Nick</td>
+          <td>241</td>
+          <td><span class="badge badge--best">Top Pick</span></td>
+          <td>3-1</td>
+          <td>5-2</td>
+          <td class="edge-pos">+18%</td>
+          <td><span class="badge badge--best">BEST BET</span></td>
+          <td>1st</td>
+        </tr>
+        <tr>
+          <td style="font-weight:600">Roger</td>
+          <td>218</td>
+          <td><span class="badge badge--great">Contender</span></td>
+          <td>4-1</td>
+          <td>7-2</td>
+          <td class="edge-pos">+12%</td>
+          <td><span class="badge badge--great">GREAT VALUE</span></td>
+          <td>2nd</td>
+        </tr>
+        <tr>
+          <td style="font-weight:600">Brock</td>
+          <td>196</td>
+          <td><span class="badge badge--toss">In the Mix</span></td>
+          <td>6-1</td>
+          <td>5-1</td>
+          <td class="edge-pos">+8%</td>
+          <td><span class="badge badge--toss">TOSS UP</span></td>
+          <td>3rd</td>
+        </tr>
+        <tr>
+          <td style="font-weight:600">Katie</td>
+          <td>174</td>
+          <td><span class="badge badge--mix">In the Mix</span></td>
+          <td>8-1</td>
+          <td>6-1</td>
+          <td class="edge-neg">-4%</td>
+          <td><span class="badge badge--mix">IN THE MIX</span></td>
+          <td>4th</td>
+        </tr>
+        <tr>
+          <td style="font-weight:600">Jeremy</td>
+          <td>161</td>
+          <td><span class="badge badge--mix">Longshot</span></td>
+          <td>12-1</td>
+          <td>10-1</td>
+          <td class="edge-neg">-6%</td>
+          <td><span class="badge badge--mix">IN THE MIX</span></td>
+          <td>5th</td>
+        </tr>
+        <tr>
+          <td style="font-weight:600">Danny</td>
+          <td>143</td>
+          <td><span class="badge badge--no">Longshot</span></td>
+          <td>15-1</td>
+          <td>12-1</td>
+          <td class="edge-neg">-12%</td>
+          <td><span class="badge badge--no">NO VALUE</span></td>
+          <td>6th</td>
+        </tr>
+        <tr>
+          <td style="font-weight:600">Ellie</td>
+          <td>128</td>
+          <td><span class="badge badge--no">Long Odds</span></td>
+          <td>20-1</td>
+          <td>15-1</td>
+          <td class="edge-neg">-18%</td>
+          <td><span class="badge badge--no">NO VALUE</span></td>
+          <td>7th</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+      <div class="callout">
+        <span class="callout-arrow">→</span>
+        <span class="callout-label">SCORE</span>
+        <span class="callout-text">336-point scale. Higher = stronger horse.</span>
+      </div>
+      <div class="callout">
+        <span class="callout-arrow">→</span>
+        <span class="callout-label">EDGE %</span>
+        <span class="callout-text">Positive = public underpricing this horse. This is your value signal.</span>
+      </div>
+      <div class="callout">
+        <span class="callout-arrow">→</span>
+        <span class="callout-label">SHOULD BE</span>
+        <span class="callout-text">What Furlong thinks the fair odds are.</span>
+      </div>
+      <div class="callout">
+        <span class="callout-arrow">→</span>
+        <span class="callout-label">RATING</span>
+        <span class="callout-text">Bottom line recommendation based on score + value combined.</span>
+      </div>
+      <div class="callout">
+        <span class="callout-arrow">→</span>
+        <span class="callout-label">OUR PICK</span>
+        <span class="callout-text">Projected finish position based on model.</span>
+      </div>
+    </div>
+
+    <div class="bullets">
+      <span class="bullet">Green EDGE % = public sleeping on this horse</span>
+      <span class="bullet">BEST BET + positive edge = highest priority plays</span>
+      <span class="bullet">Sort any column — click the header</span>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 3: Reading a Horse Card -->
+  <!-- ============================================ -->
+  <div class="slide" data-slide="3" onclick="advance()">
+    <div class="slide-header">THE HORSE CARD</div>
+    <div class="slide-subheader">Drill into any horse for the full picture.</div>
+
+    <div class="two-col">
+      <div>
+        <!-- Zone 1: Horse Quality -->
+        <div class="zone">
+          <div class="zone-label zone-label--teal">HORSE QUALITY</div>
+          <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:4px;">
+            <span style="font-size:28px; font-weight:800; color:var(--text)">224</span>
+            <span style="font-size:16px; color:var(--text-muted)">/ 336</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill progress-fill--teal" style="width:67%"></div></div>
+          <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
+            <span class="badge badge--great">Contender</span>
+            <span style="display:flex; align-items:center; gap:4px; font-size:12px; color:var(--green);">
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green)"></span>
+              Strong Data
+            </span>
+          </div>
+        </div>
+
+        <!-- Zone 2: Betting Value -->
+        <div class="zone">
+          <div class="zone-label zone-label--yellow">BETTING VALUE</div>
+          <div style="font-size:20px; font-weight:800; color:var(--teal); margin-bottom:4px;">GREAT VALUE</div>
+          <div style="font-size:13px; color:var(--text-secondary); margin-bottom:8px;">Public is undervaluing this horse</div>
+          <div style="font-size:15px; font-weight:700; color:var(--green);">Edge: +14%</div>
+        </div>
+
+        <!-- Factor Breakdown -->
+        <div style="margin-top:16px;">
+          <div style="font-size:12px; font-weight:700; color:var(--text-muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px;">FACTOR BREAKDOWN</div>
+          <div class="factor-row">
+            <span class="factor-dot" style="background:var(--green)"></span>
+            <span class="factor-name">SPEED</span>
+            <span class="factor-rating" style="color:var(--green)">Strength</span>
+            <span class="factor-desc">Consistently posts competitive figures</span>
+          </div>
+          <div class="factor-row">
+            <span class="factor-dot" style="background:var(--green)"></span>
+            <span class="factor-name">CLASS</span>
+            <span class="factor-rating" style="color:var(--green)">Strength</span>
+            <span class="factor-desc">Fits this level well</span>
+          </div>
+          <div class="factor-row">
+            <span class="factor-dot" style="background:var(--yellow)"></span>
+            <span class="factor-name">CONNECTIONS</span>
+            <span class="factor-rating" style="color:var(--yellow)">Average</span>
+            <span class="factor-desc">Trainer/jockey stats are solid</span>
+          </div>
+          <div class="factor-row">
+            <span class="factor-dot" style="background:var(--red)"></span>
+            <span class="factor-name">FORM</span>
+            <span class="factor-rating" style="color:var(--red)">Caution</span>
+            <span class="factor-desc">Last race was below par</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="annotation">
+          <div class="annotation-label">→ Zone 1: HORSE QUALITY</div>
+          <div class="annotation-text">How good is this horse? Scored against all 15 categories.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-label">→ Zone 2: BETTING VALUE</div>
+          <div class="annotation-text">Is this horse worth betting RIGHT NOW at current odds?</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-label">→ GREAT VALUE</div>
+          <div class="annotation-text">The most important signal on this card.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-label">→ Factor Rows</div>
+          <div class="annotation-text">Color tells you everything — green strength, yellow caution, red weakness.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bullets">
+      <span class="bullet">Tap any horse row on the race screen to expand</span>
+      <span class="bullet">Factor scores never change — only value shifts with odds</span>
+      <span class="bullet">DATA QUALITY warns you when model has limited info</span>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 4: Top Bets Screen -->
+  <!-- ============================================ -->
+  <div class="slide" data-slide="4" onclick="advance()">
+    <div class="slide-header">TOP BETS</div>
+    <div class="slide-subheader">Every playable bet in this race, ranked and ready.</div>
+
+    <div class="four-col">
+      <!-- WIN/PLACE/SHOW column -->
+      <div>
+        <div class="bet-col-header">WIN / PLACE / SHOW</div>
+        <div class="bet-card bet-card--best">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span class="bet-type-label">WIN — CASEY</span>
+            <span class="badge badge--best">BEST BET</span>
+          </div>
+          <div class="bet-detail">Cost: $5 · Kelly: $12</div>
+          <div class="bet-verdict" style="color:var(--green); margin-top:4px;">Model loves this one</div>
+        </div>
+        <div class="bet-card">
+          <div class="bet-type-label">WIN — SHAUN</div>
+          <div class="bet-detail">Cost: $5</div>
+          <div class="bet-verdict" style="color:var(--text-secondary); margin-top:4px;">Reasonable shot</div>
+        </div>
+      </div>
+
+      <!-- EXACTA column -->
+      <div>
+        <div class="bet-col-header">EXACTA</div>
+        <div class="bet-card bet-card--prime">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span class="bet-type-label">EXACTA BOX 2</span>
+            <span class="badge badge--prime">PRIME VALUE</span>
+          </div>
+          <div class="bet-horses">Casey + Angelina</div>
+          <div class="bet-detail">Cost: $10</div>
+          <div class="bet-verdict" style="color:var(--teal); margin-top:4px;">Numbers back this play</div>
+        </div>
+        <div class="bet-card">
+          <div class="bet-type-label">EXACTA BOX 3</div>
+          <div class="bet-horses">Casey + Shaun + Angelina</div>
+          <div class="bet-detail">Cost: $30</div>
+          <div class="bet-verdict" style="color:var(--text-secondary); margin-top:4px;">Good coverage</div>
+        </div>
+      </div>
+
+      <!-- TRIFECTA column -->
+      <div>
+        <div class="bet-col-header">TRIFECTA</div>
+        <div class="bet-card bet-card--prime">
+          <div class="bet-type-label">TRIFECTA BOX 3</div>
+          <div class="bet-horses">Casey + Angelina + Brenda</div>
+          <div class="bet-detail">Cost: $6</div>
+          <div class="bet-verdict" style="color:var(--teal); margin-top:4px;">Strong case here</div>
+        </div>
+        <div class="bet-card">
+          <div class="bet-type-label">TRIFECTA BOX 4</div>
+          <div class="bet-horses">Casey + Shaun + Angelina + Brenda</div>
+          <div class="bet-detail">Cost: $24</div>
+          <div class="bet-verdict" style="color:var(--text-secondary); margin-top:4px;">Solid spread</div>
+        </div>
+      </div>
+
+      <!-- SUPERFECTA column -->
+      <div>
+        <div class="bet-col-header">SUPERFECTA</div>
+        <div class="bet-card">
+          <div class="bet-type-label">SUPERFECTA BOX 4</div>
+          <div class="bet-horses">Casey + Shaun + Angelina + Brenda</div>
+          <div class="bet-detail">Cost: $24</div>
+          <div class="bet-verdict" style="color:var(--text-secondary); margin-top:4px;">Worth a look</div>
+        </div>
+        <div class="bet-card">
+          <div class="bet-type-label">SUPERFECTA BOX 5</div>
+          <div class="bet-horses">Casey + Shaun + Angelina + Brenda + Nick</div>
+          <div class="bet-detail">Cost: $120</div>
+          <div class="bet-verdict" style="color:var(--text-muted); margin-top:4px;">Roll the dice</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+      <div class="callout">
+        <span class="callout-arrow">→</span>
+        <span class="callout-label">BEST BET</span>
+        <span class="callout-text">Highest score + best value in the race.</span>
+      </div>
+      <div class="callout">
+        <span class="callout-arrow">→</span>
+        <span class="callout-label">Kelly</span>
+        <span class="callout-text">Suggested bet size based on your bankroll.</span>
+      </div>
+      <div class="callout">
+        <span class="callout-arrow">→</span>
+        <span class="callout-label">Columns</span>
+        <span class="callout-text">Four bet types — one screen. No math required.</span>
+      </div>
+      <div class="callout">
+        <span class="callout-arrow">→</span>
+        <span class="callout-label">Confidence</span>
+        <span class="callout-text">Plain English read from the model.</span>
+      </div>
+    </div>
+
+    <div class="bullets">
+      <span class="bullet">Sort by confidence, EV, edge, or cost</span>
+      <span class="bullet">Base amount selector scales all bets simultaneously</span>
+      <span class="bullet">Value toggle filters to only positive-edge bets</span>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 5: Build My Ticket -->
+  <!-- ============================================ -->
+  <div class="slide" data-slide="5" onclick="advance()">
+    <div class="slide-header">BUILD MY TICKET</div>
+    <div class="slide-subheader">Set a budget. Get a complete ticket. Walk to the window.</div>
+
+    <div class="two-col">
+      <div>
+        <!-- Controls row mockup -->
+        <div class="controls-row">
+          <div>
+            <div class="control-label">Budget</div>
+            <div style="display:flex; align-items:center; gap:4px; margin-top:4px;">
+              <span style="color:var(--text-muted)">$</span>
+              <span class="control-input">40</span>
+            </div>
+          </div>
+          <div>
+            <div class="control-label">Bets</div>
+            <div style="display:flex; gap:4px; margin-top:4px;">
+              <span class="control-btn">1</span>
+              <span class="control-btn">2</span>
+              <span class="control-btn active">3</span>
+              <span class="control-btn">4</span>
+              <span class="control-btn">5</span>
+            </div>
+          </div>
+          <div>
+            <div class="control-label">Mode</div>
+            <div style="display:flex; gap:4px; margin-top:4px;">
+              <span class="control-btn">Conservative</span>
+              <span class="control-btn active--moderate" style="background:var(--yellow); color:#000; border:1px solid var(--yellow);">Moderate</span>
+              <span class="control-btn">Aggressive</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:18px;">
+            <span class="control-action">Build My Ticket</span>
+            <span class="control-surprise">Surprise Me</span>
+          </div>
+        </div>
+
+        <!-- Utilization bar -->
+        <div class="util-bar">
+          <span class="util-bar-label">BUDGET UTILIZATION</span>
+          <span class="util-bar-text">$38 of $40 · 95%</span>
+          <div class="progress-bar" style="margin-top:6px;"><div class="progress-fill progress-fill--green" style="width:95%"></div></div>
+        </div>
+
+        <!-- Ticket column -->
+        <div style="font-size:13px; font-weight:700; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:10px;">Your Optimized Ticket</div>
+
+        <div class="bet-card bet-card--prime">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span class="bet-type-label">TRIFECTA BOX 3</span>
+            <span class="bet-verdict" style="color:var(--teal);">Numbers back this play</span>
+          </div>
+          <div class="bet-horses">Roger + Mattagio + Katie</div>
+          <div class="bet-detail">Cost: $18</div>
+          <div class="window-script" style="margin-top:8px; padding:10px 14px; text-align:left;">
+            <div class="window-script-label" style="font-size:10px;">SAY AT THE WINDOW</div>
+            <div class="window-script-text" style="font-size:15px;">$3 TRIFECTA BOX, 2-4-6</div>
+          </div>
+        </div>
+
+        <div class="bet-card bet-card--best">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span class="bet-type-label">EXACTA BOX 2</span>
+            <span class="bet-verdict" style="color:var(--green);">Model loves this one</span>
+          </div>
+          <div class="bet-horses">Roger + Mattagio</div>
+          <div class="bet-detail">Cost: $20</div>
+          <div class="window-script" style="margin-top:8px; padding:10px 14px; text-align:left;">
+            <div class="window-script-label" style="font-size:10px;">SAY AT THE WINDOW</div>
+            <div class="window-script-text" style="font-size:15px;">$10 EXACTA BOX, 2-4</div>
+          </div>
+        </div>
+
+        <div class="verified-badge">✓ Ticket Verified</div>
+      </div>
+
+      <div>
+        <div class="annotation">
+          <div class="annotation-label">→ Budget Bar</div>
+          <div class="annotation-text">Furlong uses as much of your budget as possible — no waste.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-label">→ Risk Mode</div>
+          <div class="annotation-text">Conservative = high probability plays. Aggressive = max upside.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-label">→ SAY AT THE WINDOW</div>
+          <div class="annotation-text">Read this verbatim to the teller. That's it.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-label">→ ✓ Ticket Verified</div>
+          <div class="annotation-text">Every horse number cross-referenced before you see it.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-label">→ Surprise Me</div>
+          <div class="annotation-text">Random ticket within your budget and mode — for when you want to mix it up.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bullets">
+      <span class="bullet">Base amounts auto-scale to fill your budget</span>
+      <span class="bullet">Bet count buttons gray out when budget can't support them</span>
+      <span class="bullet">Unlock tip tells you exactly how much more budget you need</span>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 6: Win, Place & Show -->
+  <!-- ============================================ -->
+  <div class="slide" data-slide="6" onclick="advance()">
+    <div class="slide-header">WIN · PLACE · SHOW</div>
+    <div class="slide-subheader">The simplest bets at the track. Start here.</div>
+
+    <div class="three-col">
+      <!-- WIN -->
+      <div class="col-card col-card--green">
+        <div class="col-card-label" style="color:var(--green)">WIN</div>
+        <div class="col-card-desc">Your horse finishes 1st.</div>
+        <div class="col-card-example">Example: $5 WIN on BROCK (horse #3)</div>
+        <div class="col-card-detail">Pays if #3 wins. Nothing otherwise.</div>
+        <div class="window-script" style="margin:10px 0; padding:10px; text-align:left;">
+          <div class="window-script-label" style="font-size:10px;">AT THE WINDOW</div>
+          <div class="window-script-text" style="font-size:14px;">$5 WIN on number 3</div>
+        </div>
+        <div class="col-card-detail">Typical cost: $2 minimum, bet any amount</div>
+        <div class="col-card-risk">
+          • Hardest to hit<br>• Biggest payout per dollar
+        </div>
+      </div>
+
+      <!-- PLACE -->
+      <div class="col-card col-card--yellow">
+        <div class="col-card-label" style="color:var(--yellow)">PLACE</div>
+        <div class="col-card-desc">Your horse finishes 1st or 2nd.</div>
+        <div class="col-card-example">Example: $5 PLACE on BROCK (horse #3)</div>
+        <div class="col-card-detail">Pays if #3 finishes in the top 2.</div>
+        <div class="window-script" style="margin:10px 0; padding:10px; text-align:left;">
+          <div class="window-script-label" style="font-size:10px;">AT THE WINDOW</div>
+          <div class="window-script-text" style="font-size:14px;">$5 PLACE on number 3</div>
+        </div>
+        <div class="col-card-detail">Typical cost: $2 minimum</div>
+        <div class="col-card-risk">
+          • Easier than Win<br>• Smaller payout
+        </div>
+      </div>
+
+      <!-- SHOW -->
+      <div class="col-card col-card--teal">
+        <div class="col-card-label" style="color:var(--teal)">SHOW</div>
+        <div class="col-card-desc">Your horse finishes 1st, 2nd, or 3rd.</div>
+        <div class="col-card-example">Example: $5 SHOW on BROCK (horse #3)</div>
+        <div class="col-card-detail">Pays if #3 finishes in the top 3.</div>
+        <div class="window-script" style="margin:10px 0; padding:10px; text-align:left;">
+          <div class="window-script-label" style="font-size:10px;">AT THE WINDOW</div>
+          <div class="window-script-text" style="font-size:14px;">$5 SHOW on number 3</div>
+        </div>
+        <div class="col-card-detail">Typical cost: $2 minimum</div>
+        <div class="col-card-risk">
+          • Easiest to hit<br>• Smallest payout
+        </div>
+      </div>
+    </div>
+
+    <!-- The Value Play -->
+    <div class="highlight-box">
+      <strong style="color:var(--teal)">The Value Play:</strong> Furlong's EDGE % tells you when a horse is being underpriced. A horse with +20% edge on a WIN bet means the crowd thinks it's a 10-1 shot when the model says it should be 6-1. That's where you find profit.
+    </div>
+
+    <div class="bullets">
+      <span class="bullet">Furlong scores every horse for Win, Place, and Show separately</span>
+      <span class="bullet">Kelly sizing on each card tells you the smart bet amount</span>
+      <span class="bullet">BEST BET badge = highest priority play in the race</span>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 7: Exactas, Trifectas & Superfectas -->
+  <!-- ============================================ -->
+  <div class="slide" data-slide="7" onclick="advance()">
+    <div class="slide-header">THE EXOTICS</div>
+    <div class="slide-subheader">Bigger payouts. More combinations. Still manageable.</div>
+
+    <!-- EXACTA -->
+    <div class="exotic-section">
+      <div class="exotic-title">EXACTA</div>
+      <div class="exotic-desc">Pick the 1st and 2nd place finishers.</div>
+      <div class="exotic-variants">
+        <div class="exotic-variant">
+          <div class="exotic-variant-title">STRAIGHT</div>
+          <div class="exotic-variant-desc">Exact order. Horse A wins, Horse B places.</div>
+          <div class="exotic-variant-desc" style="color:var(--text);">$2 EXACTA — NICK over CASEY (1st then 2nd)</div>
+          <div class="exotic-cost">Cost: $2 · Harder to hit · Bigger payout</div>
+        </div>
+        <div class="exotic-variant">
+          <div class="exotic-variant-title">BOX</div>
+          <div class="exotic-variant-desc">Either order. One wins, the other places.</div>
+          <div class="exotic-variant-desc" style="color:var(--text);">$2 EXACTA BOX — NICK + CASEY</div>
+          <div class="exotic-cost">Cost: $4 (2 combos × $2) · Easier · Smaller payout</div>
+          <div class="exotic-cost" style="margin-top:4px;">Box 3 horses: $12 (6 × $2) · Box 4: $24 (12 × $2)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRIFECTA -->
+    <div class="exotic-section">
+      <div class="exotic-title">TRIFECTA</div>
+      <div class="exotic-desc">Pick the 1st, 2nd, and 3rd place finishers.</div>
+      <div class="exotic-variants">
+        <div class="exotic-variant">
+          <div class="exotic-variant-title">STRAIGHT</div>
+          <div class="exotic-variant-desc">Exact order. Hardest to hit, massive payout.</div>
+          <div class="exotic-variant-desc" style="color:var(--text);">$1 TRIFECTA — NICK, CASEY, ROGER (exact)</div>
+          <div class="exotic-cost">Cost: $1</div>
+        </div>
+        <div class="exotic-variant">
+          <div class="exotic-variant-title">BOX</div>
+          <div class="exotic-variant-desc">Any order across your horses.</div>
+          <div class="exotic-variant-desc" style="color:var(--text);">$1 TRIFECTA BOX — NICK + CASEY + ROGER</div>
+          <div class="exotic-cost">BOX 3: $6 (6 combos) · BOX 4: $24 (24 combos)</div>
+          <div class="exotic-cost">BOX 5: $60 (60 combos) · BOX 6: $120 (120 combos)</div>
+        </div>
+      </div>
+      <div class="highlight-box" style="margin-top:12px;">A $1 SIX-HORSE TRIFECTA BOX covers every possible 1-2-3 finish among those 6 horses.</div>
+    </div>
+
+    <!-- SUPERFECTA -->
+    <div class="exotic-section">
+      <div class="exotic-title">SUPERFECTA</div>
+      <div class="exotic-desc">Pick the 1st, 2nd, 3rd, and 4th place finishers.</div>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:13px; color:var(--text-secondary); margin-bottom:8px;">
+        <span>BOX 4: $1 base = $24</span>
+        <span>BOX 5: $1 base = $120</span>
+        <span>BOX 6: $1 base = $360</span>
+      </div>
+      <div style="font-size:13px; color:var(--text-muted);">Furlong's ticket builder scales your base bet to fit your budget automatically.</div>
+    </div>
+
+    <div class="bullets">
+      <span class="bullet">BOX = coverage, STRAIGHT = precision</span>
+      <span class="bullet">More horses in the box = more combinations = more cost</span>
+      <span class="bullet">Build My Ticket handles all the math</span>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SLIDE 8: At the Window -->
+  <!-- ============================================ -->
+  <div class="slide" data-slide="8" onclick="advance()">
+    <div class="slide-header">AT THE WINDOW</div>
+    <div class="slide-subheader">Furlong writes the script. You just read it.</div>
+
+    <!-- Large center mockup -->
+    <div class="window-script" style="max-width:500px; margin:0 auto 16px;">
+      <div class="window-script-label">SAY AT THE WINDOW</div>
+      <div class="window-script-text" style="font-size:26px;">$3 TRIFECTA BOX, 4-7-2</div>
+    </div>
+    <div style="text-align:center; font-size:14px; color:var(--text-secondary); margin-bottom:24px; font-style:italic;">
+      "Three dollar Trifecta Box — horses four, seven, and two — in any order."
+    </div>
+
+    <!-- Three column breakdown -->
+    <div class="three-col" style="margin-bottom:24px;">
+      <div class="mock-card">
+        <div style="font-size:13px; font-weight:700; color:var(--teal); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">THE AMOUNT</div>
+        <div style="font-size:24px; font-weight:800; color:var(--text); margin-bottom:8px;">$3</div>
+        <div style="font-size:13px; color:var(--text-secondary); line-height:1.5;">This is your base bet per combination. Furlong calculates this from your budget.</div>
+      </div>
+      <div class="mock-card">
+        <div style="font-size:13px; font-weight:700; color:var(--teal); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">THE BET TYPE</div>
+        <div style="font-size:24px; font-weight:800; color:var(--text); margin-bottom:8px;">TRIFECTA BOX</div>
+        <div style="font-size:13px; color:var(--text-secondary); line-height:1.5;">The type of bet and whether it's boxed (any order) or straight (exact order).</div>
+      </div>
+      <div class="mock-card">
+        <div style="font-size:13px; font-weight:700; color:var(--teal); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">THE HORSES</div>
+        <div style="font-size:24px; font-weight:800; color:var(--text); margin-bottom:8px;">4-7-2</div>
+        <div style="font-size:13px; color:var(--text-secondary); line-height:1.5;">Program numbers from your race program. Match these exactly when you order.</div>
+      </div>
+    </div>
+
+    <!-- Common window scripts -->
+    <div style="font-size:13px; font-weight:700; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:10px;">Common Window Scripts</div>
+    <div class="script-grid">
+      <div class="script-item">
+        <div class="script-say">$5 WIN on number 3</div>
+        <div class="script-plain">Five dollar win bet on horse number three</div>
+      </div>
+      <div class="script-item">
+        <div class="script-say">$2 EXACTA BOX, 1-4</div>
+        <div class="script-plain">Two dollar exacta box, horses one and four, either order</div>
+      </div>
+      <div class="script-item">
+        <div class="script-say">$1 TRIFECTA BOX, 3-7-5-2</div>
+        <div class="script-plain">One dollar trifecta box, four horses, any finishing order</div>
+      </div>
+      <div class="script-item">
+        <div class="script-say">$1 SUPERFECTA BOX, 2-4-6-8</div>
+        <div class="script-plain">One dollar superfecta box, four horses, first through fourth any order</div>
+      </div>
+    </div>
+
+    <div class="bullets">
+      <span class="bullet">Teller may ask "which track" and "which race" — have your program ready</span>
+      <span class="bullet">Minimum bets vary by track — Furlong defaults to $1 or $2 base</span>
+      <span class="bullet">Build My Ticket generates this script for every bet automatically</span>
+    </div>
+
+    <div class="final-line">You built it. Furlong wrote it. Now go cash it.</div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  var current = 1;
+  var total = 8;
+  var slides = document.querySelectorAll('.slide');
+  var counter = document.getElementById('slideCounter');
+  var backBtn = document.getElementById('navBack');
+  var overlay = document.getElementById('restartOverlay');
+
+  function showSlide(n) {
+    for (var i = 0; i < slides.length; i++) {
+      slides[i].classList.remove('active');
+    }
+    slides[n - 1].classList.add('active');
+    counter.textContent = n + ' / ' + total;
+    if (n === 1) {
+      backBtn.classList.add('hidden');
+    } else {
+      backBtn.classList.remove('hidden');
+    }
+    current = n;
+  }
+
+  window.advance = function() {
+    if (current < total) {
+      showSlide(current + 1);
+    } else {
+      // Last slide — show restart overlay
+      overlay.classList.add('active');
+      setTimeout(function() {
+        overlay.classList.remove('active');
+        showSlide(1);
+      }, 1500);
+    }
+  };
+
+  window.goBack = function() {
+    if (current > 1) {
+      showSlide(current - 1);
+    }
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+      e.preventDefault();
+      window.advance();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      window.goBack();
+    }
+  });
+
+  showSlide(1);
+})();
+</script>
+</body>
+</html>

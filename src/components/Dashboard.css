@@ -673,7 +673,8 @@
 .app-bottombar__item--analyze-race,
 .app-bottombar__item--top-bets,
 .app-bottombar__item--strategy-guide,
-.app-bottombar__item--form-guide {
+.app-bottombar__item--form-guide,
+.app-bottombar__item--guide {
   background: var(--color-elevated);
   color: var(--color-text-primary);
   font-weight: 600;
@@ -688,7 +689,8 @@
 .app-bottombar__item--analyze-race:hover,
 .app-bottombar__item--top-bets:hover,
 .app-bottombar__item--strategy-guide:hover,
-.app-bottombar__item--form-guide:hover {
+.app-bottombar__item--form-guide:hover,
+.app-bottombar__item--guide:hover {
   background: var(--color-primary-muted);
   border-color: var(--color-primary);
   color: var(--color-primary);
@@ -697,7 +699,8 @@
 .app-bottombar__item--analyze-race:active,
 .app-bottombar__item--top-bets:active,
 .app-bottombar__item--strategy-guide:active,
-.app-bottombar__item--form-guide:active {
+.app-bottombar__item--form-guide:active,
+.app-bottombar__item--guide:active {
   transform: translateY(0);
 }
 
