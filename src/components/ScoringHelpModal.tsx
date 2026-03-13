@@ -48,13 +48,13 @@ export function ScoringHelpModal({ isOpen, onClose }: ScoringHelpModalProps) {
   if (!isOpen) return null;
 
   const sections = [
-    { id: 'race-screen', label: 'The Race Screen', icon: '\u{1F4CB}' },
-    { id: 'horse-score', label: 'Horse Score', icon: '\u{1F4CA}' },
-    { id: 'factor-breakdown', label: 'Factor Breakdown', icon: '\u{1F50D}' },
-    { id: 'suggested-bets', label: 'Suggested Bets', icon: '\u{1F4A1}' },
-    { id: 'past-performances', label: 'Past Performances', icon: '\u{1F4C5}' },
-    { id: 'horse-profile', label: 'Horse Profile', icon: '\u{1F40E}' },
-    { id: 'glossary', label: 'Glossary', icon: '\u{1F4D6}' },
+    { id: 'race-screen', label: 'The Race Screen' },
+    { id: 'horse-score', label: 'Horse Score' },
+    { id: 'factor-breakdown', label: 'Factor Breakdown' },
+    { id: 'suggested-bets', label: 'Suggested Bets' },
+    { id: 'past-performances', label: 'Past Performances' },
+    { id: 'horse-profile', label: 'Horse Profile' },
+    { id: 'glossary', label: 'Glossary' },
   ];
 
   return (
@@ -105,8 +105,7 @@ export function ScoringHelpModal({ isOpen, onClose }: ScoringHelpModalProps) {
                     className={`scoring-help-tab ${activeSection === section.id ? 'active' : ''}`}
                     onClick={() => setActiveSection(section.id)}
                   >
-                    <span className="scoring-help-tab-icon">{section.icon}</span>
-                    <span>{section.label}</span>
+                    {section.label}
                   </button>
                 ))}
               </div>

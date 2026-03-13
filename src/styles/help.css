@@ -561,27 +561,26 @@
 
 /* Tab Navigation */
 .scoring-help-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  padding: 12px 8px;
   background: var(--color-surface-variant, #242428);
   border-bottom: 1px solid var(--color-outline, rgba(255, 255, 255, 0.1));
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
 }
 
 .scoring-help-tab {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
+  width: 100%;
+  padding: 6px 4px;
   background: transparent;
   border: none;
   border-radius: 6px;
   color: rgba(238, 239, 241, 0.6);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   white-space: nowrap;
+  text-align: center;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -594,10 +593,6 @@
 .scoring-help-tab.active {
   background: var(--color-primary, #19abb5);
   color: white;
-}
-
-.scoring-help-tab-icon {
-  font-size: 16px;
 }
 
 /* Content Area */
@@ -859,19 +854,12 @@
   }
 
   .scoring-help-tabs {
-    padding: 8px 12px;
-  }
-
-  .scoring-help-tab span {
-    display: none;
+    padding: 8px 4px;
   }
 
   .scoring-help-tab {
-    padding: 8px;
-  }
-
-  .scoring-help-tab-icon {
-    font-size: 18px;
+    padding: 5px 2px;
+    font-size: 10px;
   }
 
   .scoring-help-content {
