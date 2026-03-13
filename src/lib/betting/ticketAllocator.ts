@@ -375,10 +375,13 @@ function budgetDistribution(
   }
 
   // Step G3 — Derive base amounts (floor DOWN to prevent over-budget)
+  const budgetCeiling = budget * 1.1;
   const allocated: AllocatedBet[] = selectedBets.map((bet, i) => {
     const combinations = getCombinations(bet.internalType, bet.combinationsInvolved);
-    const maxAffordableBase = Math.max(1, Math.floor(shares[i]! / combinations));
-    const computedBase = maxAffordableBase;
+    // Hard cap: no single bet's base can make it exceed the entire budget ceiling
+    const maxAllowedBase = Math.max(1, Math.floor(budgetCeiling / combinations));
+    const fromShare = Math.max(1, Math.floor(shares[i]! / combinations));
+    const computedBase = Math.min(fromShare, maxAllowedBase);
     const computedCost = computedBase * combinations;
 
     return {
@@ -395,27 +398,38 @@ function budgetDistribution(
   // Step G4 — Reduce if over budget (115% ceiling)
   const recalcTotal = () => allocated.reduce((sum, b) => sum + b.computedCost, 0);
   let totalCostCheck = recalcTotal();
+  const maxBudget = budget * 1.15;
 
-  if (totalCostCheck > budget * 1.15) {
-    // Sort by computedCost descending — reduce most expensive first
-    const byExpense = [...allocated].sort((a, b) => b.computedCost - a.computedCost);
-    while (totalCostCheck > budget * 1.15) {
+  if (totalCostCheck > maxBudget) {
+    let iterations = 0;
+    while (totalCostCheck > maxBudget && iterations < 50) {
+      iterations++;
       let reduced = false;
-      for (const bet of byExpense) {
+      // Re-sort each iteration so we always reduce the current most expensive
+      allocated.sort((a, b) => b.computedCost - a.computedCost);
+      for (const bet of allocated) {
         if (bet.computedBase > 1) {
           const comb = getCombinations(bet.internalType, bet.combinationsInvolved);
           bet.computedBase -= 1;
           bet.computedCost = bet.computedBase * comb;
           totalCostCheck = recalcTotal();
           reduced = true;
-          if (totalCostCheck <= budget * 1.15) break;
+          if (totalCostCheck <= maxBudget) break;
         }
       }
       if (!reduced) break; // all bets at $1 base minimum
     }
+    // Hard stop: if still over after 50 iterations, force all to $1 base
+    if (recalcTotal() > maxBudget) {
+      for (const bet of allocated) {
+        const comb = getCombinations(bet.internalType, bet.combinationsInvolved);
+        bet.computedBase = 1;
+        bet.computedCost = comb;
+      }
+    }
   }
 
-  // Step G4b — Fill up if under-utilized (below 80%)
+  // Step G4b — Fill up if under-utilized (below 80%) — only AFTER ceiling is safe
   totalCostCheck = recalcTotal();
   if (totalCostCheck < budget * 0.8) {
     // Sort by combinations ascending — smallest combo bets are most efficient to scale
@@ -424,15 +438,29 @@ function budgetDistribution(
       const combB = getCombinations(b.internalType, b.combinationsInvolved);
       return combA - combB;
     });
-    let remainingBudget = budget - totalCostCheck;
     for (const bet of byComboAsc) {
       const comb = getCombinations(bet.internalType, bet.combinationsInvolved);
-      const additionalBase = Math.floor(remainingBudget / comb);
+      const currentTotal = recalcTotal();
+      const headroom = budget - currentTotal;
+      if (headroom <= 0) break;
+      const additionalBase = Math.floor(headroom / comb);
       if (additionalBase > 0) {
         bet.computedBase += additionalBase;
         bet.computedCost = bet.computedBase * comb;
-        remainingBudget = budget - recalcTotal();
-        if (remainingBudget <= 0) break;
+      }
+    }
+    // Final guard: if fill-up pushed over ceiling, reduce back
+    if (recalcTotal() > maxBudget) {
+      allocated.sort((a, b) => b.computedCost - a.computedCost);
+      for (const bet of allocated) {
+        if (bet.computedBase > 1) {
+          const comb = getCombinations(bet.internalType, bet.combinationsInvolved);
+          while (bet.computedBase > 1 && recalcTotal() > maxBudget) {
+            bet.computedBase -= 1;
+            bet.computedCost = bet.computedBase * comb;
+          }
+        }
+        if (recalcTotal() <= maxBudget) break;
       }
     }
   }
@@ -538,7 +566,7 @@ export function allocateTicket(input: TicketAllocatorInput): TicketAllocatorResu
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
     }
-    selected = greedySelectByGroup(shuffled, betCount);
+    selected = greedySelectByGroup(shuffled, betCount, budget);
   } else {
     // Step F — Deterministic: sort by composite score descending, greedy select
     const compositeScores = computeCompositeScores(candidates, mode);
@@ -547,7 +575,7 @@ export function allocateTicket(input: TicketAllocatorInput): TicketAllocatorResu
       const scoreB = compositeScores.get(b) ?? 0;
       return scoreB - scoreA;
     });
-    selected = greedySelectByGroup(compositeSorted, betCount);
+    selected = greedySelectByGroup(compositeSorted, betCount, budget);
   }
 
   // Compute shortfall
@@ -597,9 +625,13 @@ export function allocateTicket(input: TicketAllocatorInput): TicketAllocatorResu
 
 /**
  * Greedy selection: pick bets one at a time, respecting one-per-column-group.
- * No budget constraint during selection — budget distribution handles scaling.
+ * Skips bets whose minimum cost ($1 base × combinations) exceeds the budget.
  */
-function greedySelectByGroup(candidates: ScaledTopBet[], maxCount: number): ScaledTopBet[] {
+function greedySelectByGroup(
+  candidates: ScaledTopBet[],
+  maxCount: number,
+  budget: number
+): ScaledTopBet[] {
   const selected: ScaledTopBet[] = [];
   const usedGroups = new Set<ColumnGroup>();
 
@@ -608,6 +640,10 @@ function greedySelectByGroup(candidates: ScaledTopBet[], maxCount: number): Scal
 
     const group = getColumnGroup(bet.internalType);
     if (usedGroups.has(group)) continue;
+
+    // Skip bets whose minimum cost at $1 base exceeds the budget
+    const minCost = getCombinations(bet.internalType, bet.combinationsInvolved);
+    if (minCost > budget) continue;
 
     selected.push(bet);
     usedGroups.add(group);
