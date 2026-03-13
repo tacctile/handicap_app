@@ -51,6 +51,10 @@ export interface TopBetsViewProps {
   onClose: () => void;
   /** Value horse program number (from AI analysis) - optional until wired */
   valueHorseNumber?: number | null;
+  /** Callback from Dashboard to open the ticket builder (triggered by bottom rail button) */
+  onOpenTicketBuilder?: boolean;
+  /** Callback to notify Dashboard the modal was closed */
+  onCloseTicketBuilder?: () => void;
 }
 
 export interface ScaledTopBet extends TopBet {
@@ -199,6 +203,8 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   isScratched = () => false,
   onClose,
   valueHorseNumber = null,
+  onOpenTicketBuilder = false,
+  onCloseTicketBuilder,
 }) => {
   // ============================================================================
   // STATE
@@ -222,7 +228,6 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   const [trifectaVariant, setTrifectaVariant] = useState<TrifectaVariant>('straight');
   const [superfectaVariant, setSuperfectaVariant] = useState<SuperfectaVariant>('straight');
   const [showValueHorseOnly, setShowValueHorseOnly] = useState(false);
-  const [showTicketBuilder, setShowTicketBuilder] = useState(false);
 
   // Persist base amount, custom amount, isCustom, and sort to localStorage
   useEffect(() => { localStorage.setItem(LS_BASE_AMOUNT, String(baseAmount)); }, [baseAmount]);
@@ -637,11 +642,6 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
           </div>
         )}
 
-        {/* Build My Ticket Button */}
-        <button className="ticket-trigger-btn" onClick={() => setShowTicketBuilder(true)}>
-          Build My Ticket
-        </button>
-
         {/* Sort Dropdown (Right) */}
         <div className="top-bets-controls__sort">
           <label htmlFor="sort-select" className="top-bets-controls__label">
@@ -722,11 +722,11 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
         })}
       </div>
 
-      {/* Build My Ticket Modal */}
-      {showTicketBuilder && (
+      {/* Build My Ticket Modal — controlled by Dashboard via onOpenTicketBuilder prop */}
+      {onOpenTicketBuilder && (
         <BuildMyTicketModal
-          isOpen={showTicketBuilder}
-          onClose={() => setShowTicketBuilder(false)}
+          isOpen={onOpenTicketBuilder}
+          onClose={() => onCloseTicketBuilder?.()}
           betPool={allScaledBets}
           currentBaseAmount={effectiveBase}
         />

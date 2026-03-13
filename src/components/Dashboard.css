@@ -701,6 +701,43 @@
   transform: translateY(0);
 }
 
+/* Build Ticket button - green, distinct from all other rail buttons */
+.app-bottombar__item--build-ticket {
+  background: #22c55e;
+  color: white;
+  font-weight: 600;
+  padding: var(--gap-element) 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid #22c55e;
+  cursor: pointer;
+  transition: all 150ms ease;
+  font-size: inherit;
+  white-space: nowrap;
+}
+
+.app-bottombar__item--build-ticket:hover {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: white;
+}
+
+.app-bottombar__item--build-ticket:active {
+  transform: translateY(0);
+}
+
+.app-bottombar__item--build-ticket:disabled {
+  background: rgba(34, 197, 94, 0.3);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: not-allowed;
+}
+
+.app-bottombar__item--build-ticket:disabled:hover {
+  background: rgba(34, 197, 94, 0.3);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: rgba(255, 255, 255, 0.5);
+}
+
 .app-bottombar__item--analyze-race:disabled,
 .app-bottombar__item--top-bets:disabled {
   background: var(--color-elevated);

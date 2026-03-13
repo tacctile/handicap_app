@@ -37,6 +37,12 @@ export interface TicketAllocatorResult {
   mode: RiskMode;
 }
 
+export interface TicketIntegrityResult {
+  verified: boolean;
+  issueCount: number;
+  issues: string[];
+}
+
 // ============================================================================
 // COLUMN GROUPING
 // ============================================================================
@@ -230,4 +236,70 @@ function greedySelect(
  */
 export function generateSurpriseTicket(input: TicketAllocatorInput): TicketAllocatorResult {
   return allocateTicket({ ...input, surpriseMode: true });
+}
+
+// ============================================================================
+// TICKET INTEGRITY VERIFICATION
+// ============================================================================
+
+/**
+ * Verify a ticket's integrity by cross-referencing horse numbers, window scripts,
+ * and bet pool data.
+ */
+export function verifyTicket(
+  selectedBets: SelectedBet[],
+  betPool: ScaledTopBet[]
+): TicketIntegrityResult {
+  const issues: string[] = [];
+
+  // Collect all horse numbers present in the bet pool
+  const poolHorseNumbers = new Set<number>();
+  for (const bet of betPool) {
+    for (const num of bet.horseNumbers) {
+      poolHorseNumbers.add(num);
+    }
+  }
+
+  for (const bet of selectedBets) {
+    const label = `${bet.internalType} (${bet.horses.map(h => h.name).join(', ')})`;
+
+    // Check a: horseNumbers array is non-empty
+    if (!bet.horseNumbers || bet.horseNumbers.length === 0) {
+      issues.push(`${label}: No horse numbers assigned`);
+      continue;
+    }
+
+    // Check b: each horse number exists in the bet pool
+    for (const num of bet.horseNumbers) {
+      if (!poolHorseNumbers.has(num)) {
+        issues.push(`${label}: Horse #${num} not found in bet pool`);
+      }
+    }
+
+    // Check c: scaledWhatToSay contains at least one horse number as substring
+    if (bet.scaledWhatToSay) {
+      const scriptContainsHorse = bet.horseNumbers.some(num =>
+        bet.scaledWhatToSay.includes(String(num))
+      );
+      if (!scriptContainsHorse) {
+        issues.push(`${label}: Window script does not reference any horse number`);
+      }
+    }
+
+    // Check d: not a wheel type
+    if (WHEEL_TYPES.includes(bet.internalType)) {
+      issues.push(`${label}: Wheel bet type should not appear in ticket`);
+    }
+
+    // Check e: scaledCost is greater than 0
+    if (!bet.scaledCost || bet.scaledCost <= 0) {
+      issues.push(`${label}: Bet cost is $0 or invalid`);
+    }
+  }
+
+  return {
+    verified: issues.length === 0,
+    issueCount: issues.length,
+    issues,
+  };
 }
