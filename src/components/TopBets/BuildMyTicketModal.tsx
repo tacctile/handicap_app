@@ -34,35 +34,42 @@ interface BuildMyTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
   betPool: ScaledTopBet[];
+  allScores: number[];
 }
 
 // ============================================================================
 // HELPERS
 // ============================================================================
 
-/**
- * Translates a normalized model conviction score (0-1) into a plain-English verdict.
- * Score is derived from probability / 100 (probability is on a 0-100 scale).
- */
-function getModelVerdict(score: number): string {
-  if (score >= 0.85) return 'Model loves this one';
-  if (score >= 0.75) return 'Numbers back this play';
-  if (score >= 0.65) return 'Strong case here';
-  if (score >= 0.55) return 'Good coverage';
-  if (score >= 0.45) return 'Reasonable shot';
-  if (score >= 0.38) return 'Could go either way';
-  if (score >= 0.3) return 'Worth a look';
-  if (score >= 0.22) return 'Solid spread';
-  if (score >= 0.15) return 'Long shot territory';
-  if (score >= 0.08) return 'High risk, high reward';
-  if (score >= 0.03) return "Model isn't sold";
-  return 'Roll the dice';
+interface VerdictResult {
+  label: string;
+  color: string;
 }
 
-function getVerdictColor(score: number): string {
-  if (score >= 0.55) return '#22c55e';
-  if (score >= 0.3) return '#eab308';
-  return '#ef4444';
+/**
+ * Translates a score into a plain-English verdict using percentile rank within the pool.
+ * Percentile = (count of bets with score <= this score) / total bets.
+ * Uses the full Top Bets pool for consistent ranking across both surfaces.
+ */
+function getModelVerdict(score: number, allScores: number[]): VerdictResult {
+  const total = allScores.length;
+  if (total === 0) return { label: 'Roll the dice', color: '#7f1d1d' };
+
+  const countAtOrBelow = allScores.filter((s) => s <= score).length;
+  const percentile = countAtOrBelow / total;
+
+  if (percentile >= 0.92) return { label: 'Model loves this one', color: '#22c55e' };
+  if (percentile >= 0.83) return { label: 'Numbers back this play', color: '#4ade80' };
+  if (percentile >= 0.75) return { label: 'Strong case here', color: '#86efac' };
+  if (percentile >= 0.67) return { label: 'Good coverage', color: '#bef264' };
+  if (percentile >= 0.58) return { label: 'Reasonable shot', color: '#eab308' };
+  if (percentile >= 0.5) return { label: 'Could go either way', color: '#facc15' };
+  if (percentile >= 0.42) return { label: 'Worth a look', color: '#fb923c' };
+  if (percentile >= 0.33) return { label: 'Solid spread', color: '#f97316' };
+  if (percentile >= 0.25) return { label: 'Long shot territory', color: '#ef4444' };
+  if (percentile >= 0.17) return { label: 'High risk, high reward', color: '#dc2626' };
+  if (percentile >= 0.08) return { label: "Model isn't sold", color: '#b91c1c' };
+  return { label: 'Roll the dice', color: '#7f1d1d' };
 }
 
 function formatBetTypeLabel(internalType: string): string {
@@ -90,6 +97,7 @@ export const BuildMyTicketModal: React.FC<BuildMyTicketModalProps> = ({
   isOpen,
   onClose,
   betPool,
+  allScores,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -324,6 +332,7 @@ export const BuildMyTicketModal: React.FC<BuildMyTicketModalProps> = ({
               result={buildTicket}
               budget={budget}
               mode={mode}
+              allScores={allScores}
             />
 
             {/* Right: Surprise Me */}
@@ -333,6 +342,7 @@ export const BuildMyTicketModal: React.FC<BuildMyTicketModalProps> = ({
                 result={surpriseTicket}
                 budget={budget}
                 mode={mode}
+                allScores={allScores}
               />
             ) : (
               <div className="ticket-column">
@@ -398,9 +408,10 @@ interface TicketColumnProps {
   result: TicketAllocatorResult;
   budget: number;
   mode: RiskMode;
+  allScores: number[];
 }
 
-const TicketColumn: React.FC<TicketColumnProps> = ({ title, result, budget, mode }) => {
+const TicketColumn: React.FC<TicketColumnProps> = ({ title, result, budget, mode, allScores }) => {
   const [showIssues, setShowIssues] = useState(false);
   const integrity = result.integrity;
 
@@ -422,7 +433,7 @@ const TicketColumn: React.FC<TicketColumnProps> = ({ title, result, budget, mode
       <div className="ticket-column__header">
         <span className="ticket-column__title">{title}</span>
         <span className="ticket-confidence-badge">
-          Blended Strength: {getModelVerdict(result.blendedConfidence / 100)}
+          Blended Strength: {getModelVerdict(result.blendedConfidence / 100, allScores).label}
         </span>
         {integrity.verified ? (
           <span className="ticket-integrity-badge ticket-integrity-badge--verified">
@@ -451,7 +462,11 @@ const TicketColumn: React.FC<TicketColumnProps> = ({ title, result, budget, mode
         Total: ${result.totalCost} of ${budget} budget
       </div>
       {result.bets.map((bet, idx) => (
-        <TicketBetCard key={`${bet.internalType}-${bet.horseNumbers.join('-')}-${idx}`} bet={bet} />
+        <TicketBetCard
+          key={`${bet.internalType}-${bet.horseNumbers.join('-')}-${idx}`}
+          bet={bet}
+          allScores={allScores}
+        />
       ))}
     </div>
   );
@@ -463,16 +478,16 @@ const TicketColumn: React.FC<TicketColumnProps> = ({ title, result, budget, mode
 
 interface TicketBetCardProps {
   bet: AllocatedBet;
+  allScores: number[];
 }
 
-const TicketBetCard: React.FC<TicketBetCardProps> = ({ bet }) => {
+const TicketBetCard: React.FC<TicketBetCardProps> = ({ bet, allScores }) => {
   const normalizedScore = Math.min(bet.probability, 99) / 100;
-  const verdictLabel = getModelVerdict(normalizedScore);
-  const verdictColor = getVerdictColor(normalizedScore);
+  const verdict = getModelVerdict(normalizedScore, allScores);
   const horseNames = bet.horses.map((h) => h.name).join(' + ');
 
   return (
-    <div className="ticket-bet-card" style={{ borderLeft: `3px solid ${verdictColor}` }}>
+    <div className="ticket-bet-card" style={{ borderLeft: `3px solid ${verdict.color}` }}>
       {/* Bet type label + verdict right-aligned */}
       <div
         style={{
@@ -492,7 +507,7 @@ const TicketBetCard: React.FC<TicketBetCardProps> = ({ bet }) => {
         >
           {formatBetTypeLabel(bet.internalType)}
         </span>
-        <span style={{ fontSize: 12, fontWeight: 600, color: verdictColor }}>{verdictLabel}</span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: verdict.color }}>{verdict.label}</span>
       </div>
 
       {/* Horse names */}

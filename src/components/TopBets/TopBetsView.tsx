@@ -70,32 +70,38 @@ export interface ScaledTopBet extends TopBet {
 }
 
 // ============================================================================
-// MODEL VERDICT HELPER
+// MODEL VERDICT HELPER — FIELD-RELATIVE PERCENTILE SYSTEM
 // ============================================================================
 
-/**
- * Translates a normalized model conviction score (0-1) into a plain-English verdict.
- * Score is derived from probability / 100 (probability is on a 0-100 scale).
- */
-function getModelVerdict(score: number): string {
-  if (score >= 0.85) return 'Model loves this one';
-  if (score >= 0.75) return 'Numbers back this play';
-  if (score >= 0.65) return 'Strong case here';
-  if (score >= 0.55) return 'Good coverage';
-  if (score >= 0.45) return 'Reasonable shot';
-  if (score >= 0.38) return 'Could go either way';
-  if (score >= 0.3) return 'Worth a look';
-  if (score >= 0.22) return 'Solid spread';
-  if (score >= 0.15) return 'Long shot territory';
-  if (score >= 0.08) return 'High risk, high reward';
-  if (score >= 0.03) return "Model isn't sold";
-  return 'Roll the dice';
+interface VerdictResult {
+  label: string;
+  color: string;
 }
 
-function getVerdictColor(score: number): string {
-  if (score >= 0.55) return '#22c55e';
-  if (score >= 0.3) return '#eab308';
-  return '#ef4444';
+/**
+ * Translates a score into a plain-English verdict using percentile rank within the pool.
+ * Percentile = (count of bets with score <= this score) / total bets.
+ * Guarantees full spectrum usage regardless of absolute score values.
+ */
+function getModelVerdict(score: number, allScores: number[]): VerdictResult {
+  const total = allScores.length;
+  if (total === 0) return { label: 'Roll the dice', color: '#7f1d1d' };
+
+  const countAtOrBelow = allScores.filter((s) => s <= score).length;
+  const percentile = countAtOrBelow / total;
+
+  if (percentile >= 0.92) return { label: 'Model loves this one', color: '#22c55e' };
+  if (percentile >= 0.83) return { label: 'Numbers back this play', color: '#4ade80' };
+  if (percentile >= 0.75) return { label: 'Strong case here', color: '#86efac' };
+  if (percentile >= 0.67) return { label: 'Good coverage', color: '#bef264' };
+  if (percentile >= 0.58) return { label: 'Reasonable shot', color: '#eab308' };
+  if (percentile >= 0.5) return { label: 'Could go either way', color: '#facc15' };
+  if (percentile >= 0.42) return { label: 'Worth a look', color: '#fb923c' };
+  if (percentile >= 0.33) return { label: 'Solid spread', color: '#f97316' };
+  if (percentile >= 0.25) return { label: 'Long shot territory', color: '#ef4444' };
+  if (percentile >= 0.17) return { label: 'High risk, high reward', color: '#dc2626' };
+  if (percentile >= 0.08) return { label: "Model isn't sold", color: '#b91c1c' };
+  return { label: 'Roll the dice', color: '#7f1d1d' };
 }
 
 // ============================================================================
@@ -390,6 +396,12 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
       };
     });
   }, [topBetsResult, effectiveBase, enhancedProbabilityMap, kellyRecommendations]);
+
+  // Precompute all normalized scores from the full bet pool for percentile-based verdicts
+  const allNormalizedScores = useMemo(
+    () => allScaledBets.map((b) => Math.min(b.probability, 99) / 100),
+    [allScaledBets]
+  );
 
   // ============================================================================
   // FILTER BETS BY COLUMN TYPE
@@ -744,6 +756,7 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
                     <CompactBetCard
                       key={`${bet.internalType}-${bet.horseNumbers.join('-')}-${index}`}
                       bet={bet}
+                      allScores={allNormalizedScores}
                       isBestBet={index === 0}
                       includesValueHorse={
                         valueHorseNumber !== null && bet.horseNumbers.includes(valueHorseNumber)
@@ -765,6 +778,7 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
           isOpen={onOpenTicketBuilder}
           onClose={() => onCloseTicketBuilder?.()}
           betPool={allScaledBets}
+          allScores={allNormalizedScores}
         />
       )}
     </div>
@@ -850,12 +864,14 @@ const ExoticBetTooltip: React.FC<ExoticBetTooltipProps> = ({ horses, children })
 
 interface CompactBetCardProps {
   bet: ScaledTopBet;
+  allScores: number[];
   isBestBet?: boolean;
   includesValueHorse?: boolean;
 }
 
 const CompactBetCard: React.FC<CompactBetCardProps> = ({
   bet,
+  allScores,
   isBestBet = false,
   includesValueHorse = false,
 }) => {
@@ -867,10 +883,9 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({
   const horseDisplay = formatHorseDisplay(bet);
   const showTooltip = isExoticBet(bet.internalType);
 
-  // Calculate model verdict from normalized probability score (0-1)
+  // Calculate model verdict from percentile rank in the full bet pool
   const normalizedScore = Math.min(bet.probability, 99) / 100;
-  const verdictLabel = getModelVerdict(normalizedScore);
-  const verdictColor = getVerdictColor(normalizedScore);
+  const verdict = getModelVerdict(normalizedScore, allScores);
 
   // Check if this is a WIN/PLACE/SHOW bet with Kelly sizing available
   const hasKellySizing = bet.kellyAmount !== undefined && bet.kellyAmount > 0;
@@ -965,8 +980,8 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({
       {/* Row 3: Confidence verdict (plain-English model conviction) */}
       <div className="compact-bet-card__confidence">
         <span className="compact-bet-card__label">CONFIDENCE:</span>
-        <span className="compact-bet-card__verdict" style={{ color: verdictColor }}>
-          {verdictLabel}
+        <span className="compact-bet-card__verdict" style={{ color: verdict.color }}>
+          {verdict.label}
         </span>
       </div>
 
