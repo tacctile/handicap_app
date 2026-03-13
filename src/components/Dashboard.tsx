@@ -57,6 +57,8 @@ interface DashboardProps {
   onResetAllRaces?: () => void;
   /** Handler to navigate to hidden diagnostics page */
   onDiagnosticsClick?: () => void;
+  /** Handler to navigate to slideshow */
+  onSlideshowClick?: () => void;
 }
 
 // Get full track name with code and size
@@ -231,6 +233,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onResetRace: _onResetRace,
   onResetAllRaces: _onResetAllRaces,
   onDiagnosticsClick,
+  onSlideshowClick,
 }) => {
   // View mode state: 'overview' (default after parse), 'analysis', or 'topBets'
   // Note: 'betMode' removed - old BET MODE screen is now disconnected
@@ -1573,7 +1576,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="app-bottombar__cluster">
             <button
               className="app-bottombar__item app-bottombar__item--guide"
-              onClick={() => window.open('/slideshow/index.html', '_blank')}
+              onClick={onSlideshowClick}
               title="Platform overview presentation"
             >
               <span>▶ GUIDE</span>
