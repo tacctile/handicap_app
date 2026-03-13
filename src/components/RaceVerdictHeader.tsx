@@ -68,7 +68,7 @@ function getConfidenceLabel(confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'MINIMAL'): 
     case 'LOW':
       return 'Low Confidence';
     case 'MINIMAL':
-      return 'No Clear Edge';
+      return 'No Clear Value Edge';
   }
 }
 
@@ -175,7 +175,7 @@ export const RaceVerdictHeader: React.FC<RaceVerdictHeaderProps> = ({
                   {convertToFractionalOdds(closestToThreshold.currentOdds)}
                 </span>
                 <span className="race-verdict-header__middot">·</span>
-                <span className="race-verdict-header__label">Fair:</span>
+                <span className="race-verdict-header__label">Should be:</span>
                 <span className="race-verdict-header__fair-value">
                   {closestToThreshold.fairOdds}
                 </span>
@@ -184,7 +184,7 @@ export const RaceVerdictHeader: React.FC<RaceVerdictHeaderProps> = ({
                   className="race-verdict-header__edge-value"
                   style={{ color: getEdgeColor(closestToThreshold.edge) }}
                 >
-                  {formatEdge(closestToThreshold.edge)} Edge
+                  {formatEdge(closestToThreshold.edge)} Value Edge
                 </span>
                 <span className="race-verdict-header__threshold-note">(below threshold)</span>
               </>
@@ -207,7 +207,7 @@ export const RaceVerdictHeader: React.FC<RaceVerdictHeaderProps> = ({
                 {convertToFractionalOdds(primaryValuePlay.currentOdds)}
               </span>
               <span className="race-verdict-header__middot">·</span>
-              <span className="race-verdict-header__label">Fair:</span>
+              <span className="race-verdict-header__label">Should be:</span>
               <span className="race-verdict-header__fair-value">
                 {calculateFairOdds(primaryValuePlay.modelWinProb)}
               </span>
@@ -216,7 +216,7 @@ export const RaceVerdictHeader: React.FC<RaceVerdictHeaderProps> = ({
                 className="race-verdict-header__edge-value"
                 style={{ color: getEdgeColor(primaryValuePlay.valueEdge) }}
               >
-                {formatEdge(primaryValuePlay.valueEdge)} Edge
+                {formatEdge(primaryValuePlay.valueEdge)} Value Edge
               </span>
               <span className="race-verdict-header__middot">·</span>
               <span className="race-verdict-header__bet-type">

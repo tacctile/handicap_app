@@ -4,6 +4,7 @@ import type { HorseEntry } from '../types/drf';
 import type { TrendScore } from '../lib/scoring/trendAnalysis';
 import type { BlendedRankResult } from '../lib/scoring/blendedRank';
 import { normalizeOddsFormat } from '../lib/utils/oddsStepper';
+import { toOrdinal } from '../lib/scoring/rankUtils';
 import {
   getValueTag,
   getScratchedValueTag,
@@ -282,21 +283,24 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         )}
       </div>
 
-      {/* Column 5: FAIR - Calculated fair odds (left side - price data) */}
+      {/* Column 5: SHOULD BE - Calculated fair odds (left side - price data) */}
       <div className="horse-summary-bar__fair-odds">
         <span className="horse-summary-bar__fair-odds-value">
           {isScratched ? '—' : fairOddsDisplay}
         </span>
+        {!isScratched && fairOddsDisplay !== '—' && (
+          <span className="horse-summary-bar__micro-label">our fair price</span>
+        )}
       </div>
 
-      {/* Column 6: PROJECTED FINISH - Model Ranking (#1, #2, etc. based on base score) - right side */}
+      {/* Column 6: OUR PICK - Model Ranking (ordinal based on base score) - right side */}
       {/* All ranks use neutral white text color */}
       <div className="horse-summary-bar__rank">
         <span
           className={`horse-summary-bar__rank-value ${!isScratched && baseScoreRank && baseScoreRank <= 3 ? 'horse-summary-bar__rank-value--top' : ''}`}
           style={{ color: isScratched ? undefined : neutralTextColor }}
         >
-          {isScratched ? '—' : baseScoreRank ? `#${baseScoreRank}` : '—'}
+          {isScratched ? '—' : baseScoreRank ? toOrdinal(baseScoreRank) : '—'}
         </span>
       </div>
 
@@ -312,7 +316,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         )}
       </div>
 
-      {/* Column 8: EDGE - Value gap percentage (right side - far right, no chevron after) */}
+      {/* Column 8: EDGE % - Value gap percentage (right side - far right, no chevron after) */}
       {/* All edge values use neutral white text color */}
       <div className="horse-summary-bar__edge">
         <span
@@ -321,6 +325,17 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         >
           {isScratched ? '—' : formatEdgeDisplay(displayEdge)}
         </span>
+        {!isScratched && (
+          <span className="horse-summary-bar__micro-label">
+            {displayEdge >= 50
+              ? 'Great Value'
+              : displayEdge >= 20
+                ? 'Good Value'
+                : displayEdge >= -20
+                  ? 'Fair Price'
+                  : 'Overpriced'}
+          </span>
+        )}
       </div>
     </div>
   );

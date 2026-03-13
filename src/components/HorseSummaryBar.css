@@ -215,6 +215,7 @@
   font-weight: 700;
   text-align: center;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
 }
@@ -223,6 +224,16 @@
   font-weight: 700;
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
+}
+
+/* Micro-labels beneath cell values - plain-English context */
+.horse-summary-bar__micro-label {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+  line-height: 1;
+  margin-top: 1px;
+  white-space: nowrap;
 }
 
 /* Hot edge glow removed - all edge values use neutral white styling */
@@ -406,6 +417,7 @@
   color: var(--color-text-secondary);
   text-align: center;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
 }
