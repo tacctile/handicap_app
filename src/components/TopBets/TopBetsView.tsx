@@ -22,20 +22,14 @@ import {
 import { useEnhancedBetting, type EnhancedHorseData } from '../../hooks/useEnhancedBetting';
 import type { ScoredHorse } from '../../lib/scoring';
 import type { RaceHeader } from '../../types/drf';
+import { BuildMyTicketModal } from './BuildMyTicketModal';
 import './TopBetsView.css';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export type SortOption =
-  | 'confidence'
-  | 'roi'
-  | 'itm'
-  | 'ev'
-  | 'payout'
-  | 'price_low'
-  | 'price_high';
+export type SortOption = 'confidence' | 'ev' | 'payout' | 'price_low' | 'price_high';
 export type ExactaVariant = 'straight' | 'box' | 'wheel';
 export type TrifectaVariant = 'straight' | 'box' | 'key' | 'wheel';
 export type SuperfectaVariant = 'straight' | 'box' | 'key' | 'wheel';
@@ -213,6 +207,7 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
   const [trifectaVariant, setTrifectaVariant] = useState<TrifectaVariant>('straight');
   const [superfectaVariant, setSuperfectaVariant] = useState<SuperfectaVariant>('straight');
   const [showValueHorseOnly, setShowValueHorseOnly] = useState(false);
+  const [showTicketBuilder, setShowTicketBuilder] = useState(false);
 
   // ============================================================================
   // ENHANCED BETTING HOOK (Softmax probabilities + Kelly sizing)
@@ -621,6 +616,11 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
           </div>
         )}
 
+        {/* Build My Ticket Button */}
+        <button className="ticket-trigger-btn" onClick={() => setShowTicketBuilder(true)}>
+          Build My Ticket
+        </button>
+
         {/* Sort Dropdown (Right) */}
         <div className="top-bets-controls__sort">
           <label htmlFor="sort-select" className="top-bets-controls__label">
@@ -634,8 +634,6 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
           >
             <option value="confidence">Confidence</option>
             <option value="ev">Expected Value</option>
-            <option value="roi">ROI</option>
-            <option value="itm">ITM %</option>
             <option value="payout">Biggest Payout</option>
             <option value="price_low">Price: Low to High</option>
             <option value="price_high">Price: High to Low</option>
@@ -702,6 +700,16 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
           );
         })}
       </div>
+
+      {/* Build My Ticket Modal */}
+      {showTicketBuilder && (
+        <BuildMyTicketModal
+          isOpen={showTicketBuilder}
+          onClose={() => setShowTicketBuilder(false)}
+          betPool={allScaledBets}
+          currentBaseAmount={effectiveBase}
+        />
+      )}
     </div>
   );
 };
@@ -1028,16 +1036,6 @@ function sortBets(bets: ScaledTopBet[], sortBy: SortOption): ScaledTopBet[] {
     case 'confidence':
       // Sort by probability (confidence) descending
       sorted.sort((a, b) => b.probability - a.probability);
-      break;
-    case 'roi':
-      // Sort by historical ROI descending (placeholder - shows N/A for now)
-      // Historical data to be wired in future prompt
-      sorted.sort((a, b) => (b.historicalROI ?? 0) - (a.historicalROI ?? 0));
-      break;
-    case 'itm':
-      // Sort by historical hit rate (ITM%) descending
-      // Historical data to be wired in future prompt
-      sorted.sort((a, b) => (b.historicalHitRate ?? 0) - (a.historicalHitRate ?? 0));
       break;
     case 'ev':
       // Sort by expected value descending

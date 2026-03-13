@@ -163,9 +163,8 @@ function HowToUseSection() {
         <div className="help-definition">
           <dt className="help-term">BASE AMOUNT ($1 / $2 / $5 / $10 / Custom)</dt>
           <dd className="help-desc">
-            This scales every bet up or down. At $1 base, a 3-horse Exacta box costs $6. At $5
-            base, that same box costs $30. Start at $1 to learn, scale up when you&apos;re
-            comfortable.
+            This scales every bet up or down. At $1 base, a 3-horse Exacta box costs $6. At $5 base,
+            that same box costs $30. Start at $1 to learn, scale up when you&apos;re comfortable.
           </dd>
         </div>
 
@@ -186,11 +185,14 @@ function HowToUseSection() {
         </div>
 
         <div className="help-definition">
-          <dt className="help-term">SORT Options (Confidence / EV / ROI / ITM% / Biggest Payout / Price Low / Price High)</dt>
+          <dt className="help-term">
+            SORT Options (Confidence / EV / Biggest Payout / Price Low / Price High)
+          </dt>
           <dd className="help-desc">
-            Confidence = most likely to win based on our model. EV = best expected mathematical
-            return. ROI = best return on investment historically. Biggest Payout = most money if it
-            hits. Price Low/High = sorted by cost. Recommendation for beginners: sort by Confidence.
+            Confidence = most likely to cash based on our model. EV = best expected mathematical
+            return. Biggest Payout = most money if it hits. Price Low→High = cheapest bets first.
+            Price High→Low = most expensive bets first. Recommendation for beginners: sort by
+            Confidence.
           </dd>
         </div>
 
@@ -327,8 +329,8 @@ function StraightBetsSection() {
             <span className="help-category-max">Two Chances</span>
           </div>
           <p className="help-category-desc">
-            <strong>What:</strong> Your horse must finish first OR second. Pays less than Win but you
-            have two chances to cash.
+            <strong>What:</strong> Your horse must finish first OR second. Pays less than Win but
+            you have two chances to cash.
           </p>
           <p className="help-category-desc">
             <strong>When to use:</strong> When you like a horse but the race looks competitive. A
@@ -355,8 +357,9 @@ function StraightBetsSection() {
             three chances to cash.
           </p>
           <p className="help-category-desc">
-            <strong>When to use:</strong> On a horse you trust with a large field where finishing top
-            3 is realistic. Also useful when including a longshot in an exotic and wanting insurance.
+            <strong>When to use:</strong> On a horse you trust with a large field where finishing
+            top 3 is realistic. Also useful when including a longshot in an exotic and wanting
+            insurance.
           </p>
           <p className="help-category-desc">
             <strong>Example:</strong> 10-horse field, your horse finishes 3rd. Show bet cashes. Win
@@ -373,8 +376,8 @@ function StraightBetsSection() {
       <div className="help-card">
         <h4 className="help-card-title">Understanding the KELLY Amount on WPS Cards</h4>
         <p className="help-text">
-          Kelly is a formula that says: bet more when your edge is bigger, bet less when your edge is
-          smaller. If Kelly shows $12, that&apos;s the mathematically optimal amount given your
+          Kelly is a formula that says: bet more when your edge is bigger, bet less when your edge
+          is smaller. If Kelly shows $12, that&apos;s the mathematically optimal amount given your
           bankroll and edge. You don&apos;t have to follow it exactly &mdash; it&apos;s a guide, not
           a rule. Beginners: ignore Kelly until you&apos;re comfortable with the basics.
         </p>
@@ -383,10 +386,10 @@ function StraightBetsSection() {
       <div className="help-card">
         <h4 className="help-card-title">Understanding the &#10003; Softmax Indicator</h4>
         <p className="help-text">
-          When you see a checkmark next to a confidence percentage, it means the probability has been
-          adjusted so all horses in the race add up to 100%. This is more accurate than raw model
-          scores. Treat it like a real probability &mdash; 65% softmax confidence means roughly
-          2-in-3 chance of cashing.
+          When you see a checkmark next to a confidence percentage, it means the probability has
+          been adjusted so all horses in the race add up to 100%. This is more accurate than raw
+          model scores. Treat it like a real probability &mdash; 65% softmax confidence means
+          roughly 2-in-3 chance of cashing.
         </p>
       </div>
 
@@ -831,8 +834,8 @@ function BankrollSizingSection() {
             <span className="help-category-name">Don&apos;t Chase Losses</span>
           </div>
           <p className="help-category-desc">
-            If you lose the first 3 races, do not increase your bet sizes to try to get even. This is
-            the fastest way to blow your budget. Stick to your plan. Good spots will come.
+            If you lose the first 3 races, do not increase your bet sizes to try to get even. This
+            is the fastest way to blow your budget. Stick to your plan. Good spots will come.
           </p>
         </div>
 
@@ -842,9 +845,9 @@ function BankrollSizingSection() {
             <span className="help-category-name">Session Limits</span>
           </div>
           <p className="help-category-desc">
-            Consider setting a &quot;stop win&quot; too &mdash; not just a loss limit. If you&apos;re
-            up 150% of your starting bankroll, consider pocketing some winnings and reducing bet
-            size. Winning sessions can turn bad fast in the last race.
+            Consider setting a &quot;stop win&quot; too &mdash; not just a loss limit. If
+            you&apos;re up 150% of your starting bankroll, consider pocketing some winnings and
+            reducing bet size. Winning sessions can turn bad fast in the last race.
           </p>
         </div>
       </div>
@@ -862,8 +865,8 @@ function BankrollSizingSection() {
           based on real math, not gut feel.
         </p>
         <p className="help-text">
-          Think of it like: A poker player going all-in when they have the best hand and folding when
-          they don&apos;t. Size your bets to match your actual advantage.
+          Think of it like: A poker player going all-in when they have the best hand and folding
+          when they don&apos;t. Size your bets to match your actual advantage.
         </p>
       </div>
 
@@ -1028,9 +1031,7 @@ function QuickReferenceSection() {
           </li>
           <li>
             <Icon name="close" className="help-list-icon" style={{ color: '#ef4444' }} />
-            <span>
-              Boxing too many horses in Trifectas and Superfectas (cost explodes)
-            </span>
+            <span>Boxing too many horses in Trifectas and Superfectas (cost explodes)</span>
           </li>
           <li>
             <Icon name="close" className="help-list-icon" style={{ color: '#ef4444' }} />
@@ -1038,9 +1039,7 @@ function QuickReferenceSection() {
           </li>
           <li>
             <Icon name="close" className="help-list-icon" style={{ color: '#ef4444' }} />
-            <span>
-              Ignoring the EDGE % &mdash; positive edge is what separates value from hope
-            </span>
+            <span>Ignoring the EDGE % &mdash; positive edge is what separates value from hope</span>
           </li>
           <li>
             <Icon name="close" className="help-list-icon" style={{ color: '#ef4444' }} />
@@ -1055,8 +1054,8 @@ function QuickReferenceSection() {
         <Icon name="tips_and_updates" className="help-tip-icon" />
         <p>
           <strong>Remember:</strong> The window script on every Top Bets card tells you exactly what
-          to say. Read it before you walk up. The teller does this all day &mdash; they just need the
-          race, amount, type, and horse numbers.
+          to say. Read it before you walk up. The teller does this all day &mdash; they just need
+          the race, amount, type, and horse numbers.
         </p>
       </div>
     </div>
