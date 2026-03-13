@@ -21,13 +21,18 @@ import './styles/help.css';
 
 type AppRoute = 'dashboard' | 'help' | 'diagnostics';
 
+const LS_SELECTED_RACE = 'furlong_selected_race';
+
 function AppContent() {
   const [parsedData, setParsedData] = useState<ParsedDRFFile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [, setValidationWarnings] = useState<string[]>([]);
   const [, setShowWarnings] = useState(true);
   const [modalOpen] = useState(false);
-  const [selectedRaceIndex, setSelectedRaceIndex] = useState(0);
+  const [selectedRaceIndex, setSelectedRaceIndex] = useState<number>(() => {
+    const saved = localStorage.getItem(LS_SELECTED_RACE);
+    return saved ? Number(saved) : 0;
+  });
 
   // Routing state
   const [currentRoute, setCurrentRoute] = useState<AppRoute>('dashboard');
@@ -76,6 +81,11 @@ function AppContent() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [trackEvent]);
+
+  // Persist selected race index to localStorage
+  useEffect(() => {
+    localStorage.setItem(LS_SELECTED_RACE, String(selectedRaceIndex));
+  }, [selectedRaceIndex]);
 
   const handleParsed = useCallback(
     async (data: ParsedDRFFile) => {
@@ -147,10 +157,18 @@ function AppContent() {
           // Use data from restored session
           setParsedData(session.parsedData);
 
-          // Restore race state for race 0
-          const raceZeroState = session.raceStates[0];
-          if (raceZeroState) {
-            raceState.initializeFromPersisted(raceZeroState);
+          // Restore saved race index (clamped to valid range)
+          const savedIndex = localStorage.getItem(LS_SELECTED_RACE);
+          const restoredIndex = savedIndex ? Number(savedIndex) : 0;
+          const maxIndex = session.parsedData.races.length - 1;
+          const clampedIndex = Math.min(Math.max(restoredIndex, 0), maxIndex);
+          setSelectedRaceIndex(clampedIndex);
+          prevRaceIndexRef.current = clampedIndex;
+
+          // Restore race state for the restored race index
+          const restoredRaceState = session.raceStates[clampedIndex];
+          if (restoredRaceState) {
+            raceState.initializeFromPersisted(restoredRaceState);
           }
 
           // Show restore notification
@@ -168,17 +186,22 @@ function AppContent() {
           setParsedData(data);
           // Reset race state for new file
           raceState.resetAll();
+          // New file: reset to race 0
+          setSelectedRaceIndex(0);
+          prevRaceIndexRef.current = 0;
+          localStorage.removeItem(LS_SELECTED_RACE);
         }
       } catch (error) {
         // If session persistence fails, continue with fresh data
         logger.logWarning('Session persistence error', { error });
         setParsedData(data);
         raceState.resetAll();
+        setSelectedRaceIndex(0);
+        prevRaceIndexRef.current = 0;
+        localStorage.removeItem(LS_SELECTED_RACE);
       }
 
       setIsLoading(false);
-      setSelectedRaceIndex(0);
-      prevRaceIndexRef.current = 0;
 
       // Re-enable saving after initial load completes
       setTimeout(() => {
@@ -213,6 +236,7 @@ function AppContent() {
     raceState.resetAll();
     sessionPersistence.clearSession();
     setSelectedRaceIndex(0);
+    localStorage.removeItem(LS_SELECTED_RACE);
   }, [raceState, sessionPersistence]);
 
   // Effect: Save race state changes to session persistence
