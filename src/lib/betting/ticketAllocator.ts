@@ -238,17 +238,17 @@ function generateAllocationReason(bet: ScaledTopBet): string {
 
   switch (group) {
     case 'WIN':
-      return `Top win pick — ${bet.horses[0]?.name ?? 'unknown'} at ${Math.round(bet.probability)}% confidence.`;
+      return `Top win pick — ${bet.horses[0]?.name ?? 'unknown'}.`;
     case 'PLACE':
-      return `Place bet on ${bet.horses[0]?.name ?? 'unknown'} — ${Math.round(bet.probability)}% chance to finish top 2.`;
+      return `Place bet on ${bet.horses[0]?.name ?? 'unknown'} — solid chance to finish top 2.`;
     case 'SHOW':
-      return `Show bet on ${bet.horses[0]?.name ?? 'unknown'} — ${Math.round(bet.probability)}% chance to finish top 3.`;
+      return `Show bet on ${bet.horses[0]?.name ?? 'unknown'} — solid chance to finish top 3.`;
     case 'EXACTA':
-      return `Best exacta combination — covers ${bet.combinationsInvolved} combination${bet.combinationsInvolved !== 1 ? 's' : ''}.`;
+      return `Exacta covering ${bet.combinationsInvolved} combination${bet.combinationsInvolved !== 1 ? 's' : ''}.`;
     case 'TRIFECTA':
-      return `Top trifecta play — ${Math.round(bet.probability)}% confidence, ${bet.combinationsInvolved} combination${bet.combinationsInvolved !== 1 ? 's' : ''} covered.`;
+      return `Trifecta covering ${bet.combinationsInvolved} combination${bet.combinationsInvolved !== 1 ? 's' : ''}.`;
     case 'SUPERFECTA':
-      return `High-upside superfecta — low probability but significant payout potential.`;
+      return `High-upside superfecta — significant payout potential.`;
     default:
       return `Selected for best composite quality score in this category.`;
   }

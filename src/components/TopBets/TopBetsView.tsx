@@ -70,6 +70,41 @@ export interface ScaledTopBet extends TopBet {
 }
 
 // ============================================================================
+// MODEL VERDICT HELPER — FIELD-RELATIVE PERCENTILE SYSTEM
+// ============================================================================
+
+interface VerdictResult {
+  label: string;
+  color: string;
+}
+
+/**
+ * Translates a score into a plain-English verdict using percentile rank within the pool.
+ * Percentile = (count of bets with score <= this score) / total bets.
+ * Guarantees full spectrum usage regardless of absolute score values.
+ */
+function getModelVerdict(score: number, allScores: number[]): VerdictResult {
+  const total = allScores.length;
+  if (total === 0) return { label: 'Roll the dice', color: '#7f1d1d' };
+
+  const countAtOrBelow = allScores.filter((s) => s <= score).length;
+  const percentile = countAtOrBelow / total;
+
+  if (percentile >= 0.92) return { label: 'Model loves this one', color: '#22c55e' };
+  if (percentile >= 0.83) return { label: 'Numbers back this play', color: '#4ade80' };
+  if (percentile >= 0.75) return { label: 'Strong case here', color: '#86efac' };
+  if (percentile >= 0.67) return { label: 'Good coverage', color: '#bef264' };
+  if (percentile >= 0.58) return { label: 'Reasonable shot', color: '#eab308' };
+  if (percentile >= 0.5) return { label: 'Could go either way', color: '#facc15' };
+  if (percentile >= 0.42) return { label: 'Worth a look', color: '#fb923c' };
+  if (percentile >= 0.33) return { label: 'Solid spread', color: '#f97316' };
+  if (percentile >= 0.25) return { label: 'Long shot territory', color: '#ef4444' };
+  if (percentile >= 0.17) return { label: 'High risk, high reward', color: '#dc2626' };
+  if (percentile >= 0.08) return { label: "Model isn't sold", color: '#b91c1c' };
+  return { label: 'Roll the dice', color: '#7f1d1d' };
+}
+
+// ============================================================================
 // CONSTANTS
 // ============================================================================
 
@@ -361,6 +396,12 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
       };
     });
   }, [topBetsResult, effectiveBase, enhancedProbabilityMap, kellyRecommendations]);
+
+  // Precompute all normalized scores from the full bet pool for percentile-based verdicts
+  const allNormalizedScores = useMemo(
+    () => allScaledBets.map((b) => Math.min(b.probability, 99) / 100),
+    [allScaledBets]
+  );
 
   // ============================================================================
   // FILTER BETS BY COLUMN TYPE
@@ -715,6 +756,7 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
                     <CompactBetCard
                       key={`${bet.internalType}-${bet.horseNumbers.join('-')}-${index}`}
                       bet={bet}
+                      allScores={allNormalizedScores}
                       isBestBet={index === 0}
                       includesValueHorse={
                         valueHorseNumber !== null && bet.horseNumbers.includes(valueHorseNumber)
@@ -736,6 +778,7 @@ export const TopBetsView: React.FC<TopBetsViewProps> = ({
           isOpen={onOpenTicketBuilder}
           onClose={() => onCloseTicketBuilder?.()}
           betPool={allScaledBets}
+          allScores={allNormalizedScores}
         />
       )}
     </div>
@@ -821,12 +864,14 @@ const ExoticBetTooltip: React.FC<ExoticBetTooltipProps> = ({ horses, children })
 
 interface CompactBetCardProps {
   bet: ScaledTopBet;
+  allScores: number[];
   isBestBet?: boolean;
   includesValueHorse?: boolean;
 }
 
 const CompactBetCard: React.FC<CompactBetCardProps> = ({
   bet,
+  allScores,
   isBestBet = false,
   includesValueHorse = false,
 }) => {
@@ -838,13 +883,9 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({
   const horseDisplay = formatHorseDisplay(bet);
   const showTooltip = isExoticBet(bet.internalType);
 
-  // Calculate confidence display (show decimal for low probabilities to reveal variation)
-  // For exotic bets with low probability, integer rounding hides meaningful differences
-  const rawProbability = Math.min(bet.probability, 99);
-  const confidenceDisplay =
-    rawProbability < 10 && rawProbability > 0
-      ? `${Math.max(0.1, rawProbability).toFixed(1)}%`
-      : `${Math.round(rawProbability)}%`;
+  // Calculate model verdict from percentile rank in the full bet pool
+  const normalizedScore = Math.min(bet.probability, 99) / 100;
+  const verdict = getModelVerdict(normalizedScore, allScores);
 
   // Check if this is a WIN/PLACE/SHOW bet with Kelly sizing available
   const hasKellySizing = bet.kellyAmount !== undefined && bet.kellyAmount > 0;
@@ -936,18 +977,12 @@ const CompactBetCard: React.FC<CompactBetCardProps> = ({
         )}
       </div>
 
-      {/* Row 3: Confidence (with softmax indicator for WIN/PLACE/SHOW) */}
+      {/* Row 3: Confidence verdict (plain-English model conviction) */}
       <div className="compact-bet-card__confidence">
         <span className="compact-bet-card__label">CONFIDENCE:</span>
-        <span className="compact-bet-card__value">{confidenceDisplay}</span>
-        {isWinPlaceShow && (
-          <span
-            className="compact-bet-card__softmax-indicator"
-            title="Softmax probability (coherent)"
-          >
-            ✓
-          </span>
-        )}
+        <span className="compact-bet-card__verdict" style={{ color: verdict.color }}>
+          {verdict.label}
+        </span>
       </div>
 
       {/* Row 4: Window script (last row) */}
