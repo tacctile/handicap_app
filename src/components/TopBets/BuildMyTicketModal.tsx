@@ -13,7 +13,9 @@ import type { ScaledTopBet } from './TopBetsView';
 import {
   allocateTicket,
   generateSurpriseTicket,
+  verifyTicket,
   type TicketAllocatorResult,
+  type TicketIntegrityResult,
   type RiskMode,
 } from '../../lib/betting/ticketAllocator';
 import './BuildMyTicketModal.css';
@@ -37,6 +39,14 @@ function getConfidenceColor(probability: number): string {
   if (probability >= 67) return '#22c55e';
   if (probability >= 40) return '#eab308';
   return '#ef4444';
+}
+
+function getConfidenceVerdict(probability: number): string {
+  if (probability >= 70) return 'Very Strong';
+  if (probability >= 50) return 'Strong';
+  if (probability >= 30) return 'Moderate';
+  if (probability >= 15) return 'Low';
+  return 'Long Shot';
 }
 
 function formatBetTypeLabel(internalType: string): string {
@@ -67,12 +77,24 @@ export const BuildMyTicketModal: React.FC<BuildMyTicketModalProps> = ({
     [betPool, budget, betCount, mode]
   );
 
+  // Integrity verification for the build ticket
+  const buildIntegrity = useMemo(
+    () => verifyTicket(buildTicket.selectedBets, betPool),
+    [buildTicket, betPool]
+  );
+
   // Surprise Me — only on button press
   const handleSurpriseMe = useCallback(() => {
     setSurpriseTicket(
       generateSurpriseTicket({ betPool, budget, betCount, mode, surpriseMode: true })
     );
   }, [betPool, budget, betCount, mode]);
+
+  // Integrity verification for the surprise ticket
+  const surpriseIntegrity = useMemo(
+    () => surpriseTicket ? verifyTicket(surpriseTicket.selectedBets, betPool) : null,
+    [surpriseTicket, betPool]
+  );
 
   // Budget input handler
   const handleBudgetChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,7 +214,6 @@ export const BuildMyTicketModal: React.FC<BuildMyTicketModalProps> = ({
 
             {/* Action Buttons */}
             <div className="ticket-controls__group">
-              <span className="ticket-controls__label">&nbsp;</span>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   className="ticket-action-btn"
@@ -220,15 +241,17 @@ export const BuildMyTicketModal: React.FC<BuildMyTicketModalProps> = ({
               result={buildTicket}
               budget={budget}
               mode={mode}
+              integrity={buildIntegrity}
             />
 
             {/* Right: Surprise Me */}
-            {surpriseTicket ? (
+            {surpriseTicket && surpriseIntegrity ? (
               <TicketColumn
                 title="Surprise Ticket"
                 result={surpriseTicket}
                 budget={budget}
                 mode={mode}
+                integrity={surpriseIntegrity}
               />
             ) : (
               <div className="ticket-column">
@@ -257,9 +280,12 @@ interface TicketColumnProps {
   result: TicketAllocatorResult;
   budget: number;
   mode: RiskMode;
+  integrity?: TicketIntegrityResult;
 }
 
-const TicketColumn: React.FC<TicketColumnProps> = ({ title, result, budget, mode }) => {
+const TicketColumn: React.FC<TicketColumnProps> = ({ title, result, budget, mode, integrity }) => {
+  const [showIssues, setShowIssues] = useState(false);
+
   if (result.selectedBets.length === 0) {
     return (
       <div className="ticket-column">
@@ -280,7 +306,29 @@ const TicketColumn: React.FC<TicketColumnProps> = ({ title, result, budget, mode
         <span className="ticket-confidence-badge">
           Blended Confidence: {result.blendedConfidence}%
         </span>
+        {integrity && (
+          integrity.verified ? (
+            <span className="ticket-integrity-badge ticket-integrity-badge--verified">
+              ✓ Ticket Verified
+            </span>
+          ) : (
+            <span
+              className="ticket-integrity-badge ticket-integrity-badge--warning"
+              onClick={() => setShowIssues(!showIssues)}
+              style={{ cursor: 'pointer' }}
+            >
+              ⚠ Check Manually
+            </span>
+          )
+        )}
       </div>
+      {integrity && !integrity.verified && showIssues && (
+        <div className="ticket-integrity-issues">
+          {integrity.issues.map((issue, i) => (
+            <div key={i} className="ticket-integrity-issues__item">{issue}</div>
+          ))}
+        </div>
+      )}
       <div className="ticket-total">
         Total: ${result.totalCost} of ${budget} budget
       </div>
@@ -327,7 +375,7 @@ const TicketBetCard: React.FC<TicketBetCardProps> = ({ bet }) => {
       <div style={{ display: 'flex', gap: 16, marginBottom: 6 }}>
         <span style={{ fontSize: 13, color: '#eeeff1' }}>Cost: ${bet.scaledCost}</span>
         <span style={{ fontSize: 13, color: confColor, fontWeight: 600 }}>
-          {Math.round(bet.probability)}%
+          {Math.round(bet.probability)}% Confidence &middot; {getConfidenceVerdict(Math.round(bet.probability))}
         </span>
       </div>
 

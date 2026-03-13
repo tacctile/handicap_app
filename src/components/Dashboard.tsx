@@ -251,6 +251,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // State for betting strategy guide modal
   const [strategyGuideOpen, setStrategyGuideOpen] = useState(false);
 
+  // State for Build Ticket modal (controlled via callback prop to TopBetsView)
+  const [showTicketBuilder, setShowTicketBuilder] = useState(false);
+
   // State for horse list sort order and direction
   // Sortable columns: POST, RANK, ODDS, FAIR, VALUE, EDGE
   // Non-sortable: HORSE (name)
@@ -1198,6 +1201,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
               getOdds={(index, defaultOdds) => raceState.getOdds(index, defaultOdds)}
               isScratched={(index) => raceState.isScratched(index)}
               onClose={() => setViewMode('analysis')}
+              onOpenTicketBuilder={showTicketBuilder}
+              onCloseTicketBuilder={() => setShowTicketBuilder(false)}
             />
           ) : (
             /* ANALYSIS MODE - Horse list and analysis view */
@@ -1539,6 +1544,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
               title="How to Read the Form"
             >
               <span>FORM GUIDE</span>
+            </button>
+          </div>
+
+          {/* Separator */}
+          <div className="app-bottombar__separator"></div>
+
+          {/* BUILD TICKET button - Opens Build My Ticket modal (green, distinct) */}
+          <div className="app-bottombar__cluster">
+            <button
+              className="app-bottombar__item app-bottombar__item--build-ticket"
+              onClick={() => setShowTicketBuilder(true)}
+              disabled={!parsedData || isLoading || viewMode !== 'topBets'}
+              title={
+                viewMode !== 'topBets'
+                  ? 'Switch to Top Bets view first'
+                  : 'Build an optimized betting ticket'
+              }
+            >
+              <span>BUILD TICKET</span>
             </button>
           </div>
 
