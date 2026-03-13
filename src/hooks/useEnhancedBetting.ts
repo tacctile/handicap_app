@@ -248,7 +248,7 @@ export function useEnhancedBetting(input: UseEnhancedBettingInput): UseEnhancedB
   // Reset session
   const resetSession = useCallback(
     (newBankroll?: number) => {
-      tracker.reset(newBankroll ?? initialBankroll);
+      tracker.reset(newBankroll ?? initialBankroll ?? loadInitialBankroll());
       syncState();
     },
     [tracker, initialBankroll, syncState]
