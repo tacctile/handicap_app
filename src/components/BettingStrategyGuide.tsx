@@ -51,13 +51,13 @@ export function BettingStrategyGuide({ isOpen, onClose }: BettingStrategyGuidePr
   if (!isOpen) return null;
 
   const sections = [
-    { id: 'how-to-use', label: 'How to Use Top Bets', emoji: '\uD83C\uDFAF' },
-    { id: 'straight-bets', label: 'Straight Bets', emoji: '\uD83C\uDFC6' },
-    { id: 'exacta', label: 'Exacta', emoji: '\uD83E\uDD47' },
-    { id: 'trifecta', label: 'Trifecta', emoji: '\uD83E\uDD49' },
-    { id: 'superfecta', label: 'Superfecta', emoji: '\uD83C\uDFB0' },
-    { id: 'bankroll', label: 'Bankroll & Sizing', emoji: '\uD83D\uDCB0' },
-    { id: 'quick-reference', label: 'Quick Reference', emoji: '\u26A1' },
+    { id: 'how-to-use', label: 'How to Use Top Bets' },
+    { id: 'straight-bets', label: 'Straight Bets' },
+    { id: 'exacta', label: 'Exacta' },
+    { id: 'trifecta', label: 'Trifecta' },
+    { id: 'superfecta', label: 'Superfecta' },
+    { id: 'bankroll', label: 'Bankroll & Sizing' },
+    { id: 'quick-reference', label: 'Quick Reference' },
   ];
 
   return (
@@ -108,8 +108,7 @@ export function BettingStrategyGuide({ isOpen, onClose }: BettingStrategyGuidePr
                     className={`scoring-help-tab ${activeSection === section.id ? 'active' : ''}`}
                     onClick={() => setActiveSection(section.id)}
                   >
-                    <span className="scoring-help-tab-icon">{section.emoji}</span>
-                    <span>{section.label}</span>
+                    {section.label}
                   </button>
                 ))}
               </div>
