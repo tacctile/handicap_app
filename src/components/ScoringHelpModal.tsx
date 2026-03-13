@@ -2,14 +2,13 @@
  * ScoringHelpModal Component
  *
  * A comprehensive guide to understanding the Furlong handicapping display.
- * Organized top-to-bottom matching the actual UI layout, like learning
- * to read a racing form for the first time.
+ * Organized as 7 tabs covering every section of the expanded horse view,
+ * written for first-time horse bettors who have never read a Daily Racing Form.
  */
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from './shared/Icon';
-import { SCORE_LIMITS, MAX_BASE_SCORE } from '../lib/scoring';
 
 interface ScoringHelpModalProps {
   isOpen: boolean;
@@ -17,7 +16,7 @@ interface ScoringHelpModalProps {
 }
 
 export function ScoringHelpModal({ isOpen, onClose }: ScoringHelpModalProps) {
-  const [activeSection, setActiveSection] = useState<string>('overview');
+  const [activeSection, setActiveSection] = useState<string>('race-screen');
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Handle escape key
@@ -49,12 +48,13 @@ export function ScoringHelpModal({ isOpen, onClose }: ScoringHelpModalProps) {
   if (!isOpen) return null;
 
   const sections = [
-    { id: 'overview', label: 'Overview', icon: 'home' },
-    { id: 'summary-row', label: 'Summary Row', icon: 'table_rows' },
-    { id: 'score-breakdown', label: 'Score Breakdown', icon: 'analytics' },
-    { id: 'horse-profile', label: 'Horse Profile', icon: 'info' },
-    { id: 'past-performances', label: 'Past Performances', icon: 'history' },
-    { id: 'glossary', label: 'Glossary', icon: 'menu_book' },
+    { id: 'race-screen', label: 'The Race Screen', icon: '\u{1F4CB}' },
+    { id: 'horse-score', label: 'Horse Score', icon: '\u{1F4CA}' },
+    { id: 'factor-breakdown', label: 'Factor Breakdown', icon: '\u{1F50D}' },
+    { id: 'suggested-bets', label: 'Suggested Bets', icon: '\u{1F4A1}' },
+    { id: 'past-performances', label: 'Past Performances', icon: '\u{1F4C5}' },
+    { id: 'horse-profile', label: 'Horse Profile', icon: '\u{1F40E}' },
+    { id: 'glossary', label: 'Glossary', icon: '\u{1F4D6}' },
   ];
 
   return (
@@ -105,7 +105,7 @@ export function ScoringHelpModal({ isOpen, onClose }: ScoringHelpModalProps) {
                     className={`scoring-help-tab ${activeSection === section.id ? 'active' : ''}`}
                     onClick={() => setActiveSection(section.id)}
                   >
-                    <Icon name={section.icon} className="scoring-help-tab-icon" />
+                    <span className="scoring-help-tab-icon">{section.icon}</span>
                     <span>{section.label}</span>
                   </button>
                 ))}
@@ -113,11 +113,12 @@ export function ScoringHelpModal({ isOpen, onClose }: ScoringHelpModalProps) {
 
               {/* Content */}
               <div className="scoring-help-content">
-                {activeSection === 'overview' && <OverviewSection />}
-                {activeSection === 'summary-row' && <SummaryRowSection />}
-                {activeSection === 'score-breakdown' && <ScoreBreakdownSection />}
-                {activeSection === 'horse-profile' && <HorseProfileSection />}
+                {activeSection === 'race-screen' && <RaceScreenSection />}
+                {activeSection === 'horse-score' && <HorseScoreSection />}
+                {activeSection === 'factor-breakdown' && <FactorBreakdownSection />}
+                {activeSection === 'suggested-bets' && <SuggestedBetsSection />}
                 {activeSection === 'past-performances' && <PastPerformancesSection />}
+                {activeSection === 'horse-profile' && <HorseProfileSection />}
                 {activeSection === 'glossary' && <GlossarySection />}
               </div>
 
@@ -135,133 +136,247 @@ export function ScoringHelpModal({ isOpen, onClose }: ScoringHelpModalProps) {
   );
 }
 
-// Overview Section
-function OverviewSection() {
+// ============================================================================
+// Tab 1: The Race Screen
+// ============================================================================
+function RaceScreenSection() {
   return (
     <div className="help-section">
       <h3 className="help-section-title">
-        <Icon name="lightbulb" className="help-section-icon" />
-        Welcome to Furlong
+        <Icon name="view_list" className="help-section-icon" />
+        The Race Screen
       </h3>
       <p className="help-text">
-        This guide will help you understand everything you see on the screen. Whether you&apos;re
-        new to horse racing or a seasoned handicapper, this tool gives you data-driven insights to
-        make smarter betting decisions.
-      </p>
-
-      <div className="help-card">
-        <h4 className="help-card-title">What You&apos;ll Learn</h4>
-        <ul className="help-list">
-          <li>
-            <Icon name="arrow_right" className="help-list-icon" />
-            <span>How to read the summary row for each horse</span>
-          </li>
-          <li>
-            <Icon name="arrow_right" className="help-list-icon" />
-            <span>What each scoring category measures</span>
-          </li>
-          <li>
-            <Icon name="arrow_right" className="help-list-icon" />
-            <span>How to interpret past performances</span>
-          </li>
-          <li>
-            <Icon name="arrow_right" className="help-list-icon" />
-            <span>Key terms and abbreviations</span>
-          </li>
-        </ul>
-      </div>
-
-      <div className="help-tip">
-        <Icon name="tips_and_updates" className="help-tip-icon" />
-        <p>
-          <strong>Quick Tip:</strong> Look for green &quot;OVERLAY&quot; badges - these indicate
-          horses where the odds may be better than they should be based on our analysis.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// Summary Row Section
-function SummaryRowSection() {
-  return (
-    <div className="help-section">
-      <h3 className="help-section-title">
-        <Icon name="table_rows" className="help-section-icon" />
-        The Summary Row
-      </h3>
-      <p className="help-text">
-        Each horse has a summary row showing key information at a glance. Here&apos;s what each
-        column means, from left to right:
+        When you open a race, you see a list of horses. Each horse gets one row with key information
+        at a glance. Here&apos;s what every column means, from left to right:
       </p>
 
       <div className="help-definitions">
         <div className="help-definition">
-          <dt className="help-term">PP (Post Position)</dt>
+          <dt className="help-term">POST (Gate #)</dt>
           <dd className="help-desc">
-            The starting gate number. Horse #1 starts closest to the inside rail. Some tracks favor
-            certain post positions - inside posts often have an advantage on tight turns.
+            Which starting gate this horse leaves from. Lower numbers are on the inside rail.
           </dd>
         </div>
 
         <div className="help-definition">
           <dt className="help-term">HORSE</dt>
-          <dd className="help-desc">
-            The horse&apos;s registered racing name. Click anywhere on the row to expand and see
-            detailed information about past races, breeding, and more.
-          </dd>
+          <dd className="help-desc">The horse&apos;s name and program number.</dd>
         </div>
 
         <div className="help-definition">
           <dt className="help-term">ODDS</dt>
           <dd className="help-desc">
-            The morning line odds set by the track. These show the expected payout ratio. For
-            example, 5-1 means a $2 bet returns $12 ($10 profit + $2 original bet). You can click to
-            adjust these to match live tote board odds.
+            What the track is currently paying if this horse wins. &quot;5-1&quot; means a $2 bet
+            pays $10.
           </dd>
         </div>
 
         <div className="help-definition">
-          <dt className="help-term">SCORE</dt>
+          <dt className="help-term">SHOULD BE</dt>
           <dd className="help-desc">
-            Our overall Furlong Score out of {MAX_BASE_SCORE} base points (up to{' '}
-            {SCORE_LIMITS.total} with overlay adjustments). This combines multiple scoring factors
-            including speed, class, form, pace, connections, and more. Higher is better.
+            What our algorithm thinks the fair odds are based on the horse&apos;s score. If this is
+            lower than ODDS, the horse may be underpriced by the public.
           </dd>
         </div>
 
         <div className="help-definition">
-          <dt className="help-term">WIN CONF (Win Confidence)</dt>
+          <dt className="help-term">OUR PICK</dt>
           <dd className="help-desc">
-            The estimated probability this horse wins, shown as a percentage. This is calculated
-            from the Furlong Score relative to other horses in the race. A 20% win confidence means
-            we estimate this horse wins about 1 in 5 times.
+            Our algorithm&apos;s predicted finishing position for this horse. &quot;Picks 1st&quot;
+            = we think this horse wins.
           </dd>
         </div>
 
         <div className="help-definition">
-          <dt className="help-term">FAIR</dt>
+          <dt className="help-term">RATING</dt>
           <dd className="help-desc">
-            The &quot;fair&quot; odds based on our win confidence calculation. If a horse has 20%
-            win confidence, fair odds would be 4-1. Compare this to actual odds to find value.
+            Our overall rating combining horse quality and betting value. Labels: TOP PICK / GREAT
+            VALUE / IN THE MIX / TOSS UP.
           </dd>
         </div>
 
         <div className="help-definition">
           <dt className="help-term">EDGE %</dt>
           <dd className="help-desc">
-            The percentage difference between actual odds and fair odds. Positive (green) means
-            potential value - you&apos;re getting better odds than our analysis suggests. Negative
-            (red) means the public may be overvaluing this horse.
+            The gap between what we think the horse is worth and what the public is paying. Positive
+            = good value. Negative = overpriced.
           </dd>
         </div>
+      </div>
 
+      <div className="help-tip">
+        <Icon name="tips_and_updates" className="help-tip-icon" />
+        <p>
+          <strong>Tip:</strong> Tap any horse row to expand it and see the full breakdown.
+        </p>
+      </div>
+
+      <div className="help-card">
+        <h4 className="help-card-title">The Race Banner Bar</h4>
+        <ul className="help-list">
+          <li>
+            <Icon name="arrow_right" className="help-list-icon" />
+            <span>
+              <strong>BETTABLE</strong> means our algorithm found enough value in this race to
+              recommend betting on it.
+            </span>
+          </li>
+          <li>
+            <Icon name="arrow_right" className="help-list-icon" />
+            <span>
+              <strong>High Confidence</strong> means the data quality is strong and our analysis is
+              reliable.
+            </span>
+          </li>
+          <li>
+            <Icon name="arrow_right" className="help-list-icon" />
+            <span>
+              <strong>&quot;Should be: X-1&quot;</strong> shows the fair odds for the top-ranked
+              horse in the race.
+            </span>
+          </li>
+          <li>
+            <Icon name="arrow_right" className="help-list-icon" />
+            <span>
+              The <strong>top horse recommendation</strong> at the top of the race tells you which
+              horse our algorithm likes best and why.
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Tab 2: Horse Score
+// ============================================================================
+function HorseScoreSection() {
+  return (
+    <div className="help-section">
+      <h3 className="help-section-title">
+        <Icon name="analytics" className="help-section-icon" />
+        Horse Score
+      </h3>
+      <p className="help-text">
+        When you expand a horse, the first thing you see is the Furlong Score Analysis row. It has
+        two zones: Horse Quality on the left and Betting Value on the right.
+      </p>
+
+      <div className="help-card">
+        <h4 className="help-card-title">HORSE QUALITY Zone (Left Side)</h4>
+        <div className="help-definitions">
+          <div className="help-definition">
+            <dt className="help-term">The Large Score Number (e.g. 166 out of 376)</dt>
+            <dd className="help-desc">
+              Think of it like a test score. Higher = better on paper. This number combines
+              everything we know about the horse into one total.
+            </dd>
+          </div>
+
+          <div className="help-definition">
+            <dt className="help-term">The Teal Progress Bar</dt>
+            <dd className="help-desc">
+              How full the bar is shows how the horse scored vs. the maximum possible. A bar
+              that&apos;s half full means the horse earned about half the possible points.
+            </dd>
+          </div>
+
+          <div className="help-definition">
+            <dt className="help-term">
+              Field Label (Top Pick / Contender / In the Mix / Longshot / Long Odds)
+            </dt>
+            <dd className="help-desc">
+              This is where this horse ranks compared to the other horses in today&apos;s race
+              specifically. &quot;Top Pick&quot; means it scored highest in the field. &quot;Long
+              Odds&quot; means it scored near the bottom.
+            </dd>
+          </div>
+
+          <div className="help-definition">
+            <dt className="help-term">Data Quality Dot (HIGH / MEDIUM / LOW)</dt>
+            <dd className="help-desc">
+              How much reliable information our system found for this horse. HIGH = full homework
+              done. LOW = limited data, be cautious.
+            </dd>
+          </div>
+        </div>
+      </div>
+
+      <div className="help-card">
+        <h4 className="help-card-title">BETTING VALUE Zone (Right Side)</h4>
+        <div className="help-definitions">
+          <div className="help-definition">
+            <dt className="help-term">VALUE / FAIR / NO VALUE Label</dt>
+            <dd className="help-desc">
+              The most important signal for betting decisions. VALUE = the public is undervaluing
+              this horse, you&apos;re getting a good deal. FAIR = priced about right. NO VALUE = the
+              public already knows, you&apos;d be overpaying.
+            </dd>
+          </div>
+
+          <div className="help-definition">
+            <dt className="help-term">The Sub-Label</dt>
+            <dd className="help-desc">
+              A plain-English translation of the label above it, like &quot;Public is undervaluing
+              this horse&quot; or &quot;Price reflects the horse&apos;s ability.&quot;
+            </dd>
+          </div>
+
+          <div className="help-definition">
+            <dt className="help-term">Edge %</dt>
+            <dd className="help-desc">
+              The exact numerical gap between our fair price and the public price. A positive number
+              means you&apos;re getting better odds than you should. A negative number means
+              you&apos;d be overpaying.
+            </dd>
+          </div>
+        </div>
+      </div>
+
+      <div className="help-tip">
+        <Icon name="tips_and_updates" className="help-tip-icon" />
+        <p>
+          <strong>Tip:</strong> The six category bars to the right of the score break down exactly
+          WHERE the horse earned its points. Tap the &apos;?&apos; button next to the score to see
+          the full explanation.
+        </p>
+      </div>
+
+      <h3 className="help-section-title">
+        <Icon name="bar_chart" className="help-section-icon" />
+        The Six Category Bars
+      </h3>
+      <p className="help-text">
+        These bars give you a quick visual of where the horse is strong or weak. Each one is
+        explained in detail in the Factor Breakdown tab.
+      </p>
+      <div className="help-definitions">
         <div className="help-definition">
-          <dt className="help-term">ODDS EDGE</dt>
+          <dt className="help-term">CONNECTIONS</dt>
+          <dd className="help-desc">Coach + driver quality (trainer + jockey).</dd>
+        </div>
+        <div className="help-definition">
+          <dt className="help-term">POST</dt>
+          <dd className="help-desc">Starting gate advantage at this track.</dd>
+        </div>
+        <div className="help-definition">
+          <dt className="help-term">SPEED/CLASS</dt>
+          <dd className="help-desc">Raw speed and level of competition.</dd>
+        </div>
+        <div className="help-definition">
+          <dt className="help-term">FORM</dt>
+          <dd className="help-desc">How the horse has been running lately.</dd>
+        </div>
+        <div className="help-definition">
+          <dt className="help-term">EQUIPMENT</dt>
+          <dd className="help-desc">Gear changes that might affect performance.</dd>
+        </div>
+        <div className="help-definition">
+          <dt className="help-term">PACE</dt>
           <dd className="help-desc">
-            A quick label: <strong>OVERLAY</strong> (green) means the odds are better than they
-            should be. <strong>UNDERLAY</strong> (red) means the horse is overbet.
-            <strong>FAIR</strong> (yellow) means odds match our estimate.
+            Whether this horse&apos;s running style fits today&apos;s race.
           </dd>
         </div>
       </div>
@@ -269,32 +384,57 @@ function SummaryRowSection() {
   );
 }
 
-// Score Breakdown Section
-function ScoreBreakdownSection() {
+// ============================================================================
+// Tab 3: Factor Breakdown
+// ============================================================================
+function FactorBreakdownSection() {
   return (
     <div className="help-section">
       <h3 className="help-section-title">
-        <Icon name="analytics" className="help-section-icon" />
-        Score Breakdown
+        <Icon name="search" className="help-section-icon" />
+        Factor Breakdown
       </h3>
       <p className="help-text">
-        The Furlong Score is built from multiple categories (14 total). The six major categories are
-        shown below. Each measures a different aspect of a horse&apos;s chances. An overlay
-        adjustment of up to &plusmn;{SCORE_LIMITS.overlayMax} points is then applied based on race
-        dynamics.
+        The Factor Breakdown section is visible in the Analysis tab when a horse is expanded. It
+        shows each scoring factor with an icon telling you if it helps or hurts the horse today.
       </p>
+
+      <div className="help-card">
+        <h4 className="help-card-title">What the Icons Mean</h4>
+        <div className="help-definitions">
+          <div className="help-definition">
+            <dt className="help-term">{'\u2705'} Green Checkmark = Strength</dt>
+            <dd className="help-desc">This factor is working in the horse&apos;s favor today.</dd>
+          </div>
+          <div className="help-definition">
+            <dt className="help-term">{'\u2796'} Gray Dash = Average</dt>
+            <dd className="help-desc">Neutral &mdash; not helping or hurting.</dd>
+          </div>
+          <div className="help-definition">
+            <dt className="help-term">{'\u26A0\uFE0F'} Yellow Warning = Caution</dt>
+            <dd className="help-desc">Something to watch, mildly against the horse.</dd>
+          </div>
+          <div className="help-definition">
+            <dt className="help-term">{'\u274C'} Red X = Weakness</dt>
+            <dd className="help-desc">This factor is working against the horse.</dd>
+          </div>
+        </div>
+      </div>
 
       <div className="help-categories">
         <div className="help-category">
           <div className="help-category-header">
             <Icon name="people" className="help-category-icon" />
             <span className="help-category-name">Connections</span>
-            <span className="help-category-max">{SCORE_LIMITS.connections} pts max</span>
           </div>
           <p className="help-category-desc">
-            Rates the trainer and jockey. Some trainers excel in specific situations (first-time
-            starters, turf races, etc.). Certain trainer-jockey combinations have strong historical
-            win rates together.
+            <strong>What:</strong> The trainer and jockey. The trainer is like a coach &mdash; they
+            prepare the horse. The jockey is like a driver &mdash; they steer during the race. When
+            both have been winning recently, it matters.
+          </p>
+          <p className="help-category-desc">
+            <strong>Think of it like:</strong> A great coach AND a great point guard on the same
+            team at the same time.
           </p>
         </div>
 
@@ -302,12 +442,14 @@ function ScoreBreakdownSection() {
           <div className="help-category-header">
             <Icon name="grid_view" className="help-category-icon" />
             <span className="help-category-name">Post Position</span>
-            <span className="help-category-max">{SCORE_LIMITS.postPosition} pts max</span>
           </div>
           <p className="help-category-desc">
-            Evaluates whether the starting gate helps or hurts. Different tracks have different
-            biases - some favor inside posts, others favor outside. We analyze historical data to
-            identify these patterns.
+            <strong>What:</strong> The starting gate number. Some gates have historically won more
+            at this specific track and distance than others.
+          </p>
+          <p className="help-category-desc">
+            <strong>Think of it like:</strong> Lane assignments in a 400m track race &mdash; the
+            inside lane runs less distance on turns but can get boxed in.
           </p>
         </div>
 
@@ -315,12 +457,14 @@ function ScoreBreakdownSection() {
           <div className="help-category-header">
             <Icon name="speed" className="help-category-icon" />
             <span className="help-category-name">Speed / Class</span>
-            <span className="help-category-max">{SCORE_LIMITS.speedClass} pts max</span>
           </div>
           <p className="help-category-desc">
-            Measures raw ability through speed figures (how fast the horse has run) and class level
-            (quality of competition). A horse moving down in class may have an advantage against
-            weaker competition.
+            <strong>What:</strong> How fast this horse has run (Beyer Speed Figure) and how tough
+            the competition was. The single biggest factor.
+          </p>
+          <p className="help-category-desc">
+            <strong>Think of it like:</strong> SAT scores AND which school you went to. Running fast
+            in a low-level race is different from running fast against the best.
           </p>
         </div>
 
@@ -328,12 +472,14 @@ function ScoreBreakdownSection() {
           <div className="help-category-header">
             <Icon name="fitness_center" className="help-category-icon" />
             <span className="help-category-name">Form</span>
-            <span className="help-category-max">{SCORE_LIMITS.form} pts max</span>
           </div>
           <p className="help-category-desc">
-            Assesses current condition. Recent race results, days since last race, and consistency
-            all factor in. Horses in good form tend to repeat. Long layoffs can be positive (rest)
-            or negative (rust).
+            <strong>What:</strong> How the horse has been running in its last 3 races. Finishing in
+            the top 3 = good form. Finishing last = cold streak.
+          </p>
+          <p className="help-category-desc">
+            <strong>Think of it like:</strong> Checking a baseball player&apos;s last 10 games
+            &mdash; are they hitting .400 or .100 right now?
           </p>
         </div>
 
@@ -341,12 +487,14 @@ function ScoreBreakdownSection() {
           <div className="help-category-header">
             <Icon name="build" className="help-category-icon" />
             <span className="help-category-name">Equipment</span>
-            <span className="help-category-max">{SCORE_LIMITS.equipment} pts max</span>
           </div>
           <p className="help-category-desc">
-            Tracks equipment changes like blinkers (eye covers to improve focus) or different shoes.
-            First-time blinkers or equipment changes can signal a trainer is trying something new to
-            improve performance.
+            <strong>What:</strong> Gear changes like blinkers (blinders that help a distracted horse
+            focus) or special shoes. Small changes can make a big difference.
+          </p>
+          <p className="help-category-desc">
+            <strong>Think of it like:</strong> A runner switching to racing spikes for the first
+            time.
           </p>
         </div>
 
@@ -354,97 +502,139 @@ function ScoreBreakdownSection() {
           <div className="help-category-header">
             <Icon name="timeline" className="help-category-icon" />
             <span className="help-category-name">Pace</span>
-            <span className="help-category-max">{SCORE_LIMITS.pace} pts max</span>
           </div>
           <p className="help-category-desc">
-            Analyzes running style and race shape. Some horses like to lead (early speed), others
-            close from behind (closers). This score shows how well the horse&apos;s style fits the
-            expected pace scenario of this race.
+            <strong>What:</strong> Does this horse&apos;s running style (sprinter, stalker, closer)
+            match the expected speed of today&apos;s race?
+          </p>
+          <p className="help-category-desc">
+            <strong>Think of it like:</strong> A fast kid getting a head start in a slow race
+            &mdash; or a sprinter stuck in a speed duel they can&apos;t win.
           </p>
         </div>
+      </div>
+
+      <div className="help-card">
+        <h4 className="help-card-title">VALUE DETECTED / NO VALUE Card</h4>
+        <p className="help-text">
+          At the bottom of the Factor Breakdown, you&apos;ll see a value card. This shows whether
+          the public odds are giving you a deal or making you overpay, regardless of how the horse
+          scores on ability. A strong horse at bad odds is a bad bet. A decent horse at great odds
+          can be a great bet.
+        </p>
       </div>
 
       <div className="help-tip">
         <Icon name="tips_and_updates" className="help-tip-icon" />
         <p>
-          <strong>Score Colors:</strong> Teal/cyan scores indicate strong performance in that
-          category. Gray scores show average or below average. Look for horses strong in multiple
-          categories.
+          <strong>Tip:</strong> Tap the &apos;?&apos; next to any factor to get a full explanation
+          specific to this horse&apos;s actual numbers.
         </p>
       </div>
     </div>
   );
 }
 
-// Horse Profile Section
-function HorseProfileSection() {
+// ============================================================================
+// Tab 4: Suggested Bets
+// ============================================================================
+function SuggestedBetsSection() {
   return (
     <div className="help-section">
       <h3 className="help-section-title">
-        <Icon name="info" className="help-section-icon" />
-        Horse Profile
+        <Icon name="lightbulb" className="help-section-icon" />
+        Suggested Bets
       </h3>
       <p className="help-text">
-        When you expand a horse row, you&apos;ll see detailed profile information. Here&apos;s what
-        it means:
+        The Suggested Bets section recommends specific wagers organized by risk level. Here&apos;s
+        what each tier means:
       </p>
 
-      <div className="help-definitions">
-        <div className="help-definition">
-          <dt className="help-term">Identity</dt>
-          <dd className="help-desc">
-            Basic info: color, sex, age. &quot;Chestnut Gelding, 4&quot; means a reddish-brown
-            castrated male horse that is 4 years old. Age matters - 3-year-olds often improve
-            rapidly.
-          </dd>
+      <div className="help-card">
+        <h4 className="help-card-title">CONSERVATIVE BETS (Lowest Risk)</h4>
+        <div className="help-definitions">
+          <div className="help-definition">
+            <dt className="help-term">Win</dt>
+            <dd className="help-desc">Bet this one horse to finish first.</dd>
+          </div>
+          <div className="help-definition">
+            <dt className="help-term">Place</dt>
+            <dd className="help-desc">
+              Bet this horse to finish first OR second. Pays less than Win but more likely to cash.
+            </dd>
+          </div>
         </div>
+        <p className="help-text">These are straight bets. One horse. Simple. Best for beginners.</p>
+      </div>
 
-        <div className="help-definition">
-          <dt className="help-term">Weight</dt>
-          <dd className="help-desc">
-            The weight the horse carries, including jockey and equipment. Higher weight (typically
-            assigned to better horses) can be a disadvantage. 5 pounds roughly equals one length
-            over a mile.
-          </dd>
+      <div className="help-card">
+        <h4 className="help-card-title">MODERATE BETS (Medium Risk, Bigger Payouts)</h4>
+        <div className="help-definitions">
+          <div className="help-definition">
+            <dt className="help-term">Exacta Key</dt>
+            <dd className="help-desc">
+              Pick the horse you like most, then list several others who might finish second. You
+              win if your key horse wins AND any of your listed horses finish second.
+            </dd>
+          </div>
+          <div className="help-definition">
+            <dt className="help-term">Trifecta Key</dt>
+            <dd className="help-desc">
+              Same idea &mdash; your key horse wins, and you cover several combinations for 2nd and
+              3rd.
+            </dd>
+          </div>
         </div>
+        <p className="help-text">
+          These cost a little more but pay significantly more than straight bets.
+        </p>
+      </div>
 
-        <div className="help-definition">
-          <dt className="help-term">Equipment</dt>
-          <dd className="help-desc">
-            Current equipment: Blinkers (B) focus attention, Front Bandages (F) provide support, Bar
-            Shoes help with hoof issues. Equipment changes are tracked in scoring.
-          </dd>
+      <div className="help-card">
+        <h4 className="help-card-title">AGGRESSIVE BETS (Highest Risk, Biggest Payouts)</h4>
+        <div className="help-definitions">
+          <div className="help-definition">
+            <dt className="help-term">Trifecta Box</dt>
+            <dd className="help-desc">
+              Pick 3&ndash;4 horses and cover every possible order they could finish in the top 3.
+            </dd>
+          </div>
+          <div className="help-definition">
+            <dt className="help-term">Value Bomb</dt>
+            <dd className="help-desc">
+              A longshot the algorithm thinks is being dramatically undervalued. High risk, high
+              reward.
+            </dd>
+          </div>
         </div>
+        <p className="help-text">
+          These are for when you think there&apos;s an upset brewing or you want maximum upside.
+        </p>
+      </div>
 
-        <div className="help-definition">
-          <dt className="help-term">Medication</dt>
-          <dd className="help-desc">
-            L = Lasix (diuretic for bleeding), B = Bute (anti-inflammatory). Most horses run on
-            Lasix. First-time Lasix can sometimes improve performance.
-          </dd>
-        </div>
+      <div className="help-card">
+        <h4 className="help-card-title">&quot;No Bets Recommended&quot;</h4>
+        <p className="help-text">
+          When a bet section shows &quot;No bets recommended,&quot; the algorithm didn&apos;t find
+          enough value to justify a recommendation. This is useful information: it means pass or be
+          very selective.
+        </p>
+      </div>
 
-        <div className="help-definition">
-          <dt className="help-term">Sire / Dam</dt>
-          <dd className="help-desc">
-            The horse&apos;s father (Sire) and mother (Dam). Breeding can indicate surface and
-            distance preferences. Some sires are known for producing turf horses or sprinters.
-          </dd>
-        </div>
-
-        <div className="help-definition">
-          <dt className="help-term">Connections</dt>
-          <dd className="help-desc">
-            Owner, Trainer, and Jockey. The trainer conditions the horse daily. The jockey rides in
-            the race. Strong trainer-jockey combinations can be a positive sign.
-          </dd>
-        </div>
+      <div className="help-tip">
+        <Icon name="tips_and_updates" className="help-tip-icon" />
+        <p>
+          <strong>Tip:</strong> The Suggested Bets section changes for every horse and every race
+          based on the live odds. Always check it after odds move closer to post time.
+        </p>
       </div>
     </div>
   );
 }
 
-// Past Performances Section
+// ============================================================================
+// Tab 5: Past Performances
+// ============================================================================
 function PastPerformancesSection() {
   return (
     <div className="help-section">
@@ -453,70 +643,108 @@ function PastPerformancesSection() {
         Past Performances
       </h3>
       <p className="help-text">
-        The past performances table shows the horse&apos;s recent race history. Each row is a
-        previous race, with the most recent at the top.
+        The Past Performances table shows the horse&apos;s recent race history. Each row is a
+        previous race, with the most recent at the top. Here&apos;s what every column means:
       </p>
 
       <div className="help-definitions">
         <div className="help-definition">
-          <dt className="help-term">Date</dt>
-          <dd className="help-desc">When the race occurred. Recent races are most relevant.</dd>
+          <dt className="help-term">DATE</dt>
+          <dd className="help-desc">When the race was run.</dd>
         </div>
 
         <div className="help-definition">
-          <dt className="help-term">Track</dt>
+          <dt className="help-term">TRACK</dt>
+          <dd className="help-desc">Which racetrack.</dd>
+        </div>
+
+        <div className="help-definition">
+          <dt className="help-term">DISTANCE</dt>
+          <dd className="help-desc">How far the race was.</dd>
+        </div>
+
+        <div className="help-definition">
+          <dt className="help-term">COND</dt>
+          <dd className="help-desc">Track condition (Fast, Muddy, Sloppy, Good, Firm, Soft).</dd>
+        </div>
+
+        <div className="help-definition">
+          <dt className="help-term">CLASS</dt>
           <dd className="help-desc">
-            Three-letter code for the racetrack (e.g., SAR = Saratoga, BEL = Belmont).
+            Level of race (Maiden, Claiming, Allowance, Stakes &mdash; see Glossary).
           </dd>
         </div>
 
         <div className="help-definition">
-          <dt className="help-term">Distance</dt>
+          <dt className="help-term">FINISH</dt>
+          <dd className="help-desc">Where this horse finished (1 = won, 2 = second, etc.).</dd>
+        </div>
+
+        <div className="help-definition">
+          <dt className="help-term">ODDS</dt>
+          <dd className="help-desc">What odds this horse went off at in that race.</dd>
+        </div>
+
+        <div className="help-definition">
+          <dt className="help-term">FIGURE</dt>
           <dd className="help-desc">
-            Race length in furlongs (f) or miles (m). One furlong = 1/8 mile. 6f is a sprint, 1m+ is
-            a route.
+            The Beyer Speed Figure &mdash; how fast they ran. Higher = faster.
           </dd>
         </div>
 
         <div className="help-definition">
-          <dt className="help-term">Class</dt>
+          <dt className="help-term">TIME</dt>
+          <dd className="help-desc">The final time of the race.</dd>
+        </div>
+
+        <div className="help-definition">
+          <dt className="help-term">DAYS</dt>
           <dd className="help-desc">
-            Race type and level. MSW = Maiden Special Weight (first-time winners). CLM = Claiming
-            (horses for sale). ALW = Allowance. STK = Stakes (highest quality).
+            Days since previous race &mdash; a long gap (60+ days) can be a question mark or a sign
+            the trainer was patient for the right spot.
           </dd>
         </div>
 
         <div className="help-definition">
-          <dt className="help-term">Finish</dt>
+          <dt className="help-term">EQUIP/MED</dt>
+          <dd className="help-desc">Equipment or medication changes for that race.</dd>
+        </div>
+
+        <div className="help-definition">
+          <dt className="help-term">RUNNING LINE</dt>
           <dd className="help-desc">
-            Final position / number of horses. &quot;3/12&quot; means finished 3rd out of 12 horses.
+            Where the horse was positioned at each call during the race (e.g. 3-2-1 = started 3rd,
+            moved to 2nd, won).
           </dd>
         </div>
 
         <div className="help-definition">
-          <dt className="help-term">Figure</dt>
-          <dd className="help-desc">
-            Speed figure rating for that race. Higher is faster. Compare to today&apos;s field to
-            gauge relative ability. 80+ is solid, 90+ is very good.
-          </dd>
+          <dt className="help-term">JOCKEY</dt>
+          <dd className="help-desc">Who rode the horse in that race.</dd>
         </div>
 
         <div className="help-definition">
-          <dt className="help-term">Running Line</dt>
-          <dd className="help-desc">
-            Position at each point of call. &quot;4 3 2 1&quot; means started 4th, moved to 3rd,
-            then 2nd, finished 1st. Shows how the horse ran the race.
-          </dd>
+          <dt className="help-term">WEIGHT</dt>
+          <dd className="help-desc">How much weight the horse carried.</dd>
         </div>
 
         <div className="help-definition">
-          <dt className="help-term">Comment</dt>
+          <dt className="help-term">COMMENT</dt>
           <dd className="help-desc">
-            Brief note about the trip. &quot;Wide&quot; = lost ground on turns. &quot;Blocked&quot;
-            = couldn&apos;t find running room. &quot;Tired&quot; = faded late. Good trips vs.
-            troubled trips matter.
+            Trainer/chart caller notes about the race &mdash; look for words like &quot;wide,&quot;
+            &quot;blocked,&quot; &quot;stumbled start&quot; &mdash; these explain bad finishes that
+            weren&apos;t the horse&apos;s fault.
           </dd>
         </div>
+      </div>
+
+      <div className="help-card">
+        <h4 className="help-card-title">Workouts: The Bullet Symbol ({'\u25CF'})</h4>
+        <p className="help-text">
+          A bullet ({'\u25CF'}) next to a workout means it was the fastest workout of the day at
+          that distance at that track. This is a highly positive sign &mdash; it means the horse
+          outworked every other horse that morning.
+        </p>
       </div>
 
       <div className="help-tip">
@@ -531,7 +759,67 @@ function PastPerformancesSection() {
   );
 }
 
-// Glossary Section
+// ============================================================================
+// Tab 6: Horse Profile
+// ============================================================================
+function HorseProfileSection() {
+  return (
+    <div className="help-section">
+      <h3 className="help-section-title">
+        <Icon name="info" className="help-section-icon" />
+        Horse Profile
+      </h3>
+      <p className="help-text">
+        The Horse Profile tab shows background information about the horse. Here&apos;s what each
+        section tells you:
+      </p>
+
+      <div className="help-card">
+        <h4 className="help-card-title">Identity</h4>
+        <p className="help-text">
+          Basic facts &mdash; color, sex, age, weight carried today, equipment, medication (Lasix =
+          bleeder medication, very common and legal).
+        </p>
+      </div>
+
+      <div className="help-card">
+        <h4 className="help-card-title">Breeding</h4>
+        <p className="help-text">
+          Sire (father), Dam (mother), Breeder. Matters most for first-time starters and young
+          horses &mdash; some bloodlines excel at certain distances or surfaces.
+        </p>
+      </div>
+
+      <div className="help-card">
+        <h4 className="help-card-title">Connections</h4>
+        <p className="help-text">
+          Owner, Trainer, Jockey. Knowing who trains and rides tells experienced bettors a lot about
+          intentions and form.
+        </p>
+      </div>
+
+      <div className="help-card">
+        <h4 className="help-card-title">Career Record</h4>
+        <p className="help-text">
+          Wins-Places-Shows out of total starts, for current year, previous year, and lifetime. A
+          horse with 15 starts and 0 wins is very different from one with 3 starts and 1 win.
+        </p>
+      </div>
+
+      <div className="help-card">
+        <h4 className="help-card-title">Surface &amp; Distance Splits</h4>
+        <p className="help-text">
+          How the horse has performed on Dirt vs. Wet vs. Turf, and at today&apos;s distance. A
+          horse with 8 wins on dirt and 0 on turf racing on turf today is a red flag.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Tab 7: Glossary
+// ============================================================================
 function GlossarySection() {
   const terms = [
     {
@@ -594,6 +882,38 @@ function GlossarySection() {
     {
       term: 'Track Bias',
       def: 'When a track surface favors certain running styles or post positions (e.g., "speed favoring" or "inside favoring").',
+    },
+    {
+      term: 'Field Label',
+      def: 'Whether a horse is our Top Pick, Contender, In the Mix, Longshot, or Long Odds relative to the other horses in today\u2019s race specifically.',
+    },
+    {
+      term: 'Data Quality',
+      def: 'How much reliable information our system found (HIGH / MEDIUM / LOW). LOW means treat the score with extra caution.',
+    },
+    {
+      term: 'Edge %',
+      def: 'The gap between our fair odds and the public\u2019s current odds. Positive = value. Negative = overpriced.',
+    },
+    {
+      term: 'Betting Value',
+      def: 'Whether the public odds give you a deal (VALUE), are fair (FAIR), or make you overpay (NO VALUE).',
+    },
+    {
+      term: 'Kelly Sizing',
+      def: 'A mathematical formula for how much to bet based on your edge and bankroll. Shown in the Top Bets screen.',
+    },
+    {
+      term: 'Beyer Speed Figure',
+      def: 'A standardized speed rating used at every US racetrack. Higher = faster. 77+ is elite. Under 50 is below average.',
+    },
+    {
+      term: 'Running Line',
+      def: 'The position a horse held at each stage of the race \u2014 shows whether they were chasing or leading throughout.',
+    },
+    {
+      term: 'Softmax',
+      def: 'A probability calculation that distributes win chances across all horses so they add up to 100%. Shown with a \u2713 symbol on Top Bets cards.',
     },
   ];
 
