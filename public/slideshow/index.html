@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Furlong — Platform Overview</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --base:#0a0a0b;--card:#0f0f10;--elev:#1a1a1c;--sv:#242428;
+  --bdr:#2a2a2c;--bdr2:#3a3a3c;
+  --pri:#19abb5;--pri-h:#1992a1;--pri-l:#36d1da;--pri-m:rgba(25,171,181,.15);
+  --grn:#22c55e;--grn-l:#4ade80;--grn-m:rgba(34,197,94,.15);
+  --yel:#eab308;--yel-m:rgba(234,179,8,.15);
+  --red:#ef4444;--red-m:rgba(239,68,68,.15);
+  --t1:#eeeff1;--t2:#b4b4b6;--t3:#6e6e70;
+  --top:44px;--bot:48px;
+  --body:calc(100vh - var(--top) - var(--bot));
+}
+html,body{width:100%;height:100%;background:var(--base);color:var(--t1);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  overflow:hidden;-webkit-font-smoothing:antialiased;user-select:none}
+
+/* === TOPBAR === */
+.top{position:fixed;top:0;left:0;right:0;height:var(--top);z-index:90;
+  background:var(--card);border-bottom:1px solid var(--bdr);
+  display:flex;align-items:center;padding:0 16px;gap:10px}
+.top-logo{width:26px;height:26px;background:var(--pri);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff}
+.top-name{font-size:14px;font-weight:700;color:var(--t1)}
+.top-sep{width:1px;height:20px;background:var(--bdr)}
+.top-ctx{font-size:12px;color:var(--t3)}
+.top-ctx b{color:var(--pri);font-weight:600}
+.top-r{margin-left:auto}
+.btn-x{background:var(--elev);border:1px solid var(--bdr);border-radius:5px;
+  color:var(--t2);font-size:12px;font-weight:500;padding:4px 12px;cursor:pointer;font-family:inherit}
+.btn-x:hover{color:var(--t1);border-color:var(--pri)}
+
+/* === BOTTOMBAR === */
+.bot{position:fixed;bottom:0;left:0;right:0;height:var(--bot);z-index:90;
+  background:var(--card);border-top:1px solid var(--bdr);
+  display:flex;align-items:center;padding:0 16px}
+.btn-bk,.btn-nx{border:1px solid var(--bdr);border-radius:5px;
+  font-size:12px;font-weight:600;padding:6px 18px;cursor:pointer;font-family:inherit}
+.btn-bk{background:var(--elev);color:var(--t2)}
+.btn-bk:hover{border-color:var(--pri);color:var(--pri)}
+.btn-bk.gone{visibility:hidden}
+.btn-nx{background:var(--pri);color:#fff;border-color:var(--pri);margin-left:auto}
+.btn-nx:hover{background:var(--pri-h)}
+.nav-mid{position:absolute;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:12px}
+.ctr{font-size:12px;font-weight:600;color:var(--t3);letter-spacing:1px;font-variant-numeric:tabular-nums}
+.dots{display:flex;gap:5px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--bdr2);transition:all .15s}
+.dot.on{background:var(--pri);box-shadow:0 0 8px rgba(25,171,181,.6);transform:scale(1.2)}
+.dot.dn{background:var(--pri);opacity:.3}
+
+/* === RESTART === */
+.rst{display:none;position:fixed;inset:0;z-index:200;background:var(--base);
+  flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.rst.on{display:flex}
+.rst-ck{width:56px;height:56px;border-radius:50%;background:var(--grn-m);border:2px solid var(--grn);
+  display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--grn)}
+.rst h2{font-size:20px;font-weight:700}
+.rst p{font-size:13px;color:var(--t3)}
+
+/* === SLIDES === */
+.deck{position:fixed;top:var(--top);left:0;right:0;bottom:var(--bot);overflow:hidden;cursor:pointer}
+.S{display:none;width:100%;height:100%;padding:clamp(12px,2vh,24px) clamp(16px,3vw,48px);
+  overflow:hidden;flex-direction:column}
+.S.on{display:flex}
+
+/* === TYPO === */
+.sh{font-size:clamp(9px,1.1vh,12px);font-weight:700;color:var(--pri);letter-spacing:.06em;text-transform:uppercase;margin-bottom:clamp(2px,.5vh,6px)}
+.st{font-size:clamp(16px,3.2vh,32px);font-weight:800;color:var(--t1);line-height:1.15;margin-bottom:clamp(2px,.4vh,4px);letter-spacing:-.02em}
+.ss{font-size:clamp(10px,1.5vh,15px);color:var(--t2);line-height:1.45;margin-bottom:clamp(6px,1.5vh,20px);max-width:56vw}
+
+/* === GRIDS === */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:clamp(8px,1.5vw,20px)}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:clamp(6px,1vw,16px)}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:clamp(4px,.8vw,12px)}
+.g21{display:grid;grid-template-columns:1.2fr .8fr;gap:clamp(10px,2vw,28px)}
+.f1{flex:1;min-height:0;overflow:hidden}
+
+/* === FOOTER === */
+.sf{display:flex;gap:clamp(10px,2vw,24px);flex-wrap:wrap;padding-top:clamp(4px,.8vh,10px);border-top:1px solid var(--bdr);margin-top:auto}
+.sf span{font-size:clamp(8px,1.1vh,11px);color:var(--t3);display:flex;align-items:center;gap:5px}
+.sf span::before{content:'';width:3px;height:3px;border-radius:50%;background:var(--pri);flex-shrink:0}
+
+/* === RANK LIST === */
+.rl{display:flex;flex-direction:column;gap:clamp(2px,.4vh,5px)}
+.ri{display:flex;background:var(--card);border:1px solid var(--bdr);border-radius:6px;overflow:hidden}
+.ri--us{border-color:var(--pri);background:linear-gradient(90deg,rgba(25,171,181,.08),transparent 60%);
+  box-shadow:0 0 16px rgba(25,171,181,.1)}
+.rp{width:clamp(24px,2.5vw,36px);display:flex;align-items:center;justify-content:center;
+  font-size:clamp(10px,1.3vh,13px);font-weight:800;color:var(--t3);border-right:1px solid var(--bdr);
+  background:rgba(255,255,255,.02);flex-shrink:0}
+.ri--us .rp{color:var(--pri);background:rgba(25,171,181,.1);border-right-color:rgba(25,171,181,.3)}
+.rb{padding:clamp(3px,.5vh,8px) clamp(6px,1vw,12px);flex:1;min-width:0}
+.rn{font-size:clamp(10px,1.3vh,13px);font-weight:700;color:var(--t1)}
+.ri--us .rn{color:var(--pri-l)}
+.rt{display:inline-block;padding:0 5px;border-radius:2px;font-size:clamp(7px,.85vh,9px);font-weight:700;
+  text-transform:uppercase;letter-spacing:.3px;margin-left:4px;vertical-align:middle}
+.rt--a{background:rgba(180,180,182,.1);color:var(--t3)}
+.rt--u{background:var(--grn-m);color:var(--grn)}
+.rt--b{background:var(--red-m);color:var(--red);opacity:.7}
+.rd{font-size:clamp(8px,1vh,11px);color:var(--t3);line-height:1.35;margin-top:1px}
+.ri--us .rd{color:var(--t2)}
+.rdiv{display:flex;align-items:center;gap:8px;font-size:clamp(7px,.9vh,9px);font-weight:700;
+  color:var(--pri);text-transform:uppercase;letter-spacing:.06em;margin:clamp(2px,.4vh,6px) 0}
+.rdiv::before,.rdiv::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--pri),transparent)}
+
+/* === EDGE PILLARS === */
+.ep{background:var(--card);border:1px solid var(--bdr);border-radius:7px;
+  padding:clamp(4px,.7vh,10px) clamp(6px,1vw,14px);margin-bottom:clamp(2px,.4vh,6px);
+  border-left:3px solid var(--pri)}
+.ep-t{font-size:clamp(10px,1.2vh,13px);font-weight:700;color:var(--t1);margin-bottom:2px;display:flex;align-items:center;gap:6px}
+.ep-t i{width:clamp(14px,1.8vh,20px);height:clamp(14px,1.8vh,20px);border-radius:4px;
+  display:inline-flex;align-items:center;justify-content:center;font-size:clamp(8px,1vh,11px);font-style:normal}
+.ep-d{font-size:clamp(8px,1.05vh,11px);color:var(--t2);line-height:1.4}
+
+/* === TABLE === */
+.tbl{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);
+  border:1px solid var(--bdr);border-radius:8px;overflow:hidden}
+.tbl thead{background:var(--elev)}
+.tbl th{text-align:left;padding:clamp(3px,.6vh,7px) clamp(4px,.6vw,10px);
+  font-size:clamp(7px,.9vh,10px);font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;
+  border-bottom:1px solid var(--bdr)}
+.tbl td{padding:clamp(3px,.55vh,7px) clamp(4px,.6vw,10px);border-bottom:1px solid var(--bdr);
+  font-variant-numeric:tabular-nums;vertical-align:middle;font-size:clamp(9px,1.15vh,13px)}
+.tbl tr:last-child td{border-bottom:none}
+
+/* === BADGES === */
+.b{display:inline-flex;align-items:center;padding:1px 6px;border-radius:3px;
+  font-size:clamp(7px,.85vh,10px);font-weight:700;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+.b--best{background:var(--grn-m);color:var(--grn);border:1px solid rgba(34,197,94,.3)}
+.b--great{background:var(--pri-m);color:var(--pri);border:1px solid rgba(25,171,181,.3)}
+.b--toss{background:var(--yel-m);color:var(--yel);border:1px solid rgba(234,179,8,.3)}
+.b--mix{background:rgba(180,180,182,.08);color:var(--t2);border:1px solid rgba(180,180,182,.12)}
+.b--no{background:var(--red-m);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.b--prime{background:var(--pri-m);color:var(--pri-l);border:1px solid rgba(54,209,218,.3)}
+.epos{color:var(--grn);font-weight:700}
+.eneg{color:var(--red);font-weight:600}
+
+/* === CALLOUTS === */
+.cog{display:grid;grid-template-columns:1fr 1fr;gap:clamp(3px,.4vh,5px) clamp(8px,1.2vw,16px)}
+.co{display:flex;align-items:flex-start;gap:7px;padding:clamp(3px,.5vh,6px) clamp(5px,.7vw,10px);
+  border-radius:5px;background:var(--card);border:1px solid var(--bdr)}
+.co-d{width:4px;height:4px;border-radius:50%;margin-top:clamp(3px,.5vh,5px);
+  background:var(--pri);flex-shrink:0;box-shadow:0 0 4px rgba(25,171,181,.5)}
+.co-l{font-size:clamp(7px,.85vh,9px);font-weight:700;color:var(--pri);text-transform:uppercase;letter-spacing:.04em;margin-bottom:1px}
+.co-t{font-size:clamp(8px,1vh,11px);color:var(--t2);line-height:1.3}
+
+/* === ANNOTATIONS === */
+.an{padding:clamp(4px,.6vh,8px) clamp(6px,.8vw,12px);border-radius:6px;
+  background:var(--card);border:1px solid var(--bdr);margin-bottom:clamp(3px,.5vh,6px);border-left:3px solid var(--pri)}
+.an-l{font-size:clamp(7px,.85vh,9px);font-weight:700;color:var(--pri);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.an-t{font-size:clamp(8px,1vh,11px);color:var(--t2);line-height:1.35}
+
+/* === ZONE CARDS === */
+.zc{background:var(--card);border:1px solid var(--bdr);border-radius:8px;
+  padding:clamp(6px,1vh,14px);margin-bottom:clamp(4px,.6vh,8px);position:relative;overflow:hidden}
+.zc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.zc--t::before{background:var(--pri)}
+.zc--y::before{background:var(--yel)}
+.zl{font-size:clamp(7px,.85vh,9px);font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  margin-bottom:clamp(4px,.6vh,8px);display:flex;align-items:center;gap:6px}
+.zl--t{color:var(--pri)}
+.zl--y{color:var(--yel)}
+
+/* === PROGRESS BAR === */
+.pb{height:clamp(3px,.5vh,5px);background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin:clamp(2px,.3vh,5px) 0}
+.pf{height:100%;border-radius:3px}
+.pf--t{background:linear-gradient(90deg,var(--pri),var(--pri-l))}
+.pf--g{background:linear-gradient(90deg,var(--grn),var(--grn-l))}
+
+/* === FACTOR ROWS === */
+.fr{display:flex;align-items:center;gap:clamp(4px,.6vw,10px);
+  padding:clamp(2px,.4vh,5px) clamp(4px,.6vw,8px);border-radius:4px;margin-bottom:2px;
+  background:rgba(255,255,255,.015);font-size:clamp(8px,1vh,11px)}
+.fd{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.fn{font-weight:700;min-width:clamp(60px,7vw,100px);text-transform:uppercase;letter-spacing:.03em}
+.fv{font-weight:600;min-width:clamp(40px,5vw,65px)}
+.fx{color:var(--t2)}
+
+/* === BET CARDS === */
+.bc{background:var(--card);border:1px solid var(--bdr);border-radius:6px;
+  padding:clamp(4px,.6vh,8px) clamp(5px,.7vw,10px);margin-bottom:clamp(3px,.4vh,6px);border-left:3px solid var(--bdr)}
+.bc--best{border-left-color:var(--grn)}
+.bc--prime{border-left-color:var(--pri)}
+.bc-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.bc-tp{font-size:clamp(8px,.9vh,10px);font-weight:700;color:var(--pri);text-transform:uppercase;letter-spacing:.4px}
+.bc-hr{font-size:clamp(9px,1.1vh,12px);font-weight:600;margin-bottom:2px}
+.bc-dt{font-size:clamp(8px,1vh,11px);color:var(--t2)}
+.bc-vd{font-size:clamp(8px,.95vh,10px);font-weight:600}
+.bch{font-size:clamp(8px,.9vh,10px);font-weight:700;color:var(--t3);text-transform:uppercase;
+  letter-spacing:.04em;padding-bottom:clamp(3px,.5vh,6px);border-bottom:1px solid var(--bdr);margin-bottom:clamp(3px,.5vh,6px)}
+
+/* === WINDOW SCRIPT === */
+.ws{background:var(--card);border:2px solid var(--pri);border-radius:7px;
+  padding:clamp(6px,1vh,14px) clamp(8px,1.2vw,18px);position:relative;overflow:hidden}
+.ws::before{content:'';position:absolute;inset:0;background:var(--pri-m);pointer-events:none}
+.ws-l{font-size:clamp(7px,.8vh,9px);font-weight:700;color:var(--pri);letter-spacing:.06em;
+  text-transform:uppercase;margin-bottom:3px;position:relative}
+.ws-t{font-size:clamp(11px,2vh,18px);font-weight:700;color:var(--t1);
+  font-family:'SF Mono','Fira Code','Cascadia Code','Consolas',monospace;letter-spacing:.5px;position:relative}
+
+/* === CONTROLS === */
+.cb{background:var(--card);border:1px solid var(--bdr);border-radius:6px;
+  padding:clamp(4px,.6vh,8px) clamp(6px,.8vw,12px);display:flex;align-items:flex-end;gap:clamp(6px,1vw,12px);flex-wrap:wrap}
+.cg{display:flex;flex-direction:column;gap:2px}
+.cl{font-size:clamp(7px,.8vh,9px);font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.04em}
+.ci{background:var(--base);border:2px solid var(--pri);border-radius:4px;color:var(--t1);
+  font-size:clamp(9px,1.1vh,12px);font-weight:600;padding:3px 6px;width:40px;text-align:center;font-family:inherit}
+.cp{display:flex;gap:1px}
+.cpl{background:var(--elev);border:1px solid var(--bdr);border-radius:3px;color:var(--t2);
+  font-size:clamp(8px,.95vh,11px);font-weight:600;padding:3px 6px;text-align:center;font-family:inherit;min-width:24px}
+.cpl.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.cpl.ony{background:var(--yel);color:#000;border-color:var(--yel)}
+.cact{background:var(--pri);color:#fff;border:none;border-radius:4px;
+  font-size:clamp(9px,1vh,11px);font-weight:700;padding:4px 12px;font-family:inherit}
+.csec{background:transparent;color:var(--pri);border:1px solid var(--pri);border-radius:4px;
+  font-size:clamp(9px,1vh,11px);font-weight:600;padding:3px 10px;font-family:inherit}
+
+/* === UTIL BAR === */
+.ub{background:var(--card);border:1px solid var(--bdr);border-radius:6px;padding:clamp(4px,.5vh,8px) clamp(6px,.8vw,12px)}
+.ub-r{display:flex;justify-content:space-between;margin-bottom:3px}
+.ub-l{font-size:clamp(7px,.8vh,9px);font-weight:700;color:var(--t3);letter-spacing:.04em;text-transform:uppercase}
+.ub-v{font-size:clamp(9px,1vh,11px);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* === TYPE CARDS === */
+.tc{background:var(--card);border:1px solid var(--bdr);border-radius:8px;
+  padding:clamp(8px,1.2vh,16px);position:relative;overflow:hidden}
+.tc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.tc--g::before{background:var(--grn)}
+.tc--y::before{background:var(--yel)}
+.tc--t::before{background:var(--pri)}
+.tc-lb{font-size:clamp(16px,3vh,24px);font-weight:800;margin-bottom:2px}
+.tc-tg{font-size:clamp(10px,1.2vh,13px);color:var(--t2);margin-bottom:clamp(4px,.7vh,10px);line-height:1.3}
+.tc-ex{background:var(--elev);border:1px solid var(--bdr);border-radius:4px;
+  padding:clamp(4px,.5vh,7px) clamp(5px,.6vw,8px);margin-bottom:clamp(3px,.5vh,6px);font-size:clamp(9px,1vh,11px)}
+.tc-dt{font-size:clamp(9px,1vh,11px);color:var(--t3);margin-bottom:2px;line-height:1.3}
+.tc-rk{font-size:clamp(9px,1vh,11px);color:var(--t2);margin-top:clamp(4px,.6vh,8px);line-height:1.4}
+
+/* === EXOTICS === */
+.ex{background:var(--card);border:1px solid var(--bdr);border-radius:8px;
+  padding:clamp(6px,1vh,14px) clamp(8px,1.2vw,18px);margin-bottom:clamp(4px,.7vh,10px)}
+.ex-tt{font-size:clamp(12px,1.6vh,16px);font-weight:800;color:var(--pri);margin-bottom:1px}
+.ex-ds{font-size:clamp(9px,1.1vh,12px);color:var(--t2);margin-bottom:clamp(4px,.7vh,10px)}
+.exg{display:grid;grid-template-columns:1fr 1fr;gap:clamp(4px,.6vw,8px)}
+.exv{background:var(--elev);border:1px solid var(--bdr);border-radius:5px;padding:clamp(4px,.7vh,10px)}
+.exv-t{font-size:clamp(8px,.95vh,10px);font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px}
+.exv-d{font-size:clamp(8px,.95vh,10px);color:var(--t2);line-height:1.35;margin-bottom:2px}
+.exv-e{font-size:clamp(8px,.95vh,10px);font-weight:500;margin-bottom:2px}
+.exv-c{font-size:clamp(7px,.85vh,9px);color:var(--t3)}
+
+/* === HIGHLIGHT === */
+.hb{background:var(--pri-m);border:1px solid rgba(25,171,181,.25);border-radius:6px;
+  padding:clamp(4px,.7vh,10px) clamp(6px,1vw,14px);font-size:clamp(9px,1.05vh,11px);color:var(--t2);line-height:1.5}
+
+/* === SCRIPT GRID === */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:clamp(4px,.5vh,6px)}
+.si{background:var(--card);border:1px solid var(--bdr);border-radius:6px;padding:clamp(4px,.6vh,8px) clamp(5px,.7vw,10px)}
+.ss2{font-size:clamp(10px,1.2vh,13px);font-weight:700;font-family:'SF Mono','Fira Code','Cascadia Code','Consolas',monospace;margin-bottom:2px}
+.sp{font-size:clamp(8px,.95vh,10px);color:var(--t3);font-style:italic}
+
+/* === VERIFIED === */
+.vb{display:inline-flex;align-items:center;gap:4px;background:var(--grn-m);border:1px solid rgba(34,197,94,.3);
+  border-radius:4px;padding:3px 8px;font-size:clamp(8px,.95vh,10px);font-weight:700;color:var(--grn)}
+
+/* === HERO === */
+.hbig{font-size:clamp(14px,2.4vh,22px);font-weight:800;line-height:1.25;margin-bottom:clamp(4px,.8vh,10px);letter-spacing:-.02em}
+.hbig em{font-style:normal;color:var(--pri)}
+.hp{font-size:clamp(10px,1.2vh,13px);color:var(--t2);line-height:1.6;max-width:42vw}
+
+/* === FINAL === */
+.fl{text-align:center;font-size:clamp(11px,1.6vh,16px);font-weight:700;color:var(--t2);
+  margin-top:auto;padding-top:clamp(4px,.6vh,8px);border-top:1px solid var(--bdr)}
+
+@media(max-width:1100px){
+  .g2,.g21{grid-template-columns:1fr}
+  .g3{grid-template-columns:1fr 1fr}
+  .g4{grid-template-columns:1fr 1fr}
+}
+@media(max-width:768px){
+  .g3,.g4{grid-template-columns:1fr}
+  .cog,.exg,.sg{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="top-logo">F</div>
+  <span class="top-name">Furlong</span>
+  <div class="top-sep"></div>
+  <span class="top-ctx"><b>Platform Overview</b> &middot; Presentation</span>
+  <div class="top-r"><button class="btn-x" id="bx">&#10005; Back to Furlong</button></div>
+</div>
+
+<div class="bot">
+  <button class="btn-bk gone" id="bb">&#8592; BACK</button>
+  <div class="nav-mid"><span class="ctr" id="ctr">1 / 8</span><div class="dots" id="dts"></div></div>
+  <button class="btn-nx" id="bn">NEXT &#8594;</button>
+</div>
+
+<div class="rst" id="rst"><div class="rst-ck">&#10003;</div><h2>You're all set</h2><p>Restarting&hellip;</p></div>
+
+<div class="deck" id="deck">
+
+<!-- S1 -->
+<div class="S on" data-s="1">
+  <div class="sh">INTRODUCING FURLONG</div>
+  <div class="st">Finding value the public misses.</div>
+  <div class="ss">A 336-point scoring engine that identifies undervalued horses, builds optimized tickets, and tells you exactly what to say at the window &mdash; all offline.</div>
+  <div class="g2 f1" style="min-height:0">
+    <div style="display:flex;flex-direction:column;overflow:hidden">
+      <div class="hbig">We don't predict who wins.<br>We find horses the public is <em>undervaluing</em>.</div>
+      <p class="hp" style="margin-bottom:clamp(4px,.8vh,12px)">Every bet at the track is priced by the crowd. When the crowd is wrong, Furlong finds those horses and builds smart tickets to capitalize. No other platform combines multi-factor scoring, live value detection, and automated ticket construction in one offline tool.</p>
+      <div style="font-size:clamp(7px,.85vh,9px);font-weight:700;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:clamp(2px,.4vh,6px)">WHERE FURLONG RANKS</div>
+      <div class="rl f1" style="overflow:hidden">
+        <div class="ri"><div class="rp">1</div><div class="rb"><div class="rn">Ragozin / Thoro-Graph <span class="rt rt--a">30+ YRS</span></div><div class="rd">Decades of proprietary speed figures. Unmatched depth &mdash; but no value detection, no tickets, years to learn.</div></div></div>
+        <div class="ri"><div class="rp">2</div><div class="rb"><div class="rn">TimeformUS <span class="rt rt--a">INDUSTRY STD</span></div><div class="rd">Gold-standard pace figures. Trusted by pros &mdash; but manual interpretation only, no betting output.</div></div></div>
+        <div class="ri"><div class="rp">3</div><div class="rb"><div class="rn">DRF Formulator <span class="rt rt--a">BIGGEST DB</span></div><div class="rd">Biggest past-performance database. But raw data only &mdash; no scoring, no value signals. You do all the work.</div></div></div>
+        <div class="rdiv">FURLONG</div>
+        <div class="ri ri--us"><div class="rp">4</div><div class="rb"><div class="rn">Furlong <span class="rt rt--u">FULL STACK</span></div><div class="rd">336-point model. Live edge detection. Automated ticket builder with Kelly sizing and window scripts. 100% offline. Raw data to printed ticket in under 60 seconds.</div></div></div>
+        <div class="rdiv">THE REST</div>
+        <div class="ri"><div class="rp">5</div><div class="rb"><div class="rn">BrisNet / Equibase <span class="rt rt--b">DATA ONLY</span></div><div class="rd">Reliable data, zero analysis. No scoring, no value detection, no ticket output.</div></div></div>
+        <div class="ri"><div class="rp">6</div><div class="rb"><div class="rn">Tout Services <span class="rt rt--b">BLACK BOX</span></div><div class="rd">Pay for picks, no transparency. No model access, no factor breakdown.</div></div></div>
+        <div class="ri"><div class="rp">7</div><div class="rb"><div class="rn">Free Tools <span class="rt rt--b">SURFACE</span></div><div class="rd">Basic figures and consensus picks. No edge calculation, no ticket building.</div></div></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;overflow:hidden">
+      <div class="ep"><div class="ep-t"><i style="background:var(--pri-m);color:var(--pri)">&#9670;</i> 336-Point Scoring Engine</div><div class="ep-d">Every horse scored across 15 weighted categories &mdash; speed, class, form, connections, pace, post position, equipment. Pure math, no gut calls.</div></div>
+      <div class="ep"><div class="ep-t"><i style="background:var(--grn-m);color:var(--grn)">&#9650;</i> Live Value Detection</div><div class="ep-d">Edge % compares our fair-odds model against the crowd. Positive edge = the public is sleeping. This signal is unique to Furlong.</div></div>
+      <div class="ep"><div class="ep-t"><i style="background:var(--yel-m);color:var(--yel)">&#9724;</i> Ticket Builder + Kelly Sizing</div><div class="ep-d">Set a budget, pick a risk mode. Furlong allocates across Win, Exacta, Trifecta, Superfecta. Every ticket comes with a window script.</div></div>
+      <div class="ep"><div class="ep-t"><i style="background:var(--red-m);color:var(--red)">&#9679;</i> Zero-Dependency Offline</div><div class="ep-d">Runs entirely on-device. No server calls, no wifi, no subscription gating. Any DRF file, any North American track, full capability offline.</div></div>
+      <div class="ep"><div class="ep-t"><i style="background:rgba(255,255,255,.05);color:var(--t2)">&#9733;</i> Transparent Methodology</div><div class="ep-d">Every score decomposed into factors. Every recommendation explainable. Every ticket verified against program numbers. Nothing is a black box.</div></div>
+    </div>
+  </div>
+  <div class="sf"><span>Runs 100% offline at the track</span><span>Loads any DRF file, any North American track</span><span>Built for real bettors</span></div>
+</div>
+
+<!-- S2 -->
+<div class="S" data-s="2">
+  <div class="sh">RACE ANALYSIS</div>
+  <div class="st">Your command center for every race.</div>
+  <div class="ss">Seven horses. Eight columns. Everything at a glance.</div>
+  <table class="tbl" style="margin-bottom:clamp(4px,.8vh,12px)">
+    <thead><tr><th>HORSE</th><th style="text-align:center">SCORE</th><th>FIELD LABEL</th><th style="text-align:center">SHOULD BE</th><th style="text-align:center">ML</th><th style="text-align:center">EDGE %</th><th>RATING</th><th style="text-align:center">PICK</th></tr></thead>
+    <tbody>
+      <tr><td style="font-weight:700">Nick</td><td style="text-align:center;font-weight:700">241</td><td><span class="b b--best">Top Pick</span></td><td style="text-align:center;font-weight:600">3-1</td><td style="text-align:center">5-2</td><td style="text-align:center" class="epos">+18%</td><td><span class="b b--best">BEST BET</span></td><td style="text-align:center;font-weight:700;color:var(--grn)">1st</td></tr>
+      <tr><td style="font-weight:700">Roger</td><td style="text-align:center;font-weight:700">218</td><td><span class="b b--great">Contender</span></td><td style="text-align:center;font-weight:600">4-1</td><td style="text-align:center">7-2</td><td style="text-align:center" class="epos">+12%</td><td><span class="b b--great">GREAT VALUE</span></td><td style="text-align:center;font-weight:700">2nd</td></tr>
+      <tr><td style="font-weight:700">Brock</td><td style="text-align:center;font-weight:700">196</td><td><span class="b b--toss">In the Mix</span></td><td style="text-align:center;font-weight:600">6-1</td><td style="text-align:center">5-1</td><td style="text-align:center" class="epos">+8%</td><td><span class="b b--toss">TOSS UP</span></td><td style="text-align:center;font-weight:700">3rd</td></tr>
+      <tr><td style="font-weight:700">Katie</td><td style="text-align:center;font-weight:700">174</td><td><span class="b b--mix">In the Mix</span></td><td style="text-align:center;font-weight:600">8-1</td><td style="text-align:center">6-1</td><td style="text-align:center" class="eneg">-4%</td><td><span class="b b--mix">IN THE MIX</span></td><td style="text-align:center">4th</td></tr>
+      <tr><td style="font-weight:700">Jeremy</td><td style="text-align:center;font-weight:700">161</td><td><span class="b b--mix">Longshot</span></td><td style="text-align:center;font-weight:600">12-1</td><td style="text-align:center">10-1</td><td style="text-align:center" class="eneg">-6%</td><td><span class="b b--mix">IN THE MIX</span></td><td style="text-align:center">5th</td></tr>
+      <tr><td style="font-weight:700">Danny</td><td style="text-align:center;font-weight:700">143</td><td><span class="b b--no">Longshot</span></td><td style="text-align:center;font-weight:600">15-1</td><td style="text-align:center">12-1</td><td style="text-align:center" class="eneg">-12%</td><td><span class="b b--no">NO VALUE</span></td><td style="text-align:center">6th</td></tr>
+      <tr><td style="font-weight:700">Ellie</td><td style="text-align:center;font-weight:700">128</td><td><span class="b b--no">Long Odds</span></td><td style="text-align:center;font-weight:600">20-1</td><td style="text-align:center">15-1</td><td style="text-align:center" class="eneg">-18%</td><td><span class="b b--no">NO VALUE</span></td><td style="text-align:center">7th</td></tr>
+    </tbody>
+  </table>
+  <div class="cog" style="margin-bottom:clamp(4px,.6vh,8px)">
+    <div class="co"><span class="co-d"></span><div><div class="co-l">SCORE</div><div class="co-t">336-point scale. Higher = stronger horse.</div></div></div>
+    <div class="co"><span class="co-d"></span><div><div class="co-l">EDGE %</div><div class="co-t">Positive = public underpricing. Your value signal.</div></div></div>
+    <div class="co"><span class="co-d"></span><div><div class="co-l">SHOULD BE</div><div class="co-t">Furlong's fair odds estimate.</div></div></div>
+    <div class="co"><span class="co-d"></span><div><div class="co-l">RATING</div><div class="co-t">Bottom line: score + value combined.</div></div></div>
+    <div class="co"><span class="co-d"></span><div><div class="co-l">OUR PICK</div><div class="co-t">Projected finish from the model.</div></div></div>
+  </div>
+  <div class="sf"><span>Green EDGE = public sleeping on this horse</span><span>BEST BET + positive edge = highest priority</span><span>Sort any column by clicking the header</span></div>
+</div>
+
+<!-- S3 -->
+<div class="S" data-s="3">
+  <div class="sh">THE HORSE CARD</div>
+  <div class="st">Drill into any horse for the full picture.</div>
+  <div class="ss">Two zones. One answer. Should you bet this horse right now?</div>
+  <div class="g21 f1" style="min-height:0">
+    <div style="display:flex;flex-direction:column;overflow:hidden">
+      <div class="zc zc--t"><div class="zl zl--t">HORSE QUALITY<span style="margin-left:auto;display:flex;align-items:center;gap:3px;font-size:clamp(7px,.85vh,10px);color:var(--grn)"><span style="width:5px;height:5px;border-radius:50%;background:var(--grn);display:inline-block"></span> Strong Data</span></div>
+        <div style="display:flex;align-items:baseline;gap:4px"><span style="font-size:clamp(20px,3.5vh,32px);font-weight:800;letter-spacing:-.02em">224</span><span style="font-size:clamp(10px,1.3vh,14px);color:var(--t3)">/ 336</span><span style="font-size:clamp(9px,1.1vh,12px);color:var(--t2);font-weight:600;margin-left:3px">67%</span></div>
+        <div class="pb"><div class="pf pf--t" style="width:67%"></div></div>
+        <div style="margin-top:4px"><span class="b b--great">Contender</span></div>
+      </div>
+      <div class="zc zc--y"><div class="zl zl--y">BETTING VALUE</div>
+        <div style="font-size:clamp(14px,2.2vh,20px);font-weight:800;color:var(--pri);margin-bottom:2px">GREAT VALUE</div>
+        <div style="font-size:clamp(9px,1vh,11px);color:var(--t2);margin-bottom:4px">Public is undervaluing this horse</div>
+        <div style="font-size:clamp(12px,1.6vh,16px);font-weight:800;color:var(--grn)">Edge: +14%</div>
+      </div>
+      <div style="font-size:clamp(7px,.8vh,9px);font-weight:700;color:var(--t3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:clamp(3px,.5vh,6px)">FACTOR BREAKDOWN</div>
+      <div class="fr"><span class="fd" style="background:var(--grn)"></span><span class="fn">SPEED</span><span class="fv" style="color:var(--grn)">Strength</span><span class="fx">Consistently competitive figures</span></div>
+      <div class="fr"><span class="fd" style="background:var(--grn)"></span><span class="fn">CLASS</span><span class="fv" style="color:var(--grn)">Strength</span><span class="fx">Fits this level well</span></div>
+      <div class="fr"><span class="fd" style="background:var(--yel)"></span><span class="fn">CONNECTIONS</span><span class="fv" style="color:var(--yel)">Average</span><span class="fx">Trainer/jockey stats are solid</span></div>
+      <div class="fr"><span class="fd" style="background:var(--red)"></span><span class="fn">FORM</span><span class="fv" style="color:var(--red)">Caution</span><span class="fx">Last race was below par</span></div>
+    </div>
+    <div style="display:flex;flex-direction:column;overflow:hidden">
+      <div class="an"><div class="an-l">Zone 1: Horse Quality</div><div class="an-t">How good is this horse? Scored across 15 categories. This number doesn't change with odds.</div></div>
+      <div class="an"><div class="an-l">Zone 2: Betting Value</div><div class="an-t">Worth betting RIGHT NOW at current odds? This is where the money is.</div></div>
+      <div class="an"><div class="an-l">"Great Value"</div><div class="an-t">Most important signal on the card. The crowd has this horse priced wrong.</div></div>
+      <div class="an"><div class="an-l">Factor Breakdown</div><div class="an-t">Green = strength, yellow = average, red = caution.</div></div>
+    </div>
+  </div>
+  <div class="sf"><span>Tap any horse row to expand</span><span>Factor scores never change &mdash; only value shifts</span><span>DATA QUALITY warns when model has limited info</span></div>
+</div>
+
+<!-- S4 -->
+<div class="S" data-s="4">
+  <div class="sh">TOP BETS</div>
+  <div class="st">Every playable bet, ranked and ready.</div>
+  <div class="ss">Four bet types. One screen. No math required.</div>
+  <div class="g4 f1" style="min-height:0">
+    <div><div class="bch">WIN / PLACE / SHOW</div>
+      <div class="bc bc--best"><div class="bc-h"><span class="bc-tp">WIN &mdash; CASEY</span><span class="b b--best">BEST BET</span></div><div class="bc-dt">Cost: $5 &middot; Kelly: $12</div><div class="bc-vd" style="color:var(--grn);margin-top:3px">Model loves this one</div></div>
+      <div class="bc"><div class="bc-tp">WIN &mdash; SHAUN</div><div class="bc-dt" style="margin-top:2px">Cost: $5</div><div class="bc-vd" style="color:var(--t2);margin-top:3px">Reasonable shot</div></div>
+    </div>
+    <div><div class="bch">EXACTA</div>
+      <div class="bc bc--prime"><div class="bc-h"><span class="bc-tp">EXACTA BOX 2</span><span class="b b--prime">PRIME VALUE</span></div><div class="bc-hr">Casey + Angelina</div><div class="bc-dt">Cost: $10</div><div class="bc-vd" style="color:var(--pri);margin-top:3px">Numbers back this play</div></div>
+      <div class="bc"><div class="bc-tp">EXACTA BOX 3</div><div class="bc-hr">Casey + Shaun + Angelina</div><div class="bc-dt">Cost: $30</div><div class="bc-vd" style="color:var(--t2);margin-top:3px">Good coverage</div></div>
+    </div>
+    <div><div class="bch">TRIFECTA</div>
+      <div class="bc bc--prime"><div class="bc-tp">TRIFECTA BOX 3</div><div class="bc-hr">Casey + Angelina + Brenda</div><div class="bc-dt">Cost: $6</div><div class="bc-vd" style="color:var(--pri);margin-top:3px">Strong case here</div></div>
+      <div class="bc"><div class="bc-tp">TRIFECTA BOX 4</div><div class="bc-hr">Casey + Shaun + Angelina + Brenda</div><div class="bc-dt">Cost: $24</div><div class="bc-vd" style="color:var(--t2);margin-top:3px">Solid spread</div></div>
+    </div>
+    <div><div class="bch">SUPERFECTA</div>
+      <div class="bc"><div class="bc-tp">SUPERFECTA BOX 4</div><div class="bc-hr">Casey + Shaun + Angelina + Brenda</div><div class="bc-dt">Cost: $24</div><div class="bc-vd" style="color:var(--t2);margin-top:3px">Worth a look</div></div>
+      <div class="bc"><div class="bc-tp">SUPERFECTA BOX 5</div><div class="bc-hr">Casey + Shaun + Angelina + Brenda + Nick</div><div class="bc-dt">Cost: $120</div><div class="bc-vd" style="color:var(--t3);margin-top:3px">Roll the dice</div></div>
+    </div>
+  </div>
+  <div class="cog" style="margin-bottom:clamp(3px,.5vh,6px)">
+    <div class="co"><span class="co-d"></span><div><div class="co-l">BEST BET</div><div class="co-t">Highest score + best value.</div></div></div>
+    <div class="co"><span class="co-d"></span><div><div class="co-l">Kelly</div><div class="co-t">Suggested bet size from bankroll.</div></div></div>
+    <div class="co"><span class="co-d"></span><div><div class="co-l">Columns</div><div class="co-t">Four bet types, one screen.</div></div></div>
+    <div class="co"><span class="co-d"></span><div><div class="co-l">Confidence</div><div class="co-t">Plain English from the model.</div></div></div>
+  </div>
+  <div class="sf"><span>Sort by confidence, EV, edge, or cost</span><span>Base amount scales all bets</span><span>Value toggle filters positive-edge only</span></div>
+</div>
+
+<!-- S5 -->
+<div class="S" data-s="5">
+  <div class="sh">BUILD MY TICKET</div>
+  <div class="st">Set a budget. Get a ticket. Walk to the window.</div>
+  <div class="ss">Furlong optimizes your bankroll across the best available plays.</div>
+  <div class="g21 f1" style="min-height:0">
+    <div style="display:flex;flex-direction:column;overflow:hidden">
+      <div class="cb" style="margin-bottom:clamp(4px,.6vh,8px)">
+        <div class="cg"><span class="cl">Budget</span><div style="display:flex;align-items:center;gap:2px"><span style="color:var(--t3);font-size:12px">$</span><span class="ci">40</span></div></div>
+        <div class="cg"><span class="cl">Bets</span><div class="cp"><span class="cpl">1</span><span class="cpl">2</span><span class="cpl on">3</span><span class="cpl">4</span><span class="cpl">5</span></div></div>
+        <div class="cg"><span class="cl">Mode</span><div class="cp"><span class="cpl">Cons</span><span class="cpl ony">Mod</span><span class="cpl">Aggr</span></div></div>
+        <div class="cg" style="margin-left:auto"><span class="cl">&nbsp;</span><div style="display:flex;gap:4px"><span class="cact">Build</span><span class="csec">Surprise</span></div></div>
+      </div>
+      <div class="ub" style="margin-bottom:clamp(4px,.6vh,8px)"><div class="ub-r"><span class="ub-l">Budget Utilization</span><span class="ub-v">$38 of $40 &middot; 95%</span></div><div class="pb"><div class="pf pf--g" style="width:95%"></div></div></div>
+      <div style="font-size:clamp(7px,.8vh,9px);font-weight:700;color:var(--t3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:clamp(3px,.4vh,6px)">Your Optimized Ticket</div>
+      <div class="bc bc--prime"><div class="bc-h"><span class="bc-tp">TRIFECTA BOX 3</span><span class="bc-vd" style="color:var(--pri)">Numbers back this play</span></div><div class="bc-hr">Roger + Mattagio + Katie</div><div class="bc-dt">Cost: $18</div><div class="ws" style="margin-top:6px;padding:5px 10px"><div class="ws-l">SAY AT THE WINDOW</div><div class="ws-t" style="font-size:clamp(10px,1.3vh,13px)">$3 TRIFECTA BOX, 2-4-6</div></div></div>
+      <div class="bc bc--best"><div class="bc-h"><span class="bc-tp">EXACTA BOX 2</span><span class="bc-vd" style="color:var(--grn)">Model loves this one</span></div><div class="bc-hr">Roger + Mattagio</div><div class="bc-dt">Cost: $20</div><div class="ws" style="margin-top:6px;padding:5px 10px"><div class="ws-l">SAY AT THE WINDOW</div><div class="ws-t" style="font-size:clamp(10px,1.3vh,13px)">$10 EXACTA BOX, 2-4</div></div></div>
+      <div class="vb" style="margin-top:4px">&#10003; Ticket Verified</div>
+    </div>
+    <div style="display:flex;flex-direction:column;overflow:hidden">
+      <div class="an"><div class="an-l">Budget Bar</div><div class="an-t">Uses as much of your budget as possible &mdash; no waste.</div></div>
+      <div class="an"><div class="an-l">Risk Mode</div><div class="an-t">Conservative = high probability. Aggressive = max upside.</div></div>
+      <div class="an"><div class="an-l">SAY AT THE WINDOW</div><div class="an-t">Read this verbatim to the teller. That's it.</div></div>
+      <div class="an"><div class="an-l">Ticket Verified</div><div class="an-t">Every horse number cross-referenced against the program.</div></div>
+      <div class="an"><div class="an-l">Surprise Me</div><div class="an-t">Random ticket within your budget and mode.</div></div>
+    </div>
+  </div>
+  <div class="sf"><span>Base amounts auto-scale to fill budget</span><span>Bet count grays out when budget can't support</span><span>Unlock tip shows how much more you need</span></div>
+</div>
+
+<!-- S6 -->
+<div class="S" data-s="6">
+  <div class="sh">THE BASICS</div>
+  <div class="st">Win &middot; Place &middot; Show</div>
+  <div class="ss">The simplest bets at the track. Start here.</div>
+  <div class="g3 f1" style="min-height:0">
+    <div class="tc tc--g"><div class="tc-lb" style="color:var(--grn)">WIN</div><div class="tc-tg">Your horse finishes 1st.</div>
+      <div class="tc-ex"><div style="font-weight:600">$5 WIN on BROCK (#3)</div><div style="color:var(--t2);font-size:clamp(8px,1vh,10px);margin-top:2px">Pays if #3 wins. Nothing otherwise.</div></div>
+      <div class="ws" style="padding:5px 8px;margin-bottom:6px"><div class="ws-l" style="font-size:clamp(6px,.7vh,8px)">AT THE WINDOW</div><div class="ws-t" style="font-size:clamp(9px,1.1vh,12px)">$5 WIN on number 3</div></div>
+      <div class="tc-dt">$2 minimum, bet any amount</div>
+      <div class="tc-rk">&#8226; Hardest to hit &middot; Biggest payout</div>
+    </div>
+    <div class="tc tc--y"><div class="tc-lb" style="color:var(--yel)">PLACE</div><div class="tc-tg">Your horse finishes 1st or 2nd.</div>
+      <div class="tc-ex"><div style="font-weight:600">$5 PLACE on BROCK (#3)</div><div style="color:var(--t2);font-size:clamp(8px,1vh,10px);margin-top:2px">Pays if #3 finishes top 2.</div></div>
+      <div class="ws" style="padding:5px 8px;margin-bottom:6px"><div class="ws-l" style="font-size:clamp(6px,.7vh,8px)">AT THE WINDOW</div><div class="ws-t" style="font-size:clamp(9px,1.1vh,12px)">$5 PLACE on number 3</div></div>
+      <div class="tc-dt">$2 minimum</div>
+      <div class="tc-rk">&#8226; Easier than Win &middot; Smaller payout</div>
+    </div>
+    <div class="tc tc--t"><div class="tc-lb" style="color:var(--pri)">SHOW</div><div class="tc-tg">Your horse finishes top 3.</div>
+      <div class="tc-ex"><div style="font-weight:600">$5 SHOW on BROCK (#3)</div><div style="color:var(--t2);font-size:clamp(8px,1vh,10px);margin-top:2px">Pays if #3 finishes top 3.</div></div>
+      <div class="ws" style="padding:5px 8px;margin-bottom:6px"><div class="ws-l" style="font-size:clamp(6px,.7vh,8px)">AT THE WINDOW</div><div class="ws-t" style="font-size:clamp(9px,1.1vh,12px)">$5 SHOW on number 3</div></div>
+      <div class="tc-dt">$2 minimum</div>
+      <div class="tc-rk">&#8226; Easiest to hit &middot; Smallest payout</div>
+    </div>
+  </div>
+  <div class="hb" style="margin-bottom:clamp(3px,.5vh,6px)"><strong style="color:var(--pri)">The Value Play:</strong> +20% edge on a WIN bet means the crowd thinks 10-1 when the model says 6-1. That's where profit lives.</div>
+  <div class="sf"><span>Scores for Win, Place, Show separately</span><span>Kelly sizing = smart bet amount</span><span>BEST BET = highest priority play</span></div>
+</div>
+
+<!-- S7 -->
+<div class="S" data-s="7">
+  <div class="sh">THE EXOTICS</div>
+  <div class="st">Exactas, Trifectas &amp; Superfectas</div>
+  <div class="ss">Bigger payouts. More combinations. Still manageable.</div>
+  <div class="f1" style="display:flex;flex-direction:column;min-height:0;overflow:hidden">
+    <div class="ex"><div class="ex-tt">EXACTA</div><div class="ex-ds">Pick 1st and 2nd place finishers.</div>
+      <div class="exg"><div class="exv"><div class="exv-t">STRAIGHT</div><div class="exv-d">Exact order. A wins, B places.</div><div class="exv-e">$2 EXACTA &mdash; NICK over CASEY</div><div class="exv-c">$2 &middot; Harder &middot; Bigger payout</div></div>
+      <div class="exv"><div class="exv-t">BOX</div><div class="exv-d">Either order.</div><div class="exv-e">$2 EXACTA BOX &mdash; NICK + CASEY</div><div class="exv-c">$4 (2&times;$2) &middot; Box 3: $12 &middot; Box 4: $24</div></div></div>
+    </div>
+    <div class="ex"><div class="ex-tt">TRIFECTA</div><div class="ex-ds">Pick 1st, 2nd, and 3rd.</div>
+      <div class="exg"><div class="exv"><div class="exv-t">STRAIGHT</div><div class="exv-d">Exact order. Massive payout.</div><div class="exv-e">$1 TRI &mdash; NICK, CASEY, ROGER</div><div class="exv-c">Cost: $1</div></div>
+      <div class="exv"><div class="exv-t">BOX</div><div class="exv-d">Any order.</div><div class="exv-e">$1 TRI BOX &mdash; NICK + CASEY + ROGER</div><div class="exv-c">3: $6 &middot; 4: $24 &middot; 5: $60 &middot; 6: $120</div></div></div>
+    </div>
+    <div class="ex"><div class="ex-tt">SUPERFECTA</div><div class="ex-ds">Pick 1st through 4th.</div>
+      <div style="display:flex;gap:14px;font-size:clamp(9px,1.05vh,11px);color:var(--t2);font-weight:600;font-variant-numeric:tabular-nums"><span>BOX 4: $24</span><span>BOX 5: $120</span><span>BOX 6: $360</span></div>
+    </div>
+  </div>
+  <div class="sf"><span>BOX = coverage, STRAIGHT = precision</span><span>More horses = more combos = more cost</span><span>Build My Ticket handles the math</span></div>
+</div>
+
+<!-- S8 -->
+<div class="S" data-s="8">
+  <div class="sh">AT THE WINDOW</div>
+  <div class="st">Furlong writes the script. You just read it.</div>
+  <div class="ss">No memorization. No mental math. Just read the box.</div>
+  <div style="max-width:clamp(300px,36vw,460px);margin:0 auto clamp(6px,1.2vh,16px)">
+    <div class="ws" style="text-align:center;padding:clamp(8px,1.5vh,18px) clamp(12px,2vw,28px)"><div class="ws-l">SAY AT THE WINDOW</div><div class="ws-t" style="font-size:clamp(14px,2.8vh,26px);letter-spacing:1px">$3 TRIFECTA BOX, 4-7-2</div></div>
+    <div style="text-align:center;font-size:clamp(10px,1.2vh,13px);color:var(--t2);margin-top:clamp(4px,.6vh,8px);font-style:italic">"Three dollar Trifecta Box &mdash; horses four, seven, two &mdash; any order."</div>
+  </div>
+  <div class="g3" style="margin-bottom:clamp(6px,1vh,14px)">
+    <div class="scard scard--p" style="background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:clamp(6px,1vh,14px);position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--pri)"></div><div style="font-size:clamp(8px,.9vh,10px);font-weight:700;color:var(--pri);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">THE AMOUNT</div><div style="font-size:clamp(18px,3vh,28px);font-weight:800;margin-bottom:3px">$3</div><div style="font-size:clamp(9px,1vh,11px);color:var(--t2);line-height:1.4">Base bet per combination. Calculated from your budget.</div></div>
+    <div style="background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:clamp(6px,1vh,14px);position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--pri)"></div><div style="font-size:clamp(8px,.9vh,10px);font-weight:700;color:var(--pri);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">THE BET TYPE</div><div style="font-size:clamp(14px,2.2vh,20px);font-weight:800;margin-bottom:3px">TRIFECTA BOX</div><div style="font-size:clamp(9px,1vh,11px);color:var(--t2);line-height:1.4">Boxed = any order. Straight = exact order.</div></div>
+    <div style="background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:clamp(6px,1vh,14px);position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--pri)"></div><div style="font-size:clamp(8px,.9vh,10px);font-weight:700;color:var(--pri);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">THE HORSES</div><div style="font-size:clamp(18px,3vh,28px);font-weight:800;margin-bottom:3px">4-7-2</div><div style="font-size:clamp(9px,1vh,11px);color:var(--t2);line-height:1.4">Program numbers. Match exactly when ordering.</div></div>
+  </div>
+  <div style="font-size:clamp(7px,.8vh,9px);font-weight:700;color:var(--t3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:clamp(3px,.4vh,6px)">Common Window Scripts</div>
+  <div class="sg" style="margin-bottom:clamp(6px,1vh,12px)">
+    <div class="si"><div class="ss2">$5 WIN on number 3</div><div class="sp">Five dollar win bet on horse number three</div></div>
+    <div class="si"><div class="ss2">$2 EXACTA BOX, 1-4</div><div class="sp">Two dollar exacta box, horses one and four</div></div>
+    <div class="si"><div class="ss2">$1 TRIFECTA BOX, 3-7-5-2</div><div class="sp">One dollar trifecta box, four horses, any order</div></div>
+    <div class="si"><div class="ss2">$1 SUPER BOX, 2-4-6-8</div><div class="sp">One dollar superfecta box, four horses</div></div>
+  </div>
+  <div class="sf"><span>Teller may ask track + race &mdash; have your program</span><span>Min bets vary &mdash; Furlong defaults $1-$2</span><span>Build My Ticket generates every script</span></div>
+  <div class="fl">You built it. Furlong wrote it. Now go cash it.</div>
+</div>
+
+</div><!-- deck -->
+
+<script>
+!function(){
+  var c=1,T=8,S=document.querySelectorAll('.S'),
+  ctr=document.getElementById('ctr'),
+  bb=document.getElementById('bb'),
+  bn=document.getElementById('bn'),
+  bx=document.getElementById('bx'),
+  rst=document.getElementById('rst'),
+  dts=document.getElementById('dts'),
+  dk=document.getElementById('deck');
+
+  for(var i=0;i<T;i++){var d=document.createElement('div');d.className='dot';dts.appendChild(d)}
+  var dots=dts.querySelectorAll('.dot');
+
+  function go(n){
+    for(var i=0;i<S.length;i++)S[i].classList.remove('on');
+    S[n-1].classList.add('on');
+    ctr.textContent=n+' / '+T;
+    bb.classList.toggle('gone',n===1);
+    bn.textContent=n===T?'FINISH \u2713':'NEXT \u2192';
+    c=n;
+    for(i=0;i<dots.length;i++)dots[i].className=i===c-1?'dot on':i<c-1?'dot dn':'dot';
+  }
+
+  function fwd(){
+    if(c<T)go(c+1);
+    else{rst.classList.add('on');setTimeout(function(){rst.classList.remove('on');go(1)},1500)}
+  }
+  function bak(){if(c>1)go(c-1)}
+
+  // Click on deck = advance
+  dk.addEventListener('click',fwd);
+
+  // Nav buttons — stop propagation so they don't also trigger deck click
+  bn.addEventListener('click',function(e){e.stopPropagation();fwd()});
+  bb.addEventListener('click',function(e){e.stopPropagation();bak()});
+  bx.addEventListener('click',function(e){e.stopPropagation();window.close()});
+
+  // Stop topbar/botbar clicks from reaching deck
+  document.querySelector('.top').addEventListener('click',function(e){e.stopPropagation()});
+  document.querySelector('.bot').addEventListener('click',function(e){e.stopPropagation()});
+
+  // Keyboard
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();fwd()}
+    else if(e.key==='ArrowLeft'){e.preventDefault();bak()}
+    else if(e.key==='Escape')window.close()
+  });
+
+  go(1);
+}();
+</script>
+</body>
+</html>

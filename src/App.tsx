@@ -4,6 +4,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider, useToastContext } from './contexts/ToastContext';
 import { HelpCenter } from './components/help';
 import { DiagnosticsPage } from './components/diagnostics/DiagnosticsPage';
+import { Slideshow } from './components/Slideshow';
 import { useRaceState } from './hooks/useRaceState';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -19,7 +20,7 @@ import './styles/help.css';
 // ROUTE TYPES
 // ============================================================================
 
-type AppRoute = 'dashboard' | 'help' | 'diagnostics';
+type AppRoute = 'dashboard' | 'help' | 'diagnostics' | 'slideshow';
 
 const LS_SELECTED_RACE = 'furlong_selected_race';
 
@@ -56,6 +57,10 @@ function AppContent() {
 
   const navigateToDiagnostics = useCallback(() => {
     setCurrentRoute('diagnostics');
+  }, []);
+
+  const navigateToSlideshow = useCallback(() => {
+    setCurrentRoute('slideshow');
   }, []);
 
   // Session tracking - track start on mount and end on beforeunload
@@ -309,6 +314,11 @@ function AppContent() {
     );
   }
 
+  // Show slideshow
+  if (currentRoute === 'slideshow') {
+    return <Slideshow onBack={navigateToDashboard} />;
+  }
+
   // Show dashboard
   return (
     <ErrorBoundary onReset={handleFullReset}>
@@ -325,6 +335,7 @@ function AppContent() {
         onResetRace={handleReset}
         onResetAllRaces={handleResetAllRaces}
         onDiagnosticsClick={navigateToDiagnostics}
+        onSlideshowClick={navigateToSlideshow}
       />
     </ErrorBoundary>
   );
