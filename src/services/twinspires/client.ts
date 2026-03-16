@@ -66,6 +66,8 @@ export async function fetchTwinSpiresEntries(
 ): Promise<TwinSpiresEntry[]> {
   const url = buildEntriesUrl(trackCode, raceType, raceNumber);
 
+  logger.logInfo(`[TwinSpires] Fetching: ${url}`, { component: 'TwinSpiresClient' });
+
   let lastError: TwinSpiresError | null = null;
 
   // Attempt up to 2 times (initial + 1 retry)
