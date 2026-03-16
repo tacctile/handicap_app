@@ -69,7 +69,22 @@ export interface RaceStateActions {
   /** Initialize state from persisted data (for session restoration) */
   initializeFromPersisted: (state: PersistedRaceState) => void;
   /** Get current state for serialization (for session saving) */
-  getSerializableState: () => Pick<PersistedRaceState, 'scratches' | 'oddsOverrides' | 'trackCondition'>;
+  getSerializableState: () => Pick<
+    PersistedRaceState,
+    'scratches' | 'oddsOverrides' | 'trackCondition'
+  >;
+  /** Batch update odds for all horses in a race from live data. Triggers ONE recalculation. */
+  batchUpdateOdds: (
+    raceIndex: number,
+    oddsMap: Record<string, string>,
+    programToIndex: Map<string, number>
+  ) => void;
+  /** Batch set scratches for a race from live data. Only applies changes. Triggers ONE recalculation if changed. */
+  batchSetScratches: (
+    raceIndex: number,
+    scratchedPrograms: Set<string>,
+    programToIndex: Map<string, number>
+  ) => void;
 }
 
 export interface UseRaceStateReturn extends RaceState, RaceStateActions {
@@ -299,6 +314,81 @@ export function useRaceState(): UseRaceStateReturn {
     [triggerRecalculation]
   );
 
+  // Batch update odds from live data — applies all odds in one state update, triggers ONE recalculation
+  const batchUpdateOdds = useCallback(
+    (_raceIndex: number, oddsMap: Record<string, string>, programToIndex: Map<string, number>) => {
+      const changedIndices = new Set<number>();
+      const newOddsUpdate: OddsUpdate = {};
+      let hasAnyChange = false;
+
+      for (const [programNumber, newOdds] of Object.entries(oddsMap)) {
+        const horseIndex = programToIndex.get(programNumber);
+        if (horseIndex === undefined) continue;
+        newOddsUpdate[horseIndex] = newOdds;
+        changedIndices.add(horseIndex);
+      }
+
+      setUpdatedOdds((prev) => {
+        // Check if anything actually changed
+        for (const [idx, odds] of Object.entries(newOddsUpdate)) {
+          if (prev[Number(idx)] !== odds) {
+            hasAnyChange = true;
+            break;
+          }
+        }
+        if (!hasAnyChange) return prev;
+        return { ...prev, ...newOddsUpdate };
+      });
+
+      if (changedIndices.size > 0) {
+        setReactivityVersion((v) => v + 1);
+        triggerRecalculation(changedIndices, 'odds');
+      }
+    },
+    [triggerRecalculation]
+  );
+
+  // Batch set scratches from live data — only applies changes, triggers ONE recalculation if anything changed
+  const batchSetScratches = useCallback(
+    (_raceIndex: number, scratchedPrograms: Set<string>, programToIndex: Map<string, number>) => {
+      const changedIndices = new Set<number>();
+
+      setScratchedHorses((prev) => {
+        const next = new Set(prev);
+        let changed = false;
+
+        // Add newly scratched horses
+        for (const programNumber of scratchedPrograms) {
+          const horseIndex = programToIndex.get(programNumber);
+          if (horseIndex === undefined) continue;
+          if (!next.has(horseIndex)) {
+            next.add(horseIndex);
+            changedIndices.add(horseIndex);
+            changed = true;
+          }
+        }
+
+        // Remove horses that are no longer scratched (un-scratch)
+        for (const [programNumber, horseIndex] of programToIndex) {
+          if (!scratchedPrograms.has(programNumber) && next.has(horseIndex)) {
+            next.delete(horseIndex);
+            changedIndices.add(horseIndex);
+            changed = true;
+          }
+        }
+
+        if (!changed) return prev;
+        return next;
+      });
+
+      if (changedIndices.size > 0) {
+        setReactivityVersion((v) => v + 1);
+        triggerRecalculation(changedIndices, 'score');
+      }
+    },
+    [triggerRecalculation]
+  );
+
   // Store original odds when race data is loaded
   const storeOriginalOdds = useCallback((odds: Record<number, string>) => {
     setOriginalOdds(odds);
@@ -336,7 +426,10 @@ export function useRaceState(): UseRaceStateReturn {
   }, []);
 
   // Get current state for serialization (for session saving)
-  const getSerializableState = useCallback((): Pick<PersistedRaceState, 'scratches' | 'oddsOverrides' | 'trackCondition'> => {
+  const getSerializableState = useCallback((): Pick<
+    PersistedRaceState,
+    'scratches' | 'oddsOverrides' | 'trackCondition'
+  > => {
     return {
       scratches: Array.from(scratchedHorses),
       oddsOverrides: { ...updatedOdds },
@@ -397,6 +490,8 @@ export function useRaceState(): UseRaceStateReturn {
       clearChangeHighlights,
       initializeFromPersisted,
       getSerializableState,
+      batchUpdateOdds,
+      batchSetScratches,
       // Helpers
       isScratched,
       getOdds,
@@ -426,6 +521,8 @@ export function useRaceState(): UseRaceStateReturn {
       clearChangeHighlights,
       initializeFromPersisted,
       getSerializableState,
+      batchUpdateOdds,
+      batchSetScratches,
       isScratched,
       getOdds,
       hasOddsChanged,
