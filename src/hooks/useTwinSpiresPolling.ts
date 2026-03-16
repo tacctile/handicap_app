@@ -129,22 +129,12 @@ export function useTwinSpiresPolling(
    * Poll all races simultaneously using Promise.allSettled.
    */
   const pollAllRaces = useCallback(async () => {
-    console.log('[TS-DEBUG] pollAllRaces() called');
     const trackInfo = trackInfoRef.current;
     const currentParsedData = parsedDataRef.current;
-    console.log('[TS-DEBUG] trackInfoRef.current =', trackInfo);
-    console.log(
-      '[TS-DEBUG] parsedDataRef.current races count =',
-      currentParsedData?.races?.length ?? 'N/A (no parsedData)'
-    );
-    if (!trackInfo) {
-      console.log('[TS-DEBUG] EARLY EXIT: trackInfo is null');
-      return;
-    }
+    if (!trackInfo) return;
 
     const raceCount = currentParsedData.races.length;
     const signal = abortControllerRef.current?.signal;
-    console.log('[TS-DEBUG] raceCount =', raceCount, '| signal aborted =', signal?.aborted);
 
     if (raceCount === 0) {
       logger.logWarning('[TwinSpires] pollAllRaces called with 0 races — skipping', {
@@ -160,32 +150,22 @@ export function useTwinSpiresPolling(
       }
     );
 
-    console.log(`[TS-DEBUG] Creating fetch promises for ${raceCount} races`);
     const racePromises = Array.from({ length: raceCount }, (_, raceIndex) => {
       const race = currentParsedData.races[raceIndex];
       if (!race) {
-        console.log(`[TS-DEBUG] Race ${raceIndex} NOT FOUND in parsedData`);
         return Promise.reject(new Error(`Race ${raceIndex} not found`));
       }
       const raceNumber = race.header.raceNumber;
-      console.log(
-        `[TS-DEBUG] Fetching race ${raceIndex}: trackCode=${trackInfo.trackCode}, raceType=${trackInfo.raceType}, raceNumber=${raceNumber}`
-      );
 
       return fetchTwinSpiresEntries(
         trackInfo.trackCode,
         trackInfo.raceType,
         raceNumber,
         signal
-      ).then((entries) => {
-        console.log(`[TS-DEBUG] Race ${raceIndex} fetch RESOLVED: ${entries.length} entries`);
-        return { raceIndex, entries, raceNumber };
-      });
+      ).then((entries) => ({ raceIndex, entries, raceNumber }));
     });
 
-    console.log(`[TS-DEBUG] Awaiting Promise.allSettled for ${racePromises.length} promises`);
     const results = await Promise.allSettled(racePromises);
-    console.log(`[TS-DEBUG] Promise.allSettled completed: ${results.length} results`);
 
     // Check if we were aborted during the poll
     if (signal?.aborted) return;
@@ -193,10 +173,6 @@ export function useTwinSpiresPolling(
     let anySuccess = false;
 
     for (const result of results) {
-      console.log(
-        `[TS-DEBUG] Result status: ${result.status}`,
-        result.status === 'rejected' ? (result as PromiseRejectedResult).reason : ''
-      );
       if (result.status === 'fulfilled') {
         const { raceIndex, entries } = result.value;
 
@@ -252,10 +228,8 @@ export function useTwinSpiresPolling(
    */
   const connect = useCallback(
     (url: string) => {
-      console.log('[TS-DEBUG] connect() called with URL:', url);
       // Parse URL to extract track info
       const trackInfo = extractTrackInfoFromUrl(url);
-      console.log('[TS-DEBUG] extractTrackInfoFromUrl result:', trackInfo);
       if (!trackInfo) {
         logger.logWarning('[TwinSpires] Failed to parse URL', {
           component: 'TwinSpiresPolling',
@@ -269,7 +243,6 @@ export function useTwinSpiresPolling(
       cleanupPolling();
 
       const currentRaceCount = parsedDataRef.current.races.length;
-      console.log('[TS-DEBUG] parsedDataRef.current.races.length =', currentRaceCount);
       logger.logInfo(
         `[TwinSpires] Connecting: track=${trackInfo.trackCode}, type=${trackInfo.raceType}, races=${currentRaceCount}`,
         { component: 'TwinSpiresPolling' }
@@ -299,23 +272,16 @@ export function useTwinSpiresPolling(
       setError(null);
 
       // Initial poll immediately
-      console.log('[TS-DEBUG] Calling pollAllRaces() for initial poll');
       pollAllRaces()
         .then(() => {
-          console.log('[TS-DEBUG] pollAllRaces() resolved — setting up interval');
           // Set up interval for subsequent polls (only if not errored)
           if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
-            console.log('[TS-DEBUG] Starting poll interval (10s)');
             intervalRef.current = setInterval(() => {
-              console.log('[TS-DEBUG] Interval poll cycle firing');
               pollAllRaces();
             }, POLL_INTERVAL_MS);
-          } else {
-            console.log('[TS-DEBUG] NOT starting interval — abortController is null or aborted');
           }
         })
         .catch((err: unknown) => {
-          console.log('[TS-DEBUG] pollAllRaces() REJECTED:', err);
           const message = err instanceof Error ? err.message : 'Unknown polling error';
           logger.logError(
             err instanceof Error ? err : new Error(`[TwinSpires] Poll cycle failed: ${message}`),

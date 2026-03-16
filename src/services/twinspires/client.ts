@@ -66,7 +66,6 @@ export async function fetchTwinSpiresEntries(
 ): Promise<TwinSpiresEntry[]> {
   const url = buildEntriesUrl(trackCode, raceType, raceNumber);
 
-  console.log('[TS-DEBUG] fetchTwinSpiresEntries called — URL:', url);
   logger.logInfo(`[TwinSpires] Fetching: ${url}`, { component: 'TwinSpiresClient' });
 
   let lastError: TwinSpiresError | null = null;
@@ -82,19 +81,13 @@ export async function fetchTwinSpiresEntries(
 
     // Check if aborted before attempting
     if (signal?.aborted) {
-      console.log('[TS-DEBUG] Signal already aborted before attempt', attempt);
       throw createTwinSpiresError('NETWORK', 'Request aborted');
     }
 
     try {
-      console.log(`[TS-DEBUG] Attempt ${attempt}: calling fetchWithTimeout(${url})`);
       const entries = await fetchWithTimeout(url, signal);
-      console.log(
-        `[TS-DEBUG] Attempt ${attempt}: fetchWithTimeout resolved — ${entries.length} entries`
-      );
       return entries;
     } catch (error) {
-      console.log(`[TS-DEBUG] Attempt ${attempt}: fetchWithTimeout THREW:`, error);
       if (error && typeof error === 'object' && 'code' in error) {
         const tsError = error as TwinSpiresError;
         lastError = tsError;
@@ -131,7 +124,6 @@ async function fetchWithTimeout(
   externalSignal?.addEventListener('abort', onExternalAbort);
 
   try {
-    console.log('[TS-DEBUG] fetchWithTimeout: executing fetch() to', url);
     const response = await fetch(url, {
       method: 'GET',
       signal: controller.signal,
@@ -139,7 +131,6 @@ async function fetchWithTimeout(
         Accept: 'application/json',
       },
     });
-    console.log('[TS-DEBUG] fetchWithTimeout: response status =', response.status);
 
     if (!response.ok) {
       throw createTwinSpiresError('NETWORK', `HTTP ${response.status}: ${response.statusText}`);
@@ -158,7 +149,6 @@ async function fetchWithTimeout(
 
     return data as TwinSpiresEntry[];
   } catch (error) {
-    console.log('[TS-DEBUG] fetchWithTimeout: CAUGHT error:', error);
     if (error && typeof error === 'object' && 'code' in error) {
       throw error;
     }
