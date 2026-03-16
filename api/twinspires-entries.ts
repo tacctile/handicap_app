@@ -112,9 +112,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       method: 'GET',
       signal: controller.signal,
       headers: {
-        Accept: 'application/json',
-        'User-Agent': 'Furlong/1.0',
+        Accept: 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36',
+        Referer: 'https://www.twinspires.com/',
+        Origin: 'https://www.twinspires.com',
       },
+      redirect: 'follow',
     });
 
     clearTimeout(timeoutId);
@@ -132,7 +137,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     res.setHeader('Cache-Control', 's-maxage=5, stale-while-revalidate=5');
     res.status(200).json(data);
   } catch (error) {
-    if (error instanceof DOMException && error.name === 'AbortError') {
+    // In Node.js, AbortError may be a DOMException or plain Error
+    if (error instanceof Error && error.name === 'AbortError') {
       res.status(504).json({ error: 'TwinSpires request timed out' });
       return;
     }
