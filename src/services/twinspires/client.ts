@@ -2,6 +2,8 @@
  * TwinSpires API Client
  *
  * Typed fetch client for the TwinSpires entries endpoint.
+ * Routes requests through a same-origin Vercel serverless proxy
+ * (/api/twinspires-entries) to avoid CORS restrictions.
  * Includes retry logic (one retry on network failure with 2s delay)
  * and 8-second timeout on all requests.
  */
@@ -19,9 +21,9 @@ const REQUEST_TIMEOUT_MS = 8000;
 /** Delay before retry on network failure */
 const RETRY_DELAY_MS = 2000;
 
-/** Base URL pattern for TwinSpires entries endpoint */
-const ENTRIES_URL_PATTERN =
-  'https://www.twinspires.com/adw/todays-tracks/{trackCode}/{raceType}/races/{raceNumber}/entries?affid=2800';
+/** Proxy endpoint pattern — same-origin, avoids CORS */
+const PROXY_URL_PATTERN =
+  '/api/twinspires-entries?trackCode={trackCode}&raceType={raceType}&raceNumber={raceNumber}';
 
 // ============================================================================
 // ERROR HELPER
@@ -36,10 +38,10 @@ function createTwinSpiresError(code: TwinSpiresErrorCode, message: string): Twin
 // ============================================================================
 
 /**
- * Build the TwinSpires entries URL for a specific race.
+ * Build the proxy URL for a specific race.
  */
 export function buildEntriesUrl(trackCode: string, raceType: string, raceNumber: number): string {
-  return ENTRIES_URL_PATTERN.replace('{trackCode}', encodeURIComponent(trackCode))
+  return PROXY_URL_PATTERN.replace('{trackCode}', encodeURIComponent(trackCode))
     .replace('{raceType}', encodeURIComponent(raceType))
     .replace('{raceNumber}', String(raceNumber));
 }
