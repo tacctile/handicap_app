@@ -281,9 +281,10 @@ export function useTwinSpiresPolling(
         })
         .catch((err: unknown) => {
           const message = err instanceof Error ? err.message : 'Unknown polling error';
-          logger.logError(`[TwinSpires] Poll cycle failed: ${message}`, {
-            component: 'TwinSpiresPolling',
-          });
+          logger.logError(
+            err instanceof Error ? err : new Error(`[TwinSpires] Poll cycle failed: ${message}`),
+            { component: 'TwinSpiresPolling' }
+          );
           setStatus('error');
           setError(message);
         });
