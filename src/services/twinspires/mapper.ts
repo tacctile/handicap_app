@@ -115,21 +115,25 @@ export function validateTrackMatch(
 // ============================================================================
 
 /**
- * URL pattern for TwinSpires race entries.
- * Example: https://www.twinspires.com/adw/todays-tracks/CD/T/races/3/entries?affid=2800
+ * URL patterns for TwinSpires race pages.
+ *
+ * API format:     /adw/todays-tracks/{trackCode}/{raceType}/races/{raceNumber}/entries
+ * Browser format: /bet/program/classic/{trackCode}/{raceType}/{raceNumber}/advanced
  */
-const TWINSPIRES_URL_REGEX = /\/todays-tracks\/([^/]+)\/([^/]+)\/races\/(\d+)\/entries/;
+const TWINSPIRES_API_URL_REGEX = /\/todays-tracks\/([^/]+)\/([^/]+)\/races\/(\d+)\/entries/;
+const TWINSPIRES_BROWSER_URL_REGEX = /\/bet\/program\/classic\/([^/]+)\/([^/]+)\/(\d+)\/advanced/;
 
 /**
  * Parse a TwinSpires race URL and extract the variable segments.
+ * Accepts both the API endpoint format and the browser address bar format.
  *
- * @param url - TwinSpires entries URL
+ * @param url - TwinSpires URL (API or browser format)
  * @returns Extracted trackCode, raceType, raceNumber or null if parsing fails
  */
 export function extractTrackInfoFromUrl(
   url: string
 ): { trackCode: string; raceType: string; raceNumber: number } | null {
-  const match = url.match(TWINSPIRES_URL_REGEX);
+  const match = url.match(TWINSPIRES_API_URL_REGEX) ?? url.match(TWINSPIRES_BROWSER_URL_REGEX);
   if (!match || !match[1] || !match[2] || !match[3]) return null;
 
   const trackCode = decodeURIComponent(match[1]);

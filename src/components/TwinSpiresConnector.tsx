@@ -176,8 +176,11 @@ export const TwinSpiresConnector = memo(function TwinSpiresConnector({
 
   const handleConnect = useCallback(() => {
     setValidationError(null);
-    if (!url.includes('twinspires.com')) {
-      setValidationError('Invalid TwinSpires URL');
+    const hasTwinSpiresDomain = url.includes('twinspires.com');
+    const hasValidPath =
+      url.includes('/adw/todays-tracks/') || url.includes('/bet/program/classic/');
+    if (!hasTwinSpiresDomain || !hasValidPath) {
+      setValidationError('Invalid TwinSpires URL format');
       return;
     }
     onConnect(url);
