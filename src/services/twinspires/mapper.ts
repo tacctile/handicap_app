@@ -118,11 +118,11 @@ export function validateTrackMatch(
  * URL patterns for TwinSpires race pages.
  *
  * API format:     /adw/todays-tracks/{trackCode}/{raceType}/races/{raceNumber}/entries
- * Browser format: /bet/program/classic/{displaySlug}/{trackCode}/{raceType}/{raceNumber}/advanced
+ * Browser format: /bet/program/classic/{displaySlug}/{trackCode}/{raceType}/{raceNumber}/{viewMode}
  */
 const TWINSPIRES_API_URL_REGEX = /\/todays-tracks\/([^/]+)\/([^/]+)\/races\/(\d+)\/entries/;
 const TWINSPIRES_BROWSER_URL_REGEX =
-  /\/bet\/program\/classic\/[^/]+\/([^/]+)\/([^/]+)\/(\d+)\/advanced/;
+  /\/bet\/program\/classic\/[^/]+\/([^/]+)\/([^/]+)\/(\d+)\/[a-z]+/;
 
 /**
  * Parse a TwinSpires race URL and extract the variable segments.
