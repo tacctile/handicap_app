@@ -268,6 +268,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
     Map<number, Map<string, 'improved' | 'worsened' | 'unchanged'>>
   >(new Map());
 
+  // Cache TwinSpires data per-race so switching races applies the latest polled data
+  const tsOddsCacheRef = useRef<Map<number, Record<string, string>>>(new Map());
+  const tsScratchCacheRef = useRef<Map<number, Set<string>>>(new Map());
+
   // Build programNumber -> horseIndex maps for each race (stable across polls)
   const programToIndexMaps = useMemo(() => {
     if (!parsedData) return new Map<number, Map<string, number>>();
@@ -283,22 +287,35 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }, [parsedData]);
 
   // TwinSpires polling callbacks
+  // Cache data for ALL races but only apply to the currently selected race.
+  // useRaceState holds flat state for one race at a time, so applying data
+  // for non-selected races would overwrite the selected race's state.
   const handleTsOddsUpdate = useCallback(
     (raceIndex: number, oddsMap: Record<string, string>) => {
+      // Always cache latest odds for every race
+      tsOddsCacheRef.current.set(raceIndex, oddsMap);
+
+      // Only apply to raceState if this is the selected race
+      if (raceIndex !== selectedRaceIndex) return;
       const progMap = programToIndexMaps.get(raceIndex);
       if (!progMap) return;
       raceState.batchUpdateOdds(raceIndex, oddsMap, progMap);
     },
-    [programToIndexMaps, raceState]
+    [programToIndexMaps, raceState, selectedRaceIndex]
   );
 
   const handleTsScratchUpdate = useCallback(
     (raceIndex: number, scratchedPrograms: Set<string>) => {
+      // Always cache latest scratches for every race
+      tsScratchCacheRef.current.set(raceIndex, scratchedPrograms);
+
+      // Only apply to raceState if this is the selected race
+      if (raceIndex !== selectedRaceIndex) return;
       const progMap = programToIndexMaps.get(raceIndex);
       if (!progMap) return;
       raceState.batchSetScratches(raceIndex, scratchedPrograms, progMap);
     },
-    [programToIndexMaps, raceState]
+    [programToIndexMaps, raceState, selectedRaceIndex]
   );
 
   const handleTsEdgeUpdate = useCallback(
@@ -368,6 +385,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
   );
 
   const isLivePolling = twinSpiresPolling.status === 'polling';
+
+  // When user switches races, apply any cached TwinSpires data for the new race
+  useEffect(() => {
+    if (!isLivePolling) return;
+
+    const cachedOdds = tsOddsCacheRef.current.get(selectedRaceIndex);
+    const cachedScratches = tsScratchCacheRef.current.get(selectedRaceIndex);
+    const progMap = programToIndexMaps.get(selectedRaceIndex);
+    if (!progMap) return;
+
+    if (cachedOdds) {
+      raceState.batchUpdateOdds(selectedRaceIndex, cachedOdds, progMap);
+    }
+    if (cachedScratches) {
+      raceState.batchSetScratches(selectedRaceIndex, cachedScratches, progMap);
+    }
+  }, [selectedRaceIndex, isLivePolling, programToIndexMaps, raceState]);
 
   // State for horse list sort order and direction
   // Sortable columns: POST, RANK, ODDS, FAIR, VALUE, EDGE
