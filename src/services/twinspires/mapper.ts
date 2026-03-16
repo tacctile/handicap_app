@@ -14,18 +14,48 @@ import type { TwinSpiresEntry } from './types';
 // ============================================================================
 
 /**
+ * Convert a TwinSpires odds value to standard fractional format (e.g. "5-2").
+ *
+ * The API returns odds as decimal ratios ("2.50" for 5/2, "3" for 3/1).
+ * US racing uses denominators 1, 2, and 5 — we try each in order.
+ */
+function normalizeLiveOdds(raw: string): string {
+  const trimmed = raw.trim();
+
+  // Already fractional with slash or dash (e.g. "5/2", "3-1") — just normalize separator
+  if (/^\d+-\d+$/.test(trimmed)) return trimmed;
+  if (/^\d+\/\d+$/.test(trimmed)) return trimmed.replace('/', '-');
+
+  // Numeric value — convert decimal ratio to fractional
+  const decimal = parseFloat(trimmed);
+  if (isNaN(decimal) || decimal <= 0) return trimmed;
+
+  // Try common US racing denominators: 1, 2, 5
+  for (const denom of [1, 2, 5]) {
+    const numer = decimal * denom;
+    if (Math.abs(numer - Math.round(numer)) < 0.01) {
+      return `${Math.round(numer)}-${denom}`;
+    }
+  }
+
+  // Fallback: treat as X-1
+  return `${Math.round(decimal)}-1`;
+}
+
+/**
  * Map TwinSpires entries to a programNumber -> liveOdds record.
  * Skips entries with null liveOdds.
+ * Converts decimal ratios to fractional format (e.g. 2.50 → "5-2").
  *
  * @param entries - Array of TwinSpires entries
- * @returns Record mapping programNumber string to liveOdds string
+ * @returns Record mapping programNumber string to fractional odds string
  */
 export function mapTwinSpiresEntriesToOdds(entries: TwinSpiresEntry[]): Record<string, string> {
   const oddsMap: Record<string, string> = {};
 
   for (const entry of entries) {
     if (entry.liveOdds !== null) {
-      oddsMap[entry.programNumber] = entry.liveOdds;
+      oddsMap[entry.programNumber] = normalizeLiveOdds(String(entry.liveOdds));
     }
   }
 
