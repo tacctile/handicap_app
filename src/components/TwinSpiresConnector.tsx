@@ -7,6 +7,7 @@
 
 import React, { useState, useCallback, useEffect, useRef, memo } from 'react';
 import type { TwinSpiresConnectionStatus } from '../services/twinspires/types';
+import { extractTrackInfoFromUrl } from '../services/twinspires/mapper';
 
 // ============================================================================
 // STYLES (scoped with ts- prefix)
@@ -176,10 +177,7 @@ export const TwinSpiresConnector = memo(function TwinSpiresConnector({
 
   const handleConnect = useCallback(() => {
     setValidationError(null);
-    const hasTwinSpiresDomain = url.includes('twinspires.com');
-    const hasValidPath =
-      url.includes('/adw/todays-tracks/') || url.includes('/bet/program/classic/');
-    if (!hasTwinSpiresDomain || !hasValidPath) {
+    if (!extractTrackInfoFromUrl(url)) {
       setValidationError('Invalid TwinSpires URL format');
       return;
     }
