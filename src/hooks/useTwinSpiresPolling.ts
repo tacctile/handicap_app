@@ -6,7 +6,7 @@
  * scratch updates, and edge delta calculations.
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
 import { logger } from '../services/logging';
 import { fetchTwinSpiresEntries } from '../services/twinspires/client';
 import {
@@ -96,18 +96,20 @@ export function useTwinSpiresPolling(
   const isFirstPollRef = useRef(true);
   const previousOddsRef = useRef<Map<number, Record<string, string>>>(new Map());
 
-  // Store latest callbacks in refs to avoid stale closures
+  // Store latest callbacks and data in refs to avoid stale closures.
+  // useLayoutEffect runs synchronously before paint, so refs are always
+  // current before any user event handlers or intervals can read them.
   const onOddsUpdateRef = useRef(onOddsUpdate);
   const onScratchUpdateRef = useRef(onScratchUpdate);
   const onEdgeUpdateRef = useRef(onEdgeUpdate);
   const parsedDataRef = useRef(parsedData);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     onOddsUpdateRef.current = onOddsUpdate;
     onScratchUpdateRef.current = onScratchUpdate;
     onEdgeUpdateRef.current = onEdgeUpdate;
     parsedDataRef.current = parsedData;
-  }, [onOddsUpdate, onScratchUpdate, onEdgeUpdate, parsedData]);
+  });
 
   /**
    * Clean up interval and abort controller.
@@ -134,13 +136,25 @@ export function useTwinSpiresPolling(
     const raceCount = currentParsedData.races.length;
     const signal = abortControllerRef.current?.signal;
 
-    logger.logDebug(`[TwinSpires] Polling ${raceCount} races`, {
-      component: 'TwinSpiresPolling',
-    });
+    if (raceCount === 0) {
+      logger.logWarning('[TwinSpires] pollAllRaces called with 0 races — skipping', {
+        component: 'TwinSpiresPolling',
+      });
+      return;
+    }
+
+    logger.logInfo(
+      `[TwinSpires] Polling ${raceCount} races for ${trackInfo.trackCode}/${trackInfo.raceType}`,
+      {
+        component: 'TwinSpiresPolling',
+      }
+    );
 
     const racePromises = Array.from({ length: raceCount }, (_, raceIndex) => {
       const race = currentParsedData.races[raceIndex];
-      if (!race) return Promise.reject(new Error(`Race ${raceIndex} not found`));
+      if (!race) {
+        return Promise.reject(new Error(`Race ${raceIndex} not found`));
+      }
       const raceNumber = race.header.raceNumber;
 
       return fetchTwinSpiresEntries(
@@ -228,10 +242,20 @@ export function useTwinSpiresPolling(
       // Clean up any existing polling
       cleanupPolling();
 
+      const currentRaceCount = parsedDataRef.current.races.length;
       logger.logInfo(
-        `[TwinSpires] Connecting: track=${trackInfo.trackCode}, type=${trackInfo.raceType}`,
+        `[TwinSpires] Connecting: track=${trackInfo.trackCode}, type=${trackInfo.raceType}, races=${currentRaceCount}`,
         { component: 'TwinSpiresPolling' }
       );
+
+      if (currentRaceCount === 0) {
+        logger.logWarning('[TwinSpires] parsedData has 0 races at connect time — cannot poll', {
+          component: 'TwinSpiresPolling',
+        });
+        setStatus('error');
+        setError('No race data loaded — upload a DRF file first');
+        return;
+      }
 
       // Store track info
       trackInfoRef.current = {
@@ -248,14 +272,24 @@ export function useTwinSpiresPolling(
       setError(null);
 
       // Initial poll immediately
-      pollAllRaces().then(() => {
-        // Set up interval for subsequent polls (only if not errored)
-        if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
-          intervalRef.current = setInterval(() => {
-            pollAllRaces();
-          }, POLL_INTERVAL_MS);
-        }
-      });
+      pollAllRaces()
+        .then(() => {
+          // Set up interval for subsequent polls (only if not errored)
+          if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
+            intervalRef.current = setInterval(() => {
+              pollAllRaces();
+            }, POLL_INTERVAL_MS);
+          }
+        })
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : 'Unknown polling error';
+          logger.logError(
+            err instanceof Error ? err : new Error(`[TwinSpires] Poll cycle failed: ${message}`),
+            { component: 'TwinSpiresPolling' }
+          );
+          setStatus('error');
+          setError(message);
+        });
     },
     [cleanupPolling, pollAllRaces]
   );

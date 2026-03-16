@@ -20,6 +20,8 @@ import { ScoringHelpModal } from './ScoringHelpModal';
 import { BettingStrategyGuide } from './BettingStrategyGuide';
 import { RaceVerdictHeader } from './RaceVerdictHeader';
 import { RaceOverview } from './RaceOverview';
+import { TwinSpiresConnector } from './TwinSpiresConnector';
+import { useTwinSpiresPolling } from '../hooks/useTwinSpiresPolling';
 import {
   calculateRaceScores,
   MAX_SCORE,
@@ -256,6 +258,116 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // State for Build Ticket modal (controlled via callback prop to TopBetsView)
   const [showTicketBuilder, setShowTicketBuilder] = useState(false);
+
+  // =========================================================================
+  // TWINSPIRES LIVE POLLING
+  // =========================================================================
+
+  // Edge delta state: raceIndex -> (programNumber -> 'improved' | 'worsened' | 'unchanged')
+  const [edgeDeltas, setEdgeDeltas] = useState<
+    Map<number, Map<string, 'improved' | 'worsened' | 'unchanged'>>
+  >(new Map());
+
+  // Build programNumber -> horseIndex maps for each race (stable across polls)
+  const programToIndexMaps = useMemo(() => {
+    if (!parsedData) return new Map<number, Map<string, number>>();
+    const maps = new Map<number, Map<string, number>>();
+    parsedData.races.forEach((race, raceIndex) => {
+      const m = new Map<string, number>();
+      race.horses.forEach((horse, horseIndex) => {
+        m.set(String(horse.programNumber), horseIndex);
+      });
+      maps.set(raceIndex, m);
+    });
+    return maps;
+  }, [parsedData]);
+
+  // TwinSpires polling callbacks
+  const handleTsOddsUpdate = useCallback(
+    (raceIndex: number, oddsMap: Record<string, string>) => {
+      const progMap = programToIndexMaps.get(raceIndex);
+      if (!progMap) return;
+      raceState.batchUpdateOdds(raceIndex, oddsMap, progMap);
+    },
+    [programToIndexMaps, raceState]
+  );
+
+  const handleTsScratchUpdate = useCallback(
+    (raceIndex: number, scratchedPrograms: Set<string>) => {
+      const progMap = programToIndexMaps.get(raceIndex);
+      if (!progMap) return;
+      raceState.batchSetScratches(raceIndex, scratchedPrograms, progMap);
+    },
+    [programToIndexMaps, raceState]
+  );
+
+  const handleTsEdgeUpdate = useCallback(
+    (
+      raceIndex: number,
+      previousEdges: Record<string, number>,
+      newEdges: Record<string, number>
+    ) => {
+      const deltaMap = new Map<string, 'improved' | 'worsened' | 'unchanged'>();
+      const allKeys = new Set([...Object.keys(previousEdges), ...Object.keys(newEdges)]);
+      for (const prog of allKeys) {
+        const prev = previousEdges[prog];
+        const curr = newEdges[prog];
+        if (prev === undefined || curr === undefined) {
+          deltaMap.set(prog, 'unchanged');
+        } else if (curr < prev) {
+          // Lower odds = more favored = improved for bettor picking this horse
+          deltaMap.set(prog, 'improved');
+        } else if (curr > prev) {
+          deltaMap.set(prog, 'worsened');
+        } else {
+          deltaMap.set(prog, 'unchanged');
+        }
+      }
+      setEdgeDeltas((prev) => {
+        const next = new Map(prev);
+        next.set(raceIndex, deltaMap);
+        return next;
+      });
+    },
+    []
+  );
+
+  // Instantiate polling hook (only when parsedData exists)
+  const twinSpiresPolling = useTwinSpiresPolling(
+    parsedData
+      ? {
+          parsedData,
+          onOddsUpdate: handleTsOddsUpdate,
+          onScratchUpdate: handleTsScratchUpdate,
+          onEdgeUpdate: handleTsEdgeUpdate,
+        }
+      : {
+          parsedData: {
+            filename: '',
+            races: [],
+            format: 'unknown',
+            version: null,
+            parsedAt: '',
+            isValid: false,
+            warnings: [],
+            errors: [],
+            stats: {
+              totalRaces: 0,
+              totalHorses: 0,
+              totalPastPerformances: 0,
+              totalWorkouts: 0,
+              parseTimeMs: 0,
+              linesProcessed: 0,
+              linesSkipped: 0,
+            },
+          },
+          onOddsUpdate: () => {},
+          onScratchUpdate: () => {},
+          onEdgeUpdate: () => {},
+        }
+  );
+
+  const isLivePolling = twinSpiresPolling.status === 'polling';
 
   // State for horse list sort order and direction
   // Sortable columns: POST, RANK, ODDS, FAIR, VALUE, EDGE
@@ -1182,16 +1294,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <main className="app-main">
           {viewMode === 'overview' && parsedData ? (
             /* OVERVIEW MODE - All races at a glance */
-            <RaceOverview
-              parsedData={parsedData}
-              raceConfidences={raceOverviewData.raceConfidences}
-              topHorsesByRace={raceOverviewData.topHorsesByRace}
-              diamondCountByRace={raceOverviewData.diamondCountByRace}
-              eliteConnectionsCountByRace={raceOverviewData.eliteConnectionsCountByRace}
-              scratchedCountByRace={raceOverviewData.scratchedCountByRace}
-              allScoredHorses={allScoredHorses}
-              onRaceSelect={handleRaceSelectFromOverview}
-            />
+            <div>
+              {/* TwinSpires connector bar — above race grid */}
+              <div style={{ padding: '8px 16px 0', display: 'flex', alignItems: 'center' }}>
+                <TwinSpiresConnector
+                  status={twinSpiresPolling.status}
+                  lastUpdated={twinSpiresPolling.lastUpdated}
+                  error={twinSpiresPolling.error}
+                  onConnect={twinSpiresPolling.connect}
+                  onDisconnect={twinSpiresPolling.disconnect}
+                />
+              </div>
+              <RaceOverview
+                parsedData={parsedData}
+                raceConfidences={raceOverviewData.raceConfidences}
+                topHorsesByRace={raceOverviewData.topHorsesByRace}
+                diamondCountByRace={raceOverviewData.diamondCountByRace}
+                eliteConnectionsCountByRace={raceOverviewData.eliteConnectionsCountByRace}
+                scratchedCountByRace={raceOverviewData.scratchedCountByRace}
+                allScoredHorses={allScoredHorses}
+                onRaceSelect={handleRaceSelectFromOverview}
+              />
+            </div>
           ) : viewMode === 'topBets' && currentRace?.header ? (
             /* TOP BETS - Simple view of top 20 bet recommendations */
             <TopBetsView
@@ -1404,6 +1528,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                               rowId={`horse-row-${horseIndex}`}
                               // Favorite detection for FALSE FAVORITE label
                               isFavorite={horseIndex === favoriteIndex}
+                              // TwinSpires live polling props
+                              isLivePolling={isLivePolling}
+                              edgeDelta={edgeDeltas
+                                .get(selectedRaceIndex)
+                                ?.get(String(horse.programNumber))}
                             />
                             <HorseExpandedView
                               horse={horse}

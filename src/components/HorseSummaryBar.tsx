@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef, useEffect } from 'react';
+import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import './HorseSummaryBar.css';
 import type { HorseEntry } from '../types/drf';
 import type { TrendScore } from '../lib/scoring/trendAnalysis';
@@ -81,6 +81,10 @@ interface HorseSummaryBarProps {
   rowId?: string;
   /** Whether this horse is the favorite (lowest odds in the field) */
   isFavorite?: boolean;
+  /** Whether TwinSpires live polling is active — disables manual odds editing and SCR interaction */
+  isLivePolling?: boolean;
+  /** Edge delta from live polling: 'improved' = odds shortened, 'worsened' = odds drifted */
+  edgeDelta?: 'improved' | 'worsened' | 'unchanged';
 }
 
 // Helper to convert odds object to string
@@ -137,6 +141,8 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   edgePercent,
   rowId,
   isFavorite: _isFavorite = false, // Kept for compatibility but now using value matrix
+  isLivePolling = false,
+  edgeDelta,
 }) => {
   // Extract horse data from HorseEntry type
   const programNumber = horse.programNumber;
@@ -168,6 +174,48 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
   const [oddsInputValue, setOddsInputValue] = useState('');
   const oddsInputRef = useRef<HTMLInputElement>(null);
   const currentOddsStr = oddsToString(currentOdds);
+
+  // Edge glow animation — inject keyframes once globally
+  const [glowKey, setGlowKey] = useState(0);
+  const prevEdgeDelta = useRef(edgeDelta);
+
+  useEffect(() => {
+    // Inject keyframes once
+    if (typeof document !== 'undefined' && !document.getElementById('ts-edge-glow-keyframes')) {
+      const style = document.createElement('style');
+      style.id = 'ts-edge-glow-keyframes';
+      style.textContent = `
+        @keyframes ts-glow-improved {
+          0% { box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.4), 0 0 8px rgba(16, 185, 129, 0.3); }
+          100% { box-shadow: none; }
+        }
+        @keyframes ts-glow-worsened {
+          0% { box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.4), 0 0 8px rgba(239, 68, 68, 0.3); }
+          100% { box-shadow: none; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+
+  // Re-trigger glow animation on each new edge delta
+  useEffect(() => {
+    if (edgeDelta && edgeDelta !== 'unchanged' && edgeDelta !== prevEdgeDelta.current) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: re-triggering CSS animation via key change on external data update
+      setGlowKey((k) => k + 1);
+    }
+    prevEdgeDelta.current = edgeDelta;
+  }, [edgeDelta]);
+
+  const glowStyle = useMemo((): React.CSSProperties | undefined => {
+    if (!edgeDelta || edgeDelta === 'unchanged') return undefined;
+    return {
+      animation:
+        edgeDelta === 'improved'
+          ? 'ts-glow-improved 3s ease-out forwards'
+          : 'ts-glow-worsened 3s ease-out forwards',
+    };
+  }, [edgeDelta]);
 
   // Focus input when editing starts
   useEffect(() => {
@@ -217,6 +265,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
 
   return (
     <div
+      key={glowKey}
       id={rowId}
       className={`horse-summary-bar
         horse-summary-bar--tier-${tierClass}
@@ -225,6 +274,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
         ${isValuePlay ? 'horse-summary-bar--value-play' : ''}
         ${isPrimaryValuePlay ? 'horse-summary-bar--primary-value-play' : ''}`}
       onClick={handleRowClick}
+      style={glowStyle}
     >
       {/* Column 1: Scratch button - larger touch target */}
       <div className="horse-summary-bar__scratch-col" onClick={(e) => e.stopPropagation()}>
@@ -232,10 +282,24 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
           className={`horse-summary-bar__scratch-btn ${isScratched ? 'horse-summary-bar__scratch-btn--active' : ''}`}
           onClick={(e) => {
             e.stopPropagation();
-            onScratchToggle(!isScratched);
+            if (!isLivePolling) onScratchToggle(!isScratched);
           }}
-          title={isScratched ? 'Unscratch horse' : 'Scratch horse from race'}
-          aria-label={isScratched ? 'Unscratch horse' : 'Scratch horse from race'}
+          disabled={isLivePolling}
+          title={
+            isLivePolling
+              ? 'Scratches managed by live data'
+              : isScratched
+                ? 'Unscratch horse'
+                : 'Scratch horse from race'
+          }
+          aria-label={
+            isLivePolling
+              ? 'Scratches managed by live data'
+              : isScratched
+                ? 'Unscratch horse'
+                : 'Scratch horse from race'
+          }
+          style={isLivePolling ? { opacity: 0.4, cursor: 'default' } : undefined}
         >
           <span className="material-icons horse-summary-bar__scratch-icon">
             {isScratched ? 'undo' : 'block'}
@@ -252,7 +316,7 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
 
       {/* Column 4: ODDS - Click to edit (left side - price data) */}
       <div className="horse-summary-bar__odds" onClick={(e) => e.stopPropagation()}>
-        {isEditingOdds ? (
+        {isEditingOdds && !isLivePolling ? (
           <div className="odds-edit-wrapper">
             <input
               ref={oddsInputRef}
@@ -270,15 +334,20 @@ export const HorseSummaryBar: React.FC<HorseSummaryBarProps> = ({
           <div className="odds-edit-wrapper">
             <button
               type="button"
-              className={`odds-edit-value ${isScratched ? 'odds-edit-value--disabled' : ''}`}
-              onClick={handleOddsClick}
-              disabled={isScratched}
-              title="Click to edit odds"
-              aria-label={`Current odds ${currentOddsStr}, click to edit`}
+              className={`odds-edit-value ${isScratched || isLivePolling ? 'odds-edit-value--disabled' : ''}`}
+              onClick={isLivePolling ? undefined : handleOddsClick}
+              disabled={isScratched || isLivePolling}
+              title={isLivePolling ? 'Live odds from TwinSpires' : 'Click to edit odds'}
+              aria-label={
+                isLivePolling
+                  ? `Live odds ${currentOddsStr}`
+                  : `Current odds ${currentOddsStr}, click to edit`
+              }
+              style={isLivePolling ? { color: 'var(--color-text-primary)' } : undefined}
             >
               {currentOddsStr}
             </button>
-            {!isScratched && <span className="odds-edit-hint">Edit</span>}
+            {!isScratched && !isLivePolling && <span className="odds-edit-hint">Edit</span>}
           </div>
         )}
       </div>
