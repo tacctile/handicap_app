@@ -130,7 +130,7 @@ export function extractTrackInfoFromUrl(
   url: string
 ): { trackCode: string; raceType: string; raceNumber: number } | null {
   const match = url.match(TWINSPIRES_URL_REGEX);
-  if (!match) return null;
+  if (!match || !match[1] || !match[2] || !match[3]) return null;
 
   const trackCode = decodeURIComponent(match[1]);
   const raceType = decodeURIComponent(match[2]);

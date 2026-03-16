@@ -60,7 +60,7 @@ function oddsToEdgeMap(oddsMap: Record<string, string>): Record<string, number> 
   const edges: Record<string, number> = {};
   for (const [prog, oddsStr] of Object.entries(oddsMap)) {
     const parts = oddsStr.split('-');
-    if (parts.length === 2) {
+    if (parts.length === 2 && parts[0] !== undefined && parts[1] !== undefined) {
       const num = parseFloat(parts[0]);
       const den = parseFloat(parts[1]);
       if (!isNaN(num) && !isNaN(den) && den > 0) {
@@ -140,6 +140,7 @@ export function useTwinSpiresPolling(
 
     const racePromises = Array.from({ length: raceCount }, (_, raceIndex) => {
       const race = currentParsedData.races[raceIndex];
+      if (!race) return Promise.reject(new Error(`Race ${raceIndex} not found`));
       const raceNumber = race.header.raceNumber;
 
       return fetchTwinSpiresEntries(
